@@ -1,16 +1,40 @@
-# React + Vite
+# Borgo 58 · Gestionale
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web app gestionale per **Borgo 58 – Osteria Contemporanea** (Piazza Armerina, EN). Sviluppata da Alessio Schillaci con Claude.
 
-Currently, two official plugins are available:
+Riferimento di progetto: `APP_Borgo58_Brief_Tecnico_v2.md`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- React + Vite
+- Tailwind CSS v4
+- React Router
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stato attuale
 
-## Expanding the Oxlint configuration
+Impalcatura generale completata: navigazione, layout, branding, login (mock) e una pagina placeholder per ciascuno degli 11 moduli previsti dal brief. Nessuna logica interna dei moduli è ancora implementata — si procede un modulo alla volta, a partire dal **Ricettario**.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Moduli
+
+| # | Modulo | Fase |
+|---|--------|------|
+| 1 | Ricettario | 1 · Nucleo operativo |
+| 2 | Fatture Fornitori | 1 · Nucleo operativo |
+| 3 | Magazzino | 1 · Nucleo operativo |
+| 4 | Cassa & Riconciliazione | 1 · Nucleo operativo |
+| 5 | Calendario Eventi | 1 · Nucleo operativo |
+| 6 | Agricolo / Orto | 2 · Fiscale e amministrativo |
+| 7 | Proiezione Fiscale | 2 · Fiscale e amministrativo |
+| 8 | Ricerca Ricorrente | 2 · Fiscale e amministrativo |
+| 9 | Sito & Social | 3 · Comunicazione |
+| 10 | Editor Menu Cartaceo | 3 · Comunicazione |
+| 11 | Chat AI | 3 · Comunicazione |
+
+## Sviluppo
+
+```
+npm install
+npm run dev
+```
+
+Server di sviluppo su `http://localhost:5173`.
