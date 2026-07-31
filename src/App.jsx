@@ -15,6 +15,7 @@ import MenuForm from "./pages/ricettario/MenuForm";
 import MenuDetail from "./pages/ricettario/MenuDetail";
 import ReservationsList from "./pages/calendario/ReservationsList";
 import ReservationForm from "./pages/calendario/ReservationForm";
+import PublicReservationForm from "./pages/public/PublicReservationForm";
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -37,6 +38,7 @@ function AppRoutes() {
           )
         }
       />
+      <Route path="/prenota" element={<PublicReservationForm />} />
       <Route
         element={
           <RequireAuth>
