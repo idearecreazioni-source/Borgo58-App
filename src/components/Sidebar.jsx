@@ -33,7 +33,7 @@ export default function Sidebar({ onNavigate }) {
         {MODULES.map((m) => (
           <NavLink
             key={m.id}
-            to={`/moduli/${m.id}`}
+            to={m.route ?? `/moduli/${m.id}`}
             onClick={onNavigate}
             className={linkClasses}
           >

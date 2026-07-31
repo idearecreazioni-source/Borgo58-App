@@ -4,21 +4,29 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
+import RicettarioHome from "./pages/ricettario/RicettarioHome";
+import IngredientiList from "./pages/ricettario/IngredientiList";
+import IngredienteForm from "./pages/ricettario/IngredienteForm";
 
 function RequireAuth({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
   return isAuthenticated ? children : <Navigate to="/" replace />;
 }
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   return (
     <Routes>
       <Route
         path="/"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          loading ? null : isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Login />
+          )
         }
       />
       <Route
@@ -29,6 +37,10 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/ricettario" element={<RicettarioHome />} />
+        <Route path="/ricettario/ingredienti" element={<IngredientiList />} />
+        <Route path="/ricettario/ingredienti/nuovo" element={<IngredienteForm />} />
+        <Route path="/ricettario/ingredienti/:id" element={<IngredienteForm />} />
         <Route path="/moduli/:moduleId" element={<ModulePlaceholder />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

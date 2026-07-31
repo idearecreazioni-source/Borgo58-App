@@ -1,0 +1,42 @@
+import { Link } from "react-router-dom";
+import Icon from "../../components/Icon";
+
+export default function RicettarioHome() {
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+          Ricettario
+        </h1>
+        <p className="text-b58-charcoal-soft mt-1">
+          Food cost dinamico, allergeni UE, HACCP.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          to="/ricettario/ingredienti"
+          className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
+        >
+          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <Icon name="box" className="w-5 h-5" />
+          </div>
+          <h3 className="font-display text-base text-b58-charcoal">Ingredienti</h3>
+          <p className="text-sm text-b58-charcoal-soft mt-1">
+            Anagrafica, prezzi correnti e storico, allergeni, stagionalità.
+          </p>
+        </Link>
+
+        <div className="rounded-xl bg-b58-parchment/60 p-6 ring-1 ring-b58-charcoal/10 opacity-70">
+          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-charcoal-soft mb-3">
+            <Icon name="book" className="w-5 h-5" />
+          </div>
+          <h3 className="font-display text-base text-b58-charcoal">Ricette</h3>
+          <p className="text-sm text-b58-charcoal-soft mt-1">
+            Food cost per porzione, fasi HACCP, menu — in sviluppo (prossimo passo).
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

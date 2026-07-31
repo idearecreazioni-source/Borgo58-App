@@ -6,15 +6,19 @@ import Logo from "../components/Logo";
 export default function Login() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (login(pin)) {
+    setSubmitting(true);
+    const result = await login(pin);
+    setSubmitting(false);
+    if (result.ok) {
       navigate("/dashboard", { replace: true });
     } else {
-      setError("PIN non valido (minimo 4 cifre).");
+      setError("PIN non corretto.");
     }
   };
 
@@ -46,22 +50,18 @@ export default function Login() {
               setPin(e.target.value);
               setError("");
             }}
-            placeholder="••••"
+            placeholder="••••••"
             className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 text-lg tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           {error && <p className="text-sm text-b58-terracotta-dark mt-2">{error}</p>}
 
           <button
             type="submit"
-            className="mt-6 w-full rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium py-3"
+            disabled={submitting}
+            className="mt-6 w-full rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
           >
-            Entra
+            {submitting ? "Accesso in corso…" : "Entra"}
           </button>
-
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-5 text-center leading-relaxed">
-            Accesso demo — l'autenticazione reale (PIN monoutente / Supabase)
-            sarà collegata insieme al resto della configurazione dati.
-          </p>
         </form>
       </div>
     </div>

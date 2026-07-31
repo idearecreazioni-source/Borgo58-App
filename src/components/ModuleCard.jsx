@@ -7,7 +7,7 @@ export default function ModuleCard({ module }) {
 
   return (
     <Link
-      to={`/moduli/${module.id}`}
+      to={module.route ?? `/moduli/${module.id}`}
       className="group relative flex flex-col gap-3 rounded-xl bg-b58-parchment p-5 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
     >
       {module.next && (

@@ -14,6 +14,7 @@ export const MODULES = [
     phase: 1,
     icon: "book",
     next: true,
+    route: "/ricettario",
   },
   {
     id: "fatture-fornitori",
