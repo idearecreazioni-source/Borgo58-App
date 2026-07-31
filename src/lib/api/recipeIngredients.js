@@ -37,3 +37,16 @@ export async function removeRecipeIngredient(id) {
   const { error } = await supabase.from("recipe_ingredients").delete().eq("id", id);
   if (error) throw error;
 }
+
+// Per il simulatore what-if: tutti gli ingredienti di più ricette in una
+// sola query, per poter ricalcolare il food cost con un prezzo ipotetico
+// senza fare N richieste separate.
+export async function listRecipeIngredientsForRecipes(recipeIds) {
+  if (recipeIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("recipe_ingredients")
+    .select(SELECT)
+    .in("recipe_id", recipeIds);
+  if (error) throw error;
+  return data;
+}

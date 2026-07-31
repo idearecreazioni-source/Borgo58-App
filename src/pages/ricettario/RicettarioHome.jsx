@@ -13,7 +13,7 @@ export default function RicettarioHome() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link
           to="/ricettario/ingredienti"
           className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
@@ -37,6 +37,19 @@ export default function RicettarioHome() {
           <h3 className="font-display text-base text-b58-charcoal">Ricette</h3>
           <p className="text-sm text-b58-charcoal-soft mt-1">
             Food cost per porzione calcolato in automatico, fasi HACCP, allergeni.
+          </p>
+        </Link>
+
+        <Link
+          to="/ricettario/menu"
+          className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
+        >
+          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+            <Icon name="calendar" className="w-5 h-5" />
+          </div>
+          <h3 className="font-display text-base text-b58-charcoal">Menu</h3>
+          <p className="text-sm text-b58-charcoal-soft mt-1">
+            Struttura 4-4-4-2, prezzi di vendita, margini, simulatore what-if.
           </p>
         </Link>
       </div>
