@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { listIngredients } from "../../lib/api/ingredients";
 import { INGREDIENT_CATEGORIES, labelFor, formatEUR } from "../../lib/constants";
 
@@ -10,6 +10,7 @@ export default function IngredientiList() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -113,15 +114,11 @@ export default function IngredientiList() {
               {sorted.map((ing) => (
                 <tr
                   key={ing.id}
+                  onClick={() => navigate(`/ricettario/ingredienti/${ing.id}`)}
                   className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
                 >
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/ricettario/ingredienti/${ing.id}`}
-                      className="text-b58-charcoal font-medium hover:text-b58-terracotta"
-                    >
-                      {ing.name}
-                    </Link>
+                  <td className="px-4 py-3 text-b58-charcoal font-medium">
+                    {ing.name}
                   </td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">
                     {labelFor(INGREDIENT_CATEGORIES, ing.category)}
