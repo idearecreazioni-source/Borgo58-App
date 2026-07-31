@@ -1,0 +1,90 @@
+import { supabase } from "../supabase";
+import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
+
+export async function listReservations({ status, type, search } = {}) {
+  let query = supabase
+    .from("reservations")
+    .select("*")
+    .order("reservation_date", { ascending: true })
+    .order("reservation_time", { ascending: true });
+
+  if (status) query = query.eq("status", status);
+  if (type) query = query.eq("type", type);
+  if (search) {
+    query = query.or(
+      `customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_email.ilike.%${search}%`
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function getReservation(id) {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select("*, event_menu:event_menu_id(id, name)")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createReservation(payload) {
+  const { data, error } = await supabase.from("reservations").insert(payload).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateReservation(id, payload) {
+  const { data, error } = await supabase
+    .from("reservations")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Simulatore fabbisogno ingredienti per un evento: scala le quantità delle
+// ricette del menu scelto sul numero di ospiti (assume che ogni ospite
+// consumi ogni piatto del menu evento — coerente con un menu fisso da
+// evento, diverso dall'à la carte).
+export async function computeEventIngredientNeeds(menuId, partySize) {
+  const { data: menuItems, error } = await supabase
+    .from("menu_items")
+    .select("recipe_id, recipe:recipe_id(id, name, portions_yield)")
+    .eq("menu_id", menuId);
+  if (error) throw error;
+
+  const recipeIds = menuItems.map((mi) => mi.recipe_id);
+  const recipeIngredients = await listRecipeIngredientsForRecipes(recipeIds);
+  const portionsByRecipe = Object.fromEntries(
+    menuItems.map((mi) => [mi.recipe_id, mi.recipe.portions_yield || 1])
+  );
+
+  const needs = {};
+  recipeIngredients
+    .filter((ri) => !ri.is_optional)
+    .forEach((ri) => {
+      const portions = portionsByRecipe[ri.recipe_id] || 1;
+      const scaledQty = ri.quantity * (partySize / portions);
+      const key = ri.ingredient_id;
+      if (!needs[key]) {
+        needs[key] = {
+          ingredient: ri.ingredient,
+          quantity: 0,
+        };
+      }
+      needs[key].quantity += scaledQty;
+    });
+
+  return Object.values(needs)
+    .map((n) => ({
+      ...n,
+      estimatedCost: n.quantity * n.ingredient.current_price,
+    }))
+    .sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name));
+}

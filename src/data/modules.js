@@ -47,6 +47,7 @@ export const MODULES = [
     description: "Prenotazioni, eventi, Giovedì della Terra, Green Card.",
     phase: 1,
     icon: "calendar",
+    route: "/calendario-eventi",
   },
   {
     id: "agricolo",

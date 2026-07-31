@@ -118,6 +118,18 @@ export const COOKING_TECHNIQUES = [
   { value: "altro", label: "Altro" },
 ];
 
+export const RESERVATION_TYPES = [
+  { value: "prenotazione", label: "Prenotazione" },
+  { value: "evento", label: "Evento" },
+];
+
+export const RESERVATION_STATUSES = [
+  { value: "richiesta_in_attesa", label: "Richiesta in attesa" },
+  { value: "confermata", label: "Confermata" },
+  { value: "rifiutata", label: "Rifiutata" },
+  { value: "annullata", label: "Annullata" },
+];
+
 // Soglie food cost (§5.3 del doc): >25% rosso, >22% giallo, altrimenti verde.
 export const foodCostLevel = (pct) => {
   if (pct == null) return "neutral";

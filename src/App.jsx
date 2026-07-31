@@ -13,6 +13,8 @@ import RicettaDetail from "./pages/ricettario/RicettaDetail";
 import MenuList from "./pages/ricettario/MenuList";
 import MenuForm from "./pages/ricettario/MenuForm";
 import MenuDetail from "./pages/ricettario/MenuDetail";
+import ReservationsList from "./pages/calendario/ReservationsList";
+import ReservationForm from "./pages/calendario/ReservationForm";
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -53,6 +55,9 @@ function AppRoutes() {
         <Route path="/ricettario/menu" element={<MenuList />} />
         <Route path="/ricettario/menu/nuovo" element={<MenuForm />} />
         <Route path="/ricettario/menu/:id" element={<MenuDetail />} />
+        <Route path="/calendario-eventi" element={<ReservationsList />} />
+        <Route path="/calendario-eventi/nuova" element={<ReservationForm />} />
+        <Route path="/calendario-eventi/:id" element={<ReservationForm />} />
         <Route path="/moduli/:moduleId" element={<ModulePlaceholder />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
