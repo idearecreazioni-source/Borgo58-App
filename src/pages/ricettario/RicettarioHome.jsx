@@ -27,15 +27,18 @@ export default function RicettarioHome() {
           </p>
         </Link>
 
-        <div className="rounded-xl bg-b58-parchment/60 p-6 ring-1 ring-b58-charcoal/10 opacity-70">
-          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-charcoal-soft mb-3">
+        <Link
+          to="/ricettario/ricette"
+          className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
+        >
+          <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
             <Icon name="book" className="w-5 h-5" />
           </div>
           <h3 className="font-display text-base text-b58-charcoal">Ricette</h3>
           <p className="text-sm text-b58-charcoal-soft mt-1">
-            Food cost per porzione, fasi HACCP, menu — in sviluppo (prossimo passo).
+            Food cost per porzione calcolato in automatico, fasi HACCP, allergeni.
           </p>
-        </div>
+        </Link>
       </div>
     </div>
   );

@@ -76,6 +76,56 @@ export const SUPPLIER_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+export const RECIPE_CATEGORIES = [
+  { value: "antipasto", label: "Antipasto" },
+  { value: "primo", label: "Primo" },
+  { value: "secondo", label: "Secondo" },
+  { value: "dolce", label: "Dolce" },
+];
+
+export const RECIPE_STATUSES = [
+  { value: "in_sviluppo", label: "In sviluppo" },
+  { value: "attiva", label: "Attiva" },
+  { value: "in_pausa", label: "In pausa" },
+  { value: "archiviata", label: "Archiviata" },
+];
+
+export const SEASONS = [
+  { value: "primavera", label: "Primavera" },
+  { value: "estate", label: "Estate" },
+  { value: "autunno", label: "Autunno" },
+  { value: "inverno", label: "Inverno" },
+  { value: "tutto_anno", label: "Tutto l'anno" },
+];
+
+export const STEP_PHASES = [
+  { value: "mise_en_place", label: "Mise en place" },
+  { value: "cottura", label: "Cottura" },
+  { value: "finitura", label: "Finitura" },
+  { value: "impiattamento", label: "Impiattamento" },
+];
+
+export const COOKING_TECHNIQUES = [
+  { value: "tradizionale", label: "Tradizionale" },
+  { value: "sottovuoto", label: "Sottovuoto" },
+  { value: "CBT", label: "CBT" },
+  { value: "abbattitore", label: "Abbattitore" },
+  { value: "bagnomaria", label: "Bagnomaria" },
+  { value: "frittura", label: "Frittura" },
+  { value: "griglia", label: "Griglia" },
+  { value: "forno", label: "Forno" },
+  { value: "crudo", label: "Crudo" },
+  { value: "altro", label: "Altro" },
+];
+
+// Soglie food cost (§5.3 del doc): >25% rosso, >22% giallo, altrimenti verde.
+export const foodCostLevel = (pct) => {
+  if (pct == null) return "neutral";
+  if (pct > 25) return "danger";
+  if (pct > 22) return "warning";
+  return "ok";
+};
+
 export const labelFor = (list, value) =>
   list.find((item) => item.value === value)?.label ?? value;
 
