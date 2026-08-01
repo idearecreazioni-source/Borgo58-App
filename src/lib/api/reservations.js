@@ -48,6 +48,33 @@ export async function updateReservation(id, payload) {
   return data;
 }
 
+// Caparra: tabella separata visibile solo al titolare (§3.5) — la tabella
+// reservations non contiene più dati economici, così è condivisibile con lo staff.
+export async function getReservationDeposit(reservationId) {
+  const { data, error } = await supabase
+    .from("reservation_deposits")
+    .select("amount")
+    .eq("reservation_id", reservationId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.amount ?? null;
+}
+
+export async function setReservationDeposit(reservationId, amount) {
+  if (amount == null || amount === "") {
+    const { error } = await supabase
+      .from("reservation_deposits")
+      .delete()
+      .eq("reservation_id", reservationId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("reservation_deposits")
+    .upsert({ reservation_id: reservationId, amount: Number(amount) });
+  if (error) throw error;
+}
+
 // Simulatore fabbisogno ingredienti per un evento: scala le quantità delle
 // ricette del menu scelto sul numero di ospiti (assume che ogni ospite
 // consumi ogni piatto del menu evento — coerente con un menu fisso da

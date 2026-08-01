@@ -38,6 +38,18 @@ export async function removeRecipeIngredient(id) {
   if (error) throw error;
 }
 
+// Vista "display" per lo staff: nomi, quantità e allergeni senza prezzi
+// (§3.5). La vista è SECURITY DEFINER e non espone alcuna colonna economica.
+export async function listRecipeIngredientsDisplay(recipeId) {
+  const { data, error } = await supabase
+    .from("recipe_ingredients_display")
+    .select("*")
+    .eq("recipe_id", recipeId)
+    .order("ingredient_name");
+  if (error) throw error;
+  return data;
+}
+
 // Per il simulatore what-if: tutti gli ingredienti di più ricette in una
 // sola query, per poter ricalcolare il food cost con un prezzo ipotetico
 // senza fare N richieste separate.

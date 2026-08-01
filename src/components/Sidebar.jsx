@@ -5,7 +5,11 @@ import { MODULES } from "../data/modules";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar({ onNavigate }) {
-  const { logout } = useAuth();
+  const { logout, isTitolare } = useAuth();
+
+  // Lo staff vede solo i moduli a lui consentiti — le voci riservate non
+  // compaiono affatto (§3.5), non sono solo bloccate.
+  const visibleModules = MODULES.filter((m) => isTitolare || m.staffVisible);
 
   const linkClasses = ({ isActive }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
@@ -30,7 +34,7 @@ export default function Sidebar({ onNavigate }) {
           Moduli
         </div>
 
-        {MODULES.map((m) => (
+        {visibleModules.map((m) => (
           <NavLink
             key={m.id}
             to={m.route ?? `/moduli/${m.id}`}

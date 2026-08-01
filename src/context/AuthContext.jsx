@@ -3,37 +3,61 @@ import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
-// Applicazione monoutente (§3.3 del brief): un solo account Supabase Auth,
-// email fissa nota all'app. Il "PIN" digitato dall'utente è la password
-// di quell'unico account. L'utente va creato una volta dalla dashboard
-// Supabase (Authentication → Add user) — Claude non gestisce credenziali.
-const SINGLE_USER_EMAIL = "alessio@borgo58.app";
+// Due account (§3.5 del brief): titolare e staff (condiviso). Il PIN digitato
+// è la password dell'account. L'app prova prima il titolare, poi lo staff —
+// il PIN stesso determina il ruolo (i due PIN devono essere diversi). Gli
+// account vanno creati dalla dashboard Supabase; Claude non gestisce credenziali.
+const TITOLARE_EMAIL = "alessio@borgo58.app";
+const STAFF_EMAIL = "staff@borgo58.app";
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchRole = async (activeSession) => {
+    if (!activeSession) {
+      setRole(null);
+      return;
+    }
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", activeSession.user.id)
+      .maybeSingle();
+    setRole(data?.role ?? null);
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
+      await fetchRole(data.session);
       setLoading(false);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      async (_event, newSession) => {
         setSession(newSession);
+        await fetchRole(newSession);
       }
     );
 
     return () => subscription.subscription.unsubscribe();
   }, []);
 
+  // Prova titolare, poi staff: il PIN corretto determina l'account e quindi il ruolo.
   const login = async (pin) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: SINGLE_USER_EMAIL,
+    let result = await supabase.auth.signInWithPassword({
+      email: TITOLARE_EMAIL,
       password: pin,
     });
-    if (error) return { ok: false, message: error.message };
+    if (result.error) {
+      result = await supabase.auth.signInWithPassword({
+        email: STAFF_EMAIL,
+        password: pin,
+      });
+    }
+    if (result.error) return { ok: false, message: result.error.message };
     return { ok: true };
   };
 
@@ -41,7 +65,15 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated: !!session, loading, login, logout }}
+      value={{
+        isAuthenticated: !!session,
+        role,
+        isTitolare: role === "titolare",
+        isStaff: role === "staff",
+        loading,
+        login,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

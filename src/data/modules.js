@@ -15,6 +15,7 @@ export const MODULES = [
     icon: "book",
     next: true,
     route: "/ricettario",
+    staffVisible: true, // staff: solo le ricette (senza food cost) — §3.5
   },
   {
     id: "fatture-fornitori",
@@ -31,6 +32,7 @@ export const MODULES = [
     description: "Carico/scarico, soglie minime, scadenze in avvicinamento.",
     phase: 1,
     icon: "box",
+    staffVisible: true, // staff: scorte/scadenze senza valore economico — §3.5
   },
   {
     id: "cassa-riconciliazione",
@@ -48,6 +50,7 @@ export const MODULES = [
     phase: 1,
     icon: "calendar",
     route: "/calendario-eventi",
+    staffVisible: true, // staff: vista operativa del servizio, senza caparra — §3.5
   },
   {
     id: "agricolo",

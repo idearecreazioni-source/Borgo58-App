@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
 import { RECIPE_CATEGORIES, RECIPE_STATUSES, labelFor, formatEUR } from "../../lib/constants";
+import { useAuth } from "../../context/AuthContext";
 
 const STATUS_BADGE = {
   in_sviluppo: "bg-b58-gold",
@@ -19,20 +20,23 @@ export default function RicetteList() {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const navigate = useNavigate();
+  const { isTitolare } = useAuth();
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      listRecipes({ search: search || undefined, category: category || undefined, status: status || undefined }),
-      listAllRecipeCosts(),
-    ])
+    const filters = { search: search || undefined, category: category || undefined, status: status || undefined };
+    // Il food cost è riservato al titolare — lo staff non lo carica nemmeno.
+    const jobs = isTitolare
+      ? Promise.all([listRecipes(filters), listAllRecipeCosts()])
+      : Promise.all([listRecipes(filters), Promise.resolve([])]);
+    jobs
       .then(([recipeData, costData]) => {
         setRecipes(recipeData);
         setCosts(Object.fromEntries(costData.map((c) => [c.recipe_id, c])));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, category, status]);
+  }, [search, category, status, isTitolare]);
 
   const sorted = useMemo(
     () => [...recipes].sort((a, b) => a.name.localeCompare(b.name)),
@@ -48,12 +52,14 @@ export default function RicetteList() {
           </Link>
           <h1 className="font-display text-2xl text-b58-charcoal mt-1">Ricette</h1>
         </div>
-        <Link
-          to="/ricettario/ricette/nuova"
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
-        >
-          + Nuova ricetta
-        </Link>
+        {isTitolare && (
+          <Link
+            to="/ricettario/ricette/nuova"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+          >
+            + Nuova ricetta
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -106,7 +112,9 @@ export default function RicetteList() {
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">Categoria</th>
                 <th className="px-4 py-3 font-medium">Porzioni</th>
-                <th className="px-4 py-3 font-medium text-right">Food cost / porzione</th>
+                {isTitolare && (
+                  <th className="px-4 py-3 font-medium text-right">Food cost / porzione</th>
+                )}
                 <th className="px-4 py-3 font-medium">Stato</th>
               </tr>
             </thead>
@@ -124,9 +132,11 @@ export default function RicetteList() {
                       {labelFor(RECIPE_CATEGORIES, r.category)}
                     </td>
                     <td className="px-4 py-3 text-b58-charcoal-soft">{r.portions_yield}</td>
-                    <td className="px-4 py-3 text-right text-b58-charcoal">
-                      {cost ? formatEUR(cost.food_cost_portion) : "—"}
-                    </td>
+                    {isTitolare && (
+                      <td className="px-4 py-3 text-right text-b58-charcoal">
+                        {cost ? formatEUR(cost.food_cost_portion) : "—"}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}

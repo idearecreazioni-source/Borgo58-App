@@ -4,10 +4,13 @@ import {
   computeEventIngredientNeeds,
   createReservation,
   getReservation,
+  getReservationDeposit,
+  setReservationDeposit,
   updateReservation,
 } from "../../lib/api/reservations";
 import { listMenus } from "../../lib/api/menus";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
+import { useAuth } from "../../context/AuthContext";
 
 const emptyForm = {
   type: "prenotazione",
@@ -20,7 +23,6 @@ const emptyForm = {
   notes: "",
   event_type: "",
   event_menu_id: "",
-  deposit_amount: "",
 };
 
 const STATUS_ACTIONS = {
@@ -37,8 +39,10 @@ export default function ReservationForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { isTitolare } = useAuth();
 
   const [form, setForm] = useState(emptyForm);
+  const [deposit, setDeposit] = useState(""); // caparra, solo titolare (tabella separata)
   const [status, setStatus] = useState("confermata");
   const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(isEdit);
@@ -53,7 +57,8 @@ export default function ReservationForm() {
     let cancelled = false;
     (async () => {
       try {
-        setMenus(await listMenus());
+        // I menu sono riservati al titolare; lo staff non li carica (RLS).
+        if (isTitolare) setMenus(await listMenus());
         if (isEdit) {
           const r = await getReservation(id);
           if (cancelled) return;
@@ -68,9 +73,12 @@ export default function ReservationForm() {
             notes: r.notes ?? "",
             event_type: r.event_type ?? "",
             event_menu_id: r.event_menu_id ?? "",
-            deposit_amount: r.deposit_amount ?? "",
           });
           setStatus(r.status);
+          if (isTitolare) {
+            const dep = await getReservationDeposit(id);
+            if (!cancelled) setDeposit(dep ?? "");
+          }
         }
       } catch (e) {
         if (e.code === "PGRST116") setNotFound(true);
@@ -82,7 +90,7 @@ export default function ReservationForm() {
     return () => {
       cancelled = true;
     };
-  }, [id, isEdit]);
+  }, [id, isEdit, isTitolare]);
 
   const isEvent = form.type === "evento";
 
@@ -128,17 +136,17 @@ export default function ReservationForm() {
         customer_email: form.customer_email || null,
         notes: form.notes || null,
         event_type: isEvent ? form.event_type || null : null,
-        event_menu_id: isEvent ? form.event_menu_id || null : null,
-        deposit_amount: isEvent && form.deposit_amount ? Number(form.deposit_amount) : null,
+        // Il menu evento è un dato commerciale: solo il titolare lo imposta.
+        event_menu_id: isEvent && isTitolare ? form.event_menu_id || null : undefined,
       };
+      // undefined ⇒ non toccare il campo (utile quando lo staff salva un evento).
+      if (payload.event_menu_id === undefined) delete payload.event_menu_id;
 
-      if (isEdit) {
-        await updateReservation(id, payload);
-        navigate(`/calendario-eventi/${id}`);
-      } else {
-        const created = await createReservation({ ...payload, source: "interno" });
-        navigate(`/calendario-eventi/${created.id}`);
-      }
+      const targetId = isEdit ? id : (await createReservation({ ...payload, source: "interno" })).id;
+      if (isEdit) await updateReservation(id, payload);
+      // La caparra vive in una tabella separata (solo titolare).
+      if (isTitolare && isEvent) await setReservationDeposit(targetId, deposit);
+      navigate(`/calendario-eventi/${targetId}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -296,30 +304,35 @@ export default function ReservationForm() {
                   className={inputClass}
                 />
               </div>
-              <div>
-                <label className={labelClass}>Menu evento</label>
-                <select
-                  value={form.event_menu_id}
-                  onChange={(e) => setForm((f) => ({ ...f, event_menu_id: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="">Nessuno</option>
-                  {menus.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>Caparra €</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.deposit_amount}
-                  onChange={(e) => setForm((f) => ({ ...f, deposit_amount: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
+              {/* Menu evento e caparra sono dati commerciali: solo titolare (§3.5) */}
+              {isTitolare && (
+                <>
+                  <div>
+                    <label className={labelClass}>Menu evento</label>
+                    <select
+                      value={form.event_menu_id}
+                      onChange={(e) => setForm((f) => ({ ...f, event_menu_id: e.target.value }))}
+                      className={inputClass}
+                    >
+                      <option value="">Nessuno</option>
+                      {menus.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Caparra €</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={deposit}
+                      onChange={(e) => setDeposit(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -333,7 +346,7 @@ export default function ReservationForm() {
         </button>
       </form>
 
-      {isEdit && isEvent && form.event_menu_id && (
+      {isTitolare && isEdit && isEvent && form.event_menu_id && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-lg text-b58-charcoal">Fabbisogno ingredienti stimato</h2>
