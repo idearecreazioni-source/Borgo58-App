@@ -1,13 +1,14 @@
 import { supabase } from "../supabase";
 import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 
-export async function listReservations({ status, type, search } = {}) {
+export async function listReservations({ status, type, search, date } = {}) {
   let query = supabase
     .from("reservations")
     .select("*")
     .order("reservation_date", { ascending: true })
     .order("reservation_time", { ascending: true });
 
+  if (date) query = query.eq("reservation_date", date);
   if (status) query = query.eq("status", status);
   if (type) query = query.eq("type", type);
   if (search) {

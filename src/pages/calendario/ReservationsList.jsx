@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listReservations } from "../../lib/api/reservations";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor } from "../../lib/constants";
@@ -10,6 +10,8 @@ const STATUS_BADGE = {
   annullata: "bg-b58-charcoal-soft/50",
 };
 
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
 export default function ReservationsList() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,15 +19,32 @@ export default function ReservationsList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
+  // Default: prenotazioni di oggi — la vista utile per preparare la sala.
+  const [date, setDate] = useState(todayISO());
   const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
-    listReservations({ search: search || undefined, status: status || undefined, type: type || undefined })
+    listReservations({
+      search: search || undefined,
+      status: status || undefined,
+      type: type || undefined,
+      date: date || undefined,
+    })
       .then(setReservations)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, status, type]);
+  }, [search, status, type, date]);
+
+  // Totale coperti del giorno filtrato (escluse rifiutate/annullate) — utile
+  // per dimensionare la sala.
+  const totalCovers = useMemo(
+    () =>
+      reservations
+        .filter((r) => r.status === "confermata" || r.status === "richiesta_in_attesa")
+        .reduce((sum, r) => sum + (r.party_size || 0), 0),
+    [reservations]
+  );
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -37,6 +56,39 @@ export default function ReservationsList() {
         >
           + Nuova prenotazione
         </Link>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+        />
+        <button
+          type="button"
+          onClick={() => setDate(todayISO())}
+          className="rounded-lg border border-b58-charcoal/15 px-3 py-2 text-sm text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+        >
+          Oggi
+        </button>
+        <button
+          type="button"
+          onClick={() => setDate("")}
+          className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+            date
+              ? "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
+              : "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+          }`}
+        >
+          Tutte le date
+        </button>
+        {date && (
+          <span className="text-sm text-b58-charcoal-soft">
+            {reservations.length} prenotazion{reservations.length === 1 ? "e" : "i"} ·{" "}
+            <span className="text-b58-charcoal font-medium">{totalCovers} coperti</span>
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -76,9 +128,11 @@ export default function ReservationsList() {
       ) : reservations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
-            {search || status || type
-              ? "Nessuna prenotazione corrisponde ai filtri."
-              : "Nessuna prenotazione ancora."}
+            {date
+              ? `Nessuna prenotazione per il ${formatDate(date)}.`
+              : search || status || type
+                ? "Nessuna prenotazione corrisponde ai filtri."
+                : "Nessuna prenotazione ancora."}
           </p>
         </div>
       ) : (
