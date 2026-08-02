@@ -27,6 +27,7 @@ import TemperatureLog from "./pages/haccp/TemperatureLog";
 import RicevimentoMerci from "./pages/haccp/RicevimentoMerci";
 import PuliziaESanificazione from "./pages/haccp/PuliziaESanificazione";
 import NonConformita from "./pages/haccp/NonConformita";
+import FattureFornitoriHome from "./pages/fatture/FattureFornitoriHome";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -119,6 +120,9 @@ function AppRoutes() {
         <Route path="/haccp/ricevimento" element={<RicevimentoMerci />} />
         <Route path="/haccp/pulizia" element={<PuliziaESanificazione />} />
         <Route path="/haccp/non-conformita" element={<NonConformita />} />
+
+        {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
+        <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />

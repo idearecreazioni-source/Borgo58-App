@@ -34,6 +34,8 @@ export const MODULES = [
     description: "Integrazione Fatture in Cloud, storico prezzi per fornitore.",
     phase: 1,
     icon: "receipt",
+    route: "/fatture-fornitori",
+    // niente staffVisible: accesso solo titolare, esplicito nel brief
   },
   {
     id: "magazzino",
