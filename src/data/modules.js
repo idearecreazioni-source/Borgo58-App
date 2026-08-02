@@ -54,6 +54,8 @@ export const MODULES = [
     description: "Riconciliazione, uscite di cassa, versamento titolare, mance, banca.",
     phase: 1,
     icon: "cash",
+    route: "/cassa",
+    // niente staffVisible: accesso solo titolare (§3.5)
   },
   {
     id: "calendario-eventi",

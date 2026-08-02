@@ -162,6 +162,27 @@ export const NC_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+export const CASH_DIRECTIONS = [
+  { value: "entrata", label: "Entrata" },
+  { value: "uscita", label: "Uscita" },
+];
+
+// solo fattura/scontrino/autofattura entrano nei calcoli fiscali (§3.4)
+export const CASH_DOCUMENT_TYPES = [
+  { value: "fattura", label: "Fattura" },
+  { value: "scontrino", label: "Scontrino" },
+  { value: "autofattura", label: "Autofattura" },
+  { value: "non_documentato", label: "Non documentato" },
+];
+
+export const DISCOUNT_GIFT_TYPES = [
+  { value: "sconto", label: "Sconto" },
+  { value: "omaggio", label: "Omaggio" },
+];
+
+// Soglia fattura semplificata (§3.4/§6): scontrino ≤400€ → promemoria IVA.
+export const SIMPLIFIED_INVOICE_THRESHOLD = 400;
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },
