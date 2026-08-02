@@ -9,7 +9,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-b58-cream flex">
       {/* Sidebar desktop/tablet */}
-      <aside className="hidden md:block md:w-64 shrink-0 border-r border-b58-charcoal/10">
+      <aside className="hidden md:block md:w-64 shrink-0 border-r border-b58-charcoal/10 print:hidden">
         <div className="sticky top-0 h-screen">
           <Sidebar />
         </div>
@@ -31,7 +31,7 @@ export default function Layout() {
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar mobile */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
+        <header className="md:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
           <Logo size="sm" />
           <button
             aria-label="Apri menu"

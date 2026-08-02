@@ -74,6 +74,12 @@ export default function MagazzinoHome() {
         </div>
         <div className="flex gap-2">
           <Link
+            to="/magazzino/tracciabilita"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Tracciabilità
+          </Link>
+          <Link
             to="/magazzino/lista-spesa"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >

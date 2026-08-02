@@ -4,6 +4,7 @@ import { getRecipe, getRecipeAllergens } from "../../lib/api/recipes";
 import { listRecipeSteps } from "../../lib/api/recipeSteps";
 import { listRecipeIngredientsDisplay } from "../../lib/api/recipeIngredients";
 import { listRecipeVideos } from "../../lib/api/recipeVideos";
+import PrintButton from "../../components/PrintButton";
 import {
   ALLERGENS,
   COOKING_TECHNIQUES,
@@ -69,9 +70,12 @@ export default function StaffRicettaDetail() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
-        ← Ricette
-      </Link>
+      <div className="flex items-center justify-between gap-4 print:hidden">
+        <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+          ← Ricette
+        </Link>
+        <PrintButton />
+      </div>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">

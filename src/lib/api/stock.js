@@ -15,7 +15,7 @@ export async function listStockLevels() {
 export async function listStockLots(ingredientId) {
   let query = supabase
     .from("stock_lots")
-    .select("*, supplier:supplier_id(id, name)")
+    .select("*, ingredient:ingredient_id(id, name, unit), supplier:supplier_id(id, name)")
     .order("expiry_date", { ascending: true, nullsFirst: false })
     .order("received_at", { ascending: false });
   if (ingredientId) query = query.eq("ingredient_id", ingredientId);
@@ -38,6 +38,7 @@ export async function listStockLotsDisplay(ingredientId) {
   if (error) throw error;
   return data.map((l) => ({
     ...l,
+    ingredient: l.ingredient_id ? { id: l.ingredient_id, name: l.ingredient_name, unit: l.unit } : null,
     supplier: l.supplier_id ? { id: l.supplier_id, name: l.supplier_name } : null,
   }));
 }

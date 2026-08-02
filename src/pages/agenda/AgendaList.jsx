@@ -149,12 +149,20 @@ export default function AgendaList() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">Agenda</h1>
-        <Link
-          to="/agenda/nuovo"
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
-        >
-          + Nuovo task
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/agenda/adempimenti"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Adempimenti (PDF)
+          </Link>
+          <Link
+            to="/agenda/nuovo"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+          >
+            + Nuovo task
+          </Link>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">

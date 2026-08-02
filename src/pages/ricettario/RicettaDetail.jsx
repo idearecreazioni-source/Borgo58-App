@@ -24,6 +24,7 @@ import {
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
+import PrintButton from "../../components/PrintButton";
 import {
   ALLERGENS,
   COOKING_TECHNIQUES,
@@ -355,9 +356,12 @@ export default function RicettaDetail() {
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
-      <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
-        ← Ricette
-      </Link>
+      <div className="flex items-center justify-between gap-4 print:hidden">
+        <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+          ← Ricette
+        </Link>
+        <PrintButton />
+      </div>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
@@ -525,7 +529,7 @@ export default function RicettaDetail() {
           <button
             onClick={saveHeader}
             disabled={savingHeader}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="print:hidden rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
           >
             {savingHeader ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -615,7 +619,7 @@ export default function RicettaDetail() {
           </table>
         )}
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3">
           {preparations.length > 0 && (
             <div className="flex gap-2 mb-2">
               <button
@@ -856,7 +860,7 @@ export default function RicettaDetail() {
           </ol>
         )}
 
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 space-y-2">
+        <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3 space-y-2">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <select
               value={stepForm.phase}
@@ -995,7 +999,7 @@ export default function RicettaDetail() {
           </ul>
         )}
 
-        <div className="flex flex-wrap gap-2 bg-white rounded-lg border border-b58-charcoal/10 p-3">
+        <div className="print:hidden flex flex-wrap gap-2 bg-white rounded-lg border border-b58-charcoal/10 p-3">
           <input
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
