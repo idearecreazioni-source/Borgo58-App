@@ -42,6 +42,7 @@ export const MODULES = [
     description: "Carico/scarico, lista della spesa, soglie minime, scadenze.",
     phase: 1,
     icon: "box",
+    route: "/magazzino",
     staffVisible: true, // staff: scorte/lista spesa senza valore economico — §3.5
   },
   {

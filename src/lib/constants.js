@@ -130,6 +130,18 @@ export const COOKING_TECHNIQUES = [
   { value: "altro", label: "Altro" },
 ];
 
+export const CONSUMPTION_REASONS = [
+  { value: "consumo", label: "Consumo" },
+  { value: "spreco", label: "Spreco" },
+  { value: "rettifica", label: "Rettifica (correzione da conteggio fisico)" },
+];
+
+export const PAYMENT_METHODS = [
+  { value: "contante", label: "Contante" },
+  { value: "bonifico", label: "Bonifico" },
+  { value: "carta", label: "Carta" },
+];
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },

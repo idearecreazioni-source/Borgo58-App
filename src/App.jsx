@@ -19,6 +19,9 @@ import ReservationForm from "./pages/calendario/ReservationForm";
 import PublicReservationForm from "./pages/public/PublicReservationForm";
 import AgendaList from "./pages/agenda/AgendaList";
 import TaskForm from "./pages/agenda/TaskForm";
+import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
+import RegistraCarico from "./pages/magazzino/RegistraCarico";
+import ListaSpesa from "./pages/magazzino/ListaSpesa";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -99,6 +102,11 @@ function AppRoutes() {
         <Route path="/agenda" element={<AgendaList />} />
         <Route path="/agenda/nuovo" element={<TaskForm />} />
         <Route path="/agenda/:id" element={<TaskForm />} />
+
+        {/* Magazzino (condiviso titolare/staff, senza valore economico per lo staff — §3.5) */}
+        <Route path="/magazzino" element={<MagazzinoHome />} />
+        <Route path="/magazzino/carico" element={<RegistraCarico />} />
+        <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />

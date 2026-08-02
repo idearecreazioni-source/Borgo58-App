@@ -11,6 +11,16 @@ export async function listSuppliers(entityId) {
   return data;
 }
 
+// Staff: solo id/nome/categoria, nessun dato di contatto (vista sicura).
+export async function listSuppliersDisplay() {
+  const { data, error } = await supabase
+    .from("suppliers_display")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data;
+}
+
 export async function createSupplier({ entityId, name, category, contactPhone, contactEmail }) {
   const { data, error } = await supabase
     .from("suppliers")
