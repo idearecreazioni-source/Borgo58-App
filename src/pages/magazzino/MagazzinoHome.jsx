@@ -118,8 +118,8 @@ export default function MagazzinoHome() {
               {levels.map((l) => {
                 const urgency = expiryUrgency(l.nearest_expiry);
                 return (
-                  <>
-                    <tr key={l.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
+                  <Fragment key={l.ingredient_id}>
+                    <tr className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="px-4 py-3 text-b58-charcoal font-medium">
                         {l.ingredient_name}
                         {l.below_threshold && (
@@ -156,7 +156,7 @@ export default function MagazzinoHome() {
                       </td>
                     </tr>
                     {openRow === l.ingredient_id && (
-                      <tr key={`${l.ingredient_id}-form`} className="bg-white">
+                      <tr className="bg-white">
                         <td colSpan={5} className="px-4 py-3">
                           <div className="flex flex-wrap gap-2 items-end">
                             <div className="w-28">
@@ -208,7 +208,7 @@ export default function MagazzinoHome() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
