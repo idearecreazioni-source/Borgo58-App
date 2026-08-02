@@ -127,11 +127,22 @@ export default function RicetteList() {
                     onClick={() => navigate(`/ricettario/ricette/${r.id}`)}
                     className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
                   >
-                    <td className="px-4 py-3 text-b58-charcoal font-medium">{r.name}</td>
+                    <td className="px-4 py-3 text-b58-charcoal font-medium">
+                      {r.name}
+                      {r.recipe_type === "preparazione" && (
+                        <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                          preparazione
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-b58-charcoal-soft">
                       {labelFor(RECIPE_CATEGORIES, r.category)}
                     </td>
-                    <td className="px-4 py-3 text-b58-charcoal-soft">{r.portions_yield}</td>
+                    <td className="px-4 py-3 text-b58-charcoal-soft">
+                      {r.recipe_type === "preparazione"
+                        ? `${r.yield_quantity ?? "—"} ${r.yield_unit ?? ""}`
+                        : r.portions_yield}
+                    </td>
                     {isTitolare && (
                       <td className="px-4 py-3 text-right text-b58-charcoal">
                         {cost ? formatEUR(cost.food_cost_portion) : "—"}

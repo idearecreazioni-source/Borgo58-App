@@ -117,6 +117,11 @@ export default function StaffRicettaDetail() {
                 <tr key={ri.recipe_ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
                   <td className="py-2 text-b58-charcoal">
                     {ri.ingredient_name}
+                    {ri.is_preparation && (
+                      <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                        preparazione
+                      </span>
+                    )}
                     {ri.is_optional && (
                       <span className="text-xs text-b58-charcoal-soft ml-1.5">(opzionale)</span>
                     )}

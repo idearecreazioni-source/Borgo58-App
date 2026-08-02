@@ -83,6 +83,11 @@ export const RECIPE_CATEGORIES = [
   { value: "dolce", label: "Dolce" },
 ];
 
+export const RECIPE_TYPES = [
+  { value: "piatto_finito", label: "Piatto finito" },
+  { value: "preparazione", label: "Preparazione (semilavorato)" },
+];
+
 // Sostituisce il vecchio status unico: due flag indipendenti, non un enum
 // (§4 del brief, revisione 02/08/2026). Etichetta derivata, non salvata.
 export const recipeStatusLabel = (prontaPerCarta, inCarta) => {

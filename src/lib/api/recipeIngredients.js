@@ -1,6 +1,8 @@
 import { supabase } from "../supabase";
 
-const SELECT = "*, ingredient:ingredient_id(id, name, unit, current_price, waste_percentage_default, allergens)";
+const SELECT =
+  "*, ingredient:ingredient_id(id, name, unit, current_price, waste_percentage_default, allergens), " +
+  "component:component_recipe_id(id, name, yield_quantity, yield_unit)";
 
 export async function listRecipeIngredients(recipeId) {
   const { data, error } = await supabase

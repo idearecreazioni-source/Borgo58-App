@@ -73,3 +73,28 @@ export async function listAllRecipeCosts() {
   if (error) throw error;
   return data;
 }
+
+// Preparazioni disponibili come componente di un'altra ricetta.
+// excludeId: la ricetta corrente non può usare se stessa (già bloccato anche
+// dal DB, ma niente di male a non proporla nella lista).
+export async function listPreparations({ excludeId } = {}) {
+  let query = supabase
+    .from("recipes")
+    .select("id, name, yield_quantity, yield_unit")
+    .eq("recipe_type", "preparazione")
+    .order("name");
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+// "Dove è usata questa preparazione" — solo uso diretto (§4 del brief).
+export async function listPreparationUsage(recipeId) {
+  const { data, error } = await supabase
+    .from("v_preparation_usage")
+    .select("*")
+    .eq("preparation_id", recipeId);
+  if (error) throw error;
+  return data;
+}

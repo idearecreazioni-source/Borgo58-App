@@ -4,6 +4,9 @@ import {
   getRecipe,
   getRecipeAllergens,
   getRecipeCost,
+  listAllRecipeCosts,
+  listPreparationUsage,
+  listPreparations,
   listRecipeStatusHistory,
   updateRecipe,
 } from "../../lib/api/recipes";
@@ -25,6 +28,7 @@ import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
+  RECIPE_TYPES,
   SEASONS,
   STEP_PHASES,
   UNITS,
@@ -37,6 +41,7 @@ import {
 
 const emptyIngredientForm = {
   ingredient_id: "",
+  component_recipe_id: "",
   quantity: "",
   unit: "",
   waste_percentage: "",
@@ -73,8 +78,12 @@ export default function RicettaDetail() {
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [videos, setVideos] = useState([]);
+  const [preparations, setPreparations] = useState([]);
+  const [preparationUsage, setPreparationUsage] = useState([]);
+  const [allCosts, setAllCosts] = useState([]);
 
   const [savingHeader, setSavingHeader] = useState(false);
+  const [ingredientMode, setIngredientMode] = useState("ingredient");
   const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [addingIngredient, setAddingIngredient] = useState(false);
@@ -85,7 +94,7 @@ export default function RicettaDetail() {
   const [addingVideo, setAddingVideo] = useState(false);
 
   const loadAll = async () => {
-    const [rec, ri, st, c, al, hist, vids] = await Promise.all([
+    const [rec, ri, st, c, al, hist, vids, prepUsage, costs] = await Promise.all([
       getRecipe(id),
       listRecipeIngredients(id),
       listRecipeSteps(id),
@@ -93,6 +102,8 @@ export default function RicettaDetail() {
       getRecipeAllergens(id),
       listRecipeStatusHistory(id),
       listRecipeVideos(id),
+      listPreparationUsage(id),
+      listAllRecipeCosts(),
     ]);
     setRecipe(rec);
     setRecipeIngredients(ri);
@@ -101,12 +112,18 @@ export default function RicettaDetail() {
     setAllergens(al);
     setVideos(vids);
     setStatusHistory(hist);
+    setPreparationUsage(prepUsage);
+    setAllCosts(costs);
   };
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([loadAll(), listIngredients().then(setAllIngredients)])
+    Promise.all([
+      loadAll(),
+      listIngredients().then(setAllIngredients),
+      listPreparations({ excludeId: id }).then(setPreparations),
+    ])
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
         else if (!cancelled) setError(e.message);
@@ -117,6 +134,14 @@ export default function RicettaDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const costById = useMemo(() => {
+    const map = {};
+    allCosts.forEach((c) => {
+      map[c.recipe_id] = c;
+    });
+    return map;
+  }, [allCosts]);
 
   const totalPrepMin = useMemo(
     () => steps.reduce((sum, s) => sum + (s.duration_min || 0), 0),
@@ -133,6 +158,12 @@ export default function RicettaDetail() {
     return allIngredients.filter((i) => i.name.toLowerCase().includes(q));
   }, [allIngredients, ingredientSearch]);
 
+  const filteredPreparations = useMemo(() => {
+    if (!ingredientSearch) return preparations;
+    const q = ingredientSearch.toLowerCase();
+    return preparations.filter((p) => p.name.toLowerCase().includes(q));
+  }, [preparations, ingredientSearch]);
+
   if (notFound) return <Navigate to="/ricettario/ricette" replace />;
   if (loading || !recipe) {
     return <p className="text-sm text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
@@ -141,6 +172,8 @@ export default function RicettaDetail() {
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+
+  const isPreparazione = recipe.recipe_type === "preparazione";
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 
@@ -162,7 +195,9 @@ export default function RicettaDetail() {
         category: recipe.category,
         subcategory: recipe.subcategory,
         seasonality: recipe.seasonality,
-        portions_yield: Number(recipe.portions_yield),
+        portions_yield: isPreparazione ? 1 : Number(recipe.portions_yield),
+        yield_quantity: isPreparazione ? Number(recipe.yield_quantity) || null : null,
+        yield_unit: isPreparazione ? recipe.yield_unit : null,
         pronta_per_carta: recipe.pronta_per_carta,
         in_carta: recipe.in_carta,
         tags: recipe.tags,
@@ -193,12 +228,15 @@ export default function RicettaDetail() {
   };
 
   const handleAddIngredient = async () => {
-    if (!ingredientForm.ingredient_id || !ingredientForm.quantity) return;
+    const componentMode = ingredientMode === "preparation";
+    if (componentMode && (!ingredientForm.component_recipe_id || !ingredientForm.quantity)) return;
+    if (!componentMode && (!ingredientForm.ingredient_id || !ingredientForm.quantity)) return;
     setAddingIngredient(true);
     setError("");
     try {
       await addRecipeIngredient(id, {
-        ingredient_id: ingredientForm.ingredient_id,
+        ingredient_id: componentMode ? null : ingredientForm.ingredient_id,
+        component_recipe_id: componentMode ? ingredientForm.component_recipe_id : null,
         quantity: Number(ingredientForm.quantity),
         unit: ingredientForm.unit,
         waste_percentage: ingredientForm.waste_percentage
@@ -359,16 +397,50 @@ export default function RicettaDetail() {
               ))}
             </select>
           </div>
-          <div>
-            <label className={labelClass}>Porzioni base</label>
-            <input
-              type="number"
-              min="1"
-              value={recipe.portions_yield}
-              onChange={(e) => handleHeaderChange("portions_yield", e.target.value)}
-              className={inputClass}
-            />
-          </div>
+          {isPreparazione ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelClass}>Resa</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={recipe.yield_quantity ?? ""}
+                  onChange={(e) => handleHeaderChange("yield_quantity", e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Unità</label>
+                <select
+                  value={recipe.yield_unit ?? "kg"}
+                  onChange={(e) => handleHeaderChange("yield_unit", e.target.value)}
+                  className={inputClass}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className={labelClass}>Porzioni base</label>
+              <input
+                type="number"
+                min="1"
+                value={recipe.portions_yield}
+                onChange={(e) => handleHeaderChange("portions_yield", e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <span className="text-xs bg-b58-cream-dark text-b58-charcoal-soft rounded-full px-2.5 py-1">
+            {labelFor(RECIPE_TYPES, recipe.recipe_type)}
+          </span>
         </div>
 
         <div className="mb-4">
@@ -477,18 +549,32 @@ export default function RicettaDetail() {
             </thead>
             <tbody>
               {recipeIngredients.map((ri) => {
-                const waste = ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
-                const rowCost =
-                  ri.quantity * ri.ingredient.current_price * (1 + waste / 100);
+                const isComponent = !!ri.component;
+                const waste = isComponent
+                  ? null
+                  : ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
+                const rowCost = isComponent
+                  ? (ri.quantity / ri.component.yield_quantity) *
+                    (costById[ri.component.id]?.food_cost_base ?? 0)
+                  : ri.quantity * ri.ingredient.current_price * (1 + waste / 100);
                 return (
                   <tr key={ri.id} className="border-b border-b58-charcoal/5 last:border-0">
                     <td className="py-2 text-b58-charcoal">
                       <Link
-                        to={`/ricettario/ingredienti/${ri.ingredient.id}`}
+                        to={
+                          isComponent
+                            ? `/ricettario/ricette/${ri.component.id}`
+                            : `/ricettario/ingredienti/${ri.ingredient.id}`
+                        }
                         className="hover:text-b58-terracotta"
                       >
-                        {ri.ingredient.name}
+                        {isComponent ? ri.component.name : ri.ingredient.name}
                       </Link>
+                      {isComponent && (
+                        <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                          preparazione
+                        </span>
+                      )}
                       {ri.is_optional && (
                         <span className="text-xs text-b58-charcoal-soft ml-1.5">(opzionale)</span>
                       )}
@@ -506,7 +592,7 @@ export default function RicettaDetail() {
                       />
                       <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
                     </td>
-                    <td className="py-2 text-b58-charcoal-soft">{waste}%</td>
+                    <td className="py-2 text-b58-charcoal-soft">{isComponent ? "—" : `${waste}%`}</td>
                     <td className="py-2 text-right text-b58-charcoal">
                       {ri.is_optional ? (
                         <span className="text-b58-charcoal-soft/60">escluso</span>
@@ -530,31 +616,83 @@ export default function RicettaDetail() {
         )}
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+          {preparations.length > 0 && (
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIngredientMode("ingredient");
+                  setIngredientForm((f) => ({ ...f, component_recipe_id: "" }));
+                }}
+                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                  ingredientMode === "ingredient"
+                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                }`}
+              >
+                Ingrediente
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIngredientMode("preparation");
+                  setIngredientForm((f) => ({ ...f, ingredient_id: "" }));
+                }}
+                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                  ingredientMode === "preparation"
+                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                }`}
+              >
+                Preparazione
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <div className="col-span-2 sm:col-span-1">
               <input
                 value={ingredientSearch}
                 onChange={(e) => setIngredientSearch(e.target.value)}
-                placeholder="Cerca ingrediente…"
+                placeholder={ingredientMode === "preparation" ? "Cerca preparazione…" : "Cerca ingrediente…"}
                 className={inputClass}
               />
-              <select
-                value={ingredientForm.ingredient_id}
-                onChange={(e) => {
-                  const chosen = allIngredients.find((i) => i.id === e.target.value);
-                  setIngredientForm((f) => ({
-                    ...f,
-                    ingredient_id: e.target.value,
-                    unit: chosen?.unit ?? f.unit,
-                  }));
-                }}
-                className={`${inputClass} mt-2`}
-              >
-                <option value="">Seleziona…</option>
-                {filteredIngredients.map((i) => (
-                  <option key={i.id} value={i.id}>{i.name}</option>
-                ))}
-              </select>
+              {ingredientMode === "preparation" ? (
+                <select
+                  value={ingredientForm.component_recipe_id}
+                  onChange={(e) => {
+                    const chosen = preparations.find((p) => p.id === e.target.value);
+                    setIngredientForm((f) => ({
+                      ...f,
+                      component_recipe_id: e.target.value,
+                      unit: chosen?.yield_unit ?? f.unit,
+                    }));
+                  }}
+                  className={`${inputClass} mt-2`}
+                >
+                  <option value="">Seleziona…</option>
+                  {filteredPreparations.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={ingredientForm.ingredient_id}
+                  onChange={(e) => {
+                    const chosen = allIngredients.find((i) => i.id === e.target.value);
+                    setIngredientForm((f) => ({
+                      ...f,
+                      ingredient_id: e.target.value,
+                      unit: chosen?.unit ?? f.unit,
+                    }));
+                  }}
+                  className={`${inputClass} mt-2`}
+                >
+                  <option value="">Seleziona…</option>
+                  {filteredIngredients.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <input
               type="number"
@@ -575,16 +713,20 @@ export default function RicettaDetail() {
                 <option key={u.value} value={u.value}>{u.label}</option>
               ))}
             </select>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="100"
-              value={ingredientForm.waste_percentage}
-              onChange={(e) => setIngredientForm((f) => ({ ...f, waste_percentage: e.target.value }))}
-              placeholder="% scarto (default ingrediente)"
-              className={inputClass}
-            />
+            {ingredientMode === "preparation" ? (
+              <div />
+            ) : (
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={ingredientForm.waste_percentage}
+                onChange={(e) => setIngredientForm((f) => ({ ...f, waste_percentage: e.target.value }))}
+                placeholder="% scarto (default ingrediente)"
+                className={inputClass}
+              />
+            )}
           </div>
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
@@ -597,15 +739,48 @@ export default function RicettaDetail() {
             </label>
             <button
               type="button"
-              disabled={addingIngredient || !ingredientForm.ingredient_id || !ingredientForm.quantity}
+              disabled={
+                addingIngredient ||
+                !ingredientForm.quantity ||
+                (ingredientMode === "preparation"
+                  ? !ingredientForm.component_recipe_id
+                  : !ingredientForm.ingredient_id)
+              }
               onClick={handleAddIngredient}
               className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
             >
-              {addingIngredient ? "Aggiungo…" : "+ Aggiungi ingrediente"}
+              {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Dove è usata questa preparazione */}
+      {isPreparazione && (
+        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+          <h2 className="font-display text-lg text-b58-charcoal mb-4">Dove è usata questa preparazione</h2>
+          {preparationUsage.length === 0 ? (
+            <p className="text-sm text-b58-charcoal-soft/60">
+              Non ancora usata come componente in altre ricette.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {preparationUsage.map((u) => (
+                <li key={u.used_in_recipe_id} className="text-sm text-b58-charcoal-soft">
+                  <Link
+                    to={`/ricettario/ricette/${u.used_in_recipe_id}`}
+                    className="text-b58-charcoal hover:text-b58-terracotta"
+                  >
+                    {u.used_in_recipe_name}
+                  </Link>
+                  {" — "}
+                  {u.quantity} {u.unit}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Fasi di preparazione */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
