@@ -70,6 +70,7 @@ export const MODULES = [
     description: "Piano di autocontrollo: temperature, pulizie, rintracciabilità.",
     phase: 1,
     icon: "leaf",
+    route: "/haccp",
     staffVisible: true, // staff: solo immissione operativa quotidiana — §3.5
   },
   {

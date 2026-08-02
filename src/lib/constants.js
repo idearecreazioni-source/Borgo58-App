@@ -142,6 +142,26 @@ export const PAYMENT_METHODS = [
   { value: "carta", label: "Carta" },
 ];
 
+export const CLEANING_FREQUENCIES = [
+  { value: "giornaliera", label: "Giornaliera" },
+  { value: "settimanale", label: "Settimanale" },
+  { value: "mensile", label: "Mensile" },
+  { value: "altro", label: "Altro" },
+];
+
+export const PEST_CONTROL_TYPES = [
+  { value: "ispezione", label: "Ispezione" },
+  { value: "trattamento", label: "Trattamento" },
+];
+
+export const NC_CATEGORIES = [
+  { value: "temperatura", label: "Temperatura" },
+  { value: "ricevimento", label: "Ricevimento merci" },
+  { value: "pulizia", label: "Pulizia e sanificazione" },
+  { value: "disinfestazione", label: "Disinfestazione" },
+  { value: "altro", label: "Altro" },
+];
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },

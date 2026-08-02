@@ -22,6 +22,11 @@ import TaskForm from "./pages/agenda/TaskForm";
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
+import HaccpHome from "./pages/haccp/HaccpHome";
+import TemperatureLog from "./pages/haccp/TemperatureLog";
+import RicevimentoMerci from "./pages/haccp/RicevimentoMerci";
+import PuliziaESanificazione from "./pages/haccp/PuliziaESanificazione";
+import NonConformita from "./pages/haccp/NonConformita";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -107,6 +112,13 @@ function AppRoutes() {
         <Route path="/magazzino" element={<MagazzinoHome />} />
         <Route path="/magazzino/carico" element={<RegistraCarico />} />
         <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
+
+        {/* HACCP (condiviso: staff fa solo immissione operativa, non modifica struttura/storico — §3.5) */}
+        <Route path="/haccp" element={<HaccpHome />} />
+        <Route path="/haccp/temperature" element={<TemperatureLog />} />
+        <Route path="/haccp/ricevimento" element={<RicevimentoMerci />} />
+        <Route path="/haccp/pulizia" element={<PuliziaESanificazione />} />
+        <Route path="/haccp/non-conformita" element={<NonConformita />} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />
