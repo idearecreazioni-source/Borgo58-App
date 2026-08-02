@@ -91,6 +91,12 @@ export const recipeStatusLabel = (prontaPerCarta, inCarta) => {
   return { label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" };
 };
 
+export const VIDEO_PLATFORMS = [
+  { value: "instagram", label: "Instagram" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "altro", label: "Altro" },
+];
+
 export const SEASONS = [
   { value: "primavera", label: "Primavera" },
   { value: "estate", label: "Estate" },

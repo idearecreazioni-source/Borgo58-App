@@ -3,12 +3,14 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { getRecipe, getRecipeAllergens } from "../../lib/api/recipes";
 import { listRecipeSteps } from "../../lib/api/recipeSteps";
 import { listRecipeIngredientsDisplay } from "../../lib/api/recipeIngredients";
+import { listRecipeVideos } from "../../lib/api/recipeVideos";
 import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
   SEASONS,
   STEP_PHASES,
+  VIDEO_PLATFORMS,
   labelFor,
 } from "../../lib/constants";
 
@@ -21,6 +23,7 @@ export default function StaffRicettaDetail() {
   const [ingredients, setIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
   const [allergens, setAllergens] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
@@ -33,13 +36,15 @@ export default function StaffRicettaDetail() {
       listRecipeIngredientsDisplay(id),
       listRecipeSteps(id),
       getRecipeAllergens(id),
+      listRecipeVideos(id),
     ])
-      .then(([rec, ing, st, al]) => {
+      .then(([rec, ing, st, al, vids]) => {
         if (cancelled) return;
         setRecipe(rec);
         setIngredients(ing);
         setSteps(st);
         setAllergens(al);
+        setVideos(vids);
       })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
@@ -175,6 +180,31 @@ export default function StaffRicettaDetail() {
           </ol>
         )}
       </div>
+
+      {/* Video ricetta */}
+      {videos.length > 0 && (
+        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+          <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
+          <ul className="space-y-2">
+            {videos.map((v) => (
+              <li key={v.id} className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                <a
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                >
+                  {v.url}
+                </a>
+                <div className="text-xs text-b58-charcoal-soft">
+                  {labelFor(VIDEO_PLATFORMS, v.platform)}
+                  {v.note ? ` · ${v.note}` : ""}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* HACCP e Allergeni */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">

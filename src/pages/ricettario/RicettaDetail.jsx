@@ -20,6 +20,7 @@ import {
   swapStepOrder,
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
+import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
 import {
   ALLERGENS,
   COOKING_TECHNIQUES,
@@ -27,6 +28,7 @@ import {
   SEASONS,
   STEP_PHASES,
   UNITS,
+  VIDEO_PLATFORMS,
   formatDate,
   formatEUR,
   labelFor,
@@ -70,6 +72,7 @@ export default function RicettaDetail() {
   const [allIngredients, setAllIngredients] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [videos, setVideos] = useState([]);
 
   const [savingHeader, setSavingHeader] = useState(false);
   const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
@@ -77,21 +80,26 @@ export default function RicettaDetail() {
   const [addingIngredient, setAddingIngredient] = useState(false);
   const [stepForm, setStepForm] = useState(emptyStepForm);
   const [addingStep, setAddingStep] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoNote, setVideoNote] = useState("");
+  const [addingVideo, setAddingVideo] = useState(false);
 
   const loadAll = async () => {
-    const [rec, ri, st, c, al, hist] = await Promise.all([
+    const [rec, ri, st, c, al, hist, vids] = await Promise.all([
       getRecipe(id),
       listRecipeIngredients(id),
       listRecipeSteps(id),
       getRecipeCost(id),
       getRecipeAllergens(id),
       listRecipeStatusHistory(id),
+      listRecipeVideos(id),
     ]);
     setRecipe(rec);
     setRecipeIngredients(ri);
     setSteps(st);
     setCost(c);
     setAllergens(al);
+    setVideos(vids);
     setStatusHistory(hist);
   };
 
@@ -281,6 +289,31 @@ export default function RicettaDetail() {
   };
 
   const ccpSteps = steps.filter((s) => s.is_haccp_ccp);
+
+  const handleAddVideo = async () => {
+    if (!videoUrl.trim()) return;
+    setAddingVideo(true);
+    setError("");
+    try {
+      await addRecipeVideo(id, { url: videoUrl.trim(), note: videoNote.trim() });
+      setVideoUrl("");
+      setVideoNote("");
+      setVideos(await listRecipeVideos(id));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAddingVideo(false);
+    }
+  };
+
+  const handleRemoveVideo = async (videoId) => {
+    try {
+      await removeRecipeVideo(videoId);
+      setVideos(await listRecipeVideos(id));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -744,6 +777,70 @@ export default function RicettaDetail() {
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Video ricetta */}
+      <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
+        <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+          Link a video Instagram/TikTok — nessun upload, nessuna estrazione automatica di
+          ingredienti/passaggi per ora.
+        </p>
+
+        {videos.length > 0 && (
+          <ul className="space-y-2 mb-4">
+            {videos.map((v) => (
+              <li
+                key={v.id}
+                className="flex items-center justify-between gap-3 bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <a
+                    href={v.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                  >
+                    {v.url}
+                  </a>
+                  <div className="text-xs text-b58-charcoal-soft">
+                    {labelFor(VIDEO_PLATFORMS, v.platform)}
+                    {v.note ? ` · ${v.note}` : ""}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemoveVideo(v.id)}
+                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
+                >
+                  Rimuovi
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex flex-wrap gap-2 bg-white rounded-lg border border-b58-charcoal/10 p-3">
+          <input
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="Link Instagram o TikTok…"
+            className={`${inputClass} flex-1 min-w-[200px]`}
+          />
+          <input
+            value={videoNote}
+            onChange={(e) => setVideoNote(e.target.value)}
+            placeholder="Nota (opzionale)"
+            className={`${inputClass} flex-1 min-w-[160px]`}
+          />
+          <button
+            type="button"
+            disabled={addingVideo || !videoUrl.trim()}
+            onClick={handleAddVideo}
+            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+          >
+            {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
+          </button>
         </div>
       </div>
 
