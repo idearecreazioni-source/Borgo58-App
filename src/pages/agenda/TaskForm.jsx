@@ -12,7 +12,24 @@ const emptyForm = {
   priority: "media",
   status: "da_fare",
   category: "",
+  remind_date: "",
+  remind_time: "",
 };
+
+// Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
+// lavorano in ora locale del browser — Date fa la conversione in entrambe
+// le direzioni.
+const splitLocal = (isoString) => {
+  if (!isoString) return { date: "", time: "" };
+  const d = new Date(isoString);
+  const pad = (n) => String(n).padStart(2, "0");
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  };
+};
+const combineToISO = (date, time) =>
+  date && time ? new Date(`${date}T${time}`).toISOString() : null;
 
 export default function TaskForm() {
   const { id } = useParams();
@@ -22,6 +39,8 @@ export default function TaskForm() {
 
   const [form, setForm] = useState(emptyForm);
   const [origineModulo, setOrigineModulo] = useState(null);
+  const [reminderSentAt, setReminderSentAt] = useState(null);
+  const [initialRemindAt, setInitialRemindAt] = useState(null);
   const [loading, setLoading] = useState(isEdit);
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -33,6 +52,7 @@ export default function TaskForm() {
     getTask(id)
       .then((t) => {
         if (cancelled) return;
+        const remind = splitLocal(t.remind_at);
         setForm({
           title: t.title,
           description: t.description ?? "",
@@ -41,8 +61,12 @@ export default function TaskForm() {
           priority: t.priority,
           status: t.status,
           category: t.category ?? "",
+          remind_date: remind.date,
+          remind_time: remind.time,
         });
         setOrigineModulo(t.origine_modulo);
+        setReminderSentAt(t.reminder_sent_at);
+        setInitialRemindAt(t.remind_at);
       })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
@@ -68,6 +92,7 @@ export default function TaskForm() {
     setSaving(true);
     setError("");
     try {
+      const newRemindAt = combineToISO(form.remind_date, form.remind_time);
       const payload = {
         title: form.title.trim(),
         description: form.description || null,
@@ -76,6 +101,9 @@ export default function TaskForm() {
         priority: form.priority,
         status: form.status,
         category: form.category || null,
+        remind_at: newRemindAt,
+        // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
+        ...(newRemindAt !== initialRemindAt ? { reminder_sent_at: null } : {}),
       };
       if (isEdit) {
         await updateTask(id, payload);
@@ -202,6 +230,42 @@ export default function TaskForm() {
             placeholder='Es. "Adempimenti societari", "Cucina", "Manutenzione"'
             className={inputClass}
           />
+        </div>
+
+        <div className="border-t border-b58-charcoal/10 pt-4">
+          <label className={labelClass}>Promemoria Telegram (opzionale)</label>
+          <p className="text-xs text-b58-charcoal-soft/70 mb-2">
+            Scegli quando vuoi essere avvisato — indipendente dalla data di scadenza.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="date"
+              value={form.remind_date}
+              onChange={(e) => setForm((f) => ({ ...f, remind_date: e.target.value }))}
+              className={inputClass}
+            />
+            <input
+              type="time"
+              value={form.remind_time}
+              onChange={(e) => setForm((f) => ({ ...f, remind_time: e.target.value }))}
+              className={inputClass}
+              disabled={!form.remind_date}
+            />
+          </div>
+          {form.remind_date && (
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, remind_date: "", remind_time: "" }))}
+              className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
+            >
+              Rimuovi promemoria
+            </button>
+          )}
+          {reminderSentAt && (
+            <p className="text-xs text-b58-olive-dark mt-1.5">
+              ✓ Promemoria già inviato il {new Date(reminderSentAt).toLocaleString("it-IT")}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-2">
