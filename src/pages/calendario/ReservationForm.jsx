@@ -42,6 +42,7 @@ export default function ReservationForm() {
   const { isTitolare } = useAuth();
 
   const [form, setForm] = useState(emptyForm);
+  const [customerId, setCustomerId] = useState(null);
   const [deposit, setDeposit] = useState(""); // caparra, solo titolare (tabella separata)
   const [status, setStatus] = useState("confermata");
   const [menus, setMenus] = useState([]);
@@ -75,6 +76,7 @@ export default function ReservationForm() {
             event_menu_id: r.event_menu_id ?? "",
           });
           setStatus(r.status);
+          setCustomerId(r.customer_id);
           if (isTitolare) {
             const dep = await getReservationDeposit(id);
             if (!cancelled) setDeposit(dep ?? "");
@@ -264,7 +266,17 @@ export default function ReservationForm() {
             />
           </div>
           <div>
-            <label className={labelClass}>Telefono</label>
+            <label className={labelClass}>
+              Telefono
+              {customerId && (
+                <Link
+                  to={`/calendario-eventi/clienti/${customerId}`}
+                  className="normal-case font-normal text-b58-terracotta hover:text-b58-terracotta-dark ml-2"
+                >
+                  vedi scheda cliente
+                </Link>
+              )}
+            </label>
             <input
               value={form.customer_phone}
               onChange={(e) => setForm((f) => ({ ...f, customer_phone: e.target.value }))}

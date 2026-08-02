@@ -16,6 +16,8 @@ import MenuForm from "./pages/ricettario/MenuForm";
 import MenuDetail from "./pages/ricettario/MenuDetail";
 import ReservationsList from "./pages/calendario/ReservationsList";
 import ReservationForm from "./pages/calendario/ReservationForm";
+import ClientiList from "./pages/calendario/ClientiList";
+import ClienteDetail from "./pages/calendario/ClienteDetail";
 import PublicReservationForm from "./pages/public/PublicReservationForm";
 import AgendaList from "./pages/agenda/AgendaList";
 import TaskForm from "./pages/agenda/TaskForm";
@@ -102,6 +104,8 @@ function AppRoutes() {
         {/* Calendario eventi (staff: vista operativa) */}
         <Route path="/calendario-eventi" element={<ReservationsList />} />
         <Route path="/calendario-eventi/nuova" element={<ReservationForm />} />
+        <Route path="/calendario-eventi/clienti" element={<ClientiList />} />
+        <Route path="/calendario-eventi/clienti/:id" element={<ClienteDetail />} />
         <Route path="/calendario-eventi/:id" element={<ReservationForm />} />
 
         {/* Agenda (condivisa titolare/staff) */}
