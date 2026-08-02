@@ -14,12 +14,16 @@
 -- dell'ingrediente (mai esposto finora dalla vista): una lista di lotti
 -- senza sapere di quale ingrediente si tratta non è una tracciabilità
 -- utilizzabile.
+--
+-- Le colonne originali restano nello stesso ordine/nome: CREATE OR REPLACE
+-- VIEW in Postgres permette solo di aggiungere colonne in coda, mai di
+-- spostarle o inserirle in mezzo (l'errore "cannot change name of view
+-- column" arriva proprio da questo — imparato provandolo).
 create or replace view stock_lots_display as
 select
-  sl.id, sl.ingredient_id, i.name as ingredient_name, i.unit,
-  sl.supplier_id, s.name as supplier_name,
-  sl.quantity_received, sl.quantity_remaining, sl.supplier_batch_number,
-  sl.expiry_date, sl.received_at, sl.note
+  sl.id, sl.ingredient_id, sl.supplier_id, s.name as supplier_name,
+  sl.quantity_received, sl.quantity_remaining, sl.expiry_date, sl.received_at, sl.note,
+  i.name as ingredient_name, i.unit, sl.supplier_batch_number
 from stock_lots sl
 left join ingredients i on i.id = sl.ingredient_id
 left join suppliers s on s.id = sl.supplier_id;
