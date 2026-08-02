@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -17,6 +17,9 @@ import MenuDetail from "./pages/ricettario/MenuDetail";
 import ReservationsList from "./pages/calendario/ReservationsList";
 import ReservationForm from "./pages/calendario/ReservationForm";
 import PublicReservationForm from "./pages/public/PublicReservationForm";
+import AgendaList from "./pages/agenda/AgendaList";
+import TaskForm from "./pages/agenda/TaskForm";
+import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -30,6 +33,17 @@ function RequireTitolare({ children }) {
   const { isTitolare, loading } = useAuth();
   if (loading) return null;
   return isTitolare ? children : <Navigate to="/dashboard" replace />;
+}
+
+// Placeholder dei moduli non ancora costruiti: il blocco dipende dal modulo
+// specifico (staffVisible in data/modules.js), non è un blanket "solo titolare".
+function ModulePlaceholderGuarded() {
+  const { moduleId } = useParams();
+  const { isTitolare, loading } = useAuth();
+  const module = getModule(moduleId);
+  if (loading) return null;
+  if (!isTitolare && !module?.staffVisible) return <Navigate to="/dashboard" replace />;
+  return <ModulePlaceholder />;
 }
 
 // La scheda ricetta cambia in base al ruolo: editor completo per il titolare,
@@ -81,8 +95,13 @@ function AppRoutes() {
         <Route path="/calendario-eventi/nuova" element={<ReservationForm />} />
         <Route path="/calendario-eventi/:id" element={<ReservationForm />} />
 
-        {/* Placeholder degli altri moduli — riservati al titolare */}
-        <Route path="/moduli/:moduleId" element={<RequireTitolare><ModulePlaceholder /></RequireTitolare>} />
+        {/* Agenda (condivisa titolare/staff) */}
+        <Route path="/agenda" element={<AgendaList />} />
+        <Route path="/agenda/nuovo" element={<TaskForm />} />
+        <Route path="/agenda/:id" element={<TaskForm />} />
+
+        {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
+        <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

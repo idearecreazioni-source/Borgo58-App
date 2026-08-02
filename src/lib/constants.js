@@ -123,6 +123,18 @@ export const RESERVATION_TYPES = [
   { value: "evento", label: "Evento" },
 ];
 
+export const TASK_PRIORITIES = [
+  { value: "alta", label: "Alta" },
+  { value: "media", label: "Media" },
+  { value: "bassa", label: "Bassa" },
+];
+
+export const TASK_STATUSES = [
+  { value: "da_fare", label: "Da fare" },
+  { value: "in_corso", label: "In corso" },
+  { value: "completato", label: "Completato" },
+];
+
 export const RESERVATION_STATUSES = [
   { value: "richiesta_in_attesa", label: "Richiesta in attesa" },
   { value: "confermata", label: "Confermata" },
