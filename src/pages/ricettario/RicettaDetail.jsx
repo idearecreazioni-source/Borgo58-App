@@ -4,6 +4,7 @@ import {
   getRecipe,
   getRecipeAllergens,
   getRecipeCost,
+  listRecipeStatusHistory,
   updateRecipe,
 } from "../../lib/api/recipes";
 import {
@@ -23,12 +24,13 @@ import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
-  RECIPE_STATUSES,
   SEASONS,
   STEP_PHASES,
   UNITS,
+  formatDate,
   formatEUR,
   labelFor,
+  recipeStatusLabel,
 } from "../../lib/constants";
 
 const emptyIngredientForm = {
@@ -66,6 +68,8 @@ export default function RicettaDetail() {
   const [cost, setCost] = useState(null);
   const [allergens, setAllergens] = useState([]);
   const [allIngredients, setAllIngredients] = useState([]);
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const [savingHeader, setSavingHeader] = useState(false);
   const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
@@ -75,18 +79,20 @@ export default function RicettaDetail() {
   const [addingStep, setAddingStep] = useState(false);
 
   const loadAll = async () => {
-    const [rec, ri, st, c, al] = await Promise.all([
+    const [rec, ri, st, c, al, hist] = await Promise.all([
       getRecipe(id),
       listRecipeIngredients(id),
       listRecipeSteps(id),
       getRecipeCost(id),
       getRecipeAllergens(id),
+      listRecipeStatusHistory(id),
     ]);
     setRecipe(rec);
     setRecipeIngredients(ri);
     setSteps(st);
     setCost(c);
     setAllergens(al);
+    setStatusHistory(hist);
   };
 
   useEffect(() => {
@@ -149,18 +155,33 @@ export default function RicettaDetail() {
         subcategory: recipe.subcategory,
         seasonality: recipe.seasonality,
         portions_yield: Number(recipe.portions_yield),
-        status: recipe.status,
+        pronta_per_carta: recipe.pronta_per_carta,
+        in_carta: recipe.in_carta,
         tags: recipe.tags,
         notes: recipe.notes,
       });
       setRecipe(saved);
-      const c = await getRecipeCost(id);
-      setCost(c);
+      setCost(await getRecipeCost(id));
+      setStatusHistory(await listRecipeStatusHistory(id));
     } catch (e) {
       setError(e.message);
     } finally {
       setSavingHeader(false);
     }
+  };
+
+  // in_carta richiede pronta_per_carta (vincolo del DB, coerenza lato UI).
+  const togglePronta = () => {
+    setRecipe((r) => {
+      const pronta = !r.pronta_per_carta;
+      return { ...r, pronta_per_carta: pronta, in_carta: pronta ? r.in_carta : false };
+    });
+  };
+  const toggleInCarta = () => {
+    setRecipe((r) => {
+      if (!r.pronta_per_carta) return r; // non attivabile finché non è pronta
+      return { ...r, in_carta: !r.in_carta };
+    });
   };
 
   const handleAddIngredient = async () => {
@@ -292,7 +313,7 @@ export default function RicettaDetail() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className={labelClass}>Categoria</label>
             <select
@@ -306,18 +327,6 @@ export default function RicettaDetail() {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Stato</label>
-            <select
-              value={recipe.status}
-              onChange={(e) => handleHeaderChange("status", e.target.value)}
-              className={inputClass}
-            >
-              {RECIPE_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className={labelClass}>Porzioni base</label>
             <input
               type="number"
@@ -327,6 +336,57 @@ export default function RicettaDetail() {
               className={inputClass}
             />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className={labelClass}>Stato</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={togglePronta}
+              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                recipe.pronta_per_carta
+                  ? "bg-b58-gold text-b58-parchment border-b58-gold"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+              }`}
+            >
+              {recipe.pronta_per_carta ? "✓ " : ""}Pronta per carta
+            </button>
+            <button
+              type="button"
+              onClick={toggleInCarta}
+              disabled={!recipe.pronta_per_carta}
+              title={!recipe.pronta_per_carta ? "Serve prima segnarla come pronta" : undefined}
+              className={`rounded-full text-xs px-3 py-1.5 border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                recipe.in_carta
+                  ? "bg-b58-olive text-b58-parchment border-b58-olive"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+              }`}
+            >
+              {recipe.in_carta ? "✓ " : ""}In carta
+            </button>
+            <span className="text-xs text-b58-charcoal-soft ml-1">
+              {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta).label}
+            </span>
+            {statusHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta ml-auto"
+              >
+                {showHistory ? "Nascondi storico" : "Mostra storico"}
+              </button>
+            )}
+          </div>
+          {showHistory && (
+            <ul className="mt-2 space-y-1 text-xs text-b58-charcoal-soft">
+              {statusHistory.map((h) => (
+                <li key={h.id}>
+                  {formatDate(h.changed_at)} — {recipeStatusLabel(h.pronta_per_carta, h.in_carta).label}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="mb-4">

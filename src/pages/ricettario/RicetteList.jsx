@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, RECIPE_STATUSES, labelFor, formatEUR } from "../../lib/constants";
+import { RECIPE_CATEGORIES, labelFor, formatEUR, recipeStatusLabel } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
-const STATUS_BADGE = {
-  in_sviluppo: "bg-b58-gold",
-  attiva: "bg-b58-olive",
-  in_pausa: "bg-b58-charcoal-soft",
-  archiviata: "bg-b58-charcoal-soft/50",
-};
+const STATUS_FILTERS = [
+  { value: "in_carta", label: "In carta" },
+  { value: "pronta", label: "Pronta (non in carta)" },
+  { value: "in_sviluppo", label: "In sviluppo" },
+];
 
 export default function RicetteList() {
   const [recipes, setRecipes] = useState([]);
@@ -18,13 +17,13 @@ export default function RicetteList() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const navigate = useNavigate();
   const { isTitolare } = useAuth();
 
   useEffect(() => {
     setLoading(true);
-    const filters = { search: search || undefined, category: category || undefined, status: status || undefined };
+    const filters = { search: search || undefined, category: category || undefined, statusFilter: statusFilter || undefined };
     // Il food cost è riservato al titolare — lo staff non lo carica nemmeno.
     const jobs = isTitolare
       ? Promise.all([listRecipes(filters), listAllRecipeCosts()])
@@ -36,7 +35,7 @@ export default function RicetteList() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, category, status, isTitolare]);
+  }, [search, category, statusFilter, isTitolare]);
 
   const sorted = useMemo(
     () => [...recipes].sort((a, b) => a.name.localeCompare(b.name)),
@@ -81,12 +80,12 @@ export default function RicetteList() {
           ))}
         </select>
         <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti gli stati</option>
-          {RECIPE_STATUSES.map((s) => (
+          {STATUS_FILTERS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
@@ -99,7 +98,7 @@ export default function RicetteList() {
       ) : sorted.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
-            {search || category || status
+            {search || category || statusFilter
               ? "Nessuna ricetta corrisponde ai filtri."
               : "Nessuna ricetta ancora. Crea la prima."}
           </p>
@@ -121,6 +120,7 @@ export default function RicetteList() {
             <tbody>
               {sorted.map((r) => {
                 const cost = costs[r.id];
+                const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta);
                 return (
                   <tr
                     key={r.id}
@@ -139,9 +139,9 @@ export default function RicetteList() {
                     )}
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}
+                        className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}
                       >
-                        {labelFor(RECIPE_STATUSES, r.status)}
+                        {statusInfo.label}
                       </span>
                     </td>
                   </tr>

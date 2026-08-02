@@ -1,10 +1,13 @@
 import { supabase } from "../supabase";
 
-export async function listRecipes({ search, category, status } = {}) {
+// statusFilter: "in_carta" | "pronta" | "in_sviluppo" | undefined (tutte)
+export async function listRecipes({ search, category, statusFilter } = {}) {
   let query = supabase.from("recipes").select("*").order("name");
   if (search) query = query.ilike("name", `%${search}%`);
   if (category) query = query.eq("category", category);
-  if (status) query = query.eq("status", status);
+  if (statusFilter === "in_carta") query = query.eq("in_carta", true);
+  if (statusFilter === "pronta") query = query.eq("pronta_per_carta", true).eq("in_carta", false);
+  if (statusFilter === "in_sviluppo") query = query.eq("pronta_per_carta", false);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -53,6 +56,16 @@ export async function getRecipeAllergens(recipeId) {
     .maybeSingle();
   if (error) throw error;
   return data?.allergens ?? [];
+}
+
+export async function listRecipeStatusHistory(recipeId) {
+  const { data, error } = await supabase
+    .from("recipe_status_history")
+    .select("*")
+    .eq("recipe_id", recipeId)
+    .order("changed_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 export async function listAllRecipeCosts() {

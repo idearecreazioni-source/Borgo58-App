@@ -28,7 +28,8 @@ export default function RicettaForm() {
         category: form.category,
         subcategory: form.subcategory || null,
         portions_yield: Number(form.portions_yield) || 1,
-        status: "in_sviluppo",
+        // Ogni ricetta nuova parte "in sviluppo" — la promozione a pronta/in
+        // carta è sempre manuale, dalla scheda ricetta.
       });
       navigate(`/ricettario/ricette/${recipe.id}`);
     } catch (e) {

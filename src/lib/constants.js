@@ -83,12 +83,13 @@ export const RECIPE_CATEGORIES = [
   { value: "dolce", label: "Dolce" },
 ];
 
-export const RECIPE_STATUSES = [
-  { value: "in_sviluppo", label: "In sviluppo" },
-  { value: "attiva", label: "Attiva" },
-  { value: "in_pausa", label: "In pausa" },
-  { value: "archiviata", label: "Archiviata" },
-];
+// Sostituisce il vecchio status unico: due flag indipendenti, non un enum
+// (§4 del brief, revisione 02/08/2026). Etichetta derivata, non salvata.
+export const recipeStatusLabel = (prontaPerCarta, inCarta) => {
+  if (inCarta) return { label: "In carta", colorClass: "bg-b58-olive" };
+  if (prontaPerCarta) return { label: "Pronta (non in carta)", colorClass: "bg-b58-gold" };
+  return { label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" };
+};
 
 export const SEASONS = [
   { value: "primavera", label: "Primavera" },
