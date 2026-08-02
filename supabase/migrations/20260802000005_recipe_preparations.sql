@@ -115,7 +115,7 @@ with recursive expansion as (
     ri.recipe_id as root_recipe_id,
     ri.ingredient_id,
     ri.component_recipe_id,
-    ri.quantity as multiplier,
+    ri.quantity::numeric as multiplier,
     ri.waste_percentage,
     ri.is_optional,
     1 as depth
