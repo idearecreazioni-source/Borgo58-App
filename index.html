@@ -1,9 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="it" translate="no">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Impedisce a Google Translate di tradurre/manipolare il DOM: la
+         traduzione automatica va in conflitto con React (crash
+         "insertBefore ... not a child of this node" sugli aggiornamenti). -->
+    <meta name="google" content="notranslate" />
     <title>Borgo 58 · Gestionale</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +16,7 @@
       rel="stylesheet"
     />
   </head>
-  <body>
+  <body class="notranslate">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
