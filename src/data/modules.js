@@ -110,6 +110,8 @@ export const MODULES = [
     description: "Anagrafica, documenti compliance, buste paga, distribuzione mance.",
     phase: 2,
     icon: "receipt",
+    route: "/personale",
+    // niente staffVisible: solo titolare (§4 mod. 11)
   },
   {
     id: "monitoraggio-social",

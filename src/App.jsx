@@ -41,6 +41,9 @@ import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
 import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
 import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
+import PersonaleHome from "./pages/personale/PersonaleHome";
+import DipendenteDetail from "./pages/personale/DipendenteDetail";
+import Mance from "./pages/personale/Mance";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -153,6 +156,11 @@ function AppRoutes() {
         <Route path="/fiscale/deduzioni" element={<RequireTitolare><DeduzioniFiscali /></RequireTitolare>} />
         <Route path="/fiscale/strumenti" element={<RequireTitolare><CatalogoStrumenti /></RequireTitolare>} />
         <Route path="/fiscale/simulatore" element={<RequireTitolare><SimulatoreFiscale /></RequireTitolare>} />
+
+        {/* Personale & Buste Paga (solo titolare — §4 mod. 11) */}
+        <Route path="/personale" element={<RequireTitolare><PersonaleHome /></RequireTitolare>} />
+        <Route path="/personale/mance" element={<RequireTitolare><Mance /></RequireTitolare>} />
+        <Route path="/personale/:id" element={<RequireTitolare><DipendenteDetail /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />

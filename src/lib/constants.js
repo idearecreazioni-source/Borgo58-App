@@ -258,6 +258,44 @@ export const FISCAL_TOOL_STATUSES = [
   { value: "abolito", label: "Abolito" },
 ];
 
+export const EMPLOYEE_STATUSES = [
+  { value: "attivo", label: "Attivo" },
+  { value: "cessato", label: "Cessato" },
+];
+
+export const CONTRACT_TYPES = [
+  { value: "indeterminato", label: "Indeterminato" },
+  { value: "determinato", label: "Determinato" },
+  { value: "apprendistato", label: "Apprendistato" },
+  { value: "stagionale", label: "Stagionale" },
+  { value: "extra", label: "Extra / a chiamata" },
+  { value: "altro", label: "Altro" },
+];
+
+export const LEAVE_TYPES = [
+  { value: "ferie", label: "Ferie" },
+  { value: "permesso", label: "Permesso" },
+  { value: "malattia", label: "Malattia" },
+  { value: "altro", label: "Altro" },
+];
+
+export const COMPLIANCE_DOC_TYPES = [
+  { value: "contratto", label: "Contratto" },
+  { value: "idoneita_sanitaria", label: "Idoneità sanitaria" },
+  { value: "formazione_haccp", label: "Formazione HACCP" },
+  { value: "formazione_sicurezza", label: "Formazione sicurezza" },
+  { value: "documento_identita", label: "Documento d'identità" },
+  { value: "permesso_soggiorno", label: "Permesso di soggiorno" },
+  { value: "altro", label: "Altro" },
+];
+
+// Regime fiscale mance (§6): imposta sostitutiva 5%, si applica se il reddito
+// da lavoro dipendente dell'anno precedente ≤75.000€; le mance agevolate sono
+// nel limite del 30% del reddito annuo.
+export const MANCE_REGIME_INCOME_THRESHOLD = 75000;
+export const MANCE_CAP_RATE = 0.3;
+export const MANCE_SUBSTITUTE_TAX_RATE = 0.05;
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },
