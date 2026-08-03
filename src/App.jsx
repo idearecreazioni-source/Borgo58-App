@@ -48,6 +48,8 @@ import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
 import DocumentoDetail from "./pages/documenti/DocumentoDetail";
 import EditorMenuHome from "./pages/menu-editor/EditorMenuHome";
 import PiattiDelGiorno from "./pages/menu-editor/PiattiDelGiorno";
+import AgricoloHome from "./pages/agricolo/AgricoloHome";
+import Cessioni from "./pages/agricolo/Cessioni";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -173,6 +175,10 @@ function AppRoutes() {
         {/* Editor Menu Cartaceo (solo titolare — i menu sono titolare-only) */}
         <Route path="/editor-menu" element={<RequireTitolare><EditorMenuHome /></RequireTitolare>} />
         <Route path="/editor-menu/giorno" element={<RequireTitolare><PiattiDelGiorno /></RequireTitolare>} />
+
+        {/* Agricolo / Orto (solo titolare — §1) */}
+        <Route path="/agricolo" element={<RequireTitolare><AgricoloHome /></RequireTitolare>} />
+        <Route path="/agricolo/cessioni" element={<RequireTitolare><Cessioni /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />

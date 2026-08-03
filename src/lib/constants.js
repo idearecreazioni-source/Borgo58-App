@@ -296,6 +296,14 @@ export const MANCE_REGIME_INCOME_THRESHOLD = 75000;
 export const MANCE_CAP_RATE = 0.3;
 export const MANCE_SUBSTITUTE_TAX_RATE = 0.05;
 
+export const CROP_STATUSES = [
+  { value: "pianificato", label: "Pianificato" },
+  { value: "seminato", label: "Seminato" },
+  { value: "in_crescita", label: "In crescita" },
+  { value: "raccolto", label: "Raccolto" },
+  { value: "chiuso", label: "Chiuso" },
+];
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },

@@ -84,6 +84,8 @@ export const MODULES = [
     description: "Semine, raccolti, cessione intercompany verso la S.r.l.s.",
     phase: 2,
     icon: "leaf",
+    route: "/agricolo",
+    // niente staffVisible: solo titolare
   },
   {
     id: "proiezione-fiscale",
