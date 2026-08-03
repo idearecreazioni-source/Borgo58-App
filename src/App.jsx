@@ -46,6 +46,8 @@ import DipendenteDetail from "./pages/personale/DipendenteDetail";
 import Mance from "./pages/personale/Mance";
 import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
 import DocumentoDetail from "./pages/documenti/DocumentoDetail";
+import EditorMenuHome from "./pages/menu-editor/EditorMenuHome";
+import PiattiDelGiorno from "./pages/menu-editor/PiattiDelGiorno";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -167,6 +169,10 @@ function AppRoutes() {
         {/* Archivio Documenti (solo titolare — §3.13) */}
         <Route path="/documenti" element={<RequireTitolare><ArchivioDocumentiHome /></RequireTitolare>} />
         <Route path="/documenti/:id" element={<RequireTitolare><DocumentoDetail /></RequireTitolare>} />
+
+        {/* Editor Menu Cartaceo (solo titolare — i menu sono titolare-only) */}
+        <Route path="/editor-menu" element={<RequireTitolare><EditorMenuHome /></RequireTitolare>} />
+        <Route path="/editor-menu/giorno" element={<RequireTitolare><PiattiDelGiorno /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />

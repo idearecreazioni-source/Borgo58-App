@@ -128,6 +128,8 @@ export const MODULES = [
     description: "Collegato ai piatti in carta, export PDF per tipografo.",
     phase: 3,
     icon: "printer",
+    route: "/editor-menu",
+    // niente staffVisible: i menu sono titolare-only
   },
   {
     id: "assistente-ai",
