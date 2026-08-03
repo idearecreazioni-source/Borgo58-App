@@ -28,6 +28,33 @@ export async function updateEmployee(id, patch) {
   return data;
 }
 
+// Eliminazione completa: documenti/ferie/buste paga vanno via a cascata.
+// Bloccata dal DB (RESTRICT) se il dipendente ha ricevuto mance in una
+// distribuzione — in quel caso va prima rimossa la distribuzione.
+export async function deleteEmployee(id) {
+  // Prima chiudi i promemoria Agenda collegati ai documenti: il cascade
+  // rimuove i documenti ma lascerebbe i task pendenti in Agenda.
+  const docs = await listEmployeeDocuments(id);
+  for (const d of docs) {
+    if (d.task_id) {
+      try {
+        await updateTask(d.task_id, { status: "completato" });
+      } catch {
+        /* task già rimosso: non bloccare */
+      }
+    }
+  }
+  const { error } = await supabase.from("employees").delete().eq("id", id);
+  if (error) {
+    if (error.code === "23503") {
+      throw new Error(
+        "Impossibile eliminare: il dipendente ha ricevuto mance in una distribuzione. Rimuovi prima la distribuzione dalla sezione Mance."
+      );
+    }
+    throw error;
+  }
+}
+
 // --- Documenti compliance (scadenza → promemoria in Agenda) ---
 export async function listEmployeeDocuments(employeeId) {
   const { data, error } = await supabase

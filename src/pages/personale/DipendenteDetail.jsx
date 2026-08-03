@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   createEmployeeDocument,
   createEmployeeLeave,
   createPayslip,
+  deleteEmployee,
   deleteEmployeeDocument,
   deleteEmployeeLeave,
   deletePayslip,
@@ -29,6 +30,9 @@ const monthLabel = (iso) =>
 
 export default function DipendenteDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [employee, setEmployee] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [leaves, setLeaves] = useState([]);
@@ -188,6 +192,20 @@ export default function DipendenteDetail() {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteEmployee(id);
+      navigate("/personale");
+    } catch (e) {
+      setError(e.message);
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (notFound) return <Navigate to="/personale" replace />;
   if (loading || !employee) {
     return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
@@ -276,7 +294,29 @@ export default function DipendenteDetail() {
           <p className="text-[11px] text-b58-charcoal-soft/70 mt-1">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
         </div>
 
-        <div className="flex justify-end print:hidden">
+        <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
+          {confirmDelete ? (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-b58-terracotta-dark">Eliminare tutto (documenti, ferie, buste paga)?</span>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-lg bg-b58-terracotta text-b58-parchment px-3 py-1.5 disabled:opacity-60"
+              >
+                {deleting ? "Elimino…" : "Sì, elimina"}
+              </button>
+              <button onClick={() => setConfirmDelete(false)} className="text-b58-charcoal-soft hover:text-b58-charcoal px-2 py-1.5">
+                Annulla
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+            >
+              Elimina dipendente
+            </button>
+          )}
           <button
             onClick={saveHeader}
             disabled={savingHeader}
