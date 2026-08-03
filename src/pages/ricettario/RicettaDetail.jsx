@@ -203,6 +203,7 @@ export default function RicettaDetail() {
         in_carta: recipe.in_carta,
         tags: recipe.tags,
         notes: recipe.notes,
+        menu_description: recipe.menu_description,
       });
       setRecipe(saved);
       setCost(await getRecipeCost(id));
@@ -496,6 +497,17 @@ export default function RicettaDetail() {
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="mb-4">
+          <label className={labelClass}>Descrizione per il menu</label>
+          <textarea
+            value={recipe.menu_description ?? ""}
+            onChange={(e) => handleHeaderChange("menu_description", e.target.value)}
+            rows={2}
+            placeholder='Come appare sul menu cartaceo, es. "Fusilloni al ragù di polpo e polvere di prezzemolo"'
+            className={inputClass}
+          />
         </div>
 
         <div className="mb-4">

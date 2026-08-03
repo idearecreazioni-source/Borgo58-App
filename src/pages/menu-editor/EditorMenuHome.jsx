@@ -13,6 +13,41 @@ const CATEGORY_ORDER = [
   { value: "dolce", label: "Dolci" },
 ];
 
+// Segno distintivo: un piccolo rametto d'ulivo, come la foglia del logo e
+// l'orto dell'azienda agricola. Separa le sezioni del menu.
+function Sprig() {
+  return (
+    <svg viewBox="0 0 150 22" width="120" height="18" className="mx-auto my-3 text-b58-olive" aria-hidden="true">
+      <line x1="0" y1="12" x2="58" y2="12" stroke="currentColor" strokeWidth="0.7" />
+      <line x1="92" y1="12" x2="150" y2="12" stroke="currentColor" strokeWidth="0.7" />
+      <path d="M75 12 C 75 5 80 2 87 3.5 C 84.5 9.5 80 12 75 12 Z" fill="currentColor" opacity="0.85" />
+      <path d="M75 12 C 75 5 70 2 63 3.5 C 65.5 9.5 70 12 75 12 Z" fill="currentColor" opacity="0.85" />
+      <line x1="75" y1="12" x2="75" y2="19" stroke="currentColor" strokeWidth="0.7" />
+    </svg>
+  );
+}
+
+function Masthead({ header, subheader }) {
+  const [logoOk, setLogoOk] = useState(true);
+  return (
+    <div className="text-center mb-2">
+      {logoOk ? (
+        <img
+          src="/logo-borgo58.png"
+          alt={header}
+          onError={() => setLogoOk(false)}
+          className="mx-auto h-20 md:h-24 object-contain"
+        />
+      ) : (
+        <>
+          <h2 className="font-display text-4xl text-b58-charcoal">{header}</h2>
+          {subheader && <p className="text-xs tracking-[0.3em] uppercase text-b58-charcoal-soft mt-1">{subheader}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function EditorMenuHome() {
   const [menus, setMenus] = useState([]);
   const [menuId, setMenuId] = useState("");
@@ -25,8 +60,9 @@ export default function EditorMenuHome() {
   const [header, setHeader] = useState("Borgo 58");
   const [subheader, setSubheader] = useState("Osteria Contemporanea");
   const [showPrices, setShowPrices] = useState(true);
+  const [showDescriptions, setShowDescriptions] = useState(true);
   const [showAllergens, setShowAllergens] = useState(false);
-  const [excluded, setExcluded] = useState({}); // itemId -> true
+  const [excluded, setExcluded] = useState({});
 
   useEffect(() => {
     listMenus()
@@ -100,7 +136,7 @@ export default function EditorMenuHome() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-b58-charcoal-soft mb-1">Titolo</label>
+              <label className="block text-xs text-b58-charcoal-soft mb-1">Titolo (se manca il logo)</label>
               <input value={header} onChange={(e) => setHeader(e.target.value)} className={inputClass} />
             </div>
             <div>
@@ -113,12 +149,14 @@ export default function EditorMenuHome() {
               <input type="checkbox" checked={showPrices} onChange={(e) => setShowPrices(e.target.checked)} /> Mostra prezzi
             </label>
             <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+              <input type="checkbox" checked={showDescriptions} onChange={(e) => setShowDescriptions(e.target.checked)} /> Mostra descrizioni
+            </label>
+            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
               <input type="checkbox" checked={showAllergens} onChange={(e) => setShowAllergens(e.target.checked)} /> Mostra allergeni
             </label>
           </div>
         </div>
 
-        {/* Selezione piatti da includere */}
         {!loading && items.length > 0 && (
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
             <p className="text-xs text-b58-charcoal-soft mb-2">Togli la spunta ai piatti da escludere dalla stampa (non modifica il menu):</p>
@@ -146,41 +184,55 @@ export default function EditorMenuHome() {
         </p>
       ) : (
         /* Anteprima menu — è ciò che viene stampato */
-        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-8 md:p-12 print:ring-0 print:p-0">
-          <div className="text-center mb-8">
-            <h2 className="font-display text-3xl text-b58-charcoal">{header}</h2>
-            {subheader && <p className="text-sm tracking-widest uppercase text-b58-charcoal-soft mt-1">{subheader}</p>}
-          </div>
+        <div
+          className="mx-auto max-w-2xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-10 py-12 md:px-14 md:py-16 print:ring-0 print:max-w-none"
+          style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact", fontFamily: "var(--font-menu)" }}
+        >
+          <Masthead header={header} subheader={subheader} />
+          <Sprig />
 
           {CATEGORY_ORDER.map((cat) => {
             const dishes = grouped[cat.value] ?? [];
             if (dishes.length === 0) return null;
             return (
-              <div key={cat.value} className="mb-8 break-inside-avoid">
-                <h3 className="font-display text-xl text-b58-terracotta text-center mb-4">{cat.label}</h3>
-                <ul className="space-y-3 max-w-xl mx-auto">
+              <section key={cat.value} className="mt-8 first:mt-6 break-inside-avoid">
+                <h3 className="text-center text-[1.6rem] leading-none text-b58-terracotta-dark tracking-[0.08em]" style={{ fontFamily: "var(--font-menu)", fontWeight: 500 }}>
+                  {cat.label}
+                </h3>
+                <ul className="mt-5 space-y-5 max-w-lg mx-auto">
                   {dishes.map((d) => {
                     const allergens = allergensByRecipe[d.recipe_id] ?? [];
                     return (
-                      <li key={d.id}>
-                        <div className="flex items-baseline justify-between gap-3">
-                          <span className="text-b58-charcoal">{d.recipe?.name}</span>
+                      <li key={d.id} className="text-center break-inside-avoid">
+                        <div className="flex items-baseline justify-center gap-2">
+                          <span className="font-display text-lg text-b58-charcoal">{d.recipe?.name}</span>
                           {showPrices && (
-                            <span className="text-b58-charcoal-soft whitespace-nowrap">{formatEUR(d.selling_price)}</span>
+                            <span className="text-b58-gold-dark text-base whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
                           )}
                         </div>
+                        {showDescriptions && d.recipe?.menu_description && (
+                          <p className="text-sm italic text-b58-charcoal-soft/85 mt-1 leading-snug" style={{ fontFamily: "var(--font-menu)" }}>
+                            {d.recipe.menu_description}
+                          </p>
+                        )}
                         {showAllergens && allergens.length > 0 && (
-                          <div className="text-[11px] text-b58-charcoal-soft/70 italic">
-                            {allergens.map((a) => labelFor(ALLERGENS, a)).join(", ")}
-                          </div>
+                          <p className="text-[11px] text-b58-charcoal-soft/60 mt-1">
+                            {allergens.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
+                          </p>
                         )}
                       </li>
                     );
                   })}
                 </ul>
-              </div>
+              </section>
             );
           })}
+
+          {showAllergens && (
+            <p className="text-[10px] text-b58-charcoal-soft/60 text-center mt-10 max-w-md mx-auto">
+              In caso di allergie o intolleranze, chiedi al personale: teniamo l'elenco completo degli allergeni per ogni piatto.
+            </p>
+          )}
         </div>
       )}
     </div>

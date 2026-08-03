@@ -47,7 +47,7 @@ export async function listMenuItemsFull(menuId) {
     supabase.from("v_menu_item_economics").select("*").eq("menu_id", menuId),
     supabase
       .from("menu_items")
-      .select("*, recipe:recipe_id(id, name, category, seasonality)")
+      .select("*, recipe:recipe_id(id, name, category, seasonality, menu_description)")
       .eq("menu_id", menuId),
   ]);
   if (e1) throw e1;

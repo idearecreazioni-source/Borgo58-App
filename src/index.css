@@ -3,6 +3,7 @@
 @theme {
   --font-display: "Fraunces", "Georgia", serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  --font-menu: "Cormorant Garamond", "Georgia", serif;
 
   --color-b58-cream: #f6efe2;
   --color-b58-cream-dark: #ece0c9;

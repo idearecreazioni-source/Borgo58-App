@@ -1,9 +1,26 @@
+import { useState } from "react";
+
 export default function Logo({ size = "md" }) {
+  const [imgOk, setImgOk] = useState(true);
+
   const dims = {
-    sm: { box: "w-9 h-9", text: "text-sm", title: "text-base" },
-    md: { box: "w-12 h-12", text: "text-base", title: "text-xl" },
-    lg: { box: "w-16 h-16", text: "text-xl", title: "text-3xl" },
+    sm: { box: "w-9 h-9", text: "text-sm", title: "text-base", img: "h-8" },
+    md: { box: "w-12 h-12", text: "text-base", title: "text-xl", img: "h-10" },
+    lg: { box: "w-16 h-16", text: "text-xl", title: "text-3xl", img: "h-16" },
   }[size];
+
+  // Logo ufficiale (PNG in /public). Se manca ancora il file, ripiego sul
+  // monogramma testuale così l'app non resta senza intestazione.
+  if (imgOk) {
+    return (
+      <img
+        src="/logo-borgo58.png"
+        alt="Borgo 58 · Osteria Contemporanea"
+        onError={() => setImgOk(false)}
+        className={`${dims.img} w-auto object-contain`}
+      />
+    );
+  }
 
   return (
     <div className="flex items-center gap-3">
