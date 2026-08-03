@@ -144,6 +144,8 @@ export const MODULES = [
     description: "Contratti, licenze, atti societari con estrazione AI e scadenze.",
     phase: 4,
     icon: "box",
+    route: "/documenti",
+    // niente staffVisible: solo titolare (§3.13)
   },
 ];
 

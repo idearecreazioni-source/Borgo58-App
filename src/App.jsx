@@ -44,6 +44,8 @@ import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import PersonaleHome from "./pages/personale/PersonaleHome";
 import DipendenteDetail from "./pages/personale/DipendenteDetail";
 import Mance from "./pages/personale/Mance";
+import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
+import DocumentoDetail from "./pages/documenti/DocumentoDetail";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -161,6 +163,10 @@ function AppRoutes() {
         <Route path="/personale" element={<RequireTitolare><PersonaleHome /></RequireTitolare>} />
         <Route path="/personale/mance" element={<RequireTitolare><Mance /></RequireTitolare>} />
         <Route path="/personale/:id" element={<RequireTitolare><DipendenteDetail /></RequireTitolare>} />
+
+        {/* Archivio Documenti (solo titolare — §3.13) */}
+        <Route path="/documenti" element={<RequireTitolare><ArchivioDocumentiHome /></RequireTitolare>} />
+        <Route path="/documenti/:id" element={<RequireTitolare><DocumentoDetail /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />
