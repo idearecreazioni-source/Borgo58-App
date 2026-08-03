@@ -183,6 +183,81 @@ export const DISCOUNT_GIFT_TYPES = [
 // Soglia fattura semplificata (§3.4/§6): scontrino ≤400€ → promemoria IVA.
 export const SIMPLIFIED_INVOICE_THRESHOLD = 400;
 
+// Regole di deducibilità (§6). Unica fonte di verità: il calcolo lato UI
+// mostra sempre da quale regola deriva ogni importo (§3.10, niente scatola nera).
+//   rate       = % deducibile della quota ammessa
+//   plafond    = soggetto a plafond (rappresentanza: % dei ricavi)
+//   cashRule   = dal 2025 il pagamento in contanti la rende indeducibile
+export const DEDUCTION_CATEGORIES = [
+  {
+    value: "formazione",
+    label: "Formazione / aggiornamento",
+    rate: 1.0,
+    plafond: false,
+    cashRule: false,
+    note: "Interamente deducibile per una società, nessun plafond.",
+  },
+  {
+    value: "trasferta",
+    label: "Trasferte (vitto/alloggio/trasporto)",
+    rate: 0.75,
+    plafond: false,
+    cashRule: true,
+    note: "75% deducibile. Dal 2025 il pagamento in contanti la rende indeducibile (esenti i biglietti di trasporto pubblico di linea e le indennità chilometriche entro i limiti).",
+  },
+  {
+    value: "rappresentanza",
+    label: "Rappresentanza",
+    rate: 1.0,
+    plafond: true,
+    cashRule: true,
+    note: "Deducibile entro il plafond dell'1,5% dei ricavi (fino a 10 mln). Sotto 50€/persona sempre deducibile fuori plafond. Dal 2025 il contante la rende indeducibile.",
+  },
+  {
+    value: "marketing",
+    label: "Marketing / pubblicità",
+    rate: 1.0,
+    plafond: false,
+    cashRule: false,
+    note: "Spese di pubblicità deducibili.",
+  },
+  {
+    value: "altro",
+    label: "Altro (spesa aziendale documentata)",
+    rate: 1.0,
+    plafond: false,
+    cashRule: false,
+    note: "Spesa aziendale documentata.",
+  },
+];
+
+// Plafond rappresentanza: 1,5% ricavi fino a 10 mln (Borgo 58 è ben sotto).
+export const RAPPRESENTANZA_PLAFOND_RATE = 0.015;
+// Soglia rappresentanza sempre deducibile fuori plafond (§6).
+export const RAPPRESENTANZA_PER_PERSON_THRESHOLD = 50;
+
+export const FISCAL_PAYMENT_METHODS = [
+  { value: "bonifico", label: "Bonifico", tracciato: true },
+  { value: "carta", label: "Carta", tracciato: true },
+  { value: "app", label: "App di pagamento", tracciato: true },
+  { value: "altro_tracciato", label: "Altro tracciato", tracciato: true },
+  { value: "contante", label: "Contante", tracciato: false },
+];
+
+export const FISCAL_TOOL_CATEGORIES = [
+  { value: "deduzione", label: "Deduzione" },
+  { value: "credito_imposta", label: "Credito d'imposta" },
+  { value: "bando", label: "Bando" },
+  { value: "incentivo", label: "Incentivo" },
+];
+
+export const FISCAL_TOOL_STATUSES = [
+  { value: "attivo", label: "Attivo" },
+  { value: "da_verificare", label: "Da verificare" },
+  { value: "scaduto", label: "Scaduto" },
+  { value: "abolito", label: "Abolito" },
+];
+
 export const RESERVATION_TYPES = [
   { value: "prenotazione", label: "Prenotazione" },
   { value: "evento", label: "Evento" },

@@ -92,6 +92,8 @@ export const MODULES = [
     description: "IVA, stima IRES/IRAP, deduzioni, scadenze, simulatore what-if.",
     phase: 2,
     icon: "percent",
+    route: "/fiscale",
+    // niente staffVisible: accesso solo titolare
   },
   {
     id: "ricerca-ricorrente",

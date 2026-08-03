@@ -37,6 +37,10 @@ import CassaHome from "./pages/cassa/CassaHome";
 import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
+import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
+import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
+import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
+import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import { getModule } from "./data/modules";
 
 function RequireAuth({ children }) {
@@ -143,6 +147,12 @@ function AppRoutes() {
         <Route path="/cassa/prima-nota" element={<RequireTitolare><PrimaNota /></RequireTitolare>} />
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
+
+        {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}
+        <Route path="/fiscale" element={<RequireTitolare><ProiezioneFiscaleHome /></RequireTitolare>} />
+        <Route path="/fiscale/deduzioni" element={<RequireTitolare><DeduzioniFiscali /></RequireTitolare>} />
+        <Route path="/fiscale/strumenti" element={<RequireTitolare><CatalogoStrumenti /></RequireTitolare>} />
+        <Route path="/fiscale/simulatore" element={<RequireTitolare><SimulatoreFiscale /></RequireTitolare>} />
 
         {/* Placeholder degli altri moduli — bloccati per modulo (staffVisible) */}
         <Route path="/moduli/:moduleId" element={<ModulePlaceholderGuarded />} />
