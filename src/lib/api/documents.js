@@ -25,7 +25,12 @@ export async function getDocument(id) {
 export async function uploadDocumentFile(file) {
   const safeName = file.name.replace(/[^\w.\-]+/g, "_");
   const path = `${crypto.randomUUID()}-${safeName}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+  // Dichiara il contentType: così il browser sa che PDF/immagini vanno aperti
+  // in linea (altrimenti li scarica come file generico).
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+    upsert: false,
+    contentType: file.type || "application/octet-stream",
+  });
   if (error) throw error;
   return { storage_path: path, file_name: file.name };
 }
