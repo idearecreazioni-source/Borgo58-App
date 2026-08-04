@@ -45,6 +45,9 @@ export async function createSupplierInvoice({
   if (error) throw error;
 
   if (dueDate) {
+    // Il titolo contiene fornitore e importo: riservato al titolare. La
+    // visibilità la decide il trigger dal valore di origine_modulo (§3.18,
+    // migrazione 20260804000001), non questa chiamata.
     const task = await createTask({
       title: `Pagare fattura ${invoiceNumber ? `#${invoiceNumber} ` : ""}— ${invoice.supplier.name} (${amount}€)`,
       due_date: dueDate,

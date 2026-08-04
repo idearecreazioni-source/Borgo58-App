@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listTasks, listTasksForMonth, updateTask } from "../../lib/api/tasks";
 import { TASK_PRIORITIES, TASK_STATUSES, formatDate, labelFor } from "../../lib/constants";
+import { useAuth } from "../../context/AuthContext";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -88,7 +89,22 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   );
 }
 
+// Solo il titolare vede i task riservati (la RLS li filtra per lo staff,
+// §3.18) — per lui è utile sapere a colpo d'occhio quali lo sono, altrimenti
+// non ha modo di distinguerli da quelli che lo staff sta leggendo davvero.
+function RiservatoBadge() {
+  return (
+    <span
+      title="Riservato: lo staff non vede questo task"
+      className="shrink-0 inline-flex items-center rounded-full bg-b58-charcoal/10 text-b58-charcoal-soft text-[10px] font-medium px-2 py-0.5"
+    >
+      Riservato
+    </span>
+  );
+}
+
 export default function AgendaList() {
+  const { isTitolare } = useAuth();
   const [view, setView] = useState("lista");
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -150,12 +166,17 @@ export default function AgendaList() {
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">Agenda</h1>
         <div className="flex gap-2">
-          <Link
-            to="/agenda/adempimenti"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
-          >
-            Adempimenti (PDF)
-          </Link>
+          {/* Adempimenti societari: materia riservata al titolare (§3.5). La
+              barriera è la RLS — per lo staff l'export uscirebbe comunque
+              vuoto — qui si evita solo di mostrargli una porta inutile. */}
+          {isTitolare && (
+            <Link
+              to="/agenda/adempimenti"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            >
+              Adempimenti (PDF)
+            </Link>
+          )}
           <Link
             to="/agenda/nuovo"
             className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
@@ -251,6 +272,7 @@ export default function AgendaList() {
                       <span className="text-xs text-b58-charcoal-soft ml-2">· {t.category}</span>
                     )}
                   </button>
+                  {t.visibile_staff === false && <RiservatoBadge />}
                   {t.due_date && (
                     <span className="text-xs text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
                   )}
@@ -292,7 +314,8 @@ export default function AgendaList() {
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
-                      <span className="text-b58-charcoal">{t.title}</span>
+                      <span className="text-b58-charcoal flex-1">{t.title}</span>
+                      {t.visibile_staff === false && <RiservatoBadge />}
                     </button>
                   ))}
                 </div>

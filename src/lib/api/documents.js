@@ -48,6 +48,8 @@ export async function createDocument(payload) {
   if (error) throw error;
 
   if (payload.expiry_date) {
+    // Riservato al titolare: la visibilità la decide il trigger dal valore di
+    // origine_modulo (§3.18, migrazione 20260804000001), non questa chiamata.
     const task = await createTask({
       title: `Scadenza documento: ${payload.title}`,
       due_date: payload.expiry_date,

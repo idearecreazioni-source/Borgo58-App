@@ -75,6 +75,11 @@ export async function createEmployeeDocument(employeeId, employeeName, payload) 
   if (error) throw error;
 
   if (payload.expiry_date) {
+    // Il titolo contiene il nome del dipendente e il tipo di documento: dati
+    // riservati (§3.5). NON serve passare visibile_staff qui — lo impone il
+    // trigger trg_task_visibility a partire da origine_modulo (§3.18,
+    // migrazione 20260804000001), così vale anche per chi scrive sulla
+    // tabella senza passare da questo file.
     const task = await createTask({
       title: `Rinnovo documento — ${employeeName}: ${payload.description || payload.doc_type}`,
       due_date: payload.expiry_date,

@@ -132,7 +132,15 @@ function AppRoutes() {
         {/* Agenda (condivisa titolare/staff) */}
         <Route path="/agenda" element={<AgendaList />} />
         <Route path="/agenda/nuovo" element={<TaskForm />} />
-        <Route path="/agenda/adempimenti" element={<StampaAdempimenti />} />
+        {/* Adempimenti societari: riservati al titolare (§3.5/§3.18) */}
+        <Route
+          path="/agenda/adempimenti"
+          element={
+            <RequireTitolare>
+              <StampaAdempimenti />
+            </RequireTitolare>
+          }
+        />
         <Route path="/agenda/:id" element={<TaskForm />} />
 
         {/* Magazzino (condiviso titolare/staff, senza valore economico per lo staff — §3.5) */}

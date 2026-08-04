@@ -14,6 +14,10 @@ const emptyForm = {
   category: "",
   remind_date: "",
   remind_time: "",
+  // §3.18: l'Agenda è condivisa, quindi un task nasce visibile. Il titolare
+  // può riservarne uno singolo; per i task automatici decide il DB (trigger
+  // trg_task_visibility), qualunque cosa mandi questo form.
+  visibile_staff: true,
 };
 
 // Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
@@ -63,6 +67,7 @@ export default function TaskForm() {
           category: t.category ?? "",
           remind_date: remind.date,
           remind_time: remind.time,
+          visibile_staff: t.visibile_staff ?? true,
         });
         setOrigineModulo(t.origine_modulo);
         setReminderSentAt(t.reminder_sent_at);
@@ -102,6 +107,7 @@ export default function TaskForm() {
         status: form.status,
         category: form.category || null,
         remind_at: newRemindAt,
+        visibile_staff: form.visibile_staff,
         // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
         ...(newRemindAt !== initialRemindAt ? { reminder_sent_at: null } : {}),
       };
@@ -146,9 +152,16 @@ export default function TaskForm() {
       )}
 
       {origineModulo && (
-        <p className="text-xs text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
-          Generato automaticamente da: {origineModulo}
-        </p>
+        <div className="text-xs text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
+          <p>Generato automaticamente da: {origineModulo}</p>
+          {isTitolare && (
+            <p className="mt-1">
+              {form.visibile_staff
+                ? "Visibile anche allo staff."
+                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
+            </p>
+          )}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
@@ -231,6 +244,26 @@ export default function TaskForm() {
             className={inputClass}
           />
         </div>
+
+        {isTitolare && !origineModulo && (
+          <div className="border-t border-b58-charcoal/10 pt-4">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.visibile_staff}
+                onChange={(e) => setForm((f) => ({ ...f, visibile_staff: e.target.checked }))}
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                <span className="text-sm text-b58-charcoal">Visibile allo staff</span>
+                <span className="block text-xs text-b58-charcoal-soft/70 mt-0.5">
+                  L'Agenda è condivisa: di norma un task è visibile a tutti. Togli la
+                  spunta per tenerlo solo per te.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
 
         <div className="border-t border-b58-charcoal/10 pt-4">
           <label className={labelClass}>Promemoria Telegram (opzionale)</label>

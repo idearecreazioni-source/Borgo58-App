@@ -79,6 +79,8 @@ export async function createFiscalTool(payload) {
   if (error) throw error;
 
   if (payload.deadline) {
+    // Riservato al titolare: la visibilità la decide il trigger dal valore di
+    // origine_modulo (§3.18, migrazione 20260804000001), non questa chiamata.
     const task = await createTask({
       title: `Strumento fiscale: ${payload.name}`,
       due_date: payload.deadline,
