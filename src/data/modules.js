@@ -51,11 +51,15 @@ export const MODULES = [
     id: "cassa-prima-nota",
     number: 5,
     name: "Cassa, Banca e Prima Nota",
-    description: "Riconciliazione, uscite di cassa, versamento titolare, mance, banca.",
+    description: "Comande, preconto, riconciliazione, uscite di cassa, mance, banca.",
     phase: 1,
     icon: "cash",
-    route: "/cassa",
-    // niente staffVisible: accesso solo titolare (§3.5)
+    // Punta a Comande (staff-accessibile), non alla dashboard finanziaria
+    // (/cassa, titolare-only) — §3.5 vuole il modulo a grana fine: comande
+    // sì per lo staff, prima nota/dashboard/riepiloghi no. Il titolare
+    // raggiunge la parte finanziaria dal link "Gestione cassa" dentro Comande.
+    route: "/cassa/comande",
+    staffVisible: true,
   },
   {
     id: "calendario-eventi",

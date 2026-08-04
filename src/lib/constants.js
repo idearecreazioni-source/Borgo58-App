@@ -183,6 +183,16 @@ export const DISCOUNT_GIFT_TYPES = [
   { value: "omaggio", label: "Omaggio" },
 ];
 
+export const ORDER_DESTINATIONS = [
+  { value: "cucina", label: "Cucina" },
+  { value: "bar", label: "Bar" },
+];
+
+export const ORDER_PAYMENT_METHODS = [
+  { value: "contante", label: "Contante" },
+  { value: "carta", label: "Carta" },
+];
+
 // Soglia fattura semplificata (§3.4/§6): scontrino ≤400€ → promemoria IVA.
 export const SIMPLIFIED_INVOICE_THRESHOLD = 400;
 

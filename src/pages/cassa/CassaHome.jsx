@@ -132,6 +132,9 @@ export default function CassaHome() {
 
           {/* Navigazione sezioni */}
           <div className="flex flex-wrap gap-2 mb-6">
+            <Link to="/cassa/comande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+              Comande
+            </Link>
             <Link to="/cassa/prima-nota" className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
               Prima nota
             </Link>
