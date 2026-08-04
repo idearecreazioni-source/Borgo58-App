@@ -40,9 +40,7 @@ import CassaHome from "./pages/cassa/CassaHome";
 import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
-import OrdersList from "./pages/cassa/OrdersList";
-import OrderDetail from "./pages/cassa/OrderDetail";
-import RepartoView from "./pages/cassa/RepartoView";
+import SalaBoard from "./pages/comande/SalaBoard";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
 import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
@@ -189,12 +187,13 @@ function AppRoutes() {
         <Route path="/cassa/prima-nota" element={<RequireTitolare><PrimaNota /></RequireTitolare>} />
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
-        {/* Comande (§3.2, §4 mod. 5): staff-accessibile, "parte facile" della
-            strada C, nessuna dipendenza dall'RT. */}
-        <Route path="/cassa/comande" element={<OrdersList />} />
-        <Route path="/cassa/comande/:id" element={<OrderDetail />} />
-        <Route path="/cassa/cucina" element={<RepartoView destination="cucina" />} />
-        <Route path="/cassa/bar" element={<RepartoView destination="bar" />} />
+        {/* Comande (§3.2, §4 mod. 5): schermo unico Sala/Cucina/Bar,
+            staff-accessibile, voce propria in sidebar — non sotto /cassa,
+            dato che è una modalità operativa diversa dal resto del
+            gestionale (uno schermo che resta aperto tutto il servizio,
+            non una pagina consultata ogni tanto). Il legame dati col
+            modulo 5 (conto -> futuro RT) resta nello schema, non nell'URL. */}
+        <Route path="/comande" element={<SalaBoard />} />
 
         {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}
         <Route path="/fiscale" element={<RequireTitolare><ProiezioneFiscaleHome /></RequireTitolare>} />

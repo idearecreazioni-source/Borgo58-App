@@ -47,17 +47,31 @@ export async function createOrder({ tableLabel, deviceId, note }) {
   return data;
 }
 
-// Righe già in bozza (mai inviate) di recente: suggerisce i tavoli usati di
-// frequente senza costruire una vera gestione tavoli (esplicitamente fuori
-// scope, §3.2 — "niente pagamenti/gestione tavoli").
-export async function listRecentTableLabels() {
+// Griglia tavoli (§3.2, ridisegno): elenco minimo di etichette, configurato
+// una volta dal titolare — non una gestione tavoli (niente pianta/capienza).
+export async function listDiningTables() {
   const { data, error } = await supabase
-    .from("orders")
-    .select("table_label")
-    .order("opened_at", { ascending: false })
-    .limit(30);
+    .from("dining_tables")
+    .select("*")
+    .eq("active", true)
+    .order("position");
   if (error) throw error;
-  return [...new Set(data.map((o) => o.table_label))].slice(0, 10);
+  return data;
+}
+
+export async function createDiningTable({ label, position }) {
+  const { data, error } = await supabase
+    .from("dining_tables")
+    .insert({ label, position: position ?? 0 })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deactivateDiningTable(id) {
+  const { error } = await supabase.from("dining_tables").update({ active: false }).eq("id", id);
+  if (error) throw error;
 }
 
 // --- Righe della comanda ---

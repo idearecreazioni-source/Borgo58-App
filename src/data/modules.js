@@ -48,18 +48,29 @@ export const MODULES = [
     staffVisible: true, // staff: scorte/lista spesa senza valore economico — §3.5
   },
   {
+    // Comande vive come voce propria in sidebar (su richiesta esplicita di
+    // Alessio, 04/08/2026): per lo staff "Cassa" evoca prima nota/incassi,
+    // non la presa ordini. Il legame col modulo 5 del brief resta nello
+    // schema dati (orders/order_items -> futuro RT), non nella navigazione.
+    id: "comande",
+    number: 5,
+    name: "Comande",
+    description: "Presa ordini, instradamento cucina/bar, chiusura conto.",
+    phase: 1,
+    icon: "cash",
+    route: "/comande",
+    staffVisible: true,
+  },
+  {
     id: "cassa-prima-nota",
     number: 5,
     name: "Cassa, Banca e Prima Nota",
-    description: "Comande, preconto, riconciliazione, uscite di cassa, mance, banca.",
+    description: "Preconto, riconciliazione, uscite di cassa, mance, banca.",
     phase: 1,
-    icon: "cash",
-    // Punta a Comande (staff-accessibile), non alla dashboard finanziaria
-    // (/cassa, titolare-only) — §3.5 vuole il modulo a grana fine: comande
-    // sì per lo staff, prima nota/dashboard/riepiloghi no. Il titolare
-    // raggiunge la parte finanziaria dal link "Gestione cassa" dentro Comande.
-    route: "/cassa/comande",
-    staffVisible: true,
+    icon: "receipt",
+    route: "/cassa",
+    // niente staffVisible: accesso solo titolare (§3.5) — Comande, sopra,
+    // è ora la voce staff-accessibile del modulo 5.
   },
   {
     id: "calendario-eventi",
