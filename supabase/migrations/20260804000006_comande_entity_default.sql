@@ -9,13 +9,26 @@
 -- La causa non era un permesso mancante da concedere: le comande
 -- riguardano SEMPRE la S.r.l.s. (l'azienda agricola non serve ai tavoli),
 -- quindi il client non ha alcun bisogno di conoscere quell'id. Risolto
--- spostando la scelta nel database: un default che risolve da solo
--- l'entità S.r.l.s. alla riga inserita, senza che orders.entity_id debba
--- mai essere passato dal client.
+-- spostando la scelta nel database, con un trigger — non un DEFAULT
+-- diretto: Postgres non ammette una subquery in un'espressione DEFAULT
+-- (`ERROR 0A000: cannot use subquery in DEFAULT expression`, trovato
+-- provando ad applicare questa migrazione la prima volta).
 -- =====================================================================
-alter table orders alter column entity_id set default (
-  select id from entities where entity_type = 'srls'
-);
+create or replace function set_order_entity_srls()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.entity_id is null then
+    select id into new.entity_id from entities where entity_type = 'srls';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_order_entity_srls
+  before insert on orders
+  for each row execute function set_order_entity_srls();
 
 comment on column orders.entity_id is
-  'Sempre la S.r.l.s. (le comande non riguardano l''azienda agricola) — valorizzato dal default DB, mai passato dal client: lo staff non ha (né deve avere) accesso alla tabella entities.';
+  'Sempre la S.r.l.s. (le comande non riguardano l''azienda agricola) — valorizzato dal trigger trg_order_entity_srls, mai passato dal client: lo staff non ha (né deve avere) accesso alla tabella entities.';
