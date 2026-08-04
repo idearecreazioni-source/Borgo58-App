@@ -25,6 +25,8 @@ import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
 import Tracciabilita from "./pages/magazzino/Tracciabilita";
+import FornitoriList from "./pages/magazzino/FornitoriList";
+import FornitoreDetail from "./pages/magazzino/FornitoreDetail";
 import HaccpHome from "./pages/haccp/HaccpHome";
 import TemperatureLog from "./pages/haccp/TemperatureLog";
 import RicevimentoMerci from "./pages/haccp/RicevimentoMerci";
@@ -148,6 +150,24 @@ function AppRoutes() {
         <Route path="/magazzino/carico" element={<RegistraCarico />} />
         <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
         <Route path="/magazzino/tracciabilita" element={<Tracciabilita />} />
+        {/* Anagrafica Fornitori (§3.11): dati economici (P.IVA, condizioni di
+            pagamento) — titolare-only, coerente col resto di §3.5. */}
+        <Route
+          path="/magazzino/fornitori"
+          element={
+            <RequireTitolare>
+              <FornitoriList />
+            </RequireTitolare>
+          }
+        />
+        <Route
+          path="/magazzino/fornitori/:id"
+          element={
+            <RequireTitolare>
+              <FornitoreDetail />
+            </RequireTitolare>
+          }
+        />
 
         {/* HACCP (condiviso: staff fa solo immissione operativa, non modifica struttura/storico — §3.5) */}
         <Route path="/haccp" element={<HaccpHome />} />

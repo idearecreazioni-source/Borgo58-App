@@ -73,6 +73,7 @@ export const SUPPLIER_CATEGORIES = [
   { value: "latticini", label: "Latticini" },
   { value: "secco", label: "Secco" },
   { value: "bevande", label: "Bevande" },
+  { value: "economato", label: "Economato" },
   { value: "altro", label: "Altro" },
 ];
 
