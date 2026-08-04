@@ -3,12 +3,19 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   deleteCustomer,
   getCustomer,
+  listCustomerDiscounts,
   listCustomerReservations,
   listCustomers,
   mergeCustomers,
   updateCustomer,
 } from "../../lib/api/customers";
-import { RESERVATION_STATUSES, formatDate, labelFor } from "../../lib/constants";
+import {
+  DISCOUNT_GIFT_TYPES,
+  RESERVATION_STATUSES,
+  formatDate,
+  formatEUR,
+  labelFor,
+} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 export default function ClienteDetail() {
@@ -18,6 +25,11 @@ export default function ClienteDetail() {
 
   const [customer, setCustomer] = useState(null);
   const [reservations, setReservations] = useState([]);
+  // Storico economico: caricato solo per il titolare. Non è la barriera —
+  // quella è la RLS su discounts_gifts (§3.4/§3.18), che allo staff
+  // restituirebbe comunque una lista vuota — serve solo a non fare una
+  // richiesta che sappiamo già inutile.
+  const [discounts, setDiscounts] = useState([]);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,9 +41,14 @@ export default function ClienteDetail() {
   const [merging, setMerging] = useState(false);
 
   const load = () =>
-    Promise.all([getCustomer(id), listCustomerReservations(id)]).then(([c, res]) => {
+    Promise.all([
+      getCustomer(id),
+      listCustomerReservations(id),
+      isTitolare ? listCustomerDiscounts(id) : Promise.resolve([]),
+    ]).then(([c, res, dg]) => {
       setCustomer(c);
       setReservations(res);
+      setDiscounts(dg);
     });
 
   useEffect(() => {
@@ -42,8 +59,11 @@ export default function ClienteDetail() {
         else setError(e.message);
       })
       .finally(() => setLoading(false));
+    // isTitolare tra le dipendenze: il ruolo arriva in modo asincrono
+    // (AuthContext), quindi al primo render può essere ancora falso — senza
+    // ricaricare, lo storico economico resterebbe vuoto anche per il titolare.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, isTitolare]);
 
   useEffect(() => {
     if (!showMerge) return;
@@ -98,6 +118,17 @@ export default function ClienteDetail() {
       setMerging(false);
     }
   };
+
+  // Aggregazioni: nessuna AI, sole somme (§3.8/§3.14). Per un omaggio il
+  // mancato incasso è l'intero valore a listino; per uno sconto è la parte
+  // non incassata.
+  const gifts = discounts.filter((d) => d.type === "omaggio");
+  const sconti = discounts.filter((d) => d.type === "sconto");
+  const giftsTotal = gifts.reduce((s, d) => s + Number(d.full_amount), 0);
+  const scontiForgone = sconti.reduce(
+    (s, d) => s + (Number(d.full_amount) - Number(d.collected_amount)),
+    0
+  );
 
   if (notFound) return <Navigate to="/calendario-eventi/clienti" replace />;
   if (loading || !customer) {
@@ -252,6 +283,83 @@ export default function ClienteDetail() {
           </ul>
         )}
       </div>
+
+      {/* Livello riservato della scheda (§3.14/§3.18): la barriera vera è la
+          RLS titolare-only su discounts_gifts (§3.4) — allo staff la lista
+          arriverebbe vuota anche senza questo blocco condizionale. */}
+      {isTitolare && (
+        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+            <h2 className="font-display text-lg text-b58-charcoal">Sconti e omaggi ricevuti</h2>
+            <span className="text-[10px] uppercase tracking-wide text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5">
+              Riservato
+            </span>
+          </div>
+          <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+            Sezione visibile solo a te: lo staff vede questa scheda senza i dati economici.
+          </p>
+
+          {discounts.length === 0 ? (
+            <p className="text-sm text-b58-charcoal-soft/60">
+              Nessuno sconto o omaggio collegato a questo cliente.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                  <div className="text-lg text-b58-charcoal">{formatEUR(giftsTotal)}</div>
+                  <div className="text-xs text-b58-charcoal-soft">
+                    {gifts.length} {gifts.length === 1 ? "omaggio" : "omaggi"} · valore a listino
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+                  <div className="text-lg text-b58-charcoal">{formatEUR(scontiForgone)}</div>
+                  <div className="text-xs text-b58-charcoal-soft">
+                    {sconti.length} {sconti.length === 1 ? "sconto" : "sconti"} · mancato incasso
+                  </div>
+                </div>
+              </div>
+
+              <ul className="space-y-1.5">
+                {discounts.map((d) => (
+                  <li
+                    key={d.id}
+                    className="flex items-center justify-between gap-3 text-sm bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <span className="text-b58-charcoal font-medium">
+                        {labelFor(DISCOUNT_GIFT_TYPES, d.type)}
+                      </span>
+                      <span className="text-b58-charcoal-soft"> · {formatDate(d.movement_date)}</span>
+                      {d.causale?.label && (
+                        <span className="text-b58-charcoal-soft"> · {d.causale.label}</span>
+                      )}
+                      {d.note && <div className="text-xs text-b58-charcoal-soft">{d.note}</div>}
+                    </div>
+                    <span className="text-b58-charcoal shrink-0">
+                      {formatEUR(d.full_amount)}
+                      {d.type === "sconto" && (
+                        <span className="text-b58-charcoal-soft">
+                          {" "}
+                          (incassato {formatEUR(d.collected_amount)})
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* §3.14 chiede anche la spesa media: non è calcolabile finché non
+              esistono le comande (§3.2) — dichiarato, non stimato. */}
+          <p className="text-xs text-b58-charcoal-soft/60 mt-4 pt-4 border-t border-b58-charcoal/10">
+            La spesa media per cliente non è ancora calcolabile: la cassa registra la prima nota,
+            non le vendite per cliente. Servono le comande (§3.2), previste dopo l'acquisto
+            dell'hardware in autunno 2026.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

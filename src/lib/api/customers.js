@@ -47,6 +47,22 @@ export async function listCustomerReservations(customerId) {
   return data;
 }
 
+// Storico sconti/omaggi ricevuti dal cliente (§3.14). RISERVATO AL TITOLARE,
+// ma senza alcun controllo di ruolo qui: `discounts_gifts` ha già una policy
+// titolare-only (§3.4), quindi allo staff questa query torna vuota da sola —
+// il permesso resta dove è definito (§3.18), non riscritto lato client.
+// causale è una FK vera, quindi l'embedding PostgREST funziona (a differenza
+// delle viste — vedi nota in cima a questo file).
+export async function listCustomerDiscounts(customerId) {
+  const { data, error } = await supabase
+    .from("discounts_gifts")
+    .select("id, type, full_amount, collected_amount, movement_date, note, causale:causale_id(label)")
+    .eq("customer_id", customerId)
+    .order("movement_date", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 export async function createCustomer({ name, phone, email, notes }) {
   const { data, error } = await supabase
     .from("customers")
