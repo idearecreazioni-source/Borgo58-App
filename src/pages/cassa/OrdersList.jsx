@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createOrder, listOpenOrders, listRecentTableLabels } from "../../lib/api/orders";
-import { getEntities } from "../../lib/api/entities";
 import { formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -40,8 +39,7 @@ export default function OrdersList() {
     setSaving(true);
     setError("");
     try {
-      const entities = await getEntities();
-      const created = await createOrder({ entityId: entities.srls.id, tableLabel: value });
+      const created = await createOrder({ tableLabel: value });
       navigate(`/cassa/comande/${created.id}`);
     } catch (e) {
       setError(e.message);

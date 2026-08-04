@@ -29,11 +29,14 @@ export async function getOrder(id) {
   return data;
 }
 
-export async function createOrder({ entityId, tableLabel, deviceId, note }) {
+// entity_id NON si passa: le comande sono sempre della S.r.l.s. e lo
+// decide un default lato database (20260804000006) — lo staff non ha
+// accesso alla tabella entities (P.IVA/codice fiscale, giustamente
+// riservata) e non deve averne bisogno per aprire un tavolo.
+export async function createOrder({ tableLabel, deviceId, note }) {
   const { data, error } = await supabase
     .from("orders")
     .insert({
-      entity_id: entityId,
       table_label: tableLabel,
       device_id: deviceId || null,
       note: note || null,
