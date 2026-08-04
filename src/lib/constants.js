@@ -167,11 +167,13 @@ export const CASH_DIRECTIONS = [
   { value: "uscita", label: "Uscita" },
 ];
 
-// solo fattura/scontrino/autofattura entrano nei calcoli fiscali (§3.4)
+// solo fattura/scontrino/autofattura/documento_raccoglitore_occasionale
+// entrano nei calcoli fiscali (§3.4, §3.17)
 export const CASH_DOCUMENT_TYPES = [
   { value: "fattura", label: "Fattura" },
   { value: "scontrino", label: "Scontrino" },
   { value: "autofattura", label: "Autofattura" },
+  { value: "documento_raccoglitore_occasionale", label: "Documento raccoglitore occasionale" },
   { value: "non_documentato", label: "Non documentato" },
 ];
 

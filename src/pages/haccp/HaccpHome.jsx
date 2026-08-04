@@ -47,6 +47,12 @@ export default function HaccpHome() {
       desc: "Segnalazioni e azioni correttive.",
       alert: openNc > 0 ? `${openNc} aperte` : null,
     },
+    {
+      to: "/haccp/raccolta-propria",
+      icon: "leaf",
+      title: "Raccolta propria",
+      desc: "Erbe spontanee e prodotti autoraccolti (§3.17).",
+    },
   ];
 
   return (

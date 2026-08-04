@@ -74,8 +74,26 @@ export async function getCashBalance(entityId) {
   return data;
 }
 
+// --- Device (tablet) — segnalazione silenziosa sconti/omaggi (§3.4) ---
+export async function listPosDevices() {
+  const { data, error } = await supabase.from("pos_devices").select("*").eq("active", true).order("name");
+  if (error) throw error;
+  return data;
+}
+
+export async function createPosDevice({ name, isOwnerDevice }) {
+  const { data, error } = await supabase
+    .from("pos_devices")
+    .insert({ name: name.trim(), is_owner_device: !!isOwnerDevice })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // --- Sconti e omaggi ---
-const DG_SELECT = "*, causale:causale_id(id, label), customer:customer_id(id, name, phone)";
+const DG_SELECT =
+  "*, causale:causale_id(id, label), customer:customer_id(id, name, phone), device:device_id(id, name, is_owner_device)";
 
 export async function listDiscountsGifts({ entityId, from, to } = {}) {
   let query = supabase

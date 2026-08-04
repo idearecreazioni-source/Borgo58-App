@@ -4,6 +4,7 @@ import {
   listCleaningLogs,
   listCleaningTasks,
   listEquipment,
+  listForagedItems,
   listGoodsReceiving,
   listNonConformities,
   listPestControlLogs,
@@ -31,9 +32,10 @@ export default function ManualeCompleto() {
       listCleaningLogs(),
       listPestControlLogs(),
       listNonConformities(),
+      listForagedItems(),
     ])
-      .then(([equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities]) =>
-        setData({ equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities })
+      .then(([equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems]) =>
+        setData({ equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems })
       )
       .catch((e) => setError(e.message));
   }, []);
@@ -177,6 +179,24 @@ export default function ManualeCompleto() {
                     <td className="py-1.5 text-b58-charcoal">{labelFor(PEST_CONTROL_TYPES, p.type)}</td>
                     <td className="py-1.5 text-b58-charcoal-soft">{p.performed_by}</td>
                     <td className="py-1.5 text-b58-charcoal-soft">{p.findings}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <SectionTitle>Raccolta propria</SectionTitle>
+          {data.foragedItems.length === 0 ? (
+            <p className="text-sm text-b58-charcoal-soft/60">Nessuna raccolta registrata.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <tbody>
+                {data.foragedItems.slice(0, 20).map((f) => (
+                  <tr key={f.id} className="border-b border-b58-charcoal/5">
+                    <td className="py-1.5 text-b58-charcoal-soft">{formatDate(f.harvest_date)}</td>
+                    <td className="py-1.5 text-b58-charcoal">{f.species}</td>
+                    <td className="py-1.5 text-b58-charcoal-soft">{f.harvest_location}</td>
+                    <td className="py-1.5 text-b58-charcoal-soft text-xs">{f.internal_lot}</td>
                   </tr>
                 ))}
               </tbody>

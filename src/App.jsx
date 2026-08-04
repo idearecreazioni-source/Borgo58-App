@@ -31,6 +31,7 @@ import RicevimentoMerci from "./pages/haccp/RicevimentoMerci";
 import PuliziaESanificazione from "./pages/haccp/PuliziaESanificazione";
 import NonConformita from "./pages/haccp/NonConformita";
 import ManualeCompleto from "./pages/haccp/ManualeCompleto";
+import RaccoltaPropria from "./pages/haccp/RaccoltaPropria";
 import StampaAdempimenti from "./pages/agenda/StampaAdempimenti";
 import FattureFornitoriHome from "./pages/fatture/FattureFornitoriHome";
 import CassaHome from "./pages/cassa/CassaHome";
@@ -147,6 +148,7 @@ function AppRoutes() {
         <Route path="/haccp/pulizia" element={<PuliziaESanificazione />} />
         <Route path="/haccp/non-conformita" element={<NonConformita />} />
         <Route path="/haccp/manuale" element={<ManualeCompleto />} />
+        <Route path="/haccp/raccolta-propria" element={<RaccoltaPropria />} />
 
         {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
         <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />

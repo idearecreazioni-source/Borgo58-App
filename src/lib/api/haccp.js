@@ -1,5 +1,30 @@
 import { supabase } from "../supabase";
 
+// --- Raccolta propria (§3.17) — erbe spontanee/prodotti autoraccolti ---
+export async function listForagedItems() {
+  const { data, error } = await supabase
+    .from("foraged_items")
+    .select("*, ingredient:ingredient_id(id, name)")
+    .order("harvest_date", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function createForagedItem(payload) {
+  const { data, error } = await supabase
+    .from("foraged_items")
+    .insert(payload)
+    .select("*, ingredient:ingredient_id(id, name)")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteForagedItem(id) {
+  const { error } = await supabase.from("foraged_items").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // --- Attrezzature (struttura, solo titolare in scrittura — RLS) ---
 export async function listEquipment() {
   const { data, error } = await supabase

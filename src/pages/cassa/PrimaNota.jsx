@@ -27,6 +27,8 @@ const emptyForm = {
   tipo_documento: "non_documentato",
   document_reference: "",
   business_purpose: "",
+  forager_tax_code: "",
+  harvest_region: "",
   is_owner_injection: false,
   note: "",
 };
@@ -87,6 +89,10 @@ export default function PrimaNota() {
     form.amount !== "" &&
     Number(form.amount) <= SIMPLIFIED_INVOICE_THRESHOLD;
 
+  // Acquisto da raccoglitore occasionale (§3.17): CF + regione di raccolta,
+  // obbligo dal 01/01/2026 (L.199/2025 c.932).
+  const isForager = form.tipo_documento === "documento_raccoglitore_occasionale";
+
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
@@ -108,6 +114,8 @@ export default function PrimaNota() {
         tipo_documento: form.tipo_documento,
         document_reference: form.document_reference || null,
         business_purpose: form.business_purpose || null,
+        forager_tax_code: isForager ? form.forager_tax_code || null : null,
+        harvest_region: isForager ? form.harvest_region || null : null,
         is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
         note: form.note || null,
       });
@@ -138,6 +146,8 @@ export default function PrimaNota() {
       { label: "Tipo documento", value: (m) => labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento) },
       { label: "Rif. documento", value: (m) => m.document_reference },
       { label: "Finalità aziendale", value: (m) => m.business_purpose },
+      { label: "CF raccoglitore", value: (m) => m.forager_tax_code },
+      { label: "Regione di raccolta", value: (m) => m.harvest_region },
       { label: "Versamento titolare", value: (m) => (m.is_owner_injection ? "Sì" : "") },
       { label: "Nota", value: (m) => m.note },
     ]);
@@ -267,11 +277,35 @@ export default function PrimaNota() {
             </p>
           )}
 
+          {isForager && (
+            <div className="mb-3">
+              <p className="text-xs text-b58-charcoal-soft/80 bg-b58-cream-dark/50 rounded-lg px-3 py-2 mb-2">
+                Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non legnosi):
+                conserva codice fiscale del raccoglitore e riferimento F24 codice tributo 1853 come prova
+                del forfait pagato. Dal 2026 è obbligatoria anche la regione di raccolta.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  value={form.forager_tax_code}
+                  onChange={(e) => setForm((f) => ({ ...f, forager_tax_code: e.target.value }))}
+                  placeholder="Codice fiscale del raccoglitore"
+                  className={inputClass}
+                />
+                <input
+                  value={form.harvest_region}
+                  onChange={(e) => setForm((f) => ({ ...f, harvest_region: e.target.value }))}
+                  placeholder="Regione di raccolta"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <input
               value={form.document_reference}
               onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
-              placeholder="Rif. documento (opz.)"
+              placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (opz.)"}
               className={inputClass}
             />
             <input
@@ -384,6 +418,7 @@ export default function PrimaNota() {
                       <td className="py-2 text-b58-charcoal-soft text-xs">
                         {labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento)}
                         {m.document_reference ? ` · ${m.document_reference}` : ""}
+                        {m.harvest_region && <div>Regione: {m.harvest_region}</div>}
                       </td>
                       <td className={`py-2 text-right font-medium ${m.direction === "entrata" ? "text-b58-olive-dark" : "text-b58-terracotta-dark"}`}>
                         {m.direction === "entrata" ? "+" : "−"}{formatEUR(m.amount)}

@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createDiscountGift,
+  createPosDevice,
   deleteDiscountGift,
   listCausali,
   listDiscountsGifts,
   listDiscountsGiftsMonthly,
+  listPosDevices,
 } from "../../lib/api/cash";
 import { listCustomers } from "../../lib/api/customers";
 import { getEntities } from "../../lib/api/entities";
@@ -20,6 +22,7 @@ const emptyForm = {
   causale_id: "",
   causale_note: "",
   customer_id: "",
+  device_id: "",
   movement_date: today(),
   note: "",
 };
@@ -36,19 +39,27 @@ export default function ScontiOmaggi() {
   const [monthly, setMonthly] = useState([]);
   const [causali, setCausali] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  const [showDeviceForm, setShowDeviceForm] = useState(false);
+  const [newDevice, setNewDevice] = useState({ name: "", isOwnerDevice: false });
+  const [savingDevice, setSavingDevice] = useState(false);
+
+  const reloadDevices = () => listPosDevices().then(setDevices);
+
   useEffect(() => {
-    Promise.all([getEntities(), listCausali("sconto_omaggio"), listCustomers()])
-      .then(([ent, caus, cust]) => {
+    Promise.all([getEntities(), listCausali("sconto_omaggio"), listCustomers(), listPosDevices()])
+      .then(([ent, caus, cust, dev]) => {
         setEntities(ent);
         setEntityId(ent.srls.id);
         setCausali(caus);
         setCustomers(cust);
+        setDevices(dev);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -91,6 +102,7 @@ export default function ScontiOmaggi() {
         causale_id: form.causale_id || null,
         causale_note: form.causale_note || null,
         customer_id: form.customer_id || null,
+        device_id: form.device_id || null,
         movement_date: form.movement_date,
         note: form.note || null,
       });
@@ -109,6 +121,21 @@ export default function ScontiOmaggi() {
       await reload();
     } catch (e) {
       setError(e.message);
+    }
+  };
+
+  const handleAddDevice = async () => {
+    if (!newDevice.name.trim()) return;
+    setSavingDevice(true);
+    setError("");
+    try {
+      await createPosDevice(newDevice);
+      setNewDevice({ name: "", isOwnerDevice: false });
+      await reloadDevices();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSavingDevice(false);
     }
   };
 
@@ -138,10 +165,15 @@ export default function ScontiOmaggi() {
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-2">Sconti e omaggi</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
-        Sconto e omaggio sono operazioni fiscalmente distinte (§6). L'omaggio di cibo/bevande è una cessione
-        gratuita: il totale mensile a valore di listino è la base dell'autofattura TD27 cumulativa mensile —
-        da validare con Laura, il sistema non emette il documento.
+      <p className="text-xs text-b58-charcoal-soft/80 mb-2">
+        Sconto e omaggio sono operazioni distinte (§6): uno sconto è una vendita a prezzo ridotto (passa
+        comunque dal registratore telematico), un omaggio è un conto che il cliente non paga affatto e resta
+        solo qui nel gestionale. Se e quando gli omaggi sistematici generano un obbligo di autofattura TD27
+        dipende da volume e frequenza — <strong>da verificare con Laura</strong>, non è automatico.
+      </p>
+      <p className="text-xs text-b58-charcoal-soft/70 mb-6">
+        Le righe segnate con un pallino colorato provengono da un device diverso dal tuo — utile per un
+        controllo interno leggero, invisibile allo staff.
       </p>
 
       {error && (
@@ -157,7 +189,7 @@ export default function ScontiOmaggi() {
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="py-2 font-medium">Mese</th>
                 <th className="py-2 font-medium text-right">Sconti (mancato incasso)</th>
-                <th className="py-2 font-medium text-right">Omaggi — base TD27</th>
+                <th className="py-2 font-medium text-right">Omaggi (valore a listino)</th>
               </tr>
             </thead>
             <tbody>
@@ -247,7 +279,7 @@ export default function ScontiOmaggi() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <select
               value={form.customer_id}
               onChange={(e) => setForm((f) => ({ ...f, customer_id: e.target.value }))}
@@ -256,6 +288,16 @@ export default function ScontiOmaggi() {
               <option value="">Cliente (opz.)</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>{c.name || c.phone}</option>
+              ))}
+            </select>
+            <select
+              value={form.device_id}
+              onChange={(e) => setForm((f) => ({ ...f, device_id: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="">Device (opz.)</option>
+              {devices.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
             <input
@@ -268,9 +310,32 @@ export default function ScontiOmaggi() {
 
           {isOmaggio && (
             <p className="text-xs text-b58-charcoal-soft/70 mb-3">
-              Un omaggio non incassa nulla: l'incassato è 0 e concorre alla base TD27 del mese.
+              Un omaggio non incassa nulla: l'incassato resta a 0.
             </p>
           )}
+
+          <div className="mb-3">
+            <button type="button" onClick={() => setShowDeviceForm((v) => !v)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta">
+              {showDeviceForm ? "Annulla" : devices.length === 0 ? "+ Configura i tablet in uso" : "Gestisci tablet"}
+            </button>
+            {showDeviceForm && (
+              <div className="mt-2 bg-b58-cream-dark/40 rounded-lg p-3 flex flex-wrap gap-2 items-end">
+                <input
+                  value={newDevice.name}
+                  onChange={(e) => setNewDevice((d) => ({ ...d, name: e.target.value }))}
+                  placeholder='Nome, es. "Tablet Sala"'
+                  className={inputClass + " flex-1 min-w-[140px]"}
+                />
+                <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft whitespace-nowrap">
+                  <input type="checkbox" checked={newDevice.isOwnerDevice} onChange={(e) => setNewDevice((d) => ({ ...d, isOwnerDevice: e.target.checked }))} />
+                  È il tuo tablet
+                </label>
+                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-1.5 disabled:opacity-60">
+                  {savingDevice ? "Salvo…" : "+ Aggiungi"}
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-end">
             <button
@@ -297,12 +362,19 @@ export default function ScontiOmaggi() {
             {items.map((it) => (
               <li key={it.id} className="flex items-center justify-between gap-3 text-sm bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
                 <div>
+                  {it.device && it.device.is_owner_device === false && (
+                    <span
+                      className="inline-block w-2 h-2 rounded-full bg-b58-terracotta mr-1.5"
+                      title={`Da un device diverso dal tuo (${it.device.name})`}
+                    />
+                  )}
                   <span className="text-b58-charcoal font-medium">{labelFor(DISCOUNT_GIFT_TYPES, it.type)}</span>
                   <span className="text-b58-charcoal-soft"> · {formatDate(it.movement_date)}</span>
                   {it.causale?.label && <span className="text-b58-charcoal-soft"> · {it.causale.label}</span>}
                   {it.customer && (
                     <span className="text-b58-charcoal-soft"> · {it.customer.name || it.customer.phone}</span>
                   )}
+                  {it.device && <span className="text-b58-charcoal-soft"> · {it.device.name}</span>}
                   {it.note && <div className="text-xs text-b58-charcoal-soft">{it.note}</div>}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
