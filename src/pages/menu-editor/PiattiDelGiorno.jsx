@@ -14,12 +14,6 @@ import PrintButton from "../../components/PrintButton";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const CATEGORY_LABELS = {
-  antipasto: "Antipasti",
-  primo: "Primi",
-  secondo: "Secondi",
-  dolce: "Dolci",
-};
 
 export default function PiattiDelGiorno() {
   const [dailyMenus, setDailyMenus] = useState([]);

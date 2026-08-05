@@ -13,7 +13,6 @@ export default function ClientiList() {
   const [showNew, setShowNew] = useState(false);
   const [newCustomer, setNewCustomer] = useState(emptyNew);
   const [saving, setSaving] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export default function ClientiList() {
       .then(setCustomers)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, reloadKey]);
+  }, [search]);
 
   // Secondo ingresso previsto da §3.14: finora esisteva solo quello automatico
   // dalla prenotazione, ma un cliente abituale che entra senza prenotare non

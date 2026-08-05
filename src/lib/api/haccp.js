@@ -1,5 +1,26 @@
 import { supabase } from "../supabase";
 
+// =====================================================================
+// ⚠️ NON AGGIUNGERE `.limit()` alle funzioni di elenco di questo file
+// =====================================================================
+// Trovato durante l'audit del 05/08/2026, prima di commettere l'errore:
+// le liste di questo file NON alimentano solo le pagine a schermo, ma
+// anche `ManualeCompleto.jsx` — il PDF del piano di autocontrollo, cioè
+// il documento che si mostra a un ispettore ASL.
+//
+// Un limite messo "per prudenza" qui produrrebbe un registro che SEMBRA
+// completo ma non lo è: un danno molto peggiore della lentezza che
+// vorrebbe curare, e per giunta silenzioso. Vale lo stesso per l'export
+// CSV della prima nota (`listCashMovements` in cash.js).
+//
+// La regola generale del progetto (§7 protocollo 6 del brief) va quindi
+// letta così: il limite si mette sulle liste **di sola visualizzazione**,
+// mai su ciò che alimenta un documento esibibile. Per contenere questi
+// registri quando cresceranno la strada giusta NON è il numero di righe
+// ma un **filtro di periodo** sul manuale (un ispettore chiede sempre un
+// intervallo di date, non "tutto dall'apertura") — vedi §3.19.
+// =====================================================================
+
 // --- Raccolta propria (§3.17) — erbe spontanee/prodotti autoraccolti ---
 export async function listForagedItems() {
   const { data, error } = await supabase

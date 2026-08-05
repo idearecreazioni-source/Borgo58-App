@@ -11,7 +11,7 @@ import {
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
 import { listRecipeIngredientsForRecipes } from "../../lib/api/recipeIngredients";
 import { listIngredients } from "../../lib/api/ingredients";
-import { RECIPE_CATEGORIES, foodCostLevel, formatEUR, labelFor } from "../../lib/constants";
+import { foodCostLevel, formatEUR } from "../../lib/constants";
 
 const SECTIONS = [
   { category: "antipasto", label: "Antipasti", target: 4 },
@@ -169,6 +169,12 @@ export default function MenuDetail() {
         const newPct = item.selling_price > 0 ? (newCost / item.selling_price) * 100 : null;
         return { item, newCost, newPct };
       });
+    // recipeFoodCostWithOverride è volutamente fuori dalle dipendenze: è una
+    // funzione ricreata a ogni render, quindi inserirla farebbe ricalcolare la
+    // simulazione ad ogni render annullando la memoizzazione. I dati che legge
+    // (recipeIngredientsByRecipe) sono già nelle dipendenze, quindi non può
+    // restare indietro. Analizzato durante la pulizia lint del 05/08/2026.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simMode, simIngredientId, simPct, items, allIngredients, recipeIngredientsByRecipe]);
 
   const swapCandidate = useMemo(() => {

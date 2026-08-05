@@ -338,7 +338,7 @@ export default function ListaSpesa() {
           <div className="flex gap-2 mb-2">
             <button
               type="button"
-              onClick={() => setAddForm((f) => ({ ...emptyAddForm, mode: "ingredient" }))}
+              onClick={() => setAddForm({ ...emptyAddForm, mode: "ingredient" })}
               className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
                 addForm.mode === "ingredient"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
@@ -349,7 +349,7 @@ export default function ListaSpesa() {
             </button>
             <button
               type="button"
-              onClick={() => setAddForm((f) => ({ ...emptyAddForm, mode: "custom" }))}
+              onClick={() => setAddForm({ ...emptyAddForm, mode: "custom" })}
               className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
                 addForm.mode === "custom"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"

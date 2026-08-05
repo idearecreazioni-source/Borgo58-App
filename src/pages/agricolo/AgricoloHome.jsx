@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, UNITS, formatDate, labelFor } from "../../lib/constants";
+import { CROP_STATUSES, UNITS, formatDate } from "../../lib/constants";
 
 const STATUS_BADGE = {
   pianificato: "bg-b58-charcoal-soft/50",

@@ -53,7 +53,9 @@ export async function createIngredient(payload) {
 // Aggiorna gli attributi dell'ingrediente SENZA toccare current_price/storico
 // (per quello vedi updateIngredientPrice, che passa dalla funzione DB dedicata).
 export async function updateIngredientFields(id, fields) {
-  const { current_price, ...rest } = fields;
+  // current_price viene scartato di proposito: si aggiorna solo via
+  // updateIngredientPrice(), che tiene lo storico.
+  const { current_price: _ignorato, ...rest } = fields;
   const { data, error } = await supabase
     .from("ingredients")
     .update(rest)
@@ -76,12 +78,18 @@ export async function updateIngredientPrice(id, newPrice, { source = "manuale", 
   return getIngredient(id);
 }
 
-export async function listPriceHistory(ingredientId) {
+// Limite sicuro: questa funzione alimenta SOLO il pannello "storico prezzi"
+// nella scheda ingrediente, nessun export. Un ingrediente con più di 100
+// variazioni di prezzo è già un caso estremo, e a schermo nessuno scorre
+// oltre. (Sulle funzioni condivise con gli export vale la regola opposta —
+// vedi la nota in cima a haccp.js.)
+export async function listPriceHistory(ingredientId, { limit = 100 } = {}) {
   const { data, error } = await supabase
     .from("price_history")
     .select("*")
     .eq("ingredient_id", ingredientId)
-    .order("recorded_at", { ascending: false });
+    .order("recorded_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return data;
 }

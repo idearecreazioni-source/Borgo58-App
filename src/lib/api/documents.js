@@ -23,7 +23,7 @@ export async function getDocument(id) {
 
 // Carica il file nel bucket privato e restituisce il percorso salvato.
 export async function uploadDocumentFile(file) {
-  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+  const safeName = file.name.replace(/[^\w.-]+/g, "_");
   const path = `${crypto.randomUUID()}-${safeName}`;
   // Dichiara il contentType: così il browser sa che PDF/immagini vanno aperti
   // in linea (altrimenti li scarica come file generico).

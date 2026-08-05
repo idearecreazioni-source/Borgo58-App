@@ -33,6 +33,11 @@ export async function deactivateCausale(id) {
 // --- Movimenti di cassa (prima nota) ---
 const MOVEMENT_SELECT = "*, causale:causale_id(id, label)";
 
+// ⚠️ NIENTE `.limit()` qui: alimenta anche l'export CSV della prima nota
+// (PrimaNota.jsx usa lo stesso array per la tabella e per il file), quindi
+// un limite produrrebbe un export fiscale incompleto ma dall'aspetto
+// normale. È già contenuta dai filtri di periodo `from`/`to`, che sono la
+// strada giusta. Stessa avvertenza estesa in cima a haccp.js.
 export async function listCashMovements({ entityId, from, to, direction } = {}) {
   let query = supabase
     .from("cash_movements")

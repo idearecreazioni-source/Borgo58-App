@@ -7,7 +7,7 @@ import {
   listSupplierPriceHistory,
   updateSupplier,
 } from "../../lib/api/suppliers";
-import { SUPPLIER_CATEGORIES, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { SUPPLIER_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 
 export default function FornitoreDetail() {
   const { id } = useParams();

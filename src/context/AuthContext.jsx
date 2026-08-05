@@ -80,6 +80,13 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Il linter segnala che esportare useAuth accanto al componente riduce
+// l'efficacia del ricaricamento a caldo in sviluppo. Spostarlo in un file
+// a parte significherebbe però toccare gli import di una trentina di
+// pagine per un guadagno di sola comodità in sviluppo, senza alcun effetto
+// sul comportamento dell'app: non vale il rischio di un cambiamento così
+// diffuso. Valutato durante la pulizia lint del 05/08/2026.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }
