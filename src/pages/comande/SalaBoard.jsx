@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addDraftItem,
-  createDiningTable,
+  createDiningTables,
   createOrder,
   deactivateDiningTable,
   getOrder,
@@ -129,12 +129,20 @@ export default function SalaBoard() {
     loadBoard();
   };
 
-  const handleAddTable = async (e) => {
+  // Un tavolo per riga, tutti aggiunti in un colpo solo — la prima versione
+  // (un input, un click per tavolo) era un fastidio inutile con una decina
+  // di tavoli veri da configurare, segnalato da Alessio.
+  const handleAddTables = async (e) => {
     e.preventDefault();
-    if (!newTable.trim()) return;
+    const labels = newTable
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (labels.length === 0) return;
     setSavingTable(true);
+    setError("");
     try {
-      await createDiningTable({ label: newTable.trim(), position: tables.length });
+      await createDiningTables(labels, tables.length);
       setNewTable("");
       await loadBoard();
     } catch (e) {
@@ -179,15 +187,19 @@ export default function SalaBoard() {
 
       {showManageTables && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4 shrink-0">
-          <form onSubmit={handleAddTable} className="flex gap-2 mb-3">
-            <input
+          <form onSubmit={handleAddTables} className="mb-3">
+            <p className="text-xs text-b58-charcoal-soft/70 mb-1.5">
+              Un tavolo per riga — li aggiunge tutti insieme.
+            </p>
+            <textarea
               value={newTable}
               onChange={(e) => setNewTable(e.target.value)}
-              placeholder='Nome tavolo, es. "T1" o "Chef table"'
-              className={inputClass}
+              placeholder={'T1\nT2\nT3\nChef Table\nDivano 1'}
+              rows={4}
+              className={`${inputClass} font-mono mb-2`}
             />
-            <button type="submit" disabled={savingTable} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2 shrink-0">
-              + Aggiungi
+            <button type="submit" disabled={savingTable} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
+              {savingTable ? "Aggiungo…" : "+ Aggiungi tutti"}
             </button>
           </form>
           <div className="flex flex-wrap gap-1.5">

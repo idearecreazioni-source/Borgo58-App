@@ -59,12 +59,13 @@ export async function listDiningTables() {
   return data;
 }
 
-export async function createDiningTable({ label, position }) {
-  const { data, error } = await supabase
-    .from("dining_tables")
-    .insert({ label, position: position ?? 0 })
-    .select()
-    .single();
+// Aggiunta in blocco (un tavolo per riga): la configurazione iniziale di una
+// decina di tavoli uno alla volta era un fastidio inutile, segnalato da
+// Alessio dopo aver provato "Gestisci tavoli" — un solo inserimento invece
+// di N andata/ritorno.
+export async function createDiningTables(labels, startPosition = 0) {
+  const rows = labels.map((label, i) => ({ label, position: startPosition + i }));
+  const { data, error } = await supabase.from("dining_tables").insert(rows).select();
   if (error) throw error;
   return data;
 }
