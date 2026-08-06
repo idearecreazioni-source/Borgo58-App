@@ -73,3 +73,20 @@ export async function deleteTask(id) {
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) throw error;
 }
+
+// Pulizia periodica dei task già evasi. Solo il titolare può cancellare
+// (policy tasks_delete_titolare): allo staff la richiesta tornerebbe
+// semplicemente senza righe eliminate, non con un errore — per questo il
+// pulsante non gli viene nemmeno mostrato.
+// I task generati da altri moduli si possono eliminare senza danni: i
+// record d'origine hanno `task_id ... on delete set null`, quindi perdono
+// il collegamento al promemoria ma restano intatti.
+export async function deleteCompletedTasks() {
+  const { data, error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("status", "completato")
+    .select("id");
+  if (error) throw error;
+  return data.length;
+}

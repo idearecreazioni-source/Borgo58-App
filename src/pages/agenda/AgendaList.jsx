@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listTasks, listTasksForMonth, updateTask } from "../../lib/api/tasks";
+import { deleteCompletedTasks, listTasks, listTasksForMonth, updateTask } from "../../lib/api/tasks";
 import { TASK_PRIORITIES, TASK_STATUSES, formatDate, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -120,6 +120,8 @@ export default function AgendaList() {
   const [monthTasks, setMonthTasks] = useState([]);
   const [monthLoading, setMonthLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -159,6 +161,38 @@ export default function AgendaList() {
     }
   };
 
+  // Pulizia dei task evasi. Il conteggio è calcolato sui task attualmente
+  // caricati, ma la cancellazione agisce su TUTTI i completati nel database
+  // — anche quelli nascosti da un filtro attivo. La conferma lo dice
+  // esplicitamente, altrimenti col filtro "Da fare" attivo si vedrebbe
+  // "elimina 0" e ne sparirebbero venti.
+  const completedShown = tasks.filter((t) => t.status === "completato").length;
+
+  const handleDeleteCompleted = async () => {
+    const ok = window.confirm(
+      "Elimina definitivamente TUTTI i task completati, compresi quelli non visibili con i filtri attivi.\n\n" +
+        "I promemoria nati da altri moduli (fatture, documenti, scadenze) si possono eliminare senza problemi: " +
+        "la scheda d'origine resta, perde solo il collegamento.\n\nOperazione non reversibile. Procedere?"
+    );
+    if (!ok) return;
+    setDeleting(true);
+    setError("");
+    try {
+      const n = await deleteCompletedTasks();
+      const [lista, mese] = await Promise.all([
+        listTasks({ status: status || undefined, priority: priority || undefined, search: search || undefined }),
+        view === "calendario" ? listTasksForMonth(year, month) : Promise.resolve(null),
+      ]);
+      setTasks(lista);
+      if (mese) setMonthTasks(mese);
+      setNotice(n === 0 ? "Nessun task completato da eliminare." : `Eliminati ${n} task completati.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
 
   return (
@@ -177,6 +211,19 @@ export default function AgendaList() {
               Adempimenti (PDF)
             </Link>
           )}
+          {/* Solo titolare: la cancellazione è riservata a lui dalla RLS
+              (tasks_delete_titolare), quindi allo staff il pulsante
+              "funzionerebbe" senza eliminare nulla — meglio non mostrarlo. */}
+          {isTitolare && completedShown > 0 && (
+            <button
+              type="button"
+              onClick={handleDeleteCompleted}
+              disabled={deleting}
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal-soft hover:text-b58-terracotta-dark text-sm font-medium px-4 py-2"
+            >
+              {deleting ? "Elimino…" : "Elimina i completati"}
+            </button>
+          )}
           <Link
             to="/agenda/nuovo"
             className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
@@ -185,6 +232,10 @@ export default function AgendaList() {
           </Link>
         </div>
       </div>
+
+      {notice && (
+        <p className="text-sm text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+      )}
 
       <div className="flex gap-2 mb-4">
         {[
