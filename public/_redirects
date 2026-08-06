@@ -1,0 +1,11 @@
+# Regola per l'hosting statico (Cloudflare Pages / Netlify).
+#
+# L'app usa indirizzi reali (BrowserRouter): /comande, /agenda, /magazzino...
+# Su un hosting statico quegli indirizzi NON corrispondono a file veri, quindi
+# ricaricando la pagina o aprendo un link diretto il server risponderebbe 404.
+#
+# Questa riga dice: qualunque indirizzo, servi index.html con codice 200 —
+# poi e' React Router, dentro l'app, a decidere cosa mostrare.
+# Senza questa riga l'app sembra funzionare finche' si naviga dai menu, e si
+# rompe appena si preme F5 o si apre un link salvato.
+/*    /index.html   200
