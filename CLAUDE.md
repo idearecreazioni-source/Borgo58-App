@@ -35,14 +35,13 @@ Le due sessioni **non comunicano in tempo reale**. Il canale è una cartella di 
 ## 3. Percorsi importanti
 
 ```
-Codice:        C:\Users\User\Desktop\Borgo58-App
-Brief tecnico: C:\Users\User\Desktop\Borgo 58 - Osteria Contemporanea\
-               Borgo 58 - Osteria Contemporanea\06_App_Borgo58\
-               APP_Borgo58_Brief_Tecnico_v2.md
-Scambio:       ...\Borgo 58 - Osteria Contemporanea\_scambio_cowork_code\
+Codice:        C:\Users\User\Desktop\Claude code\Borgo58-App
+Brief tecnico: C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea\
+               06_App_Borgo58\APP_Borgo58_Brief_Tecnico_v2.md
+Scambio:       C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea\_scambio_cowork_code\
 ```
 
-⚠️ **Il brief è stato spostato da Cowork il 05-06/08/2026** (prima era nella cartella superiore). Cowork riorganizza le cartelle: se il percorso non risponde, cercalo con Glob invece di assumere.
+⚠️ **Il brief è stato spostato più volte** (05-06/08 e di nuovo il 07/08/2026, quando è stata eliminata la doppia cartella annidata ed è nata "Claude cowork"). Cowork riorganizza le cartelle: se il percorso non risponde, cercalo con Glob invece di assumere.
 
 ⚠️ **Il brief va riletto** se la sessione dura a lungo: viene modificato in-place da Cowork anche a metà sessione, senza segnali.
 
