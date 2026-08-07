@@ -1,6 +1,6 @@
 # Borgo 58 — Gestionale · istruzioni per Claude Code
 
-Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **06/08/2026**.
+Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **08/08/2026**.
 
 ---
 
@@ -71,6 +71,13 @@ La chiave anon **non è un segreto** (finisce nel bundle): la protezione dei dat
 npm run dev      # server di sviluppo
 npm run build    # produce dist/ (file statici)
 npm run lint     # oxlint — deve restare a ZERO avvisi
+```
+
+**Push (lo fa Alessio, mai io):** il terminale di Claude Code ha i prompt di autenticazione disattivati, quindi `git push` da qui fallisce sempre. Va lanciato in una **finestra PowerShell normale**. L'08/08/2026 anche Git Credential Manager è finito nel prompt testuale `Username for 'https://github.com'` (vicolo cieco: GitHub non accetta più le password). Quello che ha funzionato — login dal browser, niente token da digitare:
+```powershell
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git
+git -C "C:\Users\User\Desktop\Claude code\Borgo58-App" push
 ```
 
 Copiare una migrazione negli appunti per Alessio:
@@ -146,6 +153,8 @@ Tre accorgimenti appresi sul campo:
 2. Per i campi controllati da React serve il **native setter**:
    `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(el, v)` + dispatch di `input`/`change`.
 3. Per verificare la **RLS vera** (non solo la UI): interrogare PostgREST direttamente col token da `localStorage` (chiave che contiene `auth-token`) + anon key.
+4. ⚠️ **Chrome traduce in automatico i pannelli in inglese** (successo l'08/08 sulla dashboard Cloudflare) e traduce anche i nomi propri: il repository `Borgo58-App` compariva come "App Borgo58", il framework "Eleventy" come "Undici". Non fidarsi delle etichette lette a schermo su pagine tradotte — verificare i valori veri con `javascript_tool` leggendo `input.value` / `input.name`.
+5. La traduzione **rimonta il DOM di continuo**: i click a coordinate si spostano fra uno screenshot e l'altro. Rifare lo screenshot subito prima di ogni click, oppure lavorare con i `ref`.
 
 ---
 
@@ -157,8 +166,6 @@ Tre accorgimenti appresi sul campo:
 - Casi limite di sala non ancora specificati: **conto diviso, tavoli uniti, storni, asporto** (§3.2.2) — servono le risposte di Alessio dalla sua esperienza in sala
 
 **In capo ad Alessio:**
-- **4 commit da pushare** (`git push` da `Borgo58-App`)
-- **Pubblicazione su Cloudflare Pages** — in corso, vedi §11
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**
 - Backup cifrato fuori sede, con Alessandro (fornitore hardware)
 - **Allungare i PIN prima dell'apertura** (rinviato consapevolmente il 06/08)
@@ -169,24 +176,33 @@ Tre accorgimenti appresi sul campo:
 
 ---
 
-## 11. Pubblicazione — stato al 06/08/2026
+## 11. Pubblicazione — FATTA l'08/08/2026
 
-**Servizio scelto: Cloudflare Pages** (il piano gratuito di Vercel è per usi non commerciali; questo è un gestionale aziendale).
+**L'app è online su https://borgo58-app.pages.dev** (Cloudflare Pages, progetto `borgo58-app`, account `idearecreazioni@gmail.com`). Scelto Cloudflare perché il piano gratuito di Vercel è per usi non commerciali e questo è un gestionale aziendale.
 
-Preparato lato codice: `public/_redirects` con `/*  /index.html  200` — necessario perché l'app usa `BrowserRouter` e senza quella regola ricaricare `/comande` darebbe 404.
+**Ogni `git push` su `master` ripubblica il sito da solo** — non serve nessuna azione sul pannello Cloudflare. Corollario: da adesso un commit sbagliato pushato finisce in produzione, non solo sul PC.
 
-Configurazione da usare:
+Configurazione effettiva del progetto:
 
 | Campo | Valore |
 |---|---|
-| Framework preset | Vite |
+| Framework preset | **Nessuno** (non "Vite": vedi nota sotto) |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Env: `VITE_SUPABASE_URL` | `https://oudjuqbqszisdtwzbxdo.supabase.co` |
 | Env: `VITE_SUPABASE_ANON_KEY` | chiave anon (da `.env.local`) |
-| Env: `NODE_VERSION` | `20` |
+| Env: `NODE_VERSION` | `22.16.0` |
 
-**Da verificare appena pubblicato**: (a) che il login funzioni davvero — se una variabile è sbagliata la schermata appare ma il PIN non entra; (b) che un indirizzo diretto tipo `/comande` non dia 404.
+- Il preset "Vite" non fa altro che riempire build command e output directory: compilarli a mano dà lo stesso risultato.
+- `NODE_VERSION` **non** va lasciato a `20` come previsto in origine: Vite 8 pretende `^20.19 || >=22.12` e un "20" generico può risolversi in una minor più vecchia. Versione esatta, non maggiore.
+- `public/_redirects` (`/*  /index.html  200`) è ciò che evita il 404 su `/comande` con `BrowserRouter`. **Non rimuoverlo mai.**
+
+**Verificato dal vivo l'08/08/2026**: `/comande` chiesto direttamente risponde 200 con l'app (non 404); il bundle pubblicato contiene davvero URL e chiave anon (se una variabile mancasse ci sarebbe `undefined`) ed è lo stesso file prodotto dalla build locale; **login col PIN reale del titolare riuscito sul sito pubblico**.
+
+Come verificare una pubblicazione senza aprire il browser:
+```powershell
+(Invoke-WebRequest "https://borgo58-app.pages.dev/comande" -UseBasicParsing).StatusCode   # deve essere 200
+```
 
 ---
 
