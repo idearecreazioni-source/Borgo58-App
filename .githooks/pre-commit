@@ -1,0 +1,50 @@
+#!/bin/sh
+# ---------------------------------------------------------------------
+# Controllo automatico prima di ogni commit
+# ---------------------------------------------------------------------
+# Principio §7: preferire l'automazione alla disciplina. I protocolli
+# "lint pulito prima di ogni commit" e "ogni migrazione si verifica e si
+# registra" erano regole scritte, cioe' cose da ricordarsi. Ora sono
+# controlli che scattano da soli: se qualcosa manca, il commit non parte.
+#
+# Attivo tramite core.hooksPath = .githooks (versionato, quindi sopravvive
+# a una nuova copia del progetto — a differenza di .git/hooks).
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+fallisci() {
+  echo ""
+  echo "  COMMIT BLOCCATO: $1"
+  echo ""
+  exit 1
+}
+
+echo "→ Controllo il codice (lint)..."
+npm run lint --silent -- --max-warnings=0 \
+  || fallisci "il codice ha errori o avvisi. Il protocollo dice lint a ZERO."
+
+echo "→ Provo a compilare l'app..."
+npm run build --silent > /dev/null \
+  || fallisci "l'app non compila. Non si committa qualcosa che non parte."
+
+echo "→ Controllo le migrazioni..."
+migrazioni=$(git diff --cached --name-only --diff-filter=ACM | grep '^supabase/migrations/.*\.sql$' || true)
+for f in $migrazioni; do
+  [ -f "$f" ] || continue
+
+  grep -qi 'applied_migrations' "$f" \
+    || fallisci "$f non si registra in applied_migrations (§7 punto 4)."
+
+  grep -qi 'raise exception' "$f" \
+    || fallisci "$f non ha un blocco di verifica che solleva eccezione (§7 punto 3)."
+
+  grep -qiE 'if not exists|or replace|on conflict|drop policy if exists|drop trigger if exists' "$f" \
+    || fallisci "$f non sembra rieseguibile due volte (§7 punto 3: serve 'if not exists', 'or replace' o 'on conflict')."
+done
+
+if [ -n "$migrazioni" ]; then
+  echo "  migrazioni controllate: $(echo "$migrazioni" | wc -l | tr -d ' ')"
+fi
+
+echo "✓ Tutto a posto."

@@ -1,0 +1,7 @@
+# Gli script del controllo pre-commit devono avere fine riga in stile Unix:
+# su Windows, un file con fine riga CRLF fa fallire l'interprete della shell
+# con un errore incomprensibile ("bad interpreter"). Senza questa riga il
+# controllo automatico smetterebbe di funzionare alla prima copia nuova del
+# progetto, e in silenzio.
+.githooks/** text eol=lf
+*.sh text eol=lf
