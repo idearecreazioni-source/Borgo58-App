@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteCompletedTasks, listTasks, listTasksForMonth, updateTask } from "../../lib/api/tasks";
-import { TASK_PRIORITIES, TASK_STATUSES, formatDate, labelFor } from "../../lib/constants";
+import { TASK_PRIORITIES, TASK_STATUSES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 const PRIORITY_BADGE = {
@@ -35,7 +35,7 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   for (let i = 0; i < startWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayISO = oggiLocale();
 
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">

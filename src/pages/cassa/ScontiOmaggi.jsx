@@ -11,9 +11,9 @@ import {
 } from "../../lib/api/cash";
 import { listCustomers } from "../../lib/api/customers";
 import { getEntities } from "../../lib/api/entities";
-import { DISCOUNT_GIFT_TYPES, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { DISCOUNT_GIFT_TYPES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = oggiLocale;
 
 const emptyForm = {
   type: "omaggio",

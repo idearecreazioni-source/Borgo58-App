@@ -14,12 +14,13 @@ import {
   formatDate,
   formatEUR,
   labelFor,
+  oggiLocale,
 } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import PrintButton from "../../components/PrintButton";
 
 const currentYear = new Date().getFullYear();
-const today = () => new Date().toISOString().slice(0, 10);
+const today = oggiLocale;
 
 const emptyForm = {
   category: "trasferta",

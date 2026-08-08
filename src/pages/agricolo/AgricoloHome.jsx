@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, UNITS, formatDate } from "../../lib/constants";
+import { CROP_STATUSES, UNITS, formatDate, oggiLocale } from "../../lib/constants";
 
 const STATUS_BADGE = {
   pianificato: "bg-b58-charcoal-soft/50",
@@ -89,7 +89,7 @@ export default function AgricoloHome() {
     try {
       await updateCrop(crop.id, {
         status: "raccolto",
-        actual_harvest_date: harvest.actual_harvest_date || new Date().toISOString().slice(0, 10),
+        actual_harvest_date: harvest.actual_harvest_date || oggiLocale(),
         harvested_quantity: Number(harvest.harvested_quantity),
         unit: harvest.unit,
       });

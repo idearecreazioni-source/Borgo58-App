@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { traGiorniLocale } from "../constants";
 import { createTask, updateTask } from "./tasks";
 
 // --- Anagrafica dipendenti ---
@@ -112,7 +113,7 @@ export async function deleteEmployeeDocument(id, taskId) {
 
 // Documenti in scadenza (tutti i dipendenti) — per l'overview.
 export async function listExpiringDocuments(withinDays = 60) {
-  const limit = new Date(Date.now() + withinDays * 86400000).toISOString().slice(0, 10);
+  const limit = traGiorniLocale(withinDays);
   const { data, error } = await supabase
     .from("employee_documents")
     .select("*, employee:employee_id(id, first_name, last_name)")

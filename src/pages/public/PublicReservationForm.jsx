@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { submitPublicReservation } from "../../lib/api/publicReservations";
+import { oggiLocale } from "../../lib/constants";
 import Logo from "../../components/Logo";
 
 const RESPONSE_HOURS = 24; // testo del brief §3.3: "entro [X ore]" — modificabile facilmente qui
@@ -21,7 +22,10 @@ export default function PublicReservationForm() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Data minima selezionabile. In UTC, dopo mezzanotte il form avrebbe
+  // continuato ad accettare "ieri" — che la funzione lato database rifiuta,
+  // dando all'ospite un errore incomprensibile.
+  const today = oggiLocale();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { oggiLocale } from "../constants";
 
 export async function listTasks({ status, priority, category, search } = {}) {
   let query = supabase
@@ -19,7 +20,7 @@ export async function listTasks({ status, priority, category, search } = {}) {
 
 // Task del giorno + task senza data (§3.12, per la Dashboard home).
 export async function listDashboardTasks() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = oggiLocale();
   const { data, error } = await supabase
     .from("tasks")
     .select("*")

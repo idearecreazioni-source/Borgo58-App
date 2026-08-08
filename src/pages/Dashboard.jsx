@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listDashboardTasks, updateTask } from "../lib/api/tasks";
-import { TASK_PRIORITIES, formatDate, labelFor } from "../lib/constants";
+import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
 
 const PRIORITY_BADGE = {
@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   const today = tasks.filter((t) => t.due_date);
   const undated = tasks.filter((t) => !t.due_date);
-  const todayLabel = formatDate(new Date().toISOString().slice(0, 10));
+  const todayLabel = formatDate(oggiLocale());
 
   return (
     <div className="max-w-3xl mx-auto">

@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCashBalance, listCashMovements, listDiscountsGiftsMonthly } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
-import { formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { formatDate, formatEUR, labelFor, primoDelMeseLocale } from "../../lib/constants";
 import { CASH_DIRECTIONS } from "../../lib/constants";
 
-const currentMonthStart = () => {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
-};
+// Primo del mese in ora locale: la versione precedente passava per
+// toISOString() e restituiva l'ULTIMO giorno del mese prima (mezzanotte
+// italiana e' ancora il giorno prima in UTC), quindi il riepilogo di cassa
+// includeva sempre una giornata di troppo.
+const currentMonthStart = primoDelMeseLocale;
 
 export default function CassaHome() {
   const [entities, setEntities] = useState(null);

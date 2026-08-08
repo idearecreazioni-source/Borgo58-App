@@ -18,10 +18,12 @@ import {
   MANCE_SUBSTITUTE_TAX_RATE,
   formatDate,
   formatEUR,
+  meseLocale,
+  oggiLocale,
 } from "../../lib/constants";
 
-const today = () => new Date().toISOString().slice(0, 10);
-const thisMonth = () => new Date().toISOString().slice(0, 7);
+const today = oggiLocale;
+const thisMonth = meseLocale;
 const currentYear = new Date().getFullYear();
 const monthLabel = (iso) => new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" }).format(new Date(iso));
 

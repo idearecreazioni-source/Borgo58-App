@@ -9,10 +9,10 @@ import {
   removeDailyMenuItem,
 } from "../../lib/api/dailyMenu";
 import { listRecipes } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { RECIPE_CATEGORIES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = oggiLocale;
 
 
 export default function PiattiDelGiorno() {

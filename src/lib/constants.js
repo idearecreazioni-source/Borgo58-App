@@ -363,3 +363,36 @@ export const formatDate = (value) =>
         new Date(value)
       )
     : "—";
+
+// ---------------------------------------------------------------------
+// Date "di calendario" nel fuso orario del locale
+// ---------------------------------------------------------------------
+// ⚠️ NON usare `new Date().toISOString().slice(0, 10)` per sapere che
+// giorno è: quella è la data UTC, e l'Italia è avanti di 1-2 ore. Fra
+// mezzanotte e le 02:00 restituisce IERI.
+//
+// Per un ufficio è ininfluente, per un'osteria che chiude all'una no: la
+// prima nota di fine servizio, le registrazioni HACCP, le mance e i task
+// finivano datati al giorno prima — senza errori e senza avvisi, su
+// registri che devono reggere anni. Trovato nell'audit dell'08/08/2026 in
+// 14 punti diversi.
+//
+// Queste funzioni leggono giorno, mese e anno dall'orologio locale, che è
+// esattamente quello che intende una persona quando dice "oggi".
+export const dataLocale = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+export const oggiLocale = () => dataLocale();
+
+export const meseLocale = (d = new Date()) => dataLocale(d).slice(0, 7);
+
+// Primo giorno del mese corrente, in locale.
+export const primoDelMeseLocale = (d = new Date()) =>
+  dataLocale(new Date(d.getFullYear(), d.getMonth(), 1));
+
+// Data fra N giorni (N negativo = indietro), in locale.
+export const traGiorniLocale = (giorni, d = new Date()) => {
+  const data = new Date(d);
+  data.setDate(data.getDate() + giorni);
+  return dataLocale(data);
+};

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listReservations } from "../../lib/api/reservations";
-import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor } from "../../lib/constants";
+import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 
 const STATUS_BADGE = {
   richiesta_in_attesa: "bg-b58-gold",
@@ -10,7 +10,7 @@ const STATUS_BADGE = {
   annullata: "bg-b58-charcoal-soft/50",
 };
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = oggiLocale;
 
 export default function ReservationsList() {
   const [reservations, setReservations] = useState([]);

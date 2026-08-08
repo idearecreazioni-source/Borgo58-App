@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createForagedItem, deleteForagedItem, listForagedItems } from "../../lib/api/haccp";
 import { listIngredients } from "../../lib/api/ingredients";
-import { formatDate } from "../../lib/constants";
+import { formatDate, oggiLocale } from "../../lib/constants";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = oggiLocale;
 
 const emptyForm = {
   species: "",

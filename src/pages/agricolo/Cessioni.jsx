@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { createCession, deleteCession, listCessions } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { UNITS, formatDate, formatEUR } from "../../lib/constants";
+import { UNITS, formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = oggiLocale;
 
 const emptyForm = {
   ingredient_id: "", product_description: "", quantity: "", unit: "kg", unit_price: "",
