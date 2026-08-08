@@ -20,6 +20,7 @@ import {
   updateOrderNote,
   voidSentItem,
 } from "../../lib/api/orders";
+import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
@@ -47,6 +48,8 @@ export default function Sala() {
   const [tables, setTables] = useState([]);
   const [openOrders, setOpenOrders] = useState([]);
   const [menu, setMenu] = useState([]);
+  const [barItems, setBarItems] = useState([]);
+  const [showWines, setShowWines] = useState(false);
   const [copertoPrice, setCopertoPrice] = useState(null);
   const [order, setOrder] = useState(null);
 
@@ -74,6 +77,7 @@ export default function Sala() {
   useEffect(() => {
     loadBoard().catch((e) => setError(e.message));
     listMenuForOrder().then(setMenu).catch((e) => setError(e.message));
+    listBarItems().then(setBarItems).catch((e) => setError(e.message));
     getServiceSettings()
       .then((s) => {
         setCopertoPrice(Number(s.coperto_price));
@@ -131,6 +135,19 @@ export default function Sala() {
         destination: "cucina",
         quantity: 1,
         unitPrice: mi.selling_price,
+      })
+    );
+
+  // Vini e bevande non sono ricette: sulla riga della comanda finiscono
+  // come testo, col formato accanto al nome ("Grillo · calice"), perche' in
+  // cucina e al bar la differenza fra un calice e una bottiglia conta.
+  const handleAddBarItem = (item) =>
+    withBusy(() =>
+      addDraftItem(order.id, {
+        freeTextName: item.serving ? `${item.name} · ${item.serving}` : item.name,
+        destination: "bar",
+        quantity: 1,
+        unitPrice: item.selling_price,
       })
     );
 
@@ -195,6 +212,36 @@ export default function Sala() {
     ...c,
     items: menu.filter((mi) => mi.category === c.value),
   })).filter((c) => c.items.length > 0);
+
+  // I vini stanno in una schermata separata (§3.2.1: incolonnati nel menu
+  // lo allungavano troppo), le altre bevande restano nell'elenco
+  // principale accanto ai piatti.
+  const raggruppaPerCategoria = (voci) => {
+    const categorie = [...new Set(voci.map((v) => v.category))];
+    return categorie.map((nome) => ({ nome, voci: voci.filter((v) => v.category === nome) }));
+  };
+  const vini = raggruppaPerCategoria(barItems.filter((b) => b.section === "vini"));
+  const bevande = raggruppaPerCategoria(barItems.filter((b) => b.section === "bevande"));
+
+  // Riga di un vino o di una bevanda: stesso target di tocco dei piatti.
+  const RigaBar = ({ v }) => (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => handleAddBarItem(v)}
+      className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50 border-b border-b58-charcoal/5"
+    >
+      <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight">
+        {v.name}
+        {v.serving && <span className="text-b58-charcoal-soft"> · {v.serving}</span>}
+        {v.producer && <span className="block text-[11px] text-b58-charcoal-soft/70">{v.producer}</span>}
+      </span>
+      <span className="text-xs text-b58-charcoal-soft shrink-0">{formatEUR(v.selling_price)}</span>
+      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
+        +
+      </span>
+    </button>
+  );
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -395,6 +442,21 @@ export default function Sala() {
             </span>
           </div>
 
+          {/* CARTA DEI VINI ------------------------------------------- */}
+          {/* Riquadro dedicato, non un elenco incolonnato nel menu: e' la
+              correzione emersa dal simulatore. Compare solo se in carta
+              c'e' davvero qualcosa. */}
+          {vini.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowWines(true)}
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold text-sm"
+            >
+              <span>🍷 Carta dei vini</span>
+              <span className="text-lg">›</span>
+            </button>
+          )}
+
           {/* MENU ------------------------------------------------------ */}
           <p className={sectionLabel}>Menu</p>
           {menuByCategory.length === 0 ? (
@@ -422,6 +484,22 @@ export default function Sala() {
                         +
                       </span>
                     </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* BEVANDE --------------------------------------------------- */}
+          {bevande.length > 0 && (
+            <div className="mb-3">
+              {bevande.map((cat) => (
+                <div key={cat.nome} className="mb-2">
+                  <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                    {cat.nome}
+                  </p>
+                  {cat.voci.map((v) => (
+                    <RigaBar key={v.id} v={v} />
                   ))}
                 </div>
               ))}
@@ -595,6 +673,42 @@ export default function Sala() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Schermata separata della carta dei vini: copre la sala senza
+          farle perdere il tavolo selezionato, si torna indietro da una
+          barra sempre visibile in alto. */}
+      {showWines && order && (
+        <div className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
+          <button
+            type="button"
+            onClick={() => setShowWines(false)}
+            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-gold-dark text-b58-parchment font-semibold text-sm uppercase tracking-wide"
+          >
+            <span className="text-lg">‹</span> Torna al menu — {order.table_label}
+          </button>
+          <div className="flex-1 overflow-y-auto p-3 max-w-md mx-auto w-full">
+            {vini.map((cat) => (
+              <div key={cat.nome} className="mb-3">
+                <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                  {cat.nome}
+                </p>
+                {cat.voci.map((v) => (
+                  <RigaBar key={v.id} v={v} />
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="shrink-0 p-3 border-t border-b58-charcoal/10 bg-b58-parchment">
+            <button
+              type="button"
+              onClick={() => setShowWines(false)}
+              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment text-base font-semibold"
+            >
+              Fatto — torna alla comanda
+            </button>
+          </div>
+        </div>
       )}
 
       {showPrecon && order && (

@@ -52,6 +52,7 @@ import Mance from "./pages/personale/Mance";
 import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
 import DocumentoDetail from "./pages/documenti/DocumentoDetail";
 import EditorMenuHome from "./pages/menu-editor/EditorMenuHome";
+import BevandeVini from "./pages/menu-editor/BevandeVini";
 import PiattiDelGiorno from "./pages/menu-editor/PiattiDelGiorno";
 import AgricoloHome from "./pages/agricolo/AgricoloHome";
 import Cessioni from "./pages/agricolo/Cessioni";
@@ -222,6 +223,7 @@ function AppRoutes() {
         {/* Editor Menu Cartaceo (solo titolare — i menu sono titolare-only) */}
         <Route path="/editor-menu" element={<RequireTitolare><EditorMenuHome /></RequireTitolare>} />
         <Route path="/editor-menu/giorno" element={<RequireTitolare><PiattiDelGiorno /></RequireTitolare>} />
+        <Route path="/editor-menu/bevande" element={<RequireTitolare><BevandeVini /></RequireTitolare>} />
 
         {/* Agricolo / Orto (solo titolare — §1) */}
         <Route path="/agricolo" element={<RequireTitolare><AgricoloHome /></RequireTitolare>} />

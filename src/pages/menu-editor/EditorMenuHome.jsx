@@ -116,6 +116,9 @@ export default function EditorMenuHome() {
             <p className="text-b58-charcoal-soft mt-1">Genera il menu stampabile dai piatti in carta.</p>
           </div>
           <div className="flex gap-2">
+            <Link to="/editor-menu/bevande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+              Bevande e vini
+            </Link>
             <Link to="/editor-menu/giorno" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
               Piatti del giorno
             </Link>
