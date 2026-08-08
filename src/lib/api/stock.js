@@ -73,13 +73,9 @@ export async function recordStockConsumption({ ingredientId, quantity, reason = 
   if (error) throw error;
 }
 
-export async function listStockConsumptions(ingredientId) {
-  let query = supabase
-    .from("stock_consumptions")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (ingredientId) query = query.eq("ingredient_id", ingredientId);
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
-}
+// Rimossa listStockConsumptions (audit 08/08/2026): nessuna pagina la
+// usava. Il codice morto non e' innocuo — invecchia senza che nessuno se
+// ne accorga, e prima o poi qualcuno lo richiama credendolo collaudato.
+// La tabella stock_consumptions resta e continua a essere scritta da
+// consumeStock: se servira' leggerla, si riscrive la query allora, sapendo
+// cosa deve mostrare.

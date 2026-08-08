@@ -24,6 +24,7 @@ import {
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
+import CampoAutosalvato from "../../components/CampoAutosalvato";
 import PrintButton from "../../components/PrintButton";
 import {
   ALLERGENS,
@@ -599,11 +600,11 @@ export default function RicettaDetail() {
                       )}
                     </td>
                     <td className="py-2">
-                      <input
+                      <CampoAutosalvato
                         type="number"
                         step="0.01"
-                        defaultValue={ri.quantity}
-                        onBlur={(e) => handleQuantityChange(ri, e.target.value)}
+                        value={ri.quantity}
+                        onSave={(v) => handleQuantityChange(ri, v)}
                         className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm"
                       />
                       <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>

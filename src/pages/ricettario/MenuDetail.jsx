@@ -12,6 +12,7 @@ import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
 import { listRecipeIngredientsForRecipes } from "../../lib/api/recipeIngredients";
 import { listIngredients } from "../../lib/api/ingredients";
 import { foodCostLevel, formatEUR } from "../../lib/constants";
+import CampoAutosalvato from "../../components/CampoAutosalvato";
 
 const SECTIONS = [
   { category: "antipasto", label: "Antipasti", target: 4 },
@@ -394,11 +395,11 @@ export default function MenuDetail() {
                         {formatEUR(item.economics?.food_cost_portion)}
                       </td>
                       <td className="py-2 text-right">
-                        <input
+                        <CampoAutosalvato
                           type="number"
                           step="0.5"
-                          defaultValue={item.selling_price}
-                          onBlur={(e) => handlePriceChange(item.id, e.target.value)}
+                          value={item.selling_price}
+                          onSave={(v) => handlePriceChange(item.id, v)}
                           className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right"
                         />
                       </td>

@@ -10,6 +10,8 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 
 **Alessio non è un programmatore.** Va guidato passo-passo per qualsiasi operazione nel suo terminale o browser: comandi spiegati per intero, click-by-click quando serve. Non dare per scontato nulla sull'ambiente.
 
+⚠️ **Come scrivergli** (chiesto esplicitamente l'08/08/2026): **risposte brevi, niente spiegazioni tecniche.** Una frase su cosa è stato fatto, poi — se serve — **cosa deve fare lui**, in 2-3 punti numerati. Niente nomi di file, funzioni, tabelle o ragionamenti di progettazione: non li capisce e allungano il messaggio nascondendo la richiesta vera. Le motivazioni tecniche vanno nei **messaggi di commit e in questo file**, non in chat. Quando serve una sua decisione, va posta in termini di conseguenze per il locale, non di implementazione.
+
 **Vincolo architetturale portante**: due entità fiscali distinte fin dal data model — **S.r.l.s.** (costituita il 03/08/2026, gestisce il ristorante) e **azienda agricola** separata per l'orto (non ancora costituita, ma prevista nello schema). Collegate da cessione intercompany. Ogni tabella economicamente rilevante ha `entity_id`.
 
 ---

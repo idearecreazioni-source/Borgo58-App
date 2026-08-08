@@ -24,7 +24,7 @@ import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
-import NotaSalvataAutomaticamente from "./NotaSalvataAutomaticamente";
+import CampoAutosalvato from "../../components/CampoAutosalvato";
 import PrecontoModal from "./PrecontoModal";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
@@ -515,7 +515,7 @@ export default function Sala() {
                 </div>
                 {/* Nota del SINGOLO piatto, distinta da quella del tavolo:
                     "senza glutine" riguarda un piatto, non tutti. */}
-                <NotaSalvataAutomaticamente
+                <CampoAutosalvato
                   value={it.note ?? ""}
                   onSave={(testo) =>
                     updateItemNote(it.id, testo).catch((err) => setError(err.message))
@@ -544,7 +544,7 @@ export default function Sala() {
               </div>
             ))}
 
-            <NotaSalvataAutomaticamente
+            <CampoAutosalvato
               key={order.id}
               value={order.note ?? ""}
               onSave={(testo) => updateOrderNote(order.id, testo).catch((e) => setError(e.message))}
