@@ -123,6 +123,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - **Stampa di un singolo ticket**: classe `.stampa-ticket` (blocco `@media print` in `index.css`) — isola il ticket dal resto della pagina e lo impagina a 72 mm, la larghezza utile di una termica da 80 mm. È il ponte verso le stampanti di reparto finché non c'è il mini-PC.
 - **Campi di testo che si salvano da soli**: `<NotaSalvataAutomaticamente>` — debounce 700 ms + blur + `pagehide`/`visibilitychange`. Da usare ovunque si scriva testo su un tablet.
 - **Un solo calcolo del conto**: `orderTotals()` in `api/orders.js`, usata da schermata, preconto e chiusura. Tre schermate che ricalcolano da sole finiscono per dire tre numeri diversi davanti al cliente.
+- **Cancellazioni tracciate** (08/08/2026): trigger `trg_log_delete` → tabella **`deleted_records`** (copia jsonb della riga + chi e quando), su 12 tabelle di soldi/fisco/lavoro/documenti. **L'app non cambia**: si cancella come prima, il database conserva la copia. Scelto contro il classico flag "cancellato", che obbligherebbe a filtrarlo in ogni query per sempre — basta dimenticarne una. Leggibile solo dal titolare. Per aggiungere una tabella: inserirla nell'elenco della migrazione `20260808000004`.
+- **Form pubblico `/prenota`**: unico varco per il ruolo `anon`, passa dalla funzione `submit_public_reservation` (che impone stato e provenienza). Dall'08/08 ha tre limiti anti-abuso: 3 richieste per contatto in 24h, nessun doppione identico in attesa, 40/ora complessive. **Ogni nuova funzione esposta ad `anon` va pensata con un freno**: su un indirizzo pubblico l'invio automatico è la norma, non l'eccezione.
 
 ---
 
@@ -137,7 +139,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
   - Risolti: **date UTC** (14 punti), **due conti aperti sullo stesso tavolo** (vincolo DB), **invio comanda che spediva le righe altrui**, **errori inghiottiti** in Cucina/Bar, **10 indici** su chiavi esterne di tabelle che crescono.
   - **Lato permessi il database è sano**: zero tabelle senza RLS, zero senza policy, zero senza chiave primaria. L'unica lettura aperta su tabella "sensibile" è `cash_causali` (solo etichette, serve allo staff per chiudere un conto con causale). Le 7 viste che scavalcano la RLS sono tutte volute e prive di colonne economiche — verificate una per una.
   - Query di sola lettura rieseguibili in `supabase/diagnostica/`: **rilanciarle dopo ogni blocco di migrazioni importanti**. Una ricerca testuale nelle migrazioni NON basta: metà delle policy nasce da cicli SQL dinamici e un controllo statico produce ~29 falsi allarmi.
-  - **Ancora aperti** (§10): `onBlur` in `RicettaDetail.jsx:606` e `MenuDetail.jsx:401`, cancellazioni definitive su dati fiscali/personale, form pubblico senza freno, codice morto `listStockConsumptions`.
+  - **Chiusi anche gli ultimi punti**: campi `onBlur` sostituiti da `<CampoAutosalvato>` (Ricettario e Comande), codice morto rimosso, **cancellazioni tracciate** e **freno al form pubblico** — le due scelte decise da Alessio l'08/08, entrambe con verifica sul campo dentro la migrazione.
   - **Non coperto**: la logica interna di ogni singolo modulo (un calcolo fiscale sbagliato, una regola HACCP incompleta). Il giro successivo, se si fa, va sui moduli che toccano soldi e obblighi: Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP.
 
 **Comande — una postazione, una schermata (§3.2.1). Riscrittura in corso.**
@@ -230,5 +232,5 @@ Come verificare una pubblicazione senza aprire il browser:
 - **2 device** in `pos_devices`: **`tablet cucina` = quello di Alessio** (`is_owner_device = true`), `tablet sala` = no
 - **7 adempimenti societari** in `tasks`, riservati al titolare, con importi e codici F24 reali
 - **1 menu attivo** "estivo" con 2 piatti, 1 fornitore reale ("Mililli") con storico prezzi
-- **38 migrazioni** registrate in `applied_migrations` (le ultime: `sala_coperti`, `un_solo_conto_per_tavolo`, `indici_chiavi_esterne`, tutte dell'08/08)
+- **40 migrazioni** registrate in `applied_migrations` (le ultime cinque, tutte dell'08/08: `sala_coperti`, `un_solo_conto_per_tavolo`, `indici_chiavi_esterne`, `tracciabilita_cancellazioni`, `freno_form_pubblico`)
 - **1 riga in `service_settings`**: prezzo del coperto = 5,00 €
