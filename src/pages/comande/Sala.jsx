@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import {
   addDraftItem,
   createDiningTables,
-  createOrder,
   deactivateDiningTable,
   getOrder,
   getServiceSettings,
   listDiningTables,
   listMenuForOrder,
   listOpenOrders,
+  openOrderForTable,
   orderTotals,
   removeDraftItem,
   sendDraftItems,
@@ -90,17 +90,18 @@ export default function Sala() {
 
   const orderForLabel = (label) => openOrders.find((o) => o.table_label === label);
 
+  // L'elenco dei tavoli occupati che ha in mano questa schermata puo'
+  // essere vecchio di qualche secondo: openOrderForTable interroga il
+  // database adesso e, se un altro tablet ha aperto il tavolo nel
+  // frattempo, apre QUEL conto invece di crearne un secondo.
   const openTable = async (label) => {
     setError("");
     setLoadingOrder(true);
     try {
-      let existing = orderForLabel(label);
-      if (!existing) {
-        existing = await createOrder({ tableLabel: label });
-        await loadBoard();
-      }
-      const full = await getOrder(existing.id);
+      const orderId = await openOrderForTable(label);
+      const full = await getOrder(orderId);
       setOrder(full);
+      await loadBoard();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -150,7 +151,10 @@ export default function Sala() {
 
   // Le note (del piatto e del tavolo) si salvano da sole mentre si scrive,
   // quindi qui non c'e' niente da ricordarsi di salvare prima dell'invio.
-  const handleSend = () => withBusy(() => sendDraftItems(order.id)).then(loadBoard);
+  // Si mandano SOLO le righe visibili su questo schermo: se il Bar sta
+  // componendo un altro giro sullo stesso tavolo, il suo non parte.
+  const handleSend = () =>
+    withBusy(() => sendDraftItems(order.id, draftItems.map((i) => i.id))).then(loadBoard);
 
   const handleVoid = (itemId) => {
     const reason = window.prompt("Motivo dell'annullamento (obbligatorio):");

@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import {
   addDraftItem,
   createDiningTables,
-  createOrder,
   deactivateDiningTable,
   getOrder,
   listDiningTables,
   listMenuForOrder,
   listOpenOrders,
+  openOrderForTable,
   removeDraftItem,
   sendDraftItems,
   updateDraftItemQuantity,
@@ -64,13 +64,10 @@ export default function SalaBoard() {
     setError("");
     setLoadingOrder(true);
     try {
-      let existing = orderForLabel(label);
-      if (!existing) {
-        existing = await createOrder({ tableLabel: label });
-        await loadBoard();
-      }
-      const full = await getOrder(existing.id);
+      const orderId = await openOrderForTable(label);
+      const full = await getOrder(orderId);
       setOrder(full);
+      await loadBoard();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -110,7 +107,7 @@ export default function SalaBoard() {
   };
 
   const handleSend = () =>
-    withBusy(() => sendDraftItems(order.id)).then(() => {
+    withBusy(() => sendDraftItems(order.id, draftItems.map((i) => i.id))).then(() => {
       setDraftNote("");
       setRefreshKey((k) => k + 1);
       loadBoard();

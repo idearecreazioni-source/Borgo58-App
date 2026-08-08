@@ -47,6 +47,44 @@ export async function createOrder({ tableLabel, deviceId, note }) {
   return data;
 }
 
+// Conto aperto per un tavolo, letto ADESSO dal database.
+// Serve a due cose: evitare di crearne un secondo quando un altro tablet
+// l'ha appena aperto, e ritrovare quello esistente se il vincolo
+// uniq_conto_aperto_per_tavolo ha respinto il nostro tentativo.
+export async function findOpenOrderByTable(tableLabel) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("table_label", tableLabel)
+    .eq("status", "aperto")
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// Apre il tavolo: riusa il conto che c'e', altrimenti ne crea uno.
+//
+// Il controllo "esiste gia'?" non basta da solo — fra la lettura e la
+// scrittura passano dei millisecondi, e in quei millisecondi l'altro
+// tablet puo' aver creato il conto. Per questo il database ha un vincolo
+// (migrazione 20260808000002) e qui si gestisce il suo rifiuto: errore
+// 23505 = qualcuno e' arrivato primo, si apre il suo conto invece di
+// mostrare un errore a un cameriere che ha un tavolo che aspetta.
+export async function openOrderForTable(tableLabel, { deviceId } = {}) {
+  const esistente = await findOpenOrderByTable(tableLabel);
+  if (esistente) return esistente.id;
+
+  try {
+    const creato = await createOrder({ tableLabel, deviceId });
+    return creato.id;
+  } catch (e) {
+    if (e?.code !== "23505") throw e;
+    const altrui = await findOpenOrderByTable(tableLabel);
+    if (!altrui) throw e;
+    return altrui.id;
+  }
+}
+
 // Griglia tavoli (§3.2, ridisegno): elenco minimo di etichette, configurato
 // una volta dal titolare — non una gestione tavoli (niente pianta/capienza).
 export async function listDiningTables() {
@@ -167,13 +205,24 @@ export async function removeDraftItem(itemId) {
   if (error) throw error;
 }
 
-// Smista le righe in bozza per reparto e le manda in cucina/bar in blocco —
-// stesso "invia comanda" dei due prototipi UX.
-export async function sendDraftItems(orderId) {
+// Manda in cucina/bar SOLO le righe indicate — quelle che chi preme il
+// pulsante ha davanti agli occhi.
+//
+// Prima mandava "tutte le righe non ancora inviate di questo tavolo", che
+// con due tablet (§3.2.1: anche il Bar prende ordini) significa spedire in
+// cucina la comanda che il collega sta ancora componendo. Trovato
+// nell'audit dell'08/08/2026.
+//
+// `is("sent_at", null)` resta come rete: se nel frattempo l'altro tablet
+// ha gia' inviato quella riga, non le si riscrive l'orario di invio.
+export async function sendDraftItems(orderId, itemIds) {
+  const ids = (itemIds ?? []).filter(Boolean);
+  if (ids.length === 0) return;
   const { error } = await supabase
     .from("order_items")
     .update({ sent_at: new Date().toISOString() })
     .eq("order_id", orderId)
+    .in("id", ids)
     .is("sent_at", null);
   if (error) throw error;
 }

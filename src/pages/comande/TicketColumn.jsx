@@ -14,8 +14,19 @@ const HEAD_COLOR = {
 
 export default function TicketColumn({ destination, refreshKey }) {
   const [tickets, setTickets] = useState([]);
+  const [errore, setErrore] = useState("");
 
-  const load = () => listRepartoTickets(destination).then(setTickets).catch(() => {});
+  // Un errore qui NON va ingoiato: prima veniva scartato in silenzio, e il
+  // reparto leggeva "Nessuna comanda in attesa" mentre i tavoli
+  // aspettavano. Una schermata vuota e' indistinguibile da una serata
+  // tranquilla — un avviso rosso no.
+  const load = () =>
+    listRepartoTickets(destination)
+      .then((t) => {
+        setTickets(t);
+        setErrore("");
+      })
+      .catch((e) => setErrore(e.message));
 
   useEffect(() => {
     load();
@@ -44,7 +55,12 @@ export default function TicketColumn({ destination, refreshKey }) {
         <span className="text-xs bg-white/20 rounded-full px-2 py-0.5">{open.length}</span>
       </div>
       <div className="p-3 space-y-2 overflow-y-auto flex-1">
-        {tickets.length === 0 ? (
+        {errore && (
+          <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            Elenco non aggiornato: {errore}. Quello che vedi potrebbe essere incompleto.
+          </p>
+        )}
+        {tickets.length === 0 && !errore ? (
           <p className="text-xs text-b58-charcoal-soft/60 text-center py-8">Nessuna comanda in attesa.</p>
         ) : (
           [...open, ...done].map((t) => (
