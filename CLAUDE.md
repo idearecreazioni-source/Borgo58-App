@@ -109,6 +109,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 
 ## 6. Pattern architetturali consolidati
 
+> ⚠️ **Prima di scrivere qualunque funzionalità nuova, leggere [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md)** — regole vincolanti sull'integrità del dato, in vigore dal 09/08/2026. In sintesi: **una richiesta dell'utente = una transazione = una chiamata al database**. È vietato eseguire dal client due scritture consecutive che devono riuscire o fallire insieme: quelle operazioni sono una funzione SQL. Gli invarianti sono vincoli del database, non controlli nella schermata.
+
 - **RLS**: funzione SQL `is_titolare()`. Tabelle titolare-only: singola policy `for all ... using ((select is_titolare()))`. Tabelle condivise (Agenda, Calendario, Magazzino, HACCP, Comande): policy separate per operazione — `select`/`insert` aperti, `update`/`delete` titolare.
 - **Dati economici nascosti allo staff**: viste **`_display` SECURITY DEFINER** (senza `security_invoker` → bypassano la RLS ma espongono solo colonne sicure). Es. `recipe_ingredients_display`, `stock_lots_display`, `suppliers_display`, `menu_items_display`.
 - **§3.18 — il permesso vive nel database, non nella schermata.** Ogni entità condivisa fra moduli eredita la RLS ovunque riappaia. Corollario: una restrizione va replicata su `insert`/`update`/`delete`, **non solo su `select`** (in Postgres sono policy indipendenti).
