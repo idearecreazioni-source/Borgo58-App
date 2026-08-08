@@ -131,6 +131,12 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 **Chiuso di recente:**
 - **§3.18 permessi trasversali** — tutti e tre i casi risolti e verificati dal vivo: 🔴 Agenda/tasks (era una fuga di dati **attiva**: nomi e documenti dei dipendenti visibili allo staff), 🟡 scheda cliente a due livelli, 🟢 Anagrafica Fornitori (era un modulo intero mai costruito, non solo una vista).
 - **Audit di robustezza (05/08)** — registro migrazioni, 5 indici mancanti, lint a zero.
+- **Audit generale delle fondamenta (08/08)** — richiesto da Alessio "prima che diventino un problema più avanti". Fatto per **classi di difetto** su tutto `src/` e tutte le migrazioni, non modulo per modulo: i guasti che emergono dopo anni sono lo stesso errore ripetuto in venti punti.
+  - Risolti: **date UTC** (14 punti), **due conti aperti sullo stesso tavolo** (vincolo DB), **invio comanda che spediva le righe altrui**, **errori inghiottiti** in Cucina/Bar, **10 indici** su chiavi esterne di tabelle che crescono.
+  - **Lato permessi il database è sano**: zero tabelle senza RLS, zero senza policy, zero senza chiave primaria. L'unica lettura aperta su tabella "sensibile" è `cash_causali` (solo etichette, serve allo staff per chiudere un conto con causale). Le 7 viste che scavalcano la RLS sono tutte volute e prive di colonne economiche — verificate una per una.
+  - Query di sola lettura rieseguibili in `supabase/diagnostica/`: **rilanciarle dopo ogni blocco di migrazioni importanti**. Una ricerca testuale nelle migrazioni NON basta: metà delle policy nasce da cicli SQL dinamici e un controllo statico produce ~29 falsi allarmi.
+  - **Ancora aperti** (§10): `onBlur` in `RicettaDetail.jsx:606` e `MenuDetail.jsx:401`, cancellazioni definitive su dati fiscali/personale, form pubblico senza freno, codice morto `listStockConsumptions`.
+  - **Non coperto**: la logica interna di ogni singolo modulo (un calcolo fiscale sbagliato, una regola HACCP incompleta). Il giro successivo, se si fa, va sui moduli che toccano soldi e obblighi: Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP.
 
 **Comande — una postazione, una schermata (§3.2.1). Riscrittura in corso.**
 
@@ -149,6 +155,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - ⚠️ **Un trigger `BEFORE` può annullare la sanatoria della sua stessa migrazione** — successo il 04/08.
 - ⚠️ **`listStockConsumptions`** in `stock.js` è codice morto, nessuna pagina la usa.
 - ⚠️ **Non fermare mai il dev server** dopo una verifica (`preview_stop`): è condiviso con Alessio.
+- ⚠️ **Mai `new Date().toISOString().slice(0, 10)` per sapere che giorno è** — è la data UTC, e fra mezzanotte e le 02:00 restituisce IERI. Per un'osteria che chiude all'una significa prima nota, registrazioni HACCP e mance datate al giorno prima. Usare `oggiLocale()` / `meseLocale()` / `primoDelMeseLocale()` / `traGiorniLocale()` da `constants.js`. Trovato in 14 punti nell'audit dell'08/08.
 - ⚠️ **Un campo che salva solo `onBlur` perde i dati** — trovato dal vivo l'08/08 sulle note della comanda: si scrive la nota, si preme F5 (o si blocca lo schermo del tablet) col cursore ancora dentro, e il salvataggio non parte mai. Nessun errore, nessun avviso. Usare `<NotaSalvataAutomaticamente>`, non `onBlur` da solo.
 
 ---
@@ -221,5 +228,5 @@ Come verificare una pubblicazione senza aprire il browser:
 - **2 device** in `pos_devices`: **`tablet cucina` = quello di Alessio** (`is_owner_device = true`), `tablet sala` = no
 - **7 adempimenti societari** in `tasks`, riservati al titolare, con importi e codici F24 reali
 - **1 menu attivo** "estivo" con 2 piatti, 1 fornitore reale ("Mililli") con storico prezzi
-- **36 migrazioni** registrate in `applied_migrations` (l'ultima: `20260808000001_sala_coperti`)
+- **38 migrazioni** registrate in `applied_migrations` (le ultime: `sala_coperti`, `un_solo_conto_per_tavolo`, `indici_chiavi_esterne`, tutte dell'08/08)
 - **1 riga in `service_settings`**: prezzo del coperto = 5,00 €
