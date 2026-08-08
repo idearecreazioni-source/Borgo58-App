@@ -75,6 +75,52 @@ export async function deactivateDiningTable(id) {
   if (error) throw error;
 }
 
+// --- Coperti e impostazioni di sala (§3.2.1) ---
+
+// Prezzo del coperto: sta nel database, non nel codice, cosi' Alessio puo'
+// cambiarlo senza toccare il software. Lettura aperta allo staff (serve per
+// calcolare il conto), scrittura riservata al titolare dalla RLS.
+export async function getServiceSettings() {
+  const { data, error } = await supabase
+    .from("service_settings")
+    .select("coperto_price")
+    .eq("id", 1)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCopertoPrice(price) {
+  const { error } = await supabase
+    .from("service_settings")
+    .update({ coperto_price: Number(price) })
+    .eq("id", 1);
+  if (error) throw error;
+}
+
+// Il contatore coperti e' libero per tutto il servizio, non solo
+// all'apertura del tavolo: e' il caso limite "coperti che si aggiungono a
+// tavolo gia' aperto" (§3.2.2), l'unico gia' risolto.
+export async function setOrderCoperti(orderId, coperti) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ coperti: Math.max(0, Number(coperti) || 0) })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
+// Nota generale del tavolo (allergie, "tutti insieme", "bimbo piccolo"):
+// vale per l'intero conto, non per una riga. Nella versione precedente il
+// campo esisteva a schermo ma il testo non veniva mai salvato da nessuna
+// parte — scritto, e perso all'invio.
+export async function updateOrderNote(orderId, note) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ note: note?.trim() ? note.trim() : null })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
 // --- Righe della comanda ---
 
 export async function addDraftItem(orderId, { recipeId, freeTextName, destination, quantity, unitPrice, note }) {
@@ -93,6 +139,19 @@ export async function addDraftItem(orderId, { recipeId, freeTextName, destinatio
     .single();
   if (error) throw error;
   return data;
+}
+
+// Nota della singola riga (es. "senza glutine"), distinta dalla nota
+// generale dell'ordine: senza questa non e' possibile segnalare
+// un'esigenza legata a UN piatto invece che a tutto il tavolo (§3.2.1).
+// Modificabile anche dopo l'invio: la cucina lavora sul ticket di carta,
+// ma la riga resta la fonte per il ticket ristampato.
+export async function updateItemNote(itemId, note) {
+  const { error } = await supabase
+    .from("order_items")
+    .update({ note: note?.trim() ? note.trim() : null })
+    .eq("id", itemId);
+  if (error) throw error;
 }
 
 export async function updateDraftItemQuantity(itemId, quantity) {
@@ -151,12 +210,36 @@ export async function listRepartoTickets(destination) {
   return data;
 }
 
+// --- Conto: un solo calcolo, usato ovunque ---
+
+// Preconto, chiusura conto e totale a schermo devono dire lo STESSO numero.
+// Tenere il calcolo qui evita che tre schermate lo rifacciano ognuna a modo
+// suo — e' il tipo di divergenza che si scopre davanti al cliente.
+// Le righe annullate non contano; il coperto si somma a parte perche' sul
+// preconto va mostrato come voce propria ("4 coperti × 5,00 €").
+export function orderTotals(order, copertoPrice) {
+  const items = (order?.items ?? []).filter((i) => !i.voided_at);
+  const itemsTotal = items.reduce((s, i) => s + i.quantity * Number(i.unit_price), 0);
+  const coperti = order?.coperti ?? 0;
+  // Su un conto gia' chiuso vale il prezzo fotografato allora, non quello di oggi.
+  const unit = Number(order?.coperto_unit_price ?? copertoPrice ?? 0);
+  const copertoTotal = coperti * unit;
+  return { items, itemsTotal, coperti, copertoUnitPrice: unit, copertoTotal, total: itemsTotal + copertoTotal };
+}
+
 // --- Chiusura conto ---
 
-export async function closeOrderPaid(orderId, paymentMethod) {
+// copertoUnitPrice viene fotografato sull'ordine: da domani il coperto puo'
+// cambiare, questo conto no (stesso principio di order_items.unit_price).
+export async function closeOrderPaid(orderId, paymentMethod, copertoUnitPrice) {
   const { error } = await supabase
     .from("orders")
-    .update({ status: "chiuso", payment_method: paymentMethod, closed_at: new Date().toISOString() })
+    .update({
+      status: "chiuso",
+      payment_method: paymentMethod,
+      coperto_unit_price: copertoUnitPrice ?? null,
+      closed_at: new Date().toISOString(),
+    })
     .eq("id", orderId);
   if (error) throw error;
 }
@@ -176,7 +259,7 @@ export async function cancelOrder(orderId, reason) {
 // incasso ridotto, passa dall'RT come una vendita normale quando esisterà).
 export async function closeOrderAsDiscountGift(
   orderId,
-  { entityId, isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note }
+  { entityId, isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note, copertoUnitPrice }
 ) {
   const dg = await createDiscountGift({
     entity_id: entityId,
@@ -195,6 +278,7 @@ export async function closeOrderAsDiscountGift(
     .update({
       status: isGift ? "omaggiato" : "chiuso",
       discount_gift_id: dg.id,
+      coperto_unit_price: copertoUnitPrice ?? null,
       closed_at: new Date().toISOString(),
     })
     .eq("id", orderId);

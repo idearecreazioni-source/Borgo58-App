@@ -40,6 +40,7 @@ import CassaHome from "./pages/cassa/CassaHome";
 import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
+import Sala from "./pages/comande/Sala";
 import SalaBoard from "./pages/comande/SalaBoard";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
@@ -187,13 +188,21 @@ function AppRoutes() {
         <Route path="/cassa/prima-nota" element={<RequireTitolare><PrimaNota /></RequireTitolare>} />
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
-        {/* Comande (§3.2, §4 mod. 5): schermo unico Sala/Cucina/Bar,
-            staff-accessibile, voce propria in sidebar — non sotto /cassa,
-            dato che è una modalità operativa diversa dal resto del
-            gestionale (uno schermo che resta aperto tutto il servizio,
-            non una pagina consultata ogni tanto). Il legame dati col
-            modulo 5 (conto -> futuro RT) resta nello schema, non nell'URL. */}
-        <Route path="/comande" element={<SalaBoard />} />
+        {/* Comande (§3.2, §4 mod. 5): staff-accessibile, voce propria in
+            sidebar — non sotto /cassa, dato che è una modalità operativa
+            diversa dal resto del gestionale (uno schermo che resta aperto
+            tutto il servizio, non una pagina consultata ogni tanto). Il
+            legame dati col modulo 5 (conto -> futuro RT) resta nello
+            schema, non nell'URL.
+
+            Una postazione, una schermata (§3.2.1): /comande è la SALA sul
+            tablet verticale. Il vecchio schermo unico a tre colonne resta
+            su /comande/reparti finché Bar (tablet orizzontale) e Cucina
+            (solo stampa) non hanno la loro — spegnerlo prima sarebbe
+            togliere a cucina e bar l'unico modo che hanno oggi di vedere
+            le comande. */}
+        <Route path="/comande" element={<Sala />} />
+        <Route path="/comande/reparti" element={<SalaBoard />} />
 
         {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}
         <Route path="/fiscale" element={<RequireTitolare><ProiezioneFiscaleHome /></RequireTitolare>} />

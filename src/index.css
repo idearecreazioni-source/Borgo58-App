@@ -24,3 +24,67 @@ body {
   background-color: var(--color-b58-cream);
   color: var(--color-b58-charcoal);
 }
+
+/* --------------------------------------------------------------------
+   Target di tocco in CENTIMETRI REALI (§3.2.1)
+   --------------------------------------------------------------------
+   Lezione emersa provando il simulatore su tablet: un pulsante "+" da
+   24 pixel e' comodo sul monitor e impossibile durante un servizio.
+   I pixel non garantiscono la stessa dimensione fisica su schermi
+   diversi, quindi le dimensioni utili al dito si esprimono in cm e si
+   calibrano una volta per dispositivo (src/lib/touch.js, con righello).
+   Vale per TUTTE le schermate touch del gestionale, non solo comande.
+
+   --pxcm = quanti pixel CSS misura un centimetro vero su questo schermo.
+   37.79528 = stima a 96 dpi, punto di partenza prima della calibrazione. */
+:root {
+  --pxcm: 37.79528px;
+}
+
+/* Riga intera tappabile (piatto del menu, tavolo): ~1 cm di altezza. */
+.tocco-riga {
+  min-height: calc(var(--pxcm) * 1.05);
+}
+
+/* Pulsantino quadrato (+/− dei coperti e delle quantita'). */
+.tocco-bottone {
+  min-height: calc(var(--pxcm) * 0.85);
+  min-width: calc(var(--pxcm) * 0.85);
+}
+
+/* Azione principale a fondo schermata (invia comanda, chiudi conto). */
+.tocco-azione {
+  min-height: calc(var(--pxcm) * 1.2);
+}
+
+/* --------------------------------------------------------------------
+   Stampa di un singolo ticket (preconto oggi, comanda di cucina domani)
+   --------------------------------------------------------------------
+   Finche' non c'e' il mini-PC nel locale (§3.6) nessuna stampante di
+   rete e' pilotabile dal browser: si stampa dal dialogo del browser.
+   Questo blocco isola il ticket dal resto della pagina e lo impagina
+   alla larghezza utile di una termica da 80 mm. */
+@media print {
+  body:has(.stampa-ticket) * {
+    visibility: hidden;
+  }
+
+  body:has(.stampa-ticket) .stampa-ticket,
+  body:has(.stampa-ticket) .stampa-ticket * {
+    visibility: visible;
+  }
+
+  .stampa-ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    max-width: 72mm;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background: #fff;
+    color: #000;
+  }
+}

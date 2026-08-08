@@ -117,6 +117,10 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - **`ALTER TYPE ... ADD VALUE`**: il nuovo valore enum non è usabile nella stessa migrazione in cui viene aggiunto.
 - **Task auto-generati in Agenda**: creare un record con scadenza chiama `createTask(...)` con `origine_modulo`, salva `task_id` sul record; cancellare/completare il record chiude il task.
 - **Export PDF senza librerie**: variante Tailwind `print:` + `<PrintButton>` + "Salva come PDF" del browser.
+- **Target di tocco in centimetri reali** (§3.2.1, vale per TUTTE le schermate touch): variabile CSS `--pxcm` + classi `.tocco-riga` (1,05 cm), `.tocco-bottone` (0,85), `.tocco-azione` (1,2) in `index.css`. Calibrazione col righello in `src/lib/touch.js`, salvata nel localStorage del dispositivo e applicata in `main.jsx` prima del primo render. Mai dimensionare un target in pixel.
+- **Stampa di un singolo ticket**: classe `.stampa-ticket` (blocco `@media print` in `index.css`) — isola il ticket dal resto della pagina e lo impagina a 72 mm, la larghezza utile di una termica da 80 mm. È il ponte verso le stampanti di reparto finché non c'è il mini-PC.
+- **Campi di testo che si salvano da soli**: `<NotaSalvataAutomaticamente>` — debounce 700 ms + blur + `pagehide`/`visibilitychange`. Da usare ovunque si scriva testo su un tablet.
+- **Un solo calcolo del conto**: `orderTotals()` in `api/orders.js`, usata da schermata, preconto e chiusura. Tre schermate che ricalcolano da sole finiscono per dire tre numeri diversi davanti al cliente.
 
 ---
 
@@ -128,10 +132,14 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - **§3.18 permessi trasversali** — tutti e tre i casi risolti e verificati dal vivo: 🔴 Agenda/tasks (era una fuga di dati **attiva**: nomi e documenti dei dipendenti visibili allo staff), 🟡 scheda cliente a due livelli, 🟢 Anagrafica Fornitori (era un modulo intero mai costruito, non solo una vista).
 - **Audit di robustezza (05/08)** — registro migrazioni, 5 indici mancanti, lint a zero.
 
-**Comande — funzionante ma interfaccia da RIFARE (terza volta):**
-- Costruito e verificato: apertura tavolo da griglia, piatti dal menu o "voce libera", invio con instradamento cucina/bar, "pronto", chiusura pagato/annullato/sconto/omaggio (scrive su `discounts_gifts` esistente, nessun registro parallelo).
-- ⚠️ **L'interfaccia attuale è superata** dalle decisioni hardware prese con Cowork il 05/08 (§3.2.1 del brief): Sala = tablet 8,7" **verticale**; Cucina = **solo stampante, nessuno schermo**; Bar = stampante + tablet 11" **orizzontale**. Lo schermo unico a tre colonne che c'è ora non regge questo disegno.
-- **Da costruire, emerso dal simulatore di Cowork** (`_scambio_cowork_code\Borgo58_Simulatore_Comande_Tablet.html` — **leggerlo prima di ricostruire**): contatore coperti, nota per singolo piatto, preconto con dicitura "DOCUMENTO NON FISCALE", carta dei vini in schermata separata, **target di tocco dimensionati in cm reali** (regola valida per tutta l'app).
+**Comande — una postazione, una schermata (§3.2.1). Riscrittura in corso.**
+
+- ✅ **SALA rifatta e verificata dal vivo l'08/08/2026** (`src/pages/comande/Sala.jsx`, rotta `/comande`): colonna singola per tablet verticale, target di tocco in cm reali, **riga intera del piatto tappabile**, contatore coperti (modificabile a tavolo aperto), nota per singolo piatto, preconto con dicitura "DOCUMENTO NON FISCALE" e coperti come voce a sé, stampa del solo ticket. Verificata con **entrambi i ruoli**: lo staff vede il prezzo del coperto ma non il pulsante Impostazioni.
+- ⏳ **Bar** (tablet 11" orizzontale, doppio ruolo preparazione + cassa) e **Cucina** (solo stampa, nessuno schermo) **non ancora rifatte**. Il vecchio schermo a tre colonne resta su **`/comande/reparti`** finché non lo sono: spegnerlo prima toglierebbe a cucina e bar l'unico modo che hanno oggi di vedere le comande.
+- ⏳ **Carta dei vini**: schermata separata prevista da §3.2.1, non costruita perché **non ha ancora una fonte dati**. Deciso l'08/08 che vini e bevande vivranno nell'**Editor Menu come categorie "bar"** — il Ricettario non le modella e `menu_items.recipe_id` è obbligatorio, quindi serve una tabella dedicata (non forzare le bevande dentro le ricette). Nel frattempo si ordinano con "Voce libera".
+- **Coperto: 5,00 € a persona**, deciso l'08/08. Sta in `service_settings` (una riga, titolare-only in scrittura), **non nel codice**; il conto chiuso conserva il prezzo di allora in `orders.coperto_unit_price`.
+- **Cucina senza stampante fino al mini-PC**: deciso di NON costruire una schermata Cucina temporanea (§3.2.1 la esclude per scelta), ma un'**anteprima stampabile dal browser** già impaginata come uscirà dalla termica.
+- Riferimento di disegno: `_scambio_cowork_code\Borgo58_Simulatore_Comande_Tablet.html` — **rileggerlo prima di fare Bar e Cucina**.
 
 ---
 
@@ -141,6 +149,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - ⚠️ **Un trigger `BEFORE` può annullare la sanatoria della sua stessa migrazione** — successo il 04/08.
 - ⚠️ **`listStockConsumptions`** in `stock.js` è codice morto, nessuna pagina la usa.
 - ⚠️ **Non fermare mai il dev server** dopo una verifica (`preview_stop`): è condiviso con Alessio.
+- ⚠️ **Un campo che salva solo `onBlur` perde i dati** — trovato dal vivo l'08/08 sulle note della comanda: si scrive la nota, si preme F5 (o si blocca lo schermo del tablet) col cursore ancora dentro, e il salvataggio non parte mai. Nessun errore, nessun avviso. Usare `<NotaSalvataAutomaticamente>`, non `onBlur` da solo.
 
 ---
 
@@ -161,7 +170,7 @@ Tre accorgimenti appresi sul campo:
 ## 10. Cosa resta da fare
 
 **In capo a Claude Code:**
-- Ricostruire l'interfaccia Comande sul disegno di §3.2.1 (leggere prima il simulatore)
+- Comande: **Bar** (tablet orizzontale, anche cassa) e **Cucina** (ticket stampabile), poi la **carta dei vini** — che però dipende dalla sezione bevande nell'Editor Menu
 - Filtro di periodo sul manuale HACCP (§3.19 punto 5)
 - Casi limite di sala non ancora specificati: **conto diviso, tavoli uniti, storni, asporto** (§3.2.2) — servono le risposte di Alessio dalla sua esperienza in sala
 
@@ -212,4 +221,5 @@ Come verificare una pubblicazione senza aprire il browser:
 - **2 device** in `pos_devices`: **`tablet cucina` = quello di Alessio** (`is_owner_device = true`), `tablet sala` = no
 - **7 adempimenti societari** in `tasks`, riservati al titolare, con importi e codici F24 reali
 - **1 menu attivo** "estivo" con 2 piatti, 1 fornitore reale ("Mililli") con storico prezzi
-- **35 migrazioni** registrate in `applied_migrations`
+- **36 migrazioni** registrate in `applied_migrations` (l'ultima: `20260808000001_sala_coperti`)
+- **1 riga in `service_settings`**: prezzo del coperto = 5,00 €

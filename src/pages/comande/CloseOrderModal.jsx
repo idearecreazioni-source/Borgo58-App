@@ -3,6 +3,7 @@ import {
   cancelOrder,
   closeOrderAsDiscountGift,
   closeOrderPaid,
+  orderTotals,
 } from "../../lib/api/orders";
 import { listCausali, listPosDevices } from "../../lib/api/cash";
 import { listCustomers } from "../../lib/api/customers";
@@ -18,7 +19,7 @@ const lineTotal = (item) => item.quantity * Number(item.unit_price);
 
 // Modale "chiudi conto" (§3.2), ripreso dal prototipo UX di Cowork: riepilogo
 // raggruppato per piatto, poi pagato/sconto/omaggio/annullato.
-export default function CloseOrderModal({ order, onClose, onDone }) {
+export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }) {
   const [mode, setMode] = useState(null); // null | "sconto" | "omaggio" | "annulla"
   const [causali, setCausali] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -44,8 +45,9 @@ export default function CloseOrderModal({ order, onClose, onDone }) {
     );
   }, []);
 
-  const items = order.items.filter((i) => !i.voided_at);
-  const total = items.reduce((s, i) => s + lineTotal(i), 0);
+  // Stesso calcolo del preconto e del totale a schermo — coperto incluso
+  // (§3.2.1): il cliente non deve vedere due numeri diversi.
+  const { items, coperti, copertoUnitPrice, copertoTotal, total } = orderTotals(order, copertoPrice);
 
   // Righe raggruppate per nome, come nello scontrino del prototipo — più
   // leggibile di una lista piatta quando ci sono più giri di comanda.
@@ -74,7 +76,7 @@ export default function CloseOrderModal({ order, onClose, onDone }) {
     }
   };
 
-  const handlePaid = (method) => run(() => closeOrderPaid(order.id, method));
+  const handlePaid = (method) => run(() => closeOrderPaid(order.id, method, copertoUnitPrice));
 
   const handleCancel = () => {
     if (!form.cancelReason.trim()) return;
@@ -94,6 +96,7 @@ export default function CloseOrderModal({ order, onClose, onDone }) {
         customerId: form.customerId || null,
         deviceId: form.deviceId || null,
         note: form.note || null,
+        copertoUnitPrice,
       })
     );
   };
@@ -123,6 +126,12 @@ export default function CloseOrderModal({ order, onClose, onDone }) {
                   <span>{formatEUR(g.total)}</span>
                 </div>
               ))
+            )}
+            {coperti > 0 && (
+              <div className="flex justify-between py-0.5">
+                <span>{coperti}× Coperto ({formatEUR(copertoUnitPrice)})</span>
+                <span>{formatEUR(copertoTotal)}</span>
+              </div>
             )}
             <div className="flex justify-between border-t border-dashed border-b58-charcoal/30 mt-1.5 pt-1.5 font-bold">
               <span>TOTALE</span>
