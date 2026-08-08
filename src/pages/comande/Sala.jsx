@@ -259,10 +259,16 @@ export default function Sala() {
         </div>
         <div className="flex gap-1.5">
           <Link
+            to="/comande/bar"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+          >
+            Bar
+          </Link>
+          <Link
             to="/comande/reparti"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
           >
-            Cucina / Bar
+            Cucina
           </Link>
           {isTitolare && (
             <button

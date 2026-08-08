@@ -40,6 +40,7 @@ import CassaHome from "./pages/cassa/CassaHome";
 import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
+import Bar from "./pages/comande/Bar";
 import Sala from "./pages/comande/Sala";
 import SalaBoard from "./pages/comande/SalaBoard";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
@@ -203,6 +204,7 @@ function AppRoutes() {
             togliere a cucina e bar l'unico modo che hanno oggi di vedere
             le comande. */}
         <Route path="/comande" element={<Sala />} />
+        <Route path="/comande/bar" element={<Bar />} />
         <Route path="/comande/reparti" element={<SalaBoard />} />
 
         {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}

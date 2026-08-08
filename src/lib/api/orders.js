@@ -235,6 +235,18 @@ export async function voidSentItem(itemId, reason) {
   if (error) throw error;
 }
 
+// Un intero ticket segnato pronto in un colpo solo: al bar si evade il
+// giro di bevande di un tavolo, non una riga per volta.
+export async function setItemsPrepared(itemIds, prepared) {
+  const ids = (itemIds ?? []).filter(Boolean);
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from("order_items")
+    .update({ prepared_at: prepared ? new Date().toISOString() : null })
+    .in("id", ids);
+  if (error) throw error;
+}
+
 export async function setItemPrepared(itemId, prepared) {
   const { error } = await supabase
     .from("order_items")
