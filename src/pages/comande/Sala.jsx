@@ -265,7 +265,7 @@ export default function Sala() {
             Bar
           </Link>
           <Link
-            to="/comande/reparti"
+            to="/comande/cucina"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
           >
             Cucina

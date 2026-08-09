@@ -41,8 +41,8 @@ import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
 import Bar from "./pages/comande/Bar";
+import Cucina from "./pages/comande/Cucina";
 import Sala from "./pages/comande/Sala";
-import SalaBoard from "./pages/comande/SalaBoard";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
 import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
@@ -197,15 +197,18 @@ function AppRoutes() {
             legame dati col modulo 5 (conto -> futuro RT) resta nello
             schema, non nell'URL.
 
-            Una postazione, una schermata (§3.2.1): /comande è la SALA sul
-            tablet verticale. Il vecchio schermo unico a tre colonne resta
-            su /comande/reparti finché Bar (tablet orizzontale) e Cucina
-            (solo stampa) non hanno la loro — spegnerlo prima sarebbe
-            togliere a cucina e bar l'unico modo che hanno oggi di vedere
-            le comande. */}
+            Una postazione, una schermata (§3.2.1): /comande è la SALA
+            (tablet verticale), /comande/bar il BAR (tablet orizzontale,
+            anche cassa), /comande/cucina la postazione di STAMPA della
+            cucina — che per scelta lavora solo di carta. Il vecchio
+            schermo unico a tre colonne è stato spento il 09/08/2026,
+            quando tutte e tre le postazioni hanno avuto la propria. */}
         <Route path="/comande" element={<Sala />} />
         <Route path="/comande/bar" element={<Bar />} />
-        <Route path="/comande/reparti" element={<SalaBoard />} />
+        <Route path="/comande/cucina" element={<Cucina />} />
+        {/* Il vecchio indirizzo resta come reindirizzo: qualche tablet
+            potrebbe averlo ancora nei preferiti. */}
+        <Route path="/comande/reparti" element={<Navigate to="/comande/cucina" replace />} />
 
         {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}
         <Route path="/fiscale" element={<RequireTitolare><ProiezioneFiscaleHome /></RequireTitolare>} />

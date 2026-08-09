@@ -150,7 +150,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 **Comande — una postazione, una schermata (§3.2.1). Riscrittura in corso.**
 
 - ✅ **SALA rifatta e verificata dal vivo l'08/08/2026** (`src/pages/comande/Sala.jsx`, rotta `/comande`): colonna singola per tablet verticale, target di tocco in cm reali, **riga intera del piatto tappabile**, contatore coperti (modificabile a tavolo aperto), nota per singolo piatto, preconto con dicitura "DOCUMENTO NON FISCALE" e coperti come voce a sé, stampa del solo ticket. Verificata con **entrambi i ruoli**: lo staff vede il prezzo del coperto ma non il pulsante Impostazioni.
-- ⏳ **Bar** (tablet 11" orizzontale, doppio ruolo preparazione + cassa) e **Cucina** (solo stampa, nessuno schermo) **non ancora rifatte**. Il vecchio schermo a tre colonne resta su **`/comande/reparti`** finché non lo sono: spegnerlo prima toglierebbe a cucina e bar l'unico modo che hanno oggi di vedere le comande.
+- ✅ **BAR fatto e verificato dal vivo l'08/08** (`/comande/bar`): due colonne — ticket da evadere per invio (non per riga) + cassa di qualunque tavolo con preconto e chiusura.
+- ✅ **CUCINA fatta il 09/08** (`/comande/cucina`): **postazione di stampa, non schermata di lavoro** — la cucina lavora solo di carta per scelta (§3.2.1). Ogni invio compare come ticket a 72 mm e si stampa dal browser con un tocco; `prepared_at` sulle righe cucina significa "ticket uscito dalla stampante" (non "piatto pronto"). Col mini-PC diventerà la coda di stampa (ARCHITETTURA §4.2) senza cambiare il ticket. **Il vecchio schermo a tre colonne è stato spento e rimosso** (`/comande/reparti` reindirizza a `/comande/cucina`).
 - ⏳ **Carta dei vini**: schermata separata prevista da §3.2.1, non costruita perché **non ha ancora una fonte dati**. Deciso l'08/08 che vini e bevande vivranno nell'**Editor Menu come categorie "bar"** — il Ricettario non le modella e `menu_items.recipe_id` è obbligatorio, quindi serve una tabella dedicata (non forzare le bevande dentro le ricette). Nel frattempo si ordinano con "Voce libera".
 - **Coperto: 5,00 € a persona**, deciso l'08/08. Sta in `service_settings` (una riga, titolare-only in scrittura), **non nel codice**; il conto chiuso conserva il prezzo di allora in `orders.coperto_unit_price`.
 - **Cucina senza stampante fino al mini-PC**: deciso di NON costruire una schermata Cucina temporanea (§3.2.1 la esclude per scelta), ma un'**anteprima stampabile dal browser** già impaginata come uscirà dalla termica.
@@ -186,7 +187,7 @@ Tre accorgimenti appresi sul campo:
 ## 10. Cosa resta da fare
 
 **In capo a Claude Code:**
-- Comande: **Bar** (tablet orizzontale, anche cassa) e **Cucina** (ticket stampabile), poi la **carta dei vini** — che però dipende dalla sezione bevande nell'Editor Menu
+- Chiudere la notifica Telegram agli estranei + chiave anon in Vault (in attesa di conferma dal tavolo di Cowork)
 - Filtro di periodo sul manuale HACCP (§3.19 punto 5)
 - Casi limite di sala non ancora specificati: **conto diviso, tavoli uniti, storni, asporto** (§3.2.2) — servono le risposte di Alessio dalla sua esperienza in sala
 

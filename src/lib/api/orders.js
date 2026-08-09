@@ -261,7 +261,7 @@ export async function setItemPrepared(itemId, prepared) {
 export async function listRepartoTickets(destination) {
   const { data, error } = await supabase
     .from("order_items")
-    .select("*, recipe:recipe_id(name), order:order_id!inner(table_label, status)")
+    .select("*, recipe:recipe_id(name), order:order_id!inner(table_label, status, note)")
     .eq("destination", destination)
     .eq("order.status", "aperto")
     .not("sent_at", "is", null)
