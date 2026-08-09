@@ -193,7 +193,6 @@ Tre accorgimenti appresi sul campo:
 
 **In capo a Claude Code:**
 - Chiudere la notifica Telegram agli estranei + chiave anon in Vault (in attesa di conferma dal tavolo di Cowork)
-- Filtro di periodo sul manuale HACCP (§3.19 punto 5)
 
 **In capo ad Alessio:**
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**
