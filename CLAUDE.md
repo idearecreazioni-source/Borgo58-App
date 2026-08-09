@@ -1,6 +1,6 @@
 # Borgo 58 — Gestionale · istruzioni per Claude Code
 
-Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **08/08/2026**.
+Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **09/08/2026**.
 
 ---
 
@@ -135,6 +135,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 **Tutti i 15 moduli del brief hanno un'implementazione funzionante.** Ricettario, Agenda, Fatture Fornitori (manuale), Magazzino, Cassa/Prima Nota, Calendario Eventi, HACCP, Agricolo, Proiezione Fiscale, Ricerca Ricorrente (placeholder), Personale, Monitoraggio Social (placeholder), Editor Menu, Assistente AI (placeholder), Archivio Documenti.
 
 **Chiuso di recente:**
+- **Canale Telegram blindato + form pubblico riparato (09/08)** — la Edge Function delle notifiche accettava chiunque avesse la chiave anon (che è pubblica): ora serve anche una parola d'ordine condivisa, che vive nel Vault e nelle variabili d'ambiente, mai nel repository. Nella stessa passata è emerso che **`/prenota` non funzionava da un browser con il gestionale aperto** — vedi §6 (`supabasePubblico`) e §8. Suite di prove: **9 pure + 17 sul database vero**.
+- **Prove automatiche + gancio pre-commit** — `npm run test` (pure, senza rete) e `npm run test:app` (database vero, utenti di prova dedicati in `.env.test`; istruzioni in `tests/app/LEGGIMI.md`). Il gancio in `.githooks/pre-commit` blocca il commit se lint, prove o build non passano: va attivato una volta con `git config core.hooksPath .githooks`.
 - **Piano correzioni integrità (09/08)** — completato per intero: le **11 operazioni multi-scrittura** trovate da Cowork e dalla verifica incrociata sono ora **16 funzioni Postgres atomiche** (una chiamata = una transazione) invocate solo attraverso il corridoio `operazioni-atomiche` via `eseguiOperazione()`. Ogni migrazione dei 4 blocchi contiene le proprie prove: impersonificazione di titolare E staff, fallimenti a metà forzati dove onestamente possibile (mance con dipendente inesistente; dipendente con mance il cui promemoria torna "da_fare"), pulizia completa. Verificato in produzione: zero `security definer` senza `search_path`. **Per ogni nuova operazione multi-tabella**: funzione SQL + riga nell'elenco del corridoio + wrapper client — mai scritture in sequenza dal browser (il gancio pre-commit non lo controlla ancora da solo: attenzione).
 - **§3.18 permessi trasversali** — tutti e tre i casi risolti e verificati dal vivo: 🔴 Agenda/tasks (era una fuga di dati **attiva**: nomi e documenti dei dipendenti visibili allo staff), 🟡 scheda cliente a due livelli, 🟢 Anagrafica Fornitori (era un modulo intero mai costruito, non solo una vista).
 - **Audit di robustezza (05/08)** — registro migrazioni, 5 indici mancanti, lint a zero.
@@ -192,10 +194,10 @@ Tre accorgimenti appresi sul campo:
 
 ## 10. Cosa resta da fare
 
-**In capo a Claude Code:**
-- Chiudere la notifica Telegram agli estranei + chiave anon in Vault (proposta pronta — la conferma spetta ad Alessio)
+**In capo a Claude Code:** nulla in sospeso. Il candidato successivo, se si riapre un giro di verifica, è quello lasciato scoperto dall'audit dell'08/08: **la logica interna dei moduli che toccano soldi e obblighi** — Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP (un calcolo fiscale sbagliato o una regola HACCP incompleta non li trova nessun controllo per classi di difetto).
 
 **In capo ad Alessio:**
+- Eliminare dal pannello Supabase la vecchia Edge Function `bright-function`: dal 09/08 non la chiama più nessuno (l'indirizzo vero è `notify-telegram-reservation`)
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**
 - Backup cifrato fuori sede, con Alessandro (fornitore hardware)
 - **Allungare i PIN prima dell'apertura** (rinviato consapevolmente il 06/08)
@@ -242,5 +244,6 @@ Come verificare una pubblicazione senza aprire il browser:
 - **2 device** in `pos_devices`: **`tablet cucina` = quello di Alessio** (`is_owner_device = true`), `tablet sala` = no
 - **7 adempimenti societari** in `tasks`, riservati al titolare, con importi e codici F24 reali
 - **1 menu attivo** "estivo" con 2 piatti, 1 fornitore reale ("Mililli") con storico prezzi
-- **40 migrazioni** registrate in `applied_migrations` (le ultime cinque, tutte dell'08/08: `sala_coperti`, `un_solo_conto_per_tavolo`, `indici_chiavi_esterne`, `tracciabilita_cancellazioni`, `freno_form_pubblico`)
+- **47 migrazioni** registrate in `applied_migrations` (le ultime sei, tutte del 09/08: `chiusura_sconto_omaggio_atomica`, `blocco1_cessioni_e_mance`, `blocco2_record_e_promemoria`, `blocco3_cancellazioni_con_promemoria`, `blocco4_rifiniture_atomiche`, `blindatura_notifiche`)
 - **1 riga in `service_settings`**: prezzo del coperto = 5,00 €
+- **2 valori nel Vault** (`vault.secrets`): `notifiche_firma` (parola d'ordine delle notifiche, esiste solo lì e nelle variabili d'ambiente della funzione) e `chiave_anon`. **Rigenerare la firma senza aggiornare anche i Secrets della Edge Function spegne le notifiche.**
