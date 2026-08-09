@@ -155,7 +155,12 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - ⏳ **Carta dei vini**: schermata separata prevista da §3.2.1, non costruita perché **non ha ancora una fonte dati**. Deciso l'08/08 che vini e bevande vivranno nell'**Editor Menu come categorie "bar"** — il Ricettario non le modella e `menu_items.recipe_id` è obbligatorio, quindi serve una tabella dedicata (non forzare le bevande dentro le ricette). Nel frattempo si ordinano con "Voce libera".
 - **Coperto: 5,00 € a persona**, deciso l'08/08. Sta in `service_settings` (una riga, titolare-only in scrittura), **non nel codice**; il conto chiuso conserva il prezzo di allora in `orders.coperto_unit_price`.
 - **Cucina senza stampante fino al mini-PC**: deciso di NON costruire una schermata Cucina temporanea (§3.2.1 la esclude per scelta), ma un'**anteprima stampabile dal browser** già impaginata come uscirà dalla termica.
-- Riferimento di disegno: `_scambio_cowork_code\Borgo58_Simulatore_Comande_Tablet.html` — **rileggerlo prima di fare Bar e Cucina**.
+- ✅ **Casi limite di sala (§3.2.2) decisi da Alessio il 09/08 dalla sua esperienza** — e costruiti lo stesso giorno:
+  - **Alla romana con arrotondamento** (nella chiusura conto, Sala e Bar): propone la cifra tonda a testa (25 € in 2 → 12), la differenza si chiude come **cortesia = sconto** sul meccanismo atomico esistente, con causale annotata. La cifra sopra il conto è bloccata: gli spicci in più sono mance e vanno nel modulo Mance. Il preconto mostra "a testa" informativo.
+  - **Sposta conto** su un altro tavolo ("sposta" accanto al nome del tavolo in Sala): una scrittura su una riga (categoria A, niente corridoio), destinazione protetta dal vincolo un-conto-per-tavolo.
+  - **Storni**: a voce — deciso di NON stampare ticket di storno; resta la registrazione con motivo obbligatorio.
+  - **Asporto**: rinviato ma previsto — `table_label` è testo libero, "Asporto 1" entrerà senza toccare lo schema.
+- Riferimento di disegno: `_scambio_cowork_code\Borgo58_Simulatore_Comande_Tablet.html`.
 
 ---
 
@@ -189,7 +194,6 @@ Tre accorgimenti appresi sul campo:
 **In capo a Claude Code:**
 - Chiudere la notifica Telegram agli estranei + chiave anon in Vault (in attesa di conferma dal tavolo di Cowork)
 - Filtro di periodo sul manuale HACCP (§3.19 punto 5)
-- Casi limite di sala non ancora specificati: **conto diviso, tavoli uniti, storni, asporto** (§3.2.2) — servono le risposte di Alessio dalla sua esperienza in sala
 
 **In capo ad Alessio:**
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**

@@ -76,6 +76,15 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               <span>{formatEUR(total)}</span>
             </div>
 
+            {/* Divisione informativa (§3.2.2): sul preconto si vede subito
+                quanto viene a testa. L'arrotondamento si fa alla chiusura. */}
+            {coperti >= 2 && total > 0 && (
+              <div className="flex justify-between text-[10.5px] pt-0.5">
+                <span>A testa ({coperti})</span>
+                <span>{formatEUR(total / coperti)}</span>
+              </div>
+            )}
+
             <div className="text-center text-[10px] mt-2 leading-snug">
               Documento non fiscale, privo di valore ai fini IVA.<br />
               Il conto resta aperto.

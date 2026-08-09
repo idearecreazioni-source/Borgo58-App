@@ -113,6 +113,28 @@ export async function deactivateDiningTable(id) {
   if (error) throw error;
 }
 
+// Sposta il conto su un altro tavolo (caso limite §3.2.2, deciso da
+// Alessio il 09/08/2026 — l'unico dei casi-tavolo che gli capita davvero).
+// UNA scrittura su UNA riga: categoria A del contratto, niente corridoio.
+// La destinazione è protetta dal vincolo "un solo conto aperto per
+// tavolo": se è occupata il database respinge, e qui si traduce il
+// rifiuto in una frase per chi sta servendo.
+export async function moveOrderTable(orderId, newTableLabel) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ table_label: newTableLabel })
+    .eq("id", orderId)
+    .eq("status", "aperto");
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(
+        `Il tavolo ${newTableLabel} ha già un conto aperto: chiudilo prima, o scegli un altro tavolo.`
+      );
+    }
+    throw error;
+  }
+}
+
 // --- Coperti e impostazioni di sala (§3.2.1) ---
 
 // Prezzo del coperto: sta nel database, non nel codice, cosi' Alessio puo'

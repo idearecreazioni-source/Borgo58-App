@@ -9,6 +9,7 @@ import {
   listDiningTables,
   listMenuForOrder,
   listOpenOrders,
+  moveOrderTable,
   openOrderForTable,
   orderTotals,
   removeDraftItem,
@@ -62,6 +63,7 @@ export default function Sala() {
 
   const [showPrecon, setShowPrecon] = useState(false);
   const [showClose, setShowClose] = useState(false);
+  const [showMove, setShowMove] = useState(false);
 
   const [panel, setPanel] = useState(null); // null | "tavoli" | "calibrazione"
   const [newTables, setNewTables] = useState("");
@@ -254,7 +256,21 @@ export default function Sala() {
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Sala</h1>
           <p className="text-xs text-b58-charcoal-soft/70 mt-1">
-            {order ? `Tavolo ${order.table_label} aperto` : "Nessun tavolo aperto"}
+            {order ? (
+              <>
+                Tavolo {order.table_label} aperto
+                {" · "}
+                <button
+                  type="button"
+                  onClick={() => setShowMove(true)}
+                  className="underline hover:text-b58-terracotta-dark"
+                >
+                  sposta
+                </button>
+              </>
+            ) : (
+              "Nessun tavolo aperto"
+            )}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -713,6 +729,55 @@ export default function Sala() {
             >
               Fatto — torna alla comanda
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sposta il conto su un altro tavolo (§3.2.2): si scelgono solo i
+          tavoli liberi; se nel frattempo un altro tablet occupa la
+          destinazione, il vincolo del database respinge e il messaggio
+          arriva qui. */}
+      {showMove && order && (
+        <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-sm w-full overflow-hidden">
+            <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
+              <span className="font-display text-base">Sposta {order.table_label} su…</span>
+              <button
+                type="button"
+                onClick={() => setShowMove(false)}
+                className="text-b58-parchment/80 hover:text-b58-parchment text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-4 gap-1.5">
+                {tables
+                  .filter((t) => t.label !== order.table_label && !orderForLabel(t.label))
+                  .map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        withBusy(async () => {
+                          await moveOrderTable(order.id, t.label);
+                        }).then(() => {
+                          setShowMove(false);
+                          loadBoard();
+                        })
+                      }
+                      className="tocco-riga rounded-lg bg-b58-cream-dark/60 hover:bg-b58-cream-dark text-sm text-b58-charcoal disabled:opacity-50"
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+              </div>
+              <p className="text-[11px] text-b58-charcoal-soft/70 mt-3 leading-relaxed">
+                Il conto si porta dietro tutto: piatti, coperti e note. I tavoli
+                occupati non compaiono.
+              </p>
+            </div>
           </div>
         </div>
       )}
