@@ -22,6 +22,28 @@ import {
 const TELEFONO = "3999000099";
 const NOME = "PROVA AUTOMATICA form pubblico";
 
+// Un momento in cui il locale accetta davvero prenotazioni.
+//
+// Non si può più scrivere una data fissa: dal 10/08 il database rifiuta i
+// giorni di chiusura e gli orari fuori servizio, e quegli orari li decide
+// Alessio dalle impostazioni. Una data scritta a mano qui dentro
+// funzionerebbe finché non sposta un giorno di riposo, e poi fallirebbe
+// dando la colpa al form.
+async function quandoSiPuoPrenotare(persone = 2) {
+  const oggi = new Date();
+  for (let i = 1; i <= 30; i++) {
+    const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const opzioni = await getReservationOptions({ date, partySize: persone });
+    // Interruttore spento: vale qualunque data futura, decide il titolare.
+    if (!opzioni?.attivo) return { date, time: "20:00" };
+    if (opzioni.orari?.length) return { date, time: opzioni.orari[0] };
+  }
+  throw new Error(
+    "Nessun orario prenotabile nei prossimi 30 giorni: controllare orari e capienza in Sala e orari."
+  );
+}
+
 describe("form pubblico /prenota", () => {
   let titolare;
 
@@ -51,10 +73,10 @@ describe("form pubblico /prenota", () => {
     const { data: sessione } = await supabase.auth.getSession();
     expect(sessione.session).not.toBeNull(); // altrimenti la prova non prova nulla
 
+    const quando = await quandoSiPuoPrenotare();
     await expect(
       submitPublicReservation({
-        date: "2026-12-31",
-        time: "20:00",
+        ...quando,
         partySize: 2,
         name: NOME,
         phone: TELEFONO,
