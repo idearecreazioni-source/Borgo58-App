@@ -29,6 +29,7 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 **Regole non derogabili:**
 - **Le migrazioni le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase (MCP/CLI non funzionanti su questa macchina). Mai eseguirle io.
 - **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai.
+- **Nessun push senza il riepilogo corrispondente per il validatore. Il riepilogo si scrive DOPO l'ultimo commit della consegna: l'hash di HEAD dichiarato deve essere l'hash che viene pushato. Vale per ogni lavoro, anche fuori dai piani concordati.**
 - **Non inserisco mai PIN o password**, nemmeno per test. Se serve provare da loggati, il login lo fa lui.
 - **Non cambio modello da solo**: segnalo quando un task è ad alto rischio e lascio decidere.
 
