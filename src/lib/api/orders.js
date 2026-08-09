@@ -295,20 +295,10 @@ export async function listRepartoTickets(destination) {
 
 // --- Conto: un solo calcolo, usato ovunque ---
 
-// Preconto, chiusura conto e totale a schermo devono dire lo STESSO numero.
-// Tenere il calcolo qui evita che tre schermate lo rifacciano ognuna a modo
-// suo — e' il tipo di divergenza che si scopre davanti al cliente.
-// Le righe annullate non contano; il coperto si somma a parte perche' sul
-// preconto va mostrato come voce propria ("4 coperti × 5,00 €").
-export function orderTotals(order, copertoPrice) {
-  const items = (order?.items ?? []).filter((i) => !i.voided_at);
-  const itemsTotal = items.reduce((s, i) => s + i.quantity * Number(i.unit_price), 0);
-  const coperti = order?.coperti ?? 0;
-  // Su un conto gia' chiuso vale il prezzo fotografato allora, non quello di oggi.
-  const unit = Number(order?.coperto_unit_price ?? copertoPrice ?? 0);
-  const copertoTotal = coperti * unit;
-  return { items, itemsTotal, coperti, copertoUnitPrice: unit, copertoTotal, total: itemsTotal + copertoTotal };
-}
+// Il calcolo vive in lib/calcoli/conto.js come modulo PURO (niente import
+// del client: le prove di unita' devono girare senza chiavi). Ri-esportato
+// da qui perche' le schermate continuino a importarlo insieme al resto.
+export { orderTotals } from "../calcoli/conto";
 
 // --- Chiusura conto ---
 

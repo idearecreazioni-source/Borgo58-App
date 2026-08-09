@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { orderTotals } from "../../src/lib/api/orders";
+// Si importa il modulo PURO, non api/orders.js: quello crea il client
+// Supabase e su una macchina senza .env farebbe esplodere la prova ancora
+// prima di partire (Attività B del pacchetto rifiniture).
+import { orderTotals } from "../../src/lib/calcoli/conto";
 
 // orderTotals è L'UNICO calcolo del conto: schermata Sala, Bar, preconto e
 // chiusura usano tutti questa funzione (CLAUDE.md §6). Se il calcolo
