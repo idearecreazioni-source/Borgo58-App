@@ -1,16 +1,37 @@
-// Edge Function: notifiche Telegram del gestionale. Un solo motore, due
-// origini possibili (stesso principio già adottato per gli assistenti AI
-// nel brief — un'infrastruttura, più punti d'uso):
+// Edge Function: notify-telegram-reservation — notifiche Telegram del
+// gestionale. Un solo motore, due origini (stesso principio degli
+// assistenti AI nel brief: un'infrastruttura, più punti d'uso):
 //
-// 1) Nuove richieste di prenotazione dal form pubblico (§3.3) — chiamata dal
-//    trigger su INSERT in "reservations" (migrazione 0006), payload
-//    { record: {...} }. Notifica solo source = "form_pubblico".
-// 2) Promemoria Agenda (§3.9) — chiamata dal job pg_cron ogni 5 minuti
-//    (migrazione 0008), payload { type: "task_reminder", task: {...} }.
-//    L'utente sceglie liberamente data/ora del promemoria per ogni task.
+// 1) Nuove richieste di prenotazione dal form pubblico (§3.3) — chiamata
+//    dal trigger su INSERT in "reservations", payload { record: {...} }.
+//    Notifica solo source = "form_pubblico".
+// 2) Promemoria Agenda (§3.9) — chiamata dal job pg_cron ogni 5 minuti,
+//    payload { type: "task_reminder", task: {...} }.
+//
+// Giustificazione (Contratto Architetturale, §2): B2 — custodisce un
+// segreto che non può mai arrivare al client (il token del bot Telegram)
+// — e B5, perché serve anche un job pianificato.
+//
+// ---------------------------------------------------------------------
+// CHI PUÒ CHIAMARLA (blindatura del 09/08/2026)
+// ---------------------------------------------------------------------
+// Fino a oggi bastava la chiave anon, che è PUBBLICA e si legge nel
+// bundle del sito: chiunque poteva far arrivare sul telefono di Alessio
+// un messaggio identico a una vera notifica del gestionale — per esempio
+// una prenotazione inventata con un numero da richiamare. Nessun dato
+// usciva, ma un canale fidato diventava scrivibile da fuori.
+//
+// Ora serve anche una PAROLA D'ORDINE condivisa (header x-borgo58-firma),
+// che vive: qui nelle variabili d'ambiente della funzione, e nel Vault
+// del database — cifrata, mai nel repository. La conoscono solo il
+// trigger delle prenotazioni e il job dei promemoria.
+//
+// La verifica JWT del gateway Supabase resta attiva: due barriere, non
+// una. Chi ha solo la chiave pubblica supera la prima e si ferma qui.
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
+const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
 
 function formatReservationMessage(record: Record<string, unknown>): string {
   const date = record.reservation_date as string;
@@ -70,6 +91,22 @@ async function sendTelegram(text: string) {
 }
 
 Deno.serve(async (req) => {
+  // 1. LA PAROLA D'ORDINE — prima di leggere qualunque cosa del payload.
+  // Se non è configurata la funzione non parte: meglio nessuna notifica
+  // che una porta aperta senza saperlo.
+  if (!NOTIFICHE_FIRMA) {
+    return new Response(
+      JSON.stringify({ error: "NOTIFICHE_FIRMA non configurata" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  if (req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
+    return new Response(JSON.stringify({ error: "Chiamante non riconosciuto" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
     return new Response(
       JSON.stringify({ error: "TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID mancanti" }),
@@ -77,7 +114,16 @@ Deno.serve(async (req) => {
     );
   }
 
-  const payload = await req.json();
+  let payload;
+  try {
+    payload = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Corpo non valido" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   let message: string | null = null;
 
   if (payload.type === "task_reminder" && payload.task) {
