@@ -16,19 +16,18 @@
 //  - nessun segreto nel codice (SUPABASE_URL/ANON_KEY sono iniettate
 //    dall'ambiente, e la anon key non è un segreto).
 //
-// Per aggiungere un'operazione nuova: una riga nell'elenco OPERAZIONI,
-// dopo che la relativa funzione Postgres è stata creata via migrazione.
+// Per aggiungere un'operazione nuova: una riga nell'elenco OPERAZIONI.
+// Può precedere la migrazione che crea la funzione Postgres: un nome in
+// elenco senza funzione nel database è inerte (la chiamata fallisce con
+// "funzione inesistente" e nessun client la invoca finché non viene
+// attivata) — così il corridoio si ridistribuisce una volta per blocco di
+// lavoro, non a ogni singola funzione.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Elenco CHIUSO delle operazioni invocabili. Tutto ciò che non è qui
 // dentro riceve un rifiuto: il corridoio non è un passacarte generico
 // verso qualunque RPC del database.
-//
-// L'elenco copre l'intero Piano correzioni del 09/08/2026 (blocchi 1-4):
-// un nome presente qui ma non ancora creato nel database è inerte — la
-// chiamata fallisce con "funzione inesistente" e nessun client la invoca
-// finché il rispettivo blocco non viene attivato dalla sua migrazione.
 const OPERAZIONI = new Set([
   // Comande / cassa (attiva dall'09/08/2026)
   "close_order_as_discount_gift",
