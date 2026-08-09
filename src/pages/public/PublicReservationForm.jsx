@@ -52,8 +52,19 @@ export default function PublicReservationForm() {
         notes: form.notes.trim(),
       });
       setDone(true);
-    } catch {
-      setError("Non è stato possibile inviare la richiesta. Riprova o contattaci telefonicamente.");
+    } catch (e) {
+      // I messaggi scritti dalla funzione del database sono pensati per
+      // essere letti da un ospite ("Abbiamo già ricevuto le tue richieste…",
+      // "Data non valida"): vanno mostrati, non sostituiti da un generico
+      // che nasconde anche a noi cosa è successo. Si riconoscono dal codice
+      // P0001, che Postgres assegna alle eccezioni scritte a mano nelle
+      // nostre funzioni; qualunque altro errore resta generico, per non
+      // esporre dettagli tecnici su una pagina pubblica.
+      setError(
+        e?.code === "P0001" && e?.message
+          ? e.message
+          : "Non è stato possibile inviare la richiesta. Riprova o contattaci telefonicamente."
+      );
     } finally {
       setSubmitting(false);
     }

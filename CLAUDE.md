@@ -126,6 +126,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - **Un solo calcolo del conto**: `orderTotals()` in `api/orders.js`, usata da schermata, preconto e chiusura. Tre schermate che ricalcolano da sole finiscono per dire tre numeri diversi davanti al cliente.
 - **Cancellazioni tracciate** (08/08/2026): trigger `trg_log_delete` → tabella **`deleted_records`** (copia jsonb della riga + chi e quando), su 12 tabelle di soldi/fisco/lavoro/documenti. **L'app non cambia**: si cancella come prima, il database conserva la copia. Scelto contro il classico flag "cancellato", che obbligherebbe a filtrarlo in ogni query per sempre — basta dimenticarne una. Leggibile solo dal titolare. Per aggiungere una tabella: inserirla nell'elenco della migrazione `20260808000004`.
 - **Form pubblico `/prenota`**: unico varco per il ruolo `anon`, passa dalla funzione `submit_public_reservation` (che impone stato e provenienza). Dall'08/08 ha tre limiti anti-abuso: 3 richieste per contatto in 24h, nessun doppione identico in attesa, 40/ora complessive. **Ogni nuova funzione esposta ad `anon` va pensata con un freno**: su un indirizzo pubblico l'invio automatico è la norma, non l'eccezione.
+- **Una pagina pubblica usa `supabasePubblico`, non `supabase`** (09/08/2026): il collegamento normale allega la sessione di chi ha il gestionale aperto in quel browser, e le funzioni concesse al solo `anon` rispondono `42501`. Vale per qualunque schermata che debba comportarsi allo stesso modo per tutti.
 
 ---
 
@@ -168,6 +169,9 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - ⚠️ **`listStockConsumptions`** in `stock.js` è codice morto, nessuna pagina la usa.
 - ⚠️ **Non fermare mai il dev server** dopo una verifica (`preview_stop`): è condiviso con Alessio.
 - ⚠️ **Mai `new Date().toISOString().slice(0, 10)` per sapere che giorno è** — è la data UTC, e fra mezzanotte e le 02:00 restituisce IERI. Per un'osteria che chiude all'una significa prima nota, registrazioni HACCP e mance datate al giorno prima. Usare `oggiLocale()` / `meseLocale()` / `primoDelMeseLocale()` / `traGiorniLocale()` da `constants.js`. Trovato in 14 punti nell'audit dell'08/08.
+- ⚠️ **Il form pubblico va provato da sloggati** — trovato dal vivo il 09/08/2026: da un browser con il gestionale aperto `/prenota` rispondeva sempre "Non è stato possibile inviare la richiesta". Difetto invisibile a chi lo prova, perché chi lo prova è dentro. Coperto ora da `tests/app/prenotazione-pubblica.test.js`.
+- ⚠️ **`signOut()` nelle prove è GLOBALE** — revoca l'utente su tutti i dispositivi, e con i file di prova che girano in parallelo butta fuori l'altro file a metà corsa: l'errore che si vede è un finto guasto del corridoio ("Sessione non valida"). Usare sempre `signOut({ scope: "local" })`.
+- ⚠️ **Non nascondere il messaggio del database dietro un errore generico**: `submit_public_reservation` scrive frasi pensate per l'ospite (il codice `P0001` le riconosce). Un catch che le sostituisce toglie l'informazione all'ospite E a noi in diagnosi.
 - ⚠️ **Un campo che salva solo `onBlur` perde i dati** — trovato dal vivo l'08/08 sulle note della comanda: si scrive la nota, si preme F5 (o si blocca lo schermo del tablet) col cursore ancora dentro, e il salvataggio non parte mai. Nessun errore, nessun avviso. Usare `<NotaSalvataAutomaticamente>`, non `onBlur` da solo.
 
 ---
