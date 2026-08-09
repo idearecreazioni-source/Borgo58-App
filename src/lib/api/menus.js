@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 export async function listMenus() {
   const { data, error } = await supabase
@@ -21,23 +22,13 @@ export async function createMenu(payload) {
   return data;
 }
 
-// Un solo menu attivo alla volta (vincolo DB): disattiva gli altri prima di
-// attivare quello scelto, per non violare l'indice unico su is_active.
+// Un solo menu attivo alla volta (vincolo DB): spegni-poi-accendi vivono
+// nella STESSA transazione dentro la funzione Postgres set_active_menu
+// (Contratto B4). Prima erano due update separate: se la seconda falliva
+// NESSUN menu restava attivo — comande e sala senza carta, in silenzio.
+// Restituisce la riga del menu attivato.
 export async function setActiveMenu(id) {
-  const { error: deactivateError } = await supabase
-    .from("menus")
-    .update({ is_active: false })
-    .eq("is_active", true);
-  if (deactivateError) throw deactivateError;
-
-  const { data, error } = await supabase
-    .from("menus")
-    .update({ is_active: true })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return eseguiOperazione("set_active_menu", { p_menu_id: id });
 }
 
 // Unisce v_menu_item_economics (numeri calcolati dal DB) con i dati della

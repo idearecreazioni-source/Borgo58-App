@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_entity_id(id, name)";
 
@@ -27,27 +28,29 @@ export async function getIngredient(id) {
   return data;
 }
 
-// Crea l'ingrediente e registra il prezzo iniziale nello storico (fonte "manuale").
+// Ingrediente + prima riga dello storico prezzi nella STESSA transazione
+// (funzione Postgres create_ingredient, Contratto B4). Prima erano due
+// scritture separate: un fallimento a metà lasciava un ingrediente il cui
+// storico non parte mai dal prezzo iniziale, e chi riprovava creava un
+// doppione. Restituisce la riga creata (il chiamante naviga con l'id).
 export async function createIngredient(payload) {
-  const { current_price, ...rest } = payload;
-
-  const { data: ingredient, error } = await supabase
-    .from("ingredients")
-    .insert({ ...rest, current_price })
-    .select(SELECT)
-    .single();
-  if (error) throw error;
-
-  const { error: historyError } = await supabase.from("price_history").insert({
-    ingredient_id: ingredient.id,
-    price: current_price,
-    supplier_id: payload.supplier_id ?? null,
-    source: "manuale",
-    note: "Prezzo iniziale",
+  return eseguiOperazione("create_ingredient", {
+    p_entity_id: payload.entity_id,
+    p_name: payload.name,
+    p_category: payload.category,
+    p_unit: payload.unit,
+    p_current_price: payload.current_price ?? 0,
+    p_source_type: payload.source_type || "fornitore_esterno",
+    p_supplier_id: payload.supplier_id ?? null,
+    p_producer_entity_id: payload.producer_entity_id ?? null,
+    p_allergens: payload.allergens ?? [],
+    p_seasonality: payload.seasonality ?? [],
+    p_storage_type: payload.storage_type ?? null,
+    p_shelf_life_days: payload.shelf_life_days ?? null,
+    p_waste_percentage_default: payload.waste_percentage_default ?? 0,
+    p_haccp_receiving_temp: payload.haccp_receiving_temp ?? null,
+    p_haccp_notes: payload.haccp_notes ?? null,
   });
-  if (historyError) throw historyError;
-
-  return ingredient;
 }
 
 // Aggiorna gli attributi dell'ingrediente SENZA toccare current_price/storico

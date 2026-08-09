@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 export async function listRecipeSteps(recipeId) {
   const { data, error } = await supabase
@@ -36,17 +37,14 @@ export async function removeRecipeStep(id) {
   if (error) throw error;
 }
 
-// Scambia step_number tra due fasi adiacenti (riordino su/giù).
+// Scambia step_number tra due fasi adiacenti (riordino su/giù), in UNA
+// transazione dentro la funzione Postgres swap_recipe_steps (Contratto
+// B4). La versione precedente faceva tre update dal browser SENZA
+// controllare gli errori: un fallimento a metà lasciava una fase
+// parcheggiata su un numero temporaneo, in silenzio.
 export async function swapStepOrder(stepA, stepB) {
-  // 1) sposta stepA su un numero temporaneo per evitare la violazione del
-  //    vincolo unique(recipe_id, step_number) durante lo scambio.
-  await supabase.from("recipe_steps").update({ step_number: -1 }).eq("id", stepA.id);
-  await supabase
-    .from("recipe_steps")
-    .update({ step_number: stepA.step_number })
-    .eq("id", stepB.id);
-  await supabase
-    .from("recipe_steps")
-    .update({ step_number: stepB.step_number })
-    .eq("id", stepA.id);
+  return eseguiOperazione("swap_recipe_steps", {
+    p_step_a: stepA.id,
+    p_step_b: stepB.id,
+  });
 }
