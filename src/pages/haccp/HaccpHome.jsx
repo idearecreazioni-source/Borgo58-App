@@ -8,16 +8,20 @@ const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toD
 export default function HaccpHome() {
   const [openNc, setOpenNc] = useState(0);
   const [nonCompliantToday, setNonCompliantToday] = useState(0);
+  const [errore, setErrore] = useState("");
 
   useEffect(() => {
+    // Un errore qui non va ingoiato: "0 fuori range" per un problema di
+    // rete è indistinguibile da una giornata a posto — e questo è un
+    // modulo di sicurezza alimentare.
     listNonConformities()
       .then((rows) => setOpenNc(rows.filter((r) => !r.resolved).length))
-      .catch(() => {});
+      .catch((e) => setErrore(e.message));
     listTemperatureLogs()
       .then((rows) =>
         setNonCompliantToday(rows.filter((r) => isToday(r.recorded_at) && !r.is_compliant).length)
       )
-      .catch(() => {});
+      .catch((e) => setErrore(e.message));
   }, []);
 
   const cards = [
@@ -69,6 +73,12 @@ export default function HaccpHome() {
           Manuale completo (PDF)
         </Link>
       </div>
+
+      {errore && (
+        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+          Contatori non aggiornati: {errore}. I numeri qui sotto potrebbero essere incompleti.
+        </p>
+      )}
 
       <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
         Struttura pronta all'uso, ma le soglie di temperatura e le attività di pulizia vanno

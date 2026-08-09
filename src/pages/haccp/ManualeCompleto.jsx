@@ -10,7 +10,7 @@ import {
   listPestControlLogs,
   listTemperatureLogs,
 } from "../../lib/api/haccp";
-import { CLEANING_FREQUENCIES, NC_CATEGORIES, PEST_CONTROL_TYPES, formatDate, labelFor } from "../../lib/constants";
+import { CLEANING_FREQUENCIES, NC_CATEGORIES, PEST_CONTROL_TYPES, formatDate, labelFor, oggiLocale, traGiorniLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 
 const SectionTitle = ({ children }) => (
@@ -19,28 +19,51 @@ const SectionTitle = ({ children }) => (
   </h2>
 );
 
+// Filtro di periodo (§3.19 punto 5): dentro il periodo dichiarato il
+// documento è COMPLETO — sono spariti i tagli silenziosi ("ultime 15
+// rilevazioni") che facevano sembrare intero un registro che non lo era.
+// Il periodo è scritto in testa al documento stampato: un ispettore vede
+// subito cosa sta guardando, e "Tutto" resta a un tocco.
 export default function ManualeCompleto() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [dal, setDal] = useState(traGiorniLocale(-30));
+  const [al, setAl] = useState(oggiLocale());
+  const [tutto, setTutto] = useState(false);
+
+  const periodo = tutto ? undefined : { dal, al };
 
   useEffect(() => {
+    setData(null);
     Promise.all([
       listEquipment(),
-      listTemperatureLogs(),
-      listGoodsReceiving(),
+      listTemperatureLogs(null, periodo),
+      listGoodsReceiving(periodo),
       listCleaningTasks(),
-      listCleaningLogs(),
-      listPestControlLogs(),
-      listNonConformities(),
-      listForagedItems(),
+      listCleaningLogs(null, periodo),
+      listPestControlLogs(periodo),
+      listNonConformities(periodo),
+      listForagedItems(periodo),
     ])
       .then(([equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems]) =>
         setData({ equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems })
       )
       .catch((e) => setError(e.message));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dal, al, tutto]);
 
   const lastCleaningFor = (taskId) => data?.cleaningLogs.find((l) => l.task_id === taskId)?.completed_at;
+
+  const impostaGiorni = (giorni) => {
+    setDal(traGiorniLocale(-giorni));
+    setAl(oggiLocale());
+    setTutto(false);
+  };
+
+  const chipClass = (attivo) =>
+    `text-xs rounded-full px-3 py-1.5 border ${attivo ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`;
+  const inputClass =
+    "rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm text-b58-charcoal";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -54,9 +77,31 @@ export default function ManualeCompleto() {
       <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
         Piano di Autocontrollo — Borgo 58
       </h1>
+      {/* Il periodo è parte del DOCUMENTO, non un dettaglio a schermo:
+          va stampato, perché dichiara di cosa il registro è completo. */}
       <p className="text-b58-charcoal-soft mt-1">
-        Generato il {formatDate(new Date().toISOString())}. Documento sempre aggiornato ai dati correnti.
+        Generato il {formatDate(oggiLocale())}.{" "}
+        {tutto
+          ? "Registro completo dall'avvio dell'attività."
+          : `Registrazioni dal ${formatDate(dal)} al ${formatDate(al)}.`}{" "}
+        Le non conformità aperte sono sempre incluse.
       </p>
+
+      <div className="flex items-center gap-2 flex-wrap mt-3 print:hidden">
+        <button type="button" onClick={() => impostaGiorni(30)} className={chipClass(!tutto && dal === traGiorniLocale(-30))}>
+          Ultimi 30 giorni
+        </button>
+        <button type="button" onClick={() => impostaGiorni(90)} className={chipClass(!tutto && dal === traGiorniLocale(-90))}>
+          Ultimi 90
+        </button>
+        <button type="button" onClick={() => setTutto(true)} className={chipClass(tutto)}>
+          Tutto
+        </button>
+        <span className="text-xs text-b58-charcoal-soft ml-2">dal</span>
+        <input type="date" value={dal} onChange={(e) => { setDal(e.target.value); setTutto(false); }} className={inputClass} />
+        <span className="text-xs text-b58-charcoal-soft">al</span>
+        <input type="date" value={al} onChange={(e) => { setAl(e.target.value); setTutto(false); }} className={inputClass} />
+      </div>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-4 print:hidden">
@@ -73,7 +118,8 @@ export default function ManualeCompleto() {
             <p className="text-sm text-b58-charcoal-soft/60">Nessuna attrezzatura registrata.</p>
           ) : (
             data.equipment.map((eq) => {
-              const readings = data.temperatureLogs.filter((l) => l.equipment_id === eq.id).slice(0, 15);
+              // Niente tagli: dentro il periodo dichiarato si stampa TUTTO.
+              const readings = data.temperatureLogs.filter((l) => l.equipment_id === eq.id);
               return (
                 <div key={eq.id} className="mb-4">
                   <p className="text-sm text-b58-charcoal font-medium">
@@ -109,7 +155,7 @@ export default function ManualeCompleto() {
             })
           )}
 
-          <SectionTitle>Ricevimento merci (ultimi controlli)</SectionTitle>
+          <SectionTitle>Ricevimento merci</SectionTitle>
           {data.goodsReceiving.length === 0 ? (
             <p className="text-sm text-b58-charcoal-soft/60">Nessun ricevimento registrato.</p>
           ) : (
@@ -123,7 +169,7 @@ export default function ManualeCompleto() {
                 </tr>
               </thead>
               <tbody>
-                {data.goodsReceiving.slice(0, 30).map((r) => (
+                {data.goodsReceiving.map((r) => (
                   <tr key={r.id} className="border-b border-b58-charcoal/5">
                     <td className="py-1.5 text-b58-charcoal-soft">{formatDate(r.received_at)}</td>
                     <td className="py-1.5 text-b58-charcoal">{r.product_description}</td>
@@ -159,7 +205,11 @@ export default function ManualeCompleto() {
                     <td className="py-1.5 text-b58-charcoal">{t.name}{t.area ? ` · ${t.area}` : ""}</td>
                     <td className="py-1.5 text-b58-charcoal-soft">{labelFor(CLEANING_FREQUENCIES, t.frequency)}</td>
                     <td className="py-1.5 text-b58-charcoal-soft">
-                      {lastCleaningFor(t.id) ? formatDate(lastCleaningFor(t.id)) : "mai eseguita"}
+                      {lastCleaningFor(t.id)
+                        ? formatDate(lastCleaningFor(t.id))
+                        : tutto
+                          ? "mai eseguita"
+                          : "nessuna nel periodo"}
                     </td>
                   </tr>
                 ))}
@@ -173,7 +223,7 @@ export default function ManualeCompleto() {
           ) : (
             <table className="w-full text-sm">
               <tbody>
-                {data.pestLogs.slice(0, 20).map((p) => (
+                {data.pestLogs.map((p) => (
                   <tr key={p.id} className="border-b border-b58-charcoal/5">
                     <td className="py-1.5 text-b58-charcoal-soft">{formatDate(p.performed_at)}</td>
                     <td className="py-1.5 text-b58-charcoal">{labelFor(PEST_CONTROL_TYPES, p.type)}</td>
@@ -191,7 +241,7 @@ export default function ManualeCompleto() {
           ) : (
             <table className="w-full text-sm">
               <tbody>
-                {data.foragedItems.slice(0, 20).map((f) => (
+                {data.foragedItems.map((f) => (
                   <tr key={f.id} className="border-b border-b58-charcoal/5">
                     <td className="py-1.5 text-b58-charcoal-soft">{formatDate(f.harvest_date)}</td>
                     <td className="py-1.5 text-b58-charcoal">{f.species}</td>

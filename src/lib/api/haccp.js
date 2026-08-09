@@ -21,12 +21,40 @@ import { supabase } from "../supabase";
 // intervallo di date, non "tutto dall'apertura") — vedi §3.19.
 // =====================================================================
 
+// ---------------------------------------------------------------------
+// Filtro di periodo (§3.19 punto 5) — il modo GIUSTO di contenere questi
+// registri quando crescono: un ispettore chiede un intervallo di date,
+// non "tutto dall'apertura". Senza periodo le liste restano complete,
+// come prima.
+//
+// I confini arrivano come date del calendario LOCALE (AAAA-MM-GG) e
+// diventano istanti: dal = mezzanotte locale, al = fine giornata locale.
+// NON si confronta la data col testo su una colonna oraria: una
+// rilevazione dell'1 agosto alle 00:30 è ancora il 31 luglio in UTC, e
+// finirebbe nel giorno sbagliato (la trappola di CLAUDE.md §8).
+// ---------------------------------------------------------------------
+function conPeriodo(query, colonna, periodo) {
+  if (periodo?.dal) query = query.gte(colonna, new Date(`${periodo.dal}T00:00:00`).toISOString());
+  if (periodo?.al) query = query.lte(colonna, new Date(`${periodo.al}T23:59:59.999`).toISOString());
+  return query;
+}
+
+// Variante per le colonne che sono GIÀ date di calendario (niente orario):
+// il confronto testuale è corretto e non passa da UTC.
+function conPeriodoData(query, colonna, periodo) {
+  if (periodo?.dal) query = query.gte(colonna, periodo.dal);
+  if (periodo?.al) query = query.lte(colonna, periodo.al);
+  return query;
+}
+
 // --- Raccolta propria (§3.17) — erbe spontanee/prodotti autoraccolti ---
-export async function listForagedItems() {
-  const { data, error } = await supabase
+export async function listForagedItems(periodo) {
+  let query = supabase
     .from("foraged_items")
     .select("*, ingredient:ingredient_id(id, name)")
     .order("harvest_date", { ascending: false });
+  query = conPeriodoData(query, "harvest_date", periodo);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -73,12 +101,13 @@ export async function createEquipment({ name, storageType, targetMinC, targetMax
 }
 
 // --- Registro temperature ---
-export async function listTemperatureLogs(equipmentId) {
+export async function listTemperatureLogs(equipmentId, periodo) {
   let query = supabase
     .from("v_haccp_temperature_logs")
     .select("*")
     .order("recorded_at", { ascending: false });
   if (equipmentId) query = query.eq("equipment_id", equipmentId);
+  query = conPeriodo(query, "recorded_at", periodo);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -95,11 +124,13 @@ export async function addTemperatureLog({ equipmentId, recordedTempC, note, corr
 }
 
 // --- Ricevimento merci ---
-export async function listGoodsReceiving() {
-  const { data, error } = await supabase
+export async function listGoodsReceiving(periodo) {
+  let query = supabase
     .from("haccp_goods_receiving")
     .select("*, supplier:supplier_id(id, name)")
     .order("received_at", { ascending: false });
+  query = conPeriodo(query, "received_at", periodo);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -144,12 +175,13 @@ export async function createCleaningTask({ name, area, frequency }) {
   return data;
 }
 
-export async function listCleaningLogs(taskId) {
+export async function listCleaningLogs(taskId, periodo) {
   let query = supabase
     .from("haccp_cleaning_logs")
     .select("*, task:task_id(id, name, area, frequency)")
     .order("completed_at", { ascending: false });
   if (taskId) query = query.eq("task_id", taskId);
+  query = conPeriodo(query, "completed_at", periodo);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -164,11 +196,13 @@ export async function addCleaningLog({ taskId, note }) {
 }
 
 // --- Disinfestazione ---
-export async function listPestControlLogs() {
-  const { data, error } = await supabase
+export async function listPestControlLogs(periodo) {
+  let query = supabase
     .from("haccp_pest_control_logs")
     .select("*")
     .order("performed_at", { ascending: false });
+  query = conPeriodo(query, "performed_at", periodo);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -184,11 +218,23 @@ export async function addPestControlLog({ performedBy, type, findings, note }) {
 }
 
 // --- Non conformità ---
-export async function listNonConformities() {
-  const { data, error } = await supabase
+// Col periodo attivo, le non conformità APERTE restano SEMPRE incluse:
+// filtrare via un problema non risolto da un documento per l'ispettore
+// somiglierebbe a nasconderlo, che è l'esatto contrario di §8 del brief.
+export async function listNonConformities(periodo) {
+  let query = supabase
     .from("haccp_non_conformities")
     .select("*")
     .order("detected_at", { ascending: false });
+  if (periodo?.dal || periodo?.al) {
+    const condizioni = [];
+    if (periodo.dal)
+      condizioni.push(`detected_at.gte.${new Date(`${periodo.dal}T00:00:00`).toISOString()}`);
+    if (periodo.al)
+      condizioni.push(`detected_at.lte.${new Date(`${periodo.al}T23:59:59.999`).toISOString()}`);
+    query = query.or(`resolved.eq.false,and(${condizioni.join(",")})`);
+  }
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
