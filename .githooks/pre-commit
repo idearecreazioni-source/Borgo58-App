@@ -24,6 +24,10 @@ echo "→ Controllo il codice (lint)..."
 npm run lint --silent -- --max-warnings=0 \
   || fallisci "il codice ha errori o avvisi. Il protocollo dice lint a ZERO."
 
+echo "→ Prove automatiche di unità (date, calcolo del conto)..."
+npm run test --silent \
+  || fallisci "le prove automatiche non passano (npm run test): qualcosa che funzionava si è rotto."
+
 echo "→ Provo a compilare l'app..."
 npm run build --silent > /dev/null \
   || fallisci "l'app non compila. Non si committa qualcosa che non parte."
