@@ -2,7 +2,7 @@
 
 Gestionale su misura per **Borgo 58 – Osteria Contemporanea** (Piazza Armerina, EN), apertura prevista marzo 2027. Sviluppato da Alessio Schillaci con Claude. **In produzione**: https://borgo58-app.pages.dev — ogni push su `master` ripubblica automaticamente (Cloudflare Pages).
 
-Chi lavora nel progetto parte da **`CLAUDE.md`** (convenzioni operative, protocolli, stato dei lavori). L'autorità sulle decisioni di architettura è il *Contratto Architetturale v2* (fuori repo, gestito da Cowork); il dettaglio implementativo è in `docs/ARCHITETTURA.md`.
+Chi lavora nel progetto parte da **`CLAUDE.md`** (convenzioni operative, protocolli, stato dei lavori). L'autorità sulle decisioni di architettura è il Contratto Architetturale, versionato in **`docs/CONTRATTO.md`**; il dettaglio implementativo è in `docs/ARCHITETTURA.md`.
 
 ## Stack
 
