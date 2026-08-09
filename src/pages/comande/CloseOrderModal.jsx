@@ -88,7 +88,6 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
     if (!isGift && !form.collectedAmount) return;
     run(() =>
       closeOrderAsDiscountGift(order.id, {
-        entityId: order.entity_id,
         isGift,
         fullAmount: total,
         collectedAmount: form.collectedAmount,
@@ -96,7 +95,6 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
         customerId: form.customerId || null,
         deviceId: form.deviceId || null,
         note: form.note || null,
-        copertoUnitPrice,
       })
     );
   };

@@ -56,7 +56,7 @@ Scambio:       C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contempora
 ## 4. Stack e infrastruttura
 
 - **Frontend**: Vite + React 19 (JSX) + Tailwind CSS v4 (config `@theme` in CSS, **non** `tailwind.config.js`) + React Router v7 (`BrowserRouter`)
-- **Backend**: nessuno. L'app è una SPA statica che parla direttamente con Supabase.
+- **Backend**: regolato dal **Contratto Architetturale** (vedi §6). SPA statica + Edge Function Supabase dove il contratto lo impone: `operazioni-atomiche` (corridoio unico per le scritture multi-tabella, B4) e `notify-telegram-reservation` (segreti/notifiche, B2/B5). Mini-PC locale previsto per l'hardware (B1). Nessun server Node tradizionale.
 - **Database**: Supabase, progetto `borgo58`, ref `oudjuqbqszisdtwzbxdo`, regione EU (Irlanda) per GDPR. **Piano Free** — da cambiare prima dell'apertura.
 - **Dev server**: `localhost:5173`, già configurato con `host: true` (raggiungibile da altri dispositivi sulla stessa WiFi all'IP del PC).
 - Scorciatoia per Alessio: **`Avvia Borgo 58.bat`** sul Desktop (doppio click; la finestra nera deve restare aperta).
@@ -109,7 +109,9 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 
 ## 6. Pattern architetturali consolidati
 
-> ⚠️ **Prima di scrivere qualunque funzionalità nuova, leggere [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md)** — regole vincolanti sull'integrità del dato, in vigore dal 09/08/2026. In sintesi: **una richiesta dell'utente = una transazione = una chiamata al database**. È vietato eseguire dal client due scritture consecutive che devono riuscire o fallire insieme: quelle operazioni sono una funzione SQL. Gli invarianti sono vincoli del database, non controlli nella schermata.
+> ⚠️ **L'autorità sulle decisioni di architettura è il "Contratto Architetturale v2" di Cowork, confermato da Alessio il 09/08/2026.** Percorso: `C:\Users\User\Desktop\Borgo58_Contratto_Architetturale.md` (se non risponde, cercarlo con Glob — i file fuori repo vengono spostati). Nessuna sessione scrive principi architetturali nuovi nei file di progetto: si propongono lì e li conferma Alessio.
+>
+> Sintesi operativa vincolante: gli invarianti sono **vincoli del database**, non controlli nella schermata; ogni scrittura multi-tabella "tutto o niente" è **UNA funzione Postgres** (una chiamata = una transazione); **il client non la chiama mai via RPC diretta — passa dalla Edge Function `operazioni-atomiche`** tramite `eseguiOperazione()` in `src/lib/operazioni.js` (regola B4, decisione esplicita di Alessio del 09/08/2026 — proposta alternativa a RPC diretta valutata e respinta). Le scritture su una sola tabella senza conseguenze altrove restano dirette con la RLS come barriera. Dettagli implementativi in [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md), **subordinato al contratto**. Lista di lavoro corrente: `Borgo58_Piano_Correzioni_Integrita.md` (Desktop) + verifica in `_scambio_cowork_code\20260809_code_verifica-contratto-e-piano.md`.
 
 - **RLS**: funzione SQL `is_titolare()`. Tabelle titolare-only: singola policy `for all ... using ((select is_titolare()))`. Tabelle condivise (Agenda, Calendario, Magazzino, HACCP, Comande): policy separate per operazione — `select`/`insert` aperti, `update`/`delete` titolare.
 - **Dati economici nascosti allo staff**: viste **`_display` SECURITY DEFINER** (senza `security_invoker` → bypassano la RLS ma espongono solo colonne sicure). Es. `recipe_ingredients_display`, `stock_lots_display`, `suppliers_display`, `menu_items_display`.

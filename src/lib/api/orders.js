@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { createDiscountGift } from "./cash";
+import { eseguiOperazione } from "../operazioni";
 
 // Piatti del menu attivo, sicuri per lo staff (§3.18) — vedi menu_items_display.
 export async function listMenuForOrder() {
@@ -318,30 +318,33 @@ export async function cancelOrder(orderId, reason) {
 // 'omaggiato' e incassato forzato a 0 (constraint DB già lo impone anche
 // lato server); isGift=false -> 'chiuso' comunque (uno sconto è un
 // incasso ridotto, passa dall'RT come una vendita normale quando esisterà).
+// Registro sconti/omaggi e chiusura del conto vivono nella stessa
+// transazione dentro la funzione Postgres close_order_as_discount_gift.
+//
+// Prima erano due scritture consecutive dal browser, e se la seconda non
+// partiva restava un omaggio in cassa per un tavolo ancora aperto — su un
+// registro che serve a valutare l'autofattura TD27.
+//
+// La chiamata passa dal corridoio (Edge Function `operazioni-atomiche`),
+// non dalla RPC diretta: regola B4 del Contratto Architetturale,
+// confermata da Alessio il 09/08/2026.
+//
+// `fullAmount` non è l'importo che verrà scritto: è il totale che
+// l'operatore ha davanti, che il database confronta col proprio calcolo e
+// rifiuta se non coincide.
 export async function closeOrderAsDiscountGift(
   orderId,
-  { entityId, isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note, copertoUnitPrice }
+  { isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note }
 ) {
-  const dg = await createDiscountGift({
-    entity_id: entityId,
-    type: isGift ? "omaggio" : "sconto",
-    full_amount: fullAmount,
-    collected_amount: isGift ? 0 : Number(collectedAmount) || 0,
-    causale_id: causaleId || null,
-    causale_note: causaleNote || null,
-    customer_id: customerId || null,
-    device_id: deviceId || null,
-    note: note || null,
+  return eseguiOperazione("close_order_as_discount_gift", {
+    p_order_id: orderId,
+    p_is_gift: isGift,
+    p_collected_amount: isGift ? 0 : Number(collectedAmount) || 0,
+    p_expected_full_amount: fullAmount ?? null,
+    p_causale_id: causaleId || null,
+    p_causale_note: causaleNote || null,
+    p_customer_id: customerId || null,
+    p_device_id: deviceId || null,
+    p_note: note || null,
   });
-
-  const { error } = await supabase
-    .from("orders")
-    .update({
-      status: isGift ? "omaggiato" : "chiuso",
-      discount_gift_id: dg.id,
-      coperto_unit_price: copertoUnitPrice ?? null,
-      closed_at: new Date().toISOString(),
-    })
-    .eq("id", orderId);
-  if (error) throw error;
 }
