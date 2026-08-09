@@ -55,7 +55,10 @@ export async function markInvoicePaid(id, { paymentMethod }) {
   });
 }
 
+// Cancella la fattura E completa il promemoria "Pagare fattura" collegato,
+// nella stessa transazione (funzione Postgres delete_supplier_invoice).
+// Prima il promemoria non veniva toccato affatto: restava pendente in
+// Agenda per sempre — difetto trovato dalla verifica di Cowork.
 export async function deleteSupplierInvoice(id) {
-  const { error } = await supabase.from("supplier_invoices").delete().eq("id", id);
-  if (error) throw error;
+  return eseguiOperazione("delete_supplier_invoice", { p_invoice_id: id });
 }

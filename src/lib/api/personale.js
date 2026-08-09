@@ -1,7 +1,6 @@
 import { supabase } from "../supabase";
 import { traGiorniLocale } from "../constants";
 import { eseguiOperazione } from "../operazioni";
-import { updateTask } from "./tasks";
 
 // --- Anagrafica dipendenti ---
 export async function listEmployees({ includeInactive } = {}) {
@@ -30,31 +29,14 @@ export async function updateEmployee(id, patch) {
   return data;
 }
 
-// Eliminazione completa: documenti/ferie/buste paga vanno via a cascata.
-// Bloccata dal DB (RESTRICT) se il dipendente ha ricevuto mance in una
-// distribuzione — in quel caso va prima rimossa la distribuzione.
+// Eliminazione completa: documenti/ferie/buste paga vanno via a cascata,
+// e i promemoria dei documenti vengono completati NELLA STESSA transazione
+// (funzione Postgres delete_employee). Se la cancellazione è respinta dal
+// vincolo sulle mance ricevute, anche i completamenti si annullano — prima
+// restavano promemoria chiusi per un dipendente ancora nel sistema. Il
+// messaggio per il caso mance arriva già leggibile dal database.
 export async function deleteEmployee(id) {
-  // Prima chiudi i promemoria Agenda collegati ai documenti: il cascade
-  // rimuove i documenti ma lascerebbe i task pendenti in Agenda.
-  const docs = await listEmployeeDocuments(id);
-  for (const d of docs) {
-    if (d.task_id) {
-      try {
-        await updateTask(d.task_id, { status: "completato" });
-      } catch {
-        /* task già rimosso: non bloccare */
-      }
-    }
-  }
-  const { error } = await supabase.from("employees").delete().eq("id", id);
-  if (error) {
-    if (error.code === "23503") {
-      throw new Error(
-        "Impossibile eliminare: il dipendente ha ricevuto mance in una distribuzione. Rimuovi prima la distribuzione dalla sezione Mance."
-      );
-    }
-    throw error;
-  }
+  return eseguiOperazione("delete_employee", { p_employee_id: id });
 }
 
 // --- Documenti compliance (scadenza → promemoria in Agenda) ---
@@ -84,16 +66,11 @@ export async function createEmployeeDocument(employeeId, _employeeName, payload)
   });
 }
 
-export async function deleteEmployeeDocument(id, taskId) {
-  if (taskId) {
-    try {
-      await updateTask(taskId, { status: "completato" });
-    } catch {
-      /* task già rimosso: non bloccare */
-    }
-  }
-  const { error } = await supabase.from("employee_documents").delete().eq("id", id);
-  if (error) throw error;
+// Promemoria completato e documento cancellato nella STESSA transazione
+// (funzione Postgres delete_employee_document). Il task_id lo legge il
+// database dalla riga: il secondo parametro resta per compatibilità.
+export async function deleteEmployeeDocument(id, _taskId) {
+  return eseguiOperazione("delete_employee_document", { p_document_id: id });
 }
 
 // Documenti in scadenza (tutti i dipendenti) — per l'overview.

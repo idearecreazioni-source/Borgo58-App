@@ -1,6 +1,5 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
-import { updateTask } from "./tasks";
 
 const BUCKET = "documents";
 
@@ -72,23 +71,18 @@ export async function updateDocument(id, patch) {
   return data;
 }
 
+// Promemoria completato e riga cancellata nella STESSA transazione
+// (funzione Postgres delete_document, Contratto B4). Il file si rimuove
+// DOPO, a riga già sparita: prima la riga, poi il file — un file orfano è
+// invisibile e innocuo, una riga che punta a un file cancellato è un
+// documento che l'app mostra e non si apre (era l'ordine di prima).
 export async function deleteDocument(doc) {
-  // chiudi il promemoria Agenda collegato
-  if (doc.task_id) {
+  const storagePath = await eseguiOperazione("delete_document", { p_document_id: doc.id });
+  if (storagePath) {
     try {
-      await updateTask(doc.task_id, { status: "completato" });
+      await supabase.storage.from(BUCKET).remove([storagePath]);
     } catch {
-      /* task già rimosso: non bloccare */
+      /* file già assente o storage non raggiungibile: la riga è la verità */
     }
   }
-  // rimuovi il file dal bucket
-  if (doc.storage_path) {
-    try {
-      await supabase.storage.from(BUCKET).remove([doc.storage_path]);
-    } catch {
-      /* file già assente: non bloccare la cancellazione del record */
-    }
-  }
-  const { error } = await supabase.from("documents").delete().eq("id", doc.id);
-  if (error) throw error;
 }

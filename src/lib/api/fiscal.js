@@ -1,6 +1,5 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
-import { updateTask } from "./tasks";
 
 // --- Impostazioni fiscali (aliquote, ricavi stimati) ---
 export async function getFiscalSettings(entityId) {
@@ -99,15 +98,9 @@ export async function updateFiscalTool(id, patch) {
   return data;
 }
 
-export async function deleteFiscalTool(id, taskId) {
-  if (taskId) {
-    // il task collegato non serve più: completalo per non lasciarlo pendente
-    try {
-      await updateTask(taskId, { status: "completato" });
-    } catch {
-      /* task già rimosso o non accessibile: non bloccare l'eliminazione */
-    }
-  }
-  const { error } = await supabase.from("fiscal_tools").delete().eq("id", id);
-  if (error) throw error;
+// Promemoria completato e strumento cancellato nella STESSA transazione
+// (funzione Postgres delete_fiscal_tool). Il task_id lo legge il database
+// dalla riga: il secondo parametro resta per compatibilità coi chiamanti.
+export async function deleteFiscalTool(id, _taskId) {
+  return eseguiOperazione("delete_fiscal_tool", { p_tool_id: id });
 }
