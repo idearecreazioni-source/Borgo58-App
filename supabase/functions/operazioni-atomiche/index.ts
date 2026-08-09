@@ -24,8 +24,33 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // Elenco CHIUSO delle operazioni invocabili. Tutto ciò che non è qui
 // dentro riceve un rifiuto: il corridoio non è un passacarte generico
 // verso qualunque RPC del database.
+//
+// L'elenco copre l'intero Piano correzioni del 09/08/2026 (blocchi 1-4):
+// un nome presente qui ma non ancora creato nel database è inerte — la
+// chiamata fallisce con "funzione inesistente" e nessun client la invoca
+// finché il rispettivo blocco non viene attivato dalla sua migrazione.
 const OPERAZIONI = new Set([
+  // Comande / cassa (attiva dall'09/08/2026)
   "close_order_as_discount_gift",
+  // Blocco 1 — cessioni intercompany e mance
+  "create_intercompany_cession",
+  "create_tip_distribution",
+  // Blocco 2 — record + promemoria collegato
+  "create_document",
+  "create_fiscal_tool",
+  "create_employee_document",
+  "create_supplier_invoice",
+  "pay_supplier_invoice",
+  // Blocco 3 — cancellazioni con chiusura del promemoria
+  "delete_document",
+  "delete_fiscal_tool",
+  "delete_employee_document",
+  "delete_employee",
+  "delete_supplier_invoice",
+  // Blocco 4 — rifiniture
+  "create_ingredient",
+  "set_active_menu",
+  "swap_recipe_steps",
 ]);
 
 const CORS = {

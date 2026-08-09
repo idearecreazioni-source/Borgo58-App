@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { traGiorniLocale } from "../constants";
+import { eseguiOperazione } from "../operazioni";
 import { createTask, updateTask } from "./tasks";
 
 // --- Anagrafica dipendenti ---
@@ -220,24 +221,23 @@ export async function listTipsPerEmployeeYear(year) {
   return data;
 }
 
-// Registra una distribuzione: crea l'intestazione + le righe per dipendente.
+// Registra una distribuzione: intestazione + righe per dipendente nella
+// STESSA transazione, dentro la funzione Postgres create_tip_distribution.
+// Prima erano due scritture separate dal browser: un fallimento a metà
+// lasciava un totale "distribuito" senza destinatari, e il totale era
+// calcolato dal client sommando anche importi che poi non inseriva. Ora
+// il totale lo calcola il database dalle sole righe che inserisce davvero.
+// La chiamata passa dal corridoio (Contratto B4, 09/08/2026).
+// Restituisce l'id della distribuzione.
 export async function createTipDistribution({ entityId, periodMonth, note, lines }) {
-  const total = lines.reduce((s, l) => s + Number(l.amount || 0), 0);
-  const { data: dist, error } = await supabase
-    .from("tip_distributions")
-    .insert({ entity_id: entityId, period_month: periodMonth, total_amount: total, note: note || null })
-    .select()
-    .single();
-  if (error) throw error;
-
-  const rows = lines
-    .filter((l) => Number(l.amount) > 0)
-    .map((l) => ({ distribution_id: dist.id, employee_id: l.employee_id, amount: Number(l.amount) }));
-  if (rows.length > 0) {
-    const { error: linesError } = await supabase.from("tip_distribution_lines").insert(rows);
-    if (linesError) throw linesError;
-  }
-  return dist;
+  return eseguiOperazione("create_tip_distribution", {
+    p_entity_id: entityId,
+    p_period_month: periodMonth,
+    p_note: note || null,
+    p_lines: (lines ?? [])
+      .filter((l) => Number(l.amount) > 0)
+      .map((l) => ({ employee_id: l.employee_id, amount: Number(l.amount) })),
+  });
 }
 
 export async function deleteTipDistribution(id) {

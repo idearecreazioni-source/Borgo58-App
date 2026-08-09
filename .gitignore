@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Nessun file di chiavi entra mai nel repository: *.local copre .env.local,
+# ma un giorno qualcuno creera' un ".env" e basta — e senza questa riga
+# finirebbe pushato su GitHub. Prevenzione da una riga (audit 09/08/2026).
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

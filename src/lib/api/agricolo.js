@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // --- Colture (orto) ---
 const CROP_SELECT = "*, ingredient:ingredient_id(id, name, unit)";
@@ -49,44 +50,32 @@ export async function listCessions() {
 // collegato, aggiorna anche il costo dell'ingrediente al prezzo di
 // trasferimento (§1: costo produzione interna = prezzo cessione). Fonte
 // "cessione_interna" nello storico prezzi.
+//
+// Cessione e aggiornamento del costo vivono nella STESSA transazione
+// dentro la funzione Postgres create_intercompany_cession — prima erano
+// due scritture separate dal browser, e un fallimento a metà lasciava una
+// cessione fatturata senza il costo che la giustifica (materia fiscale).
+// Il totale lo calcola il database. La chiamata passa dal corridoio
+// (Contratto B4, 09/08/2026). Restituisce l'id della cessione.
 export async function createCession(
   { sellerEntityId, buyerEntityId, ingredientId, productDescription, quantity, unit, unitPrice, vatRate, cessionDate, fiscalDocumentType, invoiceReference, notes },
   { updateIngredientCost } = {}
 ) {
-  const total = Number(quantity) * Number(unitPrice);
-  const { data, error } = await supabase
-    .from("intercompany_cessions")
-    .insert({
-      seller_entity_id: sellerEntityId,
-      buyer_entity_id: buyerEntityId,
-      ingredient_id: ingredientId || null,
-      product_description: productDescription,
-      quantity: Number(quantity),
-      unit,
-      unit_price: Number(unitPrice),
-      vat_rate: vatRate ? Number(vatRate) : null,
-      total_amount: Number(total.toFixed(2)),
-      cession_date: cessionDate,
-      fiscal_document_type: fiscalDocumentType || null,
-      invoice_reference: invoiceReference || null,
-      notes: notes || null,
-    })
-    .select(CESSION_SELECT)
-    .single();
-  if (error) throw error;
-
-  if (updateIngredientCost && ingredientId) {
-    const { error: priceError } = await supabase.rpc("update_ingredient_price", {
-      p_ingredient_id: ingredientId,
-      p_new_price: Number(unitPrice),
-      p_source: "cessione_interna",
-      p_note: `Cessione intercompany del ${cessionDate}`,
-      p_supplier_id: null,
-    });
-    if (priceError) throw priceError;
-  }
-
-  return data;
+  return eseguiOperazione("create_intercompany_cession", {
+    p_seller_entity_id: sellerEntityId,
+    p_buyer_entity_id: buyerEntityId,
+    p_ingredient_id: ingredientId || null,
+    p_product_description: productDescription,
+    p_quantity: Number(quantity),
+    p_unit: unit,
+    p_unit_price: Number(unitPrice),
+    p_vat_rate: vatRate ? Number(vatRate) : null,
+    p_cession_date: cessionDate,
+    p_fiscal_document_type: fiscalDocumentType || null,
+    p_invoice_reference: invoiceReference || null,
+    p_notes: notes || null,
+    p_update_ingredient_cost: Boolean(updateIngredientCost && ingredientId),
+  });
 }
 
 export async function deleteCession(id) {
