@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
-import { createTask, updateTask } from "./tasks";
+import { eseguiOperazione } from "../operazioni";
+import { updateTask } from "./tasks";
 
 // --- Impostazioni fiscali (aliquote, ricavi stimati) ---
 export async function getFiscalSettings(entityId) {
@@ -70,33 +71,21 @@ export async function listFiscalTools() {
 }
 
 // Con una scadenza, crea anche il promemoria in Agenda (§3.7), come le fatture.
+// Strumento fiscale + eventuale promemoria di scadenza nella STESSA
+// transazione (funzione Postgres create_fiscal_tool, Contratto B4).
+// Restituisce l'id dello strumento.
 export async function createFiscalTool(payload) {
-  const { data: tool, error } = await supabase
-    .from("fiscal_tools")
-    .insert(payload)
-    .select()
-    .single();
-  if (error) throw error;
-
-  if (payload.deadline) {
-    // Riservato al titolare: la visibilità la decide il trigger dal valore di
-    // origine_modulo (§3.18, migrazione 20260804000001), non questa chiamata.
-    const task = await createTask({
-      title: `Strumento fiscale: ${payload.name}`,
-      due_date: payload.deadline,
-      category: "Fiscale",
-      origine_modulo: "proiezione_fiscale",
-    });
-    const { data: updated, error: upErr } = await supabase
-      .from("fiscal_tools")
-      .update({ task_id: task.id })
-      .eq("id", tool.id)
-      .select()
-      .single();
-    if (upErr) throw upErr;
-    return updated;
-  }
-  return tool;
+  return eseguiOperazione("create_fiscal_tool", {
+    p_name: payload.name,
+    p_category: payload.category,
+    p_description: payload.description ?? null,
+    p_applicability: payload.applicability ?? null,
+    p_status: payload.status || "da_verificare",
+    p_normative_reference: payload.normative_reference ?? null,
+    p_last_verified_date: payload.last_verified_date ?? null,
+    p_in_use: Boolean(payload.in_use),
+    p_deadline: payload.deadline ?? null,
+  });
 }
 
 export async function updateFiscalTool(id, patch) {

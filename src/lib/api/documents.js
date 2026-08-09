@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
-import { createTask, updateTask } from "./tasks";
+import { eseguiOperazione } from "../operazioni";
+import { updateTask } from "./tasks";
 
 const BUCKET = "documents";
 
@@ -43,29 +44,26 @@ export async function getDocumentUrl(storagePath) {
 }
 
 // Con una scadenza, crea anche il promemoria in Agenda (§3.13).
+// Documento + eventuale promemoria di scadenza nella STESSA transazione,
+// dentro la funzione Postgres create_document (Contratto B4, 09/08/2026).
+// Prima erano tre scritture separate dal browser: un fallimento a metà
+// lasciava un documento senza promemoria o un promemoria scollegato.
+// Il file va caricato nello storage PRIMA (uploadDocumentFile): prima il
+// file, poi la riga — un file orfano è innocuo, una riga senza file no.
+// Restituisce l'id del documento.
 export async function createDocument(payload) {
-  const { data: doc, error } = await supabase.from("documents").insert(payload).select().single();
-  if (error) throw error;
-
-  if (payload.expiry_date) {
-    // Riservato al titolare: la visibilità la decide il trigger dal valore di
-    // origine_modulo (§3.18, migrazione 20260804000001), non questa chiamata.
-    const task = await createTask({
-      title: `Scadenza documento: ${payload.title}`,
-      due_date: payload.expiry_date,
-      category: "Documenti",
-      origine_modulo: "archivio_documenti",
-    });
-    const { data: updated, error: upErr } = await supabase
-      .from("documents")
-      .update({ task_id: task.id })
-      .eq("id", doc.id)
-      .select()
-      .single();
-    if (upErr) throw upErr;
-    return updated;
-  }
-  return doc;
+  return eseguiOperazione("create_document", {
+    p_title: payload.title,
+    p_entity_id: payload.entity_id ?? null,
+    p_doc_type: payload.doc_type ?? null,
+    p_document_date: payload.document_date ?? null,
+    p_counterparties: payload.counterparties ?? null,
+    p_amount: payload.amount ?? null,
+    p_expiry_date: payload.expiry_date ?? null,
+    p_note: payload.note ?? null,
+    p_storage_path: payload.storage_path ?? null,
+    p_file_name: payload.file_name ?? null,
+  });
 }
 
 export async function updateDocument(id, patch) {

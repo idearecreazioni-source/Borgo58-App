@@ -1,7 +1,7 @@
 import { supabase } from "../supabase";
 import { traGiorniLocale } from "../constants";
 import { eseguiOperazione } from "../operazioni";
-import { createTask, updateTask } from "./tasks";
+import { updateTask } from "./tasks";
 
 // --- Anagrafica dipendenti ---
 export async function listEmployees({ includeInactive } = {}) {
@@ -68,36 +68,20 @@ export async function listEmployeeDocuments(employeeId) {
   return data;
 }
 
-export async function createEmployeeDocument(employeeId, employeeName, payload) {
-  const { data: doc, error } = await supabase
-    .from("employee_documents")
-    .insert({ employee_id: employeeId, ...payload })
-    .select()
-    .single();
-  if (error) throw error;
-
-  if (payload.expiry_date) {
-    // Il titolo contiene il nome del dipendente e il tipo di documento: dati
-    // riservati (§3.5). NON serve passare visibile_staff qui — lo impone il
-    // trigger trg_task_visibility a partire da origine_modulo (§3.18,
-    // migrazione 20260804000001), così vale anche per chi scrive sulla
-    // tabella senza passare da questo file.
-    const task = await createTask({
-      title: `Rinnovo documento — ${employeeName}: ${payload.description || payload.doc_type}`,
-      due_date: payload.expiry_date,
-      category: "Personale",
-      origine_modulo: "personale",
-    });
-    const { data: updated, error: upErr } = await supabase
-      .from("employee_documents")
-      .update({ task_id: task.id })
-      .eq("id", doc.id)
-      .select()
-      .single();
-    if (upErr) throw upErr;
-    return updated;
-  }
-  return doc;
+// Documento del dipendente + eventuale promemoria di rinnovo nella STESSA
+// transazione (funzione Postgres create_employee_document, Contratto B4).
+// Il nome nel titolo del promemoria lo legge il database dal dipendente
+// vero: il secondo parametro resta per compatibilità coi chiamanti ma non
+// viene più usato. Restituisce l'id del documento.
+export async function createEmployeeDocument(employeeId, _employeeName, payload) {
+  return eseguiOperazione("create_employee_document", {
+    p_employee_id: employeeId,
+    p_doc_type: payload.doc_type,
+    p_description: payload.description ?? null,
+    p_expiry_date: payload.expiry_date ?? null,
+    p_document_reference: payload.document_reference ?? null,
+    p_issue_date: payload.issue_date ?? null,
+  });
 }
 
 export async function deleteEmployeeDocument(id, taskId) {

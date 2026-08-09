@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { createTask, updateTask } from "./tasks";
+import { eseguiOperazione } from "../operazioni";
 
 const SELECT = "*, supplier:supplier_id(id, name)";
 
@@ -28,63 +28,31 @@ export async function createSupplierInvoice({
   documentReference,
   note,
 }) {
-  const { data: invoice, error } = await supabase
-    .from("supplier_invoices")
-    .insert({
-      entity_id: entityId,
-      supplier_id: supplierId,
-      invoice_number: invoiceNumber || null,
-      invoice_date: invoiceDate,
-      due_date: dueDate || null,
-      amount,
-      document_reference: documentReference || null,
-      note: note || null,
-    })
-    .select(SELECT)
-    .single();
-  if (error) throw error;
-
-  if (dueDate) {
-    // Il titolo contiene fornitore e importo: riservato al titolare. La
-    // visibilità la decide il trigger dal valore di origine_modulo (§3.18,
-    // migrazione 20260804000001), non questa chiamata.
-    const task = await createTask({
-      title: `Pagare fattura ${invoiceNumber ? `#${invoiceNumber} ` : ""}— ${invoice.supplier.name} (${amount}€)`,
-      due_date: dueDate,
-      category: "fatture_fornitori",
-      origine_modulo: "fatture_fornitori",
-    });
-    const { data: updated, error: updateError } = await supabase
-      .from("supplier_invoices")
-      .update({ task_id: task.id })
-      .eq("id", invoice.id)
-      .select(SELECT)
-      .single();
-    if (updateError) throw updateError;
-    return updated;
-  }
-
-  return invoice;
+  // Fattura + eventuale promemoria di pagamento nella STESSA transazione
+  // (funzione Postgres create_supplier_invoice, Contratto B4). Il nome del
+  // fornitore nel titolo lo legge il database. Restituisce l'id.
+  return eseguiOperazione("create_supplier_invoice", {
+    p_entity_id: entityId,
+    p_supplier_id: supplierId,
+    p_invoice_date: invoiceDate,
+    p_amount: amount,
+    p_invoice_number: invoiceNumber || null,
+    p_due_date: dueDate || null,
+    p_document_reference: documentReference || null,
+    p_note: note || null,
+  });
 }
 
+// Pagamento e chiusura del promemoria nella STESSA transazione (funzione
+// Postgres pay_supplier_invoice, Contratto B4). Prima la chiusura del task
+// era una seconda chiamata separata: se falliva, la fattura risultava
+// pagata col promemoria "Pagare fattura" ancora pendente in Agenda. Il
+// doppio pagamento viene respinto dal database. Restituisce l'id.
 export async function markInvoicePaid(id, { paymentMethod }) {
-  const { data: invoice, error } = await supabase
-    .from("supplier_invoices")
-    .update({
-      status: "pagata",
-      paid_at: new Date().toISOString(),
-      payment_method: paymentMethod,
-    })
-    .eq("id", id)
-    .select(SELECT)
-    .single();
-  if (error) throw error;
-
-  if (invoice.task_id) {
-    await updateTask(invoice.task_id, { status: "completato" });
-  }
-
-  return invoice;
+  return eseguiOperazione("pay_supplier_invoice", {
+    p_invoice_id: id,
+    p_payment_method: paymentMethod,
+  });
 }
 
 export async function deleteSupplierInvoice(id) {
