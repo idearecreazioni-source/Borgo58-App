@@ -144,7 +144,11 @@ export default function Cessioni() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="text-sm text-b58-charcoal">Imponibile: <span className="font-medium">{formatEUR(total)}</span></div>
               <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
-                <input type="checkbox" checked={form.update_cost} onChange={(e) => setForm((f) => ({ ...f, update_cost: e.target.checked }))} disabled={!form.ingredient_id} />
+                {/* Senza ingrediente collegato la casella è spenta E vuota:
+                    prima restava disegnata "spuntata" pur essendo inerte —
+                    prometteva un aggiornamento che non sarebbe avvenuto
+                    (trovato da Alessio alla prova dal vivo del 09/08). */}
+                <input type="checkbox" checked={Boolean(form.update_cost && form.ingredient_id)} onChange={(e) => setForm((f) => ({ ...f, update_cost: e.target.checked }))} disabled={!form.ingredient_id} />
                 Aggiorna il costo dell'ingrediente collegato a questo prezzo
               </label>
               <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
