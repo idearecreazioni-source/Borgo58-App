@@ -185,7 +185,7 @@ Non solo l'architettura del codice: anche dove e come vive il repository è fiss
   - Migrazioni: `supabase/migrations/AAAAMMGGNNNNNN_nome-descrittivo.sql`, ordine cronologico, mai rinominate dopo l'applicazione.
   - Edge Function: `supabase/functions/<nome-funzione>/index.ts`, con commento in testa che dichiara quale condizione B1-B5 la giustifica (Sezione 6).
   - Funzioni client per dominio: `src/lib/api/<dominio>.js` — un file per modulo/entità, mai una funzione di un dominio scritta in un file di un altro.
-  - Scambio con Cowork: `_scambio_cowork_code/AAAAMMGG_mittente_oggetto.md`.
+  - Scambio con Cowork (storico — canale chiuso il 09/08/2026, i file restano come archivio): `_scambio_cowork_code/AAAAMMGG_mittente_oggetto.md`.
 - **MCP `supabase-lettura`** (`.mcp.json`) è configurato **esplicitamente `read_only=true`**. Resta così: un cambio a lettura/scrittura è una decisione architetturale (dà a una sessione Code la capacità di scrivere sul database di produzione fuori da una migrazione revisionata da Alessio) e passa da qui, non da una modifica silenziosa del file.
 
 ---

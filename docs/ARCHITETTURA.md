@@ -1,6 +1,6 @@
 # Borgo 58 — Architettura e regole di integrità del dato
 
-**Stato**: dettaglio implementativo **subordinato al Contratto Architetturale v2** di Cowork (Desktop, confermato da Alessio il 09/08/2026). Dove i due documenti divergono, vince il contratto — e questo file va corretto, non il contrario.
+**Stato**: dettaglio implementativo **subordinato al Contratto Architetturale** ([`docs/CONTRATTO.md`](CONTRATTO.md), v2 confermato da Alessio il 09/08/2026). Dove i due documenti divergono, vince il contratto — e questo file va corretto, non il contrario.
 **Responsabilità**: l'integrità del dato, a tutti i livelli, è responsabilità di chi scrive il codice — non dell'utente che lo usa, non della schermata, non della fortuna.
 
 > **Correzione del 09/08/2026 (decisione di Alessio, regola B4 del contratto)**: le funzioni SQL delle operazioni multi-tabella **non si invocano via RPC diretta dal client**, come una prima versione di questo documento prevedeva. Si invocano attraverso la Edge Function **`operazioni-atomiche`** (`eseguiOperazione()` in `src/lib/operazioni.js`), che verifica la sessione e inoltra il token dell'utente reale. La transazione resta quella della funzione Postgres — il corridoio non aggiunge né toglie atomicità, aggiunge il punto unico di ingresso voluto dal contratto. Ogni frase più sotto che implichi la chiamata RPC diretta va letta con questa correzione.

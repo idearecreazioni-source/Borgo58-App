@@ -20,11 +20,11 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 
 | | |
 |---|---|
-| **Questo terminale (Claude Code)** | scrive il codice nel repo `Borgo58-App` |
-| **"Cowork"** — altra sessione Claude | tiene il **brief tecnico** e la memoria di progetto, fa le ricerche normative/fiscali, prepara le domande ai consulenti |
-| **Alessio** | applica le migrazioni, fa i `git push`, decide, parla coi consulenti |
+| **Questo terminale (Claude Code)** | implementa: codice, migrazioni (scritte, mai applicate), documenti |
+| **Alessio** | applica le migrazioni, fa i `git push` e i deploy delle Edge Function, esegue le prove dal vivo, decide, parla coi consulenti |
+| **Validatore** — chat separata | validazione avversariale di ogni consegna: clone pulito + connettore Supabase in sola lettura. Riceve da Code un riepilogo per consegna (formato Sezione 5 del Piano correzioni, con hash di HEAD e stato del working tree) |
 
-Le due sessioni **non comunicano in tempo reale**. Il canale è una cartella di scambio (§3).
+> **Storico**: fino al 09/08/2026 esisteva una terza sessione, **"Cowork"**, che teneva il brief tecnico e dialogava via cartella di scambio (§3). Il canale non è più attivo: i suoi documenti restano validi come origine delle decisioni, ma non vanno più attese risposte da lì.
 
 **Regole non derogabili:**
 - **Le migrazioni le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase (MCP/CLI non funzionanti su questa macchina). Mai eseguirle io.
@@ -37,19 +37,15 @@ Le due sessioni **non comunicano in tempo reale**. Il canale è una cartella di 
 ## 3. Percorsi importanti
 
 ```
-Codice:        C:\Users\User\Desktop\Claude code\Borgo58-App
-Brief tecnico: C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea\
-               06_App_Borgo58\APP_Borgo58_Brief_Tecnico_v2.md
-Scambio:       C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea\_scambio_cowork_code\
+Codice:     C:\Users\User\Desktop\Claude code\Borgo58-App
+Contratto:  docs\CONTRATTO.md   (autorità architetturale, versionata nel repo)
+Archivio:   C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea\
+            (brief tecnico in 06_App_Borgo58\, scambi passati in _scambio_cowork_code\)
 ```
 
-⚠️ **Il brief è stato spostato più volte** (05-06/08 e di nuovo il 07/08/2026, quando è stata eliminata la doppia cartella annidata ed è nata "Claude cowork"). Cowork riorganizza le cartelle: se il percorso non risponde, cercalo con Glob invece di assumere.
-
-⚠️ **Il brief va riletto** se la sessione dura a lungo: viene modificato in-place da Cowork anche a metà sessione, senza segnali.
+⚠️ **L'archivio è STORICO** (canale Cowork chiuso il 09/08/2026): il brief e i documenti di scambio restano citabili come origine delle decisioni, ma non vengono più aggiornati e non vanno più attese risposte da lì. Se un percorso non risponde, cercarlo con Glob invece di assumere.
 
 ⚠️ La cartella `Borgo 58 - Osteria Contemporanea` contiene documenti finanziari/legali sensibili — **mai metterci codice**.
-
-**Convenzione per i messaggi a Cowork**: file in `_scambio_cowork_code\` con nome `AAAAMMGG_code_<oggetto>.md`.
 
 ---
 
@@ -111,7 +107,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 
 > ⚠️ **L'autorità sulle decisioni di architettura è il Contratto Architetturale, versionato in [`docs/CONTRATTO.md`](docs/CONTRATTO.md)** (v2, confermato da Alessio il 09/08/2026). Ogni sua modifica passa da un commit approvato esplicitamente da Alessio; nessuna sessione IA lo modifica di propria iniziativa. Nessuna sessione scrive principi architetturali nuovi negli altri file di progetto: si propongono lì e li conferma Alessio.
 >
-> Sintesi operativa vincolante: gli invarianti sono **vincoli del database**, non controlli nella schermata; ogni scrittura multi-tabella "tutto o niente" è **UNA funzione Postgres** (una chiamata = una transazione); **il client non la chiama mai via RPC diretta — passa dalla Edge Function `operazioni-atomiche`** tramite `eseguiOperazione()` in `src/lib/operazioni.js` (regola B4, decisione esplicita di Alessio del 09/08/2026 — proposta alternativa a RPC diretta valutata e respinta). Le scritture su una sola tabella senza conseguenze altrove restano dirette con la RLS come barriera. Dettagli implementativi in [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md), **subordinato al contratto**. Lista di lavoro corrente: `Borgo58_Piano_Correzioni_Integrita.md` (Desktop) + verifica in `_scambio_cowork_code\20260809_code_verifica-contratto-e-piano.md`.
+> Sintesi operativa vincolante: gli invarianti sono **vincoli del database**, non controlli nella schermata; ogni scrittura multi-tabella "tutto o niente" è **UNA funzione Postgres** (una chiamata = una transazione); **il client non la chiama mai via RPC diretta — passa dalla Edge Function `operazioni-atomiche`** tramite `eseguiOperazione()` in `src/lib/operazioni.js` (regola B4, decisione esplicita di Alessio del 09/08/2026 — proposta alternativa a RPC diretta valutata e respinta). Le scritture su una sola tabella senza conseguenze altrove restano dirette con la RLS come barriera. Dettagli implementativi in [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md), **subordinato al contratto**. Il Piano correzioni del 09/08 è **completato**; i suoi documenti (`Borgo58_Piano_Correzioni_Integrita.md` e le verifiche di scambio) restano nell'archivio storico come origine delle decisioni.
 
 - **RLS**: funzione SQL `is_titolare()`. Tabelle titolare-only: singola policy `for all ... using ((select is_titolare()))`. Tabelle condivise (Agenda, Calendario, Magazzino, HACCP, Comande): policy separate per operazione — `select`/`insert` aperti, `update`/`delete` titolare.
 - **Dati economici nascosti allo staff**: viste **`_display` SECURITY DEFINER** (senza `security_invoker` → bypassano la RLS ma espongono solo colonne sicure). Es. `recipe_ingredients_display`, `stock_lots_display`, `suppliers_display`, `menu_items_display`.
@@ -192,7 +188,7 @@ Tre accorgimenti appresi sul campo:
 ## 10. Cosa resta da fare
 
 **In capo a Claude Code:**
-- Chiudere la notifica Telegram agli estranei + chiave anon in Vault (in attesa di conferma dal tavolo di Cowork)
+- Chiudere la notifica Telegram agli estranei + chiave anon in Vault (proposta pronta — la conferma spetta ad Alessio)
 
 **In capo ad Alessio:**
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**
