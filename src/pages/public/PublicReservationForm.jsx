@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { submitPublicReservation } from "../../lib/api/publicReservations";
+import { useEffect, useState } from "react";
+import { getReservationOptions, submitPublicReservation } from "../../lib/api/publicReservations";
 import { oggiLocale } from "../../lib/constants";
 import Logo from "../../components/Logo";
 
@@ -26,6 +26,50 @@ export default function PublicReservationForm() {
   // continuato ad accettare "ieri" — che la funzione lato database rifiuta,
   // dando all'ospite un errore incomprensibile.
   const today = oggiLocale();
+
+  // Disponibilità vera, chiesta al database ogni volta che cambia la data o
+  // il numero di persone. Finché il titolare non accende l'interruttore
+  // (opzioni.attivo = false) resta l'orario libero di prima: il form
+  // funziona comunque, non dipende da questa chiamata.
+  const [opzioni, setOpzioni] = useState(null);
+  const [cercaOrari, setCercaOrari] = useState(false);
+
+  useEffect(() => {
+    const persone = Number(form.partySize);
+    if (!form.date || !persone || persone < 1) {
+      setOpzioni(null);
+      return;
+    }
+    let annullato = false;
+    setCercaOrari(true);
+    getReservationOptions({ date: form.date, partySize: persone })
+      .then((o) => {
+        if (annullato) return;
+        setOpzioni(o);
+        // Se l'orario già scelto nel frattempo non è più libero, si toglie:
+        // meglio un campo vuoto che un invio rifiutato dopo aver compilato
+        // tutto il resto.
+        if (o?.attivo && !(o.orari ?? []).includes(form.time)) {
+          setForm((f) => ({ ...f, time: "" }));
+        }
+      })
+      .catch(() => {
+        // Se la disponibilità non arriva, non si blocca la prenotazione:
+        // si torna all'orario libero e decide comunque il titolare.
+        if (!annullato) setOpzioni(null);
+      })
+      .finally(() => {
+        if (!annullato) setCercaOrari(false);
+      });
+    return () => {
+      annullato = true;
+    };
+    // form.time volutamente fuori: serve solo a ripulire, non a ricaricare.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.date, form.partySize]);
+
+  const sceltaOrari = Boolean(opzioni?.attivo);
+  const orariLiberi = opzioni?.orari ?? [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,6 +168,55 @@ export default function PublicReservationForm() {
               />
             </div>
             <div>
+              <label className={labelClass}>Persone</label>
+              <input
+                required
+                type="number"
+                min="1"
+                max="30"
+                value={form.partySize}
+                onChange={(e) => setForm((f) => ({ ...f, partySize: e.target.value }))}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {sceltaOrari ? (
+            <div>
+              <label className={labelClass}>Orario</label>
+              {cercaOrari ? (
+                <p className="text-sm text-b58-charcoal-soft">Cerco i posti liberi…</p>
+              ) : opzioni.chiuso ? (
+                <p className="text-sm text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
+                  {opzioni.motivo}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {orariLiberi.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, time: o }))}
+                      className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
+                        form.time === o
+                          ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
+                          : "bg-white text-b58-charcoal border-b58-charcoal/15 hover:bg-b58-cream-dark"
+                      }`}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {opzioni.gruppo_grande && !opzioni.chiuso && (
+                <p className="text-[11px] text-b58-charcoal-soft/80 mt-2">
+                  Siete più di quanti ne tiene il nostro tavolo più grande: la richiesta ci
+                  arriva lo stesso e ti richiamiamo per sistemarvi bene.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
               <label className={labelClass}>Ora</label>
               <input
                 required
@@ -133,20 +226,7 @@ export default function PublicReservationForm() {
                 className={inputClass}
               />
             </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>Numero di persone</label>
-            <input
-              required
-              type="number"
-              min="1"
-              max="30"
-              value={form.partySize}
-              onChange={(e) => setForm((f) => ({ ...f, partySize: e.target.value }))}
-              className={inputClass}
-            />
-          </div>
+          )}
 
           <div>
             <label className={labelClass}>Nome e cognome</label>
@@ -209,7 +289,7 @@ export default function PublicReservationForm() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (sceltaOrari && !form.time)}
             className="w-full rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
           >
             {submitting ? "Invio…" : "Invia richiesta"}

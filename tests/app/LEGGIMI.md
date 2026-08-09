@@ -24,3 +24,5 @@ Le prove entrano come i tablet: con **utenti dedicati**, mai coi PIN reali.
 - Lettura libera; scritture SOLO su dati di prova marcati (`TEST-AUTO`, `__PROVA__`), sempre ripulite alla fine — anche se un giro precedente è morto a metà.
 - **Mai** creare-e-cancellare righe nelle tabelle sorvegliate da `deleted_records` (soldi/fisco/personale/documenti): lascerebbero lapidi di prova nel registro delle cancellazioni. Quei percorsi sono già provati dentro le migrazioni, che girano da amministratore e ripuliscono anche il registro.
 - L'utente `test-titolare` è un titolare a tutti gli effetti: la password va trattata come una chiave vera.
+- **I file di prova girano in fila, non insieme** (`--no-file-parallelism`): il database è uno solo, e in parallelo si pestano i piedi in modi che sembrano guasti veri. Successo due volte il 10/08/2026 — un file che aggiungeva un tavolo mentre un altro contava i coperti liberi, e un `signOut()` globale che buttava fuori l'utente all'altro file a metà corsa. In fila costano qualche secondo in più e non mentono.
+- `signOut()` è **globale**: nelle prove va sempre `signOut({ scope: "local" })`.

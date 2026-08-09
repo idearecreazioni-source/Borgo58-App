@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listReservations } from "../../lib/api/reservations";
+import { useAuth } from "../../context/AuthContext";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 
 const STATUS_BADGE = {
@@ -22,6 +23,7 @@ export default function ReservationsList() {
   // Default: prenotazioni di oggi — la vista utile per preparare la sala.
   const [date, setDate] = useState(todayISO());
   const navigate = useNavigate();
+  const { isTitolare } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -51,6 +53,14 @@ export default function ReservationsList() {
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">Calendario Eventi</h1>
         <div className="flex gap-2">
+          {isTitolare && (
+            <Link
+              to="/calendario-eventi/sala-e-orari"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            >
+              Sala e orari
+            </Link>
+          )}
           <Link
             to="/calendario-eventi/clienti"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"

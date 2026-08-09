@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run tests/unita",
-    "test:app": "vitest run tests/app"
+    "test:app": "vitest run tests/app --no-file-parallelism"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

@@ -26,3 +26,20 @@ export async function submitPublicReservation({
   });
   if (error) throw error;
 }
+
+// Cosa può ancora scegliere un cliente per un certo giorno e un certo
+// numero di persone. Una sola chiamata: il conto dei posti liberi lo fa il
+// database, non la schermata — così la pagina pubblica e il controllo che
+// precede l'inserimento non possono dire due cose diverse.
+//
+// Risposta: { attivo, chiuso, motivo, gruppo_grande, orari: ["19:30", …] }
+// Con "attivo: false" (interruttore spento nelle impostazioni) il form
+// torna a essere una richiesta libera, come prima del 10/08/2026.
+export async function getReservationOptions({ date, partySize }) {
+  const { data, error } = await supabasePubblico.rpc("public_reservation_options", {
+    p_date: date,
+    p_party_size: partySize,
+  });
+  if (error) throw error;
+  return data;
+}
