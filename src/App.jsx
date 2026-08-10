@@ -20,6 +20,7 @@ import ClientiList from "./pages/calendario/ClientiList";
 import ClienteDetail from "./pages/calendario/ClienteDetail";
 import SalaEOrari from "./pages/calendario/SalaEOrari";
 import PublicReservationForm from "./pages/public/PublicReservationForm";
+import InformativaPrivacy from "./pages/public/InformativaPrivacy";
 import AgendaList from "./pages/agenda/AgendaList";
 import TaskForm from "./pages/agenda/TaskForm";
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
@@ -108,6 +109,7 @@ function AppRoutes() {
         }
       />
       <Route path="/prenota" element={<PublicReservationForm />} />
+      <Route path="/privacy" element={<InformativaPrivacy />} />
       <Route
         element={
           <RequireAuth>

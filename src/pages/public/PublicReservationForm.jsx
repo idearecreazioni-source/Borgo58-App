@@ -281,7 +281,19 @@ export default function PublicReservationForm() {
             <span>
               Acconsento al trattamento dei miei dati personali (nome, contatti, eventuali
               note) da parte di Borgo 58 al solo scopo di gestire questa richiesta di
-              prenotazione, in conformità al GDPR.
+              prenotazione, in conformità al GDPR.{" "}
+              {/* Il collegamento deve stare QUI, accanto alla casella: una
+                  informativa raggiungibile solo da un piè di pagina è una
+                  informativa che nessuno apre nel momento in cui acconsente. */}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noreferrer"
+                className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+              >
+                Leggi l'informativa
+              </a>
+              .
             </span>
           </label>
 
