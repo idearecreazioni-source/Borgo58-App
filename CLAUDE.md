@@ -283,7 +283,8 @@ Come verificare una pubblicazione senza aprire il browser:
 - **7 adempimenti societari** in `tasks`, riservati al titolare, con importi e codici F24 reali
 - **1 menu attivo** "estivo" con 2 piatti, 1 fornitore reale ("Mililli") con storico prezzi
 - **Progetto di prova** `Borgo58-Prova` (ref `bnwqgpuyzmzujxfbtyvs`, EU Irlanda, piano Free): usa-e-getta, ricostruibile con un comando. Ci girano le prove automatiche.
-- **50 migrazioni** registrate in `applied_migrations` (le ultime: le sei del 09/08 — `chiusura_sconto_omaggio_atomica`, `blocco1_cessioni_e_mance`, `blocco2_record_e_promemoria`, `blocco3_cancellazioni_con_promemoria`, `blocco4_rifiniture_atomiche`, `blindatura_notifiche` — più `capienza_e_orari`, `messaggi_giusti` e `search_path_dei_trigger` del 10/08). Verificato in produzione dopo l'ultima: **zero funzioni trigger senza `search_path`**.
+- **52 migrazioni** registrate in `applied_migrations` (le ultime del 10/08: `capienza_e_orari`, `messaggi_giusti`, `search_path_dei_trigger`, `conservazione_dati_clienti`, `allarmi`). Verificato in produzione dopo ognuna, dal connettore in sola lettura.
 - **Orari e capienza VERI, compilati da Alessio il 10/08**: 60 coperti su 14 tavoli, cena martedì-sabato 19:00 → 22:00 (ultimo ingresso), pranzo la domenica 12:00 → 14:00, **lunedì di riposo**. `prenotazioni_online_attive = true`: il form pubblico mostra i posti liberi ai clienti veri. Cambiarli è affare suo da "Sala e orari" — non vanno toccati da qui.
 - **1 riga in `service_settings`**: prezzo del coperto = 5,00 €
+- **3 lavori pianificati** in `cron.job`: promemoria Agenda (ogni 5 min), pulizia dati clienti scaduti (4:30), sentinella dei lavori (ogni 15 min).
 - **2 valori nel Vault** (`vault.secrets`): `notifiche_firma` (parola d'ordine delle notifiche, esiste solo lì e nelle variabili d'ambiente della funzione) e `chiave_anon`. **Rigenerare la firma senza aggiornare anche i Secrets della Edge Function spegne le notifiche.**
