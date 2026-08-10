@@ -32,7 +32,7 @@ gli altri con «password dimenticata».
 | **Supabase** — dove vivono i dati del locale | **si entra con GitHub**: non ha password propria | — | quello di GitHub | si rientra rientrando in GitHub |
 | **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | app Authenticator | codici di recupero nelle note della voce Cloudflare |
 | **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | Bitwarden (password della verifica in due passaggi + **token del bot**) | verifica in due passaggi dell'app | email di recupero `borgo58.gestionale@gmail.com` |
-| **Anthropic** — l'account dell'intelligenza artificiale (`console.anthropic.com`) | `borgo58.gestionale@gmail.com` | Bitwarden (password **e** chiave dell'API) | app Authenticator | recupero via email |
+| **Anthropic** — l'account dell'intelligenza artificiale (`platform.claude.com`) | **si entra con Google**: nessuna password propria | Bitwarden tiene la **chiave dell'API** (la password non esiste) | quello di Google | si rientra rientrando in Google |
 | **Aruba** — quando comprerai il dominio | da creare | Bitwarden | da attivare | — |
 | **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | app Authenticator | **codice di recupero di Bitwarden, su carta** — mai dentro la cassaforte che serve a recuperare |
 
