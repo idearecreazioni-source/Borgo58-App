@@ -125,7 +125,14 @@ export async function corridoioInstallato(client) {
   const r = await client.functions.invoke("operazioni-atomiche", {
     body: { operazione: "__sonda__", parametri: {} },
   });
-  return r.error?.context?.status !== 404;
+  if (!r.error) return true;
+  // Attenzione al falso negativo: il corridoio risponde 404 anche alle
+  // operazioni fuori elenco, esattamente come il gateway quando la
+  // funzione non c'è. A distinguerli è il corpo della risposta, che solo
+  // il corridoio scrive. Guardare il solo codice di stato diceva "non
+  // installata" su una funzione installata e funzionante.
+  const corpo = await r.error.context?.json?.().catch(() => null);
+  return corpo?.errore?.codice === "operazione";
 }
 
 export async function clientAutenticato({ email, password }) {
