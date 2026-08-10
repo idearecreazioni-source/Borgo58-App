@@ -82,6 +82,25 @@ function formatTaskReminderMessage(task: Record<string, unknown>): string {
     .join("\n");
 }
 
+// Un avviso di guasto deve distinguersi al primo sguardo da una
+// prenotazione o da un promemoria: chi lo riceve durante un servizio deve
+// capire in mezzo secondo se può aspettare la fine del turno.
+function formatAlarmMessage(allarme: Record<string, unknown>): string {
+  const tipo = allarme.tipo as string;
+  const messaggio = allarme.messaggio as string;
+
+  return [
+    "⚠️ QUALCOSA NON VA",
+    "",
+    messaggio,
+    "",
+    `Tipo: ${tipo}`,
+    "Di questo avviso ne arriva uno solo all'ora, anche se il guasto si ripete.",
+  ]
+    .filter((line) => line !== null && line !== "")
+    .join("\n");
+}
+
 async function sendTelegram(text: string) {
   return fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
@@ -128,6 +147,8 @@ Deno.serve(async (req) => {
 
   if (payload.type === "task_reminder" && payload.task) {
     message = formatTaskReminderMessage(payload.task);
+  } else if (payload.type === "allarme" && payload.allarme) {
+    message = formatAlarmMessage(payload.allarme);
   } else if (payload.record?.source === "form_pubblico") {
     message = formatReservationMessage(payload.record);
   }

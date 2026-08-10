@@ -59,6 +59,15 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// I rifiuti PREVISTI: il database che fa il suo mestiere, non un guasto.
+// Non devono generare avvisi — se ne generassero, il rumore diventerebbe
+// normale e il primo guasto vero passerebbe inosservato.
+//   P0001 — messaggio scritto da noi ("Questo conto è già stato chiuso")
+//   42501 — la RLS ha detto no ("solo il titolare")
+//   23505 — un vincolo del locale (un solo conto aperto per tavolo)
+//   23514 — un controllo di validità (quantità negativa, data impossibile)
+const RIFIUTI_PREVISTI = new Set(["P0001", "42501", "23505", "23514"]);
+
 function errore(status: number, codice: string, messaggio: string) {
   return new Response(JSON.stringify({ errore: { codice, messaggio } }), {
     status,
@@ -108,7 +117,25 @@ Deno.serve(async (req) => {
   if (error) {
     // Il messaggio della funzione Postgres è scritto per chi lavora in
     // sala (es. "Questo conto è già stato chiuso"): va restituito intatto.
-    return errore(409, error.code ?? "db", error.message);
+    const previsto = RIFIUTI_PREVISTI.has(error.code ?? "");
+
+    if (!previsto) {
+      // Guasto vero: il titolare lo deve sapere adesso, non domani dal
+      // sintomo. Un avviso che fallisce non deve però far fallire anche
+      // la risposta: chi è in sala deve comunque vedere cos'è successo.
+      try {
+        await supabase.rpc("segnala_allarme", {
+          p_tipo: `corridoio_${operazione}`,
+          p_messaggio:
+            `L'operazione "${operazione}" si è fermata per un errore non previsto: ${error.message}`,
+          p_dettagli: { operazione, codice: error.code ?? null },
+        });
+      } catch {
+        // silenzio: l'allarme è un di più, l'operazione viene prima
+      }
+    }
+
+    return errore(previsto ? 409 : 500, error.code ?? "db", error.message);
   }
 
   return new Response(JSON.stringify({ risultato: data ?? null }), {
