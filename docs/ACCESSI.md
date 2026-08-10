@@ -31,9 +31,16 @@ gli altri con «password dimenticata».
 | **GitHub** — dove vive il codice | utente `idearecreazioni-source`, email `borgo58.gestionale@gmail.com` (la vecchia resta come seconda) | Bitwarden | app Authenticator | **codici di recupero**: nelle note della voce GitHub + su carta |
 | **Supabase** — dove vivono i dati del locale | **si entra con GitHub**: non ha password propria | — | quello di GitHub | si rientra rientrando in GitHub |
 | **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | ⏳ da attivare | recupero via email |
-| **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | — | verifica in due passaggi dell'app | email di recupero impostata nell'app |
+| **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | Bitwarden (password della verifica in due passaggi + **token del bot**) | verifica in due passaggi dell'app | email di recupero `borgo58.gestionale@gmail.com` |
 | **Aruba** — quando comprerai il dominio | da creare | Bitwarden | da attivare | — |
-| **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | ⏳ da attivare | nessuno: se perdi la password principale non la recupera nemmeno Bitwarden |
+| **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | app Authenticator | **codice di recupero di Bitwarden, su carta** — mai dentro la cassaforte che serve a recuperare |
+
+**Due portachiavi, divisi per argomento** (scelta del 10/08/2026): tutto
+ciò che riguarda **il locale sta in Bitwarden**; le password personali e
+degli altri progetti restano nel gestore di Chrome. Così sai sempre dove
+cercare. Unica accortezza: quando cambi una password del locale, entrambe
+le estensioni chiederanno di salvarla — si dice **sì a Bitwarden e no a
+Chrome**, altrimenti fra sei mesi non si sa più quale delle due è buona.
 
 **La catena da tenere a mente**: chi entra in **GitHub** entra anche in
 **Supabase**, cioè nei dati del locale. GitHub è protetto dall'app sul
@@ -77,6 +84,11 @@ tutto il gestionale: chi ce l'ha, ha i dati.
 - [x] Password diverse per ogni conto, e una cassaforte sola dove tenerle
       (vedi sotto).
 
+- [x] **Telegram**: verifica in due passaggi attiva con email di recupero,
+      e **token del bot** messo al sicuro nella cassaforte.
+- [x] **Bitwarden**: verifica in due passaggi attiva, e il suo codice di
+      recupero scritto su carta — non dentro sé stesso.
+
 **Creata la cassaforte Bitwarden** sui server europei (`vault.bitwarden.eu`),
 con le voci dei conti e, nelle note sicure, i codici di recupero di GitHub
 e i codici di backup di Google.
@@ -99,18 +111,9 @@ non esiste, pur avendolo appena creato.
 
 - [ ] **Cloudflare: verifica in due passaggi** (My Profile → Authentication).
       È l'ultimo conto senza secondo passaggio.
-- [ ] **Telegram: verifica in due passaggi** (Impostazioni → Privacy e
-      sicurezza), con email di recupero.
-- [ ] Il **codice del bot Telegram** (quello di BotFather) salvato nel
-      gestore, e in nessun altro posto.
 - [ ] Controllare che in **GitHub → Settings → Collaborators**, in
       **Supabase → Organization → Team** e in **Cloudflare → Members** non
       ci sia nessun altro oltre a me.
-- [ ] **Verifica in due passaggi su Bitwarden stesso** (Impostazioni →
-      Sicurezza → Accesso in due passaggi, con l'app del telefono).
-- [ ] Importare in Bitwarden le password rimaste in Chrome, poi
-      **disattivare** in Chrome «Chiedi di salvare le password»: due
-      portachiavi mezzi pieni sono peggio di uno pieno.
 - [ ] Portare la cartella `Backup Borgo 58` fuori dal computer.
 
 ---
