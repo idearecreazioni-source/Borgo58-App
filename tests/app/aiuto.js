@@ -61,6 +61,73 @@ export function credenziali() {
   };
 }
 
+/**
+ * Garantisce che una tabella riservata al titolare abbia almeno una riga.
+ *
+ * Serve da quando le prove girano sul progetto di prova, che nasce vuoto:
+ * il protocollo §7 punto 2 vieta di dichiarare verificata una RLS su una
+ * tabella vuota — senza una riga che lo staff NON deve vedere, la prova
+ * passerebbe identica anche a RLS spenta. Restituisce la pulizia da
+ * chiamare alla fine (che non fa nulla se la riga c'era già).
+ */
+export async function almenoUnaRiga(titolare, tabella, riga) {
+  const { data, error } = await titolare.from(tabella).select("id").limit(1);
+  if (error) throw new Error(`Non riesco a leggere ${tabella}: ${error.message}`);
+  if (data.length > 0) return async () => {};
+
+  const inserita = await titolare.from(tabella).insert(riga).select("id").single();
+  if (inserita.error) {
+    throw new Error(`Non riesco a creare la riga di prova in ${tabella}: ${inserita.error.message}`);
+  }
+  return async () => {
+    await titolare.from(tabella).delete().eq("id", inserita.data.id);
+  };
+}
+
+/** L'entità S.r.l.s.: la prima creata. Serve a ogni riga economica. */
+export async function primaEntita(titolare) {
+  const { data, error } = await titolare
+    .from("entities")
+    .select("id")
+    .order("created_at")
+    .limit(1)
+    .single();
+  if (error) throw new Error(`Nessuna entità nel database: ${error.message}`);
+  return data.id;
+}
+
+/** Come sopra, ma per i coperti: senza posti a sedere non c'è nulla da calcolare. */
+export async function almenoUnTavolo(titolare) {
+  const { data, error } = await titolare.from("dining_tables").select("id, seats").eq("active", true);
+  if (error) throw new Error(`Non riesco a leggere i tavoli: ${error.message}`);
+  if ((data || []).reduce((t, r) => t + (r.seats || 0), 0) > 0) return async () => {};
+
+  const inserito = await titolare
+    .from("dining_tables")
+    .insert({ label: "__PROVA__ tavolo", seats: 20, active: true })
+    .select("id")
+    .single();
+  if (inserito.error) throw new Error(`Non riesco a creare il tavolo di prova: ${inserito.error.message}`);
+  return async () => {
+    await titolare.from("dining_tables").delete().eq("id", inserito.data.id);
+  };
+}
+
+/**
+ * Il corridoio (Edge Function) è installato su QUESTO progetto?
+ *
+ * Sul progetto di prova le funzioni online vanno installate a parte: se
+ * mancano, il gateway risponde 404 a qualunque chiamata — e le prove del
+ * corridoio passerebbero "perché c'è un errore", cioè per il motivo
+ * sbagliato. Meglio saperlo e dirlo.
+ */
+export async function corridoioInstallato(client) {
+  const r = await client.functions.invoke("operazioni-atomiche", {
+    body: { operazione: "__sonda__", parametri: {} },
+  });
+  return r.error?.context?.status !== 404;
+}
+
 export async function clientAutenticato({ email, password }) {
   const c = clientAnonimo();
   const { error } = await c.auth.signInWithPassword({ email, password });

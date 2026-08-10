@@ -459,6 +459,7 @@ declare
   v_id        uuid;
   v_messaggio text;
   v_accettato boolean := false;
+  v_tavolo_finto uuid;
   n           integer;
 begin
   -- PRIMA DI TUTTO: lo stato di partenza, per restituirlo intatto. Questa
@@ -494,6 +495,20 @@ begin
   v_esito := public_reservation_options(v_data, 2);
   if (v_esito ->> 'attivo')::boolean then
     raise exception 'Con l''interruttore spento la funzione si comporta come se fosse acceso.';
+  end if;
+
+  -- Su un database appena ricostruito da zero (il progetto di prova) i
+  -- tavoli non esistono ancora: sono dati del locale, non struttura, e
+  -- nessuna migrazione li crea. Con zero coperti la prova viva qui sotto
+  -- non avrebbe nessun orario da controllare e si fermerebbe dando la
+  -- colpa al calcolo. In quel caso — e solo in quello — la verifica si
+  -- crea il proprio tavolo e lo toglie alla fine. Dove i tavoli veri
+  -- esistono (produzione) questo ramo non viene mai percorso.
+  if coalesce((select sum(seats) from dining_tables where active), 0) = 0 then
+    insert into dining_tables (label, seats, active)
+    values ('__prova_capienza__', 20, true)
+    on conflict (label) do update set seats = 20, active = true
+    returning id into v_tavolo_finto;
   end if;
 
   -- Prova viva: accendo, apro il giorno, controllo che gli orari escano,
@@ -549,6 +564,7 @@ begin
 
   -- Pulizia: si torna esattamente com'era
   delete from reservations where id = v_id;
+  delete from dining_tables where id = v_tavolo_finto;
   update service_hours set attivo = v_ore_pre where weekday = v_dow and servizio = 'cena';
   update service_settings set prenotazioni_online_attive = coalesce(v_attivo_pre, false) where id = 1;
 

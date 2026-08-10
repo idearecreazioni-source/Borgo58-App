@@ -75,12 +75,19 @@ sql(
    end $pulizia$;`,
   "La rimozione dei lavori pianificati"
 );
-sql("drop schema if exists public cascade; create schema public;", "Lo svuotamento");
-sql("grant usage on schema public to anon, authenticated, service_role;", "I permessi di base");
+// Lo schema si cancella e basta: a ricrearlo ci pensa la copia, che se lo
+// porta dietro (`create schema public`). Ricrearlo qui farebbe fallire il
+// ripristino al primo comando — ed e' esattamente cosi' che si scopre che
+// una procedura di emergenza scritta a tavolino non era mai stata provata.
+sql("drop schema if exists public cascade;", "Lo svuotamento");
 // Gli accessi del progetto di prova vanno via anche loro: i dati veri sono
 // agganciati agli utenti veri (chi ha registrato un incasso, chi ha chiuso
 // un conto), e senza quegli utenti il ripristino si fermerebbe a meta'.
-sql("delete from storage.objects; delete from storage.buckets;", "La pulizia dell'archivio");
+//
+// L'archivio documenti resta invece fuori da questa prova: Supabase
+// protegge le proprie tabelle dello storage e rifiuta cancellazioni e
+// inserimenti diretti in SQL. I file veri sono nella cartella `file/`
+// della copia e si ricaricano dall'app (docs/BACKUP.md, paragrafo 6).
 sql("delete from auth.users;", "La pulizia degli accessi");
 console.log("   fatto");
 
@@ -88,14 +95,41 @@ for (const [file, descrizione] of [
   ["01_schema.sql", "Rimetto la forma del database"],
   ["03_accessi.sql", "Rimetto gli utenti che entrano nell'app"],
   ["02_dati.sql", "Rimetto il contenuto delle tabelle"],
-  ["04_archivio.sql", "Rimetto l'elenco dei documenti"],
 ]) {
   if (!existsSync(path.join(cartella, file))) continue;
   titolo(descrizione);
-  const r = esegui(psql, ["-v", "ON_ERROR_STOP=1", "-d", url, "-f", path.join(cartella, file)], {
-    silenzioso: true,
-  });
-  if (!r.ok) {
+  // Senza ON_ERROR_STOP, ma NON alla cieca: ogni errore viene letto e
+  // confrontato con l'unico tollerato. Su Supabase la copia contiene una
+  // dozzina di righe che riguardano permessi gestiti dalla piattaforma, e
+  // che nessun cliente ha il diritto di cambiare: fermarsi lì renderebbe
+  // impossibile qualunque ripristino. Qualsiasi altro errore ferma tutto.
+  //
+  // `session_replication_role = replica` spegne, per questa sola sessione,
+  // sia i controlli di coerenza sia i trigger dell'app. Serve a due cose
+  // scoperte ripristinando davvero: le righe tornano in ordine alfabetico
+  // di tabella (una caparra prima della sua prenotazione = chiave esterna
+  // violata) e ogni riga rimessa farebbe scattare i trigger, notifiche
+  // Telegram comprese. Un ripristino rimette i dati com'erano; non li fa
+  // riaccadere.
+  const r = esegui(
+    psql,
+    ["-d", url, "-c", "set session_replication_role = 'replica'", "-f", path.join(cartella, file)],
+    { silenzioso: true }
+  );
+  const errori = r.uscita
+    .split(/\r?\n/)
+    .filter((riga) => /ERROR:/.test(riga))
+    .filter((riga) => !/permission denied to change default privileges/.test(riga));
+  if (errori.length > 0) {
+    fermati(
+      `Il ripristino di ${file} ha prodotto ${errori.length} errori non previsti.`,
+      "",
+      ...errori.slice(0, 10),
+      "",
+      "Vuol dire che la copia NON basterebbe in caso di guasto: va sistemata."
+    );
+  }
+  if (!r.ok && errori.length === 0 && !/permission denied to change default privileges/.test(r.uscita)) {
     fermati(
       `Il ripristino si e' fermato su ${file}.`,
       "",
@@ -105,6 +139,19 @@ for (const [file, descrizione] of [
     );
   }
   console.log("   fatto");
+  if (file === "01_schema.sql") {
+    sql("grant usage on schema public to anon, authenticated, service_role;", "I permessi di base");
+    // Le estensioni non stanno dentro la copia: sono pezzi del motore, non
+    // dati. Vanno rimesse a mano, e senza di loro meta' del gestionale non
+    // parte (promemoria pianificati e notifiche). Scoperto ripristinando
+    // davvero: e' il genere di cosa che un documento non avrebbe previsto.
+    sql(
+      `create extension if not exists pgcrypto;
+       create extension if not exists pg_net;
+       create extension if not exists pg_cron;`,
+      "Il rimontaggio delle estensioni"
+    );
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -158,5 +205,6 @@ console.log("  nomi e telefoni dei clienti compresi. Va rimesso a posto subito:"
 console.log("");
 console.log("    npm run prova:ricostruisci -- --azzera");
 console.log("");
-console.log("  (poi ricrea i 4 utenti di prova: sono stati sostituiti da quelli veri)");
+console.log("  Gli accessi non vanno rifatti: la copia porta gli stessi quattro");
+console.log("  indirizzi, quindi le prove automatiche continuano a entrare.");
 console.log("");

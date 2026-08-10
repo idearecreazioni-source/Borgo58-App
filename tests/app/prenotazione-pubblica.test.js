@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAnonimo, clientAutenticato, credenziali } from "./aiuto";
+import { almenoUnTavolo, clientAnonimo, clientAutenticato, credenziali } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import {
   getReservationOptions,
@@ -125,6 +125,7 @@ describe("posti liberi", () => {
   let titolare;
   let staff;
   let anonimo;
+  let pulisciTavolo = async () => {};
   // Data lontana e ora precisa: nessuna prenotazione vera ci finisce sopra.
   const QUANDO = "2027-06-15T20:00:00";
   const NOME = "PROVA AUTOMATICA capienza";
@@ -137,10 +138,14 @@ describe("posti liberi", () => {
     ]);
     anonimo = clientAnonimo();
     await titolare.from("reservations").delete().eq("customer_name", NOME);
+    // Sul progetto di prova la sala nasce senza tavoli: senza posti a
+    // sedere "quanti ne restano liberi" e sempre zero e non dimostra nulla.
+    pulisciTavolo = await almenoUnTavolo(titolare);
   });
 
   afterAll(async () => {
     await titolare.from("reservations").delete().eq("customer_name", NOME);
+    await pulisciTavolo();
   });
 
   it("una prenotazione toglie posti, cancellarla li ridà", async () => {

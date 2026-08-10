@@ -137,9 +137,18 @@ una sola tabella non torna, te lo dice e si ferma.
 Da fare **almeno una volta ogni cambio importante** — e la prima volta
 subito, perché è quella che dimostra che il sistema funziona.
 
+Eseguita la prima volta il 10/08/2026: **56 tabelle, 195 righe, nessuna
+differenza**. Non era scontato: la prima prova ha trovato tre modi in cui
+il ripristino si sarebbe inceppato il giorno del guasto (l'ordine con cui
+tornano le righe, i controlli e gli avvisi che ripartivano come se i dati
+fossero nuovi, e le estensioni del motore che non stanno dentro la copia).
+Ora il comando li gestisce da solo — ed è esattamente il motivo per cui un
+backup va ripristinato almeno una volta prima di fidarsene.
+
 ⚠️ Dopo un ripristino il progetto di prova contiene i **dati veri**, nomi e
 telefoni dei clienti compresi. Rimettilo a posto subito dopo con
-`npm run prova:ricostruisci -- --azzera`.
+`npm run prova:ricostruisci -- --azzera`. Gli accessi non vanno rifatti: la
+copia porta gli stessi quattro indirizzi.
 
 ---
 

@@ -124,10 +124,29 @@ declare
   v_aperto        date;
   v_esito         jsonb;
   v_i             integer;
+  v_dow_finto     smallint;
+  v_tavolo_finto  uuid;
 begin
   select prenotazioni_online_attive, preavviso_minuti
     into v_attivo_pre, v_preavviso_pre
   from service_settings where id = 1;
+
+  -- Su un database appena ricostruito da zero (il progetto di prova) non
+  -- c'è nessun servizio acceso e nessun tavolo: sono dati del locale, che
+  -- nessuna migrazione crea. Senza di essi le tre frasi non si possono
+  -- provare. In quel caso — e solo in quello — la verifica si apre da sé
+  -- una cena e un tavolo per domani, e li richiude alla fine. Dove gli
+  -- orari veri esistono (produzione) questi due rami non si percorrono.
+  if not exists (select 1 from service_hours where attivo) then
+    v_dow_finto := extract(dow from ((now() at time zone 'Europe/Rome')::date + 1))::smallint;
+    update service_hours set attivo = true where weekday = v_dow_finto and servizio = 'cena';
+  end if;
+  if coalesce((select sum(seats) from dining_tables where active), 0) = 0 then
+    insert into dining_tables (label, seats, active)
+    values ('__prova_messaggi__', 20, true)
+    on conflict (label) do update set seats = 20, active = true
+    returning id into v_tavolo_finto;
+  end if;
 
   -- Serve un giorno senza servizi e uno con servizi, nei prossimi 14
   for v_i in 1..14 loop
@@ -186,6 +205,10 @@ begin
      set preavviso_minuti = v_preavviso_pre,
          prenotazioni_online_attive = coalesce(v_attivo_pre, false)
    where id = 1;
+  if v_dow_finto is not null then
+    update service_hours set attivo = false where weekday = v_dow_finto and servizio = 'cena';
+  end if;
+  delete from dining_tables where id = v_tavolo_finto;
 
   raise notice 'Le tre frasi sono distinte: chiuso, troppo tardi, pieno. Impostazioni riportate com''erano (preavviso %, online %).', v_preavviso_pre, coalesce(v_attivo_pre, false);
 end $verifica$;

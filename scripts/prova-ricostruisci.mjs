@@ -42,8 +42,8 @@ const MIGRAZIONE_DEI_RUOLI = "20260801000001_roles_rls.sql";
 const SQL_RUOLI = `
 insert into user_roles (user_id, role)
 select id,
-       case when email in ('alessio@borgo58.app', 'test-titolare@borgo58.app')
-            then 'titolare' else 'staff' end
+       (case when email in ('alessio@borgo58.app', 'test-titolare@borgo58.app')
+             then 'titolare' else 'staff' end)::app_role
 from auth.users
 where email in (${UTENTI_RICHIESTI.map((e) => `'${e}'`).join(", ")})
 on conflict (user_id) do update set role = excluded.role;
@@ -134,17 +134,17 @@ sql(
    end $prep$;`,
   "La parola d'ordine di prova"
 );
-esegui(
-  psql,
-  [
-    "-v", "ON_ERROR_STOP=1",
-    "-v", `chiave=${chiaveAnon}`,
-    "-d", url,
-    "-c",
-    `select vault.create_secret(:'chiave', 'chiave_anon', 'Chiave pubblica del progetto di prova.')
-     where not exists (select 1 from vault.secrets where name = 'chiave_anon');`,
-  ],
-  { silenzioso: true }
+// La chiave finisce dentro il comando SQL, quindi si controlla che
+// contenga solo i caratteri di un JWT: psql, con `-c`, non sostituisce le
+// variabili (`:'chiave'` arriverebbe al database così com'è — bug vero,
+// trovato alla prima ricostruzione).
+if (!/^[A-Za-z0-9_.-]+$/.test(chiaveAnon)) {
+  fermati("PROVA_ANON_KEY contiene caratteri inattesi.", "Deve essere la chiave `anon` del progetto di prova.");
+}
+sql(
+  `select vault.create_secret('${chiaveAnon}', 'chiave_anon', 'Chiave pubblica del progetto di prova.')
+   where not exists (select 1 from vault.secrets where name = 'chiave_anon');`,
+  "L'archiviazione della chiave pubblica"
 );
 console.log("   fatto");
 

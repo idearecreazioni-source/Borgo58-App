@@ -71,6 +71,9 @@ function dump(nomeFile, argomenti, descrizione) {
 }
 
 dump("01_schema.sql", ["--schema-only", "--schema=public"], "Forma del database");
+// I controlli si spengono al RIPRISTINO, non qui (vedi prova-ripristina):
+// `--disable-triggers` produrrebbe comandi che su Supabase nessuno ha il
+// diritto di eseguire, perché toccano i trigger di sistema.
 dump("02_dati.sql", ["--data-only", "--schema=public"], "Contenuto delle tabelle");
 dump(
   "03_accessi.sql",

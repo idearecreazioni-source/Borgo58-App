@@ -1,5 +1,20 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { clientAnonimo, clientAutenticato, credenziali } from "./aiuto";
+import {
+  almenoUnaRiga,
+  clientAnonimo,
+  clientAutenticato,
+  corridoioInstallato,
+  credenziali,
+  primaEntita,
+} from "./aiuto";
+
+// Il corridoio si cerca PRIMA di definire le prove: se la funzione online
+// non è installata su questo progetto, le prove che la riguardano vengono
+// saltate invece di passare per il motivo sbagliato (un 404 è un errore
+// anche lui, e "mi aspetto un errore" sarebbe soddisfatto da quello).
+const sonda = await clientAutenticato(credenziali().staff);
+const CORRIDOIO = await corridoioInstallato(sonda);
+await sonda.auth.signOut({ scope: "local" });
 
 // La matrice dei permessi, riprovabile in venti secondi.
 //
@@ -20,22 +35,41 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   });
 
   it("lo staff NON vede gli ingredienti (lì vivono i prezzi d'acquisto)", async () => {
-    const [perStaff, perTitolare] = await Promise.all([
-      staff.from("ingredients").select("id"),
-      titolare.from("ingredients").select("id"),
-    ]);
-    expect(perStaff.error).toBeNull();
-    expect(perStaff.data).toHaveLength(0); // la RLS filtra: zero righe, non un errore
-    expect(perTitolare.data.length).toBeGreaterThan(0);
+    const pulisci = await almenoUnaRiga(titolare, "ingredients", {
+      entity_id: await primaEntita(titolare),
+      name: "__PROVA__ ingrediente",
+      category: "altro",
+      unit: "kg",
+      current_price: 1,
+    });
+    try {
+      const [perStaff, perTitolare] = await Promise.all([
+        staff.from("ingredients").select("id"),
+        titolare.from("ingredients").select("id"),
+      ]);
+      expect(perStaff.error).toBeNull();
+      expect(perStaff.data).toHaveLength(0); // la RLS filtra: zero righe, non un errore
+      expect(perTitolare.data.length).toBeGreaterThan(0);
+    } finally {
+      await pulisci();
+    }
   });
 
   it("lo staff NON vede i fornitori (anagrafica riservata)", async () => {
-    const [perStaff, perTitolare] = await Promise.all([
-      staff.from("suppliers").select("id"),
-      titolare.from("suppliers").select("id"),
-    ]);
-    expect(perStaff.data).toHaveLength(0);
-    expect(perTitolare.data.length).toBeGreaterThan(0);
+    const pulisci = await almenoUnaRiga(titolare, "suppliers", {
+      entity_id: await primaEntita(titolare),
+      name: "__PROVA__ fornitore",
+    });
+    try {
+      const [perStaff, perTitolare] = await Promise.all([
+        staff.from("suppliers").select("id"),
+        titolare.from("suppliers").select("id"),
+      ]);
+      expect(perStaff.data).toHaveLength(0);
+      expect(perTitolare.data.length).toBeGreaterThan(0);
+    } finally {
+      await pulisci();
+    }
   });
 
   it("gli adempimenti riservati in Agenda restano invisibili allo staff", async () => {
@@ -101,21 +135,21 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(r.error.message).toContain("Data non valida");
   });
 
-  it("il corridoio respinge chi non è autenticato", async () => {
+  it.skipIf(!CORRIDOIO)("il corridoio respinge chi non è autenticato", async () => {
     const r = await anonimo.functions.invoke("operazioni-atomiche", {
       body: { operazione: "close_order_as_discount_gift", parametri: {} },
     });
     expect(r.error).not.toBeNull();
   });
 
-  it("il corridoio respinge le operazioni fuori elenco anche da autenticati", async () => {
+  it.skipIf(!CORRIDOIO)("il corridoio respinge le operazioni fuori elenco anche da autenticati", async () => {
     const r = await staff.functions.invoke("operazioni-atomiche", {
       body: { operazione: "operazione_inventata", parametri: {} },
     });
     expect(r.error).not.toBeNull();
   });
 
-  it("il corridoio arriva fino al database con un utente vero (conto inesistente → messaggio del database)", async () => {
+  it.skipIf(!CORRIDOIO)("il corridoio arriva fino al database con un utente vero (conto inesistente → messaggio del database)", async () => {
     const r = await staff.functions.invoke("operazioni-atomiche", {
       body: {
         operazione: "close_order_as_discount_gift",
@@ -125,5 +159,16 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(r.error).not.toBeNull();
     const corpo = await r.error.context?.json().catch(() => null);
     expect(corpo?.errore?.messaggio).toContain("Conto non trovato");
+  });
+
+  // Sentinella: una prova saltata in silenzio, dopo un mese, è una prova
+  // che nessuno sa di non avere più. Finché il corridoio non è installato
+  // qui, questa riga resta rossa e lo ricorda.
+  it("il corridoio è installato anche su questo progetto", () => {
+    expect(
+      CORRIDOIO,
+      "La funzione online 'operazioni-atomiche' non è installata sul progetto di prova: " +
+        "le tre prove del corridoio sono state SALTATE (docs/AMBIENTE_PROVA.md §6)."
+    ).toBe(true);
   });
 });

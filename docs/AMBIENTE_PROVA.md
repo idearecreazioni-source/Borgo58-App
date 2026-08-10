@@ -119,8 +119,17 @@ Per rifarlo da capo su un progetto non più vuoto:
 
 Onesto elenco, per non dare per verificato ciò che non lo è:
 
-- **Le funzioni online (Edge Function) non sono installate qui.** Le
-  notifiche Telegram partite per sbaglio dal progetto di prova finiscono
+- **Le funzioni online (Edge Function) non sono installate qui**, e finché
+  restano fuori **tre prove automatiche non girano**: quelle sul corridoio,
+  la strada obbligata di ogni operazione che tocca più tabelle insieme. Non
+  vengono nascoste: `npm run test:app` le salta e una riga resta **rossa**
+  apposta, così nessuno dimentica che quella parte non è coperta.
+  Come chiudere il buco, dal pannello del progetto di prova:
+  1. **Edge Functions → Deploy a new function → Via Editor**;
+  2. nome esatto: `operazioni-atomiche`;
+  3. incolla il contenuto di `supabase/functions/operazioni-atomiche/index.ts`
+     e premi **Deploy**. Non servono chiavi: usa quelle che Supabase dà da sé.
+- Le notifiche Telegram partite per sbaglio dal progetto di prova finiscono
   contro la funzione vera e vengono **respinte**: la parola d'ordine del
   progetto di prova è generata diversa apposta. Nessuna notifica di prova
   arriva sul telefono.
