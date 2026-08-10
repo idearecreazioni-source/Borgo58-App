@@ -5,18 +5,29 @@ Due livelli, due comandi:
 | Comando | Cosa prova | Serve la rete? |
 |---|---|---|
 | `npm run test` | Le regole pure: date del locale, calcolo del conto | No — gira anche a ogni commit (gancio pre-commit) |
-| `npm run test:app` | Il database vero: permessi per ruolo, corridoio, giro comanda completo | Sì — Supabase di produzione, con utenti di PROVA |
+| `npm run test:app` | Un database vero: permessi per ruolo, corridoio, giro comanda completo | Sì — il **progetto di prova**, con utenti di PROVA |
+
+## Dove girano (cambiato l'11/08/2026)
+
+Fino al 10/08 le prove scrivevano nel database del locale. Adesso girano
+sul **progetto di prova** (`docs/AMBIENTE_PROVA.md`): un database
+usa-e-getta, ricostruibile da zero con un comando. Se `.env.test`
+contenesse l'indirizzo del progetto vero, le prove **non partono**: il
+controllo è in `aiuto.js`, non nella buona memoria di chi le lancia.
 
 ## Utenti di prova (una tantum)
 
 Le prove entrano come i tablet: con **utenti dedicati**, mai coi PIN reali.
 
-1. Dashboard Supabase → **Authentication → Users → Add user** → creare:
-   - `test-titolare@borgo58.app`
-   - `test-staff@borgo58.app`
-   (stessa password per entrambi va bene: vivono nello stesso file locale)
-2. Assegnare i ruoli: eseguire `supabase/diagnostica/20260809_setup_utenti_di_prova.sql` nell'SQL Editor.
-3. Copiare `.env.test.example` in `.env.test` e scrivere la password.
+1. Dashboard Supabase, **progetto Borgo58-Prova** → **Authentication →
+   Users → Add user** → creare `test-titolare@borgo58.app` e
+   `test-staff@borgo58.app` (stessa password va bene: è un database di
+   prova, e vivono nello stesso file locale).
+2. I ruoli li assegna già `npm run prova:ricostruisci`. Se servisse
+   rifarlo a mano: `supabase/diagnostica/20260809_setup_utenti_di_prova.sql`
+   nell'SQL Editor **del progetto di prova**.
+3. Copiare `.env.test.example` in `.env.test` e completarlo (indirizzo del
+   progetto di prova, chiave anon, password).
    `.env.test` è escluso dal repository (`.gitignore`): **non va mai committato**.
 
 ## Regole di comportamento delle prove sull'app

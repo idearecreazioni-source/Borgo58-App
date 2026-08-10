@@ -19,6 +19,10 @@ dist-ssr
 .env.*
 !.env.example
 !.env.test.example
+!.env.db.example
+
+# Resoconti delle ricostruzioni del database di prova (utili solo sul momento).
+ricostruzione_*.log
 
 # Editor directories and files
 .vscode/*

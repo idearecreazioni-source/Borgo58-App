@@ -1,9 +1,11 @@
 import { defineConfig } from "vitest/config";
 import { existsSync, readFileSync } from "node:fs";
 
-// Carica le credenziali degli utenti di PROVA da .env.test (mai committato:
-// coperto da .gitignore). Serve solo a `npm run test:app`; le prove di
-// unità (`npm run test`) non ne hanno bisogno.
+// Carica da .env.test (mai committato: coperto da .gitignore) l'indirizzo
+// del progetto di PROVA e le credenziali dei suoi utenti. Questi valori
+// vincono su .env.local: e' quel file a decidere su quale database girano
+// le prove, e dall'11/08/2026 non è più quello del locale.
+// Serve solo a `npm run test:app`; le prove di unità (`npm run test`) no.
 function credenzialiDiProva() {
   const out = {};
   if (existsSync(".env.test")) {

@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Attrezzi per le prove contro il database VERO (npm run test:app).
+// Attrezzi per le prove contro un database vero (npm run test:app).
+//
+// Il database e' quello del progetto di PROVA, mai quello del locale:
+// le prove scrivono, e cio' che scrive non deve poter sbagliare bersaglio.
 //
 // Le prove entrano come entrano i tablet: con utenti di PROVA dedicati
 // (test-titolare / test-staff), mai con i PIN reali. Le credenziali vivono
@@ -11,10 +14,29 @@ import { createClient } from "@supabase/supabase-js";
 // sorvegliate da deleted_records, per non lasciare lapidi di prova nel
 // registro delle cancellazioni.
 
-const URL = import.meta.env.VITE_SUPABASE_URL;
-const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Il progetto VERO. Le prove non devono poterlo toccare: dall'11/08/2026
+// girano sul progetto di prova, e questa costante e' il controllo che lo
+// impone da solo — non una raccomandazione scritta in un documento.
+const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
+
+// .env.test (caricato da vitest.config.js) ha la precedenza su .env.local:
+// e' quel file a dire su quale database girano le prove.
+const URL = process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+const ANON = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export function clientAnonimo() {
+  if (!URL || !ANON) {
+    throw new Error(
+      "Manca l'indirizzo del progetto di prova in .env.test " +
+        "(VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
+    );
+  }
+  if (URL.includes(REF_PRODUZIONE)) {
+    throw new Error(
+      "FERMO: le prove stanno puntando al database VERO del locale. " +
+        "In .env.test va l'indirizzo del progetto di prova (docs/AMBIENTE_PROVA.md)."
+    );
+  }
   return createClient(URL, ANON, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
