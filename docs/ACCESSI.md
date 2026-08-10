@@ -30,7 +30,7 @@ gli altri con «password dimenticata».
 | **Google** `idearecreazioni@gmail.com` — vecchia, tenuta come riserva | l'indirizzo stesso | Bitwarden | — | recupero via `alessio.schillaci@icloud.com` |
 | **GitHub** — dove vive il codice | utente `idearecreazioni-source`, email `borgo58.gestionale@gmail.com` (la vecchia resta come seconda) | Bitwarden | app Authenticator | **codici di recupero**: nelle note della voce GitHub + su carta |
 | **Supabase** — dove vivono i dati del locale | **si entra con GitHub**: non ha password propria | — | quello di GitHub | si rientra rientrando in GitHub |
-| **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | ⏳ da attivare | recupero via email |
+| **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | app Authenticator | codici di recupero nelle note della voce Cloudflare |
 | **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | Bitwarden (password della verifica in due passaggi + **token del bot**) | verifica in due passaggi dell'app | email di recupero `borgo58.gestionale@gmail.com` |
 | **Aruba** — quando comprerai il dominio | da creare | Bitwarden | da attivare | — |
 | **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | app Authenticator | **codice di recupero di Bitwarden, su carta** — mai dentro la cassaforte che serve a recuperare |
@@ -86,6 +86,8 @@ tutto il gestionale: chi ce l'ha, ha i dati.
 
 - [x] **Telegram**: verifica in due passaggi attiva con email di recupero,
       e **token del bot** messo al sicuro nella cassaforte.
+- [x] **Cloudflare**: verifica in due passaggi con app di autenticazione e
+      codici di recupero salvati.
 - [x] **Bitwarden**: verifica in due passaggi attiva, e il suo codice di
       recupero scritto su carta — non dentro sé stesso.
 
@@ -109,11 +111,11 @@ non esiste, pur avendolo appena creato.
 
 ## 3. Cosa resta
 
-- [ ] **Cloudflare: verifica in due passaggi** (My Profile → Authentication).
-      È l'ultimo conto senza secondo passaggio.
-- [ ] Controllare che in **GitHub → Settings → Collaborators**, in
-      **Supabase → Organization → Team** e in **Cloudflare → Members** non
-      ci sia nessun altro oltre a me.
+- [x] **GitHub**: verificato dal terminale il 11/08/2026 — un solo accesso
+      (`idearecreazioni-source`, admin), zero inviti in sospeso, zero chiavi
+      di deploy.
+- [ ] Controllare che in **Supabase → Organization → Team** e in
+      **Cloudflare → Members** non ci sia nessun altro oltre a me.
 - [ ] Portare la cartella `Backup Borgo 58` fuori dal computer.
 
 ---
