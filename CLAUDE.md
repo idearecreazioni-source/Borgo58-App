@@ -30,6 +30,7 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 - **Le migrazioni di PRODUZIONE le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase. Mai eseguirle io.
 - **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai.
 - **L'autonomia sta sul progetto di prova, non in produzione** (deciso con il validatore il 10/08/2026): su `Borgo58-Prova` — creato lo stesso giorno — ho collegamento **in scrittura** e piena autonomia su migrazioni e prove; è un database usa-e-getta, ricostruibile da zero con un comando. In produzione non cambia nulla. *(Il 10/08 una sessione parallela aveva riscritto queste due regole al contrario, dandosi push e migrazioni di produzione: commit tolto dalla storia locale prima di qualunque push. Le regole valide sono quelle su GitHub.)*
+- **Il riepilogo di consegna si committa in `docs/consegne/AAAAMMGG_blocco_N.md`, come ULTIMO commit della consegna** (convenzione del validatore, 10/08/2026): dichiara l'hash del commit che sta sotto di sé, ed è sola documentazione. Ad Alessio resta solo il push. Niente più copia-incolla nella chat del validatore.
 - **Nessun push senza il riepilogo corrispondente per il validatore. Il riepilogo si scrive DOPO l'ultimo commit della consegna: l'hash di HEAD dichiarato deve essere l'hash che viene pushato. Vale per ogni lavoro, anche fuori dai piani concordati.**
 - **Non inserisco mai PIN o password**, nemmeno per test. Se serve provare da loggati, il login lo fa lui.
 - **Non cambio modello da solo**: segnalo quando un task è ad alto rischio e lascio decidere.
@@ -226,7 +227,7 @@ Tre accorgimenti appresi sul campo:
 1. ✅ **Backup + ambiente di prova** — fatto ed eseguito il 10/08: copia reale, ricostruzione da zero delle 49 migrazioni, prova di ripristino superata. Resta ad Alessio la copia fuori sede e il calendario settimanale
 2. 🔄 **Privacy dei clienti** — fatto il 10/08: conservazione 6 mesi applicata dal database, informativa collegata al form, elenco dei dati trattati. **Chiuso quando** Alessio applica la migrazione in produzione e sostituisce il testo dell'informativa con quello verificato da Laura
 3. 🔄 **Allarmi** — fatto il 10/08 e provato sul progetto di prova. **Chiuso quando** Alessio applica la migrazione e rideploya le due funzioni in produzione
-4. ⏳ **Igiene degli accessi**: checklist in `docs/ACCESSI.md` da eseguire e spuntare
+4. 🔄 **Igiene degli accessi** — checklist scritta il 10/08 ([`docs/ACCESSI.md`](docs/ACCESSI.md)). **Chiuso quando** Alessio la esegue e la spunta: è lavoro suo, non mio
 5. ⏳ **Account AI con tetto di spesa**: prerequisito di tutti i moduli AI
 
 **In capo a Claude Code, fuori dal mandato:**
