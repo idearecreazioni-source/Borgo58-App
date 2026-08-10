@@ -1,144 +1,115 @@
-# Igiene degli accessi — lista da eseguire e spuntare
+# Igiene degli accessi — lista eseguita, e mappa delle chiavi
 
-**A chi serve**: ad Alessio, da solo, senza nessuna competenza tecnica.
-Blocco 4 del Mandato strutturale. Documento del 10/08/2026.
+**A chi serve**: ad Alessio. Blocco 4 del Mandato strutturale.
+Scritto ed **eseguito insieme il 10/08/2026**.
 
-**Come si usa**: si eseguono le voci in ordine e si mette una `x` dentro le
-parentesi quadre man mano (`- [x]`). Serve mezz'ora scarsa.
-
-⚠️ **In questo file non va scritta nessuna password, nessun codice, nessun
-token.** Solo le caselle. Il file finisce su GitHub: se ci finisse un
-segreto, sarebbe pubblico per sempre — cancellarlo non basta, resta nella
-storia del repository.
+⚠️ **In questo file non c'è nessuna password, nessun codice, nessun token —
+e non ce ne devono finire mai.** Solo dove stanno le cose. Il file è su
+GitHub: un segreto committato resta nella storia del repository anche dopo
+essere stato cancellato.
 
 ---
 
-## 0. Perché, in due righe
+## 0. Perché
 
 Chi entra nei conti online del locale può fare più danni di chi entra in
 cucina: cancellare la contabilità, leggere i dati dei clienti, spegnere il
-sito, mandare messaggi a nome tuo. Nessuno di questi conti è protetto da una
-serratura — sono protetti da una password e, se lo attivi, da un secondo
-passaggio sul telefono.
-
-Il conto più importante non è nessuno di quelli del gestionale: è **la tua
-email**. Chi entra lì dentro si riprende tutti gli altri con "password
-dimenticata".
+sito, mandare messaggi a nome tuo. E il conto più importante non è nessuno
+di quelli del gestionale: è **l'email**, perché da lì si riprendono tutti
+gli altri con «password dimenticata».
 
 ---
 
-## 1. Prima di tutto: un gestore di password
+## 1. La mappa — dove sta cosa
 
-Senza, tutto il resto non regge: si finisce con la stessa password
-dappertutto, e basta che UN sito qualunque venga bucato.
+*(la parte da rileggere fra sei mesi, o il giorno storto)*
 
-- [ ] Ho installato un gestore di password (va bene **Bitwarden**, gratuito,
-      su computer e telefono; se preferisci pagare, 1Password è ottimo).
-- [ ] La password principale del gestore è **lunga** (una frase di quattro
-      parole che ricordi, tipo `cucinaOrtoBorgoMarzo`) e non è usata da
-      nessun'altra parte.
-- [ ] La password principale è **anche scritta su carta**, in un posto
-      chiuso a chiave in casa. Se la dimentichi non la recupera nessuno:
-      nemmeno chi ti ha venduto il servizio.
+| Conto | Si entra con | Dove sta la password | Secondo passaggio | Se perdo tutto |
+|---|---|---|---|---|
+| **Google** `borgo58.gestionale@gmail.com` — la chiave di casa | l'indirizzo stesso | gestore di Chrome | app Authenticator sul telefono + SMS | **codici di backup su carta**, cassetto chiuso a chiave |
+| **Google** `idearecreazioni@gmail.com` — vecchia, tenuta come riserva | l'indirizzo stesso | gestore di Chrome | — | recupero via `alessio.schillaci@icloud.com` |
+| **GitHub** — dove vive il codice | utente `idearecreazioni-source`, email `borgo58.gestionale@gmail.com` (la vecchia resta come seconda) | gestore di Chrome | app Authenticator | **codici di recupero**: nelle note della voce GitHub + su carta |
+| **Supabase** — dove vivono i dati del locale | **si entra con GitHub**: non ha password propria | — | quello di GitHub | si rientra rientrando in GitHub |
+| **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | gestore di Chrome (password rifatta il 10/08) | ⏳ da attivare | recupero via email |
+| **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | — | verifica in due passaggi dell'app | email di recupero impostata nell'app |
+| **Aruba** — quando comprerai il dominio | da creare | gestore di Chrome | da attivare | — |
 
----
+**La catena da tenere a mente**: chi entra in **GitHub** entra anche in
+**Supabase**, cioè nei dati del locale. GitHub è protetto dall'app sul
+telefono; se perdi il telefono, si rientra solo con i codici di recupero
+su carta. Sono quei due fogli nel cassetto a reggere tutto.
 
-## 2. L'email — il conto che regge tutti gli altri
+**Sul computer** vivono i file `.env.db`, `.env.local`, `.env.test`: sono
+chiavi del database vero, non password di siti. Non si copiano, non si
+mandano, non si mettono in cloud.
 
-Account di riferimento: **`borgo58.gestionale@gmail.com`** (creata il 10/08/2026
-apposta per il locale). La vecchia `idearecreazioni@gmail.com` resta come
-**indirizzo di recupero**: due strade per rientrare, non una.
-
-È una Gmail e non un indirizzo sul dominio di proposito: un indirizzo
-`@borgo58.it` vive finché vive il dominio, e se un anno scadesse si
-perderebbe anche la strada per recuperare i conti. Il dominio farà la
-faccia verso i clienti, non la chiave di casa.
-
-- [ ] Password unica, generata dal gestore.
-- [ ] **Verifica in due passaggi attiva** (Google → Gestisci account →
-      Sicurezza → Verifica in due passaggi).
-- [ ] **Codici di recupero** scaricati e messi nel gestore di password
-      *(non nella stessa casella email: se perdi l'email perdi anche loro)*.
-- [ ] Ho guardato l'elenco dei dispositivi collegati e non ce n'è nessuno
-      che non riconosco.
+**La cartella `Backup Borgo 58`** portata fuori dal computer vale quanto
+tutto il gestionale: chi ce l'ha, ha i dati.
 
 ---
 
-## 3. I quattro conti del gestionale
+## 2. Cosa è stato fatto il 10/08/2026
 
-Per ognuno: password unica dal gestore, secondo passaggio attivo, codici di
-recupero al sicuro, e **nessun altro** con accesso.
+- [x] Creata `borgo58.gestionale@gmail.com`, dedicata al locale, con la
+      vecchia casella e un indirizzo iCloud come vie di recupero.
+- [x] **Verifica in due passaggi su Google** attiva (app + SMS) e **codici
+      di backup** generati e messi su carta.
+- [x] **GitHub**: indirizzo principale spostato sulla casella nuova (la
+      vecchia resta come seconda strada), **verifica in due passaggi**
+      attiva con app di autenticazione, **codici di recupero** salvati.
+- [x] **Cloudflare**: password rifatta e indirizzo spostato sulla casella
+      nuova (verificato: il pannello mostra la nuova).
+- [x] **Supabase**: controllato *come* si entra — si entra con GitHub,
+      quindi non ha una serratura propria da rinforzare. L'indirizzo per
+      gli avvisi è stato allineato alla casella nuova.
+- [x] Password diverse per ogni conto, tenute nel gestore di Chrome.
 
-### GitHub (dove vive il codice)
-- [ ] Password unica.
-- [ ] Autenticazione a due fattori attiva (Settings → Password and
-      authentication → Two-factor authentication).
-- [ ] Codici di recupero salvati nel gestore.
-- [ ] In Settings → Collaborators non c'è nessuno oltre a me.
-
-### Supabase (dove vivono i dati del locale)
-- [ ] Ho controllato **come entro**: se entro con Google o con GitHub, la
-      sicurezza è quella di quel conto lì — quindi contano i punti sopra.
-- [ ] Autenticazione a due fattori attiva (Account → Security), se entro
-      con email e password.
-- [ ] In Organization → Team non c'è nessun altro membro.
-- [ ] Vale per **entrambi** i progetti: `borgo58` e `Borgo58-Prova`.
-
-### Cloudflare (dove vive il sito)
-- [ ] Password unica.
-- [ ] Two-Factor Authentication attiva (My Profile → Authentication).
-- [ ] Codici di recupero salvati.
-- [ ] In Manage Account → Members non c'è nessun altro.
-
-### Telegram (dove arrivano prenotazioni e allarmi)
-- [ ] Sul mio account Telegram è attiva la **verifica in due passaggi**
-      (Impostazioni → Privacy e sicurezza → Verifica in due passaggi):
-      senza, chi clona la scheda SIM legge le prenotazioni del locale.
-- [ ] Il codice del bot (quello dato da BotFather) è nel gestore di
-      password, e **non** è scritto in nessun altro posto: non in una chat,
-      non in un file sul Desktop, non in una email.
+**Perché il gestore di Chrome e non Bitwarden**: perché è quello che
+Alessio già usa, e uno strumento in più che non si impara è uno strumento
+che non si usa. Il suo difetto — le password vivono dentro lo stesso
+account Google da cui si recupera tutto — è compensato dai due fogli di
+codici nel cassetto, che stanno fuori da Google.
 
 ---
 
-## 4. Il computer dove lavoro
+## 3. Cosa resta
 
-Sul PC ci sono file di chiavi che aprono il database vero (`.env.db`,
-`.env.local`, `.env.test`). Non sono un problema finché il computer è tuo e
-solo tuo — lo diventano se il computer sparisce.
-
-- [ ] Windows chiede una password (o il PIN) all'accensione, e lo schermo si
-      blocca da solo dopo qualche minuto.
-- [ ] Il disco è cifrato con **BitLocker** *(Impostazioni → Privacy e
-      sicurezza → Crittografia dispositivo)*. Se non è disponibile, almeno la
-      casella qui sopra deve essere vera.
-- [ ] La cartella `Backup Borgo 58` che porti fuori (chiavetta o cloud) è
-      trattata come i soldi in cassa: chi ce l'ha, ha tutto il gestionale.
-
----
-
-## 5. Quando arriverà personale
-
-Da fare **prima** dell'apertura, non dopo:
-
-- [ ] I PIN dello staff sono più lunghi di quelli di prova
-      *(rinviato consapevolmente il 06/08/2026, ma non va dimenticato)*.
-- [ ] Nessuno dello staff conosce il mio PIN da titolare.
-- [ ] Nessun conto online del locale è condiviso: chi entra nel gestionale
-      entra con il proprio accesso, non con il mio.
+- [ ] **Cloudflare: verifica in due passaggi** (My Profile → Authentication).
+      È l'ultimo conto senza secondo passaggio.
+- [ ] **Telegram: verifica in due passaggi** (Impostazioni → Privacy e
+      sicurezza), con email di recupero.
+- [ ] Il **codice del bot Telegram** (quello di BotFather) salvato nel
+      gestore, e in nessun altro posto.
+- [ ] Controllare che in **GitHub → Settings → Collaborators**, in
+      **Supabase → Organization → Team** e in **Cloudflare → Members** non
+      ci sia nessun altro oltre a me.
+- [ ] Portare la cartella `Backup Borgo 58` fuori dal computer.
 
 ---
 
-## 6. Ogni sei mesi, e comunque prima dell'apertura
+## 4. Scelte consapevoli, non dimenticanze
 
-- [ ] Ripasso questa lista dall'inizio.
-- [ ] Controllo che non sia comparso nessun accesso di persone che non
+**Nessun PIN all'avvio del computer** — deciso il 10/08/2026: il portatile
+sta in casa e lo usa solo Alessio. Da rimettere in discussione **prima
+dell'apertura del locale**, insieme alla cifratura del disco: le due cose
+vanno insieme, perché la cifratura si sblocca proprio con quella password.
+Il giorno in cui il computer entra in un locale con altre persone — o
+esce di casa — questa riga va riaperta.
+
+**PIN dello staff ancora corti** — rinviato il 06/08/2026, stesso
+appuntamento: prima dell'apertura.
+
+---
+
+## 5. Prima dell'apertura, e poi ogni sei mesi
+
+- [ ] Riprendere il §3 e il §4 e chiuderli.
+- [ ] Nessuno dello staff conosce il PIN da titolare; nessun conto online
+      è condiviso.
+- [ ] Controllare che i codici di recupero siano ancora dove dice la mappa.
+- [ ] Controllare che non sia comparso nessun accesso di persone che non
       lavorano più con me.
-- [ ] Controllo che i codici di recupero siano ancora dove credo.
 
 ---
 
-*Chi ha eseguito e quando — da riempire a mano:*
-
-| Data | Note |
-|---|---|
-|  |  |
+*Eseguito da Alessio, con Claude Code, il 10/08/2026.*
