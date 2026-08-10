@@ -1,6 +1,6 @@
 # Borgo 58 — Gestionale · istruzioni per Claude Code
 
-Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **09/08/2026**.
+Documento letto automaticamente all'avvio di ogni sessione. Aggiornato il **10/08/2026**.
 
 ---
 
@@ -27,8 +27,9 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 > **Storico**: fino al 09/08/2026 esisteva una terza sessione, **"Cowork"**, che teneva il brief tecnico e dialogava via cartella di scambio (§3). Il canale non è più attivo: i suoi documenti restano validi come origine delle decisioni, ma non vanno più attese risposte da lì.
 
 **Regole non derogabili:**
-- **Le migrazioni le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase (MCP/CLI non funzionanti su questa macchina). Mai eseguirle io.
+- **Le migrazioni di PRODUZIONE le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase. Mai eseguirle io.
 - **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai.
+- **L'autonomia sta sul progetto di prova, non in produzione** (deciso con il validatore il 10/08/2026): quando `Borgo58-Prova` esisterà (blocco 1 del Mandato strutturale), lì avrò un collegamento **in scrittura** e piena autonomia su migrazioni e prove — è un database usa-e-getta, ricostruibile da zero con un comando. In produzione non cambia nulla. *(Il 10/08 una sessione parallela aveva riscritto queste due regole al contrario, dandosi push e migrazioni di produzione: commit tolto dalla storia locale prima di qualunque push. Le regole valide sono quelle su GitHub.)*
 - **Nessun push senza il riepilogo corrispondente per il validatore. Il riepilogo si scrive DOPO l'ultimo commit della consegna: l'hash di HEAD dichiarato deve essere l'hash che viene pushato. Vale per ogni lavoro, anche fuori dai piani concordati.**
 - **Non inserisco mai PIN o password**, nemmeno per test. Se serve provare da loggati, il login lo fa lui.
 - **Non cambio modello da solo**: segnalo quando un task è ad alto rischio e lascio decidere.
@@ -70,7 +71,16 @@ La chiave anon **non è un segreto** (finisce nel bundle): la protezione dei dat
 npm run dev      # server di sviluppo
 npm run build    # produce dist/ (file statici)
 npm run lint     # oxlint — deve restare a ZERO avvisi
+npm run backup   # copia di sicurezza del database vero (docs/BACKUP.md)
+npm run prova:ricostruisci   # rifà da zero il database di prova (docs/AMBIENTE_PROVA.md)
+npm run prova:ripristina     # prova di ripristino dell'ultima copia
 ```
+
+**Due progetti Supabase, non uno** (10/08/2026): `borgo58` (produzione) e
+`Borgo58-Prova` (usa-e-getta, ricostruibile da zero dalle migrazioni). Gli
+strumenti a riga di comando di PostgreSQL 17 (`pg_dump`, `psql`) sono un
+prerequisito una-tantum sulla macchina di Alessio; le chiavi vivono in
+`.env.db`, git-ignored, mai nel repository (modello in `.env.db.example`).
 
 **Push (lo fa Alessio, mai io):** il terminale di Claude Code ha i prompt di autenticazione disattivati, quindi `git push` da qui fallisce sempre. Va lanciato in una **finestra PowerShell normale**. L'08/08/2026 anche Git Credential Manager è finito nel prompt testuale `Username for 'https://github.com'` (vicolo cieco: GitHub non accetta più le password). Quello che ha funzionato — login dal browser, niente token da digitare:
 ```powershell
@@ -100,7 +110,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
    ```
 5. **Lint pulito prima di ogni commit.**
 6. **Query verso tabelle che crescono: limite esplicito — MA MAI su ciò che alimenta un documento esibibile** (vedi §8, trappola).
-7. **Modello per materia, non per sezione del brief**: Opus per multi-entità, fiscale/API, RLS e prima nota nuove, registratore telematico. La verifica dal vivo però non è negoziabile con nessun modello.
+7. **Ogni migrazione si applica PRIMA sul progetto di prova, poi in produzione** (10/08/2026, blocco 1 del Mandato strutturale). Vale anche per le prove automatiche: `npm run test:app` gira sul progetto di prova e si rifiuta di partire se `.env.test` punta alla produzione (controllo dentro `tests/app/aiuto.js`, non nella disciplina di chi lancia il comando).
+8. **Modello per materia, non per sezione del brief**: Opus per multi-entità, fiscale/API, RLS e prima nota nuove, registratore telematico. La verifica dal vivo però non è negoziabile con nessun modello.
 
 ---
 
@@ -137,6 +148,9 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 **Tutti i 15 moduli del brief hanno un'implementazione funzionante.** Ricettario, Agenda, Fatture Fornitori (manuale), Magazzino, Cassa/Prima Nota, Calendario Eventi, HACCP, Agricolo, Proiezione Fiscale, Ricerca Ricorrente (placeholder), Personale, Monitoraggio Social (placeholder), Editor Menu, Assistente AI (placeholder), Archivio Documenti.
 
 **Chiuso di recente:**
+- **Rete di sicurezza: copia dei dati + database di prova (10/08) — blocco 1 del Mandato strutturale** — il piano gratuito di Supabase **non fa nessun backup**: fino a ieri i dati del locale vivevano in un posto solo e le prove automatiche scrivevano lì dentro. Ora `npm run backup` porta fuori una copia completa (schema, dati, utenti, **e i file dell'archivio documenti** — che non stanno nel database: un backup che li dimentica sembra completo senza esserlo), `npm run prova:ricostruisci` rifà l'intero database da zero applicando le 49 migrazioni su un secondo progetto, `npm run prova:ripristina` dimostra che la copia funziona confrontando i conteggi riga per riga. Guide in [`docs/BACKUP.md`](docs/BACKUP.md) e [`docs/AMBIENTE_PROVA.md`](docs/AMBIENTE_PROVA.md). **Codice e guide pronti; la prima esecuzione tocca ad Alessio — finché non gira, il blocco non è chiuso.**
+  - **Scoperta della ricostruzione da zero**: le migrazioni **non** partono da un database completamente vuoto — quelle di verifica impersonano un titolare e uno staff, e si fermano se in `user_roles` non c'è nessuno. Prerequisito reso esplicito e automatizzato (4 utenti creati a mano dal pannello, ruoli assegnati dallo script subito dopo la migrazione che crea la tabella dei ruoli). Era una dipendenza invisibile finché esisteva un solo database.
+  - **Difetto noto, dichiarato**: l'indirizzo della Edge Function è inciso in tre migrazioni (`net.http_post`). Sul progetto di prova le notifiche partono quindi verso la funzione **vera** — e vengono respinte, perché la parola d'ordine del progetto di prova è generata diversa apposta. Da parametrizzare quando si tocca quel giro.
 - **Posti liberi in tempo reale sul form pubblico (10/08) — ATTIVO in produzione** — quattro decisioni di Alessio: orario libero ogni 15 minuti con ultimo ingresso (non turni fissi), **conferma sempre sua** (niente prenotazioni automatiche), richiesta in attesa che tiene il posto, email automatica al cliente quando conferma (da fare, vedi §10). Migrazioni `20260810000001` e `20260810000002`, schermata `Sala e orari`, 3 prove automatiche nuove. Verificato dal vivo da Alessio **dal telefono, fuori casa**: richiesta inviata dal sito pubblico → salvata → notifica su Telegram.
   - Difetto trovato solo accendendo davvero, con i numeri veri: il lunedì (riposo) il sito rispondeva *«non abbiamo più posto»* invece di *«siamo chiusi»* — un cliente che ci prova due volte conclude che siamo sempre pieni. Le tre situazioni ora hanno tre frasi distinte: chiuso, troppo tardi per oggi (capita **ogni sera** dopo l'ultimo ingresso, ed è l'unica in cui una telefonata salva ancora un coperto), pieno. **Con i dati segnaposto il difetto era invisibile.**
 - **Canale Telegram blindato + form pubblico riparato (09/08)** — la Edge Function delle notifiche accettava chiunque avesse la chiave anon (che è pubblica): ora serve anche una parola d'ordine condivisa, che vive nel Vault e nelle variabili d'ambiente, mai nel repository. Nella stessa passata è emerso che **`/prenota` non funzionava da un browser con il gestionale aperto** — vedi §6 (`supabasePubblico`) e §8. Suite di prove: **9 pure + 17 sul database vero**.
@@ -199,14 +213,21 @@ Tre accorgimenti appresi sul campo:
 
 ## 10. Cosa resta da fare
 
-**In capo a Claude Code:**
-- **Email automatica al cliente quando Alessio conferma** (scelta del 10/08). Bloccata dall'acquisto del dominio: un'email inviata da un indirizzo che non è il suo finisce nello spam.
+**Mandato strutturale del validatore (10/08/2026)** — cinque blocchi, in quest'ordine, **prima di aprire moduli nuovi**. Documento su `Desktop\Borgo58_Mandato_Strutturale.md`. Un riepilogo per blocco, un blocco alla volta.
+1. 🔄 **Backup + ambiente di prova**: codice e guide fatti il 10/08; **chiuso solo quando Alessio avrà eseguito** la prima copia, la ricostruzione da zero e la prova di ripristino
+2. ⏳ **Privacy dei clienti**: informativa collegata al form, regola di conservazione applicata dal database, elenco dei dati trattati
+3. ⏳ **Allarmi**: avviso al titolare quando il corridoio o i promemoria si rompono davvero (i rifiuti di business non fanno rumore), mai più di un avviso per tipo all'ora
+4. ⏳ **Igiene degli accessi**: checklist in `docs/ACCESSI.md` da eseguire e spuntare
+5. ⏳ **Account AI con tetto di spesa**: prerequisito di tutti i moduli AI
 
-Poi nulla in sospeso. Il candidato successivo, se si riapre un giro di verifica, è quello lasciato scoperto dall'audit dell'08/08: **la logica interna dei moduli che toccano soldi e obblighi** — Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP (un calcolo fiscale sbagliato o una regola HACCP incompleta non li trova nessun controllo per classi di difetto).
+**In capo a Claude Code, fuori dal mandato:**
+- **Email automatica al cliente quando Alessio conferma** (scelta del 10/08). Bloccata dall'acquisto del dominio: un'email inviata da un indirizzo che non è il suo finisce nello spam. Servizio scelto: **Resend**, piano gratuito (3.000 email/mese) — deciso il 10/08 dopo verifica dei prezzi.
+- Poi: **la logica interna dei moduli che toccano soldi e obblighi** — Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP (un calcolo fiscale sbagliato o una regola HACCP incompleta non li trova nessun controllo per classi di difetto).
 
 **In capo ad Alessio:**
-- **Comprare il dominio** (es. `borgo58.it`): serve al QR in vetrina, al link Instagram/Google e all'email di conferma
-- Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio**
+- **Blocco 1**: installare gli strumenti PostgreSQL 17, creare `Borgo58-Prova`, prima copia di sicurezza e prima prova di ripristino (`docs/BACKUP.md`, `docs/AMBIENTE_PROVA.md`)
+- **Comprare il dominio** `borgo58.it` (verificato libero il 10/08, ~5 € il primo anno da Aruba, intestato alla S.r.l.s.): serve al QR in vetrina, al link Instagram/Google e all'email di conferma
+- Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio** — e **non esiste alcun backup automatico** (verificato il 10/08 sulla documentazione Supabase)
 - Backup cifrato fuori sede, con Alessandro (fornitore hardware)
 - **Allungare i PIN prima dell'apertura** (rinviato consapevolmente il 06/08)
 - Con Laura: TD27 sugli omaggi sistematici, scadenza dati clienti (GDPR), verifica che le date degli adempimenti societari (oggi sul 2027) siano corrette ora che la S.r.l.s. esiste da agosto 2026
