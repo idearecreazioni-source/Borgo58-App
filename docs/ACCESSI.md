@@ -26,18 +26,30 @@ gli altri con «password dimenticata».
 
 | Conto | Si entra con | Dove sta la password | Secondo passaggio | Se perdo tutto |
 |---|---|---|---|---|
-| **Google** `borgo58.gestionale@gmail.com` — la chiave di casa | l'indirizzo stesso | gestore di Chrome | app Authenticator sul telefono + SMS | **codici di backup su carta**, cassetto chiuso a chiave |
-| **Google** `idearecreazioni@gmail.com` — vecchia, tenuta come riserva | l'indirizzo stesso | gestore di Chrome | — | recupero via `alessio.schillaci@icloud.com` |
-| **GitHub** — dove vive il codice | utente `idearecreazioni-source`, email `borgo58.gestionale@gmail.com` (la vecchia resta come seconda) | gestore di Chrome | app Authenticator | **codici di recupero**: nelle note della voce GitHub + su carta |
+| **Google** `borgo58.gestionale@gmail.com` — la chiave di casa | l'indirizzo stesso | Bitwarden | app Authenticator sul telefono + SMS | **codici di backup su carta**, cassetto chiuso a chiave |
+| **Google** `idearecreazioni@gmail.com` — vecchia, tenuta come riserva | l'indirizzo stesso | Bitwarden | — | recupero via `alessio.schillaci@icloud.com` |
+| **GitHub** — dove vive il codice | utente `idearecreazioni-source`, email `borgo58.gestionale@gmail.com` (la vecchia resta come seconda) | Bitwarden | app Authenticator | **codici di recupero**: nelle note della voce GitHub + su carta |
 | **Supabase** — dove vivono i dati del locale | **si entra con GitHub**: non ha password propria | — | quello di GitHub | si rientra rientrando in GitHub |
-| **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | gestore di Chrome (password rifatta il 10/08) | ⏳ da attivare | recupero via email |
+| **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | ⏳ da attivare | recupero via email |
 | **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | — | verifica in due passaggi dell'app | email di recupero impostata nell'app |
-| **Aruba** — quando comprerai il dominio | da creare | gestore di Chrome | da attivare | — |
+| **Aruba** — quando comprerai il dominio | da creare | Bitwarden | da attivare | — |
+| **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | ⏳ da attivare | nessuno: se perdi la password principale non la recupera nemmeno Bitwarden |
 
 **La catena da tenere a mente**: chi entra in **GitHub** entra anche in
 **Supabase**, cioè nei dati del locale. GitHub è protetto dall'app sul
 telefono; se perdi il telefono, si rientra solo con i codici di recupero
 su carta. Sono quei due fogli nel cassetto a reggere tutto.
+
+**Su GitHub, da questo computer**, è stata aggiunta anche una *chiave di
+accesso* (passkey): da qui si entra senza digitare la password, con lo
+sblocco di Windows. Vale **solo su questo computer** — da telefono o da
+un altro PC servono password e codice a sei cifre.
+
+⚠️ **Regola imparata sul campo la sera stessa**: non uscire mai da un
+conto prima di aver verificato che la password è dentro la cassaforte.
+È successo con GitHub — la password non era in nessun gestore, e per
+rientrare è servita la procedura di recupero. Nessun danno, ma mezz'ora
+buttata e un attimo di panico evitabile.
 
 **Sul computer** vivono i file `.env.db`, `.env.local`, `.env.test`: sono
 chiavi del database vero, non password di siti. Non si copiano, non si
@@ -62,13 +74,24 @@ tutto il gestionale: chi ce l'ha, ha i dati.
 - [x] **Supabase**: controllato *come* si entra — si entra con GitHub,
       quindi non ha una serratura propria da rinforzare. L'indirizzo per
       gli avvisi è stato allineato alla casella nuova.
-- [x] Password diverse per ogni conto, tenute nel gestore di Chrome.
+- [x] Password diverse per ogni conto, e una cassaforte sola dove tenerle
+      (vedi sotto).
 
-**Perché il gestore di Chrome e non Bitwarden**: perché è quello che
-Alessio già usa, e uno strumento in più che non si impara è uno strumento
-che non si usa. Il suo difetto — le password vivono dentro lo stesso
-account Google da cui si recupera tutto — è compensato dai due fogli di
-codici nel cassetto, che stanno fuori da Google.
+**Creata la cassaforte Bitwarden** sui server europei (`vault.bitwarden.eu`),
+con le voci dei conti e, nelle note sicure, i codici di recupero di GitHub
+e i codici di backup di Google.
+
+**Perché una cassaforte separata e non il gestore di Chrome**: perché
+serviva *un posto solo*, aggiornabile e consultabile da computer e
+telefono, che tenesse password **e** codici **e** note — cioè esattamente
+un gestore di password. E perché le password di Chrome vivono dentro lo
+stesso account Google da cui si recupera tutto il resto: tenerci dentro i
+codici per recuperare Google sarebbe come chiudere le chiavi in macchina.
+
+**Server europei** scelti di proposito, coerenti col resto del progetto
+(database in Irlanda). Due avvertenze: la scelta è **definitiva**, e
+l'app sul telefono va impostata su **EU** — altrimenti dice che l'account
+non esiste, pur avendolo appena creato.
 
 ---
 
@@ -83,6 +106,11 @@ codici nel cassetto, che stanno fuori da Google.
 - [ ] Controllare che in **GitHub → Settings → Collaborators**, in
       **Supabase → Organization → Team** e in **Cloudflare → Members** non
       ci sia nessun altro oltre a me.
+- [ ] **Verifica in due passaggi su Bitwarden stesso** (Impostazioni →
+      Sicurezza → Accesso in due passaggi, con l'app del telefono).
+- [ ] Importare in Bitwarden le password rimaste in Chrome, poi
+      **disattivare** in Chrome «Chiedi di salvare le password»: due
+      portachiavi mezzi pieni sono peggio di uno pieno.
 - [ ] Portare la cartella `Backup Borgo 58` fuori dal computer.
 
 ---
