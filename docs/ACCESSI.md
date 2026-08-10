@@ -45,7 +45,14 @@ dappertutto, e basta che UN sito qualunque venga bucato.
 
 ## 2. L'email — il conto che regge tutti gli altri
 
-Account: `idearecreazioni@gmail.com`
+Account di riferimento: **`borgo58.gestionale@gmail.com`** (creata il 10/08/2026
+apposta per il locale). La vecchia `idearecreazioni@gmail.com` resta come
+**indirizzo di recupero**: due strade per rientrare, non una.
+
+È una Gmail e non un indirizzo sul dominio di proposito: un indirizzo
+`@borgo58.it` vive finché vive il dominio, e se un anno scadesse si
+perderebbe anche la strada per recuperare i conti. Il dominio farà la
+faccia verso i clienti, non la chiave di casa.
 
 - [ ] Password unica, generata dal gestore.
 - [ ] **Verifica in due passaggi attiva** (Google → Gestisci account →
