@@ -226,10 +226,10 @@ Tre accorgimenti appresi sul campo:
 ## 10. Cosa resta da fare
 
 **Mandato strutturale del validatore (10/08/2026)** — cinque blocchi, in quest'ordine, **prima di aprire moduli nuovi**. Documento su `Desktop\Borgo58_Mandato_Strutturale.md`. Un riepilogo per blocco, un blocco alla volta.
-1. ✅ **Backup + ambiente di prova** — fatto ed eseguito il 10/08: copia reale, ricostruzione da zero delle 49 migrazioni, prova di ripristino superata. Resta ad Alessio la copia fuori sede e il calendario settimanale
+1. ✅ **Backup + ambiente di prova** — fatto ed eseguito il 10/08: copia reale, ricostruzione da zero delle 49 migrazioni, prova di ripristino superata. Copia portata fuori dal computer l'11/08; resta solo il promemoria settimanale in calendario
 2. 🔄 **Privacy dei clienti** — fatto il 10/08: conservazione 6 mesi applicata dal database, informativa collegata al form, elenco dei dati trattati. **Chiuso quando** Alessio applica la migrazione in produzione e sostituisce il testo dell'informativa con quello verificato da Laura
 3. 🔄 **Allarmi** — fatto il 10/08 e provato sul progetto di prova. **Chiuso quando** Alessio applica la migrazione e rideploya le due funzioni in produzione
-4. 🔄 **Igiene degli accessi** — checklist scritta il 10/08 ([`docs/ACCESSI.md`](docs/ACCESSI.md)). **Chiuso quando** Alessio la esegue e la spunta: è lavoro suo, non mio
+4. ✅ **Igiene degli accessi** — eseguita insieme il 10-11/08: casella dedicata al locale, secondo fattore su tutti e cinque i conti, cassaforte Bitwarden, codici di recupero su carta, nessun altro membro nei tre pannelli. Il file è diventato la **mappa delle chiavi** ([`docs/ACCESSI.md`](docs/ACCESSI.md)). Restano due scelte consapevoli con appuntamento prima dell'apertura: niente PIN sul computer, PIN dello staff corti
 5. 🔄 **Account AI con tetto di spesa** — funzione di prova `prova-ai` e guida scritte il 11/08 ([`docs/ACCOUNT_AI.md`](docs/ACCOUNT_AI.md)). **Chiuso quando** Alessio crea l'account, mette il tetto **prima** della chiave, la installa nei Secrets e la prova risponde
 
 **In capo a Claude Code, fuori dal mandato:**
@@ -237,7 +237,7 @@ Tre accorgimenti appresi sul campo:
 - Poi: **la logica interna dei moduli che toccano soldi e obblighi** — Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP (un calcolo fiscale sbagliato o una regola HACCP incompleta non li trova nessun controllo per classi di difetto).
 
 **In capo ad Alessio:**
-- **Blocco 1, ciò che resta**: portare la cartella `Backup Borgo 58` fuori dal computer (chiavetta o cloud) e mettere la copia settimanale in calendario
+- **Promemoria settimanale del backup** in calendario (la copia fuori sede è fatta)
 - **Comprare il dominio** `borgo58.it` (verificato libero il 10/08, ~5 € il primo anno da Aruba, intestato alla S.r.l.s.): serve al QR in vetrina, al link Instagram/Google e all'email di conferma
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio** — e **non esiste alcun backup automatico** (verificato il 10/08 sulla documentazione Supabase)
 - Backup cifrato fuori sede, con Alessandro (fornitore hardware)

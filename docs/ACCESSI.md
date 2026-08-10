@@ -115,9 +115,9 @@ non esiste, pur avendolo appena creato.
 - [x] **GitHub**: verificato dal terminale il 11/08/2026 — un solo accesso
       (`idearecreazioni-source`, admin), zero inviti in sospeso, zero chiavi
       di deploy.
-- [ ] Controllare che in **Supabase → Organization → Team** e in
-      **Cloudflare → Members** non ci sia nessun altro oltre a me.
-- [ ] Portare la cartella `Backup Borgo 58` fuori dal computer.
+- [x] **Supabase → Organization → Team** e **Cloudflare → Members**:
+      verificati l'11/08/2026, nessun altro membro.
+- [x] Cartella `Backup Borgo 58` portata **fuori dal computer** l'11/08/2026.
 - [ ] **Account AI**: creazione, tetto di spesa e chiave — `docs/ACCOUNT_AI.md`.
 
 ---
