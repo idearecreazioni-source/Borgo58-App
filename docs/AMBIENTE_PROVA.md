@@ -1,6 +1,6 @@
 # Il database di prova — guida operativa
 
-**A chi serve**: ad Alessio. Documento del 11/08/2026.
+**A chi serve**: ad Alessio. Documento del 10/08/2026.
 
 ---
 

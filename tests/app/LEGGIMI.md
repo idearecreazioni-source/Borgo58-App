@@ -7,7 +7,7 @@ Due livelli, due comandi:
 | `npm run test` | Le regole pure: date del locale, calcolo del conto | No — gira anche a ogni commit (gancio pre-commit) |
 | `npm run test:app` | Un database vero: permessi per ruolo, corridoio, giro comanda completo | Sì — il **progetto di prova**, con utenti di PROVA |
 
-## Dove girano (cambiato l'11/08/2026)
+## Dove girano (cambiato il 10/08/2026)
 
 Fino al 10/08 le prove scrivevano nel database del locale. Adesso girano
 sul **progetto di prova** (`docs/AMBIENTE_PROVA.md`): un database

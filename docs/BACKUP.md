@@ -1,7 +1,7 @@
 # Copia di sicurezza dei dati — guida operativa
 
 **A chi serve**: ad Alessio. Ogni passaggio è scritto per essere eseguito
-senza sapere niente di programmazione. Documento del 11/08/2026.
+senza sapere niente di programmazione. Documento del 10/08/2026.
 
 ---
 

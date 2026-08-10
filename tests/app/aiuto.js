@@ -14,7 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 // sorvegliate da deleted_records, per non lasciare lapidi di prova nel
 // registro delle cancellazioni.
 
-// Il progetto VERO. Le prove non devono poterlo toccare: dall'11/08/2026
+// Il progetto VERO. Le prove non devono poterlo toccare: dal 10/08/2026
 // girano sul progetto di prova, e questa costante e' il controllo che lo
 // impone da solo — non una raccomandazione scritta in un documento.
 const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
