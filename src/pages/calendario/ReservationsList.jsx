@@ -85,28 +85,32 @@ export default function ReservationsList() {
       </div>
 
       {daConfermare.length > 0 && (
-        <div className="rounded-xl border-2 border-b58-gold bg-b58-gold/10 p-4 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">
-            {daConfermare.length === 1
-              ? "1 richiesta aspetta una risposta"
-              : `${daConfermare.length} richieste aspettano una risposta`}
-          </h2>
+        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+              {daConfermare.length}
+            </span>
+            <h2 className="font-display text-lg text-b58-charcoal">
+              {daConfermare.length === 1 ? "richiesta da confermare" : "richieste da confermare"}
+            </h2>
+          </div>
           <p className="text-sm text-b58-charcoal-soft mb-3">
             Finché non rispondi, il posto resta bloccato e il cliente resta in attesa.
           </p>
-          <ul className="divide-y divide-b58-gold/40">
+          <ul>
             {daConfermare.map((r) => (
-              <li key={r.id}>
+              <li key={r.id} className="border-b border-b58-charcoal/5 last:border-0">
                 <button
                   type="button"
                   onClick={() => navigate(`/calendario-eventi/${r.id}`)}
-                  className="w-full text-left py-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 hover:bg-b58-gold/10 rounded-lg px-2 -mx-2 transition-colors"
+                  className="w-full text-left py-3 px-2 -mx-2 rounded-lg flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm hover:bg-b58-cream-dark/40 transition-colors"
                 >
-                  <span className="font-medium text-b58-charcoal">
-                    {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
+                  <span className="text-b58-charcoal font-medium">
+                    {formatDate(r.reservation_date)}
                   </span>
+                  <span className="text-b58-charcoal-soft">{r.reservation_time?.slice(0, 5)}</span>
                   <span className="text-b58-charcoal">{r.customer_name}</span>
-                  <span className="text-sm text-b58-charcoal-soft">
+                  <span className="text-b58-charcoal-soft">
                     {r.party_size} coperti
                     {r.customer_phone ? ` · ${r.customer_phone}` : ""}
                   </span>
