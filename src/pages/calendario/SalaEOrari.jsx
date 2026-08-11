@@ -137,6 +137,30 @@ export default function SalaEOrari() {
         </p>
       </div>
 
+      {/* Email di conferma al cliente */}
+      <div className={sezioneClass}>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={Boolean(regole?.email_conferma_attiva)}
+            onChange={(e) =>
+              esegui(() => updateRegolePrenotazione({ email_conferma_attiva: e.target.checked }))
+            }
+            className="mt-1 h-5 w-5"
+          />
+          <span>
+            <span className="block text-b58-charcoal font-medium">
+              Manda l&apos;email di conferma al cliente
+            </span>
+            <span className="block text-sm text-b58-charcoal-soft mt-1">
+              Quando confermi una richiesta arrivata dal sito, il cliente riceve un&apos;email con
+              giorno, ora e numero di persone. Spento: non riceve niente, come prima.{" "}
+              <strong>Parte solo alla conferma</strong>, mai da sola.
+            </span>
+          </span>
+        </label>
+      </div>
+
       {/* Orari */}
       <div className={sezioneClass}>
         <h2 className="font-display text-lg text-b58-charcoal mb-1">Quando siamo aperti</h2>

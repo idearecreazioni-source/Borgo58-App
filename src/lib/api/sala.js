@@ -90,7 +90,7 @@ export async function getRegolePrenotazione() {
   const { data, error } = await supabase
     .from("service_settings")
     .select(
-      "durata_tavolo_minuti, max_coperti_contemporanei, giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive"
+      "durata_tavolo_minuti, max_coperti_contemporanei, giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva"
     )
     .eq("id", 1)
     .single();
