@@ -39,46 +39,47 @@ l'11/08/2026 leggendo l'utente scritto nel pannello: è l'account Aruba.
 
 ## 1. La regola che toglie il caos
 
-> **La posta si legge in un'app sola. I pannelli si aprono da una cartella
-> sola. Non si cerca mai un indirizzo a memoria.**
+> **La posta si legge dal telefono — PEC nell'app di Aruba, tutto il resto
+> in Gmail. I pannelli si aprono da una cartella di preferiti. Non si
+> cerca mai un indirizzo a memoria.**
 
 Tutto quello che segue serve solo a rendere vera questa frase.
 
 ---
 
-## 2. Sul telefono: tutte le caselle nella stessa app
+## 2. Sul telefono: due app, e il confine è la PEC
 
-Sull'iPhone l'app **Gmail** tiene già insieme `borgo58.gestionale@gmail.com`
-e `info@borgo58.it`. Ci entrano anche le due PEC, con lo stesso
-procedimento: così **tutta la posta del locale suona in un posto solo**, e
-Apple Mail resta la posta personale.
+Scelta di Alessio dell'11/08/2026, ed è quella giusta:
 
-Per ogni PEC: *Gmail → foto profilo in alto → Aggiungi un altro account →
-Altro (IMAP)*, poi:
+| App | Cosa ci sta dentro |
+|---|---|
+| **Aruba PEC** | `alessio.schillaci@pec.it` e `borgo58@pec.it` |
+| **Gmail** | `borgo58.gestionale@gmail.com` e `info@borgo58.it` (più le caselle normali che verranno) |
+| **Apple Mail** | la posta personale, e basta |
+
+**Perché le PEC non vanno nell'app normale**, pur potendocisi mettere via
+IMAP: una PEC non è un'email, è una raccomandata. Il valore legale sta
+nell'originale sul server insieme alle **ricevute di accettazione e
+consegna** — e un'app di posta normale le tratta come messaggi qualunque:
+si cancellano con un dito, e cancellandole dall'app si cancellano **anche
+dal server**. L'app di Aruba invece le protegge, mostra le ricevute e le
+manda come PEC vere.
+
+Aggiungere la seconda PEC: **app Aruba PEC → menù → gestione delle caselle
+→ aggiungi**, poi indirizzo e password di `borgo58@pec.it` (in cassaforte;
+se manca, si rigenera da `areaclienti.pec.it`).
+
+Per le caselle **non** PEC dentro Gmail: *foto profilo → Aggiungi un altro
+account → Altro (IMAP)*, con
 
 | | |
 |---|---|
-| Indirizzo e password | quelli della PEC |
-| Posta in arrivo (IMAP) | `imaps.pec.aruba.it` · porta **993** · SSL |
-| Posta in uscita (SMTP) | `smtps.pec.aruba.it` · porta **465** · SSL |
+| Posta in arrivo (IMAP) | `imaps.aruba.it` · porta **993** · SSL |
+| Posta in uscita (SMTP) | `smtps.aruba.it` · porta **465** · SSL |
 
-⚠️ **La `s` di `imaps` non è un errore di battitura.** Con `imap.pec…` il
-telefono risponde «password errata» e si perde mezz'ora a cambiare
-password che erano giuste. È già successo l'11/08 con la casella normale.
-
-Per la posta normale gli indirizzi sono `imaps.aruba.it` e
-`smtps.aruba.it`, stesse porte.
-
-### Due regole per le PEC, e sono importanti
-
-1. **Non cancellare mai un messaggio PEC dall'app.** Il valore legale
-   sta nell'originale sul server di Aruba, insieme alle ricevute di
-   accettazione e consegna. Cancellandolo dall'app lo cancelli **anche
-   lì**: è come strappare una raccomandata firmata.
-2. **Le PEC si leggono dall'app, ma si scrivono dalla webmail PEC.**
-   Mandandole dalla webmail sei sicuro che partano come PEC e che le
-   ricevute finiscano dove devono. Un'app normale può farlo, ma se
-   sbagli qualcosa te ne accorgi quando serve la prova — cioè troppo tardi.
+⚠️ **La `s` di `imaps` non è un errore di battitura.** Con `imap.aruba.it`
+il telefono risponde «password errata» e si perde mezz'ora a cambiare
+password che erano giuste. Successo l'11/08.
 
 ---
 
@@ -138,8 +139,8 @@ password, aggiornarne una e dimenticare le altre.
 
 Fra sei mesi, senza rileggere niente:
 
-- [ ] Devo leggere una PEC → apro l'app del telefono, non cerco l'indirizzo.
-- [ ] Devo mandare una PEC → cartella `Borgo 58` → secondo collegamento.
+- [ ] Devo leggere o mandare una PEC → app **Aruba PEC**, e basta.
+- [ ] Devo leggere la posta del locale → app **Gmail**, e basta.
 - [ ] Devo creare una casella nuova → cartella `Borgo 58` → terzo
       collegamento, e la password la mette Bitwarden (è quella
       dell'account Aruba, non un `postmaster@` che non esiste).
