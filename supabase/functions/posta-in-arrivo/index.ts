@@ -152,9 +152,22 @@ Deno.serve(async (req) => {
   if (!emailId) return risposta({ errore: "Manca l'identificativo del messaggio" }, 400);
 
   // Il corpo non viaggia nel webhook (solo i dati di testa): si va a
-  // prenderlo. Se questa chiamata fallisce rispondiamo con errore e la
-  // consegna verrà ritentata — meglio un ritardo che una mail monca.
-  const messaggio = await resend(`emails/receiving/${emailId}`);
+  // prenderlo.
+  //
+  // Se non ci riusciamo, la mail si registra **lo stesso** con quello che
+  // il webhook ha portato: mittente, oggetto, elenco degli allegati.
+  // Trovato dal vivo l'11/08: la prima chiave creata aveva il permesso di
+  // *inviare* e non di *leggere*, questa chiamata rispondeva 401 e la
+  // funzione moriva con un 500 generico — la mail veniva ritentata e
+  // riperduta per sempre, senza che nessuno vedesse mai niente. Una mail
+  // senza corpo è un problema; una mail persa è un problema peggiore.
+  let messaggio: Record<string, unknown> = {};
+  let corpoMancante = false;
+  try {
+    messaggio = await resend(`emails/receiving/${emailId}`);
+  } catch {
+    corpoMancante = true;
+  }
 
   const destinatari: string[] = [
     ...(d.received_for ?? []),
@@ -174,7 +187,11 @@ Deno.serve(async (req) => {
       // Solo il testo: l'HTML di una newsletter è enorme, non aggiunge
       // niente a chi deve capire di che documento si tratta, e costerebbe
       // in token a ogni lettura.
-      testo: (messaggio?.text ?? "").slice(0, 20000) || null,
+      testo: corpoMancante
+        ? "[Il testo di questa mail non è stato scaricato: la chiave del servizio " +
+          "di posta non ha il permesso di leggere la posta ricevuta. La mail è " +
+          "registrata lo stesso, con mittente, oggetto e allegati.]"
+        : (String(messaggio?.text ?? "")).slice(0, 20000) || null,
       ricevuta_il: d.created_at ?? new Date().toISOString(),
     }),
   });
@@ -241,5 +258,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  return risposta({ ok: true, id: postaId, allegati: salvati.length });
+  return risposta({
+    ok: true,
+    id: postaId,
+    allegati: salvati.length,
+    corpo_mancante: corpoMancante,
+  });
 });

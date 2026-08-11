@@ -96,6 +96,13 @@ Copiare una migrazione negli appunti per Alessio:
 Set-Clipboard -Value ([System.IO.File]::ReadAllText("percorso\file.sql"))
 ```
 
+**Ma gli appunti non bastano** (chiesto da Alessio il 12/08/2026: gli si
+sovrascrivono di continuo mentre lavora). Ogni codice o SQL da incollare
+va scritto **anche** in `C:\Users\User\Desktop\Borgo58 - da copiare\`, con
+un nome numerato nell'ordine d'uso (`1 - funzione posta-in-arrivo.txt`).
+La cartella si svuota all'inizio di ogni sequenza nuova, così dentro c'è
+sempre e solo ciò che serve adesso.
+
 ---
 
 ## 5. Protocolli di sviluppo OBBLIGATORI (§7 del brief)
