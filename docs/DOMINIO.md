@@ -156,7 +156,36 @@ Due motivi per non farlo:
 
 ---
 
-## 7. Cosa NON è cambiato
+## 7. I record dell'email di conferma (Resend)
+
+Aggiunti l'11/08/2026, quando è nato il servizio che manda la conferma al
+cliente. **Non sono segreti**: sono dichiarazioni pubbliche, e servono a
+dimostrare al mondo che quel servizio ha il permesso di scrivere a nome
+di `borgo58.it`. Senza, le conferme finiscono nello spam.
+
+| Tipo | Nome | Valore | Priorità |
+|---|---|---|---|
+| TXT | `resend._domainkey` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCwToCNOFDcEjVC0IGFvS3P8q/R3D2cs/koS4mI0nkmT26Y50tMp0wW0kiRC0yScMqZOgew2SslVB0x7L3l0B4uVD9psplIpwFS4GlSRjlWuNguFLFj4J0SRYML4VYUa5wx2uFvN+hB1wZQ2KhOo5b//KAFG/0PF5XsQFAUsn3yyQIDAQAB` | — |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | — |
+
+Tutti e tre **solo DNS** (nuvoletta grigia).
+
+⚠️ **La riga da NON aggiungere.** Resend ne propone una quarta, sotto
+*Enable Receiving*: un **MX su `@`** verso `inbound-smtp...amazonaws.com`.
+Quella dirotterebbe **tutta la posta in arrivo del dominio** dalle caselle
+Aruba a Resend: `info@borgo58.it` smetterebbe di ricevere all'istante.
+Serve solo a chi vuole *ricevere* posta dentro Resend, che non è il nostro
+caso — noi vogliamo solo mandare. L'interruttore *Enable Receiving* resta
+spento.
+
+Il nome `send` crea un sotto-dominio (`send.borgo58.it`) con una posta
+sua, separata: è lì che vive il servizio di invio, e per questo il suo MX
+non tocca quello del dominio principale.
+
+---
+
+## 8. Cosa NON è cambiato
 
 - Le caselle di posta restano **su Aruba**: si leggono da
   `webmail.aruba.it` e dall'app del telefono esattamente come prima.
