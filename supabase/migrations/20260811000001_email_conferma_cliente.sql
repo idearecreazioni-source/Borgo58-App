@@ -110,6 +110,13 @@ $funzione$;
 comment on function email_conferma_dovuta(uuid) is
   'Dice soltanto SE la conferma va mandata (interruttore, indirizzo, stato, doppione). Separata dall''invio per poter essere provata senza spedire niente.';
 
+-- Nessuno la chiama da fuori: la usa solo invia_email_conferma(), che
+-- essendo SECURITY DEFINER gira come proprietario e non passa da questi
+-- permessi. Senza revoca, il default di Postgres la lascerebbe eseguibile
+-- via PostgREST da chiunque abbia la chiave anon — che è pubblica — e
+-- direbbe a un estraneo se una certa prenotazione esiste.
+revoke all on function email_conferma_dovuta(uuid) from public, anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 4. L'invio — dal database alla funzione online
 -- ---------------------------------------------------------------------
@@ -179,7 +186,30 @@ end
 $funzione$;
 
 comment on function invia_email_conferma(uuid) is
-  'Manda la conferma al cliente attraverso la Edge Function email-cliente. Registra l''invio PRIMA di chiamare: meglio un doppione mancato che una conferma mandata due volte.';
+  'Manda la conferma al cliente attraverso la Edge Function email-cliente. Registra l''invio PRIMA di chiamare: meglio un doppione mancato che una conferma mandata due volte. Chiamabile SOLO dal trigger: nessun ruolo applicativo ha il permesso di eseguirla.';
+
+-- ---------------------------------------------------------------------
+-- CHI PUÒ CHIAMARLA: soltanto il trigger. Nessuno.
+-- ---------------------------------------------------------------------
+-- Trovato dal validatore il 11/08/2026. Il default di Postgres concede
+-- l'esecuzione a `public`, e Supabase espone via PostgREST tutto ciò che
+-- `anon` e `authenticated` possono eseguire: senza questa revoca,
+-- chiunque abbia la chiave anon — che è **pubblica**, sta nel bundle del
+-- sito — poteva far partire un'email a nome del locale, e con essa una
+-- spesa e una riga nel registro degli invii.
+--
+-- La revoca non rompe niente perché il percorso vero non passa da questi
+-- permessi: il trigger è SECURITY DEFINER, gira come proprietario, e il
+-- proprietario può sempre eseguire le proprie funzioni.
+--
+-- Domanda del validatore — «e se domani serve una schermata *Reinvia*?»:
+-- non servirà un permesso qui. Una schermata di reinvio è una scrittura
+-- con conseguenze, quindi per il contratto (regola B4) passa dal
+-- corridoio `operazioni-atomiche`, che chiama una funzione dedicata; il
+-- permesso si concede allora a quella, non a questa. Aprire adesso in
+-- previsione di un domani è il modo classico di lasciare una porta
+-- aperta per una stanza che non verrà mai costruita.
+revoke all on function invia_email_conferma(uuid) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- 5. Il momento in cui parte: quando Alessio conferma
@@ -198,6 +228,13 @@ begin
 end
 $funzione$;
 
+-- Per uniformità: una funzione trigger non è comunque esposta da
+-- PostgREST (restituisce `trigger`, non un tipo chiamabile), ma lasciarla
+-- con i permessi di default costringerebbe chi controlla a ricordarsi
+-- l'eccezione. Meglio una regola sola: nessuna funzione di questa
+-- migrazione è eseguibile dai ruoli applicativi.
+revoke all on function trg_email_conferma_cliente() from public, anon, authenticated;
+
 drop trigger if exists trg_reservations_email_conferma on reservations;
 create trigger trg_reservations_email_conferma
   after update on reservations
@@ -211,6 +248,7 @@ declare
   v_id       uuid;
   v_prima    boolean;
   v_dovuta   boolean;
+  v_nome     text;
   n          integer;
 begin
   select coalesce(email_conferma_attiva, false) into v_prima
@@ -291,6 +329,22 @@ begin
   if n <> 1 then
     raise exception 'Le notifiche Telegram delle richieste sono rimaste spente.';
   end if;
+
+  -- Nessun ruolo applicativo può eseguire queste funzioni. È il difetto
+  -- trovato dal validatore: senza revoca, chiunque abbia la chiave anon
+  -- (pubblica) poteva far partire un'email a nome del locale.
+  for v_nome in
+    select unnest(array['email_conferma_dovuta(uuid)',
+                        'invia_email_conferma(uuid)',
+                        'trg_email_conferma_cliente()'])
+  loop
+    if has_function_privilege('anon', v_nome, 'execute') then
+      raise exception 'Il ruolo anonimo può ancora eseguire %.', v_nome;
+    end if;
+    if has_function_privilege('authenticated', v_nome, 'execute') then
+      raise exception 'Un utente qualsiasi del gestionale può ancora eseguire %.', v_nome;
+    end if;
+  end loop;
 
   -- Nessuna funzione security definer senza search_path (regola di §6).
   select count(*) into n
