@@ -50,6 +50,10 @@ const OPERAZIONI = new Set([
   "create_ingredient",
   "set_active_menu",
   "swap_recipe_steps",
+  // Posta in arrivo (12/08/2026): confermare una mail crea il documento,
+  // può creare il promemoria della scadenza e chiude la mail. Tre
+  // scritture, una sola decisione di Alessio.
+  "archivia_posta",
 ]);
 
 const CORS = {

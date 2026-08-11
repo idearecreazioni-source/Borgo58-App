@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDocument, getDocumentUrl, listDocuments, uploadDocumentFile } from "../../lib/api/documents";
 import { getEntities } from "../../lib/api/entities";
+import { contaPostaInAttesa } from "../../lib/api/posta";
 import { formatDate, formatEUR } from "../../lib/constants";
 
 // Suggerimenti di tipo (nessuna categoria fissa, §3.13: è testo libero).
@@ -19,6 +20,10 @@ const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
 export default function ArchivioDocumentiHome() {
   const navigate = useNavigate();
   const [entities, setEntities] = useState(null);
+  // Quanta posta aspetta una decisione. Il numero sta qui perché è qui
+  // che si viene a cercare un documento: il momento giusto per accorgersi
+  // che ce n'è dell'altro da guardare.
+  const [postaInAttesa, setPostaInAttesa] = useState(0);
   const [documents, setDocuments] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,6 +36,7 @@ export default function ArchivioDocumentiHome() {
 
   useEffect(() => {
     getEntities().then(setEntities).catch(() => {});
+    contaPostaInAttesa().then(setPostaInAttesa).catch(() => {});
   }, []);
 
   const reload = () => listDocuments({ search: search || undefined }).then(setDocuments);
@@ -97,12 +103,25 @@ export default function ArchivioDocumentiHome() {
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Archivio Documenti</h1>
           <p className="text-b58-charcoal-soft mt-1">Contratti, licenze, assicurazioni, atti — con scadenze in Agenda.</p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
-        >
-          {showForm ? "Annulla" : "+ Nuovo documento"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate("/documenti/posta")}
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Posta in arrivo
+            {postaInAttesa > 0 && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2 py-0.5">
+                {postaInAttesa}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+          >
+            {showForm ? "Annulla" : "+ Nuovo documento"}
+          </button>
+        </div>
       </div>
 
       <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
