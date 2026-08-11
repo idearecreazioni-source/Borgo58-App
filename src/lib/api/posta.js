@@ -15,7 +15,7 @@ import { eseguiOperazione } from "../operazioni";
 export async function listPostaInAttesa() {
   const { data, error } = await supabase
     .from("posta_ricevuta")
-    .select("*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path)")
+    .select("*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path, errore)")
     .in("stato", ["da_leggere", "proposta"])
     .order("ricevuta_il", { ascending: false });
   if (error) throw error;

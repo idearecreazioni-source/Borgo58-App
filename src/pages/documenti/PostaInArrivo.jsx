@@ -161,7 +161,12 @@ export default function PostaInArrivo() {
                           {a.file_name}
                         </button>
                       ) : (
-                        <span title="Non è stato possibile scaricarlo">{a.file_name} (mancante)</span>
+                        <span
+                          className="text-b58-terracotta-dark"
+                          title={a.errore || "Non è stato possibile salvarlo"}
+                        >
+                          {a.file_name} — non salvato
+                        </span>
                       )}
                     </span>
                   ))}

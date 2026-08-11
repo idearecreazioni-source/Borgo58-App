@@ -215,12 +215,16 @@ Deno.serve(async (req) => {
   const allegati = d.attachments ?? [];
   const salvati: string[] = [];
   for (const a of allegati) {
+    const nomeOriginale = a.filename ?? "allegato";
+    let errore: string | null = null;
     try {
       const dettagli = await resend(`emails/receiving/${emailId}/attachments/${a.id}`);
-      if (!dettagli?.download_url) continue;
+      if (!dettagli?.download_url) {
+        throw new Error("il servizio non ha dato un indirizzo da cui scaricarlo");
+      }
 
       const file = await fetch(dettagli.download_url);
-      if (!file.ok) continue;
+      if (!file.ok) throw new Error(`scaricamento fallito (${file.status})`);
       const contenuto = new Uint8Array(await file.arrayBuffer());
 
       // Il nome arriva da fuori: potrebbe contenere percorsi (`../`) e
@@ -240,6 +244,14 @@ Deno.serve(async (req) => {
         },
       );
 
+      // Se il salvataggio fallisce, il motivo va conservato: senza, in
+      // schermata resta solo «mancante» e si torna a tentare al buio.
+      if (!su.ok) {
+        errore = `salvataggio nell'archivio fallito (${su.status}): ${
+          (await su.text()).slice(0, 300)
+        }`;
+      }
+
       await db("posta_allegati", {
         method: "POST",
         body: JSON.stringify({
@@ -248,13 +260,23 @@ Deno.serve(async (req) => {
           mime: a.content_type ?? null,
           dimensione: contenuto.byteLength,
           storage_path: su.ok ? percorso : null,
+          errore,
         }),
       });
       if (su.ok) salvati.push(nome);
-    } catch {
-      // Un allegato che non si scarica non deve far perdere la mail:
-      // resta registrata, e in schermata si vedrà che manca.
-      continue;
+    } catch (e) {
+      // Un allegato che non si salva non deve far perdere la mail: resta
+      // registrata, con scritto accanto perché il file non c'è.
+      await db("posta_allegati", {
+        method: "POST",
+        body: JSON.stringify({
+          posta_id: postaId,
+          file_name: nomeOriginale.replace(/[^\w.-]+/g, "_").slice(-120),
+          mime: a.content_type ?? null,
+          storage_path: null,
+          errore: (e as Error).message?.slice(0, 300) ?? "errore sconosciuto",
+        }),
+      });
     }
   }
 
