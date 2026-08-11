@@ -144,11 +144,20 @@ record DNS, impostare l'inoltro da `info@` e dalle due PEC, mettere il
 segreto del webhook nei Secrets, installare le due funzioni e
 ridispiegare il corridoio.
 
-**Deciso stanotte, e diverso dal resto**: dalla casella Gmail del
-gestionale **non entra tutto**. È la casella da cui si recuperano tutti gli
-accessi (Google, GitHub, Cloudflare, Bitwarden): girarla per intero
-significherebbe copiare i codici di recupero in un secondo posto e darli
-in pasto a un modello. Da lì passa **solo ciò che Alessio inoltra a mano**.
+**Chiarito da Alessio**: entrano automaticamente **tutte e quattro** le
+caselle, `borgo58.gestionale@gmail.com` compresa. Aveva ragione lui su
+cosa intendeva; io avevo capito una corsia separata per la Gmail.
+
+**Rischio dichiarato, e accettato da lui dopo che gliel'ho posto due
+volte**: la Gmail del gestionale è la casella da cui si recuperano tutti
+gli accessi (Google, GitHub, Cloudflare, Bitwarden). Inoltrandola per
+intero, i codici di recupero e gli avvisi di sicurezza vengono **copiati
+nel database e letti dal modello** — e questo succede *prima* della
+conferma, quindi il passaggio «Alessio conferma» non lo evita: quello
+governa solo cosa finisce nell'Archivio, non cosa entra. Mitigazione
+disponibile e non applicata: una regola di Gmail che escluda dall'inoltro
+i mittenti di sicurezza. Da riaprire se un giorno l'accesso al gestionale
+non fosse più solo suo.
 
 **Resta fuori da questa consegna**: il conteggio della spesa AI nel tempo
 (oggi si vede solo il totale dei token per messaggio) e la scelta di cosa
