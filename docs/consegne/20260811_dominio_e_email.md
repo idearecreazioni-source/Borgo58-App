@@ -1,17 +1,21 @@
 # Consegna del 11/08/2026 — dominio sul sito ed email di conferma
 
-**Commit della consegna: `74f2e27`** (questo riepilogo è il commit
+**Commit della consegna: `bb24c76`** (questo riepilogo è il commit
 immediatamente sopra, sola documentazione). Working tree pulito.
 
 | Commit | Cosa | Stato |
 |---|---|---|
-| `74f2e27` | il dominio è **agganciato e verificato**: documenti allineati allo stato vero | **non ancora pushato** |
-| `855f156` | **email di conferma al cliente**: migrazione `20260811000001`, Edge Function `email-cliente`, record Resend documentati | **non ancora pushato** |
+| `bb24c76` | **richieste da confermare in cima al Calendario** + documenti allineati alla prova riuscita | **non ancora pushato** |
+| `f8837d8` | il collaudo della migrazione non manda più notifiche finte su Telegram | **non ancora pushato** |
+| `aa518bd` | l'interruttore dell'email in *Sala e orari*, dove lo trova Alessio | già pushato |
+| `74f2e27` | il dominio è **agganciato e verificato** | già pushato |
+| `855f156` | **email di conferma al cliente**: migrazione `20260811000001`, Edge Function `email-cliente`, record Resend | già pushato |
 | `d3b8d78` | `npm run dominio:verifica` + `docs/DOMINIO.md` | già pushato |
 | `98526fe` | la casella `info@borgo58.it` nella mappa degli accessi | già pushato |
 
-*(Il commit `6e4a9cf` in mezzo è una versione precedente di questo stesso
-documento, scritta mentre Cloudflare e Resend erano ancora in verifica.)*
+*(I commit `6e4a9cf` e `3eac056` in mezzo sono versioni precedenti di
+questo stesso documento, scritte mentre le verifiche erano ancora in
+corso.)*
 
 ⚠️ **Scostamento dichiarato dalla regola "nessun push senza riepilogo"**:
 `d3b8d78` è stato pushato prima che questo documento esistesse. È colpa
