@@ -39,6 +39,7 @@
 // viene presa al giro dopo.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.65.0";
+import { unzipSync } from "npm:fflate@0.8.2";
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
@@ -51,11 +52,8 @@ const QUANTE_PER_GIRO = 10;
 // ---------------------------------------------------------------------
 // GLI ALLEGATI CHE SI POSSONO LEGGERE DAVVERO
 // ---------------------------------------------------------------------
-// Una fattura è un PDF: leggerne solo il nome significa non leggerla. Il
-// modello sa aprire PDF e immagini; non sa aprire .odt o .docx, che
-// andrebbero convertiti prima (non lo facciamo: chi manda una fattura la
-// manda in PDF, e per il resto resta la lettura del testo della mail).
-const LEGGIBILI = new Set([
+// Una fattura è un PDF: leggerne solo il nome significa non leggerla.
+const NATIVI = new Set([
   "application/pdf",
   "image/jpeg",
   "image/png",
@@ -63,11 +61,30 @@ const LEGGIBILI = new Set([
   "image/webp",
 ]);
 
-// Due freni, per lo stesso motivo per cui esiste QUANTE_PER_GIRO: un
-// allegato pesante costa molti token, e una mail con dodici foto
-// costerebbe come una giornata intera.
-const MAX_ALLEGATI_LETTI = 2;
-const MAX_BYTE_PER_ALLEGATO = 4 * 1024 * 1024;
+// Documenti di videoscrittura: il modello non li apre, ma il testo è già
+// dentro il file — sono pacchetti compressi con un XML dentro. Si apre e
+// si passa il testo. Nessun convertitore esterno, nessun servizio in più.
+// Aggiunti il 12/08/2026: il primo contratto vero è arrivato in .odt, che
+// è il formato di LibreOffice — quello di chi non ha Word, e in Italia
+// capita spesso negli atti scritti da studi e privati.
+const DA_SPACCHETTARE: Record<string, string> = {
+  "application/vnd.oasis.opendocument.text": "content.xml",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "word/document.xml",
+};
+
+// Nessun limite al NUMERO di allegati (deciso da Alessio il 12/08: se una
+// mail merita di entrare, merita di essere letta tutta). Resta un limite
+// di dimensione, e non è una precauzione nostra: oltre una certa taglia è
+// il servizio AI a rifiutare la richiesta. Tenuto sotto quella soglia con
+// margine, così le fatture vere non lo toccano mai.
+//
+// ⚠️ Il freno serve **contro le mail che nessuno ha chiesto**, non contro
+// Alessio: la lettura avviene PRIMA della sua conferma, su tutto ciò che
+// entra automaticamente da quattro caselle.
+const MAX_BYTE_PER_ALLEGATO = 10 * 1024 * 1024;
+const MAX_BYTE_TOTALI = 20 * 1024 * 1024;
+const MAX_CARATTERI_TESTO_ESTRATTO = 20000;
 
 const ISTRUZIONI = `Sei l'archivista di un'osteria. Ricevi un'email arrivata al locale e devi dire
 se vale la pena conservarla nell'archivio documenti e, se sì, come catalogarla.
@@ -136,6 +153,34 @@ function inBase64(byte: Uint8Array): string {
   return btoa(s);
 }
 
+/**
+ * Cava il testo da un documento di videoscrittura.
+ *
+ * Un .odt e un .docx sono cartelle compresse con dentro un XML: il testo
+ * è già lì, in chiaro. Si apre il pacchetto, si prende il pezzo giusto e
+ * si tolgono i marcatori. Niente convertitore, niente servizio esterno,
+ * nessun file che esce dal nostro perimetro.
+ */
+function testoDaPacchetto(byte: Uint8Array, dentro: string): string | null {
+  try {
+    const contenuto = unzipSync(byte)[dentro];
+    if (!contenuto) return null;
+    return new TextDecoder()
+      .decode(contenuto)
+      // Fine paragrafo → a capo, così le righe non si incollano fra loro.
+      .replace(/<\/(text:p|w:p)>/g, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+      .slice(0, MAX_CARATTERI_TESTO_ESTRATTO);
+  } catch {
+    return null;
+  }
+}
+
 /** Scarica un allegato dall'archivio e lo prepara per il modello. */
 async function allegatoPerIlModello(a: {
   storage_path: string;
@@ -150,6 +195,14 @@ async function allegatoPerIlModello(a: {
 
   const byte = new Uint8Array(await r.arrayBuffer());
   if (byte.byteLength > MAX_BYTE_PER_ALLEGATO) return null;
+
+  const dentro = DA_SPACCHETTARE[a.mime];
+  if (dentro) {
+    const testo = testoDaPacchetto(byte, dentro);
+    return testo
+      ? { type: "text", text: `--- Contenuto di ${a.file_name} ---\n${testo}` }
+      : null;
+  }
 
   const data = inBase64(byte);
   return a.mime === "application/pdf"
@@ -213,14 +266,27 @@ Deno.serve(async (req) => {
 
       // I documenti veri vanno letti, non nominati: su una fattura il
       // nome del file non dice l'importo né la scadenza.
-      const daLeggere = tutti
-        .filter((a: { storage_path?: string; mime?: string }) =>
-          a.storage_path && LEGGIBILI.has(a.mime ?? "")
-        )
-        .slice(0, MAX_ALLEGATI_LETTI);
+      const daLeggere = tutti.filter((a: { storage_path?: string; mime?: string }) =>
+        a.storage_path && (NATIVI.has(a.mime ?? "") || DA_SPACCHETTARE[a.mime ?? ""])
+      );
 
-      const documenti = (await Promise.all(daLeggere.map(allegatoPerIlModello)))
-        .filter(Boolean);
+      // Si prendono in ordine finché si sta dentro la taglia massima che
+      // il servizio AI accetta: meglio leggere i primi tre allegati che
+      // vedersi rifiutare l'intera richiesta e non leggerne nessuno.
+      // deno-lint-ignore no-explicit-any
+      const documenti: any[] = [];
+      let peso = 0;
+      for (const a of daLeggere) {
+        // deno-lint-ignore no-explicit-any
+        const blocco: any = await allegatoPerIlModello(a);
+        if (!blocco) continue;
+        const dim = blocco.type === "text"
+          ? blocco.text.length
+          : blocco.source.data.length;
+        if (peso + dim > MAX_BYTE_TOTALI) break;
+        peso += dim;
+        documenti.push(blocco);
+      }
 
       const esito = await anthropic.messages.create({
         model: MODELLO,
