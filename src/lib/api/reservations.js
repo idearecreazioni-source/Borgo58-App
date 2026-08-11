@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { oggiLocale } from "../constants";
 import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 
 export async function listReservations({ status, type, search, date } = {}) {
@@ -18,6 +19,30 @@ export async function listReservations({ status, type, search, date } = {}) {
   }
 
   const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Le richieste ancora da confermare, da oggi in avanti.
+ *
+ * Esiste perché l'elenco del Calendario si apre sul giorno corrente: una
+ * richiesta per una data futura non si vedeva aprendo la pagina, e l'unico
+ * posto dove compariva era la notifica su Telegram (trovato dal vivo
+ * l'11/08/2026). Una richiesta che nessuno vede è una richiesta che nessuno
+ * risponde — e il cliente resta in attesa mentre il posto resta bloccato.
+ *
+ * Nessun `.limit()`: sono poche per definizione, e troncarle
+ * significherebbe nascondere proprio quella che manca.
+ */
+export async function listRichiesteDaConfermare() {
+  const { data, error } = await supabase
+    .from("reservations")
+    .select("*")
+    .eq("status", "richiesta_in_attesa")
+    .gte("reservation_date", oggiLocale())
+    .order("reservation_date", { ascending: true })
+    .order("reservation_time", { ascending: true });
   if (error) throw error;
   return data;
 }

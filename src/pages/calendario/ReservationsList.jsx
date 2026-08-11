@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listReservations } from "../../lib/api/reservations";
+import { listReservations, listRichiesteDaConfermare } from "../../lib/api/reservations";
 import { useAuth } from "../../context/AuthContext";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 
@@ -15,6 +15,10 @@ const todayISO = oggiLocale;
 
 export default function ReservationsList() {
   const [reservations, setReservations] = useState([]);
+  // Le richieste da confermare stanno FUORI dai filtri: sono la cosa che
+  // non deve poter passare inosservata, e i filtri sono fatti apposta per
+  // nascondere delle righe.
+  const [daConfermare, setDaConfermare] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -36,6 +40,10 @@ export default function ReservationsList() {
       .then(setReservations)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    listRichiesteDaConfermare()
+      .then(setDaConfermare)
+      .catch((e) => setError(e.message));
   }, [search, status, type, date]);
 
   // Totale coperti del giorno filtrato (escluse rifiutate/annullate) — utile
@@ -75,6 +83,39 @@ export default function ReservationsList() {
           </Link>
         </div>
       </div>
+
+      {daConfermare.length > 0 && (
+        <div className="rounded-xl border-2 border-b58-gold bg-b58-gold/10 p-4 mb-6">
+          <h2 className="font-display text-lg text-b58-charcoal mb-1">
+            {daConfermare.length === 1
+              ? "1 richiesta aspetta una risposta"
+              : `${daConfermare.length} richieste aspettano una risposta`}
+          </h2>
+          <p className="text-sm text-b58-charcoal-soft mb-3">
+            Finché non rispondi, il posto resta bloccato e il cliente resta in attesa.
+          </p>
+          <ul className="divide-y divide-b58-gold/40">
+            {daConfermare.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/calendario-eventi/${r.id}`)}
+                  className="w-full text-left py-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 hover:bg-b58-gold/10 rounded-lg px-2 -mx-2 transition-colors"
+                >
+                  <span className="font-medium text-b58-charcoal">
+                    {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
+                  </span>
+                  <span className="text-b58-charcoal">{r.customer_name}</span>
+                  <span className="text-sm text-b58-charcoal-soft">
+                    {r.party_size} coperti
+                    {r.customer_phone ? ` · ${r.customer_phone}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <input

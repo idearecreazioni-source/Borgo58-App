@@ -19,9 +19,9 @@ mia — ho chiesto ad Alessio di pubblicare mentre l'operazione sul dominio
 era ancora in corso, e il riepilogo si scrive dopo l'ultimo commit della
 consegna. Lo copro qui, retroattivamente, insieme al resto.
 
-**Da applicare in produzione**: la migrazione `20260811000001`. **Da
-installare**: la funzione online `email-cliente`. Entrambe dopo che il
-mittente risulta verificato (vedi §5).
+**Niente da applicare**: la migrazione `20260811000001` è già in
+produzione e la funzione `email-cliente` è installata. La migrazione è
+stata **corretta e riapplicata** dopo il difetto del §7.
 
 ---
 
@@ -140,25 +140,73 @@ autorevoli**, insieme alla prova che l'MX del dominio principale è rimasto
 | server DNS spostati a Cloudflare | **fatto**, visibile dai risolutori pubblici |
 | posta del dominio dopo lo spostamento | **verificata**: controlli verdi + email di prova arrivata sul telefono |
 | tre record di Resend | **verificati** dai server autorevoli |
-| migrazione `20260811000001` | **applicata e verificata sul progetto di prova**; non ancora in produzione |
-| verifica del mittente presso Resend | **quasi**: SPF e MX verificati, DKIM ancora in corso |
+| migrazione `20260811000001` | **applicata in produzione** (e sul progetto di prova), funzione `email-cliente` installata |
+| verifica del mittente presso Resend | **fatto**: dominio verificato, pronto a spedire |
 | zona Cloudflare *Active* | **fatto** (circa un'ora e mezza dopo il cambio) |
 | `borgo58.it` che apre il gestionale | **fatto e verificato**: `borgo58.it` e `www` rispondono `200` con il gestionale, e `npm run dominio:verifica` dice ✅ POSTA **e** ✅ SITO |
-| un'email di conferma davvero ricevuta da un cliente | **mai provata** — l'interruttore è spento e la funzione non è installata |
+| un'email di conferma davvero ricevuta | **fatto**: richiesta vera dal form pubblico → conferma dal gestionale → **email arrivata in casella**. Un solo invio registrato, zero allarmi |
 
-L'ultima riga è la più importante: **il modulo dell'email non è
-"fatto"**. È scritto, provato nella sua logica, e fermo dietro un
-interruttore. Diventa fatto quando una richiesta finta dal sito, confermata
-da Alessio, produce un'email che arriva davvero.
+L'ultima riga era la più importante, e ora è verde: il modulo non è
+"scritto", è **vivo**. La prova è stata fatta con i pezzi veri — form
+pubblico, ruolo del titolare, funzione in produzione, casella vera.
 
 ---
 
-## 6. Quello che resta, in ordine
+## 7. Il difetto trovato applicando la migrazione in produzione
 
-1. Resend dice *Verified* → installare `email-cliente`, applicare
-   `20260811000001` in produzione, accendere l'interruttore, **prova dal
-   vivo end-to-end**.
+Il collaudo interno della migrazione inserisce una prenotazione finta con
+`source = 'form_pubblico'` — e il trigger delle notifiche l'ha spedita su
+**Telegram come una richiesta vera**: nome, data, coperti, indirizzo.
+Alessio l'ha cercata nel gestionale e non l'ha trovata (la verifica la
+cancella subito dopo): dal suo lato sembrava un guasto del calendario.
+
+Il danno non è il messaggio: è che da quel momento una notifica Telegram
+non significa più con certezza «è arrivato un cliente». Un canale di
+allerta che ogni tanto mente vale meno di uno che tace.
+
+**Corretto spegnendo il solo trigger delle notifiche** durante il
+collaudo (`alter table … disable trigger`), non tutti. La migrazione della
+privacy usava `session_replication_role = replica`, che qui sarebbe
+sbagliato: fermerebbe anche il trigger che *questa* migrazione deve
+provare, e la verifica passerebbe senza aver verificato niente. Se il
+blocco solleva un'eccezione la DDL torna indietro con la transazione,
+quindi il trigger non può restare spento per un errore — e comunque una
+verifica finale controlla che sia riacceso, perché lasciarlo spento
+significherebbe richieste dei clienti che non arrivano più, in silenzio.
+
+Trappola scritta in `CLAUDE.md` §8: **ogni migrazione che scrive righe
+finte in una tabella con trigger di notifica deve spegnere quel trigger.**
+
+---
+
+## 8. Un difetto di prodotto, trovato dallo stesso incidente
+
+Cercando la prenotazione che non c'era, è emerso che **l'elenco del
+Calendario si apre sempre su *oggi***: una richiesta per una data futura
+non si vedeva aprendo la pagina, e l'unico posto dove compariva era la
+notifica su Telegram. Una richiesta che nessuno vede è una richiesta a cui
+nessuno risponde — e nel frattempo il posto resta bloccato (§ «una
+richiesta in attesa occupa il posto»).
+
+Ora le richieste da confermare stanno in un riquadro **sopra i filtri**,
+fuori da qualunque filtro, con il numero e il perché («finché non
+rispondi, il posto resta bloccato»). Da oggi in avanti, ordinate per data.
+Nessun `.limit()`: troncarle nasconderebbe proprio quella che manca.
+
+---
+
+## 9. Quello che restava — tutto fatto
+
+1. ✅ Fatto: mittente verificato, funzione installata, migrazione
+   applicata, interruttore acceso, **prova dal vivo end-to-end riuscita**.
 2. ✅ Fatto mentre scrivevo: zona attiva, `borgo58.it` e `www` agganciati
    al progetto Pages (Cloudflare ha sostituito da sé la riga di parcheggio
    con il puntamento al sito, **senza toccare l'MX**), e verifica finale
    verde su entrambi i fronti.
+
+**Resta aperto per il prossimo giro** (fuori da questa consegna): il
+modulo che fa entrare la posta di `info@borgo58.it` e delle due PEC
+nell'Archivio Documenti letta dall'AI — decisione di Alessio dell'11/08,
+con le tre conseguenze annotate in `CLAUDE.md` §10 (valore legale della
+PEC, conservazione e tetto di spesa, «il sistema propone, Alessio
+conferma»).
