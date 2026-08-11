@@ -69,6 +69,9 @@ Rispondi SOLO con un oggetto JSON, senza testo attorno, con queste chiavi:
  "importo": numero senza simboli o null,
  "scadenza": "AAAA-MM-GG della scadenza di pagamento, o null"}
 
+Il nome degli allegati conta quanto il testo: spesso è l'unica cosa che dice di
+cosa si tratta (una mail inoltrata può arrivare col corpo vuoto).
+
 Se un dato non c'è, metti null: non inventare. Meglio un campo vuoto che un
 importo sbagliato.`;
 
@@ -122,9 +125,14 @@ Deno.serve(async (req) => {
     return risposta({ errore: "Funzione non configurata" }, 500);
   }
 
+  // Gli allegati arrivano insieme al messaggio, e non per completezza: il
+  // nome di un file dice spessissimo tutto — «Locazione Parlato
+  // Borgo58-10.08.2026.odt» si spiega da solo. Trovato alla prima prova
+  // vera, dove la mail inoltrata aveva il corpo vuoto e l'unica
+  // informazione utile era il nome dell'allegato.
   const elenco = await db(
     `posta_ricevuta?stato=eq.da_leggere&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
-      `&select=id,mittente,oggetto,testo,casella`,
+      `&select=id,mittente,oggetto,testo,casella,posta_allegati(file_name)`,
   );
   if (!elenco.ok) {
     return risposta({ errore: "Non riesco a leggere la posta in attesa" }, 500);
@@ -147,7 +155,11 @@ Deno.serve(async (req) => {
             role: "user",
             content:
               `Casella: ${m.casella}\nDa: ${m.mittente ?? "?"}\n` +
-              `Oggetto: ${m.oggetto ?? "(nessuno)"}\n\n` +
+              `Oggetto: ${m.oggetto ?? "(nessuno)"}\n` +
+              `Allegati: ${
+                (m.posta_allegati ?? []).map((a: { file_name: string }) => a.file_name).join(", ") ||
+                "nessuno"
+              }\n\n` +
               `${(m.testo ?? "").slice(0, 6000)}`,
           },
         ],
