@@ -33,8 +33,23 @@ gli altri con «password dimenticata».
 | **Cloudflare** — dove vive il sito | `borgo58.gestionale@gmail.com` | Bitwarden (password rifatta il 10/08) | app Authenticator | codici di recupero nelle note della voce Cloudflare |
 | **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | Bitwarden (password della verifica in due passaggi + **token del bot**) | verifica in due passaggi dell'app | email di recupero `borgo58.gestionale@gmail.com` |
 | **Anthropic** — l'account dell'intelligenza artificiale (`platform.claude.com`) | **si entra con Google**: nessuna password propria | Bitwarden tiene la **chiave dell'API** (la password non esiste) | quello di Google | si rientra rientrando in Google |
-| **Aruba** — quando comprerai il dominio | da creare | Bitwarden | da attivare | — |
+| **Aruba — area clienti** (`managehosting.aruba.it`) | l'account storico delle due PEC | Bitwarden | da attivare | ordini, rinnovi, fatture |
+| **Aruba — pannello del dominio** (`admin.aruba.it`) | `postmaster@borgo58.it` | Bitwarden | — | crea e gestisce le caselle di `borgo58.it` |
+| **Casella `info@borgo58.it`** (`webmail.aruba.it`) | l'indirizzo stesso | Bitwarden | — | la posta dei clienti |
 | **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | app Authenticator | **codice di recupero di Bitwarden, su carta** — mai dentro la cassaforte che serve a recuperare |
+
+**Aruba ha tre porte diverse, ed è la cosa che fa perdere più tempo**
+(scoperto sul campo l'11/08/2026): l'area clienti si apre con l'account,
+il pannello del dominio con `postmaster@borgo58.it`, la webmail con
+l'indirizzo della casella. Tre credenziali distinte, tutte in cassaforte.
+Sbagliare porta dà «nessun dominio associato a questa login», che sembra
+un guasto e non lo è.
+
+**La posta del locale sta in un'app sua** (scelta dell'11/08): niente
+inoltro verso la Gmail personale — sull'iPhone l'app Gmail tiene insieme
+`borgo58.gestionale@gmail.com` e `info@borgo58.it` (IMAP `imaps.aruba.it`
+993 SSL, SMTP `smtps.aruba.it` 465 SSL), mentre Apple Mail resta la posta
+personale. Così suona solo il locale.
 
 **Due portachiavi, divisi per argomento** (scelta del 10/08/2026): tutto
 ciò che riguarda **il locale sta in Bitwarden**; le password personali e
