@@ -232,11 +232,20 @@ Deno.serve(async (req) => {
       const nome = (a.filename ?? "allegato").replace(/[^\w.-]+/g, "_").slice(-120);
       const percorso = `posta/${postaId}/${nome}`;
 
+      // ⚠️ `apikey` **e** `Authorization`, come per il database.
+      //
+      // Trovato dal vivo il 12/08/2026: con la sola `Authorization`
+      // l'archivio rispondeva `Invalid Compact JWS`. La chiave di
+      // servizio di questo progetto non è un token in formato JWT, e
+      // l'archivio prova a interpretarla come tale; il database invece
+      // guarda `apikey` e la accetta. Stesso segreto, due porte con
+      // aspettative diverse — e l'errore non lo dice.
       const su = await fetch(
         `${SUPABASE_URL}/storage/v1/object/${CARTELLA}/${percorso}`,
         {
           method: "POST",
           headers: {
+            apikey: SERVICE_ROLE,
             Authorization: `Bearer ${SERVICE_ROLE}`,
             "Content-Type": a.content_type ?? "application/octet-stream",
           },

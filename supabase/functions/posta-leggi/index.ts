@@ -187,9 +187,17 @@ async function allegatoPerIlModello(a: {
   mime: string;
   file_name: string;
 }) {
+  // `apikey` **e** `Authorization`: l'archivio rifiuta la sola seconda
+  // con «Invalid Compact JWS» — la chiave di servizio non è un JWT e lui
+  // prova a leggerla come tale (trovato dal vivo il 12/08/2026).
   const r = await fetch(
     `${SUPABASE_URL}/storage/v1/object/documents/${a.storage_path}`,
-    { headers: { Authorization: `Bearer ${SERVICE_ROLE}` } },
+    {
+      headers: {
+        apikey: SERVICE_ROLE!,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+      },
+    },
   );
   if (!r.ok) return null;
 
