@@ -97,11 +97,13 @@ Set-Clipboard -Value ([System.IO.File]::ReadAllText("percorso\file.sql"))
 ```
 
 **Ma gli appunti non bastano** (chiesto da Alessio il 12/08/2026: gli si
-sovrascrivono di continuo mentre lavora). Ogni codice o SQL da incollare
-va scritto **anche** in `C:\Users\User\Desktop\Borgo58 - da copiare\`, con
-un nome numerato nell'ordine d'uso (`1 - funzione posta-in-arrivo.txt`).
-La cartella si svuota all'inizio di ogni sequenza nuova, così dentro c'è
-sempre e solo ciò che serve adesso.
+sovrascrivono di continuo mentre lavora, e la sequenza di istruzioni si
+spezza). Il contenuto da incollare va messo **direttamente nel messaggio
+di chat, dentro un blocco di codice**: la sua interfaccia ci mette sopra
+l'icona per copiare, e resta lì anche se nel frattempo copia altro.
+Provata prima una cartella sul Desktop: **scartata da lui**, scomoda.
+Vale anche per file lunghi — meglio un messaggio lungo che un giro di
+«me lo ricopi?».
 
 ---
 
