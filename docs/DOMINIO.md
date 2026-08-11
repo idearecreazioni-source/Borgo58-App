@@ -2,10 +2,13 @@
 
 **A chi serve**: ad Alessio, click-by-click. Scritto l'11/08/2026.
 
-Oggi `borgo58.it` apre la pagina di parcheggio di Aruba, e il gestionale
-vive su `borgo58-app.pages.dev`. Alla fine di questa guida `borgo58.it`
-aprirà il gestionale — **e `info@borgo58.it` continuerà a ricevere posta
-esattamente come adesso**.
+✅ **Eseguita l'11/08/2026.** `borgo58.it` e `www.borgo58.it` aprono il
+gestionale, la posta arriva come prima. Quello che segue resta come
+resoconto di com'è stato fatto — e come istruzioni se un giorno il
+dominio dovesse essere rifatto o spostato altrove.
+
+Prima di allora `borgo58.it` apriva la pagina di parcheggio di Aruba e il
+gestionale viveva solo su `borgo58-app.pages.dev`.
 
 ⚠️ **La cosa che si rompe.** Il dominio non è solo l'indirizzo del sito:
 è anche ciò che dice al mondo *dove consegnare la posta*. Le due cose

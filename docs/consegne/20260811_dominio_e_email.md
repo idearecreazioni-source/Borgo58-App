@@ -137,9 +137,9 @@ autorevoli**, insieme alla prova che l'MX del dominio principale è rimasto
 | posta del dominio dopo lo spostamento | **verificata**: controlli verdi + email di prova arrivata sul telefono |
 | tre record di Resend | **verificati** dai server autorevoli |
 | migrazione `20260811000001` | **applicata e verificata sul progetto di prova**; non ancora in produzione |
-| verifica del mittente presso Resend | **in corso** al momento in cui scrivo |
-| zona Cloudflare *Active* | **in corso**: finché è `pending`, Pages rifiuta di agganciare il dominio |
-| `borgo58.it` che apre il gestionale | **non ancora** |
+| verifica del mittente presso Resend | **quasi**: SPF e MX verificati, DKIM ancora in corso |
+| zona Cloudflare *Active* | **fatto** (circa un'ora e mezza dopo il cambio) |
+| `borgo58.it` che apre il gestionale | **fatto e verificato**: `borgo58.it` e `www` rispondono `200` con il gestionale, e `npm run dominio:verifica` dice ✅ POSTA **e** ✅ SITO |
 | un'email di conferma davvero ricevuta da un cliente | **mai provata** — l'interruttore è spento e la funzione non è installata |
 
 L'ultima riga è la più importante: **il modulo dell'email non è
@@ -154,6 +154,7 @@ da Alessio, produce un'email che arriva davvero.
 1. Resend dice *Verified* → installare `email-cliente`, applicare
    `20260811000001` in produzione, accendere l'interruttore, **prova dal
    vivo end-to-end**.
-2. Cloudflare dice *Active* → agganciare `borgo58.it` e `www` al progetto
-   Pages, SSL/TLS su *Full (strict)*, e rilanciare
-   `npm run dominio:verifica`: deve dire ✅ POSTA **e** ✅ SITO.
+2. ✅ Fatto mentre scrivevo: zona attiva, `borgo58.it` e `www` agganciati
+   al progetto Pages (Cloudflare ha sostituito da sé la riga di parcheggio
+   con il puntamento al sito, **senza toccare l'MX**), e verifica finale
+   verde su entrambi i fronti.
