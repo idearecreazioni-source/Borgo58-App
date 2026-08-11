@@ -75,6 +75,7 @@ npm run lint     # oxlint — deve restare a ZERO avvisi
 npm run backup   # copia di sicurezza del database vero (docs/BACKUP.md)
 npm run prova:ricostruisci   # rifà da zero il database di prova (docs/AMBIENTE_PROVA.md)
 npm run prova:ripristina     # prova di ripristino dell'ultima copia
+npm run dominio:verifica     # la posta del dominio riceve? il sito risponde? (docs/DOMINIO.md)
 ```
 
 **Due progetti Supabase, non uno** (10/08/2026): `borgo58` (produzione) e
@@ -236,12 +237,13 @@ Tre accorgimenti appresi sul campo:
 
 **In capo a Claude Code, fuori dal mandato:**
 - **Email automatica al cliente quando Alessio conferma** (scelta del 10/08). Bloccata dall'acquisto del dominio: un'email inviata da un indirizzo che non è il suo finisce nello spam. Servizio scelto: **Resend**, piano gratuito (3.000 email/mese) — deciso il 10/08 dopo verifica dei prezzi.
+- **Posta in ingresso → Archivio Documenti, letta dall'AI** (idea di Alessio, 11/08/2026; primo modulo AI con un valore vero). **Sua decisione**: entra **automaticamente tutto** ciò che arriva su `info@borgo58.it` **e sulle due PEC**; resta fuori solo `borgo58.gestionale@gmail.com`. Io avevo proposto la corsia stretta (solo ciò che inoltra lui) — respinta. Tre conseguenze da progettare, non da dimenticare: (1) **la PEC ha valore legale nell'originale, non nella copia** — ciò che entra nel gestionale è un duplicato per comodità, la ricevuta di consegna resta nella PEC e nessuna cancellazione qui la sostituisce; (2) entrando tutto, entrano anche pubblicità e messaggi personali: servono un filtro a monte, un tetto di spesa per l'AI e **una regola di conservazione** come quella delle richieste dei clienti (§ privacy); (3) resta ferma la regola **il sistema propone, Alessio conferma** — un importo letto male in una fattura è peggio di nessuna automazione, perché ci si fida e non si ricontrolla. Da costruire dopo l'email di conferma.
 - Poi: **la logica interna dei moduli che toccano soldi e obblighi** — Cassa/Prima Nota, Proiezione Fiscale, Personale, HACCP (un calcolo fiscale sbagliato o una regola HACCP incompleta non li trova nessun controllo per classi di difetto).
 
 **In capo ad Alessio:**
 - **Promemoria settimanale del backup** in calendario (la copia fuori sede è fatta)
 - ✅ **Dominio `borgo58.it` comprato l'11/08/2026** su Aruba, pacchetto *Dominio con Email* (~20 € IVA inclusa l'anno, 5 caselle da 1 GB, rinnovo automatico attivo, scadenza 11/08/2027). Sta nello stesso account Aruba delle due PEC. **Intestato ad Alessio come persona fisica, non alla S.r.l.s.** — scelta consapevole dell'11/08 (costo irrisorio, nessun vantaggio fiscale cercato); la *modifica intestatario* è gratuita e resta da rivalutare **prima dell'apertura**, perché il nome del locale (sito, QR, email dei clienti) oggi poggia su un bene personale. Promemoria lasciato in Agenda per sua richiesta.
-- **Dominio: fatto l'11/08** — registrato (Registro .it, 02:00), DNS di Aruba attivi, casella **`info@borgo58.it`** creata e funzionante sul telefono. **Cosa resta**: puntare `borgo58.it` al sito su Cloudflare **riportando i record MX di Aruba** (altrimenti la casella smette di ricevere lo stesso giorno), e costruire l'email automatica di conferma al cliente (Resend).
+- **Dominio: fatto l'11/08** — registrato (Registro .it, 02:00), DNS di Aruba attivi, casella **`info@borgo58.it`** creata e funzionante sul telefono. **Cosa resta**: puntare `borgo58.it` al sito su Cloudflare **riportando i record MX di Aruba** (altrimenti la casella smette di ricevere lo stesso giorno) — guida click-by-click e tabella dei record veri in [`docs/DOMINIO.md`](docs/DOMINIO.md), sorvegliata da `npm run dominio:verifica`, che separa «la posta riceve» da «il sito risponde» ed esce in errore solo sulla prima. Poi l'email automatica di conferma al cliente (Resend).
 - Piano Supabase a pagamento (~25€/mese): sul Free i progetti inattivi vanno in pausa e **i promemoria Telegram smettono in silenzio** — e **non esiste alcun backup automatico** (verificato il 10/08 sulla documentazione Supabase)
 - Backup cifrato fuori sede, con Alessandro (fornitore hardware)
 - **Allungare i PIN prima dell'apertura** (rinviato consapevolmente il 06/08)
