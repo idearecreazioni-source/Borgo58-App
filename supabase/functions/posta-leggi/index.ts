@@ -210,6 +210,31 @@ async function allegatoPerIlModello(a: {
     : { type: "image", source: { type: "base64", media_type: a.mime, data } };
 }
 
+/**
+ * Avvisa Alessio sul telefono, passando dal canale che esiste già.
+ *
+ * Se anche l'avviso fallisce non si fa altro: la nota resta scritta sulla
+ * mail, che è il posto dove la si cerca comunque.
+ */
+async function avvisa(messaggio: string) {
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/notify-telegram-reservation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+        "x-borgo58-firma": NOTIFICHE_FIRMA!,
+      },
+      body: JSON.stringify({
+        type: "allarme",
+        allarme: { tipo: "posta_letta_a_meta", messaggio },
+      }),
+    });
+  } catch {
+    // niente
+  }
+}
+
 /** Il modello a volte incornicia il JSON: si prende quello che c'è fra le graffe. */
 function leggiJson(testo: string): Record<string, unknown> | null {
   const inizio = testo.indexOf("{");
@@ -259,6 +284,10 @@ Deno.serve(async (req) => {
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
   let letti = 0;
   let falliti = 0;
+  // Cosa dire ad Alessio a fine giro. Un solo messaggio per esecuzione,
+  // non uno per mail: venti avvisi di fila si smettono di leggere, ed è
+  // esattamente quando serve leggerli.
+  const saltati: string[] = [];
 
   for (const m of messaggi) {
     try {
@@ -266,9 +295,27 @@ Deno.serve(async (req) => {
 
       // I documenti veri vanno letti, non nominati: su una fattura il
       // nome del file non dice l'importo né la scadenza.
-      const daLeggere = tutti.filter((a: { storage_path?: string; mime?: string }) =>
-        a.storage_path && (NATIVI.has(a.mime ?? "") || DA_SPACCHETTARE[a.mime ?? ""])
-      );
+      // Cosa non si riesce a leggere, e perché. Non è cronaca: è la sola
+      // differenza fra «il gestionale ha guardato tutto» e «il gestionale
+      // ha guardato quello che poteva», che davanti a una fattura è la
+      // differenza che conta.
+      const scartati: string[] = [];
+
+      const daLeggere = tutti.filter((a: {
+        storage_path?: string;
+        mime?: string;
+        file_name?: string;
+      }) => {
+        if (!a.storage_path) {
+          scartati.push(`${a.file_name}: non è stato salvato nell'archivio`);
+          return false;
+        }
+        if (!NATIVI.has(a.mime ?? "") && !DA_SPACCHETTARE[a.mime ?? ""]) {
+          scartati.push(`${a.file_name}: formato che non so aprire (${a.mime ?? "?"})`);
+          return false;
+        }
+        return true;
+      });
 
       // Si prendono in ordine finché si sta dentro la taglia massima che
       // il servizio AI accetta: meglio leggere i primi tre allegati che
@@ -279,11 +326,17 @@ Deno.serve(async (req) => {
       for (const a of daLeggere) {
         // deno-lint-ignore no-explicit-any
         const blocco: any = await allegatoPerIlModello(a);
-        if (!blocco) continue;
+        if (!blocco) {
+          scartati.push(`${a.file_name}: troppo grande o illeggibile`);
+          continue;
+        }
         const dim = blocco.type === "text"
           ? blocco.text.length
           : blocco.source.data.length;
-        if (peso + dim > MAX_BYTE_TOTALI) break;
+        if (peso + dim > MAX_BYTE_TOTALI) {
+          scartati.push(`${a.file_name}: non ci stava, la mail era già troppo pesante`);
+          continue;
+        }
         peso += dim;
         documenti.push(blocco);
       }
@@ -338,9 +391,13 @@ Deno.serve(async (req) => {
           proposta_token:
             (esito.usage?.input_tokens ?? 0) + (esito.usage?.output_tokens ?? 0),
           proposta_il: new Date().toISOString(),
+          lettura_note: scartati.length ? scartati.join("; ") : null,
         }),
       });
       letti++;
+      if (scartati.length) {
+        saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${scartati.join("; ")}`);
+      }
     } catch {
       // Una mail che il modello non digerisce resta `da_leggere` e verrà
       // ripresa: se il guasto è permanente resterà lì, visibile, invece
@@ -349,5 +406,19 @@ Deno.serve(async (req) => {
     }
   }
 
-  return risposta({ letti, falliti, in_coda: messaggi.length });
+  // Un avviso solo, a fine giro, e solo se c'è davvero qualcosa da dire.
+  if (saltati.length || falliti) {
+    const righe = [
+      saltati.length
+        ? `Ho letto la posta ma qualcosa non sono riuscito ad aprirlo:\n${saltati.join("\n")}`
+        : null,
+      falliti
+        ? `${falliti} messaggi non sono stati letti del tutto: restano in attesa e ci riprovo fra un quarto d'ora.`
+        : null,
+      "Li trovi in Archivio Documenti → Posta in arrivo: il documento c'è comunque, l'ho solo letto meno bene.",
+    ].filter(Boolean);
+    await avvisa(righe.join("\n\n"));
+  }
+
+  return risposta({ letti, falliti, saltati: saltati.length, in_coda: messaggi.length });
 });

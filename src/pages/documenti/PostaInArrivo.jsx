@@ -146,6 +146,13 @@ export default function PostaInArrivo() {
                 </p>
               )}
 
+              {m.lettura_note && (
+                <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                  Ho letto questa mail solo in parte: {m.lettura_note}. Apri l&apos;allegato e
+                  controlla i dati a mano.
+                </p>
+              )}
+
               {m.allegati?.length > 0 && (
                 <p className="text-sm text-b58-charcoal-soft mb-3">
                   Allegati:{" "}
