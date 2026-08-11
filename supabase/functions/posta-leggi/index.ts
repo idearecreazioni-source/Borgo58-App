@@ -48,6 +48,27 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const MODELLO = "claude-haiku-4-5-20251001";
 const QUANTE_PER_GIRO = 10;
 
+// ---------------------------------------------------------------------
+// GLI ALLEGATI CHE SI POSSONO LEGGERE DAVVERO
+// ---------------------------------------------------------------------
+// Una fattura è un PDF: leggerne solo il nome significa non leggerla. Il
+// modello sa aprire PDF e immagini; non sa aprire .odt o .docx, che
+// andrebbero convertiti prima (non lo facciamo: chi manda una fattura la
+// manda in PDF, e per il resto resta la lettura del testo della mail).
+const LEGGIBILI = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+
+// Due freni, per lo stesso motivo per cui esiste QUANTE_PER_GIRO: un
+// allegato pesante costa molti token, e una mail con dodici foto
+// costerebbe come una giornata intera.
+const MAX_ALLEGATI_LETTI = 2;
+const MAX_BYTE_PER_ALLEGATO = 4 * 1024 * 1024;
+
 const ISTRUZIONI = `Sei l'archivista di un'osteria. Ricevi un'email arrivata al locale e devi dire
 se vale la pena conservarla nell'archivio documenti e, se sì, come catalogarla.
 
@@ -69,8 +90,13 @@ Rispondi SOLO con un oggetto JSON, senza testo attorno, con queste chiavi:
  "importo": numero senza simboli o null,
  "scadenza": "AAAA-MM-GG della scadenza di pagamento, o null"}
 
+Se sopra al testo trovi uno o più documenti allegati (PDF o immagini), **quelli
+sono il documento vero**: importo, data, scadenza e controparte si leggono lì
+dentro, non nel corpo della mail. Il corpo serve solo a capire il contesto.
+
 Il nome degli allegati conta quanto il testo: spesso è l'unica cosa che dice di
-cosa si tratta (una mail inoltrata può arrivare col corpo vuoto).
+cosa si tratta (una mail inoltrata può arrivare col corpo vuoto), e alcuni
+allegati non sono leggibili da qui — in quel caso vale il nome.
 
 Se un dato non c'è, metti null: non inventare. Meglio un campo vuoto che un
 importo sbagliato.`;
@@ -92,6 +118,43 @@ async function db(percorso: string, opzioni: RequestInit = {}) {
       ...(opzioni.headers ?? {}),
     },
   });
+}
+
+/**
+ * Da byte a base64, a blocchi.
+ *
+ * `String.fromCharCode(...array)` su un file da qualche megabyte fa
+ * esplodere lo stack: gli argomenti di una chiamata non sono infiniti.
+ * È un guasto che compare solo sui file grandi, cioè in produzione.
+ */
+function inBase64(byte: Uint8Array): string {
+  let s = "";
+  const passo = 0x8000;
+  for (let i = 0; i < byte.length; i += passo) {
+    s += String.fromCharCode(...byte.subarray(i, i + passo));
+  }
+  return btoa(s);
+}
+
+/** Scarica un allegato dall'archivio e lo prepara per il modello. */
+async function allegatoPerIlModello(a: {
+  storage_path: string;
+  mime: string;
+  file_name: string;
+}) {
+  const r = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/documents/${a.storage_path}`,
+    { headers: { Authorization: `Bearer ${SERVICE_ROLE}` } },
+  );
+  if (!r.ok) return null;
+
+  const byte = new Uint8Array(await r.arrayBuffer());
+  if (byte.byteLength > MAX_BYTE_PER_ALLEGATO) return null;
+
+  const data = inBase64(byte);
+  return a.mime === "application/pdf"
+    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } }
+    : { type: "image", source: { type: "base64", media_type: a.mime, data } };
 }
 
 /** Il modello a volte incornicia il JSON: si prende quello che c'è fra le graffe. */
@@ -132,7 +195,7 @@ Deno.serve(async (req) => {
   // informazione utile era il nome dell'allegato.
   const elenco = await db(
     `posta_ricevuta?stato=eq.da_leggere&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
-      `&select=id,mittente,oggetto,testo,casella,posta_allegati(file_name)`,
+      `&select=id,mittente,oggetto,testo,casella,posta_allegati(file_name,mime,storage_path)`,
   );
   if (!elenco.ok) {
     return risposta({ errore: "Non riesco a leggere la posta in attesa" }, 500);
@@ -146,6 +209,19 @@ Deno.serve(async (req) => {
 
   for (const m of messaggi) {
     try {
+      const tutti = m.posta_allegati ?? [];
+
+      // I documenti veri vanno letti, non nominati: su una fattura il
+      // nome del file non dice l'importo né la scadenza.
+      const daLeggere = tutti
+        .filter((a: { storage_path?: string; mime?: string }) =>
+          a.storage_path && LEGGIBILI.has(a.mime ?? "")
+        )
+        .slice(0, MAX_ALLEGATI_LETTI);
+
+      const documenti = (await Promise.all(daLeggere.map(allegatoPerIlModello)))
+        .filter(Boolean);
+
       const esito = await anthropic.messages.create({
         model: MODELLO,
         max_tokens: 400,
@@ -153,15 +229,22 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "user",
-            content:
-              `Casella: ${m.casella}\nDa: ${m.mittente ?? "?"}\n` +
-              `Oggetto: ${m.oggetto ?? "(nessuno)"}\n` +
-              `Allegati: ${
-                (m.posta_allegati ?? []).map((a: { file_name: string }) => a.file_name).join(", ") ||
-                "nessuno"
-              }\n\n` +
-              `${(m.testo ?? "").slice(0, 6000)}`,
-          },
+            content: [
+              ...documenti,
+              {
+                type: "text",
+                text:
+                  `Casella: ${m.casella}\nDa: ${m.mittente ?? "?"}\n` +
+                  `Oggetto: ${m.oggetto ?? "(nessuno)"}\n` +
+                  `Allegati: ${
+                    tutti.map((a: { file_name: string }) => a.file_name).join(", ") || "nessuno"
+                  }\n` +
+                  `Allegati che stai leggendo qui sopra: ${documenti.length}\n\n` +
+                  `${(m.testo ?? "").slice(0, 6000)}`,
+              },
+            ],
+            // deno-lint-ignore no-explicit-any
+          } as any,
         ],
       });
 
