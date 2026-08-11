@@ -2,6 +2,16 @@
 
 Risposta al blocco del validatore sulla migrazione dell'email.
 
+**Commit della consegna: `c5945af`** (questo riepilogo è il commit
+immediatamente sopra, sola documentazione). Working tree pulito.
+
+| Commit | Cosa |
+|---|---|
+| `c5945af` | revoche sull'email + migrazione `20260811000002` che chiude il ruolo anonimo su 35 funzioni, trappola in `CLAUDE.md` §8 |
+
+**Da applicare in produzione, in quest'ordine**: `20260811000001`
+(corretta, idempotente, già applicata una volta) e `20260811000002`.
+
 ---
 
 ## 0. Una correzione di fatto, prima di tutto
