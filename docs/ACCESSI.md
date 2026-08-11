@@ -34,16 +34,18 @@ gli altri con «password dimenticata».
 | **Telegram** — dove arrivano prenotazioni e allarmi | numero di telefono | Bitwarden (password della verifica in due passaggi + **token del bot**) | verifica in due passaggi dell'app | email di recupero `borgo58.gestionale@gmail.com` |
 | **Anthropic** — l'account dell'intelligenza artificiale (`platform.claude.com`) | **si entra con Google**: nessuna password propria | Bitwarden tiene la **chiave dell'API** (la password non esiste) | quello di Google | si rientra rientrando in Google |
 | **Aruba — area clienti** (`managehosting.aruba.it`) | l'account storico delle due PEC | Bitwarden | da attivare | ordini, rinnovi, fatture |
-| **Aruba — pannello del dominio** (`admin.aruba.it`) | `postmaster@borgo58.it` | Bitwarden | — | crea e gestisce le caselle di `borgo58.it` |
+| **Aruba — pannello del dominio** (`admin.aruba.it`) | **lo stesso account dell'area clienti** — non esiste nessun `postmaster@` | Bitwarden | da attivare | crea e gestisce le caselle di `borgo58.it` |
 | **Casella `info@borgo58.it`** (`webmail.aruba.it`) | l'indirizzo stesso | Bitwarden | — | la posta dei clienti |
 | **Bitwarden** — la cassaforte stessa (server **EU**, `vault.bitwarden.eu`) | `borgo58.gestionale@gmail.com` | **solo nella tua testa e sul foglio nel cassetto** | app Authenticator | **codice di recupero di Bitwarden, su carta** — mai dentro la cassaforte che serve a recuperare |
 
-**Aruba ha tre porte diverse, ed è la cosa che fa perdere più tempo**
-(scoperto sul campo l'11/08/2026): l'area clienti si apre con l'account,
-il pannello del dominio con `postmaster@borgo58.it`, la webmail con
-l'indirizzo della casella. Tre credenziali distinte, tutte in cassaforte.
-Sbagliare porta dà «nessun dominio associato a questa login», che sembra
-un guasto e non lo è.
+**Aruba ha quattro porte ma tre credenziali, ed è la cosa che fa perdere
+più tempo** (scoperto sul campo l'11/08/2026): area clienti e pannello
+del dominio si aprono **con lo stesso account**, mentre ogni casella —
+posta normale e PEC — ha la sua. Sbagliare porta dà «nessun dominio
+associato a questa login» o «la login inserita non è valida», che
+sembrano guasti e non lo sono. **Nessun `postmaster@borgo58.it`**: non
+esiste su questa configurazione, e cercare di recuperarne la password è
+un vicolo cieco. Mappa pratica in [`POSTA.md`](POSTA.md).
 
 **Come si apre ogni casella, senza sbagliare porta**: la mappa pratica
 delle quattro porte di Aruba, gli indirizzi dei server e le due regole

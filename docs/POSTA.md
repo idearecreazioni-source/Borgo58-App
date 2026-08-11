@@ -7,20 +7,28 @@ persa a sbagliare porta su Aruba.
 
 ## 0. Perché è un caos (e non è colpa tua)
 
-Aruba non ha *un* accesso: ne ha **quattro**, con credenziali diverse, e
-nessuno dei quattro dice all'altro che esiste. Sbagliare porta produce
-messaggi come «nessun dominio associato a questa login», che sembrano
-guasti e invece sono solo la porta sbagliata.
+Aruba non ha *un* accesso: ne ha **quattro indirizzi** ma **tre
+credenziali**, e nessuno dei quattro dice all'altro che esiste. Sbagliare
+porta produce messaggi come «nessun dominio associato a questa login» o
+«la login inserita non è valida», che sembrano guasti e invece sono solo
+la porta sbagliata.
 
 | Porta | Indirizzo | Si entra con | A cosa serve |
 |---|---|---|---|
 | **Webmail normale** | `webmail.aruba.it` | `info@borgo58.it` | leggere e scrivere la posta del locale |
 | **Webmail PEC** | `webmail.pec.aruba.it` | l'indirizzo PEC | leggere e mandare PEC (valore legale) |
-| **Pannello del dominio** | `admin.aruba.it` | `postmaster@borgo58.it` | creare caselle, DNS |
-| **Area clienti** | `managehosting.aruba.it` | l'account storico (`…@aruba.it`) | ordini, rinnovi, fatture, scadenze |
+| **Pannello del dominio** | `admin.aruba.it` | **l'account Aruba** (`…@aruba.it`) | creare caselle, DNS |
+| **Area clienti** | `managehosting.aruba.it` | **lo stesso account Aruba** | ordini, rinnovi, fatture, scadenze |
 
-Le prime due sono **posta**. Le seconde due sono **amministrazione**, e si
-aprono due o tre volte l'anno. Non vanno tenute insieme nella testa.
+Le prime due sono **posta**, e hanno una password ciascuna. Le altre due
+sono **amministrazione**, si aprono due o tre volte l'anno e **condividono
+lo stesso accesso**.
+
+⚠️ **Non esiste nessuna password di `postmaster@borgo58.it`** — verificato
+l'11/08/2026 leggendo l'utente scritto nel pannello: è l'account Aruba.
+`postmaster@` compare nelle guide di Aruba perché su altre configurazioni
+è così, e cercare di recuperarlo porta al messaggio «la login inserita non
+è valida»: non è un guasto, è una password che non c'è mai stata.
 
 ---
 
@@ -95,16 +103,15 @@ non devi più chiederti quale delle quattro sia.
 |---|---|
 | `Aruba — posta info@borgo58.it` | `webmail.aruba.it` |
 | `Aruba — PEC (…)` una per ciascuna | `webmail.pec.aruba.it` |
-| `Aruba — pannello dominio (postmaster@)` | `admin.aruba.it` |
-| `Aruba — area clienti` | `managehosting.aruba.it` |
+| `Aruba — account (pannello + area clienti)` | `admin.aruba.it` **e** `managehosting.aruba.it` |
 
 I nomi cominciano tutti con `Aruba —` di proposito: scrivendo «aruba»
-nella cassaforte escono tutte e quattro in fila, e si sceglie leggendo.
+nella cassaforte escono tutte in fila, e si sceglie leggendo.
 
-⚠️ **Buco da chiudere**: la password di `postmaster@borgo58.it` non è mai
-stata salvata. Si rigenera dall'area clienti (**Modifica password** nella
-scheda del dominio) e stavolta va messa in cassaforte **prima** di uscire
-dalla pagina.
+L'ultima voce ha **due indirizzi dentro la stessa scheda** (Bitwarden lo
+permette: *Aggiungi URI*), perché è un accesso solo che apre due pannelli.
+Tenerne due copie separate significa, il giorno in cui si cambia la
+password, aggiornarne una e dimenticare l'altra.
 
 ---
 
@@ -128,5 +135,6 @@ Fra sei mesi, senza rileggere niente:
 - [ ] Devo leggere una PEC → apro l'app del telefono, non cerco l'indirizzo.
 - [ ] Devo mandare una PEC → cartella `Borgo 58` → secondo collegamento.
 - [ ] Devo creare una casella nuova → cartella `Borgo 58` → terzo
-      collegamento, e la password la mette Bitwarden.
+      collegamento, e la password la mette Bitwarden (è quella
+      dell'account Aruba, non un `postmaster@` che non esiste).
 - [ ] Non ho dovuto chiedere a nessuno quale indirizzo usare.

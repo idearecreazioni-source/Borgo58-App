@@ -88,8 +88,10 @@ binari sono scritti ma non usati da nessuno. Puoi rileggerli con calma.
 Cloudflare ti mostra **due nomi** tipo `xxx.ns.cloudflare.com`. Vanno
 scritti su Aruba.
 
-1. Entra su `admin.aruba.it` con `postmaster@borgo58.it` (è la porta del
-   **pannello del dominio**, non l'area clienti — vedi `ACCESSI.md`).
+1. Entra su `admin.aruba.it` con **l'account Aruba** (`…@aruba.it`, lo
+   stesso dell'area clienti). *Non* con un `postmaster@borgo58.it`: su
+   questa configurazione non esiste, e provarci porta a «la login
+   inserita non è valida» — vedi [`POSTA.md`](POSTA.md).
 2. Cerca **Gestione DNS** → **DNS personalizzati** (o *DNS esterni*).
 3. Cancella i quattro nomi Aruba (`dns.technorail.com`,
    `dns2.technorail.com`, `dns3.arubadns.net`, `dns4.arubadns.cz`) e
