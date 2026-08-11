@@ -114,8 +114,14 @@ export default function PublicReservationForm() {
     }
   };
 
+  // `min-w-0` non è decorativo: un <input type="date"> ha una larghezza
+  // minima propria, decisa dal browser, e dentro una griglia si rifiuta
+  // di stringersi sotto quella. Il campo esce dalla sua colonna e finisce
+  // sopra a quello accanto — sui telefoni stretti, sempre. Con `min-w-0`
+  // la colonna torna a comandare. `appearance-none` toglie l'aspetto
+  // nativo di Safari, che aggiunge margini suoi e riporta il disallineamento.
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   if (done) {
@@ -156,7 +162,7 @@ export default function PublicReservationForm() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2">
+            <div className="col-span-2 min-w-0">
               <label className={labelClass}>Data</label>
               <input
                 required
@@ -167,7 +173,7 @@ export default function PublicReservationForm() {
                 className={inputClass}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={labelClass}>Persone</label>
               <input
                 required
@@ -239,7 +245,7 @@ export default function PublicReservationForm() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <label className={labelClass}>Telefono</label>
               <input
                 value={form.phone}
@@ -247,7 +253,7 @@ export default function PublicReservationForm() {
                 className={inputClass}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className={labelClass}>Email</label>
               <input
                 type="email"
