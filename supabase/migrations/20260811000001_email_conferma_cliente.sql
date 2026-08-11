@@ -216,6 +216,16 @@ begin
   select coalesce(email_conferma_attiva, false) into v_prima
     from service_settings where id = 1;
 
+  -- ⚠️ Il collaudo non deve far suonare il telefono di Alessio. Inserire
+  -- una prenotazione finta con provenienza "form_pubblico" fa scattare la
+  -- notifica Telegram delle richieste vere: successo davvero l'11/08/2026,
+  -- e per un attimo è sembrata una prenotazione di un cliente.
+  --
+  -- Si spegne SOLO quel trigger, non tutti (`session_replication_role =
+  -- replica` li fermerebbe tutti, compreso quello che questa migrazione
+  -- deve provare: la verifica passerebbe senza aver verificato niente).
+  alter table reservations disable trigger trg_notify_reservation_telegram;
+
   -- Una richiesta finta, con indirizzo, in attesa.
   insert into reservations (type, status, source, reservation_date, reservation_time,
                             party_size, customer_name, customer_email)
@@ -261,14 +271,25 @@ begin
     raise exception 'Cancellata la prenotazione, il registro degli invii è rimasto: % righe.', n;
   end if;
 
-  -- Ripristino dell'interruttore come stava prima della prova.
+  -- Ripristino: interruttore com'era, e notifiche Telegram riaccese.
   update service_settings set email_conferma_attiva = coalesce(v_prima, false) where id = 1;
+  alter table reservations enable trigger trg_notify_reservation_telegram;
 
   -- Il trigger esiste davvero.
   select count(*) into n from pg_trigger
    where tgname = 'trg_reservations_email_conferma' and not tgisinternal;
   if n <> 1 then
     raise exception 'Il trigger dell''email di conferma non risulta installato.';
+  end if;
+
+  -- E le notifiche Telegram sono tornate accese: lasciarle spente
+  -- significherebbe che le richieste dei clienti smettono di arrivare sul
+  -- telefono, in silenzio. È il guasto peggiore che questa migrazione
+  -- possa lasciarsi dietro.
+  select count(*) into n from pg_trigger
+   where tgname = 'trg_notify_reservation_telegram' and tgenabled = 'O';
+  if n <> 1 then
+    raise exception 'Le notifiche Telegram delle richieste sono rimaste spente.';
   end if;
 
   -- Nessuna funzione security definer senza search_path (regola di §6).
