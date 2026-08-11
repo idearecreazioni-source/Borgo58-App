@@ -45,6 +45,10 @@ l'indirizzo della casella. Tre credenziali distinte, tutte in cassaforte.
 Sbagliare porta dà «nessun dominio associato a questa login», che sembra
 un guasto e non lo è.
 
+**Come si apre ogni casella, senza sbagliare porta**: la mappa pratica
+delle quattro porte di Aruba, gli indirizzi dei server e le due regole
+sulle PEC stanno in [`POSTA.md`](POSTA.md).
+
 **La posta del locale sta in un'app sua** (scelta dell'11/08): niente
 inoltro verso la Gmail personale — sull'iPhone l'app Gmail tiene insieme
 `borgo58.gestionale@gmail.com` e `info@borgo58.it` (IMAP `imaps.aruba.it`
