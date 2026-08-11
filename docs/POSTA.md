@@ -7,22 +7,27 @@ persa a sbagliare porta su Aruba.
 
 ## 0. Perché è un caos (e non è colpa tua)
 
-Aruba non ha *un* accesso: ne ha **quattro indirizzi** ma **tre
-credenziali**, e nessuno dei quattro dice all'altro che esiste. Sbagliare
-porta produce messaggi come «nessun dominio associato a questa login» o
-«la login inserita non è valida», che sembrano guasti e invece sono solo
-la porta sbagliata.
+Perché Aruba non è un servizio solo: sono **due mondi separati** (il
+dominio con la sua posta, e la PEC) che si assomigliano, hanno indirizzi
+diversi e non si parlano. Da uno non si vede l'altro — verificato
+l'11/08/2026: dall'area PEC non si arriva a `info@borgo58.it`, e non è un
+permesso mancante, è proprio un altro sistema.
 
-| Porta | Indirizzo | Si entra con | A cosa serve |
+La semplificazione che toglie il caos:
+
+> **Un solo account apre tutti i pannelli. Ogni casella ha la sua
+> password per leggere la posta.**
+
+| | Porta | Si entra con | A cosa serve |
 |---|---|---|---|
-| **Webmail normale** | `webmail.aruba.it` | `info@borgo58.it` | leggere e scrivere la posta del locale |
-| **Webmail PEC** | `webmail.pec.aruba.it` | l'indirizzo PEC | leggere e mandare PEC (valore legale) |
-| **Pannello del dominio** | `admin.aruba.it` | **l'account Aruba** (`…@aruba.it`) | creare caselle, DNS |
-| **Area clienti** | `managehosting.aruba.it` | **lo stesso account Aruba** | ordini, rinnovi, fatture, scadenze |
+| 📬 **posta** | `webmail.aruba.it` | `info@borgo58.it` | leggere e scrivere la posta del locale |
+| 📬 **posta** | `webmail.pec.aruba.it` | l'indirizzo PEC | leggere e mandare PEC (valore legale) |
+| ⚙️ **pannelli** | `admin.aruba.it` | **l'account** `…@aruba.it` | caselle e DNS del dominio |
+| ⚙️ **pannelli** | `managehosting.aruba.it` | **lo stesso account** | ordini, rinnovi, fatture del dominio |
+| ⚙️ **pannelli** | `areaclienti.pec.it` | **lo stesso account** | le PEC, SPID, firma digitale |
 
-Le prime due sono **posta**, e hanno una password ciascuna. Le altre due
-sono **amministrazione**, si aprono due o tre volte l'anno e **condividono
-lo stesso accesso**.
+I pannelli si aprono due o tre volte l'anno e hanno **una password sola
+fra tutti**. Le caselle si aprono ogni giorno e ne hanno **una ciascuna**.
 
 ⚠️ **Non esiste nessuna password di `postmaster@borgo58.it`** — verificato
 l'11/08/2026 leggendo l'utente scritto nel pannello: è l'account Aruba.
@@ -85,8 +90,9 @@ ogni giorno, gli altri due due volte l'anno):
 
 1. `https://webmail.aruba.it` — posta del locale
 2. `https://webmail.pec.aruba.it` — PEC
-3. `https://admin.aruba.it` — pannello del dominio
-4. `https://managehosting.aruba.it` — area clienti
+3. `https://admin.aruba.it` — pannello del dominio (caselle, DNS)
+4. `https://managehosting.aruba.it` — rinnovi e fatture del dominio
+5. `https://areaclienti.pec.it` — rinnovi delle PEC, SPID, firma digitale
 
 Da lì in poi non si cerca più niente su Google: si apre la cartella.
 
@@ -103,15 +109,15 @@ non devi più chiederti quale delle quattro sia.
 |---|---|
 | `Aruba — posta info@borgo58.it` | `webmail.aruba.it` |
 | `Aruba — PEC (…)` una per ciascuna | `webmail.pec.aruba.it` |
-| `Aruba — account (pannello + area clienti)` | `admin.aruba.it` **e** `managehosting.aruba.it` |
+| `Aruba — account (tutti i pannelli)` | `admin.aruba.it`, `managehosting.aruba.it` **e** `areaclienti.pec.it` |
 
 I nomi cominciano tutti con `Aruba —` di proposito: scrivendo «aruba»
 nella cassaforte escono tutte in fila, e si sceglie leggendo.
 
-L'ultima voce ha **due indirizzi dentro la stessa scheda** (Bitwarden lo
-permette: *Aggiungi URI*), perché è un accesso solo che apre due pannelli.
-Tenerne due copie separate significa, il giorno in cui si cambia la
-password, aggiornarne una e dimenticare l'altra.
+L'ultima voce ha **tre indirizzi dentro la stessa scheda** (Bitwarden lo
+permette: *Aggiungi URI*), perché è un accesso solo che apre tre pannelli.
+Tenerne tre copie separate significa, il giorno in cui si cambia la
+password, aggiornarne una e dimenticare le altre.
 
 ---
 
