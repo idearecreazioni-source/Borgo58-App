@@ -113,7 +113,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 5. **Lint pulito prima di ogni commit.**
 6. **Query verso tabelle che crescono: limite esplicito — MA MAI su ciò che alimenta un documento esibibile** (vedi §8, trappola).
 7. **Ogni migrazione si applica PRIMA sul progetto di prova, poi in produzione** (10/08/2026, blocco 1 del Mandato strutturale). Vale anche per le prove automatiche: `npm run test:app` gira sul progetto di prova e si rifiuta di partire se `.env.test` punta alla produzione (controllo dentro `tests/app/aiuto.js`, non nella disciplina di chi lancia il comando).
-8. **Modello per materia, non per sezione del brief**: Opus per multi-entità, fiscale/API, RLS e prima nota nuove, registratore telematico. La verifica dal vivo però non è negoziabile con nessun modello.
+8. **I dati di prova si cancellano subito dopo la prova** (regola di Alessio, 12/08/2026, data dopo la pulizia del database prima di collegare la posta). Vale per le prove dal vivo in produzione, non solo per le migrazioni — quelle già ripuliscono da sé nel blocco di verifica. Il motivo non è l'ordine: da quando entra roba vera (documenti, fatture, prenotazioni di clienti), una riga finta indistinguibile da una vera toglie fiducia a **tutto** quello che il gestionale dice. Se una prova deve lasciare qualcosa dietro di sé, va detto ad Alessio prima, non dopo.
+9. **Modello per materia, non per sezione del brief**: Opus per multi-entità, fiscale/API, RLS e prima nota nuove, registratore telematico. La verifica dal vivo però non è negoziabile con nessun modello.
 
 ---
 
