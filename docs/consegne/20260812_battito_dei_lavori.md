@@ -152,3 +152,11 @@ quarto d'ora non è ancora stato osservato partire da solo»*.
 `lettura-posta` risulta eseguito da `pg_cron` alle 09:00, 09:15, 09:30 e
 09:45 di oggi, tutti `succeeded`. Il lavoro parte da solo. Nessuna
 migrazione lo riguarda: era già così, mancava solo che qualcuno guardasse.
+
+---
+
+## 8. Poscritto — questa migrazione ha prodotto un falso allarme
+
+Applicata in produzione alle 12:16, alle 12:30 ha fatto suonare Telegram
+con un guasto che non esisteva. Causa, conseguenze e correzione in
+[`20260812_falso_allarme.md`](20260812_falso_allarme.md).
