@@ -102,11 +102,27 @@ testo dentro una colonna.
 | lint, prove di unità, build | puliti |
 | `documento-leggi` | **mai eseguita**: non è ancora installata |
 
-**Onestà sul punto che conta**: questa consegna è **non verificata**.
-Diventa fatta quando Alessio installa la funzione, preme «Leggi il
-contenuto» sul contratto di locazione, e la stessa domanda di prima riceve
-il canone vero. Il `.odt` del contratto è anche il caso migliore per
-provare il ramo senza AI.
+### Verificata — aggiunto dopo, stesso giorno
+
+La riga qui sopra diceva «questa consegna è **non verificata**». Adesso lo
+è, e questi sono i numeri letti in produzione dal connettore in sola
+lettura, non il resoconto di Alessio:
+
+| | |
+|---|---|
+| Contratto di locazione | da **0 a 8.064 caratteri**, `letto dal file, senza AI` — il ramo `.odt`, costo zero |
+| domande successive di Alessio | 2, su manutenzioni ordinarie/straordinarie e sul canone |
+| documenti guardati / letti | 4 / 1 — e quell'uno è il contratto, non un altro |
+| token di domanda | **4.385**, contro i 2.057 di quando lo stesso documento era cieco: è la misura che il contenuto è davvero entrato nel contesto |
+
+Il documento letto è **uno solo su due che ora hanno il testo**: il
+certificato notarile ha rilevanza zero su quelle domande e resta fuori. È
+il comportamento voluto — si legge ciò che c'entra, non tutto.
+
+**Restano ciechi due documenti** («BP» e il certificato di attribuzione
+della partita IVA): hanno il file, non il testo. Basta aprirli e premere
+lo stesso bottone; non l'ho fatto fare perché non serviva alla verifica,
+e perché il secondo è un PDF e passerebbe dal modello — cioè costa.
 
 ---
 
