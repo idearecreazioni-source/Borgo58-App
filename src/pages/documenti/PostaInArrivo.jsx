@@ -27,18 +27,24 @@ const campo =
 const etichetta = "block text-[11px] uppercase tracking-wide text-b58-charcoal-soft mb-1";
 
 const NOME_TIPO = {
-  archivia_documento: "Archivia l'allegato",
-  archivia_testo: "Conserva il testo della mail",
-  promemoria: "Metti in Agenda",
-  nessuna: "Niente da fare",
+  archivia_documento: "Archivio",
+  archivia_testo: "Archivio",
+  promemoria: "Agenda",
+  promemoria_multipli: "Agenda",
+  da_fare_a_mano: "Da fare tu",
+  nessuna: "Niente",
 };
 
-// Quali campi ha senso mostrare per ciascun tipo di azione. È il punto
-// della critica di Alessio: su un promemoria non si chiedono importi.
+// Quali campi ha senso mostrare per ciascun tipo di azione — e si vedono
+// solo premendo «modifica». È il punto della seconda critica di Alessio:
+// i campi servono a correggere, non a capire. Quello che si legge è la
+// descrizione.
 const CAMPI = {
   archivia_documento: ["titolo", "tipo", "controparte", "data", "importo", "scadenza"],
   archivia_testo: ["titolo", "tipo", "controparte", "data", "importo", "scadenza"],
   promemoria: ["titolo", "data", "note"],
+  promemoria_multipli: [],
+  da_fare_a_mano: ["titolo", "data"],
   nessuna: [],
 };
 
@@ -60,6 +66,9 @@ export default function PostaInArrivo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState(null);
+  // Quale azione ha i campi aperti. Uno alla volta: se si aprissero tutti
+  // tornerebbe la schermata che Alessio ha già bocciato due volte.
+  const [aperta, setAperta] = useState(null);
 
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
@@ -189,18 +198,39 @@ export default function PostaInArrivo() {
                   key={a.id}
                   className="rounded-lg bg-white/60 ring-1 ring-b58-charcoal/10 p-3 mt-3"
                 >
-                  <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                  <div className="flex items-start gap-2 mb-1">
+                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-parchment text-[11px] font-medium px-2.5 py-1 shrink-0 mt-0.5">
                       {NOME_TIPO[a.tipo] ?? a.tipo}
                     </span>
-                    <span className="text-b58-charcoal font-medium">{a.titolo}</span>
+                    <span className="text-b58-charcoal">
+                      {a.descrizione || a.titolo}
+                    </span>
                   </div>
-                  {a.perche && (
-                    <p className="text-sm text-b58-charcoal-soft mb-2">{a.perche}</p>
+
+                  {/* Le date di un documento, in chiaro: sono la cosa che
+                      va guardata prima di confermare. */}
+                  {valori[a.id]?.scadenze?.length > 0 && (
+                    <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
+                      {valori[a.id].scadenze.map((s, i) => (
+                        <li key={i}>
+                          · <strong className="text-b58-charcoal">{formatDate(s.data)}</strong>{" "}
+                          {s.titolo}
+                          {s.note ? ` — ${s.note}` : ""}
+                        </li>
+                      ))}
+                    </ul>
                   )}
 
-                  {CAMPI[a.tipo]?.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 mb-3">
+                  {valori[a.id]?.passi?.length > 0 && (
+                    <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
+                      {valori[a.id].passi.map((s, i) => (
+                        <li key={i}>· {s}</li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {aperta === a.id && CAMPI[a.tipo]?.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 my-3">
                       {CAMPI[a.tipo].map((c) => (
                         <div key={c} className="min-w-0">
                           <label className={etichetta}>{ETICHETTE[c]}</label>
@@ -216,7 +246,7 @@ export default function PostaInArrivo() {
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 mt-2">
                     <button
                       type="button"
                       disabled={inCorso === a.id}
@@ -233,6 +263,15 @@ export default function PostaInArrivo() {
                     >
                       No
                     </button>
+                    {CAMPI[a.tipo]?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAperta(aperta === a.id ? null : a.id)}
+                        className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
+                      >
+                        {aperta === a.id ? "chiudi" : "modifica"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
