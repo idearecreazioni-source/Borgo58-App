@@ -376,7 +376,12 @@ Deno.serve(async (req) => {
 
       const esito = await anthropic.messages.create({
         model: MODELLO,
-        max_tokens: 400,
+        // Con l'elenco di azioni la risposta è molto più lunga di prima
+        // (sei campi contro tre azioni con i loro dati e i loro perché).
+        // Con 400 veniva troncata a metà, e una risposta troncata non è
+        // JSON: la lettura falliva senza dire perché — trovato dal vivo
+        // il 12/08/2026, alla prima mail dopo il passaggio alle azioni.
+        max_tokens: 1500,
         system: ISTRUZIONI,
         messages: [
           {
@@ -405,7 +410,13 @@ Deno.serve(async (req) => {
         .map((c: { text: string }) => c.text)
         .join("");
       const p = leggiJson(testo);
-      if (!p) throw new Error("risposta non interpretabile");
+      if (!p) {
+        throw new Error(
+          `non ho capito la risposta della lettura (motivo d'arresto: ${
+            esito.stop_reason ?? "?"
+          })`,
+        );
+      }
 
       // Le azioni proposte. Solo i tipi che il gestionale sa eseguire: se
       // il modello ne inventasse uno, proporrebbe un bottone che non fa
@@ -457,11 +468,22 @@ Deno.serve(async (req) => {
       if (scartati.length) {
         saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${scartati.join("; ")}`);
       }
-    } catch {
+    } catch (e) {
       // Una mail che il modello non digerisce resta `da_leggere` e verrà
       // ripresa: se il guasto è permanente resterà lì, visibile, invece
       // di sparire con una proposta inventata.
+      //
+      // Il motivo si scrive sulla mail. Senza, l'unico segnale era un
+      // avviso su Telegram che diceva «non ci sono riuscito» e basta —
+      // e si torna a indovinare, che è la cosa che stiamo togliendo di
+      // mezzo da tutta la sera.
       falliti++;
+      const motivo = (e as Error).message?.slice(0, 300) ?? "errore sconosciuto";
+      await db(`posta_ricevuta?id=eq.${m.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ lettura_note: `lettura fallita: ${motivo}` }),
+      });
+      saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${motivo}`);
     }
   }
 
