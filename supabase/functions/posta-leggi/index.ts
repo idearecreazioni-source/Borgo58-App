@@ -107,9 +107,15 @@ const TIPI_AZIONE = new Set([
   "archivia_testo",
   "promemoria",
   "promemoria_multipli",
+  "carico_magazzino",
   "da_fare_a_mano",
   "nessuna",
 ]);
+
+// Quanti ingredienti del Ricettario si mostrano al modello perché possa
+// abbinare le righe di una fattura. Si mandano solo quando c'è un
+// documento vero da leggere: su una pubblicità sarebbero token buttati.
+const MAX_INGREDIENTI = 400;
 
 const ISTRUZIONI = `Sei l'assistente di un'osteria. Ricevi un'email arrivata al locale e proponi al
 titolare COSA FARE con essa, in un elenco breve che si legge in dieci secondi.
@@ -126,10 +132,20 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
 - "promemoria_multipli": TUTTE le date di un documento in una sola riga. Usa
   questo, non tanti "promemoria" separati, quando le date sono più d'una.
 - "promemoria": una data sola, quando è davvero una sola.
+- "carico_magazzino": la merce di una fattura o di un documento di trasporto
+  entra in magazzino, e finisce nel registro HACCP di ricevimento merci. Usalo
+  SOLO quando il documento elenca prodotti con le quantità. Una riga per
+  prodotto. Se sotto trovi l'elenco degli ingredienti del Ricettario, abbina
+  ogni riga a uno di essi mettendone l'id in "ingrediente_id"; se nessuno
+  corrisponde davvero, lascia null — ci penserà lui, e una riga non abbinata
+  viene semplicemente saltata. NON abbinare a occhio: "Pomodori pelati" e
+  "Pomodorini" sono due cose diverse, e una giacenza sbagliata è peggio di una
+  riga da abbinare a mano.
 - "da_fare_a_mano": cose che il gestionale NON sa fare da solo e che deve fare
-  lui (caricare il magazzino da una fattura, registrare lotti e scadenze in
-  HACCP, pagare un bollettino, chiamare qualcuno). Diventano una lista in
-  Agenda. Usalo invece di tacere: l'informazione non deve perdersi.
+  lui (pagare un bollettino, chiamare qualcuno, portare un documento al
+  commercialista). Diventano una lista in Agenda. Usalo invece di tacere:
+  l'informazione non deve perdersi. NON usarlo più per il carico del magazzino
+  e per i lotti HACCP: adesso il gestionale li sa fare, ed è "carico_magazzino".
 - "nessuna": non c'è niente da fare. Da sola, senza altre azioni.
 
 RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
@@ -148,11 +164,20 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
     "descrizione": "Metto in Agenda 5 scadenze: 01/09/26 inizio · 31/12/26 fine canone agevolato · 01/01/27 canone a 1.500 · 01/07/27 canone a 1.800 · 31/08/31 disdetta",
     "scadenze": [{"titolo": "cosa ricordare", "data": "AAAA-MM-GG",
                   "note": "il dato utile di quel giorno, es. il nuovo importo"}]},
+   {"tipo": "carico_magazzino",
+    "titolo": "Carico dalla fattura Mililli",
+    "descrizione": "Carico 4 righe in magazzino e le registro in HACCP: 6 kg pomodori, 2 kg basilico, 10 kg patate, 3 kg cipolle",
+    "carico": {"documento": "FT 128 del 10/08", "temperatura": numero o null,
+               "righe": [
+                 {"descrizione": "riga come è scritta sulla fattura",
+                  "ingrediente_id": "id preso dall'elenco, oppure null",
+                  "quantita": numero, "costo_unitario": numero o null,
+                  "scadenza": "AAAA-MM-GG o null", "lotto": "numero di lotto o null"}]}},
    {"tipo": "da_fare_a_mano",
-    "titolo": "Dalla fattura: magazzino e HACCP",
-    "descrizione": "Ti metto in Agenda due cose che devi fare tu: caricare i prodotti e registrare lotti e scadenze",
+    "titolo": "Bollettino da pagare",
+    "descrizione": "Ti metto in Agenda il bollettino della TARI da pagare entro il 16/09",
     "data": "AAAA-MM-GG o null",
-    "passi": ["carica in magazzino i prodotti della fattura", "registra lotti e scadenze in HACCP"]}
+    "passi": ["paga il bollettino TARI di 340 €"]}
  ]}
 
 REGOLE, in ordine di importanza:
@@ -277,15 +302,23 @@ async function allegatoPerIlModello(a: {
   const dentro = DA_SPACCHETTARE[a.mime];
   if (dentro) {
     const testo = testoDaPacchetto(byte, dentro);
-    return testo
-      ? { type: "text", text: `--- Contenuto di ${a.file_name} ---\n${testo}` }
-      : null;
+    if (!testo) return null;
+    // `grezzo`: il testo esatto del documento, che qui abbiamo gratis e
+    // per intero. Verrà conservato AL POSTO del riassunto del modello —
+    // vedi la nota su `contenuto` più sotto.
+    return {
+      blocco: { type: "text", text: `--- Contenuto di ${a.file_name} ---\n${testo}` },
+      grezzo: testo,
+    };
   }
 
   const data = inBase64(byte);
-  return a.mime === "application/pdf"
-    ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } }
-    : { type: "image", source: { type: "base64", media_type: a.mime, data } };
+  return {
+    blocco: a.mime === "application/pdf"
+      ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } }
+      : { type: "image", source: { type: "base64", media_type: a.mime, data } },
+    grezzo: null,
+  };
 }
 
 /**
@@ -350,6 +383,21 @@ function numeroValido(v: unknown): number | null {
   return n;
 }
 
+/**
+ * Una temperatura, oppure niente.
+ *
+ * Non si puo' usare `numeroValido`: quella tratta lo zero come «niente»,
+ * perche' un importo di zero euro e' quasi sempre un campo non compilato.
+ * Una temperatura di 0 °C invece e' un dato vero — il pesce fresco viaggia
+ * li' — e un -18 lo e' altrettanto. Il limite serve solo a scartare le
+ * assurdita' evidenti.
+ */
+function temperaturaValida(v: unknown): number | null {
+  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
+  if (!Number.isFinite(n) || n < -40 || n > 60) return null;
+  return n;
+}
+
 /** Il lavoro vero. Gira DOPO che abbiamo già risposto — vedi in fondo. */
 async function leggiLaPosta() {
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
@@ -406,14 +454,18 @@ async function leggiLaPosta() {
       // vedersi rifiutare l'intera richiesta e non leggerne nessuno.
       // deno-lint-ignore no-explicit-any
       const documenti: any[] = [];
+      // Il testo esatto degli allegati che si aprono da soli (.odt/.docx),
+      // per nome di file. Vedi `contenuto` più sotto.
+      const testiEsatti = new Map<string, string>();
       let peso = 0;
       for (const a of daLeggere) {
         // deno-lint-ignore no-explicit-any
-        const blocco: any = await allegatoPerIlModello(a);
-        if (!blocco) {
+        const letto: any = await allegatoPerIlModello(a);
+        if (!letto) {
           scartati.push(`${a.file_name}: troppo grande o illeggibile`);
           continue;
         }
+        const blocco = letto.blocco;
         const dim = blocco.type === "text"
           ? blocco.text.length
           : blocco.source.data.length;
@@ -423,6 +475,30 @@ async function leggiLaPosta() {
         }
         peso += dim;
         documenti.push(blocco);
+        if (letto.grezzo) testiEsatti.set(a.file_name, letto.grezzo);
+      }
+
+      // L'elenco degli ingredienti serve solo ad abbinare le righe di una
+      // fattura, quindi si manda solo quando c'è un documento vero da
+      // leggere: su una pubblicità sarebbero token buttati ogni volta.
+      let elencoIngredienti = "";
+      if (documenti.length) {
+        const r = await db(
+          `ingredients?select=id,name,unit&active=eq.true&order=name&limit=${MAX_INGREDIENTI}`,
+        );
+        if (r.ok) {
+          const righe = await r.json();
+          if (righe.length) {
+            elencoIngredienti =
+              `\n\nINGREDIENTI DEL RICETTARIO (per abbinare le righe di una fattura; ` +
+              `usa l'id esatto, e null se nessuno corrisponde davvero):\n` +
+              righe
+                .map((i: { id: string; name: string; unit: string }) =>
+                  `${i.id} · ${i.name} (${i.unit})`
+                )
+                .join("\n");
+          }
+        }
       }
 
       // C'è un documento vero da leggere? Allora si legge sul serio.
@@ -451,7 +527,8 @@ async function leggiLaPosta() {
                     tutti.map((a: { file_name: string }) => a.file_name).join(", ") || "nessuno"
                   }\n` +
                   `Allegati che stai leggendo qui sopra: ${documenti.length}\n\n` +
-                  `${(m.testo ?? "").slice(0, 6000)}`,
+                  `${(m.testo ?? "").slice(0, 6000)}` +
+                  elencoIngredienti,
               },
             ],
             // deno-lint-ignore no-explicit-any
@@ -513,8 +590,45 @@ async function leggiLaPosta() {
               passi: Array.isArray(a.passi)
                 ? a.passi.map((x: unknown) => String(x).slice(0, 300)).slice(0, 12)
                 : null,
+              // Le righe di una fattura che entrano in magazzino. Il
+              // filtro sui campi non è pignoleria: quello che finisce qui
+              // dentro viene poi eseguito dal database, e un numero
+              // arrivato come testo libero diventerebbe un errore in
+              // mezzo a una transazione già cominciata.
+              righe: Array.isArray((a.carico as Record<string, unknown>)?.righe)
+                ? ((a.carico as Record<string, unknown>).righe as Record<string, unknown>[])
+                    .map((r) => ({
+                      descrizione: String(r?.descrizione ?? "").slice(0, 300),
+                      ingrediente_id: r?.ingrediente_id ? String(r.ingrediente_id) : null,
+                      quantita: numeroValido(r?.quantita),
+                      costo_unitario: numeroValido(r?.costo_unitario),
+                      scadenza: dataValida(r?.scadenza),
+                      lotto: r?.lotto ? String(r.lotto).slice(0, 100) : null,
+                    }))
+                    .filter((r) => r.quantita !== null)
+                    .slice(0, 60)
+                : null,
+              documento: (a.carico as Record<string, unknown>)?.documento
+                ? String((a.carico as Record<string, unknown>).documento).slice(0, 200)
+                : null,
+              // NON `numeroValido`: quella funzione tratta lo zero come
+              // «niente», e 0 °C è una temperatura vera — anzi, è quella
+              // del pesce fresco. Un dato HACCP azzerato in silenzio è
+              // esattamente ciò che un registro non deve fare.
+              temperatura: temperaturaValida((a.carico as Record<string, unknown>)?.temperatura),
+              registra_haccp: true,
               // Il contenuto, per le domande di domani sull'archivio.
-              contenuto: dati.contenuto ? String(dati.contenuto).slice(0, 20000) : null,
+              //
+              // Se l'allegato è un .odt o un .docx, il suo testo ESATTO ce
+              // l'abbiamo già in mano, gratis: si conserva quello invece
+              // del riassunto del modello. Un riassunto risponde bene a
+              // «quanto pago d'affitto» e male a «chi paga le manutenzioni
+              // straordinarie», perché quella clausola può non esserci
+              // finita — e nessuno se ne accorgerebbe mai, visto che la
+              // risposta sarebbe un «non risulta» credibile.
+              contenuto:
+                (allegato && testiEsatti.get(allegato.file_name)) ||
+                (dati.contenuto ? String(dati.contenuto).slice(0, 20000) : null),
               tipo: dati.tipo ?? null,
               data: dataValida(dati.data ?? a.data),
               controparte: dati.controparte ?? null,
