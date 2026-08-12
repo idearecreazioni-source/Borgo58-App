@@ -286,9 +286,23 @@ function dataValida(v: unknown): string | null {
   return Number.isNaN(Date.parse(v)) ? null : v;
 }
 
+/**
+ * Un importo, oppure niente.
+ *
+ * Lo zero diventa niente di proposito: al modello è stato chiesto di
+ * mettere `null` dove il dato non c'è, e a volte scrive `0` — su un
+ * certificato dell'Agenzia delle Entrate o su un promemoria significa
+ * «non pertinente», non «zero euro». Uno zero finto in archivio è peggio
+ * di un campo vuoto: sembra un dato letto, e nessuno lo ricontrolla.
+ *
+ * Il prezzo di questa scelta: un documento il cui importo è davvero zero
+ * arriverebbe vuoto. Non esiste nel mondo di un'osteria, e comunque
+ * Alessio lo vede prima di confermare.
+ */
 function numeroValido(v: unknown): number | null {
   const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
-  return Number.isFinite(n) ? n : null;
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n;
 }
 
 Deno.serve(async (req) => {
