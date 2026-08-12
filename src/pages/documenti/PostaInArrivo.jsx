@@ -207,9 +207,41 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
   // Il menu «cos'è?»: unico per tutti e tre i gruppi, così la correzione
   // di una riga già decisa e la decisione di una riga nuova sono lo
   // stesso gesto.
+  // Le parole di un nome, per capire se due diciture parlano della stessa
+  // cosa. «Semola di grano duro rimacinata» e «Semola rimacinata di grano
+  // duro» condividono tutto tranne l'ordine — e il gestionale lo sa, ma
+  // fino al 12/08/2026 non lo diceva, lasciando ad Alessio il compito di
+  // accorgersene da solo in un menu lungo.
+  const parole = (s) =>
+    new Set(
+      String(s ?? "")
+        .toLowerCase()
+        .replace(/[^a-zà-ù0-9]+/g, " ")
+        .split(" ")
+        .filter((p) => p.length > 3)
+    );
+
+  const somiglianti = (r) => {
+    const mie = parole(r.nuovo_ingrediente?.nome ?? r.descrizione);
+    if (mie.size === 0) return [];
+    return (ingredienti ?? [])
+      .map((ing) => {
+        const sue = parole(ing.name);
+        let comuni = 0;
+        for (const p of mie) if (sue.has(p)) comuni++;
+        return { ing, comuni, quota: comuni / Math.max(1, Math.min(mie.size, sue.size)) };
+      })
+      .filter((x) => x.comuni >= 2 && x.quota >= 0.6)
+      .sort((a, b) => b.quota - a.quota)
+      .slice(0, 2)
+      .map((x) => x.ing);
+  };
+
   const menuCosE = (r, i) => (
     <select
-      value=""
+      // Mostra la scelta corrente invece di un eterno «— scegli —»:
+      // un menu che dice sempre la stessa cosa sembra non servire a niente.
+      value={r.nuovo_ingrediente ? "__nuovo__" : (r.ingrediente_id ?? "")}
       onChange={(e) => {
         const v = e.target.value;
         if (!v) return;
@@ -250,6 +282,27 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
   // conversione, numeri. Si apre solo su richiesta.
   const dettaglioRiga = (r, i) => (
     <div className="px-3 pb-3 space-y-2">
+      {/* Se assomiglia a qualcosa che c'è già, lo si dice PRIMA del menu:
+          è il momento in cui serve, e risparmia di cercarlo in un elenco
+          lungo. Resta una proposta — collegare due prodotti è una
+          decisione di Alessio, non del gestionale. */}
+      {!r.ingrediente_id &&
+        somiglianti(r).map((ing) => (
+          <p key={ing.id} className="text-sm text-b58-charcoal">
+            Assomiglia a <strong>{ing.name}</strong> che hai già.{" "}
+            <button
+              type="button"
+              onClick={() => {
+                patchRiga(i, { ingrediente_id: ing.id, nuovo_ingrediente: null });
+                setApertaRiga(null);
+              }}
+              className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+            >
+              è la stessa cosa
+            </button>
+          </p>
+        ))}
+
       <label className={etichetta}>Cos'è?</label>
       {menuCosE(r, i)}
 
@@ -620,6 +673,17 @@ export default function PostaInArrivo() {
     try {
       await fn();
       await ricarica();
+      // ⚠️ Anche l'anagrafica, non solo la posta. Confermare un carico
+      // CREA ingredienti: senza questa riga il menu «cos'è?» della riga
+      // successiva continua a mostrare la lista di quando la pagina è
+      // stata aperta — cioè vuota, se il Ricettario lo era. È successo
+      // davvero il 12/08/2026: Alessio ha confermato il primo carico e
+      // sulla fattura dopo non trovava i sette ingredienti appena nati.
+      // Non sembrava un guasto: sembrava un menu senza niente dentro.
+      await Promise.all([
+        listIngredients().then(setIngredienti).catch(() => {}),
+        listSuppliers().then(setFornitori).catch(() => {}),
+      ]);
     } catch (e) {
       setError(e.message);
     } finally {
