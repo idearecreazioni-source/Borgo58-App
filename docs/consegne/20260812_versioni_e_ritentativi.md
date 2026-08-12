@@ -1,6 +1,6 @@
 # Consegna del 12/08/2026 — le versioni di un prodotto, e il costo dei ritentativi
 
-**Commit della consegna: `c36a478`** (questo riepilogo è il commit
+**Commit della consegna: `3cf90f1`** (questo riepilogo è il commit
 immediatamente sopra, sola documentazione). Working tree pulito.
 
 **Migrazioni `20260812000016` e `…17` già applicate in produzione** (71
@@ -146,10 +146,37 @@ sola.
 | **produzione** | **applicate**: 71 migrazioni, zero residui |
 | lint, build | puliti |
 
-**Non verificato, e dichiarato**: dopo la correzione del tetto la bolla
-non è ancora stata riletta con successo — l'ultimo tentativo è quello
-fallito per troncamento. Il prossimo giro automatico dirà se basta.
-Nessun carico è mai stato confermato con la schermata nuova, quindi
-`varianti_ingrediente()` non ha ancora mai avuto due versioni vere da
-confrontare: la sua verifica è quella dentro la migrazione, non un dato
-di produzione.
+**Non verificato, e dichiarato**: nessun carico è mai stato confermato con
+la schermata nuova, quindi `varianti_ingrediente()` non ha ancora mai
+avuto due versioni vere da confrontare. La sua verifica è quella dentro la
+migrazione, non un dato di produzione.
+
+---
+
+## 6. Dopo il tetto alzato: riuscita, e una regressione trovata subito
+
+**La rilettura è andata**: `10.242` token, tre azioni, tutte e nove le
+righe con importo, unità, fattore e nome proposto. Il tetto a 4.000 era
+esattamente il problema.
+
+**E nella risposta riuscita si è vista la regressione.** Avendo chiesto al
+modello di riportare *tutte* le righe del documento (servono a far
+quadrare il totale) e, separatamente, di *proporre un nome* per ogni riga
+non abbinata, le due istruzioni si sono sommate: proponeva **«Trasporto»**
+e **«Contributo ambientale CONAI»** come prodotti nuovi.
+
+Confermando di corsa sarebbero nati in dispensa due ingredienti che non
+sono cibo e non sono niente. È lo stesso pasticcio di stasera —
+*«Contributo trasporto» a 8 €/kg, categoria verdura* — **con un nome più
+pulito, che è peggio: sembra a posto.**
+
+Corretto: quelle righe arrivano marcate `non_merce`, senza nome proposto,
+e la schermata le mette già fuori dal carico. Confermando, la memoria le
+ricorda come «non è merce» e dal mese prossimo spariscono da sole.
+
+**La lezione è su come si scrivono le istruzioni, non sul modello**: due
+regole giuste separatamente possono comporsi in una terza che nessuno ha
+chiesto, e non lo si vede finché non arriva il documento che le tocca
+entrambe. È la stessa forma dei guasti di ieri sera — solo che qui non
+c'era nessun errore da nessuna parte, solo una proposta sbagliata scritta
+bene.
