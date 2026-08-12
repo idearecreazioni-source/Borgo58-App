@@ -8,7 +8,7 @@ import {
   scartaPosta,
 } from "../../lib/api/posta";
 import { listIngredients } from "../../lib/api/ingredients";
-import { variazionePrezzo } from "../../lib/api/assistente";
+import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { formatDate } from "../../lib/constants";
 
@@ -133,7 +133,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
   // conversione. Estratto in una variabile perché un'espressione dentro
   // l'elenco delle dipendenze non è controllabile da nessuno.
   const chiavePrezzi = JSON.stringify(
-    righe.map((r) => [r.ingrediente_id, r.costo_unitario, r.fattore])
+    righe.map((r) => [r.articolo_id, r.ingrediente_id, r.costo_unitario, r.fattore])
   );
 
   useEffect(() => {
@@ -141,14 +141,22 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
     Promise.all(
       righe.map(async (r, i) => {
         const prezzo = Number(r.costo_unitario) / (Number(r.fattore) || 1);
-        if (!r.ingrediente_id || !Number.isFinite(prezzo) || prezzo <= 0) return null;
+        if (!Number.isFinite(prezzo) || prezzo <= 0) return null;
         try {
-          const v = await variazionePrezzo({
-            ingredienteId: r.ingrediente_id,
-            fornitoreId: par?.fornitore_id || null,
-            prezzo,
-          });
-          return v ? [i, v] : null;
+          // Versione già comprata: si può dire se è salita di prezzo.
+          if (r.articolo_id) {
+            const v = await variazionePrezzo({ articoloId: r.articolo_id, prezzo });
+            return v ? [i, { tipo: "rincaro", ...v }] : null;
+          }
+          // Versione nuova di un ingrediente che si compra già: non è un
+          // rincaro — è una scelta. Si mostra cosa si paga di solito, così
+          // la si fa sapendo. È la richiesta di Alessio del 12/08.
+          if (r.ingrediente_id) {
+            const varianti = await variantiIngrediente(r.ingrediente_id);
+            const migliore = varianti.filter((v) => v.prezzo > 0)[0];
+            if (migliore) return [i, { tipo: "confronto", ...migliore, prezzo_nuovo: prezzo }];
+          }
+          return null;
         } catch {
           return null; // il prezzo di prima è un di più: non blocca la conferma
         }
@@ -160,7 +168,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chiavePrezzi, par?.fornitore_id]);
+  }, [chiavePrezzi]);
 
   // ⚠️ Una sola chiamata anche quando i campi da toccare sono due: due di
   // fila partono dalla stessa fotografia e la seconda cancella la prima.
@@ -491,9 +499,13 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
         </p>
       )}
 
-      {/* 7. I rincari: due numeri, non uno. */}
+      {/* 7. Due avvisi diversi, e la differenza è tutta qui:
+             · stessa versione più cara = qualcuno ti ha aumentato il prezzo;
+             · versione nuova di un ingrediente che compri già = una scelta,
+               non un rincaro. Confonderle significa gridare al lupo ogni
+               volta che cambi formato, e insegnare a non leggere gli avvisi. */}
       {Object.entries(rincari)
-        .filter(([, v]) => v?.da_segnalare)
+        .filter(([, v]) => v?.tipo === "rincaro" && v.da_segnalare)
         .map(([i, v]) => (
           <p key={i} className="text-sm text-b58-terracotta-dark mb-1">
             ⚠️ <strong>{nomeRiga(righe[i])}</strong>: prima lo pagavi {v.prezzo_precedente}, ora{" "}
@@ -503,6 +515,26 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
               `, +${v.variazione_totale}% da quando lo compri`}
           </p>
         ))}
+
+      {Object.entries(rincari)
+        .filter(([, v]) => v?.tipo === "confronto")
+        .map(([i, v]) => {
+          const diff = ((v.prezzo_nuovo - v.prezzo) / v.prezzo) * 100;
+          if (Math.abs(diff) < 1) return null;
+          return (
+            <p key={i} className="text-sm text-b58-charcoal-soft mb-1">
+              <strong className="text-b58-charcoal">{nomeRiga(righe[i])}</strong>: è una versione
+              nuova. Di solito compri «{v.descrizione}»
+              {v.fornitore ? ` da ${v.fornitore}` : ""} a {Number(v.prezzo).toFixed(2)} €; questa
+              viene {v.prezzo_nuovo.toFixed(2)} € —{" "}
+              <strong className={diff > 0 ? "text-b58-terracotta-dark" : "text-b58-olive"}>
+                {diff > 0 ? "+" : ""}
+                {diff.toFixed(0)}%
+              </strong>
+              . Non è un rincaro: è un prodotto diverso, e la scelta è tua.
+            </p>
+          );
+        })}
 
       {/* 8. Fornitore, temperatura e registro: in fondo, dove si guardano
              una volta sola. */}

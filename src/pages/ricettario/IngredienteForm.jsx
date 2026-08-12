@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import { listSuppliers, createSupplier } from "../../lib/api/suppliers";
+import { collegaArticoli, variantiIngrediente } from "../../lib/api/assistente";
 import {
   createIngredient,
   getIngredient,
@@ -54,6 +55,7 @@ export default function IngredienteForm() {
   const [error, setError] = useState("");
 
   const [priceHistory, setPriceHistory] = useState([]);
+  const [varianti, setVarianti] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [priceNote, setPriceNote] = useState("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
@@ -92,6 +94,7 @@ export default function IngredienteForm() {
             alimentare: ing.alimentare !== false,
           });
           setPriceHistory(await listPriceHistory(id));
+          setVarianti(await variantiIngrediente(id).catch(() => []));
         }
       } catch (e) {
         if (!cancelled) setError(e.message);
@@ -145,6 +148,19 @@ export default function IngredienteForm() {
       setError(e.message);
     } finally {
       setCreatingSupplier(false);
+    }
+  };
+
+  // «Queste due sono lo stesso prodotto». Lo dice Alessio, non il
+  // gestionale: due diciture di fornitori diversi sono due stringhe, e
+  // nessun confronto automatico può sapere che dentro c'è la stessa cosa.
+  const collega = async (articoloId, stessoDi) => {
+    setError("");
+    try {
+      await collegaArticoli(articoloId, stessoDi);
+      setVarianti(await variantiIngrediente(id));
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -547,6 +563,83 @@ export default function IngredienteForm() {
           </button>
         </div>
       </form>
+
+      {/* Le versioni comprate davvero: marca, formato, fornitore, prezzo
+          per unità. È la tabella disegnata da Alessio il 12/08/2026 —
+          «vedo tutte le versioni di olio che ho comprato e scelgo
+          consapevolmente cosa continuare a comprare», e serve anche a
+          vedere se un fornitore è più caro di un altro sullo stesso
+          identico prodotto. */}
+      {isEdit && varianti.length > 0 && (
+        <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
+          <h2 className="font-display text-lg text-b58-charcoal mb-1">
+            Versioni che compri
+          </h2>
+          <p className="text-xs text-b58-charcoal-soft mb-3">
+            Dalla più conveniente. Il prezzo è sempre per {form.unit}, così formati diversi si
+            possono confrontare.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                  <th className="pb-2">Versione</th>
+                  <th className="pb-2">Fornitore</th>
+                  <th className="pb-2 text-right">€/{form.unit}</th>
+                  <th className="pb-2 text-right">Ultima volta</th>
+                  <th className="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {varianti.map((v, i) => (
+                  <tr key={v.articolo_id} className="border-t border-b58-charcoal/10">
+                    <td className="py-1.5 text-b58-charcoal">
+                      {v.descrizione}
+                      {v.stesso_di && (
+                        <span className="text-[11px] text-b58-charcoal-soft"> · stesso prodotto</span>
+                      )}
+                    </td>
+                    <td className="py-1.5 text-b58-charcoal-soft">{v.fornitore ?? "—"}</td>
+                    <td className="py-1.5 text-right text-b58-charcoal">
+                      {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
+                      {i === 0 && v.prezzo && (
+                        <span className="text-[11px] text-b58-olive"> ↓</span>
+                      )}
+                    </td>
+                    <td className="py-1.5 text-right text-b58-charcoal-soft text-xs">
+                      {v.ultima_volta ? formatDate(v.ultima_volta) : "—"}
+                    </td>
+                    <td className="py-1.5 text-right">
+                      {/* Il gestionale vede due stringhe e non può sapere che
+                          dentro c'è la stessa cosa: glielo dice Alessio, una
+                          volta, e da lì in poi le confronta da sole. */}
+                      <select
+                        value={v.stesso_di ?? ""}
+                        onChange={(e) => collega(v.articolo_id, e.target.value || null)}
+                        className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                      >
+                        <option value="">— versione a sé —</option>
+                        {varianti
+                          .filter((a) => a.articolo_id !== v.articolo_id)
+                          .map((a) => (
+                            <option key={a.articolo_id} value={a.articolo_id}>
+                              = {a.descrizione}
+                            </option>
+                          ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+            Se due righe sono lo stesso identico prodotto con nomi diversi, collegale: da lì in poi
+            un aumento fra un fornitore e l{"'"}altro diventa un avviso invece di una cosa da
+            notare a occhio.
+          </p>
+        </div>
+      )}
 
       {isEdit && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">

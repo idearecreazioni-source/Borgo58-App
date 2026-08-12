@@ -75,14 +75,46 @@ export async function leggiContenutoDocumento(documentoId, { rileggi = false } =
  * non registrarla. La stessa regola è applicata dal database quando il
  * carico viene eseguito — qui si legge soltanto.
  */
-export async function variazionePrezzo({ ingredienteId, fornitoreId, prezzo }) {
+export async function variazionePrezzo({ articoloId, prezzo }) {
   const { data, error } = await supabase.rpc("variazione_prezzo", {
-    p_ingredient_id: ingredienteId,
-    p_supplier_id: fornitoreId ?? null,
+    p_articolo_id: articoloId,
     p_prezzo: prezzo,
   });
   if (error) throw error;
   return data?.[0] ?? null;
+}
+
+/**
+ * Le versioni di un ingrediente che sono state comprate davvero: marca,
+ * formato, fornitore, ultimo prezzo per unità — dalla più conveniente.
+ *
+ * Risponde a «chi me lo fa meglio», che è una decisione e non un allarme:
+ * due fornitori hanno prezzi diversi per mille ragioni lecite, e un
+ * avviso su ognuna sarebbe rumore.
+ */
+export async function variantiIngrediente(ingredienteId) {
+  const { data, error } = await supabase.rpc("varianti_ingrediente", {
+    p_ingredient_id: ingredienteId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Dichiara che due diciture sono lo stesso identico prodotto.
+ *
+ * Lo decide Alessio: il gestionale vede due stringhe di fornitori diversi
+ * e non può sapere che dentro c'è la stessa cosa. Collegate, il confronto
+ * dei prezzi le tratta insieme — ed è lì che «lo stesso prodotto da B lo
+ * paghi 3 invece di 2» diventa un avviso invece di una cosa da notare a
+ * occhio.
+ */
+export async function collegaArticoli(articoloId, stessoDi) {
+  const { error } = await supabase.rpc("collega_articoli", {
+    p_articolo: articoloId,
+    p_stesso_di: stessoDi ?? null,
+  });
+  if (error) throw error;
 }
 
 /**
