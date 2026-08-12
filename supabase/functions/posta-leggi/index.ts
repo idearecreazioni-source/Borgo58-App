@@ -105,9 +105,14 @@ Puoi proporre solo azioni che il gestionale sa eseguire davvero:
 - "archivia_documento": un allegato diventa un documento dell'Archivio.
 - "archivia_testo": il contenuto che conta è nella mail stessa, non in un
   allegato (una comunicazione, un IBAN nuovo, una condizione concordata).
-- "promemoria": una data che deve finire in Agenda. Puoi proporne più d'uno se
-  le date importanti sono più d'una (es. la scadenza di un contratto E la
-  disdetta da dare qualche mese prima).
+- "promemoria": una data che deve finire in Agenda. **Proponine uno per OGNI
+  data che comporterà qualcosa da fare**, non solo per quella principale. In un
+  contratto sono quasi sempre più d'una: l'inizio, la fine, la disdetta da dare
+  mesi prima, **ogni aumento programmato del canone o della rata**, la fine di
+  un periodo agevolato, i rinnovi, le revisioni ISTAT, le scadenze di
+  pagamento. Se il documento prevede sei aumenti, proponi sei promemoria: è
+  meglio che il titolare ne rifiuti due, piuttosto che scoprire un aumento dal
+  conto corrente.
 - "nessuna": non c'è niente da fare. Usala da sola, senza altre azioni.
 
 Rispondi SOLO con un oggetto JSON, senza testo attorno:
@@ -136,6 +141,11 @@ Regole:
   col corpo vuoto, e alcuni allegati non sono leggibili da qui — in quel caso
   vale il nome.
 - Un'azione per ogni allegato che vale la pena archiviare.
+- Prima di rispondere, rileggi il documento cercando TUTTE le date e tutti gli
+  importi che cambiano nel tempo: sono la cosa che il titolare dimentica, ed è
+  il motivo per cui esisti.
+- Nelle note del promemoria scrivi il dato utile del momento (per esempio il
+  nuovo importo del canone da quella data): serve a lui, non a te.
 - Se un dato non c'è, metti null: NON inventare. Meglio un campo vuoto che un
   importo sbagliato: il titolare si fida di quello che scrivi.
 - Pubblicità, newsletter, offerte non richieste, notifiche di social e messaggi
@@ -395,7 +405,7 @@ Deno.serve(async (req) => {
         // Con 400 veniva troncata a metà, e una risposta troncata non è
         // JSON: la lettura falliva senza dire perché — trovato dal vivo
         // il 12/08/2026, alla prima mail dopo il passaggio alle azioni.
-        max_tokens: 1500,
+        max_tokens: 4000,
         system: ISTRUZIONI,
         messages: [
           {
@@ -437,7 +447,10 @@ Deno.serve(async (req) => {
       // niente — peggio che non proporlo, perché insegna a non fidarsi.
       const azioni = (Array.isArray(p.azioni) ? p.azioni : [])
         .filter((a: Record<string, unknown>) => TIPI_AZIONE.has(String(a?.tipo)))
-        .slice(0, 6)
+        // Un contratto con gli aumenti a scaglioni ne produce facilmente
+        // dieci: il tetto serve a fermare una risposta impazzita, non a
+        // limitare un documento fatto bene.
+        .slice(0, 15)
         .map((a: Record<string, unknown>) => {
           const dati = (a.dati ?? {}) as Record<string, unknown>;
           // Il modello nomina l'allegato; qui si ritrova la riga vera.
