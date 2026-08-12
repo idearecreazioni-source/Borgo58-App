@@ -133,8 +133,18 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
   questo, non tanti "promemoria" separati, quando le date sono più d'una.
 - "promemoria": una data sola, quando è davvero una sola.
 - "carico_magazzino": la merce di una fattura o di un documento di trasporto
-  entra in magazzino, e finisce nel registro HACCP di ricevimento merci. Usalo
-  SOLO quando il documento elenca prodotti con le quantità.
+  entra in magazzino. Usalo SOLO quando il documento elenca prodotti con le
+  quantità.
+  NON promettere mai, nella descrizione, che registrerai la consegna in HACCP:
+  quella decisione è di Alessio e la prende da una casella nella schermata. Una
+  frase che promette una cosa che non succede è peggio di una frase in meno.
+  Per ogni riga che NON riesci ad abbinare a un ingrediente esistente, proponi
+  tu come chiamarlo, in "nuovo_ingrediente". Il nome è quello che userebbe un
+  cuoco — «Pomodoro ciliegino», «Ricotta di pecora», «Detergente sgrassante» —
+  NON la dicitura del fornitore con marca, IGP e formato: quella resta scritta
+  nella riga, e serve solo a riconoscere la stessa cosa la volta dopo. Un
+  Ricettario pieno di nomi copiati dalle fatture è un Ricettario in cui non si
+  trova niente.
   METTI TUTTE LE RIGHE DEL DOCUMENTO, comprese quelle che non sono merce
   (trasporto, contributi ambientali, sconti): servono a far quadrare il totale,
   e chi conferma decide poi cosa farne.
@@ -176,7 +186,7 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
                   "note": "il dato utile di quel giorno, es. il nuovo importo"}]},
    {"tipo": "carico_magazzino",
     "titolo": "Carico dalla fattura Mililli",
-    "descrizione": "Carico 4 righe in magazzino e le registro in HACCP: 6 kg pomodori, 2 kg basilico, 10 kg patate, 3 kg cipolle",
+    "descrizione": "Carico 4 righe in magazzino: 6 kg pomodori, 2 kg basilico, 10 kg patate, 3 kg cipolle",
     "carico": {"documento": "FT 128 del 10/08", "fornitore_id": "id dall'elenco fornitori o null",
                "temperatura": numero o null,
                "totale_imponibile": numero o null, "totale_documento": numero o null,
@@ -185,6 +195,10 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
                   "ingrediente_id": "id preso dall'elenco, oppure null",
                   "quantita": numero, "costo_unitario": numero o null,
                   "importo": "il totale della riga come è STAMPATO sul documento",
+                  "nuovo_ingrediente": {"nome": "come lo chiamerebbe un cuoco, senza marca né formato",
+                                        "unita": "kg | l | pz | mazzo",
+                                        "categoria": "verdura | frutta | carne_rossa | carne_bianca | pesce | crostacei_molluschi | latticini | uova | farine_cereali | legumi | olio_condimenti | spezie_aromi | secco_dispensa | bevande | altro",
+                                        "alimentare": "false per detersivi, carta, imballaggi"},
                   "unita_fattura": "l'unità di misura della riga: cassa, sacco, lattina, kg, pz…",
                   "fattore": "quante unità di base fa UNA di quelle: una cassa da 6 kg → 6, un sacco da 25 kg → 25, una lattina da 5 L → 5. Se la riga è già in kg/l/pz singoli → 1",
                   "scadenza": "AAAA-MM-GG o null", "lotto": "numero di lotto o null"}]}},
@@ -407,6 +421,33 @@ function numeroValido(v: unknown): number | null {
  * li' — e un -18 lo e' altrettanto. Il limite serve solo a scartare le
  * assurdita' evidenti.
  */
+// Le unita' e le categorie che il database accetta davvero. Un valore
+// inventato dal modello non produrrebbe un campo brutto: farebbe fallire
+// l'inserimento dell'ingrediente a meta' transazione, cioe' un carico che
+// non entra senza che sia chiaro il perche'.
+const UNITA_VALIDE = new Set(["kg", "l", "pz", "mazzo"]);
+const CATEGORIE_VALIDE = new Set([
+  "verdura", "frutta", "carne_rossa", "carne_bianca", "pesce",
+  "crostacei_molluschi", "latticini", "uova", "farine_cereali", "legumi",
+  "olio_condimenti", "spezie_aromi", "secco_dispensa", "bevande", "altro",
+]);
+
+/** Il nome proposto per un prodotto che in anagrafica non c'e'. */
+function ingredienteProposto(v: unknown): Record<string, unknown> | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const nome = String(o.nome ?? "").trim().slice(0, 120);
+  if (!nome) return null;
+  const unita = String(o.unita ?? "").trim();
+  const categoria = String(o.categoria ?? "").trim();
+  return {
+    nome,
+    unita: UNITA_VALIDE.has(unita) ? unita : "kg",
+    categoria: CATEGORIE_VALIDE.has(categoria) ? categoria : "altro",
+    alimentare: o.alimentare === false ? false : true,
+  };
+}
+
 function temperaturaValida(v: unknown): number | null {
   const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
   if (!Number.isFinite(n) || n < -40 || n > 60) return null;
@@ -640,6 +681,14 @@ async function leggiLaPosta() {
                         ? String(r.unita_fattura).slice(0, 40)
                         : null,
                       fattore: numeroValido(r?.fattore),
+                      // Come chiamarlo, se non e' gia' in anagrafica. Il
+                      // nome proposto e' quello che Alessio confermera'
+                      // senza toccare niente: se e' la dicitura del
+                      // fornitore, il Ricettario diventa illeggibile.
+                      // Unita' e categoria si convalidano contro l'elenco
+                      // vero — un valore inventato dal modello farebbe
+                      // fallire l'inserimento a meta' transazione.
+                      nuovo_ingrediente: ingredienteProposto(r?.nuovo_ingrediente),
                       scadenza: dataValida(r?.scadenza),
                       lotto: r?.lotto ? String(r.lotto).slice(0, 100) : null,
                     }))
