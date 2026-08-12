@@ -38,6 +38,35 @@ export async function chiediAllArchivio(domanda) {
 }
 
 /**
+ * Mette il contenuto dentro un documento già archiviato.
+ *
+ * Serve per i documenti entrati **prima** che il contenuto si conservasse
+ * da solo: senza, l'assistente ne conosce solo la scheda e risponde «non
+ * ce l'ho» a domande la cui risposta è nel file, a un centimetro.
+ *
+ * `rileggi` sovrascrive un contenuto già presente: costa e cancella,
+ * quindi si chiede per nome.
+ */
+export async function leggiContenutoDocumento(documentoId, { rileggi = false } = {}) {
+  const { data, error } = await supabase.functions.invoke("documento-leggi", {
+    body: { documento_id: documentoId, rileggi },
+  });
+
+  if (error) {
+    let messaggio = error.message;
+    try {
+      const corpo = await error.context?.json();
+      if (corpo?.errore?.messaggio) messaggio = corpo.errore.messaggio;
+    } catch {
+      // risposta senza corpo JSON: si tiene il messaggio generico
+    }
+    throw new Error(messaggio);
+  }
+
+  return data?.risultato ?? null;
+}
+
+/**
  * Le domande già fatte, con quanto sono costate.
  *
  * Limite esplicito: è una lista che cresce a ogni domanda e non alimenta

@@ -16,6 +16,15 @@ const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-
 // Esempi di domanda: servono a far capire in tre secondi che non è una
 // ricerca per titolo. Sono cliccabili perché la prima domanda è quella
 // che costa di più da inventare.
+// Il modello scrive **così** quando vuole il grassetto. Senza questa
+// conversione in pagina compaiono gli asterischi, e una risposta piena di
+// asterischi sembra scritta male anche quando è giusta.
+function ConGrassetto({ testo }) {
+  return (testo ?? "").split(/\*\*(.+?)\*\*/gs).map((pezzo, i) =>
+    i % 2 ? <strong key={i}>{pezzo}</strong> : <span key={i}>{pezzo}</span>
+  );
+}
+
 const ESEMPI = [
   "Quanto ho speso dal notaio?",
   "Quando scade il contratto di locazione?",
@@ -121,7 +130,9 @@ export default function ChiediArchivio() {
 
       {esito && (
         <div className={sezione}>
-          <p className="whitespace-pre-wrap text-b58-charcoal leading-relaxed">{esito.risposta}</p>
+          <p className="whitespace-pre-wrap text-b58-charcoal leading-relaxed">
+            <ConGrassetto testo={esito.risposta} />
+          </p>
 
           {esito.troncato && (
             <p className="text-xs text-b58-terracotta-dark mt-3">
@@ -159,7 +170,12 @@ export default function ChiediArchivio() {
               <p>
                 {esito.senza_contenuto} document{esito.senza_contenuto === 1 ? "o" : "i"} in archivio
                 non {esito.senza_contenuto === 1 ? "ha" : "hanno"} il contenuto conservato: di
-                quell{esito.senza_contenuto === 1 ? "o" : "i"} conosco solo la scheda.
+                quell{esito.senza_contenuto === 1 ? "o" : "i"} conosco solo la scheda.{" "}
+                {/* Non basta dirlo: chi legge deve sapere cosa farci. */}
+                <Link to="/documenti" className="underline hover:text-b58-charcoal">
+                  Aprili e premi «Leggi il contenuto»
+                </Link>
+                .
               </p>
             )}
             {esito.token && (

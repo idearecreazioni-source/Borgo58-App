@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { deleteDocument, getDocument, getDocumentUrl, updateDocument } from "../../lib/api/documents";
+import { leggiContenutoDocumento } from "../../lib/api/assistente";
 import { formatDate } from "../../lib/constants";
 
 export default function DocumentoDetail() {
@@ -13,6 +14,8 @@ export default function DocumentoDetail() {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [leggendo, setLeggendo] = useState(false);
+  const [esitoLettura, setEsitoLettura] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -58,6 +61,24 @@ export default function DocumentoDetail() {
       window.open(url, "_blank", "noopener");
     } catch (e) {
       setError(e.message);
+    }
+  };
+
+  // Il contenuto del file dentro il documento: è ciò che permette a
+  // «Chiedi all'archivio» di rispondere su questo documento invece di
+  // dire «ne conosco solo la scheda».
+  const leggiContenuto = async (rileggi = false) => {
+    setLeggendo(true);
+    setError("");
+    setEsitoLettura(null);
+    try {
+      const r = await leggiContenutoDocumento(id, { rileggi });
+      setEsitoLettura(r);
+      setDoc(await getDocument(id));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLeggendo(false);
     }
   };
 
@@ -134,6 +155,53 @@ export default function DocumentoDetail() {
           </div>
         ) : (
           <p className="text-xs text-b58-charcoal-soft/60 mb-4">Nessun file allegato (solo metadati).</p>
+        )}
+
+        {/* Il contenuto letto dentro il file. Senza, l'assistente conosce
+            di questo documento solo i campi qui sopra. */}
+        {doc.storage_path && (
+          <div className="mb-4 rounded-lg bg-white border border-b58-charcoal/10 p-3">
+            {doc.testo ? (
+              <p className="text-xs text-b58-charcoal-soft">
+                Contenuto letto: <strong>{doc.testo.length}</strong> caratteri. «Chiedi
+                all'archivio» può rispondere su questo documento.
+                <button
+                  onClick={() => leggiContenuto(true)}
+                  disabled={leggendo}
+                  className="ml-2 underline hover:text-b58-charcoal disabled:opacity-40"
+                >
+                  {leggendo ? "rileggo…" : "rileggi"}
+                </button>
+              </p>
+            ) : (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-xs text-b58-charcoal-soft">
+                  Contenuto non ancora letto: l'assistente di questo documento conosce solo la
+                  scheda qui sopra.
+                </p>
+                <button
+                  onClick={() => leggiContenuto(false)}
+                  disabled={leggendo}
+                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal text-xs font-medium px-3 py-1.5"
+                >
+                  {leggendo ? "Leggo…" : "Leggi il contenuto"}
+                </button>
+              </div>
+            )}
+            {leggendo && (
+              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+                Un documento lungo può richiedere un minuto.
+              </p>
+            )}
+            {esitoLettura && !leggendo && (
+              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+                {esitoLettura.gia_letto
+                  ? "Il contenuto c'era già."
+                  : `${esitoLettura.caratteri} caratteri, ${esitoLettura.come}.`}
+                {esitoLettura.troncato && " Il documento era lungo: la lettura si è fermata prima della fine."}
+              </p>
+            )}
+          </div>
         )}
 
         {doc.task_id && doc.expiry_date && (

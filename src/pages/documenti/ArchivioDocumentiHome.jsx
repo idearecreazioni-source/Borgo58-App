@@ -131,9 +131,10 @@ export default function ArchivioDocumentiHome() {
       </div>
 
       <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
-        I documenti che arrivano dalla posta vengono letti da soli; quelli caricati a mano si
-        compilano a mano. «Chiedi all'archivio» risponde a domande sul contenuto dei documenti
-        letti. I file sono conservati in modo privato su server UE, solo per te.
+        I documenti che arrivano dalla posta vengono letti da soli. Quelli caricati a mano si
+        compilano a mano, ma aprendoli puoi chiedere di leggerne il contenuto: serve perché
+        «Chiedi all'archivio» risponde solo sui documenti di cui conosce il testo. I file sono
+        conservati in modo privato su server UE, solo per te.
       </p>
 
       {error && (
