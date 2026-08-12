@@ -170,5 +170,39 @@ che serviva a trovare i guasti silenziosi.
 | formato nuovo non scambiato per rincaro | **visto** |
 | prove automatiche | **29 verdi** |
 | lint, build | puliti |
-| **avviso coi due numeri** | **mai visto**: dipende dalla conferma del documento 3 |
-| **pulizia dei dati di prova** | **da fare** dopo l'ultima conferma |
+| **avviso coi due numeri** | visto **in schermata**, mai su Telegram — vedi §7 |
+| **pulizia dei dati di prova** | **non fatta**: Alessio ha chiesto di lasciarli per ora |
+
+---
+
+## 7. 🔴 Difetto trovato all'ultimo controllo: il freno zittisce rincari veri
+
+Confermato il documento 3, Alessio ha visto **due avvisi in schermata**.
+Andando a verificare quali fossero davvero partiti, in `allarmi` ce ne
+sono due — ma non quelli che sembrava:
+
+- olio, **+10%**, dal documento 3 ✓
+- pomodori, **+12,5%**, dal documento **2**
+
+**Il rincaro dei pomodori del documento 3 — quello coi due numeri, +8,3%
+sull'ultima volta e +21,9% dall'inizio — non è mai stato inviato.**
+
+Causa: `segnala_allarme()` ha il freno anti-tempesta a **un avviso per
+tipo all'ora**, e il tipo è `rincaro_<ingrediente>`. Le due conferme
+distavano venti minuti.
+
+In schermata i due avvisi c'erano, perché lì il confronto è calcolato dal
+vivo e non passa dal freno. **Quindi lo schermo e Telegram dicevano due
+cose diverse**, ed è il caso peggiore: chi guarda il telefono crede di
+sapere tutto.
+
+**Il freno è giusto per un guasto che si ripete**, dove il secondo
+messaggio non aggiunge informazione. **Un rincaro è un fatto nuovo ogni
+volta.** Correzione proposta e messa in coda (`CLAUDE.md` §10): il prezzo
+entra nel tipo dell'avviso, così lo stesso rincaro non si ripete e uno
+diverso passa.
+
+Nella vita vera due fatture dello stesso prodotto a venti minuti non
+capitano — ma un rincaro perso in silenzio è **esattamente** ciò che
+questo modulo esiste per evitare, e il difetto va chiuso prima che
+arrivino fatture vere.
