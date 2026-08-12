@@ -88,24 +88,52 @@ const CATEGORIE = [
 ];
 
 // ---------------------------------------------------------------------
-// Il carico da fattura
+// Il carico da fattura — terza forma, 12/08/2026
 // ---------------------------------------------------------------------
-// Le righe di una fattura non stanno in una griglia di sei campi: sono N
-// prodotti, e ognuno va abbinato a un ingrediente del Ricettario. Quello
-// che si legge senza aprire niente è **cosa entra in magazzino**; il resto
-// (costo, scadenza, numero di lotto) sta sotto «modifica», come per le
-// altre azioni.
+// Le prime due erano una tabella: sette righe aperte insieme, sei caselle
+// ciascuna. Alessio, guardandola: «è tutto molto confusionario e così non
+// va». Aveva ragione, ed era la terza volta che sbagliavo nello stesso
+// modo su questo modulo.
 //
-// Una riga senza ingrediente non si carica: qui si vede subito, in rosso,
-// invece di scoprirlo dal conteggio dopo aver confermato.
-function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
+// LA COSA CHE AVEVO PERSO DI VISTA: per ogni riga la domanda vera è UNA
+// — *cos'è questa roba?* Quantità, prezzo, lotto e scadenza il documento
+// li ha già detti e l'assistente li ha già letti: mostrarli tutti in
+// permanenza è chiedere di ricontrollare ciò che non serve
+// ricontrollare.
+//
+// Quindi: **si vedono solo le righe che il gestionale non sa abbinare**,
+// una domanda per riga. Le altre stanno in un riepilogo di due righe.
+// Man mano che la memoria delle diciture si riempie, una fattura non
+// chiederà quasi più niente.
+//
+// E LA DOMANDA DI ALESSIO CHE HA SALVATO IL DISEGNO: «in che modo posso
+// validare quei dati se non vedo la fattura?». Da sola, l'idea di
+// nascondere le righe era pericolosa — si confermerebbero numeri mai
+// guardati. Rispondono due cose:
+//   1. il documento è a un tocco, qui accanto;
+//   2. **la quadratura**: se la somma delle righe lette fa il totale
+//      stampato sul documento, allora sono state lette tutte e ai prezzi
+//      giusti — senza guardarne nemmeno una. È il modo in cui si
+//      controlla una fattura da sempre: non si rileggono le righe, si
+//      guarda se torna il totale.
+// Se non torna, la riga diventa rossa e dice di aprire il documento: che
+// è esattamente il momento in cui serve aprirlo.
+function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, cambia }) {
   const righe = par?.righe ?? [];
   const perId = Object.fromEntries((ingredienti ?? []).map((i) => [i.id, i]));
 
-  // Cosa si pagava prima, per riga. Chiesto al database mentre si guarda,
-  // non dopo aver confermato: se il fornitore ha sbagliato la fattura,
-  // questo è l'unico momento in cui non registrarla è ancora gratis.
+  // Quale riga è aperta. Una alla volta: aprirle tutte è la schermata
+  // che Alessio ha già bocciato.
+  const [apertaRiga, setApertaRiga] = useState(null);
+  const [numeriAperti, setNumeriAperti] = useState(null);
   const [rincari, setRincari] = useState({});
+
+  // Cosa fa ricontrollare i prezzi: solo l'abbinamento, il costo e la
+  // conversione. Estratto in una variabile perché un'espressione dentro
+  // l'elenco delle dipendenze non è controllabile da nessuno.
+  const chiavePrezzi = JSON.stringify(
+    righe.map((r) => [r.ingrediente_id, r.costo_unitario, r.fattore])
+  );
 
   useEffect(() => {
     let vivo = true;
@@ -131,251 +159,321 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(righe.map((r) => [r.ingrediente_id, r.costo_unitario, r.fattore])), par?.fornitore_id]);
+  }, [chiavePrezzi, par?.fornitore_id]);
 
-  // Si cambia una riga con UNA sola chiamata, anche quando i campi da
-  // toccare sono due.
-  //
-  // ⚠️ Due `cambiaRiga` di fila non funzionano: partono entrambe dalla
-  // stessa fotografia di `righe`, e la seconda sovrascrive la prima. È
-  // successo davvero il 12/08/2026 su «crea nuovo da questa riga», che
-  // deve scrivere l'ingrediente nuovo E svuotare l'abbinamento: si
-  // scriveva il primo, il secondo lo cancellava, e in schermata **non
-  // succedeva niente**. Nessun errore in console: il caso peggiore.
+  // ⚠️ Una sola chiamata anche quando i campi da toccare sono due: due di
+  // fila partono dalla stessa fotografia e la seconda cancella la prima.
+  // È successo davvero, e in schermata non succedeva niente.
   const patchRiga = (i, patch) =>
     cambia("righe", righe.map((r, k) => (k === i ? { ...r, ...patch } : r)));
-  const cambiaRiga = (i, chiave, valore) => patchRiga(i, { [chiave]: valore });
 
-  const daAbbinare = righe.filter((r) => !r.ingrediente_id && !r.salta && !r.ignora && !r.nuovo_ingrediente?.nome).length;
-  const caricabili = righe.filter(
-    (r) => (r.ingrediente_id || r.nuovo_ingrediente?.nome) && !r.salta && !r.ignora
-  ).length;
+  const decisa = (r) =>
+    Boolean(r.ingrediente_id) || Boolean(r.nuovo_ingrediente?.nome) || r.ignora || r.salta;
+
+  const daDecidere = righe.map((r, i) => ({ r, i })).filter(({ r }) => !decisa(r));
+  const caricabili = righe.filter((r) => (r.ingrediente_id || r.nuovo_ingrediente?.nome) && !r.salta && !r.ignora);
+  const fuori = righe.filter((r) => r.ignora || r.salta);
+
+  // La quadratura. Si somma quello che il documento ha STAMPATO su ogni
+  // riga — non un ricalcolo nostro, che verificherebbe solo noi stessi.
+  const sommaRighe = righe.reduce((t, r) => t + (Number(r.importo) || 0), 0);
+  const imponibile = Number(par?.totale_imponibile) || 0;
+  const quadra = imponibile > 0 && Math.abs(sommaRighe - imponibile) < 0.02;
+  const misurabile = imponibile > 0 && righe.some((r) => Number(r.importo) > 0);
+
+  const euro = (n) => Number(n).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const nomeRiga = (r) =>
+    perId[r.ingrediente_id]?.name ?? r.nuovo_ingrediente?.nome ?? r.descrizione;
 
   return (
     <>
-      <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
-        {righe.map((r, i) => (
-          <li key={i} className={r.salta || r.ignora ? "line-through opacity-50" : undefined}>
-            · {r.quantita ?? "?"} {r.unita_fattura || perId[r.ingrediente_id]?.unit || ""}{" "}
-            <strong className="text-b58-charcoal">
-              {perId[r.ingrediente_id]?.name ?? r.nuovo_ingrediente?.nome ?? r.descrizione}
-            </strong>
-            {r.ingrediente_id && r.descrizione ? ` (${r.descrizione})` : ""}
-            {r.scadenza ? ` — scade ${formatDate(r.scadenza)}` : ""}
-            {r.gia_noto && <span className="text-b58-olive"> — già conosciuto</span>}
-            {r.nuovo_ingrediente?.nome && !r.ingrediente_id && (
-              <span className="text-b58-olive"> — ingrediente nuovo</span>
-            )}
-            {!r.ingrediente_id && !r.nuovo_ingrediente?.nome && !r.salta && !r.ignora && (
-              <span className="text-b58-terracotta-dark"> — da abbinare, non verrà caricata</span>
-            )}
-            {/* Il rincaro, dove si guarda: dentro la riga, non in fondo.
-                Due numeri e non uno: il singolo passo può essere innocuo,
-                la somma dall'inizio no — ed è quella l'argomento con cui
-                si telefona a un fornitore. */}
-            {rincari[i]?.da_segnalare && (
-              <span className="text-b58-terracotta-dark">
-                {" "}— ⚠️ prima lo pagavi {rincari[i].prezzo_precedente}, ora{" "}
-                {(Number(r.costo_unitario) / (Number(r.fattore) || 1)).toFixed(2)} (+
-                {rincari[i].variazione}%)
-                {rincari[i].variazione_totale > rincari[i].variazione &&
-                  `, +${rincari[i].variazione_totale}% da quando lo compri`}
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {daAbbinare > 0 && (
-        <p className="text-xs text-b58-terracotta-dark mb-2">
-          {daAbbinare === 1
-            ? "Una riga senza ingrediente"
-            : `${daAbbinare} righe senza ingrediente`}
-          : premi «modifica» per abbinarle o crearle, oppure conferma e verranno saltate.
+      {/* 1. La quadratura, prima di tutto il resto. */}
+      {misurabile && (
+        <p
+          className={`text-sm rounded-lg px-3 py-2 mb-3 ${
+            quadra
+              ? "bg-b58-olive/10 text-b58-charcoal"
+              : "bg-b58-terracotta/10 text-b58-terracotta-dark"
+          }`}
+        >
+          {quadra ? (
+            <>
+              <strong>I conti tornano.</strong> {righe.length} righe lette, somma{" "}
+              {euro(sommaRighe)} € = imponibile del documento.
+              {par?.totale_documento ? ` Totale documento ${euro(par.totale_documento)} €.` : ""}
+            </>
+          ) : (
+            <>
+              <strong>I conti non tornano.</strong> Le {righe.length} righe lette fanno{" "}
+              {euro(sommaRighe)} €, il documento dice {euro(imponibile)} €. Manca o è sbagliata
+              almeno una riga: apri il documento e controlla prima di confermare.
+            </>
+          )}
         </p>
       )}
 
-      {aperto && (
-        <div className="my-3 space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="min-w-0 col-span-2">
-              <label className={etichetta}>Fornitore</label>
-              <select
-                value={par?.fornitore_id ?? ""}
-                onChange={(e) => cambia("fornitore_id", e.target.value)}
-                className={campo}
-              >
-                <option value="">— nessuno —</option>
-                {(fornitori ?? []).map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-0">
-              <label className={etichetta}>Temp. °C</label>
-              <input
-                type="number"
-                step="0.1"
-                value={par?.temperatura ?? ""}
-                onChange={(e) => cambia("temperatura", e.target.value)}
-                className={campo}
-              />
-            </div>
-            <div className="min-w-0 flex items-end">
-              {/* Spenta di proposito: la temperatura di ricevimento si
-                  misura alla porta, e una fattura arriva dopo la merce. */}
-              <label className="flex items-center gap-1.5 text-xs text-b58-charcoal-soft pb-1.5">
-                <input
-                  type="checkbox"
-                  checked={par?.registra_haccp === true}
-                  onChange={(e) => cambia("registra_haccp", e.target.checked)}
-                />
-                registra in HACCP
-              </label>
-            </div>
-          </div>
+      {/* 2. Il documento, a un tocco. */}
+      {(allegati ?? []).length > 0 && (
+        <p className="text-sm mb-3">
+          <button
+            type="button"
+            onClick={() => apriAllegato(allegati[0])}
+            className="text-b58-terracotta hover:text-b58-terracotta-dark underline"
+          >
+            Apri il documento ({allegati[0].file_name})
+          </button>
+        </p>
+      )}
 
-          {par?.registra_haccp === true && (
-            <p className="text-[11px] text-b58-terracotta-dark">
-              Scriverà nel registro HACCP una consegna ricevuta <strong>adesso</strong>. Accendila
-              solo se la merce è davvero appena arrivata: il registro è un documento che si mostra
-              a un'ispezione.
-            </p>
-          )}
+      {/* 3. Cosa entrerà, in due righe. */}
+      <p className="text-sm text-b58-charcoal-soft mb-1">
+        <strong className="text-b58-charcoal">{caricabili.length}</strong>{" "}
+        {caricabili.length === 1 ? "riga entra" : "righe entrano"} in magazzino
+        {caricabili.length > 0 && (
+          <>: {caricabili.map((r) => nomeRiga(r)).join(", ")}</>
+        )}
+      </p>
+      {fuori.length > 0 && (
+        <p className="text-xs text-b58-charcoal-soft/70 mb-1">
+          Fuori dal carico: {fuori.map((r) => r.descrizione).join(", ")}
+        </p>
+      )}
 
-          {righe.map((r, i) => (
-            <div key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 p-2">
-              <p className="text-[11px] text-b58-charcoal-soft mb-1.5 truncate">{r.descrizione}</p>
-              <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-                <div className="min-w-0 col-span-2">
-                  <label className={etichetta}>Ingrediente</label>
-                  <select
-                    value={r.nuovo_ingrediente ? "__nuovo__" : (r.ingrediente_id ?? "")}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "__nuovo__") {
-                        // Il nome parte dalla dicitura della fattura: si
-                        // corregge, non si riscrive da zero.
-                        patchRiga(i, {
-                          ingrediente_id: "",
-                          nuovo_ingrediente: {
-                            nome: r.descrizione ?? "",
-                            unita: "kg",
-                            categoria: "verdura",
-                            alimentare: true,
-                          },
-                        });
-                      } else {
-                        patchRiga(i, { ingrediente_id: v, nuovo_ingrediente: null });
-                      }
-                    }}
-                    className={campo}
-                  >
-                    <option value="">— da abbinare —</option>
-                    {(ingredienti ?? []).map((ing) => (
-                      <option key={ing.id} value={ing.id}>{ing.name}</option>
-                    ))}
-                    <option value="__nuovo__">+ crea nuovo da questa riga</option>
-                  </select>
-                </div>
-                <div className="min-w-0">
-                  <label className={etichetta}>Quantità</label>
-                  <input type="number" step="0.01" value={r.quantita ?? ""}
-                    onChange={(e) => cambiaRiga(i, "quantita", e.target.value)} className={campo} />
-                </div>
-                <div className="min-w-0">
-                  <label className={etichetta}>Costo unit.</label>
-                  <input type="number" step="0.01" value={r.costo_unitario ?? ""}
-                    onChange={(e) => cambiaRiga(i, "costo_unitario", e.target.value)} className={campo} />
-                </div>
-                {/* La conversione: se la fattura conta casse e l'ingrediente
-                    sta in chili, senza questo numero il prezzo al chilo è
-                    sbagliato di sei volte — e la sorveglianza dei prezzi
-                    costruita sopra non vale niente. Si chiede una volta:
-                    poi resta in memoria per quella dicitura. */}
-                <div className="min-w-0">
-                  <label className={etichetta}>Conta in</label>
-                  <input value={r.unita_fattura ?? ""} placeholder="cassa, kg…"
-                    onChange={(e) => cambiaRiga(i, "unita_fattura", e.target.value)} className={campo} />
-                </div>
-                <div className="min-w-0">
-                  <label className={etichetta}>= quante unità</label>
-                  <input type="number" step="0.001" value={r.fattore ?? ""} placeholder="1"
-                    onChange={(e) => cambiaRiga(i, "fattore", e.target.value)} className={campo} />
-                </div>
-                <div className="min-w-0">
-                  <label className={etichetta}>Scadenza</label>
-                  <input type="date" value={r.scadenza ?? ""}
-                    onChange={(e) => cambiaRiga(i, "scadenza", e.target.value)} className={campo} />
-                </div>
-                <div className="min-w-0">
-                  <label className={etichetta}>N° lotto</label>
-                  <input value={r.lotto ?? ""}
-                    onChange={(e) => cambiaRiga(i, "lotto", e.target.value)} className={campo} />
-                </div>
-              </div>
-              {/* L'ingrediente che nasce da questa riga. Nome, unità e
-                  categoria si correggono qui: quello che nasce è ciò che
-                  Alessio vede, non ciò che ha proposto l'assistente. */}
-              {r.nuovo_ingrediente && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 rounded-lg bg-b58-cream-dark/40 p-2">
-                  <div className="min-w-0 col-span-2">
-                    <label className={etichetta}>Nome dell'ingrediente nuovo</label>
-                    <input value={r.nuovo_ingrediente.nome ?? ""}
-                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, nome: e.target.value })}
-                      className={campo} />
-                  </div>
-                  <div className="min-w-0">
-                    <label className={etichetta}>Unità</label>
-                    <select value={r.nuovo_ingrediente.unita ?? "kg"}
-                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, unita: e.target.value })}
-                      className={campo}>
-                      {UNITA.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                  <div className="min-w-0">
-                    <label className={etichetta}>Categoria</label>
-                    <select value={r.nuovo_ingrediente.categoria ?? "altro"}
-                      onChange={(e) => {
-                        const c = e.target.value;
-                        cambiaRiga(i, "nuovo_ingrediente", {
-                          ...r.nuovo_ingrediente, categoria: c, alimentare: c !== "altro",
-                        });
-                      }}
-                      className={campo}>
-                      {CATEGORIE.map((c) => <option key={c.v} value={c.v}>{c.t}</option>)}
-                    </select>
-                  </div>
-                  <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft col-span-2 sm:col-span-4">
-                    <input type="checkbox" checked={r.nuovo_ingrediente.alimentare !== false}
-                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, alimentare: e.target.checked })} />
-                    è un alimento (togli la spunta per detersivi, carta, imballaggi: restano
-                    sotto controllo prezzi ma fuori dal Ricettario)
-                  </label>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
-                <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft">
-                  <input type="checkbox" checked={r.salta === true}
-                    onChange={(e) => cambiaRiga(i, "salta", e.target.checked)} />
-                  non caricare questa riga, per stavolta
-                </label>
-                {/* Ricordare che una riga non è merce vale quanto ricordare
-                    che lo è: senza, trasporto e CONAI tornano ogni mese. */}
-                <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft">
-                  <input type="checkbox" checked={r.ignora === true}
-                    onChange={(e) => cambiaRiga(i, "ignora", e.target.checked)} />
-                  non è merce — non chiedermelo più
-                </label>
-              </div>
-            </div>
-          ))}
-
-          <p className="text-[11px] text-b58-charcoal-soft/70">
-            Verranno caricate {caricabili} rig{caricabili === 1 ? "a" : "he"} su {righe.length}.
+      {/* 4. I rincari, se ce ne sono: due numeri, non uno. */}
+      {Object.entries(rincari)
+        .filter(([, v]) => v?.da_segnalare)
+        .map(([i, v]) => (
+          <p key={i} className="text-sm text-b58-terracotta-dark mb-1">
+            ⚠️ <strong>{nomeRiga(righe[i])}</strong>: prima lo pagavi {v.prezzo_precedente}, ora{" "}
+            {(Number(righe[i].costo_unitario) / (Number(righe[i].fattore) || 1)).toFixed(2)} (+
+            {v.variazione}%)
+            {v.variazione_totale > v.variazione &&
+              `, +${v.variazione_totale}% da quando lo compri`}
           </p>
+        ))}
+
+      {/* 5. Le sole righe che chiedono una decisione. */}
+      {daDecidere.length > 0 && (
+        <p className="text-sm text-b58-charcoal mt-3 mb-1">
+          {daDecidere.length === 1
+            ? "Una riga che non riconosco:"
+            : `${daDecidere.length} righe che non riconosco:`}
+        </p>
+      )}
+
+      <div className="space-y-1.5">
+        {daDecidere.map(({ r, i }) => (
+          <div key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10">
+            <button
+              type="button"
+              onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
+              className="w-full text-left px-3 py-2 text-sm text-b58-charcoal hover:bg-b58-cream-dark/40 rounded-lg"
+            >
+              {r.quantita} {r.unita_fattura || ""} <strong>{r.descrizione}</strong>
+              {r.importo ? ` — ${euro(r.importo)} €` : ""}
+            </button>
+
+            {apertaRiga === i && (
+              <div className="px-3 pb-3 space-y-2">
+                <label className={etichetta}>Cos'è?</label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) return;
+                    if (v === "__nuovo__") {
+                      patchRiga(i, {
+                        ingrediente_id: "",
+                        nuovo_ingrediente: {
+                          nome: r.descrizione ?? "",
+                          unita: "kg",
+                          categoria: "verdura",
+                          alimentare: true,
+                        },
+                      });
+                    } else if (v === "__non_merce__") {
+                      patchRiga(i, { ignora: true, nuovo_ingrediente: null, ingrediente_id: "" });
+                      setApertaRiga(null);
+                    } else if (v === "__salta__") {
+                      patchRiga(i, { salta: true, nuovo_ingrediente: null, ingrediente_id: "" });
+                      setApertaRiga(null);
+                    } else {
+                      patchRiga(i, { ingrediente_id: v, nuovo_ingrediente: null });
+                      setApertaRiga(null);
+                    }
+                  }}
+                  className={campo}
+                >
+                  <option value="">— scegli —</option>
+                  {(ingredienti ?? []).map((ing) => (
+                    <option key={ing.id} value={ing.id}>
+                      {ing.name}
+                    </option>
+                  ))}
+                  <option value="__nuovo__">+ è un prodotto nuovo</option>
+                  <option value="__non_merce__">non è merce — non chiedermelo più</option>
+                  <option value="__salta__">salta, solo per stavolta</option>
+                </select>
+
+                {/* Il prodotto nuovo: nome e unità, il resto ha un default
+                    ragionevole e si corregge dal Ricettario. */}
+                {r.nuovo_ingrediente && (
+                  <div className="rounded-lg bg-b58-cream-dark/40 p-2 space-y-2">
+                    <div>
+                      <label className={etichetta}>Come lo chiami tu</label>
+                      <input
+                        value={r.nuovo_ingrediente.nome ?? ""}
+                        onChange={(e) =>
+                          patchRiga(i, {
+                            nuovo_ingrediente: { ...r.nuovo_ingrediente, nome: e.target.value },
+                          })
+                        }
+                        className={campo}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={etichetta}>Lo misuri in</label>
+                        <select
+                          value={r.nuovo_ingrediente.unita ?? "kg"}
+                          onChange={(e) =>
+                            patchRiga(i, {
+                              nuovo_ingrediente: { ...r.nuovo_ingrediente, unita: e.target.value },
+                            })
+                          }
+                          className={campo}
+                        >
+                          {UNITA.map((u) => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={etichetta}>Categoria</label>
+                        <select
+                          value={r.nuovo_ingrediente.categoria ?? "altro"}
+                          onChange={(e) => {
+                            const c = e.target.value;
+                            patchRiga(i, {
+                              nuovo_ingrediente: {
+                                ...r.nuovo_ingrediente,
+                                categoria: c,
+                                alimentare: c !== "altro",
+                              },
+                            });
+                          }}
+                          className={campo}
+                        >
+                          {CATEGORIE.map((c) => (
+                            <option key={c.v} value={c.v}>{c.t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* La conversione, chiesta a parole e solo quando serve:
+                        se il fornitore conta a colli e tu a peso. Senza,
+                        il prezzo al chilo è sbagliato di sei volte. */}
+                    {r.unita_fattura &&
+                      r.unita_fattura !== (r.nuovo_ingrediente.unita ?? "kg") && (
+                        <div>
+                          <label className={etichetta}>
+                            Un{"'"}unità di «{r.unita_fattura}» quanti{" "}
+                            {r.nuovo_ingrediente.unita ?? "kg"} fa?
+                          </label>
+                          <input
+                            type="number"
+                            step="0.001"
+                            value={r.fattore ?? ""}
+                            placeholder="1"
+                            onChange={(e) => patchRiga(i, { fattore: e.target.value })}
+                            className={campo}
+                          />
+                          {Number(r.fattore) > 0 && Number(r.costo_unitario) > 0 && (
+                            <p className="text-[11px] text-b58-charcoal-soft mt-1">
+                              Entrano {Number(r.quantita) * Number(r.fattore)}{" "}
+                              {r.nuovo_ingrediente.unita ?? "kg"} a{" "}
+                              {(Number(r.costo_unitario) / Number(r.fattore)).toFixed(2)} € l{"'"}uno.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                )}
+
+                {/* I numeri, per chi proprio deve correggerli. */}
+                <button
+                  type="button"
+                  onClick={() => setNumeriAperti(numeriAperti === i ? null : i)}
+                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta underline"
+                >
+                  {numeriAperti === i ? "nascondi i numeri" : "correggi i numeri"}
+                </button>
+
+                {numeriAperti === i && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div>
+                      <label className={etichetta}>Quantità</label>
+                      <input type="number" step="0.01" value={r.quantita ?? ""}
+                        onChange={(e) => patchRiga(i, { quantita: e.target.value })} className={campo} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>Costo unit.</label>
+                      <input type="number" step="0.01" value={r.costo_unitario ?? ""}
+                        onChange={(e) => patchRiga(i, { costo_unitario: e.target.value })} className={campo} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>Scadenza</label>
+                      <input type="date" value={r.scadenza ?? ""}
+                        onChange={(e) => patchRiga(i, { scadenza: e.target.value })} className={campo} />
+                    </div>
+                    <div>
+                      <label className={etichetta}>N° lotto</label>
+                      <input value={r.lotto ?? ""}
+                        onChange={(e) => patchRiga(i, { lotto: e.target.value })} className={campo} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 6. Fornitore, temperatura e registro: una riga sola, in fondo. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-b58-charcoal/10">
+        <div className="col-span-2">
+          <label className={etichetta}>Fornitore</label>
+          <select
+            value={par?.fornitore_id ?? ""}
+            onChange={(e) => cambia("fornitore_id", e.target.value)}
+            className={campo}
+          >
+            <option value="">— nessuno —</option>
+            {(fornitori ?? []).map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
         </div>
+        <div>
+          <label className={etichetta}>Temp. °C</label>
+          <input type="number" step="0.1" value={par?.temperatura ?? ""}
+            onChange={(e) => cambia("temperatura", e.target.value)} className={campo} />
+        </div>
+        <div className="flex items-end">
+          <label className="flex items-center gap-1.5 text-xs text-b58-charcoal-soft pb-1.5">
+            <input type="checkbox" checked={par?.registra_haccp === true}
+              onChange={(e) => cambia("registra_haccp", e.target.checked)} />
+            registra in HACCP
+          </label>
+        </div>
+      </div>
+      {par?.registra_haccp === true && (
+        <p className="text-[11px] text-b58-terracotta-dark mt-1">
+          Scriverà nel registro HACCP una consegna ricevuta <strong>adesso</strong>: accendila solo
+          se la merce è appena arrivata.
+        </p>
       )}
     </>
   );
@@ -562,7 +660,8 @@ export default function PostaInArrivo() {
                       par={valori[a.id]}
                       ingredienti={ingredienti}
                       fornitori={fornitori}
-                      aperto={aperta === a.id}
+                      allegati={m.allegati}
+                      apriAllegato={apri}
                       cambia={(chiave, valore) => cambia(a.id, chiave, valore)}
                     />
                   )}
@@ -601,7 +700,9 @@ export default function PostaInArrivo() {
                     >
                       No
                     </button>
-                    {(CAMPI[a.tipo]?.length > 0 || a.tipo === "carico_magazzino") && (
+                    {/* Il carico non ha un «modifica»: le sue righe si
+                        aprono una alla volta da sole. */}
+                    {CAMPI[a.tipo]?.length > 0 && (
                       <button
                         type="button"
                         onClick={() => setAperta(aperta === a.id ? null : a.id)}

@@ -134,8 +134,18 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
 - "promemoria": una data sola, quando è davvero una sola.
 - "carico_magazzino": la merce di una fattura o di un documento di trasporto
   entra in magazzino, e finisce nel registro HACCP di ricevimento merci. Usalo
-  SOLO quando il documento elenca prodotti con le quantità. Una riga per
-  prodotto. Se sotto trovi l'elenco degli ingredienti del Ricettario, abbina
+  SOLO quando il documento elenca prodotti con le quantità.
+  METTI TUTTE LE RIGHE DEL DOCUMENTO, comprese quelle che non sono merce
+  (trasporto, contributi ambientali, sconti): servono a far quadrare il totale,
+  e chi conferma decide poi cosa farne.
+  "fattore" È IMPORTANTE QUANTO IL PREZZO: se la riga dice «cassa da 6 kg» o
+  «sacco 25 kg» o «lattina 5 L», quel numero va lì. Senza, il prezzo al chilo
+  risulta sbagliato di sei, venticinque, cinque volte — e il controllo dei
+  costi che ne dipende diventa falso senza sembrarlo.
+  "importo" e "totale_imponibile" si copiano COME SONO STAMPATI, senza
+  ricalcolarli: servono a verificare che tu abbia letto tutto, e un numero
+  ricalcolato non verifica niente.
+  Se sotto trovi l'elenco degli ingredienti del Ricettario, abbina
   ogni riga a uno di essi mettendone l'id in "ingrediente_id"; se nessuno
   corrisponde davvero, lascia null — ci penserà lui, e una riga non abbinata
   viene semplicemente saltata. NON abbinare a occhio: "Pomodori pelati" e
@@ -167,11 +177,16 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
    {"tipo": "carico_magazzino",
     "titolo": "Carico dalla fattura Mililli",
     "descrizione": "Carico 4 righe in magazzino e le registro in HACCP: 6 kg pomodori, 2 kg basilico, 10 kg patate, 3 kg cipolle",
-    "carico": {"documento": "FT 128 del 10/08", "temperatura": numero o null,
+    "carico": {"documento": "FT 128 del 10/08", "fornitore_id": "id dall'elenco fornitori o null",
+               "temperatura": numero o null,
+               "totale_imponibile": numero o null, "totale_documento": numero o null,
                "righe": [
                  {"descrizione": "riga come è scritta sulla fattura",
                   "ingrediente_id": "id preso dall'elenco, oppure null",
                   "quantita": numero, "costo_unitario": numero o null,
+                  "importo": "il totale della riga come è STAMPATO sul documento",
+                  "unita_fattura": "l'unità di misura della riga: cassa, sacco, lattina, kg, pz…",
+                  "fattore": "quante unità di base fa UNA di quelle: una cassa da 6 kg → 6, un sacco da 25 kg → 25, una lattina da 5 L → 5. Se la riga è già in kg/l/pz singoli → 1",
                   "scadenza": "AAAA-MM-GG o null", "lotto": "numero di lotto o null"}]}},
    {"tipo": "da_fare_a_mano",
     "titolo": "Bollettino da pagare",
@@ -499,6 +514,20 @@ async function leggiLaPosta() {
                 .join("\n");
           }
         }
+
+        // Anche i fornitori: senza, il carico arriva senza mittente e la
+        // memoria delle diciture finisce nel secchio «nessun fornitore»,
+        // dove non serve a niente la volta dopo.
+        const rf = await db(`suppliers?select=id,name&active=eq.true&order=name&limit=200`);
+        if (rf.ok) {
+          const forn = await rf.json();
+          if (forn.length) {
+            elencoIngredienti +=
+              `\n\nFORNITORI IN ANAGRAFICA (metti l'id in "fornitore_id" del carico ` +
+              `se il mittente del documento è uno di questi, altrimenti null):\n` +
+              forn.map((f: { id: string; name: string }) => `${f.id} · ${f.name}`).join("\n");
+          }
+        }
       }
 
       // C'è un documento vero da leggere? Allora si legge sul serio.
@@ -602,6 +631,15 @@ async function leggiLaPosta() {
                       ingrediente_id: r?.ingrediente_id ? String(r.ingrediente_id) : null,
                       quantita: numeroValido(r?.quantita),
                       costo_unitario: numeroValido(r?.costo_unitario),
+                      // Il totale di riga come stampato: serve alla
+                      // quadratura, che e' il modo in cui una fattura si
+                      // controlla da sempre — non rileggendo le righe, ma
+                      // guardando se torna il totale.
+                      importo: numeroValido(r?.importo),
+                      unita_fattura: r?.unita_fattura
+                        ? String(r.unita_fattura).slice(0, 40)
+                        : null,
+                      fattore: numeroValido(r?.fattore),
                       scadenza: dataValida(r?.scadenza),
                       lotto: r?.lotto ? String(r.lotto).slice(0, 100) : null,
                     }))
@@ -611,11 +649,22 @@ async function leggiLaPosta() {
               documento: (a.carico as Record<string, unknown>)?.documento
                 ? String((a.carico as Record<string, unknown>).documento).slice(0, 200)
                 : null,
+              fornitore_id: (a.carico as Record<string, unknown>)?.fornitore_id
+                ? String((a.carico as Record<string, unknown>).fornitore_id)
+                : null,
               // NON `numeroValido`: quella funzione tratta lo zero come
               // «niente», e 0 °C è una temperatura vera — anzi, è quella
               // del pesce fresco. Un dato HACCP azzerato in silenzio è
               // esattamente ciò che un registro non deve fare.
               temperatura: temperaturaValida((a.carico as Record<string, unknown>)?.temperatura),
+              // I totali come stampati sul documento: chi conferma non
+              // rilegge nove righe, guarda se la somma torna.
+              totale_imponibile: numeroValido(
+                (a.carico as Record<string, unknown>)?.totale_imponibile,
+              ),
+              totale_documento: numeroValido(
+                (a.carico as Record<string, unknown>)?.totale_documento,
+              ),
               // Spento. La temperatura di ricevimento si misura quando il
               // furgone e' alla porta, e una fattura elettronica arriva
               // giorni dopo la merce: dedurre da li' un controllo che
