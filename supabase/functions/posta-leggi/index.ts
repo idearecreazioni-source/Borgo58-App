@@ -62,6 +62,14 @@ const MODELLO_ATTENTO = "claude-opus-5";
 const MODELLO_RAPIDO = "claude-haiku-4-5-20251001";
 const QUANTE_PER_GIRO = 10;
 
+// Dopo tre letture fallite la mail smette di essere ripresa. Non e' una
+// resa: una mail che il modello non digerira' mai verrebbe altrimenti
+// ripresa ogni quarto d'ora PER SEMPRE, e ogni tentativo si paga. Resta
+// in elenco con scritto cosa e' successo, e la si rimette in coda a mano
+// quando si e' capito il perche' — che e' il momento giusto per
+// riprovare, non «fra un quarto d'ora».
+const MAX_TENTATIVI = 3;
+
 // ---------------------------------------------------------------------
 // GLI ALLEGATI CHE SI POSSONO LEGGERE DAVVERO
 // ---------------------------------------------------------------------
@@ -462,8 +470,9 @@ async function leggiLaPosta() {
   // vera, dove la mail inoltrata aveva il corpo vuoto e l'unica
   // informazione utile era il nome dell'allegato.
   const elenco = await db(
-    `posta_ricevuta?stato=eq.da_leggere&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
-      `&select=id,mittente,oggetto,testo,casella,posta_allegati(id,file_name,mime,storage_path)`,
+    `posta_ricevuta?stato=eq.da_leggere&tentativi_lettura=lt.${MAX_TENTATIVI}` +
+      `&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
+      `&select=id,mittente,oggetto,testo,casella,tentativi_lettura,posta_allegati(id,file_name,mime,storage_path)`,
   );
   if (!elenco.ok) return;
   const messaggi = await elenco.json();
@@ -581,7 +590,15 @@ async function leggiLaPosta() {
         // Con 400 veniva troncata a metà, e una risposta troncata non è
         // JSON: la lettura falliva senza dire perché — trovato dal vivo
         // il 12/08/2026, alla prima mail dopo il passaggio alle azioni.
-        max_tokens: 4000,
+        // ⚠️ IL TETTO SI ALZA INSIEME A QUELLO CHE SI CHIEDE. Il 12/08
+        // era 400, l'ho portato a 4.000 quando sono nate le azioni, e la
+        // sera stessa l'ho sfondato di nuovo aggiungendo a ogni riga di
+        // fattura l'importo, l'unita', il fattore e il nome proposto:
+        // «motivo d'arresto: max_tokens», risposta troncata, che non e'
+        // JSON e fallisce senza spiegare niente. Una fattura da trenta
+        // righe ci sta comodamente in dodicimila; e il tetto non si paga
+        // se non lo si usa — si paga solo cio' che il modello scrive.
+        max_tokens: 12000,
         system: ISTRUZIONI,
         messages: [
           {
@@ -773,11 +790,26 @@ async function leggiLaPosta() {
       // mezzo da tutta la sera.
       falliti++;
       const motivo = (e as Error).message?.slice(0, 300) ?? "errore sconosciuto";
+      // Il tentativo si conta. Una mail che il modello non digerira' mai
+      // — un PDF scritto male, un allegato assurdo — verrebbe altrimenti
+      // ripresa ogni quarto d'ora PER SEMPRE, e ogni tentativo si paga.
+      // Nessuno se ne accorgerebbe: il freno degli avvisi ne fa uscire
+      // uno solo all'ora.
+      const tentativi = (m.tentativi_lettura ?? 0) + 1;
+      const arresa = tentativi >= MAX_TENTATIVI;
       await db(`posta_ricevuta?id=eq.${m.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ lettura_note: `lettura fallita: ${motivo}` }),
+        body: JSON.stringify({
+          tentativi_lettura: tentativi,
+          lettura_note: arresa
+            ? `lettura fallita ${tentativi} volte, non ci riprovo: ${motivo}`
+            : `lettura fallita: ${motivo}`,
+        }),
       });
-      saltati.push(`«${m.oggetto ?? "senza oggetto"}» — ${motivo}`);
+      saltati.push(
+        `«${m.oggetto ?? "senza oggetto"}» — ${motivo}` +
+          (arresa ? " (non ci riprovo piu': va guardata a mano)" : ""),
+      );
     }
   }
 
