@@ -133,8 +133,18 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(righe.map((r) => [r.ingrediente_id, r.costo_unitario, r.fattore])), par?.fornitore_id]);
 
-  const cambiaRiga = (i, chiave, valore) =>
-    cambia("righe", righe.map((r, k) => (k === i ? { ...r, [chiave]: valore } : r)));
+  // Si cambia una riga con UNA sola chiamata, anche quando i campi da
+  // toccare sono due.
+  //
+  // ⚠️ Due `cambiaRiga` di fila non funzionano: partono entrambe dalla
+  // stessa fotografia di `righe`, e la seconda sovrascrive la prima. È
+  // successo davvero il 12/08/2026 su «crea nuovo da questa riga», che
+  // deve scrivere l'ingrediente nuovo E svuotare l'abbinamento: si
+  // scriveva il primo, il secondo lo cancellava, e in schermata **non
+  // succedeva niente**. Nessun errore in console: il caso peggiore.
+  const patchRiga = (i, patch) =>
+    cambia("righe", righe.map((r, k) => (k === i ? { ...r, ...patch } : r)));
+  const cambiaRiga = (i, chiave, valore) => patchRiga(i, { [chiave]: valore });
 
   const daAbbinare = righe.filter((r) => !r.ingrediente_id && !r.salta && !r.ignora && !r.nuovo_ingrediente?.nome).length;
   const caricabili = righe.filter(
@@ -246,16 +256,17 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
                       if (v === "__nuovo__") {
                         // Il nome parte dalla dicitura della fattura: si
                         // corregge, non si riscrive da zero.
-                        cambiaRiga(i, "nuovo_ingrediente", {
-                          nome: r.descrizione ?? "",
-                          unita: "kg",
-                          categoria: "verdura",
-                          alimentare: true,
+                        patchRiga(i, {
+                          ingrediente_id: "",
+                          nuovo_ingrediente: {
+                            nome: r.descrizione ?? "",
+                            unita: "kg",
+                            categoria: "verdura",
+                            alimentare: true,
+                          },
                         });
-                        cambiaRiga(i, "ingrediente_id", "");
                       } else {
-                        cambiaRiga(i, "nuovo_ingrediente", null);
-                        cambiaRiga(i, "ingrediente_id", v);
+                        patchRiga(i, { ingrediente_id: v, nuovo_ingrediente: null });
                       }
                     }}
                     className={campo}
