@@ -1,6 +1,6 @@
 # Consegna del 12-13/08/2026 — il carico da fattura, provato fino in fondo
 
-**Commit della consegna: `81ba0ed`** (questo riepilogo è il commit
+**Commit della consegna: `f827205`** (questo riepilogo è il commit
 immediatamente sopra, sola documentazione). Working tree pulito.
 
 Copre tutto ciò che è successo dopo `20260812_prova_dettatura.md`: due
@@ -90,15 +90,15 @@ come rincaro; ricotta a prezzo uguale e basilico in calo: muti.
 
 ## 3. Cosa resta non verificato, e lo dico chiaro
 
-- **Il documento 3 non è ancora stato confermato** al momento in cui
-  scrivo. È quello che deve produrre l'avviso **coi due numeri** — «+8,3%
-  sull'ultima volta, +21,9% da quando lo compri» — che è l'unica cosa
-  costruita e mai vista dal vivo.
 - **Nessuna fattura vera di un fornitore vero** è mai passata di qui: i
   tre documenti sono di collaudo, generati apposta e marcati come tali.
-- **I dati delle prove sono ancora in produzione** mentre scrivo (8
-  ingredienti, 12 diciture, 13 lotti): vanno cancellati subito dopo
-  l'ultima conferma, come è già stato fatto due volte oggi.
+- **I dati delle prove restano in produzione**: Alessio ha chiesto
+  espressamente di non cancellarli per ora (8 ingredienti, 12 diciture,
+  13 lotti, 13 prezzi). Deroga consapevole al §5 punto 8 — vanno tolti
+  prima che entri roba vera, altrimenti una giacenza finta diventa
+  indistinguibile da una vera.
+- **Il documento 3 è stato confermato**, e proprio da lì è uscito il
+  difetto della §7: in schermata i due avvisi c'erano, su Telegram no.
 
 ---
 
