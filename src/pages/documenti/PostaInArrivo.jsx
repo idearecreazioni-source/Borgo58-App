@@ -159,12 +159,17 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
             {!r.ingrediente_id && !r.nuovo_ingrediente?.nome && !r.salta && !r.ignora && (
               <span className="text-b58-terracotta-dark"> — da abbinare, non verrà caricata</span>
             )}
-            {/* Il rincaro, dove si guarda: dentro la riga, non in fondo. */}
-            {rincari[i]?.oltre_soglia && (
+            {/* Il rincaro, dove si guarda: dentro la riga, non in fondo.
+                Due numeri e non uno: il singolo passo può essere innocuo,
+                la somma dall'inizio no — ed è quella l'argomento con cui
+                si telefona a un fornitore. */}
+            {rincari[i]?.da_segnalare && (
               <span className="text-b58-terracotta-dark">
                 {" "}— ⚠️ prima lo pagavi {rincari[i].prezzo_precedente}, ora{" "}
                 {(Number(r.costo_unitario) / (Number(r.fattore) || 1)).toFixed(2)} (+
                 {rincari[i].variazione}%)
+                {rincari[i].variazione_totale > rincari[i].variazione &&
+                  `, +${rincari[i].variazione_totale}% da quando lo compri`}
               </span>
             )}
           </li>

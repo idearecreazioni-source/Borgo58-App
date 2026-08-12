@@ -34,6 +34,11 @@ const emptyForm = {
   waste_percentage_default: "0",
   haccp_receiving_temp: "",
   haccp_notes: "",
+  // Acceso di partenza: il silenzio si compra prodotto per prodotto, non
+  // con una percentuale. Un fornitore che alza del 3% ogni mese non
+  // supererebbe mai una soglia, e fa +42% in un anno.
+  avvisa_rincari: true,
+  alimentare: true,
 };
 
 export default function IngredienteForm() {
@@ -83,6 +88,8 @@ export default function IngredienteForm() {
             waste_percentage_default: ing.waste_percentage_default ?? "0",
             haccp_receiving_temp: ing.haccp_receiving_temp ?? "",
             haccp_notes: ing.haccp_notes ?? "",
+            avvisa_rincari: ing.avvisa_rincari !== false,
+            alimentare: ing.alimentare !== false,
           });
           setPriceHistory(await listPriceHistory(id));
         }
@@ -162,6 +169,8 @@ export default function IngredienteForm() {
         waste_percentage_default: Number(form.waste_percentage_default) || 0,
         haccp_receiving_temp: form.haccp_receiving_temp || null,
         haccp_notes: form.haccp_notes || null,
+        avvisa_rincari: form.avvisa_rincari,
+        alimentare: form.alimentare,
       };
 
       if (isEdit) {
@@ -434,6 +443,37 @@ export default function IngredienteForm() {
               className={inputClass}
             />
           </div>
+          {/* Due interruttori, e il secondo è quello che decide se questo
+              prodotto ti farà squillare il telefono. Acceso di partenza:
+              si spegne sui prodotti che ballano per stagione o per
+              mercato, dove un avviso a ogni consegna si smette di
+              leggere. */}
+          <div className="sm:col-span-2 space-y-2">
+            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+              <input
+                type="checkbox"
+                checked={form.avvisa_rincari}
+                onChange={(e) => setForm((f) => ({ ...f, avvisa_rincari: e.target.checked }))}
+              />
+              Avvisami se il prezzo sale
+              <span className="text-xs text-b58-charcoal-soft">
+                (qualunque aumento, anche piccolo — togli la spunta su ciò che varia sempre)
+              </span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+              <input
+                type="checkbox"
+                checked={form.alimentare}
+                onChange={(e) => setForm((f) => ({ ...f, alimentare: e.target.checked }))}
+              />
+              È un alimento
+              <span className="text-xs text-b58-charcoal-soft">
+                (togli la spunta per detersivi, carta, imballaggi: restano sotto controllo prezzi
+                ma fuori dal Ricettario)
+              </span>
+            </label>
+          </div>
+
           <div>
             <label className={labelClass}>Temperatura ricevimento (HACCP)</label>
             <input
