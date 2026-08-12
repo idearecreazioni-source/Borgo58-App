@@ -21,7 +21,14 @@ export async function listPostaInAttesa() {
     .from("posta_ricevuta")
     .select(
       "*, allegati:posta_allegati(id, file_name, mime, dimensione, storage_path, errore)," +
-        " azioni:posta_azioni(id, tipo, titolo, perche, parametri, stato)"
+        // `descrizione` va chiesta per nome: PostgREST, quando si elencano
+        // le colonne di una tabella collegata, restituisce SOLO quelle —
+        // e questa mancava dall'elenco fin da quando è nata. La schermata
+        // ripiegava sul titolo senza dirlo, quindi la riga in italiano coi
+        // dati dentro — il punto della critica di Alessio del 12/08 — non
+        // è mai comparsa. Un difetto che non produce nessun errore: solo
+        // una schermata più povera di quella che credevamo di avere.
+        " azioni:posta_azioni(id, tipo, titolo, descrizione, perche, parametri, stato)"
     )
     .in("stato", ["da_leggere", "proposta"])
     .order("ricevuta_il", { ascending: false });
