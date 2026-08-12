@@ -1,0 +1,114 @@
+// Installa in PRODUZIONE una funzione online (Edge Function).
+//
+// Nasce il 12/08/2026, deciso da Alessio dopo che l'installazione a mano
+// dal pannello si e' rotta tre volte su quattro: il codice incollato
+// arrivava troncato a meta', e una funzione troncata non e' un errore
+// evidente — e' un deploy fallito con un messaggio che parla di parentesi.
+//
+// Vale lo stesso ragionamento di `migra.mjs`: qui non c'e' piu' un essere
+// umano che guarda il codice prima che entri in produzione, quindi i
+// vincoli non possono essere buone intenzioni scritte in un documento.
+//
+//   1. SOLO FILE COMMITTATI. Cio' che gira in produzione dev'essere cio'
+//      che il validatore puo' leggere su GitHub.
+//   2. NON DECIDE NIENTE DA SE': senza `--conferma` mostra soltanto cosa
+//      farebbe.
+//   3. LA VERIFICA DEL TOKEN NON SI PERDE PER STRADA. Una sola funzione
+//      del progetto e' pubblica per forza — `posta-in-arrivo`, che la
+//      chiama un servizio di posta e non un utente. Installarla senza il
+//      flag giusto la renderebbe irraggiungibile e la posta smetterebbe
+//      di arrivare in silenzio; installare le ALTRE con quel flag
+//      spalancherebbe una porta. L'elenco sta qui sotto, scritto una
+//      volta, invece che in un comando da ricordarsi a memoria.
+//
+// Il token vive in `.env.db`, git-ignored, mai nel repository.
+
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
+import { esegui, fermati, leggiConfigurazione, obbligatorio, REF_PRODUZIONE, titolo } from "./comune.mjs";
+
+const CARTELLA = "supabase/functions";
+
+// Le funzioni che NON devono pretendere un token in ingresso, con il
+// perche' accanto. Aggiungerne una qui e' una decisione di sicurezza:
+// significa aprire quella funzione a chiunque ne conosca l'indirizzo.
+const SENZA_TOKEN = {
+  "posta-in-arrivo":
+    "la chiama il servizio di posta, non un utente: la sua barriera e' la firma sulla consegna",
+};
+
+const nome = process.argv[2];
+const conferma = process.argv.includes("--conferma");
+
+const disponibili = existsSync(CARTELLA)
+  ? readdirSync(CARTELLA, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+      .sort()
+  : [];
+
+if (!nome || nome.startsWith("--")) {
+  fermati(
+    "Serve il nome della funzione da installare.",
+    `Disponibili: ${disponibili.join(", ")}`,
+    "",
+    "Esempio: npm run funzione posta-leggi -- --conferma"
+  );
+}
+if (!disponibili.includes(nome)) {
+  fermati(`Non esiste nessuna funzione «${nome}».`, `Disponibili: ${disponibili.join(", ")}`);
+}
+
+const config = leggiConfigurazione();
+const token = obbligatorio(
+  config,
+  "SUPABASE_ACCESS_TOKEN",
+  "Serve una chiave d'accesso Supabase (dashboard → Account → Access Tokens)."
+);
+
+// --- Vincolo: file committati ----------------------------------------
+const stato = esegui("git", ["status", "--porcelain", "--", path.join(CARTELLA, nome)], {
+  silenzioso: true,
+});
+if (!stato.ok) {
+  fermati("FERMO: non riesco a interrogare git, quindi non posso garantire che il file sia committato.");
+}
+if (stato.uscita.trim()) {
+  fermati(
+    `FERMO: «${nome}» ha modifiche non committate.`,
+    "Cio' che gira in produzione dev'essere cio' che si puo' leggere su GitHub.",
+    "Committa prima, poi installa."
+  );
+}
+
+titolo(`Installazione di ${nome}`);
+console.log(`  progetto: ${REF_PRODUZIONE}`);
+console.log(
+  `  verifica del token in ingresso: ${
+    SENZA_TOKEN[nome] ? `SPENTA — ${SENZA_TOKEN[nome]}` : "accesa"
+  }`
+);
+
+if (!conferma) {
+  console.log("");
+  console.log("  Nessuna modifica fatta: questa e' la modalita' di sola lettura.");
+  console.log(`  Per installarla davvero: npm run funzione ${nome} -- --conferma`);
+  console.log("");
+  process.exit(0);
+}
+
+const argomenti = ["supabase", "functions", "deploy", nome, "--project-ref", REF_PRODUZIONE];
+if (SENZA_TOKEN[nome]) argomenti.push("--no-verify-jwt");
+
+const r = esegui("npx", argomenti, { env: { SUPABASE_ACCESS_TOKEN: token } });
+if (!r.ok) {
+  fermati(
+    `L'installazione di ${nome} non e' andata a buon fine.`,
+    "In produzione resta attiva la versione precedente: un deploy fallito non spegne niente."
+  );
+}
+
+titolo("Fatta");
+console.log(`  ${nome} e' installata.`);
+console.log("  I Secrets del progetto non vengono toccati da un'installazione.");
+console.log("");
