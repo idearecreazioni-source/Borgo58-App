@@ -55,6 +55,7 @@ import Mance from "./pages/personale/Mance";
 import ArchivioDocumentiHome from "./pages/documenti/ArchivioDocumentiHome";
 import DocumentoDetail from "./pages/documenti/DocumentoDetail";
 import PostaInArrivo from "./pages/documenti/PostaInArrivo";
+import ChiediArchivio from "./pages/documenti/ChiediArchivio";
 import EditorMenuHome from "./pages/menu-editor/EditorMenuHome";
 import BevandeVini from "./pages/menu-editor/BevandeVini";
 import PiattiDelGiorno from "./pages/menu-editor/PiattiDelGiorno";
@@ -233,6 +234,7 @@ function AppRoutes() {
         <Route path="/documenti" element={<RequireTitolare><ArchivioDocumentiHome /></RequireTitolare>} />
         {/* Prima di /documenti/:id, altrimenti "posta" verrebbe letto come un id. */}
         <Route path="/documenti/posta" element={<RequireTitolare><PostaInArrivo /></RequireTitolare>} />
+        <Route path="/documenti/chiedi" element={<RequireTitolare><ChiediArchivio /></RequireTitolare>} />
         <Route path="/documenti/:id" element={<RequireTitolare><DocumentoDetail /></RequireTitolare>} />
 
         {/* Editor Menu Cartaceo (solo titolare — i menu sono titolare-only) */}

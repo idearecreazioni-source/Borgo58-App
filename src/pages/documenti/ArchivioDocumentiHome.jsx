@@ -105,6 +105,12 @@ export default function ArchivioDocumentiHome() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => navigate("/documenti/chiedi")}
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Chiedi all'archivio
+          </button>
+          <button
             onClick={() => navigate("/documenti/posta")}
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >
@@ -125,8 +131,9 @@ export default function ArchivioDocumentiHome() {
       </div>
 
       <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
-        I metadati si inseriscono a mano. La lettura automatica del documento (AI) arriverà con
-        l'attivazione dell'assistente. I file sono conservati in modo privato su server UE, solo per te.
+        I documenti che arrivano dalla posta vengono letti da soli; quelli caricati a mano si
+        compilano a mano. «Chiedi all'archivio» risponde a domande sul contenuto dei documenti
+        letti. I file sono conservati in modo privato su server UE, solo per te.
       </p>
 
       {error && (
