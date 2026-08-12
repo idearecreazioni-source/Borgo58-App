@@ -645,10 +645,26 @@ export default function PostaInArrivo() {
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
       setPosta(righe);
-      setValori(
+      // ⚠️ Le modifiche non ancora confermate SI CONSERVANO. Prima questa
+      // riga ricostruiva tutto dal database, e confermare UNA proposta
+      // azzerava il lavoro fatto sulle altre della stessa mail.
+      //
+      // Successo davvero il 12/08/2026: Alessio aveva collegato l'olio e
+      // la semola agli ingredienti che aveva già, poi ha confermato
+      // l'archiviazione del documento — e i due collegamenti sono spariti
+      // in silenzio. Ha confermato il carico convinto di averli fatti, e
+      // si è ritrovato due ingredienti doppi in Ricettario.
+      //
+      // Nessun errore, nessun avviso: solo del lavoro buttato via e un
+      // dato sbagliato che sembra giusto. È il difetto peggiore che ci
+      // sia, ed era in tre righe di codice.
+      setValori((precedenti) =>
         Object.fromEntries(
           righe.flatMap((m) =>
-            (m.azioni ?? []).map((a) => [a.id, { ...(a.parametri ?? {}) }])
+            (m.azioni ?? []).map((a) => [
+              a.id,
+              precedenti[a.id] ?? { ...(a.parametri ?? {}) },
+            ])
           )
         )
       );
