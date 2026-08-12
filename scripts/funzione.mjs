@@ -137,11 +137,56 @@ if (!conferma) {
   process.exit(0);
 }
 
+// `npx` su Windows e' un `.cmd`: senza `shell` non parte affatto (vedi
+// `esegui` in comune.mjs).
+const conShell = { shell: process.platform === "win32" };
+const ambiente = token ? { ...conShell, env: { SUPABASE_ACCESS_TOKEN: token } } : conShell;
+
+/**
+ * La versione installata adesso, o null se non si riesce a chiederlo.
+ * Il numero cresce di uno a ogni installazione riuscita: e' l'unico modo
+ * onesto di sapere se il deploy e' andato — il comando puo' impiegarci
+ * piu' di due minuti e stampare `WARNING: Docker is not running` anche
+ * quando riesce (CLAUDE.md §8).
+ */
+function versioneInstallata() {
+  const r = esegui(
+    "npx",
+    ["supabase", "functions", "list", "--project-ref", REF_PRODUZIONE],
+    { ...ambiente, silenzioso: true }
+  );
+  if (!r.ok) return null;
+  try {
+    const elenco = JSON.parse(r.uscita.slice(r.uscita.indexOf("{"))).functions || [];
+    return elenco.find((f) => f.slug === nome)?.version ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const prima = versioneInstallata();
+
 const argomenti = ["supabase", "functions", "deploy", nome, "--project-ref", REF_PRODUZIONE];
 if (SENZA_TOKEN[nome]) argomenti.push("--no-verify-jwt");
 
-const r = esegui("npx", argomenti, token ? { env: { SUPABASE_ACCESS_TOKEN: token } } : {});
-if (!r.ok) {
+const r = esegui("npx", argomenti, ambiente);
+
+// Prima di dare la colpa a qualcuno, si guarda com'e' finita davvero.
+const dopo = versioneInstallata();
+const cresciuta = prima !== null && dopo !== null && dopo > prima;
+
+if (!r.ok && !cresciuta) {
+  if (r.errore) {
+    // Non e' un rifiuto del server: il programma non e' proprio partito.
+    // Mandare a controllare la chiave qui significa far cercare per
+    // mezz'ora nel posto sbagliato.
+    fermati(
+      `Non sono riuscito ad avviare npx su questo computer (${r.errore}).`,
+      `${nome} NON e' stata installata: in produzione resta la versione precedente.`,
+      "",
+      "Non e' un problema di chiave d'accesso ne' di permessi: e' il comando che non parte."
+    );
+  }
   fermati(
     `L'installazione di ${nome} non e' andata a buon fine.`,
     "In produzione resta attiva la versione precedente: un deploy fallito non spegne niente.",
@@ -152,6 +197,16 @@ if (!r.ok) {
 }
 
 titolo("Fatta");
-console.log(`  ${nome} e' installata.`);
+if (cresciuta) {
+  console.log(`  ${nome} e' installata: versione ${prima} → ${dopo}.`);
+} else if (dopo !== null) {
+  console.log(`  ${nome} risulta installata alla versione ${dopo}.`);
+  if (prima !== null && dopo === prima) {
+    console.log("  ATTENZIONE: il numero di versione non e' cambiato. Il comando dice di aver");
+    console.log("  finito, ma in produzione potrebbe esserci ancora quella di prima.");
+  }
+} else {
+  console.log(`  ${nome} risulta installata, ma non sono riuscito a rileggerne la versione.`);
+}
 console.log("  I Secrets del progetto non vengono toccati da un'installazione.");
 console.log("");

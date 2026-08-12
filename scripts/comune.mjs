@@ -77,15 +77,33 @@ export function strumento(nome) {
   );
 }
 
-/** Esegue un programma mostrandone l'uscita. Restituisce true se e' andato bene. */
+/**
+ * Esegue un programma mostrandone l'uscita. Restituisce true se e' andato
+ * bene.
+ *
+ * `opzioni.shell` serve su Windows per i comandi che non sono veri
+ * eseguibili ma file `.cmd` — `npx` e' uno di questi. Da Node 24 un
+ * `.cmd` non si avvia piu' senza shell e l'errore che si vede e'
+ * `ENOENT`, cioe' "non trovo il programma": indistinguibile da "non e'
+ * installato". Trovato il 13/08/2026, quando l'installazione di una
+ * funzione online falliva dando la colpa alla chiave d'accesso.
+ *
+ * `errore` distingue "non sono riuscito ad AVVIARE il programma" da "il
+ * programma ha risposto male": sono due guasti diversi e mandano a
+ * cercare in due posti diversi.
+ */
 export function esegui(programma, argomenti, opzioni = {}) {
   const r = spawnSync(programma, argomenti, {
     stdio: opzioni.silenzioso ? ["ignore", "pipe", "pipe"] : "inherit",
     encoding: "utf8",
+    shell: opzioni.shell === true,
     env: { ...process.env, PGCLIENTENCODING: "UTF8", ...(opzioni.env || {}) },
   });
-  if (opzioni.silenzioso) return { ok: r.status === 0, uscita: (r.stdout || "") + (r.stderr || "") };
-  return { ok: r.status === 0, uscita: "" };
+  const errore = r.error ? r.error.code || String(r.error.message) : null;
+  if (opzioni.silenzioso) {
+    return { ok: r.status === 0, uscita: (r.stdout || "") + (r.stderr || ""), errore };
+  }
+  return { ok: r.status === 0, uscita: "", errore };
 }
 
 /** Interroga un database e restituisce il risultato come testo grezzo. */
