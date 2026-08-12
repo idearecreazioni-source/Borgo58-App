@@ -90,6 +90,30 @@ diversa.
 | **produzione — `posta-leggi`** | **installata**: `version 12`; `posta-in-arrivo` resta l'unica con la verifica del token spenta, invariata |
 | lint | pulito |
 
+---
+
+## 5. Poscritto — una riga di `CLAUDE.md` che era diventata falsa
+
+Preparando la prova ho interrogato la produzione per sapere **su quali
+ingredienti** il modello avrebbe dovuto abbinare le righe. Risposta: **zero
+ingredienti, zero fornitori, zero ricette, zero menu.** Alessio ha
+ripulito il database la notte del 12/08 prima di collegare la posta.
+
+`CLAUDE.md` §12 dichiarava ancora *«1 menu attivo estivo con 2 piatti, 1
+fornitore reale (Mililli) con storico prezzi»*. Corretto, con la
+conseguenza operativa scritta accanto: **con il Ricettario vuoto ogni riga
+di una fattura torna «da abbinare» e non si carica niente.** Non è un
+difetto del modulo — è che la dispensa non è ancora stata scritta.
+
+Lo segnalo qui perché è il genere di riga che fa progettare male: sono
+partito a costruire l'abbinamento immaginando un'anagrafica che non esiste
+più, e me ne sono accorto solo perché sono andato a leggere i dati veri
+invece di fidarmi del documento. Vale la pena chiederlo al prossimo giro
+di verifiche: **quali altre righe di §12 descrivono un database di due
+settimane fa?**
+
+---
+
 **Non verificato, e dichiarato**: nessuna fattura né bolla vera è ancora
 passata di qui. È il passo successivo, concordato con Alessio: si inoltra
 un documento vero a `info@`, si guarda **senza confermare** come ha
