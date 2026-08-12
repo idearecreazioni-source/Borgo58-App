@@ -67,6 +67,25 @@ export async function leggiContenutoDocumento(documentoId, { rileggi = false } =
 }
 
 /**
+ * Cosa si pagava prima quel prodotto da quel fornitore, e di quanto si è
+ * saliti.
+ *
+ * Serve a mostrare il rincaro **prima** che Alessio confermi il carico: se
+ * il fornitore ha sbagliato la fattura, se ne accorge mentre può ancora
+ * non registrarla. La stessa regola è applicata dal database quando il
+ * carico viene eseguito — qui si legge soltanto.
+ */
+export async function variazionePrezzo({ ingredienteId, fornitoreId, prezzo }) {
+  const { data, error } = await supabase.rpc("variazione_prezzo", {
+    p_ingredient_id: ingredienteId,
+    p_supplier_id: fornitoreId ?? null,
+    p_prezzo: prezzo,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+/**
  * Le domande già fatte, con quanto sono costate.
  *
  * Limite esplicito: è una lista che cresce a ogni domanda e non alimenta

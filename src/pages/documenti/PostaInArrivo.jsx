@@ -8,6 +8,7 @@ import {
   scartaPosta,
 } from "../../lib/api/posta";
 import { listIngredients } from "../../lib/api/ingredients";
+import { variazionePrezzo } from "../../lib/api/assistente";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { formatDate } from "../../lib/constants";
 
@@ -63,6 +64,29 @@ const ETICHETTE = {
 
 const TIPO_CAMPO = { data: "date", scadenza: "date", importo: "number" };
 
+// Le unità e le categorie del Ricettario, per l'ingrediente che nasce da
+// una riga di fattura. «altro» è quella del non alimentare (detersivi,
+// imballaggi): resta in anagrafica e sotto controllo prezzi, fuori dal
+// Ricettario.
+const UNITA = ["kg", "l", "pz", "mazzo"];
+const CATEGORIE = [
+  { v: "verdura", t: "verdura" },
+  { v: "frutta", t: "frutta" },
+  { v: "carne_rossa", t: "carne rossa" },
+  { v: "carne_bianca", t: "carne bianca" },
+  { v: "pesce", t: "pesce" },
+  { v: "crostacei_molluschi", t: "crostacei e molluschi" },
+  { v: "latticini", t: "latticini" },
+  { v: "uova", t: "uova" },
+  { v: "farine_cereali", t: "farine e cereali" },
+  { v: "legumi", t: "legumi" },
+  { v: "olio_condimenti", t: "olio e condimenti" },
+  { v: "spezie_aromi", t: "spezie e aromi" },
+  { v: "secco_dispensa", t: "secco / dispensa" },
+  { v: "bevande", t: "bevande" },
+  { v: "altro", t: "altro (non alimentare)" },
+];
+
 // ---------------------------------------------------------------------
 // Il carico da fattura
 // ---------------------------------------------------------------------
@@ -78,25 +102,70 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
   const righe = par?.righe ?? [];
   const perId = Object.fromEntries((ingredienti ?? []).map((i) => [i.id, i]));
 
+  // Cosa si pagava prima, per riga. Chiesto al database mentre si guarda,
+  // non dopo aver confermato: se il fornitore ha sbagliato la fattura,
+  // questo è l'unico momento in cui non registrarla è ancora gratis.
+  const [rincari, setRincari] = useState({});
+
+  useEffect(() => {
+    let vivo = true;
+    Promise.all(
+      righe.map(async (r, i) => {
+        const prezzo = Number(r.costo_unitario) / (Number(r.fattore) || 1);
+        if (!r.ingrediente_id || !Number.isFinite(prezzo) || prezzo <= 0) return null;
+        try {
+          const v = await variazionePrezzo({
+            ingredienteId: r.ingrediente_id,
+            fornitoreId: par?.fornitore_id || null,
+            prezzo,
+          });
+          return v ? [i, v] : null;
+        } catch {
+          return null; // il prezzo di prima è un di più: non blocca la conferma
+        }
+      })
+    ).then((esiti) => {
+      if (vivo) setRincari(Object.fromEntries(esiti.filter(Boolean)));
+    });
+    return () => {
+      vivo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(righe.map((r) => [r.ingrediente_id, r.costo_unitario, r.fattore])), par?.fornitore_id]);
+
   const cambiaRiga = (i, chiave, valore) =>
     cambia("righe", righe.map((r, k) => (k === i ? { ...r, [chiave]: valore } : r)));
 
-  const daAbbinare = righe.filter((r) => !r.ingrediente_id && !r.salta).length;
-  const caricabili = righe.filter((r) => r.ingrediente_id && !r.salta).length;
+  const daAbbinare = righe.filter((r) => !r.ingrediente_id && !r.salta && !r.ignora && !r.nuovo_ingrediente?.nome).length;
+  const caricabili = righe.filter(
+    (r) => (r.ingrediente_id || r.nuovo_ingrediente?.nome) && !r.salta && !r.ignora
+  ).length;
 
   return (
     <>
       <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
         {righe.map((r, i) => (
-          <li key={i} className={r.salta ? "line-through opacity-50" : undefined}>
-            · {r.quantita ?? "?"} {perId[r.ingrediente_id]?.unit ?? ""}{" "}
+          <li key={i} className={r.salta || r.ignora ? "line-through opacity-50" : undefined}>
+            · {r.quantita ?? "?"} {r.unita_fattura || perId[r.ingrediente_id]?.unit || ""}{" "}
             <strong className="text-b58-charcoal">
-              {perId[r.ingrediente_id]?.name ?? r.descrizione}
+              {perId[r.ingrediente_id]?.name ?? r.nuovo_ingrediente?.nome ?? r.descrizione}
             </strong>
             {r.ingrediente_id && r.descrizione ? ` (${r.descrizione})` : ""}
             {r.scadenza ? ` — scade ${formatDate(r.scadenza)}` : ""}
-            {!r.ingrediente_id && !r.salta && (
+            {r.gia_noto && <span className="text-b58-olive"> — già conosciuto</span>}
+            {r.nuovo_ingrediente?.nome && !r.ingrediente_id && (
+              <span className="text-b58-olive"> — ingrediente nuovo</span>
+            )}
+            {!r.ingrediente_id && !r.nuovo_ingrediente?.nome && !r.salta && !r.ignora && (
               <span className="text-b58-terracotta-dark"> — da abbinare, non verrà caricata</span>
+            )}
+            {/* Il rincaro, dove si guarda: dentro la riga, non in fondo. */}
+            {rincari[i]?.oltre_soglia && (
+              <span className="text-b58-terracotta-dark">
+                {" "}— ⚠️ prima lo pagavi {rincari[i].prezzo_precedente}, ora{" "}
+                {(Number(r.costo_unitario) / (Number(r.fattore) || 1)).toFixed(2)} (+
+                {rincari[i].variazione}%)
+              </span>
             )}
           </li>
         ))}
@@ -104,9 +173,10 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
 
       {daAbbinare > 0 && (
         <p className="text-xs text-b58-terracotta-dark mb-2">
-          {daAbbinare} rig{daAbbinare === 1 ? "a" : "he"} sen
-          {daAbbinare === 1 ? "za" : "za"} ingrediente: premi «modifica» per abbinarle, oppure
-          conferma e verranno saltate.
+          {daAbbinare === 1
+            ? "Una riga senza ingrediente"
+            : `${daAbbinare} righe senza ingrediente`}
+          : premi «modifica» per abbinarle o crearle, oppure conferma e verranno saltate.
         </p>
       )}
 
@@ -165,14 +235,31 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
                 <div className="min-w-0 col-span-2">
                   <label className={etichetta}>Ingrediente</label>
                   <select
-                    value={r.ingrediente_id ?? ""}
-                    onChange={(e) => cambiaRiga(i, "ingrediente_id", e.target.value)}
+                    value={r.nuovo_ingrediente ? "__nuovo__" : (r.ingrediente_id ?? "")}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__nuovo__") {
+                        // Il nome parte dalla dicitura della fattura: si
+                        // corregge, non si riscrive da zero.
+                        cambiaRiga(i, "nuovo_ingrediente", {
+                          nome: r.descrizione ?? "",
+                          unita: "kg",
+                          categoria: "verdura",
+                          alimentare: true,
+                        });
+                        cambiaRiga(i, "ingrediente_id", "");
+                      } else {
+                        cambiaRiga(i, "nuovo_ingrediente", null);
+                        cambiaRiga(i, "ingrediente_id", v);
+                      }
+                    }}
                     className={campo}
                   >
                     <option value="">— da abbinare —</option>
                     {(ingredienti ?? []).map((ing) => (
                       <option key={ing.id} value={ing.id}>{ing.name}</option>
                     ))}
+                    <option value="__nuovo__">+ crea nuovo da questa riga</option>
                   </select>
                 </div>
                 <div className="min-w-0">
@@ -185,6 +272,21 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
                   <input type="number" step="0.01" value={r.costo_unitario ?? ""}
                     onChange={(e) => cambiaRiga(i, "costo_unitario", e.target.value)} className={campo} />
                 </div>
+                {/* La conversione: se la fattura conta casse e l'ingrediente
+                    sta in chili, senza questo numero il prezzo al chilo è
+                    sbagliato di sei volte — e la sorveglianza dei prezzi
+                    costruita sopra non vale niente. Si chiede una volta:
+                    poi resta in memoria per quella dicitura. */}
+                <div className="min-w-0">
+                  <label className={etichetta}>Conta in</label>
+                  <input value={r.unita_fattura ?? ""} placeholder="cassa, kg…"
+                    onChange={(e) => cambiaRiga(i, "unita_fattura", e.target.value)} className={campo} />
+                </div>
+                <div className="min-w-0">
+                  <label className={etichetta}>= quante unità</label>
+                  <input type="number" step="0.001" value={r.fattore ?? ""} placeholder="1"
+                    onChange={(e) => cambiaRiga(i, "fattore", e.target.value)} className={campo} />
+                </div>
                 <div className="min-w-0">
                   <label className={etichetta}>Scadenza</label>
                   <input type="date" value={r.scadenza ?? ""}
@@ -196,11 +298,61 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
                     onChange={(e) => cambiaRiga(i, "lotto", e.target.value)} className={campo} />
                 </div>
               </div>
-              <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft mt-1.5">
-                <input type="checkbox" checked={r.salta === true}
-                  onChange={(e) => cambiaRiga(i, "salta", e.target.checked)} />
-                non caricare questa riga
-              </label>
+              {/* L'ingrediente che nasce da questa riga. Nome, unità e
+                  categoria si correggono qui: quello che nasce è ciò che
+                  Alessio vede, non ciò che ha proposto l'assistente. */}
+              {r.nuovo_ingrediente && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 rounded-lg bg-b58-cream-dark/40 p-2">
+                  <div className="min-w-0 col-span-2">
+                    <label className={etichetta}>Nome dell'ingrediente nuovo</label>
+                    <input value={r.nuovo_ingrediente.nome ?? ""}
+                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, nome: e.target.value })}
+                      className={campo} />
+                  </div>
+                  <div className="min-w-0">
+                    <label className={etichetta}>Unità</label>
+                    <select value={r.nuovo_ingrediente.unita ?? "kg"}
+                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, unita: e.target.value })}
+                      className={campo}>
+                      {UNITA.map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <div className="min-w-0">
+                    <label className={etichetta}>Categoria</label>
+                    <select value={r.nuovo_ingrediente.categoria ?? "altro"}
+                      onChange={(e) => {
+                        const c = e.target.value;
+                        cambiaRiga(i, "nuovo_ingrediente", {
+                          ...r.nuovo_ingrediente, categoria: c, alimentare: c !== "altro",
+                        });
+                      }}
+                      className={campo}>
+                      {CATEGORIE.map((c) => <option key={c.v} value={c.v}>{c.t}</option>)}
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft col-span-2 sm:col-span-4">
+                    <input type="checkbox" checked={r.nuovo_ingrediente.alimentare !== false}
+                      onChange={(e) => cambiaRiga(i, "nuovo_ingrediente", { ...r.nuovo_ingrediente, alimentare: e.target.checked })} />
+                    è un alimento (togli la spunta per detersivi, carta, imballaggi: restano
+                    sotto controllo prezzi ma fuori dal Ricettario)
+                  </label>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
+                <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft">
+                  <input type="checkbox" checked={r.salta === true}
+                    onChange={(e) => cambiaRiga(i, "salta", e.target.checked)} />
+                  non caricare questa riga, per stavolta
+                </label>
+                {/* Ricordare che una riga non è merce vale quanto ricordare
+                    che lo è: senza, trasporto e CONAI tornano ogni mese. */}
+                <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft">
+                  <input type="checkbox" checked={r.ignora === true}
+                    onChange={(e) => cambiaRiga(i, "ignora", e.target.checked)} />
+                  non è merce — non chiedermelo più
+                </label>
+              </div>
             </div>
           ))}
 
