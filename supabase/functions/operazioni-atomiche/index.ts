@@ -54,6 +54,9 @@ const OPERAZIONI = new Set([
   // può creare il promemoria della scadenza e chiude la mail. Tre
   // scritture, una sola decisione di Alessio.
   "archivia_posta",
+  // Posta in arrivo, seconda forma (12/08/2026): l'assistente propone
+  // azioni e Alessio ne conferma una alla volta.
+  "esegui_azione_posta",
 ]);
 
 const CORS = {

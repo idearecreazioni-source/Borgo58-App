@@ -86,37 +86,62 @@ const MAX_BYTE_PER_ALLEGATO = 10 * 1024 * 1024;
 const MAX_BYTE_TOTALI = 20 * 1024 * 1024;
 const MAX_CARATTERI_TESTO_ESTRATTO = 20000;
 
-const ISTRUZIONI = `Sei l'archivista di un'osteria. Ricevi un'email arrivata al locale e devi dire
-se vale la pena conservarla nell'archivio documenti e, se sì, come catalogarla.
+// Elenco chiuso, come per il corridoio: un tipo inventato dal modello
+// diventerebbe un bottone che non fa niente, ed è peggio che non
+// proporlo — insegna a non fidarsi dei bottoni.
+const TIPI_AZIONE = new Set([
+  "archivia_documento",
+  "archivia_testo",
+  "promemoria",
+  "nessuna",
+]);
 
-Vanno conservate: fatture, contratti, bollette, comunicazioni di consulenti,
-banche, enti pubblici, assicurazioni, scadenze, certificazioni, verbali di
-ispezione, buste paga, ricevute di pagamento.
+const ISTRUZIONI = `Sei l'assistente di un'osteria. Ricevi un'email arrivata al locale e proponi al
+titolare COSA FARE con essa. Non decidi tu: lui conferma o rifiuta ogni cosa che
+proponi, una per una.
 
-NON vanno conservate: pubblicità, newsletter, offerte commerciali non richieste,
-notifiche di social network, messaggi personali, richieste di prenotazione
-(quelle il gestionale le tratta altrove).
+Puoi proporre solo azioni che il gestionale sa eseguire davvero:
 
-Rispondi SOLO con un oggetto JSON, senza testo attorno, con queste chiavi:
-{"conservare": true/false,
- "motivo": "una riga, in italiano, sul perché",
- "titolo": "titolo breve del documento, o null",
- "tipo": "es. fattura, contratto, bolletta, comunicazione, o null",
- "data": "AAAA-MM-GG o null",
- "controparte": "chi l'ha mandata, come nome leggibile, o null",
- "importo": numero senza simboli o null,
- "scadenza": "AAAA-MM-GG della scadenza di pagamento, o null"}
+- "archivia_documento": un allegato diventa un documento dell'Archivio.
+- "archivia_testo": il contenuto che conta è nella mail stessa, non in un
+  allegato (una comunicazione, un IBAN nuovo, una condizione concordata).
+- "promemoria": una data che deve finire in Agenda. Puoi proporne più d'uno se
+  le date importanti sono più d'una (es. la scadenza di un contratto E la
+  disdetta da dare qualche mese prima).
+- "nessuna": non c'è niente da fare. Usala da sola, senza altre azioni.
 
-Se sopra al testo trovi uno o più documenti allegati (PDF o immagini), **quelli
-sono il documento vero**: importo, data, scadenza e controparte si leggono lì
-dentro, non nel corpo della mail. Il corpo serve solo a capire il contesto.
+Rispondi SOLO con un oggetto JSON, senza testo attorno:
+{"sintesi": "una riga che dice cosa è arrivato",
+ "azioni": [
+   {"tipo": "archivia_documento",
+    "titolo": "come si chiamerà il documento",
+    "perche": "una riga sul perché lo propongo",
+    "allegato": "nome esatto del file allegato",
+    "dati": {"tipo": "fattura|contratto|bolletta|comunicazione|...",
+             "data": "AAAA-MM-GG o null",
+             "controparte": "chi l'ha mandata, o null",
+             "importo": numero o null,
+             "scadenza": "AAAA-MM-GG o null"}},
+   {"tipo": "promemoria",
+    "titolo": "cosa deve ricordare",
+    "perche": "una riga",
+    "dati": {"data": "AAAA-MM-GG", "note": "testo breve o null"}}
+ ]}
 
-Il nome degli allegati conta quanto il testo: spesso è l'unica cosa che dice di
-cosa si tratta (una mail inoltrata può arrivare col corpo vuoto), e alcuni
-allegati non sono leggibili da qui — in quel caso vale il nome.
-
-Se un dato non c'è, metti null: non inventare. Meglio un campo vuoto che un
-importo sbagliato.`;
+Regole:
+- Se ci sono documenti allegati (PDF o immagini) sopra al testo, QUELLI sono il
+  documento vero: importi, date e controparti si leggono lì dentro. Il corpo
+  della mail serve solo al contesto.
+- Il nome degli allegati conta quanto il testo: spesso una mail inoltrata arriva
+  col corpo vuoto, e alcuni allegati non sono leggibili da qui — in quel caso
+  vale il nome.
+- Un'azione per ogni allegato che vale la pena archiviare.
+- Se un dato non c'è, metti null: NON inventare. Meglio un campo vuoto che un
+  importo sbagliato: il titolare si fida di quello che scrivi.
+- Pubblicità, newsletter, offerte non richieste, notifiche di social e messaggi
+  personali: "nessuna", con il perché in una riga.
+- Le richieste di prenotazione le tratta un'altra parte del gestionale:
+  "nessuna".`;
 
 function risposta(corpo: unknown, stato = 200) {
   return new Response(JSON.stringify(corpo), {
@@ -281,7 +306,7 @@ Deno.serve(async (req) => {
   // informazione utile era il nome dell'allegato.
   const elenco = await db(
     `posta_ricevuta?stato=eq.da_leggere&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
-      `&select=id,mittente,oggetto,testo,casella,posta_allegati(file_name,mime,storage_path)`,
+      `&select=id,mittente,oggetto,testo,casella,posta_allegati(id,file_name,mime,storage_path)`,
   );
   if (!elenco.ok) {
     return risposta({ errore: "Non riesco a leggere la posta in attesa" }, 500);
@@ -382,19 +407,45 @@ Deno.serve(async (req) => {
       const p = leggiJson(testo);
       if (!p) throw new Error("risposta non interpretabile");
 
+      // Le azioni proposte. Solo i tipi che il gestionale sa eseguire: se
+      // il modello ne inventasse uno, proporrebbe un bottone che non fa
+      // niente — peggio che non proporlo, perché insegna a non fidarsi.
+      const azioni = (Array.isArray(p.azioni) ? p.azioni : [])
+        .filter((a: Record<string, unknown>) => TIPI_AZIONE.has(String(a?.tipo)))
+        .slice(0, 6)
+        .map((a: Record<string, unknown>) => {
+          const dati = (a.dati ?? {}) as Record<string, unknown>;
+          // Il modello nomina l'allegato; qui si ritrova la riga vera.
+          const allegato = tutti.find(
+            (x: { file_name: string }) => x.file_name === a.allegato,
+          );
+          return {
+            posta_id: m.id,
+            tipo: a.tipo,
+            titolo: String(a.titolo ?? "Senza titolo").slice(0, 200),
+            perche: a.perche ? String(a.perche).slice(0, 300) : null,
+            parametri: {
+              allegato_id: allegato?.id ?? null,
+              titolo: a.titolo ?? null,
+              tipo: dati.tipo ?? null,
+              data: dataValida(dati.data),
+              controparte: dati.controparte ?? null,
+              importo: numeroValido(dati.importo),
+              scadenza: dataValida(dati.scadenza),
+              note: dati.note ?? null,
+            },
+          };
+        });
+
+      if (azioni.length) {
+        await db("posta_azioni", { method: "POST", body: JSON.stringify(azioni) });
+      }
+
       await db(`posta_ricevuta?id=eq.${m.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           stato: "proposta",
-          proposta_conservare: p.conservare === true,
-          proposta_motivo: typeof p.motivo === "string" ? p.motivo.slice(0, 300) : null,
-          proposta_titolo: typeof p.titolo === "string" ? p.titolo.slice(0, 200) : null,
-          proposta_tipo: typeof p.tipo === "string" ? p.tipo.slice(0, 80) : null,
-          proposta_data: dataValida(p.data),
-          proposta_controparte:
-            typeof p.controparte === "string" ? p.controparte.slice(0, 200) : null,
-          proposta_importo: numeroValido(p.importo),
-          proposta_scadenza: dataValida(p.scadenza),
+          proposta_sintesi: typeof p.sintesi === "string" ? p.sintesi.slice(0, 300) : null,
           proposta_modello: MODELLO,
           proposta_token:
             (esito.usage?.input_tokens ?? 0) + (esito.usage?.output_tokens ?? 0),
