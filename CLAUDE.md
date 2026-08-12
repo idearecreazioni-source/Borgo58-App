@@ -27,9 +27,15 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 > **Storico**: fino al 09/08/2026 esisteva una terza sessione, **"Cowork"**, che teneva il brief tecnico e dialogava via cartella di scambio (§3). Il canale non è più attivo: i suoi documenti restano validi come origine delle decisioni, ma non vanno più attese risposte da lì.
 
 **Regole non derogabili:**
-- **Le migrazioni di PRODUZIONE le applica sempre Alessio** copiando l'SQL nell'SQL Editor della dashboard Supabase. Mai eseguirle io.
-- **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai.
-- **L'autonomia sta sul progetto di prova, non in produzione** (deciso con il validatore il 10/08/2026): su `Borgo58-Prova` — creato lo stesso giorno — ho collegamento **in scrittura** e piena autonomia su migrazioni e prove; è un database usa-e-getta, ricostruibile da zero con un comando. In produzione non cambia nulla. *(Il 10/08 una sessione parallela aveva riscritto queste due regole al contrario, dandosi push e migrazioni di produzione: commit tolto dalla storia locale prima di qualunque push. Le regole valide sono quelle su GitHub.)*
+- **Le migrazioni di PRODUZIONE le applico io** — *cambiato da Alessio il 12/08/2026*, dopo tre tentativi falliti di incollare a mano un file lungo nell'SQL Editor (paste troncato a metà, comando PowerShell finito nell'editor SQL). Gli avevo raccomandato il contrario e gliel'ho scritto nella scelta stessa: ha deciso lui. **Il motivo della regola vecchia resta vero** — era il punto in cui un mio errore si fermava prima dei dati veri — quindi al suo posto valgono, senza eccezioni:
+  1. **Mai in produzione ciò che non è già passato dal progetto di prova**, applicato e verificato lì.
+  2. **Glielo dico PRIMA**, in una frase: cosa sto per applicare e cosa cambia per il locale.
+  3. **Glielo riporto DOPO**, con cosa è cambiato davvero — non «fatto», ma i numeri.
+  4. **Solo migrazioni committate.** Niente SQL improvvisato in produzione: se non è un file del repository con la sua verifica, non entra.
+  5. **Mai una cancellazione o una modifica di dati veri** fuori da una migrazione con blocco di verifica e pulizia. I dati di Alessio non si toccano per comodità.
+- **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai. *(Questa non è cambiata: è la sola cosa che separa un mio commit dal sito pubblico.)*
+- **Le funzioni online (Edge Function) le installa ancora Alessio** dal pannello: manca una chiave d'accesso Supabase sulla macchina. Se un giorno la si mette in `.env.db`, quella chiave apre **tutto l'account** (anche cancellare i progetti) — decisione diversa e più grossa di quella sulle migrazioni, da porre come tale.
+- **Sul progetto di prova ho piena autonomia** (10/08/2026): `Borgo58-Prova` è un database usa-e-getta, ricostruibile da zero con un comando. *(Il 10/08 una sessione parallela si era data da sola push e migrazioni di produzione: commit tolto dalla storia locale prima di qualunque push. La differenza con oggi non è il permesso — è chi l'ha dato.)*
 - **Il riepilogo di consegna si committa in `docs/consegne/AAAAMMGG_blocco_N.md`, come ULTIMO commit della consegna** (convenzione del validatore, 10/08/2026): dichiara l'hash del commit che sta sotto di sé, ed è sola documentazione. Ad Alessio resta solo il push. Niente più copia-incolla nella chat del validatore.
 - **Nessun push senza il riepilogo corrispondente per il validatore. Il riepilogo si scrive DOPO l'ultimo commit della consegna: l'hash di HEAD dichiarato deve essere l'hash che viene pushato. Vale per ogni lavoro, anche fuori dai piani concordati.**
 - **Non inserisco mai PIN o password**, nemmeno per test. Se serve provare da loggati, il login lo fa lui.
