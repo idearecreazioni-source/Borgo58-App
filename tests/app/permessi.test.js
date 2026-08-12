@@ -135,6 +135,38 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(r.error.message).toContain("Data non valida");
   });
 
+  // Il controllo anti-deriva che il validatore rifaceva a mano. L'11/08
+  // erano 35 le funzioni aperte a chiunque avesse la chiave pubblica del
+  // sito; chiuse tutte tranne quelle del form. Il 12/08 l'elenco è
+  // ricresciuto da 12 a 14 senza che nessuno lo dicesse — ed è quello il
+  // difetto, non il contenuto: due normalizzatori non facevano male, la
+  // prossima funzione potrebbe. Qui l'elenco diventa una prova che
+  // diventa rossa da sola.
+  it("solo 12 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+    const attese = [
+      "abbina_righe_carico",
+      "check_recipe_component",
+      "generate_foraged_lot",
+      "is_titolare",
+      "log_recipe_status_change",
+      "normalize_phone",
+      "public_reservation_options",
+      "set_aggiornato_il",
+      "set_task_visibility",
+      "set_updated_at",
+      "submit_public_reservation",
+      "task_origin_visible_to_staff",
+    ];
+
+    const r = await titolare.rpc("funzioni_aperte_ad_anon");
+    expect(r.error).toBeNull();
+
+    const ora = (r.data ?? []).map((x) => x.nome ?? x).sort();
+    // Il messaggio di errore deve dire QUALE è comparsa, non solo che il
+    // numero non torna: chi legge una prova rossa deve poter decidere.
+    expect(ora).toEqual(attese);
+  });
+
   it.skipIf(!CORRIDOIO)("il corridoio respinge chi non è autenticato", async () => {
     const r = await anonimo.functions.invoke("operazioni-atomiche", {
       body: { operazione: "close_order_as_discount_gift", parametri: {} },

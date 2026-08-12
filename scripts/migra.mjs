@@ -18,8 +18,18 @@
 //   2. SOLO FILE COMMITTATI. Una migrazione modificata e non committata
 //      non entra: ciò che gira in produzione deve essere ciò che il
 //      validatore può leggere su GitHub.
-//   3. IN ORDINE, E SI FERMA AL PRIMO ERRORE.
-//   4. NON DECIDE NIENTE DA SÉ: senza `--conferma` mostra soltanto cosa
+//   3. E GIÀ SU GITHUB, NON SOLO COMMITTATI — irrigidimento chiesto dal
+//      validatore il 13/08/2026. «Committato» voleva dire soltanto
+//      «scritto sul PC di Alessio»: fra il commit e il push c'è un
+//      passaggio che tocca a lui, e finché non l'ha fatto la produzione
+//      girerebbe codice che nessuno può leggere. Se quel commit venisse
+//      poi riscritto o buttato, il database vero resterebbe l'unico
+//      posto dove quella migrazione è mai esistita — e sarebbe la
+//      produzione a essere avanti a tutto il resto, senza che nessuno
+//      possa più dire cosa contiene. Da qui il nuovo ordine: commit →
+//      **push di Alessio** → applicazione.
+//   4. IN ORDINE, E SI FERMA AL PRIMO ERRORE.
+//   5. NON DECIDE NIENTE DA SÉ: senza `--conferma` mostra soltanto cosa
 //      farebbe. È la modalità in cui si guarda prima di agire.
 //
 // Il programma non registra niente da sé in `applied_migrations`: lo fa
@@ -72,6 +82,26 @@ function fileNonCommittati() {
       .filter(Boolean)
       .map((p) => path.basename(p))
   );
+}
+
+/**
+ * I file che NON risultano identici a quelli pubblicati su origin/master:
+ * o non sono mai stati spinti, o sono cambiati dopo.
+ * Restituisce null se non si riesce a sapere cosa c'e' su GitHub — che
+ * non e' un "va bene": chi chiama deve fermarsi.
+ */
+function nonAncoraSuGitHub(migrazioni) {
+  const fetch = esegui("git", ["fetch", "--quiet", "origin"], { silenzioso: true });
+  if (!fetch.ok) return null;
+
+  const fuori = [];
+  for (const m of migrazioni) {
+    const r = esegui("git", ["diff", "--quiet", "origin/master", "--", m.percorso], {
+      silenzioso: true,
+    });
+    if (!r.ok) fuori.push(m);
+  }
+  return fuori;
 }
 
 const conferma = process.argv.includes("--conferma");
@@ -142,6 +172,30 @@ if (nonCommittate.length > 0) {
     "",
     "Ciò che gira in produzione deve essere ciò che si può leggere su GitHub.",
     "Committa prima, poi applica."
+  );
+}
+
+// --- Vincolo 3: gia' pubblicate su GitHub ----------------------------
+const fuoriDaGitHub = nonAncoraSuGitHub(mancanti);
+if (fuoriDaGitHub === null) {
+  fermati(
+    "FERMO: non riesco a leggere cosa c'e' su GitHub, quindi non posso garantire",
+    "che la produzione non stia per correre avanti al repository.",
+    "",
+    "Riprova quando la rete risponde."
+  );
+}
+if (fuoriDaGitHub.length > 0) {
+  fermati(
+    "FERMO: queste migrazioni non sono ancora su GitHub.",
+    ...fuoriDaGitHub.map((m) => `  · ${m.file}`),
+    "",
+    "La produzione non deve mai correre avanti al repository: se il commit",
+    "venisse riscritto, il database vero sarebbe l'unico posto dove questa",
+    "migrazione e' mai esistita.",
+    "",
+    "Serve il push di Alessio, poi si riprova.",
+    "  git push"
   );
 }
 
