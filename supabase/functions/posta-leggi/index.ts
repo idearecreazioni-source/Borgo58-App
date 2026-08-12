@@ -154,8 +154,11 @@ TIPI DI AZIONE — solo questi, il gestionale sa eseguire solo questi:
   Ricettario pieno di nomi copiati dalle fatture è un Ricettario in cui non si
   trova niente.
   METTI TUTTE LE RIGHE DEL DOCUMENTO, comprese quelle che non sono merce
-  (trasporto, contributi ambientali, sconti): servono a far quadrare il totale,
-  e chi conferma decide poi cosa farne.
+  (trasporto, contributi ambientali, sconti, arrotondamenti): servono a far
+  quadrare il totale.
+  MA su quelle metti "non_merce": true e LASCIA "nuovo_ingrediente" A NULL.
+  Il trasporto non è un ingrediente, e proporne il nome significherebbe far
+  nascere in dispensa una voce «Trasporto» che poi resta lì per sempre.
   "fattore" È IMPORTANTE QUANTO IL PREZZO: se la riga dice «cassa da 6 kg» o
   «sacco 25 kg» o «lattina 5 L», quel numero va lì. Senza, il prezzo al chilo
   risulta sbagliato di sei, venticinque, cinque volte — e il controllo dei
@@ -203,6 +206,7 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
                   "ingrediente_id": "id preso dall'elenco, oppure null",
                   "quantita": numero, "costo_unitario": numero o null,
                   "importo": "il totale della riga come è STAMPATO sul documento",
+                  "non_merce": "true per trasporto, contributi, sconti: entra nel totale ma non in magazzino",
                   "nuovo_ingrediente": {"nome": "come lo chiamerebbe un cuoco, senza marca né formato",
                                         "unita": "kg | l | pz | mazzo",
                                         "categoria": "verdura | frutta | carne_rossa | carne_bianca | pesce | crostacei_molluschi | latticini | uova | farine_cereali | legumi | olio_condimenti | spezie_aromi | secco_dispensa | bevande | altro",
@@ -705,7 +709,16 @@ async function leggiLaPosta() {
                       // Unita' e categoria si convalidano contro l'elenco
                       // vero — un valore inventato dal modello farebbe
                       // fallire l'inserimento a meta' transazione.
-                      nuovo_ingrediente: ingredienteProposto(r?.nuovo_ingrediente),
+                      // Trasporto, contributi, sconti: entrano nel conto
+                      // ma non in dispensa. Arrivano gia' marcati, e
+                      // senza un nome proposto — altrimenti confermando
+                      // di corsa nascerebbe un ingrediente «Trasporto»
+                      // che poi resta li' per sempre (successo davvero
+                      // il 12/08, con «Contributo trasporto» a 8 €/kg).
+                      ignora: r?.non_merce === true,
+                      nuovo_ingrediente: r?.non_merce === true
+                        ? null
+                        : ingredienteProposto(r?.nuovo_ingrediente),
                       scadenza: dataValida(r?.scadenza),
                       lotto: r?.lotto ? String(r.lotto).slice(0, 100) : null,
                     }))
