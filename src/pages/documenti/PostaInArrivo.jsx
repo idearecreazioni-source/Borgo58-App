@@ -137,16 +137,26 @@ function RigheCarico({ par, ingredienti, fornitori, aperto, cambia }) {
               />
             </div>
             <div className="min-w-0 flex items-end">
+              {/* Spenta di proposito: la temperatura di ricevimento si
+                  misura alla porta, e una fattura arriva dopo la merce. */}
               <label className="flex items-center gap-1.5 text-xs text-b58-charcoal-soft pb-1.5">
                 <input
                   type="checkbox"
-                  checked={par?.registra_haccp !== false}
+                  checked={par?.registra_haccp === true}
                   onChange={(e) => cambia("registra_haccp", e.target.checked)}
                 />
                 registra in HACCP
               </label>
             </div>
           </div>
+
+          {par?.registra_haccp === true && (
+            <p className="text-[11px] text-b58-terracotta-dark">
+              Scriverà nel registro HACCP una consegna ricevuta <strong>adesso</strong>. Accendila
+              solo se la merce è davvero appena arrivata: il registro è un documento che si mostra
+              a un'ispezione.
+            </p>
+          )}
 
           {righe.map((r, i) => (
             <div key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 p-2">

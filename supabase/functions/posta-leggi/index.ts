@@ -616,7 +616,12 @@ async function leggiLaPosta() {
               // del pesce fresco. Un dato HACCP azzerato in silenzio è
               // esattamente ciò che un registro non deve fare.
               temperatura: temperaturaValida((a.carico as Record<string, unknown>)?.temperatura),
-              registra_haccp: true,
+              // Spento. La temperatura di ricevimento si misura quando il
+              // furgone e' alla porta, e una fattura elettronica arriva
+              // giorni dopo la merce: dedurre da li' un controllo che
+              // nessuno ha fatto sporca un registro esibibile a
+              // un'ispezione. Lo accende Alessio, quando la merce e' li'.
+              registra_haccp: false,
               // Il contenuto, per le domande di domani sull'archivio.
               //
               // Se l'allegato è un .odt o un .docx, il suo testo ESATTO ce
