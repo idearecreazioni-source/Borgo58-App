@@ -1,6 +1,6 @@
 # Consegna del 12/08/2026 — il registro HACCP si riempie alla porta
 
-**Commit della consegna: `c98732e`** (questo riepilogo è il commit
+**Commit della consegna: `c3e673e`** (questo riepilogo è il commit
 immediatamente sopra, sola documentazione). Working tree pulito.
 
 **Migrazione `20260812000012` applicata in produzione** e **`posta-leggi`
