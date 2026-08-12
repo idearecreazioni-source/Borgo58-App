@@ -25,7 +25,7 @@
 
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { esegui, fermati, leggiConfigurazione, obbligatorio, REF_PRODUZIONE, titolo } from "./comune.mjs";
+import { esegui, fermati, leggiConfigurazione, REF_PRODUZIONE, titolo } from "./comune.mjs";
 
 const CARTELLA = "supabase/functions";
 
@@ -59,12 +59,20 @@ if (!disponibili.includes(nome)) {
   fermati(`Non esiste nessuna funzione «${nome}».`, `Disponibili: ${disponibili.join(", ")}`);
 }
 
+// La chiave puo' arrivare da due strade, e la seconda e' quella buona.
+//
+// `.env.db` funziona, ma pretende che qualcuno copi il token a mano — e
+// il 12/08/2026 si e' scoperto che dal pannello Supabase non c'e' un
+// momento in cui lo si possa copiare per intero: dopo la generazione la
+// pagina lo mostra gia' mascherato. Copiarlo «da dove si vede» produce
+// una chiave che sembra giusta e viene rifiutata.
+//
+// `npx supabase login` apre il browser, Alessio autorizza, e la chiave se
+// la prende il programma da solo: nessuno la vede e nessuno la incolla.
+// Se in `.env.db` non c'e' niente, si usa quella — ed e' la strada
+// preferita, non un ripiego.
 const config = leggiConfigurazione();
-const token = obbligatorio(
-  config,
-  "SUPABASE_ACCESS_TOKEN",
-  "Serve una chiave d'accesso Supabase (dashboard → Account → Access Tokens)."
-);
+const token = config.SUPABASE_ACCESS_TOKEN || null;
 
 // --- Vincolo: file committati ----------------------------------------
 const stato = esegui("git", ["status", "--porcelain", "--", path.join(CARTELLA, nome)], {
@@ -83,6 +91,7 @@ if (stato.uscita.trim()) {
 
 titolo(`Installazione di ${nome}`);
 console.log(`  progetto: ${REF_PRODUZIONE}`);
+console.log(`  chiave: ${token ? "da .env.db" : "quella lasciata da `npx supabase login`"}`);
 console.log(
   `  verifica del token in ingresso: ${
     SENZA_TOKEN[nome] ? `SPENTA — ${SENZA_TOKEN[nome]}` : "accesa"
@@ -100,11 +109,14 @@ if (!conferma) {
 const argomenti = ["supabase", "functions", "deploy", nome, "--project-ref", REF_PRODUZIONE];
 if (SENZA_TOKEN[nome]) argomenti.push("--no-verify-jwt");
 
-const r = esegui("npx", argomenti, { env: { SUPABASE_ACCESS_TOKEN: token } });
+const r = esegui("npx", argomenti, token ? { env: { SUPABASE_ACCESS_TOKEN: token } } : {});
 if (!r.ok) {
   fermati(
     `L'installazione di ${nome} non e' andata a buon fine.`,
-    "In produzione resta attiva la versione precedente: un deploy fallito non spegne niente."
+    "In produzione resta attiva la versione precedente: un deploy fallito non spegne niente.",
+    "",
+    "Se il motivo e' la chiave: lanciare `npx supabase login` in una finestra PowerShell",
+    "normale (apre il browser, si autorizza, e la chiave resta li')."
   );
 }
 
