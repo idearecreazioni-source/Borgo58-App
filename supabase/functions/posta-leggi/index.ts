@@ -350,14 +350,8 @@ function numeroValido(v: unknown): number | null {
   return n;
 }
 
-Deno.serve(async (req) => {
-  if (!NOTIFICHE_FIRMA || req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
-    return risposta({ errore: "Chiamante non riconosciuto" }, 401);
-  }
-  if (!ANTHROPIC_API_KEY || !SERVICE_ROLE) {
-    return risposta({ errore: "Funzione non configurata" }, 500);
-  }
-
+/** Il lavoro vero. Gira DOPO che abbiamo già risposto — vedi in fondo. */
+async function leggiLaPosta() {
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
   // nome di un file dice spessissimo tutto — «Locazione Parlato
   // Borgo58-10.08.2026.odt» si spiega da solo. Trovato alla prima prova
@@ -367,11 +361,9 @@ Deno.serve(async (req) => {
     `posta_ricevuta?stato=eq.da_leggere&order=ricevuta_il.asc&limit=${QUANTE_PER_GIRO}` +
       `&select=id,mittente,oggetto,testo,casella,posta_allegati(id,file_name,mime,storage_path)`,
   );
-  if (!elenco.ok) {
-    return risposta({ errore: "Non riesco a leggere la posta in attesa" }, 500);
-  }
+  if (!elenco.ok) return;
   const messaggi = await elenco.json();
-  if (!messaggi.length) return risposta({ letti: 0 });
+  if (!messaggi.length) return;
 
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
   let letti = 0;
@@ -586,5 +578,41 @@ Deno.serve(async (req) => {
     await avvisa(righe.join("\n\n"));
   }
 
-  return risposta({ letti, falliti, saltati: saltati.length, in_coda: messaggi.length });
+}
+
+// ---------------------------------------------------------------------
+// SI RISPONDE SUBITO, SI LEGGE DOPO
+// ---------------------------------------------------------------------
+// Trovato dal vivo il 12/08/2026, appena passati al modello attento: il
+// database aspetta la risposta di una chiamata HTTP **5 secondi**, poi
+// rinuncia. Leggere due PDF con il modello grande ne richiede molti di
+// più, quindi la lettura veniva interrotta a metà — e siccome a mollare
+// era il database, sulla mail non restava scritto niente: nessun errore,
+// nessuna nota, solo una mail eternamente «da leggere».
+//
+// Ora si risponde appena riconosciuto il chiamante e si legge dopo, in
+// sottofondo. Chi ci chiama non deve sapere quanto ci mettiamo: deve solo
+// sapere che abbiamo preso in carico. L'esito si guarda dove va guardato
+// — sulla mail, in schermata.
+Deno.serve((req) => {
+  if (!NOTIFICHE_FIRMA || req.headers.get("x-borgo58-firma") !== NOTIFICHE_FIRMA) {
+    return risposta({ errore: "Chiamante non riconosciuto" }, 401);
+  }
+  if (!ANTHROPIC_API_KEY || !SERVICE_ROLE) {
+    return risposta({ errore: "Funzione non configurata" }, 500);
+  }
+
+  const lavoro = leggiLaPosta().catch(async (e) => {
+    // Un guasto qui non ha più nessuno a cui rispondere: va detto sul
+    // telefono, altrimenti torna a essere un silenzio.
+    await avvisa(`Non sono riuscito a leggere la posta: ${(e as Error).message}`);
+  });
+
+  // @ts-ignore EdgeRuntime lo mette Supabase, non è nei tipi di Deno.
+  if (typeof EdgeRuntime !== "undefined") {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(lavoro);
+  }
+
+  return risposta({ presa_in_carico: true }, 202);
 });
