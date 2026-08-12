@@ -89,6 +89,37 @@ if (stato.uscita.trim()) {
   );
 }
 
+// --- Vincolo: gia' su GitHub, non solo committato --------------------
+// Stesso irrigidimento chiesto dal validatore per `npm run migra` il
+// 13/08/2026, e vale identico qui: fra il commit e il push c'e' Alessio,
+// e una funzione online installata prima del push gira in produzione
+// mentre nessuno puo' leggerne il codice. Se quel commit venisse
+// riscritto, il progetto Supabase resterebbe l'unico posto dove quella
+// versione e' mai esistita.
+const fetch = esegui("git", ["fetch", "--quiet", "origin"], { silenzioso: true });
+if (!fetch.ok) {
+  fermati(
+    "FERMO: non riesco a leggere cosa c'e' su GitHub, quindi non posso garantire",
+    "che la produzione non stia per correre avanti al repository.",
+    "",
+    "Riprova quando la rete risponde."
+  );
+}
+const diverso = esegui(
+  "git",
+  ["diff", "--quiet", "origin/master", "--", path.join(CARTELLA, nome)],
+  { silenzioso: true }
+);
+if (!diverso.ok) {
+  fermati(
+    `FERMO: «${nome}» non e' ancora su GitHub.`,
+    "La produzione non deve mai correre avanti al repository.",
+    "",
+    "Serve il push di Alessio, poi si riprova.",
+    "  git push"
+  );
+}
+
 titolo(`Installazione di ${nome}`);
 console.log(`  progetto: ${REF_PRODUZIONE}`);
 console.log(`  chiave: ${token ? "da .env.db" : "quella lasciata da `npx supabase login`"}`);

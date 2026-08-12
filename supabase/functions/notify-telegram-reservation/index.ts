@@ -85,15 +85,41 @@ function formatTaskReminderMessage(task: Record<string, unknown>): string {
 // Un avviso di guasto deve distinguersi al primo sguardo da una
 // prenotazione o da un promemoria: chi lo riceve durante un servizio deve
 // capire in mezzo secondo se può aspettare la fine del turno.
+//
+// E un RINCARO non è un guasto: è il gestionale che funziona e riferisce
+// che un fornitore ha alzato un prezzo. Fino al 13/08/2026 arrivava sotto
+// lo stesso titolo di un guasto, con la riga tecnica del tipo attaccata e
+// una frase in fondo che dal 13/08 è anche falsa per i rincari («ne
+// arriva uno solo all'ora»: il freno ora distingue un rincaro dall'altro).
+// Mettere le due cose sotto lo stesso titolo insegna a leggere quel
+// triangolo come rumore, e il costo si paga il giorno del guasto vero.
+//
+// La categoria arriva dal database (`segnala_allarme`), non si indovina
+// da come comincia il testo del tipo: sarebbe legare il titolo alla
+// chiave del freno anti-tempesta, due cose che oggi coincidono e domani
+// no, senza che niente lo segnali.
 function formatAlarmMessage(allarme: Record<string, unknown>): string {
   const tipo = allarme.tipo as string;
   const messaggio = allarme.messaggio as string;
+  const categoria = (allarme.categoria as string) ?? "guasto";
+
+  if (categoria === "rincaro") {
+    return [
+      "💶 RINCARO",
+      "",
+      messaggio,
+      "",
+      "Lo stesso rincaro non si ripete. Un rincaro diverso arriva sempre.",
+    ].join("\n");
+  }
 
   return [
     "⚠️ QUALCOSA NON VA",
     "",
     messaggio,
     "",
+    // Il tipo resta solo qui: su un guasto serve a capire cos'è che si è
+    // rotto, e chi lo legge lo legge per decidere se chiamare aiuto.
     `Tipo: ${tipo}`,
     "Di questo avviso ne arriva uno solo all'ora, anche se il guasto si ripete.",
   ]
