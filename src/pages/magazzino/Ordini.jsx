@@ -26,6 +26,9 @@ export default function Ordini() {
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState(null);
   const [copiato, setCopiato] = useState(null);
+  // Non è un errore: è una cosa che deve sapere adesso. Scriverla nel
+  // riquadro rosso la farebbe leggere come un guasto.
+  const [nota, setNota] = useState("");
 
   const caricaOrdini = () => listaOrdini().then(setOrdini);
 
@@ -118,13 +121,16 @@ export default function Ordini() {
     return puo;
   };
 
-  const copiaTesto = async (supplierId) => {
+  const copiaTesto = async (supplierId, { silenzioso } = {}) => {
     const testo = bozze[supplierId]?.testoModificato ?? "";
     try {
       await navigator.clipboard.writeText(testo);
-      setCopiato(supplierId);
-      setTimeout(() => setCopiato(null), 2000);
+      if (!silenzioso) {
+        setCopiato(supplierId);
+        setTimeout(() => setCopiato(null), 2000);
+      }
     } catch {
+      if (silenzioso) return;
       // Su alcuni browser gli appunti sono negati: il testo resta lì da
       // selezionare a mano, ma va detto invece di non far succedere niente.
       setError("Non riesco a copiare da solo: seleziona il testo e copialo a mano.");
@@ -143,8 +149,26 @@ export default function Ordini() {
         righe: bozza.righe,
         canale: via ?? "altro",
       });
-      const link = via === "whatsapp" ? linkApp(bozza) : via === "email" ? linkPosta(bozza) : null;
-      if (link) window.location.assign(link);
+      if (via === "email") {
+        // ⚠️ `mailto:` funziona solo se sul computer c'è un programma di
+        // posta impostato. Alessio la posta la legge dal browser: Windows
+        // gli ha chiesto a chi dare il collegamento, lui ha scelto Chrome,
+        // e non è successo niente — nessun errore, solo un ordine
+        // registrato e nessuna mail.
+        //
+        // Quindi si copia PRIMA e si prova ad aprire DOPO: la copia
+        // riesce sempre, l'apertura è un di più. L'ordine inverso
+        // lasciava il caso peggiore senza rete.
+        await copiaTesto(supplierId, { silenzioso: true });
+        setNota(
+          `Messaggio copiato. Se la posta non si apre da sola, incollalo nella tua casella e mandalo a ${bozza.email}.`
+        );
+        const posta = linkPosta(bozza);
+        if (posta) window.location.assign(posta);
+      } else {
+        const link = via === "whatsapp" ? linkApp(bozza) : null;
+        if (link) window.location.assign(link);
+      }
       setBozze((b) => ({ ...b, [supplierId]: null }));
       const { senzaFornitore } = await carica();
       setOrfane(senzaFornitore);
@@ -204,6 +228,12 @@ export default function Ordini() {
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
+        </p>
+      )}
+
+      {nota && (
+        <p className="text-sm text-b58-charcoal bg-b58-cream-dark rounded-lg px-3 py-2 mb-4">
+          {nota}
         </p>
       )}
 
@@ -399,7 +429,11 @@ export default function Ordini() {
                           </>
                         )}
                         {strade(bozza).includes("email") && (
-                          <> Se la posta non si apre, copia il testo e incollalo nella tua casella.</>
+                          <>
+                            {" "}
+                            Il messaggio viene <strong>copiato comunque</strong>: se leggi la posta
+                            dal browser, il collegamento non apre niente e ti basta incollarlo.
+                          </>
                         )}
                       </p>
                     </div>
