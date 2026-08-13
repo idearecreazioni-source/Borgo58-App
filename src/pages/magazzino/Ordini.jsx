@@ -25,6 +25,7 @@ export default function Ordini() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState(null);
+  const [copiato, setCopiato] = useState(null);
 
   const caricaOrdini = () => listaOrdini().then(setOrdini);
 
@@ -79,6 +80,19 @@ export default function Ordini() {
 
   const linkWhatsApp = (bozza) =>
     bozza.telefono ? `https://wa.me/${bozza.telefono}?text=${encodeURIComponent(bozza.testoModificato)}` : null;
+
+  const copiaTesto = async (supplierId) => {
+    const testo = bozze[supplierId]?.testoModificato ?? "";
+    try {
+      await navigator.clipboard.writeText(testo);
+      setCopiato(supplierId);
+      setTimeout(() => setCopiato(null), 2000);
+    } catch {
+      // Su alcuni browser gli appunti sono negati: il testo resta lì da
+      // selezionare a mano, ma va detto invece di non far succedere niente.
+      setError("Non riesco a copiare da solo: seleziona il testo e copialo a mano.");
+    }
+  };
 
   const registra = async (supplierId) => {
     const bozza = bozze[supplierId];
@@ -277,17 +291,34 @@ export default function Ordini() {
                               (in rubrica: {bozza.telefono_scritto})
                             </>
                           ) : (
-                            <>Questo fornitore non ha un numero: copia il testo e mandaglielo tu.</>
+                            <>
+                              Questo fornitore non ha un numero:{" "}
+                              <Link to="/magazzino/fornitori" className="underline">
+                                scrivilo in anagrafica
+                              </Link>{" "}
+                              e il pulsante di WhatsApp compare da solo.
+                            </>
                           )}
                         </p>
-                        <button
-                          type="button"
-                          disabled={inCorso === g.supplier_id}
-                          onClick={() => registra(g.supplier_id)}
-                          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
-                        >
-                          {bozza.telefono ? "Registra e apri WhatsApp" : "Registra l'ordine"}
-                        </button>
+                        <div className="flex gap-2">
+                          {/* La schermata chiedeva di copiare il testo senza
+                              dare un modo per farlo. */}
+                          <button
+                            type="button"
+                            onClick={() => copiaTesto(g.supplier_id)}
+                            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+                          >
+                            {copiato === g.supplier_id ? "Copiato" : "Copia il testo"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={inCorso === g.supplier_id}
+                            onClick={() => registra(g.supplier_id)}
+                            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                          >
+                            {bozza.telefono ? "Registra e apri WhatsApp" : "Registra l'ordine"}
+                          </button>
+                        </div>
                       </div>
                       <p className="text-[11px] text-b58-charcoal-soft mt-2">
                         Il gestionale non manda niente da solo: apre WhatsApp col messaggio
