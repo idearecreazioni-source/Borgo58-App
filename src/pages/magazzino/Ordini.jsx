@@ -99,6 +99,25 @@ export default function Ordini() {
       ? `https://wa.me/${bozza.telefono}?text=${encodeURIComponent(bozza.testoModificato)}`
       : null;
 
+  // La mail si apre nella SUA posta col messaggio pronto, non parte dal
+  // gestionale (decisione di Alessio del 14/08): così una copia resta
+  // nella posta inviata e la risposta del fornitore arriva in casella.
+  const linkPosta = (bozza) =>
+    bozza.email
+      ? `mailto:${bozza.email}?subject=${encodeURIComponent(bozza.oggetto ?? "")}&body=${encodeURIComponent(bozza.testoModificato)}`
+      : null;
+
+  // Cosa si può fare con questo fornitore, e cosa ha detto lui di
+  // preferire. Vuoto vuol dire «non l'ha detto»: si offrono le strade
+  // che i recapiti permettono, senza sceglierne una.
+  const strade = (bozza) => {
+    const puo = [];
+    if (bozza.telefono) puo.push("whatsapp");
+    if (bozza.email) puo.push("email");
+    if (bozza.canale && puo.includes(bozza.canale)) return [bozza.canale];
+    return puo;
+  };
+
   const copiaTesto = async (supplierId) => {
     const testo = bozze[supplierId]?.testoModificato ?? "";
     try {
@@ -112,7 +131,7 @@ export default function Ordini() {
     }
   };
 
-  const registra = async (supplierId) => {
+  const registra = async (supplierId, via) => {
     const bozza = bozze[supplierId];
     if (!bozza || !bozza.righe?.length) return;
     setInCorso(supplierId);
@@ -122,9 +141,9 @@ export default function Ordini() {
         supplierId,
         testo: bozza.testoModificato,
         righe: bozza.righe,
-        canale: bozza.telefono ? "whatsapp" : "altro",
+        canale: via ?? "altro",
       });
-      const link = linkApp(bozza);
+      const link = via === "whatsapp" ? linkApp(bozza) : via === "email" ? linkPosta(bozza) : null;
       if (link) window.location.assign(link);
       setBozze((b) => ({ ...b, [supplierId]: null }));
       const { senzaFornitore } = await carica();
@@ -303,18 +322,27 @@ export default function Ordini() {
 
                       <div className="flex items-center justify-between gap-3 flex-wrap mt-3">
                         <p className="text-xs text-b58-charcoal-soft">
-                          {bozza.telefono ? (
+                          {/* Dove sta per scrivere, scritto per intero prima
+                              che prema: è la protezione che vale più di
+                              qualunque normalizzazione del numero. */}
+                          {strade(bozza).includes("whatsapp") && (
                             <>
-                              Andrà al numero <span className="font-medium">+{bozza.telefono}</span>{" "}
-                              (in rubrica: {bozza.telefono_scritto})
+                              WhatsApp al <span className="font-medium">+{bozza.telefono}</span>{" "}
+                              (in rubrica: {bozza.telefono_scritto}).{" "}
                             </>
-                          ) : (
+                          )}
+                          {strade(bozza).includes("email") && (
                             <>
-                              Questo fornitore non ha un numero:{" "}
+                              Mail a <span className="font-medium">{bozza.email}</span>.{" "}
+                            </>
+                          )}
+                          {strade(bozza).length === 0 && (
+                            <>
+                              Questo fornitore non ha né numero né mail:{" "}
                               <Link to="/magazzino/fornitori" className="underline">
-                                scrivilo in anagrafica
-                              </Link>{" "}
-                              e il pulsante di WhatsApp compare da solo.
+                                scrivili in anagrafica
+                              </Link>
+                              , e lì puoi anche dire come preferisce essere contattato.
                             </>
                           )}
                         </p>
@@ -328,21 +356,34 @@ export default function Ordini() {
                           >
                             {copiato === g.supplier_id ? "Copiato" : "Copia il testo"}
                           </button>
-                          <button
-                            type="button"
-                            disabled={inCorso === g.supplier_id}
-                            onClick={() => registra(g.supplier_id)}
-                            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
-                          >
-                            {bozza.telefono ? "Registra e apri WhatsApp" : "Registra l'ordine"}
-                          </button>
+                          {strade(bozza).map((via) => (
+                            <button
+                              key={via}
+                              type="button"
+                              disabled={inCorso === g.supplier_id}
+                              onClick={() => registra(g.supplier_id, via)}
+                              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                            >
+                              {via === "whatsapp" ? "Registra e apri WhatsApp" : "Registra e apri la posta"}
+                            </button>
+                          ))}
+                          {strade(bozza).length === 0 && (
+                            <button
+                              type="button"
+                              disabled={inCorso === g.supplier_id}
+                              onClick={() => registra(g.supplier_id, "altro")}
+                              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                            >
+                              Registra l&apos;ordine
+                            </button>
+                          )}
                         </div>
                       </div>
                       <p className="text-[11px] text-b58-charcoal-soft mt-2">
                         Il gestionale non manda niente da solo: apre WhatsApp col messaggio
                         pronto. Resta segnato come inviato — se poi non lo mandi, annullalo qui
                         sotto e le righe tornano in lista.
-                        {bozza.telefono && (
+                        {strade(bozza).includes("whatsapp") && (
                           <>
                             {" "}
                             Se WhatsApp non si apre,{" "}
@@ -356,6 +397,9 @@ export default function Ordini() {
                             </a>
                             .
                           </>
+                        )}
+                        {strade(bozza).includes("email") && (
+                          <> Se la posta non si apre, copia il testo e incollalo nella tua casella.</>
                         )}
                       </p>
                     </div>

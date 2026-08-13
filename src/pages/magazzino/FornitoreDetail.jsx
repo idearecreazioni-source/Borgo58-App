@@ -55,6 +55,7 @@ export default function FornitoreDetail() {
         deliveryDays: supplier.delivery_days,
         isOccasional: supplier.is_occasional,
         notes: supplier.notes,
+        canaleOrdine: supplier.canale_ordine,
       });
       setSupplier((s) => ({ ...s, ...updated }));
     } catch (e) {
@@ -167,6 +168,23 @@ export default function FornitoreDetail() {
               onChange={(e) => handleChange("contact_person", e.target.value)}
               className={inputClass}
             />
+          </div>
+          {/* Come preferisce ricevere gli ordini. Si scrive una volta e non
+              lo si chiede più: per lo stesso fornitore la risposta è sempre
+              la stessa. Lasciato vuoto, la schermata degli ordini offre
+              entrambe le strade invece di sceglierne una in silenzio. */}
+          <div>
+            <label className={labelClass}>Come vuole gli ordini</label>
+            <select
+              value={supplier.canale_ordine || ""}
+              onChange={(e) => handleChange("canale_ordine", e.target.value || null)}
+              className={inputClass}
+            >
+              <option value="">non l&apos;ha detto</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="email">Email</option>
+              <option value="telefono">Telefono (glielo leggo io)</option>
+            </select>
           </div>
         </div>
 

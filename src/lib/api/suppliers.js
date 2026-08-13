@@ -40,6 +40,7 @@ const supplierPayload = ({
   deliveryDays,
   isOccasional,
   notes,
+  canaleOrdine,
 }) => ({
   ...(entityId ? { entity_id: entityId } : {}),
   name,
@@ -55,6 +56,9 @@ const supplierPayload = ({
   delivery_days: isOccasional ? null : deliveryDays || null,
   is_occasional: !!isOccasional,
   notes: notes || null,
+  // Vuoto vuol dire «non l'ha ancora detto»: la schermata degli ordini
+  // offre le strade che i recapiti permettono, senza sceglierne una.
+  canale_ordine: canaleOrdine || null,
 });
 
 export async function createSupplier(input) {
