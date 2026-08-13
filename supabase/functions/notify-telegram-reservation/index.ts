@@ -103,6 +103,15 @@ function formatAlarmMessage(allarme: Record<string, unknown>): string {
   const messaggio = allarme.messaggio as string;
   const categoria = (allarme.categoria as string) ?? "guasto";
 
+  if (categoria === "scadenze") {
+    return [
+      "📅 SCADENZE",
+      "",
+      messaggio,
+      "Un messaggio al giorno, alle 10:00. La lista intera sta in Magazzino → Scadenze.",
+    ].join("\n");
+  }
+
   if (categoria === "rincaro") {
     return [
       "💶 RINCARO",

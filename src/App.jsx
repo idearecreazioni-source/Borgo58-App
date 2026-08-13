@@ -27,6 +27,7 @@ import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
 import Tracciabilita from "./pages/magazzino/Tracciabilita";
+import Scadenze from "./pages/magazzino/Scadenze";
 import FornitoriList from "./pages/magazzino/FornitoriList";
 import FornitoreDetail from "./pages/magazzino/FornitoreDetail";
 import HaccpHome from "./pages/haccp/HaccpHome";
@@ -164,6 +165,7 @@ function AppRoutes() {
         <Route path="/magazzino/carico" element={<RegistraCarico />} />
         <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
         <Route path="/magazzino/tracciabilita" element={<Tracciabilita />} />
+        <Route path="/magazzino/scadenze" element={<Scadenze />} />
         {/* Anagrafica Fornitori (§3.11): dati economici (P.IVA, condizioni di
             pagamento) — titolare-only, coerente col resto di §3.5. */}
         <Route

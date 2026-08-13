@@ -160,6 +160,9 @@ export const NC_CATEGORIES = [
   { value: "ricevimento", label: "Ricevimento merci" },
   { value: "pulizia", label: "Pulizia e sanificazione" },
   { value: "disinfestazione", label: "Disinfestazione" },
+  // Nasce dallo scadenziario (13/08/2026): buttare una partita scaduta
+  // scrive da sé la riga qui. In "Altro" non la ritroverebbe nessuno.
+  { value: "scadenza", label: "Prodotto scaduto o eliminato" },
   { value: "altro", label: "Altro" },
 ];
 

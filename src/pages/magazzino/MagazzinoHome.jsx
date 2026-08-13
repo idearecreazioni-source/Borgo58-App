@@ -89,6 +89,12 @@ export default function MagazzinoHome() {
             Tracciabilità
           </Link>
           <Link
+            to="/magazzino/scadenze"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Scadenze
+          </Link>
+          <Link
             to="/magazzino/lista-spesa"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >

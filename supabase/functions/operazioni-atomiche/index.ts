@@ -57,6 +57,10 @@ const OPERAZIONI = new Set([
   // Posta in arrivo, seconda forma (12/08/2026): l'assistente propone
   // azioni e Alessio ne conferma una alla volta.
   "esegui_azione_posta",
+  // Scadenziario (13/08/2026): chiudere una partita tocca la giacenza, i
+  // movimenti e — se buttata — il registro HACCP. Tre scritture, una
+  // sola decisione di Alessio.
+  "chiudi_partita",
 ]);
 
 const CORS = {
