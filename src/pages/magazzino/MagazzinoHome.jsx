@@ -1,6 +1,10 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listStockLevels, recordStockConsumption } from "../../lib/api/stock";
+import {
+  listScarichiNonRiusciti,
+  listStockLevels,
+  recordStockConsumption,
+} from "../../lib/api/stock";
 import { CONSUMPTION_REASONS, formatDate } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -23,6 +27,7 @@ export default function MagazzinoHome() {
   const [openRow, setOpenRow] = useState(null);
   const [consumptionForm, setConsumptionForm] = useState(emptyConsumptionForm);
   const [saving, setSaving] = useState(false);
+  const [nonScaricate, setNonScaricate] = useState([]);
 
   const load = () => listStockLevels().then(setLevels);
 
@@ -32,6 +37,16 @@ export default function MagazzinoHome() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Cio' che i conti chiusi non hanno potuto scaricare. Solo titolare: il
+  // database rifiuta gli altri, e chiederlo lo stesso produrrebbe un
+  // errore rosso in faccia allo staff per una cosa che non lo riguarda.
+  useEffect(() => {
+    if (!isTitolare) return;
+    listScarichiNonRiusciti()
+      .then(setNonScaricate)
+      .catch(() => setNonScaricate([]));
+  }, [isTitolare]);
 
   const toggleRow = (ingredientId) => {
     setOpenRow((r) => (r === ingredientId ? null : ingredientId));
@@ -113,6 +128,38 @@ export default function MagazzinoHome() {
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
+      )}
+
+      {/* Compare SOLO quando c'è qualcosa: un riquadro che dice «tutto a
+          posto» ogni giorno si impara a non guardare. */}
+      {nonScaricate.length > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-6">
+          <h2 className="text-sm font-semibold text-b58-charcoal">
+            Cosa non è sceso dal magazzino ({nonScaricate.length})
+          </h2>
+          <p className="text-xs text-b58-charcoal-soft mt-1">
+            Righe di conti chiusi che la giacenza non ha potuto seguire. Non
+            sono state indovinate: la giacenza qui sotto è più alta del vero di
+            questo tanto.
+          </p>
+          <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto">
+            {nonScaricate.map((r) => (
+              <li key={r.id} className="text-xs text-b58-charcoal">
+                <span className="text-b58-charcoal-soft">
+                  {formatDate(r.quando)} · {r.tavolo || "—"} ·{" "}
+                </span>
+                {r.tipo === "voce_libera" && "voce libera, nessuna ricetta: "}
+                {r.tipo === "ricetta_incompleta" && "ricetta incompleta: "}
+                {r.tipo === "giacenza_insufficiente" && "non ce n'era abbastanza: "}
+                {r.tipo === "errore" && "guasto durante lo scarico: "}
+                <span className="font-medium">{r.descrizione}</span>
+                {r.quantita_mancante != null && (
+                  <> — mancano {Number(r.quantita_mancante)} {r.unita}</>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {loading ? (

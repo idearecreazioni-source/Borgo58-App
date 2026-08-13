@@ -31,6 +31,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const OPERAZIONI = new Set([
   // Comande / cassa (attiva dall'09/08/2026)
   "close_order_as_discount_gift",
+  // Il magazzino scende da solo (13/08/2026): chiudere un conto pagato
+  // non è più un update su una riga — tocca conto, lotti, movimenti e le
+  // righe che non si è potuto scaricare. Quattro tabelle, una decisione.
+  "close_order_paid",
   // Blocco 1 — cessioni intercompany e mance
   "create_intercompany_cession",
   "create_tip_distribution",

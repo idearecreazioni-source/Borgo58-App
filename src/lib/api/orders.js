@@ -304,17 +304,20 @@ export { orderTotals } from "../calcoli/conto";
 
 // copertoUnitPrice viene fotografato sull'ordine: da domani il coperto puo'
 // cambiare, questo conto no (stesso principio di order_items.unit_price).
+// Dal 13/08/2026 chiudere un conto fa scendere la giacenza: quattro
+// tabelle (conto, lotti, movimenti, righe non scaricate) che devono
+// riuscire o fallire insieme. Quindi non è più un update dal browser ma
+// una funzione Postgres attraverso il corridoio — regola B4.
+//
+// Lo scarico è una scrittura di CONSEGUENZA: se qualcosa non torna, il
+// conto si chiude lo stesso e l'anomalia resta scritta. Il cliente ha
+// pagato e sta aspettando: non è il momento di fermarsi.
 export async function closeOrderPaid(orderId, paymentMethod, copertoUnitPrice) {
-  const { error } = await supabase
-    .from("orders")
-    .update({
-      status: "chiuso",
-      payment_method: paymentMethod,
-      coperto_unit_price: copertoUnitPrice ?? null,
-      closed_at: new Date().toISOString(),
-    })
-    .eq("id", orderId);
-  if (error) throw error;
+  return eseguiOperazione("close_order_paid", {
+    p_order_id: orderId,
+    p_payment_method: paymentMethod,
+    p_coperto_unit_price: copertoUnitPrice ?? null,
+  });
 }
 
 export async function cancelOrder(orderId, reason) {

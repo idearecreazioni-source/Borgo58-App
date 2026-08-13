@@ -73,6 +73,20 @@ export async function recordStockConsumption({ ingredientId, quantity, reason = 
   if (error) throw error;
 }
 
+// Cosa il magazzino NON ha potuto scaricare chiudendo i conti: voci
+// libere, ricette che non dicono cosa togliere, giacenze che non
+// bastavano. Solo titolare (il database rifiuta gli altri, non risponde
+// con un elenco vuoto: una schermata vuota direbbe "è andato tutto
+// bene", che qui sarebbe falso).
+export async function listScarichiNonRiusciti({ dal, al } = {}) {
+  const { data, error } = await supabase.rpc("scarichi_non_riusciti", {
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Rimossa listStockConsumptions (audit 08/08/2026): nessuna pagina la
 // usava. Il codice morto non e' innocuo — invecchia senza che nessuno se
 // ne accorga, e prima o poi qualcuno lo richiama credendolo collaudato.
