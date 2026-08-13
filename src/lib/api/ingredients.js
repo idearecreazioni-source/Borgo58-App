@@ -50,6 +50,10 @@ export async function createIngredient(payload) {
     p_waste_percentage_default: payload.waste_percentage_default ?? 0,
     p_haccp_receiving_temp: payload.haccp_receiving_temp ?? null,
     p_haccp_notes: payload.haccp_notes ?? null,
+    // Scorta minima: vuota vuol dire «non entrare mai in lista da solo».
+    // Zero non è ammesso — sarebbe una soglia che non scatta mai, cioè un
+    // campo compilato che non fa niente.
+    p_stock_minimum_threshold: payload.stock_minimum_threshold ?? null,
   });
 }
 

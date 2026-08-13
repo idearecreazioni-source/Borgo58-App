@@ -4,9 +4,11 @@ import {
   addBelowThresholdItems,
   addShoppingListItem,
   closeShoppingListItem,
+  listaSpesa,
   listShoppingList,
   listShoppingListDisplay,
   removeShoppingListItem,
+  updateShoppingListItem,
 } from "../../lib/api/shoppingList";
 import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
@@ -51,12 +53,22 @@ export default function ListaSpesa() {
   const load = () => (isTitolare ? listShoppingList() : listShoppingListDisplay());
 
   const loadAll = async () => {
-    const [listData, levels, sup] = await Promise.all([
+    // Prima di guardare la lista, si guarda il magazzino: chi è sceso
+    // sotto soglia entra da solo. Prima era un pulsante da ricordarsi di
+    // premere — cioè una lista che diceva la verità solo a chi sapeva
+    // che andava aggiornata.
+    if (isTitolare) await addBelowThresholdItems().catch(() => {});
+    const [listData, numeri, levels, sup] = await Promise.all([
       load(),
+      isTitolare ? listaSpesa() : Promise.resolve([]),
       listStockLevels(),
       isTitolare ? getEntities().then((e) => listSuppliers(e.srls.id)) : listSuppliersDisplay(),
     ]);
-    setItems(listData);
+    // I numeri veri (giacenza, soglia, quanto manca, se è rientrata) li
+    // calcola il database sullo stesso conteggio che usa il Magazzino:
+    // qui si attaccano soltanto alla riga giusta.
+    const perId = new Map(numeri.map((r) => [r.id, r]));
+    setItems(listData.map((i) => ({ ...i, numeri: perId.get(i.id) ?? null })));
     setIngredients(levels);
     setSuppliers(sup);
   };
@@ -100,6 +112,24 @@ export default function ListaSpesa() {
       setError(e.message);
     } finally {
       setAddingThreshold(false);
+    }
+  };
+
+  // Si ricarica solo la riga toccata, non tutta la schermata: ricaricare
+  // tutto butterebbe via le quantità che sta ancora correggendo sulle
+  // altre righe (successo il 12/08 sulla posta, ed era invisibile).
+  const handleQuantita = async (item, valore) => {
+    const nuova = valore === "" ? null : Number(valore);
+    if (nuova === (item.quantity_needed == null ? null : Number(item.quantity_needed))) return;
+    if (nuova != null && (Number.isNaN(nuova) || nuova < 0)) return;
+    setError("");
+    try {
+      await updateShoppingListItem(item.id, { quantity_needed: nuova });
+      setItems((righe) =>
+        righe.map((r) => (r.id === item.id ? { ...r, quantity_needed: nuova } : r))
+      );
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -210,15 +240,53 @@ export default function ListaSpesa() {
                         <span className="text-sm text-b58-charcoal font-medium">
                           {item.ingredient?.name ?? item.custom_name}
                         </span>
-                        {item.quantity_needed != null && (
-                          <span className="text-sm text-b58-charcoal-soft ml-1.5">
-                            {item.quantity_needed} {item.unit}
-                          </span>
+                        {/* La quantità si corregge qui: quella proposta è
+                            quanto manca per tornare alla scorta minima, non
+                            quanto conviene comprare (un fornitore vende a
+                            casse, non a etti). */}
+                        {isTitolare ? (
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            defaultValue={item.quantity_needed ?? ""}
+                            onBlur={(e) => handleQuantita(item, e.target.value)}
+                            className="w-20 ml-1.5 rounded border border-b58-charcoal/15 px-1.5 py-0.5 text-sm text-b58-charcoal"
+                          />
+                        ) : (
+                          item.quantity_needed != null && (
+                            <span className="text-sm text-b58-charcoal-soft ml-1.5">
+                              {item.quantity_needed} {item.unit}
+                            </span>
+                          )
+                        )}
+                        {isTitolare && (
+                          <span className="text-sm text-b58-charcoal-soft ml-1">{item.unit}</span>
                         )}
                         {item.source === "soglia_minima" && (
                           <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto soglia
                           </span>
+                        )}
+                        {/* Comprata altrove nel frattempo: la riga non
+                            sparisce da sola — la lista è sua — ma smette
+                            di far comprare due volte la stessa cosa. */}
+                        {item.numeri?.rientrata && (
+                          <span className="text-[11px] text-emerald-800 bg-emerald-100 rounded-full px-2 py-0.5 ml-1.5">
+                            ora ce n'è abbastanza
+                          </span>
+                        )}
+                        {/* I numeri veri, letti adesso dal magazzino. */}
+                        {item.numeri?.soglia != null && (
+                          <div className="text-xs text-b58-charcoal-soft mt-0.5">
+                            in cella {Number(item.numeri.giacenza ?? 0)} {item.unit} · scorta minima{" "}
+                            {Number(item.numeri.soglia)} {item.unit}
+                            {Number(item.numeri.mancante) > 0 && (
+                              <> · ne mancano {Number(item.numeri.mancante)}</>
+                            )}
+                            {" · in lista dal "}
+                            {formatDate(item.numeri.in_lista_dal)}
+                          </div>
                         )}
                         {item.note && (
                           <div className="text-xs text-b58-charcoal-soft mt-0.5">{item.note}</div>

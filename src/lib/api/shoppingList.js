@@ -1,5 +1,22 @@
 import { supabase } from "../supabase";
 
+// Titolare: la lista con i numeri VERI accanto a ogni riga — giacenza e
+// soglia lette dallo stesso conteggio del magazzino, non congelate quando
+// la riga è nata. Se nel frattempo la merce è arrivata, la riga lo dice
+// invece di far comprare due volte.
+export async function listaSpesa() {
+  const { data, error } = await supabase.rpc("lista_spesa");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Quantità, nota e fornitore di una riga: una tabella sola, nessuna
+// conseguenza altrove — scrittura diretta con la RLS come barriera.
+export async function updateShoppingListItem(itemId, fields) {
+  const { error } = await supabase.from("shopping_list_items").update(fields).eq("id", itemId);
+  if (error) throw error;
+}
+
 // Titolare: lista completa, inclusi importi/metodo di pagamento.
 export async function listShoppingList() {
   const { data, error } = await supabase

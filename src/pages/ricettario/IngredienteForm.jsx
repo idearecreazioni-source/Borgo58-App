@@ -33,6 +33,7 @@ const emptyForm = {
   storage_type: "",
   shelf_life_days: "",
   waste_percentage_default: "0",
+  stock_minimum_threshold: "",
   haccp_receiving_temp: "",
   haccp_notes: "",
   // Acceso di partenza: il silenzio si compra prodotto per prodotto, non
@@ -88,6 +89,7 @@ export default function IngredienteForm() {
             storage_type: ing.storage_type ?? "",
             shelf_life_days: ing.shelf_life_days ?? "",
             waste_percentage_default: ing.waste_percentage_default ?? "0",
+            stock_minimum_threshold: ing.stock_minimum_threshold ?? "",
             haccp_receiving_temp: ing.haccp_receiving_temp ?? "",
             haccp_notes: ing.haccp_notes ?? "",
             avvisa_rincari: ing.avvisa_rincari !== false,
@@ -183,6 +185,12 @@ export default function IngredienteForm() {
         storage_type: form.storage_type || null,
         shelf_life_days: form.shelf_life_days ? Number(form.shelf_life_days) : null,
         waste_percentage_default: Number(form.waste_percentage_default) || 0,
+        // Vuoto e zero sono la stessa cosa qui: nessuna soglia. Zero
+        // sarebbe una soglia che non scatta mai, e il database la rifiuta.
+        stock_minimum_threshold:
+          Number(form.stock_minimum_threshold) > 0
+            ? Number(form.stock_minimum_threshold)
+            : null,
         haccp_receiving_temp: form.haccp_receiving_temp || null,
         haccp_notes: form.haccp_notes || null,
         avvisa_rincari: form.avvisa_rincari,
@@ -458,6 +466,28 @@ export default function IngredienteForm() {
               }
               className={inputClass}
             />
+          </div>
+          {/* La scorta minima è quello che fa nascere una riga nella lista
+              della spesa. Volutamente VUOTA di partenza e mai proposta dal
+              sistema: senza mesi di consumi veri un numero inventato
+              sarebbe credibile e sbagliato, e finirebbe in un ordine. */}
+          <div>
+            <label className={labelClass}>Scorta minima ({form.unit || "unità"})</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.stock_minimum_threshold}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, stock_minimum_threshold: e.target.value }))
+              }
+              className={inputClass}
+              placeholder="vuota = mai in lista da solo"
+            />
+            <p className="text-xs text-b58-charcoal-soft mt-1">
+              Sotto questa quantità il prodotto entra da solo nella lista della
+              spesa. Lasciala vuota se preferisci deciderlo tu ogni volta.
+            </p>
           </div>
           {/* Due interruttori, e il secondo è quello che decide se questo
               prodotto ti farà squillare il telefono. Acceso di partenza:
