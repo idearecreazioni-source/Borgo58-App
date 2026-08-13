@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   compilaSchede,
   confermaAllergeni,
+  confermaTutti,
   listAllergeniStimati,
   listProdottiDaCompilare,
 } from "../../lib/api/schedeProdotto";
@@ -58,9 +59,29 @@ export default function SchedeProdotti() {
     }
   };
 
+  const tracceDi = (id) => stimati.find((i) => i.id === id)?.allergeni_tracce ?? [];
+
   const conferma = async (id) => {
     try {
-      await confermaAllergeni(id, scelte[id] ?? []);
+      // Le tracce si rimandano indietro come stanno: confermare gli
+      // allergeni non è il momento in cui cancellarle.
+      await confermaAllergeni(id, scelte[id] ?? [], tracceDi(id));
+      await carica();
+      setError("");
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const confermaTutte = async () => {
+    try {
+      await confermaTutti(
+        stimati.map((i) => ({
+          id: i.id,
+          allergeni: scelte[i.id] ?? [],
+          tracce: i.allergeni_tracce ?? [],
+        }))
+      );
       await carica();
       setError("");
     } catch (e) {
@@ -167,7 +188,20 @@ export default function SchedeProdotti() {
           {stimati.length === 0 ? (
             <p className="text-stone-600">Nessuno in attesa.</p>
           ) : (
-            <ul>
+            <>
+              <button
+                type="button"
+                className="tocco-bottone mb-4 rounded bg-b58-terracotta px-5 text-b58-parchment"
+                onClick={confermaTutte}
+              >
+                Confermo tutti ({stimati.length})
+              </button>
+              <p className="mb-4 text-sm text-stone-500">
+                Conferma in blocco quello che vedi spuntato qui sotto, così com&apos;è. Le
+                &laquo;possibili tracce&raquo; non ci sono e non le indovina nessuno: arriveranno
+                dalla foto dell&apos;etichetta al ricevimento merci.
+              </p>
+              <ul>
               {stimati.map((i) => (
                 <li key={i.id} className="border-b border-stone-200 py-3 last:border-0">
                   <div className="font-medium">{i.name}</div>
@@ -193,7 +227,8 @@ export default function SchedeProdotti() {
                   </button>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </>
           )}
         </>
       )}

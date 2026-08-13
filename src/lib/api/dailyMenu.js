@@ -60,7 +60,7 @@ export async function listAllergensForRecipes(recipeIds) {
   if (!recipeIds || recipeIds.length === 0) return {};
   const { data, error } = await supabase
     .from("v_recipe_allergens")
-    .select("recipe_id, allergens, allergeni_da_verificare, ingredienti_da_verificare")
+    .select("recipe_id, allergens, allergeni_da_verificare, ingredienti_da_verificare, tracce")
     .in("recipe_id", recipeIds);
   if (error) throw error;
   return Object.fromEntries(
@@ -70,6 +70,7 @@ export async function listAllergensForRecipes(recipeIds) {
         allergens: r.allergens ?? [],
         daVerificare: r.allergeni_da_verificare === true,
         ingredienti: r.ingredienti_da_verificare ?? [],
+        tracce: r.tracce ?? [],
       },
     ])
   );

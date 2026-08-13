@@ -37,7 +37,7 @@ export async function compilaSchede(ids) {
 export async function listAllergeniStimati() {
   const { data, error } = await supabase
     .from("ingredients")
-    .select("id, name, allergens, origine_allergeni, alimentare")
+    .select("id, name, allergens, allergeni_tracce, origine_allergeni, alimentare")
     .eq("active", true)
     .eq("origine_allergeni", "stimati")
     .order("name");
@@ -47,10 +47,22 @@ export async function listAllergeniStimati() {
 
 // Scrittura su una sola tabella: categoria A del contratto, niente
 // corridoio. La barriera è `is_titolare()` dentro la funzione.
-export async function confermaAllergeni(id, allergeni) {
+export async function confermaAllergeni(id, allergeni, tracce = []) {
   const { data, error } = await supabase.rpc("conferma_allergeni", {
     p_ingredient_id: id,
     p_allergeni: allergeni,
+    p_tracce: tracce,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Tutti in un colpo, e in una transazione sola: o si confermano tutti o
+// nessuno. Confermare uno alla volta significa che al quinto ci si
+// stanca e i rimasti restano «stimati» senza che nessuno se lo ricordi.
+export async function confermaTutti(scelte) {
+  const { data, error } = await supabase.rpc("conferma_allergeni_tutti", {
+    p_scelte: scelte,
   });
   if (error) throw error;
   return data;

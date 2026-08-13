@@ -261,6 +261,15 @@ export default function EditorMenuHome() {
                             {allergens.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
                           </p>
                         )}
+                        {/* Le tracce si stampano solo se qualcuno le ha
+                            davvero lette da un'etichetta: sono una riga a
+                            sé perché «può contenere» non è «contiene». */}
+                        {showAllergens && !scheda?.daVerificare && (scheda?.tracce ?? []).length > 0 && (
+                          <p className="text-[11px] text-b58-charcoal-soft/50 mt-0.5 italic">
+                            può contenere tracce di{" "}
+                            {scheda.tracce.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
+                          </p>
+                        )}
                       </li>
                     );
                   })}

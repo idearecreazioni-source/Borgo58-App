@@ -23,7 +23,7 @@ export default function StaffRicettaDetail() {
   const [recipe, setRecipe] = useState(null);
   const [ingredients, setIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
-  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [] });
+  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] });
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -239,6 +239,13 @@ export default function StaffRicettaDetail() {
                 </span>
               ))}
             </div>
+          )}
+          {allergens.tracce.length > 0 && (
+            <p className="mt-2 text-sm text-b58-charcoal-soft">
+              <strong>Può contenere tracce di:</strong>{" "}
+              {allergens.tracce.map((a) => labelFor(ALLERGENS, a)).join(", ")} — non è un
+              ingrediente, è il rischio che lo stabilimento del produttore lavori anche quello.
+            </p>
           )}
         </div>
         <div>

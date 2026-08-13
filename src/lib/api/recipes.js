@@ -65,6 +65,9 @@ export async function getRecipeAllergens(recipeId) {
     // verificato, e nemmeno niente da verificare.
     daVerificare: data ? data.allergeni_da_verificare === true : false,
     ingredienti: data?.ingredienti_da_verificare ?? [],
+    // «Può contenere tracce» è un'informazione diversa da «contiene», e
+    // resta una lista a parte: sommarle rovinerebbe tutte e due.
+    tracce: data?.tracce ?? [],
   };
 }
 

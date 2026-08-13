@@ -75,7 +75,7 @@ export default function RicettaDetail() {
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
   const [cost, setCost] = useState(null);
-  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [] });
+  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] });
   const [allIngredients, setAllIngredients] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -1066,6 +1066,12 @@ export default function RicettaDetail() {
                 </span>
               ))}
             </div>
+          )}
+          {allergens.tracce.length > 0 && (
+            <p className="mt-2 text-sm text-b58-charcoal-soft">
+              <strong>Può contenere tracce di:</strong>{" "}
+              {allergens.tracce.map((a) => labelFor(ALLERGENS, a)).join(", ")}
+            </p>
           )}
         </div>
 
