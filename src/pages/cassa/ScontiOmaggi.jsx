@@ -190,6 +190,7 @@ export default function ScontiOmaggi() {
                 <th className="py-2 font-medium">Mese</th>
                 <th className="py-2 font-medium text-right">Sconti (mancato incasso)</th>
                 <th className="py-2 font-medium text-right">Omaggi (valore a listino)</th>
+                <th className="py-2 font-medium text-right">Omaggi (costo ingredienti)</th>
               </tr>
             </thead>
             <tbody>
@@ -202,10 +203,31 @@ export default function ScontiOmaggi() {
                   <td className="py-2 text-right text-b58-charcoal font-medium">
                     {monthsMap[m].omaggio ? formatEUR(monthsMap[m].omaggio.total_full) : "—"}
                   </td>
+                  {/* Il costo si mostra SEMPRE accanto al numero di conti
+                      valorizzati solo in parte: una somma parziale letta
+                      come totale sarebbe più dannosa di nessun numero. */}
+                  <td className="py-2 text-right text-b58-charcoal">
+                    {monthsMap[m].omaggio?.total_costo != null
+                      ? formatEUR(monthsMap[m].omaggio.total_costo)
+                      : "—"}
+                    {monthsMap[m].omaggio?.conti_incompleti > 0 && (
+                      <span className="block text-[11px] text-b58-terracotta-dark">
+                        parziale: {monthsMap[m].omaggio.conti_incompleti} conti con righe non
+                        valorizzabili
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
+            Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
+            <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
+            al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
+            secondo è quello che serve a Laura per l&apos;autofattura sugli omaggi (da confermare
+            con lei, domanda L1).
+          </p>
         </div>
       )}
 
