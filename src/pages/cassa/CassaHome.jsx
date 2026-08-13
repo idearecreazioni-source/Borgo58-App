@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCashBalance, listCashMovements, listDiscountsGiftsMonthly } from "../../lib/api/cash";
+import {
+  getCashBalance,
+  listCashMovements,
+  listDiscountsGiftsMonthly,
+  listQuadraturaPagamenti,
+} from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, labelFor, primoDelMeseLocale } from "../../lib/constants";
 import { CASH_DIRECTIONS } from "../../lib/constants";
@@ -15,6 +20,7 @@ export default function CassaHome() {
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [balance, setBalance] = useState(null);
+  const [quadratura, setQuadratura] = useState([]);
   const [monthMovements, setMonthMovements] = useState([]);
   const [recent, setRecent] = useState([]);
   const [monthlyDG, setMonthlyDG] = useState([]);
@@ -39,12 +45,14 @@ export default function CassaHome() {
       listCashMovements({ entityId, from: monthStart }),
       listCashMovements({ entityId }),
       listDiscountsGiftsMonthly(entityId),
+      listQuadraturaPagamenti(),
     ])
-      .then(([bal, monthMov, allMov, dg]) => {
+      .then(([bal, monthMov, allMov, dg, quad]) => {
         setBalance(bal);
         setMonthMovements(monthMov);
         setRecent(allMov.slice(0, 8));
         setMonthlyDG(dg);
+        setQuadratura(quad);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -139,6 +147,32 @@ export default function CassaHome() {
               </div>
             </div>
           </div>
+
+          {/* Quadratura: si vede solo quando c'è qualcosa che non torna.
+              Un riquadro che dice «tutto a posto» ogni giorno si impara a
+              non guardare — stessa ragione per cui il messaggio delle
+              scadenze non parte quando non c'è niente da dire. */}
+          {quadratura.length > 0 && (
+            <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6">
+              <h2 className="font-display text-lg text-b58-terracotta-dark mb-1">
+                Non torna ({quadratura.length})
+              </h2>
+              <p className="text-xs text-b58-charcoal-soft mb-3">
+                Differenze fra le fatture fornitore e la prima nota. Non sono errori certi: sono
+                le cose che meritano un&apos;occhiata.
+              </p>
+              <ul className="space-y-2">
+                {quadratura.map((r, i) => (
+                  <li key={`${r.genere}-${i}`} className="text-sm">
+                    <span className="text-b58-charcoal font-medium">{formatEUR(r.importo)}</span>
+                    {r.quando && <span className="text-b58-charcoal-soft"> · {formatDate(r.quando)}</span>}
+                    <span className="text-b58-charcoal"> — {r.descrizione}</span>
+                    <div className="text-[11px] text-b58-charcoal-soft">{r.perche}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Navigazione sezioni */}
           <div className="flex flex-wrap gap-2 mb-6">

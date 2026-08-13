@@ -79,6 +79,23 @@ export async function getCashBalance(entityId) {
   return data;
 }
 
+// Cosa non torna fra le fatture fornitore e la prima nota.
+//
+// Il grosso è impedito per costruzione (pagare una fattura scrive da sé
+// l'uscita, e una fattura non può produrre due movimenti): qui restano i
+// casi che nessun vincolo può prevenire — fatture pagate prima che quel
+// collegamento esistesse, e uscite battute a mano che non agganciano
+// niente. Quando arriveranno gli estratti conto, è lo stesso elenco che
+// si riempirà con le righe della banca senza corrispondenza.
+export async function listQuadraturaPagamenti({ from, to } = {}) {
+  const { data, error } = await supabase.rpc("quadratura_pagamenti", {
+    p_dal: from || null,
+    p_al: to || null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // --- Device (tablet) — segnalazione silenziosa sconti/omaggi (§3.4) ---
 export async function listPosDevices() {
   const { data, error } = await supabase.from("pos_devices").select("*").eq("active", true).order("name");
