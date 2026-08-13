@@ -628,7 +628,7 @@ export default function IngredienteForm() {
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-b58-charcoal-soft">
                   <th className="pb-2">Versione</th>
-                  <th className="pb-2">Fornitore</th>
+                  <th className="pb-2">Chi la vende</th>
                   <th className="pb-2 text-right">€/{form.unit}</th>
                   <th className="pb-2 text-right">Ultima volta</th>
                   <th className="pb-2"></th>
@@ -673,21 +673,26 @@ export default function IngredienteForm() {
                     <td className="py-1.5 text-right">
                       {/* Il gestionale vede due stringhe e non può sapere che
                           dentro c'è la stessa cosa: glielo dice Alessio, una
-                          volta, e da lì in poi le confronta da sole. */}
-                      <select
-                        value={v.stesso_di ?? ""}
-                        onChange={(e) => collega(v.articolo_id, e.target.value || null)}
-                        className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
-                      >
-                        <option value="">— versione a sé —</option>
-                        {varianti
-                          .filter((a) => a.articolo_id !== v.articolo_id)
-                          .map((a) => (
-                            <option key={a.articolo_id} value={a.articolo_id}>
-                              = {a.descrizione}
-                            </option>
-                          ))}
-                      </select>
+                          volta, e da lì in poi le confronta da sole.
+                          ⚠️ Con una versione sola non c'è niente da collegare:
+                          un menù che si apre vuoto sembra un menù rotto, e
+                          accanto a quello del fornitore fa sbagliare bersaglio. */}
+                      {varianti.length > 1 && (
+                        <select
+                          value={v.stesso_di ?? ""}
+                          onChange={(e) => collega(v.articolo_id, e.target.value || null)}
+                          className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                        >
+                          <option value="">— versione a sé —</option>
+                          {varianti
+                            .filter((a) => a.articolo_id !== v.articolo_id)
+                            .map((a) => (
+                              <option key={a.articolo_id} value={a.articolo_id}>
+                                = {a.descrizione}
+                              </option>
+                            ))}
+                        </select>
+                      )}
                     </td>
                   </tr>
                 ))}
