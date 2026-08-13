@@ -36,16 +36,11 @@ export default function Scadenze() {
     carica();
   }, []);
 
+  // Nessuna conferma, nemmeno su «buttata»: chiesto da Alessio il
+  // 13/08/2026 dopo avermi sentito consigliare il contrario. Il gesto
+  // resta irreversibile e scrive nel registro HACCP — sta scritto sotto
+  // il pulsante, che è dove si legge davvero.
   const chiudi = async (partita, come) => {
-    if (
-      come === "buttata" &&
-      !window.confirm(
-        `Butti ${partita.quantita} ${partita.unita} di ${partita.ingrediente}?\n\n` +
-          "Esce dalla giacenza e finisce nel registro HACCP come prodotto eliminato."
-      )
-    ) {
-      return;
-    }
     setInCorso(partita.lotto_id);
     try {
       await chiudiPartita({ lottoId: partita.lotto_id, come });
@@ -103,6 +98,11 @@ export default function Scadenze() {
       <p className="mb-6 text-sm text-stone-600">
         Le partite che stanno per scadere e non sono state rimpiazzate da una più recente. Ogni
         mattina alle 10:00 le stesse cose arrivano su Telegram.
+      </p>
+      <p className="mb-6 text-sm text-stone-500">
+        <strong>finita</strong> = usata, esce dalla giacenza. <strong>buttata</strong> = esce dalla
+        giacenza <em>e</em> finisce nel registro HACCP come prodotto eliminato. Non si chiede
+        conferma e non si torna indietro.
       </p>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
