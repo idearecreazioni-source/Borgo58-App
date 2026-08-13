@@ -78,8 +78,26 @@ export default function Ordini() {
   const cambiaTesto = (supplierId, testo) =>
     setBozze((b) => ({ ...b, [supplierId]: { ...b[supplierId], testoModificato: testo } }));
 
-  const linkWhatsApp = (bozza) =>
-    bozza.telefono ? `https://wa.me/${bozza.telefono}?text=${encodeURIComponent(bozza.testoModificato)}` : null;
+  // Due indirizzi per la stessa cosa, e la differenza si vede all'uso:
+  //
+  //  - `whatsapp://` parla direttamente col programma installato: l'app
+  //    si apre e basta.
+  //  - `wa.me` passa dal sito di WhatsApp, che mostra una pagina
+  //    intermedia con «Apri l'app» — un clic in più ogni volta.
+  //
+  // Si usa il primo, ma il secondo resta scritto lì accanto: se il
+  // programma non fosse installato, il collegamento diretto non fa
+  // NIENTE — nessun errore, nessuna finestra — e senza una via
+  // d'uscita visibile sembrerebbe che il gestionale si sia rotto.
+  const linkApp = (bozza) =>
+    bozza.telefono
+      ? `whatsapp://send?phone=${bozza.telefono}&text=${encodeURIComponent(bozza.testoModificato)}`
+      : null;
+
+  const linkBrowser = (bozza) =>
+    bozza.telefono
+      ? `https://wa.me/${bozza.telefono}?text=${encodeURIComponent(bozza.testoModificato)}`
+      : null;
 
   const copiaTesto = async (supplierId) => {
     const testo = bozze[supplierId]?.testoModificato ?? "";
@@ -106,8 +124,8 @@ export default function Ordini() {
         righe: bozza.righe,
         canale: bozza.telefono ? "whatsapp" : "altro",
       });
-      const link = linkWhatsApp(bozza);
-      if (link) window.open(link, "_blank", "noopener");
+      const link = linkApp(bozza);
+      if (link) window.location.assign(link);
       setBozze((b) => ({ ...b, [supplierId]: null }));
       const { senzaFornitore } = await carica();
       setOrfane(senzaFornitore);
@@ -324,6 +342,21 @@ export default function Ordini() {
                         Il gestionale non manda niente da solo: apre WhatsApp col messaggio
                         pronto. Resta segnato come inviato — se poi non lo mandi, annullalo qui
                         sotto e le righe tornano in lista.
+                        {bozza.telefono && (
+                          <>
+                            {" "}
+                            Se WhatsApp non si apre,{" "}
+                            <a
+                              href={linkBrowser(bozza)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                            >
+                              aprilo dal browser
+                            </a>
+                            .
+                          </>
+                        )}
                       </p>
                     </div>
                   )}
