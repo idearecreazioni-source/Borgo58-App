@@ -133,6 +133,19 @@ export default function ListaSpesa() {
     }
   };
 
+  // Cambiare il fornitore rimescola i gruppi, quindi qui la lista si
+  // ricarica per intero: è l'unica azione di questa schermata che cambia
+  // dove sta la riga, non solo cosa dice.
+  const handleFornitore = async (itemId, supplierId) => {
+    setError("");
+    try {
+      await updateShoppingListItem(itemId, { supplier_id: supplierId || null });
+      await loadAll();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const handleAdd = async () => {
     const isCustom = addForm.mode === "custom";
     if (isCustom && !addForm.custom_name.trim()) return;
@@ -303,6 +316,25 @@ export default function ListaSpesa() {
                         )}
                       </div>
                       <div className="flex items-center gap-3">
+                        {/* Il fornitore si cambia QUI. Una riga lo eredita
+                            dalla scheda del prodotto quando nasce, ma
+                            senza poterlo correggere sulla riga si
+                            sposterebbe soltanto il punto in cui ci si
+                            blocca — ed è dove Alessio si è bloccato. */}
+                        {isTitolare && (
+                          <select
+                            value={item.supplier?.id ?? ""}
+                            onChange={(e) => handleFornitore(item.id, e.target.value)}
+                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 text-xs text-b58-charcoal"
+                          >
+                            <option value="">chi lo vende?</option>
+                            {suppliers.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                         {isTitolare && (
                           <button
                             type="button"

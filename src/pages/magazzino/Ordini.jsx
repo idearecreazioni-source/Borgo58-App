@@ -169,7 +169,11 @@ export default function Ordini() {
               </p>
               <p className="text-xs text-b58-charcoal-soft mt-1">
                 Non entrano in nessun ordine finché non dici a chi chiederle:{" "}
-                {orfane.map((r) => r.nome).join(", ")}.
+                {orfane.map((r) => r.nome).join(", ")}. Il fornitore si sceglie{" "}
+                <Link to="/magazzino/lista-spesa" className="underline">
+                  sulla riga, dalla lista della spesa
+                </Link>
+                .
               </p>
             </div>
           )}
