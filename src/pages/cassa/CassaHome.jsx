@@ -107,6 +107,15 @@ export default function CassaHome() {
                   fondo {formatEUR(balance.owner_float)} + incassi {formatEUR(balance.declared_takings)} − uscite {formatEUR(balance.total_out)}
                 </div>
               )}
+              {/* Il conto corrente sta accanto e NON si somma: sono due
+                  posti diversi, e il totale non serve a niente finché
+                  nessuno ha detto a cosa dovrebbe rispondere. */}
+              {balance && (
+                <div className="text-[11px] text-b58-charcoal-soft mt-2 border-t border-b58-charcoal/10 pt-2">
+                  Banca: <span className="font-medium text-b58-charcoal">{formatEUR(balance.saldo_banca)}</span>
+                  {" — "}entrate {formatEUR(balance.entrate_banca)} · uscite {formatEUR(balance.uscite_banca)}
+                </div>
+              )}
               {negativeBalance && (
                 <div className="text-[11px] text-b58-terracotta-dark mt-1 font-medium">
                   Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.

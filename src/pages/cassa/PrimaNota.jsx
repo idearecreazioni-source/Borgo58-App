@@ -25,6 +25,7 @@ const emptyForm = {
   amount: "",
   movement_date: today(),
   causale_id: "",
+  mezzo: "cassa",
   tipo_documento: "non_documentato",
   document_reference: "",
   business_purpose: "",
@@ -112,6 +113,7 @@ export default function PrimaNota() {
         amount: Number(form.amount),
         movement_date: form.movement_date,
         causale_id: form.causale_id || null,
+        mezzo: form.mezzo,
         tipo_documento: form.tipo_documento,
         document_reference: form.document_reference || null,
         business_purpose: form.business_purpose || null,
@@ -120,7 +122,7 @@ export default function PrimaNota() {
         is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
         note: form.note || null,
       });
-      setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction });
+      setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
       await reload();
     } catch (e) {
       setError(e.message);
@@ -143,6 +145,10 @@ export default function PrimaNota() {
       { label: "Data", value: (m) => m.movement_date },
       { label: "Direzione", value: (m) => m.direction },
       { label: "Importo", value: (m) => m.amount },
+      // Senza questa colonna l'export non permette di distinguere il
+      // cassetto dal conto corrente: due registri diversi appiattiti in
+      // uno solo, che è esattamente il difetto corretto il 13/08.
+      { label: "Mezzo", value: (m) => (m.mezzo === "banca" ? "Banca" : "Contante") },
       { label: "Causale", value: (m) => m.causale?.label },
       { label: "Tipo documento", value: (m) => labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento) },
       { label: "Rif. documento", value: (m) => m.document_reference },
@@ -172,6 +178,10 @@ export default function PrimaNota() {
               Contante in cassa:{" "}
               <span className={`font-medium ${Number(balance.balance) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.balance)}
+              </span>
+              {" · "}Banca:{" "}
+              <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
+                {formatEUR(balance.saldo_banca)}
               </span>
             </span>
           )}
@@ -220,6 +230,34 @@ export default function PrimaNota() {
               }`}
             >
               Entrata
+            </button>
+          </div>
+
+          {/* Da dove passa il denaro. Fino al 13/08/2026 il modulo
+              trattava TUTTO come contante: registrare un bonifico faceva
+              calare il cassetto di soldi che non ne erano usciti. */}
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, mezzo: "cassa" }))}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                form.mezzo === "cassa"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+              }`}
+            >
+              Contante
+            </button>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, mezzo: "banca" }))}
+              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                form.mezzo === "banca"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+              }`}
+            >
+              Banca
             </button>
           </div>
 
