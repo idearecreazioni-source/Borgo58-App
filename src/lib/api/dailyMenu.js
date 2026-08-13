@@ -51,12 +51,26 @@ export async function removeDailyMenuItem(id) {
 }
 
 // Allergeni per un gruppo di ricette (per il menu stampato): una sola query.
+//
+// ⚠️ Non restituisce solo QUALI allergeni, ma anche se sono stati
+// verificati. Un elenco vuoto non vuol dire «non ne contiene»: può voler
+// dire «nessuno l'ha mai guardato», e le due cose in mano a un cliente
+// celiaco sono opposte. Chi stampa il menu deve poterle distinguere.
 export async function listAllergensForRecipes(recipeIds) {
   if (!recipeIds || recipeIds.length === 0) return {};
   const { data, error } = await supabase
     .from("v_recipe_allergens")
-    .select("recipe_id, allergens")
+    .select("recipe_id, allergens, allergeni_da_verificare, ingredienti_da_verificare")
     .in("recipe_id", recipeIds);
   if (error) throw error;
-  return Object.fromEntries(data.map((r) => [r.recipe_id, r.allergens]));
+  return Object.fromEntries(
+    data.map((r) => [
+      r.recipe_id,
+      {
+        allergens: r.allergens ?? [],
+        daVerificare: r.allergeni_da_verificare === true,
+        ingredienti: r.ingredienti_da_verificare ?? [],
+      },
+    ])
+  );
 }

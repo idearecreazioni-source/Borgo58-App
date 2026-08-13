@@ -160,6 +160,39 @@ export default function EditorMenuHome() {
           </div>
         </div>
 
+        {/* L'avviso sta sullo schermo e NON nella stampa: un menu in mano
+            a un cliente non è il posto dove scrivere che i nostri dati
+            interni non sono verificati. Sul foglio, quei piatti
+            semplicemente non riportano l'elenco allergeni. */}
+        {!loading &&
+          showAllergens &&
+          (() => {
+            const nonVerificati = [
+              ...new Set(
+                Object.values(allergensByRecipe)
+                  .filter((s) => s?.daVerificare)
+                  .flatMap((s) => s.ingredienti ?? [])
+              ),
+            ];
+            if (nonVerificati.length === 0) return null;
+            return (
+              <div className="print:hidden rounded-xl bg-red-50 ring-1 ring-red-300 p-4 mb-6">
+                <p className="text-sm font-medium text-red-800">
+                  Attenzione: allergeni non confermati
+                </p>
+                <p className="text-sm text-red-800 mt-1">
+                  Questi ingredienti hanno allergeni solo stimati, o mai guardati da nessuno:{" "}
+                  <strong>{nonVerificati.join(", ")}</strong>. I piatti che li contengono{" "}
+                  <strong>non stampano l&apos;elenco allergeni</strong> finché non li confermi in{" "}
+                  <Link to="/ricettario/schede" className="underline">
+                    Ricettario → Schede dei prodotti
+                  </Link>
+                  .
+                </p>
+              </div>
+            );
+          })()}
+
         {!loading && items.length > 0 && (
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
             <p className="text-xs text-b58-charcoal-soft mb-2">Togli la spunta ai piatti da escludere dalla stampa (non modifica il menu):</p>
@@ -204,7 +237,12 @@ export default function EditorMenuHome() {
                 </h3>
                 <ul className="mt-5 space-y-5 max-w-lg mx-auto">
                   {dishes.map((d) => {
-                    const allergens = allergensByRecipe[d.recipe_id] ?? [];
+                    const scheda = allergensByRecipe[d.recipe_id];
+                    // Un piatto i cui ingredienti non sono stati
+                    // verificati NON stampa l'elenco allergeni: un
+                    // elenco che sembra controllato e non lo è è
+                    // peggio di nessun elenco.
+                    const allergens = scheda?.daVerificare ? [] : (scheda?.allergens ?? []);
                     return (
                       <li key={d.id} className="text-center break-inside-avoid">
                         <div className="flex items-baseline justify-center gap-2">

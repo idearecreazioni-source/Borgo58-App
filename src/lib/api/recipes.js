@@ -48,6 +48,10 @@ export async function getRecipeCost(recipeId) {
   return data;
 }
 
+// ⚠️ Restituisce anche SE gli allergeni sono verificati, non solo quali.
+// Un elenco vuoto può voler dire «non ne contiene» oppure «nessuno l'ha
+// mai guardato»: in cucina, davanti a un cliente che chiede se un piatto
+// contiene glutine, le due cose sono opposte e chi risponde deve saperlo.
 export async function getRecipeAllergens(recipeId) {
   const { data, error } = await supabase
     .from("v_recipe_allergens")
@@ -55,7 +59,13 @@ export async function getRecipeAllergens(recipeId) {
     .eq("recipe_id", recipeId)
     .maybeSingle();
   if (error) throw error;
-  return data?.allergens ?? [];
+  return {
+    allergens: data?.allergens ?? [],
+    // Nessuna riga = la ricetta non ha ingredienti: non c'è niente di
+    // verificato, e nemmeno niente da verificare.
+    daVerificare: data ? data.allergeni_da_verificare === true : false,
+    ingredienti: data?.ingredienti_da_verificare ?? [],
+  };
 }
 
 export async function listRecipeStatusHistory(recipeId) {

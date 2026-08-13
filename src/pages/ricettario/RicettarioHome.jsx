@@ -30,6 +30,21 @@ export default function RicettarioHome() {
           </Link>
         )}
 
+        {isTitolare && (
+          <Link
+            to="/ricettario/schede"
+            className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
+          >
+            <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
+              <Icon name="box" className="w-5 h-5" />
+            </div>
+            <h3 className="font-display text-base text-b58-charcoal">Schede dei prodotti</h3>
+            <p className="text-sm text-b58-charcoal-soft mt-1">
+              L&apos;assistente completa i campi mancanti. Gli allergeni li confermi tu.
+            </p>
+          </Link>
+        )}
+
         <Link
           to="/ricettario/ricette"
           className="rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"

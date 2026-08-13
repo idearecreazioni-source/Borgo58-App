@@ -23,7 +23,7 @@ export default function StaffRicettaDetail() {
   const [recipe, setRecipe] = useState(null);
   const [ingredients, setIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
-  const [allergens, setAllergens] = useState([]);
+  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [] });
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -220,11 +220,20 @@ export default function StaffRicettaDetail() {
         <h2 className="font-display text-lg text-b58-charcoal mb-4">HACCP e Allergeni</h2>
         <div className="mb-4">
           <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">Allergeni</p>
-          {allergens.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">Nessuno.</p>
+          {allergens.daVerificare && (
+            <p className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+              <strong>Elenco non verificato.</strong> Questi ingredienti non sono ancora stati
+              controllati: {allergens.ingredienti.join(", ")}. Se un cliente chiede di un&apos;allergia,
+              guarda l&apos;etichetta del prodotto — non fidarti di questo elenco.
+            </p>
+          )}
+          {allergens.allergens.length === 0 ? (
+            <p className="text-sm text-b58-charcoal-soft/60">
+              {allergens.daVerificare ? "Nessuno risulta, ma nessuno l'ha guardato." : "Nessuno."}
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {allergens.map((a) => (
+              {allergens.allergens.map((a) => (
                 <span key={a} className="text-xs bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1">
                   {labelFor(ALLERGENS, a)}
                 </span>

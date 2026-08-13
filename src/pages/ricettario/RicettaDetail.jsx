@@ -75,7 +75,7 @@ export default function RicettaDetail() {
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [steps, setSteps] = useState([]);
   const [cost, setCost] = useState(null);
-  const [allergens, setAllergens] = useState([]);
+  const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [] });
   const [allIngredients, setAllIngredients] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -1044,11 +1044,20 @@ export default function RicettaDetail() {
           <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
             Allergeni (auto-calcolati dagli ingredienti)
           </p>
-          {allergens.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">Nessuno.</p>
+          {allergens.daVerificare && (
+            <p className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+              <strong>Non verificato.</strong> Allergeni solo stimati (o mai guardati) su:{" "}
+              {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
+              l&apos;elenco allergeni sul menu.
+            </p>
+          )}
+          {allergens.allergens.length === 0 ? (
+            <p className="text-sm text-b58-charcoal-soft/60">
+              {allergens.daVerificare ? "Nessuno risulta, ma nessuno l'ha guardato." : "Nessuno."}
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {allergens.map((a) => (
+              {allergens.allergens.map((a) => (
                 <span
                   key={a}
                   className="text-xs bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1"
