@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import { listSuppliers, createSupplier } from "../../lib/api/suppliers";
-import { collegaArticoli, variantiIngrediente } from "../../lib/api/assistente";
+import {
+  assegnaFornitoreArticolo,
+  collegaArticoli,
+  variantiIngrediente,
+} from "../../lib/api/assistente";
 import {
   createIngredient,
   getIngredient,
@@ -156,6 +160,16 @@ export default function IngredienteForm() {
   // «Queste due sono lo stesso prodotto». Lo dice Alessio, non il
   // gestionale: due diciture di fornitori diversi sono due stringhe, e
   // nessun confronto automatico può sapere che dentro c'è la stessa cosa.
+  const assegnaFornitore = async (articoloId, supplierId) => {
+    setError("");
+    try {
+      await assegnaFornitoreArticolo(articoloId, supplierId);
+      setVarianti(await variantiIngrediente(id));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const collega = async (articoloId, stessoDi) => {
     setError("");
     try {
@@ -629,7 +643,24 @@ export default function IngredienteForm() {
                         <span className="text-[11px] text-b58-charcoal-soft"> · stesso prodotto</span>
                       )}
                     </td>
-                    <td className="py-1.5 text-b58-charcoal-soft">{v.fornitore ?? "—"}</td>
+                    <td className="py-1.5">
+                      {/* Chi la vende. Le diciture nate dalle prime fatture
+                          non ce l'hanno, perché all'epoca non c'era
+                          nessun fornitore in anagrafica — e senza, l'ordine
+                          non può chiamare il prodotto come lo chiama lui. */}
+                      <select
+                        value={v.fornitore_id ?? ""}
+                        onChange={(e) => assegnaFornitore(v.articolo_id, e.target.value)}
+                        className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                      >
+                        <option value="">chi la vende?</option>
+                        {suppliers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="py-1.5 text-right text-b58-charcoal">
                       {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
                       {i === 0 && v.prezzo && (

@@ -109,6 +109,37 @@ export async function variantiIngrediente(ingredienteId) {
  * paghi 3 invece di 2» diventa un avviso invece di una cosa da notare a
  * occhio.
  */
+/**
+ * Dice di CHI è una dicitura.
+ *
+ * Le diciture nate leggendo una fattura portano con sé il fornitore di
+ * quella fattura — ma solo se in quel momento il fornitore era già in
+ * anagrafica. Le prime fatture di collaudo sono entrate quando di
+ * fornitori non ce n'era nessuno, e quelle diciture sono rimaste senza
+ * padrone: la lista della spesa poteva raggrupparle, ma l'ordine non
+ * poteva chiamarle come le chiama lui.
+ *
+ * Lo dice Alessio, una volta: nessuno può indovinarlo al posto suo, e
+ * indovinare male vorrebbe dire mandare a un fornitore le parole di un
+ * altro.
+ */
+export async function assegnaFornitoreArticolo(articoloId, supplierId) {
+  const { error } = await supabase
+    .from("articoli_fornitore")
+    .update({ supplier_id: supplierId || null })
+    .eq("id", articoloId);
+  if (error) {
+    // Quel fornitore ha già una dicitura identica: sono la stessa riga,
+    // non due. Meglio dirlo con parole sue che col codice del database.
+    if (error.code === "23505") {
+      throw new Error(
+        "Questo fornitore ha già una versione con la stessa dicitura: sono la stessa cosa."
+      );
+    }
+    throw error;
+  }
+}
+
 export async function collegaArticoli(articoloId, stessoDi) {
   const { error } = await supabase.rpc("collega_articoli", {
     p_articolo: articoloId,
