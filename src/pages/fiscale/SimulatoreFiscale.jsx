@@ -68,6 +68,14 @@ export default function SimulatoreFiscale() {
     return { debito, credito, saldo: debito - credito };
   }, [salesTaxable, salesVatRate, purchasesTaxable, purchasesVatRate]);
 
+  // ⚠️ L'IRES sull'utile è corretta. L'IRAP no: ha una base sua — il
+  // valore della produzione netta — in cui alcune voci non si scalano
+  // come per l'IRES, a partire dagli interessi e da parte del costo del
+  // lavoro. Per un'osteria con dipendenti quella base è tipicamente più
+  // ALTA dell'utile, quindi il numero qui sotto è ottimista in modo
+  // sistematico: non «approssimato», storto sempre nella stessa
+  // direzione. Non si inventa una formula: si dichiara e si chiede a
+  // Laura (rilievo 2 del referto del 13/08/2026).
   const imposte = useMemo(() => {
     const profit = Number(estimatedProfit) || 0;
     const ires = profit * (Number(settings.ires_rate) || 0) / 100;
@@ -210,6 +218,14 @@ export default function SimulatoreFiscale() {
           <div className="flex justify-between text-b58-charcoal-soft">
             <span>IRAP ({settings.irap_rate}%)</span><span>{formatEUR(imposte.irap)}</span>
           </div>
+          <p className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
+            <strong>L&apos;IRAP qui è calcolata sull&apos;utile, come l&apos;IRES: è una
+            semplificazione.</strong> L&apos;IRAP ha una base sua, in cui alcune voci — interessi e
+            parte del costo del lavoro — non si scalano come per l&apos;IRES. Con dipendenti quella
+            base è di solito più alta dell&apos;utile, quindi <strong>questo numero tende a essere
+            più basso del vero</strong>. Da chiarire con Laura prima di usarlo per decidere
+            qualcosa.
+          </p>
           <div className="flex justify-between text-b58-charcoal font-medium pt-1 border-t border-b58-charcoal/10">
             <span>Totale imposte stimate</span><span>{formatEUR(imposte.totale)}</span>
           </div>

@@ -61,6 +61,10 @@ const OPERAZIONI = new Set([
   // movimenti e — se buttata — il registro HACCP. Tre scritture, una
   // sola decisione di Alessio.
   "chiudi_partita",
+  // HACCP (13/08/2026): una lettura fuori range o una merce non conforme
+  // aprono da sé la non conformità. Due tabelle, una decisione.
+  "registra_temperatura",
+  "registra_ricevimento_merci",
 ]);
 
 const CORS = {

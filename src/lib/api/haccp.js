@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // =====================================================================
 // ⚠️ NON AGGIUNGERE `.limit()` alle funzioni di elenco di questo file
@@ -113,14 +114,18 @@ export async function listTemperatureLogs(equipmentId, periodo) {
   return data;
 }
 
+// ⚠️ Passa dal corridoio (B4) e non è più una insert diretta: una lettura
+// fuori range apre da sé una non conformità, quindi sono due tabelle in
+// una transazione sola. La lettura si salva SEMPRE — anche fuori range,
+// anche senza rimedio: una misurazione persa è irrecuperabile, un rimedio
+// scritto dopo è ancora un rimedio.
 export async function addTemperatureLog({ equipmentId, recordedTempC, note, correctiveAction }) {
-  const { error } = await supabase.from("haccp_temperature_logs").insert({
-    equipment_id: equipmentId,
-    recorded_temp_c: recordedTempC,
-    note: note || null,
-    corrective_action: correctiveAction || null,
+  return eseguiOperazione("registra_temperatura", {
+    p_equipment_id: equipmentId,
+    p_recorded_temp_c: recordedTempC,
+    p_note: note || null,
+    p_corrective_action: correctiveAction || null,
   });
-  if (error) throw error;
 }
 
 // --- Ricevimento merci ---
@@ -135,6 +140,10 @@ export async function listGoodsReceiving(periodo) {
   return data;
 }
 
+// ⚠️ Anche questa passa dal corridoio (B4): merce non conforme o
+// imballaggio non integro aprono da sé la non conformità. Prima restava
+// scritto che la merce era da respingere ed era entrata comunque, senza
+// nessuna traccia di cosa si fosse deciso.
 export async function addGoodsReceiving({
   supplierId,
   productDescription,
@@ -142,16 +151,17 @@ export async function addGoodsReceiving({
   packagingOk,
   conformity,
   note,
+  azione,
 }) {
-  const { error } = await supabase.from("haccp_goods_receiving").insert({
-    supplier_id: supplierId || null,
-    product_description: productDescription,
-    temperature_c: temperatureC ?? null,
-    packaging_ok: packagingOk,
-    conformity,
-    note: note || null,
+  return eseguiOperazione("registra_ricevimento_merci", {
+    p_supplier_id: supplierId || null,
+    p_product_description: productDescription,
+    p_temperature_c: temperatureC ?? null,
+    p_packaging_ok: packagingOk,
+    p_conformity: conformity,
+    p_note: note || null,
+    p_azione: azione || null,
   });
-  if (error) throw error;
 }
 
 // --- Pulizia e sanificazione ---

@@ -14,6 +14,7 @@ export default function TemperatureLog() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [avviso, setAvviso] = useState("");
 
   const [equipmentForm, setEquipmentForm] = useState(emptyEquipmentForm);
   const [addingEquipment, setAddingEquipment] = useState(false);
@@ -70,12 +71,22 @@ export default function TemperatureLog() {
     setSaving(true);
     setError("");
     try {
-      await addTemperatureLog({
+      const esito = await addTemperatureLog({
         equipmentId,
         recordedTempC: Number(readingForm.recordedTempC),
         note: readingForm.note,
         correctiveAction: readingForm.correctiveAction,
       });
+      // La lettura è salvata comunque. Se era fuori range senza rimedio,
+      // resta una non conformità aperta — e va detto adesso, non scoperto
+      // il giorno dell'ispezione.
+      setAvviso(
+        esito?.da_chiudere
+          ? "Temperatura fuori range: è stata aperta una non conformità, e resta APERTA finché non scrivi cosa hai fatto. La trovi in HACCP → Non conformità."
+          : esito?.fuori_range
+            ? "Temperatura fuori range: registrata insieme all'azione correttiva."
+            : ""
+      );
       setOpenRow(null);
       setReadingForm(emptyReadingForm);
       await load();
@@ -124,6 +135,9 @@ export default function TemperatureLog() {
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
+      )}
+      {avviso && (
+        <p className="text-sm text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">

@@ -22,6 +22,7 @@ export default function RicevimentoMerci() {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [avviso, setAvviso] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -50,7 +51,7 @@ export default function RicevimentoMerci() {
     setSaving(true);
     setError("");
     try {
-      await addGoodsReceiving({
+      const esito = await addGoodsReceiving({
         supplierId: form.supplier_id || null,
         productDescription: form.product_description.trim(),
         temperatureC: form.temperature_c ? Number(form.temperature_c) : null,
@@ -58,6 +59,11 @@ export default function RicevimentoMerci() {
         conformity: form.conformity,
         note: form.note,
       });
+      setAvviso(
+        esito?.da_chiudere
+          ? "Merce non conforme: è stata aperta una non conformità, e resta APERTA finché non scrivi cosa hai deciso (respinta, accettata con riserva, sostituita). La trovi in HACCP → Non conformità."
+          : ""
+      );
       setForm(emptyForm);
       await load();
     } catch (e) {
@@ -105,6 +111,9 @@ export default function RicevimentoMerci() {
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
+      )}
+      {avviso && (
+        <p className="text-sm text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
       <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6">
