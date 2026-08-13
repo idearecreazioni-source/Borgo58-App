@@ -69,6 +69,11 @@ const OPERAZIONI = new Set([
   // aprono da sé la non conformità. Due tabelle, una decisione.
   "registra_temperatura",
   "registra_ricevimento_merci",
+  // Ordini ai fornitori (14/08/2026): registrare un ordine tocca
+  // l'ordine, le sue righe e la lista della spesa; annullarlo rimette le
+  // righe da comprare. Il gestionale non manda niente — apre WhatsApp.
+  "registra_ordine",
+  "annulla_ordine",
 ]);
 
 const CORS = {

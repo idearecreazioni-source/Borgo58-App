@@ -204,14 +204,24 @@ export default function ListaSpesa() {
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">Lista della spesa</h1>
-        <button
-          type="button"
-          onClick={handleAddThreshold}
-          disabled={addingThreshold}
-          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2 disabled:opacity-60"
-        >
-          {addingThreshold ? "Aggiungo…" : "+ Aggiungi articoli sotto soglia"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleAddThreshold}
+            disabled={addingThreshold}
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2 disabled:opacity-60"
+          >
+            {addingThreshold ? "Aggiungo…" : "Ricontrolla le scorte"}
+          </button>
+          {isTitolare && (
+            <Link
+              to="/magazzino/ordini"
+              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            >
+              Ordina ai fornitori
+            </Link>
+          )}
+        </div>
       </div>
 
       {error && (
