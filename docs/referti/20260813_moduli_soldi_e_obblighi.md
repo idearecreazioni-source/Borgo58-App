@@ -141,6 +141,46 @@ materia da consulente del lavoro: prima si chiede a Gianna.
 
 ---
 
+## 🔴 7. Il magazzino sale e non scende mai da solo
+
+*Aggiunto dopo la consegna del referto, da una domanda di Alessio: «il
+magazzino non cala perché non abbiamo ancora ricette, o non lo farebbe a
+prescindere?». **A prescindere.***
+
+Verificato nel codice e nel database: chiudere un conto scrive sul conto e
+sulla cassa e **non tocca il magazzino in nessun modo**. Non c'è nessun
+trigger su `orders` o `order_items` che scarichi la giacenza; le uniche
+due cose che la muovono sono il carico da fattura (che la fa salire) e lo
+scarico a mano dalla schermata Magazzino.
+
+Con le ricette perfette e la cella piena, **servire cento coperti
+lascerebbe la giacenza esattamente com'era**.
+
+**Le tre conseguenze, in ordine di quanto fanno male:**
+
+1. **La lista della spesa non partirà mai.** La Fase A del mandato «filiera
+   della spesa» — appena messa in coda — fa comparire in lista un
+   ingrediente quando la giacenza scende sotto la soglia. Se la giacenza
+   non scende, nessun ingrediente ci arriva mai. La funzione sembrerebbe
+   costruita e funzionante, e non direbbe niente per sempre.
+2. **La giacenza diverge dalla realtà un po' ogni giorno**, e non esiste
+   il momento in cui qualcuno se ne accorge: lo si scopre contando a
+   mano.
+3. **Lo scadenziario ci si appoggia**: una partita esaurita tace, ma se
+   nessuno scarica niente nessuna partita risulta mai esaurita. Regge lo
+   stesso solo grazie alla regola voluta da Alessio (una partita più
+   recente zittisce la vecchia) — che quindi lo protegge da un difetto
+   che non era stata pensata per coprire.
+
+**Perché non è una dimenticanza**: lo scarico automatico a fine conto
+funziona solo se le ricette sono precise, e va deciso cosa fare delle
+voci libere, dei piatti fuori ricetta e degli sprechi. Fatto male produce
+**giacenze sbagliate con l'aria di essere giuste**, che è peggio di
+giacenze dichiaratamente manuali. È un lavoro a sé, non una correzione —
+messo in coda in `CLAUDE.md` §10, da fare quando ci saranno ricette vere.
+
+---
+
 ## Quello che invece è sano, e va detto
 
 - **Le mance** fanno davvero i controlli che dichiarano: soglia dei
