@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
@@ -73,9 +73,43 @@ export default function PiantaSala({
   onSeleziona,
   onSposta,
   stato = {},
-  inPiedi = false,
+  inPiedi = "auto",
 }) {
   const svgRef = useRef(null);
+  const contenitoreRef = useRef(null);
+  const [stretto, setStretto] = useState(false);
+
+  // ⚠️ SI GIRA DA SOLA QUANDO LO SCHERMO È STRETTO. Trovato da Alessio
+  // aprendo il Calendario dal cellulare: la sala sdraiata si vedeva a
+  // metà. La soglia non è un numero di pixel scelto a occhio — è la
+  // stessa che decide se le sagome restano toccabili: se il posto non
+  // basta per la sala sdraiata, si mette in piedi. E si misura in
+  // centimetri VERI, con la calibrazione del dispositivo, non in pixel:
+  // due schermi con gli stessi pixel possono essere grandi il doppio.
+  // useLayoutEffect e non useEffect: la misura avviene PRIMA che il
+  // browser disegni, cosi la pianta non si vede girare per un istante a
+  // ogni apertura della pagina.
+  useLayoutEffect(() => {
+    const el = contenitoreRef.current;
+    if (!el) return;
+    const misura = () => {
+      // Larghezza zero = il riquadro non è ancora stato disegnato. Senza
+      // questa riga, al primo istante la pianta risulterebbe "stretta" e
+      // si vedrebbe girare sotto gli occhi a ogni apertura della pagina.
+      if (!el.clientWidth) return;
+      const pxcm =
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm")) || 37.79528;
+      setStretto(el.clientWidth / pxcm < LARGHEZZA_MINIMA_CM_REALI);
+    };
+    misura();
+    const osservatore = new ResizeObserver(misura);
+    osservatore.observe(el);
+    return () => osservatore.disconnect();
+  }, []);
+
+  // In Comande è sempre in piedi (tablet verticale, deciso). Altrove
+  // decide lo spazio che c'è.
+  const verticale = inPiedi === true || (inPiedi !== false && stretto);
   // La sagoma che si sta trascinando adesso: vive solo qui, e sparisce al
   // rilascio. La posizione vera resta quella del database finché non
   // arriva la conferma della scrittura.
@@ -90,14 +124,14 @@ export default function PiantaSala({
     const riquadro = svgRef.current.getBoundingClientRect();
     const fx = (evento.clientX - riquadro.left) / riquadro.width;
     const fy = (evento.clientY - riquadro.top) / riquadro.height;
-    if (inPiedi) {
+    if (verticale) {
       return { x: SALA_LARGHEZZA_CM * (1 - fy), y: fx * SALA_PROFONDITA_CM };
     }
     return { x: fx * SALA_LARGHEZZA_CM, y: fy * SALA_PROFONDITA_CM };
   };
 
   // La controrotazione di un'etichetta, perché resti diritta.
-  const testoDiritto = (tx, ty) => (inPiedi ? `rotate(90 ${tx} ${ty})` : undefined);
+  const testoDiritto = (tx, ty) => (verticale ? `rotate(90 ${tx} ${ty})` : undefined);
 
   const iniziaTrascinamento = (evento, sagoma) => {
     if (!onSposta || !sagoma.spostabile) return;
@@ -145,18 +179,28 @@ export default function PiantaSala({
   };
 
   return (
-    <div className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10">
+    // ⚠️ QUI DENTRO SI SCORRE COL DITO, e prima non si poteva. L'SVG
+    // aveva `touch-none`, che serve a non far scappare il dito mentre si
+    // trascina un tavolo — ma spegneva anche lo scorrimento di tutta la
+    // pianta: dal cellulare la sala si vedeva a metà e non c'era modo di
+    // arrivare al resto. Ora il divieto sta SOLO sulle sagome che si
+    // trascinano: il dito sul tavolo lo muove, il dito sul pavimento
+    // sposta la vista.
+    <div
+      ref={contenitoreRef}
+      className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
+    >
       <svg
         ref={svgRef}
         viewBox={
-          inPiedi
+          verticale
             ? `0 0 ${SALA_PROFONDITA_CM} ${SALA_LARGHEZZA_CM}`
             : `0 0 ${SALA_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
         }
-        className="block w-full touch-none select-none"
+        className="block w-full select-none"
         style={{
-          minWidth: `calc(${(inPiedi ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
-          aspectRatio: inPiedi
+          minWidth: `calc(${(verticale ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
+          aspectRatio: verticale
             ? `${SALA_PROFONDITA_CM} / ${SALA_LARGHEZZA_CM}`
             : `${SALA_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
           height: "auto",
@@ -167,7 +211,7 @@ export default function PiantaSala({
             basso, la sala alta in cima. Le coordinate di ogni sagoma
             restano quelle della sala vera — qui gira il foglio, non la
             stanza. */}
-        <g transform={inPiedi ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
+        <g transform={verticale ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
             si spostano, non si ridimensionano, non hanno stato. */}
         {ZONE_FONDALE.map((z) => (
@@ -236,14 +280,19 @@ export default function PiantaSala({
             largo(info?.riga2, 26),
             info?.riga1 ? 0 : largo(sagoma.posti_fissi ? `${sagoma.posti_fissi} posti` : null, 26)
           );
-          const raddrizza = inPiedi && serve <= sagoma.profondita_cm * 0.95;
+          const raddrizza = verticale && serve <= sagoma.profondita_cm * 0.95;
           const gira = (tx, ty) => (raddrizza ? `rotate(90 ${tx} ${ty})` : undefined);
 
           return (
             <g
               key={sagoma.id}
               transform={`translate(${x} ${y})`}
-              style={{ cursor: selezionabile ? "pointer" : "default" }}
+              style={{
+                cursor: selezionabile ? "pointer" : "default",
+                // Solo dove si trascina davvero: altrove il dito deve
+                // poter scorrere la pianta.
+                touchAction: onSposta && sagoma.spostabile ? "none" : undefined,
+              }}
               onPointerDown={(e) => iniziaTrascinamento(e, sagoma)}
               onPointerUp={() => rilascia(sagoma)}
               onClick={() => {
