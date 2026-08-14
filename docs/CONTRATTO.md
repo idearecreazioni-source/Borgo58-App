@@ -139,7 +139,19 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 | Assistente AI | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
 | Archivio documenti | Costruito | A |
 
-**Aperto, non "non conforme"**: conto diviso, tavoli uniti, storni post-invio, asporto (§3.2.2) restano da specificare con l'esperienza diretta di Alessio in sala — non sono un difetto architetturale, sono una decisione di prodotto non ancora presa.
+**Aperto, non "non conforme"**: conto diviso, storni post-invio, asporto (§3.2.2) restano da specificare con l'esperienza diretta di Alessio in sala — non sono un difetto architetturale, sono una decisione di prodotto non ancora presa.
+
+*Riga aggiornata il 14/08/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarata al validatore** nel riepilogo della consegna che la contiene — condizione che lui stesso ha posto autorizzando la prima modifica di questo documento. **Il testo originale elencava anche i «tavoli uniti»**, e resta qui come origine della decisione.*
+
+✅ **I TAVOLI UNITI NON SONO PIÙ UNA DECISIONE DA PRENDERE**: sono stati decisi il 14/08/2026 (mandato «Blocco Sala: la pianta viva») e sono in produzione dallo stesso giorno. La decisione, per esteso, perché una riga cancellata senza spiegazione non dice niente a chi controlla:
+
+- **Un conto si aggancia a un INSIEME di tavoli**, con una chiave esterna (`order_tables`), non alla stringa `table_label`. **Tre tavoli accostati sono una comanda sola, non tre.**
+- `orders.table_label` **resta ma cambia significato**: non è più l'aggancio, è **ciò che si stampa** sul ticket di cucina e sul preconto, fotografato all'apertura del conto. Un conto di ieri continua a dire i tavoli che aveva anche se la sala viene rinumerata — stesso principio del prezzo del coperto.
+- ⚠️ **L'invariante «un tavolo non può stare su due conti aperti insieme» è un vincolo del database** (indice unico parziale su `order_tables`), non un controllo nel codice chiamante. Per esprimerlo serve una proiezione dello stato del conto sulla riga di collegamento — in Postgres un indice parziale vede solo le colonne della propria tabella — **scritta da un trigger e mai dall'applicazione**. Senza quella copia l'invariante non sarebbe esprimibile come vincolo, e sarebbe restato un `if` nel codice: cioè esattamente ciò che questo documento vieta.
+- **Aprire, spostare e chiudere un conto su più tavoli passano dal corridoio** `operazioni-atomiche` (B4), ognuno come **una** funzione Postgres.
+- **Nessuna entità «gruppo di tavoli»**: l'accostamento è dove Alessio ha messo le sagome sulla pianta, e non ha bisogno di essere rappresentato.
+
+⚠️ **Conto diviso, storni post-invio e asporto NON sono stati toccati** dal blocco Sala, e restano aperti esattamente come prima.
 
 ---
 
