@@ -90,6 +90,13 @@ const OPERAZIONI = new Set([
   "crea_prenotazione_su_tavoli",
   "apri_conto",
   "sposta_conto",
+  // La rotta economica (14/08/2026): creare una previsione scrive sei
+  // tabelle (testata, personale, extra, costi fissi, linee accessorie,
+  // dodici mesi) — a metà sarebbe una previsione che sembra buona.
+  // Congelarla ne scrive due: i dodici mesi calcolati e poi il sigillo,
+  // in quest'ordine, perché il sigillo rifiuta anche se stesso.
+  "crea_scenario_proiezione",
+  "congela_scenario",
 ]);
 
 const CORS = {

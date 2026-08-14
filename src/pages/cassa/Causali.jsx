@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { createCausale, deactivateCausale, listAllCausali } from "../../lib/api/cash";
+import { createCausale, deactivateCausale, listAllCausali, setCausaleNeiFissi } from "../../lib/api/cash";
 
 const KINDS = [
   { value: "uscita", label: "Uscite" },
@@ -57,12 +57,26 @@ export default function Causali() {
     }
   };
 
+  const handleFissi = async (id, valore) => {
+    try {
+      await setCausaleNeiFissi(id, valore);
+      await reload();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <Link to="/cassa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Cassa
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Causali</h1>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Causali</h1>
+      <p className="text-xs text-b58-charcoal-soft mb-6">
+        Sulle uscite c&apos;è una casella <strong>«è un costo fisso»</strong>: serve alla Proiezione per
+        confrontare i costi fissi veri con quelli previsti. Finché non ne spunti nessuna, il confronto dice
+        che i fissi non li ha misurati — non che sono zero.
+      </p>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -99,15 +113,28 @@ export default function Causali() {
               <h2 className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">{k.label}</h2>
               <ul className="space-y-1">
                 {byKind[k.value].map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 text-sm text-b58-charcoal">
-                    {c.label}
-                    <button
-                      onClick={() => handleRemove(c.id)}
-                      className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      title="Disattiva"
-                    >
-                      ✕
-                    </button>
+                  <li key={c.id} className="text-sm text-b58-charcoal">
+                    <div className="flex items-center justify-between gap-2">
+                      {c.label}
+                      <button
+                        onClick={() => handleRemove(c.id)}
+                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                        title="Disattiva"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {k.value === "uscita" && (
+                      <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft mt-0.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(c.conta_nei_fissi)}
+                          onChange={(e) => handleFissi(c.id, e.target.checked)}
+                          className="accent-b58-terracotta"
+                        />
+                        è un costo fisso
+                      </label>
+                    )}
                   </li>
                 ))}
                 {byKind[k.value].length === 0 && (

@@ -12,18 +12,33 @@ export async function getFiscalSettings(entityId) {
   return data;
 }
 
-export async function upsertFiscalSettings(entityId, { annualRevenueEstimate, iresRate, irapRate }) {
-  const { data, error } = await supabase
-    .from("fiscal_settings")
-    .upsert({
-      entity_id: entityId,
-      annual_revenue_estimate: annualRevenueEstimate ?? null,
-      ires_rate: iresRate,
-      irap_rate: irapRate,
-      updated_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+// ⚠️ Dal 14/08/2026 questa riga non contiene più solo due aliquote: è
+// l'UNICO posto dove vivono aliquote, agevolazioni e scadenze degli
+// acconti (mandato «un solo motore fiscale»). Simulatore e Proiezione
+// leggono da qui attraverso `calcola_imposte()`, e nessuna schermata
+// rifà il conto per conto suo.
+export async function upsertFiscalSettings(entityId, campi) {
+  const patch = { entity_id: entityId, updated_at: new Date().toISOString() };
+  const mappa = {
+    annualRevenueEstimate: "annual_revenue_estimate",
+    iresRate: "ires_rate",
+    irapRate: "irap_rate",
+    maxideduzioneAttiva: "maxideduzione_attiva",
+    maxideduzionePercento: "maxideduzione_percento",
+    accontoPercento: "acconto_percento",
+    accontoPrimaRataPercento: "acconto_prima_rata_percento",
+    accontoSogliaMinima: "acconto_soglia_minima",
+    primaScadenzaMese: "prima_scadenza_mese",
+    primaScadenzaGiorno: "prima_scadenza_giorno",
+    secondaScadenzaMese: "seconda_scadenza_mese",
+    secondaScadenzaGiorno: "seconda_scadenza_giorno",
+    parametriConfermatiDaLaura: "parametri_confermati_da_laura",
+  };
+  for (const [chiave, colonna] of Object.entries(mappa)) {
+    if (campi[chiave] !== undefined) patch[colonna] = campi[chiave];
+  }
+
+  const { data, error } = await supabase.from("fiscal_settings").upsert(patch).select().single();
   if (error) throw error;
   return data;
 }

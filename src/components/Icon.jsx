@@ -10,6 +10,8 @@ const PATHS = {
   share: "M18 5.5a2.5 2.5 0 1 0-2.4-3.2M18 21.5a2.5 2.5 0 1 0 2.4-3.2M6 15a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8.3 13.3l7.4-4.1M8.3 12.7l7.4 4.1",
   printer: "M6 9V4h12v5 M4 9h16v7H4V9Z M6 16v4h12v-4 M8 12h.01",
   chat: "M4 5h16v11H8l-4 4V5Z M8 9.5h8 M8 12.5h5",
+  chart: "M4 20V4 M4 20h16 M8 16v-5 M12.5 16V8 M17 16v-3",
+  clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 7v5.2l3.2 2",
 };
 
 export default function Icon({ name, className = "w-5 h-5" }) {

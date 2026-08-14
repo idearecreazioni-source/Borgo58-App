@@ -30,6 +30,18 @@ export async function deactivateCausale(id) {
   if (error) throw error;
 }
 
+// Quali uscite sono costi fissi lo decide Alessio, non un elenco di
+// parole scritto da noi: il giorno che aggiunge una causale nuova,
+// indovinarla la farebbe finire dalla parte sbagliata in silenzio.
+// Serve allo scostamento della Proiezione (14/08/2026).
+export async function setCausaleNeiFissi(id, valore) {
+  const { error } = await supabase
+    .from("cash_causali")
+    .update({ conta_nei_fissi: valore })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 // --- Movimenti di cassa (prima nota) ---
 const MOVEMENT_SELECT = "*, causale:causale_id(id, label)";
 

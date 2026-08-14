@@ -33,6 +33,20 @@ export default function ProiezioneFiscaleHome() {
 
   const cards = [
     {
+      to: "/fiscale/previsioni",
+      icon: "chart",
+      title: "Le previsioni",
+      desc: "Il tuo piano caricato dal foglio, chiuso e non più ritoccabile. Le riproiezioni si confrontano con la prima.",
+      stat: null,
+    },
+    {
+      to: "/fiscale/andamento",
+      icon: "clock",
+      title: "Come sta andando",
+      desc: "Il mese vero contro il previsto, scomposto: coperti, scontrino, food cost, fissi. E quanti omaggi ti puoi permettere.",
+      stat: null,
+    },
+    {
       to: "/fiscale/deduzioni",
       icon: "percent",
       title: "Deduzioni fiscali",
