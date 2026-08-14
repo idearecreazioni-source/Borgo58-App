@@ -43,8 +43,53 @@
 alter table dining_tables
   add column if not exists ruotato boolean not null default false;
 
+-- ⚠️ SULLO SCOSTAMENTO LA COLONNA È NULLABILE, E NON È UNA SVISTA.
+-- `null` vuol dire «per quel giorno non ho deciso il verso: vale quello
+-- della base». Un `not null default false` direbbe un'altra cosa —
+-- «quel giorno il tavolo è diritto» — e la direbbe **al posto di
+-- Alessio**, su righe che non hanno mai avuto un'opinione in proposito.
+--
+-- **Questo difetto è successo davvero, in produzione, il 14/08**: la
+-- prima stesura di questa migrazione aveva `not null default false`, e
+-- applicandola i 9 scostamenti che Alessio aveva appena creato
+-- trascinando i tavoli si sono ritrovati addosso un «diritto» che
+-- nessuno aveva scritto. Risultato: T1 e T2 giravano nella pianta base e
+-- restavano diritti nella giornata di oggi — e la verifica in fondo si è
+-- fermata dicendolo, prima di registrare la versione.
+--
+-- ⚠️ E IL PROGETTO DI PROVA NON POTEVA ACCORGERSENE: lì
+-- `disposizioni_giornaliere` era vuota, quindi il default non aveva
+-- nessuna riga su cui scrivere la propria risposta. È **identica** alla
+-- lezione del 12/08 (§8 di CLAUDE.md): la prova non era falsa, era su uno
+-- stato di partenza diverso da quello vero **esattamente nel punto
+-- rilevante**. Quando una migrazione aggiunge una colonna a una tabella
+-- che ha già righe, guardare col connettore *quante righe ci sono
+-- davvero* prima di scegliere il default.
 alter table disposizioni_giornaliere
-  add column if not exists ruotato boolean not null default false;
+  add column if not exists ruotato boolean;
+
+-- La sanatoria per i database dove la prima stesura ha già scritto il suo
+-- «false» addosso a righe che non l'avevano chiesto.
+--
+-- Il guardiano è la nullabilità stessa: finché la colonna è ancora
+-- `not null`, nessun client ha mai potuto scrivere un «diritto»
+-- intenzionale, quindi tutti i `false` presenti sono il default e vanno
+-- tolti. Dopo, questo blocco non si esegue più — e un «diritto» scelto
+-- da Alessio non verrà mai cancellato da una riesecuzione.
+do $sanatoria$
+declare
+  n integer;
+begin
+  if (select is_nullable from information_schema.columns
+       where table_name = 'disposizioni_giornaliere' and column_name = 'ruotato') = 'NO' then
+    alter table disposizioni_giornaliere alter column ruotato drop default;
+    alter table disposizioni_giornaliere alter column ruotato drop not null;
+
+    update disposizioni_giornaliere set ruotato = null where ruotato = false;
+    get diagnostics n = row_count;
+    raise notice 'Tolto il verso inventato dal default a % scostamenti: tornano a seguire la base.', n;
+  end if;
+end $sanatoria$;
 
 comment on column dining_tables.ruotato is
   'Un quarto di giro nel DISEGNO: larghezza e profondita'' si scambiano. Le misure in tabella restano quelle fisiche del mobile. Non esiste un angolo libero, per scelta.';
@@ -159,8 +204,11 @@ begin
     raise exception 'Quel giorno la sala è già disposta come la base: non c''è niente da promuovere.';
   end if;
 
+  -- `coalesce`: uno scostamento che non dice niente sul verso non deve
+  -- raddrizzare il tavolo promuovendo la giornata. Sulla base la colonna
+  -- resta `not null`, perché lì un verso c'è sempre.
   update dining_tables t
-     set x = d.x, y = d.y, ruotato = d.ruotato
+     set x = d.x, y = d.y, ruotato = coalesce(d.ruotato, t.ruotato)
     from disposizioni_giornaliere d
    where d.dining_table_id = t.id and d.data = p_data;
 
@@ -213,7 +261,10 @@ begin
   end if;
 
   -- ⚠️ Il quarto di giro cambia il DISEGNO e non la misura del mobile.
-  select * into v_riga from pianta_del_giorno(current_date) where label = 'T1';
+  -- Si guarda una data LONTANA e senza scostamenti, non oggi: com'è messa
+  -- la sala stasera lo decide Alessio, e una verifica che pretende di
+  -- ritrovarcelo diventerebbe rossa la prima volta che gira un tavolo.
+  select * into v_riga from pianta_del_giorno(v_domani) where label = 'T1';
   if v_riga.larghezza_cm <> 90 or v_riga.profondita_cm <> 180 then
     raise exception 'T1 non risulta girato nel disegno: % × %.', v_riga.larghezza_cm, v_riga.profondita_cm;
   end if;
@@ -221,6 +272,25 @@ begin
     raise exception 'Girando il tavolo è cambiata la sua misura vera: in tabella non è più 180 di larghezza.';
   end if;
   select id into v_t1 from dining_tables where label = 'T1';
+
+  -- ⚠️ LA PROVA DEL DIFETTO DEL 14/08, e va lasciata qui per sempre.
+  -- «Non ho deciso il verso per quel giorno» deve restare dicibile: se la
+  -- colonna tornasse `not null`, ogni scostamento nato prima di una
+  -- rotazione futura raddrizzerebbe di nuovo i tavoli in silenzio.
+  if (select is_nullable from information_schema.columns
+       where table_name = 'disposizioni_giornaliere' and column_name = 'ruotato') <> 'YES' then
+    raise exception 'Lo scostamento non può più dire "il verso non l''ho deciso": tornerebbe a raddrizzare i tavoli da solo.';
+  end if;
+
+  -- ...e uno scostamento che non dice niente sul verso segue la base.
+  insert into disposizioni_giornaliere (data, dining_table_id, x, y, ruotato)
+  values (v_domani, v_t1, 500, 500, null)
+  on conflict (data, dining_table_id) do update set x = 500, y = 500, ruotato = null;
+
+  select * into v_riga from pianta_del_giorno(v_domani) where label = 'T1';
+  if v_riga.larghezza_cm <> 90 then
+    raise exception 'Uno scostamento senza verso ha raddrizzato il tavolo: % × %.', v_riga.larghezza_cm, v_riga.profondita_cm;
+  end if;
 
   -- Girarlo per una giornata sola vale per quella giornata e basta.
   insert into disposizioni_giornaliere (data, dining_table_id, x, y, ruotato)
@@ -231,9 +301,8 @@ begin
   if v_riga.larghezza_cm <> 180 or not v_riga.spostato then
     raise exception 'Lo scostamento del giorno non riporta il tavolo diritto: % × %.', v_riga.larghezza_cm, v_riga.profondita_cm;
   end if;
-  select * into v_riga from pianta_del_giorno(current_date) where label = 'T1';
-  if v_riga.larghezza_cm <> 90 then
-    raise exception 'Girare un tavolo per un giorno ha cambiato anche gli altri giorni.';
+  if not (select ruotato from dining_tables where id = v_t1) then
+    raise exception 'Girare un tavolo per un giorno ha cambiato anche la pianta base.';
   end if;
 
   -- Promuovere porta nella base anche il verso, non solo la posizione.
@@ -259,25 +328,39 @@ begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', v_titolare, 'role', 'authenticated')::text, true);
 
-  -- Nessuna sagoma esce dalla sala, girata compresa.
+  -- ⚠️ I DUE CONTROLLI QUI SOTTO GUARDANO LA PIANTA BASE, NON LA GIORNATA.
+  -- Il primo tentativo guardava `pianta_del_giorno(current_date)` e si è
+  -- fermato su una sovrapposizione che aveva creato la prova stessa —
+  -- ma il difetto era il controllo, non i dati: **come sono messi i
+  -- tavoli stasera lo decide Alessio**, e accostare un tavolo a un divano
+  -- è una cosa che in una sala si fa. Una migrazione che si rifiuta di
+  -- passare per come qualcuno ha apparecchiato è una migrazione che verrà
+  -- disattivata. La base invece è roba di questa migrazione, e lì la
+  -- pretesa è legittima.
   select count(*) into n
-  from pianta_del_giorno(current_date)
-  where x < 0 or y < 0 or x + larghezza_cm > 2070 or y + profondita_cm > 1030;
+  from dining_tables
+  where active
+    and (x < 0 or y < 0
+         or x + (case when ruotato then profondita_cm else larghezza_cm  end) > 2070
+         or y + (case when ruotato then larghezza_cm  else profondita_cm end) > 1030);
   if n > 0 then
-    raise exception '% sagome escono dal perimetro della sala.', n;
+    raise exception '% sagome escono dal perimetro della sala nella pianta base.', n;
   end if;
 
-  -- Nessuna sagoma della sala bassa sta addosso a un divano o allo Chef
-  -- Table: e' la prova che le posizioni nuove non hanno creato un
-  -- pasticcio peggiore di quello che correggevano.
   select count(*) into n
-  from pianta_del_giorno(current_date) a
-  join pianta_del_giorno(current_date) b on b.id <> a.id
+  from (select id, spostabile, x, y,
+               case when ruotato then profondita_cm else larghezza_cm  end as l,
+               case when ruotato then larghezza_cm  else profondita_cm end as p
+        from dining_tables where active) a
+  join (select id, x, y,
+               case when ruotato then profondita_cm else larghezza_cm  end as l,
+               case when ruotato then larghezza_cm  else profondita_cm end as p
+        from dining_tables where active) b on b.id <> a.id
   where not a.spostabile
-    and a.x < b.x + b.larghezza_cm and a.x + a.larghezza_cm > b.x
-    and a.y < b.y + b.profondita_cm and a.y + a.profondita_cm > b.y;
+    and a.x < b.x + b.l and a.x + a.l > b.x
+    and a.y < b.y + b.p and a.y + a.p > b.y;
   if n > 0 then
-    raise exception '% sovrapposizioni fra un arredo fisso e un''altra sagoma.', n;
+    raise exception '% sovrapposizioni fra un arredo fisso e un''altra sagoma nella pianta base.', n;
   end if;
 
   delete from disposizioni_giornaliere where data = v_domani;
