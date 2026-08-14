@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   addDraftItem,
   apriConto,
+  cancelOrder,
   getOrder,
   getServiceSettings,
   listMenuForOrder,
@@ -757,6 +758,41 @@ export default function Sala() {
                 Chiudi conto
               </button>
             </div>
+
+            {/* ⚠️ IL VICOLO CIECO, trovato da Alessio con un tavolo aperto
+                per sbaglio che non riusciva a togliere.
+                «Annulla tavolo» esisteva, ma viveva DENTRO la finestra di
+                chiusura — che si apre dal pulsante «Chiudi conto», che è
+                spento finché non è stato inviato niente. Quindi un tavolo
+                aperto e mai usato non si poteva chiudere né annullare: **in
+                nessun modo**. E dal 14/08 pesa il doppio, perché quel conto
+                tiene occupati i suoi tavoli e impedisce di riaprirli.
+                Regola generale: se un pulsante si spegne, va guardato cosa
+                resta raggiungibile da lì — spegnerlo non deve chiudere
+                l'unica porta. */}
+            {sentItems.length === 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Annullare ${order.table_label}?\n\nNon è stato inviato niente in cucina, quindi non si butta via nessun ordine. I tavoli tornano liberi.`
+                    )
+                  )
+                    return;
+                  withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(
+                    () => {
+                      setOrder(null);
+                      setSelezione([]);
+                      loadBoard();
+                    }
+                  );
+                }}
+                className="w-full text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark py-1"
+              >
+                Annulla il tavolo (non è stato ordinato niente)
+              </button>
+            )}
           </div>
         </>
       )}
