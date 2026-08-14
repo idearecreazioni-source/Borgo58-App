@@ -8,8 +8,8 @@ import {
   isSoldOut,
   promuoviDisposizione,
   riportaSagomaAllaBase,
+  salvaSagoma,
   setSoldOut,
-  spostaSagoma,
 } from "../../lib/api/sala";
 import {
   assegnaPrenotazione,
@@ -135,6 +135,11 @@ export default function PiantaGiornata() {
     });
 
   const scostamenti = sagome.filter((s) => s.spostato).length;
+  // Girare un quadrato non cambia niente: il pulsante compare solo dove
+  // il quarto di giro si vede.
+  const sagomeGirevoli = sagome.filter(
+    (s) => s.spostabile && s.larghezza_cm !== s.profondita_cm
+  );
 
   const bottone =
     "rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2";
@@ -234,10 +239,45 @@ export default function PiantaGiornata() {
             onSeleziona={tocca}
             onSposta={
               isTitolare
-                ? (sagoma, x, y) => esegui(() => spostaSagoma({ data, sagomaId: sagoma.id, x, y }))
+                ? (sagoma, x, y) =>
+                    // Il verso si riscrive insieme alla posizione: senza,
+                    // trascinare un tavolo girato lo raddrizzerebbe.
+                    esegui(() =>
+                      salvaSagoma({ data, sagomaId: sagoma.id, x, y, ruotato: sagoma.ruotato })
+                    )
                 : undefined
             }
           />
+
+          {/* Girare un tavolo. Un quarto di giro e basta: un tavolo in
+              sala si mette di traverso, non a 37 gradi. Compare solo per
+              le sagome che girandole cambiano forma — su un quadrato non
+              vorrebbe dire niente. */}
+          {isTitolare && sagomeGirevoli.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="text-[11px] text-b58-charcoal-soft">Gira per questo giorno:</span>
+              {sagomeGirevoli.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() =>
+                    esegui(() =>
+                      salvaSagoma({
+                        data,
+                        sagomaId: s.id,
+                        x: s.x,
+                        y: s.y,
+                        ruotato: !s.ruotato,
+                      })
+                    )
+                  }
+                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-1.5"
+                >
+                  ⟳ {s.label} {s.ruotato ? "(in piedi)" : "(di traverso)"}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
             <span>

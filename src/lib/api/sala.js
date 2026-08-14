@@ -64,17 +64,30 @@ export async function getPiantaDelGiorno(data) {
   return righe ?? [];
 }
 
-// Sposta una sagoma per UNA giornata: si salva solo lo scostamento, mai
-// una copia dell'intera pianta. Se una data non ha scostamenti non esiste
-// nessuna riga per quella data, e il giorno dopo si riparte dalla base
-// senza che nessuno debba rimettere niente a posto.
-export async function spostaSagoma({ data, sagomaId, x, y }) {
-  const { error } = await supabase
-    .from("disposizioni_giornaliere")
-    .upsert(
-      { data, dining_table_id: sagomaId, x: Math.round(x), y: Math.round(y), aggiornato_il: new Date().toISOString() },
-      { onConflict: "data,dining_table_id" }
-    );
+// Come sta una sagoma per UNA giornata: dov'è e da che verso. Si salva
+// solo lo scostamento, mai una copia dell'intera pianta — se una data non
+// ha scostamenti non esiste nessuna riga per quella data, e il giorno
+// dopo si riparte dalla base senza che nessuno rimetta niente a posto.
+//
+// ⚠️ POSIZIONE E VERSO SI SCRIVONO INSIEME, sempre tutti e due. Salvando
+// solo quello che si è appena toccato, la prima volta che si trascina un
+// tavolo girato nascerebbe una riga nuova col verso a "diritto" — e il
+// tavolo si raddrizzerebbe da solo, senza errori e senza avvisi, come
+// conseguenza di uno spostamento. È la stessa forma del difetto del
+// 12/08, quando ricaricare una schermata buttava via ciò che l'utente
+// stava scrivendo altrove.
+export async function salvaSagoma({ data, sagomaId, x, y, ruotato }) {
+  const { error } = await supabase.from("disposizioni_giornaliere").upsert(
+    {
+      data,
+      dining_table_id: sagomaId,
+      x: Math.round(x),
+      y: Math.round(y),
+      ruotato: Boolean(ruotato),
+      aggiornato_il: new Date().toISOString(),
+    },
+    { onConflict: "data,dining_table_id" }
+  );
   if (error) throw error;
 }
 
