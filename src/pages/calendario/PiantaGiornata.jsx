@@ -13,17 +13,93 @@ import {
 } from "../../lib/api/sala";
 import {
   assegnaPrenotazione,
+  creaPrenotazioneSuTavoli,
   listReservations,
   listTavoliPrenotatiPerData,
   togliAssegnazione,
+  updateReservation,
 } from "../../lib/api/reservations";
 
-// LA PIANTA VIVA — la schermata in cui si prepara una serata.
+// LA SALA — la schermata in cui si prepara una serata, e in cui si prende
+// una prenotazione al telefono.
 //
-// Il sistema non decide più se un gruppo entra: lo decide Alessio
-// guardando la sala. Qui si fanno tre cose e basta: si sposta la sala per
-// quel giorno, si dice chi sta dove, e si chiude la serata quando è
-// piena.
+// ⚠️ IL GESTO È «TOCCO LA SALA», NON «COMPILO UN MODULO». Alessio, dopo
+// la prima prova: *«come faccio a sapere se c'è posto così?»*. La
+// risposta non è un numero — è la sala disegnata. Quindi qui dentro si
+// guarda dove c'è spazio, se serve si accostano due tavoli trascinandoli,
+// si toccano quelli giusti e si scrive il nome. Uscire dalla pianta per
+// compilare un modulo altrove e poi tornare a cercare dove metterli è il
+// modo sicuro per non farlo mai.
+//
+// Un tocco su una sagoma vuol dire tre cose diverse, e non possono essere
+// ambigue:
+//   · c'è un lavoro in corso  → aggiunge o toglie il tavolo dalla scelta
+//   · tavolo libero           → comincia una prenotazione nuova su quello
+//   · tavolo già promesso     → apre QUELLA prenotazione, per cambiarla
+//
+// ⚠️ La pianta mostra TUTTA la serata, non un momento. Un tavolo
+// prenotato alle 19:30 resta colorato anche se alle 22 si libera: non
+// esistono turni né finestre temporali (§8 del mandato), quindi ogni
+// sagoma occupata porta scritta l'ora e decide lui.
+
+const NUOVA_VUOTA = { nome: "", telefono: "", persone: 2, ora: "20:00", note: "" };
+
+const BOTTONE =
+  "rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2";
+const PRINCIPALE =
+  "rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-semibold px-4 py-2";
+const SEZIONE = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-5";
+const CAMPO =
+  "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+const ETICHETTA = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+
+// ⚠️ FUORI dal componente, e non è una questione di ordine. Definita
+// dentro, sarebbe un componente NUOVO a ogni render: React butterebbe via
+// i campi e li rifarebbe da capo a ogni lettera digitata, e il cursore
+// salterebbe fuori dalla casella dopo il primo carattere. È lo stesso
+// modo di perdere ciò che si sta scrivendo del difetto del 12/08 — solo
+// più veloce a farsi notare.
+function CampiPrenotazione({ valori, cambia }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+      <div className="col-span-2">
+        <label className={ETICHETTA}>Nome</label>
+        <input value={valori.nome} onChange={(e) => cambia({ ...valori, nome: e.target.value })} className={CAMPO} />
+      </div>
+      <div>
+        <label className={ETICHETTA}>Persone</label>
+        <input
+          type="number"
+          min="1"
+          value={valori.persone}
+          onChange={(e) => cambia({ ...valori, persone: e.target.value })}
+          className={CAMPO}
+        />
+      </div>
+      <div>
+        <label className={ETICHETTA}>Ora</label>
+        <input
+          type="time"
+          value={valori.ora}
+          onChange={(e) => cambia({ ...valori, ora: e.target.value })}
+          className={CAMPO}
+        />
+      </div>
+      <div className="col-span-2">
+        <label className={ETICHETTA}>Telefono</label>
+        <input
+          value={valori.telefono}
+          onChange={(e) => cambia({ ...valori, telefono: e.target.value })}
+          className={CAMPO}
+        />
+      </div>
+      <div className="col-span-2">
+        <label className={ETICHETTA}>Note (allergie, occasione…)</label>
+        <input value={valori.note} onChange={(e) => cambia({ ...valori, note: e.target.value })} className={CAMPO} />
+      </div>
+    </div>
+  );
+}
 
 export default function PiantaGiornata() {
   const { isTitolare } = useAuth();
@@ -36,13 +112,19 @@ export default function PiantaGiornata() {
   const [caricamento, setCaricamento] = useState(true);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
+  const [salvando, setSalvando] = useState(false);
 
-  // La prenotazione che si sta sistemando adesso, e i tavoli che le si
-  // stanno dando. Vivono solo qui: finché non si conferma, nel database
-  // non cambia niente.
-  const [inCorso, setInCorso] = useState(null);
+  // Cosa si sta facendo adesso. Vive solo qui: finché non si conferma,
+  // nel database non cambia niente.
+  const [modo, setModo] = useState(null); // null | "nuova" | "assegna"
+  const [inCorso, setInCorso] = useState(null); // la prenotazione da assegnare
   const [scelti, setScelti] = useState([]);
   const [rischio, setRischio] = useState(false);
+  const [nuova, setNuova] = useState(NUOVA_VUOTA);
+
+  // La prenotazione aperta toccando un tavolo già promesso.
+  const [aperta, setAperta] = useState(null);
+  const [modifica, setModifica] = useState(null);
 
   const ricarica = useCallback(async () => {
     const [p, r, a, s] = await Promise.all([
@@ -57,10 +139,19 @@ export default function PiantaGiornata() {
     setPieno(s);
   }, [data]);
 
-  useEffect(() => {
-    setCaricamento(true);
+  const azzera = () => {
+    setModo(null);
     setInCorso(null);
     setScelti([]);
+    setRischio(false);
+    setNuova(NUOVA_VUOTA);
+    setAperta(null);
+    setModifica(null);
+  };
+
+  useEffect(() => {
+    setCaricamento(true);
+    azzera();
     ricarica()
       .catch((e) => setError(e.message))
       .finally(() => setCaricamento(false));
@@ -69,11 +160,14 @@ export default function PiantaGiornata() {
   const esegui = async (azione) => {
     setError("");
     setAvviso("");
+    setSalvando(true);
     try {
       await azione();
       await ricarica();
     } catch (e) {
       setError(e.message);
+    } finally {
+      setSalvando(false);
     }
   };
 
@@ -88,62 +182,111 @@ export default function PiantaGiornata() {
     return m;
   }, [assegnazioni]);
 
-  const tavoliDi = (reservationId) =>
-    assegnazioni.filter((a) => a.reservation.id === reservationId);
+  const tavoliDi = (reservationId) => assegnazioni.filter((a) => a.reservation.id === reservationId);
+
+  const evidenziata = inCorso?.id ?? aperta?.id ?? null;
 
   const stato = useMemo(() => {
     const s = {};
     for (const sagoma of sagome) {
-      const elenco = perTavolo.get(sagoma.id) ?? [];
-      const altri = elenco.filter((a) => a.reservation.id !== inCorso?.id);
-      if (altri.length > 0) {
-        s[sagoma.id] = {
-          colore: "prenotato",
-          riga1: altri[0].reservation.customer_name?.split(" ")[0],
-          riga2:
-            altri.length > 1
-              ? `${altri.length} turni`
-              : `${altri[0].reservation.reservation_time?.slice(0, 5)} · ${altri[0].reservation.party_size}p`,
-        };
-      }
+      const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
+      if (altri.length === 0) continue;
+      s[sagoma.id] = {
+        colore: "prenotato",
+        riga1: altri[0].reservation.customer_name?.split(" ")[0],
+        riga2:
+          altri.length > 1
+            ? `${altri.length} turni`
+            : `${altri[0].reservation.reservation_time?.slice(0, 5)} · ${altri[0].reservation.party_size}p`,
+      };
     }
     return s;
-  }, [sagome, perTavolo, inCorso]);
+  }, [sagome, perTavolo, evidenziata]);
 
   const tocca = (sagoma) => {
-    if (!inCorso) {
-      setAvviso("Scegli prima una prenotazione qui sotto, poi tocca i tavoli da darle.");
+    setAvviso("");
+    setError("");
+
+    // Lavoro in corso: il tocco aggiunge o toglie, sempre. Anche su un
+    // tavolo già promesso — è il secondo giro della serata, che al
+    // telefono si fa: il sistema non lo impedisce e non avvisa.
+    if (modo) {
+      setScelti((s) => (s.includes(sagoma.id) ? s.filter((x) => x !== sagoma.id) : [...s, sagoma.id]));
       return;
     }
-    setAvviso("");
-    setScelti((s) => (s.includes(sagoma.id) ? s.filter((x) => x !== sagoma.id) : [...s, sagoma.id]));
+
+    const sopra = perTavolo.get(sagoma.id) ?? [];
+    if (sopra.length > 0) {
+      const p = prenotazioni.find((x) => x.id === sopra[0].reservation.id);
+      setAperta(p ?? null);
+      setModifica(
+        p
+          ? {
+              nome: p.customer_name ?? "",
+              telefono: p.customer_phone ?? "",
+              persone: p.party_size ?? 1,
+              ora: p.reservation_time?.slice(0, 5) ?? "",
+              note: p.notes ?? "",
+            }
+          : null
+      );
+      return;
+    }
+
+    setModo("nuova");
+    setScelti([sagoma.id]);
   };
 
   const iniziaAssegnazione = (p) => {
     setAvviso("");
+    setAperta(null);
+    setModo("assegna");
     setInCorso(p);
     setScelti(tavoliDi(p.id).map((a) => a.dining_table_id));
     setRischio(tavoliDi(p.id)[0]?.rischio_accettato ?? false);
   };
 
-  const conferma = () =>
+  const etichetteScelte = sagome
+    .filter((s) => scelti.includes(s.id))
+    .map((s) => s.label)
+    .join(" · ");
+
+  const confermaAssegnazione = () =>
     esegui(async () => {
       await assegnaPrenotazione(inCorso.id, scelti, { rischioAccettato: rischio, conferma: true });
-      setInCorso(null);
-      setScelti([]);
-      setRischio(false);
+      azzera();
+    });
+
+  const confermaNuova = () =>
+    esegui(async () => {
+      await creaPrenotazioneSuTavoli({
+        data,
+        ora: nuova.ora,
+        persone: nuova.persone,
+        nome: nuova.nome,
+        telefono: nuova.telefono,
+        note: nuova.note,
+        tavoliIds: scelti,
+        rischioAccettato: rischio,
+      });
+      azzera();
+    });
+
+  const salvaModifica = () =>
+    esegui(async () => {
+      await updateReservation(aperta.id, {
+        customer_name: modifica.nome.trim(),
+        customer_phone: modifica.telefono.trim() || null,
+        party_size: Number(modifica.persone),
+        reservation_time: modifica.ora,
+        notes: modifica.note.trim() || null,
+      });
+      azzera();
     });
 
   const scostamenti = sagome.filter((s) => s.spostato).length;
-  // Girare un quadrato non cambia niente: il pulsante compare solo dove
-  // il quarto di giro si vede.
-  const sagomeGirevoli = sagome.filter(
-    (s) => s.spostabile && s.larghezza_cm !== s.profondita_cm
-  );
-
-  const bottone =
-    "rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2";
-  const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-5";
+  const sagomeGirevoli = sagome.filter((s) => s.spostabile && s.larghezza_cm !== s.profondita_cm);
+  const copertiDelGiorno = prenotazioni.reduce((t, p) => t + (p.party_size || 0), 0);
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -152,17 +295,15 @@ export default function PiantaGiornata() {
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">La sala</h1>
       <p className="text-sm text-b58-charcoal-soft mb-5">
-        Sposta i tavoli come li apparecchi quel giorno, poi di' a ogni prenotazione dove
-        sedersi. Quello che sposti oggi vale <strong>solo per oggi</strong>: domani la sala
-        torna com'è di solito.
+        Guarda dove c'è spazio, accosta i tavoli se serve, poi <strong>tocca i tavoli</strong>: se
+        sono liberi ci prendi una prenotazione, se sono già promessi apri quella che c'è. Quello che
+        sposti oggi vale <strong>solo per oggi</strong>.
       </p>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
-      {avviso && (
-        <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4">{avviso}</p>
-      )}
+      {avviso && <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4">{avviso}</p>}
 
       {/* Il giorno */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -172,10 +313,20 @@ export default function PiantaGiornata() {
           onChange={(e) => setData(e.target.value)}
           className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal"
         />
-        <button type="button" onClick={() => setData(oggiLocale())} className={bottone}>
+        <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
         </button>
-        <span className="text-sm text-b58-charcoal-soft">{formatDate(data)}</span>
+        <span className="text-sm text-b58-charcoal-soft">
+          {formatDate(data)}
+          {prenotazioni.length > 0 && (
+            <>
+              {" · "}
+              <strong className="text-b58-charcoal">{prenotazioni.length}</strong> prenotazion
+              {prenotazioni.length === 1 ? "e" : "i"} ·{" "}
+              <strong className="text-b58-charcoal">{copertiDelGiorno}</strong> persone
+            </>
+          )}
+        </span>
       </div>
 
       {caricamento ? (
@@ -183,7 +334,7 @@ export default function PiantaGiornata() {
       ) : (
         <>
           {/* La serata al completo — l'unico freno alle richieste dal sito */}
-          <div className={sezione}>
+          <div className={SEZIONE}>
             <label className="flex items-start gap-3">
               <input
                 type="checkbox"
@@ -197,10 +348,9 @@ export default function PiantaGiornata() {
                   Per questa sera siamo al completo
                 </span>
                 <span className="block text-sm text-b58-charcoal-soft mt-1">
-                  Acceso: dal sito non arrivano più richieste per questo giorno, e al cliente
-                  compare che siamo pieni. Si toglie quando vuoi.{" "}
-                  <strong>Non è una chiusura</strong>: quella si mette da Sala e orari e resta
-                  un'altra cosa.
+                  Acceso: dal sito non arrivano più richieste per questo giorno, e al cliente compare
+                  che siamo pieni. Si toglie quando vuoi. <strong>Non è una chiusura</strong>: quella
+                  si mette da Sala e orari e resta un'altra cosa.
                 </span>
               </span>
             </label>
@@ -240,8 +390,6 @@ export default function PiantaGiornata() {
             onSposta={
               isTitolare
                 ? (sagoma, x, y) =>
-                    // Il verso si riscrive insieme alla posizione: senza,
-                    // trascinare un tavolo girato lo raddrizzerebbe.
                     esegui(() =>
                       salvaSagoma({ data, sagomaId: sagoma.id, x, y, ruotato: sagoma.ruotato })
                     )
@@ -249,10 +397,6 @@ export default function PiantaGiornata() {
             }
           />
 
-          {/* Girare un tavolo. Un quarto di giro e basta: un tavolo in
-              sala si mette di traverso, non a 37 gradi. Compare solo per
-              le sagome che girandole cambiano forma — su un quadrato non
-              vorrebbe dire niente. */}
           {isTitolare && sagomeGirevoli.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="text-[11px] text-b58-charcoal-soft">Gira per questo giorno:</span>
@@ -262,13 +406,7 @@ export default function PiantaGiornata() {
                   type="button"
                   onClick={() =>
                     esegui(() =>
-                      salvaSagoma({
-                        data,
-                        sagomaId: s.id,
-                        x: s.x,
-                        y: s.y,
-                        ruotato: !s.ruotato,
-                      })
+                      salvaSagoma({ data, sagomaId: s.id, x: s.x, y: s.y, ruotato: !s.ruotato })
                     )
                   }
                   className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-1.5"
@@ -300,29 +438,61 @@ export default function PiantaGiornata() {
                 ))}
           </div>
 
-          {/* Assegnazione in corso */}
-          {inCorso && (
+          {/* PRENOTAZIONE NUOVA — il gesto principale di questa pagina */}
+          {modo === "nuova" && (
+            <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
+              <p className="text-b58-charcoal font-medium mb-1">
+                Prenotazione su {etichetteScelte || <em className="text-b58-charcoal-soft">nessun tavolo</em>}
+              </p>
+              <p className="text-sm text-b58-charcoal-soft mb-4">
+                Tocca altri tavoli per aggiungerli — se sono in tanti, accostali prima e poi toccali
+                tutti. Il cliente <strong>non riceve nessuna email</strong>: gliel'hai appena detto tu.
+              </p>
+
+              <CampiPrenotazione valori={nuova} cambia={setNuova} />
+
+              <label className="flex items-start gap-2 text-sm text-b58-charcoal-soft mb-4">
+                <input
+                  type="checkbox"
+                  checked={rischio}
+                  onChange={(e) => setRischio(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>Sa che il tavolo potrebbe essere ancora occupato quando arriva (secondo giro).</span>
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={salvando || scelti.length === 0 || !nuova.nome.trim()}
+                  onClick={confermaNuova}
+                  className={PRINCIPALE}
+                >
+                  {salvando ? "Salvo…" : `Prenota ${scelti.length || "…"} ${scelti.length === 1 ? "tavolo" : "tavoli"}`}
+                </button>
+                <button type="button" onClick={azzera} className={BOTTONE}>
+                  Lascia stare
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ASSEGNAZIONE di una richiesta arrivata dal sito */}
+          {modo === "assegna" && inCorso && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
               <p className="text-b58-charcoal font-medium mb-1">
                 {inCorso.customer_name} · {inCorso.party_size} persone ·{" "}
                 {inCorso.reservation_time?.slice(0, 5)}
               </p>
               <p className="text-sm text-b58-charcoal-soft mb-3">
-                Tocca sulla pianta i tavoli dove li fai sedere. Se sono in tanti, accostali
-                prima e poi toccali tutti.
+                Tocca sulla pianta i tavoli dove li fai sedere.
               </p>
               <p className="text-sm text-b58-charcoal mb-3">
                 {scelti.length === 0 ? (
                   <em className="text-b58-charcoal-soft">Nessun tavolo scelto.</em>
                 ) : (
                   <>
-                    Tavoli scelti:{" "}
-                    <strong>
-                      {sagome
-                        .filter((s) => scelti.includes(s.id))
-                        .map((s) => s.label)
-                        .join(" · ")}
-                    </strong>
+                    Tavoli scelti: <strong>{etichetteScelte}</strong>
                   </>
                 )}
               </p>
@@ -334,31 +504,72 @@ export default function PiantaGiornata() {
                   onChange={(e) => setRischio(e.target.checked)}
                   className="mt-0.5"
                 />
-                <span>
-                  Il cliente sa che il tavolo potrebbe essere ancora occupato quando arriva
-                  (è il secondo giro della serata).
-                </span>
+                <span>Sa che il tavolo potrebbe essere ancora occupato quando arriva (secondo giro).</span>
               </label>
 
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  disabled={scelti.length === 0}
-                  onClick={conferma}
-                  className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-semibold px-4 py-2"
+                  disabled={salvando || scelti.length === 0}
+                  onClick={confermaAssegnazione}
+                  className={PRINCIPALE}
                 >
-                  Conferma su {scelti.length || "…"}{" "}
-                  {scelti.length === 1 ? "tavolo" : "tavoli"}
+                  Conferma su {scelti.length || "…"} {scelti.length === 1 ? "tavolo" : "tavoli"}
+                </button>
+                <button type="button" onClick={azzera} className={BOTTONE}>
+                  Lascia stare
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PRENOTAZIONE APERTA toccando un tavolo già promesso */}
+          {aperta && modifica && (
+            <div className="rounded-xl bg-b58-olive/10 ring-1 ring-b58-olive/30 p-5 mb-5">
+              <p className="text-b58-charcoal font-medium mb-1">
+                {aperta.customer_name}
+                {aperta.status === "richiesta_in_attesa" && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                    da confermare
+                  </span>
+                )}
+              </p>
+              <p className="text-sm text-b58-charcoal-soft mb-4">
+                Su {tavoliDi(aperta.id).map((a) => a.etichetta_al_momento).join(" · ")}. Cambia quello
+                che serve, oppure spostali su altri tavoli.
+              </p>
+
+              <CampiPrenotazione valori={modifica} cambia={setModifica} />
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={salvando || !modifica.nome.trim()}
+                  onClick={salvaModifica}
+                  className={PRINCIPALE}
+                >
+                  {salvando ? "Salvo…" : "Salva le modifiche"}
+                </button>
+                <button type="button" onClick={() => iniziaAssegnazione(aperta)} className={BOTTONE}>
+                  Spostali su altri tavoli
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setInCorso(null);
-                    setScelti([]);
+                    if (!window.confirm(`Il cliente ha disdetto? La prenotazione di ${aperta.customer_name} verrà annullata e i tavoli tornano liberi.`))
+                      return;
+                    esegui(async () => {
+                      await updateReservation(aperta.id, { status: "annullata" });
+                      await togliAssegnazione(aperta.id);
+                      azzera();
+                    });
                   }}
-                  className={bottone}
+                  className="rounded-lg border border-b58-terracotta/40 text-b58-terracotta-dark hover:bg-b58-terracotta/10 transition-colors text-sm font-medium px-4 py-2"
                 >
-                  Lascia stare
+                  Ha disdetto
+                </button>
+                <button type="button" onClick={azzera} className={BOTTONE}>
+                  Chiudi
                 </button>
               </div>
             </div>
@@ -371,7 +582,8 @@ export default function PiantaGiornata() {
           {prenotazioni.length === 0 ? (
             <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-8 text-center">
               <p className="text-b58-charcoal-soft text-sm">
-                Nessuna prenotazione per questo giorno.
+                Nessuna prenotazione per questo giorno. Tocca un tavolo libero sulla pianta per
+                prenderne una.
               </p>
             </div>
           ) : (
@@ -401,7 +613,7 @@ export default function PiantaGiornata() {
                         da confermare
                       </span>
                     )}
-                    <button type="button" onClick={() => iniziaAssegnazione(p)} className={bottone}>
+                    <button type="button" onClick={() => iniziaAssegnazione(p)} className={BOTTONE}>
                       {suoi.length > 0 ? "Cambia tavolo" : "Dai un tavolo"}
                     </button>
                     {suoi.length > 0 && isTitolare && (

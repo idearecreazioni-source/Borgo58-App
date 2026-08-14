@@ -131,6 +131,40 @@ export async function assegnaPrenotazione(
   });
 }
 
+// Prende una prenotazione guardando la sala: si toccano i tavoli, si
+// scrive il nome, e nasce già confermata su quei tavoli.
+//
+// ⚠️ Nessuna email al cliente e nessun avviso su Telegram, per decisione
+// di Alessio del 14/08: al telefono la conferma gliel'ha appena data a
+// voce. Non serve un interruttore — la prenotazione nasce `confermata`
+// senza passare da un cambio di stato, e l'email parte solo sul cambio di
+// stato; l'avviso guarda le richieste dal sito, e questa è interna.
+//
+// Prenotazione + righe dei tavoli: due tabelle, corridoio (B4).
+export async function creaPrenotazioneSuTavoli({
+  data,
+  ora,
+  persone,
+  nome,
+  telefono,
+  email,
+  note,
+  tavoliIds,
+  rischioAccettato = false,
+}) {
+  return eseguiOperazione("crea_prenotazione_su_tavoli", {
+    p_data: data,
+    p_ora: ora,
+    p_persone: Number(persone),
+    p_nome: nome,
+    p_tavoli: tavoliIds,
+    p_telefono: telefono || null,
+    p_email: email || null,
+    p_note: note || null,
+    p_rischio_accettato: rischioAccettato,
+  });
+}
+
 export async function togliAssegnazione(reservationId) {
   const { error } = await supabase
     .from("prenotazione_tavoli")

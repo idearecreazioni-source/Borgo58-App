@@ -84,6 +84,10 @@ const OPERAZIONI = new Set([
   // il conto e i suoi tavoli. Tre tavoli accostati sono una comanda sola.
   "promuovi_disposizione",
   "assegna_prenotazione",
+  // La prenotazione si prende guardando la sala (14/08/2026): al telefono
+  // si toccano i tavoli e si scrive il nome. Prenotazione + righe dei
+  // tavoli, una decisione sola.
+  "crea_prenotazione_su_tavoli",
   "apri_conto",
   "sposta_conto",
 ]);
