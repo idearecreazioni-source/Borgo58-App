@@ -91,6 +91,9 @@ export default function ScontiOmaggi() {
 
   const handleAdd = async () => {
     if (!form.full_amount || Number(form.full_amount) < 0) return;
+    // Dal 14/08 la causale e obbligatoria anche qui: il registro manuale
+    // scrive nella stessa tabella del conto chiuso in sala.
+    if (!form.causale_id) return;
     setSaving(true);
     setError("");
     try {
@@ -99,7 +102,7 @@ export default function ScontiOmaggi() {
         type: form.type,
         full_amount: Number(form.full_amount),
         collected_amount: isOmaggio ? 0 : Number(form.collected_amount) || 0,
-        causale_id: form.causale_id || null,
+        causale_id: form.causale_id,
         causale_note: form.causale_note || null,
         customer_id: form.customer_id || null,
         device_id: form.device_id || null,
@@ -294,13 +297,13 @@ export default function ScontiOmaggi() {
               />
             </div>
             <div>
-              <label className={labelClass}>Causale</label>
+              <label className={labelClass}>Causale (obbligatoria)</label>
               <select
                 value={form.causale_id}
                 onChange={(e) => setForm((f) => ({ ...f, causale_id: e.target.value }))}
                 className={inputClass}
               >
-                <option value="">—</option>
+                <option value="">Perché? —</option>
                 {causali.map((c) => (
                   <option key={c.id} value={c.id}>{c.label}</option>
                 ))}
@@ -369,7 +372,7 @@ export default function ScontiOmaggi() {
           <div className="flex justify-end">
             <button
               type="button"
-              disabled={saving || !form.full_amount}
+              disabled={saving || !form.full_amount || !form.causale_id}
               onClick={handleAdd}
               className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
             >

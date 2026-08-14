@@ -106,6 +106,8 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
   const handleRomana = (method) => {
     if (totaleRomana <= 0 || totaleRomana > total) return;
+    // Con una cortesia in ballo la causale e obbligatoria: e uno sconto.
+    if (cortesia > 0 && !form.causaleId) return;
     if (cortesia === 0) {
       // Cifra esatta: è un pagamento normale.
       run(() => closeOrderPaid(order.id, method, copertoUnitPrice));
@@ -117,6 +119,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
           isGift: false,
           fullAmount: total,
           collectedAmount: totaleRomana,
+          causaleId: form.causaleId,
           causaleNote: `Alla romana: ${persone} × ${formatEUR(Number(aTesta) || 0)}`,
         })
       );
@@ -131,6 +134,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   const handleDiscountGift = () => {
     const isGift = mode === "omaggio";
     if (!isGift && !form.collectedAmount) return;
+    if (!form.causaleId) return;
     run(() =>
       closeOrderAsDiscountGift(order.id, {
         isGift,
@@ -275,12 +279,41 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 )}
               </div>
 
+              {/* ⚠️ LA CAUSALE SERVE ANCHE QUI, e prima non c'era.
+                  L'arrotondamento per difetto si chiude come SCONTO, e dal
+                  14/08 uno sconto senza causale il database lo rifiuta.
+                  Senza questo campo il gesto più frequente dei tre si
+                  sarebbe rotto al primo tentativo, in sala, con un cliente
+                  che aspetta. Compare solo quando una cortesia c'è
+                  davvero: se la cifra è esatta è un pagamento normale e
+                  non si registra nessuno sconto. */}
+              {cortesia > 0 && (
+                <div>
+                  <select
+                    value={form.causaleId}
+                    onChange={(e) => setForm((f) => ({ ...f, causaleId: e.target.value }))}
+                    className={inputClass}
+                  >
+                    <option value="">Perché la cortesia? —</option>
+                    {causali.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                  {!form.causaleId && (
+                    <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
+                      Serve per chiudere: {formatEUR(cortesia)} regalati senza un perché, fra un
+                      anno, sono un numero che nessuno sa spiegare.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2">
                 {ORDER_PAYMENT_METHODS.map((pm) => (
                   <button
                     key={pm.value}
                     type="button"
-                    disabled={busy || totaleRomana <= 0 || totaleRomana > total}
+                    disabled={busy || totaleRomana <= 0 || totaleRomana > total || (cortesia > 0 && !form.causaleId)}
                     onClick={() => handleRomana(pm.value)}
                     className="flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-3 py-2"
                   >
@@ -316,7 +349,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 onChange={(e) => setForm((f) => ({ ...f, causaleId: e.target.value }))}
                 className={inputClass}
               >
-                <option value="">Causale —</option>
+                <option value="">Perché? — obbligatorio</option>
                 {causali.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
               <select
@@ -338,7 +371,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               <div className="flex gap-2">
                 <button
                   type="button"
-                  disabled={busy || (mode === "sconto" && !form.collectedAmount)}
+                  disabled={busy || !form.causaleId || (mode === "sconto" && !form.collectedAmount)}
                   onClick={handleDiscountGift}
                   className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
                 >
