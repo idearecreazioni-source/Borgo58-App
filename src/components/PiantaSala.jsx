@@ -244,7 +244,11 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
                   {info.riga2}
                 </text>
               )}
-              {sagoma.posti_fissi && !info?.riga1 && (
+              {/* I posti di un arredo fisso si scrivono solo se la sagoma è
+                  alta abbastanza da contenerli: sul bancone dello Chef
+                  Table, che è profondo 70 cm, la riga finiva fuori dal
+                  disegno. */}
+              {sagoma.posti_fissi && !info?.riga1 && sagoma.profondita_cm >= 110 && (
                 <text
                   x={sagoma.larghezza_cm / 2}
                   y={sagoma.profondita_cm / 2 + 44}
