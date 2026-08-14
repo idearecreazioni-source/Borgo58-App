@@ -110,6 +110,12 @@ export default function MagazzinoHome() {
             Scadenze
           </Link>
           <Link
+            to="/magazzino/produzioni"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Produzioni
+          </Link>
+          <Link
             to="/magazzino/lista-spesa"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >

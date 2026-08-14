@@ -74,6 +74,10 @@ const OPERAZIONI = new Set([
   // righe da comprare. Il gestionale non manda niente — apre WhatsApp.
   "registra_ordine",
   "annulla_ordine",
+  // Produzioni (14/08/2026): registrare un semilavorato scarica gli
+  // ingredienti dai lotti, scrive i movimenti e crea il lotto nuovo col
+  // suo costo. Quattro tabelle, un gesto in cucina.
+  "registra_produzione",
 ]);
 
 const CORS = {

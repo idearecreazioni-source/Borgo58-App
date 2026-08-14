@@ -3,12 +3,20 @@ import { eseguiOperazione } from "../operazioni";
 
 const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_entity_id(id, name)";
 
-export async function listIngredients({ search, category } = {}) {
+// I semilavorati hanno una riga qui dentro, ma solo per poter avere dei
+// lotti in magazzino: nel Ricettario NON sono ingredienti. Mostrarli
+// darebbe due modi di mettere il ragù in una ricetta — come ingrediente e
+// come preparazione — e due strade per la stessa cosa finiscono per dire
+// due numeri diversi. In magazzino invece si vedono, ed è giusto: quanto
+// ragù c'è in cella è una domanda vera.
+export async function listIngredients({ search, category, includiPreparazioni } = {}) {
   let query = supabase
     .from("ingredients")
     .select(SELECT)
     .eq("active", true)
     .order("name");
+
+  if (!includiPreparazioni) query = query.is("preparazione_id", null);
 
   if (search) query = query.ilike("name", `%${search}%`);
   if (category) query = query.eq("category", category);
