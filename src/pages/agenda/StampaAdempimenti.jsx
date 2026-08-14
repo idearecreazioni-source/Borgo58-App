@@ -35,9 +35,17 @@ export default function StampaAdempimenti() {
       </div>
 
       <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
-        Calendario adempimenti societari — Borgo 58 S.r.l.s.
+        Scadenze fiscali e societarie — Borgo 58 S.r.l.s.
       </h1>
       <p className="text-b58-charcoal-soft mt-1">Generato il {formatDate(new Date().toISOString())}.</p>
+      {/* A cosa serve questa pagina: portarla al commercialista senza
+          leggergli l'Agenda dal telefono. Non si stampa da sola e non
+          manda niente — è un foglio, quando serve un foglio. */}
+      <p className="text-sm text-b58-charcoal-soft mt-2 print:hidden">
+        Tutte le scadenze della categoria «Fisco e scadenze», in ordine di data,
+        in un foglio da stampare o salvare come PDF — da portare a Laura o da
+        tenere appeso. Si aggiorna da sé: mostra quello che c&apos;è in Agenda adesso.
+      </p>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-4 print:hidden">
