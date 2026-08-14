@@ -376,9 +376,12 @@ export default function PiantaSala({
                   </text>
                 )}
               </g>
-              {sagoma.spostato && (
-                <circle cx={sagoma.larghezza_cm - 16} cy="16" r="12" fill="var(--color-b58-terracotta)" />
-              )}
+              {/* Qui c'era un pallino che segnava «spostato solo per oggi».
+                  Tolto su richiesta di Alessio: quale tavolo ha spostato
+                  lo sa, l'ha appena fatto lui — e un segno che non serve
+                  su una sagoma piccola è solo una cosa in meno di spazio
+                  per il nome. Quanti ne ha spostati resta scritto sotto la
+                  pianta, dove serve a rimetterli a posto. */}
             </g>
           );
         })}

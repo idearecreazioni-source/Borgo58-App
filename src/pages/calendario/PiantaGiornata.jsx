@@ -256,6 +256,11 @@ export default function PiantaGiornata() {
     setScelti(tavoliDi(p.id).map((a) => a.dining_table_id));
   };
 
+  // Le prenotazioni già presenti sui tavoli che si stanno scegliendo.
+  const giaPromessi = scelti.flatMap((id) =>
+    (perTavolo.get(id) ?? []).filter((a) => a.reservation.id !== evidenziata)
+  );
+
   const etichetteScelte = sagome
     .filter((s) => scelti.includes(s.id))
     .map((s) => s.label)
@@ -370,6 +375,28 @@ export default function PiantaGiornata() {
             <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
               La sala del {formatDate(data)}
             </p>
+            {/* ⚠️ SENZA QUESTO PULSANTE non c'era modo di cominciare una
+                prenotazione su un tavolo GIÀ occupato: un tocco su un
+                tavolo promesso apre quella prenotazione, e uno su un
+                tavolo libero ne comincia una nuova — ma se i tavoli che
+                servono sono tutti già promessi (il secondo giro, che è
+                proprio il caso per cui esistono i due colori) non si
+                partiva. Trovato da Alessio provandolo. */}
+            <div className="flex flex-wrap items-center gap-2">
+            {!modo && !aperta && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAvviso("Tocca sulla pianta i tavoli, anche quelli già promessi a qualcun altro.");
+                  setAperta(null);
+                  setModo("nuova");
+                  setScelti([]);
+                }}
+                className={PRINCIPALE}
+              >
+                + Prenotazione nuova
+              </button>
+            )}
             {isTitolare && scostamenti > 0 && (
               <button
                 type="button"
@@ -389,6 +416,7 @@ export default function PiantaGiornata() {
                 Questa diventa la sala di sempre
               </button>
             )}
+            </div>
           </div>
 
           <PiantaSala
@@ -446,7 +474,7 @@ export default function PiantaGiornata() {
           <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
             <span>
               {scostamenti > 0
-                ? `${scostamenti} ${scostamenti === 1 ? "tavolo spostato" : "tavoli spostati"} solo per questo giorno (pallino rosso)`
+                ? `${scostamenti} ${scostamenti === 1 ? "tavolo spostato" : "tavoli spostati"} solo per questo giorno`
                 : "Sala nella disposizione di sempre"}
             </span>
             {isTitolare &&
@@ -470,10 +498,27 @@ export default function PiantaGiornata() {
               <p className="text-b58-charcoal font-medium mb-1">
                 Prenotazione su {etichetteScelte || <em className="text-b58-charcoal-soft">nessun tavolo</em>}
               </p>
-              <p className="text-sm text-b58-charcoal-soft mb-4">
-                Tocca altri tavoli per aggiungerli — se sono in tanti, accostali prima e poi toccali
-                tutti. Il cliente <strong>non riceve nessuna email</strong>: gliel'hai appena detto tu.
+              <p className="text-sm text-b58-charcoal-soft mb-3">
+                Tocca i tavoli per aggiungerli o toglierli — <strong>anche quelli già promessi a
+                qualcun altro</strong>. Se sono in tanti, accostali prima e poi toccali tutti. Il
+                cliente <strong>non riceve nessuna email</strong>: gliel'hai appena detto tu.
               </p>
+
+              {/* Chi c'è già su quei tavoli. Non è un avviso e non blocca
+                  niente: è il secondo giro, e la sola cosa che serve è
+                  sapere a che ora se ne vanno gli altri. */}
+              {giaPromessi.length > 0 && (
+                <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-3">
+                  Su questi tavoli c'è già:{" "}
+                  {giaPromessi
+                    .map(
+                      (a) =>
+                        `${a.etichetta_al_momento} — ${a.reservation.customer_name} alle ${a.reservation.reservation_time?.slice(0, 5)}`
+                    )
+                    .join(" · ")}
+                  .
+                </p>
+              )}
 
               <CampiPrenotazione valori={nuova} cambia={setNuova} />
 
