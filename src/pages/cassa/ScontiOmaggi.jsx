@@ -170,6 +170,13 @@ export default function ScontiOmaggi() {
         comunque dal registratore telematico), un omaggio è un conto che il cliente non paga affatto e resta
         solo qui nel gestionale. Se e quando gli omaggi sistematici generano un obbligo di autofattura TD27
         dipende da volume e frequenza — <strong>da verificare con Laura</strong>, non è automatico.
+        {/* Confermato da Alessio il 14/08: un omaggio non e' un movimento
+            di soldi, quindi non scrive niente in prima nota. Cio' che
+            costa davvero e' il cibo uscito, ed e' scritto qui accanto —
+            non in cassa, dove non e' mai passato un euro. */}
+        {" "}
+        <strong>Un omaggio non tocca la prima nota</strong>: nessun euro entra e nessuno esce. Quello
+        che ti è costato davvero sono gli ingredienti, ed è la colonna qui sotto.
       </p>
       <p className="text-xs text-b58-charcoal-soft/70 mb-6">
         Le righe segnate con un pallino colorato provengono da un device diverso dal tuo — utile per un

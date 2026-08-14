@@ -129,6 +129,22 @@ export default function CassaHome() {
                   Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.
                 </div>
               )}
+              {/* ⚠️ IL LIMITE VA DETTO QUI, NON SOTTOINTESO. Chiudere un
+                  conto in sala non scrive niente in prima nota: e' una
+                  scelta presa il 04/08 e scritta sulla tabella dei conti
+                  ("«Chiuso» qui NON registra un incasso — quello arrivera'
+                  con il registratore telematico"), confermata da Alessio il
+                  14/08. Ma un saldo che esclude in silenzio tutti gli
+                  incassi di sala e' un numero che sembra completo e non lo
+                  e': la stessa forma dello scarto a zero e dell'elenco
+                  allergeni vuoto. Finche' il registratore non c'e', questa
+                  riga e' l'unica cosa che separa "il cassetto e' cosi'" da
+                  "il cassetto sembra cosi'". */}
+              <div className="text-[11px] text-b58-charcoal-soft/80 mt-2 leading-relaxed">
+                Gli incassi qui sono <strong>solo quelli che scrivi tu</strong>. Chiudere un tavolo
+                in Comande non ne crea uno: gli incassi di sala arriveranno tutti insieme dal
+                registratore telematico, quando ci sarà.
+              </div>
             </div>
 
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
