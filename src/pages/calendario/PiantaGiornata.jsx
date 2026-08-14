@@ -131,6 +131,9 @@ export default function PiantaGiornata() {
   // La prenotazione aperta toccando un tavolo già promesso.
   const [aperta, setAperta] = useState(null);
   const [modifica, setModifica] = useState(null);
+  // La sagoma da cui si e aperta: serve al pulsante che aggiunge una
+  // seconda prenotazione proprio su quel tavolo.
+  const [toccato, setToccato] = useState(null);
 
   const ricarica = useCallback(async () => {
     const [p, r, a, s, reg] = await Promise.all([
@@ -154,6 +157,7 @@ export default function PiantaGiornata() {
     setNuova(NUOVA_VUOTA);
     setAperta(null);
     setModifica(null);
+    setToccato(null);
   };
 
   useEffect(() => {
@@ -229,6 +233,9 @@ export default function PiantaGiornata() {
     const sopra = perTavolo.get(sagoma.id) ?? [];
     if (sopra.length > 0) {
       const p = prenotazioni.find((x) => x.id === sopra[0].reservation.id);
+      // Quale sagoma è stata toccata, per poterci aggiungere una seconda
+      // prenotazione da qui: il pulsante sta dove sta il gesto.
+      setToccato(sagoma.id);
       setAperta(p ?? null);
       setModifica(
         p
@@ -255,6 +262,11 @@ export default function PiantaGiornata() {
     setInCorso(p);
     setScelti(tavoliDi(p.id).map((a) => a.dining_table_id));
   };
+
+  // La prenotazione aperta arriva dopo la soglia? Allora quel tavolo non
+  // servirà una seconda volta — e vale la pena dirlo lì, accanto al
+  // pulsante che ne aggiungerebbe un'altra.
+  const ultimoGiro = Boolean(aperta && (aperta.reservation_time ?? "") > soglia);
 
   // Le prenotazioni già presenti sui tavoli che si stanno scegliendo.
   const giaPromessi = scelti.flatMap((id) =>
@@ -375,28 +387,6 @@ export default function PiantaGiornata() {
             <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
               La sala del {formatDate(data)}
             </p>
-            {/* ⚠️ SENZA QUESTO PULSANTE non c'era modo di cominciare una
-                prenotazione su un tavolo GIÀ occupato: un tocco su un
-                tavolo promesso apre quella prenotazione, e uno su un
-                tavolo libero ne comincia una nuova — ma se i tavoli che
-                servono sono tutti già promessi (il secondo giro, che è
-                proprio il caso per cui esistono i due colori) non si
-                partiva. Trovato da Alessio provandolo. */}
-            <div className="flex flex-wrap items-center gap-2">
-            {!modo && !aperta && (
-              <button
-                type="button"
-                onClick={() => {
-                  setAvviso("Tocca sulla pianta i tavoli, anche quelli già promessi a qualcun altro.");
-                  setAperta(null);
-                  setModo("nuova");
-                  setScelti([]);
-                }}
-                className={PRINCIPALE}
-              >
-                + Prenotazione nuova
-              </button>
-            )}
             {isTitolare && scostamenti > 0 && (
               <button
                 type="button"
@@ -416,7 +406,6 @@ export default function PiantaGiornata() {
                 Questa diventa la sala di sempre
               </button>
             )}
-            </div>
           </div>
 
           <PiantaSala
@@ -587,7 +576,14 @@ export default function PiantaGiornata() {
               </p>
               <p className="text-sm text-b58-charcoal-soft mb-4">
                 Su {tavoliDi(aperta.id).map((a) => a.etichetta_al_momento).join(" · ")}. Cambia quello
-                che serve, oppure spostali su altri tavoli.
+                che serve, oppure spostali su altri tavoli.{" "}
+                {ultimoGiro ? (
+                  <strong>
+                    Arriva dopo le {soglia.slice(0, 5)}: è l'ultimo giro di questo tavolo.
+                  </strong>
+                ) : (
+                  <>Arriva entro le {soglia.slice(0, 5)}: il tavolo può servire una seconda volta.</>
+                )}
               </p>
 
               <CampiPrenotazione valori={modifica} cambia={setModifica} />
@@ -600,6 +596,26 @@ export default function PiantaGiornata() {
                   className={PRINCIPALE}
                 >
                   {salvando ? "Salvo…" : "Salva le modifiche"}
+                </button>
+                {/* ⚠️ IL PULSANTE STA DOVE STA IL GESTO. Prima era fisso in
+                    cima alla pianta, ed era la cosa giusta nel posto
+                    sbagliato: chiesto da Alessio di portarlo qui, dentro il
+                    tavolo che ha appena toccato.
+                    Compare anche sui tavoli VERDI, e non è una svista: la
+                    sua decisione è che il verde avvisa e non blocca. Lì
+                    accanto c'è scritto che è l'ultimo giro — poi decide
+                    lui, come per tutto il resto di questa sala. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAperta(null);
+                    setModifica(null);
+                    setModo("nuova");
+                    setScelti(toccato ? [toccato] : []);
+                  }}
+                  className={BOTTONE}
+                >
+                  + Aggiungi una prenotazione su questo tavolo
                 </button>
                 <button type="button" onClick={() => iniziaAssegnazione(aperta)} className={BOTTONE}>
                   Spostali su altri tavoli
