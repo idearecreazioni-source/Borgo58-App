@@ -4,21 +4,24 @@ import CampoAutosalvato from "../../components/CampoAutosalvato";
 import { oggiLocale } from "../../lib/constants";
 import {
   GIORNI,
+  attivaSagoma,
   createClosure,
   deleteClosure,
   getRegolePrenotazione,
   listClosures,
-  listDiningTables,
+  listSagome,
   listServiceHours,
+  rinominaSagoma,
   updateRegolePrenotazione,
   updateServiceHour,
-  updateTableSeats,
 } from "../../lib/api/sala";
 
-// I numeri che il locale conosce e il software no: quanti posti ha ogni
-// tavolo, quando si è aperti, quanto si tiene un tavolo. Da qui il form
-// pubblico sa se c'è posto — e sono numeri che cambiano nel tempo, quindi
-// li cambia Alessio senza chiedere una modifica al software.
+// Quando si è aperti, come si chiamano i tavoli, quando si è chiusi.
+//
+// ⚠️ Dal 14/08/2026 qui non c'è più nessun numero di coperti. La capienza
+// non è un dato del software: dipende da come i tavoli sono messi quel
+// giorno, e quel fatto vive nella testa di chi apparecchia. Chi entra lo
+// decide Alessio guardando la pianta, non un conto.
 
 const inputClass =
   "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -37,7 +40,7 @@ export default function SalaEOrari() {
 
   const ricarica = useCallback(async () => {
     const [t, o, c, r] = await Promise.all([
-      listDiningTables(),
+      listSagome(),
       listServiceHours(),
       listClosures(),
       getRegolePrenotazione(),
@@ -54,11 +57,8 @@ export default function SalaEOrari() {
       .finally(() => setLoading(false));
   }, [ricarica]);
 
-  const capienza = useMemo(
-    () => tavoli.filter((t) => t.active).reduce((s, t) => s + (t.seats ?? 0), 0),
-    [tavoli]
-  );
   const serviziAperti = useMemo(() => orari.filter((o) => o.attivo).length, [orari]);
+  const sagomeAttive = useMemo(() => tavoli.filter((t) => t.active), [tavoli]);
 
   const esegui = async (azione) => {
     setError("");
@@ -72,12 +72,12 @@ export default function SalaEOrari() {
 
   const cambiaInterruttore = async (acceso) => {
     setAvviso("");
-    // Acceso senza numeri veri, il sito direbbe "non c'è posto" a chiunque:
-    // peggio della richiesta libera di prima.
-    if (acceso && (capienza === 0 || serviziAperti === 0)) {
+    // Acceso senza nessun servizio, il sito direbbe "siamo chiusi" a
+    // chiunque, tutti i giorni: peggio della richiesta libera di prima.
+    if (acceso && serviziAperti === 0) {
       setAvviso(
-        "Prima accendi almeno un servizio qui sotto e controlla i coperti dei tavoli: " +
-          "altrimenti il sito risponderebbe «non c'è posto» a tutti."
+        "Prima accendi almeno un servizio qui sotto: altrimenti il sito risponderebbe " +
+          "«quel giorno siamo chiusi» a tutti."
       );
       return;
     }
@@ -116,11 +116,11 @@ export default function SalaEOrari() {
           />
           <span>
             <span className="block text-b58-charcoal font-medium">
-              Mostra i posti liberi sul sito
+              Mostra i nostri orari sul sito
             </span>
             <span className="block text-sm text-b58-charcoal-soft mt-1">
-              Acceso: il cliente vede solo gli orari in cui c'è davvero posto, e non può
-              chiedere un giorno di chiusura. Spento: può chiedere qualunque data e ora,
+              Acceso: il cliente sceglie un'ora fra quelle in cui siamo in servizio, e non
+              può chiedere un giorno di chiusura. Spento: può chiedere qualunque data e ora,
               come prima. <strong>In tutti e due i casi confermi sempre tu.</strong>
             </span>
           </span>
@@ -131,9 +131,14 @@ export default function SalaEOrari() {
           </p>
         )}
         <p className="text-sm text-b58-charcoal-soft mt-3">
-          Oggi il locale conta <strong>{capienza} coperti</strong> su {tavoli.filter((t) => t.active).length}{" "}
-          tavoli, con <strong>{serviziAperti}</strong>{" "}
-          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana.
+          Oggi la sala ha <strong>{sagomeAttive.length} posizioni</strong>, con{" "}
+          <strong>{serviziAperti}</strong>{" "}
+          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quante
+          persone entrano lo decidi tu guardando la sala:{" "}
+          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+            apri la pianta
+          </Link>
+          .
         </p>
       </div>
 
@@ -212,23 +217,36 @@ export default function SalaEOrari() {
         </div>
       </div>
 
-      {/* Coperti dei tavoli */}
+      {/* Come si chiamano i tavoli */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Coperti di ogni tavolo</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
         <p className="text-sm text-b58-charcoal-soft mb-4">
-          Il totale è la capienza che il sito considera piena. Se unisci due tavoli per un
-          gruppo, il conto lo fai tu quando confermi.
+          Solo il nome: dove stanno lo decidi trascinandoli dalla{" "}
+          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+            pianta
+          </Link>
+          . Un tavolo che non usi più si spegne, non si cancella: le prenotazioni vecchie
+          devono continuare a dire dove erano seduti.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {tavoli.map((t) => (
             <div key={t.id} className={`bg-white rounded-lg px-3 py-2 ${t.active ? "" : "opacity-50"}`}>
-              <label className={labelClass}>{t.label}</label>
+              <label className={labelClass}>
+                {t.tipo === "tavolo" ? "Tavolo" : t.tipo === "divano" ? "Divano" : "Bancone"}
+                {t.posti_fissi ? ` · ${t.posti_fissi} posti` : ""}
+              </label>
               <CampoAutosalvato
-                type="number"
-                value={t.seats ?? ""}
-                onSave={(v) => esegui(() => updateTableSeats(t.id, v))}
+                value={t.label}
+                onSave={(v) => esegui(() => rinominaSagoma(t.id, v))}
                 className={`${inputClass} w-full`}
               />
+              <button
+                type="button"
+                onClick={() => esegui(() => attivaSagoma(t.id, !t.active))}
+                className="text-[11px] text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
+              >
+                {t.active ? "spegni" : "riaccendi"}
+              </button>
             </div>
           ))}
         </div>
@@ -238,34 +256,6 @@ export default function SalaEOrari() {
       <div className={sezioneClass}>
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Regole di prenotazione</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Quanto tieni un tavolo (minuti)</label>
-            <CampoAutosalvato
-              type="number"
-              value={regole?.durata_tavolo_minuti ?? ""}
-              onSave={(v) => esegui(() => updateRegolePrenotazione({ durata_tavolo_minuti: Number(v) }))}
-              className={`${inputClass} w-full`}
-            />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
-              Due ore è la misura di una cena tranquilla.
-            </p>
-          </div>
-          <div>
-            <label className={labelClass}>Massimo coperti insieme (vuoto = tutti)</label>
-            <CampoAutosalvato
-              type="number"
-              value={regole?.max_coperti_contemporanei ?? ""}
-              onSave={(v) =>
-                esegui(() =>
-                  updateRegolePrenotazione({ max_coperti_contemporanei: v === "" ? null : Number(v) })
-                )
-              }
-              className={`${inputClass} w-full`}
-            />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
-              Da usare se la cucina regge meno posti di quanti ne ha la sala.
-            </p>
-          </div>
           <div>
             <label className={labelClass}>Con quanto anticipo minimo (minuti)</label>
             <CampoAutosalvato
@@ -295,7 +285,12 @@ export default function SalaEOrari() {
         <h2 className="font-display text-lg text-b58-charcoal mb-1">Chiusure straordinarie</h2>
         <p className="text-sm text-b58-charcoal-soft mb-4">
           Ferie, festivi, giorni singoli. In queste date il sito non propone nessun orario e
-          scrive al cliente il motivo, se lo metti.
+          scrive al cliente il motivo, se lo metti. <strong>Non è «siamo pieni»</strong>:
+          quello si mette giorno per giorno dalla{" "}
+          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+            pianta
+          </Link>
+          , e nello storico resta una cosa diversa.
         </p>
         <div className="flex flex-wrap gap-2 items-end mb-4">
           <div>

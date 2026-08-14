@@ -61,6 +61,12 @@ export default function ReservationsList() {
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">Calendario Eventi</h1>
         <div className="flex gap-2">
+          <Link
+            to="/calendario-eventi/pianta"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            La sala
+          </Link>
           {isTitolare && (
             <Link
               to="/calendario-eventi/sala-e-orari"
@@ -95,7 +101,12 @@ export default function ReservationsList() {
             </h2>
           </div>
           <p className="text-sm text-b58-charcoal-soft mb-3">
-            Finché non rispondi, il posto resta bloccato e il cliente resta in attesa.
+            Una richiesta non tiene nessun tavolo: il cliente resta in attesa finché non
+            gliene dai uno tu dalla{" "}
+            <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+              pianta della sala
+            </Link>
+            .
           </p>
           <ul>
             {daConfermare.map((r) => (

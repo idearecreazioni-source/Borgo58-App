@@ -20,6 +20,7 @@ import ReservationForm from "./pages/calendario/ReservationForm";
 import ClientiList from "./pages/calendario/ClientiList";
 import ClienteDetail from "./pages/calendario/ClienteDetail";
 import SalaEOrari from "./pages/calendario/SalaEOrari";
+import PiantaGiornata from "./pages/calendario/PiantaGiornata";
 import PublicReservationForm from "./pages/public/PublicReservationForm";
 import InformativaPrivacy from "./pages/public/InformativaPrivacy";
 import AgendaList from "./pages/agenda/AgendaList";
@@ -146,6 +147,9 @@ function AppRoutes() {
           path="/calendario-eventi/sala-e-orari"
           element={<RequireTitolare><SalaEOrari /></RequireTitolare>}
         />
+        {/* La pianta: la legge anche la sala (serve a sapere chi sta dove),
+            ma la muove solo il titolare — lo decide la RLS, non la rotta. */}
+        <Route path="/calendario-eventi/pianta" element={<PiantaGiornata />} />
         <Route path="/calendario-eventi/clienti" element={<ClientiList />} />
         <Route path="/calendario-eventi/clienti/:id" element={<ClienteDetail />} />
         <Route path="/calendario-eventi/:id" element={<ReservationForm />} />

@@ -11,7 +11,9 @@ export async function listMenuForOrder() {
 export async function listOpenOrders() {
   const { data, error } = await supabase
     .from("orders")
-    .select("*, items:order_items(id, quantity, unit_price, voided_at)")
+    .select(
+      "*, items:order_items(id, quantity, unit_price, voided_at), tavoli:order_tables(dining_table_id, etichetta_al_momento)"
+    )
     .eq("status", "aperto")
     .order("opened_at", { ascending: true });
   if (error) throw error;
@@ -19,7 +21,7 @@ export async function listOpenOrders() {
 }
 
 const ORDER_SELECT =
-  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name))";
+  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento)";
 
 export async function getOrder(id) {
   const { data, error } = await supabase.from("orders").select(ORDER_SELECT).eq("id", id).single();
@@ -29,110 +31,48 @@ export async function getOrder(id) {
   return data;
 }
 
-// entity_id NON si passa: le comande sono sempre della S.r.l.s. e lo
-// decide un default lato database (20260804000006) — lo staff non ha
-// accesso alla tabella entities (P.IVA/codice fiscale, giustamente
-// riservata) e non deve averne bisogno per aprire un tavolo.
-export async function createOrder({ tableLabel, deviceId, note }) {
-  const { data, error } = await supabase
-    .from("orders")
-    .insert({
-      table_label: tableLabel,
-      device_id: deviceId || null,
-      note: note || null,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+// Apre UN conto su uno o più tavoli (14/08/2026, blocco Sala).
+//
+// ⚠️ È il cuore del blocco: TRE TAVOLI ACCOSTATI SONO UNA COMANDA, NON
+// TRE. Prima il conto identificava il tavolo con una stringa e valeva «un
+// solo conto aperto per tavolo»: davanti a un tavolo da dieci o il
+// cameriere apriva tre conti, o il vincolo gli bloccava il secondo.
+//
+// Conto + righe di collegamento sono due tabelle che devono riuscire o
+// fallire insieme: corridoio (B4). L'invariante «un tavolo non sta su due
+// conti aperti» è un indice unico nel database, non un controllo qui:
+// fra la lettura di questa schermata e la scrittura passano millisecondi,
+// e in quei millisecondi l'altro tablet può essere arrivato primo.
+//
+// entity_id non si passa: le comande sono sempre della S.r.l.s. e lo
+// decide un default lato database (20260804000006).
+export async function apriConto(tavoliIds, { deviceId, note } = {}) {
+  const esito = await eseguiOperazione("apri_conto", {
+    p_tavoli: tavoliIds,
+    p_device_id: deviceId || null,
+    p_note: note || null,
+  });
+  return esito?.order_id ?? null;
 }
 
-// Conto aperto per un tavolo, letto ADESSO dal database.
-// Serve a due cose: evitare di crearne un secondo quando un altro tablet
-// l'ha appena aperto, e ritrovare quello esistente se il vincolo
-// uniq_conto_aperto_per_tavolo ha respinto il nostro tentativo.
-export async function findOpenOrderByTable(tableLabel) {
+// Cambia l'insieme dei tavoli di un conto aperto: è lo «sposta» del
+// 09/08 (§3.2.2), che ora sa anche unire e separare. Righe di
+// collegamento + etichetta stampata del conto → corridoio.
+export async function spostaConto(orderId, tavoliIds) {
+  return eseguiOperazione("sposta_conto", { p_order_id: orderId, p_tavoli: tavoliIds });
+}
+
+// Il conto aperto su un certo tavolo, letto ADESSO dal database: serve a
+// non aprirne un secondo quando un altro tablet l'ha appena aperto.
+export async function findOpenOrderByTable(diningTableId) {
   const { data, error } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("table_label", tableLabel)
-    .eq("status", "aperto")
+    .from("order_tables")
+    .select("order_id")
+    .eq("dining_table_id", diningTableId)
+    .eq("conto_aperto", true)
     .maybeSingle();
   if (error) throw error;
-  return data;
-}
-
-// Apre il tavolo: riusa il conto che c'e', altrimenti ne crea uno.
-//
-// Il controllo "esiste gia'?" non basta da solo — fra la lettura e la
-// scrittura passano dei millisecondi, e in quei millisecondi l'altro
-// tablet puo' aver creato il conto. Per questo il database ha un vincolo
-// (migrazione 20260808000002) e qui si gestisce il suo rifiuto: errore
-// 23505 = qualcuno e' arrivato primo, si apre il suo conto invece di
-// mostrare un errore a un cameriere che ha un tavolo che aspetta.
-export async function openOrderForTable(tableLabel, { deviceId } = {}) {
-  const esistente = await findOpenOrderByTable(tableLabel);
-  if (esistente) return esistente.id;
-
-  try {
-    const creato = await createOrder({ tableLabel, deviceId });
-    return creato.id;
-  } catch (e) {
-    if (e?.code !== "23505") throw e;
-    const altrui = await findOpenOrderByTable(tableLabel);
-    if (!altrui) throw e;
-    return altrui.id;
-  }
-}
-
-// Griglia tavoli (§3.2, ridisegno): elenco minimo di etichette, configurato
-// una volta dal titolare — non una gestione tavoli (niente pianta/capienza).
-export async function listDiningTables() {
-  const { data, error } = await supabase
-    .from("dining_tables")
-    .select("*")
-    .eq("active", true)
-    .order("position");
-  if (error) throw error;
-  return data;
-}
-
-// Aggiunta in blocco (un tavolo per riga): la configurazione iniziale di una
-// decina di tavoli uno alla volta era un fastidio inutile, segnalato da
-// Alessio dopo aver provato "Gestisci tavoli" — un solo inserimento invece
-// di N andata/ritorno.
-export async function createDiningTables(labels, startPosition = 0) {
-  const rows = labels.map((label, i) => ({ label, position: startPosition + i }));
-  const { data, error } = await supabase.from("dining_tables").insert(rows).select();
-  if (error) throw error;
-  return data;
-}
-
-export async function deactivateDiningTable(id) {
-  const { error } = await supabase.from("dining_tables").update({ active: false }).eq("id", id);
-  if (error) throw error;
-}
-
-// Sposta il conto su un altro tavolo (caso limite §3.2.2, deciso da
-// Alessio il 09/08/2026 — l'unico dei casi-tavolo che gli capita davvero).
-// UNA scrittura su UNA riga: categoria A del contratto, niente corridoio.
-// La destinazione è protetta dal vincolo "un solo conto aperto per
-// tavolo": se è occupata il database respinge, e qui si traduce il
-// rifiuto in una frase per chi sta servendo.
-export async function moveOrderTable(orderId, newTableLabel) {
-  const { error } = await supabase
-    .from("orders")
-    .update({ table_label: newTableLabel })
-    .eq("id", orderId)
-    .eq("status", "aperto");
-  if (error) {
-    if (error.code === "23505") {
-      throw new Error(
-        `Il tavolo ${newTableLabel} ha già un conto aperto: chiudilo prima, o scegli un altro tavolo.`
-      );
-    }
-    throw error;
-  }
+  return data?.order_id ?? null;
 }
 
 // --- Coperti e impostazioni di sala (§3.2.1) ---

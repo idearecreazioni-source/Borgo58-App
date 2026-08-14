@@ -2,31 +2,30 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addDraftItem,
-  createDiningTables,
-  deactivateDiningTable,
+  apriConto,
   getOrder,
   getServiceSettings,
-  listDiningTables,
   listMenuForOrder,
   listOpenOrders,
-  moveOrderTable,
-  openOrderForTable,
   orderTotals,
   removeDraftItem,
   sendDraftItems,
   setOrderCoperti,
+  spostaConto,
   updateCopertoPrice,
   updateDraftItemQuantity,
   updateItemNote,
   updateOrderNote,
   voidSentItem,
 } from "../../lib/api/orders";
+import { getPiantaDelGiorno } from "../../lib/api/sala";
 import { listBarItems } from "../../lib/api/barItems";
-import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
+import { RECIPE_CATEGORIES, formatEUR, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import PiantaSala from "../../components/PiantaSala";
 import PrecontoModal from "./PrecontoModal";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
@@ -46,8 +45,11 @@ const lineTotal = (item) => item.quantity * Number(item.unit_price);
 export default function Sala() {
   const { isTitolare } = useAuth();
 
-  const [tables, setTables] = useState([]);
+  const [sagome, setSagome] = useState([]);
   const [openOrders, setOpenOrders] = useState([]);
+  // I tavoli toccati e non ancora aperti: tre sagome accostate fanno UN
+  // conto, non tre — è il motivo per cui questa schermata è cambiata.
+  const [selezione, setSelezione] = useState([]);
   const [menu, setMenu] = useState([]);
   const [barItems, setBarItems] = useState([]);
   const [showWines, setShowWines] = useState(false);
@@ -63,16 +65,19 @@ export default function Sala() {
 
   const [showPrecon, setShowPrecon] = useState(false);
   const [showClose, setShowClose] = useState(false);
-  const [showMove, setShowMove] = useState(false);
+  // Si sta cambiando l'insieme dei tavoli di questo conto: unire,
+  // separare, spostare. È lo «sposta» del 09/08, che ora sa fare tutt'e tre.
+  const [spostando, setSpostando] = useState(false);
 
-  const [panel, setPanel] = useState(null); // null | "tavoli" | "calibrazione"
-  const [newTables, setNewTables] = useState("");
-  const [savingTables, setSavingTables] = useState(false);
+  const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
   const [priceDraft, setPriceDraft] = useState("");
 
+  // La pianta è quella di OGGI: se Alessio ha accostato dei tavoli per
+  // stasera, in sala si vedono accostati. Data locale, non UTC — fra
+  // mezzanotte e le due la sala di ieri è ancora quella giusta.
   const loadBoard = () =>
-    Promise.all([listDiningTables(), listOpenOrders()]).then(([t, o]) => {
-      setTables(t);
+    Promise.all([getPiantaDelGiorno(oggiLocale()), listOpenOrders()]).then(([p, o]) => {
+      setSagome(p);
       setOpenOrders(o);
     });
 
@@ -94,19 +99,51 @@ export default function Sala() {
       );
   }, []);
 
-  const orderForLabel = (label) => openOrders.find((o) => o.table_label === label);
+  // Quale conto sta su quale sagoma. Il legame è una chiave esterna, non
+  // il nome del tavolo: «T5 · T6 · T7» non è un tavolo.
+  const orderForTable = (sagomaId) =>
+    openOrders.find((o) => (o.tavoli ?? []).some((t) => t.dining_table_id === sagomaId));
 
-  // L'elenco dei tavoli occupati che ha in mano questa schermata puo'
-  // essere vecchio di qualche secondo: openOrderForTable interroga il
-  // database adesso e, se un altro tablet ha aperto il tavolo nel
-  // frattempo, apre QUEL conto invece di crearne un secondo.
-  const openTable = async (label) => {
+  const apriConoscendoIlConto = async (orderId) => {
     setError("");
     setLoadingOrder(true);
     try {
-      const orderId = await openOrderForTable(label);
       const full = await getOrder(orderId);
       setOrder(full);
+      setSelezione([]);
+      await loadBoard();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoadingOrder(false);
+    }
+  };
+
+  // Un tocco sulla pianta: se il tavolo ha già un conto lo apre, altrimenti
+  // lo aggiunge (o lo toglie) a quelli che si stanno per aprire insieme.
+  const toccaSagoma = (sagoma) => {
+    const conto = orderForTable(sagoma.id);
+    if (conto) {
+      if (spostando) return setError("Quel tavolo ha già un conto aperto: scegline un altro.");
+      return apriConoscendoIlConto(conto.id);
+    }
+    setError("");
+    setSelezione((s) => (s.includes(sagoma.id) ? s.filter((x) => x !== sagoma.id) : [...s, sagoma.id]));
+  };
+
+  // L'elenco dei tavoli occupati che ha in mano questa schermata può
+  // essere vecchio di qualche secondo. La garanzia che lo stesso tavolo
+  // non finisca su due conti è un indice unico nel database: qui si
+  // traduce solo il suo rifiuto in una frase per chi sta servendo.
+  const apriSelezione = async () => {
+    if (selezione.length === 0) return;
+    setError("");
+    setLoadingOrder(true);
+    try {
+      const orderId = await apriConto(selezione);
+      const full = await getOrder(orderId);
+      setOrder(full);
+      setSelezione([]);
       await loadBoard();
     } catch (e) {
       setError(e.message);
@@ -182,20 +219,17 @@ export default function Sala() {
     withBusy(() => voidSentItem(itemId, reason.trim()));
   };
 
-  const handleAddTables = async (e) => {
-    e.preventDefault();
-    const labels = newTables.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (labels.length === 0) return;
-    setSavingTables(true);
+  const confermaSpostamento = async () => {
+    if (selezione.length === 0) return;
     setError("");
     try {
-      await createDiningTables(labels, tables.length);
-      setNewTables("");
+      await spostaConto(order.id, selezione);
+      setSpostando(false);
+      setSelezione([]);
+      await reloadOrder();
       await loadBoard();
     } catch (e) {
       setError(e.message);
-    } finally {
-      setSavingTables(false);
     }
   };
 
@@ -258,14 +292,17 @@ export default function Sala() {
           <p className="text-xs text-b58-charcoal-soft/70 mt-1">
             {order ? (
               <>
-                Tavolo {order.table_label} aperto
+                {order.table_label} aperto
                 {" · "}
                 <button
                   type="button"
-                  onClick={() => setShowMove(true)}
+                  onClick={() => {
+                    setSpostando(true);
+                    setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
+                  }}
                   className="underline hover:text-b58-terracotta-dark"
                 >
-                  sposta
+                  cambia tavoli
                 </button>
               </>
             ) : (
@@ -307,10 +344,10 @@ export default function Sala() {
           <div className="flex gap-1.5">
             <button
               type="button"
-              onClick={() => setPanel("tavoli")}
-              className={`text-xs rounded-full px-3 py-1.5 border ${panel === "tavoli" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
+              onClick={() => setPanel("coperto")}
+              className={`text-xs rounded-full px-3 py-1.5 border ${panel === "coperto" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
             >
-              Tavoli e coperto
+              Coperto
             </button>
             <button
               type="button"
@@ -323,7 +360,7 @@ export default function Sala() {
 
           {panel === "calibrazione" && <CalibrazioneTocco onClose={() => setPanel(null)} />}
 
-          {panel === "tavoli" && (
+          {panel === "coperto" && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 space-y-4">
               <div>
                 <p className={sectionLabel}>Prezzo del coperto</p>
@@ -351,83 +388,101 @@ export default function Sala() {
                 </p>
               </div>
 
-              <div>
-                <p className={sectionLabel}>Tavoli</p>
-                <form onSubmit={handleAddTables} className="mb-2">
-                  <textarea
-                    value={newTables}
-                    onChange={(e) => setNewTables(e.target.value)}
-                    placeholder={"T1\nT2\nChef Table"}
-                    rows={3}
-                    className={`${inputClass} font-mono mb-2`}
-                  />
-                  <button
-                    type="submit"
-                    disabled={savingTables}
-                    className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
-                  >
-                    {savingTables ? "Aggiungo…" : "+ Aggiungi (uno per riga)"}
-                  </button>
-                </form>
-                <div className="flex flex-wrap gap-1.5">
-                  {tables.map((t) => (
-                    <span key={t.id} className="inline-flex items-center gap-1.5 text-xs bg-white rounded-full border border-b58-charcoal/15 pl-3 pr-1.5 py-1">
-                      {t.label}
-                      <button
-                        type="button"
-                        onClick={() => deactivateDiningTable(t.id).then(loadBoard).catch((e) => setError(e.message))}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <p className="text-[11px] text-b58-charcoal-soft/70 leading-relaxed">
+                I tavoli si spostano e si rinominano dalla pianta, in Calendario Eventi →
+                La sala.
+              </p>
             </div>
           )}
         </div>
       )}
 
-      {/* TAVOLI ------------------------------------------------------- */}
-      <p className={sectionLabel}>Tavolo</p>
-      {tables.length === 0 ? (
-        <p className="text-xs text-b58-charcoal-soft/60 py-4">
-          Nessun tavolo configurato.{isTitolare && " Aprili da Impostazioni."}
-        </p>
+      {/* LA SALA ------------------------------------------------------ */}
+      {/* La stessa pianta del Calendario: se stasera tre tavoli sono
+          accostati, qui si vedono accostati — e si aprono insieme, con UN
+          conto solo. */}
+      <p className={sectionLabel}>
+        {spostando ? "Su quali tavoli lo sposti?" : "Sala"}
+      </p>
+      {sagome.length === 0 ? (
+        <p className="text-xs text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
       ) : (
-        <div className="grid grid-cols-4 gap-1.5 mb-4">
-          {tables.map((t) => {
-            const occupato = Boolean(orderForLabel(t.label));
-            const attivo = order?.table_label === t.label;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => openTable(t.label)}
-                className={`tocco-riga relative rounded-lg text-sm px-1 transition-colors ${
-                  attivo
-                    ? "bg-b58-terracotta text-b58-parchment font-semibold"
-                    : "bg-white ring-1 ring-b58-charcoal/10 text-b58-charcoal"
-                }`}
-              >
-                {t.label}
-                {occupato && !attivo && (
-                  <span className="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-b58-gold-dark" />
-                )}
-              </button>
-            );
-          })}
+        <div className="mb-3">
+          <PiantaSala
+            sagome={sagome}
+            selezione={selezione}
+            onSeleziona={toccaSagoma}
+            stato={Object.fromEntries(
+              sagome
+                .map((s) => {
+                  const conto = orderForTable(s.id);
+                  if (!conto) return null;
+                  const attivo = conto.id === order?.id;
+                  return [
+                    s.id,
+                    {
+                      colore: attivo ? "selezionato" : "occupato",
+                      riga1: attivo ? "aperto qui" : "occupato",
+                    },
+                  ];
+                })
+                .filter(Boolean)
+            )}
+          />
+        </div>
+      )}
+
+      {/* La barra che compare solo quando c'è qualcosa da decidere. */}
+      {selezione.length > 0 && (
+        <div className="mb-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
+          <p className="text-sm text-b58-charcoal mb-2">
+            {sagome
+              .filter((s) => selezione.includes(s.id))
+              .map((s) => s.label)
+              .join(" · ")}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={loadingOrder}
+              onClick={spostando ? confermaSpostamento : apriSelezione}
+              className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment text-base font-semibold"
+            >
+              {spostando
+                ? `Sposta qui (${selezione.length})`
+                : `Apri ${selezione.length === 1 ? "il tavolo" : `${selezione.length} tavoli insieme`}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelezione([]);
+                setSpostando(false);
+              }}
+              className="tocco-azione rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal text-sm font-medium px-4"
+            >
+              Annulla
+            </button>
+          </div>
+          {!spostando && selezione.length > 1 && (
+            <p className="text-[11px] text-b58-charcoal-soft/70 mt-2 leading-relaxed">
+              Un conto solo per tutti e {selezione.length}: una comanda, un totale, un
+              preconto.
+            </p>
+          )}
         </div>
       )}
 
       {loadingOrder && <p className="text-xs text-b58-charcoal-soft">Apro il tavolo…</p>}
 
-      {!loadingOrder && !order && (
-        <p className="text-sm text-b58-charcoal-soft/70 text-center py-8">
+      {!loadingOrder && !order && selezione.length === 0 && (
+        <p className="text-sm text-b58-charcoal-soft/70 text-center py-6">
           Tocca un tavolo per aprirlo.
           <br />
-          <span className="text-xs">Il pallino dorato segnala i tavoli con un conto già aperto.</span>
+          <span className="text-xs">
+            Se hanno accostato più tavoli, toccali tutti: si apre un conto solo.
+            <br />
+            I tavoli dorati hanno già un conto aperto.
+          </span>
         </p>
       )}
 
@@ -733,55 +788,6 @@ export default function Sala() {
         </div>
       )}
 
-      {/* Sposta il conto su un altro tavolo (§3.2.2): si scelgono solo i
-          tavoli liberi; se nel frattempo un altro tablet occupa la
-          destinazione, il vincolo del database respinge e il messaggio
-          arriva qui. */}
-      {showMove && order && (
-        <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-sm w-full overflow-hidden">
-            <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
-              <span className="font-display text-base">Sposta {order.table_label} su…</span>
-              <button
-                type="button"
-                onClick={() => setShowMove(false)}
-                className="text-b58-parchment/80 hover:text-b58-parchment text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-4 gap-1.5">
-                {tables
-                  .filter((t) => t.label !== order.table_label && !orderForLabel(t.label))
-                  .map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      disabled={busy}
-                      onClick={() =>
-                        withBusy(async () => {
-                          await moveOrderTable(order.id, t.label);
-                        }).then(() => {
-                          setShowMove(false);
-                          loadBoard();
-                        })
-                      }
-                      className="tocco-riga rounded-lg bg-b58-cream-dark/60 hover:bg-b58-cream-dark text-sm text-b58-charcoal disabled:opacity-50"
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-              </div>
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-3 leading-relaxed">
-                Il conto si porta dietro tutto: piatti, coperti e note. I tavoli
-                occupati non compaiono.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showPrecon && order && (
         <PrecontoModal order={order} copertoPrice={copertoPrice} onClose={() => setShowPrecon(false)} />
       )}
@@ -794,6 +800,7 @@ export default function Sala() {
           onDone={() => {
             setShowClose(false);
             setOrder(null);
+            setSelezione([]);
             loadBoard();
           }}
         />

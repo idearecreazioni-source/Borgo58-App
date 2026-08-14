@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
 import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 
@@ -72,6 +73,70 @@ export async function updateReservation(id, payload) {
     .single();
   if (error) throw error;
   return data;
+}
+
+// --- I tavoli di una prenotazione (14/08/2026) ---
+//
+// Nessuna entità "gruppo": una prenotazione tiene semplicemente l'elenco
+// dei tavoli che occupa, e l'accostamento è dove Alessio li ha messi
+// sulla pianta. L'etichetta è fotografata al momento della conferma —
+// se fra sei mesi la sala viene rinumerata, una prenotazione di oggi
+// continua a mostrare il tavolo che aveva.
+
+export async function listTavoliPrenotazione(reservationId) {
+  const { data, error } = await supabase
+    .from("prenotazione_tavoli")
+    .select("dining_table_id, etichetta_al_momento, rischio_accettato")
+    .eq("reservation_id", reservationId);
+  if (error) throw error;
+  return data;
+}
+
+// Tutti gli abbinamenti di una giornata, per colorare la pianta: quale
+// tavolo è già promesso a chi.
+export async function listTavoliPrenotatiPerData(data) {
+  const { data: righe, error } = await supabase
+    .from("prenotazione_tavoli")
+    .select(
+      "dining_table_id, etichetta_al_momento, rischio_accettato, reservation:reservation_id!inner(id, customer_name, party_size, reservation_time, reservation_date, status)"
+    )
+    .eq("reservation.reservation_date", data)
+    .in("reservation.status", ["richiesta_in_attesa", "confermata"]);
+  if (error) throw error;
+  return righe;
+}
+
+// Assegna la prenotazione a uno o più tavoli e, se richiesto, la conferma.
+//
+// Tocca lo stato della prenotazione E N righe di collegamento: due
+// tabelle, quindi corridoio obbligatorio (Contratto §5, rilievo del
+// validatore del 14/08). Se la conferma passasse e i tavoli no, resterebbe
+// una prenotazione confermata che non dice dove far sedere nessuno — e
+// nessuno se ne accorgerebbe fino alla sera.
+//
+// `rischioAccettato`: due prenotazioni sullo stesso tavolo la stessa sera
+// a orari diversi sono ammesse — è la procedura che Alessio usa al
+// telefono. Il sistema non lo impedisce e non avvisa: registra che il
+// secondo cliente sa di poterlo trovare ancora occupato.
+export async function assegnaPrenotazione(
+  reservationId,
+  tavoliIds,
+  { rischioAccettato = false, conferma = true } = {}
+) {
+  return eseguiOperazione("assegna_prenotazione", {
+    p_reservation_id: reservationId,
+    p_tavoli: tavoliIds,
+    p_rischio_accettato: rischioAccettato,
+    p_conferma: conferma,
+  });
+}
+
+export async function togliAssegnazione(reservationId) {
+  const { error } = await supabase
+    .from("prenotazione_tavoli")
+    .delete()
+    .eq("reservation_id", reservationId);
+  if (error) throw error;
 }
 
 // Caparra: tabella separata visibile solo al titolare (§3.5) — la tabella

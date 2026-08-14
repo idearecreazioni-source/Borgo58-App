@@ -1,16 +1,19 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
-// Capienza e orari del locale — i numeri che il form pubblico usa per dire
-// a un cliente se c'è posto.
+// La sala: le sagome, la pianta di una giornata, gli orari, il sold out.
 //
-// Stanno nel database e non nel codice per la stessa ragione del prezzo del
-// coperto: cambiano nella vita del locale (una chiusura, un tavolo in più,
-// un orario spostato d'estate) e non devono richiedere una modifica al
-// software. Scrittura riservata al titolare dalla RLS: qui non c'è nessun
-// controllo di ruolo, la barriera è nel database (§6).
+// Dal 14/08/2026 questo file non contiene più nessun conteggio di posti.
+// La capienza non si calcola: la sala è una pianta che Alessio muove con
+// le mani, e chi entra lo decide lui guardandola. Il calcolo dei coperti
+// liberi è stato RIMOSSO dal database, non spento — una funzione che non
+// fa niente, fra tre mesi, qualcuno la riaccende credendo di riparare
+// qualcosa.
 //
-// Sono tutte scritture su UNA tabella: categoria A del Contratto, quindi
-// dirette. Nessuna di queste operazioni ha conseguenze su altre tabelle.
+// Spostare una sagoma scrive su UNA tabella: categoria A del Contratto,
+// chiamata diretta. Un viaggio di rete verso una Edge Function a ogni
+// movimento non guadagnerebbe niente e si sentirebbe tutto.
+// Promuovere una disposizione a base ne tocca DUE: B4, corridoio.
 
 export const GIORNI = [
   { weekday: 1, nome: "Lunedì" },
@@ -22,22 +25,114 @@ export const GIORNI = [
   { weekday: 0, nome: "Domenica" },
 ];
 
-// --- Tavoli e coperti ---
+// La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
+// non è interattivo — pareti e zone non si spostano, non si
+// ridimensionano, non hanno stato. Le proporzioni vengono dalla
+// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
+// sala, serve che le zone siano riconoscibili a colpo d'occhio.
+export const SALA_LARGHEZZA_CM = 2070;
+export const SALA_PROFONDITA_CM = 1030;
 
-export async function listDiningTables() {
+export const ZONE_FONDALE = [
+  { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
+  { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
+  { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
+  { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
+  { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
+];
+
+// --- Le sagome (pianta base) ---
+
+export async function listSagome() {
   const { data, error } = await supabase
     .from("dining_tables")
-    .select("id, label, seats, active, position")
+    .select(
+      "id, label, tipo, forma, zona, larghezza_cm, profondita_cm, spostabile, posti_fissi, x, y, active, position"
+    )
     .order("position");
   if (error) throw error;
   return data;
 }
 
-export async function updateTableSeats(id, seats) {
+// La sala com'è in una certa data: pianta base + scostamenti di quel
+// giorno. UN solo calcolo, nel database, per la schermata del calendario
+// e per le Comande — due schermate che ricostruiscono la pianta per conto
+// proprio finirebbero per disegnare due sale diverse.
+export async function getPiantaDelGiorno(data) {
+  const { data: righe, error } = await supabase.rpc("pianta_del_giorno", { p_data: data });
+  if (error) throw error;
+  return righe ?? [];
+}
+
+// Sposta una sagoma per UNA giornata: si salva solo lo scostamento, mai
+// una copia dell'intera pianta. Se una data non ha scostamenti non esiste
+// nessuna riga per quella data, e il giorno dopo si riparte dalla base
+// senza che nessuno debba rimettere niente a posto.
+export async function spostaSagoma({ data, sagomaId, x, y }) {
   const { error } = await supabase
-    .from("dining_tables")
-    .update({ seats: Number(seats) })
-    .eq("id", id);
+    .from("disposizioni_giornaliere")
+    .upsert(
+      { data, dining_table_id: sagomaId, x: Math.round(x), y: Math.round(y), aggiornato_il: new Date().toISOString() },
+      { onConflict: "data,dining_table_id" }
+    );
+  if (error) throw error;
+}
+
+// Rimette una sagoma dov'è nella pianta base, per quel giorno.
+export async function riportaSagomaAllaBase({ data, sagomaId }) {
+  const { error } = await supabase
+    .from("disposizioni_giornaliere")
+    .delete()
+    .eq("data", data)
+    .eq("dining_table_id", sagomaId);
+  if (error) throw error;
+}
+
+// «Questa diventa la disposizione base». Senza questo comando non si
+// capisce più quale sia la sala vera. Due tabelle → corridoio.
+export async function promuoviDisposizione(data) {
+  return eseguiOperazione("promuovi_disposizione", { p_data: data });
+}
+
+export async function rinominaSagoma(id, label) {
+  const { error } = await supabase.from("dining_tables").update({ label: label.trim() }).eq("id", id);
+  if (error) throw error;
+}
+
+// Le sagome si disattivano, mai si cancellano: uno storico che punta a un
+// tavolo sparito non si legge più.
+export async function attivaSagoma(id, attiva) {
+  const { error } = await supabase.from("dining_tables").update({ active: attiva }).eq("id", id);
+  if (error) throw error;
+}
+
+// --- Giornate al completo ---
+
+export async function listSoldOut({ da } = {}) {
+  let query = supabase.from("giornate_sold_out").select("data").order("data");
+  if (da) query = query.gte("data", da);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function isSoldOut(data) {
+  const { data: riga, error } = await supabase
+    .from("giornate_sold_out")
+    .select("data")
+    .eq("data", data)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(riga);
+}
+
+export async function setSoldOut(data, pieno) {
+  if (pieno) {
+    const { error } = await supabase.from("giornate_sold_out").upsert({ data }, { onConflict: "data" });
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase.from("giornate_sold_out").delete().eq("data", data);
   if (error) throw error;
 }
 
@@ -62,6 +157,9 @@ export async function updateServiceHour(id, payload) {
 }
 
 // --- Chiusure straordinarie ---
+// ⚠️ Non sono i giorni «al completo»: quelle sono un'altra tabella, e la
+// differenza deve restare leggibile anche fra un anno. Una sera chiusa e
+// una sera piena sono due fatti diversi.
 
 export async function listClosures() {
   const { data, error } = await supabase
@@ -85,13 +183,14 @@ export async function deleteClosure(id) {
 }
 
 // --- Regole di prenotazione (la riga unica di service_settings) ---
+// Restano solo quelle che NON sono capienza: da quanto tempo prima si
+// prenota e fin quando in là. La durata del tavolo e il tetto dei coperti
+// contemporanei sono stati rimossi dalla tabella.
 
 export async function getRegolePrenotazione() {
   const { data, error } = await supabase
     .from("service_settings")
-    .select(
-      "durata_tavolo_minuti, max_coperti_contemporanei, giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva"
-    )
+    .select("giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva")
     .eq("id", 1)
     .single();
   if (error) throw error;

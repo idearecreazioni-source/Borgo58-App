@@ -5,6 +5,7 @@ import {
   createReservation,
   getReservation,
   getReservationDeposit,
+  listTavoliPrenotazione,
   setReservationDeposit,
   updateReservation,
 } from "../../lib/api/reservations";
@@ -45,6 +46,7 @@ export default function ReservationForm() {
   const [customerId, setCustomerId] = useState(null);
   const [deposit, setDeposit] = useState(""); // caparra, solo titolare (tabella separata)
   const [status, setStatus] = useState("confermata");
+  const [tavoli, setTavoli] = useState([]);
   const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [notFound, setNotFound] = useState(false);
@@ -77,6 +79,8 @@ export default function ReservationForm() {
           });
           setStatus(r.status);
           setCustomerId(r.customer_id);
+          const t = await listTavoliPrenotazione(id);
+          if (!cancelled) setTavoli(t);
           if (isTitolare) {
             const dep = await getReservationDeposit(id);
             if (!cancelled) setDeposit(dep ?? "");
@@ -182,9 +186,27 @@ export default function ReservationForm() {
       )}
 
       {isEdit && (
-        <div className="flex items-center justify-between rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4">
           <span className="text-sm text-b58-charcoal">
             Stato: <span className="font-medium">{labelFor(RESERVATION_STATUSES, status)}</span>
+            {" · "}
+            {/* Dove li fai sedere: si decide sulla pianta, non da qui — un
+                secondo posto per assegnare un tavolo sarebbe un secondo
+                posto in cui sbagliare. */}
+            {tavoli.length > 0 ? (
+              <>
+                tavolo <span className="font-medium">{tavoli.map((t) => t.etichetta_al_momento).join(" · ")}</span>
+                {tavoli[0]?.rischio_accettato && (
+                  <span className="text-b58-charcoal-soft"> (secondo giro)</span>
+                )}
+              </>
+            ) : (
+              <span className="text-b58-terracotta-dark">senza tavolo</span>
+            )}
+            {" · "}
+            <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+              apri la pianta
+            </Link>
           </span>
           <div className="flex gap-2">
             {STATUS_ACTIONS[status].map((a) => (

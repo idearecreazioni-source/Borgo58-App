@@ -27,10 +27,16 @@ export default function PublicReservationForm() {
   // dando all'ospite un errore incomprensibile.
   const today = oggiLocale();
 
-  // Disponibilità vera, chiesta al database ogni volta che cambia la data o
-  // il numero di persone. Finché il titolare non accende l'interruttore
+  // Gli orari in cui siamo in servizio, chiesti al database ogni volta che
+  // cambia la data. Finché il titolare non accende l'interruttore
   // (opzioni.attivo = false) resta l'orario libero di prima: il form
   // funziona comunque, non dipende da questa chiamata.
+  //
+  // ⚠️ Dal 14/08/2026 questa risposta NON contiene nessun numero sulla
+  // capienza, e non perché la schermata eviti di mostrarlo: dentro la
+  // funzione del database non c'è più nessun conteggio di posti. Il solo
+  // freno è la giornata segnata al completo, che qui arriva come
+  // `sold_out` e altrove non esiste.
   const [opzioni, setOpzioni] = useState(null);
   const [cercaOrari, setCercaOrari] = useState(false);
 
@@ -213,12 +219,6 @@ export default function PublicReservationForm() {
                     </button>
                   ))}
                 </div>
-              )}
-              {opzioni.gruppo_grande && !opzioni.chiuso && (
-                <p className="text-[11px] text-b58-charcoal-soft/80 mt-2">
-                  Siete più di quanti ne tiene il nostro tavolo più grande: la richiesta ci
-                  arriva lo stesso e ti richiamiamo per sistemarvi bene.
-                </p>
               )}
             </div>
           ) : (

@@ -27,12 +27,15 @@ export async function submitPublicReservation({
   if (error) throw error;
 }
 
-// Cosa può ancora scegliere un cliente per un certo giorno e un certo
-// numero di persone. Una sola chiamata: il conto dei posti liberi lo fa il
-// database, non la schermata — così la pagina pubblica e il controllo che
-// precede l'inserimento non possono dire due cose diverse.
+// Cosa può scegliere un cliente per un certo giorno: gli orari in cui
+// siamo in servizio, oppure il motivo per cui non se ne può scegliere
+// nessuno.
 //
-// Risposta: { attivo, chiuso, motivo, gruppo_grande, orari: ["19:30", …] }
+// Risposta: { attivo, chiuso, sold_out, motivo, orari: ["19:30", …] }
+// ⚠️ Nessun numero sulla capienza, e non per prudenza di questa
+// schermata: dal 14/08/2026 dentro la funzione del database non c'è più
+// nessun conteggio di posti. L'unico freno è `sold_out`, cioè una serata
+// che Alessio ha segnato al completo guardando la sala.
 // Con "attivo: false" (interruttore spento nelle impostazioni) il form
 // torna a essere una richiesta libera, come prima del 10/08/2026.
 export async function getReservationOptions({ date, partySize }) {
