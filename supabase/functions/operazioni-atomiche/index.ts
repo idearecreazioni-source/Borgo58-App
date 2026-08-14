@@ -78,6 +78,14 @@ const OPERAZIONI = new Set([
   // ingredienti dai lotti, scrive i movimenti e crea il lotto nuovo col
   // suo costo. Quattro tabelle, un gesto in cucina.
   "registra_produzione",
+  // La pianta viva (14/08/2026). Promuovere una disposizione a base tocca
+  // la pianta e gli scostamenti; assegnare una prenotazione tocca la
+  // prenotazione e le righe dei tavoli; aprire o spostare un conto tocca
+  // il conto e i suoi tavoli. Tre tavoli accostati sono una comanda sola.
+  "promuovi_disposizione",
+  "assegna_prenotazione",
+  "apri_conto",
+  "sposta_conto",
 ]);
 
 const CORS = {
