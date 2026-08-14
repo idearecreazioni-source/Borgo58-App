@@ -203,7 +203,9 @@ export async function deleteClosure(id) {
 export async function getRegolePrenotazione() {
   const { data, error } = await supabase
     .from("service_settings")
-    .select("giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva")
+    .select(
+      "giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva, ora_primo_turno"
+    )
     .eq("id", 1)
     .single();
   if (error) throw error;

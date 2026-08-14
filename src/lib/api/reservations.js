@@ -86,7 +86,7 @@ export async function updateReservation(id, payload) {
 export async function listTavoliPrenotazione(reservationId) {
   const { data, error } = await supabase
     .from("prenotazione_tavoli")
-    .select("dining_table_id, etichetta_al_momento, rischio_accettato")
+    .select("dining_table_id, etichetta_al_momento")
     .eq("reservation_id", reservationId);
   if (error) throw error;
   return data;
@@ -98,7 +98,7 @@ export async function listTavoliPrenotatiPerData(data) {
   const { data: righe, error } = await supabase
     .from("prenotazione_tavoli")
     .select(
-      "dining_table_id, etichetta_al_momento, rischio_accettato, reservation:reservation_id!inner(id, customer_name, party_size, reservation_time, reservation_date, status)"
+      "dining_table_id, etichetta_al_momento, reservation:reservation_id!inner(id, customer_name, party_size, reservation_time, reservation_date, status)"
     )
     .eq("reservation.reservation_date", data)
     .in("reservation.status", ["richiesta_in_attesa", "confermata"]);
@@ -114,19 +114,14 @@ export async function listTavoliPrenotatiPerData(data) {
 // una prenotazione confermata che non dice dove far sedere nessuno — e
 // nessuno se ne accorgerebbe fino alla sera.
 //
-// `rischioAccettato`: due prenotazioni sullo stesso tavolo la stessa sera
-// a orari diversi sono ammesse — è la procedura che Alessio usa al
-// telefono. Il sistema non lo impedisce e non avvisa: registra che il
-// secondo cliente sa di poterlo trovare ancora occupato.
-export async function assegnaPrenotazione(
-  reservationId,
-  tavoliIds,
-  { rischioAccettato = false, conferma = true } = {}
-) {
+// Due prenotazioni sullo stesso tavolo la stessa sera a orari diversi
+// restano ammesse — è la procedura che Alessio usa al telefono. Dal
+// 14/08 non si spunta più niente: lo dice il colore della sagoma, giallo
+// per chi arriva presto e verde per chi arriva tardi.
+export async function assegnaPrenotazione(reservationId, tavoliIds, { conferma = true } = {}) {
   return eseguiOperazione("assegna_prenotazione", {
     p_reservation_id: reservationId,
     p_tavoli: tavoliIds,
-    p_rischio_accettato: rischioAccettato,
     p_conferma: conferma,
   });
 }
@@ -150,7 +145,6 @@ export async function creaPrenotazioneSuTavoli({
   email,
   note,
   tavoliIds,
-  rischioAccettato = false,
 }) {
   return eseguiOperazione("crea_prenotazione_su_tavoli", {
     p_data: data,
@@ -161,7 +155,6 @@ export async function creaPrenotazioneSuTavoli({
     p_telefono: telefono || null,
     p_email: email || null,
     p_note: note || null,
-    p_rischio_accettato: rischioAccettato,
   });
 }
 

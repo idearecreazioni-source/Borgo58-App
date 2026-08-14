@@ -257,6 +257,20 @@ export default function SalaEOrari() {
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Regole di prenotazione</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
+            <label className={labelClass}>Fin quando è «primo giro»</label>
+            <CampoAutosalvato
+              type="time"
+              value={regole?.ora_primo_turno?.slice(0, 5) ?? ""}
+              onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_primo_turno: v }))}
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
+              liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
+              colpo d'occhio: non impedisce niente.
+            </p>
+          </div>
+          <div>
             <label className={labelClass}>Con quanto anticipo minimo (minuti)</label>
             <CampoAutosalvato
               type="number"

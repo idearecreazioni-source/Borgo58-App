@@ -54,6 +54,18 @@ const COLORI = {
   selezionato: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
   occupato: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
   prenotato: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  // ⚠️ I DUE COLORI DELLA SERATA (idea di Alessio, 14/08). Giallo = chi
+  // arriva entro l'ora di soglia, quindi il tavolo può liberarsi per un
+  // secondo giro; verde = chi arriva dopo, ed è l'ultimo giro di quel
+  // tavolo. Non è un vincolo e non impedisce niente: è l'ora resa
+  // visibile senza doverla leggere. Ha sostituito una spunta che chiedeva
+  // ad Alessio di dichiarare a mano una cosa che si deduce dall'orario.
+  presto: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
+  tardi: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  // Mezzo e mezzo: il tavolo ha sia un primo che un secondo giro. Chi ha
+  // prenotato dopo sa implicitamente di poter aspettare — che è esattamente
+  // ciò che la spunta diceva a parole.
+  misto: { riempimento: "url(#mezzoEmezzo)", bordo: "var(--color-b58-olive-dark)" },
   fisso: { riempimento: "var(--color-b58-cream-dark)", bordo: "var(--color-b58-charcoal-soft)" },
 };
 
@@ -65,7 +77,8 @@ const limita = (v, min, max) => Math.min(max, Math.max(min, v));
  * @param selezione   array di id selezionati
  * @param onSeleziona (sagoma) => void — assente: le sagome non si toccano
  * @param onSposta    (sagoma, x, y) => void — assente: niente trascinamento
- * @param stato       { [id]: { colore, riga1, riga2 } }
+ * @param stato       { [id]: { colore } } — solo il colore: dentro una
+ *                    sagoma di 90 cm non ci sta altro di leggibile
  */
 export default function PiantaSala({
   sagome = [],
@@ -211,6 +224,16 @@ export default function PiantaSala({
             basso, la sala alta in cima. Le coordinate di ogni sagoma
             restano quelle della sala vera — qui gira il foglio, non la
             stanza. */}
+        <defs>
+          {/* Il tavolo con due giri: metà giallo, metà verde. Due tappe
+              secche sullo stesso punto, non una sfumatura — una sfumatura
+              direbbe «un po' presto e un po' tardi», che non vuol dire
+              niente. */}
+          <linearGradient id="mezzoEmezzo" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="50%" stopColor="var(--color-b58-gold)" />
+            <stop offset="50%" stopColor="var(--color-b58-olive)" />
+          </linearGradient>
+        </defs>
         <g transform={verticale ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
             si spostano, non si ridimensionano, non hanno stato. */}
@@ -273,15 +296,26 @@ export default function PiantaSala({
           // piante di sala scrivono da sempre. La decisione vale per
           // TUTTE le righe della stessa sagoma: mezze scritte diritte e
           // mezze di traverso sarebbero peggio di entrambe.
+          // ⚠️ DENTRO LA SAGOMA CI STA IL SUO NOME E BASTA.
+          // Decisione di Alessio dopo averlo visto: in un quadrato di 90
+          // cm non entrano un nome e un'ora a una dimensione leggibile —
+          // sul telefono le due righe di un divano si accavallavano, sul
+          // computer l'ora usciva tagliata («0:00 · 2»). Chi c'è e a che
+          // ora si legge nell'elenco sotto la pianta, dove lo spazio c'è.
+          // Sulla sagoma resta il colore, che si legge senza leggere.
           const largo = (t, f) => (t ? String(t).length * f * 0.55 : 0);
-          const serve = Math.max(
-            largo(sagoma.label, 36),
-            largo(info?.riga1, 28),
-            largo(info?.riga2, 26),
-            info?.riga1 ? 0 : largo(sagoma.posti_fissi ? `${sagoma.posti_fissi} posti` : null, 26)
-          );
+          const posti =
+            sagoma.posti_fissi && sagoma.profondita_cm >= 110 ? `${sagoma.posti_fissi} posti` : null;
+          const serve = Math.max(largo(sagoma.label, 36), largo(posti, 26));
+          // Con la sala in piedi un'etichetta raddrizzata ha a
+          // disposizione la PROFONDITÀ della sagoma, non la larghezza:
+          // "Chef Table" su un bancone profondo 70 cm sborderebbe sui
+          // vicini. Si raddrizza solo ciò che ci sta; il resto corre lungo
+          // il lato lungo, come le piante di sala scrivono da sempre.
           const raddrizza = verticale && serve <= sagoma.profondita_cm * 0.95;
-          const gira = (tx, ty) => (raddrizza ? `rotate(90 ${tx} ${ty})` : undefined);
+          const cx = sagoma.larghezza_cm / 2;
+          const cy = sagoma.profondita_cm / 2;
+          const chiaro = selezionati.has(sagoma.id) || Boolean(info?.colore);
 
           return (
             <g
@@ -310,69 +344,38 @@ export default function PiantaSala({
                 strokeWidth={inMano ? 10 : 5}
                 opacity={inMano ? 0.85 : 1}
               />
-              <text
-                x={sagoma.larghezza_cm / 2}
-                y={sagoma.profondita_cm / 2 + (info?.riga1 ? -6 : 12)}
-                transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + (info?.riga1 ? -6 : 12))}
-                textAnchor="middle"
-                fontSize="36"
-                fontWeight="600"
-                fill={
-                  selezionati.has(sagoma.id) || info?.colore === "prenotato"
-                    ? "var(--color-b58-parchment)"
-                    : "var(--color-b58-charcoal)"
-                }
-              >
-                {sagoma.label}
-              </text>
-              {info?.riga1 && (
+              {/* ⚠️ UN SOLO gruppo per tutte le scritte della sagoma, e non
+                  una controrotazione per ciascuna. Girando ogni etichetta
+                  attorno a sé stessa, due righe che stanno una SOTTO
+                  l'altra finiscono una ACCANTO all'altra e si sovrappongono
+                  — è il difetto che Alessio ha visto sui divani. Girando il
+                  blocco intero attorno al centro della sagoma, la rotazione
+                  del disegno e la controrotazione si annullano esattamente:
+                  le scritte restano dritte E impilate come sono scritte
+                  qui. */}
+              <g transform={raddrizza ? `rotate(90 ${cx} ${cy})` : undefined}>
                 <text
-                  x={sagoma.larghezza_cm / 2}
-                  y={sagoma.profondita_cm / 2 + 32}
-                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 32)}
+                  x={cx}
+                  y={cy + (posti ? -6 : 12)}
                   textAnchor="middle"
-                  fontSize="28"
-                  fill={
-                    selezionati.has(sagoma.id) || info?.colore === "prenotato"
-                      ? "var(--color-b58-parchment)"
-                      : "var(--color-b58-charcoal-soft)"
-                  }
+                  fontSize="36"
+                  fontWeight="600"
+                  fill={chiaro ? "var(--color-b58-parchment)" : "var(--color-b58-charcoal)"}
                 >
-                  {info.riga1}
+                  {sagoma.label}
                 </text>
-              )}
-              {info?.riga2 && (
-                <text
-                  x={sagoma.larghezza_cm / 2}
-                  y={sagoma.profondita_cm / 2 + 66}
-                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 66)}
-                  textAnchor="middle"
-                  fontSize="26"
-                  fill={
-                    selezionati.has(sagoma.id) || info?.colore === "prenotato"
-                      ? "var(--color-b58-parchment)"
-                      : "var(--color-b58-charcoal-soft)"
-                  }
-                >
-                  {info.riga2}
-                </text>
-              )}
-              {/* I posti di un arredo fisso si scrivono solo se la sagoma è
-                  alta abbastanza da contenerli: sul bancone dello Chef
-                  Table, che è profondo 70 cm, la riga finiva fuori dal
-                  disegno. */}
-              {sagoma.posti_fissi && !info?.riga1 && sagoma.profondita_cm >= 110 && (
-                <text
-                  x={sagoma.larghezza_cm / 2}
-                  y={sagoma.profondita_cm / 2 + 44}
-                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 44)}
-                  textAnchor="middle"
-                  fontSize="26"
-                  fill="var(--color-b58-charcoal-soft)"
-                >
-                  {sagoma.posti_fissi} posti
-                </text>
-              )}
+                {posti && (
+                  <text
+                    x={cx}
+                    y={cy + 32}
+                    textAnchor="middle"
+                    fontSize="26"
+                    fill={chiaro ? "var(--color-b58-parchment)" : "var(--color-b58-charcoal-soft)"}
+                  >
+                    {posti}
+                  </text>
+                )}
+              </g>
               {sagoma.spostato && (
                 <circle cx={sagoma.larghezza_cm - 16} cy="16" r="12" fill="var(--color-b58-terracotta)" />
               )}

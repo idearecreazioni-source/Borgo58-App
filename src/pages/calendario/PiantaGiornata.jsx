@@ -5,6 +5,7 @@ import { formatDate, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import {
   getPiantaDelGiorno,
+  getRegolePrenotazione,
   isSoldOut,
   promuoviDisposizione,
   riportaSagomaAllaBase,
@@ -40,7 +41,8 @@ import {
 // ⚠️ La pianta mostra TUTTA la serata, non un momento. Un tavolo
 // prenotato alle 19:30 resta colorato anche se alle 22 si libera: non
 // esistono turni né finestre temporali (§8 del mandato), quindi ogni
-// sagoma occupata porta scritta l'ora e decide lui.
+// sagoma occupata e' colorata secondo l'ora di arrivo, e l'ora esatta si
+// legge nell'elenco sotto.
 
 const NUOVA_VUOTA = { nome: "", telefono: "", persone: 2, ora: "20:00", note: "" };
 
@@ -109,6 +111,11 @@ export default function PiantaGiornata() {
   const [prenotazioni, setPrenotazioni] = useState([]);
   const [assegnazioni, setAssegnazioni] = useState([]);
   const [pieno, setPieno] = useState(false);
+  // L'ora che separa il primo giro dal secondo: sta nelle impostazioni,
+  // perche' d'estate o di sabato cambia e non deve servire una modifica al
+  // programma. Formato del database (HH:MM:SS), per confrontarla con
+  // reservation_time senza tagliare stringhe.
+  const [soglia, setSoglia] = useState("20:00:00");
   const [caricamento, setCaricamento] = useState(true);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
@@ -119,7 +126,6 @@ export default function PiantaGiornata() {
   const [modo, setModo] = useState(null); // null | "nuova" | "assegna"
   const [inCorso, setInCorso] = useState(null); // la prenotazione da assegnare
   const [scelti, setScelti] = useState([]);
-  const [rischio, setRischio] = useState(false);
   const [nuova, setNuova] = useState(NUOVA_VUOTA);
 
   // La prenotazione aperta toccando un tavolo già promesso.
@@ -127,23 +133,24 @@ export default function PiantaGiornata() {
   const [modifica, setModifica] = useState(null);
 
   const ricarica = useCallback(async () => {
-    const [p, r, a, s] = await Promise.all([
+    const [p, r, a, s, reg] = await Promise.all([
       getPiantaDelGiorno(data),
       listReservations({ date: data }),
       listTavoliPrenotatiPerData(data),
       isSoldOut(data),
+      getRegolePrenotazione(),
     ]);
     setSagome(p);
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
+    if (reg?.ora_primo_turno) setSoglia(reg.ora_primo_turno);
   }, [data]);
 
   const azzera = () => {
     setModo(null);
     setInCorso(null);
     setScelti([]);
-    setRischio(false);
     setNuova(NUOVA_VUOTA);
     setAperta(null);
     setModifica(null);
@@ -186,22 +193,26 @@ export default function PiantaGiornata() {
 
   const evidenziata = inCorso?.id ?? aperta?.id ?? null;
 
+  // ⚠️ SULLA SAGOMA VA SOLO IL COLORE, e chi c'è si legge nell'elenco
+  // sotto. Dentro un quadrato di 90 cm un nome e un'ora non ci stanno a
+  // una dimensione leggibile: sul telefono le righe si accavallavano, sul
+  // computer l'ora usciva tagliata.
+  //
+  // Il colore però dice la cosa che serve a colpo d'occhio: **giallo** chi
+  // arriva entro l'ora di soglia (il tavolo può liberarsi per un secondo
+  // giro), **verde** chi arriva dopo (ultimo giro), **mezzo e mezzo** un
+  // tavolo che ha già tutt'e due.
   const stato = useMemo(() => {
     const s = {};
     for (const sagoma of sagome) {
       const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
       if (altri.length === 0) continue;
-      s[sagoma.id] = {
-        colore: "prenotato",
-        riga1: altri[0].reservation.customer_name?.split(" ")[0],
-        riga2:
-          altri.length > 1
-            ? `${altri.length} turni`
-            : `${altri[0].reservation.reservation_time?.slice(0, 5)} · ${altri[0].reservation.party_size}p`,
-      };
+      const presto = altri.some((a) => (a.reservation.reservation_time ?? "") <= soglia);
+      const tardi = altri.some((a) => (a.reservation.reservation_time ?? "") > soglia);
+      s[sagoma.id] = { colore: presto && tardi ? "misto" : presto ? "presto" : "tardi" };
     }
     return s;
-  }, [sagome, perTavolo, evidenziata]);
+  }, [sagome, perTavolo, evidenziata, soglia]);
 
   const tocca = (sagoma) => {
     setAvviso("");
@@ -243,7 +254,6 @@ export default function PiantaGiornata() {
     setModo("assegna");
     setInCorso(p);
     setScelti(tavoliDi(p.id).map((a) => a.dining_table_id));
-    setRischio(tavoliDi(p.id)[0]?.rischio_accettato ?? false);
   };
 
   const etichetteScelte = sagome
@@ -253,7 +263,7 @@ export default function PiantaGiornata() {
 
   const confermaAssegnazione = () =>
     esegui(async () => {
-      await assegnaPrenotazione(inCorso.id, scelti, { rischioAccettato: rischio, conferma: true });
+      await assegnaPrenotazione(inCorso.id, scelti, { conferma: true });
       azzera();
     });
 
@@ -267,7 +277,6 @@ export default function PiantaGiornata() {
         telefono: nuova.telefono,
         note: nuova.note,
         tavoliIds: scelti,
-        rischioAccettato: rischio,
       });
       azzera();
     });
@@ -417,6 +426,23 @@ export default function PiantaGiornata() {
             </div>
           )}
 
+          {/* La legenda dei colori: la scritta che non sta dentro il
+              tavolo, detta una volta invece che su ognuno. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px] text-b58-charcoal-soft">
+            <span>
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
+              arriva entro le {soglia.slice(0, 5)} — il tavolo può liberarsi per una seconda serata
+            </span>
+            <span>
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-olive align-middle mr-1" />
+              arriva dopo — è l'ultimo giro di quel tavolo
+            </span>
+            <span>
+              <span className="inline-block w-2.5 h-2.5 rounded-sm align-middle mr-1 bg-gradient-to-r from-b58-gold from-50% to-b58-olive to-50%" />
+              tutti e due
+            </span>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
             <span>
               {scostamenti > 0
@@ -450,16 +476,6 @@ export default function PiantaGiornata() {
               </p>
 
               <CampiPrenotazione valori={nuova} cambia={setNuova} />
-
-              <label className="flex items-start gap-2 text-sm text-b58-charcoal-soft mb-4">
-                <input
-                  type="checkbox"
-                  checked={rischio}
-                  onChange={(e) => setRischio(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>Sa che il tavolo potrebbe essere ancora occupato quando arriva (secondo giro).</span>
-              </label>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -496,16 +512,6 @@ export default function PiantaGiornata() {
                   </>
                 )}
               </p>
-
-              <label className="flex items-start gap-2 text-sm text-b58-charcoal-soft mb-4">
-                <input
-                  type="checkbox"
-                  checked={rischio}
-                  onChange={(e) => setRischio(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>Sa che il tavolo potrebbe essere ancora occupato quando arriva (secondo giro).</span>
-              </label>
 
               <div className="flex flex-wrap gap-2">
                 <button

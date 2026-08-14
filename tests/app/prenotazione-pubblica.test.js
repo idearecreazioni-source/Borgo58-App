@@ -324,7 +324,6 @@ describe("prendere una prenotazione dalla pianta", () => {
       p_telefono: "3999000097",
       p_email: null,
       p_note: null,
-      p_rischio_accettato: false,
     });
     expect(error).toBeNull();
     expect(data.tavoli).toBe(2);

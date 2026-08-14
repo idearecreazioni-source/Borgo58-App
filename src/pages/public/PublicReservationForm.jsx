@@ -203,22 +203,23 @@ export default function PublicReservationForm() {
                   {opzioni.motivo}
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                // Un menu a tendina, non un muro di pulsanti: con l'orario
+                // ogni quarto d'ora sono tredici bottoni per una cena, e su
+                // un telefono occupano mezza schermata prima ancora che
+                // l'ospite abbia scritto il proprio nome.
+                <select
+                  required
+                  value={form.time}
+                  onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                  className={inputClass}
+                >
+                  <option value="">Scegli l'ora…</option>
                   {orariLiberi.map((o) => (
-                    <button
-                      key={o}
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, time: o }))}
-                      className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
-                        form.time === o
-                          ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
-                          : "bg-white text-b58-charcoal border-b58-charcoal/15 hover:bg-b58-cream-dark"
-                      }`}
-                    >
+                    <option key={o} value={o}>
                       {o}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
               )}
             </div>
           ) : (

@@ -196,9 +196,6 @@ export default function ReservationForm() {
             {tavoli.length > 0 ? (
               <>
                 tavolo <span className="font-medium">{tavoli.map((t) => t.etichetta_al_momento).join(" · ")}</span>
-                {tavoli[0]?.rischio_accettato && (
-                  <span className="text-b58-charcoal-soft"> (secondo giro)</span>
-                )}
               </>
             ) : (
               <span className="text-b58-terracotta-dark">senza tavolo</span>
