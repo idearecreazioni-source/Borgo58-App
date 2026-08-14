@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   agendaCorsie,
+  agendaFatti,
   completaTask,
+  riapriTask,
   listTasksForMonth,
   spostaTask,
   stellaTask,
@@ -220,6 +222,8 @@ export default function AgendaList() {
   const [error, setError] = useState("");
   const [corsie, setCorsie] = useState([]);
   const [apri, setApri] = useState({});
+  const [fatti, setFatti] = useState([]);
+  const [mostraFatti, setMostraFatti] = useState(false);
   const navigate = useNavigate();
 
   const now = new Date();
@@ -230,7 +234,32 @@ export default function AgendaList() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [notice, setNotice] = useState("");
 
-  const ricarica = async () => setCorsie(await agendaCorsie());
+  const ricarica = async () => {
+    const [c, f] = await Promise.all([agendaCorsie(), agendaFatti(30)]);
+    setCorsie(c);
+    setFatti(f);
+  };
+
+  // Annullare un «fatto». Sul ricorrente si porta dietro il successore
+  // già nato: due righe per lo stesso adempimento sarebbero
+  // indistinguibili da due impegni veri.
+  const riapri = async (t) => {
+    setError("");
+    setNotice("");
+    try {
+      const r = await riapriTask(t.id);
+      await ricarica();
+      if (r?.successore_tolto) {
+        setNotice("Rimesso da fare. Ho tolto anche quello che era già nato per la volta dopo.");
+      } else if (r?.successore_rimasto) {
+        setNotice(
+          "Rimesso da fare. Quello nato per la volta dopo l'hai già lavorato, quindi l'ho lasciato dov'era."
+        );
+      }
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -452,7 +481,48 @@ export default function AgendaList() {
             })}
           </div>
         )
-      ) : (
+      ) : null}
+
+      {/* Dove finiscono i fatti. Non e' un archivio: e' la via di
+          ritorno da un tocco sbagliato. Chiusa di default, perche' la
+          domanda dell'Agenda resta «cosa devo fare adesso». */}
+      {view === "lista" && fatti.length > 0 && (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => setMostraFatti((m) => !m)}
+            className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+          >
+            {mostraFatti ? "▾" : "▸"} Fatti di recente ({fatti.length})
+          </button>
+          {mostraFatti && (
+            <div className="mt-2 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
+              {fatti.map((f) => (
+                <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <span className="text-sm text-b58-charcoal-soft line-through flex-1 min-w-0">
+                    {f.title}
+                  </span>
+                  {f.ricorrenza && (
+                    <span className="text-[10px] text-b58-charcoal-soft/70 shrink-0">si ripete</span>
+                  )}
+                  <span className="text-xs text-b58-charcoal-soft/70 shrink-0">
+                    {formatDate(f.fatto_il)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => riapri(f)}
+                    className="shrink-0 text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                  >
+                    rimetti da fare
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === "calendario" ? (
         <>
           <CalendarView
             tasks={monthTasks}
@@ -489,7 +559,7 @@ export default function AgendaList() {
             </div>
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

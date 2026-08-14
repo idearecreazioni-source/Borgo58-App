@@ -23,6 +23,25 @@ export async function completaTask(id) {
   return data;
 }
 
+// Gli impegni chiusi di recente. Esistono perché un «fatto» premuto per
+// sbaglio deve poter tornare indietro: senza, la spunta è irreversibile
+// e nessuno la usa con serenità.
+export async function agendaFatti(giorni = 30) {
+  const { data, error } = await supabase.rpc("agenda_fatti", { p_giorni: giorni });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ⚠️ Riaprire un ricorrente si porta dietro il successore già nato:
+// altrimenti resterebbero due righe per lo stesso adempimento, e la
+// seconda sembrerebbe legittima. Se qualcuno ci ha già lavorato sopra
+// resta dov'è, e la schermata lo dice.
+export async function riapriTask(id) {
+  const { data, error } = await supabase.rpc("riapri_task", { p_id: id });
+  if (error) throw error;
+  return data;
+}
+
 // Rimanda / promuovi a data: una riga sola, la RLS come barriera.
 export async function spostaTask(id, dueDate) {
   return updateTask(id, { due_date: dueDate });
