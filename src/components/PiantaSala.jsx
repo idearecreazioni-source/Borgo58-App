@@ -27,6 +27,23 @@ import {
 // si riesce a toccare durante un servizio non è una pianta, è un disegno.
 const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
 
+// ⚠️ LA SALA IN PIEDI, per il tablet della sala (chiesto da Alessio il
+// 14/08 dopo aver aperto il primo tavolo dal vivo: la pianta sbordava di
+// lato e si vedeva mezza).
+//
+// La sala è larga il doppio di quanto è profonda: su un tablet tenuto in
+// verticale, sdraiata, o esce dallo schermo o diventa troppo piccola per
+// toccarla. Girata di un quarto ci sta in larghezza e scorre in
+// verticale — che è il verso in cui si scorre su un telefono.
+//
+// **Il disegno gira, la sala no.** L'ingresso finisce in basso, cioè
+// dalla parte da cui si entra guardando lo schermo, e la sala alta in
+// cima. ⚠️ **Le scritte NON girano**: ogni etichetta si rigira di un
+// quarto in senso contrario, altrimenti si leggerebbe di traverso — e un
+// nome di tavolo che si legge piegando la testa, durante un servizio,
+// non si legge.
+const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05;
+
 // L'aggancio a griglia: 10 cm. Abbastanza fine da accostare due tavoli
 // senza fatica, abbastanza grosso da non lasciare fessure di 3 cm che a
 // schermo sembrano un errore di chi trascina.
@@ -50,7 +67,14 @@ const limita = (v, min, max) => Math.min(max, Math.max(min, v));
  * @param onSposta    (sagoma, x, y) => void — assente: niente trascinamento
  * @param stato       { [id]: { colore, riga1, riga2 } }
  */
-export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, onSposta, stato = {} }) {
+export default function PiantaSala({
+  sagome = [],
+  selezione = [],
+  onSeleziona,
+  onSposta,
+  stato = {},
+  inPiedi = false,
+}) {
   const svgRef = useRef(null);
   // La sagoma che si sta trascinando adesso: vive solo qui, e sparisce al
   // rilascio. La posizione vera resta quella del database finché non
@@ -59,14 +83,21 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
 
   const selezionati = new Set(selezione);
 
-  // Da pixel dello schermo a centimetri della sala.
+  // Da pixel dello schermo a centimetri della sala. Con la sala in piedi
+  // gli assi si scambiano: chi trascina muove il dito verso il basso e il
+  // tavolo deve andare verso l'ingresso, non verso destra.
   const inCentimetri = (evento) => {
     const riquadro = svgRef.current.getBoundingClientRect();
-    return {
-      x: ((evento.clientX - riquadro.left) / riquadro.width) * SALA_LARGHEZZA_CM,
-      y: ((evento.clientY - riquadro.top) / riquadro.height) * SALA_PROFONDITA_CM,
-    };
+    const fx = (evento.clientX - riquadro.left) / riquadro.width;
+    const fy = (evento.clientY - riquadro.top) / riquadro.height;
+    if (inPiedi) {
+      return { x: SALA_LARGHEZZA_CM * (1 - fy), y: fx * SALA_PROFONDITA_CM };
+    }
+    return { x: fx * SALA_LARGHEZZA_CM, y: fy * SALA_PROFONDITA_CM };
   };
+
+  // La controrotazione di un'etichetta, perché resti diritta.
+  const testoDiritto = (tx, ty) => (inPiedi ? `rotate(90 ${tx} ${ty})` : undefined);
 
   const iniziaTrascinamento = (evento, sagoma) => {
     if (!onSposta || !sagoma.spostabile) return;
@@ -117,15 +148,26 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
     <div className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${SALA_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`}
+        viewBox={
+          inPiedi
+            ? `0 0 ${SALA_PROFONDITA_CM} ${SALA_LARGHEZZA_CM}`
+            : `0 0 ${SALA_LARGHEZZA_CM} ${SALA_PROFONDITA_CM}`
+        }
         className="block w-full touch-none select-none"
         style={{
-          minWidth: `calc(${LARGHEZZA_MINIMA_CM_REALI.toFixed(1)} * var(--pxcm))`,
-          aspectRatio: `${SALA_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
+          minWidth: `calc(${(inPiedi ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
+          aspectRatio: inPiedi
+            ? `${SALA_PROFONDITA_CM} / ${SALA_LARGHEZZA_CM}`
+            : `${SALA_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
           height: "auto",
         }}
         onPointerMove={muovi}
       >
+        {/* Un quarto di giro a tutto il disegno: l'ingresso finisce in
+            basso, la sala alta in cima. Le coordinate di ogni sagoma
+            restano quelle della sala vera — qui gira il foglio, non la
+            stanza. */}
+        <g transform={inPiedi ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
             si spostano, non si ridimensionano, non hanno stato. */}
         {ZONE_FONDALE.map((z) => (
@@ -144,6 +186,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
             <text
               x={z.x + 18}
               y={z.y + 46}
+              transform={testoDiritto(z.x + 18, z.y + 46)}
               fontSize="34"
               fill="var(--color-b58-charcoal)"
               fillOpacity="0.35"
@@ -164,7 +207,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
           strokeWidth="16"
           strokeLinecap="round"
         />
-        <text x="24" y="800" fontSize="30" fill="var(--color-b58-olive-dark)">
+        <text x="24" y="800" transform={testoDiritto(24, 800)} fontSize="30" fill="var(--color-b58-olive-dark)">
           Ingresso
         </text>
 
@@ -177,6 +220,24 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
           const info = stato[sagoma.id];
           const tondo = sagoma.forma === "tondo";
           const selezionabile = Boolean(onSeleziona || (onSposta && sagoma.spostabile));
+
+          // ⚠️ Con la sala in piedi, un'etichetta raddrizzata ha a
+          // disposizione la PROFONDITA' della sagoma, non la larghezza:
+          // "Chef Table" su un bancone profondo 70 cm sborderebbe sui
+          // vicini. Quindi si raddrizza solo cio' che ci sta, e il resto
+          // corre lungo il lato lungo della sagoma — che e' come le
+          // piante di sala scrivono da sempre. La decisione vale per
+          // TUTTE le righe della stessa sagoma: mezze scritte diritte e
+          // mezze di traverso sarebbero peggio di entrambe.
+          const largo = (t, f) => (t ? String(t).length * f * 0.55 : 0);
+          const serve = Math.max(
+            largo(sagoma.label, 36),
+            largo(info?.riga1, 28),
+            largo(info?.riga2, 26),
+            info?.riga1 ? 0 : largo(sagoma.posti_fissi ? `${sagoma.posti_fissi} posti` : null, 26)
+          );
+          const raddrizza = inPiedi && serve <= sagoma.profondita_cm * 0.95;
+          const gira = (tx, ty) => (raddrizza ? `rotate(90 ${tx} ${ty})` : undefined);
 
           return (
             <g
@@ -203,6 +264,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
               <text
                 x={sagoma.larghezza_cm / 2}
                 y={sagoma.profondita_cm / 2 + (info?.riga1 ? -6 : 12)}
+                transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + (info?.riga1 ? -6 : 12))}
                 textAnchor="middle"
                 fontSize="36"
                 fontWeight="600"
@@ -218,6 +280,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
                 <text
                   x={sagoma.larghezza_cm / 2}
                   y={sagoma.profondita_cm / 2 + 32}
+                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 32)}
                   textAnchor="middle"
                   fontSize="28"
                   fill={
@@ -233,6 +296,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
                 <text
                   x={sagoma.larghezza_cm / 2}
                   y={sagoma.profondita_cm / 2 + 66}
+                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 66)}
                   textAnchor="middle"
                   fontSize="26"
                   fill={
@@ -252,6 +316,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
                 <text
                   x={sagoma.larghezza_cm / 2}
                   y={sagoma.profondita_cm / 2 + 44}
+                  transform={gira(sagoma.larghezza_cm / 2, sagoma.profondita_cm / 2 + 44)}
                   textAnchor="middle"
                   fontSize="26"
                   fill="var(--color-b58-charcoal-soft)"
@@ -265,6 +330,7 @@ export default function PiantaSala({ sagome = [], selezione = [], onSeleziona, o
             </g>
           );
         })}
+        </g>
       </svg>
     </div>
   );

@@ -408,7 +408,13 @@ export default function Sala() {
         <p className="text-xs text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
       ) : (
         <div className="mb-3">
+          {/* In piedi, non sdraiata: la sala è larga il doppio di quanto è
+              profonda, e su un tablet tenuto in verticale sdraiata si
+              vedeva a metà (detto da Alessio dopo il primo tavolo aperto
+              dal vivo). Girata ci sta in larghezza e scorre in giù, che è
+              il verso in cui si scorre con un dito. */}
           <PiantaSala
+            inPiedi
             sagome={sagome}
             selezione={selezione}
             onSeleziona={toccaSagoma}
@@ -417,18 +423,21 @@ export default function Sala() {
                 .map((s) => {
                   const conto = orderForTable(s.id);
                   if (!conto) return null;
-                  const attivo = conto.id === order?.id;
-                  return [
-                    s.id,
-                    {
-                      colore: attivo ? "selezionato" : "occupato",
-                      riga1: attivo ? "aperto qui" : "occupato",
-                    },
-                  ];
+                  // Nessuna scritta dentro la sagoma: dentro un quadrato
+                  // di 90 cm girato non ci sta niente di leggibile, e il
+                  // colore lo dice meglio. La legenda qui sotto lo spiega
+                  // una volta invece di ripeterlo su ogni tavolo.
+                  return [s.id, { colore: conto.id === order?.id ? "selezionato" : "occupato" }];
                 })
                 .filter(Boolean)
             )}
           />
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
+            hanno già un conto aperto ·{" "}
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-terracotta align-middle mr-1" />
+            il conto che stai servendo
+          </p>
         </div>
       )}
 
