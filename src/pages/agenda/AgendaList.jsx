@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { deleteCompletedTasks, listTasks, listTasksForMonth, updateTask } from "../../lib/api/tasks";
-import { TASK_PRIORITIES, TASK_STATUSES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
+import {
+  agendaCorsie,
+  completaTask,
+  deleteCompletedTasks,
+  listTasks,
+  listTasksForMonth,
+  spostaTask,
+  stellaTask,
+} from "../../lib/api/tasks";
+import { TASK_CATEGORIES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 const PRIORITY_BADGE = {
@@ -9,6 +17,43 @@ const PRIORITY_BADGE = {
   media: "bg-b58-gold",
   bassa: "bg-b58-charcoal-soft/50",
 };
+
+// Le quattro corsie, nell'ordine in cui servono a rispondere alla domanda
+// vera: cosa devo fare adesso.
+const CORSIE = [
+  { key: "in_ritardo", titolo: "In ritardo", nascondiSeVuota: true },
+  { key: "questa_settimana", titolo: "Questa settimana" },
+  { key: "piu_avanti", titolo: "Più avanti" },
+  { key: "quando_capita", titolo: "Quando capita" },
+];
+
+const GIORNI = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+
+// «Oggi», «Domani», «Giovedì 20»: una data scritta per intero costringe a
+// fare il conto ogni volta.
+function etichettaGiorno(iso, oggiISO) {
+  if (iso === oggiISO) return "Oggi";
+  const d = new Date(`${iso}T12:00:00`);
+  const o = new Date(`${oggiISO}T12:00:00`);
+  const diff = Math.round((d - o) / 86400000);
+  if (diff === 1) return "Domani";
+  return `${GIORNI[d.getDay()]} ${d.getDate()}`;
+}
+
+function etichettaMese(iso) {
+  const d = new Date(`${iso}T12:00:00`);
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function raggruppa(righe, chiave) {
+  const map = new Map();
+  righe.forEach((r) => {
+    const k = chiave(r);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(r);
+  });
+  return [...map.entries()];
+}
 
 const MONTH_NAMES = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -103,15 +148,81 @@ function RiservatoBadge() {
   );
 }
 
+// Una riga della lista, coi tre gesti a portata di pollice.
+function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
+  const [rimanda, setRimanda] = useState(false);
+  const senzaData = !t.due_date;
+
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center gap-3">
+        <input type="checkbox" checked={false} onChange={onFatto} className="shrink-0" title="Fatto" />
+        <button type="button" onClick={onStella} className="shrink-0 text-base leading-none" title="Per me conta">
+          <span className={t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>★</span>
+        </button>
+        <button onClick={onApri} className="flex-1 text-left min-w-0">
+          <span className="text-sm text-b58-charcoal">{t.title}</span>
+          <span className="text-xs text-b58-charcoal-soft ml-2">
+            · {labelFor(TASK_CATEGORIES, t.category)}
+          </span>
+          {/* ⚠️ L'anzianità è ciò che impedisce a «quando capita» di
+              diventare un cimitero: senza, una voce ferma da tre mesi
+              sembra scritta ieri. */}
+          {senzaData && t.giorni_in_lista > 13 && (
+            <span className="text-xs text-b58-charcoal-soft/70 ml-2">
+              in lista da {Math.round(t.giorni_in_lista / 30) >= 1
+                ? `${Math.round(t.giorni_in_lista / 30)} mes${Math.round(t.giorni_in_lista / 30) === 1 ? "e" : "i"}`
+                : `${t.giorni_in_lista} giorni`}
+            </span>
+          )}
+        </button>
+        {/* Da dove viene, e ci si arriva con un tocco. */}
+        {t.origine_modulo && (
+          <Link
+            to={t.origine_modulo === "posta" ? "/documenti/posta" : "/documenti"}
+            className="shrink-0 text-[10px] text-b58-charcoal-soft hover:text-b58-terracotta underline"
+          >
+            da {t.origine_modulo === "posta" ? "Posta" : "Archivio documenti"}
+          </Link>
+        )}
+        {t.visibile_staff === false && <RiservatoBadge />}
+        {t.due_date && (
+          <span className="text-xs text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => setRimanda((r) => !r)}
+          className="shrink-0 text-xs text-b58-charcoal-soft hover:text-b58-terracotta"
+        >
+          {senzaData ? "dagli una data" : "rimanda"}
+        </button>
+      </div>
+      {rimanda && (
+        <div className="mt-2 pl-8">
+          <input
+            type="date"
+            defaultValue={t.due_date ?? ""}
+            onChange={(e) => {
+              onSposta(e.target.value);
+              setRimanda(false);
+            }}
+            className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-xs text-b58-charcoal"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AgendaList() {
   const { isTitolare } = useAuth();
+  const oggiISO = oggiLocale();
   const [view, setView] = useState("lista");
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-  const [priority, setPriority] = useState("");
-  const [search, setSearch] = useState("");
+  const [corsie, setCorsie] = useState([]);
+  const [apri, setApri] = useState({});
   const navigate = useNavigate();
 
   const now = new Date();
@@ -123,13 +234,21 @@ export default function AgendaList() {
   const [deleting, setDeleting] = useState(false);
   const [notice, setNotice] = useState("");
 
+  // Le corsie per la lista; `tasks` resta solo per il conteggio dei
+  // completati (che serve al pulsante di pulizia) e per il calendario.
+  const ricarica = async () => {
+    const [c, t] = await Promise.all([agendaCorsie(), listTasks({})]);
+    setCorsie(c);
+    setTasks(t);
+  };
+
   useEffect(() => {
     setLoading(true);
-    listTasks({ status: status || undefined, priority: priority || undefined, search: search || undefined })
-      .then(setTasks)
+    ricarica()
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [status, priority, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (view !== "calendario") return;
@@ -150,16 +269,50 @@ export default function AgendaList() {
     setSelectedDay(null);
   };
 
-  const toggleComplete = async (task) => {
+  // I tre gesti dalla lista, senza aprire la scheda: fatto, rimanda,
+  // promuovi a data. Aprire una scheda per spuntare una casella è il
+  // motivo per cui le liste non si tengono aggiornate.
+  const fatto = async (task) => {
+    setError("");
+    setNotice("");
     try {
-      const newStatus = task.status === "completato" ? "da_fare" : "completato";
-      await updateTask(task.id, { status: newStatus });
-      setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
-      setMonthTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
+      const nuovo = await completaTask(task.id);
+      await ricarica();
+      if (nuovo) setNotice("Fatto. Ne è già nato uno nuovo alla prossima scadenza.");
     } catch (e) {
       setError(e.message);
     }
   };
+
+  const sposta = async (task, data) => {
+    if (!data) return;
+    setError("");
+    try {
+      await spostaTask(task.id, data);
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const stella = async (task) => {
+    setError("");
+    try {
+      await stellaTask(task.id, !task.preferito);
+      setCorsie((cs) =>
+        cs.map((c) => (c.id === task.id ? { ...c, preferito: !task.preferito } : c))
+      );
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // ⚠️ Il badge conta SOLO ritardo e oggi. «Quando capita» non ci entra
+  // mai: un numero fermo su venti smette di essere un'informazione e si
+  // impara a ignorarlo.
+  const daFareAdesso = corsie.filter(
+    (c) => c.corsia === "in_ritardo" || c.giorni_alla_scadenza === 0
+  ).length;
 
   // Pulizia dei task evasi. Il conteggio è calcolato sui task attualmente
   // caricati, ma la cancellazione agisce su TUTTI i completati nel database
@@ -179,11 +332,8 @@ export default function AgendaList() {
     setError("");
     try {
       const n = await deleteCompletedTasks();
-      const [lista, mese] = await Promise.all([
-        listTasks({ status: status || undefined, priority: priority || undefined, search: search || undefined }),
-        view === "calendario" ? listTasksForMonth(year, month) : Promise.resolve(null),
-      ]);
-      setTasks(lista);
+      const mese = view === "calendario" ? await listTasksForMonth(year, month) : null;
+      await ricarica();
       if (mese) setMonthTasks(mese);
       setNotice(n === 0 ? "Nessun task completato da eliminare." : `Eliminati ${n} task completati.`);
     } catch (e) {
@@ -198,7 +348,17 @@ export default function AgendaList() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-        <h1 className="font-display text-2xl text-b58-charcoal">Agenda</h1>
+        <h1 className="font-display text-2xl text-b58-charcoal">
+          Agenda
+          {/* ⚠️ Il badge conta SOLO ritardo e oggi. «Quando capita» non ci
+              entra mai: un numero fermo su venti smette di essere
+              un'informazione e si impara a ignorarlo. */}
+          {daFareAdesso > 0 && (
+            <span className="ml-2 inline-flex items-center rounded-full bg-b58-terracotta text-b58-parchment text-xs font-medium px-2 py-0.5 align-middle">
+              {daFareAdesso}
+            </span>
+          )}
+        </h1>
         <div className="flex gap-2">
           {/* Adempimenti societari: materia riservata al titolare (§3.5). La
               barriera è la RLS — per lo staff l'export uscirebbe comunque
@@ -259,84 +419,91 @@ export default function AgendaList() {
       {error && <p className="text-sm text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {view === "lista" ? (
-        <>
-          <div className="flex flex-wrap gap-3 mb-4">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cerca task…"
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[200px]"
-            />
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
-            >
-              <option value="">Tutte le priorità</option>
-              {TASK_PRIORITIES.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
-            >
-              <option value="">Tutti gli stati</option>
-              {TASK_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+        loading ? (
+          <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        ) : corsie.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
+            <p className="text-b58-charcoal-soft">Niente da fare. Davvero.</p>
           </div>
+        ) : (
+          <div className="space-y-6">
+            {CORSIE.map((c) => {
+              const righe = corsie.filter((t) => t.corsia === c.key);
+              {/* «In ritardo» sparisce quando è vuota: una corsia vuota in
+                  cima ogni giorno è rumore che si impara a saltare. */}
+              if (righe.length === 0 && c.nascondiSeVuota) return null;
 
-          {loading ? (
-            <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
-          ) : tasks.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
-              <p className="text-b58-charcoal-soft">Nessun task.</p>
-            </div>
-          ) : (
-            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
-              {tasks.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={t.status === "completato"}
-                    onChange={() => toggleComplete(t)}
-                    className="shrink-0"
-                  />
+              let gruppi;
+              if (c.key === "questa_settimana") {
+                gruppi = raggruppa(righe, (r) => r.due_date).map(([k, v]) => [
+                  etichettaGiorno(k, oggiISO),
+                  v,
+                ]);
+              } else if (c.key === "piu_avanti") {
+                gruppi = raggruppa(righe, (r) => r.due_date.slice(0, 7)).map(([k, v]) => [
+                  etichettaMese(`${k}-01`),
+                  v,
+                ]);
+              } else {
+                gruppi = [[null, righe]];
+              }
+
+              const chiusa = c.key === "piu_avanti" && !apri[c.key];
+
+              return (
+                <section key={c.key}>
                   <button
-                    onClick={() => navigate(`/agenda/${t.id}`)}
-                    className="flex-1 text-left min-w-0"
+                    type="button"
+                    onClick={() =>
+                      c.key === "piu_avanti" && setApri((a) => ({ ...a, [c.key]: !a[c.key] }))
+                    }
+                    className="flex items-center gap-2 mb-2"
                   >
-                    <span
-                      className={`text-sm ${
-                        t.status === "completato"
-                          ? "text-b58-charcoal-soft line-through"
-                          : "text-b58-charcoal"
+                    <h2
+                      className={`font-display text-lg ${
+                        c.key === "in_ritardo" ? "text-b58-terracotta-dark" : "text-b58-charcoal"
                       }`}
                     >
-                      {t.title}
-                    </span>
-                    {t.category && (
-                      <span className="text-xs text-b58-charcoal-soft ml-2">· {t.category}</span>
+                      {c.titolo}
+                    </h2>
+                    <span className="text-xs text-b58-charcoal-soft">({righe.length})</span>
+                    {c.key === "piu_avanti" && (
+                      <span className="text-xs text-b58-charcoal-soft">{chiusa ? "▸" : "▾"}</span>
                     )}
                   </button>
-                  {t.visibile_staff === false && <RiservatoBadge />}
-                  {t.due_date && (
-                    <span className="text-xs text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
+
+                  {righe.length === 0 ? (
+                    <p className="text-sm text-b58-charcoal-soft/60">Niente qui.</p>
+                  ) : chiusa ? null : (
+                    <div className="space-y-3">
+                      {gruppi.map(([titolo, elenco]) => (
+                        <div key={titolo ?? "unico"}>
+                          {titolo && (
+                            <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1">
+                              {titolo}
+                            </p>
+                          )}
+                          <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
+                            {elenco.map((t) => (
+                              <RigaImpegno
+                                key={t.id}
+                                t={t}
+                                onFatto={() => fatto(t)}
+                                onSposta={(d) => sposta(t, d)}
+                                onStella={() => stella(t)}
+                                onApri={() => navigate(`/agenda/${t.id}`)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <span
-                    className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment text-[10px] font-medium px-2 py-0.5`}
-                  >
-                    {labelFor(TASK_PRIORITIES, t.priority)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+                </section>
+              );
+            })}
+          </div>
+        )
       ) : (
         <>
           <CalendarView

@@ -1,6 +1,37 @@
 import { supabase } from "../supabase";
 import { oggiLocale } from "../constants";
 
+// Gli impegni aperti con la loro corsia — in ritardo, questa settimana,
+// più avanti, quando capita — e da quanti giorni sono lì.
+//
+// La corsia la calcola il database, non la schermata: il badge del modulo
+// e la lista devono contare la stessa cosa. Due conteggi diversi sullo
+// stesso schermo sono la lezione dei rincari, dove schermo e Telegram
+// dicevano due numeri.
+export async function agendaCorsie() {
+  const { data, error } = await supabase.rpc("agenda_corsie");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Chiudere un impegno che torna genera il successivo, nella stessa
+// transazione: se la chiusura passasse e la rigenerazione no, un
+// adempimento annuale sparirebbe per riapparire come dimenticanza.
+export async function completaTask(id) {
+  const { data, error } = await supabase.rpc("completa_task", { p_id: id });
+  if (error) throw error;
+  return data;
+}
+
+// Rimanda / promuovi a data: una riga sola, la RLS come barriera.
+export async function spostaTask(id, dueDate) {
+  return updateTask(id, { due_date: dueDate });
+}
+
+export async function stellaTask(id, preferito) {
+  return updateTask(id, { preferito });
+}
+
 export async function listTasks({ status, priority, category, search } = {}) {
   let query = supabase
     .from("tasks")

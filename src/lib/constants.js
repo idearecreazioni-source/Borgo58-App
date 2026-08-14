@@ -325,6 +325,31 @@ export const RESERVATION_TYPES = [
   { value: "evento", label: "Evento" },
 ];
 
+// Elenco CHIUSO: prima erano testo libero e su venti righe convivevano
+// quattro convenzioni diverse ("Adempimenti societari", "Documenti",
+// "amministrativo", vuoto). Il database normalizza e rifiuta il resto —
+// qui vivono solo le etichette da mostrare.
+export const TASK_CATEGORIES = [
+  { value: "fisco_scadenze", label: "Fisco e scadenze" },
+  { value: "documenti", label: "Documenti" },
+  { value: "fornitori_pagamenti", label: "Fornitori e pagamenti" },
+  { value: "personale", label: "Personale" },
+  { value: "haccp_locale", label: "HACCP e locale" },
+  { value: "altro", label: "Altro" },
+];
+
+export const TASK_RICORRENZE = [
+  { value: "", label: "Non si ripete" },
+  { value: "mensile", label: "Ogni mese" },
+  { value: "trimestrale", label: "Ogni tre mesi" },
+  { value: "semestrale", label: "Ogni sei mesi" },
+  { value: "annuale", label: "Ogni anno" },
+];
+
+// ⚠️ Non si usa più in Agenda: l'urgenza la dice la scadenza, non un
+// campo dichiarato a mano (su venti righe valeva "alta" per tutti gli
+// adempimenti e "media" per tutto il resto — non distingueva niente).
+// Resta perché la colonna è `not null` e alcuni moduli la scrivono ancora.
 export const TASK_PRIORITIES = [
   { value: "alta", label: "Alta" },
   { value: "media", label: "Media" },

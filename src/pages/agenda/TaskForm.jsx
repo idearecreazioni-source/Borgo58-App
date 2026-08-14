@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_PRIORITIES, TASK_STATUSES } from "../../lib/constants";
+import { TASK_CATEGORIES, TASK_RICORRENZE, TASK_STATUSES } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 const emptyForm = {
@@ -11,7 +11,9 @@ const emptyForm = {
   due_time: "",
   priority: "media",
   status: "da_fare",
-  category: "",
+  category: "altro",
+  preferito: false,
+  ricorrenza: "",
   remind_date: "",
   remind_time: "",
   // §3.18: l'Agenda è condivisa, quindi un task nasce visibile. Il titolare
@@ -64,7 +66,9 @@ export default function TaskForm() {
           due_time: t.due_time?.slice(0, 5) ?? "",
           priority: t.priority,
           status: t.status,
-          category: t.category ?? "",
+          category: t.category ?? "altro",
+          preferito: t.preferito ?? false,
+          ricorrenza: t.ricorrenza ?? "",
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
@@ -105,7 +109,9 @@ export default function TaskForm() {
         due_time: form.due_time || null,
         priority: form.priority,
         status: form.status,
-        category: form.category || null,
+        category: form.category || "altro",
+        preferito: form.preferito,
+        ricorrenza: form.ricorrenza || null,
         remind_at: newRemindAt,
         visibile_staff: form.visibile_staff,
         // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
@@ -209,17 +215,23 @@ export default function TaskForm() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          {/* La priorità dichiarata a mano è sparita: a decidere quanto è
+              urgente una cosa è la sua scadenza. Resta la stella, che è
+              un'altra cosa e non si può calcolare. */}
           <div>
-            <label className={labelClass}>Priorità</label>
+            <label className={labelClass}>Si ripete</label>
             <select
-              value={form.priority}
-              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
+              value={form.ricorrenza}
+              onChange={(e) => setForm((f) => ({ ...f, ricorrenza: e.target.value }))}
               className={inputClass}
             >
-              {TASK_PRIORITIES.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              {TASK_RICORRENZE.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
+            <p className="text-xs text-b58-charcoal-soft mt-1">
+              Chiudendolo ne nasce subito un altro alla scadenza successiva.
+            </p>
           </div>
           <div>
             <label className={labelClass}>Stato</label>
@@ -235,14 +247,31 @@ export default function TaskForm() {
           </div>
         </div>
 
-        <div>
-          <label className={labelClass}>Categoria (opzionale)</label>
-          <input
-            value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-            placeholder='Es. "Adempimenti societari", "Cucina", "Manutenzione"'
-            className={inputClass}
-          />
+        {/* Elenco chiuso: prima era testo libero, e su venti righe erano
+            nate quattro convenzioni diverse. */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Categoria</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              className={inputClass}
+            >
+              {TASK_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+              <input
+                type="checkbox"
+                checked={form.preferito}
+                onChange={(e) => setForm((f) => ({ ...f, preferito: e.target.checked }))}
+              />
+              ★ Per me conta
+            </label>
+          </div>
         </div>
 
         {isTitolare && !origineModulo && (

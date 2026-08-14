@@ -10,7 +10,11 @@ export default function StampaAdempimenti() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    listTasks({ category: "Adempimenti societari" })
+    // La categoria era testo libero ("Adempimenti societari"); dal 14/08
+    // l'elenco è chiuso e quella dicitura è diventata «fisco_scadenze».
+    // Senza questa riga il PDF per il commercialista sarebbe uscito
+    // VUOTO — e vuoto è credibile.
+    listTasks({ category: "fisco_scadenze" })
       .then(setTasks)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
