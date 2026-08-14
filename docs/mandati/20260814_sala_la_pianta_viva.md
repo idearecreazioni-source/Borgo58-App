@@ -421,3 +421,32 @@ dalla planimetria (§4).*
 La sessione che lo riceve lo committa lì — insieme al mandato
 cumulativo e al mandato «Ricettario Fase 1» — **prima di iniziare il
 lavoro**: è il primo commit del blocco.*
+
+---
+
+## 12. Errata corrige — criterio di collaudo 11
+
+*Aggiunta del 14/08/2026. Riformulazione del validatore, ratificata da
+Alessio. **Questa versione fa fede**; il testo del §10 punto 11 resta
+sopra come origine.*
+
+Il criterio 11 chiedeva «nessuna occorrenza residua nel repository»
+delle funzioni e colonne smontate al §8. Preso alla lettera è
+inverificabile e resterebbe rosso per sempre: **le migrazioni già
+applicate non si riscrivono mai** (Contratto §8), quindi quelle parole
+vivono nella storia del progetto per costruzione — è la storia, non un
+residuo.
+
+**Il criterio 11 si legge così:**
+
+1. Nessuna occorrenza nel **codice vivo** — `src/` e
+   `supabase/functions/`.
+2. In **produzione**, quelle colonne e quelle funzioni **non esistono
+   più**: verificato dal connettore, non dedotto dal codice.
+3. Le **migrazioni già applicate** restano come storia e sono
+   **escluse** dal controllo.
+
+Il punto 2 è quello che conta davvero: è la differenza fra rimuovere e
+smettere di chiamare. Una colonna che nessuno nomina più ma che è
+ancora in tabella è esattamente ciò che il §8 vieta — fra tre mesi
+qualcuno la ritrova e la riaccende credendo di riparare qualcosa.
