@@ -280,3 +280,102 @@ describe("la pianta della sala e la giornata al completo", () => {
     expect(perAnonimo ?? []).toHaveLength(0);
   });
 });
+
+// La prenotazione presa al telefono, guardando la sala (14/08/2026).
+//
+// Chiesta da Alessio dopo la prima prova della pianta: al telefono si
+// guarda dove c'è spazio e si scrive il nome, senza uscire dalla
+// schermata. Qui si prova ciò che la migrazione non può provare perché
+// gira come amministratore: che la prenda anche lo STAFF, e che non
+// faccia partire niente verso il cliente.
+describe("prendere una prenotazione dalla pianta", () => {
+  let titolare;
+  let staff;
+  let prova = { ids: [], sagome: [], pulisci: async () => {} };
+  const NOME = "PROVA AUTOMATICA telefono";
+  const QUANDO = "2027-07-20";
+
+  const ripulisci = async () => {
+    await titolare.from("reservations").delete().like("customer_name", `${NOME}%`);
+  };
+
+  beforeAll(async () => {
+    const cred = credenziali();
+    [titolare, staff] = await Promise.all([
+      clientAutenticato(cred.titolare),
+      clientAutenticato(cred.staff),
+    ]);
+    await ripulisci();
+    prova = await sagomeDiProva(titolare, 2);
+  });
+
+  afterAll(async () => {
+    await ripulisci();
+    await prova.pulisci();
+  });
+
+  it("lo staff la prende su due tavoli accostati: nasce confermata e senza email", async () => {
+    const { data, error } = await staff.rpc("crea_prenotazione_su_tavoli", {
+      p_data: QUANDO,
+      p_ora: "20:30",
+      p_persone: 8,
+      p_nome: NOME,
+      p_tavoli: prova.ids,
+      p_telefono: "3999000097",
+      p_email: null,
+      p_note: null,
+      p_rischio_accettato: false,
+    });
+    expect(error).toBeNull();
+    expect(data.tavoli).toBe(2);
+
+    const { data: riga } = await staff
+      .from("reservations")
+      .select("status, source, party_size")
+      .eq("id", data.reservation_id)
+      .single();
+    // Confermata: al telefono gliel'ha appena detto lui.
+    expect(riga.status).toBe("confermata");
+    // Interna: è quello che tiene spento l'avviso su Telegram.
+    expect(riga.source).toBe("interno");
+    expect(riga.party_size).toBe(8);
+
+    // ⚠️ Nessuna email al cliente: l'email parte su un CAMBIO di stato, e
+    // qui non ce n'è nessuno. Si controlla invece di darlo per scontato.
+    const { data: inviate } = await titolare
+      .from("email_inviate")
+      .select("id")
+      .eq("reservation_id", data.reservation_id);
+    expect(inviate ?? []).toHaveLength(0);
+
+    // E i tavoli risultano suoi nella giornata.
+    const { data: tavoli } = await staff
+      .from("prenotazione_tavoli")
+      .select("etichetta_al_momento")
+      .eq("reservation_id", data.reservation_id);
+    expect(tavoli.map((t) => t.etichetta_al_momento).sort()).toEqual(
+      prova.sagome.map((s) => s.label).sort()
+    );
+  });
+
+  it("senza tavoli e senza nome non si prende", async () => {
+    const senzaTavoli = await staff.rpc("crea_prenotazione_su_tavoli", {
+      p_data: QUANDO, p_ora: "20:00", p_persone: 2, p_nome: NOME, p_tavoli: [],
+    });
+    expect(senzaTavoli.error).not.toBeNull();
+
+    const senzaNome = await staff.rpc("crea_prenotazione_su_tavoli", {
+      p_data: QUANDO, p_ora: "20:00", p_persone: 2, p_nome: "  ", p_tavoli: prova.ids,
+    });
+    expect(senzaNome.error).not.toBeNull();
+  });
+
+  it("il ruolo anonimo non la può prendere: resta un gesto di chi è in sala", async () => {
+    const anonimo = clientAnonimo();
+    const { error } = await anonimo.rpc("crea_prenotazione_su_tavoli", {
+      p_data: QUANDO, p_ora: "20:00", p_persone: 2, p_nome: NOME, p_tavoli: prova.ids,
+    });
+    expect(error).not.toBeNull();
+    expect(error.code).toBe("42501"); // permesso negato
+  });
+});
