@@ -96,20 +96,45 @@ export async function primaEntita(titolare) {
   return data.id;
 }
 
-/** Come sopra, ma per i coperti: senza posti a sedere non c'è nulla da calcolare. */
-export async function almenoUnTavolo(titolare) {
-  const { data, error } = await titolare.from("dining_tables").select("id, seats").eq("active", true);
-  if (error) throw new Error(`Non riesco a leggere i tavoli: ${error.message}`);
-  if ((data || []).reduce((t, r) => t + (r.seats || 0), 0) > 0) return async () => {};
+/**
+ * Sagome di prova nella pianta della sala (14/08/2026).
+ *
+ * Rimpiazza `almenoUnTavolo`, che creava un tavolo «da 20 coperti»: dal
+ * blocco Sala nessun tavolo ha coperti, e il database lo rifiuta per
+ * vincolo. Qui si creano N tavoli marcati, e si restituisce come toglierli.
+ *
+ * Le sagome di prova hanno un nome riconoscibile e vengono cancellate a
+ * fine corsa: nella pianta di Alessio non deve comparire nulla che non
+ * sia un tavolo vero.
+ */
+export async function sagomeDiProva(titolare, quante = 3) {
+  const etichette = Array.from({ length: quante }, (_, i) => `__PROVA__ ${i + 1}`);
+  await titolare.from("dining_tables").delete().in("label", etichette);
 
-  const inserito = await titolare
+  const { data, error } = await titolare
     .from("dining_tables")
-    .insert({ label: "__PROVA__ tavolo", seats: 20, active: true })
-    .select("id")
-    .single();
-  if (inserito.error) throw new Error(`Non riesco a creare il tavolo di prova: ${inserito.error.message}`);
-  return async () => {
-    await titolare.from("dining_tables").delete().eq("id", inserito.data.id);
+    .insert(
+      etichette.map((label, i) => ({
+        label,
+        position: 900 + i,
+        active: true,
+        tipo: "tavolo",
+        zona: "sala_bassa",
+        larghezza_cm: 90,
+        profondita_cm: 90,
+        x: 100 + i * 100,
+        y: 900,
+      }))
+    )
+    .select("id, label");
+  if (error) throw new Error(`Non riesco a creare le sagome di prova: ${error.message}`);
+
+  return {
+    sagome: data,
+    ids: data.map((s) => s.id),
+    async pulisci() {
+      await titolare.from("dining_tables").delete().in("label", etichette);
+    },
   };
 }
 

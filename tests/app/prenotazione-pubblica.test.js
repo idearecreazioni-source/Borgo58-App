@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { almenoUnTavolo, clientAnonimo, clientAutenticato, credenziali } from "./aiuto";
+import { clientAnonimo, clientAutenticato, credenziali, sagomeDiProva } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import {
   getReservationOptions,
@@ -114,21 +114,22 @@ describe("form pubblico /prenota", () => {
   });
 });
 
-// Capienza e orari (10/08/2026). Queste prove NON accendono l'interruttore
-// delle prenotazioni online: cambiarlo mentre gira il locale vero
-// cambierebbe il comportamento del sito pubblico per il tempo della corsa.
-// La prova della catena completa (orario pieno che sparisce, invio
-// rifiutato) sta dentro la migrazione 20260810000001, che la esegue e si
-// ripulisce. Qui si verifica ciò che la migrazione NON può verificare,
-// perché gira come amministratore: i permessi dei ruoli veri.
-describe("posti liberi", () => {
+// La pianta viva (14/08/2026): al posto del calcolo dei posti liberi.
+//
+// Queste prove NON accendono l'interruttore delle prenotazioni online:
+// cambiarlo mentre gira il locale vero cambierebbe il comportamento del
+// sito pubblico per il tempo della corsa. La catena completa (giornata al
+// completo che rifiuta, ferie che restano distinguibili) sta dentro la
+// migrazione 20260814000007, che la esegue e si ripulisce. Qui si prova
+// ciò che la migrazione NON può provare, perché gira come
+// amministratore: i permessi dei ruoli veri.
+describe("la pianta della sala e la giornata al completo", () => {
   let titolare;
   let staff;
   let anonimo;
-  let pulisciTavolo = async () => {};
-  // Data lontana e ora precisa: nessuna prenotazione vera ci finisce sopra.
-  const QUANDO = "2027-06-15T20:00:00";
-  const NOME = "PROVA AUTOMATICA capienza";
+  let prova = { ids: [], pulisci: async () => {} };
+  // Data lontana: nessuna prenotazione vera ci finisce sopra.
+  const GIORNO_PIENO = "2027-06-15";
 
   beforeAll(async () => {
     const cred = credenziali();
@@ -137,69 +138,115 @@ describe("posti liberi", () => {
       clientAutenticato(cred.staff),
     ]);
     anonimo = clientAnonimo();
-    await titolare.from("reservations").delete().eq("customer_name", NOME);
-    // Sul progetto di prova la sala nasce senza tavoli: senza posti a
-    // sedere "quanti ne restano liberi" e sempre zero e non dimostra nulla.
-    pulisciTavolo = await almenoUnTavolo(titolare);
+    await titolare.from("giornate_sold_out").delete().eq("data", GIORNO_PIENO);
+    prova = await sagomeDiProva(titolare, 3);
   });
 
   afterAll(async () => {
-    await titolare.from("reservations").delete().eq("customer_name", NOME);
-    await pulisciTavolo();
+    await titolare.from("giornate_sold_out").delete().eq("data", GIORNO_PIENO);
+    await prova.pulisci();
   });
 
-  it("una prenotazione toglie posti, cancellarla li ridà", async () => {
-    const { data: prima, error: e1 } = await titolare.rpc("posti_liberi", { p_quando: QUANDO });
-    expect(e1).toBeNull();
-    expect(prima).toBeGreaterThan(0); // altrimenti la prova non dimostrerebbe nulla
+  it("del calcolo dei posti non è rimasto niente da chiamare", async () => {
+    // Non «risponde zero»: proprio non esiste più. Una funzione spenta,
+    // fra tre mesi, qualcuno la riaccende credendo di riparare qualcosa.
+    const { error } = await titolare.rpc("posti_liberi", { p_quando: "2027-06-15T20:00:00" });
+    expect(error).not.toBeNull();
 
-    const { data: creata, error: e2 } = await titolare
-      .from("reservations")
-      .insert({
-        type: "prenotazione",
-        status: "richiesta_in_attesa",
-        source: "interno",
-        reservation_date: "2027-06-15",
-        reservation_time: "20:00",
-        party_size: 2,
-        customer_name: NOME,
+    // E nessun tavolo può tornare ad avere dei coperti.
+    const { error: coperti } = await titolare
+      .from("dining_tables")
+      .update({ seats: 4 })
+      .eq("id", prova.ids[0]);
+    expect(coperti).not.toBeNull();
+  });
+
+  it("un tavolo non può avere coperti, e gli arredi fissi non si spostano", async () => {
+    const { error: suTavolo } = await titolare
+      .from("dining_tables")
+      .update({ posti_fissi: 4 })
+      .eq("id", prova.ids[0]);
+    expect(suTavolo).not.toBeNull();
+    expect(suTavolo.code).toBe("23514"); // il vincolo, non un controllo di schermata
+  });
+
+  it("la pianta di un giorno è base + scostamenti, e il giorno dopo riparte dalla base", async () => {
+    const domani = "2027-06-16";
+
+    const { error } = await titolare.from("disposizioni_giornaliere").upsert(
+      { data: GIORNO_PIENO, dining_table_id: prova.ids[0], x: 1234, y: 567 },
+      { onConflict: "data,dining_table_id" }
+    );
+    expect(error).toBeNull();
+
+    const { data: quelGiorno } = await titolare.rpc("pianta_del_giorno", { p_data: GIORNO_PIENO });
+    const spostato = quelGiorno.find((s) => s.id === prova.ids[0]);
+    expect(spostato.x).toBe(1234);
+    expect(spostato.spostato).toBe(true);
+
+    const { data: ilGiornoDopo } = await titolare.rpc("pianta_del_giorno", { p_data: domani });
+    const base = ilGiornoDopo.find((s) => s.id === prova.ids[0]);
+    expect(base.x).toBe(100); // la posizione di partenza della sagoma di prova
+    expect(base.spostato).toBe(false);
+
+    await titolare.from("disposizioni_giornaliere").delete().eq("data", GIORNO_PIENO);
+  });
+
+  it("lo staff vede la pianta ma non la sposta, e non chiude la serata", async () => {
+    const { data: vista } = await staff.rpc("pianta_del_giorno", { p_data: GIORNO_PIENO });
+    expect((vista ?? []).length).toBeGreaterThan(0);
+
+    const { data: mosse } = await staff
+      .from("disposizioni_giornaliere")
+      .insert({ data: GIORNO_PIENO, dining_table_id: prova.ids[0], x: 10, y: 10 })
+      .select("id");
+    expect(mosse ?? []).toHaveLength(0);
+
+    const { data: chiuse } = await staff
+      .from("giornate_sold_out")
+      .insert({ data: GIORNO_PIENO })
+      .select("data");
+    expect(chiuse ?? []).toHaveLength(0);
+  });
+
+  it("una giornata al completo rifiuta la richiesta pubblica, e il rifiuto è del database", async () => {
+    const { error: segnata } = await titolare.from("giornate_sold_out").insert({ data: GIORNO_PIENO });
+    expect(segnata).toBeNull();
+
+    // Il cliente lo vede…
+    const opzioni = await getReservationOptions({ date: GIORNO_PIENO, partySize: 2 });
+    expect(opzioni.sold_out).toBe(true);
+    expect(opzioni.chiuso).toBe(true);
+
+    // …e chiamando la funzione direttamente, non dall'interfaccia, il
+    // rifiuto arriva lo stesso: un form disabilitato non è un freno.
+    await expect(
+      submitPublicReservation({
+        date: GIORNO_PIENO,
+        time: "20:00",
+        partySize: 2,
+        name: "PROVA AUTOMATICA sold out",
+        phone: "3999000098",
+        email: "",
+        notes: "",
       })
-      .select("id")
-      .single();
-    expect(e2).toBeNull();
-
-    // Una richiesta ancora da confermare tiene il posto: è la decisione del
-    // 10/08 — altrimenti due clienti vedrebbero lo stesso ultimo tavolo.
-    const { data: dopo } = await titolare.rpc("posti_liberi", { p_quando: QUANDO });
-    expect(dopo).toBe(prima - 2);
-
-    // Mezz'ora dopo il tavolo è ancora occupato (dura più di un istante)…
-    const { data: mezzOra } = await titolare.rpc("posti_liberi", {
-      p_quando: "2027-06-15T20:30:00",
-    });
-    expect(mezzOra).toBe(prima - 2);
-
-    // …ma il giorno prima no.
-    const { data: altroGiorno } = await titolare.rpc("posti_liberi", {
-      p_quando: "2027-06-14T20:00:00",
-    });
-    expect(altroGiorno).toBe(prima);
-
-    await titolare.from("reservations").delete().eq("id", creata.id);
-    const { data: liberato } = await titolare.rpc("posti_liberi", { p_quando: QUANDO });
-    expect(liberato).toBe(prima);
+    ).rejects.toThrow(/completo/i);
   });
 
-  it("il cliente può chiedere gli orari liberi, ma non quanto è pieno il locale", async () => {
-    // La pagina pubblica passa da qui: deve funzionare da anonimo.
-    const opzioni = await getReservationOptions({ date: "2027-06-15", partySize: 2 });
-    expect(opzioni).toHaveProperty("attivo");
+  it("il form pubblico non espone nessun numero sulla capienza", async () => {
+    const opzioni = await getReservationOptions({ date: "2027-06-20", partySize: 2 });
+    // Si controlla la FORMA della risposta, non il testo: una chiave in
+    // più domani sarebbe un numero in più esposto senza che nessuno se
+    // ne accorga.
+    const ammesse = ["attivo", "chiuso", "sold_out", "motivo", "orari"];
+    expect(Object.keys(opzioni).filter((k) => !ammesse.includes(k))).toEqual([]);
     expect(Array.isArray(opzioni.orari)).toBe(true);
 
-    // Quanti posti restano è un dato di casa: non esce dal locale.
-    const { error } = await anonimo.rpc("posti_liberi", { p_quando: QUANDO });
-    expect(error).not.toBeNull();
-    expect(error.code).toBe("42501");
+    // E il ruolo anonimo non legge né la pianta né le giornate chiuse.
+    const { data: sagome } = await anonimo.from("dining_tables").select("id");
+    expect(sagome ?? []).toHaveLength(0);
+    const { data: piene } = await anonimo.from("giornate_sold_out").select("data");
+    expect(piene ?? []).toHaveLength(0);
   });
 
   it("orari e chiusure li cambia solo il titolare", async () => {
