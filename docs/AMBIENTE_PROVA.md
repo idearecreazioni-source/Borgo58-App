@@ -108,10 +108,27 @@ Per rifarlo da capo su un progetto non più vuoto:
    `.env.test`, che punta al progetto di prova. Se qualcuno ci rimettesse
    l'indirizzo del database vero, le prove **si rifiutano di partire**: il
    controllo è dentro il codice, non affidato alla memoria.
-2. **Ogni migrazione si applica prima qui, poi in produzione.** Prima si
-   incolla nell'SQL Editor del progetto di prova; se arriva in fondo senza
-   errori, si incolla in quello vero. La rete di sicurezza serve solo se
-   la si usa nell'ordine giusto.
+2. **Ogni migrazione si applica prima qui, poi in produzione.**
+
+   ```bash
+   npm run prova:migra
+   ```
+
+   Applica quelle che mancano. Con un nome (`npm run prova:migra --
+   20260815000002`) ne riapplica una sola anche se è già passata: è così
+   che si dimostra che è **idempotente**, cioè che premere Run due volte
+   non fa danni.
+
+   Solo dopo, in produzione: `npm run migra -- --conferma`, che si rifiuta
+   di partire se non ha visto la migrazione passare **prima** da qui.
+
+   *Fino al 15/08/2026 questo paragrafo diceva di incollare il file
+   nell'SQL Editor del progetto di prova. Era rimasto l'unico anello
+   manuale della catena — ed era anche il più ripetuto, perché una
+   migrazione si applica alla prova molte volte. È lo stesso gesto che il
+   12/08 è arrivato troncato a metà e ha fatto cambiare la regola su chi
+   applica le migrazioni: la rete di sicurezza serve solo se usarla non
+   costa più di saltarla.*
 
 ---
 
