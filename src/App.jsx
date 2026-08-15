@@ -48,6 +48,7 @@ import PrimaNota from "./pages/cassa/PrimaNota";
 import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
 import Previsione from "./pages/cassa/Previsione";
+import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
 import Sala from "./pages/comande/Sala";
@@ -219,6 +220,7 @@ function AppRoutes() {
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
+        <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* Comande (§3.2, §4 mod. 5): staff-accessibile, voce propria in
             sidebar — non sotto /cassa, dato che è una modalità operativa
             diversa dal resto del gestionale (uno schermo che resta aperto

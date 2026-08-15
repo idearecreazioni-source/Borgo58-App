@@ -235,6 +235,9 @@ export default function CassaHome() {
             <Link to="/cassa/previsione" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
               Ce la faccio?
             </Link>
+            <Link to="/cassa/personale" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+              Ho messo di tasca mia
+            </Link>
             <Link to="/cassa/sconti-omaggi" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
               Sconti e omaggi
             </Link>
