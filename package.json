@@ -12,6 +12,7 @@
     "test:app": "vitest run tests/app --no-file-parallelism",
     "backup": "node scripts/backup.mjs",
     "prova:ricostruisci": "node scripts/prova-ricostruisci.mjs",
+    "prova:migra": "node scripts/prova-migra.mjs",
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",
     "migra": "node scripts/migra.mjs",
