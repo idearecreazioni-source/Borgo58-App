@@ -24,6 +24,61 @@ export const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
  */
 export const REF_PROVA = "bnwqgpuyzmzujxfbtyvs";
 
+/**
+ * La prima migrazione soggetta alla rete dei riepiloghi (16/08/2026).
+ *
+ * ⚠️ PERCHE' C'E' UNA SOGLIA, e perche' e' questa. Il controllo qui sotto
+ * cerca il numero di versione COMPLETO dentro i file di
+ * `docs/consegne/`. Le migrazioni piu' vecchie non lo passerebbero, per
+ * due motivi che non sono difetti:
+ *   - quelle fino al 09/08/2026 sono precedenti alla convenzione stessa
+ *     dei riepiloghi, che nasce il 10/08;
+ *   - quelle fra il 10/08 e il 15/08 SONO documentate, ma i riepiloghi le
+ *     nominano in forma abbreviata («…09», «…14») invece che per intero.
+ * Applicare il controllo all'indietro produrrebbe 62 falsi allarmi e la
+ * rete verrebbe disattivata al primo uso — che e' il modo in cui muoiono
+ * i controlli.
+ *
+ * Da questa versione in avanti la regola e': **il numero completo va
+ * scritto nel riepilogo**. La soglia e' la prima migrazione del debito
+ * rilevato dal validatore il 16/08.
+ */
+export const PRIMA_CON_RIEPILOGO = "20260815000006";
+
+/**
+ * Le migrazioni gia' applicate che nessun riepilogo nomina.
+ *
+ * ⚠️ IL SENSO DELLA RETE, detto una volta. La regola «nessun push senza
+ * riepilogo» il 15/08 e' stata violata quattro volte di fila, e nessuno se
+ * n'e' accorto fino al controllo del validatore: era un'intenzione, e le
+ * intenzioni si degradano quando il lavoro e' lungo. Qui diventa una
+ * condizione che ferma il programma.
+ *
+ * ⚠️ E CONTROLLA CIO' CHE E' GIA' APPLICATO, non cio' che sta per esserlo.
+ * Sembra un dettaglio ed e' la scelta che rende la rete usabile: il
+ * riepilogo contiene i NUMERI VERI dell'applicazione — quante migrazioni
+ * ci sono adesso, quanti avvisi sono partiti, cosa dice il connettore —
+ * che si conoscono solo dopo. Pretenderlo prima costringerebbe a scrivere
+ * un documento con dei buchi da riempire, cioe' a fingere. Cosi' invece il
+ * debito non puo' ACCUMULARSI: la volta dopo non si applica niente finche'
+ * la precedente non e' documentata.
+ *
+ * @param {Set<string>} versioniApplicate versioni presenti in produzione
+ * @returns {string[]} le versioni scoperte, in ordine
+ */
+export function migrazioniSenzaRiepilogo(versioniApplicate) {
+  const cartella = "docs/consegne";
+  if (!existsSync(cartella)) return [];
+  const testo = readdirSync(cartella)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => readFileSync(path.join(cartella, f), "utf8"))
+    .join("\n");
+  return [...versioniApplicate]
+    .filter((v) => v >= PRIMA_CON_RIEPILOGO)
+    .filter((v) => !testo.includes(v))
+    .sort();
+}
+
 export function leggiConfigurazione(file = ".env.db") {
   if (!existsSync(file)) {
     fermati(

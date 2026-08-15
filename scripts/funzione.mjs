@@ -25,7 +25,16 @@
 
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { esegui, fermati, leggiConfigurazione, REF_PRODUZIONE, REF_PROVA, titolo } from "./comune.mjs";
+import {
+  esegui,
+  fermati,
+  interroga,
+  leggiConfigurazione,
+  migrazioniSenzaRiepilogo,
+  REF_PRODUZIONE,
+  REF_PROVA,
+  titolo,
+} from "./comune.mjs";
 
 const CARTELLA = "supabase/functions";
 
@@ -139,6 +148,38 @@ if (!diverso.ok) {
     "Serve il push di Alessio, poi si riprova.",
     "  git push"
   );
+}
+
+// ⚠️ La stessa rete di `migra.mjs` (16/08/2026): finche' c'e' una
+// migrazione applicata in produzione che nessun riepilogo nomina, la
+// produzione non si tocca — nemmeno da questa parte. Una funzione online
+// installata mentre l'arretrato e' aperto e' un altro cambiamento del
+// sistema vero che chi controlla non puo' ricostruire.
+//
+// Sulla PROVA non si applica: quel progetto e' usa-e-getta, e il suo scopo
+// e' esercitare il codice prima che diventi una consegna.
+if (!suProva) {
+  // Si riusa la configurazione gia' letta sopra: rileggerla creerebbe una
+  // seconda verita' sullo stesso file.
+  const urlProduzione = config.DB_URL_PRODUZIONE;
+  if (urlProduzione) {
+    const applicate = new Set(
+      interroga(urlProduzione, "select version from applied_migrations;")
+        .split(/\r?\n/)
+        .map((r) => r.trim())
+        .filter(Boolean)
+    );
+    const scoperte = migrazioniSenzaRiepilogo(applicate);
+    if (scoperte.length > 0) {
+      fermati(
+        "FERMO: ci sono migrazioni in produzione che nessun riepilogo nomina.",
+        ...scoperte.map((v) => `  · ${v}`),
+        "",
+        "Finche' l'arretrato e' aperto non si tocca la produzione, nemmeno",
+        "installando una funzione. Scrivi il riepilogo in docs/consegne/."
+      );
+    }
+  }
 }
 
 titolo(`Installazione di ${nome}${suProva ? " — PROGETTO DI PROVA" : ""}`);

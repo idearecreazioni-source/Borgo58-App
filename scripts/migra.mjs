@@ -44,6 +44,7 @@ import {
   fermati,
   interroga,
   leggiConfigurazione,
+  migrazioniSenzaRiepilogo,
   obbligatorio,
   REF_PRODUZIONE,
   strumento,
@@ -144,6 +145,31 @@ if (mancanti.length === 0) {
   console.log("  da applicare: nessuna — la produzione e' aggiornata.");
   console.log("");
   process.exit(0);
+}
+
+// --- Vincolo 0: il debito dei riepiloghi non si accumula --------------
+// ⚠️ Nasce il 16/08/2026 da un rilievo del validatore: il 15/08 quattro
+// commit sono usciti senza riepilogo, due dei quali con una migrazione
+// gia' applicata in produzione. La regola c'era — «nessun push senza il
+// riepilogo corrispondente» — ed era un'intenzione: si e' degradata dopo
+// nove ore di lavoro, e a rilevarlo e' stato un controllo esterno.
+//
+// Qui diventa una condizione che ferma il programma, nello stesso punto e
+// nella stessa forma della rete che gia' impedisce di applicare in
+// produzione cio' che non e' passato dal progetto di prova.
+const scoperte = migrazioniSenzaRiepilogo(inProduzione);
+if (scoperte.length > 0) {
+  fermati(
+    "FERMO: queste migrazioni sono gia' in produzione e nessun riepilogo le nomina.",
+    ...scoperte.map((v) => `  · ${v}`),
+    "",
+    "Il validatore legge i riepiloghi per confrontare il consegnato col richiesto:",
+    "una migrazione applicata e non documentata e' un cambiamento del database",
+    "vero che nessuno, fuori da qui, puo' ricostruire.",
+    "",
+    "Scrivi il riepilogo in docs/consegne/ nominando la versione per intero,",
+    "poi si riprende. Non si applica altro finche' l'arretrato non e' chiuso."
+  );
 }
 
 // --- Vincolo 1: gia' passate dalla prova -----------------------------

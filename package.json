@@ -16,6 +16,7 @@
     "prova:ripristina": "node scripts/prova-ripristina.mjs",
     "dominio:verifica": "node scripts/verifica-dominio.mjs",
     "migra": "node scripts/migra.mjs",
+    "consegne": "node scripts/consegne.mjs",
     "funzione": "node scripts/funzione.mjs"
   },
   "dependencies": {
