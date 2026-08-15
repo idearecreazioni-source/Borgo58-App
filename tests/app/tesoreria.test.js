@@ -315,3 +315,129 @@ describe("previsione di cassa: cosa deve ancora uscire", () => {
     expect(p.avvertenza).toContain("NON comprende gli stipendi");
   });
 });
+
+// Incassato contro scontrinato (16/08/2026, chiesto da Alessio).
+//
+// ⚠️ Il punto: la colonna nasce VUOTA e vuoto vuol dire «nessuno l'ha
+// ancora detto», non «niente è stato emesso». Se il valore predefinito
+// fosse «scontrino», la quadratura tornerebbe sempre per costruzione —
+// proprio nel caso in cui serve che non torni.
+describe("incassato e scontrinato: due totali e la differenza in elenco", () => {
+  let titolare;
+  let staff;
+  let ente;
+  const GIORNO = "2091-09-01";
+
+  async function pulisci() {
+    const { data } = await titolare.from("orders").select("id").like("note", "TEST-AUTO fisc%");
+    for (const o of data ?? []) {
+      await titolare.from("order_items").delete().eq("order_id", o.id);
+      await titolare.from("orders").delete().eq("id", o.id);
+    }
+  }
+
+  async function conto(etichetta, prezzo, documento) {
+    const { data, error } = await titolare
+      .from("orders")
+      .insert({
+        entity_id: ente,
+        table_label: etichetta,
+        status: "chiuso",
+        payment_method: "contante",
+        coperti: 0,
+        coperto_unit_price: 5,
+        opened_at: GIORNO,
+        closed_at: GIORNO,
+        note: "TEST-AUTO fisc",
+        documento_fiscale: documento ?? null,
+        documento_emesso_il: documento === "fattura" ? GIORNO : null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    await titolare.from("order_items").insert({
+      order_id: data.id,
+      free_text_name: "Piatto",
+      destination: "cucina",
+      quantity: 1,
+      unit_price: prezzo,
+    });
+    return data.id;
+  }
+
+  beforeAll(async () => {
+    titolare = await clientAutenticato(credenziali().titolare);
+    staff = await clientAutenticato(credenziali().staff);
+    ente = await primaEntita(titolare);
+    await pulisci();
+  });
+
+  afterAll(async () => {
+    await pulisci();
+    await titolare.auth.signOut({ scope: "local" });
+    await staff.auth.signOut({ scope: "local" });
+  });
+
+  it("un conto senza documento non risulta scontrinato", async () => {
+    await conto("TEST-AUTO fisc A", 40, "scontrino");
+    await conto("TEST-AUTO fisc B", 60, null);
+
+    const { data } = await titolare.rpc("quadratura_fiscale", {
+      p_entity_id: ente,
+      p_dal: GIORNO,
+      p_al: GIORNO,
+    });
+    expect(Number(data[0].incassato)).toBe(100);
+    expect(Number(data[0].fiscalizzato)).toBe(40);
+    expect(Number(data[0].da_fiscalizzare)).toBe(60);
+    expect(Number(data[0].quanti_da_fare)).toBe(1);
+    // La differenza non è un numero muto: dice che resta in elenco.
+    expect(data[0].avvertenza).toContain("non spariscono da soli");
+  });
+
+  it("segnandolo dopo, il conto esce dall'elenco", async () => {
+    const { data: prima } = await titolare.rpc("conti_da_fiscalizzare", {
+      p_entity_id: ente,
+      p_dal: GIORNO,
+      p_al: GIORNO,
+    });
+    expect(prima).toHaveLength(1);
+
+    await titolare
+      .from("orders")
+      .update({ documento_fiscale: "scontrino" })
+      .eq("id", prima[0].order_id);
+
+    const { data: dopo } = await titolare.rpc("conti_da_fiscalizzare", {
+      p_entity_id: ente,
+      p_dal: GIORNO,
+      p_al: GIORNO,
+    });
+    expect(dopo).toHaveLength(0);
+
+    const { data: q } = await titolare.rpc("quadratura_fiscale", {
+      p_entity_id: ente,
+      p_dal: GIORNO,
+      p_al: GIORNO,
+    });
+    expect(Number(q[0].fiscalizzato)).toBe(100);
+  });
+
+  it("una fattura non si dichiara emessa senza dire quando", async () => {
+    const id = await conto("TEST-AUTO fisc C", 25, null);
+    // ⚠️ Il rifiuto arriva dal vincolo del database: quella data è la sola
+    // cosa che distingue «fatta» da «promessa».
+    const { error } = await titolare
+      .from("orders")
+      .update({ documento_fiscale: "fattura", documento_emesso_il: null })
+      .eq("id", id);
+    expect(error).toBeTruthy();
+  });
+
+  it("lo staff non legge la quadratura fiscale", async () => {
+    for (const fn of ["quadratura_fiscale", "conti_da_fiscalizzare"]) {
+      const { error } = await staff.rpc(fn, { p_entity_id: ente, p_dal: GIORNO, p_al: GIORNO });
+      expect(error, `${fn} avrebbe dovuto rifiutare lo staff`).toBeTruthy();
+    }
+  });
+});

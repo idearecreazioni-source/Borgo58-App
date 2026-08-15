@@ -330,3 +330,28 @@ export async function listDiscountsGiftsMonthly(entityId) {
   if (error) throw error;
   return data;
 }
+
+// --- Incassato contro scontrinato (16/08/2026) ----------------------
+// Due totali, non uno: quanto è entrato e quanto ha un documento fiscale.
+// ⚠️ La differenza NON sparisce da sola — resta finché non la si chiude,
+// come le fatture da pagare. Un elenco che si svuota da solo è un elenco
+// che non serve a niente.
+export async function getQuadraturaFiscale(entityId, dal, al) {
+  const { data, error } = await supabase.rpc("quadratura_fiscale", {
+    p_entity_id: entityId,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function listContiDaFiscalizzare(entityId, dal, al) {
+  const { data, error } = await supabase.rpc("conti_da_fiscalizzare", {
+    p_entity_id: entityId,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}

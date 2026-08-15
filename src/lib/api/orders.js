@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { oggiLocale } from "../constants";
 
 // Piatti del menu attivo, sicuri per lo staff (§3.18) — vedi menu_items_display.
 export async function listMenuForOrder() {
@@ -302,4 +303,25 @@ export async function closeOrderAsDiscountGift(
     p_device_id: deviceId || null,
     p_note: note || null,
   });
+}
+
+/**
+ * Cosa è stato emesso per un conto: scontrino, fattura da fare, fattura
+ * fatta (16/08/2026).
+ *
+ * ⚠️ Una tabella sola, quindi chiamata diretta (categoria A del
+ * Contratto). E `null` è un valore ammesso: vuol dire «non l'ho ancora
+ * detto», che è diverso da «niente è stato emesso» — il conto torna
+ * nell'elenco di quelli da sistemare.
+ */
+export async function setDocumentoFiscale(orderId, { tipo, numero, emessoIl }) {
+  const patch = {
+    documento_fiscale: tipo || null,
+    documento_numero: numero?.trim() || null,
+    // Una fattura dichiarata emessa senza data la rifiuta il database: è
+    // la sola cosa che distingue «fatta» da «promessa».
+    documento_emesso_il: tipo === "fattura" ? emessoIl || oggiLocale() : null,
+  };
+  const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
+  if (error) throw error;
 }
