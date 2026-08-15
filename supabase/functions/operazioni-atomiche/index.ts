@@ -100,6 +100,17 @@ const OPERAZIONI = new Set([
   // E correggerla: le righe figlie si rifanno da capo, quindi tocca le
   // stesse sei tabelle. Su una previsione chiusa la respingono i trigger.
   "aggiorna_scenario_proiezione",
+  // La tesoreria (15/08/2026). Contare il cassetto scrive il conteggio E
+  // il movimento che porta a galla la differenza: se la seconda scrittura
+  // mancasse, il saldo continuerebbe a dire un numero che il cassetto ha
+  // gia' smentito, e alla settimana dopo la differenza si sommerebbe a se
+  // stessa.
+  "registra_conteggio_cassa",
+  // Un versamento e' un TRASFERIMENTO: due movimenti, cassa giu' e banca
+  // su. A meta' sarebbe denaro sparito da una parte e mai arrivato
+  // dall'altra — l'incoerenza piu' facile da non notare, perche' ognuno
+  // dei due saldi resta un numero plausibile.
+  "versa_in_banca",
 ]);
 
 const CORS = {
