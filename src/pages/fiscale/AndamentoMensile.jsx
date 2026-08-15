@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import {
+  andamentoAnno,
   budgetOmaggi,
   chiudiMese,
   listaConsuntivi,
   listaScenari,
   misureDelMese,
   omaggiPerCausale,
+  proiezioneFineAnno,
   scostamentoMensile,
   statoConfrontoMensile,
 } from "../../lib/api/proiezione";
@@ -36,6 +38,8 @@ export default function AndamentoMensile() {
   const [budget, setBudget] = useState(null);
   const [omaggi, setOmaggi] = useState([]);
   const [consuntivi, setConsuntivi] = useState([]);
+  const [anno_, setAnno_] = useState([]);
+  const [fineAnno, setFineAnno] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [chiudendo, setChiudendo] = useState(false);
@@ -71,15 +75,21 @@ export default function AndamentoMensile() {
     setConsuntivi(cons);
     setOmaggi(await omaggiPerCausale(entityId, anno, mese));
     if (scenarioId) {
-      const [sc, bo] = await Promise.all([
+      const [sc, bo, aa, fa] = await Promise.all([
         scostamentoMensile(entityId, anno, mese, scenarioId),
         budgetOmaggi(entityId, anno, mese, scenarioId),
+        andamentoAnno(entityId, anno, scenarioId),
+        proiezioneFineAnno(entityId, anno, scenarioId),
       ]);
       setScostamento(sc);
       setBudget(bo);
+      setAnno_(aa);
+      setFineAnno(fa);
     } else {
       setScostamento([]);
       setBudget(null);
+      setAnno_([]);
+      setFineAnno(null);
     }
   }, [entityId, anno, mese, scenarioId]);
 
@@ -205,6 +215,94 @@ export default function AndamentoMensile() {
               arriva dalle ricette, i costi fissi dalle causali di prima nota che hai segnato come tali.
             </p>
           </div>
+
+          {/* --- Il piano sovrapposto ai numeri veri --- */}
+          {anno_.length > 0 && (
+            <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6 overflow-x-auto">
+              <h2 className="font-display text-lg text-b58-charcoal mb-1">
+                In che direzione stiamo andando — {anno}
+              </h2>
+              <p className="text-xs text-b58-charcoal-soft mb-4">
+                Dall&apos;inizio dell&apos;anno a oggi, voce per voce, e dove si arriva a dicembre se da
+                domani tieni la rotta. <strong>I mesi che restano valgono quello che avevi previsto tu</strong>:
+                un mese buono non viene moltiplicato per dodici.
+              </p>
+              <table className="w-full text-sm min-w-[680px]">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                    <th className="text-left font-medium py-1">Voce</th>
+                    <th className="text-right font-medium py-1">Previsto a oggi</th>
+                    <th className="text-right font-medium py-1">Reale a oggi</th>
+                    <th className="text-right font-medium py-1">Scarto</th>
+                    <th className="text-right font-medium py-1">Piano anno</th>
+                    <th className="text-right font-medium py-1">Stima a dicembre</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {anno_.map((r) => {
+                    const q = (v) =>
+                      v == null ? "—" :
+                      r.unita === "euro" ? formatEUR(v) :
+                      r.unita === "percento" ? `${Number(v).toLocaleString("it-IT", { maximumFractionDigits: 1 })}%` :
+                      Number(v).toLocaleString("it-IT", { maximumFractionDigits: 0 });
+                    return (
+                      <tr key={r.indicatore} className="border-t border-b58-charcoal/5 align-top">
+                        <td className="py-1.5 text-b58-charcoal">
+                          {r.indicatore}
+                          <span className="block text-[11px] text-b58-charcoal-soft/70">{r.spiegazione}</span>
+                        </td>
+                        <td className="py-1.5 text-right tabular-nums text-b58-charcoal-soft">{q(r.previsto_a_oggi)}</td>
+                        <td className="py-1.5 text-right tabular-nums text-b58-charcoal">
+                          {r.misurato ? q(r.reale_a_oggi)
+                            : <span className="text-b58-charcoal-soft/50 text-xs">non misurato</span>}
+                        </td>
+                        <td className={`py-1.5 text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark font-medium" : "text-b58-olive-dark"}`}>
+                          {r.scarto_percento == null ? "—"
+                            : r.unita === "percento"
+                              ? `${Number(r.scarto_percento) > 0 ? "+" : ""}${Number(r.scarto_percento).toLocaleString("it-IT", { maximumFractionDigits: 1 })} punti`
+                              : `${Number(r.scarto_percento) > 0 ? "+" : ""}${Number(r.scarto_percento).toLocaleString("it-IT", { maximumFractionDigits: 1 })}%`}
+                        </td>
+                        <td className="py-1.5 text-right tabular-nums text-b58-charcoal-soft">{q(r.previsto_anno)}</td>
+                        <td className="py-1.5 text-right tabular-nums text-b58-charcoal font-medium">
+                          {q(r.proiettato_anno)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {fineAnno && (
+                <div className="mt-5 pt-4 border-t border-b58-charcoal/10">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-b58-charcoal-soft">Risultato — piano</p>
+                      <p className="text-b58-charcoal">{formatEUR(fineAnno.ante_imposte_piano)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-b58-charcoal-soft">Risultato — stima</p>
+                      <p className="text-b58-charcoal font-medium">{formatEUR(fineAnno.ante_imposte_proiettato)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-b58-charcoal-soft">Imposte — piano</p>
+                      <p className="text-b58-charcoal">
+                        {fineAnno.imposte_piano == null ? "—" : formatEUR(fineAnno.imposte_piano)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-b58-charcoal-soft">Imposte — stima</p>
+                      <p className="text-b58-charcoal font-medium">
+                        {fineAnno.imposte_proiettate == null ? "—" : formatEUR(fineAnno.imposte_proiettate)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className={`text-[11px] rounded px-2 py-1.5 mt-3 ${fineAnno.voci_misurate > 0 ? "text-b58-charcoal-soft bg-b58-cream-dark" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
+                    {fineAnno.voci_misurate} voci misurate su {fineAnno.voci_totali}. {fineAnno.avvertenza}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* --- Lo scostamento --- */}
           {scostamento.length > 0 && (

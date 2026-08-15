@@ -57,6 +57,7 @@ import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import Previsioni from "./pages/fiscale/Previsioni";
 import PrevisioneDettaglio from "./pages/fiscale/PrevisioneDettaglio";
 import AndamentoMensile from "./pages/fiscale/AndamentoMensile";
+import PrevisioneForm from "./pages/fiscale/PrevisioneForm";
 import PersonaleHome from "./pages/personale/PersonaleHome";
 import DipendenteDetail from "./pages/personale/DipendenteDetail";
 import Mance from "./pages/personale/Mance";
@@ -241,6 +242,8 @@ function AppRoutes() {
         <Route path="/fiscale/strumenti" element={<RequireTitolare><CatalogoStrumenti /></RequireTitolare>} />
         <Route path="/fiscale/simulatore" element={<RequireTitolare><SimulatoreFiscale /></RequireTitolare>} />
         <Route path="/fiscale/previsioni" element={<RequireTitolare><Previsioni /></RequireTitolare>} />
+        <Route path="/fiscale/previsioni/nuova" element={<RequireTitolare><PrevisioneForm /></RequireTitolare>} />
+        <Route path="/fiscale/previsioni/:id/modifica" element={<RequireTitolare><PrevisioneForm /></RequireTitolare>} />
         <Route path="/fiscale/previsioni/:id" element={<RequireTitolare><PrevisioneDettaglio /></RequireTitolare>} />
         <Route path="/fiscale/andamento" element={<RequireTitolare><AndamentoMensile /></RequireTitolare>} />
 

@@ -97,6 +97,9 @@ const OPERAZIONI = new Set([
   // in quest'ordine, perché il sigillo rifiuta anche se stesso.
   "crea_scenario_proiezione",
   "congela_scenario",
+  // E correggerla: le righe figlie si rifanno da capo, quindi tocca le
+  // stesse sei tabelle. Su una previsione chiusa la respingono i trigger.
+  "aggiorna_scenario_proiezione",
 ]);
 
 const CORS = {

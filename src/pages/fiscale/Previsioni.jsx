@@ -86,7 +86,10 @@ export default function Previsioni() {
   };
 
   const elimina = async (s) => {
-    if (!confirm(`Cancellare «${s.nome}»? Non è ancora chiusa, quindi si può.`)) return;
+    const avviso = s.congelato_il
+      ? `Buttare via «${s.nome}»? È chiusa: sparisce intera, e la cancellazione resta scritta.`
+      : `Cancellare «${s.nome}»?`;
+    if (!confirm(avviso)) return;
     try {
       await cancellaScenario(s.id);
       await ricarica();
@@ -111,12 +114,31 @@ export default function Previsioni() {
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
-      {/* --- Caricare il foglio --- */}
+      {/* --- Costruirla a mano: la strada normale --- */}
+      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="font-display text-lg text-b58-charcoal mb-1">Costruiscine una</h2>
+          <p className="text-xs text-b58-charcoal-soft">
+            Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi,
+            e mese per mese quanta gente ti aspetti.
+          </p>
+        </div>
+        <Link
+          to="/fiscale/previsioni/nuova"
+          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 shrink-0"
+        >
+          + Nuova previsione
+        </Link>
+      </div>
+
+      {/* --- Caricare il foglio: la scorciatoia --- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Carica il tuo foglio</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-1">Oppure parti dal tuo foglio Excel</h2>
         <p className="text-xs text-b58-charcoal-soft mb-4">
-          Il file resta sul tuo computer: il gestionale legge i numeri e li tiene nel database, non
-          conserva il foglio da nessuna parte.
+          Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
+          scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
+          database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
+          correggi da qui.
         </p>
 
         {!decompressioneDisponibile() ? (
@@ -230,14 +252,22 @@ export default function Previsioni() {
                   )}
                 </p>
               </div>
-              {!s.congelato_il && (
+              <div className="flex items-center gap-3 shrink-0">
+                {!s.congelato_il && (
+                  <Link
+                    to={`/fiscale/previsioni/${s.id}/modifica`}
+                    className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                  >
+                    Correggi
+                  </Link>
+                )}
                 <button
                   onClick={() => elimina(s)}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
+                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 >
                   Cancella
                 </button>
-              )}
+              </div>
             </li>
           ))}
         </ul>

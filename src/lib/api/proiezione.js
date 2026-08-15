@@ -79,9 +79,40 @@ export async function creaScenarioDaFoglio(dati) {
   return eseguiOperazione("crea_scenario_proiezione", { p_dati: dati });
 }
 
+// Correggere una previsione aperta rifà le sue righe: sei tabelle, una
+// transazione (B4). Su una chiusa il database rifiuta da sé.
+export async function aggiornaScenario(id, dati) {
+  return eseguiOperazione("aggiorna_scenario_proiezione", { p_scenario_id: id, p_dati: dati });
+}
+
 // Scrive i dodici mesi e poi sigilla, in quest'ordine (B4).
 export async function congelaScenario(id) {
   return eseguiOperazione("congela_scenario", { p_scenario_id: id });
+}
+
+// --- Dove stiamo andando ---
+
+// Il piano sovrapposto ai numeri veri, voce per voce. Non calcola niente
+// qui: la regola di come si proietta (quello che è successo + quello che
+// resta da fare come previsto) vive nel database.
+export async function andamentoAnno(entityId, anno, scenarioId) {
+  const { data, error } = await supabase.rpc("andamento_anno", {
+    p_entity_id: entityId,
+    p_anno: anno,
+    p_scenario_id: scenarioId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function proiezioneFineAnno(entityId, anno, scenarioId) {
+  const { data, error } = await supabase.rpc("proiezione_fine_anno", {
+    p_entity_id: entityId,
+    p_anno: anno,
+    p_scenario_id: scenarioId,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
 
 export async function cancellaScenario(id) {

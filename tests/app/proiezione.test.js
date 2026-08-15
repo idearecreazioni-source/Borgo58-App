@@ -113,39 +113,39 @@ describe("la rotta economica: riservata, congelata, con un solo motore fiscale",
     expect(rifiuto.error).not.toBeNull();
   });
 
-  it.skipIf(!CORRIDOIO)("chiusa, non si ritocca nemmeno scrivendo dritto in tabella", async () => {
+  it.skipIf(!CORRIDOIO)("finché è aperta si corregge, e passa dal corridoio", async () => {
     expect(scenarioId).toBeTruthy();
 
-    const chiusura = await titolare.functions.invoke("operazioni-atomiche", {
-      body: { operazione: "congela_scenario", parametri: { p_scenario_id: scenarioId } },
+    const dati = scenarioDiProva(ente);
+    dati.parametri.scontrinoFood = 50;
+    const { error } = await titolare.functions.invoke("operazioni-atomiche", {
+      body: {
+        operazione: "aggiorna_scenario_proiezione",
+        parametri: { p_scenario_id: scenarioId, p_dati: dati },
+      },
     });
-    expect(chiusura.error).toBeNull();
+    expect(error).toBeNull();
 
-    const dopo = await titolare
-      .from("scenari_proiezione")
-      .select("congelato_il, bep_solo_sala")
-      .eq("id", scenarioId)
-      .single();
-    expect(dopo.data.congelato_il).toBeTruthy();
-    // 12.000 di fissi all'anno su 35 di margine a coperto = 343, per eccesso.
-    expect(dopo.data.bep_solo_sala).toBe(343);
-
-    // ⚠️ Il sigillo vale per il browser, non solo per la schermata.
-    const ritocco = await titolare
-      .from("scenari_proiezione")
-      .update({ nome: "cambiata dopo" })
-      .eq("id", scenarioId);
-    expect(ritocco.error).not.toBeNull();
-
-    const ritoccoMesi = await titolare
-      .from("scenario_mesi")
-      .update({ coperti_feriali: 99 })
-      .eq("scenario_id", scenarioId);
-    expect(ritoccoMesi.error).not.toBeNull();
-
-    const cancella = await titolare.from("scenari_proiezione").delete().eq("id", scenarioId);
-    expect(cancella.error).not.toBeNull();
+    const mesi = await titolare.rpc("proiezione_scenario", { p_scenario_id: scenarioId });
+    // 100 coperti a 60 = 6.000 di ricavi.
+    expect(Number(mesi.data[0].ricavi_sala)).toBe(6000);
+    // E le righe figlie si rifanno, non si accumulano.
+    const righe = await titolare.from("scenario_mesi").select("id").eq("scenario_id", scenarioId);
+    expect(righe.data).toHaveLength(12);
   });
+
+  // ⚠️ IL SIGILLO NON SI PROVA QUI, ed è una scelta con una ragione. Per
+  // provarlo servirebbe congelare una previsione, e una previsione chiusa
+  // — anche buttandola via — lascia una riga nel registro delle
+  // cancellazioni, che **nessuno può ripulire** (ha la sola lettura, ed è
+  // giusto così). Ogni giro di prove sporcherebbe per sempre un registro
+  // che serve a ricostruire i fatti veri, contro la regola dei dati di
+  // prova che si cancellano sempre.
+  //
+  // Il sigillo è provato dentro `20260814000014` e `20260815000001`, che
+  // girano come proprietarie del database e si ripuliscono per intero:
+  // update rifiutato, cancellazione di un pezzo rifiutata, riapertura
+  // rifiutata, e la previsione intera che se ne va lasciando la traccia.
 
   it("il motore fiscale è uno solo, e il numero esce con la frase che lo spiega", async () => {
     const { data, error } = await titolare.rpc("calcola_imposte", {
