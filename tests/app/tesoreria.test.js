@@ -204,3 +204,94 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
     }
   });
 });
+
+// «Ce la faccio al 16?» — Blocco 6b.
+//
+// ⚠️ Il pezzo che una migrazione non può provare da sola: le tre funzioni
+// nuove passano da PostgREST col token dello staff, che è come ci arriva
+// un tablet. E la riconciliazione senza estratto conto — una fattura che
+// sparisce dalle attese quando la si paga — si prova qui perché tocca due
+// moduli diversi.
+describe("previsione di cassa: cosa deve ancora uscire", () => {
+  let titolare;
+  let staff;
+  let ente;
+
+  beforeAll(async () => {
+    titolare = await clientAutenticato(credenziali().titolare);
+    staff = await clientAutenticato(credenziali().staff);
+    ente = await primaEntita(titolare);
+    await titolare.from("scadenze_previste").delete().eq("nota", MARCA);
+  });
+
+  afterAll(async () => {
+    await titolare.from("scadenze_previste").delete().eq("nota", MARCA);
+    await titolare.from("impostazioni_tesoreria").delete().eq("entity_id", ente);
+    await titolare.auth.signOut({ scope: "local" });
+    await staff.auth.signOut({ scope: "local" });
+  });
+
+  it("lo staff è respinto su previsione, scadenze e POS", async () => {
+    for (const [fn, args] of [
+      ["previsione_cassa", { p_entity_id: ente, p_fino_al: null }],
+      ["movimenti_attesi", { p_entity_id: ente, p_fino_al: null }],
+      ["pos_in_transito", { p_entity_id: ente }],
+    ]) {
+      const { error } = await staff.rpc(fn, args);
+      expect(error, `${fn} avrebbe dovuto rifiutare lo staff`).toBeTruthy();
+    }
+  });
+
+  it("i parametri del POS nascono vuoti e la schermata lo dichiara", async () => {
+    const { data } = await titolare.rpc("pos_in_transito", { p_entity_id: ente });
+    // ⚠️ Niente commissione inventata: senza risposta della banca il netto
+    // non è calcolabile, e va detto invece di mostrare il lordo come netto.
+    expect(data[0].netto_atteso).toBeNull();
+    expect(data[0].avvertenza).toContain("LORDO");
+  });
+
+  it("una scadenza scritta a mano entra nella previsione, e oltre l'orizzonte no", async () => {
+    const fra10 = new Date();
+    fra10.setDate(fra10.getDate() + 10);
+    const data10 = fra10.toLocaleDateString("sv-SE"); // AAAA-MM-GG in ora locale
+
+    await titolare.from("scadenze_previste").insert({
+      entity_id: ente,
+      descrizione: `${MARCA} affitto`,
+      importo: 900,
+      scade_il: data10,
+      mezzo: "banca",
+      nota: MARCA,
+    });
+
+    const fra20 = new Date();
+    fra20.setDate(fra20.getDate() + 20);
+    const { data: dentro } = await titolare.rpc("movimenti_attesi", {
+      p_entity_id: ente,
+      p_fino_al: fra20.toLocaleDateString("sv-SE"),
+    });
+    expect(dentro.some((m) => m.descrizione === `${MARCA} affitto`)).toBe(true);
+
+    const fra5 = new Date();
+    fra5.setDate(fra5.getDate() + 5);
+    const { data: fuori } = await titolare.rpc("movimenti_attesi", {
+      p_entity_id: ente,
+      p_fino_al: fra5.toLocaleDateString("sv-SE"),
+    });
+    expect(fuori.some((m) => m.descrizione === `${MARCA} affitto`)).toBe(false);
+  });
+
+  it("la previsione somma quello che dice di sommare, e dichiara che mancano gli stipendi", async () => {
+    const { data } = await titolare.rpc("previsione_cassa", {
+      p_entity_id: ente,
+      p_fino_al: null,
+    });
+    const p = data[0];
+    expect(Number(p.saldo_previsto)).toBe(
+      Number(p.oggi_cassa) + Number(p.oggi_banca) + Number(p.pos_in_arrivo) - Number(p.uscite_attese)
+    );
+    // Il buco più grosso è dichiarato: senza, un saldo previsto ottimista
+    // sembrerebbe una promessa.
+    expect(p.avvertenza).toContain("NON comprende gli stipendi");
+  });
+});

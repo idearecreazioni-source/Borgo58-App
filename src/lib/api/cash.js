@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { oggiLocale } from "../constants";
 
 // --- Causali (editabili dal titolare, §3.4) ---
 export async function listCausali(kind) {
@@ -113,6 +114,107 @@ export async function versaInBanca({ entityId, importo, data, nota }) {
     p_data: data,
     p_nota: nota ?? null,
   });
+}
+
+// --- «Ce la faccio al 16?» (15/08/2026, Blocco 6b) -------------------
+// La domanda che chiude i ristoranti non è «quanto ho» ma «arrivo alla
+// scadenza con i soldi sul conto». Tutto qui sotto LEGGE: le fatture da
+// pagare e le imposte il gestionale le sa già, e riscriverle come scadenze
+// le conterebbe due volte.
+
+export async function getPrevisioneCassa(entityId, finoAl) {
+  const { data, error } = await supabase.rpc("previsione_cassa", {
+    p_entity_id: entityId,
+    p_fino_al: finoAl ?? null,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function getPosInTransito(entityId) {
+  const { data, error } = await supabase.rpc("pos_in_transito", { p_entity_id: entityId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function listMovimentiAttesi(entityId, finoAl) {
+  const { data, error } = await supabase.rpc("movimenti_attesi", {
+    p_entity_id: entityId,
+    p_fino_al: finoAl ?? null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getImpostazioniTesoreria(entityId) {
+  const { data, error } = await supabase
+    .from("impostazioni_tesoreria")
+    .select("*")
+    .eq("entity_id", entityId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function salvaImpostazioniTesoreria(entityId, campi) {
+  const { data, error } = await supabase
+    .from("impostazioni_tesoreria")
+    .upsert({
+      entity_id: entityId,
+      // Vuoto resta vuoto: «non l'ha ancora detto la banca» è una risposta
+      // diversa da zero, e zero commissioni sarebbe una risposta inventata.
+      giorni_accredito_pos:
+        campi.giorniAccredito === "" || campi.giorniAccredito == null
+          ? null
+          : Number(campi.giorniAccredito),
+      commissione_pos_percento:
+        campi.commissione === "" || campi.commissione == null ? null : Number(campi.commissione),
+      aggiornato_il: new Date().toISOString(),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function listScadenzePreviste(entityId) {
+  const { data, error } = await supabase
+    .from("scadenze_previste")
+    .select("*")
+    .eq("entity_id", entityId)
+    .is("chiusa_il", null)
+    .order("scade_il");
+  if (error) throw error;
+  return data;
+}
+
+export async function createScadenzaPrevista(payload) {
+  const { data, error } = await supabase
+    .from("scadenze_previste")
+    .insert({
+      entity_id: payload.entityId,
+      descrizione: payload.descrizione.trim(),
+      importo: Number(payload.importo),
+      scade_il: payload.scadeIl,
+      ogni_mesi: Number(payload.ogniMesi ?? 0),
+      mezzo: payload.mezzo ?? "banca",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function chiudiScadenzaPrevista(id) {
+  // ⚠️ `oggiLocale()` e non `toISOString().slice(0,10)`: quella è la data
+  // UTC, e fra mezzanotte e le due restituisce IERI. Per un'osteria che
+  // chiude all'una vuol dire chiudere la scadenza col giorno sbagliato
+  // (§8, trovata in 14 punti nell'audit dell'08/08).
+  const { error } = await supabase
+    .from("scadenze_previste")
+    .update({ chiusa_il: oggiLocale() })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function listConteggiCassa(entityId, limite = 10) {
