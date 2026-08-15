@@ -25,7 +25,7 @@
 
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { esegui, fermati, leggiConfigurazione, REF_PRODUZIONE, titolo } from "./comune.mjs";
+import { esegui, fermati, leggiConfigurazione, REF_PRODUZIONE, REF_PROVA, titolo } from "./comune.mjs";
 
 const CARTELLA = "supabase/functions";
 
@@ -39,6 +39,20 @@ const SENZA_TOKEN = {
 
 const nome = process.argv[2];
 const conferma = process.argv.includes("--conferma");
+
+// Su quale progetto si installa.
+//
+// ⚠️ PERCHE' ESISTE «--prova» (15/08/2026). Le migrazioni hanno una rete:
+// scripts/migra.mjs si rifiuta di toccare la produzione se non le ha
+// viste passare dal progetto di prova. Le funzioni online NON ce l'avevano,
+// e il buco si e' visto costruendo la tesoreria: due operazioni nuove del
+// corridoio, le prove automatiche che le chiamavano, e il corridoio del
+// progetto di prova che rispondeva 404 perche' nessuno poteva aggiornarlo
+// se non dal pannello a mano. Senza questo comando, un'operazione nuova
+// puo' arrivare in produzione senza essere mai stata esercitata da
+// nessuna prova.
+const suProva = process.argv.includes("--prova");
+const REF = suProva ? REF_PROVA : REF_PRODUZIONE;
 
 const disponibili = existsSync(CARTELLA)
   ? readdirSync(CARTELLA, { withFileTypes: true })
@@ -78,10 +92,16 @@ const token = config.SUPABASE_ACCESS_TOKEN || null;
 const stato = esegui("git", ["status", "--porcelain", "--", path.join(CARTELLA, nome)], {
   silenzioso: true,
 });
-if (!stato.ok) {
+if (!stato.ok && !suProva) {
   fermati("FERMO: non riesco a interrogare git, quindi non posso garantire che il file sia committato.");
 }
-if (stato.uscita.trim()) {
+// ⚠️ Sulla PROVA anche questo vincolo non si applica, per la stessa
+// ragione di quello su GitHub: il progetto di prova serve a esercitare il
+// codice PRIMA di committarlo, ed e' esattamente l'ordine che il
+// protocollo chiede (§7 punto 7). Pretendere il commit qui creerebbe un
+// giro chiuso — non posso provarlo finche' non lo committo, e non voglio
+// committarlo finche' non l'ho provato. In produzione resta intero.
+if (stato.uscita.trim() && !suProva) {
   fermati(
     `FERMO: «${nome}» ha modifiche non committate.`,
     "Cio' che gira in produzione dev'essere cio' che si puo' leggere su GitHub.",
@@ -96,7 +116,10 @@ if (stato.uscita.trim()) {
 // mentre nessuno puo' leggerne il codice. Se quel commit venisse
 // riscritto, il progetto Supabase resterebbe l'unico posto dove quella
 // versione e' mai esistita.
-const fetch = esegui("git", ["fetch", "--quiet", "origin"], { silenzioso: true });
+// ⚠️ Sulla PROVA questo vincolo non si applica, ed e' il punto: il
+// progetto di prova serve proprio a esercitare codice non ancora spinto.
+// In produzione resta intero.
+const fetch = suProva ? { ok: true } : esegui("git", ["fetch", "--quiet", "origin"], { silenzioso: true });
 if (!fetch.ok) {
   fermati(
     "FERMO: non riesco a leggere cosa c'e' su GitHub, quindi non posso garantire",
@@ -105,11 +128,9 @@ if (!fetch.ok) {
     "Riprova quando la rete risponde."
   );
 }
-const diverso = esegui(
-  "git",
-  ["diff", "--quiet", "origin/master", "--", path.join(CARTELLA, nome)],
-  { silenzioso: true }
-);
+const diverso = suProva
+  ? { ok: true }
+  : esegui("git", ["diff", "--quiet", "origin/master", "--", path.join(CARTELLA, nome)], { silenzioso: true });
 if (!diverso.ok) {
   fermati(
     `FERMO: «${nome}» non e' ancora su GitHub.`,
@@ -120,8 +141,8 @@ if (!diverso.ok) {
   );
 }
 
-titolo(`Installazione di ${nome}`);
-console.log(`  progetto: ${REF_PRODUZIONE}`);
+titolo(`Installazione di ${nome}${suProva ? " — PROGETTO DI PROVA" : ""}`);
+console.log(`  progetto: ${REF}${suProva ? " (prova)" : " (PRODUZIONE)"}`);
 console.log(`  chiave: ${token ? "da .env.db" : "quella lasciata da `npx supabase login`"}`);
 console.log(
   `  verifica del token in ingresso: ${
@@ -132,7 +153,7 @@ console.log(
 if (!conferma) {
   console.log("");
   console.log("  Nessuna modifica fatta: questa e' la modalita' di sola lettura.");
-  console.log(`  Per installarla davvero: npm run funzione ${nome} -- --conferma`);
+  console.log(`  Per installarla davvero: npm run funzione ${nome} --${suProva ? " --prova" : ""} --conferma`);
   console.log("");
   process.exit(0);
 }
@@ -152,7 +173,7 @@ const ambiente = token ? { ...conShell, env: { SUPABASE_ACCESS_TOKEN: token } } 
 function versioneInstallata() {
   const r = esegui(
     "npx",
-    ["supabase", "functions", "list", "--project-ref", REF_PRODUZIONE],
+    ["supabase", "functions", "list", "--project-ref", REF],
     { ...ambiente, silenzioso: true }
   );
   if (!r.ok) return null;
@@ -166,7 +187,7 @@ function versioneInstallata() {
 
 const prima = versioneInstallata();
 
-const argomenti = ["supabase", "functions", "deploy", nome, "--project-ref", REF_PRODUZIONE];
+const argomenti = ["supabase", "functions", "deploy", nome, "--project-ref", REF];
 if (SENZA_TOKEN[nome]) argomenti.push("--no-verify-jwt");
 
 const r = esegui("npx", argomenti, ambiente);

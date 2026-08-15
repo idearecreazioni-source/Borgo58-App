@@ -16,6 +16,14 @@ import path from "node:path";
 /** Il progetto di produzione. Se compare dove non deve, si interrompe tutto. */
 export const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
 
+/**
+ * Il progetto di prova, usa-e-getta e ricostruibile da zero.
+ * Serve a installarci le funzioni online PRIMA della produzione: senza,
+ * un'operazione nuova del corridoio potrebbe arrivare in produzione senza
+ * essere mai stata esercitata da nessuna prova automatica.
+ */
+export const REF_PROVA = "bnwqgpuyzmzujxfbtyvs";
+
 export function leggiConfigurazione(file = ".env.db") {
   if (!existsSync(file)) {
     fermati(
