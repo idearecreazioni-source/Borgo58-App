@@ -164,7 +164,27 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
     expect(Number(dopo[0].contante_atteso)).toBe(teorico - 15);
   });
 
-  it("una causale di sistema non si può spegnere né contare fra i costi fissi", async () => {
+
+  it("le causali di sistema non compaiono quando si registra un movimento a mano", async () => {
+    // ⚠️ Segnalato da Alessio guardando il menu della prima nota. Sceglierne
+    // una per una spesa vera la farebbe sparire dai costi IN SILENZIO,
+    // perche' quelle causali sono trattate come spostamenti di denaro.
+    const { data: elenco } = await titolare
+      .from("cash_causali")
+      .select("label, di_sistema")
+      .eq("active", true)
+      .eq("di_sistema", false)
+      .eq("kind", "uscita");
+    expect(elenco.some((c) => c.di_sistema)).toBe(false);
+    expect(elenco.some((c) => c.label === "Versamento in banca")).toBe(false);
+    expect(elenco.some((c) => c.label === "Rimborso al titolare")).toBe(false);
+
+    // Ma esistono ancora, e si vedono dove servono.
+    const { data: tutte } = await titolare.from("cash_causali").select("label").eq("di_sistema", true);
+    expect(tutte.length).toBe(5);
+  });
+
+  it("una causale di sistema non si puo' spegnere ne' contare fra i costi fissi", async () => {
     const { data: causale } = await titolare
       .from("cash_causali")
       .select("id")

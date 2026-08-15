@@ -3,8 +3,22 @@ import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
 
 // --- Causali (editabili dal titolare, §3.4) ---
+//
+// ⚠️ Le causali di SISTEMA restano fuori da questo elenco (15/08/2026,
+// segnalato da Alessio guardando il menu della prima nota). «Versamento in
+// banca», «Differenza di cassa in meno/in più» e «Rimborso al titolare»
+// non le sceglie lui: le scrive il gestionale quando conta il cassetto,
+// versa o rimborsa. Sceglierne una a mano per una spesa vera **la farebbe
+// sparire dai costi in silenzio**, perché quelle causali sono trattate
+// come spostamenti di denaro e non come spese. Restano visibili in
+// «Cassa → Causali», che serve a vederle tutte.
 export async function listCausali(kind) {
-  let query = supabase.from("cash_causali").select("*").eq("active", true).order("label");
+  let query = supabase
+    .from("cash_causali")
+    .select("*")
+    .eq("active", true)
+    .eq("di_sistema", false)
+    .order("label");
   if (kind) query = query.eq("kind", kind);
   const { data, error } = await query;
   if (error) throw error;

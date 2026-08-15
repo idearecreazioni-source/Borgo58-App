@@ -103,6 +103,12 @@ export default function Causali() {
         la ereditano, e su una singola riga puoi sempre dire diversamente. Le regole si creano da{" "}
         <Link to="/fiscale/deducibilita" className="underline">Proiezione fiscale → Deducibilità dei costi</Link>.
       </p>
+      <p className="text-xs text-b58-charcoal-soft mb-6">
+        Alcune causali le scrive <strong>il gestionale</strong>, non tu: quando conti il cassetto, versi in
+        banca o ti rimborsi un anticipo. Le vedi qui per sapere che esistono, ma{" "}
+        <strong>non compaiono quando registri un movimento a mano</strong> — sono spostamenti di denaro, non
+        spese, e sceglierne una per una spesa vera la farebbe sparire dai costi.
+      </p>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -141,16 +147,29 @@ export default function Causali() {
                 {byKind[k.value].map((c) => (
                   <li key={c.id} className="text-sm text-b58-charcoal">
                     <div className="flex items-center justify-between gap-2">
-                      {c.label}
-                      <button
-                        onClick={() => handleRemove(c.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                        title="Disattiva"
-                      >
-                        ✕
-                      </button>
+                      <span>
+                        {c.label}
+                        {c.di_sistema && (
+                          <span className="block text-[11px] text-b58-charcoal-soft/70">
+                            la scrive il gestionale
+                          </span>
+                        )}
+                      </span>
+                      {/* ⚠️ Sulle causali di sistema il pulsante non c'è
+                          invece di esserci e fallire: il database le
+                          protegge, e un tasto che dà errore ogni volta
+                          insegna solo a diffidare dei tasti. */}
+                      {!c.di_sistema && (
+                        <button
+                          onClick={() => handleRemove(c.id)}
+                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          title="Disattiva"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
-                    {k.value === "uscita" && (
+                    {k.value === "uscita" && !c.di_sistema && (
                       <>
                         <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft mt-0.5 cursor-pointer">
                           <input
