@@ -131,13 +131,24 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 | Calendario eventi / clienti | Costruito, form pubblico con freno anti-abuso | A + B2/B3 (Edge Function per notifica) |
 | HACCP | Costruito; manca filtro di periodo sul manuale esportabile (§3.19 punto 5) | A |
 | Agricolo | Costruito | A |
-| Proiezione fiscale | Costruito | A |
+| Proiezione fiscale | Costruito | A + B4 — vedi la constatazione qui sotto |
 | Ricerca ricorrente | Placeholder, non attivato | Non ancora costruito — bloccato su account AI di Alessio |
 | Personale | Costruito | A |
 | Monitoraggio social | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
 | Editor menu | Costruito | A |
 | Assistente AI | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
 | Archivio documenti | Costruito | A |
+
+*Riga della Proiezione fiscale aggiornata il 15/08/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarata al validatore** nel riepilogo della consegna «la rotta economica». **Il testo originale era `| Proiezione fiscale | Costruito | A |`**, e resta qui perché il confronto sia possibile.*
+
+📌 **CONSTATAZIONE, NON LASCIAPASSARE** — condizione posta da Alessio autorizzando questa modifica: la categoria di un modulo descrive **cosa fa il codice**, non cosa gli è permesso fare. Quindi la riga non dice «la Proiezione può usare il corridoio»: dice che **creare uno scenario scrive su sei tabelle, quindi ricade in B4**. Se domani quella scrittura tornasse su una tabella sola, la riga tornerebbe ad «A» — non perché qualcuno revochi un permesso, ma perché sarebbe cambiato il fatto.
+
+Il fatto, per esteso, perché il validatore possa verificarlo invece di crederci:
+
+- **Operazione `crea_scenario_proiezione`.** Il client la invoca **solo** attraverso `eseguiOperazione()` → Edge Function `operazioni-atomiche` → **una sola** funzione Postgres `security definer`. Non sei scritture in fila dentro un server: quella forma sposterebbe il problema di un livello senza risolverlo, ed è esattamente ciò che la regola B4 vieta (§2, sotto-decisione «per B4 in particolare»).
+- **Le sei tabelle scritte in quella singola transazione**: `scenari_proiezione`, `scenario_personale`, `scenario_extra`, `scenario_costi_fissi`, `scenario_linee_accessorie`, `scenario_mesi`. A metà resterebbe una previsione che **sembra buona** — parametri senza mesi, o mesi senza costi fissi — e produrrebbe numeri plausibili e falsi.
+- **Operazione `congela_scenario`.** Ne scrive **due**: `scenario_risultati` (i dodici mesi calcolati) e poi `scenari_proiezione` (il sigillo), **in quest'ordine obbligato**. Invertendo, il trigger che vieta le modifiche a uno scenario congelato rifiuterebbe il congelamento stesso — ed è la ragione per cui in quel trigger non esiste nessuna scappatoia: una scappatoia sarebbe anche la strada per aggirarlo.
+- **Tutto il resto del modulo resta categoria A**: leggere una previsione, chiudere un mese (`consuntivi_mensili`, una tabella sola), segnare un periodo anomalo, marcare una causale come costo fisso. A rendere necessario il corridoio è la seconda tabella, non il numero di righe — come già stabilito per `completa_task` in Agenda.
 
 **Aperto, non "non conforme"**: conto diviso, storni post-invio, asporto (§3.2.2) restano da specificare con l'esperienza diretta di Alessio in sala — non sono un difetto architetturale, sono una decisione di prodotto non ancora presa.
 
