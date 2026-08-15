@@ -9,6 +9,7 @@ import {
   listaScenari,
   misureDelMese,
   omaggiPerCausale,
+  imposteEFiscalizzato,
   proiezioneFineAnno,
   scostamentoMensile,
   statoConfrontoMensile,
@@ -40,6 +41,7 @@ export default function AndamentoMensile() {
   const [consuntivi, setConsuntivi] = useState([]);
   const [anno_, setAnno_] = useState([]);
   const [fineAnno, setFineAnno] = useState(null);
+  const [dueImposte, setDueImposte] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [chiudendo, setChiudendo] = useState(false);
@@ -85,6 +87,14 @@ export default function AndamentoMensile() {
       setBudget(bo);
       setAnno_(aa);
       setFineAnno(fa);
+      // Le due cifre delle imposte: su tutto l'incassato e sul solo
+      // fiscalizzato. Si chiedono sull'imponibile proiettato, cioè sullo
+      // stesso numero da cui esce la stima mostrata accanto.
+      setDueImposte(
+        fa?.ante_imposte_proiettato == null
+          ? null
+          : await imposteEFiscalizzato(entityId, anno, fa.ante_imposte_proiettato).catch(() => null)
+      );
     } else {
       setScostamento([]);
       setBudget(null);
@@ -296,6 +306,43 @@ export default function AndamentoMensile() {
                       </p>
                     </div>
                   </div>
+                  {/* ⚠️ Le DUE cifre delle imposte (16/08/2026, decisione di
+                      Alessio). I ricavi restano interi — se li riducessimo,
+                      scontrino medio, food cost in percentuale e scostamento
+                      direbbero il falso — e la distinzione vive qui, dove è
+                      pertinente. La cifra vera sta fra le due, e si sposta
+                      verso la prima man mano che i conti in sospeso vengono
+                      regolarizzati. */}
+                  {dueImposte && Number(dueImposte.conti_sospesi) > 0 && (
+                    <div className="mt-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 px-3 py-2.5">
+                      <p className="text-xs font-medium text-b58-charcoal mb-1.5">
+                        Imposte: la cifra vera sta fra queste due
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-xs text-b58-charcoal-soft">Su tutto l&apos;incassato</p>
+                          <p className="text-b58-charcoal font-medium">
+                            {formatEUR(dueImposte.su_tutto_incassato)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-b58-charcoal-soft">Sul solo fiscalizzato</p>
+                          <p className="text-b58-charcoal font-medium">
+                            {formatEUR(dueImposte.su_solo_fiscalizzato)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-b58-charcoal-soft mt-2 leading-relaxed">
+                        {dueImposte.avvertenza}
+                      </p>
+                      <Link
+                        to="/cassa/scontrinato"
+                        className="text-[11px] text-b58-terracotta-dark underline mt-1 inline-block"
+                      >
+                        Vedi i {dueImposte.conti_sospesi} conti da sistemare →
+                      </Link>
+                    </div>
+                  )}
                   <p className={`text-[11px] rounded px-2 py-1.5 mt-3 ${fineAnno.voci_misurate > 0 ? "text-b58-charcoal-soft bg-b58-cream-dark" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
                     {fineAnno.voci_misurate} voci misurate su {fineAnno.voci_totali}. {fineAnno.avvertenza}
                   </p>

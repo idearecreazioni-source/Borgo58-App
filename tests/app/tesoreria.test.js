@@ -441,3 +441,82 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
     }
   });
 });
+
+// Le due cifre delle imposte (16/08/2026, decisione di Alessio).
+//
+// ⚠️ Il punto: i RICAVI restano interi — se si riducessero, scontrino
+// medio, food cost in percentuale e scostamento direbbero il falso — e la
+// distinzione fra incassato e fiscalizzato vive sulle IMPOSTE, dove è
+// pertinente. E il motore fiscale resta uno solo: le due cifre escono da
+// due chiamate alla stessa funzione, non da due calcoli.
+describe("imposte: due cifre, e la vera sta in mezzo", () => {
+  let titolare;
+  let staff;
+  let ente;
+  const GIORNO = "2089-04-01";
+
+  async function pulisci() {
+    const { data } = await titolare.from("orders").select("id").like("note", "TEST-AUTO imp%");
+    for (const o of data ?? []) {
+      await titolare.from("order_items").delete().eq("order_id", o.id);
+      await titolare.from("orders").delete().eq("id", o.id);
+    }
+  }
+
+  beforeAll(async () => {
+    titolare = await clientAutenticato(credenziali().titolare);
+    staff = await clientAutenticato(credenziali().staff);
+    ente = await primaEntita(titolare);
+    await pulisci();
+  });
+
+  afterAll(async () => {
+    await pulisci();
+    await titolare.auth.signOut({ scope: "local" });
+    await staff.auth.signOut({ scope: "local" });
+  });
+
+  it("i ricavi non fiscalizzati si leggono dai conti chiusi", async () => {
+    const { data: o } = await titolare
+      .from("orders")
+      .insert({
+        entity_id: ente,
+        table_label: "TEST-AUTO imp",
+        status: "chiuso",
+        payment_method: "contante",
+        coperti: 0,
+        coperto_unit_price: 5,
+        opened_at: GIORNO,
+        closed_at: GIORNO,
+        note: "TEST-AUTO imp",
+      })
+      .select()
+      .single();
+    await titolare.from("order_items").insert({
+      order_id: o.id,
+      free_text_name: "Piatto",
+      destination: "cucina",
+      quantity: 1,
+      unit_price: 250,
+    });
+
+    const { data } = await titolare.rpc("ricavi_non_fiscalizzati", {
+      p_entity_id: ente,
+      p_anno: 2089,
+    });
+    expect(Number(data[0].importo)).toBe(250);
+    expect(Number(data[0].conti)).toBe(1);
+  });
+
+  it("lo staff non legge né i ricavi non fiscalizzati né le due stime", async () => {
+    const a = await staff.rpc("ricavi_non_fiscalizzati", { p_entity_id: ente, p_anno: 2089 });
+    expect(a.error).toBeTruthy();
+    const b = await staff.rpc("imposte_e_fiscalizzato", {
+      p_entity_id: ente,
+      p_anno: 2089,
+      p_imponibile: 1000,
+      p_costo_lavoro: 0,
+    });
+    expect(b.error).toBeTruthy();
+  });
+});

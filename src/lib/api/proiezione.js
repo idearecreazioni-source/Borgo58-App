@@ -250,3 +250,24 @@ export async function cancellaPeriodoAnomalo(id) {
   const { error } = await supabase.from("periodi_anomali").delete().eq("id", id);
   if (error) throw error;
 }
+
+/**
+ * Le due cifre delle imposte (16/08/2026, decisione di Alessio): stimate
+ * su tutto l'incassato e sul solo fiscalizzato.
+ *
+ * ⚠️ La ragione per cui i ricavi NON si riducono: da quel numero escono
+ * anche scontrino medio, food cost in percentuale e scostamento, e ridurli
+ * li falserebbe tutti e tre. La distinzione vive qui, sulle imposte, dove
+ * è pertinente — e le due cifre non si separano mai perché arrivano
+ * insieme dalla stessa funzione.
+ */
+export async function imposteEFiscalizzato(entityId, anno, imponibile, costoLavoro = 0) {
+  const { data, error } = await supabase.rpc("imposte_e_fiscalizzato", {
+    p_entity_id: entityId,
+    p_anno: anno,
+    p_imponibile: imponibile,
+    p_costo_lavoro: costoLavoro,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
