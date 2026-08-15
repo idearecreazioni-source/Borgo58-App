@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // --- Causali (editabili dal titolare, §3.4) ---
 export async function listCausali(kind) {
@@ -81,6 +82,50 @@ export async function deleteCashMovement(id) {
 }
 
 // Saldo di cassa (contante atteso) per entità.
+// --- La tesoreria (15/08/2026, Blocco 6a) ---------------------------
+// L'UNICA risposta a «quanto contante ho nel cassetto». Comprende gli
+// incassi in contante dei conti chiusi, che il database LEGGE dalla sala
+// invece di riscriverli in prima nota: così non c'è nessuna riga doppia da
+// togliere il giorno del registratore telematico. Porta con sé
+// l'avvertenza, come tutte le funzioni che restituiscono un numero e il
+// suo limite.
+export async function getSaldoTesoreria(entityId) {
+  const { data, error } = await supabase.rpc("saldo_tesoreria", { p_entity_id: entityId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// Conteggio del cassetto e versamento in banca toccano due tabelle
+// ciascuno, quindi passano dal corridoio (Contratto B4).
+export async function registraConteggioCassa({ entityId, contato, data, nota }) {
+  return eseguiOperazione("registra_conteggio_cassa", {
+    p_entity_id: entityId,
+    p_contato: contato,
+    p_data: data,
+    p_nota: nota ?? null,
+  });
+}
+
+export async function versaInBanca({ entityId, importo, data, nota }) {
+  return eseguiOperazione("versa_in_banca", {
+    p_entity_id: entityId,
+    p_importo: importo,
+    p_data: data,
+    p_nota: nota ?? null,
+  });
+}
+
+export async function listConteggiCassa(entityId, limite = 10) {
+  const { data, error } = await supabase
+    .from("conteggi_cassa")
+    .select("*")
+    .eq("entity_id", entityId)
+    .order("contato_il", { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return data;
+}
+
 export async function getCashBalance(entityId) {
   const { data, error } = await supabase
     .from("v_cash_balance")

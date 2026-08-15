@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getCashBalance,
+  getSaldoTesoreria,
   listCashMovements,
   listDiscountsGiftsMonthly,
   listQuadraturaPagamenti,
+  registraConteggioCassa,
+  versaInBanca,
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
-import { formatDate, formatEUR, labelFor, primoDelMeseLocale } from "../../lib/constants";
+import { formatDate, formatEUR, labelFor, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import { CASH_DIRECTIONS } from "../../lib/constants";
 
 // Primo del mese in ora locale: la versione precedente passava per
@@ -20,6 +23,7 @@ export default function CassaHome() {
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [balance, setBalance] = useState(null);
+  const [tesoreria, setTesoreria] = useState(null);
   const [quadratura, setQuadratura] = useState([]);
   const [monthMovements, setMonthMovements] = useState([]);
   const [recent, setRecent] = useState([]);
@@ -42,13 +46,15 @@ export default function CassaHome() {
     const monthStart = currentMonthStart();
     Promise.all([
       getCashBalance(entityId),
+      getSaldoTesoreria(entityId),
       listCashMovements({ entityId, from: monthStart }),
       listCashMovements({ entityId }),
       listDiscountsGiftsMonthly(entityId),
       listQuadraturaPagamenti(),
     ])
-      .then(([bal, monthMov, allMov, dg, quad]) => {
+      .then(([bal, tes, monthMov, allMov, dg, quad]) => {
         setBalance(bal);
+        setTesoreria(tes);
         setMonthMovements(monthMov);
         setRecent(allMov.slice(0, 8));
         setMonthlyDG(dg);
@@ -72,7 +78,25 @@ export default function CassaHome() {
   const giftsThisMonth = monthlyDG.find((r) => r.month === currentMonthKey && r.type === "omaggio");
   const discountsThisMonth = monthlyDG.find((r) => r.month === currentMonthKey && r.type === "sconto");
 
-  const negativeBalance = balance && Number(balance.balance) < 0;
+  // Il saldo che conta e' quello della tesoreria: comprende il contante
+  // incassato in sala, che la prima nota non registra per scelta.
+  const negativeBalance = tesoreria && Number(tesoreria.contante_atteso) < 0;
+
+  // Dopo un conteggio o un versamento si ricarica ciò che è cambiato sul
+  // server — i saldi e i movimenti — e non ciò che l'utente sta scrivendo
+  // nell'altro riquadro (trappola del 12/08).
+  const ricaricaSaldi = () =>
+    Promise.all([
+      getCashBalance(entityId),
+      getSaldoTesoreria(entityId),
+      listCashMovements({ entityId }),
+      listCashMovements({ entityId, from: currentMonthStart() }),
+    ]).then(([bal, tes, allMov, monthMov]) => {
+      setBalance(bal);
+      setTesoreria(tes);
+      setRecent(allMov.slice(0, 8));
+      setMonthMovements(monthMov);
+    });
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -108,11 +132,15 @@ export default function CassaHome() {
             <div className={`rounded-xl p-5 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
               <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Contante in cassa</div>
               <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
-                {balance ? formatEUR(balance.balance) : "—"}
+                {tesoreria ? formatEUR(tesoreria.contante_atteso) : "—"}
               </div>
-              {balance && (
+              {balance && tesoreria && (
                 <div className="text-[11px] text-b58-charcoal-soft mt-1">
-                  fondo {formatEUR(balance.owner_float)} + incassi {formatEUR(balance.declared_takings)} − uscite {formatEUR(balance.total_out)}
+                  fondo {formatEUR(balance.owner_float)} + incassi {formatEUR(balance.declared_takings)} − uscite{" "}
+                  {formatEUR(balance.total_out)}
+                  {Number(tesoreria.conti_contanti) > 0 && (
+                    <> + {formatEUR(tesoreria.incassi_contanti_sala)} di sala ({tesoreria.conti_contanti} conti)</>
+                  )}
                 </div>
               )}
               {/* Il conto corrente sta accanto e NON si somma: sono due
@@ -129,21 +157,20 @@ export default function CassaHome() {
                   Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.
                 </div>
               )}
-              {/* ⚠️ IL LIMITE VA DETTO QUI, NON SOTTOINTESO. Chiudere un
-                  conto in sala non scrive niente in prima nota: e' una
-                  scelta presa il 04/08 e scritta sulla tabella dei conti
-                  ("«Chiuso» qui NON registra un incasso — quello arrivera'
-                  con il registratore telematico"), confermata da Alessio il
-                  14/08. Ma un saldo che esclude in silenzio tutti gli
-                  incassi di sala e' un numero che sembra completo e non lo
-                  e': la stessa forma dello scarto a zero e dell'elenco
-                  allergeni vuoto. Finche' il registratore non c'e', questa
-                  riga e' l'unica cosa che separa "il cassetto e' cosi'" da
-                  "il cassetto sembra cosi'". */}
+              {/* ⚠️ QUESTA RIGA DICEVA IL CONTRARIO FINO AL 15/08, ed è la
+                  parte che vale la pena raccontare. Dal 04/08 chiudere un
+                  conto non scrive in prima nota — scelta giusta e ancora
+                  valida — ma la conseguenza era che il saldo escludeva in
+                  silenzio ogni incasso di sala, e serviva un avviso sotto
+                  per dirlo. Un numero che si deve spiegare con una nota
+                  sotto non è una risposta.
+                  Ora gli incassi in contante dei conti chiusi si LEGGONO
+                  dalla sala (nessuna riga finta in prima nota, quindi
+                  niente da togliere quando arriverà il registratore
+                  telematico), e l'avvertenza è diventata quella vera: qui
+                  manca la CARTA, che non è ancora in banca. */}
               <div className="text-[11px] text-b58-charcoal-soft/80 mt-2 leading-relaxed">
-                Gli incassi qui sono <strong>solo quelli che scrivi tu</strong>. Chiudere un tavolo
-                in Comande non ne crea uno: gli incassi di sala arriveranno tutti insieme dal
-                registratore telematico, quando ci sarà.
+                {tesoreria?.avvertenza}
               </div>
             </div>
 
@@ -163,6 +190,13 @@ export default function CassaHome() {
               </div>
             </div>
           </div>
+
+          <IlCassetto
+            entityId={entityId}
+            tesoreria={tesoreria}
+            onFatto={ricaricaSaldi}
+            onErrore={setError}
+          />
 
           {/* Quadratura: si vede solo quando c'è qualcosa che non torna.
               Un riquadro che dice «tutto a posto» ogni giorno si impara a
@@ -232,6 +266,158 @@ export default function CassaHome() {
             )}
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Il cassetto: contarlo, e portarne una parte in banca.
+//
+// ⚠️ Due gesti diversi che si somigliano e vanno tenuti separati. Contare
+// il cassetto RILEVA una differenza fra quello che il gestionale crede e
+// quello che c'è davvero — e la differenza si dichiara, non si aggiusta
+// di nascosto. Versare in banca non è un'uscita: è lo stesso denaro che
+// cambia posto, e infatti muove due saldi insieme.
+// ---------------------------------------------------------------------
+function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
+  const [contato, setContato] = useState("");
+  const [versamento, setVersamento] = useState("");
+  const [data, setData] = useState(oggiLocale());
+  const [inCorso, setInCorso] = useState("");
+  const [esito, setEsito] = useState(null);
+
+  const teorico = tesoreria ? Number(tesoreria.contante_atteso) : null;
+  const differenza =
+    contato !== "" && teorico != null ? Number(contato) - teorico : null;
+
+  const inputClass =
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass =
+    "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+
+  const conta = async () => {
+    if (contato === "" || Number(contato) < 0) return;
+    setInCorso("conteggio");
+    setEsito(null);
+    onErrore("");
+    try {
+      await registraConteggioCassa({ entityId, contato: Number(contato), data, nota: null });
+      const scarto = differenza;
+      setContato("");
+      await onFatto();
+      setEsito(
+        scarto === 0
+          ? "Il cassetto torna: nessuna differenza."
+          : `Differenza di ${formatEUR(Math.abs(scarto))} ${scarto < 0 ? "in meno" : "in più"}, registrata in prima nota.`
+      );
+    } catch (e) {
+      onErrore(e.message);
+    } finally {
+      setInCorso("");
+    }
+  };
+
+  const versa = async () => {
+    if (versamento === "" || Number(versamento) <= 0) return;
+    setInCorso("versamento");
+    setEsito(null);
+    onErrore("");
+    try {
+      await versaInBanca({ entityId, importo: Number(versamento), data, nota: null });
+      const quanto = Number(versamento);
+      setVersamento("");
+      await onFatto();
+      setEsito(`${formatEUR(quanto)} spostati dal cassetto alla banca.`);
+    } catch (e) {
+      onErrore(e.message);
+    } finally {
+      setInCorso("");
+    }
+  };
+
+  return (
+    <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+      <h2 className="font-display text-lg text-b58-charcoal mb-1">Il cassetto</h2>
+      <p className="text-[11px] text-b58-charcoal-soft/80 mb-4">
+        Contare il cassetto non corregge di nascosto: se quello che trovi è diverso da quello che
+        risulta, <strong>la differenza resta scritta</strong>. Le differenze che tornano tutti i mesi
+        sono un&apos;informazione, non un fastidio.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className={labelClass}>Data</label>
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputClass} />
+        </div>
+
+        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+          <label className={labelClass}>Ho contato €</label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={contato}
+              onChange={(e) => setContato(e.target.value)}
+              placeholder={teorico != null ? formatEUR(teorico).replace("€", "").trim() : ""}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              disabled={inCorso !== "" || contato === ""}
+              onClick={conta}
+              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-2 disabled:opacity-60 shrink-0"
+            >
+              {inCorso === "conteggio" ? "…" : "Conta"}
+            </button>
+          </div>
+          {differenza != null && differenza !== 0 && (
+            <p className="text-[11px] text-b58-gold-dark mt-1.5">
+              {differenza < 0 ? "Mancano" : "Ci sono"} {formatEUR(Math.abs(differenza))}{" "}
+              {differenza < 0 ? "rispetto al teorico" : "in più del teorico"}.
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
+          <label className={labelClass}>Verso in banca €</label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={versamento}
+              onChange={(e) => setVersamento(e.target.value)}
+              className={inputClass}
+            />
+            <button
+              type="button"
+              disabled={inCorso !== "" || versamento === ""}
+              onClick={versa}
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-3 py-2 disabled:opacity-60 shrink-0"
+            >
+              {inCorso === "versamento" ? "…" : "Versa"}
+            </button>
+          </div>
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
+            Non è un&apos;uscita: il cassetto cala e la banca sale dello stesso importo.
+          </p>
+        </div>
+      </div>
+
+      {esito && <p className="text-xs text-b58-olive-dark mt-3">{esito}</p>}
+
+      {tesoreria?.ultimo_conteggio_il && (
+        <p className="text-[11px] text-b58-charcoal-soft/70 mt-3 border-t border-b58-charcoal/10 pt-2">
+          Ultimo conteggio: {formatDate(tesoreria.ultimo_conteggio_il)}
+          {Number(tesoreria.ultima_differenza) !== 0 && (
+            <>
+              {" "}— differenza di {formatEUR(Math.abs(Number(tesoreria.ultima_differenza)))}{" "}
+              {Number(tesoreria.ultima_differenza) < 0 ? "in meno" : "in più"}
+            </>
+          )}
+        </p>
       )}
     </div>
   );
