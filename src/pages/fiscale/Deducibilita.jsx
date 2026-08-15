@@ -202,7 +202,7 @@ export default function Deducibilita() {
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                   <th className="py-2 font-medium">Data</th>
                   <th className="py-2 font-medium">Voce</th>
-                  <th className="py-2 font-medium text-right">Importo</th>
+                  <th className="py-2 pr-6 font-medium text-right">Importo</th>
                   <th className="py-2 font-medium">Perché</th>
                 </tr>
               </thead>
@@ -216,7 +216,7 @@ export default function Deducibilita() {
                         {" "}· {c.origine === "fattura" ? "fattura" : "prima nota"}
                       </span>
                     </td>
-                    <td className="py-2 text-right text-b58-charcoal-soft whitespace-nowrap">
+                    <td className="py-2 pr-6 text-right text-b58-charcoal-soft whitespace-nowrap">
                       {formatEUR(c.importo)}
                     </td>
                     <td className="py-2 text-xs text-b58-charcoal-soft">{c.motivo}</td>
@@ -246,7 +246,9 @@ export default function Deducibilita() {
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="py-2 font-medium">Regola</th>
-                <th className="py-2 font-medium text-right">Deducibile</th>
+                {/* Senza lo spazio a destra la percentuale si incolla alla
+                    colonna dopo e si legge «100%—» invece di due colonne. */}
+                <th className="py-2 pr-6 font-medium text-right">Deducibile</th>
                 <th className="py-2 font-medium">Vincoli</th>
                 <th className="py-2 font-medium">Confermata il</th>
                 <th className="py-2"></th>
@@ -266,7 +268,7 @@ export default function Deducibilita() {
                       </div>
                     )}
                   </td>
-                  <td className="py-2 text-right text-b58-charcoal whitespace-nowrap">
+                  <td className="py-2 pr-6 text-right text-b58-charcoal whitespace-nowrap">
                     {Number(r.percentuale_deducibile)}%
                   </td>
                   <td className="py-2 text-xs text-b58-charcoal-soft">

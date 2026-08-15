@@ -379,7 +379,7 @@ export default function DeduzioniFiscali() {
                   <th className="py-2 font-medium">Data</th>
                   <th className="py-2 font-medium">Descrizione</th>
                   <th className="py-2 font-medium">Pagamento</th>
-                  <th className="py-2 font-medium text-right">Importo</th>
+                  <th className="py-2 pr-6 font-medium text-right">Importo</th>
                   <th className="py-2 font-medium text-right">Deducibile</th>
                   <th className="py-2 print:hidden"></th>
                 </tr>
@@ -398,7 +398,7 @@ export default function DeduzioniFiscali() {
                     <td className="py-2 text-b58-charcoal-soft text-xs">
                       {labelFor(FISCAL_PAYMENT_METHODS, e.payment_method)}
                     </td>
-                    <td className="py-2 text-right text-b58-charcoal-soft whitespace-nowrap">{formatEUR(e.amount)}</td>
+                    <td className="py-2 pr-6 text-right text-b58-charcoal-soft whitespace-nowrap">{formatEUR(e.amount)}</td>
                     <td
                       className={`py-2 text-right whitespace-nowrap ${
                         e.stato === "da_classificare"
