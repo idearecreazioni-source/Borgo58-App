@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../../components/Icon";
-import { getFiscalSettings, listDeductibleExpenses, listFiscalTools } from "../../lib/api/fiscal";
+import { listFiscalTools } from "../../lib/api/fiscal";
 import { getEntities } from "../../lib/api/entities";
-import { computeDeducibility } from "../../lib/deducibility";
+import { getRettificheFiscali, listSpeseValorizzate } from "../../lib/api/deducibilita";
 import { formatEUR } from "../../lib/constants";
 
 const currentYear = new Date().getFullYear();
 
 export default function ProiezioneFiscaleHome() {
   const [deductibleTotal, setDeductibleTotal] = useState(null);
+  const [daClassificare, setDaClassificare] = useState(0);
   const [toolsInUse, setToolsInUse] = useState(0);
   const [error, setError] = useState("");
 
@@ -17,13 +18,17 @@ export default function ProiezioneFiscaleHome() {
     (async () => {
       try {
         const ent = await getEntities();
-        const [expenses, settings, tools] = await Promise.all([
-          listDeductibleExpenses({ entityId: ent.srls.id, year: currentYear }),
-          getFiscalSettings(ent.srls.id),
+        // La quota deducibile la calcola il database (15/08/2026): prima la
+        // ricalcolava questa pagina per conto suo, con le regole scritte nel
+        // bundle. Due schermate che rifanno lo stesso conto finiscono per
+        // dire due numeri diversi.
+        const [spese, rett, tools] = await Promise.all([
+          listSpeseValorizzate(ent.srls.id, currentYear),
+          getRettificheFiscali(ent.srls.id, currentYear),
           listFiscalTools(),
         ]);
-        const res = computeDeducibility(expenses, { annualRevenue: settings?.annual_revenue_estimate });
-        setDeductibleTotal(res.totalDeductible);
+        setDeductibleTotal(spese.reduce((s, e) => s + Number(e.quota), 0));
+        setDaClassificare(Number(rett?.righe_non_classificate ?? 0));
         setToolsInUse(tools.filter((t) => t.in_use).length);
       } catch (e) {
         setError(e.message);
@@ -47,10 +52,17 @@ export default function ProiezioneFiscaleHome() {
       stat: null,
     },
     {
+      to: "/fiscale/deducibilita",
+      icon: "percent",
+      title: "Deducibilità dei costi",
+      desc: "Quali costi si scaricano e quanto. È la differenza fra l'utile e l'imponibile: senza, la stima delle imposte è sbagliata su casi normali.",
+      stat: daClassificare > 0 ? `${daClassificare} da classificare` : null,
+    },
+    {
       to: "/fiscale/deduzioni",
       icon: "percent",
       title: "Deduzioni fiscali",
-      desc: "Spese documentate per categoria, regola contanti 2025, plafond rappresentanza.",
+      desc: "Spese documentate una per una, con la quota che ne deriva dalla regola.",
       stat: deductibleTotal != null ? `${formatEUR(deductibleTotal)} deducibili ${currentYear}` : null,
     },
     {

@@ -1,29 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  createDeductibleExpense,
-  deleteDeductibleExpense,
-  getFiscalSettings,
-  listDeductibleExpenses,
-} from "../../lib/api/fiscal";
+import { createDeductibleExpense, deleteDeductibleExpense } from "../../lib/api/fiscal";
+import { listRegoleDeducibilita, listSpeseValorizzate } from "../../lib/api/deducibilita";
 import { getEntities } from "../../lib/api/entities";
-import { computeDeducibility, expenseCashRuleFails, expenseEligibleAmount } from "../../lib/deducibility";
-import {
-  DEDUCTION_CATEGORIES,
-  FISCAL_PAYMENT_METHODS,
-  formatDate,
-  formatEUR,
-  labelFor,
-  oggiLocale,
-} from "../../lib/constants";
+import { FISCAL_PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import PrintButton from "../../components/PrintButton";
+
+// ⚠️ Questa schermata NON calcola più nessuna quota (15/08/2026). Le regole
+// e il calcolo vivono nel database: `listSpeseValorizzate` restituisce ogni
+// spesa già valorizzata, con il motivo. Prima le regole stavano in
+// `src/lib/constants.js` e il conto in `src/lib/deducibility.js` — cioè in
+// JavaScript, nel bundle pubblico, con sopra scritto «unica fonte di
+// verità»; costruirci accanto l'attributo del mandato avrebbe dato al
+// gestionale due risposte alla stessa domanda.
 
 const currentYear = new Date().getFullYear();
 const today = oggiLocale;
 
 const emptyForm = {
-  category: "trasferta",
+  regola_deducibilita_id: "",
   description: "",
   amount: "",
   expense_date: today(),
@@ -40,7 +36,7 @@ export default function DeduzioniFiscali() {
   const [entityId, setEntityId] = useState("");
   const [year, setYear] = useState(currentYear);
   const [expenses, setExpenses] = useState([]);
-  const [settings, setSettings] = useState(null);
+  const [regole, setRegole] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyForm);
@@ -57,12 +53,16 @@ export default function DeduzioniFiscali() {
 
   const reload = () => {
     if (!entityId) return Promise.resolve();
+    // ⚠️ Le regole si ricaricano insieme alle spese: se ne nasce una nuova
+    // in «Deducibilità», il menu qui non deve restare quello di prima
+    // (trappola del 12/08, la lista caricata una volta sola).
     return Promise.all([
-      listDeductibleExpenses({ entityId, year }),
-      getFiscalSettings(entityId),
-    ]).then(([exp, set]) => {
+      listSpeseValorizzate(entityId, year),
+      listRegoleDeducibilita({ soloAttive: true }),
+    ]).then(([exp, reg]) => {
       setExpenses(exp);
-      setSettings(set);
+      setRegole(reg);
+      setForm((f) => (f.regola_deducibilita_id ? f : { ...f, regola_deducibilita_id: reg[0]?.id ?? "" }));
     });
   };
 
@@ -75,16 +75,23 @@ export default function DeduzioniFiscali() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId, year]);
 
-  const annualRevenue = settings?.annual_revenue_estimate ?? null;
-  const result = useMemo(
-    () => computeDeducibility(expenses, { annualRevenue }),
-    [expenses, annualRevenue]
-  );
+  const regolaScelta = regole.find((r) => r.id === form.regola_deducibilita_id);
 
-  const currentCatRule = DEDUCTION_CATEGORIES.find((c) => c.value === form.category);
-  // Avviso in tempo reale: la spesa che sto inserendo è indeducibile per contanti?
-  const formCashWarning =
-    currentCatRule?.cashRule && form.payment_method === "contante" && !form.exempt_from_cash_rule;
+  // Gli avvisi in tempo reale mostrano cosa succederà, ma la quota vera la
+  // dice il database quando la riga è salvata — qui non si anticipa un
+  // numero, si spiega una regola.
+  const avvisoContante =
+    regolaScelta?.vieta_contante &&
+    form.payment_method === "contante" &&
+    !form.exempt_from_cash_rule;
+  const avvisoDocumento = !form.document_reference.trim();
+
+  const totali = useMemo(() => {
+    const speso = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const deducibile = expenses.reduce((s, e) => s + Number(e.quota), 0);
+    const daClassificare = expenses.filter((e) => e.stato === "da_classificare").length;
+    return { speso, deducibile, daClassificare };
+  }, [expenses]);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -97,7 +104,7 @@ export default function DeduzioniFiscali() {
     try {
       await createDeductibleExpense({
         entity_id: entityId,
-        category: form.category,
+        regola_deducibilita_id: form.regola_deducibilita_id || null,
         description: form.description.trim(),
         amount: Number(form.amount),
         expense_date: form.expense_date,
@@ -108,7 +115,11 @@ export default function DeduzioniFiscali() {
         business_purpose: form.business_purpose || null,
         note: form.note || null,
       });
-      setForm({ ...emptyForm, category: form.category, expense_date: form.expense_date });
+      setForm({
+        ...emptyForm,
+        regola_deducibilita_id: form.regola_deducibilita_id,
+        expense_date: form.expense_date,
+      });
       await reload();
     } catch (e) {
       setError(e.message);
@@ -129,11 +140,12 @@ export default function DeduzioniFiscali() {
   const handleExport = () => {
     downloadCsv(`deduzioni_${year}.csv`, expenses, [
       { label: "Data", value: (e) => e.expense_date },
-      { label: "Categoria", value: (e) => labelFor(DEDUCTION_CATEGORIES, e.category) },
+      { label: "Regola", value: (e) => e.regola ?? "non classificata" },
       { label: "Descrizione", value: (e) => e.description },
       { label: "Importo", value: (e) => e.amount },
       { label: "Pagamento", value: (e) => labelFor(FISCAL_PAYMENT_METHODS, e.payment_method) },
-      { label: "Quota deducibile stimata", value: (e) => expenseEligibleAmount(e).toFixed(2) },
+      { label: "Quota deducibile", value: (e) => Number(e.quota).toFixed(2) },
+      { label: "Perché", value: (e) => e.motivo },
       { label: "Rif. documento", value: (e) => e.document_reference },
       { label: "Finalità", value: (e) => e.business_purpose },
     ]);
@@ -185,70 +197,36 @@ export default function DeduzioniFiscali() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Deduzioni fiscali {year}</h1>
       <p className="text-xs text-b58-charcoal-soft/80 mb-6">
         Stima interna della quota deducibile, sempre da validare con Laura. Ogni importo mostra da quale
-        regola deriva; il sistema non presenta nessun numero come certo (§6).
+        regola deriva; il sistema non presenta nessun numero come certo (§6). Le regole si governano da{" "}
+        <Link to="/fiscale/deducibilita" className="underline print:hidden">Deducibilità dei costi</Link>.
       </p>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">{error}</p>
       )}
 
-      {/* Riepilogo per categoria */}
+      {/* Riepilogo */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Riepilogo {year}</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">Categoria</th>
-                <th className="py-2 font-medium text-right">Speso</th>
-                <th className="py-2 font-medium text-right">Deducibile (stima)</th>
-                <th className="py-2 font-medium">Nota</th>
-              </tr>
-            </thead>
-            <tbody>
-              {DEDUCTION_CATEGORIES.map((c) => {
-                const b = result.byCat[c.value];
-                if (!b || b.count === 0) return null;
-                return (
-                  <tr key={c.value} className="border-b border-b58-charcoal/5 last:border-0 align-top">
-                    <td className="py-2 text-b58-charcoal font-medium">{c.label}</td>
-                    <td className="py-2 text-right text-b58-charcoal-soft">{formatEUR(b.total)}</td>
-                    <td className="py-2 text-right text-b58-charcoal">{formatEUR(b.deductible)}</td>
-                    <td className="py-2 text-xs text-b58-charcoal-soft">
-                      {c.rate < 1 && <div>Deducibile al {Math.round(c.rate * 100)}%.</div>}
-                      {b.cashExcluded > 0 && (
-                        <div className="text-b58-terracotta-dark">
-                          {formatEUR(b.cashExcluded)} esclusi: pagati in contanti (regola 2025).
-                        </div>
-                      )}
-                      {c.value === "rappresentanza" && b.plafond != null && (
-                        <div>
-                          Plafond {formatEUR(b.plafond)} (1,5% ricavi).
-                          {b.overPlafond > 0 && (
-                            <span className="text-b58-terracotta-dark"> {formatEUR(b.overPlafond)} oltre plafond.</span>
-                          )}
-                        </div>
-                      )}
-                      {c.value === "rappresentanza" && b.plafond == null && (
-                        <div className="text-b58-gold-dark">Imposta i ricavi stimati nel simulatore per calcolare il plafond.</div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-b58-charcoal/15">
-                <td className="py-2 font-medium text-b58-charcoal">Totale</td>
-                <td className="py-2 text-right text-b58-charcoal-soft">{formatEUR(result.totalSpent)}</td>
-                <td className="py-2 text-right text-b58-charcoal font-medium">{formatEUR(result.totalDeductible)}</td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+            <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Speso</div>
+            <div className="text-lg text-b58-charcoal">{formatEUR(totali.speso)}</div>
+          </div>
+          <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
+            <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Deducibile (stima)</div>
+            <div className="text-lg text-b58-charcoal">{formatEUR(totali.deducibile)}</div>
+          </div>
+          {totali.daClassificare > 0 && (
+            <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-gold-dark/40">
+              <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Da classificare</div>
+              <div className="text-lg text-b58-gold-dark">{totali.daClassificare}</div>
+              <div className="text-[11px] text-b58-charcoal-soft/70 mt-0.5">non contate nel deducibile</div>
+            </div>
+          )}
         </div>
         {expenses.length === 0 && (
-          <p className="text-sm text-b58-charcoal-soft/60 mt-2">Nessuna spesa registrata per il {year}.</p>
+          <p className="text-sm text-b58-charcoal-soft/60 mt-3">Nessuna spesa registrata per il {year}.</p>
         )}
       </div>
 
@@ -258,14 +236,17 @@ export default function DeduzioniFiscali() {
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div>
-              <label className={labelClass}>Categoria</label>
+              <label className={labelClass}>Regola</label>
               <select
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                value={form.regola_deducibilita_id}
+                onChange={(e) => setForm((f) => ({ ...f, regola_deducibilita_id: e.target.value }))}
                 className={inputClass}
               >
-                {DEDUCTION_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                <option value="">— da classificare —</option>
+                {regole.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.etichetta} ({Number(r.percentuale_deducibile)}%)
+                  </option>
                 ))}
               </select>
             </div>
@@ -310,41 +291,56 @@ export default function DeduzioniFiscali() {
             className={`${inputClass} mb-3`}
           />
 
-          <p className="text-xs text-b58-charcoal-soft/70 mb-3">{currentCatRule?.note}</p>
+          {regolaScelta?.nota && (
+            <p className="text-xs text-b58-charcoal-soft/70 mb-3">{regolaScelta.nota}</p>
+          )}
+          {regolaScelta && !regolaScelta.verificata_il && (
+            <p className="text-xs text-b58-gold-dark mb-3">
+              Questa regola non è ancora stata confermata dalla commercialista.
+            </p>
+          )}
 
-          {formCashWarning && (
+          {avvisoContante && (
             <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-              Pagata in contanti: dal 2025 questa spesa è <strong>indeducibile</strong>. Se è un biglietto di
-              trasporto pubblico di linea o un'indennità chilometrica, spunta l'esenzione qui sotto; altrimenti
-              paga con metodo tracciato per poterla dedurre.
+              Pagata in contanti: con questa regola la spesa è <strong>indeducibile</strong>. Se è un biglietto
+              di trasporto pubblico di linea o un&apos;indennità chilometrica, spunta l&apos;esenzione qui
+              sotto; altrimenti paga con metodo tracciato per poterla dedurre.
+            </p>
+          )}
+
+          {avvisoDocumento && (
+            <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+              Senza il riferimento al documento questa spesa <strong>non si deduce</strong>, qualunque regola
+              le assegni. Puoi registrarla lo stesso — resterà indeducibile finché non aggiungi il documento.
             </p>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-            {currentCatRule?.cashRule && (
+            {regolaScelta?.vieta_contante && (
               <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
                 <input
                   type="checkbox"
                   checked={form.exempt_from_cash_rule}
                   onChange={(e) => setForm((f) => ({ ...f, exempt_from_cash_rule: e.target.checked }))}
+                  className="accent-b58-terracotta"
                 />
                 Esente regola contanti (biglietto di linea / km)
               </label>
             )}
-            {form.category === "rappresentanza" && (
+            {regolaScelta?.soggetta_a_plafond && (
               <input
                 type="number"
                 min="1"
                 value={form.people_count}
                 onChange={(e) => setForm((f) => ({ ...f, people_count: e.target.value }))}
-                placeholder="N. persone (soglia 50€/pers.)"
+                placeholder="N. persone (annotazione)"
                 className={inputClass}
               />
             )}
             <input
               value={form.document_reference}
               onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
-              placeholder="Rif. documento (opz.)"
+              placeholder="Rif. documento"
               className={inputClass}
             />
           </div>
@@ -389,39 +385,47 @@ export default function DeduzioniFiscali() {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((e) => {
-                  const fails = expenseCashRuleFails(e);
-                  return (
-                    <tr key={e.id} className="border-b border-b58-charcoal/5 last:border-0">
-                      <td className="py-2 text-b58-charcoal-soft">{formatDate(e.expense_date)}</td>
-                      <td className="py-2 text-b58-charcoal">
-                        {e.description}
-                        <span className="text-xs text-b58-charcoal-soft"> · {labelFor(DEDUCTION_CATEGORIES, e.category)}</span>
-                      </td>
-                      <td className="py-2 text-b58-charcoal-soft text-xs">
-                        {labelFor(FISCAL_PAYMENT_METHODS, e.payment_method)}
-                      </td>
-                      <td className="py-2 text-right text-b58-charcoal-soft">{formatEUR(e.amount)}</td>
-                      <td className={`py-2 text-right ${fails ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
-                        {fails ? "0 (contanti)" : formatEUR(expenseEligibleAmount(e))}
-                      </td>
-                      <td className="py-2 text-right print:hidden">
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                        >
-                          Rimuovi
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {expenses.map((e) => (
+                  <tr key={e.id} className="border-b border-b58-charcoal/5 last:border-0 align-top">
+                    <td className="py-2 text-b58-charcoal-soft whitespace-nowrap">{formatDate(e.expense_date)}</td>
+                    <td className="py-2 text-b58-charcoal">
+                      {e.description}
+                      <span className="text-xs text-b58-charcoal-soft"> · {e.regola ?? "non classificata"}</span>
+                      {/* Il motivo arriva dal database insieme alla quota:
+                          un numero senza la sua ragione è una scatola nera. */}
+                      <div className="text-[11px] text-b58-charcoal-soft/70">{e.motivo}</div>
+                    </td>
+                    <td className="py-2 text-b58-charcoal-soft text-xs">
+                      {labelFor(FISCAL_PAYMENT_METHODS, e.payment_method)}
+                    </td>
+                    <td className="py-2 text-right text-b58-charcoal-soft whitespace-nowrap">{formatEUR(e.amount)}</td>
+                    <td
+                      className={`py-2 text-right whitespace-nowrap ${
+                        e.stato === "da_classificare"
+                          ? "text-b58-gold-dark"
+                          : e.stato === "indeducibile"
+                            ? "text-b58-terracotta-dark"
+                            : "text-b58-charcoal"
+                      }`}
+                    >
+                      {e.stato === "da_classificare" ? "—" : formatEUR(e.quota)}
+                    </td>
+                    <td className="py-2 text-right print:hidden">
+                      <button
+                        onClick={() => handleDelete(e.id)}
+                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      >
+                        Rimuovi
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
             <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
-              La colonna "Deducibile" mostra la quota per singola spesa (con la % di categoria e la regola
-              contanti). Per la rappresentanza il plafond è applicato sul totale annuo, non riga per riga —
-              vedi il riepilogo in alto.
+              La colonna «Deducibile» la calcola il database, non questa pagina. Un trattino vuol dire{" "}
+              <strong>non classificata</strong>: non è zero, è che nessuno ha ancora detto se si deduce — e
+              infatti non è contata da nessuna parte.
             </p>
           </div>
         )}

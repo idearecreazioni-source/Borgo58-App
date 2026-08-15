@@ -199,58 +199,17 @@ export const ORDER_PAYMENT_METHODS = [
 // Soglia fattura semplificata (§3.4/§6): scontrino ≤400€ → promemoria IVA.
 export const SIMPLIFIED_INVOICE_THRESHOLD = 400;
 
-// Regole di deducibilità (§6). Unica fonte di verità: il calcolo lato UI
-// mostra sempre da quale regola deriva ogni importo (§3.10, niente scatola nera).
-//   rate       = % deducibile della quota ammessa
-//   plafond    = soggetto a plafond (rappresentanza: % dei ricavi)
-//   cashRule   = dal 2025 il pagamento in contanti la rende indeducibile
-export const DEDUCTION_CATEGORIES = [
-  {
-    value: "formazione",
-    label: "Formazione / aggiornamento",
-    rate: 1.0,
-    plafond: false,
-    cashRule: false,
-    note: "Interamente deducibile per una società, nessun plafond.",
-  },
-  {
-    value: "trasferta",
-    label: "Trasferte (vitto/alloggio/trasporto)",
-    rate: 0.75,
-    plafond: false,
-    cashRule: true,
-    note: "75% deducibile. Dal 2025 il pagamento in contanti la rende indeducibile (esenti i biglietti di trasporto pubblico di linea e le indennità chilometriche entro i limiti).",
-  },
-  {
-    value: "rappresentanza",
-    label: "Rappresentanza",
-    rate: 1.0,
-    plafond: true,
-    cashRule: true,
-    note: "Deducibile entro il plafond dell'1,5% dei ricavi (fino a 10 mln). Sotto 50€/persona sempre deducibile fuori plafond. Dal 2025 il contante la rende indeducibile.",
-  },
-  {
-    value: "marketing",
-    label: "Marketing / pubblicità",
-    rate: 1.0,
-    plafond: false,
-    cashRule: false,
-    note: "Spese di pubblicità deducibili.",
-  },
-  {
-    value: "altro",
-    label: "Altro (spesa aziendale documentata)",
-    rate: 1.0,
-    plafond: false,
-    cashRule: false,
-    note: "Spesa aziendale documentata.",
-  },
-];
-
-// Plafond rappresentanza: 1,5% ricavi fino a 10 mln (Borgo 58 è ben sotto).
-export const RAPPRESENTANZA_PLAFOND_RATE = 0.015;
-// Soglia rappresentanza sempre deducibile fuori plafond (§6).
-export const RAPPRESENTANZA_PER_PERSON_THRESHOLD = 50;
+// Le regole di deducibilità NON stanno più qui (15/08/2026).
+// Vivevano in questo file come DEDUCTION_CATEGORIES, con sopra scritto
+// «unica fonte di verità», e il calcolo stava in src/lib/deducibility.js.
+// Erano due cose sbagliate insieme: percentuali fiscali dentro il bundle
+// pubblico — e sono proprio quelle che il quesito L4 aspetta da Laura,
+// quindi cambiarle voleva dire fare un deploy invece di riempire un campo —
+// e un secondo calcolo accanto a quello che il mandato «personale e
+// tesoreria» chiedeva di costruire, cioè due risposte alla stessa domanda.
+// Ora: tabella regole_deducibilita e funzione quota_deducibile() nel
+// database, governate da Alessio da «Proiezione fiscale → Deducibilità dei
+// costi». Il client le legge da src/lib/api/deducibilita.js e non ricalcola.
 
 export const FISCAL_PAYMENT_METHODS = [
   { value: "bonifico", label: "Bonifico", tracciato: true },

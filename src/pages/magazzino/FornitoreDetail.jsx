@@ -7,6 +7,7 @@ import {
   listSupplierPriceHistory,
   updateSupplier,
 } from "../../lib/api/suppliers";
+import { listRegoleDeducibilita, setRegolaFornitore } from "../../lib/api/deducibilita";
 import { SUPPLIER_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 
 export default function FornitoreDetail() {
@@ -14,6 +15,7 @@ export default function FornitoreDetail() {
   const [supplier, setSupplier] = useState(null);
   const [prices, setPrices] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
+  const [regole, setRegole] = useState([]);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,11 +23,17 @@ export default function FornitoreDetail() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([getSupplier(id), listSupplierPriceHistory(id), listSupplierDeliveries(id)])
-      .then(([s, p, d]) => {
+    Promise.all([
+      getSupplier(id),
+      listSupplierPriceHistory(id),
+      listSupplierDeliveries(id),
+      listRegoleDeducibilita({ soloAttive: true }).catch(() => []),
+    ])
+      .then(([s, p, d, r]) => {
         setSupplier(s);
         setPrices(p);
         setDeliveries(d);
+        setRegole(r);
       })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
@@ -184,6 +192,34 @@ export default function FornitoreDetail() {
               <option value="whatsapp">WhatsApp</option>
               <option value="email">Email</option>
               <option value="telefono">Telefono (glielo leggo io)</option>
+            </select>
+          </div>
+          {/* La deducibilità ABITUALE delle sue fatture: le nuove la
+              ereditano, e su una singola fattura si può sempre dire
+              diversamente. Si salva da sé, senza toccare il resto del
+              modulo: ricaricare la scheda butterebbe via ciò che si sta
+              scrivendo negli altri campi (trappola del 12/08). */}
+          <div>
+            <label className={labelClass}>Deducibilità abituale</label>
+            <select
+              value={supplier.regola_deducibilita_id || ""}
+              onChange={async (e) => {
+                const v = e.target.value || null;
+                setSupplier((s) => ({ ...s, regola_deducibilita_id: v }));
+                try {
+                  await setRegolaFornitore(id, v);
+                } catch (err) {
+                  setError(err.message);
+                }
+              }}
+              className={inputClass}
+            >
+              <option value="">da dire</option>
+              {regole.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.etichetta} ({Number(r.percentuale_deducibile)}%)
+                </option>
+              ))}
             </select>
           </div>
         </div>

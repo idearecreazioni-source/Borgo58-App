@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { createCausale, deactivateCausale, listAllCausali, setCausaleNeiFissi } from "../../lib/api/cash";
+import { listRegoleDeducibilita, setRegolaCausale } from "../../lib/api/deducibilita";
 
 const KINDS = [
   { value: "uscita", label: "Uscite" },
@@ -15,8 +16,15 @@ export default function Causali() {
   const [newLabel, setNewLabel] = useState("");
   const [newKind, setNewKind] = useState("uscita");
   const [saving, setSaving] = useState(false);
+  const [regole, setRegole] = useState([]);
 
-  const reload = () => listAllCausali().then(setCausali);
+  const reload = () =>
+    Promise.all([listAllCausali(), listRegoleDeducibilita({ soloAttive: true })]).then(
+      ([c, r]) => {
+        setCausali(c);
+        setRegole(r);
+      }
+    );
 
   useEffect(() => {
     reload()
@@ -66,6 +74,19 @@ export default function Causali() {
     }
   };
 
+  // La regola di deducibilità ABITUALE: le uscite di prima nota con questa
+  // causale la ereditano da sole. Classificarle una per una è una cosa che
+  // nessuno fa per più di due settimane — stessa ragione per cui dal 14/08
+  // il fornitore abituale sta sul prodotto e non su ogni riga della lista.
+  const handleRegola = async (id, regolaId) => {
+    try {
+      await setRegolaCausale(id, regolaId);
+      await reload();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <Link to="/cassa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
@@ -76,6 +97,11 @@ export default function Causali() {
         Sulle uscite c&apos;è una casella <strong>«è un costo fisso»</strong>: serve alla Proiezione per
         confrontare i costi fissi veri con quelli previsti. Finché non ne spunti nessuna, il confronto dice
         che i fissi non li ha misurati — non che sono zero.
+      </p>
+      <p className="text-xs text-b58-charcoal-soft mb-6">
+        Sotto c&apos;è anche <strong>la deducibilità abituale</strong>: le uscite registrate con quella causale
+        la ereditano, e su una singola riga puoi sempre dire diversamente. Le regole si creano da{" "}
+        <Link to="/fiscale/deducibilita" className="underline">Proiezione fiscale → Deducibilità dei costi</Link>.
       </p>
 
       {error && (
@@ -125,15 +151,29 @@ export default function Causali() {
                       </button>
                     </div>
                     {k.value === "uscita" && (
-                      <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft mt-0.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(c.conta_nei_fissi)}
-                          onChange={(e) => handleFissi(c.id, e.target.checked)}
-                          className="accent-b58-terracotta"
-                        />
-                        è un costo fisso
-                      </label>
+                      <>
+                        <label className="flex items-center gap-1.5 text-[11px] text-b58-charcoal-soft mt-0.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(c.conta_nei_fissi)}
+                            onChange={(e) => handleFissi(c.id, e.target.checked)}
+                            className="accent-b58-terracotta"
+                          />
+                          è un costo fisso
+                        </label>
+                        <select
+                          value={c.regola_deducibilita_id || ""}
+                          onChange={(e) => handleRegola(c.id, e.target.value)}
+                          className="w-full mt-1 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 text-[11px] text-b58-charcoal"
+                        >
+                          <option value="">deducibilità: da dire</option>
+                          {regole.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.etichetta} ({Number(r.percentuale_deducibile)}%)
+                            </option>
+                          ))}
+                        </select>
+                      </>
                     )}
                   </li>
                 ))}

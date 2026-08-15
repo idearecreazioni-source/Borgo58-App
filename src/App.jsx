@@ -52,6 +52,7 @@ import Cucina from "./pages/comande/Cucina";
 import Sala from "./pages/comande/Sala";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
+import Deducibilita from "./pages/fiscale/Deducibilita";
 import CatalogoStrumenti from "./pages/fiscale/CatalogoStrumenti";
 import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import Previsioni from "./pages/fiscale/Previsioni";
@@ -239,6 +240,7 @@ function AppRoutes() {
         {/* Proiezione Fiscale (solo titolare — §3.5, materia sensibile §6) */}
         <Route path="/fiscale" element={<RequireTitolare><ProiezioneFiscaleHome /></RequireTitolare>} />
         <Route path="/fiscale/deduzioni" element={<RequireTitolare><DeduzioniFiscali /></RequireTitolare>} />
+        <Route path="/fiscale/deducibilita" element={<RequireTitolare><Deducibilita /></RequireTitolare>} />
         <Route path="/fiscale/strumenti" element={<RequireTitolare><CatalogoStrumenti /></RequireTitolare>} />
         <Route path="/fiscale/simulatore" element={<RequireTitolare><SimulatoreFiscale /></RequireTitolare>} />
         <Route path="/fiscale/previsioni" element={<RequireTitolare><Previsioni /></RequireTitolare>} />
