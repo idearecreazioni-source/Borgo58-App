@@ -10,7 +10,19 @@ Gestionale su misura per **Borgo 58 — Osteria Contemporanea**, osteria a Piazz
 
 **Alessio non è un programmatore.** Va guidato passo-passo per qualsiasi operazione nel suo terminale o browser: comandi spiegati per intero, click-by-click quando serve. Non dare per scontato nulla sull'ambiente.
 
-⚠️ **Come scrivergli** (chiesto esplicitamente l'08/08/2026): **risposte brevi, niente spiegazioni tecniche.** Una frase su cosa è stato fatto, poi — se serve — **cosa deve fare lui**, in 2-3 punti numerati. Niente nomi di file, funzioni, tabelle o ragionamenti di progettazione: non li capisce e allungano il messaggio nascondendo la richiesta vera. Le motivazioni tecniche vanno nei **messaggi di commit e in questo file**, non in chat. Quando serve una sua decisione, va posta in termini di conseguenze per il locale, non di implementazione.
+⚠️ **Come scrivergli in chat — protocollo, non preferenza** (chiesto l'08/08/2026, **irrigidito e reso esplicito da lui il 15/08/2026**). Quattro regole:
+
+1. **Linguaggio semplice.** Niente nomi di file, righe di codice, sigle o termini tecnici se non indispensabili. Se un termine tecnico serve davvero, va **spiegato in una frase** lì dove compare.
+2. **Prima il punto, poi il minimo per capirlo.** Si apre con «fatto», «c'è un problema», «mi serve una cosa da te» — non con il racconto di come ci si è arrivati. **Il dettaglio lungo va nei documenti, non in chat.**
+3. **Le domande stanno tutte insieme, in un elenco numerato in fondo al messaggio.** Mai sparse nel testo: una domanda in mezzo a un paragrafo non viene vista, e la risposta arriva su una sola.
+4. **Ogni richiesta di autorizzazione dichiara le due strade**, in una frase ciascuna: cosa succede se dice sì, cosa succede se dice no. Chiedere un permesso senza dire cosa si perde rifiutandolo non è una domanda, è una spinta.
+
+Il motivo di fondo non è cambiato: **Alessio non è un programmatore**, e un messaggio pieno di dettagli tecnici non è più preciso — è più difficile da leggere, e nasconde la richiesta vera. Le motivazioni tecniche vanno nei **messaggi di commit, nei riepiloghi di consegna e in questo file**. Quando serve una sua decisione, va posta in termini di **conseguenze per il locale**, non di implementazione.
+
+⚠️ **Dove questo protocollo NON si applica** — e sono tre casi, perché lì i destinatari sono altri:
+- **I riepiloghi di consegna** in `docs/consegne/` restano tecnici e completi: sono **per il validatore**, non per lui.
+- **Le risposte alle domande del validatore** che lui gira in chat restano tecniche, con nomi di file e numeri precisi: chi controlla verifica ogni affermazione sul codice, e una risposta semplificata gli toglie il modo di farlo.
+- **I messaggi di commit e questo file**, che sono il posto dove il ragionamento tecnico deve stare.
 
 **Vincolo architetturale portante**: due entità fiscali distinte fin dal data model — **S.r.l.s.** (costituita il 03/08/2026, gestisce il ristorante) e **azienda agricola** separata per l'orto (non ancora costituita, ma prevista nello schema). Collegate da cessione intercompany. Ogni tabella economicamente rilevante ha `entity_id`.
 
