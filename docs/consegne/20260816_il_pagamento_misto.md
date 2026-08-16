@@ -180,11 +180,34 @@ testa a questo riepilogo.)*
 | `20260816000011` | applicata durante il tentativo del Blocco 9, **prima** di questo riepilogo — è l'arretrato che la rete ha segnalato |
 | `20260816000012` | applicata dopo questo riepilogo |
 
-**DA COMPILARE dopo l'applicazione:** conti sanati (atteso: **1**, il
-«Divano 3» del 15/08 chiuso in contante da 5,00), quote registrate,
-migrazioni totali, e la verifica che `saldo_tesoreria` restituisca lo
-stesso contante atteso di prima — perché la sanatoria non deve spostare
-nessun saldo, solo cambiare da dove viene letto.
+```
+Sanatoria: 1 conti gia' chiusi hanno ora la loro quota.
+totale migrazioni in produzione: 119
+```
+
+| Controllo (connettore in sola lettura, dopo) | Valore |
+|---|---|
+| Versione `20260816000012` registrata | sì |
+| Quote in `order_payments` | **1** — `contante 15,00` |
+| Firma di `close_order_paid` | `(uuid, text, numeric, jsonb)`, la nuova |
+| Funzioni nuove (`incasso_conto`, `conti_senza_quadratura`, `riflette_mezzo_pagamento`) | 3, presenti |
+| Trigger `trg_mezzo_pagamento` | presente |
+
+⚠️ **La quota sanata è 15,00 e non 5,00**, e vale la pena spiegarlo prima
+che sembri un errore: il «Divano 3» ha **una riga da 5,00 più due coperti
+da 5,00**. `incasso_conto()` legge il totale del conto — righe **e**
+coperti — che è esattamente ciò che la tesoreria contava anche prima
+tramite `totale_conto()`. **Il contante atteso non si è mosso**: è
+cambiato solo da dove viene letto.
+
+🔴 **Un terzo inciampo, alla seconda applicazione**, dichiarato perché è
+dello stesso tipo dei primi due: la sanatoria e la verifica sono passate e
+la versione si è registrata, ma **la riga di riepilogo in fondo alla
+migrazione** — quella che stampa i quattro numeri — chiamava anch'essa
+`incasso_conto()`, e ha sollevato la stessa eccezione. Il lavoro era già
+fatto e registrato; a fallire era la stampa. Corretta: *una riga di
+riepilogo non deve avere il potere di impersonare qualcuno per stampare un
+numero.*
 
 ---
 

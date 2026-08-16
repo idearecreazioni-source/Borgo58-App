@@ -660,7 +660,10 @@ on conflict (version) do nothing;
 select
   (select count(*) from order_payments)                                            as quote_registrate,
   (select count(*) from orders where status in ('chiuso','omaggiato'))             as conti_chiusi,
+  -- ⚠️ Qui NON si chiama `incasso_conto()`: passa da `totale_conto()`, che
+  -- pretende un utente autenticato, e questa riga gira come `postgres`.
+  -- La sanatoria sopra impersona il titolare apposta; una riga di
+  -- riepilogo non deve avere quel potere per stampare un numero.
   (select count(*) from orders o where o.status in ('chiuso','omaggiato')
-     and not exists (select 1 from order_payments p where p.order_id = o.id)
-     and incasso_conto(o.id) > 0)                                                  as conti_chiusi_senza_quote,
+     and not exists (select 1 from order_payments p where p.order_id = o.id))      as conti_chiusi_senza_quote,
   (select count(*) from pg_trigger where tgname = 'trg_log_delete' and not tgisinternal) as tabelle_tracciate;
