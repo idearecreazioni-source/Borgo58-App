@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createTipCollected,
+  manceDaDistribuire,
   createTipDistribution,
   deleteTipCollected,
   deleteTipDistribution,
@@ -16,6 +17,7 @@ import {
   MANCE_CAP_RATE,
   MANCE_REGIME_INCOME_THRESHOLD,
   MANCE_SUBSTITUTE_TAX_RATE,
+  TIP_MEZZI,
   formatDate,
   formatEUR,
   meseLocale,
@@ -38,7 +40,9 @@ export default function Mance() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [collectForm, setCollectForm] = useState({ amount: "", collected_date: today(), note: "" });
+  const [collectForm, setCollectForm] = useState({ amount: "", collected_date: today(), mezzo: "contanti", note: "" });
+  const [distMezzo, setDistMezzo] = useState("contanti");
+  const [daDistribuire, setDaDistribuire] = useState(null);
   const [distMonth, setDistMonth] = useState(thisMonth());
   const [allocations, setAllocations] = useState({}); // employeeId -> amount string
   const [busy, setBusy] = useState(false);
@@ -60,12 +64,14 @@ export default function Mance() {
       listTipDistributions(entityId),
       listEmployees(),
       listTipsPerEmployeeYear(currentYear),
-    ]).then(([bal, coll, dist, emp, ty]) => {
+      manceDaDistribuire(entityId),
+    ]).then(([bal, coll, dist, emp, ty, dd]) => {
       setBalance(bal);
       setCollected(coll);
       setDistributions(dist);
       setEmployees(emp);
       setTipsYear(ty);
+      setDaDistribuire(dd);
     });
   };
 
@@ -98,7 +104,7 @@ export default function Mance() {
         collected_date: collectForm.collected_date,
         note: collectForm.note || null,
       });
-      setCollectForm({ amount: "", collected_date: today(), note: "" });
+      setCollectForm({ amount: "", collected_date: today(), mezzo: collectForm.mezzo, note: "" });
       await reload();
     } catch (e) {
       setError(e.message);
@@ -134,6 +140,7 @@ export default function Mance() {
         entityId,
         periodMonth: `${distMonth}-01`,
         lines,
+        mezzo: distMezzo,
       });
       setAllocations({});
       await reload();
@@ -225,6 +232,13 @@ export default function Mance() {
             <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 flex flex-wrap gap-2 items-end mb-4">
               <input type="number" step="0.01" min="0" value={collectForm.amount} onChange={(e) => setCollectForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Importo €" className={inputClass + " w-32"} />
               <input type="date" value={collectForm.collected_date} onChange={(e) => setCollectForm((f) => ({ ...f, collected_date: e.target.value }))} className={inputClass + " w-40"} />
+              {/* ⚠️ Dove sono finiti quei soldi: in contanti restano nel
+                  cassetto, su carta arrivano in banca con gli incassi.
+                  Senza, il conteggio del cassetto mostrerebbe
+                  un'eccedenza cronica. */}
+              <select value={collectForm.mezzo} onChange={(e) => setCollectForm((f) => ({ ...f, mezzo: e.target.value }))} className={inputClass + " w-32"}>
+                {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
+              </select>
               <input value={collectForm.note} onChange={(e) => setCollectForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={inputClass + " flex-1 min-w-[120px]"} />
               <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
                 + Registra raccolta
@@ -242,6 +256,29 @@ export default function Mance() {
             )}
           </div>
 
+          {/* ⚠️ Le mance non sono ricavi del locale: sono dei collaboratori,
+              e finché non sono distribuite la società le TIENE. Quelle in
+              contanti stanno fisicamente nel cassetto — per questo il saldo
+              di cassa le comprende e dichiara che non sono sue. */}
+          {daDistribuire && Number(daDistribuire.totale) > 0 && (
+            <div className="rounded-xl bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 p-6 mb-6">
+              <h2 className="font-display text-lg text-b58-charcoal mb-1">Da distribuire</h2>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-b58-charcoal mb-2">
+                <span>
+                  Nel cassetto:{" "}
+                  <strong>{formatEUR(daDistribuire.in_contanti)}</strong>
+                </span>
+                <span>
+                  In arrivo dalla banca:{" "}
+                  <strong>{formatEUR(daDistribuire.su_carta)}</strong>
+                </span>
+              </div>
+              <p className="text-[11px] text-b58-charcoal-soft leading-relaxed">
+                {daDistribuire.avvertenza}
+              </p>
+            </div>
+          )}
+
           {/* Distribuzione */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
             <h2 className="font-display text-lg text-b58-charcoal mb-4">Distribuzione mensile</h2>
@@ -253,6 +290,15 @@ export default function Mance() {
                   <div>
                     <label className="block text-xs text-b58-charcoal-soft mb-1">Mese</label>
                     <input type="month" value={distMonth} onChange={(e) => setDistMonth(e.target.value)} className={inputClass + " w-44"} />
+                  </div>
+                  <div>
+                    {/* Con che soldi paghi: il gestionale non lo indovina,
+                        perché un'ipotesi qui sposterebbe il saldo del
+                        cassetto senza che nessuno l'abbia deciso. */}
+                    <label className="block text-xs text-b58-charcoal-soft mb-1">Paghi con</label>
+                    <select value={distMezzo} onChange={(e) => setDistMezzo(e.target.value)} className={inputClass + " w-36"}>
+                      {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
+                    </select>
                   </div>
                   <button type="button" onClick={distributeEqually} className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal text-sm px-4 py-2">
                     Dividi equamente il monte

@@ -93,3 +93,22 @@ export async function listScarichiNonRiusciti({ dal, al } = {}) {
 // La tabella stock_consumptions resta e continua a essere scritta da
 // consumeStock: se servira' leggerla, si riscrive la query allora, sapendo
 // cosa deve mostrare.
+
+/**
+ * Quanto è costato ciò che è uscito dalla cella senza essere venduto:
+ * vitto del personale, sprechi, rettifiche (16/08/2026).
+ *
+ * ⚠️ NON entra nel food cost dei piatti venduti — quello si calcola sui
+ * soli scarichi legati a un conto — ed è il punto: senza questa
+ * separazione il cibo mangiato dalla brigata farebbe cercare un problema
+ * in cucina che non esiste.
+ */
+export async function scarichiSenzaRicavo(entityId, dal, al) {
+  const { data, error } = await supabase.rpc("scarichi_senza_ricavo", {
+    p_entity_id: entityId,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}

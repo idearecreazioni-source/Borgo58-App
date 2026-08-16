@@ -131,10 +131,25 @@ export const COOKING_TECHNIQUES = [
   { value: "altro", label: "Altro" },
 ];
 
+// ⚠️ Vocabolario CHIUSO, e in tre posti che devono restare d'accordo: qui,
+// dentro `record_stock_consumption` e nel vincolo della tabella
+// `stock_consumptions`. Testo libero produrrebbe «vitto», «Vitto
+// personale» e «pasto staff», cioè tre totali che non si sommano.
 export const CONSUMPTION_REASONS = [
   { value: "consumo", label: "Consumo" },
   { value: "spreco", label: "Spreco" },
+  // Il cibo che mangia la brigata è food cost che non genera ricavo: se
+  // non lo si distingue, gonfia il food cost dei piatti venduti e fa
+  // cercare un problema in cucina che non esiste (16/08/2026).
+  { value: "vitto_personale", label: "Vitto del personale" },
   { value: "rettifica", label: "Rettifica (correzione da conteggio fisico)" },
+];
+
+// Dove sono finite le mance: quelle in contanti restano nel cassetto,
+// quelle su carta arrivano in banca insieme agli incassi.
+export const TIP_MEZZI = [
+  { value: "contanti", label: "Contanti" },
+  { value: "carta", label: "Carta" },
 ];
 
 export const PAYMENT_METHODS = [

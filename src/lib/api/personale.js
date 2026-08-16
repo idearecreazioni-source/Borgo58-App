@@ -190,11 +190,14 @@ export async function listTipsPerEmployeeYear(year) {
 // il totale lo calcola il database dalle sole righe che inserisce davvero.
 // La chiamata passa dal corridoio (Contratto B4, 09/08/2026).
 // Restituisce l'id della distribuzione.
-export async function createTipDistribution({ entityId, periodMonth, note, lines }) {
+export async function createTipDistribution({ entityId, periodMonth, note, lines, mezzo }) {
   return eseguiOperazione("create_tip_distribution", {
     p_entity_id: entityId,
     p_period_month: periodMonth,
     p_note: note || null,
+    // In che forma si paga: senza, il conteggio delle mance rimaste nel
+    // cassetto sarebbe un'ipotesi.
+    p_mezzo: mezzo || "contanti",
     p_lines: (lines ?? [])
       .filter((l) => Number(l.amount) > 0)
       .map((l) => ({ employee_id: l.employee_id, amount: Number(l.amount) })),
@@ -204,4 +207,20 @@ export async function createTipDistribution({ entityId, periodMonth, note, lines
 export async function deleteTipDistribution(id) {
   const { error } = await supabase.from("tip_distributions").delete().eq("id", id);
   if (error) throw error;
+}
+
+/**
+ * Le mance raccolte e non ancora distribuite, separate per forma
+ * (16/08/2026).
+ *
+ * ⚠️ Non sono un ricavo: sono un DEBITO verso il personale. La divisione
+ * fra contanti e carta non è un dettaglio — quelle in contanti stanno nel
+ * cassetto e quelle su carta arrivano in banca insieme agli incassi.
+ */
+export async function manceDaDistribuire(entityId) {
+  const { data, error } = await supabase.rpc("mance_da_distribuire", {
+    p_entity_id: entityId,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
