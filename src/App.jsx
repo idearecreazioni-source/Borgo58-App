@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./components/Layout";
+import SegnaleDatabase from "./components/SegnaleDatabase";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
@@ -291,6 +292,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* Sopra le rotte, non dentro il Layout: vale anche sulle Comande
+            e sulla pagina pubblica, che il Layout non lo usano. */}
+        <SegnaleDatabase />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

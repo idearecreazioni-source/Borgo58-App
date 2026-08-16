@@ -154,12 +154,19 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // nella stessa consegna. Se cambiasse senza che nessuno lo dica,
   // sarebbe il difetto del 12/08 — ed e' il motivo per cui questa prova
   // esiste.
-  it("solo 11 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SCESO DA 11 A 10 il 16/08/2026, e anche stavolta il modo conta:
+  // `log_recipe_status_change` è diventata `security definer` perché era
+  // ROTTA — girando coi permessi del chiamante non poteva scrivere nello
+  // storico, quindi nessuno poteva marcare una ricetta «pronta per
+  // carta». Diventata definer, lasciarla eseguibile con la chiave
+  // pubblica sarebbe stata una porta aperta: revocata nella stessa
+  // migrazione (`20260816000017`). Anche lei è una funzione di trigger:
+  // la esegue il motore per conto di `recipes`, senza bisogno di permessi.
+  it("solo 10 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
       "is_titolare",
-      "log_recipe_status_change",
       "normalize_phone",
       "public_reservation_options",
       "set_aggiornato_il",

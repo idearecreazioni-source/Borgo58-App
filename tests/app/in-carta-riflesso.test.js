@@ -21,6 +21,13 @@ describe("«in carta» lo dice il menu, non una casella", () => {
   let piatto;
   let acerbo;
   let menu;
+  // ⚠️ Il menu attivo può essere UNO SOLO (`uniq_single_active_menu`), e
+  // dal 16/08/2026 il progetto di prova ha uno stato di partenza che ne
+  // tiene uno acceso. Questa prova ne accende uno suo, quindi deve
+  // spegnere quello che trova — e **rimetterlo com'era alla fine**: una
+  // prova che si ripulisce cancellando invece che rimettendo lascia il
+  // mondo diverso da come l'ha trovato (lezione del 14/08).
+  let menuAttivoDiPrima = null;
 
   async function pulisci() {
     const { data: menus } = await titolare.from("menus").select("id").eq("name", MENU);
@@ -60,10 +67,19 @@ describe("«in carta» lo dice il menu, non una casella", () => {
     const m = await titolare.from("menus").insert({ name: MENU, is_active: false }).select("id").single();
     if (m.error) throw new Error(`Non riesco a creare il menu di prova: ${m.error.message}`);
     menu = m.data.id;
+
+    const attivo = await titolare.from("menus").select("id").eq("is_active", true).maybeSingle();
+    menuAttivoDiPrima = attivo.data?.id ?? null;
+    if (menuAttivoDiPrima) {
+      await titolare.from("menus").update({ is_active: false }).eq("id", menuAttivoDiPrima);
+    }
   });
 
   afterAll(async () => {
     await pulisci();
+    if (menuAttivoDiPrima) {
+      await titolare.from("menus").update({ is_active: true }).eq("id", menuAttivoDiPrima);
+    }
     await titolare.auth.signOut({ scope: "local" });
   });
 
@@ -108,6 +124,34 @@ describe("«in carta» lo dice il menu, non una casella", () => {
     const r = await titolare.from("recipes").update({ pronta_per_carta: false }).eq("id", piatto);
     expect(r.error).not.toBeNull();
     expect(r.error.message).toContain(MENU);
+  });
+
+  // 🔴 Il difetto trovato costruendo lo stato di partenza col gesto vero
+  // (16/08/2026): `log_recipe_status_change` era `security invoker`, e su
+  // `recipe_status_history` un utente ha la sola lettura — quindi
+  // marcare una ricetta «pronta per carta» rispondeva 42501 e non
+  // riusciva. Nessuna verifica dentro le migrazioni poteva vederlo: là si
+  // gira come proprietari, e i proprietari scavalcano la RLS.
+  it("marcare «pronta per carta» riesce, e lo storico si scrive", async () => {
+    const r = await titolare.from("recipes").update({ pronta_per_carta: true }).eq("id", acerbo);
+    expect(r.error).toBeNull();
+
+    const storico = await titolare
+      .from("recipe_status_history")
+      .select("pronta_per_carta")
+      .eq("recipe_id", acerbo);
+    expect(storico.error).toBeNull();
+    expect(storico.data.length).toBeGreaterThan(0);
+    expect(storico.data.at(-1).pronta_per_carta).toBe(true);
+  });
+
+  // …e lo storico resta scrivibile SOLO dal trigger: la cura non doveva
+  // aprire quella tabella a nessuno.
+  it("nello storico non ci si scrive a mano", async () => {
+    const r = await titolare
+      .from("recipe_status_history")
+      .insert({ recipe_id: acerbo, pronta_per_carta: true, in_carta: false });
+    expect(r.error).not.toBeNull();
   });
 
   it("togliendolo dal menu la casella si spegne", async () => {

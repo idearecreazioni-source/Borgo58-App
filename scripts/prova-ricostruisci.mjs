@@ -197,4 +197,27 @@ console.log(`   migrazioni registrate: ${interroga(url, "select count(*) from ap
 console.log(`   ruoli assegnati:       ${interroga(url, "select count(*) from user_roles;")}`);
 console.log("");
 console.log(`Database di prova ricostruito da zero. Resoconto: ${registro}`);
+
+// ---------------------------------------------------------------------
+// 5. Lo stato di partenza.
+//
+// ⚠️ Ricostruito da zero, il progetto di prova è VUOTO — ed è la
+// condizione in cui le verifiche dicono verde senza aver verificato
+// niente (14/08, 15/08 e 16/08: tre volte la stessa lezione). Quindi la
+// ricostruzione non finisce col database vuoto: finisce con lo stato di
+// partenza rimesso.
+//
+// ⚠️ E se non riesce, si dice e non si nasconde: la ricostruzione è
+// comunque riuscita, ma un progetto di prova senza stato di partenza è
+// mezzo strumento — e chi crede di averlo intero non lo controlla.
+// ---------------------------------------------------------------------
+titolo("Rimetto lo stato di partenza");
+const base = esegui(process.execPath, ["scripts/prova-base.mjs", "--rifai"]);
+if (!base.ok) {
+  console.log("");
+  console.log("  ⚠ La ricostruzione è riuscita, ma lo stato di partenza NON si è costruito.");
+  console.log("    Sopra c'è il motivo. Si riprova con:  npm run prova:base -- --rifai");
+  console.log("");
+  process.exit(1);
+}
 console.log("");

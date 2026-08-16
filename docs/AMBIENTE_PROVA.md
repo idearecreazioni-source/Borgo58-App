@@ -102,6 +102,74 @@ Per rifarlo da capo su un progetto non più vuoto:
 
 ---
 
+## 4bis. Lo stato di partenza (dal 16/08/2026)
+
+Un database di prova **vuoto** è un database che dice sempre di sì. Tre
+difetti veri di agosto hanno avuto tutti la stessa forma: la prova girava
+su uno stato di partenza diverso da quello vero *esattamente nel punto
+rilevante*, quindi passava verde — il valore predefinito che rispondeva al
+posto dell'utente (14/08), la colonna nuova senza righe da sanare (15/08),
+la verifica del vitto che saltava proprio la parte che in produzione
+sarebbe scattata (16/08).
+
+```bash
+npm run prova:base
+```
+
+Costruisce poche righe vere: un fornitore, un ingrediente con giacenza e
+storico prezzi, una ricetta, un menu attivo, **un conto aperto → mandato in
+cucina → chiuso e pagato**, un movimento di prima nota, una fattura da
+pagare, un ricevimento non conforme, una prenotazione.
+
+Tre cose da sapere:
+
+1. **È costruito chiamando le funzioni vere dell'app**, non con `insert`
+   scritti a mano. Se domani un'operazione cambia, questo comando o si
+   aggiorna da solo o **smette di funzionare e lo si vede subito**. È anche
+   una prova: se un giorno fallisce, la prima ipotesi non è che sia rotto
+   lui. *(Ha già trovato un difetto vero il giorno stesso: nessuno poteva
+   marcare una ricetta «pronta per carta».)*
+2. **Tutto si chiama `BASE-…`** e si butta senza pensarci:
+   `npm run prova:base -- --rifai`. `npm run prova:ricostruisci` lo rimette
+   da sé alla fine.
+3. **Non copre tutto**, e non finge di farlo:
+
+   ```bash
+   npm run prova:stato
+   ```
+
+   elenca le tabelle che nel locale vero hanno dei dati e sulla prova sono
+   ancora vuote. L'elenco **si ricava dal locale vero a ogni esecuzione**:
+   man mano che il locale si riempie, chiede di più da solo.
+
+---
+
+## 4ter. Aprire il gestionale sul progetto di prova
+
+```bash
+npm run dev:prova
+```
+
+Apre lo stesso gestionale collegato al progetto di prova. `.env.local` non
+si tocca: `npm run dev` continua ad aprire il locale vero, e non c'è niente
+da rimettere a posto dopo.
+
+⚠️ **Come si capisce dove si sta scrivendo**, senza aprire nessun file:
+
+- sul **progetto di prova** c'è una **fascia rossa in cima a ogni
+  schermata**: «DATABASE DI PROVA — quello che scrivi qui non è vero»;
+- sul **locale vero** c'è una **targhetta grigia in basso a sinistra**:
+  «dati veri».
+
+Si dichiara in tutte e due le direzioni apposta. Un avviso che comparisse
+solo sulla prova proteggerebbe soltanto chi si ricorda che quell'avviso
+esiste — e il caso pericoloso è l'altro: **stare sul locale vero credendo
+di stare sulla prova** e riempirlo di dati finti. Una riga finta
+indistinguibile da una vera toglie fiducia a tutto quello che il gestionale
+dice.
+
+---
+
 ## 5. Da adesso in poi: due regole
 
 1. **Le prove automatiche girano qui.** `npm run test:app` usa
@@ -154,4 +222,10 @@ Onesto elenco, per non dare per verificato ciò che non lo è:
   database e si recuperano solo da una copia di sicurezza.
 - **I dati del locale non ci sono** (orari, tavoli, menù): le migrazioni
   creano le tabelle, non i tuoi numeri. Se una prova ha bisogno di orari,
-  se li crea da sola e li ripulisce.
+  se li crea da sola e li ripulisce. Dal 16/08 `npm run prova:base` mette
+  uno **stato di partenza minimo**, che non è la stessa cosa dei tuoi dati:
+  `npm run prova:stato` dice sempre cosa manca ancora.
+- **La posta, l'assistente e le previsioni non ci sono**: `posta_ricevuta`,
+  `posta_azioni`, `documents`, `domande_archivio` e le tabelle degli
+  scenari restano vuote. Sono i **dati di collaudo**, che si preparano a
+  parte — lo stato di partenza è un'altra cosa e più piccola.
