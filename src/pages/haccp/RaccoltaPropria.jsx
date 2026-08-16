@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { createForagedItem, deleteForagedItem, listForagedItems } from "../../lib/api/haccp";
 import { listIngredients } from "../../lib/api/ingredients";
 import { formatDate, oggiLocale } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const today = oggiLocale;
 
@@ -154,9 +155,18 @@ export default function RaccoltaPropria() {
                   <div className="text-xs text-b58-terracotta-dark mt-1">Rischio: {it.contamination_risk_note}</div>
                 )}
               </div>
-              <button onClick={() => handleDelete(it.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0">
-                Rimuovi
-              </button>
+              {/* ⚠️ Era l’unico registro HACCP cancellabile a un tocco e
+                  senza traccia (Blocco 6.2 del mandato di correzione).
+                  Ora chiede conferma E la cancellazione resta scritta nel
+                  registro delle cancellazioni: pulizia e disinfestazione
+                  facevano già la cosa giusta non lasciandosi cancellare
+                  affatto. */}
+              <ConfermaDistruttiva
+                etichetta="Rimuovi"
+                cosaSparisce={`la raccolta di ${it.species} del ${formatDate(it.harvest_date)} dal registro HACCP`}
+                className="shrink-0"
+                onConferma={() => handleDelete(it.id)}
+              />
             </li>
           ))}
         </ul>

@@ -223,8 +223,14 @@ export default function Scontrinato() {
                           placeholder="n. fattura"
                           className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 text-xs text-b58-charcoal"
                         />
+                        {/* ⚠️ Senza numero non è una fattura: è una riga
+                            che dice di esserlo, e sparisce dall'elenco
+                            portandosi via la differenza fra incassato e
+                            fiscalizzato. Dal 16/08 lo rifiuta anche il
+                            vincolo del database — qui l'errore arriva
+                            prima di premere. */}
                         <button
-                          disabled={inCorso === c.order_id}
+                          disabled={inCorso === c.order_id || !(numeroFattura[c.order_id] ?? "").trim()}
                           onClick={() => segna(c.order_id, "fattura")}
                           className="rounded-lg bg-b58-terracotta text-b58-parchment text-xs px-3 py-1.5 disabled:opacity-60"
                         >

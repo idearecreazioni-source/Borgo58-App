@@ -153,13 +153,24 @@ export default function NonConformita() {
                       <input
                         value={correctiveAction}
                         onChange={(e) => setCorrectiveAction(e.target.value)}
-                        placeholder="Azione correttiva"
+                        placeholder="Cosa hai fatto per rimediare"
                         className={inputClass}
                       />
+                      {/* ⚠️ La promessa era scritta solo nei messaggi: il
+                          registro temperature dice «resta aperta finché non
+                          scrivi cosa hai fatto», e si chiudeva col campo
+                          vuoto. Nel manuale esibibile quella riga compariva
+                          come risolta senza rimedio — davanti a un ispettore
+                          è peggio di una ancora aperta. Dal 16/08 il divieto
+                          è anche nel database: qui si dà solo l'errore
+                          prima. */}
+                      <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
+                        Obbligatorio: finisce nel manuale che si mostra a un controllo.
+                      </p>
                     </div>
                     <button
                       type="button"
-                      disabled={resolving}
+                      disabled={resolving || !correctiveAction.trim()}
                       onClick={() => handleResolve(item.id)}
                       className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
                     >
