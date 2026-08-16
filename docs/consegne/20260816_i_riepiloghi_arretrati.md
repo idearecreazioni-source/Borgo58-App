@@ -165,15 +165,28 @@ controllo finale verifica che sia tornata com'era in entrambi i casi.
 | residui sul progetto di prova | **zero**, `fiscal_settings` tornata a zero righe |
 | **produzione** | **108 migrazioni** — `20260816000002` **non ancora applicata** |
 
-### Da riempire dopo l'applicazione in produzione
+### Dopo l'applicazione in produzione — compilata
 
-*(questa sezione va completata nello stesso giorno, prima del secondo
-push — è ciò che la rete di §3 verificherà la volta successiva)*
+`20260816000002` applicata il 16/08/2026. Letto col connettore in sola
+lettura, non dedotto dall'uscita della migrazione:
 
-- migrazioni in produzione dopo l'applicazione: **da compilare**
-- avvisi partiti durante l'applicazione: **da compilare**
-- residui delle verifiche in produzione: **da compilare**
-- `fiscal_settings` intatta (1 riga, quella della S.r.l.s.): **da compilare**
+| Cosa | Stato |
+|---|---|
+| migrazioni in produzione | **109** |
+| avvisi partiti durante l'applicazione | **zero** |
+| residui della verifica (conti di prova) | **zero** |
+| `fiscal_settings` | **1 riga**, quella della S.r.l.s. — intatta |
+| elenco anonimi · `security definer` senza portiere | **12** · **13**, invariati |
+| conti incassati ancora senza documento | **1** (Divano 3 del 15/08) |
+
+⚠️ **La riga dei parametri fiscali è quella di Alessio e non è stata
+toccata**: il ramo della verifica che ne crea una temporanea non è stato
+percorso qui, perché in produzione la riga esiste. È stato percorso sul
+progetto di prova, che è il motivo per cui esiste.
+
+⚠️ **Il riquadro delle due cifre ora ha dati veri su cui comparire**: c'è
+una previsione caricata e un conto incassato senza documento. Non è ancora
+stato aperto da nessuno.
 
 ---
 
