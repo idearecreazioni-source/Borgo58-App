@@ -12,13 +12,22 @@ import { ambienteCorrente } from "../lib/ambiente";
 // Un dato finto indistinguibile da uno vero toglie fiducia a tutto quello
 // che il gestionale dice (§5 punto 8).
 //
-// Due forme diverse perché i due casi non sono simmetrici:
-//  - sulla PROVA una fascia larga in cima, che occupa spazio e non si può
-//    non vedere: lì si sta apposta, e per poco tempo;
-//  - sul VERO una targhetta piccola in un angolo, ferma sopra tutto: è lo
-//    stato normale di ogni giorno, e una fascia larga per sempre si
-//    smetterebbe di vedere in una settimana — cioè non varrebbe niente
-//    proprio il giorno in cui serve.
+// ⚠️ UN SOLO SEGNO, DUE STATI — e non era la prima versione. Il 16/08 il
+// segno sul locale vero era una targhetta piccola in basso a sinistra, e
+// al collaudo Alessio l'ha vista **solo perché la stava cercando**: il
+// criterio era «notata senza cercarla», e in basso a sinistra non guarda
+// mai nessuno mentre lavora.
+//
+// La correzione è sua, e la ragione vale più della modifica: *due segni in
+// due posti diversi si imparano peggio di due stati dello stesso segno.*
+// Se l'occhio deve controllare **un solo punto** per sapere dove sta, il
+// controllo diventa automatico in due giorni. Quindi stessa posizione
+// sempre — in cima, ferma mentre si scorre — e a cambiare sono **il
+// colore e il testo**, mai il posto.
+//
+// Il tono resta diverso apposta: rosso pieno sulla prova (ci si sta
+// apposta, e per poco), grigio sottile sul vero (è ogni giorno, e un segno
+// invadente per sempre viene ignorato prima e nascosto poi).
 //
 // Sta fuori dal Layout apposta: vale anche sulle Comande e sulla pagina
 // pubblica, che il Layout non lo usano. `print:hidden` ovunque: su un
@@ -26,11 +35,15 @@ import { ambienteCorrente } from "../lib/ambiente";
 export default function SegnaleDatabase() {
   const ambiente = ambienteCorrente();
 
+  // La posizione è scritta una volta sola: se cambia, cambia per tutti e
+  // due gli stati — che è esattamente la proprietà da non perdere.
+  const posizione = "print:hidden sticky top-0 z-50 w-full text-center";
+
   if (ambiente.produzione) {
     return (
       <div
         title={`Progetto Supabase ${ambiente.riferimento}`}
-        className="print:hidden fixed bottom-2 left-2 z-50 rounded-full bg-b58-charcoal/70 text-b58-parchment text-[10px] leading-none px-2.5 py-1 pointer-events-none select-none"
+        className={`${posizione} bg-b58-charcoal/10 text-b58-charcoal-soft border-b border-b58-charcoal/10 px-4 py-1 text-[11px] leading-tight tracking-wide`}
       >
         dati veri
       </div>
@@ -38,7 +51,7 @@ export default function SegnaleDatabase() {
   }
 
   return (
-    <div className="print:hidden sticky top-0 z-50 bg-b58-terracotta text-b58-parchment px-4 py-2 text-center text-sm">
+    <div className={`${posizione} bg-b58-terracotta text-b58-parchment px-4 py-2 text-sm`}>
       <strong>
         {ambiente.genere === "prova" ? "DATABASE DI PROVA" : "DATABASE SCONOSCIUTO"}
       </strong>{" "}
