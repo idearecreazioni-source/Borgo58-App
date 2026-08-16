@@ -276,11 +276,17 @@ export { orderTotals } from "../calcoli/conto";
 // Lo scarico è una scrittura di CONSEGUENZA: se qualcosa non torna, il
 // conto si chiude lo stesso e l'anomalia resta scritta. Il cliente ha
 // pagato e sta aspettando: non è il momento di fermarsi.
-export async function closeOrderPaid(orderId, paymentMethod, copertoUnitPrice) {
+// ⚠️ `pagamenti` è la divisione su più mezzi (Blocco 9, 16/08/2026):
+// `[{ mezzo: "contante", importo: 30 }, { mezzo: "carta", importo: 20 }]`.
+// Passandolo, `paymentMethod` non serve. Le quote devono fare l'incassato
+// al centesimo, e a rifiutare è il database: una divisione che non torna
+// sarebbe cassa e banca che non tornano più.
+export async function closeOrderPaid(orderId, paymentMethod, copertoUnitPrice, pagamenti = null) {
   return eseguiOperazione("close_order_paid", {
     p_order_id: orderId,
-    p_payment_method: paymentMethod,
+    p_payment_method: pagamenti ? null : paymentMethod,
     p_coperto_unit_price: copertoUnitPrice ?? null,
+    p_pagamenti: pagamenti,
   });
 }
 

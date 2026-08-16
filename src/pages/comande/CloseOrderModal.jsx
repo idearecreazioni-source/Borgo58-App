@@ -20,7 +20,8 @@ const lineTotal = (item) => item.quantity * Number(item.unit_price);
 // Modale "chiudi conto" (§3.2), ripreso dal prototipo UX di Cowork: riepilogo
 // raggruppato per piatto, poi pagato/sconto/omaggio/annullato.
 export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }) {
-  const [mode, setMode] = useState(null); // null | "sconto" | "omaggio" | "annulla" | "romana"
+  const [mode, setMode] = useState(null); // null | "sconto" | "omaggio" | "annulla" | "romana" | "misto"
+  const [quotaCarta, setQuotaCarta] = useState("");
   // Divisione alla romana con arrotondamento (§3.2.2, deciso da Alessio il
   // 09/08/2026): 25 € in 2 → si propone la cifra tonda (12), il conto si
   // chiude a 24 e il 1 € di differenza resta registrato come cortesia
@@ -84,6 +85,33 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   };
 
   const handlePaid = (method) => run(() => closeOrderPaid(order.id, method, copertoUnitPrice));
+
+  // --- Pagano in due modi (Blocco 9, deciso da Alessio) ---------------
+  //
+  // ⚠️ La forma segue come si paga DAVVERO in sala, che gliel'ho chiesto
+  // prima di disegnare: «una sola [passata sul POS] per la sua parte».
+  // Quindi si registrano le QUOTE — quanto con la carta, quanto in
+  // contanti — e non un giro di carta-per-tutto-e-resto-in-contanti, che
+  // sarebbe un'uscita di cassa mai avvenuta.
+  //
+  // La proposta iniziale è la divisione equa fra due, sua indicazione: il
+  // caso normale è due persone che si dividono il conto.
+  const apriMisto = () => {
+    const meta = Math.round((total / 2) * 100) / 100;
+    setQuotaCarta(String(meta));
+    setMode("misto");
+  };
+
+  const quotaContante = Math.round((total - (Number(quotaCarta) || 0)) * 100) / 100;
+  const mistoValido = Number(quotaCarta) > 0 && quotaContante > 0;
+
+  const handleMisto = () =>
+    run(() =>
+      closeOrderPaid(order.id, null, copertoUnitPrice, [
+        { mezzo: "carta", importo: Number(quotaCarta) },
+        { mezzo: "contante", importo: quotaContante },
+      ])
+    );
 
   // --- Alla romana ---
   const esattoATesta = persone > 0 ? total / persone : 0;
@@ -227,6 +255,9 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 ))}
               </div>
               <div className="flex gap-2">
+                <button type="button" onClick={apriMisto} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
+                  Pagano in due modi
+                </button>
                 <button type="button" onClick={apriRomana} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
                   Alla romana
                 </button>
@@ -244,6 +275,62 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 Nessun incasso viene registrato in cassa: l'integrazione con il registratore telematico (§3.2) arriverà con l'hardware.
               </p>
             </>
+          )}
+
+          {mode === "misto" && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-b58-charcoal">
+                Pagano in due modi — {formatEUR(total)} in tutto
+              </h3>
+              <p className="text-xs text-b58-charcoal-soft">
+                Scrivi quanto passi sul POS: il resto è contante. Batti sul POS{" "}
+                <strong>solo quella cifra</strong>, non il totale.
+              </p>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="block text-[11px] text-b58-charcoal-soft mb-1">Con la carta</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={quotaCarta}
+                    onChange={(e) => setQuotaCarta(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[11px] text-b58-charcoal-soft mb-1">In contanti</div>
+                  <div className="text-lg font-medium text-b58-charcoal py-1.5">
+                    {formatEUR(quotaContante)}
+                  </div>
+                </div>
+              </div>
+              {/* ⚠️ Il rifiuto vero è nel database: le quote devono fare
+                  l'incassato al centesimo. Qui si evita solo di premere. */}
+              {!mistoValido && (
+                <p className="text-xs text-b58-terracotta-dark">
+                  Le due parti devono essere tutt'e due maggiori di zero. Se paga tutto in un
+                  modo solo, torna indietro e usa «Paga contante» o «Paga carta».
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !mistoValido}
+                  onClick={handleMisto}
+                  className="flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-3 py-2"
+                >
+                  {busy ? "Chiudo…" : "Chiudi il conto"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode(null)}
+                  className="rounded-lg border border-b58-charcoal/15 text-b58-charcoal text-sm px-4 py-2"
+                >
+                  Indietro
+                </button>
+              </div>
+            </div>
           )}
 
           {mode === "romana" && (
