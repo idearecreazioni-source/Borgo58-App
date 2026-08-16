@@ -4,7 +4,6 @@ import {
   getRecipe,
   getRecipeAllergens,
   getRecipeCost,
-  listAllRecipeCosts,
   listPreparationUsage,
   listPreparations,
   listRecipeStatusHistory,
@@ -12,6 +11,7 @@ import {
 } from "../../lib/api/recipes";
 import {
   addRecipeIngredient,
+  getRecipeRowCosts,
   listRecipeIngredients,
   removeRecipeIngredient,
   updateRecipeIngredient,
@@ -82,7 +82,7 @@ export default function RicettaDetail() {
   const [videos, setVideos] = useState([]);
   const [preparations, setPreparations] = useState([]);
   const [preparationUsage, setPreparationUsage] = useState([]);
-  const [allCosts, setAllCosts] = useState([]);
+  const [rowCosts, setRowCosts] = useState({});
 
   const [savingHeader, setSavingHeader] = useState(false);
   const [ingredientMode, setIngredientMode] = useState("ingredient");
@@ -95,27 +95,38 @@ export default function RicettaDetail() {
   const [videoNote, setVideoNote] = useState("");
   const [addingVideo, setAddingVideo] = useState(false);
 
-  const loadAll = async () => {
-    const [rec, ri, st, c, al, hist, vids, prepUsage, costs] = await Promise.all([
-      getRecipe(id),
+  // ⚠️ Le righe e i loro costi si ricaricano insieme: il costo di una riga
+  // ora lo dice il database (`v_recipe_row_costs`), quindi cambiare una
+  // quantità e ricaricare le sole righe mostrerebbe una quantità nuova col
+  // costo di prima — che è peggio del vecchio ricalcolo nel browser,
+  // perché sbaglia in silenzio invece di essere solo una copia.
+  const ricaricaRighe = async () => {
+    const [ri, costi, c] = await Promise.all([
       listRecipeIngredients(id),
-      listRecipeSteps(id),
+      getRecipeRowCosts(id),
       getRecipeCost(id),
+    ]);
+    setRecipeIngredients(ri);
+    setRowCosts(costi);
+    setCost(c);
+  };
+
+  const loadAll = async () => {
+    const [rec, st, al, hist, vids, prepUsage] = await Promise.all([
+      getRecipe(id),
+      listRecipeSteps(id),
       getRecipeAllergens(id),
       listRecipeStatusHistory(id),
       listRecipeVideos(id),
       listPreparationUsage(id),
-      listAllRecipeCosts(),
     ]);
     setRecipe(rec);
-    setRecipeIngredients(ri);
     setSteps(st);
-    setCost(c);
     setAllergens(al);
     setVideos(vids);
     setStatusHistory(hist);
     setPreparationUsage(prepUsage);
-    setAllCosts(costs);
+    await ricaricaRighe();
   };
 
   useEffect(() => {
@@ -137,13 +148,6 @@ export default function RicettaDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const costById = useMemo(() => {
-    const map = {};
-    allCosts.forEach((c) => {
-      map[c.recipe_id] = c;
-    });
-    return map;
-  }, [allCosts]);
 
   const totalPrepMin = useMemo(
     () => steps.reduce((sum, s) => sum + (s.duration_min || 0), 0),
@@ -250,8 +254,7 @@ export default function RicettaDetail() {
       });
       setIngredientForm(emptyIngredientForm);
       setIngredientSearch("");
-      setRecipeIngredients(await listRecipeIngredients(id));
-      setCost(await getRecipeCost(id));
+      await ricaricaRighe();
       setAllergens(await getRecipeAllergens(id));
     } catch (e) {
       setError(e.message);
@@ -264,8 +267,7 @@ export default function RicettaDetail() {
     if (Number(newQuantity) === Number(ri.quantity)) return;
     try {
       await updateRecipeIngredient(ri.id, { quantity: Number(newQuantity) || 0 });
-      setRecipeIngredients(await listRecipeIngredients(id));
-      setCost(await getRecipeCost(id));
+      await ricaricaRighe();
     } catch (e) {
       setError(e.message);
     }
@@ -274,8 +276,7 @@ export default function RicettaDetail() {
   const handleRemoveIngredient = async (riId) => {
     try {
       await removeRecipeIngredient(riId);
-      setRecipeIngredients(await listRecipeIngredients(id));
-      setCost(await getRecipeCost(id));
+      await ricaricaRighe();
       setAllergens(await getRecipeAllergens(id));
     } catch (e) {
       setError(e.message);
@@ -570,10 +571,10 @@ export default function RicettaDetail() {
                 const waste = isComponent
                   ? null
                   : ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
-                const rowCost = isComponent
-                  ? (ri.quantity / ri.component.yield_quantity) *
-                    (costById[ri.component.id]?.food_cost_base ?? 0)
-                  : ri.quantity * ri.ingredient.current_price * (1 + waste / 100);
+                // ⚠️ Il costo della riga arriva dal database, non si
+                // ricalcola qui: era la stessa moltiplicazione che
+                // `v_recipe_costs` faceva già, scritta una seconda volta.
+                const rowCost = rowCosts[ri.id];
                 return (
                   <tr key={ri.id} className="border-b border-b58-charcoal/5 last:border-0">
                     <td className="py-2 text-b58-charcoal">

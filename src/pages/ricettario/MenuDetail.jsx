@@ -3,14 +3,14 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import {
   addMenuItem,
   getMenu,
+  listIngredientiDelMenu,
   listMenuItemsFull,
   removeMenuItem,
   setActiveMenu,
+  simulaPrezzoIngrediente,
   updateMenuItemPrice,
 } from "../../lib/api/menus";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
-import { listRecipeIngredientsForRecipes } from "../../lib/api/recipeIngredients";
-import { listIngredients } from "../../lib/api/ingredients";
 import { foodCostLevel, formatEUR } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 
@@ -34,8 +34,6 @@ export default function MenuDetail() {
   const [items, setItems] = useState([]);
   const [allRecipes, setAllRecipes] = useState([]);
   const [allRecipeCosts, setAllRecipeCosts] = useState({});
-  const [allIngredients, setAllIngredients] = useState([]);
-  const [recipeIngredientsByRecipe, setRecipeIngredientsByRecipe] = useState({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
@@ -43,20 +41,15 @@ export default function MenuDetail() {
 
   const [addForms, setAddForms] = useState({}); // { [category]: { recipe_id, selling_price } }
 
+  // ⚠️ Le righe di ricetta e l'anagrafica degli ingredienti non si
+  // caricano più: servivano solo alla copia della formula del food cost
+  // che stava qui dentro. Il simulatore ora chiede al database, che le
+  // legge da sé — due giri in meno e una formula in meno.
   const load = async () => {
     const m = await getMenu(id);
     const its = await listMenuItemsFull(id);
     setMenu(m);
     setItems(its);
-    const recipeIds = its.map((i) => i.recipe_id);
-    if (recipeIds.length > 0) {
-      const ri = await listRecipeIngredientsForRecipes(recipeIds);
-      const grouped = {};
-      ri.forEach((r) => {
-        (grouped[r.recipe_id] ??= []).push(r);
-      });
-      setRecipeIngredientsByRecipe(grouped);
-    }
   };
 
   useEffect(() => {
@@ -68,7 +61,6 @@ export default function MenuDetail() {
       listAllRecipeCosts().then((c) =>
         setAllRecipeCosts(Object.fromEntries(c.map((x) => [x.recipe_id, x])))
       ),
-      listIngredients().then(setAllIngredients),
     ])
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
@@ -133,50 +125,43 @@ export default function MenuDetail() {
   const [simTargetPct, setSimTargetPct] = useState("22");
   const [applyingPrice, setApplyingPrice] = useState(false);
 
-  const usedIngredientIds = useMemo(() => {
-    const ids = new Set();
-    Object.values(recipeIngredientsByRecipe)
-      .flat()
-      .forEach((ri) => ids.add(ri.ingredient_id));
-    return [...ids];
-  }, [recipeIngredientsByRecipe]);
+  // ⚠️ La simulazione LA CALCOLA IL DATABASE (16/08/2026, Blocco 2 del
+  // mandato di correzione). Qui c'era una terza copia della formula del
+  // food cost che non conosceva le preparazioni: su una riga-componente
+  // `ri.ingredient` è vuoto, quindi la schermata si ROMPEVA su ogni piatto
+  // che contiene un semilavorato — e quando non si rompeva guardava un
+  // livello solo, cioè rispondeva «nessun piatto è toccato» a un rincaro
+  // che tocca tutto il menu attraverso un soffritto.
+  //
+  // Anche l'elenco degli ingredienti simulabili viene da lì: costruirlo
+  // qui sui soli ingredienti diretti rendeva non selezionabile proprio
+  // ciò che il simulatore vecchio non sapeva vedere.
+  const [simIngredients, setSimIngredients] = useState([]);
+  const [priceSimResults, setPriceSimResults] = useState(null);
 
-  const recipeFoodCostWithOverride = (recipeId, portionsYield, overrideIngredientId, overridePrice) => {
-    const ris = recipeIngredientsByRecipe[recipeId] ?? [];
-    const base = ris.reduce((sum, ri) => {
-      if (ri.is_optional) return sum;
-      const price = ri.ingredient_id === overrideIngredientId ? overridePrice : ri.ingredient.current_price;
-      const waste = ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
-      return sum + ri.quantity * price * (1 + waste / 100);
-    }, 0);
-    return portionsYield ? base / portionsYield : base;
-  };
+  useEffect(() => {
+    let cancelled = false;
+    listIngredientiDelMenu(id)
+      .then((r) => !cancelled && setSimIngredients(r))
+      .catch((e) => !cancelled && setError(e.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  const priceSimResults = useMemo(() => {
-    if (simMode !== "prezzo_ingrediente" || !simIngredientId) return null;
-    const ingredient = allIngredients.find((i) => i.id === simIngredientId);
-    if (!ingredient) return null;
-    const newPrice = ingredient.current_price * (1 + Number(simPct) / 100);
-
-    return items
-      .filter((item) => (recipeIngredientsByRecipe[item.recipe_id] ?? []).some((ri) => ri.ingredient_id === simIngredientId))
-      .map((item) => {
-        const newCost = recipeFoodCostWithOverride(
-          item.recipe_id,
-          item.recipe.portions_yield ?? 1,
-          simIngredientId,
-          newPrice
-        );
-        const newPct = item.selling_price > 0 ? (newCost / item.selling_price) * 100 : null;
-        return { item, newCost, newPct };
-      });
-    // recipeFoodCostWithOverride è volutamente fuori dalle dipendenze: è una
-    // funzione ricreata a ogni render, quindi inserirla farebbe ricalcolare la
-    // simulazione ad ogni render annullando la memoizzazione. I dati che legge
-    // (recipeIngredientsByRecipe) sono già nelle dipendenze, quindi non può
-    // restare indietro. Analizzato durante la pulizia lint del 05/08/2026.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [simMode, simIngredientId, simPct, items, allIngredients, recipeIngredientsByRecipe]);
+  useEffect(() => {
+    if (simMode !== "prezzo_ingrediente" || !simIngredientId || simPct === "") {
+      setPriceSimResults(null);
+      return;
+    }
+    let cancelled = false;
+    simulaPrezzoIngrediente(id, simIngredientId, simPct)
+      .then((r) => !cancelled && setPriceSimResults(r))
+      .catch((e) => !cancelled && setError(e.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [id, simMode, simIngredientId, simPct]);
 
   const swapCandidate = useMemo(() => {
     if (simMode !== "sostituzione" || !simSwapRecipeId) return null;
@@ -493,11 +478,12 @@ export default function MenuDetail() {
                 className={`${inputClass} flex-1 min-w-[180px]`}
               >
                 <option value="">Seleziona ingrediente usato nel menu…</option>
-                {allIngredients
-                  .filter((i) => usedIngredientIds.includes(i.id))
-                  .map((i) => (
-                    <option key={i.id} value={i.id}>{i.name}</option>
-                  ))}
+                {simIngredients.map((i) => (
+                  <option key={i.ingredient_id} value={i.ingredient_id}>
+                    {i.nome}
+                    {i.solo_in_preparazioni ? " (solo dentro preparazioni)" : ""}
+                  </option>
+                ))}
               </select>
               <div className="flex items-center gap-1">
                 <input
@@ -526,15 +512,27 @@ export default function MenuDetail() {
                     </tr>
                   </thead>
                   <tbody>
-                    {priceSimResults.map(({ item, newCost, newPct }) => (
-                      <tr key={item.id} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">{item.recipe.name}</td>
-                        <td className="py-2 text-right text-b58-charcoal-soft">
-                          {formatEUR(item.economics?.food_cost_portion)}
+                    {priceSimResults.map((r) => (
+                      <tr key={r.menu_item_id} className="border-b border-b58-charcoal/5 last:border-0">
+                        <td className="py-2 text-b58-charcoal">
+                          {r.piatto}
+                          {/* Il caso che prima era invisibile: l'ingrediente
+                              non è in questo piatto, è dentro qualcosa che
+                              il piatto usa. */}
+                          {r.via_preparazione && (
+                            <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                              attraverso una preparazione
+                            </span>
+                          )}
                         </td>
-                        <td className="py-2 text-right text-b58-charcoal">{formatEUR(newCost)}</td>
-                        <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(newPct)]}`}>
-                          {newPct != null ? `${newPct.toFixed(1)}%` : "—"}
+                        <td className="py-2 text-right text-b58-charcoal-soft">
+                          {formatEUR(r.food_cost_attuale)}
+                        </td>
+                        <td className="py-2 text-right text-b58-charcoal">
+                          {formatEUR(r.food_cost_simulato)}
+                        </td>
+                        <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(r.pct_simulata)]}`}>
+                          {r.pct_simulata != null ? `${Number(r.pct_simulata).toFixed(1)}%` : "—"}
                         </td>
                       </tr>
                     ))}

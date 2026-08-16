@@ -72,3 +72,31 @@ export async function removeMenuItem(id) {
   const { error } = await supabase.from("menu_items").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ⚠️ Il what-if «e se questo ingrediente rincarasse» lo calcola il
+// DATABASE (16/08/2026, Blocco 2 del mandato di correzione). Prima era una
+// terza copia della formula del food cost dentro la schermata, e non
+// conosceva le preparazioni: su una riga-componente il dato è vuoto,
+// quindi il simulatore si ROMPEVA su ogni piatto che contiene un
+// semilavorato — e quando non si rompeva guardava un livello solo, cioè
+// taceva sui rincari che arrivano attraverso una preparazione.
+export async function simulaPrezzoIngrediente(menuId, ingredientId, variazionePct) {
+  const { data, error } = await supabase.rpc("simula_prezzo_ingrediente", {
+    p_menu_id: menuId,
+    p_ingredient_id: ingredientId,
+    p_variazione_pct: Number(variazionePct),
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Gli ingredienti che il menu consuma davvero, preparazioni attraversate.
+// Anche questo era costruito nel browser su un livello solo: un ingrediente
+// che sta unicamente dentro una preparazione non era nemmeno selezionabile.
+export async function listIngredientiDelMenu(menuId) {
+  const { data, error } = await supabase.rpc("ingredienti_del_menu", {
+    p_menu_id: menuId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}

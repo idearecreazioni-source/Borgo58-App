@@ -7,6 +7,7 @@ import {
   listRepartoTickets,
   setItemsPrepared,
 } from "../../lib/api/orders";
+import { orderTotals } from "../../lib/calcoli/conto";
 import { formatEUR } from "../../lib/constants";
 import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
@@ -212,13 +213,13 @@ export default function Bar() {
               </p>
             ) : (
               openOrders.map((o) => {
-                const righe = (o.items ?? []).filter((i) => !i.voided_at);
-                const totaleRighe = righe.reduce(
-                  (s, i) => s + i.quantity * Number(i.unit_price),
-                  0
-                );
-                const coperti = o.coperti ?? 0;
-                const totale = totaleRighe + coperti * Number(copertoPrice ?? 0);
+                // ⚠️ Il totale lo calcola il modulo unico, non questa
+                // schermata: preconto, chiusura e riquadro cassa devono
+                // dire lo STESSO numero davanti al cliente. Qui la somma
+                // era riscritta a mano, e non guardava il prezzo del
+                // coperto fotografato sul conto — oggi coincide perché i
+                // conti aperti non ce l'hanno ancora, domani no.
+                const { items: righe, coperti, total: totale } = orderTotals(o, copertoPrice);
                 return (
                   <div key={o.id} className="rounded-xl bg-white ring-1 ring-b58-charcoal/15 p-3 mb-2">
                     <div className="flex items-center justify-between mb-1">
