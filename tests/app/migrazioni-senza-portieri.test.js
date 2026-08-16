@@ -27,6 +27,31 @@ import { clientAutenticato, credenziali } from "./aiuto";
 // quella delle funzioni aperte ad `anon`. Una funzione col portiere nuova,
 // chiamata da una migrazione futura, fa diventare rossa questa prova senza
 // che nessuno si sia ricordato di aggiornarla.
+//
+// ⚠️ MA IL RICONOSCIMENTO È UN'EURISTICA, e va detto qui invece che
+// scoperto il giorno che serve. `funzioni_col_portiere()` riconosce DUE
+// forme, e solo quelle:
+//
+//     if not is_titolare() then …          →  'not\s+is_titolare\s*\(\s*\)'
+//     if auth.uid() is null then …         →  'auth\.uid\s*\(\s*\)\s+is\s+null'
+//
+// Sono le due che il progetto usa oggi, in tutte le sue funzioni. **Un
+// portiere scritto in un'altra forma non verrebbe riconosciuto**, e questa
+// prova direbbe «tutto a posto» dopo aver guardato solo una parte — che è
+// il modo di fallire peggiore, lo stesso dello zero al posto del buco.
+//
+// Esempi che oggi le sfuggirebbero, non per chiuderli adesso ma perché la
+// frase sia già scritta quando capiterà:
+//   · `if is_titolare() = false then …` — confronto invece di negazione;
+//   · `if coalesce(auth.uid(), …) …` — la chiamata avvolta in altro;
+//   · un portiere delegato a una funzione terza (`solo_il_titolare()`),
+//     che questa ricerca non seguirebbe.
+//
+// La forma definitiva sarebbe marcare le funzioni nel database con
+// un'etichetta che si portano dietro, invece di dedurre il portiere dal
+// testo. È la stessa strada indicata per il corridoio se l'eccezione
+// mono-tabella si ripresentasse: costa lavoro vero e oggi non lo vale,
+// ma è quella giusta.
 const CARTELLA = "supabase/migrations";
 
 // ⚠️ Le migrazioni anteriori alla regola non si riscrivono (Contratto §8),
