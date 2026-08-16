@@ -128,13 +128,29 @@ che pretende un utente autenticato — e una migrazione gira come
 `postgres`, dove `auth.uid()` è **nullo**. La migrazione si è fermata alla
 prima riga vera.
 
-⚠️ **Il progetto di prova non poteva accorgersene, ed è la parte che
-conta: lì non c'è nessun conto chiuso**, quindi la `select` non valutava
-mai `incasso_conto` e passava. In produzione ce n'è uno. È la **terza
-ricomparsa** della stessa famiglia: *la prova non era falsa, era su uno
-stato di partenza diverso da quello vero esattamente nel punto rilevante*
-(12/08, 14/08, 15/08). Stavolta è stata la produzione a dirlo, non io a
-prevederlo.
+Sul progetto di prova non è successo niente perché **lì non c'è nessun
+conto chiuso**, quindi la `select` non valutava mai `incasso_conto`.
+
+🔴 **La mia prima diagnosi era sbagliata, e la correzione è del
+validatore.** Avevo scritto che la causa era lo stato di partenza diverso
+— la famiglia del 12/08, 14/08 e 15/08. **Non è così.** La causa è che
+**una sanatoria ha chiamato una funzione dell'applicazione che ha il
+portiere**: `totale_conto()` controlla il ruolo di chi chiama, e una
+migrazione non ha un utente — ha un proprietario.
+
+⚠️ **Quella chiamata avrebbe rifiutato anche con dieci conti chiusi sul
+progetto di prova.** Lo stato di partenza avrebbe reso il difetto
+*visibile prima*, non inesistente — ed è una differenza che decide quale
+cura viene prima: la regola sulle funzioni col portiere è la cura, lo
+stato di partenza è la rete che l'avrebbe fatta scattare sul progetto di
+prova invece che in produzione.
+
+**La regola, da qui in avanti:** dentro una migrazione non si chiamano le
+funzioni dell'app che hanno un portiere. Una sanatoria **legge le
+tabelle**; se serve davvero la funzione, si impostano i claims come già
+fanno i blocchi di verifica. Qui si è scelta la seconda strada — ed è
+accettabile perché il calcolo del totale non va riscritto — ma la prima
+sarebbe stata più semplice.
 
 **Stato lasciato dal tentativo fallito**, letto col connettore e non
 supposto: tabella `order_payments` creata e **vuota**, parola `misto`
@@ -174,6 +190,14 @@ progetto di prova.
 
 *(Sezione compilata subito dopo l'applicazione — vedi l'avvertenza in
 testa a questo riepilogo.)*
+
+⚠️ **Per chi valida: entrambe le migrazioni SONO applicate** e questo
+riepilogo esiste. Il messaggio che chiedeva di finire il Blocco 9
+descriveva lo stato di qualche minuto prima: `20260816000011` era già in
+produzione (applicata dal tentativo fallito), `20260816000012` è stata
+applicata dopo la correzione della sanatoria, e la Edge Function
+`operazioni-atomiche` è stata reinstallata (le quote passano dal
+corridoio come tutto il resto della chiusura).
 
 | Migrazione | Quando |
 |---|---|
@@ -216,10 +240,11 @@ numero.*
 - **Nessuno ha mai diviso un conto vero.** La schermata «Pagano in due
   modi» non è mai stata usata da una mano.
 - ⚠️ **La sanatoria non è esercitata dalla suite né dal progetto di
-  prova**, e non lo sarà: lì non ci sono conti chiusi. L'unica prova vera
-  è l'applicazione in produzione, e il suo numero è in §7. **È il buco
-  che ha causato il fallimento, e resta aperto per la prossima
-  migrazione che tocchi i conti chiusi.**
+  prova**, e non lo sarà finché lì non ci sono conti chiusi. L'unica
+  prova vera è l'applicazione in produzione: **1 riga toccata**, §7.
+  Da questa consegna in poi ogni sanatoria dichiara quante righe ha
+  toccato, e **lo zero sul progetto di prova va detto qui invece che
+  taciuto** — è il silenzio ad aver ingannato, non la mancanza del dato.
 - **La riconciliazione col POS non è provata contro niente**: i due
   parametri della banca (giorni di accredito, commissione) sono ancora
   vuoti, per decisione di Alessio, e finché lo sono l'importo è dichiarato
