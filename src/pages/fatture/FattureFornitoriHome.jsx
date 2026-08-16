@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { annullaPagamentoFattura, createSupplierInvoice, deleteSupplierInvoice, listSupplierInvoices, markInvoicePaid } from "../../lib/api/supplierInvoices";
+import {
+  annullaPagamentoFattura,
+  createSupplierInvoice,
+  deleteSupplierInvoice,
+  listSupplierInvoices,
+  markInvoicePaid,
+  updateSupplierInvoice,
+} from "../../lib/api/supplierInvoices";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const emptyForm = {
   entity_id: "",
@@ -108,6 +116,22 @@ export default function FattureFornitoriHome() {
     setError("");
     try {
       await deleteSupplierInvoice(id);
+      setInvoices(await listSupplierInvoices());
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // ⚠️ Correggere invece di «cancella e rifai» (Blocco 5.2 del mandato di
+  // correzione). Su una fattura già pagata l'importo NON si tocca da qui:
+  // quel numero è uscito dalla cassa, e cambiarlo lo scollegherebbe in
+  // silenzio dal movimento che lo giustifica. Per quello si annulla prima
+  // il pagamento — è la stessa regola del Blocco 1, e Alessio l'ha
+  // confermata come precedente per i casi analoghi.
+  const correggi = async (id, patch) => {
+    setError("");
+    try {
+      await updateSupplierInvoice(id, patch);
       setInvoices(await listSupplierInvoices());
     } catch (e) {
       setError(e.message);
@@ -277,7 +301,29 @@ export default function FattureFornitoriHome() {
                       {inv.note && <p className="text-xs text-b58-charcoal-soft mt-1">{inv.note}</p>}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-b58-charcoal font-medium">{formatEUR(inv.amount)}</span>
+                      {/* Correggibili finché la fattura non è pagata: dopo,
+                          l'importo è uscito dalla cassa. */}
+                      <input
+                        defaultValue={inv.invoice_number ?? ""}
+                        onBlur={(e) =>
+                          (e.target.value.trim() || null) !== inv.invoice_number &&
+                          correggi(inv.id, { invoice_number: e.target.value.trim() || null })
+                        }
+                        placeholder="n. fattura"
+                        className="w-28 rounded border border-b58-charcoal/15 px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue={inv.amount}
+                        onBlur={(e) =>
+                          Number(e.target.value) !== Number(inv.amount) &&
+                          Number(e.target.value) > 0 &&
+                          correggi(inv.id, { amount: Number(e.target.value) })
+                        }
+                        className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right font-medium"
+                      />
                       <button
                         type="button"
                         onClick={() => {
@@ -288,13 +334,11 @@ export default function FattureFornitoriHome() {
                       >
                         {payingId === inv.id ? "Annulla" : "Segna pagata"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(inv.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        Rimuovi
-                      </button>
+                      <ConfermaDistruttiva
+                        etichetta="Rimuovi"
+                        cosaSparisce={`la fattura ${inv.invoice_number ? `#${inv.invoice_number} ` : ""}di ${inv.supplier.name} da ${formatEUR(inv.amount)}`}
+                        onConferma={() => handleDelete(inv.id)}
+                      />
                     </div>
                   </div>
                   {payingId === inv.id && (
@@ -341,13 +385,13 @@ export default function FattureFornitoriHome() {
                 </span>
                 <span className="flex items-center gap-3 shrink-0">
                   <span className="text-b58-charcoal">{formatEUR(inv.amount)}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleAnnullaPagamento(inv.id)}
-                    className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                  >
-                    Annulla il pagamento
-                  </button>
+                  {/* Toglie un'uscita vera dalla prima nota: conferma. */}
+                  <ConfermaDistruttiva
+                    etichetta="Annulla il pagamento"
+                    domanda={`Tolgo dalla prima nota l'uscita di ${formatEUR(inv.amount)} e rimetto la fattura fra quelle da pagare?`}
+                    etichettaConferma="Sì, annulla"
+                    onConferma={() => handleAnnullaPagamento(inv.id)}
+                  />
                 </span>
               </li>
             ))}

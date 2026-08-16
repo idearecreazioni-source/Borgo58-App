@@ -34,7 +34,13 @@ const STATUS_ACTIONS = {
   ],
   confermata: [{ to: "annullata", label: "Annulla", cls: "bg-b58-charcoal-soft" }],
   rifiutata: [{ to: "confermata", label: "Conferma comunque", cls: "bg-b58-olive" }],
-  annullata: [],
+  // ⚠️ Era una casella vuota: una prenotazione annullata per sbaglio non
+  // si poteva più riprendere da nessuna parte, e l'unico rimedio era
+  // riscriverla da capo perdendo quando era stata presa (Blocco 5.2 del
+  // mandato di correzione). Riconfermandola i tavoli vanno riassegnati
+  // dalla pianta: annullando erano stati liberati davvero, e qualcun
+  // altro può averli presi nel frattempo.
+  annullata: [{ to: "confermata", label: "Riprendi la prenotazione", cls: "bg-b58-olive" }],
 };
 
 export default function ReservationForm() {

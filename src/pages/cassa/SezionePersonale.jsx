@@ -15,6 +15,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 // La sezione personale del titolare (Blocco 7).
 //
@@ -428,12 +429,11 @@ export default function SezionePersonale() {
                       >
                         Mi sono rimborsato
                       </button>
-                      <button
-                        onClick={() => elimina(n.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        ✕
-                      </button>
+                      <ConfermaDistruttiva
+                        etichetta="✕"
+                        cosaSparisce={`la nota da ${formatEUR(n.importo)} del ${formatDate(n.pagata_il)}`}
+                        onConferma={() => elimina(n.id)}
+                      />
                     </span>
                   </li>
                 ))}
@@ -488,13 +488,14 @@ export default function SezionePersonale() {
                       <span className="text-b58-charcoal-soft">
                         {formatEUR(n.importo)} · rimborsata il {formatDate(n.pareggiata_il)}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => annullaRimborso(n.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        Annulla il rimborso
-                      </button>
+                      {/* Toglie un'uscita vera dal cassetto: chiede conferma
+                          come ogni gesto che sposta denaro. */}
+                      <ConfermaDistruttiva
+                        etichetta="Annulla il rimborso"
+                        domanda={`Tolgo dalla cassa l'uscita di ${formatEUR(n.importo)} e riapro la nota?`}
+                        etichettaConferma="Sì, annulla"
+                        onConferma={() => annullaRimborso(n.id)}
+                      />
                     </span>
                   </li>
                 ))}

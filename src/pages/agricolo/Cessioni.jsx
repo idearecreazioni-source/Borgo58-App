@@ -4,6 +4,7 @@ import { createCession, deleteCession, listCessions } from "../../lib/api/agrico
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
 import { UNITS, formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const today = oggiLocale;
 
@@ -194,7 +195,11 @@ export default function Cessioni() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-b58-charcoal font-medium">{formatEUR(c.total_amount)}</span>
-                <button onClick={() => rimuovi(c.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
+                <ConfermaDistruttiva
+                  etichetta="Rimuovi"
+                  cosaSparisce={`la cessione di ${c.product_description} da ${formatEUR(c.total_amount)}${c.ingredient ? ` — il costo di ${c.ingredient.name} torna al prezzo di prima` : ""}`}
+                  onConferma={() => rimuovi(c.id)}
+                />
               </div>
             </li>
           ))}

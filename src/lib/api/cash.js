@@ -191,13 +191,17 @@ export async function salvaImpostazioniTesoreria(entityId, campi) {
   return data;
 }
 
-export async function listScadenzePreviste(entityId) {
-  const { data, error } = await supabase
+// ⚠️ `includiChiuse` esiste perché una scadenza chiusa con «non serve
+// più» spariva dall'elenco e non c'era più nessun posto da cui riaprirla
+// (Blocco 5.2 del mandato di correzione, 16/08/2026).
+export async function listScadenzePreviste(entityId, { includiChiuse = false } = {}) {
+  let query = supabase
     .from("scadenze_previste")
     .select("*")
     .eq("entity_id", entityId)
-    .is("chiusa_il", null)
     .order("scade_il");
+  if (!includiChiuse) query = query.is("chiusa_il", null);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -228,6 +232,29 @@ export async function chiudiScadenzaPrevista(id) {
     .from("scadenze_previste")
     .update({ chiusa_il: oggiLocale() })
     .eq("id", id);
+  if (error) throw error;
+}
+
+// Le due vie di ritorno di una scadenza fissa: riaprirla se è stata
+// chiusa per sbaglio, e correggerla se l'importo o la data erano
+// sbagliati. Prima c'era solo «non serve più», che è una porta a senso
+// unico: l'unico rimedio era ricrearla, perdendo da quanto tempo esiste.
+export async function riapriScadenzaPrevista(id) {
+  const { error } = await supabase
+    .from("scadenze_previste")
+    .update({ chiusa_il: null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function aggiornaScadenzaPrevista(id, payload) {
+  const patch = {};
+  if (payload.descrizione !== undefined) patch.descrizione = payload.descrizione.trim();
+  if (payload.importo !== undefined) patch.importo = Number(payload.importo);
+  if (payload.scadeIl !== undefined) patch.scade_il = payload.scadeIl;
+  if (payload.ogniMesi !== undefined) patch.ogni_mesi = Number(payload.ogniMesi ?? 0);
+  if (payload.mezzo !== undefined) patch.mezzo = payload.mezzo;
+  const { error } = await supabase.from("scadenze_previste").update(patch).eq("id", id);
   if (error) throw error;
 }
 

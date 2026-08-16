@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
   deactivateSupplier,
+  riattivaSupplier,
   getSupplier,
   listSupplierDeliveries,
   listSupplierPriceHistory,
@@ -82,6 +83,24 @@ export default function FornitoreDetail() {
     }
   };
 
+  // ⚠️ La via di ritorno che mancava (Blocco 5.2 del mandato di
+  // correzione): l'elenco dei fornitori mostra solo gli attivi, quindi
+  // uno disattivato per sbaglio non aveva NESSUNA schermata da cui
+  // tornare. L'unico rimedio sarebbe stato crearne uno nuovo con lo
+  // stesso nome — e da lì in poi lo storico dei prezzi sarebbe rimasto
+  // spezzato fra due fornitori, cioè la sorveglianza dei rincari avrebbe
+  // smesso di funzionare su di lui senza dirlo. I tavoli quel ritorno ce
+  // l'hanno dal 14/08, i fornitori no.
+  const handleReactivate = async () => {
+    setError("");
+    try {
+      await riattivaSupplier(id);
+      setSupplier((s) => ({ ...s, active: true }));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   if (notFound) return <Navigate to="/magazzino/fornitori" replace />;
   if (loading || !supplier) {
     return <p className="text-sm text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
@@ -108,8 +127,17 @@ export default function FornitoreDetail() {
             className="font-display text-2xl text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none flex-1 min-w-[200px]"
           />
           {!supplier.active && (
-            <span className="text-xs text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2.5 py-1">
-              Disattivato
+            <span className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2.5 py-1">
+                Disattivato
+              </span>
+              <button
+                type="button"
+                onClick={handleReactivate}
+                className="text-xs text-b58-olive-dark hover:text-b58-charcoal"
+              >
+                Riaccendilo
+              </button>
             </span>
           )}
         </div>

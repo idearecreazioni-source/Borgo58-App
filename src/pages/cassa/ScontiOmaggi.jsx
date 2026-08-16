@@ -10,6 +10,7 @@ import {
   listPosDevices,
 } from "../../lib/api/cash";
 import { listCustomers } from "../../lib/api/customers";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { getEntities } from "../../lib/api/entities";
 import { DISCOUNT_GIFT_TYPES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 
@@ -416,12 +417,11 @@ export default function ScontiOmaggi() {
                       <span className="text-b58-charcoal-soft"> (incassato {formatEUR(it.collected_amount)})</span>
                     )}
                   </span>
-                  <button
-                    onClick={() => handleDelete(it.id)}
-                    className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                  >
-                    Rimuovi
-                  </button>
+                  <ConfermaDistruttiva
+                    etichetta="Rimuovi"
+                    cosaSparisce={`${it.type === "omaggio" ? "l'omaggio" : "lo sconto"} del ${formatDate(it.movement_date)} da ${formatEUR(it.full_amount)}`}
+                    onConferma={() => handleDelete(it.id)}
+                  />
                 </div>
               </li>
             ))}

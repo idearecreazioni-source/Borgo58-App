@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { createDeductibleExpense, deleteDeductibleExpense } from "../../lib/api/fiscal";
+import {
+  createDeductibleExpense,
+  deleteDeductibleExpense,
+  updateDeductibleExpense,
+} from "../../lib/api/fiscal";
 import { listRegoleDeducibilita, listSpeseValorizzate } from "../../lib/api/deducibilita";
 import { getEntities } from "../../lib/api/entities";
 import { FISCAL_PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import PrintButton from "../../components/PrintButton";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 // ⚠️ Questa schermata NON calcola più nessuna quota (15/08/2026). Le regole
 // e il calcolo vivono nel database: `listSpeseValorizzate` restituisce ogni
@@ -125,6 +130,20 @@ export default function DeduzioniFiscali() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ⚠️ Correggere invece di «cancella e rifai» (Blocco 5.2): una riga
+  // rifatta perde la sua data di registrazione, e quella cancellata resta
+  // comunque nel registro delle cancellazioni a raccontare una spesa che
+  // non è mai esistita.
+  const correggi = async (id, patch) => {
+    setError("");
+    try {
+      await updateDeductibleExpense(id, patch);
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -389,7 +408,18 @@ export default function DeduzioniFiscali() {
                   <tr key={e.id} className="border-b border-b58-charcoal/5 last:border-0 align-top">
                     <td className="py-2 text-b58-charcoal-soft whitespace-nowrap">{formatDate(e.expense_date)}</td>
                     <td className="py-2 text-b58-charcoal">
-                      {e.description}
+                      {/* Correggibile sul posto: rifarla le cambierebbe la
+                          data di registrazione, e la cancellata resterebbe
+                          nel registro a raccontare una spesa mai esistita. */}
+                      <input
+                        defaultValue={e.description}
+                        onBlur={(ev) =>
+                          ev.target.value.trim() &&
+                          ev.target.value.trim() !== e.description &&
+                          correggi(e.id, { description: ev.target.value.trim() })
+                        }
+                        className="w-full max-w-[16rem] rounded border border-transparent hover:border-b58-charcoal/15 focus:border-b58-terracotta px-1 py-0.5 bg-transparent print:border-0"
+                      />
                       <span className="text-xs text-b58-charcoal-soft"> · {e.regola ?? "non classificata"}</span>
                       {/* Il motivo arriva dal database insieme alla quota:
                           un numero senza la sua ragione è una scatola nera. */}
@@ -411,12 +441,11 @@ export default function DeduzioniFiscali() {
                       {e.stato === "da_classificare" ? "—" : formatEUR(e.quota)}
                     </td>
                     <td className="py-2 text-right print:hidden">
-                      <button
-                        onClick={() => handleDelete(e.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        Rimuovi
-                      </button>
+                      <ConfermaDistruttiva
+                        etichetta="Rimuovi"
+                        cosaSparisce={`la spesa «${e.description}» del ${formatDate(e.expense_date)} da ${formatEUR(e.amount)}`}
+                        onConferma={() => handleDelete(e.id)}
+                      />
                     </td>
                   </tr>
                 ))}

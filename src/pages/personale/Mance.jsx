@@ -23,6 +23,7 @@ import {
   meseLocale,
   oggiLocale,
 } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const today = oggiLocale;
 const thisMonth = meseLocale;
@@ -255,7 +256,11 @@ export default function Mance() {
                 {collected.slice(0, 20).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-b58-charcoal-soft">
                     <span>{formatDate(c.collected_date)} · {formatEUR(c.amount)}{c.note ? ` · ${c.note}` : ""}</span>
-                    <button onClick={() => handleDeleteCollected(c.id)} className="text-xs hover:text-b58-terracotta-dark">Rimuovi</button>
+                    <ConfermaDistruttiva
+                      etichetta="Rimuovi"
+                      cosaSparisce={`la raccolta del ${formatDate(c.collected_date)} da ${formatEUR(c.amount)}`}
+                      onConferma={() => handleDeleteCollected(c.id)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -367,7 +372,11 @@ export default function Mance() {
                 {distributions.map((d) => (
                   <li key={d.id} className="flex items-center justify-between gap-2 text-sm text-b58-charcoal-soft">
                     <span className="capitalize">{monthLabel(d.period_month)} · {formatEUR(d.total_amount)} · {d.lines?.length ?? 0} dipendenti</span>
-                    <button onClick={() => handleDeleteDistribution(d.id)} className="text-xs hover:text-b58-terracotta-dark">Rimuovi</button>
+                    <ConfermaDistruttiva
+                      etichetta="Rimuovi"
+                      cosaSparisce={`la distribuzione di ${monthLabel(d.period_month)} da ${formatEUR(d.total_amount)}, con le sue righe per dipendente`}
+                      onConferma={() => handleDeleteDistribution(d.id)}
+                    />
                   </li>
                 ))}
               </ul>

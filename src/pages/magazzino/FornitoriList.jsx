@@ -18,7 +18,9 @@ export default function FornitoriList() {
 
   const load = () =>
     getEntities()
-      .then((e) => listSuppliers(e.srls.id))
+      // ⚠️ Anche i disattivati: senza, un fornitore spento per sbaglio
+      // non ha nessuna schermata da cui tornare (Blocco 5.2).
+      .then((e) => listSuppliers(e.srls.id, { includiDisattivati: true }))
       .then(setSuppliers);
 
   useEffect(() => {
@@ -170,9 +172,16 @@ export default function FornitoriList() {
                 <tr
                   key={s.id}
                   onClick={() => navigate(`/magazzino/fornitori/${s.id}`)}
-                  className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark cursor-pointer"
+                  className={`border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark cursor-pointer ${s.active ? "" : "opacity-55"}`}
                 >
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">{s.name}</td>
+                  <td className="px-4 py-3 text-b58-charcoal font-medium">
+                    {s.name}
+                    {!s.active && (
+                      <span className="text-[11px] text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5 ml-2">
+                        disattivato
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">
                     {s.category ? labelFor(SUPPLIER_CATEGORIES, s.category) : "—"}
                   </td>

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getQuadraturaFiscale, listContiDaFiscalizzare } from "../../lib/api/cash";
-import { setDocumentoFiscale } from "../../lib/api/orders";
+import { listContiFiscalizzati, setDocumentoFiscale } from "../../lib/api/orders";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 // Incassato e scontrinato — chiesto da Alessio il 15/08/2026.
 //
@@ -25,6 +26,7 @@ export default function Scontrinato() {
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState("");
   const [numeroFattura, setNumeroFattura] = useState({});
+  const [fiscalizzati, setFiscalizzati] = useState([]);
 
   useEffect(() => {
     getEntities()
@@ -40,9 +42,11 @@ export default function Scontrinato() {
     return Promise.all([
       getQuadraturaFiscale(entityId, dal, al),
       listContiDaFiscalizzare(entityId, dal, al),
-    ]).then(([q, c]) => {
+      listContiFiscalizzati({ entityId, dal, al }),
+    ]).then(([q, c, f]) => {
       setQuadratura(q);
       setConti(c);
+      setFiscalizzati(f);
     });
   };
 
@@ -69,6 +73,20 @@ export default function Scontrinato() {
       setError(e.message);
     } finally {
       setInCorso("");
+    }
+  };
+
+  // ⚠️ `tipo: null` è un valore ammesso e vuol dire «non l'ho ancora
+  // detto», che è diverso da «niente è stato emesso»: il conto torna
+  // nell'elenco di quelli da sistemare invece di sparire dichiarando il
+  // falso.
+  const togliSegno = async (orderId) => {
+    setError("");
+    try {
+      await setDocumentoFiscale(orderId, { tipo: null, numero: null, emessoIl: null });
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -219,6 +237,43 @@ export default function Scontrinato() {
               </ul>
             )}
           </div>
+
+          {/* ⚠️ La via di ritorno che mancava (Blocco 5.2 del mandato di
+              correzione): una volta segnato, il conto spariva dall'elenco
+              e non c'era più nessun posto da cui dire che era stato un
+              errore. Un conto marcato scontrinato per sbaglio non è un
+              dettaglio — è proprio la differenza fra incassato e
+              fiscalizzato, cioè il numero che questa schermata esiste per
+              far tornare. */}
+          {fiscalizzati.length > 0 && (
+            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
+              <h2 className="font-display text-lg text-b58-charcoal mb-1">Già segnati</h2>
+              <p className="text-xs text-b58-charcoal-soft/80 mb-4">
+                Se uno di questi è stato segnato per sbaglio, togli il segno: il conto
+                torna fra quelli da sistemare.
+              </p>
+              <ul className="space-y-1.5">
+                {fiscalizzati.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-b58-charcoal-soft">
+                      {formatDate(c.closed_at)} · {c.table_label} ·{" "}
+                      {c.documento_fiscale === "fattura"
+                        ? `fattura${c.documento_numero ? ` n. ${c.documento_numero}` : ""}`
+                        : c.documento_fiscale === "fattura_da_emettere"
+                        ? "fattura da fare"
+                        : "scontrino"}
+                    </span>
+                    <ConfermaDistruttiva
+                      etichetta="Non era così"
+                      domanda="Tolgo il segno? Il conto torna fra quelli da sistemare."
+                      etichettaConferma="Sì, togli"
+                      onConferma={() => togliSegno(c.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
     </div>

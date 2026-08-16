@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  aggiornaScadenzaPrevista,
   chiudiScadenzaPrevista,
   createScadenzaPrevista,
   getImpostazioniTesoreria,
@@ -8,6 +9,7 @@ import {
   getPrevisioneCassa,
   listMovimentiAttesi,
   listScadenzePreviste,
+  riapriScadenzaPrevista,
   salvaImpostazioniTesoreria,
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
@@ -66,7 +68,7 @@ export default function Previsione() {
       getPrevisioneCassa(entityId, finoAl()),
       getPosInTransito(entityId),
       listMovimentiAttesi(entityId, finoAl()),
-      listScadenzePreviste(entityId),
+      listScadenzePreviste(entityId, { includiChiuse: true }),
       getImpostazioniTesoreria(entityId),
     ]).then(([p, t, a, s, imp]) => {
       setPrevisione(p);
@@ -121,6 +123,30 @@ export default function Previsione() {
   const chiudi = async (id) => {
     try {
       await chiudiScadenzaPrevista(id);
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // ⚠️ Le due vie di ritorno che mancavano (Blocco 5.2 del mandato di
+  // correzione). «Non serve più» era una porta a senso unico: la scadenza
+  // spariva dall'elenco e l'unico rimedio era ricrearla, perdendo da
+  // quanto tempo esisteva e ogni quanti mesi tornava.
+  const riapri = async (id) => {
+    setError("");
+    try {
+      await riapriScadenzaPrevista(id);
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const correggi = async (s, campo, valore) => {
+    setError("");
+    try {
+      await aggiornaScadenzaPrevista(s.id, { [campo]: valore });
       await ricarica();
     } catch (e) {
       setError(e.message);
@@ -270,7 +296,10 @@ export default function Previsione() {
             {scadenze.length > 0 && (
               <ul className="space-y-1.5 mb-4">
                 {scadenze.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between gap-3 text-sm">
+                  <li
+                    key={s.id}
+                    className={`flex items-center justify-between gap-3 text-sm ${s.chiusa_il ? "opacity-55" : ""}`}
+                  >
                     <span className="text-b58-charcoal">
                       {formatDate(s.scade_il)} · {s.descrizione}
                       {s.ogni_mesi > 0 && (
@@ -278,15 +307,44 @@ export default function Previsione() {
                           {" "}· ogni {s.ogni_mesi === 1 ? "mese" : `${s.ogni_mesi} mesi`}
                         </span>
                       )}
+                      {/* Una scadenza chiusa resta visibile e spenta invece
+                          di sparire: è l'unico posto da cui si può dire che
+                          la si è chiusa per sbaglio. */}
+                      {s.chiusa_il && (
+                        <span className="text-[11px] text-b58-charcoal-soft">
+                          {" "}· tolta il {formatDate(s.chiusa_il)}, non entra nella previsione
+                        </span>
+                      )}
                     </span>
                     <span className="flex items-center gap-3 shrink-0">
-                      <span className="text-b58-charcoal-soft">{formatEUR(s.importo)}</span>
-                      <button
-                        onClick={() => chiudi(s.id)}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                      >
-                        non serve più
-                      </button>
+                      {/* Correggere l'importo senza rifare la scadenza: si
+                          salva uscendo dal campo, come le altre note. */}
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue={s.importo}
+                        onBlur={(e) =>
+                          Number(e.target.value) !== Number(s.importo) &&
+                          correggi(s, "importo", e.target.value)
+                        }
+                        className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right"
+                      />
+                      {s.chiusa_il ? (
+                        <button
+                          onClick={() => riapri(s.id)}
+                          className="text-xs text-b58-olive-dark hover:text-b58-charcoal"
+                        >
+                          rimettila in elenco
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => chiudi(s.id)}
+                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                        >
+                          non serve più
+                        </button>
+                      )}
                     </span>
                   </li>
                 ))}

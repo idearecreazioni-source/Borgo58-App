@@ -348,3 +348,30 @@ export async function setDocumentoFiscale(orderId, { tipo, numero, emessoIl }) {
   const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
   if (error) throw error;
 }
+
+/**
+ * I conti già segnati come scontrinati o fatturati, per poterlo disfare
+ * (Blocco 5.2 del mandato di correzione, 16/08/2026).
+ *
+ * ⚠️ Prima non esisteva nessuna strada: una volta premuto «Scontrino
+ * fatto», il conto spariva dall'elenco di quelli da sistemare e non c'era
+ * più nessuna schermata da cui dire che era stato un errore. E un conto
+ * marcato scontrinato per sbaglio non è un dettaglio: è la differenza fra
+ * incassato e fiscalizzato, cioè proprio il numero che quella schermata
+ * esiste per far tornare.
+ */
+export async function listContiFiscalizzati({ entityId, dal, al } = {}) {
+  let query = supabase
+    .from("orders")
+    .select("id, table_label, closed_at, documento_fiscale, documento_numero, documento_emesso_il")
+    .not("documento_fiscale", "is", null)
+    .in("status", ["chiuso", "omaggiato"])
+    .order("closed_at", { ascending: false })
+    .limit(50);
+  if (entityId) query = query.eq("entity_id", entityId);
+  if (dal) query = query.gte("closed_at", `${dal}T00:00:00`);
+  if (al) query = query.lte("closed_at", `${al}T23:59:59`);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}

@@ -12,9 +12,14 @@ import {
   imposteEFiscalizzato,
   proiezioneFineAnno,
   scostamentoMensile,
+  cancellaConsuntivo,
+  cancellaPeriodoAnomalo,
+  creaPeriodoAnomalo,
+  listaPeriodiAnomali,
   statoConfrontoMensile,
 } from "../../lib/api/proiezione";
-import { formatEUR, oggiLocale } from "../../lib/constants";
+import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const MESI = [
   "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
@@ -39,6 +44,8 @@ export default function AndamentoMensile() {
   const [budget, setBudget] = useState(null);
   const [omaggi, setOmaggi] = useState([]);
   const [consuntivi, setConsuntivi] = useState([]);
+  const [periodi, setPeriodi] = useState([]);
+  const [nuovoPeriodo, setNuovoPeriodo] = useState({ dal: "", al: "", tipo: "chiusura", nota: "" });
   const [anno_, setAnno_] = useState([]);
   const [fineAnno, setFineAnno] = useState(null);
   const [dueImposte, setDueImposte] = useState(null);
@@ -67,14 +74,16 @@ export default function AndamentoMensile() {
 
   const carica = useCallback(async () => {
     if (!entityId) return;
-    const [m, st, cons] = await Promise.all([
+    const [m, st, cons, per] = await Promise.all([
       misureDelMese(entityId, anno, mese),
       statoConfrontoMensile(entityId, anno, mese),
       listaConsuntivi(entityId),
+      listaPeriodiAnomali(entityId),
     ]);
     setMisure(m);
     setStato(st);
     setConsuntivi(cons);
+    setPeriodi(per);
     setOmaggi(await omaggiPerCausale(entityId, anno, mese));
     if (scenarioId) {
       const [sc, bo, aa, fa] = await Promise.all([
@@ -112,6 +121,48 @@ export default function AndamentoMensile() {
 
   const inputClass =
     "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+
+  // ⚠️ DUE GESTI SEPARATI, non «cancella e rifai» in un colpo solo
+  // (decisione di Alessio, 16/08): prima si cancella, poi si rifotografa.
+  // Così non si sovrascrive per inerzia. La fotografia cancellata resta
+  // nel registro delle cancellazioni, ed è da lì che la prossima saprà di
+  // essere una seconda — nessuno deve ricordarsi di segnarlo.
+  const cancella = async (id) => {
+    setError("");
+    try {
+      await cancellaConsuntivo(id);
+      await carica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const aggiungiPeriodo = async () => {
+    setError("");
+    try {
+      await creaPeriodoAnomalo({
+        entity_id: entityId,
+        dal: nuovoPeriodo.dal,
+        al: nuovoPeriodo.al,
+        tipo: nuovoPeriodo.tipo,
+        nota: nuovoPeriodo.nota.trim() || null,
+      });
+      setNuovoPeriodo({ dal: "", al: "", tipo: "chiusura", nota: "" });
+      await carica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const togliPeriodo = async (id) => {
+    setError("");
+    try {
+      await cancellaPeriodoAnomalo(id);
+      await carica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   const chiudi = async () => {
     if (!confirm(`Chiudere ${MESI[mese - 1]} ${anno}? La fotografia non si potrà più rifare.`)) return;
@@ -178,6 +229,79 @@ export default function AndamentoMensile() {
           confronto con lo stesso mese di un altro anno non varrebbe.
         </p>
       )}
+
+      {/* ⚠️ Il filo scollegato (Blocco 5.2 del mandato di correzione):
+          l'app mostrava l'avviso «periodo anomalo» qui sopra, le funzioni
+          per crearli esistevano dal 14/08 — e NESSUNA schermata li
+          creava. Un avviso che non può mai comparire è peggio di nessun
+          avviso: dice che il gestionale se ne occupa, e non è vero. */}
+      <details className="mb-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-4 py-3">
+        <summary className="text-sm text-b58-charcoal cursor-pointer">
+          Periodi da non confrontare ({periodi.length})
+        </summary>
+        <p className="text-xs text-b58-charcoal-soft/80 mt-2 mb-3">
+          Apertura, chiusure, lavori: mesi che non si possono confrontare con lo stesso
+          mese di un altro anno. Vanno segnati <strong>quando succedono</strong> — fra un
+          anno nessuno si ricorderà perché quel mese è andato così.
+        </p>
+        {periodi.length > 0 && (
+          <ul className="space-y-1 mb-3 text-sm">
+            {periodi.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-3">
+                <span className="text-b58-charcoal-soft">
+                  {formatDate(p.dal)} → {formatDate(p.al)} · <strong>{p.tipo}</strong>
+                  {p.nota ? ` · ${p.nota}` : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => togliPeriodo(p.id)}
+                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                >
+                  togli
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-wrap gap-2 items-end">
+          <input
+            type="date"
+            value={nuovoPeriodo.dal}
+            onChange={(e) => setNuovoPeriodo((p) => ({ ...p, dal: e.target.value }))}
+            className={inputClass}
+          />
+          <input
+            type="date"
+            value={nuovoPeriodo.al}
+            onChange={(e) => setNuovoPeriodo((p) => ({ ...p, al: e.target.value }))}
+            className={inputClass}
+          />
+          <select
+            value={nuovoPeriodo.tipo}
+            onChange={(e) => setNuovoPeriodo((p) => ({ ...p, tipo: e.target.value }))}
+            className={inputClass}
+          >
+            <option value="apertura">apertura</option>
+            <option value="chiusura">chiusura</option>
+            <option value="lavori">lavori</option>
+            <option value="altro">altro</option>
+          </select>
+          <input
+            value={nuovoPeriodo.nota}
+            onChange={(e) => setNuovoPeriodo((p) => ({ ...p, nota: e.target.value }))}
+            placeholder="perché (opz.)"
+            className={inputClass}
+          />
+          <button
+            type="button"
+            disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
+            onClick={aggiungiPeriodo}
+            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+          >
+            + Segna
+          </button>
+        </div>
+      </details>
 
       {loading ? (
         <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
@@ -469,15 +593,39 @@ export default function AndamentoMensile() {
                     <th className="text-right font-medium py-1">Coperti</th>
                     <th className="text-right font-medium py-1">Incassato</th>
                     <th className="text-right font-medium py-1">Food cost</th>
+                    <th className="py-1"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {consuntivi.map((c) => (
                     <tr key={c.id} className="border-t border-b58-charcoal/5">
-                      <td className="py-1 text-b58-charcoal">{MESI[c.mese - 1]} {c.anno}</td>
+                      <td className="py-1 text-b58-charcoal">
+                        {MESI[c.mese - 1]} {c.anno}
+                        {/* ⚠️ Condizione di Alessio (16/08): un mese rifatto
+                            DEVE vedersi. Un numero che cambia in silenzio è
+                            la famiglia di difetti contro cui è nato questo
+                            lavoro. */}
+                        {c.chiusure_precedenti > 0 && (
+                          <span className="text-[11px] text-b58-gold-dark bg-b58-gold/15 rounded-full px-2 py-0.5 ml-2">
+                            rifatta
+                            {c.chiusure_precedenti > 1 ? ` ${c.chiusure_precedenti} volte` : ""}
+                            {c.prima_chiusura_il
+                              ? ` — la prima era del ${formatDate(c.prima_chiusura_il)}`
+                              : ""}
+                          </span>
+                        )}
+                      </td>
                       <td className="py-1 text-right tabular-nums"><Valore v={c.coperti} euro={false} /></td>
                       <td className="py-1 text-right tabular-nums"><Valore v={c.ricavi} /></td>
                       <td className="py-1 text-right tabular-nums"><Valore v={c.food_cost} /></td>
+                      <td className="py-1 text-right">
+                        <ConfermaDistruttiva
+                          etichetta="Rifalla"
+                          domanda={`Cancello la fotografia di ${MESI[c.mese - 1]} ${c.anno}? Dopo dovrai rifotografare il mese.`}
+                          etichettaConferma="Sì, cancella"
+                          onConferma={() => cancella(c.id)}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

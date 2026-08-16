@@ -59,6 +59,20 @@ export async function markInvoicePaid(id, { paymentMethod }) {
 // nella stessa transazione (funzione Postgres delete_supplier_invoice).
 // Prima il promemoria non veniva toccato affatto: restava pendente in
 // Agenda per sempre — difetto trovato dalla verifica di Cowork.
+// ⚠️ Correggere una fattura sbagliata invece di cancellarla e rifarla
+// (Blocco 5.2, 16/08/2026). Una fattura pagata non si può nemmeno
+// cancellare — c'è l'uscita in prima nota — quindi senza questa un numero
+// digitato male restava sbagliato per sempre.
+//
+// L'importo NON si tocca da qui quando la fattura è già pagata: quel
+// numero è uscito dalla cassa, e cambiarlo scollegherebbe in silenzio la
+// fattura dal movimento che la giustifica. Per quello si annulla prima il
+// pagamento.
+export async function updateSupplierInvoice(id, patch) {
+  const { error } = await supabase.from("supplier_invoices").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
 // ⚠️ Dal 16/08/2026 RESPINGE una fattura già pagata: cancellarla lasciava
 // in prima nota l'uscita senza più il documento che la giustifica. Il
 // messaggio del database porta importo e data e dice cosa fare prima.

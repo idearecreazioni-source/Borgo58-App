@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import {
   deleteCustomer,
   getCustomer,
@@ -210,13 +211,11 @@ export default function ClienteDetail() {
                 >
                   {showMerge ? "Annulla unione" : "Unisci con un'altra scheda"}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                >
-                  Elimina scheda
-                </button>
+                <ConfermaDistruttiva
+                  etichetta="Elimina scheda"
+                  cosaSparisce={`la scheda di ${customer.name || "questo cliente"}, con i suoi recapiti e le sue note`}
+                  onConferma={handleDelete}
+                />
               </>
             )}
           </div>

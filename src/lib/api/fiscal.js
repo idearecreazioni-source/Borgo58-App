@@ -68,6 +68,17 @@ export async function createDeductibleExpense(payload) {
   return data;
 }
 
+// ⚠️ Correggere invece di «cancella e rifai» (Blocco 5.2 del mandato di
+// correzione, 16/08/2026). Non è una comodità: rifare una spesa le cambia
+// la data di creazione e le fa perdere il posto nell'ordine in cui è
+// stata registrata — e una riga cancellata finisce comunque nel registro
+// delle cancellazioni, dove resta a raccontare una spesa che non è mai
+// esistita.
+export async function updateDeductibleExpense(id, patch) {
+  const { error } = await supabase.from("deductible_expenses").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteDeductibleExpense(id) {
   const { error } = await supabase.from("deductible_expenses").delete().eq("id", id);
   if (error) throw error;

@@ -1,12 +1,14 @@
 import { supabase } from "../supabase";
 
-export async function listSuppliers(entityId) {
-  const { data, error } = await supabase
-    .from("suppliers")
-    .select("*")
-    .eq("entity_id", entityId)
-    .eq("active", true)
-    .order("name");
+// ⚠️ `includiDisattivati` esiste perché senza di lui un fornitore
+// disattivato è un vicolo cieco: l'elenco mostra solo gli attivi, quindi
+// non c'è nessuna schermata da cui riaccenderlo (Blocco 5.2 del mandato
+// di correzione, 16/08/2026). I tavoli quel ritorno ce l'hanno, i
+// fornitori no.
+export async function listSuppliers(entityId, { includiDisattivati = false } = {}) {
+  let query = supabase.from("suppliers").select("*").eq("entity_id", entityId).order("name");
+  if (!includiDisattivati) query = query.eq("active", true);
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -84,6 +86,16 @@ export async function updateSupplier(id, input) {
 
 export async function deactivateSupplier(id) {
   const { error } = await supabase.from("suppliers").update({ active: false }).eq("id", id);
+  if (error) throw error;
+}
+
+// La via di ritorno di «disattiva». Un fornitore si smette di usare e si
+// riprende: senza questo, l'unico modo per riaverlo era crearne uno nuovo
+// con lo stesso nome — e da lì in poi lo storico dei prezzi sarebbe stato
+// spezzato in due fornitori diversi, cioè la sorveglianza dei rincari
+// avrebbe smesso di funzionare su di lui senza dirlo.
+export async function riattivaSupplier(id) {
+  const { error } = await supabase.from("suppliers").update({ active: true }).eq("id", id);
   if (error) throw error;
 }
 

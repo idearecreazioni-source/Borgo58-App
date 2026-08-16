@@ -17,6 +17,7 @@ import {
   oggiLocale,
 } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const today = oggiLocale;
 
@@ -463,12 +464,11 @@ export default function PrimaNota() {
                         {m.direction === "entrata" ? "+" : "−"}{formatEUR(m.amount)}
                       </td>
                       <td className="py-2 text-right">
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                        >
-                          Rimuovi
-                        </button>
+                        <ConfermaDistruttiva
+                          etichetta="Rimuovi"
+                          cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
+                          onConferma={() => handleDelete(m.id)}
+                        />
                       </td>
                     </tr>
                   ))}

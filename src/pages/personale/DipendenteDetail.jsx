@@ -24,6 +24,7 @@ import {
   labelFor,
 } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const monthLabel = (iso) =>
   new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" }).format(new Date(iso));
@@ -340,9 +341,12 @@ export default function DipendenteDetail() {
                   {d.expiry_date && <span className="text-b58-charcoal-soft"> · scade {formatDate(d.expiry_date)}</span>}
                   {d.document_reference && <div className="text-xs text-b58-charcoal-soft">Rif.: {d.document_reference}</div>}
                 </div>
-                <button onClick={() => removeDocument(d)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0 print:hidden">
-                  Rimuovi
-                </button>
+                <ConfermaDistruttiva
+                  etichetta="Rimuovi"
+                  cosaSparisce={`il documento «${labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}» e il suo promemoria in Agenda`}
+                  className="shrink-0 print:hidden"
+                  onConferma={() => removeDocument(d)}
+                />
               </li>
             ))}
           </ul>
@@ -379,9 +383,12 @@ export default function DipendenteDetail() {
                   {l.days ? ` · ${l.days} gg` : ""}
                   {l.note ? ` · ${l.note}` : ""}
                 </span>
-                <button onClick={() => removeLeave(l.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0 print:hidden">
-                  Rimuovi
-                </button>
+                <ConfermaDistruttiva
+                  etichetta="Rimuovi"
+                  cosaSparisce={`${labelFor(LEAVE_TYPES, l.leave_type)} dal ${formatDate(l.start_date)} al ${formatDate(l.end_date)}`}
+                  className="shrink-0 print:hidden"
+                  onConferma={() => removeLeave(l.id)}
+                />
               </li>
             ))}
           </ul>
@@ -424,7 +431,11 @@ export default function DipendenteDetail() {
                   <td className="py-2 text-right text-b58-charcoal-soft">{p.gross_amount != null ? formatEUR(p.gross_amount) : "—"}</td>
                   <td className="py-2 text-right text-b58-charcoal">{p.net_amount != null ? formatEUR(p.net_amount) : "—"}</td>
                   <td className="py-2 text-right print:hidden">
-                    <button onClick={() => removePayslip(p.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
+                    <ConfermaDistruttiva
+                      etichetta="Rimuovi"
+                      cosaSparisce={`la busta paga di ${monthLabel(p.period_month)}`}
+                      onConferma={() => removePayslip(p.id)}
+                    />
                   </td>
                 </tr>
               ))}
