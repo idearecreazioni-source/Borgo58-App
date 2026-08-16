@@ -78,7 +78,12 @@ export async function createCession(
   });
 }
 
+// ⚠️ Cancellare una cessione STORNA anche il costo che aveva aggiornato:
+// via la riga dello storico prezzi, e il costo dell'ingrediente torna
+// all'ultima riga rimasta. Prima era un delete diretto dal browser, e
+// l'ingrediente restava valorizzato al prezzo di trasferimento — un costo
+// aggiornato senza più il documento che lo giustifica. Tre tabelle in una
+// transazione, quindi corridoio (Contratto B4).
 export async function deleteCession(id) {
-  const { error } = await supabase.from("intercompany_cessions").delete().eq("id", id);
-  if (error) throw error;
+  return eseguiOperazione("delete_intercompany_cession", { p_cession_id: id });
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  annullaPareggioAnticipazione,
   createAnticipazione,
   createTagAnticipazione,
   deleteAnticipazione,
@@ -132,8 +133,22 @@ export default function SezionePersonale() {
   };
 
   const elimina = async (id) => {
+    setError("");
     try {
       await deleteAnticipazione(id);
+      await ricarica();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // La via di ritorno del pareggio. Il rifiuto di cancellare una nota già
+  // rimborsata è giusto — in cassa c'è l'uscita — ma senza questo gesto
+  // sarebbe un muro.
+  const annullaRimborso = async (id) => {
+    setError("");
+    try {
+      await annullaPareggioAnticipazione(id);
       await ricarica();
     } catch (e) {
       setError(e.message);
@@ -469,12 +484,26 @@ export default function SezionePersonale() {
                     <span className="text-b58-charcoal-soft">
                       {formatDate(n.pagata_il)} · {n.tag?.etichetta}
                     </span>
-                    <span className="text-b58-charcoal-soft">
-                      {formatEUR(n.importo)} · rimborsata il {formatDate(n.pareggiata_il)}
+                    <span className="flex items-center gap-3 shrink-0">
+                      <span className="text-b58-charcoal-soft">
+                        {formatEUR(n.importo)} · rimborsata il {formatDate(n.pareggiata_il)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => annullaRimborso(n.id)}
+                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      >
+                        Annulla il rimborso
+                      </button>
                     </span>
                   </li>
                 ))}
               </ul>
+              <p className="text-xs text-b58-charcoal-soft/70 mt-3">
+                Una nota già rimborsata non si può togliere: in cassa c'è l'uscita
+                che la registra. Annullando il rimborso l'uscita sparisce e la nota
+                torna aperta.
+              </p>
             </div>
           )}
         </>

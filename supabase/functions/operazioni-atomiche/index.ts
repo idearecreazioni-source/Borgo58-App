@@ -116,6 +116,16 @@ const OPERAZIONI = new Set([
   // debito gia' pagato che risulta ancora aperto, o soldi usciti dal
   // cassetto senza niente che dica perche'.
   "pareggia_anticipazione",
+  // Blocco 1 del mandato di correzione (16/08/2026): un documento che ha
+  // generato un effetto altrove o è respinto, o storna anche l'effetto
+  // nella stessa transazione. `delete_anticipazione` tocca una tabella
+  // sola e passa comunque di qui: il mandato chiede che il controllo
+  // stia nella funzione e la funzione si chiami dal corridoio, perché è
+  // la forma che rende l'elenco delle cancellazioni controllabile.
+  "delete_anticipazione",
+  "annulla_pareggio_anticipazione",
+  "annulla_pagamento_fattura",
+  "delete_intercompany_cession",
 ]);
 
 const CORS = {

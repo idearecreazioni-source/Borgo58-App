@@ -46,6 +46,21 @@ export default function Cessioni() {
     [form.quantity, form.unit_price]
   );
 
+  // ⚠️ Togliere una cessione STORNA anche il costo che aveva aggiornato:
+  // sparisce la riga dello storico prezzi e l'ingrediente torna
+  // all'ultimo prezzo rimasto. Prima l'errore non era nemmeno mostrato —
+  // la cancellazione era un `.then(reload)` senza via d'uscita: se
+  // falliva, la riga restava lì e nessuno sapeva perché.
+  const rimuovi = async (id) => {
+    setError("");
+    try {
+      await deleteCession(id);
+      await reload();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const handleAdd = async () => {
     if (!entities || !form.product_description.trim() || !form.quantity || !form.unit_price) return;
     setSaving(true);
@@ -179,7 +194,7 @@ export default function Cessioni() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-b58-charcoal font-medium">{formatEUR(c.total_amount)}</span>
-                <button onClick={() => deleteCession(c.id).then(reload)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
+                <button onClick={() => rimuovi(c.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
               </div>
             </li>
           ))}

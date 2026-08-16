@@ -59,6 +59,16 @@ export async function markInvoicePaid(id, { paymentMethod }) {
 // nella stessa transazione (funzione Postgres delete_supplier_invoice).
 // Prima il promemoria non veniva toccato affatto: restava pendente in
 // Agenda per sempre — difetto trovato dalla verifica di Cowork.
+// ⚠️ Dal 16/08/2026 RESPINGE una fattura già pagata: cancellarla lasciava
+// in prima nota l'uscita senza più il documento che la giustifica. Il
+// messaggio del database porta importo e data e dice cosa fare prima.
 export async function deleteSupplierInvoice(id) {
   return eseguiOperazione("delete_supplier_invoice", { p_invoice_id: id });
+}
+
+// La via di ritorno: riporta la fattura a «da pagare», riapre il
+// promemoria e toglie l'uscita dalla prima nota, nella stessa
+// transazione. Senza, il rifiuto qui sopra sarebbe un vicolo cieco.
+export async function annullaPagamentoFattura(id) {
+  return eseguiOperazione("annulla_pagamento_fattura", { p_invoice_id: id });
 }

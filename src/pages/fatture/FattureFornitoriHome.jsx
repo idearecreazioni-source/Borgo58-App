@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createSupplierInvoice, deleteSupplierInvoice, listSupplierInvoices, markInvoicePaid } from "../../lib/api/supplierInvoices";
+import { annullaPagamentoFattura, createSupplierInvoice, deleteSupplierInvoice, listSupplierInvoices, markInvoicePaid } from "../../lib/api/supplierInvoices";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor } from "../../lib/constants";
@@ -105,8 +105,23 @@ export default function FattureFornitoriHome() {
   };
 
   const handleDelete = async (id) => {
+    setError("");
     try {
       await deleteSupplierInvoice(id);
+      setInvoices(await listSupplierInvoices());
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // La via di ritorno di «Segna pagata». Senza, una fattura segnata
+  // pagata per sbaglio resterebbe pagata per sempre: l'uscita in prima
+  // nota la rende non cancellabile, ed è giusto — ma un rifiuto senza
+  // gesto di uscita è un vicolo cieco.
+  const handleAnnullaPagamento = async (id) => {
+    setError("");
+    try {
+      await annullaPagamentoFattura(id);
       setInvoices(await listSupplierInvoices());
     } catch (e) {
       setError(e.message);
@@ -324,10 +339,24 @@ export default function FattureFornitoriHome() {
                   {inv.paid_at && ` — ${formatDate(inv.paid_at)}`}
                   {inv.payment_method && ` · ${labelFor(PAYMENT_METHODS, inv.payment_method)}`}
                 </span>
-                <span className="text-b58-charcoal">{formatEUR(inv.amount)}</span>
+                <span className="flex items-center gap-3 shrink-0">
+                  <span className="text-b58-charcoal">{formatEUR(inv.amount)}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleAnnullaPagamento(inv.id)}
+                    className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  >
+                    Annulla il pagamento
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
+          <p className="text-xs text-b58-charcoal-soft/70 mt-3">
+            Una fattura pagata non si può rimuovere: in prima nota c'è l'uscita che
+            la registra. Annullando il pagamento l'uscita sparisce, la fattura torna
+            fra quelle da pagare e il promemoria si riapre.
+          </p>
         </div>
       )}
     </div>

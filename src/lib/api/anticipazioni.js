@@ -71,9 +71,19 @@ export async function createAnticipazione(payload) {
   return data;
 }
 
+// ⚠️ Una nota già rimborsata NON si cancella: il rifiuto arriva dal
+// database e dice cosa fare prima. Cancellarla lasciava in cassa
+// l'uscita del rimborso senza più il perché — il difetto n. 10 del
+// mandato di correzione, terzo esemplare.
 export async function deleteAnticipazione(id) {
-  const { error } = await supabase.from("anticipazioni_socio").delete().eq("id", id);
-  if (error) throw error;
+  return eseguiOperazione("delete_anticipazione", { p_anticipazione_id: id });
+}
+
+// La via di ritorno del rifiuto qui sopra: riapre la nota e toglie
+// l'uscita dalla prima nota, nella stessa transazione. Senza, il rifiuto
+// sarebbe un vicolo cieco.
+export async function annullaPareggioAnticipazione(id) {
+  return eseguiOperazione("annulla_pareggio_anticipazione", { p_anticipazione_id: id });
 }
 
 // ⚠️ Il pareggio tocca due tabelle — chiude la nota E fa uscire il
