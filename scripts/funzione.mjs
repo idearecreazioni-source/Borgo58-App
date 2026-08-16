@@ -31,6 +31,7 @@ import {
   interroga,
   leggiConfigurazione,
   migrazioniSenzaRiepilogo,
+  obbligatorio,
   REF_PRODUZIONE,
   REF_PROVA,
   titolo,
@@ -159,26 +160,33 @@ if (!diverso.ok) {
 // Sulla PROVA non si applica: quel progetto e' usa-e-getta, e il suo scopo
 // e' esercitare il codice prima che diventi una consegna.
 if (!suProva) {
-  // Si riusa la configurazione gia' letta sopra: rileggerla creerebbe una
-  // seconda verita' sullo stesso file.
-  const urlProduzione = config.DB_URL_PRODUZIONE;
-  if (urlProduzione) {
-    const applicate = new Set(
-      interroga(urlProduzione, "select version from applied_migrations;")
-        .split(/\r?\n/)
-        .map((r) => r.trim())
-        .filter(Boolean)
+  // ⚠️ La stringa e' OBBLIGATORIA, non facoltativa (rilievo della
+  // validazione del 16/08). Nella prima stesura il controllo stava dentro
+  // un `if (urlProduzione)`: senza quella variabile nel .env.db la rete
+  // non scattava **e non lo diceva**. Una rete che si disattiva quando
+  // manca una variabile e' una rete che non c'e' — e si sarebbe scoperto
+  // solo dopo, guardando cos'e' finito in produzione senza riepilogo.
+  // In `migra.mjs` l'url era gia' obbligatorio: qui si chiude l'asimmetria.
+  const urlProduzione = obbligatorio(
+    config,
+    "DB_URL_PRODUZIONE",
+    "Serve per sapere quali migrazioni sono in produzione: senza, non si puo' garantire che siano tutte documentate."
+  );
+  const applicate = new Set(
+    interroga(urlProduzione, "select version from applied_migrations;")
+      .split(/\r?\n/)
+      .map((r) => r.trim())
+      .filter(Boolean)
+  );
+  const scoperte = migrazioniSenzaRiepilogo(applicate);
+  if (scoperte.length > 0) {
+    fermati(
+      "FERMO: ci sono migrazioni in produzione che nessun riepilogo nomina.",
+      ...scoperte.map((v) => `  · ${v}`),
+      "",
+      "Finche' l'arretrato e' aperto non si tocca la produzione, nemmeno",
+      "installando una funzione. Scrivi il riepilogo in docs/consegne/."
     );
-    const scoperte = migrazioniSenzaRiepilogo(applicate);
-    if (scoperte.length > 0) {
-      fermati(
-        "FERMO: ci sono migrazioni in produzione che nessun riepilogo nomina.",
-        ...scoperte.map((v) => `  · ${v}`),
-        "",
-        "Finche' l'arretrato e' aperto non si tocca la produzione, nemmeno",
-        "installando una funzione. Scrivi il riepilogo in docs/consegne/."
-      );
-    }
   }
 }
 

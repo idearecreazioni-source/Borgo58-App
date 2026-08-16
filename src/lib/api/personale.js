@@ -151,8 +151,37 @@ export async function listTipsCollected(entityId) {
   return data;
 }
 
-export async function createTipCollected(payload) {
-  const { data, error } = await supabase.from("tips_collected").insert(payload).select().single();
+/**
+ * Registra una mancia raccolta.
+ *
+ * ⚠️ I campi si costruiscono QUI, non nella schermata (16/08/2026). Prima
+ * questa funzione girava al database un oggetto già pronto, e la schermata
+ * ne aveva dimenticato uno: il menu «contanti / carta» c'era, si vedeva e
+ * si conservava, ma `mezzo` non arrivava mai — quindi ogni mancia su carta
+ * finiva registrata come contante e nel contante atteso del cassetto senza
+ * esserci. Con l'elenco dei campi in un posto solo, quello che manca si
+ * vede leggendo, e una prova può controllarlo.
+ */
+export function payloadMancia({ entityId, amount, collectedDate, mezzo, note }) {
+  return {
+    entity_id: entityId,
+    amount: Number(amount),
+    collected_date: collectedDate,
+    // Dove sono finiti quei soldi: in contanti restano nel cassetto, su
+    // carta arrivano in banca insieme agli incassi. Il predefinito del
+    // database è «contanti», quindi ometterlo non dà errore — sbaglia in
+    // silenzio, che è il modo peggiore.
+    mezzo: mezzo ?? "contanti",
+    note: note?.trim() || null,
+  };
+}
+
+export async function createTipCollected(campi) {
+  const { data, error } = await supabase
+    .from("tips_collected")
+    .insert(payloadMancia(campi))
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }

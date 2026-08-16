@@ -141,6 +141,23 @@ export default function CassaHome() {
                   {Number(tesoreria.conti_contanti) > 0 && (
                     <> + {formatEUR(tesoreria.incassi_contanti_sala)} di sala ({tesoreria.conti_contanti} conti)</>
                   )}
+                  {/* ⚠️ Questa voce mancava, e senza di essa la
+                      scomposizione smetteva di sommare al numero grande
+                      dalla prima mancia in contanti (validazione del
+                      16/08). L'avvertenza dal database lo diceva a parole,
+                      ma un numero e la sua spiegazione che non tornano
+                      sono la famiglia di difetti che questo progetto
+                      combatte apposta. */}
+                  {Number(tesoreria.mance_in_cassa) > 0 && (
+                    <> + {formatEUR(tesoreria.mance_in_cassa)} di mance</>
+                  )}
+                </div>
+              )}
+              {/* La parte che non è sua, come DATO e non solo come frase:
+                  è il numero per cui `di_cui_non_tuo` è stato creato. */}
+              {tesoreria && Number(tesoreria.di_cui_non_tuo) > 0 && (
+                <div className="text-[11px] text-b58-gold-dark mt-1 font-medium">
+                  di cui {formatEUR(tesoreria.di_cui_non_tuo)} non sono tuoi: sono mance del personale
                 </div>
               )}
               {/* Il conto corrente sta accanto e NON si somma: sono due

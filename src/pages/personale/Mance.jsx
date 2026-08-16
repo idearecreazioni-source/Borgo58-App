@@ -98,11 +98,17 @@ export default function Mance() {
     setBusy(true);
     setError("");
     try {
+      // 🔴 Qui mancava `mezzo` (validazione del 16/08): il menu c'era e si
+      // vedeva, ma il valore non arrivava al database, che applicava il
+      // predefinito «contanti». Ogni mancia su carta entrava nel contante
+      // atteso del cassetto senza esserci fisicamente. Ora l'elenco dei
+      // campi vive in `payloadMancia`, dove una prova lo può controllare.
       await createTipCollected({
-        entity_id: entityId,
-        amount: Number(collectForm.amount),
-        collected_date: collectForm.collected_date,
-        note: collectForm.note || null,
+        entityId,
+        amount: collectForm.amount,
+        collectedDate: collectForm.collected_date,
+        mezzo: collectForm.mezzo,
+        note: collectForm.note,
       });
       setCollectForm({ amount: "", collected_date: today(), mezzo: collectForm.mezzo, note: "" });
       await reload();
