@@ -142,15 +142,45 @@ quella parte non aspetta nessuno.)*
 
 ---
 
-## 6. Dopo l'applicazione in produzione
+## 6. Dopo l'applicazione in produzione — compilata
 
-*(da compilare nello stesso giorno, prima del secondo push)*
+`20260816000003` applicata il 16/08/2026. Letto col connettore in sola
+lettura.
 
-- migrazioni in produzione: **da compilare**
-- avvisi partiti durante l'applicazione: **da compilare**
-- residui delle verifiche: **da compilare**
-- elenco anonimi · `security definer` senza portiere: **da compilare**
-- i dati di collaudo del magazzino non toccati dalla verifica: **da compilare**
+| Cosa | Stato |
+|---|---|
+| migrazioni in produzione | **110** |
+| avvisi partiti durante l'applicazione | **zero** |
+| mance, distribuzioni, righe di distribuzione | **0 · 0 · 0** |
+| scarichi con motivo `vitto_personale` | **0** |
+| ingredienti di prova rimasti | **zero** |
+| lotto di prova rimasto | **zero** |
+| elenco anonimi · `security definer` senza portiere | **12** · **13**, invariati |
+| vocabolario degli scarichi in produzione | `consumo, spreco, rettifica, vitto_personale` |
+
+### 🔴 E un difetto, trovato leggendo la giacenza invece del «residui: zero»
+
+⚠️ **La verifica di questa migrazione ha tolto 2 unità di detergente dalla
+merce vera di Alessio**, e la pulizia non le ha rimesse.
+
+La verifica sceglieva **un ingrediente qualunque già esistente**, gli
+aggiungeva un lotto di prova e ne scaricava 2 per dimostrare che lo
+scarico a mano registra finalmente il costo. Ma **FEFO non ha preso dal
+lotto di prova**: ordina per scadenza e, a parità, per data di
+ricevimento — e il lotto vero del «Detergente sgrassante» (12/08, senza
+scadenza) viene prima di quello di prova (oggi, senza scadenza). La
+pulizia ha poi cancellato il lotto di prova, ancora intero, lasciando la
+giacenza vera **corta di 2 senza nessuno scarico che lo spieghi**.
+
+⚠️ **È la lezione del 14/08 che si ripresenta**, quella dei due tavoli
+rimasti in mezzo ai divani: *una verifica che modifica dati esistenti non
+si ripulisce cancellando, si ripulisce rimettendo.* Allora il controllo
+finale contava le righe lasciate in giro e non i valori cambiati; qui ha
+fatto lo stesso errore su una colonna invece che su una riga.
+
+**Corretto da `20260816000004`**, con il suo riepilogo. La regola che ne
+esce è più stretta: **una verifica che prova uno scarico non riusa un
+ingrediente vero** — se ne crea uno proprio, sempre.
 
 ---
 
