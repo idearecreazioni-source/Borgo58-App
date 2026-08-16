@@ -68,21 +68,46 @@ export default function BevandeVini() {
 
   const visibili = items.filter((i) => showInactive || i.active);
 
+  // ⚠️ «Rossi» e «rossi» sono la stessa categoria, e prima diventavano due
+  // sezioni della carta con lo stesso titolo. Il campo resta libero per
+  // scelta (§ sopra: aggiungere «Vermouth» non deve richiedere di toccare
+  // il programma), quindi non si chiude il vocabolario — si raggruppa
+  // ignorando maiuscole e accenti, tenendo la prima scrittura incontrata.
+  const chiaveCategoria = (c) =>
+    String(c ?? "").trim().toLocaleLowerCase("it").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
   // Raggruppamento per sezione e categoria, nell'ordine in cui si legge
   // una carta: prima i vini, poi il resto.
   const sezioni = ["vini", "bevande"].map((section) => {
     const diSezione = visibili.filter((i) => i.section === section);
-    const categorie = [...new Set(diSezione.map((i) => i.category))];
+    const perChiave = new Map();
+    for (const i of diSezione) {
+      const k = chiaveCategoria(i.category);
+      if (!perChiave.has(k)) perChiave.set(k, { nome: i.category, voci: [] });
+      perChiave.get(k).voci.push(i);
+    }
     return {
       section,
       label: section === "vini" ? "Carta dei vini" : "Bevande",
-      categorie: categorie.map((c) => ({
-        nome: c,
-        voci: diSezione.filter((i) => i.category === c),
-      })),
+      categorie: [...perChiave.values()],
       totale: diSezione.length,
     };
   });
+
+  // I suggerimenti comprendono le categorie già in uso: così la seconda
+  // bottiglia si aggancia a quella di prima invece di reinventarne la
+  // scrittura. È il freno che vale più del raggruppamento — quello ripara
+  // dopo, questo evita.
+  const categorieUsate = [
+    ...new Map(
+      items
+        .filter((i) => i.section === form.section)
+        .map((i) => [chiaveCategoria(i.category), i.category])
+    ).values(),
+  ];
+  const suggerimentiCategoria = [
+    ...new Set([...categorieUsate, ...CATEGORIE_SUGGERITE[form.section]]),
+  ];
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -132,7 +157,7 @@ export default function BevandeVini() {
             className={inputClass}
           />
           <datalist id="categorie-carta">
-            {CATEGORIE_SUGGERITE[form.section].map((c) => (
+            {suggerimentiCategoria.map((c) => (
               <option key={c} value={c} />
             ))}
           </datalist>

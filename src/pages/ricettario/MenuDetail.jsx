@@ -222,14 +222,31 @@ export default function MenuDetail() {
     }
   };
 
+  // ⚠️ Un prezzo lasciato vuoto NON è zero. Prima `Number("") || 0`
+  // scriveva 0,00 in silenzio: un piatto a zero non è un piatto gratis, è
+  // un piatto che nessuno ha ancora prezzato — e mandava il food cost al
+  // 100%, il margine sotto zero e la media del menu a valanga, tutti
+  // numeri credibili e falsi. È la stessa forma dello scarto a zero.
+  const prezzoScritto = (v) => {
+    const s = String(v ?? "").trim();
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  };
+
   const handleAddItem = async (category) => {
     const form = addForms[category];
     if (!form?.recipe_id) return;
+    const prezzo = prezzoScritto(form.selling_price);
+    if (prezzo === null) {
+      setError("Scrivi il prezzo del piatto: lasciandolo vuoto finirebbe in carta a 0,00 €.");
+      return;
+    }
     try {
       await addMenuItem(id, {
         recipe_id: form.recipe_id,
         category,
-        selling_price: Number(form.selling_price) || 0,
+        selling_price: prezzo,
         position: itemsByCategory[category].length,
       });
       setAddForms((f) => ({ ...f, [category]: { recipe_id: "", selling_price: "" } }));
@@ -240,8 +257,17 @@ export default function MenuDetail() {
   };
 
   const handlePriceChange = async (itemId, price) => {
+    const prezzo = prezzoScritto(price);
+    if (prezzo === null) {
+      // Non si scrive niente e si ricarica: il campo torna al prezzo vero,
+      // così si vede che la cancellatura non ha attaccato.
+      setError("Il prezzo non può restare vuoto: il piatto andrebbe in carta a 0,00 €.");
+      await load();
+      return;
+    }
+    setError("");
     try {
-      await updateMenuItemPrice(itemId, Number(price) || 0);
+      await updateMenuItemPrice(itemId, prezzo);
       await load();
     } catch (e) {
       setError(e.message);

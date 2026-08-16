@@ -120,13 +120,25 @@ export default function Mance() {
     }
   };
 
+  // ⚠️ I centesimi che avanzano non restano nel monte. Dividendo 100 € fra
+  // tre si arrotondava ognuno per difetto (33,33) e il centesimo che
+  // resta si sedimentava lì: un debito verso il personale che non si può
+  // mai chiudere, e che cresce di poco a ogni distribuzione finché il
+  // monte non torna a zero mai più. Si danno ai primi, un centesimo per
+  // uno — che è quello che si fa davvero quando si dividono i soldi in
+  // mano. È una PROPOSTA: resta modificabile riga per riga prima di
+  // registrare.
   const distributeEqually = () => {
     const active = employees;
     if (active.length === 0) return;
-    const pool = Number(balance?.balance) || 0;
-    const each = Math.floor((pool / active.length) * 100) / 100;
+    const centesimi = Math.round((Number(balance?.balance) || 0) * 100);
+    if (centesimi <= 0) return;
+    const base = Math.floor(centesimi / active.length);
+    const avanzo = centesimi - base * active.length;
     const next = {};
-    active.forEach((e) => { next[e.id] = String(each); });
+    active.forEach((e, i) => {
+      next[e.id] = ((base + (i < avanzo ? 1 : 0)) / 100).toFixed(2);
+    });
     setAllocations(next);
   };
 
@@ -134,6 +146,10 @@ export default function Mance() {
     () => Object.values(allocations).reduce((s, v) => s + (Number(v) || 0), 0),
     [allocations]
   );
+
+  // Un centesimo di tolleranza: il totale si somma da valori digitati, e
+  // 33,33 + 33,33 + 33,34 non deve sembrare uno sforamento.
+  const oltreIlMonte = Boolean(balance) && allocationTotal - Number(balance.balance) > 0.005;
 
   const handleRegisterDistribution = async () => {
     const lines = employees
@@ -347,13 +363,20 @@ export default function Mance() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-b58-charcoal-soft">
                     Totale da distribuire: <span className="text-b58-charcoal font-medium">{formatEUR(allocationTotal)}</span>
-                    {balance && allocationTotal > Number(balance.balance) && (
-                      <span className="text-b58-terracotta-dark"> · supera il monte disponibile</span>
+                    {oltreIlMonte && (
+                      <span className="text-b58-terracotta-dark">
+                        {" "}· supera il monte disponibile di {formatEUR(allocationTotal - Number(balance.balance))}
+                      </span>
                     )}
                   </span>
+                  {/* ⚠️ Avvisare e lasciar premere non è avvisare. Il
+                      database rifiuta comunque (dal 16/08 non si distribuisce
+                      più di quello che c'è in quella forma), ma un pulsante
+                      che si preme per farsi dire di no insegna che l'avviso
+                      rosso si può ignorare. */}
                   <button
                     type="button"
-                    disabled={busy || allocationTotal <= 0}
+                    disabled={busy || allocationTotal <= 0 || oltreIlMonte}
                     onClick={handleRegisterDistribution}
                     className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
                   >

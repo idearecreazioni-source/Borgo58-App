@@ -193,6 +193,24 @@ export default function RicettaDetail() {
   };
 
   const saveHeader = async () => {
+    // ⚠️ Due campi che svuotati diventavano zero, e lo zero qui non è una
+    // risposta: si divide per quei numeri.
+    // - le porzioni: `Number("")` fa 0, il database rifiutava con un
+    //   messaggio suo («violates check constraint…»), che è un errore
+    //   grezzo in faccia a chi ha solo cancellato un campo;
+    // - la resa di una preparazione: senza, il costo della preparazione
+    //   diventa un buco e SPARISCE da ogni ricetta che la usa — senza
+    //   nessun errore, perché non è la ricetta che si sta modificando.
+    const porzioni = Number(recipe.portions_yield);
+    if (!isPreparazione && (!Number.isFinite(porzioni) || porzioni < 1)) {
+      setError("Quante porzioni vengono da questa ricetta? Serve almeno 1: il costo per porzione si ottiene dividendo per questo numero.");
+      return;
+    }
+    const resa = Number(recipe.yield_quantity);
+    if (isPreparazione && (!Number.isFinite(resa) || resa <= 0)) {
+      setError("Quanto ne viene da una dose? Senza la resa, il costo di questa preparazione sparisce da tutte le ricette che la usano.");
+      return;
+    }
     setSavingHeader(true);
     setError("");
     try {
@@ -201,8 +219,8 @@ export default function RicettaDetail() {
         category: recipe.category,
         subcategory: recipe.subcategory,
         seasonality: recipe.seasonality,
-        portions_yield: isPreparazione ? 1 : Number(recipe.portions_yield),
-        yield_quantity: isPreparazione ? Number(recipe.yield_quantity) || null : null,
+        portions_yield: isPreparazione ? 1 : porzioni,
+        yield_quantity: isPreparazione ? resa : null,
         yield_unit: isPreparazione ? recipe.yield_unit : null,
         pronta_per_carta: recipe.pronta_per_carta,
         in_carta: recipe.in_carta,

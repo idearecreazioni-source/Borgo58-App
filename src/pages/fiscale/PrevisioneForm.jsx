@@ -41,6 +41,9 @@ const num = (v) => (v === "" || v == null ? 0 : Number(v));
 // posto solo, e non in mezzo ai calcoli.
 const daPercento = (v) => num(v) / 100;
 const aPercento = (v) => (v == null ? "" : String(Math.round(Number(v) * 10000) / 100));
+// `String(null)` dà la parola «null», che in un campo numerico diventa NaN
+// alla prossima scrittura: un valore mai impostato deve tornare vuoto.
+const aTesto = (v) => (v == null ? "" : String(v));
 
 export default function PrevisioneForm() {
   const { id } = useParams();
@@ -81,27 +84,27 @@ export default function PrevisioneForm() {
     // dell'agricola l'avrebbe spostata all'altra società senza dirlo.
     setEntitaScenario(s.entity_id);
     setPar({
-      scontrinoFood: String(s.scontrino_food), scontrinoBeverage: String(s.scontrino_beverage),
+      scontrinoFood: aTesto(s.scontrino_food), scontrinoBeverage: aTesto(s.scontrino_beverage),
       foodCostPercento: aPercento(s.food_cost_percento),
       beverageCostPercento: aPercento(s.beverage_cost_percento),
-      lavanderiaCoperto: String(s.lavanderia_coperto),
+      lavanderiaCoperto: aTesto(s.lavanderia_coperto),
       pagamentiElettroniciPercento: aPercento(s.pagamenti_elettronici_percento),
       commissionePosPercento: aPercento(s.commissione_pos_percento),
-      oreGiorno: String(s.ore_giorno), pressionePersonale: aPercento(s.pressione_personale),
-      ammortamentiAnnui: String(s.ammortamenti_annui),
-      finanziamentoImporto: String(s.finanziamento_importo),
+      oreGiorno: aTesto(s.ore_giorno), pressionePersonale: aPercento(s.pressione_personale),
+      ammortamentiAnnui: aTesto(s.ammortamenti_annui),
+      finanziamentoImporto: aTesto(s.finanziamento_importo),
       finanziamentoTasso: aPercento(s.finanziamento_tasso),
-      finanziamentoAnni: String(s.finanziamento_anni),
+      finanziamentoAnni: aTesto(s.finanziamento_anni),
     });
     const g = await ingressiScenario(id);
-    setPersonale(g.personale.map((p) => ({ ruolo: p.ruolo, nettoOrario: String(p.netto_orario), nettoGiorno: String(p.netto_giorno) })));
-    setExtra(g.extra.map((e) => ({ tipo: e.tipo, giornateAnno: String(e.giornate_anno), tariffaGiorno: String(e.tariffa_giorno), pressione: aPercento(e.pressione), daEventi: e.da_eventi })));
-    setFissi(g.costiFissi.map((f) => ({ voce: f.voce, euroMese: String(f.euro_mese) })));
-    setAccessorie(g.accessorie.map((a) => ({ linea: a.linea, quantita: String(a.quantita), prezzoMedio: String(a.prezzo_medio), costoPercento: aPercento(a.costo_percento), base: a.base })));
+    setPersonale(g.personale.map((p) => ({ ruolo: p.ruolo, nettoOrario: aTesto(p.netto_orario), nettoGiorno: aTesto(p.netto_giorno) })));
+    setExtra(g.extra.map((e) => ({ tipo: e.tipo, giornateAnno: aTesto(e.giornate_anno), tariffaGiorno: aTesto(e.tariffa_giorno), pressione: aPercento(e.pressione), daEventi: e.da_eventi })));
+    setFissi(g.costiFissi.map((f) => ({ voce: f.voce, euroMese: aTesto(f.euro_mese) })));
+    setAccessorie(g.accessorie.map((a) => ({ linea: a.linea, quantita: aTesto(a.quantita), prezzoMedio: aTesto(a.prezzo_medio), costoPercento: aPercento(a.costo_percento), base: a.base })));
     setMesi(g.mesi.map((m) => ({
-      mese: m.mese, serviziSettimana: String(m.servizi_settimana), giorniLavorativi: String(m.giorni_lavorativi),
-      giorniPeak: String(m.giorni_peak), copertiPeak: String(m.coperti_peak),
-      copertiFeriali: String(m.coperti_feriali), eventiPremium: String(m.eventi_premium),
+      mese: m.mese, serviziSettimana: aTesto(m.servizi_settimana), giorniLavorativi: aTesto(m.giorni_lavorativi),
+      giorniPeak: aTesto(m.giorni_peak), copertiPeak: aTesto(m.coperti_peak),
+      copertiFeriali: aTesto(m.coperti_feriali), eventiPremium: aTesto(m.eventi_premium),
     })));
   }, [id, modifica]);
 
@@ -132,7 +135,25 @@ export default function PrevisioneForm() {
     </div>
   );
 
+  // ⚠️ Un campo lasciato vuoto diventava zero senza dirlo, e su questi due
+  // lo zero non è una risposta: uno scontrino medio a zero fa una
+  // previsione con ricavi zero, un food cost a zero fa un margine perfetto.
+  // Sono numeri che sembrano calcolati e non lo sono.
+  //
+  // Solo questi due, e non tutti: su «lavanderia a coperto» o «eventi
+  // premium» lo zero è la risposta vera di chi non ha quella voce, e
+  // pretenderla riempita farebbe scrivere numeri finti per passare oltre.
+  const OBBLIGATORI = [
+    ["scontrinoFood", "lo scontrino medio food"],
+    ["foodCostPercento", "il food cost %"],
+  ];
+
   const salva = async () => {
+    const mancanti = OBBLIGATORI.filter(([k]) => String(par[k] ?? "").trim() === "").map(([, e]) => e);
+    if (mancanti.length) {
+      setError(`Manca ${mancanti.join(" e ")}: lasciato vuoto varrebbe zero, e una previsione con quello zero dentro non è una previsione.`);
+      return;
+    }
     setSalvando(true);
     setError("");
     try {

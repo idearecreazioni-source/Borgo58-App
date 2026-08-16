@@ -76,6 +76,19 @@ export default function AgricoloHome() {
   };
 
   const changeStatus = async (crop, status) => {
+    // ⚠️ «Raccolto» non è uno stato che si mette: è un fatto che ha due
+    // numeri (quando, e quanto ne è uscito). Dal menu si poteva scegliere
+    // «raccolto» senza dire quanto, e la coltura restava marcata raccolta
+    // con la quantità vuota — cioè un raccolto che il gestionale non sa
+    // misurare, che è il modo di sparire in silenzio.
+    // Il menu quindi non lo scrive: apre il gesto che quei numeri li
+    // chiede. Se la quantità c'è già (si sta correggendo qualcos'altro),
+    // passa come prima.
+    if (status === "raccolto" && !crop.harvested_quantity) {
+      setHarvestFor(crop.id);
+      setHarvest({ actual_harvest_date: "", harvested_quantity: "", unit: crop.unit ?? "kg" });
+      return;
+    }
     try {
       await updateCrop(crop.id, { status });
       await reload();
