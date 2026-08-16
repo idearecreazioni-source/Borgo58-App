@@ -99,8 +99,27 @@ export default function MenuDetail() {
   const summary = useMemo(() => {
     const present = SECTIONS.map((s) => categoryAverages[s.category]).filter(Boolean);
     if (present.length === 0) return null;
-    const weightedFoodCost = present.reduce((s, c) => s + c.avgPct, 0) / present.length;
-    const weightedMargin = present.reduce((s, c) => s + c.avgMargin, 0) / present.length;
+
+    // ⚠️ MEDIA SU TUTTI I PIATTI, non media delle medie per categoria
+    // (16/08/2026, coda del mandato di correzione, decisione di Alessio).
+    // Prima ogni categoria pesava uguale: i dolci sono quasi sempre pochi
+    // e cari, e con due dolci e dodici primi spostavano il numero come se
+    // fossero metà del menu.
+    //
+    // ⚠️ E RESTA IL SECONDO DEI TRE NUMERI POSSIBILI. Il terzo — il food
+    // cost pesato su QUANTO SI VENDE — è l'unico che serve davvero a
+    // decidere i prezzi, e si potrà calcolare solo con gli scontrini
+    // veri. Finché non c'è, la schermata lo dichiara accanto al numero:
+    // senza quella riga, fra un anno questo verrebbe letto come se fosse
+    // il terzo. È lavoro da chiedere, non da dedurre.
+    const conPct = items.filter((i) => i.economics?.food_cost_pct != null);
+    const conMargine = items.filter((i) => i.economics?.gross_margin != null);
+    const weightedFoodCost = conPct.length
+      ? conPct.reduce((s, i) => s + Number(i.economics.food_cost_pct), 0) / conPct.length
+      : null;
+    const weightedMargin = conMargine.length
+      ? conMargine.reduce((s, i) => s + Number(i.economics.gross_margin), 0) / conMargine.length
+      : null;
 
     const priced = items.filter((i) => i.economics?.gross_margin != null);
     const best = priced.length
@@ -297,12 +316,14 @@ export default function MenuDetail() {
             <div>
               <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Food cost medio</p>
               <p className={`text-xl font-medium ${LEVEL_CLASS[foodCostLevel(summary.weightedFoodCost)]}`}>
-                {summary.weightedFoodCost.toFixed(1)}%
+                {summary.weightedFoodCost != null ? `${summary.weightedFoodCost.toFixed(1)}%` : "—"}
               </p>
             </div>
             <div>
               <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Margine medio/coperto</p>
-              <p className="text-xl font-medium text-b58-charcoal">{formatEUR(summary.weightedMargin)}</p>
+              <p className="text-xl font-medium text-b58-charcoal">
+                {summary.weightedMargin != null ? formatEUR(summary.weightedMargin) : "—"}
+              </p>
             </div>
             <div>
               <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Miglior margine</p>
@@ -317,6 +338,15 @@ export default function MenuDetail() {
               </p>
             </div>
           </div>
+          {/* ⚠️ Il numero e il suo limite viaggiano insieme. Senza questa
+              riga, fra un anno «food cost medio» verrebbe letto come se
+              fosse pesato sulle vendite — che è l'unico dei tre numeri
+              che serve a decidere i prezzi, e oggi non si può calcolare. */}
+          <p className="text-[11px] text-b58-charcoal-soft/80 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4">
+            Media su tutti i piatti del menu, <strong>non pesata su quanto si vende</strong>:
+            un piatto che esce due volte a sera conta come uno che esce venti. Il food cost
+            pesato sulle vendite si potrà calcolare quando ci saranno gli scontrini veri.
+          </p>
           {summary.overThreshold.length > 0 && (
             <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
               ⚠ {summary.overThreshold.length} piatt{summary.overThreshold.length === 1 ? "o" : "i"} sopra il 25% di food cost:{" "}
