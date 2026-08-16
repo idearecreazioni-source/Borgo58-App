@@ -35,7 +35,30 @@ const CARTELLA = path.join("docs", "collaudo", "documenti");
 // ---------------------------------------------------------------------
 const A4 = { larghezza: 595, altezza: 842 };
 
-const proteggi = (t) => String(t).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+// ⚠️ Trovato APRENDO un PDF, non generandolo: i trattini lunghi «—»
+// sparivano. Il file si scrive in latin-1, che tiene solo i primi 256
+// caratteri: un «—» (U+2014) diventa il byte 0x14, cioè un carattere di
+// controllo, e il lettore non disegna niente. Nessun errore da nessuna
+// parte — la riga usciva semplicemente con un buco in mezzo.
+//
+// Due cose insieme: si sostituiscono i caratteri tipografici con quelli
+// che il formato regge, e **tutto ciò che resta fuori fa fallire la
+// generazione**. Un carattere che sparisce in silenzio da una fattura di
+// prova si scambia per un difetto del lettore di documenti, e si perde
+// mezza giornata a cercarlo dalla parte sbagliata.
+const SOSTITUZIONI = { "—": "-", "–": "-", "’": "'", "‘": "'", "“": '"', "”": '"', "…": "...", " ": " " };
+
+const proteggi = (testo) => {
+  const t = String(testo).replace(/[—–’‘“”… ]/g, (c) => SOSTITUZIONI[c]);
+  const fuori = [...t].filter((c) => c.codePointAt(0) > 0xff);
+  if (fuori.length) {
+    throw new Error(
+      `Carattere che il PDF non sa scrivere: ${JSON.stringify(fuori.join(""))} in «${t}». ` +
+        "Va aggiunto a SOSTITUZIONI, altrimenti sparisce dal foglio senza dirlo."
+    );
+  }
+  return t.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+};
 
 function paginaPdf(righe) {
   const flusso = righe
