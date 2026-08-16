@@ -5,3 +5,7 @@
 # progetto, e in silenzio.
 .githooks/** text eol=lf
 *.sh text eol=lf
+# I PDF sono binari: senza questa riga Git ci normalizza i fine riga e
+# gli scostamenti interni (xref) smettono di puntare dove devono — cioè
+# il file resta li' ma nessun lettore lo apre piu'.
+*.pdf binary

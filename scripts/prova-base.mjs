@@ -39,6 +39,8 @@ import {
 
 const MARCA = "BASE-";
 const rifai = process.argv.includes("--rifai");
+// Lo scenario del collaudo: molto piu' dello stato di partenza, stessa marca.
+const scenario = process.argv.includes("--scenario");
 
 // ---------------------------------------------------------------------
 // 1. L'ambiente: si legge da .env.test, che è già il file che dice qual è
@@ -94,8 +96,8 @@ const { addRecipeIngredient } = await carica("/src/lib/api/recipeIngredients.js"
 const { createMenu, addMenuItem, setActiveMenu } = await carica("/src/lib/api/menus.js");
 const orders = await carica("/src/lib/api/orders.js");
 const { createCashMovement, createPosDevice, listAllCausali } = await carica("/src/lib/api/cash.js");
-const { createSupplierInvoice } = await carica("/src/lib/api/supplierInvoices.js");
-const { createReservation } = await carica("/src/lib/api/reservations.js");
+const { createSupplierInvoice, markInvoicePaid } = await carica("/src/lib/api/supplierInvoices.js");
+const { assegnaPrenotazione, createReservation } = await carica("/src/lib/api/reservations.js");
 const { upsertFiscalSettings } = await carica("/src/lib/api/fiscal.js");
 const { addBelowThresholdItems } = await carica("/src/lib/api/shoppingList.js");
 const { addGoodsReceiving } = await carica("/src/lib/api/haccp.js");
@@ -464,7 +466,223 @@ await createReservation({
 segna("prenotazione confermata");
 
 // ---------------------------------------------------------------------
-// 6. Riepilogo — e ogni riga dice quante ne ha scritte.
+// 6. LO SCENARIO DEL COLLAUDO (`--scenario`)
+//
+// Lo stato di partenza qui sopra serve a non far girare a vuoto le
+// verifiche: bastano poche righe. Lo SCENARIO è un'altra cosa e ha un
+// altro scopo — dare a una persona abbastanza roba da **recitarci sopra
+// due giornate**: una sera di servizio e un ciclo acquisti.
+//
+// ⚠️ Cosa NON c'è, di proposito: nessun conto aperto, nessuna comanda in
+// corso, nessuna riga da stornare già pronta. Le situazioni storte — il
+// tavolo che riordina a metà servizio, la riga da stornare, il conto
+// diviso, l'omaggio — **le fa venire fuori chi usa l'app**, e un elenco
+// di casi deciso a tavolino troverebbe solo i difetti che chi l'ha
+// scritto aveva già in mente. Qui si apparecchia la sala, non si recita
+// la parte.
+//
+// Stessa marca `BASE-` e stessa pulizia: una seconda marca vorrebbe dire
+// una seconda pulizia, e due pulizie divergono.
+// ---------------------------------------------------------------------
+if (scenario) {
+  titolo("Aggiungo lo scenario del collaudo");
+
+  // I due fornitori hanno gli stessi nomi che compaiono sui documenti
+  // finti (`npm run collaudo:documenti`): quando la fattura arriva dalla
+  // posta, il nome che si legge sul PDF esiste già in anagrafica.
+  const fornitori = {};
+  for (const [nome, canale, telefono] of [
+    ["Ortofrutta PROVA S.r.l.", "whatsapp", "+390000000010"],
+    ["Ittica di Collaudo S.n.c.", "email", "+390000000011"],
+  ]) {
+    const f = await createSupplier({
+      entityId: ente,
+      name: `${MARCA}${nome}`,
+      contactPhone: telefono,
+      contactEmail: `ordini@${nome.split(" ")[0].toLowerCase()}.invalid`,
+      canaleOrdine: canale,
+    });
+    fornitori[nome] = f.id;
+  }
+  segna("fornitori con recapiti e canale d'ordine", 2);
+
+  // ⚠️ Le soglie sono sopra la giacenza su DUE ingredienti e sotto sugli
+  // altri: serve che la lista della spesa abbia qualcosa dentro e
+  // qualcosa fuori. Una lista dove tutto è sotto soglia non fa vedere la
+  // differenza fra ciò che serve e ciò che no.
+  const DISPENSA = [
+    ["Pomodoro ciliegino", "verdura", "kg", 4.8, 18, 8, "Ortofrutta PROVA S.r.l."],
+    ["Melanzana lunga", "verdura", "kg", 1.95, 10, 4, "Ortofrutta PROVA S.r.l."],
+    ["Basilico", "spezie_aromi", "mazzo", 1.15, 6, 10, "Ortofrutta PROVA S.r.l."],
+    ["Gambero rosso", "crostacei_molluschi", "kg", 24.0, 4, 6, "Ittica di Collaudo S.n.c."],
+    ["Alici fresche", "pesce", "kg", 4.2, 6, 3, "Ittica di Collaudo S.n.c."],
+    ["Ricotta di pecora", "latticini", "kg", 7.4, 5, 2, null],
+    ["Farina di grano duro", "farine_cereali", "kg", 1.35, 25, 10, null],
+    ["Olio extravergine", "olio_condimenti", "l", 9.8, 12, 5, null],
+  ];
+  const dispensa = {};
+  for (const [nome, categoria, unita, prezzo, giacenza, soglia, fornitore] of DISPENSA) {
+    const creato = await createIngredient({
+      entity_id: ente,
+      name: `${MARCA}${nome}`,
+      category: categoria,
+      unit: unita,
+      current_price: prezzo,
+      supplier_id: fornitore ? fornitori[fornitore] : null,
+      stock_minimum_threshold: soglia,
+      waste_percentage_default: categoria === "pesce" || categoria === "crostacei_molluschi" ? 35 : 8,
+    });
+    dispensa[nome] = creato?.id ?? creato;
+    await registerStockDelivery({
+      ingredientId: dispensa[nome],
+      quantity: giacenza,
+      supplierId: fornitore ? fornitori[fornitore] : null,
+      expiryDate: new Date(Date.now() + (categoria === "pesce" ? 3 : 25) * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      unitCost: prezzo,
+      note: `${MARCA}carico iniziale`,
+    });
+  }
+  segna("ingredienti con giacenza, prezzo e scorta minima", DISPENSA.length);
+
+  // Il menu: otto piatti, quattro categorie. Le quantità non sono tonde
+  // apposta — un food cost che viene 30,00% esatto non fa vedere niente.
+  const CARTA = [
+    ["Alici marinate al limone", "antipasto", 9, [["Alici fresche", 0.12], ["Olio extravergine", 0.02]]],
+    ["Caponata di melanzane", "antipasto", 8, [["Melanzana lunga", 0.22], ["Olio extravergine", 0.03]]],
+    ["Busiate al pomodoro e basilico", "primo", 12, [["Farina di grano duro", 0.11], ["Pomodoro ciliegino", 0.18], ["Basilico", 0.15]]],
+    ["Ravioli di ricotta", "primo", 14, [["Farina di grano duro", 0.09], ["Ricotta di pecora", 0.13]]],
+    ["Crudo di gambero rosso", "antipasto", 18, [["Gambero rosso", 0.09], ["Olio extravergine", 0.015]]],
+    ["Alici fritte", "secondo", 15, [["Alici fresche", 0.24], ["Farina di grano duro", 0.04]]],
+    ["Melanzane alla parmigiana", "secondo", 13, [["Melanzana lunga", 0.35], ["Pomodoro ciliegino", 0.12]]],
+    ["Cassatina di ricotta", "dolce", 7, [["Ricotta di pecora", 0.09]]],
+  ];
+  const menuCollaudo = await createMenu({ name: `${MARCA}Carta di collaudo`, structure: "4-4-4-2" });
+  for (const [nome, categoria, prezzo, componenti] of CARTA) {
+    const r = await createRecipe({
+      name: `${MARCA}${nome}`,
+      category: categoria,
+      recipe_type: "piatto_finito",
+      portions_yield: 4,
+    });
+    for (const [ingrediente, quantita] of componenti) {
+      await addRecipeIngredient(r.id, {
+        ingredient_id: dispensa[ingrediente],
+        quantity: quantita,
+        unit: DISPENSA.find(([n]) => n === ingrediente)[2],
+      });
+    }
+    await updateRecipe(r.id, { pronta_per_carta: true });
+    await addMenuItem(menuCollaudo.id, { recipe_id: r.id, category: categoria, selling_price: prezzo });
+  }
+  // ⚠️ Il menu si accende DOPO aver messo dentro i piatti: su un menu già
+  // attivo il database rifiuta i piatti non ancora «pronti per la carta»,
+  // e qui si diventa pronti riga per riga. È l'ordine che userebbe anche
+  // una persona — si compone la carta, poi la si mette in servizio.
+  await setActiveMenu(menuCollaudo.id);
+  segna("piatti in carta, su un menu attivo", CARTA.length);
+
+  // La sala di stasera: metà prima del primo giro, metà dopo — così sulla
+  // pianta si vedono i due colori e i tavoli che si possono girare.
+  const { data: sagome } = await supabase
+    .from("dining_tables")
+    .select("id, label")
+    .eq("tipo", "tavolo")
+    .eq("active", true)
+    .order("label");
+  const SERATA = [
+    ["Famiglia Grasso", "19:30", 4],
+    ["Nicosia", "19:45", 2],
+    ["Tavolo Amato", "20:00", 6],
+    ["Di Blasi", "21:00", 2],
+    ["Compleanno Lo Giudice", "21:15", 8],
+    ["Interlandi", "21:30", 3],
+  ];
+  let quante = 0;
+  for (const [i, [nome, ora, persone]] of SERATA.entries()) {
+    const p = await createReservation({
+      customer_name: `${MARCA}${nome}`,
+      customer_phone: `+3900000001${String(i).padStart(2, "0")}`,
+      party_size: persone,
+      reservation_date: oggi,
+      reservation_time: ora,
+      status: "confermata",
+      type: "prenotazione",
+      source: "interno",
+      notes: i === 4 ? "Compleanno: portare la torta a fine cena. Un ospite allergico ai crostacei." : null,
+    });
+    // Solo alcune hanno il tavolo: le altre le assegna lui dalla pianta,
+    // che è uno dei gesti da collaudare.
+    if (sagome?.[i] && i < 3) {
+      await assegnaPrenotazione(p.id, [sagome[i].id]).catch(() => {});
+    }
+    quante += 1;
+  }
+  segna("prenotazioni per stasera (tre già a tavolo, tre da assegnare)", quante);
+
+  // Un po' di storia, perché una schermata vuota non si collauda: due
+  // conti già chiusi e pagati, e due fatture — una pagata, una da pagare.
+  let conti = 0;
+  for (const [tavoloIndice, piatti, mezzo] of [
+    [0, [0, 2], "contante"],
+    [1, [3, 5, 7], "carta"],
+  ]) {
+    const t = sagome?.[tavoloIndice];
+    if (!t) break;
+    const c = await orders.apriConto([t.id], { note: `${MARCA}serata precedente` });
+    await orders.setOrderCoperti(c, 2 + tavoloIndice);
+    const righe = [];
+    for (const indice of piatti) {
+      const { data: ric } = await supabase
+        .from("recipes")
+        .select("id")
+        .eq("name", `${MARCA}${CARTA[indice][0]}`)
+        .single();
+      const r = await orders.addDraftItem(c, {
+        recipeId: ric.id,
+        destination: "cucina",
+        quantity: 1,
+        unitPrice: CARTA[indice][2],
+      });
+      righe.push(r.id);
+    }
+    await orders.sendDraftItems(c, righe);
+    await orders.closeOrderPaid(c, mezzo, impostazioni?.coperto_price ?? null);
+    conti += 1;
+  }
+  segna("conti già chiusi, per non guardare schermate vuote", conti);
+
+  const invPagata = await createSupplierInvoice({
+    entityId: ente,
+    supplierId: fornitori["Ortofrutta PROVA S.r.l."],
+    invoiceNumber: "BASE-098",
+    invoiceDate: new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10),
+    dueDate: new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10),
+    amount: 128.44,
+    note: `${MARCA}fattura del mese scorso`,
+  });
+  await markInvoicePaid(invPagata, { paymentMethod: "bonifico" });
+  await createSupplierInvoice({
+    entityId: ente,
+    supplierId: fornitori["Ittica di Collaudo S.n.c."],
+    invoiceNumber: "BASE-058",
+    invoiceDate: oggi,
+    dueDate: new Date(Date.now() + 25 * 86400000).toISOString().slice(0, 10),
+    amount: 195.69,
+    note: `${MARCA}fattura in scadenza`,
+  });
+  segna("fatture fornitore: una pagata, una da pagare", 2);
+
+  await addBelowThresholdItems();
+  const { count: inLista } = await supabase
+    .from("shopping_list_items")
+    .select("id", { count: "exact", head: true });
+  segna("righe in lista della spesa, nate dalle soglie", inLista ?? 0);
+}
+
+// ---------------------------------------------------------------------
+// 7. Riepilogo — e ogni riga dice quante ne ha scritte.
 // ---------------------------------------------------------------------
 titolo("Fatto");
 for (const r of creato) console.log(`   ${r}`);

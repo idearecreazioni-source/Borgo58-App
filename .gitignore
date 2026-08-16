@@ -34,3 +34,8 @@ ricostruzione_*.log
 *.njsproj
 *.sln
 *.sw?
+
+# I documenti finti del collaudo si RIGENERANO identici con
+# `npm run collaudo:documenti`: nel repository sta il generatore, che e'
+# la fonte, non sei PDF binari da tenere allineati a mano.
+docs/collaudo/documenti/

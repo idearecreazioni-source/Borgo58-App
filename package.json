@@ -20,7 +20,9 @@
     "funzione": "node scripts/funzione.mjs",
     "dev:prova": "node scripts/dev-prova.mjs",
     "prova:stato": "node scripts/prova-stato.mjs",
-    "prova:base": "node scripts/prova-base.mjs"
+    "prova:base": "node scripts/prova-base.mjs",
+    "collaudo:documenti": "node scripts/documenti-finti.mjs",
+    "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
