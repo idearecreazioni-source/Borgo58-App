@@ -14,10 +14,8 @@ const lineLabel = (item) => item.recipe?.name || item.free_text_name;
 //    non fiscale interna: si stampa sulla termica non fiscale del bar.
 //    Finche' quella stampante non c'e', si stampa dal browser.
 export default function PrecontoModal({ order, copertoPrice, onClose }) {
-  const { items, itemsTotal, coperti, copertoUnitPrice, copertoTotal, total } = orderTotals(
-    order,
-    copertoPrice
-  );
+  const { items, itemsTotal, nonInviate, coperti, copertoUnitPrice, copertoTotal, total } =
+    orderTotals(order, copertoPrice);
 
   // Righe raggruppate per piatto: piu' leggibile quando il tavolo ha fatto
   // piu' giri di comanda, ed e' come lo legge il cliente.
@@ -90,6 +88,18 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               Il conto resta aperto.
             </div>
           </div>
+
+          {/* ⚠️ `print:hidden`: l'avviso è per chi porta il preconto, non
+              per il cliente — sul foglio ci va il conto, non i nostri
+              lavori in corso. Stessa scelta degli allergeni da verificare,
+              che stanno sullo schermo e non sul menu. */}
+          {nonInviate.length > 0 && (
+            <p className="print:hidden text-[11px] text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
+              {nonInviate.length === 1
+                ? "1 riga non è mai stata mandata in cucina e non è su questo preconto."
+                : `${nonInviate.length} righe non sono mai state mandate in cucina e non sono su questo preconto.`}
+            </p>
+          )}
 
           <p className="print:hidden text-[11px] text-b58-charcoal-soft/80 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
             Solo un'anteprima per il cliente: nessun pagamento registrato, nessuno

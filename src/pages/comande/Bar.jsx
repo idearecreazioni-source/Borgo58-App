@@ -219,7 +219,7 @@ export default function Bar() {
                 // era riscritta a mano, e non guardava il prezzo del
                 // coperto fotografato sul conto — oggi coincide perché i
                 // conti aperti non ce l'hanno ancora, domani no.
-                const { items: righe, coperti, total: totale } = orderTotals(o, copertoPrice);
+                const { items: righe, nonInviate, coperti, total: totale } = orderTotals(o, copertoPrice);
                 return (
                   <div key={o.id} className="rounded-xl bg-white ring-1 ring-b58-charcoal/15 p-3 mb-2">
                     <div className="flex items-center justify-between mb-1">
@@ -232,6 +232,16 @@ export default function Bar() {
                       {righe.length} {righe.length === 1 ? "riga" : "righe"}
                       {coperti > 0 && ` · ${coperti} coperti`} · aperto alle {ora(o.opened_at)}
                     </p>
+                    {/* ⚠️ Dal Bar si può chiudere un tavolo qualunque, anche
+                        senza aver mandato niente: il totale escluderebbe
+                        quelle righe in silenzio. Qui si vede prima di
+                        aprire la chiusura. */}
+                    {nonInviate.length > 0 && (
+                      <p className="text-xs text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-2 py-1 mb-2">
+                        {nonInviate.length} {nonInviate.length === 1 ? "riga mai mandata" : "righe mai mandate"} in
+                        cucina — fuori dal totale
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       <button
                         type="button"

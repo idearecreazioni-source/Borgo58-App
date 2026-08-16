@@ -53,7 +53,8 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
   // Stesso calcolo del preconto e del totale a schermo — coperto incluso
   // (§3.2.1): il cliente non deve vedere due numeri diversi.
-  const { items, coperti, copertoUnitPrice, copertoTotal, total } = orderTotals(order, copertoPrice);
+  const { items, nonInviate, nonInviateTotal, coperti, copertoUnitPrice, copertoTotal, total } =
+    orderTotals(order, copertoPrice);
 
   // Righe raggruppate per nome, come nello scontrino del prototipo — più
   // leggibile di una lista piatta quando ci sono più giri di comanda.
@@ -185,6 +186,30 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               <span>{formatEUR(total)}</span>
             </div>
           </div>
+
+          {/* ⚠️ Il buco si dichiara, non si lascia dedurre dal totale: una
+              riga che sparisce dal conto senza una frase è indistinguibile
+              da un piatto dimenticato. Non è un errore — è una scelta che
+              deve passare sotto i suoi occhi prima di incassare. */}
+          {nonInviate.length > 0 && (
+            <div className="text-xs bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
+              <p className="text-b58-charcoal font-medium">
+                {nonInviate.length === 1
+                  ? "1 riga non è mai stata mandata in cucina"
+                  : `${nonInviate.length} righe non sono mai state mandate in cucina`}
+                {" "}({formatEUR(nonInviateTotal)})
+              </p>
+              <p className="text-b58-charcoal-soft mt-0.5">
+                Non entrano nel conto e non scaricano il magazzino. Se sono state
+                servite lo stesso, chiudi questa finestra e mandale prima.
+              </p>
+              <ul className="mt-1 text-b58-charcoal-soft">
+                {nonInviate.map((i) => (
+                  <li key={i.id}>· {i.quantity}× {i.recipe?.name ?? i.free_text_name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {mode === null && (
             <>

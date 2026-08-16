@@ -13,7 +13,14 @@ export async function listOpenOrders() {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "*, items:order_items(id, quantity, unit_price, voided_at), tavoli:order_tables(dining_table_id, etichetta_al_momento)"
+      // ⚠️ `sent_at` serve al CALCOLO, non solo alla schermata: dal
+      // 16/08/2026 una riga mai mandata in cucina non entra nel conto.
+      // Senza questa colonna nella select, ogni riga risulterebbe non
+      // inviata e il totale del Bar crollerebbe ai soli coperti — in
+      // silenzio, che è il modo peggiore. È la lezione del 16/08 sulle
+      // mance, allo specchio: lì un campo non arrivava al database, qui
+      // non arriva alla schermata.
+      "*, items:order_items(id, quantity, unit_price, voided_at, sent_at), tavoli:order_tables(dining_table_id, etichetta_al_momento)"
     )
     .eq("status", "aperto")
     .order("opened_at", { ascending: true });
@@ -155,16 +162,32 @@ export async function updateItemNote(itemId, note) {
   if (error) throw error;
 }
 
+// ⚠️ `is("sent_at", null)` è la rete che qui mancava, ed è la stessa che
+// `sendDraftItems` ha dall'audit dell'08/08. Senza, da un secondo tablet
+// si poteva cambiare o cancellare una riga GIÀ USCITA dalla stampante
+// della cucina — anche a conto chiuso — e nessuno se ne accorgeva: il
+// piatto è in cottura, la riga non esiste più, il conto non lo dice.
+//
+// La rete vera però è nel database (`trg_riga_servita`, 16/08/2026):
+// questa qui serve a dare un errore prima, non a essere l'unica difesa.
 export async function updateDraftItemQuantity(itemId, quantity) {
   if (quantity <= 0) return removeDraftItem(itemId);
-  const { error } = await supabase.from("order_items").update({ quantity }).eq("id", itemId);
+  const { error } = await supabase
+    .from("order_items")
+    .update({ quantity })
+    .eq("id", itemId)
+    .is("sent_at", null);
   if (error) throw error;
 }
 
-// Valido SOLO per righe ancora in bozza (sent_at nullo) — mai chiamato su
-// una riga già inviata a cucina/bar, che si annulla invece con voidSentItem.
+// Valido SOLO per righe ancora in bozza: una riga già inviata a cucina/bar
+// non si cancella — si storna con voidSentItem, e lo storno resta scritto.
 export async function removeDraftItem(itemId) {
-  const { error } = await supabase.from("order_items").delete().eq("id", itemId);
+  const { error } = await supabase
+    .from("order_items")
+    .delete()
+    .eq("id", itemId)
+    .is("sent_at", null);
   if (error) throw error;
 }
 

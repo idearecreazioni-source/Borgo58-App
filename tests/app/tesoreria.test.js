@@ -360,6 +360,7 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
       free_text_name: "Piatto",
       destination: "cucina",
       quantity: 1,
+      sent_at: new Date().toISOString(),
       unit_price: prezzo,
     });
     return data.id;
@@ -497,6 +498,7 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
       free_text_name: "Piatto",
       destination: "cucina",
       quantity: 1,
+      sent_at: new Date().toISOString(),
       unit_price: 250,
     });
 

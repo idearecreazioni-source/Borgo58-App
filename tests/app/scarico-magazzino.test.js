@@ -130,10 +130,10 @@ describe("il magazzino scende chiudendo un conto", () => {
 
     const piatto = await staff
       .from("order_items")
-      .insert({ order_id: conto, recipe_id: ricetta, destination: "cucina", quantity: 1, unit_price: 10 });
+      .insert({ order_id: conto, recipe_id: ricetta, destination: "cucina", quantity: 1, unit_price: 10, sent_at: new Date().toISOString() });
     const caffe = await staff
       .from("order_items")
-      .insert({ order_id: conto, free_text_name: "TEST-AUTO caffè", destination: "bar", quantity: 1, unit_price: 1.5 });
+      .insert({ order_id: conto, free_text_name: "TEST-AUTO caffè", destination: "bar", quantity: 1, unit_price: 1.5, sent_at: new Date().toISOString() });
     expect(piatto.error).toBeNull();
     expect(caffe.error).toBeNull();
   });

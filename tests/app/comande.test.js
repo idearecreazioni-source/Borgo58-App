@@ -122,8 +122,26 @@ describe("comande: tre tavoli accostati, un conto solo", () => {
     const agg = await staff.from("orders").update({ coperti: 3 }).eq("id", ordine).select().single();
     expect(agg.error).toBeNull();
 
+    // ⚠️ Prova B era rimasta in bozza dalla prova precedente, e dal
+    // 16/08/2026 una bozza NON entra nel conto: prima di guardare il
+    // totale si manda in cucina, che è ciò che succede in sala prima di
+    // chiudere un tavolo.
+    const invio = await staff
+      .from("order_items")
+      .update({ sent_at: new Date().toISOString() })
+      .eq("order_id", ordine)
+      .is("sent_at", null);
+    expect(invio.error).toBeNull();
+
     const prezzo = await staff.from("service_settings").select("coperto_price").eq("id", 1).single();
-    const righe = await staff.from("order_items").select("quantity, unit_price, voided_at").eq("order_id", ordine);
+    // ⚠️ `sent_at` va chiesto: dal 16/08/2026 il conto non addebita le
+    // righe mai mandate in cucina, quindi una select che lo dimentica fa
+    // sembrare tutto in bozza e il totale crolla ai soli coperti. Questa
+    // riga è la prova che quella dimenticanza è facile — è successo qui.
+    const righe = await staff
+      .from("order_items")
+      .select("quantity, unit_price, voided_at, sent_at")
+      .eq("order_id", ordine);
 
     const conto = orderTotals({ ...agg.data, items: righe.data }, Number(prezzo.data.coperto_price));
     // Prova A: 1×1,00 + Prova B: 2×2,00 = 5,00; coperti 3 × prezzo corrente.

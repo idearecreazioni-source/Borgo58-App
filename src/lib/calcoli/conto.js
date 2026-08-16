@@ -13,12 +13,33 @@
 // numero: questo e' l'unico posto dove il conto si calcola. Le righe
 // annullate non contano; il coperto si somma a parte perche' sul
 // preconto va mostrato come voce propria ("4 coperti × 5,00 €").
+// ⚠️ Dal 16/08/2026 (Blocco 4.2 del mandato di correzione, decisione di
+// Alessio) una riga MAI MANDATA IN CUCINA non si addebita: non e' un
+// piatto servito, e alla chiusura non deve nemmeno scaricare il magazzino.
+//
+// ⚠️ Ma non spariscono in silenzio: `nonInviate` esce insieme al totale,
+// perche' chi chiude deve VEDERLO dichiarato. Una riga che se ne va dal
+// conto senza una frase e' indistinguibile da un piatto dimenticato — ed
+// e' la stessa forma dell'avvertenza che viaggia insieme al numero delle
+// imposte.
 export function orderTotals(order, copertoPrice) {
-  const items = (order?.items ?? []).filter((i) => !i.voided_at);
+  const vive = (order?.items ?? []).filter((i) => !i.voided_at);
+  const items = vive.filter((i) => i.sent_at);
+  const nonInviate = vive.filter((i) => !i.sent_at);
   const itemsTotal = items.reduce((s, i) => s + i.quantity * Number(i.unit_price), 0);
+  const nonInviateTotal = nonInviate.reduce((s, i) => s + i.quantity * Number(i.unit_price), 0);
   const coperti = order?.coperti ?? 0;
   // Su un conto gia' chiuso vale il prezzo fotografato allora, non quello di oggi.
   const unit = Number(order?.coperto_unit_price ?? copertoPrice ?? 0);
   const copertoTotal = coperti * unit;
-  return { items, itemsTotal, coperti, copertoUnitPrice: unit, copertoTotal, total: itemsTotal + copertoTotal };
+  return {
+    items,
+    itemsTotal,
+    nonInviate,
+    nonInviateTotal,
+    coperti,
+    copertoUnitPrice: unit,
+    copertoTotal,
+    total: itemsTotal + copertoTotal,
+  };
 }
