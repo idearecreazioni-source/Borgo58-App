@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // Stessa normalizzazione minima della funzione DB normalize_phone(): solo
 // cifre e un eventuale + iniziale, per restare coerenti col trigger che
@@ -89,7 +90,10 @@ export async function deleteCustomer(id) {
   if (error) throw error;
 }
 
+// ⚠️ Sposta le prenotazioni sulla scheda che resta E cancella quella
+// doppia: due tabelle, quindi corridoio (Contratto B4, 16/08/2026).
+// Era già atomica dentro — a metà, un cliente sarebbe sparito portandosi
+// via la sua storia.
 export async function mergeCustomers(keepId, mergeId) {
-  const { error } = await supabase.rpc("merge_customers", { p_keep_id: keepId, p_merge_id: mergeId });
-  if (error) throw error;
+  return eseguiOperazione("merge_customers", { p_keep_id: keepId, p_merge_id: mergeId });
 }

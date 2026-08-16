@@ -126,6 +126,17 @@ const OPERAZIONI = new Set([
   "annulla_pareggio_anticipazione",
   "annulla_pagamento_fattura",
   "delete_intercompany_cession",
+  // Blocco 3 del mandato di correzione (16/08/2026). `annulla_prenotazione`
+  // è nuova: annullare e liberare i tavoli erano due scritture separate dal
+  // browser, e a metà restava una prenotazione annullata che teneva tavoli
+  // veri senza che nessuna schermata lo dicesse. Le altre quattro esistono
+  // da tempo e sono già atomiche dentro: cambia la strada da cui il
+  // browser le chiama, ed è la forma che rende l'elenco controllabile.
+  "annulla_prenotazione",
+  "merge_customers",
+  "close_shopping_list_item",
+  "record_stock_consumption",
+  "update_ingredient_price",
 ]);
 
 const CORS = {

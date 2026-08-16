@@ -13,6 +13,7 @@ import {
   setSoldOut,
 } from "../../lib/api/sala";
 import {
+  annullaPrenotazione,
   assegnaPrenotazione,
   creaPrenotazioneSuTavoli,
   listReservations,
@@ -626,8 +627,9 @@ export default function PiantaGiornata() {
                     if (!window.confirm(`Il cliente ha disdetto? La prenotazione di ${aperta.customer_name} verrà annullata e i tavoli tornano liberi.`))
                       return;
                     esegui(async () => {
-                      await updateReservation(aperta.id, { status: "annullata" });
-                      await togliAssegnazione(aperta.id);
+                      // Una cosa sola, non due: annullare e liberare i
+                      // tavoli non possono riuscire a metà.
+                      await annullaPrenotazione(aperta.id);
                       azzera();
                     });
                   }}

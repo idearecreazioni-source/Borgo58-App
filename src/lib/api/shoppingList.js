@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // Titolare: la lista con i numeri VERI accanto a ogni riga — giacenza e
 // soglia lette dallo stesso conteggio del magazzino, non congelate quando
@@ -87,7 +88,10 @@ export async function closeShoppingListItem({
   documentReference,
   expiryDate,
 }) {
-  const { error } = await supabase.rpc("close_shopping_list_item", {
+  // ⚠️ Chiude la riga della lista E carica il lotto in magazzino: due
+  // tabelle, quindi corridoio (Contratto B4, 16/08/2026). A metà sarebbe
+  // merce comprata che non risulta arrivata, o arrivata due volte.
+  return eseguiOperazione("close_shopping_list_item", {
     p_item_id: itemId,
     p_purchased_amount: purchasedAmount,
     p_payment_method: paymentMethod,
@@ -95,5 +99,4 @@ export async function closeShoppingListItem({
     p_document_reference: documentReference ?? null,
     p_expiry_date: expiryDate ?? null,
   });
-  if (error) throw error;
 }

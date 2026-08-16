@@ -81,15 +81,18 @@ export async function updateIngredientFields(id, fields) {
   return data;
 }
 
+// ⚠️ Scrive due tabelle — il prezzo dell'ingrediente E lo storico —
+// quindi passa dal corridoio (Contratto B4). Era già atomica dentro: dal
+// 16/08/2026 (Blocco 3 del mandato di correzione) è anche nella forma
+// giusta, che è quella che rende l'elenco delle scritture controllabile.
 export async function updateIngredientPrice(id, newPrice, { source = "manuale", note, supplierId } = {}) {
-  const { error } = await supabase.rpc("update_ingredient_price", {
+  await eseguiOperazione("update_ingredient_price", {
     p_ingredient_id: id,
     p_new_price: newPrice,
     p_source: source,
     p_note: note ?? null,
     p_supplier_id: supplierId ?? null,
   });
-  if (error) throw error;
   return getIngredient(id);
 }
 

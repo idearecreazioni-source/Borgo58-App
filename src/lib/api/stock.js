@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // Giacenza per ingrediente (soglia, prossima scadenza) — vista sicura,
 // nessun dato economico: stessa query per titolare e staff.
@@ -63,14 +64,16 @@ export async function registerStockDelivery({
   return data;
 }
 
+// ⚠️ Toglie dai lotti col metodo FEFO E fotografa il costo di quello che
+// esce: due tabelle, quindi corridoio (Contratto B4, 16/08/2026). A metà
+// sarebbe merce sparita dalla giacenza senza nessuno scarico che lo dica.
 export async function recordStockConsumption({ ingredientId, quantity, reason = "consumo", note }) {
-  const { error } = await supabase.rpc("record_stock_consumption", {
+  return eseguiOperazione("record_stock_consumption", {
     p_ingredient_id: ingredientId,
     p_quantity: quantity,
     p_reason: reason,
     p_note: note ?? null,
   });
-  if (error) throw error;
 }
 
 // Cosa il magazzino NON ha potuto scaricare chiudendo i conti: voci

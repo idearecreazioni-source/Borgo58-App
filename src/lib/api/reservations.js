@@ -166,6 +166,22 @@ export async function togliAssegnazione(reservationId) {
   if (error) throw error;
 }
 
+// «Ha disdetto», e anche «rifiuta» dalla scheda della prenotazione.
+//
+// ⚠️ Lo stato E i tavoli in una transazione sola (Contratto B4, Blocco 3
+// del mandato di correzione, 16/08/2026). Sulla pianta erano due scritture
+// separate dal browser — al fallimento a metà restava una prenotazione
+// annullata che teneva i suoi tavoli, e quella riga non si vede da nessuna
+// schermata: al telefono si dice «non c'è posto» per un tavolo libero.
+// Nella scheda della prenotazione era anche peggio: i tavoli non venivano
+// liberati mai.
+export async function annullaPrenotazione(reservationId, stato = "annullata") {
+  return eseguiOperazione("annulla_prenotazione", {
+    p_reservation_id: reservationId,
+    p_stato: stato,
+  });
+}
+
 // Caparra: tabella separata visibile solo al titolare (§3.5) — la tabella
 // reservations non contiene più dati economici, così è condivisibile con lo staff.
 export async function getReservationDeposit(reservationId) {

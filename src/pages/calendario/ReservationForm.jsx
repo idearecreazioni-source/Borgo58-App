@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   computeEventIngredientNeeds,
+  annullaPrenotazione,
   createReservation,
   getReservation,
   getReservationDeposit,
@@ -163,7 +164,15 @@ export default function ReservationForm() {
   const handleStatusChange = async (newStatus) => {
     setError("");
     try {
-      await updateReservation(id, { status: newStatus });
+      // ⚠️ Annullare e rifiutare non sono un cambio di etichetta: una
+      // prenotazione che non ci sarà non deve tenere i suoi tavoli. Da qui
+      // non venivano liberati MAI — e il tavolo risultava occupato da
+      // qualcuno che non verrà, senza che nessuna schermata lo dicesse.
+      if (newStatus === "annullata" || newStatus === "rifiutata") {
+        await annullaPrenotazione(id, newStatus);
+      } else {
+        await updateReservation(id, { status: newStatus });
+      }
       setStatus(newStatus);
     } catch (e) {
       setError(e.message);
