@@ -14,6 +14,7 @@ const emptyForm = {
   packaging_ok: true,
   conformity: true,
   note: "",
+  azione: "",
 };
 
 export default function RicevimentoMerci() {
@@ -58,11 +59,14 @@ export default function RicevimentoMerci() {
         packagingOk: form.packaging_ok,
         conformity: form.conformity,
         note: form.note,
+        azione: form.azione,
       });
       setAvviso(
         esito?.da_chiudere
           ? "Merce non conforme: è stata aperta una non conformità, e resta APERTA finché non scrivi cosa hai deciso (respinta, accettata con riserva, sostituita). La trovi in HACCP → Non conformità."
-          : ""
+          : esito?.non_conforme
+            ? "Merce non conforme: registrata insieme a cosa hai deciso, la non conformità è già chiusa."
+            : ""
       );
       setForm(emptyForm);
       await load();
@@ -161,6 +165,24 @@ export default function RicevimentoMerci() {
             Conforme
           </label>
         </div>
+        {/* ⚠️ Il campo che mancava. L'api accettava «azione» dal 13/08, il
+            database la sa registrare e ci chiude da sola la non
+            conformità — ma nessuna schermata gliela mandava: un filo
+            attaccato da una parte sola.
+            Compare solo quando serve, cioè quando qualcosa non va: un
+            campo sempre visibile su una consegna normale è un campo che
+            si impara a saltare. È lo stesso gesto della temperatura fuori
+            range, e la stessa regola — si registra comunque, anche senza
+            rimedio: una consegna non registrata è irrecuperabile, un
+            rimedio scritto dopo è ancora un rimedio. */}
+        {(!form.conformity || !form.packaging_ok) && (
+          <input
+            value={form.azione}
+            onChange={(e) => setForm((f) => ({ ...f, azione: e.target.value }))}
+            placeholder="Cosa hai deciso? (respinta, accettata con riserva, sostituita…)"
+            className={`${inputClass} mb-2`}
+          />
+        )}
         <div className="flex items-center justify-between gap-2">
           <input
             value={form.note}

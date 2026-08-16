@@ -26,6 +26,12 @@ export default function ArchivioDocumentiHome() {
   const [postaInAttesa, setPostaInAttesa] = useState(0);
   const [documents, setDocuments] = useState([]);
   const [search, setSearch] = useState("");
+  // Quello che si sta ancora scrivendo, e quello su cui si cerca davvero.
+  // Prima partiva una richiesta a OGNI tasto premuto: scrivere «locazione»
+  // ne mandava nove, di cui otto già inutili quando arrivava la risposta —
+  // e le risposte potevano tornare in ordine sparso, mostrando i risultati
+  // di «locazi» sopra quelli di «locazione».
+  const [cercato, setCercato] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,7 +45,15 @@ export default function ArchivioDocumentiHome() {
     contaPostaInAttesa().then(setPostaInAttesa).catch(() => {});
   }, []);
 
-  const reload = () => listDocuments({ search: search || undefined }).then(setDocuments);
+  const reload = () => listDocuments({ search: cercato || undefined }).then(setDocuments);
+
+  // Stessa attesa del salvataggio automatico delle note (700 ms sarebbe
+  // troppo per una ricerca, che deve sembrare istantanea): si aspetta che
+  // le dita si fermino un momento.
+  useEffect(() => {
+    const t = setTimeout(() => setCercato(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     setLoading(true);
@@ -47,7 +61,7 @@ export default function ArchivioDocumentiHome() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [cercato]);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";

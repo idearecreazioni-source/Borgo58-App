@@ -138,19 +138,15 @@ export async function deleteTask(id) {
   if (error) throw error;
 }
 
-// Pulizia periodica dei task già evasi. Solo il titolare può cancellare
-// (policy tasks_delete_titolare): allo staff la richiesta tornerebbe
-// semplicemente senza righe eliminate, non con un errore — per questo il
-// pulsante non gli viene nemmeno mostrato.
-// I task generati da altri moduli si possono eliminare senza danni: i
-// record d'origine hanno `task_id ... on delete set null`, quindi perdono
-// il collegamento al promemoria ma restano intatti.
-export async function deleteCompletedTasks() {
-  const { data, error } = await supabase
-    .from("tasks")
-    .delete()
-    .eq("status", "completato")
-    .select("id");
-  if (error) throw error;
-  return data.length;
-}
+// ⚠️ Qui c'era `deleteCompletedTasks`, tolta il 16/08/2026 con le
+// piccolezze. Cancellava in blocco tutti gli impegni completati, e il suo
+// commento descriveva «il pulsante» che la chiama — un pulsante che non
+// esiste in nessuna schermata: nessuna la richiamava.
+//
+// Non e' stata collegata a un pulsante nuovo, ed e' la parte che conta:
+// gli impegni completati sono la storia di cosa e' stato fatto e quando,
+// e in quella tabella ci sono gli adempimenti societari con importi e
+// codici F24. Un gesto che li cancella tutti in blocco toglie proprio
+// quello che serve il giorno in cui bisogna dimostrare di aver assolto un
+// adempimento. Se un giorno la lista dei fatti diventera' ingombrante, si
+// nasconde — non si cancella.

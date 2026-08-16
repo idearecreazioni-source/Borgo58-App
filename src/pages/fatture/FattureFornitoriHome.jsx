@@ -5,6 +5,7 @@ import {
   deleteSupplierInvoice,
   listSupplierInvoices,
   markInvoicePaid,
+  ultimeFatturePagate,
   updateSupplierInvoice,
 } from "../../lib/api/supplierInvoices";
 import { listSuppliers } from "../../lib/api/suppliers";
@@ -32,8 +33,11 @@ const dueUrgency = (dateStr) => {
   return "neutral";
 };
 
+const QUANTE_PAGATE = 20;
+
 export default function FattureFornitoriHome() {
-  const [invoices, setInvoices] = useState([]);
+  const [daPagare, setDaPagare] = useState([]);
+  const [pagate, setPagate] = useState({ righe: [], quante: 0 });
   const [entities, setEntities] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,12 +50,22 @@ export default function FattureFornitoriHome() {
   const [paymentMethod, setPaymentMethod] = useState("bonifico");
   const [paying, setPaying] = useState(false);
 
+  // Le due liste si chiedono separate: quelle da pagare tutte (è l'elenco
+  // di cosa c'è da fare), le pagate solo le ultime.
+  const ricaricaFatture = async () => {
+    const [aperte, chiuse] = await Promise.all([
+      listSupplierInvoices({ status: "da_pagare" }),
+      ultimeFatturePagate(QUANTE_PAGATE),
+    ]);
+    setDaPagare(aperte);
+    setPagate(chiuse);
+  };
+
   const load = async () => {
     const ent = await getEntities();
     setEntities(ent);
     setForm((f) => (f.entity_id ? f : { ...f, entity_id: ent.srls.id }));
-    const [inv, sup] = await Promise.all([listSupplierInvoices(), listSuppliers(ent.srls.id)]);
-    setInvoices(inv);
+    const [, sup] = await Promise.all([ricaricaFatture(), listSuppliers(ent.srls.id)]);
     setSuppliers(sup);
   };
 
@@ -61,9 +75,6 @@ export default function FattureFornitoriHome() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
-
-  const daPagare = useMemo(() => invoices.filter((i) => i.status === "da_pagare"), [invoices]);
-  const pagate = useMemo(() => invoices.filter((i) => i.status === "pagata"), [invoices]);
 
   // ⚠️ Due società, due debiti — mai un totale solo. La S.r.l.s. e
   // l'azienda agricola sono due soggetti fiscali distinti: chi paga le
@@ -106,7 +117,7 @@ export default function FattureFornitoriHome() {
         note: form.note,
       });
       setForm((f) => ({ ...emptyForm, entity_id: f.entity_id }));
-      setInvoices(await listSupplierInvoices());
+      await ricaricaFatture();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -120,7 +131,7 @@ export default function FattureFornitoriHome() {
     try {
       await markInvoicePaid(id, { paymentMethod });
       setPayingId(null);
-      setInvoices(await listSupplierInvoices());
+      await ricaricaFatture();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -132,7 +143,7 @@ export default function FattureFornitoriHome() {
     setError("");
     try {
       await deleteSupplierInvoice(id);
-      setInvoices(await listSupplierInvoices());
+      await ricaricaFatture();
     } catch (e) {
       setError(e.message);
     }
@@ -148,7 +159,7 @@ export default function FattureFornitoriHome() {
     setError("");
     try {
       await updateSupplierInvoice(id, patch);
-      setInvoices(await listSupplierInvoices());
+      await ricaricaFatture();
     } catch (e) {
       setError(e.message);
     }
@@ -162,7 +173,7 @@ export default function FattureFornitoriHome() {
     setError("");
     try {
       await annullaPagamentoFattura(id);
-      setInvoices(await listSupplierInvoices());
+      await ricaricaFatture();
     } catch (e) {
       setError(e.message);
     }
@@ -403,11 +414,18 @@ export default function FattureFornitoriHome() {
         )}
       </div>
 
-      {pagate.length > 0 && (
+      {pagate.righe.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Pagate di recente</h2>
+          <h2 className="font-display text-lg text-b58-charcoal mb-1">Pagate di recente</h2>
+          {/* Il taglio si dichiara: un elenco tagliato in silenzio sembra
+              completo, ed è la stessa forma dello zero al posto del buco. */}
+          <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+            {pagate.quante > pagate.righe.length
+              ? `Le ultime ${pagate.righe.length} di ${pagate.quante} pagate in tutto.`
+              : `Tutte e ${pagate.quante}.`}
+          </p>
           <ul className="space-y-1.5">
-            {pagate.map((inv) => (
+            {pagate.righe.map((inv) => (
               <li key={inv.id} className="text-sm text-b58-charcoal-soft flex items-center justify-between gap-2">
                 <span>
                   <span className="text-b58-charcoal">{inv.supplier.name}</span>

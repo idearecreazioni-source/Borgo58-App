@@ -20,6 +20,27 @@ export async function listSupplierInvoices({ status, supplierId } = {}) {
   return data;
 }
 
+// «Pagate di recente» mostrava TUTTE le fatture pagate dall'inizio dei
+// tempi: fra due anni sarebbe stato un muro sotto la sola lista che serve
+// davvero, quella da pagare. Si mostrano le ultime, e si dice quante ce ne
+// sono in tutto — un elenco tagliato che non dichiara il taglio è un
+// elenco che sembra completo (§8).
+//
+// ⚠️ Non è la stessa cosa del divieto di mettere limiti sulle liste HACCP
+// e di prima nota: quelle alimentano documenti esibibili, dove un taglio
+// silenzioso produrrebbe un registro incompleto. Qui è una comodità di
+// schermata, e il numero totale resta scritto accanto.
+export async function ultimeFatturePagate(limite = 20) {
+  const { data, error, count } = await supabase
+    .from("supplier_invoices")
+    .select(SELECT, { count: "exact" })
+    .eq("status", "pagata")
+    .order("paid_at", { ascending: false, nullsFirst: false })
+    .limit(limite);
+  if (error) throw error;
+  return { righe: data ?? [], quante: count ?? 0 };
+}
+
 // Se la fattura ha una scadenza, crea anche il promemoria collegato in
 // Agenda (origine_modulo) — così non serve ricordarsene a parte.
 export async function createSupplierInvoice({
