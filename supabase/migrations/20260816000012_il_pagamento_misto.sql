@@ -159,13 +159,42 @@ create trigger trg_mezzo_pagamento
 -- cui la tesoreria smette di guardare `payment_method` — un saldo che
 -- cala da solo, e nessuno saprebbe perche'. In produzione e' un conto
 -- solo, ma la regola vale per qualunque ripristino.
-insert into order_payments (order_id, mezzo, importo)
-select o.id, o.payment_method::text, incasso_conto(o.id)
-  from orders o
- where o.status in ('chiuso', 'omaggiato')
-   and o.payment_method in ('contante', 'carta')
-   and incasso_conto(o.id) > 0
-   and not exists (select 1 from order_payments p where p.order_id = o.id);
+-- ⚠️ LA SANATORIA GIRA IMPERSONANDO IL TITOLARE, e non e' una formalita':
+-- `incasso_conto()` passa da `totale_conto()`, che pretende un utente
+-- autenticato — e una migrazione gira come `postgres`, dove `auth.uid()`
+-- e' NULLO. Senza queste righe la migrazione si ferma.
+--
+-- ⚠️ E il progetto di prova non poteva accorgersene, che e' la parte da
+-- ricordare: li' NON C'E' NESSUN CONTO CHIUSO, quindi la `select` non
+-- valutava mai `incasso_conto` e passava. In produzione ce n'e' uno, e si
+-- e' fermata al primo tentativo. E' la stessa lezione del 12/08 e del
+-- 14/08 — *la prova non era falsa, era su uno stato di partenza diverso
+-- da quello vero esattamente nel punto rilevante* — e stavolta e' stata
+-- la produzione a dirlo, non io a prevederlo.
+do $sanatoria$
+declare
+  v_titolare uuid;
+  n integer;
+begin
+  select user_id into v_titolare from user_roles where role = 'titolare' limit 1;
+  if v_titolare is null then
+    raise exception 'Nessun titolare in user_roles: la sanatoria non puo'' leggere gli incassi.';
+  end if;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_titolare, 'role', 'authenticated')::text, true);
+
+  insert into order_payments (order_id, mezzo, importo)
+  select o.id, o.payment_method::text, incasso_conto(o.id)
+    from orders o
+   where o.status in ('chiuso', 'omaggiato')
+     and o.payment_method::text in ('contante', 'carta')
+     and incasso_conto(o.id) > 0
+     and not exists (select 1 from order_payments p where p.order_id = o.id);
+  get diagnostics n = row_count;
+  raise notice 'Sanatoria: % conti gia'' chiusi hanno ora la loro quota.', n;
+
+  perform set_config('request.jwt.claims', null, true);
+end $sanatoria$;
 
 -- ---------------------------------------------------------------------
 -- 5. Chiudere un conto sapendo che le quote possono essere piu' d'una
