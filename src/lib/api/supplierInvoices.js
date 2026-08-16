@@ -1,7 +1,11 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 
-const SELECT = "*, supplier:supplier_id(id, name)";
+// L'entità viaggia insieme alla fattura, e non è un di più: il «da pagare»
+// sommava S.r.l.s. e azienda agricola in un numero solo, che non è il
+// debito di nessuna delle due. Per separarlo in schermata serve sapere di
+// chi è ogni riga.
+const SELECT = "*, supplier:supplier_id(id, name), entity:entity_id(id, name)";
 
 export async function listSupplierInvoices({ status, supplierId } = {}) {
   let query = supabase

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import {
   aggiornaScenario,
@@ -45,9 +45,14 @@ const aPercento = (v) => (v == null ? "" : String(Math.round(Number(v) * 10000) 
 export default function PrevisioneForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ricerca] = useSearchParams();
   const modifica = Boolean(id);
+  // La società arriva dall'elenco delle previsioni, che ha il selettore:
+  // senza, si guardava l'elenco dell'agricola e si scriveva nella S.r.l.s.
+  const entitaScelta = ricerca.get("entita");
 
   const [entities, setEntities] = useState(null);
+  const [entitaScenario, setEntitaScenario] = useState(null);
   const [nome, setNome] = useState("");
   const [anno, setAnno] = useState(new Date(oggiLocale()).getFullYear() + 1);
   const [tipo, setTipo] = useState("partenza");
@@ -71,6 +76,10 @@ export default function PrevisioneForm() {
     setNome(s.nome);
     setAnno(s.anno);
     setTipo(s.tipo);
+    // ⚠️ Correggendo, la società resta quella della previsione. Prima si
+    // rimandava sempre la S.r.l.s.: correggere una previsione
+    // dell'agricola l'avrebbe spostata all'altra società senza dirlo.
+    setEntitaScenario(s.entity_id);
     setPar({
       scontrinoFood: String(s.scontrino_food), scontrinoBeverage: String(s.scontrino_beverage),
       foodCostPercento: aPercento(s.food_cost_percento),
@@ -128,7 +137,7 @@ export default function PrevisioneForm() {
     setError("");
     try {
       const dati = {
-        entity_id: entities?.srls?.id,
+        entity_id: entitaScenario || entitaScelta || entities?.srls?.id,
         nome: nome.trim() || "Previsione senza nome",
         tipo,
         anno: Number(anno),
@@ -174,6 +183,9 @@ export default function PrevisioneForm() {
     }
   };
 
+  const idSocieta = entitaScenario || entitaScelta || entities?.srls?.id;
+  const nomeSocieta = [entities?.srls, entities?.agricola].find((e) => e?.id === idSocieta)?.name ?? "";
+
   const riga = (lista, setLista, indice, chiave, valore) =>
     setLista(lista.map((r, i) => (i === indice ? { ...r, [chiave]: valore } : r)));
 
@@ -187,10 +199,16 @@ export default function PrevisioneForm() {
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">
         {modifica ? "Correggi la previsione" : "Costruisci una previsione"}
       </h1>
-      <p className="text-sm text-b58-charcoal-soft mb-6">
+      <p className="text-sm text-b58-charcoal-soft mb-2">
         Finché non la chiudi puoi tornarci sopra quante volte vuoi. Si blocca solo quando premi tu
         «Chiudi questa previsione», dalla sua scheda.
       </p>
+      {/* Di quale società è questa previsione: si sceglie nell'elenco, e
+          qui si vede — un piano scritto per la società sbagliata non si
+          nota da nessun numero. */}
+      {nomeSocieta && (
+        <p className="text-xs text-b58-charcoal-soft/80 mb-6">Società: <strong>{nomeSocieta}</strong></p>
+      )}
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>

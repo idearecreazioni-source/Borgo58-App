@@ -19,22 +19,34 @@ export default function Previsioni() {
   const [anno, setAnno] = useState(new Date(oggiLocale()).getFullYear());
   const [tipo, setTipo] = useState("partenza");
   const [salvando, setSalvando] = useState(false);
+  // ⚠️ Le previsioni sono di UNA società: la S.r.l.s. e l'azienda agricola
+  // hanno ricavi, costi e imposte propri, e un elenco che le mescola fa
+  // confrontare fra loro due piani che non parlano della stessa cosa. È lo
+  // stesso filtro che «Come sta andando» applica già.
+  const [entityId, setEntityId] = useState("");
   const fileRef = useRef(null);
 
-  const ricarica = () => listaScenari().then(setScenari);
+  const ricarica = (ente) => listaScenari(ente).then(setScenari);
 
   useEffect(() => {
     (async () => {
       try {
-        setEntities(await getEntities());
-        await ricarica();
+        const ent = await getEntities();
+        setEntities(ent);
+        setEntityId(ent.srls.id);
       } catch (e) {
         setError(e.message);
-      } finally {
-        setLoading(false);
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!entityId) return;
+    setLoading(true);
+    ricarica(entityId)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [entityId]);
 
   const inputClass =
     "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -59,7 +71,10 @@ export default function Previsioni() {
     setError("");
     try {
       await creaScenarioDaFoglio({
-        entity_id: entities?.srls?.id,
+        // La società è quella scelta in cima, non sempre la S.r.l.s.:
+        // altrimenti scegliendo l'agricola si guarderebbe il suo elenco e
+        // si scriverebbe nell'altro, in silenzio.
+        entity_id: entityId,
         nome,
         tipo,
         anno: Number(anno),
@@ -77,7 +92,7 @@ export default function Previsioni() {
       });
       setLetto(null);
       if (fileRef.current) fileRef.current.value = "";
-      await ricarica();
+      await ricarica(entityId);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -92,7 +107,7 @@ export default function Previsioni() {
     if (!confirm(avviso)) return;
     try {
       await cancellaScenario(s.id);
-      await ricarica();
+      await ricarica(entityId);
     } catch (e) {
       setError(e.message);
     }
@@ -103,7 +118,19 @@ export default function Previsioni() {
       <Link to="/fiscale" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Proiezione fiscale
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Le previsioni</h1>
+      <div className="flex items-center justify-between gap-3 flex-wrap mt-1 mb-2">
+        <h1 className="font-display text-2xl text-b58-charcoal">Le previsioni</h1>
+        {entities && (
+          <select
+            value={entityId}
+            onChange={(e) => setEntityId(e.target.value)}
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+          >
+            <option value={entities.srls.id}>{entities.srls.name}</option>
+            {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
+          </select>
+        )}
+      </div>
       <p className="text-sm text-b58-charcoal-soft mb-6">
         Una previsione chiusa non si ritocca mai più: se cambia qualcosa se ne fa una nuova, e le due
         restano confrontabili. È l&apos;unico modo perché fra un anno si possa dire com&apos;era andata
@@ -124,7 +151,7 @@ export default function Previsioni() {
           </p>
         </div>
         <Link
-          to="/fiscale/previsioni/nuova"
+          to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
           className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 shrink-0"
         >
           + Nuova previsione

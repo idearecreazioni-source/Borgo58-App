@@ -64,7 +64,23 @@ export default function FattureFornitoriHome() {
 
   const daPagare = useMemo(() => invoices.filter((i) => i.status === "da_pagare"), [invoices]);
   const pagate = useMemo(() => invoices.filter((i) => i.status === "pagata"), [invoices]);
-  const totaleDaPagare = useMemo(() => daPagare.reduce((sum, i) => sum + Number(i.amount), 0), [daPagare]);
+
+  // ⚠️ Due società, due debiti — mai un totale solo. La S.r.l.s. e
+  // l'azienda agricola sono due soggetti fiscali distinti: chi paga le
+  // fatture dell'una non sono i soldi dell'altra, e un numero che le
+  // somma non è il debito di nessuna delle due. Si mostra un totale per
+  // società, e solo per quelle che hanno qualcosa da pagare.
+  const totaliPerSocieta = useMemo(() => {
+    const per = new Map();
+    for (const i of daPagare) {
+      const nome = i.entity?.name ?? "Senza società";
+      const riga = per.get(nome) ?? { nome, totale: 0, quante: 0 };
+      riga.totale += Number(i.amount);
+      riga.quante += 1;
+      per.set(nome, riga);
+    }
+    return [...per.values()].sort((a, b) => a.nome.localeCompare(b.nome, "it"));
+  }, [daPagare]);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -166,8 +182,21 @@ export default function FattureFornitoriHome() {
           </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(totaleDaPagare)}</div>
-          <div className="text-xs text-b58-charcoal-soft">totale da pagare</div>
+          {totaliPerSocieta.length === 0 ? (
+            <>
+              <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(0)}</div>
+              <div className="text-xs text-b58-charcoal-soft">niente da pagare</div>
+            </>
+          ) : (
+            totaliPerSocieta.map((r) => (
+              <div key={r.nome} className="mb-1 last:mb-0">
+                <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(r.totale)}</div>
+                <div className="text-xs text-b58-charcoal-soft">
+                  da pagare — {r.nome} ({r.quante})
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -282,6 +311,9 @@ export default function FattureFornitoriHome() {
                         <span className="text-xs text-b58-charcoal-soft ml-1.5">#{inv.invoice_number}</span>
                       )}
                       <div className="text-xs text-b58-charcoal-soft">
+                        {/* Di chi è questa fattura: senza, i due totali qui
+                            sopra non si possono ricontrollare riga per riga. */}
+                        {inv.entity?.name && <>{inv.entity.name} · </>}
                         {formatDate(inv.invoice_date)}
                         {inv.due_date && (
                           <span
