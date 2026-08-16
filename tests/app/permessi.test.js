@@ -142,9 +142,20 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // difetto, non il contenuto: due normalizzatori non facevano male, la
   // prossima funzione potrebbe. Qui l'elenco diventa una prova che
   // diventa rossa da sola.
-  it("solo 12 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SCESO DA 12 A 11 il 16/08/2026, e il modo in cui e' sceso e' la
+  // parte che conta: `abbina_righe_carico` aveva i permessi PREDEFINITI
+  // di Postgres — nessun revoke le era mai stato fatto — quindi era
+  // eseguibile da chiunque avesse la chiave pubblica del sito. E' una
+  // funzione di trigger: la esegue il motore per conto di
+  // `posta_azioni`, e non ha bisogno di nessun permesso. Controllato
+  // prima di togliere che non la chiamasse nessun altro.
+  //
+  // ⚠️ Questo numero scende SOLO cosi': con una riga tolta e dichiarata
+  // nella stessa consegna. Se cambiasse senza che nessuno lo dica,
+  // sarebbe il difetto del 12/08 — ed e' il motivo per cui questa prova
+  // esiste.
+  it("solo 11 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
-      "abbina_righe_carico",
       "check_recipe_component",
       "generate_foraged_lot",
       "is_titolare",
