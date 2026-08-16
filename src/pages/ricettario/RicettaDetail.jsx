@@ -223,7 +223,9 @@ export default function RicettaDetail() {
         yield_quantity: isPreparazione ? resa : null,
         yield_unit: isPreparazione ? recipe.yield_unit : null,
         pronta_per_carta: recipe.pronta_per_carta,
-        in_carta: recipe.in_carta,
+        // `in_carta` NON si manda più: lo calcola il database dal menu.
+        // Mandarlo sarebbe una scrittura che viene ignorata, cioè la cosa
+        // che fa credere di aver deciso qualcosa.
         tags: recipe.tags,
         notes: recipe.notes,
         menu_description: recipe.menu_description,
@@ -238,18 +240,19 @@ export default function RicettaDetail() {
     }
   };
 
-  // in_carta richiede pronta_per_carta (vincolo del DB, coerenza lato UI).
+  // ⚠️ «In carta» non si preme più: dal 16/08/2026 è un RIFLESSO del menu
+  // (decisione di Alessio). Vale vero quando il piatto sta nel menu
+  // attivo, lo scrive un trigger del database, e qui si legge soltanto.
+  // Il pulsante c'era e adesso non c'è: due posti che dicono la stessa
+  // cosa e possono contraddirsi sono un difetto, non una comodità.
+  //
+  // E per la stessa ragione qui non si spegne più «in carta» quando si
+  // toglie «pronta per carta»: quella coerenza la teneva la schermata, e
+  // ora la tiene il database — che RIFIUTA, dicendo in quale menu sta il
+  // piatto. Spegnerla di nascosto sarebbe stato toglierlo dalla carta
+  // senza toglierlo dal menu.
   const togglePronta = () => {
-    setRecipe((r) => {
-      const pronta = !r.pronta_per_carta;
-      return { ...r, pronta_per_carta: pronta, in_carta: pronta ? r.in_carta : false };
-    });
-  };
-  const toggleInCarta = () => {
-    setRecipe((r) => {
-      if (!r.pronta_per_carta) return r; // non attivabile finché non è pronta
-      return { ...r, in_carta: !r.in_carta };
-    });
+    setRecipe((r) => ({ ...r, pronta_per_carta: !r.pronta_per_carta }));
   };
 
   const handleAddIngredient = async () => {
@@ -482,19 +485,19 @@ export default function RicettaDetail() {
             >
               {recipe.pronta_per_carta ? "✓ " : ""}Pronta per carta
             </button>
-            <button
-              type="button"
-              onClick={toggleInCarta}
-              disabled={!recipe.pronta_per_carta}
-              title={!recipe.pronta_per_carta ? "Serve prima segnarla come pronta" : undefined}
-              className={`rounded-full text-xs px-3 py-1.5 border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            {/* Non è un pulsante: è quello che il menu dice di questo
+                piatto. Si accende mettendolo in un menu attivo, dall'Editor
+                Menu. */}
+            <span
+              title="Si accende da sé quando il piatto è nel menu attivo. Si cambia dall'Editor Menu, non da qui."
+              className={`rounded-full text-xs px-3 py-1.5 border ${
                 recipe.in_carta
                   ? "bg-b58-olive text-b58-parchment border-b58-olive"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
-              {recipe.in_carta ? "✓ " : ""}In carta
-            </button>
+              {recipe.in_carta ? "✓ In carta" : "Non in carta"}
+            </span>
             <span className="text-xs text-b58-charcoal-soft ml-1">
               {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta).label}
             </span>

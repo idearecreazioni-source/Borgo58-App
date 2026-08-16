@@ -474,9 +474,19 @@ export default function MenuDetail() {
                   className={`${inputClass} flex-1 min-w-[160px]`}
                 >
                   <option value="">Aggiungi ricetta…</option>
-                  {candidates.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
+                  {/* ⚠️ In un menu ATTIVO entrano solo i piatti segnati
+                      «pronti per la carta» — lo impone il database. Qui i
+                      non pronti si mostrano lo stesso, spenti e col
+                      perché: nasconderli farebbe cercare per dieci minuti
+                      un piatto che c'è, e che manca solo di una spunta. */}
+                  {candidates.map((r) => {
+                    const bloccata = menu.is_active && !r.pronta_per_carta;
+                    return (
+                      <option key={r.id} value={r.id} disabled={bloccata}>
+                        {r.name}{bloccata ? " — non ancora pronta per la carta" : ""}
+                      </option>
+                    );
+                  })}
                 </select>
                 <input
                   type="number"
