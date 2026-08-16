@@ -137,6 +137,16 @@ const OPERAZIONI = new Set([
   "close_shopping_list_item",
   "record_stock_consumption",
   "update_ingredient_price",
+  // ⚠️ ECCEZIONE DICHIARATA (16/08/2026, decisione di Alessio su rilievo
+  // del validatore): queste due scrivono UNA tabella sola — `tasks` — e
+  // il Contratto non le obbligherebbe a passare di qui. Ci passano perché
+  // sono tutto-o-niente per senso: chiudere un impegno ricorrente genera
+  // il successivo, riaprirlo toglie quello già nato. Il Contratto §B4 NON
+  // è stato allargato: «più di una tabella» è misurabile dal database e
+  // la prova se ne costruisce l'elenco da sola, «tutto-o-niente» sarebbe
+  // un giudizio da riscrivere a mano in un file.
+  "completa_task",
+  "riapri_task",
 ]);
 
 const CORS = {

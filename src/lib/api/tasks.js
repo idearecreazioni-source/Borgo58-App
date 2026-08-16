@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
 
 // Gli impegni aperti con la loro corsia — in ritardo, questa settimana,
@@ -17,10 +18,22 @@ export async function agendaCorsie() {
 // Chiudere un impegno che torna genera il successivo, nella stessa
 // transazione: se la chiusura passasse e la rigenerazione no, un
 // adempimento annuale sparirebbe per riapparire come dimenticanza.
+// ⚠️ ECCEZIONE DICHIARATA alla regola B4, non un allargamento della
+// regola (decisione di Alessio del 16/08 su rilievo del validatore).
+// `completa_task` scrive UNA tabella sola — chiude l'impegno e genera il
+// successivo, tutt'e due su `tasks` — quindi il Contratto non la
+// obbligherebbe a passare dal corridoio. Ci passa lo stesso perché è
+// un'operazione tutto-o-niente **per senso**: se la chiusura passasse e
+// la rigenerazione no, un adempimento annuale sparirebbe per riapparire
+// come dimenticanza.
+//
+// ⚠️ Il Contratto NON è stato allargato, ed è la parte da capire: «scrive
+// più di una tabella» è misurabile dal database, e la prova del Blocco 3
+// si costruisce l'elenco da sola. «Operazione tutto-o-niente» è un
+// giudizio che nessuna query calcola: con quella formulazione l'elenco
+// tornerebbe scritto a mano in un file, cioè invecchierebbe in silenzio.
 export async function completaTask(id) {
-  const { data, error } = await supabase.rpc("completa_task", { p_id: id });
-  if (error) throw error;
-  return data;
+  return eseguiOperazione("completa_task", { p_id: id });
 }
 
 // Gli impegni chiusi di recente. Esistono perché un «fatto» premuto per
@@ -36,10 +49,10 @@ export async function agendaFatti(giorni = 30) {
 // altrimenti resterebbero due righe per lo stesso adempimento, e la
 // seconda sembrerebbe legittima. Se qualcuno ci ha già lavorato sopra
 // resta dov'è, e la schermata lo dice.
+// Stessa eccezione dichiarata di `completaTask`: una tabella sola, ma
+// riaprire e togliere il successore già nato devono riuscire insieme.
 export async function riapriTask(id) {
-  const { data, error } = await supabase.rpc("riapri_task", { p_id: id });
-  if (error) throw error;
-  return data;
+  return eseguiOperazione("riapri_task", { p_id: id });
 }
 
 // Rimanda / promuovi a data: una riga sola, la RLS come barriera.

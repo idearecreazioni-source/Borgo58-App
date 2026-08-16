@@ -70,6 +70,38 @@ describe("le scritture su più tabelle passano dal corridoio", () => {
     expect(colpevoli, colpevoli.join("\n")).toEqual([]);
   });
 
+  // ⚠️ ECCEZIONI DICHIARATE, e il perché sta qui e non solo nel riepilogo.
+  // `completa_task` e `riapri_task` scrivono UNA tabella sola (`tasks`),
+  // quindi questa rete non le vede e non deve vederle: la sua domanda è
+  // «scrive più di una tabella?», che il database sa calcolare. Passano
+  // comunque dal corridoio perché sono tutto-o-niente **per senso** —
+  // chiudere un impegno ricorrente genera il successivo, riaprirlo toglie
+  // quello già nato (decisione di Alessio, 16/08/2026).
+  //
+  // ⚠️ Il Contratto §B4 NON è stato allargato a «ogni operazione
+  // tutto-o-niente», ed è la ragione per cui questa rete continua a
+  // esistere: «più di una tabella» è misurabile, «tutto-o-niente» è un
+  // giudizio che nessuna query calcola. Con la regola larga l'elenco
+  // tornerebbe scritto a mano in questo file — cioè invecchierebbe in
+  // silenzio, che è esattamente ciò che questa prova evita.
+  //
+  // Se il caso si ripresentasse una terza volta, la strada pulita esiste:
+  // marcare le funzioni nel database con un'etichetta che si portano
+  // dietro, così l'elenco resta calcolabile.
+  it("le eccezioni dichiarate sono nel corridoio, e restano eccezioni", async () => {
+    const corridoio = readFileSync("supabase/functions/operazioni-atomiche/index.ts", "utf8");
+    for (const nome of ["completa_task", "riapri_task"]) {
+      expect(corridoio, `${nome} manca dall'elenco del corridoio`).toContain(`"${nome}"`);
+    }
+    // E non devono comparire fra le multi-tabella: se ci comparissero,
+    // vorrebbe dire che qualcuno ha cambiato cosa scrivono, e allora
+    // l'eccezione non è più un'eccezione.
+    const { data } = await titolare.rpc("funzioni_multi_tabella");
+    const multi = data.map((f) => f.nome);
+    expect(multi).not.toContain("completa_task");
+    expect(multi).not.toContain("riapri_task");
+  });
+
   it("le cinque del Blocco 3 sono nell'elenco delle operazioni del corridoio", () => {
     // Il corridoio ha un elenco CHIUSO: un nome che non c'è riceve 404, e
     // una schermata che chiama un'operazione non ammessa fallisce solo
