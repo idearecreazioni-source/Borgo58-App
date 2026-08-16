@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { filtroRicerca } from "../calcoli/ricerca";
 
 const BUCKET = "documents";
 
@@ -9,7 +10,7 @@ export async function listDocuments({ search } = {}) {
     .select("*")
     .order("document_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
-  if (search) query = query.or(`title.ilike.%${search}%,doc_type.ilike.%${search}%,counterparties.ilike.%${search}%`);
+  if (search) query = query.or(filtroRicerca(["title", "doc_type", "counterparties"], search));
   const { data, error } = await query;
   if (error) throw error;
   return data;

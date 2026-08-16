@@ -1,6 +1,7 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
+import { filtroRicerca } from "../calcoli/ricerca";
 import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 
 export async function listReservations({ status, type, search, date } = {}) {
@@ -15,7 +16,7 @@ export async function listReservations({ status, type, search, date } = {}) {
   if (type) query = query.eq("type", type);
   if (search) {
     query = query.or(
-      `customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_email.ilike.%${search}%`
+      filtroRicerca(["customer_name", "customer_phone", "customer_email"], search)
     );
   }
 

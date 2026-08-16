@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { filtroRicerca } from "../calcoli/ricerca";
 
 // Stessa normalizzazione minima della funzione DB normalize_phone(): solo
 // cifre e un eventuale + iniziale, per restare coerenti col trigger che
@@ -15,7 +16,7 @@ export function normalizePhone(phone) {
 // in Magazzino) — due query separate, unite qui per id.
 export async function listCustomers({ search } = {}) {
   let query = supabase.from("customers").select("*").eq("active", true).order("name");
-  if (search) query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+  if (search) query = query.or(filtroRicerca(["name", "phone"], search));
   const [{ data, error }, { data: stats, error: statsError }] = await Promise.all([
     query,
     supabase.from("v_customer_stats").select("*"),
