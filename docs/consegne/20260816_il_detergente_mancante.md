@@ -92,15 +92,26 @@ vera. Applicata tre volte sul progetto di prova senza errori.
 
 ---
 
-## 4. Dopo l'applicazione in produzione
+## 4. Dopo l'applicazione in produzione — compilata
 
-*(da compilare nello stesso giorno, prima del secondo push)*
+`20260816000004` applicata il 16/08/2026. Letto col connettore in sola
+lettura.
 
-- migrazioni in produzione: **da compilare**
-- detergente: quantità ricevuta e rimasta: **da compilare**
-- lotti con merce mancante e nessuno scarico: **da compilare**
-- residui della verifica (ingrediente `__PROVA FEFO__`): **da compilare**
-- avvisi partiti: **da compilare**
+| Cosa | Stato |
+|---|---|
+| migrazioni in produzione | **111** |
+| «Detergente sgrassante» | **10 ricevute, 10 rimaste** — rimesso |
+| lotti con merce mancante e nessuno scarico che la spieghi | **0** |
+| residui della verifica (ingrediente `__PROVA FEFO__`) | **zero** |
+| avvisi partiti durante l'applicazione | **zero** |
+| elenco anonimi | **12**, invariato |
+| **giacenza totale del magazzino** | **214** (era **212**) |
+
+⚠️ **La giacenza totale è la conferma indipendente**: prima della
+correzione il magazzino contava 212 unità, ora 214. Sono esattamente le 2
+unità mancanti, e il fatto che il numero torni **da solo** — senza che
+nessuno lo abbia impostato — è ciò che dimostra che la ricostruzione del
+difetto era quella giusta e non una spiegazione plausibile.
 
 ---
 
