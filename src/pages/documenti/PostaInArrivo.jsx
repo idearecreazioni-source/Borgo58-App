@@ -10,6 +10,7 @@ import {
 import { listIngredients } from "../../lib/api/ingredients";
 import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
 import { listSuppliers } from "../../lib/api/suppliers";
+import { getEntities } from "../../lib/api/entities";
 import { formatDate } from "../../lib/constants";
 
 // La posta arrivata al locale, in attesa di una decisione.
@@ -676,8 +677,28 @@ export default function PostaInArrivo() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
     // Se non ci sono fatture da caricare non servono, e non fanno danno.
-    listIngredients().then(setIngredienti).catch(() => {});
-    listSuppliers().then(setFornitori).catch(() => {});
+    listIngredients().then(setIngredienti).catch((e) => setError(e.message));
+    // 🔴 IL DIFETTO n. 11, in due pezzi.
+    //
+    // `listSuppliers()` era chiamata SENZA la società, mentre ovunque
+    // altrove è `listSuppliers(entities.srls.id)`. La chiamata falliva, il
+    // `catch` vuoto se la mangiava, e il menu «Fornitore» del carico da
+    // fattura era SEMPRE VUOTO — senza che niente lo dicesse.
+    //
+    // ⚠️ E le conseguenze non finivano nel menu: dentro
+    // `carico_con_memoria` un carico senza fornitore intesta gli
+    // ingredienti nuovi alla PRIMA ENTITÀ TROVATA — possono finire
+    // sull'agricola invece che sulla S.r.l.s., che è il vincolo portante
+    // del progetto; la memoria delle diciture finisce in un secchio
+    // generico; e lo storico prezzi perde il «da chi», su cui si regge
+    // tutta la sorveglianza dei rincari.
+    //
+    // ⚠️ Il catch muto è la metà peggiore: un errore che nessuno vede è
+    // peggio di un errore. Ora l'errore si mostra.
+    getEntities()
+      .then((ent) => listSuppliers(ent.srls.id))
+      .then(setFornitori)
+      .catch((e) => setError(e.message));
   }, []);
 
   const cambia = (azioneId, chiave, valore) =>

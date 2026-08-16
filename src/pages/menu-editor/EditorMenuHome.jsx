@@ -261,6 +261,21 @@ export default function EditorMenuHome() {
                             {allergens.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
                           </p>
                         )}
+                        {/* ⚠️ IL DIFETTO n. 14, e non era l'intento: era il
+                            risultato. Un piatto con allergeni non confermati
+                            non stampava la riga, mentre tutti gli altri la
+                            stampavano — e per il cliente che legge
+                            un'assenza in mezzo a delle presenze dice
+                            «questo non contiene allergeni». L'opposto.
+                            La nota generica in fondo alla pagina non basta,
+                            perché non distingue QUESTO piatto dagli altri.
+                            Il segno va accanto al piatto, ed è la cura
+                            minima: l'alternativa era non stamparlo affatto. */}
+                        {showAllergens && scheda?.daVerificare && (
+                          <p className="text-[11px] text-b58-charcoal-soft mt-1">
+                            per gli allergeni chiedi al personale
+                          </p>
+                        )}
                         {/* Le tracce si stampano solo se qualcuno le ha
                             davvero lette da un'etichetta: sono una riga a
                             sé perché «può contenere» non è «contiene». */}

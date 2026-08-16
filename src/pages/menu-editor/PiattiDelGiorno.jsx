@@ -241,6 +241,22 @@ export default function PiattiDelGiorno() {
               </li>
             ))}
           </ul>
+          {/* ⚠️ Difetto n. 14, seconda faccia: questo inserto non riportava
+              NIENTE sugli allergeni, nemmeno la frase generica che il menu
+              principale ha in fondo. E i piatti del giorno sono proprio
+              quelli con pesce, crostacei e frutta secca — cioè quelli in
+              cui la domanda si pone davvero.
+
+              ⚠️ Qui la frase è generica e basta, per una ragione: le voci
+              dell'inserto possono essere testo libero (`custom_name`) senza
+              nessuna ricetta dietro, quindi per metà di loro il gestionale
+              NON SA quali allergeni contengano. Stampare un elenco per le
+              une e non per le altre rifarebbe qui lo stesso difetto appena
+              chiuso sul menu principale. */}
+          <p className="text-[10px] text-b58-charcoal-soft/60 text-center mt-6">
+            In caso di allergie o intolleranze, chiedi al personale: teniamo l&apos;elenco
+            completo degli allergeni per ogni piatto.
+          </p>
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import {
   confrontoColFoglio,
   congelaScenario,
   getScenario,
+  listaScenari,
   proiezioneScenario,
   riepilogoScenario,
 } from "../../lib/api/proiezione";
@@ -28,6 +29,7 @@ export default function PrevisioneDettaglio() {
   const [riepilogo, setRiepilogo] = useState(null);
   const [confronto, setConfronto] = useState([]);
   const [calendario, setCalendario] = useState([]);
+  const [annoPrima, setAnnoPrima] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [congelando, setCongelando] = useState(false);
@@ -44,9 +46,26 @@ export default function PrevisioneDettaglio() {
     setRiepilogo(r);
     setConfronto(c);
     if (r?.imposte != null) {
-      setCalendario(await calendarioImposte(s.entity_id, s.anno, r.imposte));
+      // ⚠️ IL QUARTO PARAMETRO — il difetto n. 15. Sopra la tabella c'è
+      // scritto «è la cassa di giugno che tradisce, quando il saldo
+      // dell'anno prima e il primo acconto cadono insieme», e il saldo
+      // dell'anno prima non veniva mai passato: la funzione del database
+      // ha il ramo apposta, e restava spento. Cioè la schermata
+      // annunciava un pericolo e poi non lo mostrava.
+      //
+      // Da dove viene: dalla previsione dell'anno precedente della stessa
+      // società, preferendo quella chiusa — una previsione congelata è
+      // l'unica che non cambierà più. Se non ce n'è, resta `null` e la
+      // schermata lo DICHIARA invece di far sembrare giugno leggero.
+      const precedenti = await listaScenari(s.entity_id).catch(() => []);
+      const anteriore =
+        precedenti.filter((x) => x.anno === s.anno - 1).sort((a, b) => (b.congelato_il ? 1 : 0) - (a.congelato_il ? 1 : 0))[0] ?? null;
+      const rPrec = anteriore ? await riepilogoScenario(anteriore.id).catch(() => null) : null;
+      setAnnoPrima(rPrec?.imposte != null ? { nome: anteriore.nome, imposte: rPrec.imposte } : null);
+      setCalendario(await calendarioImposte(s.entity_id, s.anno, r.imposte, rPrec?.imposte ?? null));
     } else {
       setCalendario([]);
+      setAnnoPrima(null);
     }
   }, [id]);
 
@@ -222,6 +241,13 @@ export default function PrevisioneDettaglio() {
           <p className="text-xs text-b58-charcoal-soft mb-3">
             Non basta sapere quanto: è la cassa di giugno che tradisce, quando il saldo dell&apos;anno prima
             e il primo acconto cadono insieme.
+          </p>
+          {/* ⚠️ Il limite viaggia col numero: senza le imposte dell'anno
+              prima, giugno sembra più leggero di quello che sarà. */}
+          <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
+            {annoPrima
+              ? `Il saldo dell'anno prima è compreso, e viene dalla previsione «${annoPrima.nome}».`
+              : "Il saldo dell'anno prima NON è compreso: non c'è nessuna previsione dell'anno precedente da cui prenderlo. Giugno sarà più pesante di così."}
           </p>
           <table className="w-full text-sm">
             <tbody>
