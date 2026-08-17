@@ -409,6 +409,36 @@ begin
       v_saldo_p, v_saldo_d;
   end if;
 
+  -- 3bis. E ORA IL VERSO OPPOSTO, che e' la meta' che conta davvero
+  --       (rilievo di Alessio, 17/08).
+  --
+  -- ⚠️ «Il saldo non e' cambiato» da solo e' una prova DEBOLE: dimostra che
+  -- la regola non rompe niente, non che funziona — e coinciderebbe anche
+  -- se la vista ignorasse la data del tutto. La prova forte e' quella che
+  -- produce LEI la differenza: **lo stesso movimento**, spostato da domani
+  -- a ieri, deve entrare nel saldo di **esattamente** il suo importo.
+  -- Due numeri che devono divergere di una cifra nota, non due che devono
+  -- coincidere. E' la lezione delle mance applicata qui: si misura la
+  -- differenza che si produce, non il totale del mondo.
+  update cash_movements
+     set movement_date = (now() at time zone 'Europe/Rome')::date - 1
+   where supplier_invoice_id = v_inv;
+
+  select b.saldo_banca into v_saldo_d from v_cash_balance b where b.entity_id = v_ente;
+  if v_saldo_d <> v_saldo_p - 250.00 then
+    raise exception
+      'Spostando l''uscita a ieri il saldo banca doveva passare da % a %, ed e'' %.',
+      v_saldo_p, v_saldo_p - 250.00, v_saldo_d;
+  end if;
+
+  -- E rimessa a domani, torna fuori dal saldo: la data comanda in tutti e
+  -- due i versi, non solo in discesa.
+  update cash_movements set movement_date = v_domani where supplier_invoice_id = v_inv;
+  select b.saldo_banca into v_saldo_d from v_cash_balance b where b.entity_id = v_ente;
+  if v_saldo_d <> v_saldo_p then
+    raise exception 'Rimessa a domani, l''uscita e'' rimasta nel saldo (% invece di %).', v_saldo_d, v_saldo_p;
+  end if;
+
   -- 4. Ma compare fra le uscite attese, UNA VOLTA SOLA. Il controllo
   --    speculare chiesto da Alessio: non deve nemmeno sparire, ne'
   --    comparire due volte.
