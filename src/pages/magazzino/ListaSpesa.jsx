@@ -14,7 +14,7 @@ import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
-import { PAYMENT_METHODS, UNITS, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { PAYMENT_METHODS_SPESA, UNITS, formatDate, formatEUR, labelFor } from "../../lib/constants";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -377,7 +377,7 @@ export default function ListaSpesa() {
                             }
                             className={inputClass}
                           >
-                            {PAYMENT_METHODS.map((p) => (
+                            {PAYMENT_METHODS_SPESA.map((p) => (
                               <option key={p.value} value={p.value}>{p.label}</option>
                             ))}
                           </select>
@@ -558,7 +558,7 @@ export default function ListaSpesa() {
                 {isTitolare && item.purchased_amount != null && (
                   <span className="text-b58-charcoal">
                     {formatEUR(item.purchased_amount)}
-                    {item.payment_method && ` · ${labelFor(PAYMENT_METHODS, item.payment_method)}`}
+                    {item.payment_method && ` · ${labelFor(PAYMENT_METHODS_SPESA, item.payment_method)}`}
                   </span>
                 )}
               </li>

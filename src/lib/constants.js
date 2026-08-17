@@ -152,16 +152,40 @@ export const TIP_MEZZI = [
   { value: "carta", label: "Carta" },
 ];
 
+// Come si paga una FATTURA FORNITORE.
+//
 // ⚠️ L'assegno c'è dal 17/08/2026: mancava, e Alessio conta di usarne una
 // trentina prima dell'apertura. Un pagamento vero che il gestionale non sa
 // nominare finisce registrato come qualcos'altro.
-// ⚠️ Il vocabolario è chiuso anche nel database, in DUE posti: la funzione
-// `pay_supplier_invoice` e il vincolo su `supplier_invoices`. Aggiungerne
-// uno qui senza aggiungerlo là fallisce al primo uso.
+// ⚠️ Il vocabolario è chiuso in TRE posti che devono restare d'accordo: qui,
+// nella funzione `pay_supplier_invoice` e nel vincolo su
+// `supplier_invoices`. Da oggi c'è una rete che lo controlla —
+// `src/lib/calcoli/vocabolari.js` e `tests/app/vocabolari.test.js`.
 export const PAYMENT_METHODS = [
   { value: "contante", label: "Contante" },
   { value: "bonifico", label: "Bonifico" },
   { value: "assegno", label: "Assegno" },
+  { value: "carta", label: "Carta" },
+];
+
+// Come si paga una spesa CHIUSA DALLA LISTA — e sono due vocabolari, non
+// uno.
+//
+// 🔴 Fino al 17/08 la lista della spesa usava l'elenco delle fatture, e
+// finché i due coincidevano non si vedeva. Aggiungendo l'assegno alle
+// fatture, questo menu ha cominciato a offrire un valore che il database
+// rifiuta (`shopping_list_items_payment_method_check` ammette contante,
+// bonifico, carta): sceglierlo faceva fallire la chiusura della riga.
+// Trovato costruendo la rete dei vocabolari, non da un errore.
+//
+// ⚠️ NON si è allargato il vincolo per far posto all'assegno: quale sia il
+// vocabolario della sua spesa lo decide Alessio, e aggiungere un valore per
+// far tornare un conto sarebbe una regola scritta da me sul suo modo di
+// comprare. Se un giorno pagherà la spesa con un assegno, è una riga qui e
+// una migrazione.
+export const PAYMENT_METHODS_SPESA = [
+  { value: "contante", label: "Contante" },
+  { value: "bonifico", label: "Bonifico" },
   { value: "carta", label: "Carta" },
 ];
 
