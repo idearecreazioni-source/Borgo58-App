@@ -21,9 +21,10 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    rimaste: HACCP, Personale, Proiezione Fiscale, Archivio Documenti,
    Editor Menu, Assistente, Agricolo.
 3. ⏳ Manda il **secondo blocco**. Da lì lavoro io e lui si ferma.
-4. ✅ **Primo giro CHIUSO** — cinque difetti A, piu' n. 10 e n. 3: i difetti A. Ordine di gravità: **n. 4 e n. 2**
-   prima degli altri, poi **n. 1 + n. 10 insieme** (sono lo stesso
-   lavoro), poi n. 3, poi la seconda metà di n. 5.
+4. ✅ **Primo giro CHIUSO**: i cinque difetti A, più il n. 10 e il n. 3.
+   L'ordine seguito è stato quello concordato — prima il manuale HACCP
+   (l'unico documento che finisce in mano a qualcun altro), poi n. 4 e
+   n. 2, poi n. 1 col n. 10, poi n. 3.
 5. 🔄 **Secondo giro, in corso**: le mancanze sui pagamenti (B 6-7-8-9), che sono
    una cosa sola e non quattro.
 6. ⏳ **Le piccolezze (D) tutte in un giro solo**, alla fine.
