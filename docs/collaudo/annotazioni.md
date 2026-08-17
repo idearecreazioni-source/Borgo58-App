@@ -29,13 +29,16 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    erano una cosa sola e non quattro. In due consegne — la fondazione coi
    filtri ([riepilogo](../consegne/20260817_l_uscita_ha_la_sua_data.md)) e
    le note di credito ([riepilogo](../consegne/20260817_la_nota_di_credito.md)).
-6. 🔄 **Le piccolezze (D): 8 su 10.** Cinque col giro dei quattro difetti
+6. ✅ **Le piccolezze (D): 10 su 10 — il primo blocco è chiuso per intero.** Cinque col giro dei quattro difetti
    ([riepilogo](../consegne/20260817_i_quattro_difetti.md)), tre col giro
    degli importi ([riepilogo](../consegne/20260817_gli_importi_e_le_piccolezze.md)).
-   ⚠️ **Restano due**: il riepilogo in cima al Magazzino («3 sotto soglia, 1
-   scade fra due giorni») e **le spunte dell'Editor Menu Cartaceo** — quella
-   va **disegnata e non aggiustata**, e non si fa di corsa in coda a un giro
-   lungo.
+   Le ultime due col terzo giro
+   ([riepilogo](../consegne/20260817_le_ultime_piccolezze.md)): il riepilogo in
+   cima al Magazzino, e **le spunte dell'Editor Menu** — ridisegnate e non
+   ritoccate. ⚠️ Presa la strada «smette di sembrare uno stato»: quella scelta
+   non è uno stato del menu, vale per un foglio che si sta per stampare. E i
+   verbi sono di STAMPA e mai «togli», perché nel menu «Rimuovi» esiste già e
+   toglie il piatto dalla carta per davvero.
 7. ✅ **La rete sui vocabolari chiusi — fatta il 17/08**, prima delle
    piccolezze per decisione di Alessio: vive nelle prove e nel database,
    quindi non cambia le schermate che lui sta guardando.
