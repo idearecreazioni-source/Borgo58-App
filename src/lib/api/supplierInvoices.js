@@ -1,11 +1,24 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { SELECT_FATTURA } from "../calcoli/selectFatture";
 
 // L'entità viaggia insieme alla fattura, e non è un di più: il «da pagare»
 // sommava S.r.l.s. e azienda agricola in un numero solo, che non è il
 // debito di nessuna delle due. Per separarlo in schermata serve sapere di
 // chi è ogni riga.
-const SELECT = "*, supplier:supplier_id(id, name), entity:entity_id(id, name)";
+// ⚠️ `da_pagare` e `note_scalate` NON sono colonne della tabella: sono
+// calcolate dal database e lette come se lo fossero. È il modo per avere
+// «250 meno 40 fa 210» scritto in UN posto solo — rifarlo qui in
+// JavaScript sarebbe un secondo calcolo dello stesso numero, che è il
+// difetto chiuso in nove punti dal mandato di correzione.
+//
+// `utilizzi` porta le ETICHETTE delle note scalate (quale nota, di che
+// data): serve a scrivere «fattura 250, nota −40, pagati 210» senza che
+// nessuno debba sommare niente.
+//
+// La stringa sta in `calcoli/selectFatture.js` perché la prova automatica
+// possa usare quella, non una copia: vedi il commento là.
+const SELECT = SELECT_FATTURA;
 
 // `dal`/`al` filtrano sulla DATA DELLA FATTURA, non sulla scadenza: è la
 // data che si legge sul documento e quella che si ricorda («la fattura di
@@ -89,13 +102,109 @@ export async function createSupplierInvoice({
 // `riferimento` è il numero dell'assegno o del bonifico — senza, due
 // uscite dello stesso importo allo stesso fornitore sono indistinguibili
 // sull'estratto conto.
-export async function markInvoicePaid(id, { paymentMethod, dataUscita, riferimento }) {
+// ⚠️ `noteDaUsare` sono i crediti che si scelgono di scalare su QUESTA
+// fattura (17/08/2026). Quanto di ognuno venga usato non lo decide questa
+// riga: lo decide `crediti_da_applicare` nel database, la stessa funzione
+// che alimenta l'anteprima — due crediti da 30 su una fattura da 40 si
+// applicano per 40 in tutto, non per 60.
+export async function markInvoicePaid(id, { paymentMethod, dataUscita, riferimento, noteDaUsare }) {
   return eseguiOperazione("pay_supplier_invoice", {
     p_invoice_id: id,
     p_payment_method: paymentMethod,
     p_data_uscita: dataUscita || null,
     p_riferimento: riferimento?.trim() || null,
+    p_note_da_usare: noteDaUsare?.length ? noteDaUsare : null,
   });
+}
+
+// ---------------------------------------------------------------------
+// Note di credito (n. 8 del collaudo, 17/08/2026)
+// ---------------------------------------------------------------------
+// La regola decisa da Alessio: se la nota arriva PRIMA del pagamento
+// riduce quanto si paga (fattura 250, nota 40 → escono 210); se arriva
+// DOPO resta come credito da usare sulla fattura successiva di quel
+// fornitore. Il gestionale fa l'una o l'altra a seconda di quando arriva,
+// e la differenza è tutta lì.
+
+// Registra la nota e, se la fattura che corregge è ancora da pagare, la
+// scala subito su di lei: due tabelle, una decisione (Contratto B4).
+export async function registraNotaCredito({
+  entityId,
+  supplierId,
+  data,
+  importo,
+  fatturaId,
+  numero,
+  note,
+}) {
+  return eseguiOperazione("registra_nota_credito", {
+    p_entity_id: entityId,
+    p_supplier_id: supplierId,
+    p_data: data,
+    p_importo: importo,
+    p_fattura_id: fatturaId || null,
+    p_numero: numero?.trim() || null,
+    p_note: note?.trim() || null,
+  });
+}
+
+// ⚠️ Respinta se la nota è già scalata su una fattura pagata: quel
+// pagamento è stato più basso proprio per via sua. La via d'uscita è
+// annullare il pagamento, e il messaggio del database la nomina.
+export async function eliminaNotaCredito(id) {
+  return eseguiOperazione("elimina_nota_credito", { p_id: id });
+}
+
+// `credito_residuo` è calcolato dal database, come `da_pagare`.
+export async function listNoteCredito(entityId) {
+  const { data, error } = await supabase
+    .from("note_credito")
+    .select(
+      "*, credito_residuo, supplier:supplier_id(id, name)," +
+        " fattura:fattura_id(id, invoice_number, invoice_date, status)"
+    )
+    .eq("entity_id", entityId)
+    .order("data", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+// Il credito ancora da usare, per fornitore: si mostra accanto al «da
+// pagare» perché un credito che nessuno ricorda sono soldi persi.
+export async function creditiFornitore(entityId) {
+  const { data, error } = await supabase.rpc("crediti_fornitore", { p_entity_id: entityId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Cosa proporre pagando questa fattura, con quanto se ne potrebbe usare.
+export async function creditiPerFattura(invoiceId) {
+  const { data, error } = await supabase.rpc("crediti_per_fattura", { p_invoice_id: invoiceId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// I numeri che uscirebbero confermando — chiesti al database, non
+// ricostruiti qui: due crediti da 30 su una fattura da 40 si applicano
+// per 40, e una somma fatta in schermata direbbe 60.
+export async function anteprimaPagamento(invoiceId, noteDaUsare) {
+  const { data, error } = await supabase.rpc("anteprima_pagamento", {
+    p_invoice_id: invoiceId,
+    p_note: noteDaUsare?.length ? noteDaUsare : null,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// I documenti collegati (DDT, contratti): un collegamento e basta —
+// nessun conto ci passa dentro. Una tabella sola, quindi scrittura
+// diretta con la RLS come barriera (categoria A del Contratto).
+export async function collegaDocumentoAFattura(documentId, invoiceId) {
+  const { error } = await supabase
+    .from("documents")
+    .update({ supplier_invoice_id: invoiceId })
+    .eq("id", documentId);
+  if (error) throw error;
 }
 
 // Cancella la fattura E completa il promemoria "Pagare fattura" collegato,

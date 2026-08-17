@@ -147,6 +147,16 @@ const OPERAZIONI = new Set([
   // un giudizio da riscrivere a mano in un file.
   "completa_task",
   "riapri_task",
+  // Le note di credito (17/08/2026, n. 8 del collaudo). `registra_nota_credito`
+  // tocca due tabelle: la nota nasce e, se la fattura che corregge e'
+  // ancora da pagare, si scala subito su di lei — a meta' resterebbe una
+  // nota registrata che non abbassa niente, cioe' un «da pagare» che
+  // mente. `elimina_nota_credito` ne tocca una sola e passa comunque di
+  // qui, come `delete_anticipazione`: il controllo sta nella funzione, e
+  // la forma e' quella che rende l'elenco delle cancellazioni
+  // controllabile.
+  "registra_nota_credito",
+  "elimina_nota_credito",
 ]);
 
 const CORS = {

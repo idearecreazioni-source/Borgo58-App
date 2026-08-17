@@ -97,7 +97,8 @@ const { addRecipeIngredient } = await carica("/src/lib/api/recipeIngredients.js"
 const { createMenu, addMenuItem, setActiveMenu } = await carica("/src/lib/api/menus.js");
 const orders = await carica("/src/lib/api/orders.js");
 const { createCashMovement, createPosDevice, listAllCausali } = await carica("/src/lib/api/cash.js");
-const { createSupplierInvoice, markInvoicePaid } = await carica("/src/lib/api/supplierInvoices.js");
+const { collegaDocumentoAFattura, createSupplierInvoice, markInvoicePaid, registraNotaCredito } =
+  await carica("/src/lib/api/supplierInvoices.js");
 const { assegnaPrenotazione, createReservation } = await carica("/src/lib/api/reservations.js");
 const { upsertFiscalSettings } = await carica("/src/lib/api/fiscal.js");
 const { createEmployee, createEmployeeLeave, createTipCollected } = await carica("/src/lib/api/personale.js");
@@ -217,6 +218,17 @@ begin
 
   delete from cash_movements
    where supplier_invoice_id in (select id from supplier_invoices where note like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  -- ATTENZIONE: le note di credito PRIMA delle fatture. Gli utilizzi
+  -- puntano alle fatture con "on delete restrict", ed e' voluto: una
+  -- fattura con una nota addosso non si cancella e basta. Qui i trigger
+  -- sono spenti, ma l'ordine resta quello giusto - se un giorno si
+  -- demolisse coi trigger accesi, questo pezzo non cambierebbe.
+  delete from note_credito_utilizzi
+   where nota_id in (select id from note_credito where note like '${MARCA}%')
+      or fattura_id in (select id from supplier_invoices where note like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from note_credito where note like '${MARCA}%';
   get diagnostics n = row_count; tolte := tolte + n;
   delete from tasks
    where id in (select task_id from supplier_invoices where note like '${MARCA}%' and task_id is not null);
@@ -771,7 +783,7 @@ if (scenario) {
     note: `${MARCA}fattura del mese scorso`,
   });
   await markInvoicePaid(invPagata, { paymentMethod: "bonifico" });
-  await createSupplierInvoice({
+  const invScadenza = await createSupplierInvoice({
     entityId: ente,
     supplierId: fornitori["Ittica di Collaudo S.n.c."],
     invoiceNumber: "BASE-058",
@@ -793,6 +805,62 @@ if (scenario) {
     note: `${MARCA}fattura SCADUTA`,
   });
   segna("fatture fornitore: una pagata, una in scadenza, una SCADUTA", 3);
+
+  // --- Le note di credito, nei DUE casi che sono cose diverse (n. 8) ---
+  //
+  // ⚠️ Stanno qui e non in una prova automatica per una ragione precisa:
+  // `note_credito` è sorvegliata dal registro delle cancellazioni, e una
+  // prova che crea-e-cancella lì dentro lascia lapidi che non può togliere
+  // (tests/app/LEGGIMI.md). Lo stato di partenza invece si demolisce da
+  // SQL coi trigger spenti, quindi può tenere righe vere senza sporcare
+  // niente — ed è anche l'unico modo di avere una riga su cui provare che
+  // lo staff non vede le note di credito (§5 punto 2: mai dichiarare
+  // verificata una RLS restrittiva su una tabella vuota).
+  //
+  // Caso 1 — la nota è arrivata PRIMA: si scala e si pagherà 170,00 su
+  // 195,69. La schermata deve dire tutti e tre i numeri.
+  await registraNotaCredito({
+    entityId: ente,
+    supplierId: fornitori["Ittica di Collaudo S.n.c."],
+    data: oggi,
+    importo: 25.69,
+    fatturaId: invScadenza,
+    numero: "NC-2027/14",
+    note: `${MARCA}nota arrivata prima del pagamento`,
+  });
+  // Caso 2 — la nota è arrivata DOPO che la fattura era già pagata:
+  // diventa un credito da usare sulla prossima di quel fornitore. È il
+  // caso che si dimentica, e per questo il credito si mostra accanto al
+  // «da pagare».
+  await registraNotaCredito({
+    entityId: ente,
+    supplierId: fornitori["Ortofrutta PROVA S.r.l."],
+    data: traGiorniLocale(-4),
+    importo: 30,
+    fatturaId: invPagata,
+    numero: "NC-2027/21",
+    note: `${MARCA}nota arrivata dopo il pagamento`,
+  });
+  segna("note di credito: una scalata, una che resta credito", 2);
+
+  // --- Un DDT collegato alla fattura: la meccanica, senza conti dentro ---
+  const ddt = await createDocument({
+    entity_id: ente,
+    title: `${MARCA}DDT 341 — Ortofrutta PROVA`,
+    doc_type: "DDT",
+    document_date: traGiorniLocale(-2),
+    counterparties: "Ortofrutta PROVA S.r.l.",
+    note: `${MARCA}documento collegato alla fattura scaduta`,
+  });
+  const { data: fatturaScaduta } = await supabase
+    .from("supplier_invoices")
+    .select("id")
+    .eq("invoice_number", "BASE-101")
+    .maybeSingle();
+  if (fatturaScaduta) {
+    await collegaDocumentoAFattura(ddt?.id ?? ddt, fatturaScaduta.id);
+    segna("documento collegato a una fattura");
+  }
 
   await addBelowThresholdItems();
   const { count: inLista } = await supabase
