@@ -29,11 +29,13 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    erano una cosa sola e non quattro. In due consegne — la fondazione coi
    filtri ([riepilogo](../consegne/20260817_l_uscita_ha_la_sua_data.md)) e
    le note di credito ([riepilogo](../consegne/20260817_la_nota_di_credito.md)).
-6. 🔄 **Le piccolezze (D)**: 5 fatte il 17/08 con i quattro difetti
-   ([riepilogo](../consegne/20260817_i_quattro_difetti.md)), 5 restano —
-   gergo in interfaccia, «Questo mese» coi numeri nudi, riepilogo in cima al
-   Magazzino, «Nuova fattura» nel posto piu' visibile, e **le spunte
-   dell'Editor Menu Cartaceo**, che va disegnata e non ritoccata.
+6. 🔄 **Le piccolezze (D): 8 su 10.** Cinque col giro dei quattro difetti
+   ([riepilogo](../consegne/20260817_i_quattro_difetti.md)), tre col giro
+   degli importi ([riepilogo](../consegne/20260817_gli_importi_e_le_piccolezze.md)).
+   ⚠️ **Restano due**: il riepilogo in cima al Magazzino («3 sotto soglia, 1
+   scade fra due giorni») e **le spunte dell'Editor Menu Cartaceo** — quella
+   va **disegnata e non aggiustata**, e non si fa di corsa in coda a un giro
+   lungo.
 7. ✅ **La rete sui vocabolari chiusi — fatta il 17/08**, prima delle
    piccolezze per decisione di Alessio: vive nelle prove e nel database,
    quindi non cambia le schermate che lui sta guardando.
@@ -55,8 +57,16 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    **cassa**: 40 € in contanti al contadino non registrati diventano un
    ammanco del cassetto la sera — lo stesso meccanismo delle mance su carta.
    È il prerequisito dell'unificazione dei vocabolari dei mezzi di pagamento.
-9. ⏳ **I 33 posti dove una dimenticanza è silenziosa**: misurati, mai
-   camminati. `createCashMovement` ha ancora la forma vulnerabile.
+9. ⏳ **Due facce dello stesso problema — un controllo che guarda la FORMA
+   invece del COMPORTAMENTO** — da affrontare insieme:
+   · **quante funzioni sono riscritte da una migrazione senza che nessuna
+     verifica le abbia mai chiamate?** Se sono poche si guardano a mano; se
+     sono tante è una rete: *ogni funzione che una migrazione riscrive va
+     eseguita almeno una volta nella sua verifica*. Nasce dal difetto del
+     17/08 — un corpo che si crea non è un corpo che funziona;
+   · **i 33 posti dove una dimenticanza è silenziosa** (vocabolari su una
+     colonna con predefinito): misurati, mai camminati.
+     `createCashMovement` ha ancora la forma vulnerabile.
 10. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
    può assegnare a un tavolo ostacolerebbero proprio la prova che deve
