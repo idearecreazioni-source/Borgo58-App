@@ -151,6 +151,13 @@ export async function registraNotaCredito({
 // ⚠️ Respinta se la nota è già scalata su una fattura pagata: quel
 // pagamento è stato più basso proprio per via sua. La via d'uscita è
 // annullare il pagamento, e il messaggio del database la nomina.
+//
+// ⚠️ E RESTITUISCE UNA FRASE che dice cosa ha stornato — «la fattura BASE-058
+// torna a 195,69 euro da pagare» — perché sull'altra strada l'effetto si
+// storna in silenzio: il «da pagare» di quella fattura risale e niente lo
+// dice. Un effetto stornato che nessuno annuncia è indistinguibile da un
+// numero che cambia da solo (rilievo di Alessio, 17/08/2026). La frase va
+// mostrata, non ignorata.
 export async function eliminaNotaCredito(id) {
   return eseguiOperazione("elimina_nota_credito", { p_id: id });
 }

@@ -57,6 +57,10 @@ export default function FattureFornitoriHome() {
   const [documenti, setDocumenti] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Un avviso che NON è un guasto: cosa è cambiato dopo un gesto. Sta a
+  // parte dal rosso perché leggere il rosso su una cosa andata bene insegna
+  // a ignorare il rosso vero.
+  const [avviso, setAvviso] = useState("");
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -315,11 +319,18 @@ export default function FattureFornitoriHome() {
     }
   };
 
+  // ⚠️ Togliere una nota fa RISALIRE il «da pagare» di quella fattura, e va
+  // detto in tutti e due i momenti: prima con una conferma che nomina la
+  // cifra, dopo con la frase che il database restituisce (quale fattura
+  // torna a quanto). Senza, un numero cambierebbe da solo — la stessa cosa
+  // che il 17/08 abbiamo dovuto spiegare per il saldo di cassa.
   const togliNota = async (notaId) => {
     setError("");
+    setAvviso("");
     try {
-      await eliminaNotaCredito(notaId);
+      const detto = await eliminaNotaCredito(notaId);
       await ricarica();
+      if (typeof detto === "string" && detto) setAvviso(detto);
     } catch (e) {
       setError(e.message);
     }
@@ -349,13 +360,16 @@ export default function FattureFornitoriHome() {
             {u.nota?.numero ? `${u.nota.numero} ` : ""}
             <strong className="text-b58-terracotta-dark">−{formatEUR(u.importo)}</strong>
             {inv.status !== "pagata" && (
-              <button
-                type="button"
-                onClick={() => togliNota(u.nota.id)}
-                className="ml-1 text-[10px] text-b58-charcoal-soft/70 hover:text-b58-terracotta underline"
-              >
-                togli
-              </button>
+              <span className="ml-1 inline-block align-middle">
+                <ConfermaDistruttiva
+                  etichetta="togli"
+                  domanda={`Togliendo la nota ${u.nota?.numero ?? "senza numero"} questa fattura torna a ${formatEUR(
+                    inv.amount
+                  )} meno le altre note: il «da pagare» risale di ${formatEUR(u.importo)}. Procedo?`}
+                  etichettaConferma="Sì, togli la nota"
+                  onConferma={() => togliNota(u.nota.id)}
+                />
+              </span>
             )}
           </span>
         ))}
@@ -473,6 +487,19 @@ export default function FattureFornitoriHome() {
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
+        </p>
+      )}
+
+      {avviso && (
+        <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-3">
+          <span>{avviso}</span>
+          <button
+            type="button"
+            onClick={() => setAvviso("")}
+            className="text-xs text-b58-charcoal-soft hover:text-b58-charcoal shrink-0"
+          >
+            ho capito
+          </button>
         </p>
       )}
 

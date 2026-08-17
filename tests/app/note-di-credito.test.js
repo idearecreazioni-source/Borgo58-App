@@ -188,17 +188,21 @@ describe("la nota di credito: se arriva prima riduce, se arriva dopo resta credi
     expect(corpo.errore.messaggio).toContain("maggiore di zero");
 
     // `elimina_nota_credito` su un identificativo inesistente non cancella
-    // niente e non lascia lapidi: serve solo a dire che il nome esiste.
+    // niente e non lascia lapidi. ⚠️ E serve anche a un'altra cosa: quella
+    // funzione RESTITUISCE una frase che dice cosa ha stornato, e la
+    // schermata la mostra. Se la frase non arrivasse fino al browser, il
+    // «da pagare» di un'altra fattura risalirebbe in silenzio — che è il
+    // difetto che quella frase esiste per chiudere. Qui si prova che il
+    // valore di ritorno faccia tutto il tragitto.
     const e = await titolare.functions.invoke("operazioni-atomiche", {
       body: {
         operazione: "elimina_nota_credito",
         parametri: { p_id: "00000000-0000-0000-0000-000000000000" },
       },
     });
-    if (e.error) {
-      const c = await e.error.context.json();
-      expect(c.errore.codice).not.toBe("operazione");
-    }
+    expect(e.error, "l'operazione non è arrivata alla funzione").toBeFalsy();
+    expect(typeof e.data?.risultato).toBe("string");
+    expect(e.data.risultato).toContain("non c'");
   });
 
   it("una fattura con una nota addosso non si cancella: e il rifiuto dice cosa fare", async () => {

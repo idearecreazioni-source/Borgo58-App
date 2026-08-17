@@ -196,14 +196,16 @@ begin
   -- che non si puo' leggere. Si sceglie prima quale riga si sta guardando.
   if tg_op = 'DELETE' then v_riga := old; else v_riga := new; end if;
 
-  select * into v_nota from note_credito       where id = v_riga.nota_id;
-  select * into v_inv  from supplier_invoices  where id = v_riga.fattura_id;
-  if v_nota.id is null or v_inv.id is null then
-    raise exception 'Nota di credito o fattura inesistente.';
+  select * into v_inv from supplier_invoices where id = v_riga.fattura_id;
+  if v_inv.id is null then
+    raise exception 'Fattura inesistente.';
   end if;
 
   -- Lo stato della fattura vale in TUTTI E TRE i versi (insert, update,
-  -- delete): e' il caso che protegge i soldi gia' usciti.
+  -- delete): e' il caso che protegge i soldi gia' usciti. E vale anche per
+  -- chi scrive dritto in tabella dal browser — la RLS gli lascerebbe
+  -- cancellare la riga, e il controllo dentro `elimina_nota_credito` non
+  -- sarebbe passato da nessuno.
   -- ⚠️ `annulla_pagamento_fattura` passa di qui e non ha scappatoie: rimette
   -- prima la fattura a «da pagare» e libera i crediti dopo. E' la stessa
   -- strada dei due storni del 16/08 — una scappatoia nel trigger sarebbe
@@ -214,8 +216,23 @@ begin
       coalesce(v_inv.invoice_number, '(senza numero)');
   end if;
 
+  -- ⚠️ QUI SI ESCE, E LA NOTA NON SI CERCA NEMMENO. Trovato applicando:
+  -- togliere una nota scalata su una fattura da pagare cancella l'utilizzo
+  -- **in cascata**, quindi quando questo trigger gira la nota non c'e' piu'
+  -- e cercarla faceva fallire il gesto con «Nota di credito inesistente».
+  -- Era il primo gesto che si fa dalla schermata («togli»), e nessuna
+  -- delle prove precedenti passava da qui: l'unico caso provato era una
+  -- nota non ancora scalata, dove non c'e' nessun utilizzo da cancellare.
+  --
+  -- I controlli che seguono riguardano solo cio' che si sta SCRIVENDO: su
+  -- una cancellazione non c'e' niente da confrontare.
   if tg_op = 'DELETE' then
     return old;
+  end if;
+
+  select * into v_nota from note_credito where id = v_riga.nota_id;
+  if v_nota.id is null then
+    raise exception 'Nota di credito inesistente.';
   end if;
 
   if v_nota.supplier_id <> v_inv.supplier_id then
@@ -389,11 +406,33 @@ comment on function registra_nota_credito(uuid, uuid, date, numeric, uuid, text,
 revoke all on function registra_nota_credito(uuid, uuid, date, numeric, uuid, text, text) from public, anon, authenticated;
 grant execute on function registra_nota_credito(uuid, uuid, date, numeric, uuid, text, text) to authenticated;
 
--- La via di ritorno. ⚠️ Respinge se la nota e' scalata su una fattura gia'
--- pagata: quel pagamento e' stato piu' basso PROPRIO per via di questa
--- nota, e toglierla lascerebbe un'uscita che non torna col documento.
+-- La via di ritorno, e la regola del Blocco 1 (16/08) applicata alle note:
+-- una nota che ha generato un effetto o e' RESPINTA con un messaggio che
+-- dice cosa fare prima, o STORNA anche l'effetto nella stessa transazione.
+-- Non esiste il terzo caso — l'effetto resta e il documento sparisce.
+--
+--   · scalata su una fattura GIA' PAGATA  → respinta. Quel pagamento e'
+--     stato piu' basso proprio per via sua, e togliere la nota
+--     lascerebbe un'uscita che non torna col documento. La via d'uscita
+--     («annulla prima il pagamento») e' nel messaggio.
+--   · scalata su una fattura DA PAGARE    → si storna: l'utilizzo se ne va
+--     con la nota e quella fattura torna al suo importo pieno.
+--
+-- ⚠️ MA IL SECONDO CASO STORNAVA IN SILENZIO, e questo e' il rilievo di
+-- Alessio del 17/08. Il collegamento e' `on delete cascade`, quindi la
+-- cancellazione FUNZIONAVA: solo che il «da pagare» di un'ALTRA fattura
+-- risaliva senza che niente lo dicesse. Un effetto stornato che nessuno
+-- annuncia e' indistinguibile da un numero che cambia da solo — la stessa
+-- forma del saldo che si muove alla mezzanotte, che il 17/08 abbiamo
+-- dovuto spiegare per la stessa ragione.
+--
+-- Quindi la funzione RESTITUISCE cosa ha stornato, e la schermata lo dice.
+-- ⚠️ Il tipo di ritorno cambia da `void` a `text`: `create or replace` non
+-- basta (Postgres rifiuta un tipo di ritorno diverso), serve il `drop`.
+drop function if exists elimina_nota_credito(uuid);
+
 create or replace function elimina_nota_credito(p_id uuid)
-returns void
+returns text
 language plpgsql
 security definer
 set search_path = public
@@ -401,9 +440,17 @@ as $funzione$
 declare
   v_bloccanti integer;
   v_quali     text;
+  v_nota      note_credito%rowtype;
+  v_stornate  text;
+  v_quante    integer;
 begin
   if not is_titolare() then
     raise exception 'Solo il titolare puo'' eliminare una nota di credito';
+  end if;
+
+  select * into v_nota from note_credito where id = p_id for update;
+  if v_nota.id is null then
+    return 'Quella nota di credito non c''e'' piu''.';
   end if;
 
   select count(*), string_agg(coalesce(i.invoice_number, '(senza numero)'), ', ')
@@ -418,9 +465,33 @@ begin
       v_bloccanti, v_quali;
   end if;
 
+  -- Che cosa si sta per stornare, letto PRIMA di cancellare: dopo, la
+  -- cascata se l'e' portato via e non c'e' piu' modo di dirlo.
+  select count(*),
+         string_agg(
+           'la fattura ' || coalesce(i.invoice_number, '(senza numero)')
+             || ' torna a ' || to_char(i.amount - note_scalate(i) + u.importo, 'FM999999990.00')
+             || ' euro da pagare',
+           '; ' order by i.invoice_number)
+    into v_quante, v_stornate
+    from note_credito_utilizzi u
+    join supplier_invoices i on i.id = u.fattura_id
+   where u.nota_id = p_id;
+
   delete from note_credito where id = p_id;
+
+  if coalesce(v_quante, 0) = 0 then
+    return 'Nota di credito ' || coalesce(v_nota.numero, 'senza numero')
+      || ' rimossa: non era scalata su nessuna fattura, quindi nessun importo cambia.';
+  end if;
+
+  return 'Nota di credito ' || coalesce(v_nota.numero, 'senza numero')
+    || ' rimossa, e con lei lo sconto che faceva: ' || v_stornate || '.';
 end;
 $funzione$;
+
+comment on function elimina_nota_credito(uuid) is
+  'Toglie una nota di credito. Respinta se e'' scalata su una fattura gia'' pagata (la via d''uscita e'' nel messaggio); altrimenti storna anche l''effetto e RESTITUISCE quali fatture tornano a quanto — un effetto stornato in silenzio e'' un numero che cambia da solo.';
 
 revoke all on function elimina_nota_credito(uuid) from public, anon, authenticated;
 grant execute on function elimina_nota_credito(uuid) to authenticated;
@@ -1505,12 +1576,40 @@ begin
   --     sta al punto 6b — e ci sta li' perche' prima la fattura pagata
   --     non c'e': una prova messa nel punto sbagliato del racconto
   --     verifica un caso diverso da quello che dichiara.
-  declare v_prova uuid;
+  declare
+    v_prova uuid;
+    v_detto text;
   begin
     v_prova := registra_nota_credito(v_ente, v_forn, v_data, 5.00, null, 'NC-USA-E-GETTA', '__VERIFICA__');
-    perform elimina_nota_credito(v_prova);
+    v_detto := elimina_nota_credito(v_prova);
     select count(*) into n from note_credito where id = v_prova;
     if n <> 0 then raise exception 'Una nota non usata non si e'' lasciata eliminare.'; end if;
+    if v_detto not like '%nessun importo cambia%' then
+      raise exception 'Togliendo una nota mai usata doveva dire che non cambia niente: «%»', v_detto;
+    end if;
+
+    -- 5f. E LO STORNO NON DEVE ESSERE SILENZIOSO (rilievo di Alessio,
+    --     17/08). Una nota scalata su una fattura DA PAGARE si puo'
+    --     togliere — l'effetto si storna con la cascata — ma il «da
+    --     pagare» di quella fattura risale, e va DETTO: un effetto
+    --     stornato che nessuno annuncia e' indistinguibile da un numero
+    --     che cambia da solo.
+    v_prova := registra_nota_credito(v_ente, v_forn, v_data, 20.00, v_inv2, 'NC-DA-TOGLIERE', '__VERIFICA__');
+    select da_pagare(i) into v_num from supplier_invoices i where i.id = v_inv2;
+    if v_num <> 80.00 then
+      raise exception 'La nota da 20 su una fattura da 100 doveva lasciare 80 da pagare, e sono %.', v_num;
+    end if;
+
+    v_detto := elimina_nota_credito(v_prova);
+    -- Il numero di ritorno e' quello vero: la fattura torna a 100.
+    if v_detto not like '%__VERIFICA__ 100%' or v_detto not like '%100.00 euro da pagare%' then
+      raise exception
+        'Lo storno non ha detto quale fattura torna a quanto: «%»', v_detto;
+    end if;
+    select da_pagare(i) into v_num from supplier_invoices i where i.id = v_inv2;
+    if v_num <> 100.00 then
+      raise exception 'Togliendo la nota la fattura doveva tornare a 100 da pagare, ed e'' %.', v_num;
+    end if;
   end;
 
   -- ------------------------------------------------------------------
@@ -1550,6 +1649,22 @@ begin
     end if;
   end;
   if passata then raise exception 'Ha eliminato una nota scalata su una fattura pagata.'; end if;
+
+  -- 6c. E IL DIVIETO STA NEL TRIGGER, non solo nella funzione: la RLS
+  --     lascia al titolare la cancellazione diretta dalla tabella, e da
+  --     lì il controllo di `elimina_nota_credito` non passa da nessuno.
+  --     La cancellazione della nota porta via l'utilizzo in cascata, e il
+  --     trigger deve fermare anche quella.
+  passata := false;
+  begin
+    delete from note_credito where id = v_nota;
+    passata := true;
+  exception when sqlstate 'P0001' then
+    if sqlerrm not like '%Annulla prima il pagamento%' then raise; end if;
+  end;
+  if passata then
+    raise exception 'Scrivendo dritto in tabella si e'' tolta una nota scalata su una fattura pagata.';
+  end if;
 
   -- E la prova al contrario, che rende quella sopra discriminante: un
   -- movimento di prima nota NON legato a nessuna fattura deve invece
