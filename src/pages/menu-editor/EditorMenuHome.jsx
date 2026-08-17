@@ -214,6 +214,15 @@ export default function EditorMenuHome() {
              che valgono solo per questa stampa. Stessa forma della striscia
              del database: due stati dello stesso segno, non due segni. */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
+            {/* ⚠️ IL BLOCCO SI CHIAMA COL GESTO A CUI APPARTIENE, e le parole
+                sono verbi di STAMPA, mai «togli» (rilievo del validatore,
+                17/08): nel menu esiste già «Rimuovi», che toglie il piatto
+                dalla carta per davvero. Se le due si somigliassero, qualcuno
+                userebbe la prima credendo di fare la seconda — che è il
+                difetto di oggi visto dall'altro lato. */}
+            <p className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+              Cosa lascio fuori da questa stampa
+            </p>
             <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
               <p className="text-xs text-b58-charcoal-soft">
                 {quantiEsclusi === 0 ? (
@@ -222,7 +231,8 @@ export default function EditorMenuHome() {
                   <>
                     Si stampano <strong>{items.length - quantiEsclusi} piatti su {items.length}</strong>:{" "}
                     {quantiEsclusi === 1 ? "uno è tolto" : `${quantiEsclusi} sono tolti`} da questa
-                    stampa. <strong>Il menu non cambia</strong>, e riaprendo la pagina tornano tutti.
+                    stampa. <strong>Il menu non cambia</strong>, e riaprendo la pagina tornano tutti:
+                    per togliere un piatto dalla carta per davvero si usa «Rimuovi», nel menu.
                   </>
                 )}
               </p>
@@ -256,7 +266,7 @@ export default function EditorMenuHome() {
                     onClick={() => setExcluded((x) => ({ ...x, [i.id]: !x[i.id] }))}
                     className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
                   >
-                    {excluded[i.id] ? "rimetti" : "togli da questa stampa"}
+                    {excluded[i.id] ? "rimetti nella stampa" : "non stampare"}
                   </button>
                 </div>
               ))}
