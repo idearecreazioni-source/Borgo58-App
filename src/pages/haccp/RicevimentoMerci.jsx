@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { addGoodsReceiving, listGoodsReceiving } from "../../lib/api/haccp";
+import { esitoRicevimento } from "../../lib/calcoli/haccp";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
@@ -84,7 +85,13 @@ export default function RicevimentoMerci() {
       { label: "Data/ora", value: (r) => formatDate(r.received_at) },
       { label: "Temperatura (°C)", value: (r) => r.temperature_c },
       { label: "Imballaggio OK", value: (r) => (r.packaging_ok ? "Sì" : "No") },
-      { label: "Conforme", value: (r) => (r.conformity ? "Sì" : "No") },
+      { label: "Merce conforme", value: (r) => (r.conformity ? "Sì" : "No") },
+      // ⚠️ L'esito complessivo, dalla stessa funzione del manuale: le due
+      // colonne qui sopra restano perché in un registro serve sapere
+      // QUALE delle due cose non andava, ma senza una colonna di sintesi
+      // chi legge il foglio deve rifare il confronto a mano — ed è così
+      // che si ricomincia a sbagliarlo.
+      { label: "Esito", value: (r) => esitoRicevimento(r).etichetta },
       { label: "Nota", value: (r) => r.note },
     ]);
   };
@@ -213,9 +220,15 @@ export default function RicevimentoMerci() {
                   {l.supplier?.name && (
                     <span className="text-xs text-b58-charcoal-soft ml-1.5">· {l.supplier.name}</span>
                   )}
-                  {!l.conformity && (
+                  {/* ⚠️ Stesso difetto del manuale, in un secondo posto:
+                      questa pastiglia compariva solo su «merce non
+                      conforme», quindi una consegna con l'imballaggio
+                      rotto si leggeva come una consegna normale. Ora
+                      l'esito lo dice `esitoRicevimento()`, e dice anche
+                      il perché. */}
+                  {!esitoRicevimento(l).conforme && (
                     <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
-                      non conforme
+                      {esitoRicevimento(l).etichetta}
                     </span>
                   )}
                 </div>

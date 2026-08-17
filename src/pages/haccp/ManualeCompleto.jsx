@@ -10,6 +10,7 @@ import {
   listPestControlLogs,
   listTemperatureLogs,
 } from "../../lib/api/haccp";
+import { esitoRicevimento } from "../../lib/calcoli/haccp";
 import { CLEANING_FREQUENCIES, NC_CATEGORIES, PEST_CONTROL_TYPES, formatDate, labelFor, oggiLocale, traGiorniLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 
@@ -174,12 +175,23 @@ export default function ManualeCompleto() {
                     <td className="py-1.5 text-b58-charcoal-soft">{formatDate(r.received_at)}</td>
                     <td className="py-1.5 text-b58-charcoal">{r.product_description}</td>
                     <td className="py-1.5 text-b58-charcoal-soft">{r.supplier?.name ?? "—"}</td>
+                    {/* ⚠️ L'esito lo decide `esitoRicevimento()`, non un
+                        confronto scritto qui: prima questa colonna
+                        guardava solo «merce conforme» e ignorava
+                        l'imballaggio, quindi il manuale dichiarava
+                        «conforme» una consegna che due sezioni più sotto
+                        compariva fra le non conformità. */}
                     <td className="py-1.5">
-                      {r.conformity ? (
-                        <span className="text-b58-olive-dark text-xs">conforme</span>
-                      ) : (
-                        <span className="text-b58-terracotta-dark text-xs font-medium">non conforme</span>
-                      )}
+                      {(() => {
+                        const esito = esitoRicevimento(r);
+                        return esito.conforme ? (
+                          <span className="text-b58-olive-dark text-xs">conforme</span>
+                        ) : (
+                          <span className="text-b58-terracotta-dark text-xs font-medium">
+                            {esito.etichetta}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
