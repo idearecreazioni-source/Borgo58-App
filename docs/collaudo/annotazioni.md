@@ -21,10 +21,10 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    rimaste: HACCP, Personale, Proiezione Fiscale, Archivio Documenti,
    Editor Menu, Assistente, Agricolo.
 3. ⏳ Manda il **secondo blocco**. Da lì lavoro io e lui si ferma.
-4. ⏳ **Primo giro**: i difetti A. Ordine di gravità: **n. 4 e n. 2**
+4. ✅ **Primo giro CHIUSO** — cinque difetti A, piu' n. 10 e n. 3: i difetti A. Ordine di gravità: **n. 4 e n. 2**
    prima degli altri, poi **n. 1 + n. 10 insieme** (sono lo stesso
    lavoro), poi n. 3, poi la seconda metà di n. 5.
-5. ⏳ **Secondo giro**: le mancanze sui pagamenti (B 6-7-8-9), che sono
+5. 🔄 **Secondo giro, in corso**: le mancanze sui pagamenti (B 6-7-8-9), che sono
    una cosa sola e non quattro.
 6. ⏳ **Le piccolezze (D) tutte in un giro solo**, alla fine.
 7. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
@@ -41,9 +41,9 @@ l'annotazione — e anche la fiducia in quelle già scritte.
 | n. | Cosa | Stato |
 |---|---|---|
 | 1 | «Apri la pianta» non si porta dietro la prenotazione | ✅ **provato con le mani** (col n. 10) |
-| 2 | ✅ **Due piante diverse dello stesso locale**: il Calendario mostra la disposizione originale, le Comande quella modificata | ⚠️ **misurato: i dati sono identici**, vedi sotto — serve una decisione |
+| 2 | **Due piante diverse dello stesso locale** | ✅ **misurato: i dati sono identici** — è l'orientamento, vedi sotto. Chiuso dichiarandolo su entrambe le schermate |
 | 3 | Da una ricetta «Pronta (non in carta)» non c'è modo di metterla nel menu | ✅ **provato con le mani** |
-| 4 | ✅ **In prima nota non si distingue il contante dalla banca**: due uscite compaiono identiche, e si capisce quale è uscita dalla banca solo facendo i conti coi riquadri sopra. E le righe dicono solo «Uscita» / «Altra uscita», senza descrizione | da fare, **priorità** |
+| 4 | **In prima nota non si distingue il contante dalla banca**, e le righe non hanno descrizione | ✅ colonna «Da dove» + la nota, che non si vedeva da nessuna parte |
 | 5 | Magazzino illeggibile per le righe delle prove automatiche | ✅ metà fatta (gli avanzi li porta via il reset dello scenario); resta la metà di prodotto → vedi decisione sotto |
 
 ⚠️ **Perché il n. 4 e il n. 2 vengono prima.** Il n. 4 perché contante e
@@ -70,7 +70,7 @@ prima dell'apertura significano trenta uscite datate male.
 
 | n. | Cosa | Stato |
 |---|---|---|
-| 10 | Dalle prenotazioni senza tavolo, un pulsante che porti alla pianta **già pronta ad assegnare quella prenotazione** | da fare, col n. 1 |
+| 10 | Dalle prenotazioni senza tavolo, un pulsante che porti alla pianta **già pronta ad assegnare quella prenotazione** | ✅ col n. 1, provato con le mani |
 | 11 | **Finger food**: piatti composti da più ricette, con food cost cumulativo. Il meccanismo esiste (componenti + costo espanso in profondità) ma il menu dei componenti propone solo le preparazioni | **parcheggiata**: è una decisione di modello, si imposta insieme. Prima vanno risolte le porzioni e lo scarico di magazzino |
 | 12 | Sulla **Dashboard manca la serata**: 6 prenotazioni nel database e la prima schermata parla di adempimenti fiscali. Chi apre alle 19 vuole sapere quanti coperti ha | da fare |
 
