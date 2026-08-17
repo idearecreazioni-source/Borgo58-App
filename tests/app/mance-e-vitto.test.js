@@ -27,11 +27,36 @@ describe("mance e vitto: niente delle due è un ricavo", () => {
     }
   }
 
+  // ⚠️ I totali di partenza si misurano PRIMA, e si confronta la
+  // differenza. Fino al 17/08 questa prova pretendeva che i totali
+  // valessero esattamente 40 e 60 — cioè dava per scontato che nel
+  // database non ci fossero altre mance, e si è fatta rossa il giorno in
+  // cui lo scenario del collaudo ne ha messe due.
+  //
+  // La prova era sbagliata, non lo scenario: quello che vuole dimostrare è
+  // che «40 in contanti e 60 su carta finiscono nei posti giusti», e per
+  // dimostrarlo serve la differenza che ha prodotto lei. Un totale
+  // assoluto afferma anche «nessun altro ha dati», che non è cosa sua.
+  let prima;
+
   beforeAll(async () => {
     titolare = await clientAutenticato(credenziali().titolare);
     staff = await clientAutenticato(credenziali().staff);
     ente = await primaEntita(titolare);
     await pulisci();
+
+    const [monte, saldo, pos] = await Promise.all([
+      titolare.rpc("mance_da_distribuire", { p_entity_id: ente }),
+      titolare.rpc("saldo_tesoreria", { p_entity_id: ente }),
+      titolare.rpc("pos_in_transito", { p_entity_id: ente }),
+    ]);
+    prima = {
+      contanti: Number(monte.data[0].in_contanti),
+      carta: Number(monte.data[0].su_carta),
+      manceInCassa: Number(saldo.data[0].mance_in_cassa),
+      nonTuo: Number(saldo.data[0].di_cui_non_tuo),
+      posMance: Number(pos.data[0].mance),
+    };
   });
 
   afterAll(async () => {
@@ -47,8 +72,8 @@ describe("mance e vitto: niente delle due è un ricavo", () => {
     ]);
 
     const { data } = await titolare.rpc("mance_da_distribuire", { p_entity_id: ente });
-    expect(Number(data[0].in_contanti)).toBe(40);
-    expect(Number(data[0].su_carta)).toBe(60);
+    expect(Number(data[0].in_contanti) - prima.contanti).toBe(40);
+    expect(Number(data[0].su_carta) - prima.carta).toBe(60);
     expect(data[0].avvertenza).toContain("NON sono ricavi");
   });
 
@@ -58,14 +83,14 @@ describe("mance e vitto: niente delle due è un ricavo", () => {
     // ogni conteggio del cassetto mostrerebbe un'eccedenza cronica e la
     // differenza genererebbe un movimento per correggere un errore che non
     // esiste.
-    expect(Number(data[0].mance_in_cassa)).toBe(40);
-    expect(Number(data[0].di_cui_non_tuo)).toBe(40);
+    expect(Number(data[0].mance_in_cassa) - prima.manceInCassa).toBe(40);
+    expect(Number(data[0].di_cui_non_tuo) - prima.nonTuo).toBe(40);
     expect(data[0].avvertenza).toContain("non tuoi");
   });
 
   it("le mance su carta arrivano in banca insieme agli incassi", async () => {
     const { data } = await titolare.rpc("pos_in_transito", { p_entity_id: ente });
-    expect(Number(data[0].mance)).toBe(60);
+    expect(Number(data[0].mance) - prima.posMance).toBe(60);
     expect(data[0].avvertenza).toContain("non sono ricavi tuoi");
   });
 

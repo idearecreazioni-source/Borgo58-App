@@ -89,7 +89,8 @@ const { supabase } = await carica("/src/lib/supabase.js");
 const { ambienteCorrente } = await carica("/src/lib/ambiente.js");
 const { getEntities } = await carica("/src/lib/api/entities.js");
 const { createSupplier } = await carica("/src/lib/api/suppliers.js");
-const { createIngredient, updateIngredientPrice } = await carica("/src/lib/api/ingredients.js");
+const { createIngredient, updateIngredientFields, updateIngredientPrice } =
+  await carica("/src/lib/api/ingredients.js");
 const { registerStockDelivery } = await carica("/src/lib/api/stock.js");
 const { createRecipe, updateRecipe } = await carica("/src/lib/api/recipes.js");
 const { addRecipeIngredient } = await carica("/src/lib/api/recipeIngredients.js");
@@ -99,8 +100,12 @@ const { createCashMovement, createPosDevice, listAllCausali } = await carica("/s
 const { createSupplierInvoice, markInvoicePaid } = await carica("/src/lib/api/supplierInvoices.js");
 const { assegnaPrenotazione, createReservation } = await carica("/src/lib/api/reservations.js");
 const { upsertFiscalSettings } = await carica("/src/lib/api/fiscal.js");
+const { createEmployee, createEmployeeLeave, createTipCollected } = await carica("/src/lib/api/personale.js");
+const { createDocument } = await carica("/src/lib/api/documents.js");
+const { chiudiMese, creaScenarioDaFoglio } = await carica("/src/lib/api/proiezione.js");
 const { addBelowThresholdItems } = await carica("/src/lib/api/shoppingList.js");
-const { addGoodsReceiving } = await carica("/src/lib/api/haccp.js");
+const { addCleaningLog, addGoodsReceiving, addPestControlLog, addTemperatureLog, createCleaningTask, createEquipment } =
+  await carica("/src/lib/api/haccp.js");
 // ⚠️ Le date si prendono dalle funzioni dell'app, non da `toISOString()`.
 // Vedi il commento su `oggi` piu' sotto: e' un difetto vero, trovato dal
 // collaudo, e la cura e' usare gli stessi attrezzi delle schermate.
@@ -221,6 +226,48 @@ begin
   delete from suppliers where name like '${MARCA}%';
   get diagnostics n = row_count; tolte := tolte + n;
 
+  delete from tip_distribution_lines where employee_id in (select id from employees where last_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from tip_distributions where note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from tips_collected where note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from employee_leaves where employee_id in (select id from employees where last_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from employee_documents where employee_id in (select id from employees where last_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from payslips where employee_id in (select id from employees where last_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from employees where last_name like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from haccp_temperature_logs where equipment_id in (select id from haccp_equipment where name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from haccp_equipment where name like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from haccp_cleaning_logs where task_id in (select id from haccp_cleaning_tasks where name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from haccp_cleaning_tasks where name like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from haccp_pest_control_logs where performed_by like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from documents where title like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from consuntivi_mensili where entity_id in (select id from entities);
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_risultati where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_mesi where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_personale where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_extra where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_costi_fissi where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenario_linee_accessorie where scenario_id in (select id from scenari_proiezione where nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scenari_proiezione where nome like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
   delete from haccp_goods_receiving where product_description like '${MARCA}%';
   get diagnostics n = row_count; tolte := tolte + n;
   delete from haccp_non_conformities where description like '%${MARCA}%' or note like '${MARCA}%';
@@ -764,6 +811,253 @@ if (scenario) {
     "ingredienti sotto scorta minima, contati adesso",
     (livelli ?? []).filter((r) => r.below_threshold).length
   );
+
+  // -------------------------------------------------------------------
+  // IL RETRO DEL LOCALE (secondo blocco del collaudo, 17/08)
+  //
+  // ⚠️ Al primo giro la sala era apparecchiata e il retro vuoto: cinque
+  // moduli **non erano provabili**, non «erano vuoti». La differenza
+  // conta, perché una schermata vuota non dice se funziona — e il modulo
+  // più delicato dell'app (la Proiezione) era fra quelli.
+  // -------------------------------------------------------------------
+
+  // --- Personale: tre persone, e le mance con la loro forma ---
+  //
+  // ⚠️ Uno ha il reddito dell'anno prima e uno no, apposta: il tetto del
+  // 30% si può verificare solo su chi quel numero l'ha, e sull'altro la
+  // schermata deve dire che non lo sa — invece di calcolare su zero.
+  const persone = [];
+  for (const [nome, cognome, ruolo, reddito] of [
+    ["Mario", "Rossi", "cuoco", 18400],
+    ["Lucia", "Bianchi", "sala", 12900],
+    ["Salvo", "Verdi", "aiuto cucina", null],
+  ]) {
+    const p = await createEmployee({
+      entity_id: ente,
+      first_name: nome,
+      last_name: `${MARCA}${cognome}`,
+      role: ruolo,
+      hire_date: traGiorniLocale(-120),
+      prior_year_income: reddito,
+    });
+    persone.push(p);
+  }
+  segna("dipendenti (uno senza reddito dell'anno prima, apposta)", persone.length);
+
+  await createEmployeeLeave({
+    employee_id: persone[1].id,
+    leave_type: "ferie",
+    start_date: traGiorniLocale(12),
+    end_date: traGiorniLocale(19),
+    note: `${MARCA}ferie di prova`,
+  });
+  segna("periodo di ferie");
+
+  // ⚠️ Due raccolte con MEZZO diverso: è il difetto corretto il 16/08
+  // (il menu c'era e il valore non arrivava al database) e non era mai
+  // stato visto dal vivo. Con una sola in contanti non si vedrebbe.
+  for (const [importo, mezzo, giorni] of [
+    [42.5, "contanti", -2],
+    [68.0, "carta", -1],
+  ]) {
+    await createTipCollected({
+      entityId: ente,
+      amount: importo,
+      collectedDate: traGiorniLocale(giorni),
+      mezzo,
+      note: `${MARCA}mance di prova`,
+    });
+  }
+  // ⚠️ NON si distribuisce: distribuire è il gesto da collaudare — il
+  // tetto del 30%, il monte per forma di pagamento, i centesimi.
+  segna("raccolte di mance, una in contanti e una su carta", 2);
+
+  // --- HACCP: le sezioni che un ispettore guarda per prime ---
+  const frigo = [];
+  for (const [nome, tipo, min, max] of [
+    ["Cella frigo carni", "frigo_0_4", 0, 4],
+    ["Cella frigo verdure", "frigo_4_8", 4, 8],
+    ["Abbattitore", "freezer", -20, -18],
+  ]) {
+    frigo.push(await createEquipment({ name: `${MARCA}${nome}`, storageType: tipo, targetMinC: min, targetMaxC: max }));
+  }
+  segna("attrezzature con la loro finestra di temperatura", frigo.length);
+
+  // Le letture: due normali, una fuori range CON il rimedio (che chiude
+  // da sé la non conformità) e una fuori range SENZA rimedio.
+  //
+  // ⚠️ Quella senza rimedio è la ragione per cui questo pezzo esiste:
+  // lascia una **non conformità APERTA**, e senza una aperta il rifiuto
+  // sul campo vuoto (Blocco 6) non è provabile. Nasce dalla strada vera,
+  // non scritta a mano.
+  await addTemperatureLog({ equipmentId: frigo[0].id, recordedTempC: 2.4, note: `${MARCA}lettura del mattino` });
+  await addTemperatureLog({ equipmentId: frigo[1].id, recordedTempC: 6.1, note: `${MARCA}lettura del mattino` });
+  await addTemperatureLog({
+    equipmentId: frigo[0].id,
+    recordedTempC: 7.8,
+    note: `${MARCA}porta rimasta aperta`,
+    correctiveAction: "Porta richiusa, merce controllata e trasferita nella cella 2",
+  });
+  await addTemperatureLog({
+    equipmentId: frigo[2].id,
+    recordedTempC: -12.5,
+    note: `${MARCA}abbattitore sopra soglia`,
+  });
+  segna("letture di temperatura (due fuori range: una chiusa, una APERTA)", 4);
+
+  for (const [nome, area, frequenza] of [
+    ["Sanificazione piani di lavoro", "cucina", "giornaliera"],
+    ["Pulizia celle frigorifere", "cucina", "settimanale"],
+  ]) {
+    const t = await createCleaningTask({ name: `${MARCA}${nome}`, area, frequency: frequenza });
+    await addCleaningLog({ taskId: t.id, note: `${MARCA}fatta` });
+  }
+  segna("attività di pulizia, con la loro registrazione", 2);
+
+  await addPestControlLog({
+    performedBy: `${MARCA}Disinfestazioni di Prova`,
+    type: "ispezione",
+    findings: "Nessuna traccia nelle trappole",
+    note: `${MARCA}visita trimestrale`,
+  });
+  segna("visita di disinfestazione");
+
+  // --- Allergeni confermati su due ingredienti ---
+  //
+  // ⚠️ Senza almeno due confermati, TUTTI i piatti portano il rimando al
+  // personale e la distinzione del Blocco 7 — piatto con allergeni
+  // confermati contro piatto da verificare — non si vede sul foglio
+  // stampato. Due bastano: serve il confronto, non la completezza.
+  for (const [nome, allergeni] of [
+    ["Farina di grano duro", ["glutine"]],
+    ["Ricotta di pecora", ["latte"]],
+  ]) {
+    await updateIngredientFields(dispensa[nome], {
+      allergens: allergeni,
+      origine_allergeni: "confermati",
+    });
+  }
+  segna("ingredienti con allergeni CONFERMATI (gli altri restano da verificare)", 2);
+
+  // --- Archivio: documenti col testo dentro ---
+  //
+  // ⚠️ Il testo va messo, non solo la scheda: «Chiedi all'archivio»
+  // risponde solo su ciò di cui conosce il contenuto, e senza testo la
+  // schermata è provabile solo mandando le mail. Il contenuto è lo stesso
+  // dei documenti finti (`npm run collaudo:documenti`), così una domanda
+  // sul canone trova la stessa risposta che troverà dal PDF vero.
+  const DOCUMENTI = [
+    {
+      title: `${MARCA}Contratto manutenzione frigoriferi`,
+      doc_type: "Contratto fornitura",
+      counterparties: "FrigoService PROVA S.r.l.",
+      amount: 1776,
+      expiry_date: traGiorniLocale(320),
+      testo:
+        "CONTRATTO DI MANUTENZIONE fra FrigoService PROVA S.r.l. e BORGO 58 S.r.l.s. " +
+        "Art. 1 Oggetto: manutenzione di 3 celle frigorifere e 1 abbattitore. " +
+        "Art. 2 Durata: 24 mesi dalla decorrenza del 01/04/2027, fino al 31/03/2029. " +
+        "Art. 3 Canone: 148,00 euro piu' IVA al mese, fatturato trimestralmente. " +
+        "Art. 4 Interventi ordinari: 2 visite programmate l'anno, comprese nel canone. " +
+        "Art. 5 Interventi straordinari: a carico del committente, 55,00 euro l'ora piu' ricambi, " +
+        "con uscita entro 24 ore dalla chiamata. " +
+        "Art. 6 Rinnovo: tacito per 12 mesi salvo disdetta 90 giorni prima della scadenza, a mezzo PEC. " +
+        "Art. 7 Foro competente: Enna.",
+    },
+    {
+      title: `${MARCA}Polizza assicurativa locale`,
+      doc_type: "Assicurazione",
+      counterparties: "Assicurazioni di Prova S.p.A.",
+      amount: 940,
+      expiry_date: traGiorniLocale(45),
+      testo:
+        "POLIZZA MULTIRISCHI ESERCIZI COMMERCIALI n. PR-00042. Contraente: BORGO 58 S.r.l.s. " +
+        "Premio annuo 940,00 euro, frazionabile in due rate semestrali. " +
+        "Garanzie: incendio fino a 300.000 euro, furto e rapina fino a 25.000 euro, " +
+        "responsabilita' civile verso terzi fino a 1.500.000 euro, danni da acqua condotta. " +
+        "Franchigia sul furto: 500,00 euro. Scoperto sui danni da acqua: 10 per cento. " +
+        "Disdetta: 60 giorni prima della scadenza annuale, altrimenti si rinnova.",
+    },
+  ];
+  for (const d of DOCUMENTI) {
+    const { testo, ...scheda } = d;
+    const id = await createDocument({ entity_id: ente, ...scheda });
+    // Il testo lo scrive normalmente la lettura automatica; qui si mette a
+    // mano perché sul progetto di prova la posta non arriva.
+    const r = await supabase.from("documents").update({ testo }).eq("id", id?.id ?? id);
+    if (r.error) throw new Error(`Non riesco a scrivere il testo del documento: ${r.error.message}`);
+  }
+  segna("documenti in archivio, col testo dentro (l'assistente ci può rispondere)", DOCUMENTI.length);
+
+  // --- La Proiezione: una previsione aperta, dell'anno in corso ---
+  //
+  // ⚠️ L'anno è quello CORRENTE e non il 2027 dell'apertura vera, ed è una
+  // scelta del collaudo: gli scostamenti e il calendario delle imposte si
+  // vedono solo se qualche mese è già passato. Su un piano del 2027 tutto
+  // sarebbe «non ancora misurato», cioè la schermata direbbe la stessa
+  // cosa sia che funzioni sia che no.
+  const anno = Number(oggi.slice(0, 4));
+  const mesi = Array.from({ length: 12 }, (_, i) => ({
+    mese: i + 1,
+    serviziSettimana: 6,
+    giorniLavorativi: 26,
+    giorniPeak: i >= 5 && i <= 8 ? 12 : 6,
+    copertiPeak: i >= 5 && i <= 8 ? 55 : 38,
+    copertiFeriali: i >= 5 && i <= 8 ? 34 : 22,
+    eventiPremium: i === 7 ? 2 : 0,
+  }));
+  const previsione = await creaScenarioDaFoglio({
+    entity_id: ente,
+    nome: `${MARCA}Previsione di collaudo ${anno}`,
+    tipo: "partenza",
+    anno,
+    origine: "scenario di collaudo",
+    parametri: {
+      scontrinoFood: 26,
+      scontrinoBeverage: 9,
+      foodCostPercento: 0.29,
+      beverageCostPercento: 0.24,
+      lavanderiaCoperto: 0.35,
+      pagamentiElettroniciPercento: 0.7,
+      commissionePosPercento: 0.012,
+      oreGiorno: 8,
+      pressionePersonale: 0.32,
+      ammortamentiAnnui: 14000,
+      finanziamentoImporto: 60000,
+      finanziamentoTasso: 0.062,
+      finanziamentoAnni: 7,
+    },
+    personale: [
+      { ruolo: "cuoco", nettoOrario: 9.5, nettoGiorno: 76 },
+      { ruolo: "sala", nettoOrario: 8.2, nettoGiorno: 65.6 },
+    ],
+    extra: [{ tipo: "extra sala fine settimana", giornateAnno: 90, tariffaGiorno: 70, pressione: 0.3, daEventi: false }],
+    costiFissi: [
+      { voce: "Affitto", euroMese: 2000 },
+      { voce: "Utenze", euroMese: 780 },
+      { voce: "Commercialista", euroMese: 250 },
+      { voce: "Assicurazioni", euroMese: 78 },
+    ],
+    accessorie: [{ linea: "Aperitivi", quantita: 1200, prezzoMedio: 7, costoPercento: 0.22, base: "per_giorno" }],
+    mesi,
+    controlli: [],
+  });
+  segna("previsione APERTA per l'anno in corso, con dodici mesi");
+
+  // Due mesi chiusi, così scostamenti e consuntivi hanno qualcosa da dire.
+  // ⚠️ Si chiudono mesi GIA' PASSATI: chiudere il mese in corso
+  // fotograferebbe un mese a metà e il confronto direbbe una bugia.
+  const meseCorrente = Number(oggi.slice(5, 7));
+  let chiusi = 0;
+  for (const m of [meseCorrente - 2, meseCorrente - 1].filter((m) => m >= 1)) {
+    const esito = await chiudiMese(ente, anno, m).catch((e) => ({ errore: e.message }));
+    if (!esito?.errore) chiusi += 1;
+  }
+  segna("mesi chiusi (consuntivo fotografato)", chiusi);
+  if (chiusi === 0) {
+    console.log("      ⚠ nessun mese chiuso: siamo a gennaio, oppure la chiusura ha rifiutato.");
+  }
+  void previsione;
 }
 
 // ---------------------------------------------------------------------
