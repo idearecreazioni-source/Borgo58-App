@@ -40,9 +40,17 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    guardiano. Trovato costruendola un difetto vivo in produzione
    («Assegno» nella lista della spesa) e, misurando, un buco più grosso —
    vedi sotto.
-8. ⏳ **Da decidere insieme: la spesa chiusa dalla lista non scrive
-   nessuna uscita** (vedi la misura qui sotto). È il prerequisito
-   dell'unificazione dei vocabolari dei mezzi di pagamento.
+8. ⏳ **La lista della spesa non scrive mai un'uscita** — impostazione
+   **decisa da Alessio il 17/08**, scritta per intero in
+   [`docs/mandati/20260817_la_lista_non_scrive_uscite.md`](../mandati/20260817_la_lista_non_scrive_uscite.md).
+   Da fare **dopo** le piccolezze. In due righe: il costo nasce solo dal
+   documento o da una registrazione esplicita; la casella «come hai pagato»
+   va tolta; la chiusura a mano ha **tre** esiti distinti (comprato e pagato
+   · avuto gratis · non preso), e confondere gli ultimi due mette in
+   magazzino merce mai arrivata. ⚠️ Il buco che l'impostazione lascia è la
+   **cassa**: 40 € in contanti al contadino non registrati diventano un
+   ammanco del cassetto la sera — lo stesso meccanismo delle mance su carta.
+   È il prerequisito dell'unificazione dei vocabolari dei mezzi di pagamento.
 9. ⏳ **I 33 posti dove una dimenticanza è silenziosa**: misurati, mai
    camminati. `createCashMovement` ha ancora la forma vulnerabile.
 7. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
