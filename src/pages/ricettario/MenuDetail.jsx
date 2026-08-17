@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import {
   addMenuItem,
   getMenu,
@@ -41,6 +41,13 @@ export default function MenuDetail() {
 
   const [addForms, setAddForms] = useState({}); // { [category]: { recipe_id, selling_price } }
 
+  // Da dove si arriva: la scheda di una ricetta «pronta ma non in carta»
+  // può mandare qui sé stessa (difetto n. 3 del collaudo, speculare al
+  // n. 1). Si arriva col piatto già scelto nella sua categoria — resta da
+  // scrivere il prezzo, che è la decisione, e da confermare.
+  const [ricerca, setRicerca] = useSearchParams();
+  const daAggiungere = ricerca.get("aggiungi");
+
   // ⚠️ Le righe di ricetta e l'anagrafica degli ingredienti non si
   // caricano più: servivano solo alla copia della formula del food cost
   // che stava qui dentro. Il simulatore ora chiede al database, che le
@@ -72,6 +79,29 @@ export default function MenuDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Il piatto arrivato dalla sua scheda si mette nel modulo della SUA
+  // categoria, gia' scelto. Non si aggiunge da solo: il prezzo e' la
+  // decisione, e quella resta di chi guarda.
+  //
+  // ⚠️ L'indirizzo si ripulisce subito, come per l'assegnazione dalla
+  // pianta: senza, ricaricando la pagina il piatto tornerebbe a
+  // riproporsi anche dopo essere stato messo in carta.
+  useEffect(() => {
+    if (!daAggiungere || loading) return;
+    const r = allRecipes.find((x) => x.id === daAggiungere);
+    if (r) {
+      const gia = items.some((i) => i.recipe_id === r.id);
+      if (gia) setError(`«${r.name}» è già in questo menu.`);
+      else setAddForms((f) => ({ ...f, [r.category]: { recipe_id: r.id, selling_price: "" } }));
+    } else {
+      setError("Quel piatto non risulta fra le ricette.");
+    }
+    const senza = new URLSearchParams(ricerca);
+    senza.delete("aggiungi");
+    setRicerca(senza, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daAggiungere, loading, allRecipes, items]);
 
   const itemsByCategory = useMemo(() => {
     const map = { antipasto: [], primo: [], secondo: [], dolce: [] };

@@ -23,6 +23,7 @@ import {
   swapStepOrder,
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
+import { listMenus } from "../../lib/api/menus";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import PrintButton from "../../components/PrintButton";
@@ -79,6 +80,9 @@ export default function RicettaDetail() {
   const [allIngredients, setAllIngredients] = useState([]);
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  // Il menu in servizio: serve solo a offrire la strada per mettere in
+  // carta un piatto pronto. Se non ce n'e' nessuno la schermata lo dice.
+  const [menuAttivo, setMenuAttivo] = useState(null);
   const [videos, setVideos] = useState([]);
   const [preparations, setPreparations] = useState([]);
   const [preparationUsage, setPreparationUsage] = useState([]);
@@ -112,14 +116,16 @@ export default function RicettaDetail() {
   };
 
   const loadAll = async () => {
-    const [rec, st, al, hist, vids, prepUsage] = await Promise.all([
+    const [rec, st, al, hist, vids, prepUsage, menus] = await Promise.all([
       getRecipe(id),
       listRecipeSteps(id),
       getRecipeAllergens(id),
       listRecipeStatusHistory(id),
       listRecipeVideos(id),
       listPreparationUsage(id),
+      listMenus(),
     ]);
+    setMenuAttivo(menus.find((m) => m.is_active) ?? null);
     setRecipe(rec);
     setSteps(st);
     setAllergens(al);
@@ -501,6 +507,30 @@ export default function RicettaDetail() {
             <span className="text-xs text-b58-charcoal-soft ml-1">
               {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta).label}
             </span>
+            {/* ⚠️ La strada per rimediare, che mancava (difetto n. 3 del
+                collaudo, speculare al n. 1): l'app diceva «Pronta (non in
+                carta)» — nominando esattamente ciò che manca — e non
+                offriva il modo di farlo. «In carta» è un riflesso del menu
+                dal 16/08, quindi il gesto non è qui: è mettere il piatto
+                in un menu attivo. Quello che si può fare da questa
+                schermata è portarci.
+                ⚠️ E se il menu attivo non c'è, si dice quello invece di
+                offrire un collegamento che non porta da nessuna parte —
+                un vicolo cieco travestito da pulsante. */}
+            {recipe.pronta_per_carta && !recipe.in_carta && (
+              menuAttivo ? (
+                <Link
+                  to={`/ricettario/menu/${menuAttivo.id}?aggiungi=${recipe.id}`}
+                  className="text-xs text-b58-terracotta underline hover:text-b58-terracotta-dark"
+                >
+                  mettila in «{menuAttivo.name}»
+                </Link>
+              ) : (
+                <span className="text-xs text-b58-charcoal-soft/80">
+                  nessun menu attivo: per metterla in carta serve prima un menu in servizio
+                </span>
+              )
+            )}
             {statusHistory.length > 0 && (
               <button
                 type="button"
