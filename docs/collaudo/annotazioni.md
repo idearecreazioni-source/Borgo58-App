@@ -25,9 +25,16 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    L'ordine seguito è stato quello concordato — prima il manuale HACCP
    (l'unico documento che finisce in mano a qualcun altro), poi n. 4 e
    n. 2, poi n. 1 col n. 10, poi n. 3.
-5. 🔄 **Secondo giro, in corso**: le mancanze sui pagamenti (B 6-7-8-9), che sono
-   una cosa sola e non quattro.
-6. ⏳ **Le piccolezze (D) tutte in un giro solo**, alla fine.
+5. ✅ **Secondo giro CHIUSO**: le mancanze sui pagamenti (B 6-7-8-9), che
+   erano una cosa sola e non quattro. In due consegne — la fondazione coi
+   filtri ([riepilogo](../consegne/20260817_l_uscita_ha_la_sua_data.md)) e
+   le note di credito ([riepilogo](../consegne/20260817_la_nota_di_credito.md)).
+6. 🔄 **Le piccolezze (D) tutte in un giro solo** — il prossimo lavoro.
+7. ⏳ Poi **la rete sui vocabolari chiusi in due posti**: terza ricomparsa
+   (scarichi il 16/08, metodi di pagamento il 17/08). Da guardare se è la
+   stessa forma del campo dimenticato delle mance — due posti che devono
+   dire la stessa cosa e nessuno che controlli che la dicano — e se una rete
+   sola copre entrambi.
 7. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
    può assegnare a un tavolo ostacolerebbero proprio la prova che deve
@@ -56,6 +63,9 @@ già chiuso tre volte col riflesso (`payment_method`, `conto_aperto`,
 `in_carta`).
 
 ### B. Mancanze da colmare — un lavoro solo, non quattro
+
+✅ **Tutte e quattro fatte** (17/08). Il n. 6, 7 e 9 nella prima consegna, il
+n. 8 nella seconda.
 
 | n. | Cosa |
 |---|---|
@@ -153,6 +163,29 @@ il tablet tenuto verticale. Non la cambio da solo: vedi la domanda aperta.
   accorgersene bisognerebbe sospettarlo.
 - **La serata recitata si fa sull'app corretta**, non prima.
 - **Il finger food si imposta insieme**, e non è lavoro di adesso.
+
+---
+
+## La lezione del secondo giro: il caso vuoto
+
+**Detta da Alessio il 17/08**, dopo il terzo caso in due giorni:
+
+> Una prova che gira sul caso vuoto dimostra che il codice non esplode, non
+> che funziona. È la stessa forma di «misurare una coincidenza invece di una
+> differenza», solo dal lato dei dati invece che dei numeri. **Il caso da
+> provare è quello che ha qualcosa da fare.**
+
+I tre casi, in fila:
+
+| quando | la prova girava su… | e non vedeva |
+|---|---|---|
+| 16/08 | un database vuoto, pretendendo 40 e 60 | il campo `mezzo` delle mance che non arrivava |
+| 17/08 | un saldo senza movimenti futuri | che la vista potesse ignorare la data del tutto |
+| 17/08 | una nota di credito **non ancora scalata** | che togliere una nota scalata **fallisse** |
+
+⚠️ Il terzo è il più istruttivo: la prova esisteva, passava, ed era il **primo
+gesto** che Alessio avrebbe fatto aprendo la schermata. Scritto anche in
+`CLAUDE.md` §8, accanto alla regola sulla differenza contro la coincidenza.
 
 ---
 
