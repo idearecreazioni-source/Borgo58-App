@@ -258,6 +258,28 @@ export async function addNonConformity({ category, description, note }) {
   if (error) throw error;
 }
 
+// La via di ritorno di «Risolvi» (difetto n. 3 del collaudo, 17/08). Una
+// non conformità chiusa per sbaglio restava chiusa per sempre: stessa
+// famiglia dei vicoli ciechi del Blocco 5 — un gesto irreversibile senza
+// il gesto che lo disfa.
+//
+// ⚠️ Il rimedio scritto NON si cancella: resta lì, e lo si rilegge quando
+// si richiude. Cancellarlo farebbe perdere quello che era stato scritto —
+// e su un registro che si esibisce, riaprire una riga è già abbastanza
+// delicato senza aggiungerci una perdita di informazione. Chi richiude
+// scrive il rimedio nuovo, che sovrascrive.
+//
+// ⚠️ Non è una scrittura da nascondere: `resolved_at` torna vuoto, quindi
+// nel manuale quella riga torna fra le aperte — che è esattamente ciò che
+// si vuole, perché il fatto è ancora aperto.
+export async function riapriNonConformita(id) {
+  const { error } = await supabase
+    .from("haccp_non_conformities")
+    .update({ resolved: false, resolved_at: null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function resolveNonConformity(id, { correctiveAction }) {
   const { error } = await supabase
     .from("haccp_non_conformities")

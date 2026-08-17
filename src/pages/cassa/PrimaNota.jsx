@@ -434,6 +434,14 @@ export default function PrimaNota() {
                 <thead>
                   <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                     <th className="py-2 font-medium">Data</th>
+                    {/* ⚠️ Da dove escono o entrano i soldi è la distinzione
+                        che DECIDE questa schermata, e fino al collaudo del
+                        17/08 non c'era: due uscite comparivano identiche, e
+                        per capire quale era uscita dalla banca bisognava
+                        fare i conti coi riquadri dei saldi qui sopra.
+                        Cassa e banca sono due saldi che non si sommano
+                        mai: leggerli confusi è leggerli sbagliati. */}
+                    <th className="py-2 font-medium">Da dove</th>
                     <th className="py-2 font-medium">Causale</th>
                     <th className="py-2 font-medium">Documento</th>
                     <th className="py-2 font-medium text-right">Importo</th>
@@ -444,6 +452,17 @@ export default function PrimaNota() {
                   {movements.map((m) => (
                     <tr key={m.id} className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="py-2 text-b58-charcoal-soft">{formatDate(m.movement_date)}</td>
+                      <td className="py-2 whitespace-nowrap">
+                        <span
+                          className={`text-[11px] rounded-full px-2 py-0.5 ${
+                            m.mezzo === "banca"
+                              ? "bg-b58-charcoal/10 text-b58-charcoal"
+                              : "bg-b58-gold/20 text-b58-gold-dark"
+                          }`}
+                        >
+                          {m.mezzo === "banca" ? "Banca" : "Contante"}
+                        </span>
+                      </td>
                       <td className="py-2 text-b58-charcoal">
                         {m.causale?.label ?? "—"}
                         {m.is_owner_injection && (
@@ -454,6 +473,13 @@ export default function PrimaNota() {
                         {m.business_purpose && (
                           <div className="text-xs text-b58-charcoal-soft">{m.business_purpose}</div>
                         )}
+                        {/* ⚠️ La nota non si vedeva da nessuna parte, e le
+                            causali di sistema si chiamano «Uscita» e «Altra
+                            uscita»: due righe diverse comparivano con la
+                            stessa parola sopra. La descrizione la scrive
+                            lui nella nota — mostrarla è tutto ciò che
+                            serviva perché una riga si riconosca. */}
+                        {m.note && <div className="text-xs text-b58-charcoal-soft">{m.note}</div>}
                       </td>
                       <td className="py-2 text-b58-charcoal-soft text-xs">
                         {labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento)}

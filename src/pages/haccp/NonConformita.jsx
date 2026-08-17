@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { addNonConformity, listNonConformities, resolveNonConformity } from "../../lib/api/haccp";
+import { addNonConformity, listNonConformities, riapriNonConformita, resolveNonConformity } from "../../lib/api/haccp";
 import { NC_CATEGORIES, formatDate, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const emptyForm = { category: "temperatura", description: "", note: "" };
 
@@ -61,6 +62,16 @@ export default function NonConformita() {
       setError(e.message);
     } finally {
       setResolving(false);
+    }
+  };
+
+  const handleRiapri = async (id) => {
+    setError("");
+    try {
+      await riapriNonConformita(id);
+      await load();
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -189,11 +200,31 @@ export default function NonConformita() {
           <h2 className="font-display text-lg text-b58-charcoal mb-4">Risolte</h2>
           <ul className="space-y-1.5">
             {resolved.map((item) => (
-              <li key={item.id} className="text-sm text-b58-charcoal-soft">
-                <span className="text-b58-charcoal">{item.description}</span>
-                {item.corrective_action && ` — ${item.corrective_action}`}
-                {" · "}
-                {formatDate(item.resolved_at)}
+              <li
+                key={item.id}
+                className="text-sm text-b58-charcoal-soft flex items-start justify-between gap-3"
+              >
+                <span>
+                  <span className="text-b58-charcoal">{item.description}</span>
+                  {item.corrective_action && ` — ${item.corrective_action}`}
+                  {" · "}
+                  {formatDate(item.resolved_at)}
+                </span>
+                {/* La via di ritorno di «Risolvi»: chiusa per sbaglio,
+                    restava chiusa per sempre. Con la conferma, perché
+                    riaprire una riga di un registro che si esibisce non è
+                    un gesto da fare per sbaglio due volte. */}
+                {/* Solo il titolare, come «Risolvi»: la scrittura su
+                    questa tabella è sua, e allo staff il pulsante darebbe
+                    un rifiuto invece di un gesto. */}
+                {isTitolare && (
+                <ConfermaDistruttiva
+                  etichetta="Riapri"
+                  domanda={`Rimetto «${item.description}» fra le non conformità aperte? Quello che avevi scritto come rimedio resta, e lo puoi correggere richiudendola.`}
+                  etichettaConferma="Sì, riapri"
+                  onConferma={() => handleRiapri(item.id)}
+                />
+                )}
               </li>
             ))}
           </ul>
