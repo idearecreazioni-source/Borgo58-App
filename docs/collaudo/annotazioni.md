@@ -89,7 +89,7 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    ⚠️ **Il punto 0 era una misura, e ha cambiato la diagnosi**: non è
    `prova:scenario` a sovrascrivere la sala «di sempre» — è
    `prova:ricostruisci --azzera`, che ho eseguito io il 17/08. Dal 14/08 la
-   disposizione di sempre vive **dentro **, cioè è un dato di
+   disposizione di sempre vive **dentro `dining_tables`**, cioè è un dato di
    Alessio, e quel comando la butta via senza dirlo.
 11. ⏳ **La serata recitata di nuovo, DOPO i giri del mandato sala** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
