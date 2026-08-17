@@ -30,11 +30,21 @@ l'annotazione — e anche la fiducia in quelle già scritte.
    filtri ([riepilogo](../consegne/20260817_l_uscita_ha_la_sua_data.md)) e
    le note di credito ([riepilogo](../consegne/20260817_la_nota_di_credito.md)).
 6. 🔄 **Le piccolezze (D) tutte in un giro solo** — il prossimo lavoro.
-7. ⏳ Poi **la rete sui vocabolari chiusi in due posti**: terza ricomparsa
-   (scarichi il 16/08, metodi di pagamento il 17/08). Da guardare se è la
-   stessa forma del campo dimenticato delle mance — due posti che devono
-   dire la stessa cosa e nessuno che controlli che la dicano — e se una rete
-   sola copre entrambi.
+7. ✅ **La rete sui vocabolari chiusi — fatta il 17/08**, prima delle
+   piccolezze per decisione di Alessio: vive nelle prove e nel database,
+   quindi non cambia le schermate che lui sta guardando.
+   [Riepilogo](../consegne/20260817_la_rete_sui_vocabolari.md). I posti
+   erano **tre**, non due. **Non** è una rete sola con quella delle mance, e
+   il discriminante era già scritto: *direbbero esattamente la stessa cosa?*
+   Se sì si toglie il doppione (un riflesso), se solo in parte serve un
+   guardiano. Trovato costruendola un difetto vivo in produzione
+   («Assegno» nella lista della spesa) e, misurando, un buco più grosso —
+   vedi sotto.
+8. ⏳ **Da decidere insieme: la spesa chiusa dalla lista non scrive
+   nessuna uscita** (vedi la misura qui sotto). È il prerequisito
+   dell'unificazione dei vocabolari dei mezzi di pagamento.
+9. ⏳ **I 33 posti dove una dimenticanza è silenziosa**: misurati, mai
+   camminati. `createCashMovement` ha ancora la forma vulnerabile.
 7. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
    può assegnare a un tavolo ostacolerebbero proprio la prova che deve
