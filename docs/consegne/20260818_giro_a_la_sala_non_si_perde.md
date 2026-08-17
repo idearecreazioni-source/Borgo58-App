@@ -125,6 +125,13 @@ diverso.
 
 ## 5. Cosa NON è verificato
 
+⚠️ **E questo giro NON è validato**: è *chiuso e con riepilogo*. La
+validazione la fa il validatore, insieme al giro B, come deciso da Alessio.
+Le due mani vanno tenute distinte anche nelle parole — fra un mese non si
+distinguerebbe più ciò che è stato verificato dal connettore da ciò che ho
+dichiarato io.
+
+
 - **Nessuna mano vera ha eseguito il comando dopo l'ultima modifica**: l'ho
   eseguito io per intero una volta (13 sagome riprese, 0 differenze), e la
   guardia del §3 l'ho provata **dopo**, nei due versi, senza rifare il giro
@@ -137,7 +144,15 @@ diverso.
 - **`DB_URL_PRODUZIONE` mancante o sbagliata**: i due rami sono scritti ma non
   esercitati — non ho tolto la configurazione per provarli.
 
-## 6. Stato finale
+## 6. Cosa abbiamo rovesciato
+
+**Nessun rovesciamento in questo giro.**
+
+*(La sezione c'è anche quando è vuota: vedi
+[`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md). Il giro B invece
+ne contiene uno — la capacità per tavolo — ed è già in elenco.)*
+
+## 7. Stato finale
 
 | | |
 |---|---|
