@@ -60,11 +60,41 @@ scenario»:
    nominare le cose che sono *di Alessio* e che nessuna migrazione rimetterà
    — a partire dalla pianta della sala. Oggi elenca i prerequisiti e non le
    perdite.
-2. **La disposizione «di sempre» dovrebbe poter tornare**: se è un dato suo,
-   il modo di rimetterla dopo una ricostruzione non può essere «ridisegnarla a
-   mano». O entra nello **stato di partenza** (`prova:base`), o si esporta.
-   ⚠️ Da decidere con Alessio: se entra in `prova:base` diventa *la sala del
-   collaudo*, e la sua sala vera resterebbe comunque solo in produzione.
+2. **La disposizione «di sempre» si prende dalla PRODUZIONE** — decisione del
+   18/08, e ha scartato le due strade che avevo proposto perché *avevano lo
+   stesso difetto in due versi*:
+   - **congelarla nello stato di partenza** la renderebbe *una sala decisa una
+     volta*: il giorno che Alessio la cambia, la ricostruzione successiva
+     gliela riporta indietro — **lo stesso difetto di oggi, solo più difficile
+     da vedere perché sembra voluto**;
+   - **esportarla a mano** è un gesto che ci si ricorda di fare *solo dopo*
+     aver perso il lavoro.
+
+   **La sala vera vive in produzione.** Se `prova:ricostruisci` se la va a
+   prendere da lì, **non invecchia mai e resta di Alessio senza che lui faccia
+   niente** — ed è lo stesso criterio con cui si è deciso cosa deve esistere
+   sul progetto di prova: *la lista non la scegliamo noi, la leggiamo dal
+   locale vero* (`prova:stato`, 16/08).
+
+   ### Misurato: è praticabile
+
+   | | |
+   |---|---|
+   | Gli script leggono già la produzione | **sì** — `prova-stato.mjs` usa `DB_URL_PRODUZIONE`, con la guardia che punti davvero al progetto del locale |
+   | La sala vera in produzione | **13 sagome**, 2 ruotate |
+   | Scostamenti giornalieri in produzione | **0** |
+
+   ⚠️ **Si copia solo `dining_tables`, non `disposizioni_giornaliere`**: i
+   secondi sono lo scostamento *di una giornata*, non la sala di sempre.
+   Copiarli porterebbe sul progetto di prova la disposizione di un martedì.
+
+   ⚠️ **E la lettura della produzione resta in SOLA LETTURA**, con la stessa
+   guardia di `prova:stato`: un comando che ricostruisce il progetto di prova
+   non deve poter scrivere una riga sul locale vero.
+
+   *Se un giorno quella lettura non fosse praticabile, si ripiega
+   sull'esportazione a mano — **non** sul congelamento: meglio un gesto in più
+   che una sala che torna indietro da sola.*
 
 ---
 
