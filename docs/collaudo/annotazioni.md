@@ -166,6 +166,67 @@ il tablet tenuto verticale. Non la cambio da solo: vedi la domanda aperta.
 
 ---
 
+## Un vocabolario solo per i mezzi di pagamento? La misura
+
+Domanda di Alessio (17/08), dopo che avevo separato l'elenco della lista
+della spesa da quello delle fatture: *«perché non lasciare tutti i metodi
+ovunque? Due elenchi diversi sono proprio ciò che ha prodotto il difetto.»*
+Con il vincolo giusto: **il lavoro non è nel menu, è nelle conseguenze** —
+ogni mezzo porta una regola su dove escono i soldi, e l'assegno porta la
+data differita.
+
+Misurato prima di decidere. Chi tiene un «mezzo di pagamento», e cosa ne fa:
+
+| dove | che domanda risponde | scrive un movimento? |
+|---|---|---|
+| `supplier_invoices.payment_method` (4, con assegno) | con che strumento pago una fattura | **sì**, con la data di uscita vera |
+| `shopping_list_items.payment_method` (3) | con che strumento ho pagato la spesa | 🔴 **no, niente** |
+| `order_payments.mezzo` (contante, carta) | come incassa il locale in sala | no, per scelta del 04/08 — ed è denaro in **entrata** |
+| `deductible_expenses.payment_method` (5) | se la spesa è **tracciata** ai fini fiscali | no: `app` e `altro_tracciato` esistono per la regola del contante |
+| `tips_collected` / `tip_distributions.mezzo` (2) | come sono arrivate le mance | sì (i saldi le leggono) |
+| `anticipazioni_socio.fondi` (contanti, conto_personale) | da quale tasca del **titolare** | sì |
+| `cash_movements.mezzo`, `scadenze_previste.mezzo` (cassa, banca) | **da dove** escono i soldi | è la destinazione, non lo strumento |
+
+**«I mezzi di pagamento» non è un vocabolario: sono quattro concetti.**
+Strumento, forma d'incasso in sala, tracciabilità fiscale, e destinazione.
+Unificarli tutti direbbe che «bonifico» ha senso su una mancia e «app» su
+una fattura.
+
+I due che *sono* lo stesso concetto sono la fattura e la spesa. E lì la
+misura ha trovato la ragione vera per non unificare adesso:
+
+### 🔴 Chiudere una riga della lista della spesa non scrive nessuna uscita
+
+`close_shopping_list_item` registra l'importo e il mezzo sulla riga, crea il
+lotto in magazzino, e **non scrive niente in prima nota**. `purchased_amount`
+non è letto da nessuna funzione, da nessuna vista e da nessun totale: solo
+dalla schermata che lo mostra.
+
+Conseguenza: **la spesa pagata dalla lista è denaro uscito che nessun saldo
+e nessun totale dei costi conosce.** È la stessa forma di «pagare una
+fattura non era un movimento» (rilievo del 13/08) e del doppio conteggio
+chiuso oggi.
+
+⚠️ **E questo decide la domanda sul vocabolario.** Cosa farebbe oggi quella
+schermata se ricevesse «assegno»? *La stessa cosa che fa con «bonifico»:
+niente.* Il mezzo lì è **decorativo** — non è che l'assegno non sia gestito,
+è che nessun mezzo lo è. Unificare adesso produrrebbe esattamente il
+«vocabolario finto» che Alessio ha nominato, e per un motivo più grosso
+dell'assegno.
+
+**Quindi: due vocabolari dichiarati, per ora**, e la rete che sorveglia che
+non si separino di nascosto. L'unificazione diventa la cosa giusta *dopo*
+che la lista scrive la sua uscita.
+
+⚠️ **E quel lavoro ha una decisione dentro, che non è mia**: la lista
+contiene sia righe pagate sul posto (mercato, ricevuta) sia righe **ordinate**
+dalla Fase B, per cui arriverà una fattura. Scrivere un movimento per tutte
+conterebbe due volte quelle fatturate — cioè ricostruirebbe il difetto
+chiuso oggi, dall'altro lato. Va chiesto ad Alessio quale dei due è il caso
+normale.
+
+---
+
 ## La lezione del secondo giro: il caso vuoto
 
 **Detta da Alessio il 17/08**, dopo il terzo caso in due giorni:
