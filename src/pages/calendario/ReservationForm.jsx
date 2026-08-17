@@ -216,8 +216,19 @@ export default function ReservationForm() {
               <span className="text-b58-terracotta-dark">senza tavolo</span>
             )}
             {" · "}
-            <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
-              apri la pianta
+            {/* ⚠️ Non è più un collegamento secco (difetti n. 1 e n. 10 del
+                collaudo). Prima portava alla pianta del giorno corrente,
+                che non sapeva niente di QUESTA prenotazione: da lì si
+                poteva solo crearne una nuova sul tavolo toccato. Ora si
+                porta dietro la data e la prenotazione, e la pianta si apre
+                già in attesa di sapere dove far sedere questa gente.
+                L'app nominava esattamente ciò che mancava — «senza
+                tavolo» — e non offriva la strada per rimediare. */}
+            <Link
+              to={`/calendario-eventi/pianta?data=${form.reservation_date}&assegna=${id}`}
+              className="underline text-b58-terracotta"
+            >
+              {tavoli.length > 0 ? "apri la pianta" : "dai un tavolo dalla pianta"}
             </Link>
           </span>
           <div className="flex gap-2">

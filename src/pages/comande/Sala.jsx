@@ -433,6 +433,19 @@ export default function Sala() {
                 .filter(Boolean)
             )}
           />
+          {/* ⚠️ Perché questa sala non somiglia a quella del Calendario
+              (difetto n. 2 del collaudo). È lo STESSO locale con gli
+              STESSI tavoli — misurato: le due schermate chiedono la pianta
+              alla stessa funzione e ricevono le stesse coordinate. Qui è
+              girata in piedi perché il tablet si tiene verticale, e resta
+              così sempre: una mappa mentale vale solo se non si ribalta
+              mai (decisione di Alessio del 14/08, riconfermata il 17/08).
+              La riga c'è perché chi confronta le due schermate deve poter
+              capire il perché, invece di sospettare due disposizioni. */}
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
+            Sala girata in piedi per il tablet. In Calendario la vedi sdraiata: è lo stesso
+            locale, girato — non un&apos;altra disposizione.
+          </p>
           <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
             <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
             hanno già un conto aperto ·{" "}

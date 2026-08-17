@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -106,8 +106,12 @@ function CampiPrenotazione({ valori, cambia }) {
 
 export default function PiantaGiornata() {
   const { isTitolare } = useAuth();
+  // Da dove si arriva: la scheda di una prenotazione può mandare qui la
+  // sua data e sé stessa, per farsi dare un tavolo (difetti n. 1 e n. 10).
+  const [ricerca, setRicerca] = useSearchParams();
+  const daAssegnare = ricerca.get("assegna");
 
-  const [data, setData] = useState(oggiLocale());
+  const [data, setData] = useState(ricerca.get("data") || oggiLocale());
   const [sagome, setSagome] = useState([]);
   const [prenotazioni, setPrenotazioni] = useState([]);
   const [assegnazioni, setAssegnazioni] = useState([]);
@@ -168,6 +172,28 @@ export default function PiantaGiornata() {
       .catch((e) => setError(e.message))
       .finally(() => setCaricamento(false));
   }, [ricarica]);
+
+  // Arrivando da una prenotazione senza tavolo, l'assegnazione parte da
+  // sola: la pianta si apre già in attesa di sapere dove far sedere quella
+  // gente, invece di essere una pianta qualunque su cui ricominciare.
+  //
+  // ⚠️ Passa dallo STESSO `iniziaAssegnazione` del pulsante interno, non da
+  // una scorciatoia sua: due modi di avviare la stessa cosa sono due modi
+  // di avviarla diversa.
+  //
+  // ⚠️ E l'indirizzo si ripulisce appena l'assegnazione è partita: senza,
+  // ogni ricarica della pagina la farebbe ripartire — anche dopo che il
+  // tavolo è stato dato, anche dopo aver cambiato giorno.
+  useEffect(() => {
+    if (!daAssegnare || caricamento) return;
+    const p = prenotazioni.find((x) => x.id === daAssegnare);
+    if (p) iniziaAssegnazione(p);
+    else setAvviso("Quella prenotazione non è fra quelle di questo giorno.");
+    const senza = new URLSearchParams(ricerca);
+    senza.delete("assegna");
+    setRicerca(senza, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daAssegnare, caricamento, prenotazioni]);
 
   const esegui = async (azione) => {
     setError("");
@@ -423,6 +449,16 @@ export default function PiantaGiornata() {
                 : undefined
             }
           />
+
+          {/* ⚠️ La stessa riga sta anche in Comande, e sta QUI soprattutto:
+              chi si accorge della discrepanza parte da questa schermata,
+              perché è quella dove si sta seduti a ragionare (rilievo di
+              Alessio, 17/08). Dirlo solo di là servirebbe a chi ha già
+              capito. */}
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
+            In Comande questa stessa sala è disegnata in piedi, per il tablet tenuto
+            verticale: è lo stesso locale girato — non un&apos;altra disposizione.
+          </p>
 
           {isTitolare && sagomeGirevoli.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
