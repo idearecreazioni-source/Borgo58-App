@@ -61,6 +61,12 @@ export default function FattureFornitoriHome() {
   // parte dal rosso perché leggere il rosso su una cosa andata bene insegna
   // a ignorare il rosso vero.
   const [avviso, setAvviso] = useState("");
+  // ⚠️ IL RIFIUTO VA MOSTRATO ACCANTO ALLA RIGA SU CUI SI È PREMUTO
+  // (difetto n. 2 del collaudo, 17/08). Il messaggio in cima alla pagina era
+  // ottimo e non l'ha visto nessuno: Alessio stava a metà schermata, non ha
+  // capito se la fattura fosse stata cancellata, e l'istinto è premere di
+  // nuovo. Un rifiuto lontano dal gesto è un rifiuto che non c'è.
+  const [erroreRiga, setErroreRiga] = useState(null);
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -217,25 +223,33 @@ export default function FattureFornitoriHome() {
     setCreditiFattura([]);
     setAnteprima(null);
     setError("");
+    setErroreRiga(null);
     try {
-      const [proposte, ante] = await Promise.all([
-        creditiPerFattura(inv.id),
-        anteprimaPagamento(inv.id, []),
-      ]);
-      setCreditiFattura(proposte);
-      setAnteprima(ante);
+      await ricaricaAnteprima(inv.id, () => []);
     } catch (e) {
-      setError(e.message);
+      setErroreRiga({ id: inv.id, messaggio: e.message });
     }
   };
 
+  // I due numeri del pannello — quali crediti si possono usare e cosa
+  // uscirebbe — si chiedono sempre al database. `trasforma` serve a togliere
+  // dalle scelte una nota che nel frattempo è sparita.
+  const ricaricaAnteprima = async (invId, trasforma = (s) => s) => {
+    const scelte = trasforma(noteScelte);
+    setNoteScelte(scelte);
+    const [proposte, ante] = await Promise.all([
+      creditiPerFattura(invId),
+      anteprimaPagamento(invId, scelte),
+    ]);
+    setCreditiFattura(proposte);
+    setAnteprima(ante);
+  };
+
   const cambiaCredito = async (invId, notaId) => {
-    const nuove = noteScelte.includes(notaId)
-      ? noteScelte.filter((x) => x !== notaId)
-      : [...noteScelte, notaId];
-    setNoteScelte(nuove);
     try {
-      setAnteprima(await anteprimaPagamento(invId, nuove));
+      await ricaricaAnteprima(invId, (scelte) =>
+        scelte.includes(notaId) ? scelte.filter((x) => x !== notaId) : [...scelte, notaId]
+      );
     } catch (e) {
       setError(e.message);
     }
@@ -245,6 +259,7 @@ export default function FattureFornitoriHome() {
     setPaying(true);
     setError("");
     try {
+      setErroreRiga(null);
       await markInvoicePaid(id, {
         paymentMethod,
         dataUscita,
@@ -254,7 +269,7 @@ export default function FattureFornitoriHome() {
       setPayingId(null);
       await ricarica();
     } catch (e) {
-      setError(e.message);
+      setErroreRiga({ id, messaggio: e.message });
     } finally {
       setPaying(false);
     }
@@ -262,11 +277,13 @@ export default function FattureFornitoriHome() {
 
   const handleDelete = async (id) => {
     setError("");
+    setErroreRiga(null);
     try {
       await deleteSupplierInvoice(id);
       await ricarica();
     } catch (e) {
-      setError(e.message);
+      // Accanto alla riga, non in cima alla pagina.
+      setErroreRiga({ id, messaggio: e.message });
     }
   };
 
@@ -281,11 +298,14 @@ export default function FattureFornitoriHome() {
   // note di credito già scalate: si pagherebbe un numero negativo.
   const correggi = async (id, patch) => {
     setError("");
+    setErroreRiga(null);
     try {
       await updateSupplierInvoice(id, patch);
       await ricarica();
     } catch (e) {
-      setError(e.message);
+      // Anche questo rifiuto riguarda una riga precisa: «su questa fattura
+      // sono scalate note per X, portandola a Y si pagherebbe un negativo».
+      setErroreRiga({ id, messaggio: e.message });
     }
   };
 
@@ -324,15 +344,26 @@ export default function FattureFornitoriHome() {
   // cifra, dopo con la frase che il database restituisce (quale fattura
   // torna a quanto). Senza, un numero cambierebbe da solo — la stessa cosa
   // che il 17/08 abbiamo dovuto spiegare per il saldo di cassa.
-  const togliNota = async (notaId) => {
+  const togliNota = async (notaId, fatturaId) => {
     setError("");
     setAvviso("");
+    setErroreRiga(null);
     try {
       const detto = await eliminaNotaCredito(notaId);
       await ricarica();
+      // ⚠️ E SE IL MODULO DEL PAGAMENTO È APERTO, SI RICARICA (difetto n. 4
+      // del collaudo): continuava a dire «usciranno 170,00 · nota già
+      // scalata 25,69» quando la nota non c'era più. Un pezzo di schermata
+      // che promette un importo che un altro pezzo ha appena cambiato.
+      //
+      // ⚠️ Si ricarica quello che è cambiato SUL SERVER — l'anteprima e i
+      // crediti proponibili — e non quello che l'utente stava scegliendo:
+      // le note spuntate restano, meno quelle che non esistono più (trappola
+      // del 12/08).
+      if (payingId) await ricaricaAnteprima(payingId, (scelte) => scelte.filter((x) => x !== notaId));
       if (typeof detto === "string" && detto) setAvviso(detto);
     } catch (e) {
-      setError(e.message);
+      setErroreRiga({ id: fatturaId, messaggio: e.message });
     }
   };
 
@@ -367,7 +398,7 @@ export default function FattureFornitoriHome() {
                     inv.amount
                   )} meno le altre note: il «da pagare» risale di ${formatEUR(u.importo)}. Procedo?`}
                   etichettaConferma="Sì, togli la nota"
-                  onConferma={() => togliNota(u.nota.id)}
+                    onConferma={() => togliNota(u.nota.id, inv.id)}
                 />
               </span>
             )}
@@ -737,13 +768,36 @@ export default function FattureFornitoriHome() {
                       >
                         {payingId === inv.id ? "Annulla" : "Segna pagata"}
                       </button>
-                      <ConfermaDistruttiva
-                        etichetta="Rimuovi"
-                        cosaSparisce={`la fattura ${inv.invoice_number ? `#${inv.invoice_number} ` : ""}di ${inv.supplier.name} da ${formatEUR(inv.amount)}`}
-                        onConferma={() => handleDelete(inv.id)}
-                      />
+                      {/* ⚠️ SPENTO CON LA RAGIONE, non premibile per essere
+                          rifiutato (difetto n. 3 del collaudo, 17/08). La
+                          schermata sa già che il gesto verrà respinto — la
+                          nota è lì, in quella riga — e chiedere «elimino la
+                          fattura?» sapendolo è una domanda finta. È la stessa
+                          lezione del pulsante «Pronta per carta» del 16/08:
+                          meglio spento con la ragione accanto. */}
+                      {Number(inv.note_scalate ?? 0) > 0 ? (
+                        <span
+                          className="text-xs text-b58-charcoal-soft/60"
+                          title="Togli prima la nota di credito"
+                        >
+                          Rimuovi — non si può: c&apos;è una nota di credito
+                        </span>
+                      ) : (
+                        <ConfermaDistruttiva
+                          etichetta="Rimuovi"
+                          cosaSparisce={`la fattura ${inv.invoice_number ? `#${inv.invoice_number} ` : ""}di ${inv.supplier.name} da ${formatEUR(inv.amount)}`}
+                          onConferma={() => handleDelete(inv.id)}
+                        />
+                      )}
                     </div>
                   </div>
+
+                  {/* Il rifiuto accanto al gesto: vedi `erroreRiga`. */}
+                  {erroreRiga?.id === inv.id && (
+                    <p className="mt-2 text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
+                      {erroreRiga.messaggio}
+                    </p>
+                  )}
 
                   <RigaNote inv={inv} />
                   {(docPerId === inv.id || (inv.documenti ?? []).length > 0) && (

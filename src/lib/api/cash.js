@@ -108,8 +108,17 @@ export async function deleteCashMovement(id) {
 // saldo OGGI. Serve a spiegare un saldo che cambia da solo alla
 // mezzanotte: senza questi due numeri, la prima volta che succede sembra
 // un errore del gestionale (condizione posta da Alessio il 17/08).
-export async function getUsciteFuture(entityId) {
-  const { data, error } = await supabase.rpc("uscite_future", { p_entity_id: entityId });
+// ⚠️ Con un orizzonte, risponde anche quante uscite cadono OLTRE (17/08/2026,
+// difetto n. 1 del collaudo): la previsione guarda 30 giorni per
+// impostazione predefinita, e un assegno datato al 31° sparisce da tutte e
+// due le schermate — dal saldo perché non è ancora avvenuto, dalla
+// previsione perché è fuori orizzonte. Senza orizzonte quei numeri sono
+// zero, ed è giusto: chi non ha un orizzonte non ha un «oltre».
+export async function getUsciteFuture(entityId, finoAl) {
+  const { data, error } = await supabase.rpc("uscite_future", {
+    p_entity_id: entityId,
+    p_fino_al: finoAl ?? null,
+  });
   if (error) throw error;
   return data?.[0] ?? null;
 }

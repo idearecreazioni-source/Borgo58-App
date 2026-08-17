@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { chiudiPartita, listPartiteInScadenza } from "../../lib/api/scadenze";
-import { formatDate } from "../../lib/constants";
+import { formatDate, formatQta} from "../../lib/constants";
 
 // Lo scadenziario, la stessa cosa che alle 10:00 arriva su Telegram.
 //
@@ -62,7 +62,7 @@ export default function Scadenze() {
         <div>
           <div className="font-medium">{p.ingrediente}</div>
           <div className="text-sm text-stone-600">
-            {p.quantita} {p.unita} · {quandoScade(p.giorni_mancanti, p.scadenza)}
+            {formatQta(p.quantita)} {p.unita} · {quandoScade(p.giorni_mancanti, p.scadenza)}
             {p.lotto_fornitore ? ` · lotto ${p.lotto_fornitore}` : ""}
           </div>
           {p.perche_muta && <div className="text-sm text-stone-500 italic">{p.perche_muta}</div>}

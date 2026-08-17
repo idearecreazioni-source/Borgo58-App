@@ -7,6 +7,7 @@ import {
   getImpostazioniTesoreria,
   getPosInTransito,
   getPrevisioneCassa,
+  getUsciteFuture,
   listMovimentiAttesi,
   listScadenzePreviste,
   riapriScadenzaPrevista,
@@ -45,6 +46,9 @@ export default function Previsione() {
   const [pos, setPos] = useState(null);
   const [attesi, setAttesi] = useState([]);
   const [scadenze, setScadenze] = useState([]);
+  // Cosa cade OLTRE l'orizzonte scelto: un elenco tagliato che non dichiara
+  // il taglio sembra completo (difetto n. 1 del collaudo, 17/08).
+  const [oltre, setOltre] = useState(null);
   const [impostazioni, setImpostazioni] = useState({ giorniAccredito: "", commissione: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,11 +74,16 @@ export default function Previsione() {
       listMovimentiAttesi(entityId, finoAl()),
       listScadenzePreviste(entityId, { includiChiuse: true }),
       getImpostazioniTesoreria(entityId),
-    ]).then(([p, t, a, s, imp]) => {
+      // ⚠️ Con l'orizzonte, per sapere cosa cade OLTRE. Il conto lo fa il
+      // database: sottrarre qui «tutte le future meno quelle in elenco»
+      // sarebbe un secondo calcolo dello stesso numero.
+      getUsciteFuture(entityId, finoAl()).catch(() => null),
+    ]).then(([p, t, a, s, imp, uf]) => {
       setPrevisione(p);
       setPos(t);
       setAttesi(a);
       setScadenze(s);
+      setOltre(uf);
       setImpostazioni({
         giorniAccredito: imp?.giorni_accredito_pos ?? "",
         commissione: imp?.commissione_pos_percento ?? "",
@@ -281,6 +290,27 @@ export default function Previsione() {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {/* ⚠️ IL TAGLIO SI DICHIARA (difetto n. 1 del collaudo, 17/08).
+                Un'uscita già registrata che cade oltre l'orizzonte scelto
+                era invisibile in tutti e due i posti: fuori dal saldo perché
+                non è ancora avvenuta, fuori da qui perché è oltre — e in
+                Cassa un messaggio la mandava a cercare proprio qui.
+                ⚠️ Non si allunga l'orizzonte da soli: se «fra 30 giorni»
+                comprendesse anche il 31° quando lì c'è qualcosa, «30» non
+                vorrebbe più dire 30. Si dice cosa resta fuori. */}
+            {oltre?.quante_oltre > 0 && (
+              <p className="text-xs text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
+                Oltre questa data{" "}
+                {oltre.quante_oltre === 1
+                  ? "c'è un'uscita già registrata"
+                  : `ci sono ${oltre.quante_oltre} uscite già registrate`}{" "}
+                per <strong>{formatEUR(oltre.totale_oltre)}</strong>: la prima il{" "}
+                {formatDate(oltre.prima_oltre)}. Non {oltre.quante_oltre === 1 ? "è" : "sono"} nel
+                saldo previsto qui sopra — allunga l&apos;orizzonte per vederl
+                {oltre.quante_oltre === 1 ? "a" : "e"}.
+              </p>
             )}
           </div>
 

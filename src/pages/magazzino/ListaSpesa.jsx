@@ -14,7 +14,7 @@ import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
-import { PAYMENT_METHODS_SPESA, UNITS, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { PAYMENT_METHODS_SPESA, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -279,7 +279,7 @@ export default function ListaSpesa() {
                         ) : (
                           item.quantity_needed != null && (
                             <span className="text-sm text-b58-charcoal-soft ml-1.5">
-                              {item.quantity_needed} {item.unit}
+                              {formatQta(item.quantity_needed)} {item.unit}
                             </span>
                           )
                         )}

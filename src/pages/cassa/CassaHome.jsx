@@ -198,7 +198,12 @@ export default function CassaHome() {
                 <div className="text-[11px] text-b58-charcoal-soft mt-2">
                   {future.quante === 1 ? "Un'uscita già registrata" : `${future.quante} uscite già registrate`}{" "}
                   per {formatEUR(future.totale)} <strong>non è ancora nel saldo</strong>: la prima
-                  esce il {formatDate(future.prima_scadenza)}. La trovi in «Ce la faccio?».
+                  esce il {formatDate(future.prima_scadenza)}. In «Ce la faccio?» compare se
+                  l&apos;orizzonte arriva fin lì.
+                  {/* ⚠️ Prima questa riga diceva «La trovi in "Ce la faccio?"», e non era
+                      vero: la previsione guarda 30 giorni di partenza, e un assegno al 31°
+                      non c'era. Misurato il 17/08 — era l'orizzonte, non le uscite non
+                      lette. Una schermata non deve promettere quello che un'altra farà. */}
                 </div>
               )}
               {future?.entrate_oggi > 0 && (

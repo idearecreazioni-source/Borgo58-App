@@ -214,10 +214,17 @@ describe("la nota di credito: se arriva prima riduce, se arriva dopo resta credi
     });
     expect(r.error, "ha cancellato una fattura con una nota di credito collegata").toBeTruthy();
     const corpo = await r.error.context.json();
-    expect(corpo.errore.messaggio).toContain("note di credito");
+    // ⚠️ Al SINGOLARE, perché su questa fattura la nota è una: dal 17/08 il
+    // messaggio concorda (prima diceva «1 note di credito», che è la firma di
+    // un messaggio scritto da una macchina — e i messaggi scritti da una
+    // macchina si smette di leggerli).
+    expect(corpo.errore.messaggio).toContain("è collegata 1 nota di credito");
+    expect(corpo.errore.messaggio).toContain("resterebbe una nota che dichiara");
     // Un rifiuto senza gesto d'uscita è un vicolo cieco (difetto n. 8 del
     // mandato di correzione): il messaggio deve nominare la via.
     expect(corpo.errore.messaggio).toContain("Togli prima");
+    // E l'accento è un accento, non un apostrofo.
+    expect(corpo.errore.messaggio).toContain("non esiste più");
 
     // E la fattura è ancora lì.
     const { data } = await titolare

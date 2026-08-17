@@ -390,6 +390,18 @@ export const formatEUR = (value) =>
     value ?? 0
   );
 
+// Una quantità come la scrive una persona.
+//
+// ⚠️ Nasce da una piccolezza del collaudo (17/08): in Magazzino si leggeva
+// «5.8785 kg» — il residuo di uno scarico calcolato, col punto inglese e
+// quattro decimali che nessuno userà mai per prendere una decisione.
+// Al massimo due decimali, e gli zeri in coda si tolgono: «10 kg» si legge
+// meglio di «10,00 kg», e «5,88 kg» dice tutto quello che serve.
+export const formatQta = (value) =>
+  value == null || value === ""
+    ? "—"
+    : new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(Number(value));
+
 export const formatDate = (value) =>
   value
     ? new Intl.DateTimeFormat("it-IT", { dateStyle: "medium" }).format(

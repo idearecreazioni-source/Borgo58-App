@@ -480,17 +480,34 @@ export default function RicettaDetail() {
         <div className="mb-4">
           <label className={labelClass}>Stato</label>
           <div className="flex flex-wrap items-center gap-2">
+            {/* ⚠️ SPENTO CON LA RAGIONE quando il piatto è in carta (difetto
+                del collaudo, 17/08). Prima era premibile: si spegneva a
+                schermo e il salvataggio veniva respinto dal database, che ha
+                ragione — ma un pulsante che si può premere solo per essere
+                rifiutato insegna a diffidare dei pulsanti. La stessa lezione
+                del «Rimuovi» sulle fatture con una nota di credito. */}
             <button
               type="button"
               onClick={togglePronta}
+              disabled={recipe.in_carta}
+              title={
+                recipe.in_carta
+                  ? "È in carta nel menu attivo: prima togli il piatto dal menu, poi si può smettere di considerarlo pronto."
+                  : undefined
+              }
               className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
                 recipe.pronta_per_carta
                   ? "bg-b58-gold text-b58-parchment border-b58-gold"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
-              }`}
+              } ${recipe.in_carta ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               {recipe.pronta_per_carta ? "✓ " : ""}Pronta per carta
             </button>
+            {recipe.in_carta && (
+              <span className="text-[11px] text-b58-charcoal-soft/80">
+                non si toglie: è in carta nel menu attivo
+              </span>
+            )}
             {/* Non è un pulsante: è quello che il menu dice di questo
                 piatto. Si accende mettendolo in un menu attivo, dall'Editor
                 Menu. */}

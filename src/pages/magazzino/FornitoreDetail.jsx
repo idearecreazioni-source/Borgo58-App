@@ -9,7 +9,7 @@ import {
   updateSupplier,
 } from "../../lib/api/suppliers";
 import { listRegoleDeducibilita, setRegolaFornitore } from "../../lib/api/deducibilita";
-import { SUPPLIER_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
+import { SUPPLIER_CATEGORIES, formatDate, formatEUR, formatQta} from "../../lib/constants";
 
 export default function FornitoreDetail() {
   const { id } = useParams();
@@ -316,7 +316,7 @@ export default function FornitoreDetail() {
             {deliveries.map((d) => (
               <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-b58-charcoal">
-                  {d.ingredient?.name} <span className="text-b58-charcoal-soft">· {d.quantity_received} {d.ingredient?.unit}</span>
+                  {d.ingredient?.name} <span className="text-b58-charcoal-soft">· {formatQta(d.quantity_received)} {d.ingredient?.unit}</span>
                 </span>
                 <span className="text-b58-charcoal-soft shrink-0">
                   {formatDate(d.received_at)}

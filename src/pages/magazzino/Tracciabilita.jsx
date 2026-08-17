@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listStockLots, listStockLotsDisplay } from "../../lib/api/stock";
-import { formatDate } from "../../lib/constants";
+import { formatDate, formatQta} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import PrintButton from "../../components/PrintButton";
 
@@ -67,10 +67,10 @@ export default function Tracciabilita() {
                   <td className="px-4 py-3 text-b58-charcoal-soft">{l.supplier_batch_number ?? "—"}</td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">{formatDate(l.received_at)}</td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {l.quantity_received} {l.ingredient?.unit}
+                    {formatQta(l.quantity_received)} {l.ingredient?.unit}
                   </td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {l.quantity_remaining} {l.ingredient?.unit}
+                    {formatQta(l.quantity_remaining)} {l.ingredient?.unit}
                   </td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">{formatDate(l.expiry_date)}</td>
                 </tr>

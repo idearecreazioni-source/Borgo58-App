@@ -5,7 +5,7 @@ import {
   listStockLevels,
   recordStockConsumption,
 } from "../../lib/api/stock";
-import { CONSUMPTION_REASONS, formatDate } from "../../lib/constants";
+import { CONSUMPTION_REASONS, formatDate, formatQta} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 const emptyConsumptionForm = { quantity: "", reason: "consumo", note: "" };
@@ -203,10 +203,10 @@ export default function MagazzinoHome() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {l.current_quantity} {l.unit}
+                        {formatQta(l.current_quantity)} {l.unit}
                       </td>
                       <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {l.stock_minimum_threshold != null ? `${l.stock_minimum_threshold} ${l.unit}` : "—"}
+                        {l.stock_minimum_threshold != null ? `${formatQta(l.stock_minimum_threshold)} ${l.unit}` : "—"}
                       </td>
                       <td
                         className={`px-4 py-3 ${
