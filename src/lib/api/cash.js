@@ -104,6 +104,16 @@ export async function deleteCashMovement(id) {
 // togliere il giorno del registratore telematico. Porta con sé
 // l'avvertenza, come tutte le funzioni che restituiscono un numero e il
 // suo limite.
+// ⚠️ Le uscite già scritte e non ancora avvenute, e quelle entrate nel
+// saldo OGGI. Serve a spiegare un saldo che cambia da solo alla
+// mezzanotte: senza questi due numeri, la prima volta che succede sembra
+// un errore del gestionale (condizione posta da Alessio il 17/08).
+export async function getUsciteFuture(entityId) {
+  const { data, error } = await supabase.rpc("uscite_future", { p_entity_id: entityId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
 export async function getSaldoTesoreria(entityId) {
   const { data, error } = await supabase.rpc("saldo_tesoreria", { p_entity_id: entityId });
   if (error) throw error;

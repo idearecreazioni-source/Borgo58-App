@@ -73,10 +73,19 @@ export async function createSupplierInvoice({
 // era una seconda chiamata separata: se falliva, la fattura risultava
 // pagata col promemoria "Pagare fattura" ancora pendente in Agenda. Il
 // doppio pagamento viene respinto dal database. Restituisce l'id.
-export async function markInvoicePaid(id, { paymentMethod }) {
+// ⚠️ `dataUscita` è il giorno in cui i soldi ESCONO, non quello in cui si
+// registra il pagamento (17/08/2026). Con un assegno a 30 giorni le due
+// date sono diverse, e i saldi contano solo ciò che è già avvenuto: senza
+// questo parametro la cassa scendeva un mese prima del dovuto.
+// `riferimento` è il numero dell'assegno o del bonifico — senza, due
+// uscite dello stesso importo allo stesso fornitore sono indistinguibili
+// sull'estratto conto.
+export async function markInvoicePaid(id, { paymentMethod, dataUscita, riferimento }) {
   return eseguiOperazione("pay_supplier_invoice", {
     p_invoice_id: id,
     p_payment_method: paymentMethod,
+    p_data_uscita: dataUscita || null,
+    p_riferimento: riferimento?.trim() || null,
   });
 }
 

@@ -152,9 +152,16 @@ export const TIP_MEZZI = [
   { value: "carta", label: "Carta" },
 ];
 
+// ⚠️ L'assegno c'è dal 17/08/2026: mancava, e Alessio conta di usarne una
+// trentina prima dell'apertura. Un pagamento vero che il gestionale non sa
+// nominare finisce registrato come qualcos'altro.
+// ⚠️ Il vocabolario è chiuso anche nel database, in DUE posti: la funzione
+// `pay_supplier_invoice` e il vincolo su `supplier_invoices`. Aggiungerne
+// uno qui senza aggiungerlo là fallisce al primo uso.
 export const PAYMENT_METHODS = [
   { value: "contante", label: "Contante" },
   { value: "bonifico", label: "Bonifico" },
+  { value: "assegno", label: "Assegno" },
   { value: "carta", label: "Carta" },
 ];
 

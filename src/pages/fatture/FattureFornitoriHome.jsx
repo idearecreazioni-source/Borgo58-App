@@ -10,7 +10,7 @@ import {
 } from "../../lib/api/supplierInvoices";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
-import { PAYMENT_METHODS, formatDate, formatEUR, labelFor } from "../../lib/constants";
+import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const emptyForm = {
@@ -48,6 +48,11 @@ export default function FattureFornitoriHome() {
 
   const [payingId, setPayingId] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("bonifico");
+  // Il giorno in cui i soldi escono: di partenza oggi, e con l'assegno lo
+  // si sposta in avanti. Non ha un valore predefinito «fra 30 giorni»: una
+  // data inventata da me sposterebbe il saldo di chi non ci ha pensato.
+  const [dataUscita, setDataUscita] = useState(oggiLocale());
+  const [riferimento, setRiferimento] = useState("");
   const [paying, setPaying] = useState(false);
 
   // Le due liste si chiedono separate: quelle da pagare tutte (è l'elenco
@@ -95,6 +100,7 @@ export default function FattureFornitoriHome() {
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block text-[11px] text-b58-charcoal-soft mb-1";
 
   const handleEntityChange = async (entityId) => {
     setForm((f) => ({ ...f, entity_id: entityId, supplier_id: "" }));
@@ -129,7 +135,7 @@ export default function FattureFornitoriHome() {
     setPaying(true);
     setError("");
     try {
-      await markInvoicePaid(id, { paymentMethod });
+      await markInvoicePaid(id, { paymentMethod, dataUscita, riferimento });
       setPayingId(null);
       await ricaricaFatture();
     } catch (e) {
@@ -372,6 +378,8 @@ export default function FattureFornitoriHome() {
                         onClick={() => {
                           setPayingId((id) => (id === inv.id ? null : inv.id));
                           setPaymentMethod("bonifico");
+                          setDataUscita(oggiLocale());
+                          setRiferimento("");
                         }}
                         className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
                       >
@@ -385,26 +393,73 @@ export default function FattureFornitoriHome() {
                     </div>
                   </div>
                   {payingId === inv.id && (
-                    <div className="mt-3 pt-3 border-t border-b58-charcoal/10 flex flex-wrap gap-2 items-end">
-                      <div className="w-40">
-                        <select
-                          value={paymentMethod}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className={inputClass}
+                    <div className="mt-3 pt-3 border-t border-b58-charcoal/10">
+                      <div className="flex flex-wrap gap-2 items-end">
+                        <div className="w-36">
+                          <label className={labelClass}>Come paghi</label>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className={inputClass}
+                          >
+                            {PAYMENT_METHODS.map((p) => (
+                              <option key={p.value} value={p.value}>{p.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {/* ⚠️ Il giorno in cui i soldi ESCONO, non quello in
+                            cui registri (17/08). Con un assegno a 30 giorni
+                            le due date sono diverse, e prima la cassa
+                            scendeva un mese prima del dovuto. */}
+                        <div className="w-40">
+                          <label className={labelClass}>Quando escono i soldi</label>
+                          <input
+                            type="date"
+                            value={dataUscita}
+                            onChange={(e) => setDataUscita(e.target.value)}
+                            className={inputClass}
+                          />
+                        </div>
+                        <div className="w-44">
+                          <label className={labelClass}>
+                            {paymentMethod === "assegno" ? "N. assegno" : "Riferimento"}
+                          </label>
+                          <input
+                            value={riferimento}
+                            onChange={(e) => setRiferimento(e.target.value)}
+                            placeholder={paymentMethod === "assegno" ? "es. 0004521" : "es. bonifico 12/03"}
+                            className={inputClass}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          disabled={paying || !dataUscita}
+                          onClick={() => handlePay(inv.id)}
+                          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
                         >
-                          {PAYMENT_METHODS.map((p) => (
-                            <option key={p.value} value={p.value}>{p.label}</option>
-                          ))}
-                        </select>
+                          {paying ? "Confermo…" : "Conferma pagamento"}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        disabled={paying}
-                        onClick={() => handlePay(inv.id)}
-                        className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
-                      >
-                        {paying ? "Confermo…" : "Conferma pagamento"}
-                      </button>
+                      {/* ⚠️ Le due avvertenze sono INFORMAZIONE, non
+                          divieti: il database non rifiuta nessuna delle due
+                          date, perché entrambe sono cose vere — prima è un
+                          acconto, dopo è un assegno postdatato. Dirlo qui
+                          serve a distinguere il caso voluto dal giorno
+                          digitato male. */}
+                      {dataUscita > oggiLocale() && (
+                        <p className="text-[11px] text-b58-charcoal-soft mt-2">
+                          I soldi escono il {formatDate(dataUscita)}: fino a quel giorno l&apos;uscita
+                          resta in prima nota e <strong>non abbassa il saldo</strong> — la trovi fra le
+                          uscite attese in «Ce la faccio?».
+                        </p>
+                      )}
+                      {dataUscita && dataUscita < inv.invoice_date && (
+                        <p className="text-[11px] text-b58-gold-dark mt-2">
+                          Escono <strong>prima</strong> della data della fattura
+                          ({formatDate(inv.invoice_date)}): è un acconto? Se invece hai sbagliato il
+                          giorno, correggilo — in prima nota resterebbe così.
+                        </p>
+                      )}
                     </div>
                   )}
                 </li>

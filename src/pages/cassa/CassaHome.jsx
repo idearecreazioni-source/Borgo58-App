@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getCashBalance,
+  getUsciteFuture,
   getSaldoTesoreria,
   listCashMovements,
   listDiscountsGiftsMonthly,
@@ -23,6 +24,8 @@ export default function CassaHome() {
   const [entities, setEntities] = useState(null);
   const [entityId, setEntityId] = useState("");
   const [balance, setBalance] = useState(null);
+  // Le uscite scritte e non ancora avvenute: servono a spiegare il saldo.
+  const [future, setFuture] = useState(null);
   const [tesoreria, setTesoreria] = useState(null);
   const [quadratura, setQuadratura] = useState([]);
   const [monthMovements, setMonthMovements] = useState([]);
@@ -46,14 +49,22 @@ export default function CassaHome() {
     const monthStart = currentMonthStart();
     Promise.all([
       getCashBalance(entityId),
+      getUsciteFuture(entityId).catch(() => null),
       getSaldoTesoreria(entityId),
       listCashMovements({ entityId, from: monthStart }),
       listCashMovements({ entityId }),
       listDiscountsGiftsMonthly(entityId),
       listQuadraturaPagamenti(),
     ])
-      .then(([bal, tes, monthMov, allMov, dg, quad]) => {
+      // ⚠️ L'ordine qui dentro deve seguire l'ordine delle promesse sopra,
+      // e aggiungendone una ho sbagliato proprio questo: senza aggiornare
+      // l'elenco, `tesoreria` avrebbe ricevuto le uscite future e ogni
+      // numero della schermata si sarebbe spostato di uno. Nessun errore,
+      // solo cifre sbagliate — la stessa forma del campo dimenticato del
+      // 16/08. Se si aggiunge una riga sopra, si aggiunge anche qui.
+      .then(([bal, fut, tes, monthMov, allMov, dg, quad]) => {
         setBalance(bal);
+        setFuture(fut);
         setTesoreria(tes);
         setMonthMovements(monthMov);
         setRecent(allMov.slice(0, 8));
@@ -88,11 +99,13 @@ export default function CassaHome() {
   const ricaricaSaldi = () =>
     Promise.all([
       getCashBalance(entityId),
+      getUsciteFuture(entityId).catch(() => null),
       getSaldoTesoreria(entityId),
       listCashMovements({ entityId }),
       listCashMovements({ entityId, from: currentMonthStart() }),
-    ]).then(([bal, tes, allMov, monthMov]) => {
+    ]).then(([bal, fut, tes, allMov, monthMov]) => {
       setBalance(bal);
+      setFuture(fut);
       setTesoreria(tes);
       setRecent(allMov.slice(0, 8));
       setMonthMovements(monthMov);
@@ -172,6 +185,27 @@ export default function CassaHome() {
               {negativeBalance && (
                 <div className="text-[11px] text-b58-terracotta-dark mt-1 font-medium">
                   Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.
+                </div>
+              )}
+              {/* ⚠️ IL SALDO CAMBIA DA SOLO ALLA MEZZANOTTE, e va spiegato
+                  nei due versi (condizione posta da Alessio il 17/08). Dal
+                  17/08 i saldi contano solo ciò che è già avvenuto: un
+                  assegno a 30 giorni sta in prima nota e non abbassa il
+                  saldo finché non arriva il giorno. Senza queste due righe,
+                  la prima volta che il saldo scende senza che nessuno abbia
+                  fatto niente sembra un errore del gestionale. */}
+              {future?.quante > 0 && (
+                <div className="text-[11px] text-b58-charcoal-soft mt-2">
+                  {future.quante === 1 ? "Un'uscita già registrata" : `${future.quante} uscite già registrate`}{" "}
+                  per {formatEUR(future.totale)} <strong>non è ancora nel saldo</strong>: la prima
+                  esce il {formatDate(future.prima_scadenza)}. La trovi in «Ce la faccio?».
+                </div>
+              )}
+              {future?.entrate_oggi > 0 && (
+                <div className="text-[11px] text-b58-charcoal-soft mt-1">
+                  Oggi {future.entrate_oggi === 1 ? "è entrata nel saldo un'uscita" : `sono entrate nel saldo ${future.entrate_oggi} uscite`}{" "}
+                  per {formatEUR(future.totale_oggi)}: erano state registrate prima, e oggi è il
+                  giorno in cui i soldi escono.
                 </div>
               )}
               {/* ⚠️ QUESTA RIGA DICEVA IL CONTRARIO FINO AL 15/08, ed è la

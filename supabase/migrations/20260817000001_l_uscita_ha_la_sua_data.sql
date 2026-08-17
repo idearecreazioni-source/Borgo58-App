@@ -293,16 +293,27 @@ begin
     raise exception 'Questa fattura risulta gia'' pagata';
   end if;
 
-  -- La data la dice lui; senza, e' oggi come prima. ⚠️ Non si accetta una
-  -- data ANTERIORE alla fattura: un'uscita prima del documento che la
-  -- giustifica non e' un pagamento, e' un errore di digitazione — e in
-  -- prima nota resterebbe per sempre.
+  -- La data la dice lui; senza, e' oggi come prima.
+  --
+  -- ⚠️ QUI NON C'E' NESSUN RIFIUTO, ed e' una correzione a me stesso
+  -- (rilievo di Alessio, 17/08). La prima versione rifiutava una data
+  -- ANTERIORE alla fattura, ragionando che un'uscita prima del documento
+  -- che la giustifica fosse un errore di digitazione. **E' un caso vero:**
+  -- l'acconto o la caparra si pagano PRIMA che la fattura arrivi, e coi
+  -- fornitori nuovi non e' nemmeno raro. Quel vincolo avrebbe bloccato un
+  -- gesto legittimo.
+  --
+  -- E non si sostituisce con una soglia («non oltre N giorni prima»): un
+  -- errore di digitazione e un acconto sono indistinguibili da qui, e una
+  -- soglia inventata sarebbe una regola scritta da me sui suoi soldi. Il
+  -- posto giusto per l'avvertenza e' la SCHERMATA, che puo' dire «esce
+  -- prima della data della fattura: e' un acconto?» e lasciar decidere —
+  -- informazione, non divieto.
+  --
+  -- Il database rifiuta dove c'e' un invariante. Qui non ce n'e' nessuno:
+  -- una data prima e' un acconto, una data dopo e' un assegno postdatato.
+  -- Sono entrambe cose vere.
   v_data := coalesce(p_data_uscita, (now() at time zone 'Europe/Rome')::date);
-  if v_data < v_inv.invoice_date then
-    raise exception
-      'La data di uscita (%) e'' anteriore alla data della fattura (%): controlla il giorno.',
-      to_char(v_data, 'DD/MM/YYYY'), to_char(v_inv.invoice_date, 'DD/MM/YYYY');
-  end if;
 
   update supplier_invoices
      set status = 'pagata', paid_at = now(), payment_method = p_payment_method
@@ -422,19 +433,20 @@ begin
     raise exception 'uscite_future non vede l''uscita di domani (quante=%, totale=%).', quante, totale;
   end if;
 
-  -- 7. Una data ANTERIORE alla fattura si rifiuta.
+  -- 7. L'ACCONTO PASSA: un'uscita anteriore alla fattura e' legittima, e
+  --    questa prova sta qui per impedire che qualcuno la richiuda domani
+  --    credendo di correggere un difetto. Il caso e' l'acconto pagato
+  --    prima che la fattura arrivi.
   insert into supplier_invoices (entity_id, supplier_id, invoice_number, invoice_date, amount, status)
     values (v_ente, v_forn, '__VERIFICA__ 2', (now() at time zone 'Europe/Rome')::date, 10.00, 'da_pagare')
     returning id into v_inv;
-  passata := false;
-  begin
-    perform pay_supplier_invoice(v_inv, 'assegno', (now() at time zone 'Europe/Rome')::date - 5, null);
-    passata := true;
-  exception
-    when sqlstate 'P0001' then
-      if sqlerrm not like 'La data di uscita%' then raise; end if;
-  end;
-  if passata then raise exception 'Ha accettato un''uscita anteriore alla fattura.'; end if;
+  perform pay_supplier_invoice(v_inv, 'bonifico', (now() at time zone 'Europe/Rome')::date - 5, 'ACCONTO');
+  select count(*) into n from cash_movements
+   where supplier_invoice_id = v_inv
+     and movement_date = (now() at time zone 'Europe/Rome')::date - 5;
+  if n <> 1 then
+    raise exception 'L''acconto pagato prima della fattura non e'' stato registrato (righe: %).', n;
+  end if;
 
   -- 8. Un metodo inventato si rifiuta ancora.
   passata := false;
