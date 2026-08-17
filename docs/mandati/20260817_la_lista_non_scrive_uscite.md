@@ -50,6 +50,18 @@ parte» serve tenerne traccia.
 ⚠️ **Il terzo sembra ovvio, ma confonderlo col secondo significa avere in
 magazzino merce che non è mai arrivata.**
 
+### Con che mezzo esce il denaro — deciso da Alessio il 17/08
+
+**Contante di partenza.** Il caso normale è il mercato, e chiedere ogni volta
+aggiungerebbe un gesto a un'operazione che ne ha già tre.
+
+⚠️ **A una condizione, e non è una sfumatura**: il mezzo si **vede nel momento
+della conferma** e si cambia lì. *Un predefinito che si vede è una comodità;
+uno che riempie un campo che nessuno guarda è la famiglia dei 33 posti
+silenziosi censiti il 17/08* — dove dimenticare un campo non dà errore, scrive
+il predefinito, e sbaglia in silenzio. È esattamente così che si è perso il
+`mezzo` delle mance.
+
 ---
 
 ## Due avvertenze sul caso «gratis»
