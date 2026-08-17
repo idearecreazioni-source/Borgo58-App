@@ -76,7 +76,46 @@ tenerli distinti:
 
 ---
 
-## 3. Cosa NON è verificato
+## 3. 🔴 E un rilievo arrivato dopo, provando la stampa
+
+⚠️ **Questo pezzo è stato aggiunto al riepilogo dopo che era già scritto**, su
+richiesta del validatore: la correzione era già fatta e il riepilogo no, ed è
+esattamente la situazione che la rete dei riepiloghi esiste per impedire — un
+blocco che *sembra* chiuso senza esserlo.
+
+**Il rilievo, e va scritto perché fra sei mesi sarà meno ovvio della cura.**
+Accendendo «Mostra allergeni», i Ravioli mostravano l'elenco vero — «Glutine ·
+Latte» — e sotto **tutti gli altri sette piatti** compariva *«per gli allergeni
+chiedi al personale»*. La distinzione funzionava: il piatto non confermato non
+stampava un elenco che sembrava controllato. Ma la stessa frase ripetuta sotto
+sette piatti su otto è **rumore**, e contraddiceva una decisione già presa —
+sul menu resta solo la dicitura in fondo, l'elenco vive nella schermata per lo
+staff.
+
+⚠️ **La cura non era togliere e basta.** Se un piatto non confermato diventa
+identico a uno che non contiene allergeni, torna il difetto di partenza:
+**l'assenza in mezzo a delle presenze si legge come una rassicurazione.** È lo
+stesso difetto, visto dall'altro lato.
+
+**La cura**: un **asterisco** accanto al nome del piatto, e **una** nota in
+fondo alla pagina che lo spiega — «i piatti con * non hanno ancora l'elenco
+completo: per quelli chiedi sempre al personale». La nota compare solo se c'è
+almeno un piatto asteriscato, e il conto si fa sugli stessi piatti che
+finiscono sul foglio.
+
+⚠️ **Quando tutti gli ingredienti saranno confermati l'asterisco sparisce da
+solo**: non è un interruttore da ricordarsi di spegnere — e questo progetto ha
+già visto cosa succede a una cosa che va spenta a mano.
+
+**E la casella dice a cosa serve** (seconda metà del rilievo, decisione di
+Alessio): sul menu definitivo **non vanno elenchi sotto i piatti**, quindi
+«Mostra allergeni» serve a stampare una copia per la sala. Accanto c'è scritto
+**«copia per uso interno, non la carta»**. Senza dirlo, fra sei mesi qualcuno
+la accende credendo che sia il modo previsto di stampare la carta.
+
+---
+
+## 4. Cosa NON è verificato
 
 - **Nessuna mano vera ha aperto le due schermate** dopo la modifica. L'Editor
   Menu in particolare: Alessio lo userà sul serio a breve, quando comincerà a
@@ -91,8 +130,11 @@ tenerli distinti:
   `below_threshold` dalla vista, che è già provata altrove.
 - **Non c'è nessuna migrazione**, quindi niente da applicare e niente da
   verificare sul database.
+- **Il menu con l'asterisco non è mai stato stampato**: si vede in anteprima,
+  ma nessuno ha mandato il foglio alla stampante né guardato come cade
+  l'asterisco su una riga lunga.
 
-## 4. Stato finale
+## 5. Stato finale
 
 | | |
 |---|---|

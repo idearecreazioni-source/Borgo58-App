@@ -34,10 +34,24 @@ pomodoro e la fattura ne porta 5, la riga **non deve sparire**: ce ne sono
 ancora 15 da comprare. Si segnala come **arrivata in parte** e si **propone**
 la chiusura, invece di deciderlo da soli.
 
-*Nota di implementazione, non una decisione*: oggi `shopping_list_items` non
-conserva quanto è arrivato — `close_shopping_list_item` riceve
-`p_quantity_received` e lo usa solo per il lotto. Per dire «arrivata in
-parte» serve tenerne traccia.
+**Il comportamento, deciso da Alessio il 17/08**: quando la fattura porta 5 dei
+20 kg, la riga **resta aperta** con «arrivati 5 di 20» e **propone** la
+chiusura. Non si chiude da sola, e **non si riscrive a 15 senza dirlo**: il
+gestionale segnala, Alessio decide se ne compra ancora o se gli bastano.
+
+⚠️ **La colonna si aggiunge ADESSO**, e la ragione è il momento: oggi la lista
+è vuota, quindi non costa niente. Farlo fra un mese, con righe vere dentro,
+vuol dire migrazione più sanatoria più il dubbio su cosa fare delle righe già
+chiuse.
+
+⚠️ **E non è un dettaglio**: «20 kg in lista, 5 in fattura» è la **normalità**
+coi fornitori, non un'eccezione. Una riga che sparisce per intero quando la
+merce è arrivata a metà produce scorte mancanti — e la lista della spesa esiste
+proprio per non restare senza qualcosa.
+
+*Stato di oggi*: `shopping_list_items` non conserva quanto è arrivato —
+`close_shopping_list_item` riceve `p_quantity_received` e lo usa solo per il
+lotto.
 
 ### 2. Chiusura a mano — tre esiti, e vanno tenuti distinti tutti e tre
 
