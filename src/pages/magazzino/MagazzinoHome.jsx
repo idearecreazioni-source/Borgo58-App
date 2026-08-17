@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   listScarichiNonRiusciti,
@@ -28,6 +28,16 @@ export default function MagazzinoHome() {
   const [consumptionForm, setConsumptionForm] = useState(emptyConsumptionForm);
   const [saving, setSaving] = useState(false);
   const [nonScaricate, setNonScaricate] = useState([]);
+
+  // I due numeri del riepilogo, contati dalle righe che si vedono sotto.
+  // `below_threshold` la calcola la vista: si legge la sua risposta invece di
+  // rifare il confronto qui — due posti che decidono «è sotto soglia?»
+  // finirebbero per dire due numeri diversi.
+  const sottoSoglia = useMemo(() => levels.filter((l) => l.below_threshold).length, [levels]);
+  const inScadenza = useMemo(
+    () => levels.filter((l) => expiryUrgency(l.nearest_expiry) === "danger").length,
+    [levels]
+  );
 
   const load = () => listStockLevels().then(setLevels);
 
@@ -83,8 +93,42 @@ export default function MagazzinoHome() {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Magazzino</h1>
+          {/* ⚠️ IL RIEPILOGO IN CIMA (piccolezza del collaudo, 17/08). Prima
+              c'era solo «Giacenze, soglie minime, scadenze», che descrive la
+              schermata e non dice niente: per sapere se c'era qualcosa da
+              fare bisognava scorrere l'elenco riga per riga.
+              ⚠️ I due numeri si contano da `levels`, cioè dalle STESSE righe
+              che si vedono sotto — non da una seconda interrogazione. Un
+              totale che non si può ricontrollare riga per riga è un totale
+              *diverso*, non uno *più vero* (regola del 16/08 sui due totali
+              del «da pagare»).
+              ⚠️ E quando non c'è niente da fare lo dice, invece di sparire:
+              un riquadro che compare solo nei guai fa dubitare, quando manca,
+              di non averlo visto. */}
           <p className="text-b58-charcoal-soft mt-1">
-            Giacenze, soglie minime, scadenze.
+            {levels.length === 0 ? (
+              "Giacenze, soglie minime, scadenze."
+            ) : (
+              <>
+                {sottoSoglia > 0 ? (
+                  <strong className="text-b58-terracotta-dark">
+                    {sottoSoglia} sotto scorta minima
+                  </strong>
+                ) : (
+                  "nessuno sotto scorta minima"
+                )}
+                {" · "}
+                {inScadenza > 0 ? (
+                  <strong className="text-b58-gold-dark">
+                    {inScadenza === 1 ? "1 scade" : `${inScadenza} scadono`} entro tre giorni
+                  </strong>
+                ) : (
+                  "niente in scadenza nei prossimi tre giorni"
+                )}
+                {" — su "}
+                {levels.length} {levels.length === 1 ? "ingrediente" : "ingredienti"}.
+              </>
+            )}
           </p>
         </div>
         <div className="flex gap-2">

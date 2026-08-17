@@ -103,6 +103,10 @@ export default function EditorMenuHome() {
     return map;
   }, [items, excluded]);
 
+  // Quanti piatti sono stati tolti da QUESTA stampa: si conta dagli stessi
+  // piatti che si vedono nell'elenco, non da un secondo posto.
+  const quantiEsclusi = useMemo(() => items.filter((i) => excluded[i.id]).length, [items, excluded]);
+
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
@@ -194,21 +198,70 @@ export default function EditorMenuHome() {
           })()}
 
         {!loading && items.length > 0 && (
+          <>{/* ⚠️ QUESTO BLOCCO È STATO RIDISEGNATO, non ritoccato (piccolezza
+             del collaudo, 17/08, e la ragione è di Alessio).
+             Prima erano CASELLE SPUNTATE: dieci piatti, dieci spunte tutte
+             accese, e togliendone una si escludeva quel piatto da *questa*
+             stampa. Ma una casella spuntata è il segno universale di una
+             scelta SALVATA — le togli, esci, rientri, e sono tornate tutte.
+             La riga che lo spiegava c'era, sopra e in piccolo, e quello che
+             si vede è il comportamento, non la nota.
+             ⚠️ La cura non è ingrandire la nota: è che il segno somigli a
+             ciò che fa. Adesso non c'è niente di spuntato — si toglie un
+             piatto, e il piatto si vede tolto (barrato, sbiadito, con
+             «rimetti» accanto). Lo stato di partenza è «tutto dentro», che è
+             la verità, e l'elenco dice in ogni momento quanti ne mancano e
+             che valgono solo per questa stampa. Stessa forma della striscia
+             del database: due stati dello stesso segno, non due segni. */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
-            <p className="text-xs text-b58-charcoal-soft mb-2">Togli la spunta ai piatti da escludere dalla stampa (non modifica il menu):</p>
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+              <p className="text-xs text-b58-charcoal-soft">
+                {quantiEsclusi === 0 ? (
+                  <>Si stampano tutti e {items.length} i piatti.</>
+                ) : (
+                  <>
+                    Si stampano <strong>{items.length - quantiEsclusi} piatti su {items.length}</strong>:{" "}
+                    {quantiEsclusi === 1 ? "uno è tolto" : `${quantiEsclusi} sono tolti`} da questa
+                    stampa. <strong>Il menu non cambia</strong>, e riaprendo la pagina tornano tutti.
+                  </>
+                )}
+              </p>
+              {quantiEsclusi > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExcluded({})}
+                  className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                >
+                  Rimettili tutti
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
               {items.map((i) => (
-                <label key={i.id} className="flex items-center gap-2 text-sm text-b58-charcoal-soft">
-                  <input
-                    type="checkbox"
-                    checked={!excluded[i.id]}
-                    onChange={(e) => setExcluded((x) => ({ ...x, [i.id]: !e.target.checked }))}
-                  />
-                  {i.recipe?.name} <span className="text-xs text-b58-charcoal-soft/60">({labelFor(CATEGORY_ORDER, i.category)})</span>
-                </label>
+                <div key={i.id} className="flex items-center gap-2 text-sm">
+                  <span
+                    className={
+                      excluded[i.id]
+                        ? "line-through text-b58-charcoal-soft/40"
+                        : "text-b58-charcoal-soft"
+                    }
+                  >
+                    {i.recipe?.name}{" "}
+                    <span className="text-xs text-b58-charcoal-soft/60">
+                      ({labelFor(CATEGORY_ORDER, i.category)})
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setExcluded((x) => ({ ...x, [i.id]: !x[i.id] }))}
+                    className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                  >
+                    {excluded[i.id] ? "rimetti" : "togli da questa stampa"}
+                  </button>
+                </div>
               ))}
             </div>
-          </div>
+          </div></>
         )}
       </div>
 
