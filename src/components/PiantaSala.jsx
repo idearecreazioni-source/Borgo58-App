@@ -77,8 +77,10 @@ const limita = (v, min, max) => Math.min(max, Math.max(min, v));
  * @param selezione   array di id selezionati
  * @param onSeleziona (sagoma) => void — assente: le sagome non si toccano
  * @param onSposta    (sagoma, x, y) => void — assente: niente trascinamento
- * @param stato       { [id]: { colore } } — solo il colore: dentro una
- *                    sagoma di 90 cm non ci sta altro di leggibile
+ * @param stato       { [id]: { colore, coperti, corretto } } — il colore,
+ *                    e dal 18/08 la sola CIFRA dei coperti col punto che
+ *                    segna «corretto a mano». Niente altro: dentro una
+ *                    sagoma di 90 cm non ci sta altro di leggibile.
  */
 export default function PiantaSala({
   sagome = [],
@@ -303,9 +305,26 @@ export default function PiantaSala({
           // computer l'ora usciva tagliata («0:00 · 2»). Chi c'è e a che
           // ora si legge nell'elenco sotto la pianta, dove lo spazio c'è.
           // Sulla sagoma resta il colore, che si legge senza leggere.
+          // ⚠️ IL NUMERO DEI COPERTI RIENTRA NELLA SAGOMA (18/08), e
+          // cambia la decisione del 14/08 «dentro la sagoma ci sta il suo
+          // nome e basta». La ragione di allora vale ancora — in un
+          // quadrato di 90 cm due righe lunghe si accavallano — quindi il
+          // prezzo accettato è che qui entra una CIFRA e nient'altro: non
+          // «4 posti», non l'ora, che resta nell'elenco sotto.
+          // ⚠️ E si vede quale dei due numeri si sta guardando: quello
+          // corretto a mano porta un punto. Il perché sta nel mandato — su
+          // quella cifra si decide se accettare una prenotazione, quindi
+          // deve poter essere quella vera e deve dirsi tale. Le parole
+          // (di quanto, e perché) stanno nell'elenco: sulla sagoma il
+          // segno, sotto la spiegazione.
           const largo = (t, f) => (t ? String(t).length * f * 0.55 : 0);
+          const coperti = info?.coperti;
           const posti =
-            sagoma.posti_fissi && sagoma.profondita_cm >= 110 ? `${sagoma.posti_fissi} posti` : null;
+            coperti != null
+              ? `${coperti}${info?.corretto ? " ·" : ""}`
+              : sagoma.posti_fissi && sagoma.profondita_cm >= 110
+                ? `${sagoma.posti_fissi} posti`
+                : null;
           const serve = Math.max(largo(sagoma.label, 36), largo(posti, 26));
           // Con la sala in piedi un'etichetta raddrizzata ha a
           // disposizione la PROFONDITÀ della sagoma, non la larghezza:

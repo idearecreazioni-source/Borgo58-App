@@ -111,6 +111,17 @@ export async function sagomeDiProva(titolare, quante = 3) {
   const etichette = Array.from({ length: quante }, (_, i) => `__PROVA__ ${i + 1}`);
   await titolare.from("dining_tables").delete().in("label", etichette);
 
+  // Dal 18/08/2026 un tavolo DEVE avere un formato: è da lì che vengono i
+  // suoi coperti, e senza il conteggio della serata sarebbe più basso del
+  // vero senza dare nessun errore. Il vincolo lo impedisce, e queste
+  // sagome vanno create come quelle vere.
+  const { data: formato, error: erroreFormato } = await titolare
+    .from("formati_tavolo")
+    .select("id")
+    .eq("nome", "Quadrato 90x90")
+    .single();
+  if (erroreFormato) throw new Error(`Manca il formato dei tavoli di prova: ${erroreFormato.message}`);
+
   const { data, error } = await titolare
     .from("dining_tables")
     .insert(
@@ -122,6 +133,7 @@ export async function sagomeDiProva(titolare, quante = 3) {
         zona: "sala_bassa",
         larghezza_cm: 90,
         profondita_cm: 90,
+        formato_id: formato.id,
         x: 100 + i * 100,
         y: 900,
       }))

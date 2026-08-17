@@ -143,14 +143,23 @@ cambiamento va **dichiarato**, non fatto scivolare dentro una migrazione.
 | sagoma | coperti |
 |---|---|
 | tavolo 90×90 | **4** |
-| tavolo 180×90 | **6**, sempre |
+| tavolo 180×90 | **6** da solo |
 | Chef Table | 4 |
 | divano | 6 (×3) |
 
-⚠️ **I due tavoli da 180 NON sono accostabili**: sono di stile diverso dagli
-altri. La regola dell'accostamento vale **solo fra i 90×90**, e i 180 restano
-6 fissi. *Non è un vincolo di calcolo, è un fatto della sala*: il gestionale
-**non deve nemmeno offrire** l'accostamento su quei due.
+⚠️ **CORRETTO IL 18/08, su domanda del validatore.** Il testo originale di
+questa avvertenza diceva: *«i due tavoli da 180 NON sono accostabili: la
+regola dell'accostamento vale solo fra i 90×90, e i 180 restano 6 fissi»*.
+Resta qui come origine della decisione, ma **non è quello che ha detto
+Alessio**. La sua regola è **lo stile**, non la misura: i due da 180 sono
+accostabili **fra loro** (stesso stile) e non lo sono **verso i 90×90**.
+
+Quindi: **il gesto resta acceso dentro ciascun formato e si spegne solo fra i
+due gruppi**, e la regola «somma meno due per giunzione» vale su entrambi.
+Due 180 accostati fanno **10**; tre 90×90 in fila fanno **8**.
+
+*Non è un vincolo di calcolo, è un fatto della sala*: il gestionale **non deve
+nemmeno offrire** l'accostamento fra un 180 e un 90×90.
 
 ⚠️ **Chef Table e divani restano FUORI dal conteggio di «c'è posto?»**, e la
 ragione è che sono **due formule diverse**: chi chiama per cenare vuole un
@@ -162,6 +171,24 @@ da come Alessio lo mette **quel giorno**. Quindi è una correzione della
 **disposizione del giorno**, non un attributo della sagoma — scriverlo su
 `dining_tables` se lo porterebbe dietro anche i giorni in cui quel tavolo sta
 in mezzo alla sala.
+
+⚠️ **PRECISATO IL 18/08, rilievo del validatore: la collocazione era giusta,
+il meccanismo separato no.** Alessio ha già chiesto che il numero sia
+**sempre correggibile a mano**; costruire *accanto* un meccanismo «contro il
+muro» darebbe **due strade per lo stesso numero** — e il flag saprebbe solo
+sottrarre, cioè sarebbe strettamente meno espressivo. Peggio del doppione:
+potendo contraddirsi, servirebbe una regola di precedenza inventata da chi
+scrive il codice.
+
+**Quindi il «contro il muro» non si costruisce**: c'è **una sola correzione a
+mano**, con la ragione scritta accanto se serve — «uno contro il muro» è una
+di quelle ragioni, non un meccanismo.
+
+⚠️ **E la chiave è l'INSIEME di tavoli di quel giorno**, non il singolo
+tavolo: Alessio corregge il numero che *guarda*, che è quello del rettangolo.
+Un tavolo singolo è un insieme di uno. Conseguenza decisa da lui: **sciogliendo
+un tavolone la correzione decade** e il numero torna a quello calcolato — e lo
+schermo lo dice.
 
 **Soglia di avviso: 25 coperti** prenotati per la serata. La cucina regge 30,
 la sala ne fa 40 sulla carta: la soglia è **più bassa di proposito** per il
@@ -263,7 +290,7 @@ cosa succede davvero su uno schermo da telefono prima di cambiarla.
 | giro | cosa | perché in quest'ordine |
 |---|---|---|
 | **A** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_a_la_sala_non_si_perde.md)). Il punto 0: `--azzera` dichiara cosa butta via, e la sala «di sempre» può tornare | è un difetto che **agisce adesso** — ogni ricostruzione del progetto di prova costa ad Alessio il lavoro di ridisegnare la sala |
-| **B** | I punti **2 + 1**: i coperti dentro il tavolo, poi «c'è posto a quell'ora?» | il secondo **non esiste senza il primo**: senza i posti sul tavolo non c'è niente da contare. E il 2 tocca un vincolo del database, quindi va da solo |
+| **B** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md)). I punti **2 + 1**: i coperti dentro il tavolo, poi «c'è posto?» | il secondo **non esiste senza il primo**: senza i posti sul tavolo non c'è niente da contare. E il 2 tocca un vincolo del database, quindi va da solo |
 | **C** | I punti **3 + 4**: le tre fasce e «da liberare entro le…» | ⚠️ **non si separano**: il 3 senza il 4 è una regola che vale solo sulla carta, perché in servizio nessuno la vede |
 | **D** | I punti **5 + 6**: evidenziazione incrociata e lista riordinata | sono la stessa fatica vista da due lati, e toccano le stesse due schermate |
 | **E** | Il punto **7**: la pianta nello schermo | va misurato per ultimo, perché B e C cambiano cosa c'è **dentro** una sagoma — e quindi quanto spazio serve |

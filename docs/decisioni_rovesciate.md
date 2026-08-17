@@ -37,7 +37,8 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | # | data | decisione rovesciata | dove è raccontato |
 |---|---|---|---|
 | 1 | 14/08/2026 | *Una richiesta in attesa occupa il posto* (10/08) | [la pianta viva](consegne/20260814_la_pianta_viva.md) |
-| 2 | 18/08/2026 | *Nel sistema non esiste una capacità per tavolo* (14/08) | mandato sala, giro B — riepilogo da scrivere |
+| 2 | 18/08/2026 | *Nel sistema non esiste una capacità per tavolo* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
+| 3 | 18/08/2026 | *Dentro la sagoma ci sta il suo nome e basta* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
 
 ---
 
@@ -82,6 +83,20 @@ posti che non esistono.
 180×90 = 6. Accostandone due o più, il numero si aggiorna con la regola *somma
 meno due per ogni giunzione*.
 
+⚠️ **Come è stato fatto, perché cambia cosa si è tolto** *(precisato il 18/08,
+costruendo)*. Il numero **non** sta su `dining_tables`: sta su una tabella dei
+**formati** (`formati_tavolo`), a cui ogni tavolo punta. Quindi
+`dining_tables_sagoma_check` **non è stato toccato** — un `tavolo` con
+`posti_fissi` viene rifiutato oggi come il 14/08.
+**Questo non annulla il rovesciamento**, ed è il punto: l'invariante di allora
+diceva *«nessun numero di coperti è associato a un tavolo»*, e metterlo sul
+formato a cui il tavolo punta è associarcelo a **un passo di distanza**. Il
+vincolo sopravvive alla lettera e non alla sostanza, e dirlo così è l'unico
+modo perché fra sei mesi la riga si legga per quello che è.
+*La ragione per cui la capacità sta sul formato non è però l'aggiramento: è
+che Alessio non ha detto «i 180 non si accostano perché sono larghi», ha detto
+«perché sono di uno stile diverso» — e lo stile è una proprietà del formato.*
+
 **Perché la ragione di allora non vale più — anzi: vale ancora, ed è per
 questo che la forma nuova è diversa.** La ragione del 14/08 **non era che i
 posti non esistono**: era che *un totale di sala fisso non descrive la sala*.
@@ -96,7 +111,37 @@ di lasciarlo fermo.
 > come è messa».
 
 ⚠️ **E resta un prezzo, accettato**: il vincolo che vietava i coperti sui
-tavoli era anche una difesa contro il ritorno del secchio unico. Togliendolo,
-quella difesa la fa il **disegno** e non più il database. La prova che deve
-tenerla ferma è dichiarata nel mandato: *stessa sera, stesse prenotazioni, due
-disposizioni diverse, due totali diversi.*
+tavoli era anche una difesa contro il ritorno del secchio unico. Anche se la
+lettera del vincolo resta, quella difesa **non copre più il caso**: da oggi la
+fa il **disegno** e non più il database. La prova che deve tenerla ferma è
+dichiarata nel mandato ed è stata scritta: *stessa sera, stesse prenotazioni,
+due disposizioni diverse, due totali diversi* — e verificata **al contrario**,
+rompendo apposta la regola delle giunzioni sul progetto di prova per vedere le
+prove diventare rosse.
+
+---
+
+## 3 · 18/08/2026 — «dentro la sagoma ci sta il suo nome e basta»
+
+**Cosa era stato deciso, e quando.** Il 14/08, e non a tavolino: Alessio l'ha
+deciso **dopo averlo visto**. Sulla sagoma resta il solo nome; chi c'è e a che
+ora si legge nell'elenco sotto la pianta.
+
+**La ragione di allora.** In un quadrato di 90 cm non entrano due righe a una
+dimensione leggibile: sul telefono le righe di un divano si accavallavano, sul
+computer l'ora usciva tagliata («0:00 · 2»).
+
+**Cosa si decide adesso.** Nella sagoma torna una seconda riga: **il numero
+dei coperti**, col punto che segna «corretto a mano». Lo chiede il mandato del
+18/08 — *«sul tavolo si legge quanti ne tiene»* — ed è su quella cifra che si
+decide se accettare una prenotazione.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, ed è per
+questo che quello che entra è una cifra.** Il problema del 14/08 non era «una
+seconda riga», era **una seconda riga lunga**: `20:00 · 2` sono sei caratteri
+che in 90 cm non stanno. Un numero di una o due cifre sì.
+⚠️ **Il prezzo accettato è che nella sagoma non entra nient'altro**: non «4
+posti», non l'ora, non la ragione della correzione. Le parole stanno
+nell'elenco sotto, dove lo spazio c'è — sulla sagoma il segno, sotto la
+spiegazione. Se durante il collaudo dovesse risultare illeggibile anche così,
+cade il numero e non l'elenco.

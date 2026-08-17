@@ -9,19 +9,25 @@ import {
   deleteClosure,
   getRegolePrenotazione,
   listClosures,
+  listFormatiTavolo,
   listSagome,
   listServiceHours,
   rinominaSagoma,
+  updateFormatoTavolo,
   updateRegolePrenotazione,
   updateServiceHour,
 } from "../../lib/api/sala";
 
 // Quando si è aperti, come si chiamano i tavoli, quando si è chiusi.
 //
-// ⚠️ Dal 14/08/2026 qui non c'è più nessun numero di coperti. La capienza
-// non è un dato del software: dipende da come i tavoli sono messi quel
-// giorno, e quel fatto vive nella testa di chi apparecchia. Chi entra lo
-// decide Alessio guardando la pianta, non un conto.
+// ⚠️ Il 14/08/2026 da qui era sparito ogni numero di coperti, con questa
+// ragione: *la capienza non è un dato del software, dipende da come i
+// tavoli sono messi quel giorno*. Dal 18/08 un numero torna, e la ragione
+// di allora non è stata smentita — è stata resa più precisa. Quello che
+// torna è **quanti ne tiene UN tavolo di quel formato**, che è un fatto
+// del mobile e non cambia mai; quello che resta fuori — e deve restare
+// fuori — è la capienza della sala, che non è scritta da nessuna parte
+// perché si ricalcola ogni giorno sulla disposizione di quel giorno.
 
 const inputClass =
   "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -33,22 +39,25 @@ export default function SalaEOrari() {
   const [orari, setOrari] = useState([]);
   const [chiusure, setChiusure] = useState([]);
   const [regole, setRegole] = useState(null);
+  const [formati, setFormati] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
   const [nuovaChiusura, setNuovaChiusura] = useState({ dal: "", al: "", motivo: "" });
 
   const ricarica = useCallback(async () => {
-    const [t, o, c, r] = await Promise.all([
+    const [t, o, c, r, f] = await Promise.all([
       listSagome(),
       listServiceHours(),
       listClosures(),
       getRegolePrenotazione(),
+      listFormatiTavolo(),
     ]);
     setTavoli(t);
     setOrari(o);
     setChiusure(c);
     setRegole(r);
+    setFormati(f);
   }, []);
 
   useEffect(() => {
@@ -217,6 +226,44 @@ export default function SalaEOrari() {
         </div>
       </div>
 
+      {/* Quanti ne tiene un tavolo, per formato */}
+      <div className={sezioneClass}>
+        <h2 className="font-display text-lg text-b58-charcoal mb-1">Quanti ne tiene un tavolo</h2>
+        <p className="text-sm text-b58-charcoal-soft mb-4">
+          Quanti coperti fa <strong>un tavolo da solo</strong>, per formato. Accostandone due il
+          totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
+          vede sulla{" "}
+          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+            pianta
+          </Link>
+          , e lì si corregge a mano quando la sala dice altro.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {formati.map((f) => (
+            <div key={f.id} className="bg-white rounded-lg px-3 py-2">
+              <label className={labelClass}>{f.nome}</label>
+              <CampoAutosalvato
+                type="number"
+                value={f.coperti_base}
+                onSave={(v) => esegui(() => updateFormatoTavolo(f.id, { coperti_base: Number(v) }))}
+                className={`${inputClass} w-full`}
+              />
+            </div>
+          ))}
+        </div>
+        {/* ⚠️ IL FORMATO È ANCHE LA REGOLA DELL'ACCOSTAMENTO, e va detto
+            qui perché è dove uno se lo chiede. La ragione è di Alessio e
+            non è la misura: i due tavoli lunghi sono di uno STILE diverso,
+            quindi si accostano fra loro e non ai quadrati. Se domani
+            comprasse due 90x90 di un altro stile, sarebbero un formato
+            nuovo — e giustamente non accostabili a questi. */}
+        <p className="text-xs text-b58-charcoal-soft/80 mt-3">
+          Due tavoli si accostano <strong>solo se sono dello stesso formato</strong>: i due lunghi
+          fra loro, i quadrati fra loro. Non è il gestionale che sceglie — è che sono mobili
+          diversi.
+        </p>
+      </div>
+
       {/* Come si chiamano i tavoli */}
       <div className={sezioneClass}>
         <h2 className="font-display text-lg text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
@@ -268,6 +315,26 @@ export default function SalaEOrari() {
               Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
               liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
               colpo d'occhio: non impedisce niente.
+            </p>
+          </div>
+          <div>
+            {/* ⚠️ LA SOGLIA È UN SUO PARAMETRO, non un numero nel codice.
+                25 è più basso di quel che la sala regge (40 sulla carta) e
+                di quel che la cucina regge (30): è così di proposito, per
+                il rodaggio, e il giorno che il rodaggio finisce si cambia
+                qui invece che con una migrazione. */}
+            <label className={labelClass}>Avvisami sopra questi coperti a serata</label>
+            <CampoAutosalvato
+              type="number"
+              value={regole?.soglia_coperti_serata ?? ""}
+              onSave={(v) =>
+                esegui(() => updateRegolePrenotazione({ soglia_coperti_serata: Number(v) }))
+              }
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Sopra questo numero di coperti confermati la sala te lo dice. <strong>Avvisa
+              soltanto</strong>: accettare o no lo decidi tu.
             </p>
           </div>
           <div>

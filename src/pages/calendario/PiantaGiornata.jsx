@@ -4,11 +4,15 @@ import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import {
+  getCopertiDelGiorno,
   getPiantaDelGiorno,
+  getPostoPerLaSerata,
   getRegolePrenotazione,
   isSoldOut,
   promuoviDisposizione,
+  rimuoviCorrezioneCoperti,
   riportaSagomaAllaBase,
+  salvaCorrezioneCoperti,
   salvaSagoma,
   setSoldOut,
 } from "../../lib/api/sala";
@@ -121,6 +125,13 @@ export default function PiantaGiornata() {
   // programma. Formato del database (HH:MM:SS), per confrontarla con
   // reservation_time senza tagliare stringhe.
   const [soglia, setSoglia] = useState("20:00:00");
+  // I tavoloni della giornata coi loro coperti, e la risposta a «c'è
+  // posto?». Vengono dal database — la pianta e il conteggio devono dire
+  // lo stesso numero, quindi il calcolo è uno solo e non sta qui.
+  const [gruppi, setGruppi] = useState([]);
+  const [posto, setPosto] = useState(null);
+  // Quale tavolone si sta correggendo a mano, e con che numero.
+  const [correzione, setCorrezione] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
@@ -141,14 +152,18 @@ export default function PiantaGiornata() {
   const [toccato, setToccato] = useState(null);
 
   const ricarica = useCallback(async () => {
-    const [p, r, a, s, reg] = await Promise.all([
+    const [p, r, a, s, reg, g, po] = await Promise.all([
       getPiantaDelGiorno(data),
       listReservations({ date: data }),
       listTavoliPrenotatiPerData(data),
       isSoldOut(data),
       getRegolePrenotazione(),
+      getCopertiDelGiorno(data),
+      getPostoPerLaSerata(data),
     ]);
     setSagome(p);
+    setGruppi(g);
+    setPosto(po);
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
@@ -233,17 +248,29 @@ export default function PiantaGiornata() {
   // arriva entro l'ora di soglia (il tavolo può liberarsi per un secondo
   // giro), **verde** chi arriva dopo (ultimo giro), **mezzo e mezzo** un
   // tavolo che ha già tutt'e due.
+  //
+  // ⚠️ E dal 18/08 porta anche la CIFRA dei coperti. Il numero è quello
+  // del tavolone: tre tavoli accostati mostrano tutti e tre il numero del
+  // rettangolo, perché è quello il posto che c'è — non un terzo a testa.
   const stato = useMemo(() => {
     const s = {};
+    for (const g of gruppi) {
+      for (const id of g.tavoli ?? []) {
+        s[id] = { coperti: g.coperti, corretto: g.corretto };
+      }
+    }
     for (const sagoma of sagome) {
       const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
       if (altri.length === 0) continue;
       const presto = altri.some((a) => (a.reservation.reservation_time ?? "") <= soglia);
       const tardi = altri.some((a) => (a.reservation.reservation_time ?? "") > soglia);
-      s[sagoma.id] = { colore: presto && tardi ? "misto" : presto ? "presto" : "tardi" };
+      s[sagoma.id] = {
+        ...s[sagoma.id],
+        colore: presto && tardi ? "misto" : presto ? "presto" : "tardi",
+      };
     }
     return s;
-  }, [sagome, perTavolo, evidenziata, soglia]);
+  }, [sagome, perTavolo, evidenziata, soglia, gruppi]);
 
   const tocca = (sagoma) => {
     setAvviso("");
@@ -409,6 +436,35 @@ export default function PiantaGiornata() {
             </label>
           </div>
 
+          {/* «C'È POSTO?» — la domanda del telefono, prima della pianta.
+              ⚠️ AVVISA, NON IMPEDISCE: qui non c'è niente che si spenga o
+              rifiuti. Decide Alessio guardando la sala; questo riquadro
+              gli dice solo cosa sta guardando. */}
+          {posto && (
+            <div className="rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10 p-3 mb-3">
+              <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                <span className="text-sm">
+                  <strong className="text-lg">{posto.restanti}</strong> posti liberi
+                </span>
+                <span className="text-[13px] text-b58-charcoal-soft">
+                  {posto.capienza} in questa disposizione · {posto.prenotati} prenotati
+                  {posto.in_attesa > 0 && ` · ${posto.in_attesa} da confermare`}
+                </span>
+              </div>
+              {posto.oltre_soglia && (
+                <p className="text-[13px] mt-1.5 font-medium text-b58-terracotta">
+                  Sei oltre i {posto.soglia} coperti che ti sei dato per la serata. Puoi accettare
+                  lo stesso: è un avviso, non un divieto.
+                </p>
+              )}
+              {/* ⚠️ Il numero e la frase che ne dichiara il limite viaggiano
+                  insieme, e la frase arriva dal database insieme al numero:
+                  un avviso scritto qui dentro non proteggerebbe la seconda
+                  schermata che mostrasse lo stesso totale. */}
+              <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">{posto.avvertenza}</p>
+            </div>
+          )}
+
           {/* La pianta */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
@@ -459,6 +515,141 @@ export default function PiantaGiornata() {
             In Comande questa stessa sala è disegnata in piedi, per il tablet tenuto
             verticale: è lo stesso locale girato — non un&apos;altra disposizione.
           </p>
+
+          {/* I TAVOLONI, e il numero corretto a mano.
+              ⚠️ Sulla sagoma c'è la cifra col punto; qui ci sono le parole.
+              Le due cose non si ripetono: il segno si legge a colpo
+              d'occhio, la spiegazione si legge quando serve. */}
+          {gruppi.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
+                Quanti ne tengono
+              </p>
+              <ul className="divide-y divide-b58-charcoal/10 rounded-xl ring-1 ring-b58-charcoal/10">
+                {gruppi.map((g) => {
+                  const chiave = (g.tavoli ?? []).join(",");
+                  const inCorrezione = correzione?.chiave === chiave;
+                  return (
+                    <li key={chiave} className="px-3 py-2">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <span className="text-sm font-medium">
+                          {(g.etichette ?? []).join(" · ")}
+                          {g.giunzioni > 0 && (
+                            <span className="text-[11px] font-normal text-b58-charcoal-soft">
+                              {" "}
+                              — accostati
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm">
+                          <strong>{g.coperti}</strong>
+                          {g.corretto ? (
+                            <span className="text-[12px] text-b58-charcoal-soft">
+                              {" "}
+                              corretto a mano · la regola direbbe {g.coperti_calcolati}
+                              {g.ragione ? ` · ${g.ragione}` : ""}
+                            </span>
+                          ) : (
+                            <span className="text-[12px] text-b58-charcoal-soft"> calcolato</span>
+                          )}
+                        </span>
+                      </div>
+
+                      {inCorrezione ? (
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={correzione.coperti}
+                            onChange={(e) =>
+                              setCorrezione((c) => ({ ...c, coperti: e.target.value }))
+                            }
+                            className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="perché (es. uno contro il muro)"
+                            value={correzione.ragione}
+                            onChange={(e) =>
+                              setCorrezione((c) => ({ ...c, ragione: e.target.value }))
+                            }
+                            className="flex-1 min-w-[12rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+                          />
+                          <button
+                            type="button"
+                            disabled={salvando || correzione.coperti === ""}
+                            onClick={() => {
+                              const n = Number(correzione.coperti);
+                              // ⚠️ Il vuoto non è zero (lezione del 17/08):
+                              // un campo svuotato non deve diventare «questo
+                              // tavolo non tiene nessuno».
+                              if (!Number.isFinite(n) || correzione.coperti === "") return;
+                              esegui(async () => {
+                                await salvaCorrezioneCoperti({
+                                  data,
+                                  tavoli: g.tavoli,
+                                  coperti: n,
+                                  ragione: correzione.ragione,
+                                });
+                                setCorrezione(null);
+                              });
+                            }}
+                            className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
+                          >
+                            Salva
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCorrezione(null)}
+                            className="text-sm text-b58-charcoal-soft underline"
+                          >
+                            Lascia stare
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCorrezione({
+                                chiave,
+                                coperti: String(g.coperti),
+                                ragione: g.ragione ?? "",
+                              })
+                            }
+                            className="text-[12px] text-b58-charcoal-soft underline"
+                          >
+                            Correggi il numero
+                          </button>
+                          {g.corretto && (
+                            <button
+                              type="button"
+                              disabled={salvando}
+                              onClick={() =>
+                                esegui(() => rimuoviCorrezioneCoperti({ data, tavoli: g.tavoli }))
+                              }
+                              className="text-[12px] text-b58-charcoal-soft underline"
+                            >
+                              Torna al calcolato ({g.coperti_calcolati})
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {/* ⚠️ LA SPARIZIONE SI DICE. Una correzione decade quando
+                  l'insieme cambia, ed è il comportamento voluto: sciolto
+                  un tavolone, quel numero non descrive più niente. Ciò che
+                  rende un valore che sparisce un difetto altrove non è la
+                  sparizione — è il silenzio. */}
+              <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
+                Se sciogli o cambi un tavolone, il numero corretto a mano decade e torna quello
+                calcolato: si riferiva a quei tavoli messi così.
+              </p>
+            </div>
+          )}
 
           {isTitolare && sagomeGirevoli.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">

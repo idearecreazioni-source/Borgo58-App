@@ -119,6 +119,88 @@ export async function attivaSagoma(id, attiva) {
   if (error) throw error;
 }
 
+// --- I coperti (18/08/2026, giro B del mandato sala) ---
+//
+// ⚠️ Dal 18/08 questo file torna ad avere un conteggio di posti, e il
+// commento in testa va letto insieme a questo. Non è il ritorno del
+// secchio unico rimosso il 14/08: i posti stanno DENTRO il tavolo, il
+// totale della serata si ricalcola sulla disposizione di quel giorno, e
+// accostando due tavoli il totale SCENDE. Quello che resta rimosso — e
+// deve restare rimosso — è la capienza della sala indipendente da come è
+// messa.
+//
+// Il calcolo non è qui: sta nel database, sopra `pianta_del_giorno()`, che
+// è già l'unico posto dove la pianta base e lo scostamento del giorno si
+// sommano. Rifarlo in JavaScript darebbe due numeri diversi alla pianta e
+// a «c'è posto?».
+
+export async function getCopertiDelGiorno(data) {
+  const { data: righe, error } = await supabase.rpc("coperti_del_giorno", { p_data: data });
+  if (error) throw error;
+  return righe ?? [];
+}
+
+export async function getPostoPerLaSerata(data) {
+  const { data: righe, error } = await supabase.rpc("posto_per_la_serata", { p_data: data });
+  if (error) throw error;
+  return righe?.[0] ?? null;
+}
+
+// La correzione a mano: una sola, e la chiave è l'insieme di tavoli che
+// formano quel rettangolo in quella giornata (un tavolo singolo è un
+// insieme di uno). Scrive su UNA tabella → categoria A, chiamata diretta.
+//
+// ⚠️ Non esiste un meccanismo separato «contro il muro»: sarebbero due
+// strade per lo stesso numero, e potendo contraddirsi servirebbe una
+// regola di precedenza inventata. Il muro si scrive nella ragione.
+export async function salvaCorrezioneCoperti({ data, tavoli, coperti, ragione }) {
+  const { error } = await supabase.from("correzioni_coperti").upsert(
+    {
+      data,
+      tavoli,
+      coperti,
+      ragione: ragione?.trim() || null,
+      aggiornato_il: new Date().toISOString(),
+    },
+    { onConflict: "data,tavoli" }
+  );
+  if (error) throw error;
+}
+
+export async function rimuoviCorrezioneCoperti({ data, tavoli }) {
+  const { error } = await supabase
+    .from("correzioni_coperti")
+    .delete()
+    .eq("data", data)
+    .eq("tavoli", `{${tavoli.join(",")}}`);
+  if (error) throw error;
+}
+
+// --- I formati di tavolo: quanti ne tiene, e cosa si accosta con cosa ---
+//
+// ⚠️ La capacità è un dato di Alessio, non una costante nel codice:
+// cambiare «un 90x90 ne tiene 4» è un UPDATE, non una migrazione. E il
+// formato è anche la regola dell'accostamento — due tavoli si accostano
+// solo se sono dello stesso formato, perché la ragione che ha dato lui è
+// lo STILE, non la misura.
+
+export async function listFormatiTavolo() {
+  const { data, error } = await supabase
+    .from("formati_tavolo")
+    .select("id, nome, coperti_base, attivo")
+    .order("nome");
+  if (error) throw error;
+  return data;
+}
+
+export async function updateFormatoTavolo(id, payload) {
+  const { error } = await supabase
+    .from("formati_tavolo")
+    .update({ ...payload, aggiornato_il: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 // --- Giornate al completo ---
 
 export async function listSoldOut({ da } = {}) {
@@ -204,7 +286,7 @@ export async function getRegolePrenotazione() {
   const { data, error } = await supabase
     .from("service_settings")
     .select(
-      "giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva, ora_primo_turno"
+      "giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva, ora_primo_turno, soglia_coperti_serata"
     )
     .eq("id", 1)
     .single();
