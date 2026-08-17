@@ -138,6 +138,69 @@ essere **quella vera** e non quella calcolata.
 Chef Table, che sono arredi fissi. Questo punto cambia quella decisione, e il
 cambiamento va **dichiarato**, non fatto scivolare dentro una migrazione.
 
+### I numeri veri di Alessio — al posto di qualunque esempio (18/08)
+
+| sagoma | coperti |
+|---|---|
+| tavolo 90×90 | **4** |
+| tavolo 180×90 | **6**, sempre |
+| Chef Table | 4 |
+| divano | 6 (×3) |
+
+⚠️ **I due tavoli da 180 NON sono accostabili**: sono di stile diverso dagli
+altri. La regola dell'accostamento vale **solo fra i 90×90**, e i 180 restano
+6 fissi. *Non è un vincolo di calcolo, è un fatto della sala*: il gestionale
+**non deve nemmeno offrire** l'accostamento su quei due.
+
+⚠️ **Chef Table e divani restano FUORI dal conteggio di «c'è posto?»**, e la
+ragione è che sono **due formule diverse**: chi chiama per cenare vuole un
+tavolo, chi chiama per l'aperitivo può scegliere fra tavolo e divano. Il
+conteggio dei coperti della cena guarda **i 9 tavoli**.
+
+⚠️ **Il posto perso contro il muro NON è una proprietà del tavolo**: dipende
+da come Alessio lo mette **quel giorno**. Quindi è una correzione della
+**disposizione del giorno**, non un attributo della sagoma — scriverlo su
+`dining_tables` se lo porterebbe dietro anche i giorni in cui quel tavolo sta
+in mezzo alla sala.
+
+**Soglia di avviso: 25 coperti** prenotati per la serata. La cucina regge 30,
+la sala ne fa 40 sulla carta: la soglia è **più bassa di proposito** per il
+rodaggio, quindi è un **parametro modificabile da Alessio**, non un numero nel
+codice. **Avvisa, mai impedisce.**
+
+### Le tre cose da tenere ferme
+
+1. **La capacità base per formato di sagoma è un dato di Alessio**,
+   modificabile senza migrazione — non una costante nel codice. Stessa forma
+   dei parametri del simulatore assunzioni e delle causali.
+2. **Il rovesciamento della decisione del 14/08 va dichiarato nel riepilogo,
+   con la vecchia ragione accanto alla nuova.** Il giro B non la smentisce: la
+   rende più precisa. ⚠️ Ed è il **secondo rovesciamento** di una decisione
+   motivata in questo mandato, dopo quello sul calcolo dei posti.
+3. **Il numero calcolato e il numero corretto a mano devono restare
+   distinguibili**: se Alessio scrive 7 dove la regola dice 6, quel 7 **non
+   deve sparire alla prima ricostruzione dell'accostamento né essere
+   ricalcolato sopra in silenzio** — è il caso «campo svuotato che diventa
+   zero» del 17/08 in un'altra veste. E **in sala deve vedersi quale dei due
+   si sta guardando**.
+
+### Due avvertenze operative
+
+⚠️ **Se si allarga `dining_tables_sagoma_check`**: i vocabolari chiusi di
+questo progetto hanno già mostrato **tre volte** di stare in più posti di
+quanti sembra (database, funzione, elenco della schermata). La rete del 17/08
+dovrebbe accorgersene — **va verificato che scatti davvero**, non dato per
+fatto.
+
+⚠️ **E la misura che dimostra il conteggio non è «25 su una sala ferma».** Un
+accostamento **abbassa** il totale (due tavoli da 4 accostati fanno 6, non 8),
+quindi la capienza della serata **non è una costante: dipende dalla
+disposizione di quel giorno**. La prova che vale è quella che produce la
+differenza: **stessa sera, stesse prenotazioni, due disposizioni diverse, due
+totali diversi.**
+
+---
+
 ## 3. Tre fasce di colore
 
 **Giallo** entro le 20 · **verde** dalle 20 alle 22 · **arancio** dopo le 22.
