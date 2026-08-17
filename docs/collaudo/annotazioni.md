@@ -41,7 +41,7 @@ l'annotazione — e anche la fiducia in quelle già scritte.
 | n. | Cosa | Stato |
 |---|---|---|
 | 1 | «Apri la pianta» non si porta dietro la prenotazione: da una prenotazione senza tavolo il collegamento apre la pianta del giorno, che non sa niente di lei. È un link secco | da fare, **col n. 10** |
-| 2 | **Due piante diverse dello stesso locale**: il Calendario mostra la disposizione originale, le Comande quella modificata | da fare, **priorità** |
+| 2 | **Due piante diverse dello stesso locale**: il Calendario mostra la disposizione originale, le Comande quella modificata | ⚠️ **misurato: i dati sono identici**, vedi sotto — serve una decisione |
 | 3 | Da una ricetta «Pronta (non in carta)» non c'è modo di metterla nel menu: l'app nomina quello che manca e non offre la strada. Speculare al n. 1 | da fare |
 | 4 | **In prima nota non si distingue il contante dalla banca**: due uscite compaiono identiche, e si capisce quale è uscita dalla banca solo facendo i conti coi riquadri sopra. E le righe dicono solo «Uscita» / «Altra uscita», senza descrizione | da fare, **priorità** |
 | 5 | Magazzino illeggibile per le righe delle prove automatiche | ✅ metà fatta (gli avanzi li porta via il reset dello scenario); resta la metà di prodotto → vedi decisione sotto |
@@ -100,6 +100,34 @@ prima dell'apertura significano trenta uscite datate male.
   codice che non è l'app*.
 - Mancava la **fattura scaduta**.
 - «Due sotto soglia» erano tre → ora il numero **lo chiede al database**.
+
+---
+
+## n. 2 — le «due piante»: cosa ho misurato prima di toccare
+
+Non è un difetto dei dati, e vale la pena scriverlo perché la diagnosi
+facile era un'altra.
+
+Ho chiamato la funzione vera dell'app (`getPiantaDelGiorno`) col token dei
+due ruoli, sulla stessa data che usano le due schermate:
+
+| | titolare | staff |
+|---|---|---|
+| Sagome nella pianta del giorno | 13 | 13 |
+| Spostate rispetto alla base | 1 (T6) | 1 (T6) |
+| T6 | (1330, 690) | (1330, 690) |
+
+**Le due risposte sono identiche**, e le due schermate chiamano la stessa
+funzione con la stessa data (`oggiLocale()`). Il calcolo unico regge: la
+pianta è una sola.
+
+⚠️ **La differenza è l'ORIENTAMENTO.** Le Comande passano `inPiedi`
+(forzato), il Calendario `auto` — che su uno schermo largo disegna la sala
+sdraiata. Stesse posizioni, stessa sala, girata di novanta gradi: due
+disegni affiancati che l'occhio legge come due piante diverse.
+
+Il forzato in piedi delle Comande è una **decisione del 14/08**, presa per
+il tablet tenuto verticale. Non la cambio da solo: vedi la domanda aperta.
 
 ---
 
