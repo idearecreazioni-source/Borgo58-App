@@ -119,9 +119,31 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
       for (const regione of regioniEseguiteOra(sql)) {
         const haIClaims = /set_config\s*\(\s*'request\.jwt\.claims'/.test(regione.testo);
         if (haIClaims) continue;
+        // ⚠️ CI SONO TRE MODI DI NOMINARE UNA FUNZIONE SENZA CHIAMARLA, e
+        // tutti e tre compaiono per forza in una migrazione che ne scrive
+        // una: la dichiarazione (`create or replace function nome(…)`), la
+        // cancellazione (`drop function nome(…)`) e i permessi
+        // (`revoke`/`grant`/`comment on function`, obbligatori per §8).
+        //
+        // Senza questa depurazione l'euristica accusava la migrazione del
+        // 17/08 di «chiamare `movimenti_attesi()` al primo livello»: era la
+        // sua stessa intestazione. Un guardiano che grida sul gesto
+        // obbligatorio viene spento al secondo allarme falso — ed è
+        // esattamente il motivo per cui questa prova esiste con una soglia
+        // dichiarata invece di gridare su 62 migrazioni vecchie.
+        const testo = regione.testo
+          .replace(/\b(revoke|grant|comment)\b[^;]*;/gi, " ")
+          // ⚠️ `if exists` sta FRA `function` e il nome (`drop function if
+          // exists nome(…)`): senza prevederlo, la depurazione mancava
+          // proprio la riga che cancella la firma vecchia — ed è la riga
+          // obbligatoria ogni volta che una funzione cambia parametri.
+          .replace(
+            /\b(create|drop)\s+(or\s+replace\s+)?function\s+(if\s+exists\s+)?\w+\s*\([^)]*\)/gi,
+            " "
+          );
         for (const nome of guardiane) {
           const chiamata = new RegExp(`\\b${nome}\\s*\\(`);
-          if (chiamata.test(regione.testo)) {
+          if (chiamata.test(testo)) {
             colpevoli.push(
               `${file}: chiama ${nome}() ${regione.primoLivello ? "al primo livello" : "in un blocco"} senza impostare i claims`
             );

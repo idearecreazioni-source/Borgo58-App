@@ -18,7 +18,14 @@ import { clientAutenticato, corridoioInstallato, credenziali, primaEntita } from
 // 4. **Il cassetto contato produce una differenza dichiarata**, mai un
 //    aggiustamento silenzioso.
 const MARCA = "TEST-AUTO tesoreria";
-const ANNO = 2095;
+// ⚠️ UN ANNO NEL PASSATO, e dal 17/08/2026 non e' indifferente: i saldi
+// contano solo i movimenti FINO A OGGI (un assegno che uscira' fra un mese
+// non e' ancora uscito). Con l'anno di prova nel FUTURO — com'era fino a
+// ieri — i movimenti di questa prova sparivano dai saldi e le sue
+// asserzioni diventavano rosse. L'anno serve solo a non incrociare i dati
+// veri, e per quello un anno passato va bene uguale: il locale apre nel
+// 2027.
+const ANNO = 1995;
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
