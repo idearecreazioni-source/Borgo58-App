@@ -133,8 +133,20 @@ function cosaSparisce() {
     console.log("        DB_URL_PRODUZIONE e' configurata.");
   }
   if (scostamenti) {
-    console.log(`      · ${scostamenti} scostamenti di giornata: la disposizione di un giorno preciso.`);
-    console.log("        Quelli NON si riprendono da nessuna parte — sono di chi li ha fatti.");
+    // ⚠️ NOMINARE, NON RESUSCITARE (rilievo del validatore, 18/08). Non si
+    // ripristinano — sono la disposizione di UN GIORNO, e rimetterli dopo una
+    // ricostruzione riporterebbe in vita una sala che quel giorno non esiste
+    // più; e un `--azzera` che li ripristina contraddirebbe, sulla stessa
+    // riga, la distinzione che il giro A è nato per scrivere. Ma «spariranno
+    // degli scostamenti» non dice niente: quali, e di quando, sì.
+    const date = interroga(
+      url,
+      "select coalesce(string_agg(g, ', '), '') from (select distinct to_char(data,'DD/MM/YYYY') as g from disposizioni_giornaliere order by 1) d;"
+    ).trim();
+    console.log(`      · ${scostamenti} scostamenti di giornata${date ? `, del ${date}` : ""}:`);
+    console.log("        la disposizione di un giorno preciso. NON si riprendono da nessuna");
+    console.log("        parte, ed è voluto: rimetterli riporterebbe in vita una sala che");
+    console.log("        quel giorno non esiste più.");
   }
   console.log("      · tutto quello che qualcuno ha creato a mano e non e' marcato «BASE-»:");
   console.log("        prenotazioni, note, conti, righe di collaudo.");
@@ -312,6 +324,39 @@ if (!urlVero) {
     console.log(`   sagome riprese dalla produzione: ${quante}`);
     console.log(`   sagome ora sul progetto di prova: ${interroga(url, "select count(*) from dining_tables;").trim()}`);
   }
+}
+
+// ---------------------------------------------------------------------
+// ⚠️ LA VERIFICA CHE RENDE IL PASSO SOPRA DIMOSTRABILE (rilievo del
+// validatore, 18/08). «Zero righe diverse» misurato a mano non è una prova:
+// zero è anche il risultato di un confronto che legge due volte lo stesso
+// database, o che guarda prima di aver ricostruito. E «senza il ripristino
+// sarebbero state le posizioni della migrazione» è un ragionamento, non una
+// misura.
+//
+// Questa verifica sta SEPARATA dal passo che ripristina, ed è tutta la
+// differenza: togliendo il ripristino, il confronto trova le posizioni della
+// migrazione e il comando si ferma. È la stessa forma della prova sulla data
+// di uscita — si misura la differenza che si produce, nei due versi.
+// ---------------------------------------------------------------------
+if (urlVero && urlVero.includes(REF_PRODUZIONE)) {
+  const foto = (u) =>
+    interroga(u, "select label||'|'||x||'|'||y||'|'||ruotato||'|'||zona from dining_tables order by label;")
+      .trim().split(/\r?\n/).filter(Boolean);
+  const vere = foto(urlVero);
+  const nostre = foto(url);
+  const diverse = vere.filter((r, i) => r !== nostre[i]);
+  if (vere.length !== nostre.length || diverse.length > 0) {
+    fermati(
+      "La sala del progetto di prova NON corrisponde a quella vera.",
+      `sagome: ${vere.length} in produzione, ${nostre.length} qui; righe diverse: ${diverse.length}`,
+      diverse.slice(0, 3).join("  |  "),
+      "",
+      "Se il passo «Riprendo la sala dalla produzione» e' stato tolto o non ha",
+      "funzionato, questa e' la riga che se ne accorge."
+    );
+  }
+  console.log(`   sala verificata contro la produzione: ${vere.length} sagome, 0 righe diverse`);
 }
 
 titolo("Rimetto lo stato di partenza");

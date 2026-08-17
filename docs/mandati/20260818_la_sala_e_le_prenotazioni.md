@@ -199,7 +199,7 @@ cosa succede davvero su uno schermo da telefono prima di cambiarla.
 
 | giro | cosa | perché in quest'ordine |
 |---|---|---|
-| **A** | Il punto 0: `--azzera` dichiara cosa butta via, e la sala «di sempre» può tornare | è un difetto che **agisce adesso** — ogni ricostruzione del progetto di prova costa ad Alessio il lavoro di ridisegnare la sala |
+| **A** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_a_la_sala_non_si_perde.md)). Il punto 0: `--azzera` dichiara cosa butta via, e la sala «di sempre» può tornare | è un difetto che **agisce adesso** — ogni ricostruzione del progetto di prova costa ad Alessio il lavoro di ridisegnare la sala |
 | **B** | I punti **2 + 1**: i coperti dentro il tavolo, poi «c'è posto a quell'ora?» | il secondo **non esiste senza il primo**: senza i posti sul tavolo non c'è niente da contare. E il 2 tocca un vincolo del database, quindi va da solo |
 | **C** | I punti **3 + 4**: le tre fasce e «da liberare entro le…» | ⚠️ **non si separano**: il 3 senza il 4 è una regola che vale solo sulla carta, perché in servizio nessuno la vede |
 | **D** | I punti **5 + 6**: evidenziazione incrociata e lista riordinata | sono la stessa fatica vista da due lati, e toccano le stesse due schermate |
