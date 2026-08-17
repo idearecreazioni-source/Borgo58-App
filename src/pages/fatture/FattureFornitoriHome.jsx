@@ -38,6 +38,9 @@ const QUANTE_PAGATE = 20;
 export default function FattureFornitoriHome() {
   const [daPagare, setDaPagare] = useState([]);
   const [pagate, setPagate] = useState({ righe: [], quante: 0 });
+  // Il debito INTERO, che nessun filtro tocca: vedi ricaricaFatture.
+  const [tutteDaPagare, setTutteDaPagare] = useState([]);
+  const [filtri, setFiltri] = useState({ supplierId: "", dal: "", al: "" });
   const [entities, setEntities] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,13 +60,21 @@ export default function FattureFornitoriHome() {
 
   // Le due liste si chiedono separate: quelle da pagare tutte (è l'elenco
   // di cosa c'è da fare), le pagate solo le ultime.
-  const ricaricaFatture = async () => {
-    const [aperte, chiuse] = await Promise.all([
+  //
+  // ⚠️ E IL DEBITO TOTALE SI CHIEDE A PARTE, SENZA FILTRI. È la decisione
+  // che conta di tutto il n. 9: un totale «da pagare» che si rimpicciolisce
+  // perché si è filtrato un fornitore somiglia in tutto a un debito più
+  // piccolo. Il filtro cambia cosa si GUARDA, non quanto si DEVE — e la
+  // schermata dichiara che il totale è intero quando un filtro è attivo.
+  const ricaricaFatture = async (f = filtri) => {
+    const [aperte, chiuse, tutteAperte] = await Promise.all([
+      listSupplierInvoices({ status: "da_pagare", supplierId: f.supplierId, dal: f.dal, al: f.al }),
+      ultimeFatturePagate(QUANTE_PAGATE, f),
       listSupplierInvoices({ status: "da_pagare" }),
-      ultimeFatturePagate(QUANTE_PAGATE),
     ]);
     setDaPagare(aperte);
     setPagate(chiuse);
+    setTutteDaPagare(tutteAperte);
   };
 
   const load = async () => {
@@ -88,7 +99,7 @@ export default function FattureFornitoriHome() {
   // società, e solo per quelle che hanno qualcosa da pagare.
   const totaliPerSocieta = useMemo(() => {
     const per = new Map();
-    for (const i of daPagare) {
+    for (const i of tutteDaPagare) {
       const nome = i.entity?.name ?? "Senza società";
       const riga = per.get(nome) ?? { nome, totale: 0, quante: 0 };
       riga.totale += Number(i.amount);
@@ -96,11 +107,26 @@ export default function FattureFornitoriHome() {
       per.set(nome, riga);
     }
     return [...per.values()].sort((a, b) => a.nome.localeCompare(b.nome, "it"));
-  }, [daPagare]);
+  }, [tutteDaPagare]);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block text-[11px] text-b58-charcoal-soft mb-1";
+
+  const filtroAttivo = Boolean(filtri.supplierId || filtri.dal || filtri.al);
+
+  // Il filtro cambia e si ricarica subito: nessun pulsante «cerca», che su
+  // tre campi sarebbe un passaggio in piu' per niente.
+  const cambiaFiltro = async (patch) => {
+    const nuovi = { ...filtri, ...patch };
+    setFiltri(nuovi);
+    setError("");
+    try {
+      await ricaricaFatture(nuovi);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   const handleEntityChange = async (entityId) => {
     setForm((f) => ({ ...f, entity_id: entityId, supplier_id: "" }));
@@ -311,8 +337,64 @@ export default function FattureFornitoriHome() {
       </div>
       )}
 
+      {/* I FILTRI (n. 9 del collaudo): «con due fatture si vive, con
+          duecento no». Governano ENTRAMBE le liste — da pagare e pagate —
+          perché cercare «le fatture di Mililli di marzo» non ha niente a
+          che vedere con se sono già state pagate.
+          ⚠️ Non toccano i totali qui sopra: vedi `ricaricaFatture`. */}
+      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 mb-4 flex flex-wrap gap-3 items-end">
+        <div className="min-w-[180px]">
+          <label className={labelClass}>Fornitore</label>
+          <select
+            value={filtri.supplierId}
+            onChange={(e) => cambiaFiltro({ supplierId: e.target.value })}
+            className={inputClass}
+          >
+            <option value="">Tutti</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Dal (data fattura)</label>
+          <input
+            type="date"
+            value={filtri.dal}
+            onChange={(e) => cambiaFiltro({ dal: e.target.value })}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Al</label>
+          <input
+            type="date"
+            value={filtri.al}
+            onChange={(e) => cambiaFiltro({ al: e.target.value })}
+            className={inputClass}
+          />
+        </div>
+        {filtroAttivo && (
+          <button
+            type="button"
+            onClick={() => cambiaFiltro({ supplierId: "", dal: "", al: "" })}
+            className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark pb-2"
+          >
+            Togli i filtri
+          </button>
+        )}
+      </div>
+
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Da pagare</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-1">Da pagare</h2>
+        {/* ⚠️ Con un filtro attivo l'elenco è parziale e i totali no: senza
+            dirlo, un elenco corto accanto a un totale grande sembra un
+            errore di somma. */}
+        <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+          {filtroAttivo
+            ? `${daPagare.length} di ${tutteDaPagare.length} da pagare — i totali in alto restano quelli interi.`
+            : `Tutte e ${tutteDaPagare.length}.`}
+        </p>
         {daPagare.length === 0 ? (
           <p className="text-sm text-b58-charcoal-soft/60">Nessuna fattura da pagare.</p>
         ) : (
@@ -476,8 +558,8 @@ export default function FattureFornitoriHome() {
               completo, ed è la stessa forma dello zero al posto del buco. */}
           <p className="text-xs text-b58-charcoal-soft/70 mb-4">
             {pagate.quante > pagate.righe.length
-              ? `Le ultime ${pagate.righe.length} di ${pagate.quante} pagate in tutto.`
-              : `Tutte e ${pagate.quante}.`}
+              ? `Le ultime ${pagate.righe.length} di ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : " pagate in tutto"}.`
+              : `Tutte e ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : ""}.`}
           </p>
           <ul className="space-y-1.5">
             {pagate.righe.map((inv) => (

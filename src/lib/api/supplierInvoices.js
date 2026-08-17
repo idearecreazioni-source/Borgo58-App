@@ -7,7 +7,10 @@ import { eseguiOperazione } from "../operazioni";
 // chi è ogni riga.
 const SELECT = "*, supplier:supplier_id(id, name), entity:entity_id(id, name)";
 
-export async function listSupplierInvoices({ status, supplierId } = {}) {
+// `dal`/`al` filtrano sulla DATA DELLA FATTURA, non sulla scadenza: è la
+// data che si legge sul documento e quella che si ricorda («la fattura di
+// marzo»). La scadenza serve a ordinare l'elenco, non a cercarci dentro.
+export async function listSupplierInvoices({ status, supplierId, dal, al } = {}) {
   let query = supabase
     .from("supplier_invoices")
     .select(SELECT)
@@ -15,6 +18,8 @@ export async function listSupplierInvoices({ status, supplierId } = {}) {
     .order("invoice_date", { ascending: false });
   if (status) query = query.eq("status", status);
   if (supplierId) query = query.eq("supplier_id", supplierId);
+  if (dal) query = query.gte("invoice_date", dal);
+  if (al) query = query.lte("invoice_date", al);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -30,13 +35,17 @@ export async function listSupplierInvoices({ status, supplierId } = {}) {
 // e di prima nota: quelle alimentano documenti esibibili, dove un taglio
 // silenzioso produrrebbe un registro incompleto. Qui è una comodità di
 // schermata, e il numero totale resta scritto accanto.
-export async function ultimeFatturePagate(limite = 20) {
-  const { data, error, count } = await supabase
+export async function ultimeFatturePagate(limite = 20, { supplierId, dal, al } = {}) {
+  let query = supabase
     .from("supplier_invoices")
     .select(SELECT, { count: "exact" })
     .eq("status", "pagata")
     .order("paid_at", { ascending: false, nullsFirst: false })
     .limit(limite);
+  if (supplierId) query = query.eq("supplier_id", supplierId);
+  if (dal) query = query.gte("invoice_date", dal);
+  if (al) query = query.lte("invoice_date", al);
+  const { data, error, count } = await query;
   if (error) throw error;
   return { righe: data ?? [], quante: count ?? 0 };
 }
