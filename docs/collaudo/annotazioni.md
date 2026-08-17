@@ -82,7 +82,16 @@ l'annotazione — e anche la fiducia in quelle già scritte.
      rimaste stanno in `euro()`, in `prezzo_leggibile` e
      `percentuale_leggibile` — i posti unici degli altri due tipi — e in
      funzioni che formattano quantità o temperature.*
-10. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
+10. ✅ **La serata recitata — fatta da Alessio nella notte del 18/08**, col
+   telefono in mano. Ne è nato il mandato
+   [`20260818_la_sala_e_le_prenotazioni.md`](../mandati/20260818_la_sala_e_le_prenotazioni.md):
+   non un elenco di difetti ma un pezzo di disegno, spezzato in cinque giri.
+   ⚠️ **Il punto 0 era una misura, e ha cambiato la diagnosi**: non è
+   `prova:scenario` a sovrascrivere la sala «di sempre» — è
+   `prova:ricostruisci --azzera`, che ho eseguito io il 17/08. Dal 14/08 la
+   disposizione di sempre vive **dentro **, cioè è un dato di
+   Alessio, e quel comando la butta via senza dirlo.
+11. ⏳ **La serata recitata di nuovo, DOPO i giri del mandato sala** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
    può assegnare a un tavolo ostacolerebbero proprio la prova che deve
    emergere.
