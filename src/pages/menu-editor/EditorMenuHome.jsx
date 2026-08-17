@@ -107,6 +107,15 @@ export default function EditorMenuHome() {
   // piatti che si vedono nell'elenco, non da un secondo posto.
   const quantiEsclusi = useMemo(() => items.filter((i) => excluded[i.id]).length, [items, excluded]);
 
+  // Quanti piatti portano l'asterisco: si contano dagli stessi piatti che
+  // finiscono sul foglio, e la nota in fondo compare solo se ce n'è almeno
+  // uno. Quando tutti gli ingredienti saranno confermati sparisce da sola.
+  const conAsterisco = useMemo(
+    () =>
+      items.filter((i) => !excluded[i.id] && allergensByRecipe[i.recipe_id]?.daVerificare).length,
+    [items, excluded, allergensByRecipe]
+  );
+
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
@@ -159,7 +168,14 @@ export default function EditorMenuHome() {
               <input type="checkbox" checked={showDescriptions} onChange={(e) => setShowDescriptions(e.target.checked)} /> Mostra descrizioni
             </label>
             <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
-              <input type="checkbox" checked={showAllergens} onChange={(e) => setShowAllergens(e.target.checked)} /> Mostra allergeni
+              <input type="checkbox" checked={showAllergens} onChange={(e) => setShowAllergens(e.target.checked)} />{" "}
+              Mostra allergeni{" "}
+              {/* ⚠️ SCRITTO ACCANTO, non sottinteso (decisione di Alessio,
+                  17/08): sul menu definitivo NON vanno elenchi sotto i
+                  piatti. Questa casella serve a stampare una copia per la
+                  sala. Senza dirlo, fra sei mesi qualcuno la accende
+                  credendo che sia il modo previsto di stampare la carta. */}
+              <span className="text-b58-charcoal-soft/60">— copia per uso interno, non la carta</span>
             </label>
           </div>
         </div>
@@ -309,7 +325,25 @@ export default function EditorMenuHome() {
                     return (
                       <li key={d.id} className="text-center break-inside-avoid">
                         <div className="flex items-baseline justify-center gap-2">
-                          <span className="font-display text-lg text-b58-charcoal">{d.recipe?.name}</span>
+                          <span className="font-display text-lg text-b58-charcoal">
+                            {d.recipe?.name}
+                            {/* ⚠️ UN SEGNO, NON UNA FRASE (rilievo del 17/08).
+                                «per gli allergeni chiedi al personale» ripetuto
+                                sotto sette piatti su otto è rumore, e contraddice
+                                la decisione già presa: sul menu resta solo la
+                                dicitura in fondo. Ma toglierlo e basta farebbe
+                                tornare il difetto di partenza — un piatto non
+                                confermato diventerebbe identico a uno che non
+                                contiene allergeni, e l'assenza si legge come una
+                                rassicurazione. Quindi un asterisco accanto al
+                                nome, e UNA nota in fondo che lo spiega.
+                                ⚠️ Quando tutti gli ingredienti saranno confermati
+                                l'asterisco sparisce da solo: non è un
+                                interruttore da ricordarsi di spegnere. */}
+                            {showAllergens && scheda?.daVerificare && (
+                              <span className="text-b58-charcoal-soft"> *</span>
+                            )}
+                          </span>
                           {showPrices && (
                             <span className="text-b58-gold-dark text-base whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
                           )}
@@ -334,11 +368,7 @@ export default function EditorMenuHome() {
                             perché non distingue QUESTO piatto dagli altri.
                             Il segno va accanto al piatto, ed è la cura
                             minima: l'alternativa era non stamparlo affatto. */}
-                        {showAllergens && scheda?.daVerificare && (
-                          <p className="text-[11px] text-b58-charcoal-soft mt-1">
-                            per gli allergeni chiedi al personale
-                          </p>
-                        )}
+
                         {/* Le tracce si stampano solo se qualcuno le ha
                             davvero lette da un'etichetta: sono una riga a
                             sé perché «può contenere» non è «contiene». */}
@@ -358,7 +388,12 @@ export default function EditorMenuHome() {
 
           {showAllergens && (
             <p className="text-[10px] text-b58-charcoal-soft/60 text-center mt-10 max-w-md mx-auto">
-              In caso di allergie o intolleranze, chiedi al personale: teniamo l'elenco completo degli allergeni per ogni piatto.
+              In caso di allergie o intolleranze, chiedi al personale: teniamo l&apos;elenco completo
+              degli allergeni per ogni piatto.
+              {conAsterisco > 0 && (
+                <> I piatti con <span className="text-b58-charcoal-soft">*</span> non hanno ancora
+                l&apos;elenco completo: per quelli chiedi sempre al personale.</>
+              )}
             </p>
           )}
         </div>
