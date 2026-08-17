@@ -1,0 +1,26 @@
+-- ⚠️ QUESTA FOTOGRAFIA NON HA FUNZIONATO, e resta qui come lezione invece
+-- che come rete.
+--
+-- Il 18/08, prima di collaudare il giro A, ho fotografato i 4 scostamenti di
+-- giornata del progetto di prova conservando `dining_table_id`. Ma la
+-- ricostruzione ricrea le sagome con identificativi NUOVI: al momento di
+-- rimetterli, la chiave esterna li ha respinti tutti.
+--
+-- 🔴 LA LEZIONE: **una fotografia che conserva un identificativo non
+-- sopravvive a una ricostruzione.** Deve conservare il NOME — l'etichetta
+-- del tavolo — e ritrovare l'identificativo al momento di rimettere. È
+-- esattamente quello che fa il ripristino della sala dalla produzione, che
+-- infatti ha funzionato: aggiorna `where label = …`, non `where id = …`.
+--
+-- I quattro scostamenti sono persi. Erano di Alessio, fatti durante la
+-- serata recitata sul progetto di PROVA, e si rifanno trascinando: il costo
+-- è di secondi. Ma la forma dell'errore no — e in produzione avrebbe un
+-- prezzo diverso.
+--
+-- Se un giorno servisse davvero, la fotografia giusta è questa:
+--   select 'insert into disposizioni_giornaliere (data, dining_table_id, x, y, ruotato)'
+--       || ' select ' || quote_literal(d.data) || '::date, t.id, '
+--       || coalesce(d.x::text,'null') || ', ' || coalesce(d.y::text,'null') || ', '
+--       || coalesce(d.ruotato::text,'null')
+--       || ' from dining_tables t where t.label = ' || quote_literal(t2.label) || ';'
+--     from disposizioni_giornaliere d join dining_tables t2 on t2.id = d.dining_table_id;

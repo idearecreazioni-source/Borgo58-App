@@ -25,6 +25,9 @@ import {
   fermati,
   titolo,
   timbroLocale,
+  // Il riferimento del progetto vero: serve alla guardia che impedisce di
+  // riprendere la sala da un database che non è quello del locale.
+  REF_PRODUZIONE,
 } from "./comune.mjs";
 
 const UTENTI_RICHIESTI = [
@@ -96,7 +99,50 @@ if (tabelleGiaPresenti > 0 && !azzera) {
     "Per svuotarlo e rifarlo:  npm run prova:ricostruisci -- --azzera"
   );
 }
+// ---------------------------------------------------------------------
+// ⚠️ COSA STA PER SPARIRE, DETTO PRIMA (giro A del mandato sala, 18/08).
+//
+// Fino a oggi questo comando elencava i PREREQUISITI e taceva le PERDITE.
+// E la perdita che conta non è ovvia: dal 14/08 «questa diventa la base»
+// scrive la disposizione della sala **dentro `dining_tables`**, quindi la
+// sala «di sempre» non è un dato di una migrazione — è un dato di Alessio.
+// `--azzera` la buttava via in silenzio, e chi la ritrovava tornata alla
+// disposizione della migrazione dava la colpa allo scenario (che infatti
+// non c'entrava: misurato il 18/08).
+//
+// Elencare i prerequisiti e tacere le perdite è la stessa forma dello
+// scarto silenzioso: un comando che dice solo quello che gli serve, e non
+// quello che costa.
+// ---------------------------------------------------------------------
+function cosaSparisce() {
+  const conta = (tabella) => {
+    const r = interroga(url, `select count(*) from ${tabella};`).trim();
+    return Number.isFinite(Number(r)) ? Number(r) : null;
+  };
+  const sagome = conta("dining_tables");
+  const scostamenti = conta("disposizioni_giornaliere");
+
+  console.log("");
+  console.log("  ⚠ Sta per sparire TUTTO il contenuto del progetto di prova.");
+  console.log("    Le migrazioni ricostruiscono lo schema, e `prova:base` rimette lo");
+  console.log("    scenario marcato «BASE-». Quello che NON torna da nessuna delle due:");
+  console.log("");
+  if (sagome !== null) {
+    console.log(`      · la sala: ${sagome} sagome, e la disposizione «di sempre» che c'e' addosso.`);
+    console.log("        Da oggi si riprende dalla produzione (vedi piu' sotto), ma solo se");
+    console.log("        DB_URL_PRODUZIONE e' configurata.");
+  }
+  if (scostamenti) {
+    console.log(`      · ${scostamenti} scostamenti di giornata: la disposizione di un giorno preciso.`);
+    console.log("        Quelli NON si riprendono da nessuna parte — sono di chi li ha fatti.");
+  }
+  console.log("      · tutto quello che qualcuno ha creato a mano e non e' marcato «BASE-»:");
+  console.log("        prenotazioni, note, conti, righe di collaudo.");
+  console.log("");
+}
+
 if (azzera) {
+  cosaSparisce();
   titolo("Svuoto il progetto di prova");
   // I lavori pianificati vanno tolti per primi: restare programmati su
   // funzioni che stiamo per cancellare produce errori a ripetizione.
@@ -211,6 +257,63 @@ console.log(`Database di prova ricostruito da zero. Resoconto: ${registro}`);
 // comunque riuscita, ma un progetto di prova senza stato di partenza è
 // mezzo strumento — e chi crede di averlo intero non lo controlla.
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// 4bis. LA SALA SI RIPRENDE DALLA PRODUZIONE (giro A, decisione di Alessio
+//       del 18/08).
+//
+// ⚠️ Perché non congelata nello stato di partenza e non esportata a mano:
+// le due strade hanno lo stesso difetto in due versi. Congelata diventa
+// «una sala decisa una volta», e il giorno che lui la cambia la
+// ricostruzione gliela riporta indietro — lo stesso difetto di prima, solo
+// più difficile da vedere perché sembra voluto. Esportata a mano è un gesto
+// che ci si ricorda di fare solo dopo aver perso il lavoro.
+//
+// La sala vera vive in produzione: presa da lì non invecchia mai e resta di
+// Alessio senza che lui faccia niente. È lo stesso criterio di
+// `prova:stato` — l'elenco non lo scegliamo noi, lo leggiamo dal locale
+// vero.
+//
+// ⚠️ SOLO `dining_tables`, mai `disposizioni_giornaliere`: i secondi sono
+// lo scostamento di UNA giornata, e copiarli porterebbe qui la disposizione
+// di un martedì.
+//
+// ⚠️ E la produzione si tocca in SOLA LETTURA. La guardia è la stessa di
+// `prova:stato`: se quella stringa non punta al progetto del locale, il
+// confronto non avrebbe senso — e qui sarebbe peggio, perché scriveremmo
+// una sala presa da chissà dove.
+// ---------------------------------------------------------------------
+titolo("Riprendo la sala dalla produzione");
+const urlVero = config.DB_URL_PRODUZIONE;
+if (!urlVero) {
+  console.log("   DB_URL_PRODUZIONE non e' configurata: la sala resta quella della migrazione.");
+  console.log("   ⚠ Vuol dire che la disposizione «di sempre» di Alessio NON e' tornata.");
+} else if (!urlVero.includes(REF_PRODUZIONE)) {
+  console.log("   ⚠ DB_URL_PRODUZIONE non punta al progetto del locale: non la leggo.");
+  console.log("     Meglio una sala vecchia che una sala presa da un database sconosciuto.");
+} else {
+  // Le sagome come righe pronte da riapplicare: `on conflict do update`
+  // aggiorna quelle che la migrazione ha appena creato, invece di
+  // duplicarle. Le colonne aggiornate sono quelle che Alessio muove.
+  const righe = interroga(
+    urlVero,
+    `select 'update dining_tables set x=' || x || ', y=' || y
+         || ', ruotato=' || ruotato || ', zona=' || quote_literal(zona)
+         || ', larghezza_cm=' || larghezza_cm || ', profondita_cm=' || profondita_cm
+         || ' where label=' || quote_literal(label) || ';'
+       from dining_tables order by label;`
+  ).trim();
+  const quante = righe.split("\n").filter(Boolean).length;
+  if (quante === 0) {
+    console.log("   In produzione non c'e' nessuna sagoma: non c'e' niente da riprendere.");
+  } else {
+    sql(righe, "Il ripristino della sala dalla produzione");
+    // ⚠️ Si CONTA quello che si è mosso, non si dà per fatto: è la regola
+    // del 16/08 — ogni sanatoria dichiara quante righe ha toccato.
+    console.log(`   sagome riprese dalla produzione: ${quante}`);
+    console.log(`   sagome ora sul progetto di prova: ${interroga(url, "select count(*) from dining_tables;").trim()}`);
+  }
+}
+
 titolo("Rimetto lo stato di partenza");
 const base = esegui(process.execPath, ["scripts/prova-base.mjs", "--rifai"]);
 if (!base.ok) {
