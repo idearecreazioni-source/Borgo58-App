@@ -69,7 +69,19 @@ l'annotazione — e anche la fiducia in quelle già scritte.
      17/08 — un corpo che si crea non è un corpo che funziona;
    · **i 33 posti dove una dimenticanza è silenziosa** (vocabolari su una
      colonna con predefinito): misurati, mai camminati.
-     `createCashMovement` ha ancora la forma vulnerabile.
+     `createCashMovement` ha ancora la forma vulnerabile;
+   · ⚠️ **`tipo_allarme_rincaro` formatta un prezzo al proprio interno**
+     mentre esiste `prezzo_leggibile` (rilievo della validazione del 17/08,
+     minore). **Può essere una scelta** — quel testo non è un messaggio per
+     una persona ma la chiave che identifica un avviso, e cambiarne la forma
+     cambierebbe cosa il freno anti-tempesta considera «lo stesso avviso» —
+     **o può essere il decimo posto dimenticato**. Vale una riga di verifica,
+     non una correzione a occhio.
+     *Contesto: la proprietà «nessuna funzione formatta un importo per conto
+     suo» è stata verificata sulle 191 funzioni; le uniche maschere numeriche
+     rimaste stanno in `euro()`, in `prezzo_leggibile` e
+     `percentuale_leggibile` — i posti unici degli altri due tipi — e in
+     funzioni che formattano quantità o temperature.*
 10. ⏳ **La serata recitata, DOPO le correzioni di A** — decisione di
    Alessio: due piante diverse della sala e una prenotazione che non si
    può assegnare a un tavolo ostacolerebbero proprio la prova che deve
