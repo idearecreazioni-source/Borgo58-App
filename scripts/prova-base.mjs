@@ -101,6 +101,10 @@ const { assegnaPrenotazione, createReservation } = await carica("/src/lib/api/re
 const { upsertFiscalSettings } = await carica("/src/lib/api/fiscal.js");
 const { addBelowThresholdItems } = await carica("/src/lib/api/shoppingList.js");
 const { addGoodsReceiving } = await carica("/src/lib/api/haccp.js");
+// ⚠️ Le date si prendono dalle funzioni dell'app, non da `toISOString()`.
+// Vedi il commento su `oggi` piu' sotto: e' un difetto vero, trovato dal
+// collaudo, e la cura e' usare gli stessi attrezzi delle schermate.
+const { oggiLocale, traGiorniLocale } = await carica("/src/lib/constants.js");
 
 // ⚠️ Il controllo si rifà QUI, sull'ambiente che i moduli hanno davvero
 // caricato — non su quello che ho letto io dal file. Fra le due cose c'è
@@ -124,7 +128,18 @@ const accesso = await supabase.auth.signInWithPassword({
 });
 if (accesso.error) fermati("Non riesco a entrare come titolare di prova:", accesso.error.message);
 
-const oggi = new Date().toISOString().slice(0, 10);
+// 🔴 QUI C'ERA UN DIFETTO MIO, trovato al primo giro di collaudo: le 6
+// prenotazioni «per stasera» sono nate datate al GIORNO PRIMA, perche' lo
+// scenario e' stato costruito dopo mezzanotte e `toISOString()` da' la
+// data UTC — che fra mezzanotte e le due di notte e' ancora ieri.
+//
+// ⚠️ E' la trappola scritta in CLAUDE.md §8, trovata in 14 punti
+// nell'audit dell'8 agosto e risolta allora con `oggiLocale()`: l'ho
+// riaperta in uno script nuovo, che non usava gli attrezzi dell'app
+// perche' «e' solo un comando». Non e' solo un comando: e' l'unica cosa
+// che apparecchia la sala del collaudo, e una data sbagliata li' fa
+// sembrare vuota una serata piena.
+const oggi = oggiLocale();
 const creato = [];
 const segna = (cosa, quante = 1) => creato.push(`${String(quante).padStart(3)}  ${cosa}`);
 
@@ -233,14 +248,55 @@ end $pulizia$;
 reset session_replication_role;
 `;
 
+// ⚠️ E anche gli avanzi delle PROVE AUTOMATICHE, non solo i miei.
+//
+// Trovato al primo giro di collaudo: il Magazzino era illeggibile perché
+// 47 ingredienti `TEST-AUTO` con giacenza zero soffocavano le otto righe
+// vere. Le prove ne creano e non tutte ripuliscono, e ognuna presa da sola
+// ha ragione — nessuna sa quante ne hanno lasciate le altre.
+//
+// Il posto giusto per raccoglierli è qui: rimettere lo scenario è già il
+// gesto che dice «il progetto di prova torni presentabile». Si contano a
+// parte dai miei, perché sono roba di qualcun altro e il numero va visto.
+const SQL_AVANZI_PROVE = `
+set session_replication_role = replica;
+do $avanzi$
+declare
+  tolte int := 0;
+  n     int;
+begin
+  delete from stock_consumptions where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from stock_lots where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from price_history where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from articoli_fornitore where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from shopping_list_items where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from recipe_ingredients where ingredient_id in (select id from ingredients where name like 'TEST-AUTO%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from ingredients where name like 'TEST-AUTO%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  raise notice 'avanzi tolti: %', tolte;
+end $avanzi$;
+reset session_replication_role;
+`;
+
+function pulisci(url, sql, etichetta, chiave) {
+  const uscita = interroga(url, sql);
+  const quante = uscita.match(new RegExp(`${chiave}: (\\d+)`))?.[1] ?? "?";
+  console.log(`   ${etichetta}: ${quante}`);
+}
+
 function togliBase() {
   const config = leggiConfigurazione();
   const url = soloProva(
     obbligatorio(config, "DB_URL_PROVA", "E' la stringa 'Session pooler' del progetto Borgo58-Prova.")
   );
-  const uscita = interroga(url, SQL_PULIZIA);
-  const quante = uscita.match(/righe tolte: (\d+)/)?.[1] ?? "?";
-  console.log(`   righe tolte: ${quante}`);
+  pulisci(url, SQL_PULIZIA, "righe dello scenario tolte", "righe tolte");
+  pulisci(url, SQL_AVANZI_PROVE, "avanzi delle prove automatiche tolti", "avanzi tolti");
 }
 
 // «C'è già?» si chiede con gli occhi dell'app, non del proprietario del
@@ -315,7 +371,7 @@ await updateIngredientPrice(ingredienteId, 2.8, {
 segna("variazione di prezzo");
 
 // --- La giacenza ---
-const scadenza = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+const scadenza = traGiorniLocale(20);
 await registerStockDelivery({
   ingredientId: ingredienteId,
   quantity: 12,
@@ -393,7 +449,7 @@ await createCashMovement({
 segna("movimento di prima nota");
 
 // --- Una fattura fornitore da pagare (e il suo promemoria in Agenda) ---
-const fraDieciGiorni = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10);
+const fraDieciGiorni = traGiorniLocale(10);
 await createSupplierInvoice({
   entityId: ente,
   supplierId: fornitore.id,
@@ -506,10 +562,17 @@ if (scenario) {
   }
   segna("fornitori con recapiti e canale d'ordine", 2);
 
-  // ⚠️ Le soglie sono sopra la giacenza su DUE ingredienti e sotto sugli
-  // altri: serve che la lista della spesa abbia qualcosa dentro e
-  // qualcosa fuori. Una lista dove tutto è sotto soglia non fa vedere la
-  // differenza fra ciò che serve e ciò che no.
+  // ⚠️ Alcune soglie sono sopra la giacenza e altre sotto: serve che la
+  // lista della spesa abbia qualcosa dentro e qualcosa fuori. Una lista
+  // dove tutto è sotto soglia non fa vedere la differenza fra ciò che
+  // serve e ciò che no.
+  //
+  // ⚠️ QUANTI siano sotto soglia NON è scritto qui: lo conta il comando e
+  // lo dichiara in fondo. Al primo giro il riepilogo diceva «due» e ne
+  // erano tre — perché il conto lo avevo fatto io a mente sulla tabella
+  // qui sotto, dimenticando l'ingrediente dello stato di partenza e i
+  // consumi dei conti chiusi. Un numero che descrive il database va
+  // chiesto al database.
   const DISPENSA = [
     ["Pomodoro ciliegino", "verdura", "kg", 4.8, 18, 8, "Ortofrutta PROVA S.r.l."],
     ["Melanzana lunga", "verdura", "kg", 1.95, 10, 4, "Ortofrutta PROVA S.r.l."],
@@ -537,9 +600,7 @@ if (scenario) {
       ingredientId: dispensa[nome],
       quantity: giacenza,
       supplierId: fornitore ? fornitori[fornitore] : null,
-      expiryDate: new Date(Date.now() + (categoria === "pesce" ? 3 : 25) * 86400000)
-        .toISOString()
-        .slice(0, 10),
+      expiryDate: traGiorniLocale(categoria === "pesce" ? 3 : 25),
       unitCost: prezzo,
       note: `${MARCA}carico iniziale`,
     });
@@ -657,8 +718,8 @@ if (scenario) {
     entityId: ente,
     supplierId: fornitori["Ortofrutta PROVA S.r.l."],
     invoiceNumber: "BASE-098",
-    invoiceDate: new Date(Date.now() - 40 * 86400000).toISOString().slice(0, 10),
-    dueDate: new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10),
+    invoiceDate: traGiorniLocale(-40),
+    dueDate: traGiorniLocale(-10),
     amount: 128.44,
     note: `${MARCA}fattura del mese scorso`,
   });
@@ -668,17 +729,41 @@ if (scenario) {
     supplierId: fornitori["Ittica di Collaudo S.n.c."],
     invoiceNumber: "BASE-058",
     invoiceDate: oggi,
-    dueDate: new Date(Date.now() + 25 * 86400000).toISOString().slice(0, 10),
+    dueDate: traGiorniLocale(25),
     amount: 195.69,
     note: `${MARCA}fattura in scadenza`,
   });
-  segna("fatture fornitore: una pagata, una da pagare", 2);
+  // ⚠️ E UNA SCADUTA, che al primo giro mancava: il caso che deve saltare
+  // all'occhio non era mai stato visto da nessuno. Scaduta da sei giorni,
+  // ancora da pagare — è la riga che in quella schermata deve urlare.
+  await createSupplierInvoice({
+    entityId: ente,
+    supplierId: fornitori["Ortofrutta PROVA S.r.l."],
+    invoiceNumber: "BASE-101",
+    invoiceDate: traGiorniLocale(-36),
+    dueDate: traGiorniLocale(-6),
+    amount: 74.9,
+    note: `${MARCA}fattura SCADUTA`,
+  });
+  segna("fatture fornitore: una pagata, una in scadenza, una SCADUTA", 3);
 
   await addBelowThresholdItems();
   const { count: inLista } = await supabase
     .from("shopping_list_items")
     .select("id", { count: "exact", head: true });
   segna("righe in lista della spesa, nate dalle soglie", inLista ?? 0);
+
+  // Il numero vero degli ingredienti sotto scorta minima, chiesto al
+  // database dopo che i conti chiusi hanno scaricato: è quello che si
+  // vedrà in Magazzino, non quello che avevo contato a mente.
+  // `below_threshold` la calcola la vista: si legge la sua risposta invece
+  // di rifare il confronto qui — due posti che decidono «è sotto soglia?»
+  // finirebbero per dire due numeri diversi.
+  const { data: livelli } = await supabase.from("v_stock_levels").select("below_threshold");
+  segna(
+    "ingredienti sotto scorta minima, contati adesso",
+    (livelli ?? []).filter((r) => r.below_threshold).length
+  );
 }
 
 // ---------------------------------------------------------------------
