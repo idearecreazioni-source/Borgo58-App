@@ -78,7 +78,11 @@ export default function SegnaleDatabase() {
       className={`print:hidden sticky top-0 z-50 w-full text-center px-4 py-2 text-sm ${stato.fondo}`}
     >
       <strong>{stato.titolo}</strong> — {stato.spiegazione}
-      {ambiente.riferimento && <span className="opacity-75"> ({ambiente.riferimento})</span>}
+      {/* ⚠️ Il riferimento del progetto NON si stampa più nella striscia
+          (piccolezza del collaudo, 17/08): «oudjuqbqszisdtwzbxdo» accanto a
+          «DATI VERI» non dice niente a chi legge, e una sigla incomprensibile
+          in un avviso insegna che quell'avviso è roba da tecnici. Resta nel
+          titolo al passaggio del mouse, dove serve a me e non disturba lui. */}
     </div>
   );
 }

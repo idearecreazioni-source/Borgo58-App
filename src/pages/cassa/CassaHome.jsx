@@ -232,8 +232,19 @@ export default function CassaHome() {
 
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
               <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Questo mese</div>
-              <div className="text-lg text-b58-olive-dark font-medium">+{formatEUR(monthIn)}</div>
-              <div className="text-lg text-b58-terracotta-dark font-medium">−{formatEUR(monthOut)}</div>
+              {/* ⚠️ I due numeri erano NUDI (piccolezza del collaudo, 17/08):
+                  «+0,00» e «−152,94» uno sotto l'altro, senza dire di cosa.
+                  Un numero senza la sua parola si legge due volte e si
+                  capisce alla seconda — e in prima nota il verso è proprio
+                  quello che si vuole sapere a colpo d'occhio. */}
+              <div className="text-lg text-b58-olive-dark font-medium">
+                +{formatEUR(monthIn)}{" "}
+                <span className="text-xs text-b58-charcoal-soft font-normal">entrati</span>
+              </div>
+              <div className="text-lg text-b58-terracotta-dark font-medium">
+                −{formatEUR(monthOut)}{" "}
+                <span className="text-xs text-b58-charcoal-soft font-normal">usciti</span>
+              </div>
             </div>
 
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
@@ -242,7 +253,11 @@ export default function CassaHome() {
                 Sconti: {discountsThisMonth ? formatEUR(discountsThisMonth.total_forgone) : formatEUR(0)}
               </div>
               <div className="text-sm text-b58-charcoal">
-                Omaggi (base TD27): {giftsThisMonth ? formatEUR(giftsThisMonth.total_full) : formatEUR(0)}
+                {/* ⚠️ «base TD27» era gergo: TD27 è il codice della fattura
+                    per autoconsumo, e in una schermata che si guarda ogni
+                    giorno non dice niente. Il fatto che conta è che il valore
+                    degli omaggi serve a Laura, e quello si può dire. */}
+                Omaggi: {giftsThisMonth ? formatEUR(giftsThisMonth.total_full) : formatEUR(0)}
               </div>
             </div>
           </div>

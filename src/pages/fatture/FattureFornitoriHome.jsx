@@ -87,6 +87,12 @@ export default function FattureFornitoriHome() {
   const [noteScelte, setNoteScelte] = useState([]);
   const [anteprima, setAnteprima] = useState(null);
 
+  // ⚠️ Il modulo «Nuova fattura» nasce CHIUSO (piccolezza del collaudo,
+  // 17/08): occupava il posto più visibile della schermata pur essendo il
+  // gesto più raro — le fatture arrivano dalla posta o si registrano una
+  // volta ogni tanto, mentre quello che si guarda ogni giorno è cosa c'è da
+  // pagare. Lo spazio in alto va a chi lo usa di più.
+  const [nuovaAperta, setNuovaAperta] = useState(false);
   const [notaPerId, setNotaPerId] = useState(null);
   const [docPerId, setDocPerId] = useState(null);
 
@@ -534,9 +540,28 @@ export default function FattureFornitoriHome() {
         </p>
       )}
 
-      {entities && (
+      {entities && !nuovaAperta && (
+        <button
+          type="button"
+          onClick={() => setNuovaAperta(true)}
+          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-4 py-2 mb-4"
+        >
+          + Registra una fattura a mano
+        </button>
+      )}
+
+      {entities && nuovaAperta && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Nuova fattura</h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-display text-lg text-b58-charcoal">Nuova fattura</h2>
+          <button
+            type="button"
+            onClick={() => setNuovaAperta(false)}
+            className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal"
+          >
+            Chiudi
+          </button>
+        </div>
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <select
