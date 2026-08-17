@@ -40,10 +40,10 @@ l'annotazione — e anche la fiducia in quelle già scritte.
 
 | n. | Cosa | Stato |
 |---|---|---|
-| 1 | «Apri la pianta» non si porta dietro la prenotazione: da una prenotazione senza tavolo il collegamento apre la pianta del giorno, che non sa niente di lei. È un link secco | da fare, **col n. 10** |
-| 2 | **Due piante diverse dello stesso locale**: il Calendario mostra la disposizione originale, le Comande quella modificata | ⚠️ **misurato: i dati sono identici**, vedi sotto — serve una decisione |
-| 3 | Da una ricetta «Pronta (non in carta)» non c'è modo di metterla nel menu: l'app nomina quello che manca e non offre la strada. Speculare al n. 1 | da fare |
-| 4 | **In prima nota non si distingue il contante dalla banca**: due uscite compaiono identiche, e si capisce quale è uscita dalla banca solo facendo i conti coi riquadri sopra. E le righe dicono solo «Uscita» / «Altra uscita», senza descrizione | da fare, **priorità** |
+| 1 | «Apri la pianta» non si porta dietro la prenotazione | ✅ **provato con le mani** (col n. 10) |
+| 2 | ✅ **Due piante diverse dello stesso locale**: il Calendario mostra la disposizione originale, le Comande quella modificata | ⚠️ **misurato: i dati sono identici**, vedi sotto — serve una decisione |
+| 3 | Da una ricetta «Pronta (non in carta)» non c'è modo di metterla nel menu | ✅ **provato con le mani** |
+| 4 | ✅ **In prima nota non si distingue il contante dalla banca**: due uscite compaiono identiche, e si capisce quale è uscita dalla banca solo facendo i conti coi riquadri sopra. E le righe dicono solo «Uscita» / «Altra uscita», senza descrizione | da fare, **priorità** |
 | 5 | Magazzino illeggibile per le righe delle prove automatiche | ✅ metà fatta (gli avanzi li porta via il reset dello scenario); resta la metà di prodotto → vedi decisione sotto |
 
 ⚠️ **Perché il n. 4 e il n. 2 vengono prima.** Il n. 4 perché contante e
@@ -92,6 +92,14 @@ prima dell'apertura significano trenta uscite datate male.
 - Fatture: i campi modificabili di numero e importo non hanno etichetta. E
   il modulo «Nuova fattura» occupa il posto più visibile pur essendo il
   caso più raro.
+- **Editor Menu Cartaceo: le spunte accanto ai piatti sembrano una scelta
+  salvata e non lo sono** (trovato il 17/08 provando il n. 3 A). Servono
+  solo a escludere un piatto da *quella* stampa: le togli, esci, rientri e
+  sono tornate tutte. La riga che lo spiega c'è, ma sta sopra e in piccolo
+  — e quello che si vede è il comportamento, non la nota. *La cura non è
+  ingrandire la nota: è che la spunta somigli a ciò che fa* (stessa lezione
+  della striscia grigia: due stati dello stesso segno devono avere la
+  stessa forma).
 
 ### E. Difetti dello scenario — ✅ fatti (commit `4ce5a59`)
 
