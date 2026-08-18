@@ -69,7 +69,7 @@ const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
 // quarto in senso contrario, altrimenti si leggerebbe di traverso — e un
 // nome di tavolo che si legge piegando la testa, durante un servizio,
 // non si legge.
-const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
+export const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
 
 // L'aggancio a griglia: 10 cm. Abbastanza fine da accostare due tavoli
 // senza fatica, abbastanza grosso da non lasciare fessure di 3 cm che a
