@@ -42,6 +42,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 4 | 18/08/2026 | *Il tavolo più piccolo non scende mai sotto 1,05 cm reali* (14/08) | [giro E, la sala entra nel telefono](consegne/20260818_giro_e_la_sala_entra_nel_telefono.md) |
 | 5 | 18/08/2026 | *Il ritardo prende tutto il tavolo al posto del colore della fascia* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 | 6 | 18/08/2026 | *In Comande il tavolo con un conto aperto è dorato* (08/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
+| 7 | 18/08/2026 | *Le due legende dichiarano la precedenza dei colori* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 
 ---
 
@@ -210,3 +211,37 @@ non ha modo di sapere quale dei due sta guardando.
 ed è una scelta, non una dimenticanza: lì l'ambiguità si scioglie da sé,
 perché il tavolo selezionato è al massimo uno ed è quello che si è appena
 toccato. La legenda lo dichiara nell'ordine di precedenza.
+
+---
+
+## 7 · 18/08/2026 — «le due legende dichiarano la precedenza dei colori»
+
+**Cosa era stato deciso, e quando.** Il **18/08**, poche ore prima, dentro il
+perimetro stesso del giro D2: *«le due legende che DICHIARANO la precedenza,
+non che aggiungono una riga»*. Erano state costruite, e generate dallo stesso
+dato con cui il colore veniva deciso — così la spiegazione non poteva
+raccontare un ordine diverso da quello applicato.
+
+**La ragione di allora.** Il rilievo del mandato: *un colore che ne sovrascrive
+altri, senza che la legenda lo dica, si legge come un colore che non esiste da
+nessuna parte*. Chi cerca il verde su un tavolo diventato scuro conclude che il
+gestionale ha sbagliato.
+
+**Cosa si decide adesso.** **Le legende si tolgono del tutto.** Deciso da
+Alessio guardando la schermata: le considera superflue. Gli era stata proposta
+anche la via di mezzo — nasconderle dietro un tocco, per chi lavorerà in sala e
+non conosce i colori a memoria — e ha scelto di toglierle.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, e questo è il
+prezzo che accettiamo.** La ragione non è caduta: è **cambiato il lettore**.
+Oggi in sala c'è Alessio, che quei colori li ha scelti lui, e per lui la
+legenda è ingombro. Il prezzo è preciso e va scritto perché fra sei mesi si
+sappia dove ripescare la cosa: **da oggi la precedenza dei segni è dichiarata
+solo in due posti — il codice (`segnoDelTavolo` in `lib/calcoli/ritardo.js`) e
+il riepilogo del giro D2 — e in nessun punto della schermata.** ⚠️ Il giorno
+che entrerà personale nuovo, che è anche il giorno in cui l'accesso condiviso
+dello staff diventerà un problema (§10), la legenda va rimessa: non è codice
+perso, è codice tolto con la sua ragione accanto.
+⚠️ **E quello che resta è la regola, non la spiegazione**: togliere la legenda
+non tocca la precedenza, che continua a decidere i colori esattamente come
+prima.

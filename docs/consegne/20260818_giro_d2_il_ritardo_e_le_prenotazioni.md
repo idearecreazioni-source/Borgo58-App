@@ -6,11 +6,11 @@
 [D1](20260818_giro_d1_il_conto_sa_da_dove_nasce.md), che ha scritto il legame
 che qui si comincia a vedere. Resta il **D3**, le schermate.
 
-- **HEAD dichiarato**: `2d9f4e0`
+- **HEAD dichiarato**: `d0b0b32` (il primo riepilogo di questo giro dichiarava `2d9f4e0`, prima del collaudo di Alessio: le sue due decisioni sono i commit `d0b0b32` e questo)
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — al database non serviva niente (vedi sotto:
   *la colonna c'era già e nessuno la leggeva*)
-- **Prove**: **96** pure (erano 78) + **172** sul progetto di prova (erano 167)
+- **Prove**: **102** pure (erano 78) + **172** sul progetto di prova (erano 167)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **niente da applicare**
 - **Contratto**: non toccato · **Corridoio**: non ridistribuito (nessuna
@@ -49,22 +49,32 @@ come una voce chiusa.
 
 E quelle che apre questo giro:
 
-8. 🔴 **NESSUNA MANO VERA HA VISTO LA SBARRATURA.** In questo progetto le prove
-   non hanno un ambiente DOM: **nessuna prova automatica guarda il disegno**,
-   come già dichiarato dal giro E. Quello che è provato è *quali tavoli* sono
-   in ritardo, non *come si vedono*. ⚠️ **E il rischio è specifico del segno
-   scelto**: un tratteggio è una texture, e su un tavolo di 90 cm disegnato al
-   75% su un telefono potrebbe risultare una sfumatura invece che una
-   sbarratura. Se al collaudo non si distingue a colpo d'occhio, si ispessisce
-   — **non** si torna al terzo rosso, che il problema ce l'ha per costruzione.
-9. 🔴 **NESSUNO HA ANCORA VISTO LE COMANDE PIENE.** Tutto quello che questa
-   consegna aggiunge a quella schermata — coperti, colori, elenco della serata,
-   nome sul conto — è stato provato **come dati**, mai come pagina. Il caso
-   peggiore è quello che il 14/08 fece correggere una mia scelta: *ci stanno,
-   quelle scritte, su un tablet tenuto in verticale?*
-10. 🟡 **Il colore nuovo del «conto aperto» non è mai stato guardato.** È scuro
-    (`charcoal-soft`) con la scritta chiara sopra: leggibile sul monitor da
-    cui è stato scelto, mai su un tablet in sala con le luci basse.
+8. ✅ **LA SBARRATURA È STATA VISTA, e si vede** — la voce resta con la sua
+   risposta invece di sparire. Alessio l'ha guardata dal telefono la sera
+   stessa: *«si vede, va bene così»*, **anche su T8, che sta dentro un
+   tavolone**. Il rischio dichiarato — un tratteggio su un tavolo di 90 cm
+   ridotto al 75% che si legge come una sfumatura invece che come una
+   sbarratura — **non si è avverato**. Resta vero che **nessuna prova
+   automatica guarda il disegno**: a guardarlo è stato un occhio, e la
+   prossima volta servirà di nuovo.
+   ⚠️ **E c'è una correzione di Alessio su sé stesso, che vale più della
+   conferma**: aveva prima segnalato T8 come *non* sbarrato, leggendolo dalla
+   propria fotografia. Era sbarrato, solo poco marcato. *Ha dedotto da
+   un'immagine invece di misurare* — nessun difetto nel programma, e la stessa
+   forma dell'errore che questo progetto insegue nel codice: **una lettura non
+   è una misura**.
+9. 🟡 **LE COMANDE PIENE SONO STATE VISTE IN PARTE.** Alessio ha guardato la
+   schermata: **nell'elenco «Stasera» ci sta tutto** — la paura del 14/08 (le
+   scritte che non entrano su un tablet verticale) non si è avverata. Restano
+   non guardati: **la domenica a pranzo**, **un tavolo con due turni**, e la
+   sala con **più conti aperti insieme**, che è la condizione normale di un
+   servizio vero e non è mai esistita.
+10. 🟡 **Il colore del «conto aperto» è comparso, ma non nella condizione che
+    conta.** Alessio prima non vedeva nessun tavolo scuro — ⚠️ **e non era un
+    difetto: in quel momento non c'era nessun conto aperto in produzione**,
+    quindi quel colore non aveva casi. Aprendone uno è comparso. Quindi **il
+    segno esiste e si vede**; se in sala, **con le luci basse**, si confonda
+    col fondo scuro della pianta resta da provare in una serata vera.
 11. 🟡 **L'orologio che fa scattare la sbarratura batte ogni minuto e non è
     stato visto scattare.** Quello che è provato è il calcolo a un istante
     dato; che il tablet lasciato acceso sul tavolino aggiorni davvero il
@@ -82,14 +92,26 @@ E quelle che apre questo giro:
     caso il tavolo **si sbarra**, anche se il secondo cliente non può sedersi
     perché il primo è ancora lì. La sbarratura dice «questa gente non è
     arrivata», che è vero; non dice «il tavolo è libero», che non lo è.
+14. 🔴 **DA OGGI LA PRECEDENZA DEI COLORI NON È DICHIARATA IN NESSUNA
+    SCHERMATA.** Le legende sono state tolte (rovesciamento n. 7, deciso da
+    Alessio); la regola resta intera, la **spiegazione** vive solo nel codice
+    (`segnoDelTavolo`) e in questo documento. ⚠️ Per Alessio non è un problema
+    — i colori li ha scelti lui — ma **il giorno che entrerà personale nuovo
+    quella spiegazione va rimessa**, ed è lo stesso giorno in cui l'accesso
+    condiviso dello staff (§10 di `CLAUDE.md`) smetterà di bastare. Non è
+    codice perso: è codice tolto con la sua ragione scritta accanto.
+15. 🟡 **Il tavolone colorato intero non è stato visto**: la propagazione è
+    arrivata **dopo** il collaudo di Alessio. Quello che ha guardato lui è la
+    sbarratura su T8; che T7 e T9 si colorino con lui **è provato solo dalle
+    prove pure**.
 
 ---
 
 ## Cosa abbiamo rovesciato
 
-**Due rovesciamenti**, entrambi nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. **5** e **6**),
-dove stanno per esteso con le quattro righe.
+**Tre rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. **5**, **6** e
+**7**), dove stanno per esteso con le quattro righe.
 
 ### 5 · «il ritardo prende tutto il tavolo al posto del colore della fascia»
 
@@ -124,7 +146,84 @@ dove stanno per esteso con le quattro righe.
   ha modo di sapere quale dei due sta guardando.
   ⚠️ **Il terracotta resta doppio ed è una scelta**: lì l'ambiguità si scioglie
   da sé, perché il tavolo selezionato è al massimo uno ed è quello che si è
-  appena toccato. La legenda lo dichiara nell'ordine di precedenza.
+  appena toccato.
+
+**I tre colori delle Comande, PRIMA e DOPO** — scritti per esteso perché è un
+cambio di convenzione su una schermata che si userà in servizio, e perché la
+percezione di Alessio («mi sembrava già scuro») **era giusta a metà**: il
+terracotta c'era davvero, ma voleva dire un'altra cosa.
+
+| | prima del D2 | dopo il D2 |
+|---|---|---|
+| **dorato** (`b58-gold`) | il tavolo ha un **conto aperto** | **primo giro** — arriva presto, il tavolo può servire due volte |
+| **terracotta** (`b58-terracotta`) | il **conto che stai servendo** | invariato per la selezione · e in più: **ultimo giro** (la fascia, dal giro C) |
+| **scuro** (`b58-charcoal-soft`) | non esisteva | il tavolo ha un **conto aperto** |
+| **verde** (`b58-olive`) | non esisteva in Comande | **occupa la serata** |
+| **tratteggio** | non esisteva | **in ritardo**, sopra qualunque colore |
+
+### 7 · «le due legende dichiarano la precedenza dei colori»
+
+- **Cosa era stato deciso, e quando.** Il **18/08**, poche ore prima, dentro il
+  perimetro stesso di questo giro.
+- **La ragione di allora.** Il rilievo del mandato: *un colore che ne
+  sovrascrive altri, senza che la legenda lo dica, si legge come un colore che
+  non esiste da nessuna parte*.
+- **Cosa si decide adesso.** **Le legende si tolgono del tutto**, deciso da
+  Alessio guardando la schermata: le considera superflue. Gli era stata
+  proposta anche la via di mezzo — nasconderle dietro un tocco, per chi
+  lavorerà in sala e non conosce i colori a memoria — e ha scelto di toglierle.
+- **Perché la ragione di allora non vale più — anzi: vale ancora, e questo è il
+  prezzo che accettiamo.** La ragione non è caduta: **è cambiato il lettore**.
+  Oggi in sala c'è Alessio, che quei colori li ha scelti lui. Il prezzo è
+  scritto nella voce 14 di *Cosa NON è verificato*, ed è preciso: **la
+  precedenza resta dichiarata solo nel codice e in questo documento**.
+- ⚠️ **E quello che resta è la regola, non la spiegazione**: togliere la
+  legenda non tocca la precedenza, che continua a decidere i colori
+  esattamente come prima.
+
+---
+
+## Il tavolone si colora intero — richiesta di Alessio
+
+*«Non possiamo far sì che i tavoli uniti prenotati o con comande aperte
+cambino tutti di colore?»* — guardando la sua fotografia: T7·T8·T9 sono un
+tavolone, la prenotazione è agganciata a **T8**, e T7 e T9 restavano bianchi.
+
+⚠️ **Non è una rifinitura: è lo stesso principio del giro B.** Lì un tavolone
+ha **un** numero di coperti e non tre, perché l'unità con cui si decide è il
+gruppo. Se l'unità è il gruppo per il conteggio, deve esserlo anche per il
+colore — altrimenti la stessa sala dice «qui c'è posto per otto» e «due di
+questi tre tavoli sono liberi», che non possono essere vere insieme.
+
+**Misurato prima di costruire, come chiesto**: la pianta accetta uno stato
+**per sagoma** (`stato[sagoma.id]`), quindi la strada è **propagare al gruppo
+prima di disegnare** — e sta in un posto solo, `segniDellaSala()`, chiamata
+dalle due schermate. Non è un colore ripetuto tre volte dalle schermate.
+
+⚠️ **E il conto aperto già si comportava così**, misurato invece che supposto:
+un conto sta su un **insieme** di tavoli (`order_tables` ha una riga per
+ciascuno), quindi tutte e tre le sagome trovavano il proprio conto e si
+coloravano. A restare indietro era **solo la prenotazione**, che è agganciata
+ai soli tavoli che Alessio ha scelto.
+
+### Il caso incrociato, dichiarato invece che lasciato al caso
+
+Dal giro C sullo stesso tavolone possono esserci **due prenotazioni in due
+fasce diverse** — un giallo alle 19:30 su T7, un arancio alle 22:30 su T9.
+
+**Il gruppo non sceglie fra le due e non prende «la più importante»**: le fasce
+si **uniscono**, e due fasce diverse fanno **«misto»** (il tavolo mezzo giallo
+e mezzo verde). ⚠️ È esattamente la regola che valeva già per due prenotazioni
+sullo **stesso tavolo singolo**: nessuna precedenza nuova inventata da chi
+scrive il codice, e una prova pura la tiene ferma.
+
+### L'unica cosa che NON si propaga: la selezione
+
+Toccare un tavolo per aggiungerlo a un conto riguarda **quel** tavolo:
+colorando tutto il gruppo, lo schermo prometterebbe di aprirne tre mentre ne
+apre uno. **La selezione risponde al dito, e il dito ne ha toccato uno solo.**
+⚠️ La sbarratura invece passa **anche** sopra il tavolo selezionato, ed è
+coerente con la sua natura di secondo canale.
 
 ---
 
@@ -277,7 +376,7 @@ riesegue.
 
 ## Le prove, e la controprova
 
-**96 pure** (erano 78: +18) e **172 sul progetto di prova** (erano 167: +5).
+**102 pure** (erano 78: +24) e **172 sul progetto di prova** (erano 167: +5).
 
 Le pure girano **ai bordi e nei due versi**: al minuto esatto della tolleranza
 non è in ritardo e al minuto dopo sì; la tolleranza cambiata cambia il
@@ -303,8 +402,11 @@ Rotte apposta **tre** regole, una alla volta, e ogni volta è diventata rossa
 | la fascia oraria copre il conto aperto | 1 — *«il conto aperto copre la fascia oraria»* |
 | un conto **chiuso** non prova l'arrivo | 2 — *«un conto CHIUSO conta»* e *«su una serata intera, il conto chiuso spegne il rosso»* |
 | la sbarratura **sostituisce** il colore | 1 — *«LA SBARRATURA NON È IN GARA»* |
+| il colore **non si propaga** al tavolone | 5 — tutte quelle del tavolone, ed è giusto: la rottura spegne il meccanismo intero |
+| **anche la selezione** si propaga al gruppo | 1 — *«LA SELEZIONE NON SI PROPAGA»* |
+| sul tavolone **vince una fascia** invece di «misto» | 1 — *«IL CASO INCROCIATO»* |
 
-Poi tutto rimesso a posto: **96 verdi**.
+Poi tutto rimesso a posto: **102 verdi**.
 
 ⚠️ **E la quarta rottura non è stata fatta apposta: è successa.** È il difetto
 del nome di campo, ed è la sola che ha trovato qualcosa che nessuno cercava.
@@ -351,9 +453,27 @@ primo tavolo davvero in ritardo del gestionale è a portata di collaudo.
 
 ---
 
+## ✅ Cosa ha guardato Alessio, la sera stessa
+
+Il collaudo è avvenuto **fra la prima e la seconda metà di questa consegna**, e
+tre delle quattro domande hanno avuto risposta:
+
+- **il tratteggio del ritardo si vede**, *«va bene così»*, anche su T8 che sta
+  dentro un tavolone;
+- **i 30 minuti vanno bene**;
+- **nell'elenco «Stasera» ci sta tutto**;
+- il **tavolo scuro** è comparso solo quando ha aperto un conto — prima non
+  c'era nessun conto aperto, quindi quel colore non aveva casi. Resta da
+  guardarlo **con le luci basse** (voce 10).
+
+E da lì è nata la richiesta del **tavolone colorato intero**, che è la seconda
+metà della consegna.
+
+---
+
 ## Per Alessio, in una riga
 
-Apri le Comande stasera: la sala non è più bianca, e **T8 dovrebbe essere
-sbarrato** — «mario» aveva prenotato per le 21 e nessuno ha aperto la sua
-comanda. Guarda solo tre cose: che il tratteggio si veda, che le scritte
-dell'elenco ci stiano, e che il tavolo scuro si distingua da quelli colorati.
+Il tratteggio e l'elenco li hai già visti e vanno bene. **Quello che resta da
+guardare è una cosa sola**: quando accosti dei tavoli, adesso si colorano
+*tutti e tre insieme* — prima si colorava solo quello a cui era attaccata la
+prenotazione.
