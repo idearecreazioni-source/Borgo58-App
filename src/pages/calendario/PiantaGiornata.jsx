@@ -165,38 +165,22 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
 // tavolo libero non si potrebbe più fare da nessuna parte: è il gesto che
 // faceva l'elenco sotto la pianta, che questo giro ha tolto.
 // Due copie della stessa casella sarebbero due posti che divergono.
-function CopertiDelGruppo({ gruppo, mostraNumero, correzione, setCorrezione, salvando, salva, azzeraCorrezione }) {
+function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, azzeraCorrezione }) {
   if (!gruppo) return null;
   const chiave = (gruppo.tavoli ?? []).join(",");
   const inCorrezione = correzione?.chiave === chiave;
-  const piuTavoli = (gruppo.tavoli ?? []).length > 1;
   return (
     <div className="mb-3">
-      {/* ⚠️ IL NUMERO SI MOSTRA SOLO DOVE SERVE A DECIDERE, cioè mentre si
-          prende una prenotazione («ci stanno in sei?»). Nel riquadro del
-          tavolo è stato tolto da Alessio il 18/08: lì la cifra è già scritta
-          **dentro la sagoma** che si è appena toccata (giro B), e ridirla
-          accanto era la stessa cosa detta due volte.
-          ⚠️ Insieme se n'è andata la frase che distingueva tavolo e tavolone
-          («è il numero di T7 · T8 · T9 insieme, non del solo T8»). Il contesto
-          resta nel TITOLO del riquadro — «T8 — accostato a T7 · T9» — che è il
-          posto dove l'informazione sta: senza quel titolo il rischio
-          tornerebbe intero, ed è il motivo per cui non si tocca. */}
-      {mostraNumero && (
-        <p className="text-sm text-b58-charcoal">
-          {piuTavoli && (
-            <span className="text-b58-charcoal-soft">{(gruppo.etichette ?? []).join(" · ")}: </span>
-          )}
-          Ci stanno <strong>{gruppo.coperti}</strong>
-          {gruppo.corretto && (
-            <span className="text-b58-charcoal-soft">
-              {" "}
-              — corretto a mano{gruppo.ragione ? ` · ${gruppo.ragione}` : ""}
-            </span>
-          )}
-        </p>
-      )}
-
+      {/* ⚠️ QUI C'ERA LA RIGA «Ci stanno 6», tolta da Alessio il 19/08: il
+          pannello dentro la pianta sforava in altezza e l'ora finiva fuori
+          dal contenitore. La cifra è già **dentro la sagoma** che si è appena
+          toccata (giro B), e ridirla accanto era la stessa cosa detta due
+          volte.
+          ⚠️ Ma quella riga era anche l'unico posto dove si vedeva che il
+          tavolo fa parte di un TAVOLONE, e il pulsante qui sotto corregge il
+          numero del gruppo. L'informazione non si è persa: è passata nel
+          TITOLO del pannello, che adesso è l'elenco dei tavoli con in
+          grassetto quello toccato — sta su un rigo, ed è dove sta il dubbio. */}
       {inCorrezione ? (
         <div className="flex flex-wrap items-center gap-2 mt-2">
           <input
@@ -440,6 +424,21 @@ export default function PiantaGiornata() {
 
   const tavoliDi = (reservationId) => assegnazioni.filter((a) => a.reservation.id === reservationId);
 
+  // ⚠️ LE PRENOTAZIONI SENZA TAVOLO VANNO IN CIMA (Alessio, 19/08). Il bordo
+  // colorato non basta se la riga sta in fondo: **la ragione per cui devono
+  // farsi notare è che rischiano di restare senza tavolo**, e in fondo
+  // all'elenco si guardano per ultime. L'ordine per ora resta dentro i due
+  // gruppi — è come si legge una serata.
+  //
+  // ⚠️ Ed è l'unico posto dove possono essere viste: una prenotazione senza
+  // tavolo **non compare da nessuna parte sulla pianta**.
+  const prenotazioniInElenco = [...prenotazioni].sort((a, b) => {
+    const senzaA = tavoliDi(a.id).length === 0;
+    const senzaB = tavoliDi(b.id).length === 0;
+    if (senzaA !== senzaB) return senzaA ? -1 : 1;
+    return (a.reservation_time ?? "").localeCompare(b.reservation_time ?? "");
+  });
+
   const evidenziata = inCorso?.id ?? aperta?.id ?? null;
 
   // ⚠️ SULLA SAGOMA VA SOLO IL COLORE, e chi c'è si legge nell'elenco
@@ -664,7 +663,6 @@ export default function PiantaGiornata() {
   const turnoDi = (id) => turni.find((t) => t.reservation_id === id);
 
   // --- IL TAVOLO TOCCATO, e cosa gli sta attorno ---
-  const sagomaToccata = sagome.find((s) => s.id === toccato) ?? null;
   // ⚠️ Il gruppo lo dice il DATABASE (`coperti_del_giorno`), non una seconda
   // regola qui: chi è accostato con chi è la stessa risposta che colora la
   // pianta e che conta i coperti della serata.
@@ -694,6 +692,36 @@ export default function PiantaGiornata() {
   // I tavoloni toccati dalla scelta in corso, senza doppioni: toccando due
   // tavoli dello stesso tavolone il numero è uno, e va mostrato una volta.
   const gruppiScelti = gruppi.filter((g) => (g.tavoli ?? []).some((id) => scelti.includes(id)));
+
+  // IL TITOLO DEI DUE PANNELLI: l'elenco dei tavoli, con in grassetto quelli
+  // di cui si sta parlando.
+  //
+  // ⚠️ È NATO DA UN PROBLEMA DI SPAZIO E RISOLVE ANCHE UN PROBLEMA DI
+  // SIGNIFICATO (19/08). Il pannello dentro la pianta sforava in altezza, e la
+  // riga da togliere — «T5 · T6: Ci stanno 6» — era **l'unico posto dove si
+  // vedeva che quel tavolo fa parte di un tavolone**, mentre sotto c'è
+  // «Correggi il numero», che corregge il numero del GRUPPO.
+  // Mettendo l'elenco nel titolo l'informazione resta **dove sta il dubbio**,
+  // su un rigo solo, e più corto di «Prenotazione su T9».
+  const etichetteDelTitolo = (ids) => {
+    const visti = new Set();
+    const fuori = [];
+    for (const id of ids) {
+      for (const t of insiemeDi.get(id) ?? [id]) {
+        if (!visti.has(t)) {
+          visti.add(t);
+          fuori.push(t);
+        }
+      }
+    }
+    return fuori.map((t) => ({
+      id: t,
+      label: sagome.find((s) => s.id === t)?.label ?? "?",
+      // In grassetto quello che si è toccato o scelto: gli altri ci sono
+      // perché sono accostati, e il numero dei coperti è di tutti insieme.
+      nostro: ids.includes(t),
+    }));
+  };
 
   // «È arrivato o no» in tre parole — il dato del giro D2, che nell'elenco
   // non c'era mai stato. ⚠️ Non è un campo scritto da nessuno: si deduce dal
@@ -801,16 +829,15 @@ export default function PiantaGiornata() {
     toccato && !modo ? (
             <div className="mt-3 rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 p-4">
               <div className="flex items-baseline justify-between gap-3 mb-2">
-                <p className="text-b58-charcoal font-medium">
-                  {sagomaToccata?.label}
-                  {gruppoDelToccato && (gruppoDelToccato.tavoli ?? []).length > 1 && (
-                    <span className="text-sm font-normal text-b58-charcoal-soft">
-                      {" "}
-                      — accostato a {(gruppoDelToccato.etichette ?? [])
-                        .filter((e) => e !== sagomaToccata?.label)
-                        .join(" · ")}
+                <p className="text-b58-charcoal">
+                  {etichetteDelTitolo(toccato ? [toccato] : []).map((t, i) => (
+                    <span key={t.id}>
+                      {i > 0 && <span className="text-b58-charcoal-soft"> · </span>}
+                      <span className={t.nostro ? "font-semibold" : "text-b58-charcoal-soft"}>
+                        {t.label}
+                      </span>
                     </span>
-                  )}
+                  ))}
                 </p>
                 <button
                   type="button"
@@ -879,12 +906,20 @@ export default function PiantaGiornata() {
                   aggiunge e toglie, e il cliente non riceve nessuna email
                   (l'invio parte su un cambio di stato, e qui non ce n'è
                   nessuno — verificato il 14/08, non dedotto). */}
-              <p className="text-b58-charcoal font-medium mb-3">
-                Prenotazione su{" "}
-                {etichetteScelte || (
+              <p className="text-b58-charcoal mb-3">
+                {scelti.length === 0 ? (
                   // Resta possibile solo quando c'è già del lavoro dentro:
                   // senza testo scritto il modulo si chiude da sé.
                   <em className="text-b58-terracotta-dark">nessun tavolo — toccane uno</em>
+                ) : (
+                  etichetteDelTitolo(scelti).map((t, i) => (
+                    <span key={t.id}>
+                      {i > 0 && <span className="text-b58-charcoal-soft"> · </span>}
+                      <span className={t.nostro ? "font-semibold" : "text-b58-charcoal-soft"}>
+                        {t.label}
+                      </span>
+                    </span>
+                  ))
                 )}
               </p>
 
@@ -899,7 +934,6 @@ export default function PiantaGiornata() {
                 <CopertiDelGruppo
                   key={(g.tavoli ?? []).join(",")}
                   gruppo={g}
-                  mostraNumero
                   correzione={correzione}
                   setCorrezione={setCorrezione}
                   salvando={salvando}
@@ -973,11 +1007,12 @@ export default function PiantaGiornata() {
         <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
         </button>
+        {/* ⚠️ La data NON si ripete: c'era due volte, nel selettore e qui
+            accanto (rilievo di Alessio, 19/08). Restano i conteggi, e al suo
+            posto è salito l'interruttore «al completo». */}
         <span className="text-sm text-b58-charcoal-soft">
-          {formatDate(data)}
           {prenotazioni.length > 0 && (
             <>
-              {" · "}
               <strong className="text-b58-charcoal">{prenotazioni.length}</strong> prenotazion
               {prenotazioni.length === 1 ? "e" : "i"} ·{" "}
               <strong className="text-b58-charcoal">{copertiDelGiorno}</strong> persone
@@ -1376,7 +1411,7 @@ export default function PiantaGiornata() {
                Alle 21:15, con due tavoli liberi e uno che non si è visto, è la
                prima domanda che ci si fa. */
             <ul className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
-              {prenotazioni.map((p) => {
+              {prenotazioniInElenco.map((p) => {
                 const suoi = tavoliDi(p.id);
                 const accesa = prenotazioniEvidenziate.has(p.id);
                 return (

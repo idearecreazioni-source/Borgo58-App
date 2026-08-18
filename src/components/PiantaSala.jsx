@@ -277,8 +277,26 @@ export default function PiantaSala({
     if (!sagoma) return;
     const mia = misureSagoma(sagoma);
     const limiti = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
-    let x = limita(aggancia(punto.x - trascina.dx), 0, SALA_LARGHEZZA_CM - mia.larghezza);
-    let y = limita(aggancia(punto.y - trascina.dy), 0, SALA_PROFONDITA_CM - mia.profondita);
+    const grezzoX = aggancia(punto.x - trascina.dx);
+    const grezzoY = aggancia(punto.y - trascina.dy);
+    let x = limita(grezzoX, 0, SALA_LARGHEZZA_CM - mia.larghezza);
+    let y = limita(grezzoY, 0, SALA_PROFONDITA_CM - mia.profondita);
+    // ⚠️ FUORI DALLA SALA IL GESTO SI ANNULLA, e il tavolo torna dov'era
+    // (Alessio, 19/08). Prima si fermava appoggiato al bordo, e i due esiti
+    // dicono cose diverse: **fermarsi al bordo somiglia a «l'ho messo lì»**,
+    // tornare indietro dice «quel gesto non si poteva fare». Un tavolo
+    // appoggiato al muro è una posizione che nessuno ha scelto e che resta
+    // scritta come se qualcuno l'avesse scelta.
+    //
+    // ⚠️ E TORNA ESATTAMENTE DA DOV'ERA PARTITO, non in un posto calcolato:
+    // basta **non salvare**. Così non può finire sopra un altro tavolo né
+    // dentro il pannello — la posizione di partenza era valida per
+    // definizione.
+    //
+    // ⚠️ Ma si vede PRIMA di lasciare, altrimenti sarebbe una sorpresa: la
+    // sagoma si fa trasparente e cambia bordo mentre il dito è fuori. È la
+    // stessa scelta del segno del magnete, che si vede mentre si trascina.
+    const fuori = grezzoX !== x || grezzoY !== y;
 
     // ⚠️ IL MAGNETE, e il suo raggio si misura in DITO. Il riquadro dice
     // quanti punti di schermo occupa la pianta adesso, quindi quanti
@@ -303,18 +321,22 @@ export default function PiantaSala({
     y = preso.y;
     setTrascina((t) =>
       t
-        ? { ...t, x, y, agganci: preso.agganci, mosso: t.mosso || x !== sagoma.x || y !== sagoma.y }
+        ? { ...t, x, y, fuori, agganci: preso.agganci, mosso: t.mosso || x !== sagoma.x || y !== sagoma.y }
         : t
     );
   };
 
   const rilascia = (sagoma) => {
     if (!trascina || trascina.id !== sagoma.id) return;
-    const { x, y, mosso } = trascina;
+    const { x, y, mosso, fuori } = trascina;
     setTrascina(null);
     // Un tocco senza movimento è una selezione, non uno spostamento: in
     // sala si tocca il tavolo per aprirlo molto più spesso di quanto lo
     // si sposti.
+    // Fuori dalla sala: il gesto si annulla in silenzio — la sagoma torna
+    // dov'era perche' non si scrive niente, e non si apre nemmeno il
+    // pannello: chi ha trascinato voleva spostare, non toccare.
+    if (fuori) return;
     if (mosso) onSposta?.(sagoma, x, y);
     else onSeleziona?.(sagoma);
   };
@@ -546,10 +568,22 @@ export default function PiantaSala({
                 height={misure.profondita}
                 rx={tondo ? Math.min(misure.larghezza, misure.profondita) / 2 : 12}
                 fill={colore.riempimento}
-                stroke={inMano && trascina?.agganci?.length ? COLORE_AGGANCIO : colore.bordo}
+                stroke={
+                  inMano && trascina?.fuori
+                    ? "var(--color-b58-terracotta)"
+                    : inMano && trascina?.agganci?.length
+                      ? COLORE_AGGANCIO
+                      : colore.bordo
+                }
                 strokeWidth={inMano ? 10 : inGruppo ? 1.5 : 5}
                 strokeOpacity={!inMano && inGruppo ? 0.3 : 1}
-                opacity={inMano ? 0.85 : 1}
+                // ⚠️ Fuori dalla sala si vede PRIMA di lasciare: la sagoma si
+                // fa trasparente e prende il bordo del rifiuto. Un gesto che
+                // si annulla solo al rilascio è una sorpresa, e la volta dopo
+                // si trascina piano per paura — è la stessa ragione per cui il
+                // magnete si vede mentre prende.
+                strokeDasharray={inMano && trascina?.fuori ? "30 18" : undefined}
+                opacity={inMano ? (trascina?.fuori ? 0.45 : 0.85) : 1}
               />
               {/* IN RITARDO — sopra il colore e SOTTO il nome: il tavolo si
                   vede sbarrato e si continua a leggere quale tavolo è. Chi
