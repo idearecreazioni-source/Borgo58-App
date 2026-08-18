@@ -158,6 +158,43 @@ cade il numero e non l'elenco.
 
 ---
 
+## 4 · 18/08/2026 — «il tavolo più piccolo non scende mai sotto 1,05 cm reali»
+
+⚠️ **Questa sezione mancava, e il buco l'ha trovato la validazione contando**:
+la tabella andava da 1 a 13 e i racconti erano dodici. Non mancava un
+rovesciamento — mancava il suo racconto, perché stava **solo** nel riepilogo
+del giro E. *Un elenco che esiste per far contare i rovesciamenti non può
+avere un buco: chi lo legge fra sei mesi non sa se ne manca uno o se è un
+numero saltato.* Da qui in avanti ogni riga della tabella ha la sua sezione,
+anche quando il racconto lungo vive altrove.
+
+**Cosa era stato deciso, e quando.** Il **14/08**, con la pianta viva: il
+disegno della sala non si rimpicciolisce mai al punto che il tavolo più
+piccolo (90 cm) scenda sotto **1,05 cm reali** — il bersaglio di tocco del
+progetto. Sotto quella soglia la pianta smette di rimpicciolirsi e la sala
+scorre.
+
+**La ragione di allora.** *Un tavolo che non si riesce a toccare durante un
+servizio non è una pianta, è un disegno.*
+
+**Cosa si decide adesso.** La pianta si disegna al **75%** di quella soglia,
+così entra nello schermo del telefono senza scorrere di lato.
+
+**Perché la ragione di allora non vale più — anzi: il principio vale ancora,
+era sbagliato il numero.** 1,05 cm era **una convenzione presa da fuori**, mai
+confrontata con l'uso di questa app. Misurata con le mani il 18/08: a **~5,3
+mm i quadrati si prendono bene** (*«è proprio tutto perfetto»*). Quindi non era
+un rischio accettato, era un numero sbagliato — ed è il motivo per cui la
+pianta è rimasta più larga dello schermo fino a quel giorno.
+⚠️ **Il prezzo, accettato**: la soglia che GIRA la sala **non** è scesa
+insieme. Erano lo stesso numero, ora sono due — se fosse scesa, un tablet in
+verticale avrebbe smesso di girare la sala e l'avrebbe mostrata sdraiata dove
+le Comande, sullo stesso tablet, la mostrano in piedi.
+
+*Il racconto lungo, con le misure, sta nel [riepilogo del giro E](consegne/20260818_giro_e_la_sala_entra_nel_telefono.md).*
+
+---
+
 ## 5 · 18/08/2026 — «il ritardo prende tutto il tavolo al posto del colore della fascia»
 
 **Cosa era stato deciso, e quando.** Il **18/08/2026**, aprendo il giro D:

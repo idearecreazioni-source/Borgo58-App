@@ -711,7 +711,11 @@ export default function PiantaSala({
           qui si disegna quello che è stato deciso. */}
       {pannello && riquadroPannello && (
         <div
-          className="absolute overflow-auto rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/20 p-3"
+          // ⚠️ TRASPARENTE E SENZA BORDO: il contenuto porta già il suo
+          // riquadro, e due riquadri uno dentro l'altro costavano 24 punti di
+          // altezza su 487 — che è quello che faceva sforare la casella
+          // dell'ora (Alessio, 19/08).
+          className="absolute overflow-auto"
           style={
             verticale
               ? {

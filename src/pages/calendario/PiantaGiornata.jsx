@@ -111,15 +111,21 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
   // ⚠️ E i campi restano SOPRA la soglia toccabile: si allargano le caselle
   // in altezza, non si stringono per farcele stare. Quella soglia è già stata
   // sfondata una volta nel giro E, e a salvarla è stata la sua mano.
+  // ⚠️ SI STRINGE FRA GLI ELEMENTI, MAI DENTRO LE CASELLE (Alessio, 19/08:
+  // *«basta stringere leggermente gli spazi tra una cosa e l'altra e ci
+  // siamo»*). L'altezza dei campi è la soglia toccabile, ed è già stata
+  // sfondata una volta nel giro E: quello che si accorcia è lo spazio fra un
+  // campo e l'altro e sotto le etichette, non i campi.
   const campo = stretto ? `${CAMPO} py-3 text-base` : CAMPO;
+  const etichetta = stretto ? `${ETICHETTA} mb-0.5` : ETICHETTA;
   return (
-    <div className={stretto ? "grid grid-cols-2 gap-2 mb-3" : "grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3"}>
+    <div className={stretto ? "grid grid-cols-2 gap-x-2 gap-y-1 mb-2" : "grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3"}>
       <div className="col-span-2">
-        <label className={ETICHETTA}>Nome</label>
+        <label className={etichetta}>Nome</label>
         <input value={valori.nome} onChange={(e) => cambia({ ...valori, nome: e.target.value })} className={campo} />
       </div>
       <div>
-        <label className={ETICHETTA}>Persone</label>
+        <label className={etichetta}>Persone</label>
         <input
           type="number"
           min="1"
@@ -129,7 +135,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
         />
       </div>
       <div>
-        <label className={ETICHETTA}>Ora</label>
+        <label className={etichetta}>Ora</label>
         <input
           type="time"
           value={valori.ora}
@@ -138,7 +144,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
         />
       </div>
       <div className="col-span-2">
-        <label className={ETICHETTA}>Telefono</label>
+        <label className={etichetta}>Telefono</label>
         <input
           value={valori.telefono}
           onChange={(e) => cambia({ ...valori, telefono: e.target.value })}
@@ -146,7 +152,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
         />
       </div>
       <div className="col-span-2">
-        <label className={ETICHETTA}>Note (allergie, occasione…)</label>
+        <label className={etichetta}>{stretto ? "Note" : "Note (allergie, occasione…)"}</label>
         <input value={valori.note} onChange={(e) => cambia({ ...valori, note: e.target.value })} className={campo} />
       </div>
     </div>
@@ -827,7 +833,11 @@ export default function PiantaGiornata() {
   // divergono al primo ritocco.
   const riquadroTavolo =
     toccato && !modo ? (
-            <div className="mt-3 rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 p-4">
+            <div
+              className={`rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 ${
+                dentroLaPianta ? "p-2" : "mt-3 p-4"
+              }`}
+            >
               <div className="flex items-baseline justify-between gap-3 mb-2">
                 <p className="text-b58-charcoal">
                   {etichetteDelTitolo(toccato ? [toccato] : []).map((t, i) => (
@@ -899,14 +909,19 @@ export default function PiantaGiornata() {
 
   const moduloNuova =
     modo === "nuova" ? (
-            <div ref={moduloRef} className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
+            <div
+              ref={moduloRef}
+              className={`rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 ${
+                dentroLaPianta ? "p-2" : "p-5 mb-5"
+              }`}
+            >
               {/* ⚠️ Qui c'erano due spiegazioni — come si aggiungono i tavoli
                   e perché si è arrivati qui — tolte da Alessio il 18/08
                   insieme alle altre cinque. Le regole restano: il tocco
                   aggiunge e toglie, e il cliente non riceve nessuna email
                   (l'invio parte su un cambio di stato, e qui non ce n'è
                   nessuno — verificato il 14/08, non dedotto). */}
-              <p className="text-b58-charcoal mb-3">
+              <p className={`text-b58-charcoal ${dentroLaPianta ? "mb-2" : "mb-3"}`}>
                 {scelti.length === 0 ? (
                   // Resta possibile solo quando c'è già del lavoro dentro:
                   // senza testo scritto il modulo si chiude da sé.

@@ -182,8 +182,24 @@ export default function Sala() {
   }, []);
 
   // La pianta si carica quando si sa che sera è, non prima.
+  //
+  // ⚠️ `setLetta(false)` PRIMA DI LEGGERE, e la ragione va scritta perché il
+  // difetto oggi **non è vivo**: qui la serata si decide una volta sola,
+  // all'apertura della schermata, e non cambia più (voce dichiarata nel
+  // riepilogo del giro D2). Quindi il caso «serata nuova, lettura fallita,
+  // resta a schermo la sala di prima» non può presentarsi.
+  // Ma il giorno che la serata si aggiornerà da sola alle 5 — che è una voce
+  // aperta — quella trappola sarebbe **armata**, e sarebbe la peggiore delle
+  // due: non una sala vuota, che si nota, ma **la sala di ieri sotto la
+  // serata di oggi**, che è plausibile. Costa una riga chiuderla adesso.
+  //
+  // 🔴 E VALE LA PENA DIRE PERCHÉ ERA RIMASTA APERTA: la cura è nata nella
+  // schermata dove il difetto è stato **visto** (il Calendario, in una
+  // fotografia), non in quella dove morde di più. *Un difetto curato dove lo
+  // si è visto lascia scoperto lo stesso difetto dove nessuno ha guardato.*
   useEffect(() => {
     if (!serata) return;
+    setLetta(false);
     loadBoard().catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serata]);
