@@ -526,6 +526,7 @@ export default function PiantaGiornata() {
             sagome={sagome}
             selezione={scelti}
             stato={stato}
+            gruppi={gruppi}
             onSeleziona={tocca}
             onSposta={
               isTitolare

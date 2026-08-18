@@ -19,7 +19,7 @@ import {
   updateOrderNote,
   voidSentItem,
 } from "../../lib/api/orders";
-import { getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
+import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
@@ -48,6 +48,12 @@ export default function Sala() {
   const { isTitolare } = useAuth();
 
   const [sagome, setSagome] = useState([]);
+  // I tavoloni della serata. Servono al DISEGNO: senza, in Comande tre
+  // tavoli accostati si vedrebbero come tre quadrati e in Calendario come
+  // un tavolone — la stessa sala disegnata in due modi, che è il rilievo
+  // che Alessio aveva già fatto il 17/08. Chi sta con chi lo dice il
+  // database, qui non si ricalcola niente.
+  const [gruppi, setGruppi] = useState([]);
   const [openOrders, setOpenOrders] = useState([]);
   // I tavoli toccati e non ancora aperti: tre sagome accostate fanno UN
   // conto, non tre — è il motivo per cui questa schermata è cambiata.
@@ -97,13 +103,17 @@ export default function Sala() {
   // visitabile: la pianta del Calendario ha il suo selettore di data e
   // resta libera, così alle 00:30 si può comunque preparare domani.
   const loadBoard = () =>
-    Promise.all([getPiantaDelGiorno(serata), listOpenOrders(), getTurniDelGiorno(serata)]).then(
-      ([p, o, t]) => {
-        setSagome(p);
-        setOpenOrders(o);
-        setTurni(t);
-      }
-    );
+    Promise.all([
+      getPiantaDelGiorno(serata),
+      listOpenOrders(),
+      getTurniDelGiorno(serata),
+      getCopertiDelGiorno(serata),
+    ]).then(([p, o, t, g]) => {
+      setSagome(p);
+      setOpenOrders(o);
+      setTurni(t);
+      setGruppi(g);
+    });
 
   useEffect(() => {
     listMenuForOrder().then(setMenu).catch((e) => setError(e.message));
@@ -459,6 +469,7 @@ export default function Sala() {
           <PiantaSala
             inPiedi
             sagome={sagome}
+            gruppi={gruppi}
             selezione={selezione}
             onSeleziona={toccaSagoma}
             stato={Object.fromEntries(
@@ -485,8 +496,9 @@ export default function Sala() {
               La riga c'è perché chi confronta le due schermate deve poter
               capire il perché, invece di sospettare due disposizioni. */}
           <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
-            Sala girata in piedi per il tablet. In Calendario la vedi sdraiata: è lo stesso
-            locale, girato — non un&apos;altra disposizione.
+            Sala girata in piedi per il tablet. In Calendario si gira da sola quando lo schermo è
+            stretto e resta sdraiata quando c&apos;è spazio: è lo stesso locale, girato — non
+            un&apos;altra disposizione.
           </p>
           <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
             <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />

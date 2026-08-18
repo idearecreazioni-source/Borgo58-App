@@ -75,3 +75,187 @@ export function sagomeFuoriGriglia(sagome, griglia = GRIGLIA_CM) {
     .filter((s) => s.larghezza_cm % griglia !== 0 || s.profondita_cm % griglia !== 0)
     .map((s) => `${s.label} (${s.larghezza_cm}×${s.profondita_cm})`);
 }
+
+// =====================================================================
+// IL DISEGNO — quanto grande finisce sullo schermo (18/08/2026, giro E)
+// =====================================================================
+
+/**
+ * Il verso vero di una sagoma.
+ *
+ * ⚠️ DIFETTO TROVATO MISURANDO PER L'AGGANCIO, non leggendo: `ruotato`
+ * era onorato dal **conteggio** (`coperti_del_giorno()` scambia larghezza
+ * e profondità) e **ignorato dal disegno**, che disegnava T1 e T2 sdraiati
+ * 180×90 mentre il database li contava in piedi 90×180. Due tavoli veri
+ * della sala di Alessio, disegnati con un ingombro che il numero non
+ * riconosceva — cioè esattamente il guasto che l'aggancio deve evitare:
+ * *lo schermo dice «attaccati» e il numero dice «separati»*.
+ *
+ * Chi comanda è il database, e non per gerarchia: la decisione del 14/08
+ * dice **«il disegno gira mentre la misura del mobile resta 180×90»**, ed
+ * è quello che fa il conteggio. Quindi si corregge il disegno.
+ *
+ * Da qui in avanti nessuno legge `larghezza_cm` di una sagoma senza
+ * passare da qui.
+ */
+export function misureSagoma(sagoma) {
+  return sagoma?.ruotato
+    ? { larghezza: sagoma.profondita_cm, profondita: sagoma.larghezza_cm }
+    : { larghezza: sagoma.larghezza_cm, profondita: sagoma.profondita_cm };
+}
+
+/**
+ * Quanto si rimpicciolisce il disegno della sala rispetto alla regola dei
+ * tocchi (1,05 cm reali per il tavolo più piccolo).
+ *
+ * ⚠️ È UN ROVESCIAMENTO DICHIARATO, e il numero non è un quarto tondo
+ * scelto a occhio: è **il minimo necessario più un margine misurato**.
+ *
+ *   La pianta in piedi pretende (1030 / 90) × 1,05 = 12,02 cm reali, che
+ *   col righello di fabbrica (37,8 px/cm) fanno **454 punti**. Sul telefono
+ *   di Alessio — iPhone da 390 punti, meno i 16+16 di margine della pagina
+ *   — ne restano **358**. Il minimo esatto sarebbe quindi **0,788**, e non
+ *   va preso: lascia zero margine, e basta un punto di differenza per
+ *   tornare a scorrere di lato. A 0,75 il pavimento è 341 punti.
+ *
+ * ⚠️ E il margine non costa NIENTE sul suo telefono, che è il motivo per
+ * cui si può essere generosi: 341 sta sotto 358, quindi lì comanda la
+ * larghezza del contenitore e la pianta si disegna a 358 punti **con
+ * qualunque fattore sotto 0,788**. Il pavimento morde solo su uno schermo
+ * più stretto — un telefono da 375 punti — e lì il margine è tutto ciò che
+ * separa «entra» da «scorre».
+ */
+export const RIDUZIONE_DISEGNO = 0.75;
+
+/**
+ * Quanto vicino deve arrivare il DITO perché due tavoli si aggancino.
+ *
+ * ⚠️ IN DITO REALE, MAI IN UNITÀ DEL DISEGNO — ed è la trappola che questo
+ * numero esiste per non ripetere: una distanza scritta in centimetri di
+ * sala si accorcerebbe da sola ogni volta che la pianta si rimpicciolisce,
+ * cioè l'aggancio peggiorerebbe proprio nel giro che lo costruisce.
+ *
+ * Un quinto del bersaglio di tocco del progetto (1,05 cm). Sul telefono
+ * di Alessio fa circa 8 punti di schermo di raggio, cioè una ventina di
+ * centimetri di sala.
+ *
+ * ⚠️ IL PREZZO, DICHIARATO: due tavoli **dello stesso formato** che si
+ * guardano da meno di una ventina di centimetri non si possono più
+ * lasciare staccati — il magnete li unisce. In una sala vera è un
+ * passaggio in cui non ci si passa comunque, e la via d'uscita c'è: si
+ * scostano di lato finché la sovrapposizione scende sotto CONTATTO_MINIMO_CM.
+ */
+export const AGGANCIO_DITO_CM = 0.2;
+
+/**
+ * Il raggio del magnete in centimetri di SALA, dedotto da quanto è grande
+ * il disegno adesso.
+ *
+ * @param cmPerPixel  quanti centimetri di sala vale un punto di schermo
+ * @param pxcm        quanti punti di schermo vale un centimetro vero
+ */
+export function raggioAggancioCm(cmPerPixel, pxcm, ditoCm = AGGANCIO_DITO_CM) {
+  if (!(cmPerPixel > 0) || !(pxcm > 0)) return 0;
+  return ditoCm * pxcm * cmPerPixel;
+}
+
+/**
+ * IL MAGNETE. Data una sagoma trascinata in (x, y), la porta a combaciare
+ * col vicino più vicino — se un vicino c'è, se è dello stesso formato, e se
+ * il contatto che ne uscirebbe è un tavolone e non uno spigolo.
+ *
+ * ⚠️ STA QUI, ACCANTO A `TOLLERANZA_CONTATTO_CM` E `CONTATTO_MINIMO_CM`,
+ * e non è una comodità: l'aggancio deve portare i tavoli **davvero dentro
+ * la tolleranza con cui il database li conta accostati**. Se agganciasse a
+ * una distanza che il conteggio non riconosce, lo schermo direbbe
+ * «attaccati» e il numero direbbe «separati» — e il numero è quello con
+ * cui si accettano le prenotazioni. Qui il magnete porta la distanza a
+ * **zero esatto**, che sta dentro qualunque tolleranza non negativa; le
+ * prove lo verificano contro le stesse costanti, non contro una copia.
+ *
+ * Restituisce sempre una posizione: se nessun vicino chiama, è quella di
+ * partenza, con `agganci` vuoto.
+ *
+ * @param sagoma   { id, formato_id, larghezza, profondita }  già nel verso vero
+ * @param vicini   [{ id, formato_id, x, y, larghezza, profondita }]
+ * @param raggioCm il raggio del magnete in centimetri di sala
+ * @param limiti   { larghezza, profondita } della sala: fuori non si va
+ */
+export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti }) {
+  const nulla = { x, y, agganci: [] };
+  if (!(raggioCm > 0) || !sagoma) return nulla;
+
+  const w = sagoma.larghezza;
+  const h = sagoma.profondita;
+  const sovrapposizione = (a1, a2, b1, b2) => Math.min(a2, b2) - Math.max(a1, b1);
+  const dentro = (px, py) =>
+    !limiti ||
+    (px >= 0 && py >= 0 && px + w <= limiti.larghezza && py + h <= limiti.profondita);
+
+  let scelta = null;
+  for (const v of vicini) {
+    if (v.id === sagoma.id) continue;
+    // La regola di Alessio è lo STILE, non la misura: il gestionale non
+    // deve nemmeno OFFRIRE l'accostamento fra formati diversi.
+    if (!v.formato_id || v.formato_id !== sagoma.formato_id) continue;
+
+    const vx2 = v.x + v.larghezza;
+    const vy2 = v.y + v.profondita;
+    // I quattro modi di appoggiarsi a un vicino. Per ciascuno, sull'altro
+    // asse si può PAREGGIARE uno dei due bordi oppure restare dove si è.
+    const lati = [
+      { asse: "x", dove: vx2 },
+      { asse: "x", dove: v.x - w },
+      { asse: "y", dove: vy2 },
+      { asse: "y", dove: v.y - h },
+    ];
+    for (const lato of lati) {
+      const suX = lato.asse === "x";
+      const passo = Math.abs(lato.dove - (suX ? x : y));
+      if (passo > raggioCm) continue;
+      // ⚠️ IL PAREGGIO VIENE PRIMA DEL «RESTA DOVE SEI», e non è una
+      // preferenza estetica: un magnete che unisce lasciando uno scalino
+      // di 10 cm disegna un tavolone che non sembra un tavolone — cioè
+      // disfa con una mano quello che la linea di giunzione fa con
+      // l'altra. E il pareggio aumenta la sovrapposizione, quindi non può
+      // far contare un tavolone che il database non conterebbe.
+      const perpendicolari = suX ? [v.y, vy2 - h, y] : [v.x, vx2 - w, x];
+      for (const perp of perpendicolari) {
+        const px = suX ? lato.dove : perp;
+        const py = suX ? perp : lato.dove;
+        if (Math.abs(perp - (suX ? y : x)) > raggioCm) continue;
+        if (!dentro(px, py)) continue;
+        const tocco = suX
+          ? sovrapposizione(py, py + h, v.y, vy2)
+          : sovrapposizione(px, px + w, v.x, vx2);
+        if (tocco < CONTATTO_MINIMO_CM) continue;
+        if (!scelta || passo < scelta.passo) scelta = { x: px, y: py, passo };
+        // L'elenco delle perpendicolari è già in ordine di preferenza:
+        // il primo che passa è il migliore per questo lato.
+        break;
+      }
+    }
+  }
+
+  if (!scelta) return nulla;
+  // Chi altro finisce attaccato con questa posizione: un tavolo infilato
+  // fra due ne tocca due, e l'avviso a schermo deve dirlo.
+  const agganci = vicini
+    .filter((v) => v.id !== sagoma.id && v.formato_id === sagoma.formato_id)
+    .filter((v) => {
+      const vx2 = v.x + v.larghezza;
+      const vy2 = v.y + v.profondita;
+      const perX =
+        (Math.abs(scelta.x + w - v.x) <= TOLLERANZA_CONTATTO_CM ||
+          Math.abs(vx2 - scelta.x) <= TOLLERANZA_CONTATTO_CM) &&
+        sovrapposizione(scelta.y, scelta.y + h, v.y, vy2) >= CONTATTO_MINIMO_CM;
+      const perY =
+        (Math.abs(scelta.y + h - v.y) <= TOLLERANZA_CONTATTO_CM ||
+          Math.abs(vy2 - scelta.y) <= TOLLERANZA_CONTATTO_CM) &&
+        sovrapposizione(scelta.x, scelta.x + w, v.x, vx2) >= CONTATTO_MINIMO_CM;
+      return perX || perY;
+    })
+    .map((v) => v.id);
+
+  return { x: scelta.x, y: scelta.y, agganci };
+}

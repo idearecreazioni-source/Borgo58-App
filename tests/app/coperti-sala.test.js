@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { credenziali } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
-import { GRIGLIA_CM, sagomeFuoriGriglia } from "../../src/lib/calcoli/sala";
+import { GRIGLIA_CM, misureSagoma, sagomeFuoriGriglia } from "../../src/lib/calcoli/sala";
 import {
   getCopertiDelGiorno,
+  getPiantaDelGiorno,
   getPostoPerLaSerata,
   rimuoviCorrezioneCoperti,
   salvaCorrezioneCoperti,
@@ -45,13 +46,13 @@ let baseL = 0;
 
 // Mette i tavoli dove diciamo noi, solo per quel giorno. Scrive lo
 // scostamento, mai la pianta base: la sala di Alessio non si tocca.
-async function metti(posizioni) {
+async function metti(posizioni, ruotato = false) {
   const righe = posizioni.map(([id, x, y]) => ({
     data: GIORNO,
     dining_table_id: id,
     x,
     y,
-    ruotato: false,
+    ruotato,
     aggiornato_il: new Date().toISOString(),
   }));
   const { error } = await titolare
@@ -117,6 +118,55 @@ afterAll(async () => {
   if (!titolare) return;
   await pulisci();
   await titolare.auth.signOut({ scope: "local" });
+});
+
+// ⚠️ IL VERSO DEL TAVOLO — trovato il 18/08 misurando per il magnete.
+// Il conteggio onora `ruotato` (scambia larghezza e profondità), il
+// disegno lo ignorava: T1 e T2, due tavoli veri della sala di Alessio,
+// erano disegnati sdraiati 180×90 e contati in piedi 90×180.
+//
+// ⚠️ Queste due prove sono discriminanti SOLO INSIEME, ed è tutto il
+// punto: la prima mette due tavoli girati in una posizione dove si
+// toccano **solo se il verso conta**, la seconda in una dove si
+// toccherebbero **solo se il verso NON contasse**. Una sola delle due
+// passerebbe anche con la convenzione rovesciata.
+describe("Il verso del tavolo, fra disegno e conteggio", () => {
+  it("due tavoli girati si toccano dove il verso li fa toccare", async () => {
+    // Girati, un 180×90 ingombra 90 di larghezza e 180 di profondità.
+    // Appoggiati fianco a fianco: 100→190 e 190→280.
+    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 190, 100]], true);
+    const gruppi = await getCopertiDelGiorno(GIORNO);
+    const g = gruppoDi(gruppi, lunghi[0].id);
+    expect(g.tavoli).toHaveLength(2);
+    expect(g.coperti).toBe(baseL * 2 - 2);
+  });
+
+  it("e NON si toccano dove li farebbe toccare il verso sbagliato", async () => {
+    // A 280 il secondo tocca il primo solo leggendolo sdraiato (100→280).
+    // Girati sono lontani 90 cm, cioè due tavoli distinti.
+    await metti([[lunghi[0].id, 100, 100], [lunghi[1].id, 280, 100]], true);
+    const gruppi = await getCopertiDelGiorno(GIORNO);
+    expect(gruppoDi(gruppi, lunghi[0].id).tavoli).toHaveLength(1);
+    expect(gruppoDi(gruppi, lunghi[1].id).tavoli).toHaveLength(1);
+  });
+
+  it("e il disegno riceve dal database lo stesso verso e lo stesso formato", async () => {
+    // ⚠️ Senza il formato nella pianta, il magnete del giro E
+    // attaccherebbe un 90 a un 180: lo schermo direbbe «attaccati» e il
+    // numero direbbe «separati».
+    await metti([[lunghi[0].id, 100, 100]], true);
+    const pianta = await getPiantaDelGiorno(GIORNO);
+    const t = pianta.find((s) => s.id === lunghi[0].id);
+    expect(t.ruotato).toBe(true);
+    expect(t.formato_id).toBe(lunghi[0].formato_id);
+    // La misura che il disegno userà è quella girata — la stessa che il
+    // conteggio ha appena usato per decidere chi tocca chi.
+    expect(misureSagoma(t)).toEqual({ larghezza: 90, profondita: 180 });
+    // E ogni tavolo della sala vera porta il suo formato: un buco qui
+    // lascerebbe il magnete cieco proprio su quel tavolo.
+    const tavoli = pianta.filter((s) => s.tipo === "tavolo");
+    expect(tavoli.every((s) => s.formato_id)).toBe(true);
+  });
 });
 
 describe("I coperti dentro il tavolo", () => {

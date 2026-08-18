@@ -4,7 +4,13 @@ import {
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
 } from "../lib/api/sala";
-import { GRIGLIA_CM } from "../lib/calcoli/sala";
+import {
+  GRIGLIA_CM,
+  RIDUZIONE_DISEGNO,
+  agganciaAiVicini,
+  misureSagoma,
+  raggioAggancioCm,
+} from "../lib/calcoli/sala";
 
 // LA PIANTA DELLA SALA — la stessa in Calendario e in Comande.
 //
@@ -26,7 +32,27 @@ import { GRIGLIA_CM } from "../lib/calcoli/sala";
 // in orizzontale — che è quello che fa una pianta di sala su un foglio
 // piccolo. Non si rimpicciolisce sotto quella soglia: un tavolo che non
 // si riesce a toccare durante un servizio non è una pianta, è un disegno.
-const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
+// ⚠️ ROVESCIAMENTO DICHIARATO (18/08, giro E). Il fattore RIDUZIONE_DISEGNO
+// abbassa questa soglia: il tavolo piu' piccolo non misura piu' 1,05 cm
+// reali ma poco piu' di tre quarti. La ragione di allora non era sbagliata
+// nel principio — un bersaglio troppo piccolo non si prende — ma 1,05 era
+// una convenzione presa da fuori, non una misura su questa app: Alessio
+// oggi trascina i tavoli col dito a 6,6 mm senza inciampare. Il perche' del
+// numero, e il prezzo che accettiamo, stanno in lib/calcoli/sala.js.
+const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
+
+// ⚠️ E DA QUI IN POI SONO DUE NUMERI DIVERSI, che prima erano lo stesso.
+// «Quanto piccolo può diventare il disegno» e «quando la sala sta male
+// sdraiata» sono due domande, e la riduzione del giro E le separa: se la
+// soglia si rimpicciolisse insieme al disegno, un tablet in verticale
+// (768 punti) smetterebbe di girare la sala e mostrerebbe una pianta
+// sdraiata dove le Comande, sullo STESSO tablet, la mostrano in piedi —
+// cioè si allargherebbe la differenza fra le due schermate proprio nel
+// giro che la deve chiudere.
+// Quindi il verso si decide con la misura di PRIMA: nessuno schermo
+// cambia orientamento per via di questo giro, cambia solo quanto è grande
+// il disegno.
+const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
 
 // ⚠️ LA SALA IN PIEDI, per il tablet della sala (chiesto da Alessio il
 // 14/08 dopo aver aperto il primo tavolo dal vivo: la pianta sbordava di
@@ -43,7 +69,7 @@ const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
 // quarto in senso contrario, altrimenti si leggerebbe di traverso — e un
 // nome di tavolo che si legge piegando la testa, durante un servizio,
 // non si legge.
-const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05;
+const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
 
 // L'aggancio a griglia: 10 cm. Abbastanza fine da accostare due tavoli
 // senza fatica, abbastanza grosso da non lasciare fessure di 3 cm che a
@@ -82,7 +108,19 @@ const COLORI = {
   fisso: { riempimento: "var(--color-b58-cream-dark)", bordo: "var(--color-b58-charcoal-soft)" },
 };
 
+// ⚠️ IL SEGNO CHE IL MAGNETE HA PRESO, e deve vedersi MENTRE si trascina,
+// non dopo aver lasciato. Un aggancio che si scopre solo al rilascio non
+// e' un aggancio: e' una sorpresa, e la volta dopo si trascina piano per
+// paura. Il colore e' quello con cui la sala dice «questo e' pieno»: lo
+// stesso che avra' il tavolone appena esiste.
+const COLORE_AGGANCIO = "var(--color-b58-olive-dark)";
+
 const aggancia = (v) => Math.round(v / GRIGLIA_CM) * GRIGLIA_CM;
+// Quanti punti di schermo vale un centimetro vero su QUESTO dispositivo.
+// Sta qui perche' lo leggono in due: la soglia che gira la sala e il
+// raggio del magnete, che e' scritto in dito reale.
+const leggiPxCm = () =>
+  parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm")) || 37.79528;
 const limita = (v, min, max) => Math.min(max, Math.max(min, v));
 
 /**
@@ -90,6 +128,11 @@ const limita = (v, min, max) => Math.min(max, Math.max(min, v));
  * @param selezione   array di id selezionati
  * @param onSeleziona (sagoma) => void — assente: le sagome non si toccano
  * @param onSposta    (sagoma, x, y) => void — assente: niente trascinamento
+ * @param gruppi      i tavoloni della giornata come li conta il DATABASE
+ *                    ([{ tavoli: [id] }]). Non si ricalcolano qui: chi
+ *                    e' accostato lo decide `coperti_del_giorno()`, e una
+ *                    seconda regola in JavaScript finirebbe per disegnare
+ *                    un tavolone dove il numero non ne vede nessuno.
  * @param stato       { [id]: { colore, coperti, corretto } } — il colore,
  *                    e dal 18/08 la sola CIFRA dei coperti col punto che
  *                    segna «corretto a mano». Niente altro: dentro una
@@ -101,6 +144,7 @@ export default function PiantaSala({
   onSeleziona,
   onSposta,
   stato = {},
+  gruppi = [],
   inPiedi = "auto",
 }) {
   const svgRef = useRef(null);
@@ -125,9 +169,7 @@ export default function PiantaSala({
       // questa riga, al primo istante la pianta risulterebbe "stretta" e
       // si vedrebbe girare sotto gli occhi a ogni apertura della pagina.
       if (!el.clientWidth) return;
-      const pxcm =
-        parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm")) || 37.79528;
-      setStretto(el.clientWidth / pxcm < LARGHEZZA_MINIMA_CM_REALI);
+      setStretto(el.clientWidth / leggiPxCm() < SOGLIA_IN_PIEDI_CM_REALI);
     };
     misura();
     const osservatore = new ResizeObserver(misura);
@@ -144,6 +186,39 @@ export default function PiantaSala({
   const [trascina, setTrascina] = useState(null);
 
   const selezionati = new Set(selezione);
+
+  // I TAVOLONI DA DISEGNARE COME UNO. Chi sta con chi arriva dal database
+  // (`gruppi`), mai da un secondo calcolo qui dentro. Qui si decide solo
+  // se quel gruppo si puo' DISEGNARE come un rettangolo unico.
+  //
+  // ⚠️ IL LIMITE, DICHIARATO: si disegna il riquadro solo quando i pezzi
+  // riempiono esattamente il loro ingombro — cioe' quando il tavolone e'
+  // una fila o un blocco pieno. Tre tavoli a L formano un gruppo vero ma
+  // il loro ingombro comprende un angolo vuoto, e un perimetro tirato li'
+  // attorno disegnerebbe un tavolo dove non c'e' niente. In quel caso i
+  // pezzi restano col loro bordo pieno: meno bello, mai falso.
+  const perId = new Map(sagome.map((s) => [s.id, s]));
+  const tavoloni = (gruppi ?? [])
+    .map((g) => {
+      const ids = g?.tavoli ?? [];
+      if (ids.length < 2) return null;
+      // Mentre un pezzo e' in mano il tavolone non esiste ancora: la sua
+      // posizione sta cambiando, e un riquadro fermo attorno a una sagoma
+      // che si muove sarebbe una bugia disegnata.
+      if (trascina && ids.includes(trascina.id)) return null;
+      const pezzi = ids.map((id) => perId.get(id)).filter(Boolean);
+      if (pezzi.length !== ids.length) return null;
+      const scatole = pezzi.map((s) => ({ s, m: misureSagoma(s) }));
+      const x1 = Math.min(...scatole.map((p) => p.s.x));
+      const y1 = Math.min(...scatole.map((p) => p.s.y));
+      const x2 = Math.max(...scatole.map((p) => p.s.x + p.m.larghezza));
+      const y2 = Math.max(...scatole.map((p) => p.s.y + p.m.profondita));
+      const pieno = scatole.reduce((t, p) => t + p.m.larghezza * p.m.profondita, 0);
+      if (pieno !== (x2 - x1) * (y2 - y1)) return null;
+      return { chiave: ids.join("+"), ids, x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 };
+    })
+    .filter(Boolean);
+  const dentroUnTavolone = new Set(tavoloni.flatMap((t) => t.ids));
 
   // Da pixel dello schermo a centimetri della sala. Con la sala in piedi
   // gli assi si scambiano: chi trascina muove il dito verso il basso e il
@@ -182,9 +257,37 @@ export default function PiantaSala({
     const punto = inCentimetri(evento);
     const sagoma = sagome.find((s) => s.id === trascina.id);
     if (!sagoma) return;
-    const x = limita(aggancia(punto.x - trascina.dx), 0, SALA_LARGHEZZA_CM - sagoma.larghezza_cm);
-    const y = limita(aggancia(punto.y - trascina.dy), 0, SALA_PROFONDITA_CM - sagoma.profondita_cm);
-    setTrascina((t) => (t ? { ...t, x, y, mosso: t.mosso || x !== sagoma.x || y !== sagoma.y } : t));
+    const mia = misureSagoma(sagoma);
+    const limiti = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+    let x = limita(aggancia(punto.x - trascina.dx), 0, SALA_LARGHEZZA_CM - mia.larghezza);
+    let y = limita(aggancia(punto.y - trascina.dy), 0, SALA_PROFONDITA_CM - mia.profondita);
+
+    // ⚠️ IL MAGNETE, e il suo raggio si misura in DITO. Il riquadro dice
+    // quanti punti di schermo occupa la pianta adesso, quindi quanti
+    // centimetri di sala vale un punto: cosi' il magnete resta grande
+    // uguale sotto il dito anche quando la pianta si rimpicciolisce —
+    // che e' esattamente cio' che il giro E fa al disegno.
+    const riquadro = svgRef.current?.getBoundingClientRect();
+    const cmPerPunto = riquadro?.width
+      ? (verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / riquadro.width
+      : 0;
+    const preso = agganciaAiVicini({
+      sagoma: { id: sagoma.id, formato_id: sagoma.formato_id, ...mia },
+      vicini: sagome
+        .filter((v) => v.id !== sagoma.id && v.tipo === "tavolo")
+        .map((v) => ({ id: v.id, formato_id: v.formato_id, x: v.x, y: v.y, ...misureSagoma(v) })),
+      x,
+      y,
+      raggioCm: raggioAggancioCm(cmPerPunto, leggiPxCm()),
+      limiti,
+    });
+    x = preso.x;
+    y = preso.y;
+    setTrascina((t) =>
+      t
+        ? { ...t, x, y, agganci: preso.agganci, mosso: t.mosso || x !== sagoma.x || y !== sagoma.y }
+        : t
+    );
   };
 
   const rilascia = (sagoma) => {
@@ -301,6 +404,13 @@ export default function PiantaSala({
           const colore = coloreDi(sagoma);
           const info = stato[sagoma.id];
           const tondo = sagoma.forma === "tondo";
+          // ⚠️ IL VERSO. Fino al 18/08 il disegno ignorava `ruotato`
+          // mentre il conteggio lo onorava: T1 e T2 — due tavoli veri
+          // della sala — erano disegnati sdraiati 180×90 e contati in
+          // piedi 90×180. Da qui in avanti nessuno legge `larghezza_cm`
+          // senza passare da `misureSagoma()`.
+          const misure = misureSagoma(sagoma);
+          const inGruppo = dentroUnTavolone.has(sagoma.id);
           const selezionabile = Boolean(onSeleziona || (onSposta && sagoma.spostabile));
 
           // ⚠️ Con la sala in piedi, un'etichetta raddrizzata ha a
@@ -335,7 +445,7 @@ export default function PiantaSala({
           const posti =
             coperti != null
               ? `${coperti}${info?.corretto ? " ·" : ""}`
-              : sagoma.posti_fissi && sagoma.profondita_cm >= 110
+              : sagoma.posti_fissi && misure.profondita >= 110
                 ? `${sagoma.posti_fissi} posti`
                 : null;
           const serve = Math.max(largo(sagoma.label, 36), largo(posti, 26));
@@ -344,9 +454,9 @@ export default function PiantaSala({
           // "Chef Table" su un bancone profondo 70 cm sborderebbe sui
           // vicini. Si raddrizza solo ciò che ci sta; il resto corre lungo
           // il lato lungo, come le piante di sala scrivono da sempre.
-          const raddrizza = verticale && serve <= sagoma.profondita_cm * 0.95;
-          const cx = sagoma.larghezza_cm / 2;
-          const cy = sagoma.profondita_cm / 2;
+          const raddrizza = verticale && serve <= misure.profondita * 0.95;
+          const cx = misure.larghezza / 2;
+          const cy = misure.profondita / 2;
           const chiaro = selezionati.has(sagoma.id) || Boolean(info?.colore);
 
           return (
@@ -367,13 +477,21 @@ export default function PiantaSala({
                 if (!sagoma.spostabile || !onSposta) onSeleziona?.(sagoma);
               }}
             >
+              {/* ⚠️ LA LINEA DI GIUNZIONE (4-bis del mandato). Dentro un
+                  tavolone i lati NON spariscono: si assottigliano. Un
+                  rettangolo unico direbbe «questo è un tavolone» e
+                  perderebbe «è fatto di tre» — che serve quando lo si
+                  smonta, e serve alla correzione a mano, che ha per chiave
+                  proprio l'insieme dei tavoli. Il perimetro forte del
+                  tavolone lo ridisegna il riquadro del gruppo. */}
               <rect
-                width={sagoma.larghezza_cm}
-                height={sagoma.profondita_cm}
-                rx={tondo ? Math.min(sagoma.larghezza_cm, sagoma.profondita_cm) / 2 : 12}
+                width={misure.larghezza}
+                height={misure.profondita}
+                rx={tondo ? Math.min(misure.larghezza, misure.profondita) / 2 : 12}
                 fill={colore.riempimento}
-                stroke={colore.bordo}
-                strokeWidth={inMano ? 10 : 5}
+                stroke={inMano && trascina?.agganci?.length ? COLORE_AGGANCIO : colore.bordo}
+                strokeWidth={inMano ? 10 : inGruppo ? 1.5 : 5}
+                strokeOpacity={!inMano && inGruppo ? 0.3 : 1}
                 opacity={inMano ? 0.85 : 1}
               />
               {/* ⚠️ UN SOLO gruppo per tutte le scritte della sagoma, e non
@@ -417,6 +535,63 @@ export default function PiantaSala({
             </g>
           );
         })}
+
+        {/* IL PERIMETRO DEL TAVOLONE — disegnato DOPO le sagome, quindi
+            sopra le loro linee sottili. Non intercetta il dito: si tocca
+            sempre il tavolo che c'è sotto, perché è il singolo tavolo che
+            si sposta e si smonta, non il gruppo. */}
+        {tavoloni.map((t) => {
+          const scelto = t.ids.some((id) => selezionati.has(id));
+          const primo = perId.get(t.ids[0]);
+          const colore = scelto ? COLORI.selezionato : coloreDi(primo);
+          return (
+            <rect
+              key={`tavolone-${t.chiave}`}
+              x={t.x}
+              y={t.y}
+              width={t.larghezza}
+              height={t.profondita}
+              rx={12}
+              fill="none"
+              stroke={colore.bordo}
+              strokeWidth={5}
+              pointerEvents="none"
+            />
+          );
+        })}
+
+        {/* ⚠️ «STA PER PRENDERE» — il segno del magnete mentre il dito è
+            ancora giù. Racconta la stessa cosa del perimetro qui sopra, un
+            attimo prima che sia vera: questi tavoli stanno per diventarne
+            uno. Tratteggiato apposta — è una promessa, non un fatto. */}
+        {trascina?.agganci?.length > 0 && (() => {
+          const mia = misureSagoma(sagome.find((s) => s.id === trascina.id));
+          const pezzi = [
+            { x: trascina.x, y: trascina.y, m: mia },
+            ...trascina.agganci
+              .map((id) => perId.get(id))
+              .filter(Boolean)
+              .map((s) => ({ x: s.x, y: s.y, m: misureSagoma(s) })),
+          ];
+          const x1 = Math.min(...pezzi.map((p) => p.x));
+          const y1 = Math.min(...pezzi.map((p) => p.y));
+          const x2 = Math.max(...pezzi.map((p) => p.x + p.m.larghezza));
+          const y2 = Math.max(...pezzi.map((p) => p.y + p.m.profondita));
+          return (
+            <rect
+              x={x1 - 10}
+              y={y1 - 10}
+              width={x2 - x1 + 20}
+              height={y2 - y1 + 20}
+              rx={16}
+              fill="none"
+              stroke={COLORE_AGGANCIO}
+              strokeWidth={8}
+              strokeDasharray="30 18"
+              pointerEvents="none"
+            />
+          );
+        })()}
         </g>
       </svg>
     </div>
