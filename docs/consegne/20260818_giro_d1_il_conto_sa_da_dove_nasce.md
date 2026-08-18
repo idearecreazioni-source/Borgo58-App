@@ -27,16 +27,23 @@
    su T8** — e c'è già **un conto aperto su T5**. Il prossimo conto che
    Alessio apre su T3 o su T8 nasce agganciato, ed è la prima volta che si
    vede.
-2. 🔴 **La controprova sulla regola della fascia NON è stata eseguita**, ed è
-   il buco più importante di questa consegna: è proprio il punto in cui il
-   legame può attaccare lo scontrino al cliente sbagliato. Volevo rompere la
-   regola nel database (farle scegliere «la prima che trovi») e il giro
-   attraverso `psql` si è rotto sugli accenti dei commenti della funzione.
-   Quindi lì la discriminazione è **ragionata, non misurata**: le due
-   prenotazioni della prova stanno a cavallo dell'istante in cui gira, quindi
-   un'implementazione che ordinasse per orario prenderebbe quella sbagliata.
-   **Da rifare prima di chiudere il giro D**, con un metodo che regga gli
-   accenti.
+2. ✅ **ERA IL BUCO PIÙ IMPORTANTE DI QUESTA CONSEGNA, ed è chiuso** — la voce
+   resta con la sua risposta invece di sparire. La controprova sulla regola
+   della fascia **non era stata eseguita**: il giro attraverso `psql -c` si
+   rompeva sugli accenti dei commenti della funzione, quindi lì la
+   discriminazione era **ragionata e non misurata** — proprio nel punto in cui
+   il legame può attaccare lo scontrino al cliente sbagliato.
+   **Rifatta e riuscita**: la regola è stata riscritta in un file UTF-8 e
+   applicata al progetto di prova con `psql -f` invece che passandola come
+   argomento (è la strada che regge gli accenti già oggi per 137 file), con la
+   scelta cambiata in «la prima per orario». **È diventata rossa la prova
+   giusta** — *«con DUE turni sceglie quello dell'ora più vicina, non il
+   primo»*. Poi la regola è stata rimessa a posto riapplicando la migrazione, e
+   le quattro prove sono tornate verdi.
+   ⚠️ Una seconda prova è caduta insieme, ed è un **effetto e non un secondo
+   segnale**: fallendo, la terza non arriva alla propria pulizia e lascia un
+   conto aperto su quel tavolo, quindi la quarta viene respinta da
+   `apri_conto`. Va detto, o chi rilegge conta due difetti dove ce n'è uno.
 3. **Nessuna mano ha toccato il giro C.**
 4. **La mezzanotte in servizio non è mai capitata dal vivo.**
 5. **La domenica a pranzo non ha prenotazioni vere.**
