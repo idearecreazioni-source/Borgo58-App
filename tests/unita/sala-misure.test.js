@@ -3,6 +3,8 @@ import {
   CONTATTO_MINIMO_CM,
   GRIGLIA_CM,
   TOLLERANZA_CONTATTO_CM,
+  pannelloNellaPianta,
+  riquadroDelPannello,
   sagomeFuoriGriglia,
   tolleranzaCoerenteCollaGriglia,
 } from "../../src/lib/calcoli/sala";
@@ -246,5 +248,77 @@ describe("La riduzione del disegno", () => {
 
   it("senza riduzione non ci entrava — che è il difetto che chiude", () => {
     expect(pavimentoInPiedi(1)).toBeGreaterThan(358);
+  });
+});
+
+describe("Il pannello dentro la pianta", () => {
+  // Le zone come le disegna il fondale vero: due di servizio in alto che
+  // formano un rettangolo, più il resto della sala.
+  const ZONE = [
+    { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
+    { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
+    { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
+    { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
+  ];
+  const tavolo = (x, y) => ({ id: `t${x}-${y}`, x, y, larghezza_cm: 90, profondita_cm: 90 });
+
+  it("le due zone di servizio in alto formano il riquadro del pannello", () => {
+    expect(riquadroDelPannello(ZONE)).toEqual({ x: 0, y: 0, larghezza: 1400, profondita: 515 });
+  });
+
+  it("se una zona viene RINOMINATA il pannello non si disegna — non si sposta a caso", () => {
+    // ⚠️ La gemella al contrario: il fallimento è «niente pannello», mai «un
+    // pannello nel posto sbagliato». Si perde una comodità, non si disegna
+    // una cosa sopra il pavimento della sala.
+    const rinominate = ZONE.map((z) => (z.nome === "Cucina" ? { ...z, nome: "Cucina nuova" } : z));
+    expect(riquadroDelPannello(rinominate)).toBeNull();
+  });
+
+  it("e se le zone NON riempiono il loro ingombro, nemmeno", () => {
+    // Due zone a L lasciano un angolo scoperto: un pannello tirato sul loro
+    // ingombro ci finirebbe sopra. Stessa regola del tavolone che si disegna
+    // come rettangolo unico solo se i pezzi lo riempiono.
+    const aL = ZONE.map((z) => (z.nome === "Cucina" ? { ...z, profondita: 300 } : z));
+    expect(riquadroDelPannello(aL)).toBeNull();
+  });
+
+  it("col posto sgombro il pannello ci va", () => {
+    expect(pannelloNellaPianta(ZONE, [tavolo(1600, 100), tavolo(300, 800)])).toEqual({
+      x: 0,
+      y: 0,
+      larghezza: 1400,
+      profondita: 515,
+    });
+  });
+
+  it("con un tavolo sopra la cucina NON ci va — ed è la cura del costo dichiarato", () => {
+    // ⚠️ Il costo misurato era: un tavolo finito sotto il pannello non si
+    // potrebbe più afferrare. Invece di scriverlo a schermo e lasciarlo
+    // succedere, il conflitto non si fa esistere: il pannello esce dalla
+    // pianta e torna sotto. Quello spazio è vuoto sul disegno, non vietato.
+    expect(pannelloNellaPianta(ZONE, [tavolo(600, 200)])).toBeNull();
+  });
+
+  it("un tavolo che lo sfiora appena basta a farlo uscire", () => {
+    // Il bordo conta: 1400 è il primo centimetro fuori, 1390 è dentro.
+    expect(pannelloNellaPianta(ZONE, [tavolo(1400, 100)])).not.toBeNull();
+    expect(pannelloNellaPianta(ZONE, [tavolo(1390, 100)])).toBeNull();
+  });
+
+  it("su QUESTO fondale basta la posizione — e la prova lo dichiara", () => {
+    // 🔴 QUI C'ERA UNA PROVA CHE NON DISCRIMINAVA, e se n'è accorta la
+    // rottura fatta apposta, non la rilettura: guardando le misure sulla
+    // carta invece del verso vero, **nessuna prova diventava rossa**.
+    // La ragione è che l'area del pannello parte dall'angolo (0,0): una
+    // sagoma la tocca se e solo se il suo spigolo in alto a sinistra cade
+    // dentro, e **quanto è grande non conta**. Il verso della sagoma è
+    // guardato lo stesso — è giusto in generale, e il fondale può cambiare —
+    // ma su questo fondale non decide niente, e una prova che finge di
+    // provarlo è peggio di nessuna prova.
+    const lungo = { id: "L", larghezza_cm: 180, profondita_cm: 90 };
+    for (const ruotato of [false, true]) {
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }])).toBeNull();
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }])).not.toBeNull();
+    }
   });
 });

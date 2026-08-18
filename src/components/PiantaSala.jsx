@@ -161,6 +161,8 @@ export default function PiantaSala({
   onSposta,
   stato = {},
   gruppi = [],
+  pannello,
+  riquadroPannello,
   inPiedi = "auto",
 }) {
   const svgRef = useRef(null);
@@ -337,6 +339,16 @@ export default function PiantaSala({
       ref={contenitoreRef}
       className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
     >
+      {/* ⚠️ IL RIQUADRO CHE TIENE INSIEME DISEGNO E PANNELLO. La larghezza
+          minima si è spostata qui dallo SVG: il pannello si posiziona in
+          percentuale del DISEGNO, non del contenitore, e quando la pianta è
+          più larga dello schermo le due cose non coincidono. */}
+      <div
+        className="relative"
+        style={{
+          minWidth: `calc(${(verticale ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
+        }}
+      >
       <svg
         ref={svgRef}
         viewBox={
@@ -346,7 +358,10 @@ export default function PiantaSala({
         }
         className="block w-full select-none"
         style={{
-          minWidth: `calc(${(verticale ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
+          // La larghezza minima si è spostata sul riquadro che contiene
+          // questo disegno: il pannello si posiziona in percentuale del
+          // DISEGNO, e quando la pianta è più larga dello schermo il
+          // contenitore e il disegno non coincidono.
           aspectRatio: verticale
             ? `${SALA_PROFONDITA_CM} / ${SALA_LARGHEZZA_CM}`
             : `${SALA_LARGHEZZA_CM} / ${SALA_PROFONDITA_CM}`,
@@ -649,6 +664,45 @@ export default function PiantaSala({
         })()}
         </g>
       </svg>
+
+      {/* IL PANNELLO DENTRO LA PIANTA (19/08, idea di Alessio). Sta nello
+          spazio di cucina e servizi, che sul disegno è vuoto: così il modulo
+          della prenotazione non spinge più la pianta in basso e non obbliga a
+          scorrere per prendere una prenotazione — il gesto più frequente di
+          questa schermata.
+          ⚠️ In percentuale del DISEGNO, e le percentuali si girano insieme a
+          lui: con la sala in piedi quell'area finisce in basso a sinistra.
+          ⚠️ E ci arriva SOLO se là dentro non c'è nessun tavolo. La decisione
+          la prende chi chiama (`pannelloNellaPianta` in lib/calcoli/sala.js);
+          qui si disegna quello che è stato deciso. */}
+      {pannello && riquadroPannello && (
+        <div
+          className="absolute overflow-auto rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/20 p-3"
+          style={
+            verticale
+              ? {
+                  left: `${(riquadroPannello.y / SALA_PROFONDITA_CM) * 100}%`,
+                  top: `${((SALA_LARGHEZZA_CM - riquadroPannello.x - riquadroPannello.larghezza) / SALA_LARGHEZZA_CM) * 100}%`,
+                  width: `${(riquadroPannello.profondita / SALA_PROFONDITA_CM) * 100}%`,
+                  height: `${(riquadroPannello.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                }
+              : {
+                  left: `${(riquadroPannello.x / SALA_LARGHEZZA_CM) * 100}%`,
+                  top: `${(riquadroPannello.y / SALA_PROFONDITA_CM) * 100}%`,
+                  width: `${(riquadroPannello.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                  height: `${(riquadroPannello.profondita / SALA_PROFONDITA_CM) * 100}%`,
+                }
+          }
+          /* ⚠️ LA TASTIERA DELL'IPHONE copre metà schermo, e questo pannello
+             sta in fondo alla pianta: senza questa riga il campo su cui si
+             sta scrivendo finirebbe sotto la tastiera. Si chiede la distanza
+             MINIMA, così dove la tastiera non c'è non si muove niente. */
+          onFocus={(e) => e.target?.scrollIntoView?.({ block: "nearest" })}
+        >
+          {pannello}
+        </div>
+      )}
+      </div>
     </div>
   );
 }

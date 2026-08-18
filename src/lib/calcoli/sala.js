@@ -259,3 +259,75 @@ export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti }
 
   return { x: scelta.x, y: scelta.y, agganci };
 }
+
+// =====================================================================
+// LO SPAZIO VUOTO DENTRO LA PIANTA (19/08/2026, idea di Alessio)
+// =====================================================================
+//
+// *«Potremmo sfruttare lo spazio utilizzato dentro la pianta per cucina e
+// servizi inutilmente per far comparire le info sui tavoli.»* Risolve alla
+// radice il problema rincorso per tutto il giro D3: il modulo che spinge la
+// pianta in basso e obbliga a scorrere per prendere una prenotazione.
+//
+// ⚠️ QUALI ZONE SONO UNA SCELTA, LA GEOMETRIA NO. Le due zone sono nominate
+// qui perché è una decisione — sono quelle in cui non c'è mai niente da
+// guardare — mentre **dove stanno e quanto sono grandi lo dice il fondale**:
+// se un giorno la cucina cambia misura, il pannello la segue. Se una delle
+// due venisse rinominata, `riquadroDelPannello` restituisce null e il modulo
+// torna sotto la pianta: si perde una comodità, non si disegna un pannello
+// nel posto sbagliato.
+export const ZONE_DEL_PANNELLO = ["Servizi", "Cucina"];
+
+/** Il rettangolo che le zone scelte formano, o null se non lo formano. */
+export function riquadroDelPannello(zone = []) {
+  const scelte = zone.filter((z) => ZONE_DEL_PANNELLO.includes(z.nome));
+  if (scelte.length !== ZONE_DEL_PANNELLO.length) return null;
+  const x = Math.min(...scelte.map((z) => z.x));
+  const y = Math.min(...scelte.map((z) => z.y));
+  const x2 = Math.max(...scelte.map((z) => z.x + z.larghezza));
+  const y2 = Math.max(...scelte.map((z) => z.y + z.profondita));
+  // ⚠️ Solo se riempiono davvero il loro ingombro: due zone a L lascerebbero
+  // un angolo scoperto, e il pannello ci finirebbe sopra il pavimento della
+  // sala. Stessa regola con cui si decide se un tavolone si può disegnare
+  // come un rettangolo unico.
+  const piene = scelte.reduce((t, z) => t + z.larghezza * z.profondita, 0);
+  if (piene !== (x2 - x) * (y2 - y)) return null;
+  return { x, y, larghezza: x2 - x, profondita: y2 - y };
+}
+
+/**
+ * Il pannello può stare DENTRO la pianta? Solo se là dentro non c'è nessun
+ * tavolo.
+ *
+ * ⚠️ È LA RISPOSTA AL COSTO CHE ERA STATO DICHIARATO, e non una dichiarazione
+ * in più: misurando l'idea era emerso che **un tavolo finito sotto il pannello
+ * non si potrebbe più afferrare** (trascinarcelo dentro invece funziona, per
+ * via della cattura del puntatore). Invece di scriverlo a schermo e lasciarlo
+ * succedere, il conflitto **non si fa esistere**: se qualcuno sposta un tavolo
+ * sopra la cucina, il pannello esce dalla pianta e torna sotto — la comodità
+ * si perde, il gesto no.
+ *
+ * *Quello spazio è vuoto sul disegno ma non è vietato, ed è esattamente il
+ * genere di cosa che Alessio fa: i tavoli li muove lui.*
+ */
+export function pannelloNellaPianta(zone = [], sagome = []) {
+  const r = riquadroDelPannello(zone);
+  if (!r) return null;
+  // ⚠️ SI GUARDA IL VERSO VERO DELLA SAGOMA, ma su QUESTO fondale non decide
+  // niente — e la cosa è emersa da una rottura fatta apposta, non rileggendo:
+  // sostituendo `misureSagoma` con le misure sulla carta, **nessuna prova
+  // diventava rossa**. La ragione è che l'area del pannello parte dall'angolo
+  // (0,0): una sagoma la tocca se e solo se il suo spigolo in alto a sinistra
+  // ci cade dentro, e quanto è grande non conta. Resta scritto giusto perché
+  // il fondale può cambiare; la prova che fingeva di provarlo è stata tolta.
+  const tocca = sagome.some((s) => {
+    const m = misureSagoma(s);
+    return (
+      s.x < r.x + r.larghezza &&
+      s.x + m.larghezza > r.x &&
+      s.y < r.y + r.profondita &&
+      s.y + m.profondita > r.y
+    );
+  });
+  return tocca ? null : r;
+}

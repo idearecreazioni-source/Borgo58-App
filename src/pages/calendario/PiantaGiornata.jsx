@@ -4,9 +4,11 @@ import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
+import { pannelloNellaPianta } from "../../lib/calcoli/sala";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
+  ZONE_FONDALE,
   getCopertiDelGiorno,
   getPiantaDelGiorno,
   getPostoPerLaSerata,
@@ -97,12 +99,24 @@ const ETICHETTA = "block text-xs font-medium uppercase tracking-wide text-b58-ch
 // salterebbe fuori dalla casella dopo il primo carattere. È lo stesso
 // modo di perdere ciò che si sta scrivendo del difetto del 12/08 — solo
 // più veloce a farsi notare.
-function CampiPrenotazione({ valori, cambia }) {
+function CampiPrenotazione({ valori, cambia, stretto }) {
+  // ⚠️ STRETTO = dentro la pianta, dove lo spazio è largo metà schermo.
+  // La soluzione è di Alessio, ed è quella che ha scavalcato il vincolo
+  // misurato: *«basterà fare i riquadri da compilare più alti in modo che
+  // siano più facili da toccare col dito. A quel punto si aprirà la tastiera
+  // e la dimensione del riquadro non conterà più, anche perché se ci scrivo
+  // dentro del testo che non entra in un'unica riga potrà sempre andare a
+  // capo»*. Il vincolo era la LARGHEZZA; lui ha spostato la spesa
+  // sull'ALTEZZA, che lì ce n'è (487 punti sul suo telefono).
+  // ⚠️ E i campi restano SOPRA la soglia toccabile: si allargano le caselle
+  // in altezza, non si stringono per farcele stare. Quella soglia è già stata
+  // sfondata una volta nel giro E, e a salvarla è stata la sua mano.
+  const campo = stretto ? `${CAMPO} py-3 text-base` : CAMPO;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+    <div className={stretto ? "grid grid-cols-2 gap-2 mb-3" : "grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3"}>
       <div className="col-span-2">
         <label className={ETICHETTA}>Nome</label>
-        <input value={valori.nome} onChange={(e) => cambia({ ...valori, nome: e.target.value })} className={CAMPO} />
+        <input value={valori.nome} onChange={(e) => cambia({ ...valori, nome: e.target.value })} className={campo} />
       </div>
       <div>
         <label className={ETICHETTA}>Persone</label>
@@ -111,7 +125,7 @@ function CampiPrenotazione({ valori, cambia }) {
           min="1"
           value={valori.persone}
           onChange={(e) => cambia({ ...valori, persone: e.target.value })}
-          className={CAMPO}
+          className={campo}
         />
       </div>
       <div>
@@ -120,7 +134,7 @@ function CampiPrenotazione({ valori, cambia }) {
           type="time"
           value={valori.ora}
           onChange={(e) => cambia({ ...valori, ora: e.target.value })}
-          className={CAMPO}
+          className={campo}
         />
       </div>
       <div className="col-span-2">
@@ -128,12 +142,12 @@ function CampiPrenotazione({ valori, cambia }) {
         <input
           value={valori.telefono}
           onChange={(e) => cambia({ ...valori, telefono: e.target.value })}
-          className={CAMPO}
+          className={campo}
         />
       </div>
       <div className="col-span-2">
         <label className={ETICHETTA}>Note (allergie, occasione…)</label>
-        <input value={valori.note} onChange={(e) => cambia({ ...valori, note: e.target.value })} className={CAMPO} />
+        <input value={valori.note} onChange={(e) => cambia({ ...valori, note: e.target.value })} className={campo} />
       </div>
     </div>
   );
@@ -765,6 +779,171 @@ export default function PiantaGiornata() {
   const sagomeGirevoli = sagome.filter((s) => s.spostabile && s.larghezza_cm !== s.profondita_cm);
   const copertiDelGiorno = prenotazioni.reduce((t, p) => t + (p.party_size || 0), 0);
 
+  // ⚠️ LA DECISIONE VIENE PRIMA DEI DUE PANNELLI, e non è un dettaglio di
+  // ordine: dentro la pianta lo spazio è largo metà schermo, quindi il modulo
+  // deve sapere PRIMA di disegnarsi che i campi vanno in colonna e alti.
+  // ⚠️ E la decisione sta qui e non dentro la pianta, perché serve a tutte e
+  // due: la schermata deve sapere se disegnare il pannello sotto.
+  const dentroLaPianta =
+    (toccato && !modo) || modo === "nuova" ? pannelloNellaPianta(ZONE_FONDALE, sagome) : null;
+
+  // ⚠️ I DUE PANNELLI DELLA SALA, ESTRATTI PERCHÉ POSSONO STARE IN DUE
+  // POSTI. Dal 19/08 vanno DENTRO la pianta, nello spazio di cucina e
+  // servizi che sul disegno è vuoto (idea di Alessio: così il modulo non
+  // spinge più la pianta in basso e non si deve scorrere per prendere una
+  // prenotazione). Ma ci vanno **solo se là dentro non c'è nessun tavolo**:
+  // altrimenti tornano sotto la pianta, dov'erano.
+  //
+  // ⚠️ È UNA COSA SOLA SCRITTA UNA VOLTA, non due copie in due posizioni:
+  // due pannelli identici in due punti della schermata sono due posti che
+  // divergono al primo ritocco.
+  const riquadroTavolo =
+    toccato && !modo ? (
+            <div className="mt-3 rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 p-4">
+              <div className="flex items-baseline justify-between gap-3 mb-2">
+                <p className="text-b58-charcoal font-medium">
+                  {sagomaToccata?.label}
+                  {gruppoDelToccato && (gruppoDelToccato.tavoli ?? []).length > 1 && (
+                    <span className="text-sm font-normal text-b58-charcoal-soft">
+                      {" "}
+                      — accostato a {(gruppoDelToccato.etichette ?? [])
+                        .filter((e) => e !== sagomaToccata?.label)
+                        .join(" · ")}
+                    </span>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={azzera}
+                  className="text-sm text-b58-charcoal-soft underline shrink-0"
+                >
+                  Chiudi
+                </button>
+              </div>
+
+              {/* I COPERTI — la stessa casella che compare nel modulo della
+                  prenotazione nuova, scritta una volta sola. */}
+              <CopertiDelGruppo
+                gruppo={gruppoDelToccato}
+                correzione={correzione}
+                setCorrezione={setCorrezione}
+                salvando={salvando}
+                salva={salvaCoperti}
+                azzeraCorrezione={tornaAlCalcolato}
+              />
+
+              {/* CHI C'È SU QUESTO TAVOLO — e da qui si apre la sua scheda.
+                  Il riquadro non ripete la scheda: la introduce. */}
+              {prenotazioniDelToccato.length > 0 ? (
+                <ul className="divide-y divide-b58-charcoal/10 rounded-lg ring-1 ring-b58-charcoal/10 mb-2">
+                  {prenotazioniDelToccato.map((p) => (
+                    <li key={p.id} className="px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="text-sm text-b58-charcoal-soft w-12">
+                        {p.reservation_time?.slice(0, 5)}
+                      </span>
+                      <span className="text-sm text-b58-charcoal flex-1 min-w-[8rem]">
+                        {p.customer_name}
+                        <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
+                      </span>
+                      <span className="text-[11px] text-b58-charcoal-soft">{statoArrivo(p.id)}</span>
+                      <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
+                        Apri
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-b58-charcoal-soft mb-2">Nessuno, per ora.</p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAperta(null);
+                  setModo("nuova");
+                  setScelti([toccato]);
+                }}
+                className={PRINCIPALE}
+              >
+                Prendi una prenotazione qui
+              </button>
+            </div>
+    ) : null;
+
+  const moduloNuova =
+    modo === "nuova" ? (
+            <div ref={moduloRef} className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
+              {/* ⚠️ Qui c'erano due spiegazioni — come si aggiungono i tavoli
+                  e perché si è arrivati qui — tolte da Alessio il 18/08
+                  insieme alle altre cinque. Le regole restano: il tocco
+                  aggiunge e toglie, e il cliente non riceve nessuna email
+                  (l'invio parte su un cambio di stato, e qui non ce n'è
+                  nessuno — verificato il 14/08, non dedotto). */}
+              <p className="text-b58-charcoal font-medium mb-3">
+                Prenotazione su{" "}
+                {etichetteScelte || (
+                  // Resta possibile solo quando c'è già del lavoro dentro:
+                  // senza testo scritto il modulo si chiude da sé.
+                  <em className="text-b58-terracotta-dark">nessun tavolo — toccane uno</em>
+                )}
+              </p>
+
+              {/* I COPERTI DEI TAVOLI SCELTI — la stessa casella del riquadro.
+                  ⚠️ Senza di lei, dopo che il tocco sul tavolo libero salta il
+                  riquadro, il numero di un tavolo libero non si potrebbe più
+                  correggere da nessuna parte: era il gesto dell'elenco sotto
+                  la pianta, che questo giro ha tolto. E qui serve davvero —
+                  è il numero su cui si decide se accettare la prenotazione
+                  che si sta scrivendo. */}
+              {gruppiScelti.map((g) => (
+                <CopertiDelGruppo
+                  key={(g.tavoli ?? []).join(",")}
+                  gruppo={g}
+                  mostraNumero
+                  correzione={correzione}
+                  setCorrezione={setCorrezione}
+                  salvando={salvando}
+                  salva={salvaCoperti}
+                  azzeraCorrezione={tornaAlCalcolato}
+                />
+              ))}
+
+              {/* Chi c'è già su quei tavoli. Non è un avviso e non blocca
+                  niente: è il secondo giro, e la sola cosa che serve è
+                  sapere a che ora se ne vanno gli altri. */}
+              {giaPromessi.length > 0 && (
+                <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-3">
+                  Su questi tavoli c'è già:{" "}
+                  {giaPromessi
+                    .map(
+                      (a) =>
+                        `${a.etichetta_al_momento} — ${a.reservation.customer_name} alle ${a.reservation.reservation_time?.slice(0, 5)}`
+                    )
+                    .join(" · ")}
+                  .
+                </p>
+              )}
+
+              <CampiPrenotazione valori={nuova} cambia={setNuova} stretto={Boolean(dentroLaPianta)} />
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={salvando || scelti.length === 0 || !nuova.nome.trim()}
+                  onClick={confermaNuova}
+                  className={PRINCIPALE}
+                >
+                  {salvando ? "Salvo…" : `Prenota ${scelti.length || "…"} ${scelti.length === 1 ? "tavolo" : "tavoli"}`}
+                </button>
+                <button type="button" onClick={azzera} className={BOTTONE}>
+                  Lascia stare
+                </button>
+              </div>
+            </div>
+    ) : null;
+
+  const contenutoPannello = riquadroTavolo ?? moduloNuova;
+
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <Link to="/calendario-eventi" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
@@ -938,6 +1117,8 @@ export default function PiantaGiornata() {
             selezione={tavoliEvidenziati}
             stato={stato}
             gruppi={gruppi}
+            pannello={dentroLaPianta ? contenutoPannello : null}
+            riquadroPannello={dentroLaPianta}
             onSeleziona={tocca}
             onSposta={
               isTitolare
@@ -976,77 +1157,7 @@ export default function PiantaGiornata() {
               correzione ha per chiave l'insieme, dal giro B). Correggere il
               numero di un tavolone credendo di correggere un tavolo è un
               errore che poi decide se si accetta gente. */}
-          {toccato && !modo && (
-            <div className="mt-3 rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 p-4">
-              <div className="flex items-baseline justify-between gap-3 mb-2">
-                <p className="text-b58-charcoal font-medium">
-                  {sagomaToccata?.label}
-                  {gruppoDelToccato && (gruppoDelToccato.tavoli ?? []).length > 1 && (
-                    <span className="text-sm font-normal text-b58-charcoal-soft">
-                      {" "}
-                      — accostato a {(gruppoDelToccato.etichette ?? [])
-                        .filter((e) => e !== sagomaToccata?.label)
-                        .join(" · ")}
-                    </span>
-                  )}
-                </p>
-                <button
-                  type="button"
-                  onClick={azzera}
-                  className="text-sm text-b58-charcoal-soft underline shrink-0"
-                >
-                  Chiudi
-                </button>
-              </div>
-
-              {/* I COPERTI — la stessa casella che compare nel modulo della
-                  prenotazione nuova, scritta una volta sola. */}
-              <CopertiDelGruppo
-                gruppo={gruppoDelToccato}
-                correzione={correzione}
-                setCorrezione={setCorrezione}
-                salvando={salvando}
-                salva={salvaCoperti}
-                azzeraCorrezione={tornaAlCalcolato}
-              />
-
-              {/* CHI C'È SU QUESTO TAVOLO — e da qui si apre la sua scheda.
-                  Il riquadro non ripete la scheda: la introduce. */}
-              {prenotazioniDelToccato.length > 0 ? (
-                <ul className="divide-y divide-b58-charcoal/10 rounded-lg ring-1 ring-b58-charcoal/10 mb-2">
-                  {prenotazioniDelToccato.map((p) => (
-                    <li key={p.id} className="px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="text-sm text-b58-charcoal-soft w-12">
-                        {p.reservation_time?.slice(0, 5)}
-                      </span>
-                      <span className="text-sm text-b58-charcoal flex-1 min-w-[8rem]">
-                        {p.customer_name}
-                        <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
-                      </span>
-                      <span className="text-[11px] text-b58-charcoal-soft">{statoArrivo(p.id)}</span>
-                      <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
-                        Apri
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-b58-charcoal-soft mb-2">Nessuno, per ora.</p>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAperta(null);
-                  setModo("nuova");
-                  setScelti([toccato]);
-                }}
-                className={PRINCIPALE}
-              >
-                Prendi una prenotazione qui
-              </button>
-            </div>
-          )}
+          {!dentroLaPianta && riquadroTavolo}
 
 
           {isTitolare && sagomeGirevoli.length > 0 && (
@@ -1106,76 +1217,7 @@ export default function PiantaGiornata() {
           </div>
 
           {/* PRENOTAZIONE NUOVA — il gesto principale di questa pagina */}
-          {modo === "nuova" && (
-            <div ref={moduloRef} className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
-              {/* ⚠️ Qui c'erano due spiegazioni — come si aggiungono i tavoli
-                  e perché si è arrivati qui — tolte da Alessio il 18/08
-                  insieme alle altre cinque. Le regole restano: il tocco
-                  aggiunge e toglie, e il cliente non riceve nessuna email
-                  (l'invio parte su un cambio di stato, e qui non ce n'è
-                  nessuno — verificato il 14/08, non dedotto). */}
-              <p className="text-b58-charcoal font-medium mb-3">
-                Prenotazione su{" "}
-                {etichetteScelte || (
-                  // Resta possibile solo quando c'è già del lavoro dentro:
-                  // senza testo scritto il modulo si chiude da sé.
-                  <em className="text-b58-terracotta-dark">nessun tavolo — toccane uno</em>
-                )}
-              </p>
-
-              {/* I COPERTI DEI TAVOLI SCELTI — la stessa casella del riquadro.
-                  ⚠️ Senza di lei, dopo che il tocco sul tavolo libero salta il
-                  riquadro, il numero di un tavolo libero non si potrebbe più
-                  correggere da nessuna parte: era il gesto dell'elenco sotto
-                  la pianta, che questo giro ha tolto. E qui serve davvero —
-                  è il numero su cui si decide se accettare la prenotazione
-                  che si sta scrivendo. */}
-              {gruppiScelti.map((g) => (
-                <CopertiDelGruppo
-                  key={(g.tavoli ?? []).join(",")}
-                  gruppo={g}
-                  mostraNumero
-                  correzione={correzione}
-                  setCorrezione={setCorrezione}
-                  salvando={salvando}
-                  salva={salvaCoperti}
-                  azzeraCorrezione={tornaAlCalcolato}
-                />
-              ))}
-
-              {/* Chi c'è già su quei tavoli. Non è un avviso e non blocca
-                  niente: è il secondo giro, e la sola cosa che serve è
-                  sapere a che ora se ne vanno gli altri. */}
-              {giaPromessi.length > 0 && (
-                <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-3">
-                  Su questi tavoli c'è già:{" "}
-                  {giaPromessi
-                    .map(
-                      (a) =>
-                        `${a.etichetta_al_momento} — ${a.reservation.customer_name} alle ${a.reservation.reservation_time?.slice(0, 5)}`
-                    )
-                    .join(" · ")}
-                  .
-                </p>
-              )}
-
-              <CampiPrenotazione valori={nuova} cambia={setNuova} />
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={salvando || scelti.length === 0 || !nuova.nome.trim()}
-                  onClick={confermaNuova}
-                  className={PRINCIPALE}
-                >
-                  {salvando ? "Salvo…" : `Prenota ${scelti.length || "…"} ${scelti.length === 1 ? "tavolo" : "tavoli"}`}
-                </button>
-                <button type="button" onClick={azzera} className={BOTTONE}>
-                  Lascia stare
-                </button>
-              </div>
-            </div>
-          )}
+          {!dentroLaPianta && moduloNuova}
 
           {/* ASSEGNAZIONE di una richiesta arrivata dal sito */}
           {modo === "assegna" && inCorso && (
