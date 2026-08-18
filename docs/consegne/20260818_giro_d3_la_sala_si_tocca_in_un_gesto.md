@@ -4,7 +4,7 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `af29bc7` — il giro è in **tre commit di codice** (`8222222`, `28d20dc`, `af29bc7`) perché il collaudo di Alessio è passato **due volte** in mezzo alla consegna
+- **HEAD dichiarato**: `278cfe5` — il giro è in **quattro commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`) perché il collaudo di Alessio è passato **tre volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
@@ -66,11 +66,11 @@ E quelle che apre questo giro:
     la metà che sparisce è quella visibile. ⚠️ Il giorno che ci saranno accessi
     **per persona** quella riga va rimessa a schermo — e diventerà leggibile
     all'indietro, perché nel frattempo è stata scritta lo stesso.
-13. 🟡 **Restano senza risposta due domande poste ad Alessio**: se il riquadro
-    sul tavolo **occupato** ci sta nello schermo senza scorrere, e se i
-    blocchetti del Calendario Eventi si leggono meglio della tabella. Si è
-    fermato sui difetti prima di arrivarci. ✅ **La terza ha risposta**:
-    toccando un tavolo bianco **la pagina scorre da sola fino ai campi**.
+13. ✅ **Due domande su tre hanno risposta**: toccando un tavolo bianco **la
+    pagina scorre da sola fino ai campi**, e **il riquadro sul tavolo occupato
+    ci sta nello schermo senza scorrere**. 🟡 Resta senza risposta se i
+    blocchetti del Calendario Eventi si leggano meglio della tabella: non ci è
+    arrivato.
 13-bis. 🟡 **La cura del difetto (b) non è stata vista da nessuno.** Il tocco su
     un tavolo di un tavolone prenotato adesso apre il riquadro invece di
     andare ai campi, e l'avviso compare da qualunque tavolo del gruppo: è
@@ -91,8 +91,8 @@ E quelle che apre questo giro:
 
 ## Cosa abbiamo rovesciato
 
-**Cinque rovesciamenti**, tutti nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **12**),
+**Sei rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **13**),
 dove stanno per esteso con le quattro righe.
 
 ⚠️ **Sono tanti, e la ragione è una sola**: il collaudo di Alessio è passato
@@ -436,3 +436,85 @@ l'avesse apparecchiata**.
 Tocca un tavolo **bianco** e sei già nei campi della prenotazione, col numero
 dei coperti lì accanto; tocca un tavolo **colorato** — anche se è colorato
 perché il suo vicino accostato è prenotato — e si apre chi c'è già.
+
+---
+
+## 🔴 Il terzo giro di collaudo — l'errore che nessuno aveva segnalato
+
+Alle **23:55**, sulla schermata «La sala», una banda rossa **«TypeError: Load
+failed»** e **la pianta vuota**: nessun tavolo, solo le zone. Una volta sola;
+riaprendo la pagina era tornato tutto. Alessio non l'ha segnalato — l'ha visto
+il validatore nelle sue fotografie.
+
+**Misurato invece di archiviarlo come intermittenza di rete.** Quella schermata
+fa **nove letture in blocco**, e sono avviate insieme: se **una sola** fallisce,
+**nessuna** delle altre viene applicata. La schermata mostrava la striscia
+rossa e **sotto continuava a disegnare** — la sala, con dentro zero tavoli.
+
+⚠️ **E una sala vuota è un'informazione, non l'assenza di un'informazione.**
+Chi guarda legge *«stasera non ha prenotato nessuno»*, e in quel momento era
+falso. È la stessa famiglia dell'elenco allergeni vuoto che si legge «non
+contiene allergeni» (13/08): **il caso in cui il gestionale non sa deve dirlo**,
+non disegnare il contenitore.
+
+**Cosa è cambiato.** La pianta si disegna **solo se è stata letta davvero**;
+altrimenti al suo posto c'è *«non sono riuscito a leggere la sala — non vuol
+dire che è vuota, vuol dire che non lo so»*, con il gesto per **riprovare**
+(un rifiuto senza via d'uscita è un vicolo cieco, regola del 16/08, e
+quell'errore è passeggero).
+
+⚠️ **E lo stesso segno copre un caso più insidioso che nella foto non si
+vedeva**: cambiando giorno, se la lettura fallisce, senza di esso resterebbero
+a schermo **i tavoli di ieri sotto la data di oggi** — una sala vera, per il
+giorno sbagliato.
+
+### ⚠️ La stessa forma esisteva in Comande, ed è dove morderebbe davvero
+
+Misurato su richiesta: **cinque letture in blocco**, stesso comportamento. Ma lì
+la frase era peggiore — **«Nessun tavolo configurato»**, cioè una frase *sicura
+di sé* e falsa, letta di sera con la rete del locale mentre si serve. Corretta
+con lo stesso rimedio.
+
+---
+
+## La misura sullo spazio dentro la pianta (proposta di Alessio, non costruita)
+
+*«Potremmo sfruttare lo spazio utilizzato dentro la pianta per cucina e servizi
+inutilmente per far comparire le info sui tavoli.»* L'idea risolve alla radice
+il problema rincorso tutta la sera — il modulo che spinge la pianta in basso e
+obbliga a scorrere. **Misurato prima di decidere, come chiesto**, dalle costanti
+vere del disegno:
+
+| | pianta | area libera (Servizi + Cucina) |
+|---|---|---|
+| telefono di Alessio (390 pt) | 358 pt | **179 × 487 pt** |
+| telefono stretto (375 pt) | 343 pt | 172 × 466 pt |
+| tablet delle Comande (768 pt) | 736 pt | **368 × 1000 pt** |
+| computer (max-w-5xl) | 1024 pt | **693 × 255 pt** |
+
+*(l'area libera è 1400 × 515 cm di sala; il bersaglio di tocco del progetto è
+40 pt, un bottone 32 pt)*
+
+**Il sospetto del validatore è confermato dai numeri.**
+- **Sul telefono l'area è alta ma STRETTA: 179 pt, cioè metà schermo.** Ci sta
+  benissimo la **scheda di chi c'è** (nome, ora, quante persone, note). **Non**
+  ci sta il modulo intero: cinque campi su 179 pt di larghezza vogliono dire
+  caselle da ~163 pt utili, dove un nome lungo e la riga delle note stanno
+  strette — e la larghezza non si recupera, perché quell'area è larga quanto è
+  profonda la sala.
+- **Sul tablet e sul computer ci sta tutto**: 368 × 1000 pt e 693 × 255 pt (sul
+  computer i campi vanno su due colonne, che nei 693 pt entrano comode).
+
+⚠️ **Quindi due comportamenti diversi, e a deciderli è lo SPAZIO, non il tipo di
+dispositivo** — che è la condizione posta. La stessa misura che gira la pianta
+in piedi decide anche questo.
+
+⚠️ **E il vincolo del trascinamento, misurato.** Il trascinamento di una sagoma
+usa la *cattura del puntatore*: una volta cominciato, tutti gli eventi restano
+alla sagoma **anche passando sopra un pannello**. Quindi trascinare un tavolo
+*dentro* la cucina continuerebbe a funzionare. Quello che si perde è **afferrare
+un tavolo che sta già sotto il pannello**: oggi non ce n'è nessuno lì, ma è uno
+spazio libero sul disegno e **non vietato**, e Alessio i tavoli li sposta.
+
+**Non costruito**: è una proposta, e i numeri servono a decidere prima di
+partire.

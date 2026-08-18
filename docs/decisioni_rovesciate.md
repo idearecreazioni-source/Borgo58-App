@@ -48,6 +48,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 10 | 18/08/2026 | *Un tocco fa sempre la stessa cosa: apre il riquadro* (18/08, rovescia il n. 9) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 11 | 18/08/2026 | *La riga «è lo stesso locale girato» sta su entrambe le schermate* (17/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 12 | 18/08/2026 | *Il riquadro del sold out, la scomposizione dei posti, un comando per ogni tavolo spostato* | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 13 | 18/08/2026 | *Il numero e la frase che ne dichiara il limite viaggiano insieme* (15/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -420,3 +421,36 @@ cenare vuole un tavolo. Finché lo legge Alessio va bene, perché la regola l'ha
 decisa lui; **per chi verrà dopo è un numero che sembra dire «la sala tiene 25»
 e non lo dice**, e ora non c'è più niente a schermo che lo spieghi. Sta
 nell'elenco delle sette spiegazioni tolte, che è lo stesso elenco.
+
+---
+
+## 13 · 18/08/2026 — «il numero e la frase che ne dichiara il limite viaggiano insieme»
+
+⚠️ **Questo non rovescia una riga di schermata: rovescia un principio**, ed è
+il motivo per cui sta da solo e non dentro il n. 12.
+
+**Cosa era stato deciso, e quando.** Il **15/08**, col motore fiscale unico e
+poi col conteggio dei posti: una funzione del database che restituisce un
+numero restituisce **anche la frase che ne dichiara il limite**, e le due cose
+arrivano insieme *proprio perché non possano separarsi*.
+
+**La ragione di allora.** *Un avviso che vive nel testo di una schermata non
+protegge la seconda schermata che mostra lo stesso numero.* Scritto nel
+database, il limite segue il numero ovunque vada.
+
+**Cosa si decide adesso.** Sotto «25 posti liberi» la frase — «il conteggio
+guarda i soli tavoli: divani e Chef Table restano fuori» — **non si stampa
+più**. Deciso da Alessio insieme agli altri alleggerimenti.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, ed è il prezzo
+più caro dei sette tagli di oggi.** ⚠️ **Il meccanismo non è smontato**: la
+funzione continua a restituire l'avvertenza insieme al numero, quindi una
+seconda schermata che un domani mostrasse quel totale la troverebbe lì. Quello
+che cambia è che **questa** schermata ha smesso di stamparla.
+⚠️ **E il limite è vero e sostanziale**: quel numero conta i **soli tavoli** —
+divani e Chef Table restano fuori perché sono due formule diverse, chi chiama
+per cenare vuole un tavolo. Finché quel numero lo legge Alessio va bene, perché
+la regola l'ha decisa lui; **per chiunque altro «25 posti liberi» si legge «la
+sala tiene 25»**, e non è quello che dice.
+⚠️ **Il giorno che quel numero lo guarderà qualcun altro, la frase va
+rimessa** — ed è lo stesso giorno degli accessi per persona (nn. 8 e 7).
