@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
-import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
+import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
@@ -151,36 +151,35 @@ function CampiPrenotazione({ valori, cambia }) {
 // tavolo libero non si potrebbe più fare da nessuna parte: è il gesto che
 // faceva l'elenco sotto la pianta, che questo giro ha tolto.
 // Due copie della stessa casella sarebbero due posti che divergono.
-function CopertiDelGruppo({ gruppo, sagomaLabel, correzione, setCorrezione, salvando, salva, azzeraCorrezione }) {
+function CopertiDelGruppo({ gruppo, mostraNumero, correzione, setCorrezione, salvando, salva, azzeraCorrezione }) {
   if (!gruppo) return null;
   const chiave = (gruppo.tavoli ?? []).join(",");
   const inCorrezione = correzione?.chiave === chiave;
   const piuTavoli = (gruppo.tavoli ?? []).length > 1;
   return (
     <div className="mb-3">
-      <p className="text-sm text-b58-charcoal">
-        {piuTavoli && !sagomaLabel && (
-          <span className="text-b58-charcoal-soft">{(gruppo.etichette ?? []).join(" · ")}: </span>
-        )}
-        Ci stanno <strong>{gruppo.coperti}</strong>
-        {gruppo.corretto ? (
-          <span className="text-b58-charcoal-soft">
-            {" "}
-            — corretto a mano, la regola direbbe {gruppo.coperti_calcolati}
-            {gruppo.ragione ? ` · ${gruppo.ragione}` : ""}
-          </span>
-        ) : (
-          <span className="text-b58-charcoal-soft"> — calcolato</span>
-        )}
-      </p>
-      {/* ⚠️ LA FRASE CHE DISTINGUE LE DUE COSE, e compare SOLO quando il
-          gruppo è di più tavoli: il tocco è del tavolo, il numero è del
-          tavolone. Una spiegazione che c'è sempre si smette di leggere, e
-          questa deve farsi notare proprio nel caso in cui serve. */}
-      {piuTavoli && sagomaLabel && (
-        <p className="text-[11px] text-b58-charcoal-soft/80 mt-0.5">
-          È il numero di <strong>{(gruppo.etichette ?? []).join(" · ")}</strong> insieme, non del
-          solo {sagomaLabel}: correggendolo cambi il tavolone.
+      {/* ⚠️ IL NUMERO SI MOSTRA SOLO DOVE SERVE A DECIDERE, cioè mentre si
+          prende una prenotazione («ci stanno in sei?»). Nel riquadro del
+          tavolo è stato tolto da Alessio il 18/08: lì la cifra è già scritta
+          **dentro la sagoma** che si è appena toccata (giro B), e ridirla
+          accanto era la stessa cosa detta due volte.
+          ⚠️ Insieme se n'è andata la frase che distingueva tavolo e tavolone
+          («è il numero di T7 · T8 · T9 insieme, non del solo T8»). Il contesto
+          resta nel TITOLO del riquadro — «T8 — accostato a T7 · T9» — che è il
+          posto dove l'informazione sta: senza quel titolo il rischio
+          tornerebbe intero, ed è il motivo per cui non si tocca. */}
+      {mostraNumero && (
+        <p className="text-sm text-b58-charcoal">
+          {piuTavoli && (
+            <span className="text-b58-charcoal-soft">{(gruppo.etichette ?? []).join(" · ")}: </span>
+          )}
+          Ci stanno <strong>{gruppo.coperti}</strong>
+          {gruppo.corretto && (
+            <span className="text-b58-charcoal-soft">
+              {" "}
+              — corretto a mano{gruppo.ragione ? ` · ${gruppo.ragione}` : ""}
+            </span>
+          )}
         </p>
       )}
 
@@ -287,6 +286,8 @@ export default function PiantaGiornata() {
   // Quale tavolone si sta correggendo a mano, e con che numero.
   const [correzione, setCorrezione] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
+  // La sala è stata letta davvero? Vedi la nota in fondo a `ricarica`.
+  const [letta, setLetta] = useState(false);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -339,7 +340,22 @@ export default function PiantaGiornata() {
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
-
+    // 🔴 SOLO QUI LA SALA È LETTA DAVVERO, e questa riga esiste per un errore
+    // vero: il 18/08 alle 23:55 una di queste nove letture è fallita
+    // («TypeError: Load failed», una volta sola) e la schermata ha disegnato
+    // **la sala vuota** — nessun tavolo, solo le zone. Ha mostrato una
+    // striscia rossa, ma sotto ha continuato a disegnare.
+    //
+    // ⚠️ E UNA SALA VUOTA È UN'INFORMAZIONE, non l'assenza di
+    // un'informazione: chi guarda legge «stasera non ha prenotato nessuno» —
+    // e in quel momento era falso. È la stessa famiglia dell'elenco allergeni
+    // vuoto che si legge «non contiene allergeni» (13/08): il caso in cui il
+    // gestionale non sa deve **dirlo**, non disegnare il contenitore.
+    //
+    // ⚠️ E la stessa riga copre il caso più insidioso: cambiando giorno, se la
+    // lettura fallisce, senza questo segno resterebbero a schermo **i tavoli
+    // di ieri sotto la data di oggi**.
+    setLetta(true);
   }, [data]);
 
   const azzera = () => {
@@ -354,6 +370,7 @@ export default function PiantaGiornata() {
 
   useEffect(() => {
     setCaricamento(true);
+    setLetta(false);
     azzera();
     ricarica()
       .catch((e) => setError(e.message))
@@ -631,7 +648,6 @@ export default function PiantaGiornata() {
   // La fascia della prenotazione aperta, letta dal database e non
   // ricalcolata: la regola vive in un posto solo.
   const turnoDi = (id) => turni.find((t) => t.reservation_id === id);
-  const ultimoGiro = turnoDi(aperta?.id)?.fascia === "tardi";
 
   // --- IL TAVOLO TOCCATO, e cosa gli sta attorno ---
   const sagomaToccata = sagome.find((s) => s.id === toccato) ?? null;
@@ -809,6 +825,33 @@ export default function PiantaGiornata() {
 
       {caricamento ? (
         <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+      ) : !letta ? (
+        /* 🔴 LA SALA NON SI DISEGNA SE NON È STATA LETTA. Prima qui si
+           disegnava lo stesso, e con nessun tavolo dentro: una sala vuota che
+           chi guarda legge «non ha prenotato nessuno».
+           ⚠️ E il rifiuto ha la sua via d'uscita (regola del 16/08: un rifiuto
+           senza gesto d'uscita è un vicolo cieco), perché quell'errore è
+           passeggero — a lui è capitato una volta sola, e riaprendo la pagina
+           era tornato tutto. */
+        <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-8 text-center">
+          <p className="text-b58-charcoal font-medium mb-1">Non sono riuscito a leggere la sala.</p>
+          <p className="text-sm text-b58-charcoal-soft mb-4">
+            Non vuol dire che è vuota: vuol dire che non lo so. Di solito è la connessione.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setCaricamento(true);
+              ricarica()
+                .catch((e) => setError(e.message))
+                .finally(() => setCaricamento(false));
+            }}
+            className={PRINCIPALE}
+          >
+            Riprova
+          </button>
+        </div>
       ) : (
         <>
 
@@ -849,10 +892,17 @@ export default function PiantaGiornata() {
                   insieme, e la frase arriva dal database insieme al numero:
                   un avviso scritto qui dentro non proteggerebbe la seconda
                   schermata che mostrasse lo stesso totale. */}
-              {/* ⚠️ L'avvertenza del database resta: arriva insieme al numero
-                  proprio perché non possano separarsi, e non è una
-                  spiegazione della schermata ma il limite del calcolo. */}
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">{posto.avvertenza}</p>
+              {/* 🔴 QUI C'ERA L'AVVERTENZA CHE ARRIVA DAL DATABASE INSIEME AL
+                  NUMERO — «il conteggio guarda i soli tavoli: divani e Chef
+                  Table restano fuori» — tolta da Alessio il 18/08.
+                  ⚠️ È un rovesciamento di un principio, non solo di una riga
+                  (n. 13): dal 15/08 in questo progetto **il numero e la frase
+                  che ne dichiara il limite viaggiano insieme**, e la frase
+                  arriva dal database proprio perché una schermata non possa
+                  separarla dal numero. Adesso è separata.
+                  ⚠️ `posto.avvertenza` **continua ad arrivare** e nessuna
+                  seconda schermata che mostrasse questo totale resterebbe
+                  scoperta: si è smesso di stamparla qui, non di calcolarla. */}
             </div>
           )}
 
@@ -953,7 +1003,6 @@ export default function PiantaGiornata() {
                   prenotazione nuova, scritta una volta sola. */}
               <CopertiDelGruppo
                 gruppo={gruppoDelToccato}
-                sagomaLabel={sagomaToccata?.label}
                 correzione={correzione}
                 setCorrezione={setCorrezione}
                 salvando={salvando}
@@ -1085,6 +1134,7 @@ export default function PiantaGiornata() {
                 <CopertiDelGruppo
                   key={(g.tavoli ?? []).join(",")}
                   gruppo={g}
+                  mostraNumero
                   correzione={correzione}
                   setCorrezione={setCorrezione}
                   salvando={salvando}
@@ -1174,28 +1224,16 @@ export default function PiantaGiornata() {
                   </span>
                 )}
               </p>
-              <p className="text-sm text-b58-charcoal-soft mb-4">
-                Su {tavoliDi(aperta.id).map((a) => a.etichetta_al_momento).join(" · ")}. Cambia quello
-                che serve, oppure spostali su altri tavoli.{" "}
-                {FASCE[turnoDi(aperta.id)?.fascia]?.spiega}
-                {ultimoGiro && " "}
-              </p>
-
-              {/* IL RITARDO, IN PAROLE. Sulla pianta è una sbarratura, che si
-                  legge a colpo d'occhio e non dice di quanto. Qui c'è il
-                  numero, perché è dove si decide se telefonare o se ridare via
-                  il tavolo. ⚠️ E «è arrivato» non lo segna nessuno: lo dice
-                  il conto aperto in sala. */}
-              {ritardi.perPrenotazione.get(aperta.id)?.inRitardo && (
-                <p className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/40 px-3 py-2 text-sm mb-4">
-                  <strong>
-                    Non ancora arrivati — {ritardi.perPrenotazione.get(aperta.id).minuti} minuti
-                    oltre l&apos;ora prenotata
-                  </strong>{" "}
-                  e in sala nessuno ha aperto la comanda su questo tavolo. Decidi tu: il
-                  gestionale avvisa e basta.
-                </p>
-              )}
+              {/* ⚠️ Qui c'erano due cose, tolte da Alessio il 18/08: la riga
+                  «Su T8. Cambia quello che serve…» e il riquadro del ritardo
+                  in parole. Il ritardo resta dove si guarda davvero — nella
+                  riga dell'elenco, dove c'è già — e qui era la stessa cosa
+                  detta due volte con più parole. Le regole non cambiano: su
+                  quali tavoli sta questa prenotazione si legge sulla pianta,
+                  che è accesa proprio su quelli.
+                  ⚠️ Con la riga se ne va anche la frase della FASCIA, che
+                  era l'unico posto in cui si leggeva a parole: il colore del
+                  tavolo la dice, e la sua precedenza vive nel codice. */}
 
               {/* ⚠️ «DA LIBERARE ENTRO LE…», ed è il punto che fa valere le
                   fasce. Senza, si accetta gente alle 19:30 «purché liberi
@@ -1305,7 +1343,18 @@ export default function PiantaGiornata() {
                     ref={(el) => {
                       righeRef.current[p.id] = el;
                     }}
-                    className={`p-4 transition-colors ${accesa ? "bg-b58-terracotta/10" : ""}`}
+                    // ⚠️ SENZA TAVOLO SI FA NOTARE, e non è un vezzo: sua
+                    // richiesta — *«serve qualcosa che evidenzi le
+                    // prenotazioni che non hanno ancora un tavolo altrimenti
+                    // si rischia che rimangano senza»*. È il caso in cui
+                    // l'app deve farsi notare invece di essere discreta, e ha
+                    // una ragione che le altre righe non hanno: **una
+                    // prenotazione senza tavolo non compare da nessuna parte
+                    // sulla pianta**, quindi questo elenco è l'unico posto
+                    // dove può essere vista. Se sfugge qui, sfugge e basta.
+                    className={`p-4 transition-colors ${
+                      accesa ? "bg-b58-terracotta/10" : ""
+                    } ${suoi.length === 0 ? "border-l-4 border-b58-terracotta" : ""}`}
                   >
                     {/* Tutta la riga è tappabile: tocco = «fammi vedere dov'è»,
                         ed è il verso opposto dell'evidenziazione incrociata. */}
@@ -1336,7 +1385,9 @@ export default function PiantaGiornata() {
                             {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
                           </span>
                         ) : (
-                          <span className="text-b58-terracotta-dark">senza tavolo</span>
+                          <span className="rounded-full bg-b58-terracotta text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                            senza tavolo
+                          </span>
                         )}
                       </span>
                       {statoArrivo(p.id) && (

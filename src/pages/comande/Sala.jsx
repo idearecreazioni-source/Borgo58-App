@@ -90,6 +90,8 @@ export default function Sala() {
   // Un minuto: la tolleranza è di trenta, un battito più fitto non
   // aggiungerebbe niente e ridisegnerebbe la sala sotto le mani.
   const [adesso, setAdesso] = useState(() => new Date());
+  // La sala è stata letta davvero? Vedi la nota in fondo a `loadBoard`.
+  const [letta, setLetta] = useState(false);
   const [order, setOrder] = useState(null);
 
   const [error, setError] = useState("");
@@ -150,6 +152,13 @@ export default function Sala() {
       // Senza nessuna prenotazione non si chiede niente al database.
       const ids = [...new Set(t.map((x) => x.reservation_id))];
       setContiDellaSerata(await listContiPerPrenotazioni(ids));
+      // 🔴 SOLO QUI LA SALA È LETTA DAVVERO. Queste cinque letture partono
+      // insieme: se una fallisce, **nessuna** delle altre viene applicata, e
+      // prima del 18/08 la schermata rispondeva «Nessun tavolo configurato»
+      // — una frase sicura di sé, e falsa. È l'errore che Alessio ha visto in
+      // Calendario alle 23:55 («TypeError: Load failed»), e qui morderebbe di
+      // sera, con la rete del locale, mentre si serve.
+      setLetta(true);
     });
 
   useEffect(() => {
@@ -602,7 +611,29 @@ export default function Sala() {
       <p className={sectionLabel}>
         {spostando ? "Su quali tavoli lo sposti?" : "Sala"}
       </p>
-      {sagome.length === 0 ? (
+      {!letta ? (
+        /* 🔴 «NON LO SO» INVECE DI «NON C'È NIENTE». Prima qui compariva
+           «Nessun tavolo configurato» anche quando la lettura era fallita —
+           una frase sicura di sé, e falsa. In servizio è la peggiore che si
+           possa leggere. Il rifiuto ha la sua via d'uscita, perché l'errore
+           che l'ha prodotto è passeggero. */
+        <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-6 text-center mb-3">
+          <p className="text-b58-charcoal font-medium mb-1">Non riesco a leggere la sala.</p>
+          <p className="text-xs text-b58-charcoal-soft mb-3">
+            Non vuol dire che è vuota: vuol dire che non lo so.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              loadBoard().catch((e) => setError(e.message));
+            }}
+            className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-base font-semibold px-6"
+          >
+            Riprova
+          </button>
+        </div>
+      ) : sagome.length === 0 ? (
         <p className="text-xs text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
       ) : (
         <div className="mb-3">
