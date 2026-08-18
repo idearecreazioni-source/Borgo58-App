@@ -5,10 +5,11 @@ punto **7** più il **4-bis**. Anticipato al giro D per decisione di Alessio:
 ogni sua prova dal telefono inciampava nella pianta troppo grande **prima** di
 arrivare a ciò che stava provando.
 
-- **HEAD dichiarato**: `a0601b7`
+- **HEAD dichiarato**: `a0601b7` — **chiusura**: `2983f7b` (vedi in fondo)
 - **Working tree**: pulito
 - **Migrazione**: `20260818000007_il_formato_arriva_al_disegno.sql`
-- **Prove**: **85** pure (erano 67) + **163** sul progetto di prova (erano 157)
+- **Prove**: **78** pure + **163** sul progetto di prova (erano 67 e 157; le pure
+  erano salite a 85 e sono scese a 78 togliendo il modulo della misura, vedi la chiusura)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **applicata** — 136 migrazioni
 - **Contratto**: non toccato
@@ -17,10 +18,14 @@ arrivare a ciò che stava provando.
 
 ## ⚠️ Cosa NON è verificato
 
-1. **Il ridimensionamento e l'aggancio li può giudicare solo la mano di
-   Alessio dal telefono.** I quadrati diventano **un quinto più piccoli sotto
-   il dito** — da circa 6,6 a circa 5,3 millimetri — e nessuno ha provato se
-   restano comodi da prendere. Da qui si misura, non si tocca.
+1. ✅ **VERIFICATO IL 18/08, dopo la consegna** — la voce resta con la sua
+   risposta invece di sparire, perché era il punto 1 e la risposta è il
+   risultato più istruttivo del giro. **Alessio l'ha provato con le mani dal
+   telefono**: la pianta ci sta tutta in larghezza, i quadrati a ~5,3 mm si
+   prendono ancora bene col dito, i tavoli accostati si vedono come un
+   tavolone e si capisce di quanti pezzi sono fatti, la cornice tratteggiata
+   compare **prima** che l'aggancio scatti. Parole sue: *«è proprio tutto
+   perfetto»*.
 2. **Nessuna mano ha toccato il giro C**: le tre fasce, la nota del turno e la
    sala di Comande dopo mezzanotte non sono mai state usate da una persona.
 3. **La mezzanotte in servizio non è mai capitata dal vivo.** Provata ai bordi
@@ -30,11 +35,11 @@ arrivare a ciò che stava provando.
 6. **I due rami di `DB_URL_PRODUZIONE`** — mancante, o che punta altrove —
    **non sono mai stati esercitati.**
 7. **Il messaggio con le date degli scostamenti non è mai comparso a schermo.**
-8. **Il disegno non è mai stato guardato da un occhio umano.** In questo
-   progetto le prove non hanno un ambiente DOM, quindi la linea di giunzione,
-   la cornice tratteggiata del magnete e i due tavoli girati sono verificati
-   **per aritmetica e per geometria**, mai visti. Aggiungere jsdom sarebbe una
-   dipendenza nuova, e non è lavoro di questo giro.
+8. ✅ **ANCHE QUESTA VERIFICATA lo stesso giorno**, dalla stessa prova con le
+   mani: linea di giunzione, cornice del magnete e tavoli girati **visti**.
+   Resta vero il limite strutturale: in questo progetto le prove non hanno un
+   ambiente DOM, quindi **nessuna prova automatica guarda il disegno** —
+   quello che l'ha guardato è un occhio, e la prossima volta servirà di nuovo.
 
 ---
 
@@ -55,15 +60,28 @@ servizio prendere il tavolo sbagliato costa.
 piccolo misura poco più di 0,78 cm reali. La sala entra nello schermo del
 telefono, che è dove si prendono le prenotazioni.
 
-**Vale ancora nel principio — ed è il NUMERO a non aver mai avuto una misura
-dietro. Questo è il prezzo che accettiamo.** 1,05 cm è una convenzione presa
-da fuori, non qualcosa che qualcuno abbia misurato su questa app: e la realtà
-l'ha già smentita, perché **Alessio oggi trascina i tavoli col dito a 6,6 mm
-senza inciampare** — cioè sta già sotto la soglia da giorni, e la soglia non
-se n'è accorta. Il prezzo dichiarato è che si scende a un valore che **nessuno
-ha ancora provato**, e l'unico modo di sapere se regge è la sua mano: per
-questo la prova del dito sta al **punto 1** di ciò che non è verificato, non
-in fondo.
+**Vale ancora nel principio, e il NUMERO è stato smentito — non da un
+ragionamento, dalla mano di Alessio.** 1,05 cm era una convenzione presa da
+fuori, non qualcosa che qualcuno avesse misurato su questa app. Due misure
+l'hanno smontata, in quest'ordine:
+
+1. **Prima della consegna**: Alessio trascinava già i tavoli col dito a
+   **6,6 mm**, cioè stava sotto la soglia da giorni — e la soglia non se n'era
+   accorta, perché nessuno l'aveva mai confrontata con l'uso vero.
+2. **Dopo la consegna**: li ha provati a **~5,3 mm**, dal telefono, e si
+   prendono ancora bene. *«È proprio tutto perfetto.»*
+
+Quindi la quarta riga non è «abbiamo accettato un rischio»: è che **il numero
+era sbagliato e la prova sul posto lo ha dimostrato**. Il principio — un
+bersaglio troppo piccolo non si prende — resta intero e non è mai stato in
+discussione; quello che non reggeva era il valore che pretendeva di
+rappresentarlo.
+
+⚠️ **E la voce lo dice perché è un caso di una famiglia**: è il **terzo in tre
+giorni in cui una misura sul posto batte una regola presa altrove** (rilievo
+della validazione). Il costo di quella regola non era teorico — è il motivo
+per cui la pianta è rimasta più larga dello schermo fino a oggi, cioè il
+difetto che questo giro chiude.
 
 ⚠️ **E la soglia che GIRA la sala non scende insieme.** Erano lo stesso
 numero; da oggi sono due, perché rispondono a due domande — *quanto piccolo
@@ -337,3 +355,47 @@ vede quando stanno per prendersi, i tavoli accostati si vedono come un tavolone
 solo, e l'app si aggiunge davvero alla schermata iniziale — **poi tocca a lui
 togliere l'icona vecchia, rifarla, e leggere la riga della misura: è la terza
 lettura, quella da installata.**
+
+---
+
+## La chiusura del giro — `2983f7b`
+
+### ✅ Provato con le mani, e verificato dal connettore
+
+**Alessio, dal telefono**: la pianta ci sta tutta in larghezza, i quadrati a
+~5,3 mm si prendono bene col dito, i tavoli accostati si vedono come un
+tavolone **e si capisce di quanti pezzi sono fatti**, la cornice tratteggiata
+compare **prima** che l'aggancio scatti.
+
+**La validazione, gruppo per gruppo e non sul totale**: T1 e T2 da 6 e soli,
+T3 e T4 da 4 e sole, T5·T6 = 6, T7·T8·T9 = 8, totale **34** — identici a
+prima. Quindi **mettere a posto il verso dei due lunghi non ha cambiato
+nessun accostamento**. 13 sagome, nessuna spostata, 25 lapidi invariate,
+`security definer` aperti ad `anon` fermi a 2, zero policy aperte ad
+`anon`, 136 migrazioni.
+
+### La riga della misura se n'è andata
+
+Serviva a sapere quanto spazio ha davvero la pianta sul telefono, e ha finito.
+Il dimensionamento è stato fatto sul **caso peggiore** — le barre di Safari
+aperte, 358 punti utili — che è quello che conta: la lettura da installata
+sarebbe stata **un dato in più, non una condizione**.
+
+⚠️ **Se n'è andato anche il modulo, non solo la riga**: senza chiamanti sarebbe
+codice morto, e un numero tecnico che resta in un angolo è la famiglia di
+«fisco_scadenze». Le misure che ha prodotto restano **qui**, che è il posto
+giusto: un documento, non del codice che gira. Prove pure: da 85 a **78**.
+
+### Il coperto in meno per il tavolo contro il muro — chiesto e ritirato
+
+Alessio ha **riproposto** il meccanismo «un posto in meno quando il tavolo è
+contro il muro», che era stato scartato il 18/08 (rilievo della validazione al
+giro B): due strade per lo stesso numero, con una precedenza da inventare da
+chi scrive il codice. Gli è stata offerta la via intermedia — *l'app propone,
+la correzione a mano resta l'unico meccanismo che scrive*.
+
+**Ha rinunciato**: *«è già fantastica così»*. **Non è stato costruito niente.**
+
+⚠️ Annotato apposta, con la richiesta accanto alla rinuncia: se torna fra sei
+mesi si riparte **da qui** — dalla via intermedia già disegnata e dalla
+ragione per cui il flag separato non si fa — e non da zero.
