@@ -4,7 +4,7 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `8222222`
+- **HEAD dichiarato**: `28d20dc` (la prima metà del giro è `8222222`; in mezzo c'è passato il collaudo di Alessio, e le sue due richieste sono il secondo commit)
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
@@ -35,13 +35,22 @@
 
 E quelle che apre questo giro:
 
-8. 🔴 **NESSUNA MANO HA ANCORA TOCCATO IL RIQUADRO DEL TAVOLO.** È il pezzo
-   che cambia il gesto più frequente di quella schermata, e **nessuna prova
-   automatica di questo progetto guarda una schermata**: quello che è provato
-   è che i dati arrivano, non che il riquadro si apra dove serve e ci stia sul
-   telefono. ⚠️ Il caso peggiore è misurabile in anticipo e va dichiarato: su
-   un tavolo con **una** prenotazione ci vuole adesso **un tocco in più** per
-   arrivare alla sua scheda.
+8. 🟡 **IL RIQUADRO È STATO PROVATO A METÀ.** Alessio l'ha guardato ed è da lì
+   che nascono le due richieste della seconda metà di questo giro. ⚠️ Ma
+   **quello che ha guardato non c'è più nella stessa forma**: sul tavolo
+   libero il riquadro adesso non compare affatto, e **quella versione lì non
+   l'ha ancora vista nessuno**. Resta vero il limite generale: **nessuna prova
+   automatica di questo progetto guarda una schermata**.
+   ⚠️ **E il tocco in più è sparito solo su metà dei casi**: su un tavolo
+   libero si va dritti ai campi, su un tavolo con **una sola** prenotazione ci
+   vuole ancora un tocco in più rispetto a prima del giro D3.
+8-bis. 🔴 **UN FALSO ALLARME, e vale la pena scriverlo.** Le prime fotografie
+   del collaudo mostravano ancora l'elenco dei tavoli sotto la pianta: Alessio
+   stava guardando la versione **prima del push**. Nessun difetto — ma è la
+   seconda volta in due giorni che una **lettura** viene scambiata per una
+   **misura**, e la prima l'aveva rilevata lui su sé stesso (T8 «non
+   sbarrato»). *Guardare una schermata non dice quale versione si sta
+   guardando.*
 9. 🔴 **L'EVIDENZIAZIONE E LO SCORRIMENTO NON SONO PROVATI DA NIENTE.** Lo
    scorrimento fino alla riga esiste proprio perché sul telefono la pianta e
    l'elenco non stanno insieme — cioè **il caso in cui serve è quello che qui
@@ -57,14 +66,36 @@ E quelle che apre questo giro:
     la metà che sparisce è quella visibile. ⚠️ Il giorno che ci saranno accessi
     **per persona** quella riga va rimessa a schermo — e diventerà leggibile
     all'indietro, perché nel frattempo è stata scritta lo stesso.
+13. 🟡 **Restano senza risposta due domande poste ad Alessio**: se il riquadro
+    ci sta nello schermo senza scorrere, e se i blocchetti del Calendario
+    Eventi si leggono meglio della tabella. Non le ha guardate perché era
+    sulla versione precedente al push.
+14. 🔴 **Sul computer, da oggi, il Calendario mostra la sala sdraiata e le
+    Comande in piedi senza niente che lo spieghi** (rovesciamento n. 11). Il
+    fatto resta vero — le due schermate chiedono la pianta alla stessa
+    funzione — ma **la frase che lo diceva è stata tolta da tutte e due**. Sul
+    telefono non serviva più (lì la pianta si gira da sola e le due schermate
+    sono identiche); sul computer serviva, e il prezzo è dichiarato.
+15. 🟡 **Il tocco su un tavolo libero non è mai stato provato su un tavolo che
+    fa parte di un TAVOLONE.** Lì il modulo mostra i coperti del gruppo, e la
+    frase che distingue tavolo e tavolone **non compare** (compare solo nel
+    riquadro): sul modulo il numero è etichettato con le etichette del gruppo,
+    che è un'altra forma di dirlo. **Non è stato guardato da nessuno.**
 
 ---
 
 ## Cosa abbiamo rovesciato
 
-**Due rovesciamenti**, entrambi nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. **8** e **9**),
-dove stanno per esteso con le quattro righe.
+**Quattro rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. **8**, **9**,
+**10** e **11**), dove stanno per esteso con le quattro righe.
+
+⚠️ **Sono tanti, e la ragione è una sola**: il collaudo di Alessio è passato
+**in mezzo** a questo giro. Il n. 10 rovescia il n. 9 di poche ore prima — non
+è confusione, è che il n. 9 è stato messo nelle sue mani e ha risposto. *Un
+rovesciamento a poche ore di distanza è il segno che la cosa è stata provata
+davvero, non che era stata decisa male* — a patto che sia scritto, che è
+esattamente perché questo elenco esiste.
 
 ### 8 · «chi ha corretto i coperti, e quando, si vede a schermo»
 
@@ -99,6 +130,77 @@ registra chi e quando, e si vede»*.
   diversi per lo stesso gesto sono ambigui *per costruzione*, perché chi tocca
   deve ricordarsi cosa c'era sotto. Un esito solo la toglie alla radice.
 
+### 10 · «un tocco fa sempre la stessa cosa: apre il riquadro»
+
+⚠️ **Rovescia il n. 9, poche ore dopo, e va letto insieme a quello.**
+
+- **Cosa si decide adesso.** Su un tavolo **libero** il tocco porta **dritto ai
+  campi della prenotazione**, saltando il riquadro. Richiesta di Alessio dopo
+  averlo provato: *«l'ideale sarebbe che si arrivasse direttamente ai campi da
+  compilare per effettuare una prenotazione non appena si tocca un tavolo»*.
+  Sul tavolo occupato il riquadro resta. Gli esiti tornano **due**.
+- **Perché — anzi: la ragione del n. 9 regge lo stesso.** Su un tavolo libero
+  il riquadro **non faceva scegliere niente**: era una tappa fra il dito e i
+  campi. E l'ambiguità che il n. 9 voleva togliere non torna, per una ragione
+  che il 14/08 non era mai stata scritta: **la condizione si vede prima di
+  toccare** — un tavolo bianco è libero, uno colorato ha qualcuno, e il colore
+  è il segno più leggibile di quella schermata.
+- ⚠️ **IL PREZZO, MISURATO PRIMA DI ACCETTARLO.** Il validatore ha sospettato
+  che si spostasse sul caso *«tavolo libero ma volevo solo correggere i
+  coperti»*, ed era **giusto**: senza cura, il numero di un tavolo libero non
+  si sarebbe più potuto correggere da nessuna parte, perché il gesto che lo
+  faceva — l'elenco sotto la pianta — questo giro l'ha tolto.
+  **Curato insieme alla richiesta**: la casella dei coperti sta **anche nel
+  modulo della prenotazione**, quindi il numero si corregge ancora in **un
+  tocco** e si vede proprio mentre si decide se accettare. ⚠️ **La casella è
+  una sola componente usata dai due posti**: due copie della stessa casella
+  sono due posti che divergono.
+  **Quello che resta da pagare, detto**: chi tocca un tavolo libero *solo* per
+  correggerne il numero si trova dentro un modulo intitolato «Prenotazione su
+  T3» e deve premere «Annulla» per uscirne. Non perde niente e non scrive
+  niente, ma **il gesto si chiama diversamente da quello che voleva fare**.
+
+### 11 · «la riga "è lo stesso locale girato" sta su entrambe le schermate»
+
+- **Cosa era stato deciso.** Il **17/08**, da Alessio: quella frase va messa
+  sia in Comande sia nel Calendario, e anzi soprattutto nel Calendario.
+- **La ragione di allora.** Chi si accorge della discrepanza parte dalla
+  schermata dove si sta seduti a ragionare: *dirlo solo di là servirebbe a chi
+  ha già capito*. Senza la riga, chi confronta le due sale sospetta **due
+  disposizioni diverse**.
+- **Cosa si decide adesso.** **Si toglie da tutte e due.** Gli era stato fatto
+  notare che sul telefono non spiega più niente — dal giro E la pianta del
+  Calendario si gira da sola, quindi le due schermate mostrano la stessa cosa
+  — mentre **sul computer resta vera**, ed era stata proposta la via di mezzo
+  di tenerla solo lì. Ha deciso di toglierla ovunque.
+- **Perché — sul telefono la ragione è caduta da sola; sul computer vale
+  ancora, e questo è il prezzo.** Da oggi chi apre le due schermate su un
+  monitor largo vede due sale girate diversamente **senza niente che glielo
+  spieghi**. Il fatto resta vero — le due schermate chiedono la pianta alla
+  stessa funzione e ricevono le stesse coordinate — sparisce la frase.
+
+---
+
+## ⚠️ La documentazione a schermo ha un destinatario, e il destinatario cambia
+
+Rilievo del validatore, e vale più delle cinque righe che l'hanno prodotto.
+In tre giorni erano state aggiunte molte spiegazioni; **oggi Alessio ne ha
+tolte cinque in due passaggi** — le due legende dei colori, il paragrafo che
+spiegava il tocco, quello del «siamo al completo» e la riga sulla sala girata.
+
+⚠️ **Non erano sbagliate**: erano rivolte a chi non sa, e lui ormai sa — quelle
+regole le ha decise lui. Quindi il criterio non è «una spiegazione in più non
+fa male»: una spiegazione che il lettore ha già in testa **è ingombro**, e
+l'ingombro su una schermata che si usa in servizio si paga in secondi.
+
+⚠️ **E il problema tornerà, non nella stessa forma.** Il giorno che entrerà
+personale nuovo servirà di nuovo dire cosa fa un tocco e cosa vuol dire un
+colore — ma a gente che non ha mai visto quella sala, quindi **con parole
+diverse da quelle tolte oggi**. Per questo ogni riga è stata tolta
+**dichiarando dove quella regola resta scritta** (il codice, questo riepilogo)
+invece di essere cancellata e basta. La regola generale è finita in
+`CLAUDE.md` §6.
+
 ---
 
 ## ⚠️ Le due cose di natura diversa dentro lo stesso riquadro
@@ -126,7 +228,7 @@ questa deve farsi notare proprio nel caso in cui serve.
 
 ## Cosa è stato costruito
 
-### 1. Il riquadro del tavolo, che assorbe il tocco
+### 1. Il riquadro del tavolo — sui tavoli che hanno qualcuno
 
 Dentro c'è tutto quello che riguarda quel tavolo: **i coperti** con la casella
 per correggerli e la ragione, **le prenotazioni** che ci stanno sopra (con
@@ -137,6 +239,11 @@ l'ora, il nome, quanti sono e se sono arrivati) da aprire con un tocco, e
 **sparito**, e con lui la seconda strada per correggere i coperti. Era già la
 regola del progetto — due strade per lo stesso numero vogliono una precedenza
 inventata da chi scrive il codice.
+
+⚠️ **Sul tavolo LIBERO il riquadro non compare** (rovesciamento n. 10,
+richiesta di Alessio dopo averlo provato): lì non c'era niente da scegliere, e
+il tocco porta dritto ai campi della prenotazione. **La casella dei coperti lo
+segue nel modulo**, ed è la stessa componente — non una seconda copia.
 
 ### 2. L'evidenziazione incrociata, nei due versi
 
@@ -245,7 +352,7 @@ l'avesse apparecchiata**.
 
 ## Per Alessio, in una riga
 
-Tocca un tavolo sulla pianta: si apre un riquadro con dentro tutto — quanti ne
-tiene, chi c'è, e il pulsante per prendere una prenotazione. **L'elenco dei
-tavoli che stava sotto la pianta non c'è più**: quello che facevi lì lo fai
-adesso toccando il tavolo.
+Tocca un tavolo **bianco** e sei già nei campi della prenotazione, col numero
+dei coperti lì accanto; tocca un tavolo **colorato** e si apre chi c'è già.
+**L'elenco dei tavoli che stava sotto la pianta non c'è più**: quello che
+facevi lì lo fai adesso toccando il tavolo.

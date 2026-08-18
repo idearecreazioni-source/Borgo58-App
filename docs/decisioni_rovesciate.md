@@ -45,6 +45,8 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 7 | 18/08/2026 | *Le due legende dichiarano la precedenza dei colori* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 | 8 | 18/08/2026 | *Chi ha corretto i coperti, e quando, si vede a schermo* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 9 | 18/08/2026 | *Un tocco sulla sagoma vuol dire tre cose diverse* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 10 | 18/08/2026 | *Un tocco fa sempre la stessa cosa: apre il riquadro* (18/08, rovescia il n. 9) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 11 | 18/08/2026 | *La riga «è lo stesso locale girato» sta su entrambe le schermate* (17/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -310,3 +312,74 @@ il gesto che il mandato descrive come quello che «pesava» di più.
 ⚠️ L'unica eccezione resta il **lavoro in corso**: mentre si sceglie dove far
 sedere qualcuno il tocco aggiunge e toglie, e lì il gesto è già dichiarato da
 un riquadro aperto sopra la pianta.
+
+---
+
+## 10 · 18/08/2026 — «un tocco fa sempre la stessa cosa: apre il riquadro»
+
+⚠️ **Rovescia il n. 9, poche ore dopo**, e va letto insieme a quello.
+
+**Cosa era stato deciso, e quando.** Il **18/08**, nel giro D3 di poche ore
+prima: il tocco su una sagoma apre **sempre** il riquadro di quel tavolo, e le
+strade stanno lì dentro.
+
+**La ragione di allora.** Togliere l'ambiguità alla radice: *tre esiti diversi
+per lo stesso gesto sono ambigui per costruzione*, perché chi tocca deve
+ricordarsi cosa c'era sotto il dito.
+
+**Cosa si decide adesso.** Su un tavolo **libero** il tocco porta **dritto ai
+campi della prenotazione**, saltando il riquadro. Richiesta di Alessio dopo
+averlo provato: *«l'ideale sarebbe che si arrivasse direttamente ai campi da
+compilare per effettuare una prenotazione non appena si tocca un tavolo»*.
+Sul tavolo **occupato** il riquadro resta. Quindi gli esiti tornano **due**.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, e regge lo
+stesso.** Su un tavolo libero il riquadro **non faceva scegliere niente**: non
+c'erano prenotazioni da aprire, quindi era una tappa fra il dito e i campi. E
+l'ambiguità che il n. 9 voleva togliere si regge lo stesso, per una ragione
+che il 14/08 non era mai stata scritta: **la condizione si vede prima di
+toccare**. Un tavolo bianco è libero, uno colorato ha qualcuno — e il colore è
+il segno più leggibile di quella schermata. Il modulo lo dichiara comunque a
+parole, una volta, nel posto dove la regola agisce.
+
+⚠️ **IL PREZZO, MISURATO PRIMA DI ACCETTARLO** (rilievo del validatore: *«il
+mio sospetto è che si sposti sul caso tavolo libero ma volevo solo correggere
+i coperti»*). Il sospetto era **giusto**, e la cura è stata costruita insieme
+alla richiesta: la casella dei coperti **è nel modulo della prenotazione**, non
+solo nel riquadro. Quindi il numero di un tavolo libero si corregge ancora in
+**un tocco**, e per giunta si vede proprio mentre si decide se accettare quella
+prenotazione.
+Quello che resta da pagare, e va detto: chi tocca un tavolo libero **solo** per
+correggerne il numero si trova dentro un modulo intitolato «Prenotazione su
+T3», e per uscirne deve premere «Annulla». Non perde niente e non scrive
+niente, ma **il gesto si chiama diversamente da quello che voleva fare**.
+
+---
+
+## 11 · 18/08/2026 — «la riga che spiega perché in Comande la sala è girata sta su ENTRAMBE le schermate»
+
+**Cosa era stato deciso, e quando.** Il **17/08**, da Alessio: la frase *«è lo
+stesso locale girato — non un'altra disposizione»* va messa **sia** in Comande
+**sia** nel Calendario. Anzi, soprattutto nel Calendario.
+
+**La ragione di allora.** Chi si accorge della discrepanza parte dalla
+schermata dove si sta seduti a ragionare, non da quella del servizio: *dirlo
+solo di là servirebbe a chi ha già capito*. Senza la riga, chi confronta le
+due sale sospetta **due disposizioni diverse** — che sarebbe un difetto grave,
+perché la sala è una.
+
+**Cosa si decide adesso.** **Si toglie da tutte e due.** Gli era stato fatto
+notare che sul telefono quella riga non spiega più niente — lì la pianta del
+Calendario si gira da sola, e le due schermate mostrano la stessa cosa —
+mentre **sul computer resta vera**, ed era stata proposta la via di mezzo:
+tenerla solo lì. Ha deciso di toglierla ovunque.
+
+**Perché la ragione di allora non vale più — anzi: sul computer vale ancora, e
+questo è il prezzo che accettiamo.** Sul telefono la ragione **è caduta da
+sola**: dal giro E la pianta si gira quando lo schermo è stretto, quindi le due
+schermate sono identiche e non c'è nessuna discrepanza da spiegare. Sul
+computer no: lì il Calendario mostra la sala sdraiata e le Comande in piedi, e
+**da oggi chi apre le due schermate su un monitor largo vede due sale girate
+diversamente senza niente che glielo spieghi**. Il fatto resta vero — le due
+schermate chiedono la pianta alla stessa funzione e ricevono le stesse
+coordinate — sparisce la frase che lo diceva.
