@@ -28,9 +28,14 @@ punti **3 + 4**. Segue i giri [A](20260818_giro_a_la_sala_non_si_perde.md) e
 4. **Il lato SQL delle 5 non c'è**: vedi «l'orologio», qui sotto. Finché non
    c'è, il gestionale ha due nozioni di «oggi» che divergono fra mezzanotte e
    le cinque.
-5. **Restano dal giro A**: il messaggio con le date degli scostamenti mai
-   comparso a schermo, i due rami di `DB_URL_PRODUZIONE` mai esercitati, la
-   guardia di `--azzera` mai scattata in una ricostruzione vera.
+5. **Restano dai giri A e B — e solo l'ESECUZIONE, non più la lettura**
+   (aggiornato dopo la validazione completa del 18/08, che ha coperto anche la
+   metà repo: riepiloghi confrontati col codice vero, Contratto mai toccato,
+   135 file = 135 applicate, e il codice del giro A esistente e corrispondente
+   a quanto dichiarato). Quello che nessuno ha ancora **visto girare**: il
+   messaggio con le date degli scostamenti mai comparso a schermo, i due rami
+   di `DB_URL_PRODUZIONE` mai esercitati, la guardia di `--azzera` mai
+   scattata in una ricostruzione vera.
 
 ---
 
