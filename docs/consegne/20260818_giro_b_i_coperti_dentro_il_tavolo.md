@@ -213,6 +213,24 @@ un altro tornerebbe **vuota in silenzio**. Quindi:
 ⚠️ **Limite dichiarato**: finché si entra per ruolo, «un altro accesso» è
 tutto ciò che si può dire con verità. Un nome sarebbe inventato.
 
+**E l'accesso condiviso è una scelta, non un rinvio** (Alessio, 18/08): per
+adesso lo staff entra con un accesso solo. Conservare **sotto** l'identificativo
+vero è quindi una scelta esplicita e non un dettaglio di implementazione — è
+**la forma opposta al campo dimenticato**: un dato conservato oggi *perché
+servirà*, invece di uno perso *perché oggi non serviva*. Il giorno degli
+accessi personali, la storia vecchia diventa leggibile all'indietro senza che
+si rifaccia niente.
+
+⚠️ **Due posti dove l'accesso condiviso costa, girati da qui ad Alessio e
+scritti in `CLAUDE.md` §10 perché non si perdano:**
+- **il manuale HACCP esibibile** registra chi ha fatto letture e pulizie: con
+  un accesso solo dirà «staff» ovunque. **Va sentita Tiziana** — se per lei è
+  un problema, la scadenza si sposta da «prima di assumere» a **«prima
+  dell'apertura»**;
+- **cassa e mance** sono i due posti dove, quando un numero non torna, la
+  domanda è *«chi»*: con l'accesso condiviso non ha risposta, e sulle mance i
+  soldi sono **di altri**.
+
 ⚠️ **Lo scrive il trigger, mai la schermata** — un campo che la schermata può
 dimenticare di passare è un campo che prima o poi si perde in silenzio (il
 `mezzo` delle mance, 16/08).
@@ -312,6 +330,50 @@ cui eserciti il tratto **fra schermata e database**, cioè il pezzo dove il
 
 ---
 
+## L'applicazione in produzione — i numeri veri
+
+Applicate **2 su 2**, in ordine. Totale in produzione: **131 migrazioni**.
+I tre controlli chiesti dal validatore, letti col connettore in sola lettura:
+
+**1 · Le sagome sono ancora 13 e identiche.** 13 righe, 13 attive: 9 tavoli,
+3 divani, 1 Chef Table, 2 ruotate. Misure, zone, posizioni, versi e
+`posti_fissi` invariati rispetto alla misura fatta a inizio sessione — la
+migrazione scrive **solo** `formato_id`.
+
+**2 · Ciascun tavolo ha preso il formato giusto.**
+
+| formato | coperti | quanti | quali |
+|---|---|---|---|
+| Quadrato 90×90 | 4 | **7** | T3, T4, T5, T6, T7, T8, T9 |
+| Rettangolare 180×90 | 6 | **2** | T1, T2 |
+
+**3 · Chef Table e divani sono fuori dal conteggio della cena, non dentro con
+un numero.** Per **due** ragioni indipendenti, entrambe verificabili dal
+connettore: nessun arredo fisso ha un formato (**0**), e
+`coperti_del_giorno()` filtra `p.tipo = 'tavolo'` **e** passa da un `join
+formati_tavolo` che loro non hanno. I `posti_fissi` restano dove stavano e
+non entrano in nessun calcolo: *Chef Table = 4 · Divano 1 = 6 · Divano 2 = 6 ·
+Divano 3 = 6*. E il vincolo del 14/08 regge: **0** tavoli con `posti_fissi`.
+
+⚠️ **Nota per chi valida**: `coperti_del_giorno()` è concessa al solo ruolo
+dell'app, quindi **dal connettore in sola lettura non è eseguibile** — è
+corretto che sia così. I controlli qui sopra sono scritti apposta per essere
+rifatti senza chiamarla.
+
+### Il primo numero vero della sala
+
+Nella disposizione base di adesso **T5·T6 sono accostati e T7·T8·T9 pure**:
+due giunzioni nel secondo gruppo, una nel primo. Con la regola, la sala vale
+**34** e non 40 — che è esattamente il punto di tutto il giro.
+⚠️ Calcolato **a mano dalle coordinate**, non letto dalla funzione (vedi la
+nota qui sopra): è il primo numero che Alessio vedrà a schermo, e va
+confrontato con quello.
+⚠️ E **`CLAUDE.md` §12 diceva «T5·T6·T7 accostati e T8·T9 accostati»**: era
+vero il 14/08 e non lo è più, perché Alessio nel frattempo li ha spostati.
+Corretto — è una descrizione di come sono messi, non una regola.
+
+---
+
 ## Cosa NON è verificato
 
 - ⚠️ **Nessuna mano vera l'ha ancora usato.** Il numero sulla sagoma, la
@@ -372,6 +434,13 @@ vero quando lo affronteremo.
 decide se la cura sta nel giro C o in un lavoro a sé. Nel codice nuovo di
 questa consegna la data locale è usata:
 `(now() at time zone 'Europe/Rome')::date`.
+
+⚠️ **CONDIZIONE SCRITTA ADESSO, VINCOLANTE PER IL GIRO C.** Il giro C parla di
+orari di una serata che attraversa la mezzanotte: **qualunque cosa scriva lì
+non deve aggiungere un dodicesimo punto a quell'elenco.** Se in C serve «che
+sera è», si usa **un solo posto e lo si nomina** — anche se per ora fa la cosa
+semplice — così quando arriverà il lavoro vero ci sarà **un punto solo da
+cambiare invece di tre nuovi da trovare**.
 
 ---
 
