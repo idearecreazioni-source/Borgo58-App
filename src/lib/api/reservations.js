@@ -7,7 +7,12 @@ import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 export async function listReservations({ status, type, search, date } = {}) {
   let query = supabase
     .from("reservations")
-    .select("*")
+    // ⚠️ I TAVOLI ARRIVANO INSIEME, e non con una seconda interrogazione.
+    // Fino al 18/08 l'elenco del Calendario Eventi non sapeva su quale tavolo
+    // fosse una prenotazione — non per dimenticanza della schermata: il dato
+    // non veniva proprio chiesto al database. L'incorporamento funziona
+    // perché `prenotazione_tavoli.reservation_id` è una vera chiave esterna.
+    .select("*, tavoli:prenotazione_tavoli(dining_table_id, etichetta_al_momento)")
     .order("reservation_date", { ascending: true })
     .order("reservation_time", { ascending: true });
 

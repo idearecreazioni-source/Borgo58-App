@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
@@ -41,11 +41,20 @@ import {
 // compilare un modulo altrove e poi tornare a cercare dove metterli è il
 // modo sicuro per non farlo mai.
 //
-// Un tocco su una sagoma vuol dire tre cose diverse, e non possono essere
-// ambigue:
-//   · c'è un lavoro in corso  → aggiunge o toglie il tavolo dalla scelta
-//   · tavolo libero           → comincia una prenotazione nuova su quello
-//   · tavolo già promesso     → apre QUELLA prenotazione, per cambiarla
+// ⚠️ UN TOCCO VUOL DIRE UNA COSA SOLA — dal giro D3 (18/08), e fino a quel
+// giorno ne voleva dire tre a seconda di cosa c'era sotto il dito (tavolo
+// libero → prenotazione nuova, tavolo promesso → apre quella prenotazione,
+// lavoro in corso → aggiunge alla scelta). La ragione di allora era che le
+// tre cose «non possono essere ambigue», e vale ancora: la forma nuova la
+// serve meglio. Adesso il tocco apre **il riquadro di quel tavolo**, e le
+// strade stanno lì dentro con le parole che dicono quale fa cosa.
+// L'unica eccezione è il lavoro in corso — mentre si sceglie dove far sedere
+// qualcuno, il tocco aggiunge e toglie: lì il gesto è già dichiarato da un
+// riquadro aperto sopra la pianta.
+//
+// ⚠️ E il riquadro ha ASSORBITO anche l'elenco dei tavoli che stava sotto la
+// pianta: i coperti si correggono da lì, dove si è appena toccato il tavolo,
+// invece che da una seconda lista con la sua riga da cercare.
 //
 // ⚠️ La pianta mostra TUTTA la serata, non un momento. Un tavolo
 // prenotato alle 19:30 resta colorato anche se alle 22 si libera: non
@@ -162,9 +171,17 @@ export default function PiantaGiornata() {
   // La prenotazione aperta toccando un tavolo già promesso.
   const [aperta, setAperta] = useState(null);
   const [modifica, setModifica] = useState(null);
-  // La sagoma da cui si e aperta: serve al pulsante che aggiunge una
-  // seconda prenotazione proprio su quel tavolo.
+  // La sagoma toccata: da qui nasce il riquadro del tavolo, e da lì si fa
+  // tutto quello che riguarda quel tavolo.
   const [toccato, setToccato] = useState(null);
+
+  // ⚠️ I DUE APPIGLI DELL'EVIDENZIAZIONE INCROCIATA. Accendere una riga che
+  // sta fuori schermo non è evidenziare: è nascondere meglio. Sul telefono la
+  // pianta e l'elenco non ci stanno insieme, quindi al tocco la pagina va
+  // dove sta la cosa accesa — verso l'elenco se si è toccato un tavolo, verso
+  // la pianta se si è toccata una prenotazione.
+  const piantaRef = useRef(null);
+  const righeRef = useRef({});
 
   const ricarica = useCallback(async () => {
     const [p, r, a, s, g, po, tu, reg] = await Promise.all([
@@ -287,6 +304,21 @@ export default function PiantaGiornata() {
     return () => clearInterval(battito);
   }, []);
 
+  // L'ALTRO VERSO DELL'EVIDENZIAZIONE: toccato un tavolo, la pagina scorre
+  // fino alla riga di chi ci siede.
+  //
+  // ⚠️ `block: "nearest"` e non `"center"`: se la riga è già visibile la
+  // pagina non si muove affatto. Sul computer sta tutto sullo stesso schermo,
+  // e una pagina che salta a ogni tocco sarebbe un difetto introdotto per
+  // curare un problema che lì non esiste.
+  useEffect(() => {
+    if (!toccato) return;
+    const primo = (perTavolo.get(toccato) ?? [])[0];
+    const riga = primo && righeRef.current[primo.reservation.id];
+    riga?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toccato]);
+
   // IL RITARDO, E LA SOLA GIORNATA IN CUI HA SENSO.
   //
   // ⚠️ Questa schermata visita QUALUNQUE data — è il suo mestiere: alle 00:30
@@ -341,6 +373,12 @@ export default function PiantaGiornata() {
     return s;
   }, [sagome, perTavolo, evidenziata, fasciaPerPrenotazione, gruppi, ritardi]);
 
+  // ⚠️ UN TOCCO, UN RIQUADRO — e non più tre esiti diversi a seconda di cosa
+  // c'è sotto il dito (giro D3, richiesta di Alessio). Prima un tavolo libero
+  // avviava una prenotazione, uno prenotato apriva la scheda, e i coperti si
+  // correggevano da un elenco che stava da un'altra parte. Adesso il tocco fa
+  // sempre la stessa cosa — apre il riquadro di quel tavolo — e dentro ci
+  // sono tutte e tre le strade, con le parole che dicono quale fa cosa.
   const tocca = (sagoma) => {
     setAvviso("");
     setError("");
@@ -353,29 +391,26 @@ export default function PiantaGiornata() {
       return;
     }
 
-    const sopra = perTavolo.get(sagoma.id) ?? [];
-    if (sopra.length > 0) {
-      const p = prenotazioni.find((x) => x.id === sopra[0].reservation.id);
-      // Quale sagoma è stata toccata, per poterci aggiungere una seconda
-      // prenotazione da qui: il pulsante sta dove sta il gesto.
-      setToccato(sagoma.id);
-      setAperta(p ?? null);
-      setModifica(
-        p
-          ? {
-              nome: p.customer_name ?? "",
-              telefono: p.customer_phone ?? "",
-              persone: p.party_size ?? 1,
-              ora: p.reservation_time?.slice(0, 5) ?? "",
-              note: p.notes ?? "",
-            }
-          : null
-      );
-      return;
-    }
+    setAperta(null);
+    setModifica(null);
+    setCorrezione(null);
+    setToccato(sagoma.id);
+  };
 
-    setModo("nuova");
-    setScelti([sagoma.id]);
+  // Aprire la scheda di una prenotazione — dal riquadro del tavolo o
+  // dall'elenco sotto. Una funzione sola: due strade che riempiono a mano
+  // gli stessi campi finirebbero per riempirli diversi.
+  const apriPrenotazione = (p) => {
+    setAvviso("");
+    setError("");
+    setAperta(p);
+    setModifica({
+      nome: p.customer_name ?? "",
+      telefono: p.customer_phone ?? "",
+      persone: p.party_size ?? 1,
+      ora: p.reservation_time?.slice(0, 5) ?? "",
+      note: p.notes ?? "",
+    });
   };
 
   const iniziaAssegnazione = (p) => {
@@ -393,6 +428,51 @@ export default function PiantaGiornata() {
   // ricalcolata: la regola vive in un posto solo.
   const turnoDi = (id) => turni.find((t) => t.reservation_id === id);
   const ultimoGiro = turnoDi(aperta?.id)?.fascia === "tardi";
+
+  // --- IL TAVOLO TOCCATO, e cosa gli sta attorno ---
+  const sagomaToccata = sagome.find((s) => s.id === toccato) ?? null;
+  // ⚠️ Il gruppo lo dice il DATABASE (`coperti_del_giorno`), non una seconda
+  // regola qui: chi è accostato con chi è la stessa risposta che colora la
+  // pianta e che conta i coperti della serata.
+  const gruppoDelToccato = toccato
+    ? (gruppi.find((g) => (g.tavoli ?? []).includes(toccato)) ?? null)
+    : null;
+  const chiaveDelToccato = (gruppoDelToccato?.tavoli ?? []).join(",");
+  const prenotazioniDelToccato = (perTavolo.get(toccato) ?? [])
+    .map((a) => prenotazioni.find((p) => p.id === a.reservation.id))
+    .filter(Boolean);
+
+  // «È arrivato o no» in tre parole — il dato del giro D2, che nell'elenco
+  // non c'era mai stato. ⚠️ Non è un campo scritto da nessuno: si deduce dal
+  // conto aperto, e vuoto vuol dire «deve ancora arrivare, ed è presto».
+  const statoArrivo = (id) => {
+    const r = ritardi.perPrenotazione.get(id);
+    if (!r) return "";
+    if (r.arrivata) return "arrivati";
+    if (r.inRitardo) return `in ritardo di ${r.minuti} min`;
+    return "attesi";
+  };
+
+  // --- L'EVIDENZIAZIONE INCROCIATA, nei due versi (giro D3, punto 5) ---
+  //
+  // ⚠️ Fino a oggi per accompagnare qualcuno al tavolo bisognava **incrociare
+  // due elenchi con gli occhi** — la pianta sopra e le prenotazioni sotto — ed
+  // è la causa principale della fatica che Alessio ha descritto.
+  //
+  // ⚠️ E si riusa il segno che c'è già: «selezionato» significa, per la
+  // precedenza dei colori, *la risposta al tuo tocco*. Un colore nuovo apposta
+  // per l'evidenziazione direbbe una quarta cosa con un quarto segno, mentre
+  // questa È quella cosa lì.
+  const tavoliEvidenziati = modo
+    ? scelti
+    : aperta
+      ? tavoliDi(aperta.id).map((a) => a.dining_table_id)
+      : toccato
+        ? [toccato]
+        : [];
+  const prenotazioniEvidenziate = new Set(
+    aperta ? [aperta.id] : prenotazioniDelToccato.map((p) => p.id)
+  );
 
   // Le prenotazioni già presenti sui tavoli che si stanno scegliendo.
   const giaPromessi = scelti.flatMap((id) =>
@@ -563,9 +643,10 @@ export default function PiantaGiornata() {
             )}
           </div>
 
+          <div ref={piantaRef}>
           <PiantaSala
             sagome={sagome}
-            selezione={scelti}
+            selezione={tavoliEvidenziati}
             stato={stato}
             gruppi={gruppi}
             onSeleziona={tocca}
@@ -578,6 +659,7 @@ export default function PiantaGiornata() {
                 : undefined
             }
           />
+          </div>
 
           {/* ⚠️ La stessa riga sta anche in Comande, e sta QUI soprattutto:
               chi si accorge della discrepanza parte da questa schermata,
@@ -589,153 +671,187 @@ export default function PiantaGiornata() {
             verticale: è lo stesso locale girato — non un&apos;altra disposizione.
           </p>
 
-          {/* I TAVOLONI, e il numero corretto a mano.
-              ⚠️ Sulla sagoma c'è la cifra col punto; qui ci sono le parole.
-              Le due cose non si ripetono: il segno si legge a colpo
-              d'occhio, la spiegazione si legge quando serve. */}
-          {gruppi.length > 0 && (
-            <div className="mt-3">
-              <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
-                Quanti ne tengono
-              </p>
-              <ul className="divide-y divide-b58-charcoal/10 rounded-xl ring-1 ring-b58-charcoal/10">
-                {gruppi.map((g) => {
-                  const chiave = (g.tavoli ?? []).join(",");
-                  const inCorrezione = correzione?.chiave === chiave;
-                  return (
-                    <li key={chiave} className="px-3 py-2">
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                        <span className="text-sm font-medium">
-                          {(g.etichette ?? []).join(" · ")}
-                          {g.giunzioni > 0 && (
-                            <span className="text-[11px] font-normal text-b58-charcoal-soft">
-                              {" "}
-                              — accostati
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-sm">
-                          <strong>{g.coperti}</strong>
-                          {g.corretto ? (
-                            <span className="text-[12px] text-b58-charcoal-soft">
-                              {" "}
-                              corretto a mano · la regola direbbe {g.coperti_calcolati}
-                              {g.ragione ? ` · ${g.ragione}` : ""}
-                              {/* ⚠️ CHI e QUANDO, perché una correzione senza
-                                  autore è un numero che nessuno può spiegare
-                                  tre giorni dopo — e quel numero decide se si
-                                  accetta gente. «Un altro accesso» e non un
-                                  nome: oggi si entra per ruolo e non per
-                                  persona, e dire un nome sarebbe inventarlo. */}
-                              {g.corretto_il &&
-                                ` · ${g.corretto_da_me ? "l'hai messo tu" : "da un altro accesso"} il ${formatDate(g.corretto_il.slice(0, 10))}`}
-                            </span>
-                          ) : (
-                            <span className="text-[12px] text-b58-charcoal-soft"> calcolato</span>
-                          )}
-                        </span>
-                      </div>
+          {/* IL RIQUADRO DEL TAVOLO (giro D3, richiesta di Alessio).
+              ⚠️ ASSORBE il tocco, non gli si affianca: prima toccare un
+              tavolo prenotato apriva direttamente la prenotazione, e i
+              coperti si correggevano da un elenco separato sotto la pianta.
+              Due strade per due pezzi della stessa cosa — e l'elenco è
+              sparito con questo riquadro.
+              ⚠️ E QUI DENTRO CONVIVONO DUE COSE DI NATURA DIVERSA, che vanno
+              dichiarate o si sbaglia in silenzio: **il tocco è del tavolo**
+              (hai toccato T8), **il numero dei coperti è del TAVOLONE** (la
+              correzione ha per chiave l'insieme, dal giro B). Correggere il
+              numero di un tavolone credendo di correggere un tavolo è un
+              errore che poi decide se si accetta gente. */}
+          {toccato && !modo && (
+            <div className="mt-3 rounded-xl bg-b58-parchment ring-1 ring-b58-terracotta/40 p-4">
+              <div className="flex items-baseline justify-between gap-3 mb-2">
+                <p className="text-b58-charcoal font-medium">
+                  {sagomaToccata?.label}
+                  {gruppoDelToccato && (gruppoDelToccato.tavoli ?? []).length > 1 && (
+                    <span className="text-sm font-normal text-b58-charcoal-soft">
+                      {" "}
+                      — accostato a {(gruppoDelToccato.etichette ?? [])
+                        .filter((e) => e !== sagomaToccata?.label)
+                        .join(" · ")}
+                    </span>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={azzera}
+                  className="text-sm text-b58-charcoal-soft underline shrink-0"
+                >
+                  Chiudi
+                </button>
+              </div>
 
-                      {inCorrezione ? (
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <input
-                            type="number"
-                            min="0"
-                            value={correzione.coperti}
-                            onChange={(e) =>
-                              setCorrezione((c) => ({ ...c, coperti: e.target.value }))
-                            }
-                            className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
-                          />
-                          <input
-                            type="text"
-                            placeholder="perché (es. uno contro il muro)"
-                            value={correzione.ragione}
-                            onChange={(e) =>
-                              setCorrezione((c) => ({ ...c, ragione: e.target.value }))
-                            }
-                            className="flex-1 min-w-[12rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
-                          />
-                          <button
-                            type="button"
-                            disabled={salvando || correzione.coperti === ""}
-                            onClick={() => {
-                              const n = Number(correzione.coperti);
-                              // ⚠️ Il vuoto non è zero (lezione del 17/08):
-                              // un campo svuotato non deve diventare «questo
-                              // tavolo non tiene nessuno».
-                              if (!Number.isFinite(n) || correzione.coperti === "") return;
-                              esegui(async () => {
-                                await salvaCorrezioneCoperti({
-                                  data,
-                                  tavoli: g.tavoli,
-                                  coperti: n,
-                                  ragione: correzione.ragione,
-                                });
-                                setCorrezione(null);
-                              });
-                            }}
-                            className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
-                          >
-                            Salva
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setCorrezione(null)}
-                            className="text-sm text-b58-charcoal-soft underline"
-                          >
-                            Lascia stare
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-3 mt-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCorrezione({
-                                chiave,
-                                coperti: String(g.coperti),
-                                ragione: g.ragione ?? "",
-                              })
-                            }
-                            className="text-[12px] text-b58-charcoal-soft underline"
-                          >
-                            Correggi il numero
-                          </button>
-                          {g.corretto && (
-                            <button
-                              type="button"
-                              disabled={salvando}
-                              onClick={() =>
-                                esegui(() => rimuoviCorrezioneCoperti({ data, tavoli: g.tavoli }))
-                              }
-                              className="text-[12px] text-b58-charcoal-soft underline"
-                            >
-                              Torna al calcolato ({g.coperti_calcolati})
-                            </button>
-                          )}
-                        </div>
+              {/* I COPERTI. Il numero è del gruppo, e quando il gruppo è più
+                  di un tavolo la frase lo dice per esteso. */}
+              {gruppoDelToccato && (
+                <div className="mb-3">
+                  <p className="text-sm text-b58-charcoal">
+                    Ci stanno <strong>{gruppoDelToccato.coperti}</strong>
+                    {gruppoDelToccato.corretto ? (
+                      <span className="text-b58-charcoal-soft">
+                        {" "}
+                        — corretto a mano, la regola direbbe {gruppoDelToccato.coperti_calcolati}
+                        {gruppoDelToccato.ragione ? ` · ${gruppoDelToccato.ragione}` : ""}
+                      </span>
+                    ) : (
+                      <span className="text-b58-charcoal-soft"> — calcolato</span>
+                    )}
+                  </p>
+                  {(gruppoDelToccato.tavoli ?? []).length > 1 && (
+                    <p className="text-[11px] text-b58-charcoal-soft/80 mt-0.5">
+                      È il numero di <strong>{(gruppoDelToccato.etichette ?? []).join(" · ")}</strong>{" "}
+                      insieme, non del solo {sagomaToccata?.label}: correggendolo cambi il tavolone.
+                    </p>
+                  )}
+
+                  {correzione?.chiave === chiaveDelToccato ? (
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={correzione.coperti}
+                        onChange={(e) => setCorrezione((c) => ({ ...c, coperti: e.target.value }))}
+                        className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="perché (es. uno contro il muro)"
+                        value={correzione.ragione}
+                        onChange={(e) => setCorrezione((c) => ({ ...c, ragione: e.target.value }))}
+                        className="flex-1 min-w-[10rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+                      />
+                      <button
+                        type="button"
+                        disabled={salvando || correzione.coperti === ""}
+                        onClick={() => {
+                          const n = Number(correzione.coperti);
+                          // ⚠️ Il vuoto non è zero (lezione del 17/08): un
+                          // campo svuotato non deve diventare «questo tavolo
+                          // non tiene nessuno».
+                          if (!Number.isFinite(n) || correzione.coperti === "") return;
+                          esegui(async () => {
+                            await salvaCorrezioneCoperti({
+                              data,
+                              tavoli: gruppoDelToccato.tavoli,
+                              coperti: n,
+                              ragione: correzione.ragione,
+                            });
+                            setCorrezione(null);
+                          });
+                        }}
+                        className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
+                      >
+                        Salva
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCorrezione(null)}
+                        className="text-sm text-b58-charcoal-soft underline"
+                      >
+                        Lascia stare
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCorrezione({
+                            chiave: chiaveDelToccato,
+                            coperti: String(gruppoDelToccato.coperti),
+                            ragione: gruppoDelToccato.ragione ?? "",
+                          })
+                        }
+                        className="text-[12px] text-b58-charcoal-soft underline"
+                      >
+                        Correggi il numero
+                      </button>
+                      {gruppoDelToccato.corretto && (
+                        <button
+                          type="button"
+                          disabled={salvando}
+                          onClick={() =>
+                            esegui(() =>
+                              rimuoviCorrezioneCoperti({ data, tavoli: gruppoDelToccato.tavoli })
+                            )
+                          }
+                          className="text-[12px] text-b58-charcoal-soft underline"
+                        >
+                          Torna al calcolato ({gruppoDelToccato.coperti_calcolati})
+                        </button>
                       )}
+                    </div>
+                  )}
+                  {/* ⚠️ «Chi ha corretto e quando» NON è più a schermo —
+                      Alessio lo considera superfluo qui (giro D3). Resta
+                      scritto nel database dal trigger, ed è quello che
+                      permette di spiegare un numero tre giorni dopo. */}
+                </div>
+              )}
+
+              {/* CHI C'È SU QUESTO TAVOLO — e da qui si apre la sua scheda.
+                  Il riquadro non ripete la scheda: la introduce. */}
+              {prenotazioniDelToccato.length > 0 ? (
+                <ul className="divide-y divide-b58-charcoal/10 rounded-lg ring-1 ring-b58-charcoal/10 mb-2">
+                  {prenotazioniDelToccato.map((p) => (
+                    <li key={p.id} className="px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="text-sm text-b58-charcoal-soft w-12">
+                        {p.reservation_time?.slice(0, 5)}
+                      </span>
+                      <span className="text-sm text-b58-charcoal flex-1 min-w-[8rem]">
+                        {p.customer_name}
+                        <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
+                      </span>
+                      <span className="text-[11px] text-b58-charcoal-soft">{statoArrivo(p.id)}</span>
+                      <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
+                        Apri
+                      </button>
                     </li>
-                  );
-                })}
-              </ul>
-              {/* ⚠️ LA SPARIZIONE SI DICE — e per intero. La prima stesura
-                  diceva solo «decade», ed era una mezza verità: la riga non
-                  si cancella, quindi rifacendo lo stesso accostamento nello
-                  stesso giorno il numero TORNA. Detta a metà, la schermata
-                  prometteva una cosa e il gestionale ne faceva un'altra
-                  (rilievo della validazione del 18/08). La scelta di non
-                  cancellare resta — un trascinamento per sbaglio non deve
-                  distruggere un numero scritto a mano — ma va detta. */}
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
-                Se sciogli o cambi un tavolone il numero corretto a mano non vale più e torna
-                quello calcolato: si riferiva a quei tavoli messi così. Non lo perdi — se
-                rimetti insieme <strong>gli stessi</strong> tavoli oggi stesso, torna anche il
-                tuo numero.
-              </p>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-b58-charcoal-soft mb-2">Nessuno, per ora.</p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAperta(null);
+                  setModo("nuova");
+                  setScelti([toccato]);
+                }}
+                className={PRINCIPALE}
+              >
+                Prendi una prenotazione qui
+              </button>
             </div>
           )}
+
 
           {isTitolare && sagomeGirevoli.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -942,7 +1058,13 @@ export default function PiantaGiornata() {
                     setAperta(null);
                     setModifica(null);
                     setModo("nuova");
-                    setScelti(toccato ? [toccato] : []);
+                    // ⚠️ Aprendo la prenotazione DALL'ELENCO non c'è nessun
+                    // tavolo toccato: senza questa seconda strada il pulsante
+                    // partirebbe con nessun tavolo scelto, cioè direbbe «su
+                    // questo tavolo» e non ne prenderebbe nessuno.
+                    setScelti(
+                      toccato ? [toccato] : tavoliDi(aperta.id).map((a) => a.dining_table_id)
+                    );
                   }}
                   className={BOTTONE}
                 >
@@ -986,43 +1108,90 @@ export default function PiantaGiornata() {
               </p>
             </div>
           ) : (
+            /* ⚠️ RIORDINATA PER IL TELEFONO (giro D3, punto 6). Prima era
+               piatta e **i comandi pesavano quanto le informazioni**: «Cambia
+               tavolo» era un riquadro grande ripetuto su ogni riga, mentre
+               quello che si legge mille volte è *ora → nome → quanti → dove*.
+               Adesso le informazioni stanno in prima riga, e i comandi
+               compaiono **solo sulla riga evidenziata** — cioè dopo un tocco.
+               ⚠️ E c'è lo stato che mancava: **chi è arrivato e chi tarda**.
+               Alle 21:15, con due tavoli liberi e uno che non si è visto, è la
+               prima domanda che ci si fa. */
             <ul className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
               {prenotazioni.map((p) => {
                 const suoi = tavoliDi(p.id);
+                const accesa = prenotazioniEvidenziate.has(p.id);
                 return (
-                  <li key={p.id} className="p-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <span className="text-sm text-b58-charcoal-soft w-12">
-                      {p.reservation_time?.slice(0, 5)}
-                    </span>
-                    <span className="text-b58-charcoal font-medium flex-1 min-w-[140px]">
-                      {p.customer_name}
-                      <span className="text-b58-charcoal-soft font-normal"> · {p.party_size} persone</span>
-                    </span>
-                    <span className="text-sm">
-                      {suoi.length > 0 ? (
-                        <span className="text-b58-olive-dark font-medium">
-                          {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
-                        </span>
-                      ) : (
-                        <span className="text-b58-terracotta-dark">senza tavolo</span>
-                      )}
-                    </span>
-                    {p.status === "richiesta_in_attesa" && (
-                      <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
-                        da confermare
+                  <li
+                    key={p.id}
+                    ref={(el) => {
+                      righeRef.current[p.id] = el;
+                    }}
+                    className={`p-4 transition-colors ${accesa ? "bg-b58-terracotta/10" : ""}`}
+                  >
+                    {/* Tutta la riga è tappabile: tocco = «fammi vedere dov'è»,
+                        ed è il verso opposto dell'evidenziazione incrociata. */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        apriPrenotazione(p);
+                        setToccato(null);
+                        // Sul telefono la pianta sta sopra e fuori schermo:
+                        // senza questo, il tavolo si accende dove non si vede.
+                        piantaRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                      }}
+                      className="w-full text-left flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                    >
+                      <span className="text-sm text-b58-charcoal-soft w-12 shrink-0">
+                        {p.reservation_time?.slice(0, 5)}
                       </span>
-                    )}
-                    <button type="button" onClick={() => iniziaAssegnazione(p)} className={BOTTONE}>
-                      {suoi.length > 0 ? "Cambia tavolo" : "Dai un tavolo"}
+                      <span className="text-b58-charcoal font-medium flex-1 min-w-[8rem]">
+                        {p.customer_name}
+                        <span className="text-b58-charcoal-soft font-normal">
+                          {" "}
+                          · {p.party_size} persone
+                        </span>
+                      </span>
+                      <span className="text-sm">
+                        {suoi.length > 0 ? (
+                          <span className="text-b58-olive-dark font-medium">
+                            {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
+                          </span>
+                        ) : (
+                          <span className="text-b58-terracotta-dark">senza tavolo</span>
+                        )}
+                      </span>
+                      {statoArrivo(p.id) && (
+                        <span className="text-[11px] text-b58-charcoal-soft">
+                          {statoArrivo(p.id)}
+                        </span>
+                      )}
+                      {p.status === "richiesta_in_attesa" && (
+                        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                          da confermare
+                        </span>
+                      )}
                     </button>
-                    {suoi.length > 0 && isTitolare && (
-                      <button
-                        type="button"
-                        onClick={() => esegui(() => togliAssegnazione(p.id))}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark underline"
-                      >
-                        togli
-                      </button>
+
+                    {accesa && (
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => iniziaAssegnazione(p)}
+                          className={BOTTONE}
+                        >
+                          {suoi.length > 0 ? "Cambia tavolo" : "Dai un tavolo"}
+                        </button>
+                        {suoi.length > 0 && isTitolare && (
+                          <button
+                            type="button"
+                            onClick={() => esegui(() => togliAssegnazione(p.id))}
+                            className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark underline"
+                          >
+                            togli il tavolo
+                          </button>
+                        )}
+                      </div>
                     )}
                   </li>
                 );

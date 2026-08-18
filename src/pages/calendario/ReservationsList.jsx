@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { listReservations, listRichiesteDaConfermare } from "../../lib/api/reservations";
 import { useAuth } from "../../context/AuthContext";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
+import { campiPrenotazione } from "../../lib/calcoli/prenotazioni";
 
 const STATUS_BADGE = {
   richiesta_in_attesa: "bg-b58-gold",
@@ -210,42 +211,92 @@ export default function ReservationsList() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Ora</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Coperti</th>
-                <th className="px-4 py-3 font-medium">Tipo</th>
-                <th className="px-4 py-3 font-medium">Stato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reservations.map((r) => (
-                <tr
-                  key={r.id}
-                  onClick={() => navigate(`/calendario-eventi/${r.id}`)}
-                  className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
-                >
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">{formatDate(r.reservation_date)}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{r.reservation_time?.slice(0, 5)}</td>
-                  <td className="px-4 py-3 text-b58-charcoal">{r.customer_name}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{r.party_size}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{labelFor(RESERVATION_TYPES, r.type)}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}
-                    >
-                      {labelFor(RESERVATION_STATUSES, r.status)}
-                    </span>
-                  </td>
+        <>
+          {/* SUL TELEFONO: un blocchetto per prenotazione, coi dati a capo.
+              ⚠️ La riga di prima scorreva di lato, e il dato che si cercava
+              stava sempre nella parte fuori schermo. Qui non si scorre: si
+              legge. La soglia `md:` è quella che il progetto usa già per
+              distinguere telefono e computer (il menu principale). */}
+          <div className="md:hidden space-y-2">
+            {reservations.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => navigate(`/calendario-eventi/${r.id}`)}
+                className="w-full text-left rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4"
+              >
+                <div className="flex items-baseline justify-between gap-3 mb-1">
+                  <span className="text-b58-charcoal font-medium">
+                    {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
+                  </span>
+                  <span
+                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1 shrink-0`}
+                  >
+                    {labelFor(RESERVATION_STATUSES, r.status)}
+                  </span>
+                </div>
+                {campiPrenotazione(r)
+                  .filter((c) => c.chiave !== "data" && c.chiave !== "ora")
+                  .map((c) => (
+                    <p key={c.chiave} className="text-sm">
+                      <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
+                      {c.valore ? (
+                        <span className={c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal"}>
+                          {c.valore}
+                        </span>
+                      ) : (
+                        <span className="text-b58-charcoal-soft/70 italic">{c.vuoto ?? "—"}</span>
+                      )}
+                    </p>
+                  ))}
+              </button>
+            ))}
+          </div>
+
+          {/* SUL COMPUTER: la tabella resta — lì funziona, e si cura dove fa
+              male (stessa distinzione delle due colonne rimandate). */}
+          <div className="hidden md:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  {campiPrenotazione(reservations[0]).map((c) => (
+                    <th key={c.chiave} className="px-4 py-3 font-medium">
+                      {c.etichetta}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 font-medium">Stato</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {reservations.map((r) => (
+                  <tr
+                    key={r.id}
+                    onClick={() => navigate(`/calendario-eventi/${r.id}`)}
+                    className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
+                  >
+                    {campiPrenotazione(r).map((c) => (
+                      <td
+                        key={c.chiave}
+                        className={`px-4 py-3 ${c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal-soft"}`}
+                      >
+                        {c.valore || (
+                          <span className="text-b58-charcoal-soft/70 italic">{c.vuoto ?? "—"}</span>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}
+                      >
+                        {labelFor(RESERVATION_STATUSES, r.status)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
