@@ -43,6 +43,8 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 5 | 18/08/2026 | *Il ritardo prende tutto il tavolo al posto del colore della fascia* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 | 6 | 18/08/2026 | *In Comande il tavolo con un conto aperto è dorato* (08/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 | 7 | 18/08/2026 | *Le due legende dichiarano la precedenza dei colori* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
+| 8 | 18/08/2026 | *Chi ha corretto i coperti, e quando, si vede a schermo* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 9 | 18/08/2026 | *Un tocco sulla sagoma vuol dire tre cose diverse* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -245,3 +247,66 @@ perso, è codice tolto con la sua ragione accanto.
 ⚠️ **E quello che resta è la regola, non la spiegazione**: togliere la legenda
 non tocca la precedenza, che continua a decidere i colori esattamente come
 prima.
+
+---
+
+## 8 · 18/08/2026 — «chi ha corretto i coperti, e quando, si vede a schermo»
+
+**Cosa era stato deciso, e quando.** Il **18/08**, nel giro B, e non da noi: è
+la **condizione posta dal validatore** per lasciare la correzione dei coperti a
+tutto lo staff invece che al solo titolare. Testuale: *«Con una condizione:
+registra chi e quando, e si vede»*.
+
+**La ragione di allora.** *Una correzione senza autore è un numero che nessuno
+può spiegare tre giorni dopo* — e quel numero decide se si accetta gente.
+
+**Cosa si decide adesso.** «Chi ha corretto e quando» **esce dalla schermata**.
+Resta la ragione scritta a mano («uno contro il muro»), resta il numero
+calcolato accanto a quello corretto. Deciso da Alessio costruendo il riquadro
+del tavolo: fra le cose dell'elenco vecchio, considera superflue **a schermo**
+proprio quella e «quali tavoli sono accostati».
+
+**Perché la ragione di allora non vale più — anzi: vale ancora per intero, e
+questo è il prezzo che accettiamo.** ⚠️ **La condizione del validatore era
+doppia** — *registrare* e *far vedere* — e **la metà che conta di più resta
+intatta**: il trigger continua a scrivere chi e quando su ogni correzione, e
+nessuno può toglierlo dalla schermata. Quello che cambia è **dove si legge**:
+non più accanto al numero, ma nel database.
+⚠️ **E il caso in cui serviva non è oggi**: si entra per **ruolo e non per
+persona**, quindi a schermo quella riga poteva dire soltanto «l'hai messo tu»
+oppure «da un altro accesso» — con un accesso condiviso per tutto lo staff,
+la seconda frase non identifica nessuno. Il giorno che ci saranno accessi per
+persona quel dato diventerà leggibile **all'indietro**, perché è stato scritto
+lo stesso, e **quello è il giorno in cui la riga va rimessa a schermo**.
+
+---
+
+## 9 · 18/08/2026 — «un tocco sulla sagoma vuol dire tre cose diverse»
+
+**Cosa era stato deciso, e quando.** Il **14/08**, con la pianta viva: un tocco
+significa una cosa diversa a seconda di cosa c'è sotto il dito — lavoro in
+corso → aggiunge o toglie il tavolo; tavolo libero → comincia una prenotazione
+nuova; tavolo già promesso → apre *quella* prenotazione.
+
+**La ragione di allora.** Le tre cose *«non possono essere ambigue»*: ogni
+situazione doveva avere una risposta sola e prevedibile.
+
+**Cosa si decide adesso.** Il tocco fa **sempre la stessa cosa**: apre il
+**riquadro di quel tavolo**, che contiene i coperti con la loro casella, le
+prenotazioni che ci sono sopra e il pulsante per prenderne una. Richiesta di
+Alessio, che ha chiesto anche di far sparire l'elenco dei tavoli sotto la
+pianta — assorbito dallo stesso riquadro.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, e la forma
+nuova la serve meglio.** Il problema del 14/08 non era «tre gesti», era
+**l'ambiguità**: e tre esiti diversi per lo stesso gesto sono ambigui *per
+costruzione*, perché chi tocca deve ricordarsi cosa c'era sotto. Un esito solo
+la toglie alla radice.
+⚠️ **Il prezzo, misurato e accettato**: su un tavolo con una prenotazione sola
+ci vuole **un tocco in più** per arrivare alla sua scheda (prima si apriva
+diretta). In cambio, i coperti si correggono **da dove si è toccato il
+tavolo** invece che da una seconda lista in cui cercare la riga giusta — ed è
+il gesto che il mandato descrive come quello che «pesava» di più.
+⚠️ L'unica eccezione resta il **lavoro in corso**: mentre si sceglie dove far
+sedere qualcuno il tocco aggiunge e toglie, e lì il gesto è già dichiarato da
+un riquadro aperto sopra la pianta.
