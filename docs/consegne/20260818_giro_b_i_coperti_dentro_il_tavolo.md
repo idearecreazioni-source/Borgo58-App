@@ -408,6 +408,18 @@ arrotondamento, non accosta tavoli lontani.
 mobile di una misura qualsiasi sarebbe una regola scritta da noi sulle sue
 cose. La rete avvisa, non impedisce — come tutto il resto di questo giro.
 
+**E la prova è stata VISTA diventare rossa**, non data per funzionante — la
+condizione posta dalla validazione, ed è la lezione del formattatore degli
+importi (*un controllo che nessuno ha mai visto scattare è un controllo di cui
+non sappiamo niente*). Messo T3 a **95 cm** sul progetto di prova: **una sola
+prova rossa su sette**, e il messaggio nomina il tavolo e dice dove andare a
+rivedere i due numeri. Poi rimesso il valore **che c'era** — non uno «giusto».
+
+⚠️ **E quel giro ha trovato di più di quanto cercava**: modificando T3 la sua
+`updated_at` si è riempita, e questo ha messo in luce che la verifica della
+migrazione 3 sarebbe fallita da lì in avanti (vedi sotto). *Il difetto non è
+uscito rileggendo il codice: è uscito chiedendosi come far fallire una prova.*
+
 ### 2 · La sovrapposizione ≥ 30 cm è aritmetica scritta, non geometria
 
 Dichiarata qui e nel codice, **insieme al «meno due per giunzione»**: sono
@@ -421,7 +433,7 @@ suo**: T5-T8 e T6-T7 stanno a distanza **zero** e hanno sovrapposizione
 quella soglia, quattro tavoli che si sfiorano agli spigoli sarebbero diventati
 un tavolone.
 
-### 3 · `greatest(somma − 2·giunzioni, 0)` — limite dichiarato, e una domanda
+### 3 · Il blocco 2×2 — nessuna regola speciale, ed è la risposta giusta
 
 **Fatta l'aritmetica prima di chiedere.** La regola non è approssimativa sui
 blocchi: quattro quadrati 2×2 fanno un quadrato di 180×180, e la regola dà
@@ -430,25 +442,49 @@ blocchi: quattro quadrati 2×2 fanno un quadrato di 180×180, e la regola dà
 nessuna disposizione ragionevole.**
 
 ⚠️ **Resta che, se si attivasse, nasconderebbe in silenzio un risultato
-assurdo** — ed è la famiglia dello scarto a zero. Dichiarato come limite. **La
-domanda ad Alessio è se 8 su un blocco 2×2 è il numero che si aspetta**: la
-geometria dice di sì, ma è la sua sala. Se dicesse un altro numero, non è la
-regola a essere sbagliata — è che quel caso vuole una correzione a mano, che
-esiste già.
+assurdo** — ed è la famiglia dello scarto a zero. Dichiarato come limite, e
+come **ramo mai percorso**.
 
-### 4 · La resurrezione della correzione — decisa, e la schermata lo diceva a metà
+**Deciso da Alessio: nessuna regola speciale.** Oltre alla fila la regola resta
+**la stessa** — somma meno due per giunzione, su qualunque forma — e se un
+numero non gli torna lo sistema con la **correzione a mano**, che esiste già.
+⚠️ E la ragione vale oltre questo caso: *una regola in più per un caso raro è
+un posto in più dove sbagliare.*
 
-🔴 **Il difetto vero era la frase, non il comportamento.** La schermata diceva
-solo *«decade e torna quello calcolato»*, e poi rifacendo lo stesso
-accostamento nello stesso giorno il numero **tornava**: la schermata prometteva
-una cosa e il gestionale ne faceva un'altra.
+### 4 · La resurrezione della correzione — una DECISIONE, non un funzionamento
 
-**Decisione, scritta invece che subita**: la riga **non si cancella**. Un
-trascinamento per sbaglio non deve distruggere un numero scritto a mano, e la
-correzione è legata a *quei tavoli in quella giornata* — se tornano insieme, è
-di nuovo il caso per cui era stata scritta. **Ora la schermata lo dice per
-intero**: «non lo perdi — se rimetti insieme gli stessi tavoli oggi stesso,
-torna anche il tuo numero».
+🔴 **Il difetto vero era la frase, non il comportamento**, ed è il risultato
+migliore di questo giro. La schermata diceva solo *«decade e torna quello
+calcolato»*, e poi rifacendo lo stesso accostamento nello stesso giorno il
+numero **tornava**: **la schermata dichiarava una perdita che non avveniva.**
+
+⚠️ **È una famiglia che avevamo già visto, ma mai qui.** È la stessa forma del
+manuale HACCP che stampava «conforme» dove il database apriva una non
+conformità: **un testo che descrive male il proprio programma.** Fino a oggi
+l'avevamo incontrata solo su **documenti esibibili**, dove il danno è verso
+un'ispezione. Qui era su **un messaggio di interfaccia** — e il danno è che
+qualcuno rinuncia a un gesto perché il programma gli dice che perderà qualcosa
+che invece non perde. *Vale come precedente: la famiglia non riguarda solo ciò
+che si stampa.*
+
+**Ed è una DECISIONE, non la descrizione di come funziona.** Scritta così
+perché è esattamente la distinzione che il registro dei rovesciamenti esiste
+per tenere in vita:
+
+- **Alessio aveva detto una cosa più stretta** — *«quando divido un tavolone
+  che avevo accostato, torna al numero originale calcolato»*. Della
+  **sopravvivenza al rimontaggio** non aveva detto niente: è **un'estensione
+  mia**.
+- **La mia ragione**: la riga non si cancella perché un trascinamento per
+  sbaglio non deve distruggere un numero scritto a mano, e la correzione è
+  legata a *quei tavoli in quella giornata* — se tornano insieme, è di nuovo il
+  caso per cui era stata scritta.
+- ✅ **Confermata da Alessio il 18/08**, girata dal validatore proprio perché
+  era mia e non sua. Nessuna riga da cambiare — ma resta scritta come scelta,
+  non come effetto collaterale.
+
+**E la schermata ora lo dice per intero**: «non lo perdi — se rimetti insieme
+gli stessi tavoli oggi stesso, torna anche il tuo numero».
 
 ### 5 · Le correzioni orfane
 
@@ -469,13 +505,46 @@ vincolo: si chiude sapendo che `correzioni_coperti` è **un appunto per una
 giornata, non uno storico**. Se un giorno servisse conservarlo, servirà prima
 una regola su quanto.
 
-### E la colonna che il connettore chiedeva
+### Le due aggiunte non chieste, dichiarate come tali
 
-`dining_tables.updated_at`, aggiunta **adesso perché adesso si tocca quella
-tabella**. Non serve a sorvegliare nessuno: serve perché una verifica futura
-possa distinguere da sola **«non l'ho toccata»** da **«l'ho toccata e rimessa
-uguale»** — cosa che oggi il connettore non può dire e che è rimasta sulla
-parola.
+Nessuna delle due era nei rilievi; entrambe chiudono un buco che i rilievi
+hanno fatto emergere, e vanno scritte perché **chi legge fra sei mesi capisca
+perché ci sono**.
+
+**1 · Le correzioni se ne vanno con la sagoma.** Chiude la famiglia
+dell'orfano **nel verso pulito**: via con lei, non lasciate lì a non
+combaciare con niente. L'alternativa — lasciarle e filtrarle a ogni lettura —
+è la stessa forma del flag «cancellato» che questo progetto ha scartato l'08/08:
+basta dimenticare un filtro.
+
+**2 · `dining_tables.updated_at` nasce da un LIMITE DI VERIFICA, non da un
+difetto.** Nessun dato era sbagliato: è che la validazione, dal connettore in
+sola lettura, **non poteva distinguere «non ho toccato le posizioni» da «le ho
+toccate e rimesse uguali»** — non esiste una fotografia di prima, e la tabella
+non aveva una data di ultima modifica. Quella notte quel punto è rimasto **sulla
+mia parola**. La colonna esiste perché la **prossima** volta non debba
+rimanerci: non sorveglia nessuno, rende rispondibile una domanda che oggi non
+lo era.
+
+⚠️ **Nasce senza valore predefinito** (lezione del 14/08): su una riga già
+esistente un predefinito dichiarerebbe una modifica mai avvenuta. Si chiama
+`updated_at` e non `aggiornato_il` perché `set_updated_at()` scrive quel nome,
+e riusarla su un nome diverso fallisce a tempo di esecuzione (trappola del
+12/08).
+
+🔴 **E la sua verifica era sbagliata, trovato pensando a come rendere rossa una
+prova.** La prima stesura pretendeva che **nessuna sagoma preesistente** avesse
+una data: vero il giorno dell'applicazione, **falso per sempre dopo** — sarebbe
+bastato che Alessio rinominasse un tavolo o ne spegnesse uno, che sono gesti
+legittimi, perché la migrazione si rifiutasse di riapplicarsi **su una sua
+scelta**. È la lezione del 14/08 sommata a quella del 16/08: *un guardiano dice
+come deve essere fatto il mondo, non com'era quando l'ho guardato.* Al suo
+posto la proprietà vera — **la colonna non ha un valore predefinito** — che è
+ciò che davvero garantisce l'assenza di modifiche inventate. Quante sagome non
+sono mai state toccate resta come **notizia**, non come pretesa.
+**Dimostrato**: dopo aver modificato T3 sul progetto di prova, la migrazione si
+riapplica ancora — ed è esattamente il caso che la versione di prima avrebbe
+fatto fallire.
 
 ⚠️ **Nasce senza valore predefinito** (lezione del 14/08): su una riga già
 esistente un predefinito dichiarerebbe una modifica mai avvenuta. Vuoto vuol
