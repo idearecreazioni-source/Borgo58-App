@@ -15,6 +15,20 @@ const finta = ({ innerHeight, screenHeight, standalone = undefined, media = fals
   matchMedia: () => ({ matches: media }),
 });
 
+// Un documento finto che risponde alle unità stabili come farebbe un
+// iPhone: barre aperte 699, barre ritirate 844.
+const documentoFinto = (perUnita) => ({
+  createElement: () => {
+    const stile = {};
+    return {
+      style: { set cssText(_v) {}, set height(v) { stile.h = v; }, get height() { return stile.h; } },
+      getBoundingClientRect: () => ({ height: perUnita[String(stile.h).replace("100", "")] ?? 0 }),
+      remove() {},
+    };
+  },
+  body: { appendChild() {} },
+});
+
 describe("Quanto spazio ha la pianta", () => {
   it("da Safari le barre si vedono nel conto", () => {
     const m = misureSchermo(finta({ innerHeight: 650, screenHeight: 812 }));
@@ -43,6 +57,27 @@ describe("Quanto spazio ha la pianta", () => {
     // qualcosa.
     const m = misureSchermo(finta({ innerHeight: 900, screenHeight: 812 }));
     expect(m.barre).toBe(0);
+  });
+
+  it("misura i due casi STABILI, non solo l'altezza di adesso", () => {
+    // ⚠️ Il rilievo della validazione: su iPhone le barre si ritirano
+    // scorrendo, quindi `innerHeight` è una fotografia. Le due altezze
+    // stabili le conosce il browser, e sono quelle su cui si dimensiona.
+    const m = misureSchermo(
+      finta({ innerHeight: 699, screenHeight: 844 }),
+      documentoFinto({ svh: 699, lvh: 844, dvh: 699 })
+    );
+    expect(m.piccola).toBe(699);
+    expect(m.grande).toBe(844);
+    expect(m.adesso).toBe(699);
+  });
+
+  it("non finge di conoscere le altezze stabili dove non esistono", () => {
+    // Un browser che non conosce svh/lvh restituisce 0: meglio «non lo so»
+    // di un numero inventato su cui poi si dimensiona.
+    const m = misureSchermo(finta({ innerHeight: 699, screenHeight: 844 }), documentoFinto({}));
+    expect(m.piccola).toBeNull();
+    expect(m.grande).toBeNull();
   });
 
   it("la frase dice quale dei due casi si sta guardando", () => {

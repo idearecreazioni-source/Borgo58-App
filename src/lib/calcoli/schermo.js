@@ -25,8 +25,9 @@
  * davvero. In Safari è meno dello schermo (le barre); in un'app aggiunta
  * alla schermata iniziale è quasi tutto.
  */
-export function misureSchermo(finestra = window) {
+export function misureSchermo(finestra = window, documento = globalThis.document) {
   const installata = modalitaInstallata(finestra);
+  const stabili = altezzeStabili(documento);
   return {
     installata,
     altezzaUtile: Math.round(finestra.innerHeight),
@@ -35,7 +36,41 @@ export function misureSchermo(finestra = window) {
     // Quanto si è perso rispetto allo schermo fisico: in Safari sono le
     // barre, da installata è quasi zero.
     barre: Math.max(0, Math.round((finestra.screen?.height ?? 0) - finestra.innerHeight)),
+    ...stabili,
   };
+}
+
+/**
+ * ⚠️ IL RILIEVO CHE CAMBIA COSA SI MISURA (validazione del 18/08).
+ * `innerHeight` è l'altezza **in quel momento**: su iPhone le barre di
+ * Safari si ritirano scorrendo, e la finestra cresce mentre la pagina
+ * vive. Un numero letto una volta è quindi una fotografia, non una misura
+ * — e dimensionare la pianta su quella fotografia significa costruirla su
+ * un'altezza che cambia sotto.
+ *
+ * Il browser però conosce **i due casi stabili**, e sono unità CSS:
+ *   · `svh` (small)  = l'altezza con le barre APERTE, cioè la più piccola;
+ *   · `lvh` (large)  = con le barre RITIRATE, la più grande;
+ *   · `dvh` (dynamic) = quella di adesso, che si muove fra le due.
+ *
+ * Si misurano mettendo un righello invisibile nella pagina e chiedendo
+ * quanto è alto. **Sul `svh` si dimensiona**: è il caso stabile più
+ * piccolo, e tutto il resto diventa margine invece che salto.
+ */
+export function altezzeStabili(documento) {
+  if (!documento?.createElement) return { piccola: null, grande: null, adesso: null };
+  const righello = documento.createElement("div");
+  righello.style.cssText =
+    "position:absolute;visibility:hidden;pointer-events:none;top:0;left:0;width:0;";
+  documento.body.appendChild(righello);
+  const misura = (unita) => {
+    righello.style.height = `100${unita}`;
+    const h = righello.getBoundingClientRect().height;
+    return h > 0 ? Math.round(h) : null;
+  };
+  const out = { piccola: misura("svh"), grande: misura("lvh"), adesso: misura("dvh") };
+  righello.remove();
+  return out;
 }
 
 /**
@@ -53,5 +88,9 @@ export function modalitaInstallata(finestra = window) {
 
 /** La riga che Alessio legge e riferisce, in parole sue. */
 export function fraseMisura(m) {
-  return `${m.installata ? "Dall'icona" : "Da Safari"}: ${m.altezzaUtile} di altezza (schermo ${m.altezzaSchermo}, barre ${m.barre}).`;
+  const stabili =
+    m.piccola && m.grande
+      ? ` · stabile fra ${m.piccola} e ${m.grande}`
+      : "";
+  return `${m.installata ? "Dall'icona" : "Da Safari"}: ${m.altezzaUtile} di altezza (schermo ${m.altezzaSchermo}, barre ${m.barre})${stabili}.`;
 }
