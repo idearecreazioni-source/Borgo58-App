@@ -125,13 +125,29 @@ begin
   select updated_at into quando from dining_tables where id = s1;
   if quando is null then raise exception 'La sagoma non registra di essere stata modificata.'; end if;
 
-  -- ⚠️ E le righe che c'erano PRIMA restano vuote: la colonna non deve
-  -- aver dichiarato una modifica su tavoli che nessuno ha toccato.
-  select count(*) into n from dining_tables
-   where label not like '__VERIFICA__%' and updated_at is not null;
-  if n > 0 then
-    raise exception '% sagome preesistenti dichiarano una modifica che non e'' avvenuta.', n;
+  -- ⚠️ CIO' CHE GARANTISCE che la colonna non abbia dichiarato modifiche
+  -- mai avvenute e' una PROPRIETA' DELLO SCHEMA — l'assenza di un valore
+  -- predefinito — non un conteggio di righe vuote (lezione del 16/08: un
+  -- guardiano dice come deve essere fatto il mondo, non com'era quando l'ho
+  -- guardato).
+  --
+  -- ⚠️ E la prima stesura sbagliava proprio qui: pretendeva che NESSUNA
+  -- sagoma preesistente avesse una data. Sarebbe stato vero il giorno
+  -- dell'applicazione e falso per sempre dopo — basta che Alessio rinomini
+  -- un tavolo o ne spenga uno, che sono gesti legittimi, e la migrazione
+  -- si sarebbe rifiutata di riapplicarsi su una SUA scelta. E' la lezione
+  -- del 14/08, e me l'ha fatta vedere il pensare a come rendere rossa una
+  -- prova, non il rileggere il codice.
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'dining_tables'
+       and column_name = 'updated_at' and column_default is not null
+  ) then
+    raise exception 'dining_tables.updated_at ha un valore predefinito: su ogni riga gia'' esistente dichiarerebbe una modifica mai avvenuta.';
   end if;
+
+  select count(*) into n from dining_tables where label not like '__VERIFICA__%' and updated_at is null;
+  raise notice 'Sagome che non sono mai state modificate da quando la colonna esiste: %.', n;
 
   -- --- Una correzione che nomina una sagoma sparita se ne va ---
   insert into correzioni_coperti (data, tavoli, coperti, ragione)
