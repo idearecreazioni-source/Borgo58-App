@@ -4,7 +4,7 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `c6bac45` — il giro è in **cinque commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`, `c6bac45`) perché il collaudo di Alessio è passato **quattro volte** in mezzo alla consegna
+- **HEAD dichiarato**: `4459a99` — il giro è in **sei commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`, `c6bac45`, `4459a99`) perché il collaudo di Alessio è passato **cinque volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
@@ -35,15 +35,15 @@
 
 E quelle che apre questo giro:
 
-8. 🟡 **IL RIQUADRO È STATO PROVATO A METÀ.** Alessio l'ha guardato ed è da lì
-   che nascono le due richieste della seconda metà di questo giro. ⚠️ Ma
-   **quello che ha guardato non c'è più nella stessa forma**: sul tavolo
-   libero il riquadro adesso non compare affatto, e **quella versione lì non
-   l'ha ancora vista nessuno**. Resta vero il limite generale: **nessuna prova
-   automatica di questo progetto guarda una schermata**.
-   ⚠️ **E il tocco in più è sparito solo su metà dei casi**: su un tavolo
-   libero si va dritti ai campi, su un tavolo con **una sola** prenotazione ci
-   vuole ancora un tocco in più rispetto a prima del giro D3.
+8. ✅ **IL RIQUADRO, IL PANNELLO E I BLOCCHETTI SONO STATI PROVATI DA UNA MANO.**
+   Alessio li ha guardati in cinque passaggi, e da lì nascono quasi tutte le
+   correzioni di questa consegna. In particolare: **il pannello dentro la
+   pianta esce e torna sotto quando gli si sposta un tavolo sopra** — è la
+   cura di un costo che il giorno prima era solo *dichiarato*, ed è una delle
+   poche cose di oggi che una mano ha davvero toccato.
+   ⚠️ Resta vero il limite generale: **nessuna prova automatica di questo
+   progetto guarda una schermata**. Quello che è provato è che i dati
+   arrivano.
 8-bis. 🔴 **UN FALSO ALLARME, e vale la pena scriverlo.** Le prime fotografie
    del collaudo mostravano ancora l'elenco dei tavoli sotto la pianta: Alessio
    stava guardando la versione **prima del push**. Nessun difetto — ma è la
@@ -54,32 +54,25 @@ E quelle che apre questo giro:
 9. 🔴 **L'EVIDENZIAZIONE E LO SCORRIMENTO NON SONO PROVATI DA NIENTE.** Lo
    scorrimento fino alla riga esiste proprio perché sul telefono la pianta e
    l'elenco non stanno insieme — cioè **il caso in cui serve è quello che qui
-   non si può riprodurre**. Va guardato da un occhio, su un telefono vero.
-10. 🟡 **I blocchetti del Calendario Eventi sono stati visti solo compilando**:
-    la soglia fra telefono e computer è quella che il progetto già usa per il
-    menu principale, ma **nessuno ha guardato la pagina stretta**.
+   non si può riprodurre**. ✅ Quello verso i campi è stato visto funzionare;
+   quello verso la riga della prenotazione no.
+10. 🟡 **Il tocco su un tavolo libero non è mai stato provato su un tavolo che
+    fa parte di un TAVOLONE**, e ora quel caso ha una forma nuova: il titolo
+    del pannello mostra tutti i tavoli del gruppo col toccato in grassetto.
+    **Non è stato guardato da nessuno.**
 11. 🟡 **Il riquadro non è mai stato aperto su un tavolo con DUE turni** — il
-    caso che il giro C ha reso possibile. I dati per farlo esistono (elenca
-    tutte le prenotazioni di quel tavolo), ma non è mai successo.
+    caso che il giro C ha reso possibile. I dati per farlo esistono, ma non è
+    mai successo.
 12. 🔴 **«Chi ha corretto e quando» non si legge più da nessuna schermata**
     (rovesciamento n. 8): il dato continua a essere **scritto** dal trigger, e
     la metà che sparisce è quella visibile. ⚠️ Il giorno che ci saranno accessi
     **per persona** quella riga va rimessa a schermo — e diventerà leggibile
     all'indietro, perché nel frattempo è stata scritta lo stesso.
-13. ✅ **CHIUSO DA ALESSIO**: i blocchetti del Calendario Eventi vanno bene, il
-    riquadro sul tavolo occupato ci sta nello schermo, la cura del tocco sul
-    tavolone è a posto e toccando un tavolo bianco la pagina scorre da sola
-    fino ai campi. 🔴 **Ma il pannello dentro la pianta è arrivato DOPO**, e
-    quello non l'ha visto nessuno.
-13-ter. ✅ **Due domande su tre avevano risposta già ieri**: toccando un tavolo bianco **la
-    pagina scorre da sola fino ai campi**, e **il riquadro sul tavolo occupato
-    ci sta nello schermo senza scorrere**. 🟡 Resta senza risposta se i
-    blocchetti del Calendario Eventi si leggano meglio della tabella: non ci è
-    arrivato.
-13-bis. 🟡 **La cura del difetto (b) non è stata vista da nessuno.** Il tocco su
-    un tavolo di un tavolone prenotato adesso apre il riquadro invece di
-    andare ai campi, e l'avviso compare da qualunque tavolo del gruppo: è
-    provato dalle prove pure sulla mappa dei gruppi, **mai da un dito**.
+13. 🟡 **LO ZOOM DELLA TASTIERA su iPhone resta**, per decisione di Alessio
+    (*«non è un grosso problema, lo restringo io»*). ⚠️ Non è un capriccio del
+    telefono: iOS ingrandisce da solo quando il testo di un campo è sotto una
+    certa dimensione. **Il giorno che una mano diversa dalla sua userà quella
+    schermata in servizio, «lo restringo io» non sarà più una risposta.**
 14. 🔴 **Sul computer, da oggi, il Calendario mostra la sala sdraiata e le
     Comande in piedi senza niente che lo spieghi** (rovesciamento n. 11). Il
     fatto resta vero — le due schermate chiedono la pianta alla stessa
@@ -609,3 +602,71 @@ stampava «conforme».
 
 **Il numero che esce da quella misura decide se è una voce piccola o un lavoro a
 sé**, e per questo si misura prima di aprirlo.
+
+---
+
+## ✅ Il quinto collaudo — il pannello provato con le mani
+
+**Verificato dal vivo da Alessio**: il pannello dentro la pianta funziona, i
+campi ci sono, e **spostando un tavolo sopra la cucina il pannello esce dalla
+pianta e torna sotto**. ⚠️ È una delle poche cose di questa consegna che una
+mano ha davvero toccato — ed è proprio la cura del costo che il giorno prima
+era stato solo *dichiarato*.
+
+E quattro cose corrette:
+
+### Il titolo diventa l'elenco dei tavoli
+
+Il pannello **sforava in altezza** e l'ora finiva fuori dal contenitore. La
+riga da togliere era «T5 · T6: Ci stanno 6» — ⚠️ **ma era l'unico posto dove si
+vedeva che quel tavolo fa parte di un tavolone**, e sotto c'è «Correggi il
+numero», che corregge il numero del **gruppo**.
+
+L'informazione non si è persa: è passata **nel titolo**, che adesso è l'elenco
+dei tavoli col toccato in grassetto — «T7 · T8 · **T9**». Sta su un rigo, è
+**più corto** di «Prenotazione su T9», e resta **dove sta il dubbio**.
+
+### Le prenotazioni senza tavolo vanno in cima
+
+Il bordo colorato non basta se la riga sta in fondo: *la ragione per cui devono
+farsi notare è che rischiano di restare senza tavolo*, e in fondo all'elenco si
+guardano per ultime. Dentro i due gruppi l'ordine resta per ora — è come si
+legge una serata.
+
+### La data non si ripete
+
+Compariva nel selettore **e** riscritta accanto. Al suo posto è salito
+l'interruttore «al completo», che stava sulla riga sotto.
+
+### Il tavolo che sfora la pianta torna dov'era
+
+Prima si fermava **appoggiato al bordo**. ⚠️ I due esiti dicono cose diverse:
+*fermarsi al bordo somiglia a «l'ho messo lì»*, tornare indietro dice «quel
+gesto non si poteva fare» — e una posizione contro il muro che nessuno ha
+scelto resta scritta come se qualcuno l'avesse scelta.
+
+⚠️ **E torna esattamente da dov'era partito, non in un posto calcolato**: basta
+**non salvare**. Così non può finire sopra un altro tavolo né dentro il
+pannello — la posizione di partenza era valida per definizione. Era la domanda
+posta prima di costruirlo, e la risposta è che il caso non si presenta.
+
+⚠️ **E si vede prima di lasciare**: mentre il dito è fuori la sagoma si fa
+trasparente e prende il bordo del rifiuto. Un gesto che si annulla solo al
+rilascio è una sorpresa, e la volta dopo si trascina piano per paura — è la
+stessa ragione per cui il segno del magnete si vede *mentre* prende.
+
+---
+
+## ⚠️ La tastiera: deciso di non correggere, e perché va scritto
+
+*«La tastiera copre un po' il campo ma non è un problema, semmai quando la
+tastiera si apre zooma sul campo da compilare e quando smetto di scrivere resta
+zoomato. Non è un grosso problema, lo restringo io.»*
+
+**Non è stato corretto: ha deciso lui.** Ma va annotato, perché **lo zoom che
+resta dopo la scrittura non è un capriccio del telefono**: iOS ingrandisce da
+solo quando il testo di un campo è sotto una certa dimensione, e si evita
+alzando quella dimensione. Oggi «lo restringo io» è una risposta;
+⚠️ **il giorno che una mano diversa dalla sua userà quella schermata in
+servizio, non lo sarà più** — chi serve non restringe niente con due dita
+mentre accompagna qualcuno al tavolo. Voce di coda, non lavoro adesso.
