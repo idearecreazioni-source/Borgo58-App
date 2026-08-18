@@ -4,7 +4,7 @@
 punti **2 + 1**. Segue il [giro A](20260818_giro_a_la_sala_non_si_perde.md),
 non ancora validato: il validatore guarda A e B insieme.
 
-- **HEAD dichiarato**: `3188233`
+- **HEAD dichiarato**: `2687771`
 - **Working tree**: pulito
 - **Migrazioni**: `20260818000001_i_coperti_dentro_il_tavolo.sql`,
   `20260818000002_chi_ha_corretto_e_quando.sql` e
@@ -13,6 +13,26 @@ non ancora validato: il validatore guarda A e B insieme.
 - **Prove**: **53** pure (erano 49) + **151** sul progetto di prova (erano 144)
   — tutte verdi
 - **Lint**: zero avvisi · **Build**: ok
+
+---
+
+## ⚠️ Cosa NON è verificato — in cima, perché è la cosa che si dimentica
+
+1. **Nessuna mano ha ancora toccato il giro B.** Niente di questo è mai stato
+   usato da una persona: né la cifra sulla sagoma, né la correzione a mano, né
+   il riquadro «c'è posto?».
+2. **La cifra dentro il quadrato da 90 cm non è mai stata guardata da un
+   telefono** — ed è precisamente il punto su cui Alessio corresse una mia
+   scelta il 14/08. Lo guarda lui, e il giro C parte dopo.
+3. **Il canarino non è stato letto come lo legge la schermata.** Vedi sotto: la
+   strada dell'app non era percorribile da qui, e resta ad Alessio.
+4. **Il messaggio con le date degli scostamenti (giro A) non è mai comparso a
+   schermo.**
+5. **I due rami di `DB_URL_PRODUZIONE` mancante o sbagliata (giro A) non sono
+   mai stati esercitati.**
+6. **La guardia di `--azzera` non è mai scattata in una ricostruzione vera.**
+7. **La metà repo della validazione non è stata fatta**: riepiloghi contro
+   codice vero, clone pulito.
 
 ---
 
@@ -363,6 +383,36 @@ dell'app, quindi **dal connettore in sola lettura non è eseguibile** — è
 corretto che sia così. I controlli qui sopra sono scritti apposta per essere
 rifatti senza chiamarla.
 
+### L'applicazione della terza migrazione, e il canarino
+
+`20260818000003` applicata: **1 su 1**, totale in produzione **132**. Lo stato
+dopo, letto col connettore:
+
+| controllo | valore |
+|---|---|
+| sagome / attive / tavoli | **13 / 13 / 9** |
+| formati | Quadrato 90×90: **7 tavoli da 4** · Rettangolare 180×90: **2 tavoli da 6** |
+| sagome mai modificate (`updated_at` vuoto) | **13** |
+| `updated_at` ha un predefinito? | **no** |
+| trigger sulle sagome | `trg_dining_tables_updated_at` · `trg_pulisci_correzioni_orfane` |
+| correzioni dei coperti in produzione | **0** |
+| sagome di verifica rimaste | **0** |
+
+**Il canarino tiene: la sala dice ancora 34.** Le tre giunzioni trovate sono
+`T5·T6`, `T8·T9`, `T8·T7` — cioè i gruppi **{T5,T6} = 6** e **{T7,T8,T9} = 8**,
+con T1, T2 a 6 e T3, T4 a 4. Somma dei tavoli 40, meno 2 per giunzione = **34**.
+
+⚠️ **Ma non è stato letto come lo legge la schermata, e va detto.** La
+richiesta era di non ricalcolarlo con la stessa funzione che lo produce — e
+infatti qui i gruppi sono **ricostruiti dalle posizioni**. Solo che questa è la
+stessa strada che ha usato il validatore: **la strada dell'app non era
+percorribile da qui**, perché `coperti_del_giorno()` è concessa al solo ruolo
+del gestionale, il connettore in sola lettura non può eseguirla, e in
+produzione non entro con nessun accesso.
+**Quindi delle due strade indipendenti ne mancano ancora una**, e quella è la
+schermata di Alessio: se il telefono mostra un numero diverso da 34, la
+differenza è la notizia.
+
 ### Il primo numero vero della sala
 
 Nella disposizione base di adesso **T5·T6 sono accostati e T7·T8·T9 pure**:
@@ -532,19 +582,40 @@ esistente un predefinito dichiarerebbe una modifica mai avvenuta. Si chiama
 e riusarla su un nome diverso fallisce a tempo di esecuzione (trappola del
 12/08).
 
-🔴 **E la sua verifica era sbagliata, trovato pensando a come rendere rossa una
-prova.** La prima stesura pretendeva che **nessuna sagoma preesistente** avesse
-una data: vero il giorno dell'applicazione, **falso per sempre dopo** — sarebbe
-bastato che Alessio rinominasse un tavolo o ne spegnesse uno, che sono gesti
-legittimi, perché la migrazione si rifiutasse di riapplicarsi **su una sua
-scelta**. È la lezione del 14/08 sommata a quella del 16/08: *un guardiano dice
-come deve essere fatto il mondo, non com'era quando l'ho guardato.* Al suo
-posto la proprietà vera — **la colonna non ha un valore predefinito** — che è
-ciò che davvero garantisce l'assenza di modifiche inventate. Quante sagome non
-sono mai state toccate resta come **notizia**, non come pretesa.
-**Dimostrato**: dopo aver modificato T3 sul progetto di prova, la migrazione si
-riapplica ancora — ed è esattamente il caso che la versione di prima avrebbe
-fatto fallire.
+🔴 **E la sua verifica era sbagliata — è il difetto migliore di questo giro, e
+non perché fosse grave.** Non era ancora vivo: è la **forma** che conta.
+
+La prima stesura pretendeva che **nessuna sagoma preesistente** avesse una
+data. Vero il giorno dell'applicazione, **falso per sempre dopo**. I gesti che
+l'avrebbero rotta, nominati perché la lezione sia riconoscibile la prossima
+volta: **rinominare un tavolo** (`rinominaSagoma`), **spegnerne uno**
+(`attivaSagoma`). Sono due gesti quotidiani, offerti dalla schermata *Sala e
+orari*, e bastava uno dei due.
+
+⚠️ **Un controllo che si rompe al primo gesto normale di chi usa il programma,
+e poi dà la colpa a quel gesto, è PEGGIO di un controllo assente**: uno assente
+non dice niente, uno rotto **dice una falsità e la attribuisce a chi lavora**.
+Alessio avrebbe rinominato un tavolo e da lì in poi la migrazione si sarebbe
+rifiutata di riapplicarsi, indicando la sua scelta come il problema.
+
+È la lezione del 14/08 (*una verifica non deve fallire per come qualcuno ha
+apparecchiato*) sommata a quella del 16/08 (*un guardiano dice come deve essere
+fatto il mondo, non com'era quando l'ho guardato*). Al suo posto la proprietà
+vera — **la colonna non ha un valore predefinito** — che è ciò che davvero
+garantisce l'assenza di modifiche inventate. Quante sagome non sono mai state
+toccate resta come **notizia**, non come pretesa.
+
+**Dimostrato invece che affermato**: dopo aver modificato T3 sul progetto di
+prova la migrazione si riapplica ancora — ed è esattamente il caso che la
+versione di prima avrebbe fatto fallire.
+
+⚠️ **E il metodo che l'ha trovato vale più del difetto**, tanto che è finito in
+`CLAUDE.md` §8 e non solo qui: **due** risultati veri di questa giornata sono
+usciti dal chiedersi *come far fallire una prova*, **zero** dal rileggere il
+codice appena scritto. La regola «le prove misurano una differenza, non una
+coincidenza» dice *cosa deve fare* una prova; questa dice *come si scopre che
+non lo fa* — si rompe di proposito ciò che dovrebbe proteggere, e si guarda se
+diventa rossa la prova giusta.
 
 ⚠️ **Nasce senza valore predefinito** (lezione del 14/08): su una riga già
 esistente un predefinito dichiarerebbe una modifica mai avvenuta. Vuoto vuol
