@@ -670,3 +670,96 @@ alzando quella dimensione. Oggi «lo restringo io» è una risposta;
 ⚠️ **il giorno che una mano diversa dalla sua userà quella schermata in
 servizio, non lo sarà più** — chi serve non restringe niente con due dita
 mentre accompagna qualcuno al tavolo. Voce di coda, non lavoro adesso.
+
+---
+
+## Il sesto collaudo — e due rilievi che la misura ha cambiato
+
+✅ **Verificato da Alessio**: il titolo «T5 · **T6**» *«si capisce, riguarda il
+tavolone e non sembra che stia prenotando tre tavoli»*; e il tavolo che si fa
+trasparente uscendo dalla sala è *«perfetto»*. ⚠️ Quest'ultimo era stato
+**aggiunto di iniziativa**, non richiesto: senza un segno, il ritorno alla
+posizione di partenza si legge come un errore, e la volta dopo si trascina
+piano per paura.
+
+### Il pannello: si stringe fra le cose, non dentro le caselle
+
+*«Basta stringere leggermente gli spazi tra una cosa e l'altra e ci siamo.»*
+Tolti **circa 108 punti** di altezza su 487 **senza toccare l'altezza dei
+campi** — che è la soglia toccabile, già sfondata una volta nel giro E:
+
+| cosa | prima | dopo |
+|---|---|---|
+| il riquadro dentro il riquadro (il pannello aveva bordo e sfondo sotto un altro riquadro) | 24 pt | 0 |
+| bordo interno del pannello | 20 pt | 8 pt |
+| spazio fra un campo e l'altro | 12 pt | 4 pt |
+| spazio sotto ogni etichetta | 6 pt | 2 pt |
+| «Note (allergie, occasione…)» che andava a capo | 2 righe | «Note» |
+
+⚠️ **Contato sul CASO PIÙ LUNGO e non su quello di stasera**, che era il
+rilievo: modulo intero, titolo di tre tavoli, tutte le etichette → **≈ 356
+punti su 487**. Se il titolo va a capo restano ancora un centinaio di punti di
+margine.
+⚠️ **Ma sono stime lette dal codice, non misure**: a misurare sarà il suo
+occhio. E se anche il caso più lungo sforasse, il pannello **scorre dentro di
+sé** — non si perde niente, si perde comodità.
+
+### Il buco nel registro dei rovesciamenti
+
+Trovato dalla validazione **contando**: la tabella andava da 1 a 13 e i
+racconti erano dodici. **Misurato: non mancava un rovesciamento** — mancava la
+**sezione** del n. 4, perché il suo racconto stava solo nel riepilogo del giro
+E. Scritta.
+
+⚠️ *Un elenco che esiste per far **contare** i rovesciamenti non può avere un
+buco*: chi lo legge fra sei mesi non sa se ne manca uno o se è un numero
+saltato. Da qui in avanti ogni riga della tabella ha la sua sezione, anche
+quando il racconto lungo vive altrove.
+
+### 🔴 Il segno «letta» in Comande — e la misura che ha cambiato la risposta
+
+Il rilievo: in Comande manca lo spegnimento del segno al cambio di serata,
+quindi alle 5 del mattino una lettura fallita lascerebbe **la sala di ieri
+sotto la serata di oggi**.
+
+**Misurato prima di correggere**: in Comande la serata si decide **una volta
+sola**, all'apertura della schermata, e **non cambia più** (è una voce già
+dichiarata nel riepilogo del giro D2). Quindi **oggi quel caso non può
+presentarsi**, e il rilievo cade nella sua forma.
+
+**Corretto lo stesso**, e la ragione è che la trappola è **latente, non
+inesistente**: il giorno che la serata si aggiornerà da sola — voce aperta —
+sarebbe armata, e sarebbe **la peggiore delle due**: non una sala vuota, che si
+nota, ma una sala vera per il giorno sbagliato, che è plausibile. Costa una
+riga chiuderla adesso.
+
+⚠️ **E perché era rimasta aperta, che è la parte che tornerà.** La cura è nata
+nella schermata dove il difetto è stato **visto** — il Calendario, in una
+fotografia mandata per altro — non in quella dove morde di più. *Un difetto
+curato dove lo si è visto lascia scoperto lo stesso difetto dove nessuno ha
+guardato.*
+⚠️ **La prova che discriminerebbe** — cambiare serata con una lettura che
+fallisce, nei due versi — **non esiste**: in questo progetto nessuna prova
+automatica guarda una schermata, e questo vive in uno stato della schermata.
+
+---
+
+## Come sono stati trovati i difetti di questo giro — il risultato del metodo
+
+Vale la pena contarli, perché dice più del codice:
+
+| difetto | chi l'ha trovato |
+|---|---|
+| il modulo che restava senza tavoli | **la mano** di Alessio |
+| il tocco che trattava da libero un tavolo colorato | **la mano** di Alessio (dall'avviso mancante) |
+| la sala disegnata vuota quando una lettura fallisce | **una sua fotografia**, mandata per altro |
+| il nome di campo sbagliato nel ritardo (giro D2) | **una prova sui dati veri** |
+| la prova sul verso della sagoma che non discriminava | **una rottura fatta apposta** |
+| il buco nel registro dei rovesciamenti | **la validazione, contando** |
+
+⚠️ **I tre difetti grossi li ha trovati una mano o un occhio.** Le prove
+automatiche hanno fatto il loro lavoro — tengono ferme le regole, e due volte
+hanno trovato cose che nessuna rilettura avrebbe visto — ma **nessuna di loro
+guarda una schermata**, e i difetti di questo giro vivevano quasi tutti lì.
+*Il collaudo con le mani non è la conferma finale di un lavoro finito: è lo
+strumento che ha trovato di più.*
