@@ -11,8 +11,7 @@ punti **3 + 4**. Segue i giri [A](20260818_giro_a_la_sala_non_si_perde.md) e
   `20260818000006_gli_orari_veri_e_il_passo.sql`
 - **Prove**: **60** pure (erano 53) + **157** sul progetto di prova (erano 151)
 - **Lint**: zero avvisi · **Build**: ok
-- **In produzione**: la `…004` è **applicata** (133 migrazioni); la `…005` e la
-  `…006` ⏳ non ancora
+- **In produzione**: tutte e tre **applicate** — 135 migrazioni
 
 ---
 
@@ -315,10 +314,19 @@ adesso invece che con le prenotazioni vere dentro.
 
 ⚠️ **La difesa è un TRIGGER e vale solo per il varco pubblico.** Sulla tabella
 e non dentro la funzione, così vale anche per una funzione futura che
-dimenticasse il controllo. E solo su `source = 'form_pubblico'`, perché **dalla
-pianta Alessio deve poter scrivere le 20:07** se un cliente arriva alle 20:07:
-il freno sta dove sta il rischio. **Provato nei due versi** — respinto da
-fuori, accettato da dentro.
+dimenticasse il controllo. **Provato nei due versi** — respinto da fuori,
+accettato da dentro.
+
+⚠️ **L'ASIMMETRIA È LA SCELTA, NON UN BUCO — e la ragione va scritta accanto,
+o fra due mesi qualcuno «chiude anche l'altra porta» credendo di correggere un
+difetto.** Il sito **propone orari**; Alessio **registra fatti**. Se un cliente
+arriva alle 20:07, quello **è successo davvero**, e il gestionale non deve
+discutere con la realtà: deve poterlo scrivere. Il freno esiste dove qualcuno
+potrebbe inventarsi un orario che non gli è mai stato offerto — cioè su un
+indirizzo pubblico, dove l'invio automatico è la norma.
+*È la stessa forma del rifiuto della data anteriore alla fattura, tolto il
+17/08 per l'acconto: una regola giusta sul caso normale che, applicata anche a
+chi registra un fatto, gli impedisce di scrivere la verità.*
 
 ### Gli orari veri, scritti una volta sola
 
@@ -367,3 +375,46 @@ griglia basta — ed è ciò che Alessio ha chiesto; per il **singolo giorno** n
 
 Non è stato colmato di proposito: **allargare il giro C sarebbe il difetto che
 continuiamo a evitare.** Voce a sé negli appunti.
+
+
+---
+
+## L'applicazione in produzione — i numeri
+
+Applicate **3 su 3** in due passaggi (la `…004` prima, poi `…005` e `…006`).
+Totale in produzione: **135**.
+
+**Gli orari, che sono la cosa da controllare:**
+
+| servizio | righe | finestra | primo giro | ultimi arrivi | accesi |
+|---|---|---|---|---|---|
+| **cena** | 7 | **20:00 → 22:30** | **20:00** | **22:00** | 5 — martedì‑sabato |
+| **pranzo** | 7 | **12:30 → 14:00** | **12:30** | **(vuota)** | 1 — solo domenica |
+
+Le righe del pranzo esistono su **tutti** i giorni e l'interruttore resta in
+mano ad Alessio: la settimana tipo è un suo dato.
+
+**I parametri**: passo **15** · fine serata **05:00** · minuti fra i turni **0**
+· soglia **25**. Zero prenotazioni di verifica rimaste.
+
+**Il canarino del giro B tiene: la sala dice ancora 34**, con le giunzioni
+`T5·T6`, `T8·T9`, `T8·T7` — cioè {T5,T6} = 6 e {T7,T8,T9} = 8. Una migrazione
+degli orari non dovrebbe toccare la sala, ed è esattamente per questo che si
+guarda.
+
+### Le quattro prenotazioni in produzione: misurate, e non sono mie
+
+Rilievo del validatore su un numero che non tornava (nel briefing ne avevo
+contate due). **Sono quattro, e sono tutte di Alessio**: create il **14/08**
+fra le 16:09 e le 20:01 (`alessio`, `Alessio`, `franco`, `simona`), tutte
+`source = 'interno'`, e **annullate da lui stesso** fra le 20:15 e le 20:16
+dello stesso giorno. **Zero tavoli assegnati.** Nessuna è nata dalle verifiche
+delle migrazioni — quelle si ripuliscono e il controllo lo dichiara.
+
+⚠️ **Il numero «2» del briefing veniva da una riga di `CLAUDE.md` rimasta
+indietro** («2 prenotazioni di prova, di cui una sola con un tavolo
+assegnato»): corretta. È il tipo di riga che fa progettare male.
+
+⚠️ **Restano dati di collaudo**, e vanno nell'elenco delle cose che Alessio
+cancella prima della prima fattura vera (§5 punto 8) — non le tolgo io: sono
+righe sue.
