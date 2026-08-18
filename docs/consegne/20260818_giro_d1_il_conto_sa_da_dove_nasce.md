@@ -17,17 +17,27 @@
 
 ## ⚠️ Cosa NON è verificato
 
-1. **Il legame non si può vedere sui dati veri.** In produzione ci sono
-   **4 conti** e **nessuno agganciato**, e la ragione è precisa: sono tutti
-   stati aperti **prima** della migrazione (14/08, 15/08, e uno oggi alle
-   19:09 — la migrazione è delle 20:56). Tutto ciò che è provato sta nella
-   verifica della migrazione e nelle 4 prove nuove.
-   ✅ **Ma il caso è a un gesto di distanza**: le due prenotazioni confermate
-   di stasera sono intatte — **le 20:00 «prova» su T3** e **le 21:00 «mario»
-   su T8** — e c'è già **un conto aperto su T5**. Il prossimo conto che
-   Alessio apre su T3 o su T8 nasce agganciato, ed è la prima volta che si
-   vede.
-2. ✅ **ERA IL BUCO PIÙ IMPORTANTE DI QUESTA CONSEGNA, ed è chiuso** — la voce
+1. ✅ **VISTO SUI DATI VERI la sera stessa** — la voce resta con la sua
+   risposta. Alessio ha aperto un conto su **T3 alle 21:06:43**, e il conto è
+   nato con la prenotazione **«prova» delle 20:00** già attaccata. Poi l'ha
+   annullato, e **il legame è rimasto sulla riga**, com'è giusto: un conto
+   annullato è comunque un conto che è esistito.
+   ⚠️ **Ma un caso che riesce non dimostra che la regola discrimina** — quello
+   lo dimostra la rottura, ed è al punto 2. Le due cose provano cose diverse e
+   servono tutte e due: il caso vero dice *«la strada è collegata»*, la rottura
+   dice *«e sceglie davvero, non indovina»*.
+2. 🔴 **IL LEGAME NON LO MOSTRA NESSUNA SCHERMATA, ed è un limite dichiarato,
+   non un dettaglio.** Rilievo di Alessio subito dopo la prova: *«ho provato ad
+   aprire il conto al T3 ma non ho visto l'associazione con la prenotazione»*.
+   Ha ragione: il dato è scritto nel database e non compare da nessuna parte.
+   ⚠️ **Per chi usa l'app, un dato scritto che nessuno può vedere è
+   indistinguibile da un dato non scritto.** È esattamente il motivo per cui
+   D2 e D3 non sono rifiniture: senza di loro il legame è un fatto vero che
+   non serve a nessuno.
+   ✅ E la sua foto di Comande conferma da vicino la quarta causa di stamattina:
+   **sala tutta bianca**, nessun coperto, nessun colore di fascia, e **T5**
+   unico tavolo colorato perché ha il conto aperto dalle 19:09.
+3. ✅ **ERA IL BUCO PIÙ IMPORTANTE DI QUESTA CONSEGNA, ed è chiuso** — la voce
    resta con la sua risposta invece di sparire. La controprova sulla regola
    della fascia **non era stata eseguita**: il giro attraverso `psql -c` si
    rompeva sugli accenti dei commenti della funzione, quindi lì la
@@ -44,12 +54,17 @@
    segnale**: fallendo, la terza non arriva alla propria pulizia e lascia un
    conto aperto su quel tavolo, quindi la quarta viene respinta da
    `apri_conto`. Va detto, o chi rilegge conta due difetti dove ce n'è uno.
-3. **Nessuna mano ha toccato il giro C.**
-4. **La mezzanotte in servizio non è mai capitata dal vivo.**
-5. **La domenica a pranzo non ha prenotazioni vere.**
-6. **La guardia di `--azzera` non è mai scattata in una ricostruzione vera.**
-7. **I due rami di `DB_URL_PRODUZIONE` non sono mai stati esercitati.**
-8. **Il messaggio con le date degli scostamenti non è mai comparso a schermo.**
+   **La forma generale, perché tornerà**: *in una catena di prove che
+   condividono lo stato, la prima che fallisce può far cadere le successive per
+   il RESIDUO che lascia, non per il difetto.* Chi conta i rossi conta i
+   difetti **solo se le prove sono indipendenti** — e queste, che si passano lo
+   stesso tavolo, non lo sono.
+4. **Nessuna mano ha toccato il giro C.**
+5. **La mezzanotte in servizio non è mai capitata dal vivo.**
+6. **La domenica a pranzo non ha prenotazioni vere.**
+7. **La guardia di `--azzera` non è mai scattata in una ricostruzione vera.**
+8. **I due rami di `DB_URL_PRODUZIONE` non sono mai stati esercitati.**
+9. **Il messaggio con le date degli scostamenti non è mai comparso a schermo.**
 
 ---
 
