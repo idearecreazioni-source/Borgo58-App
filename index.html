@@ -3,6 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- L'APP AGGIUNTA ALLA SCHERMATA INIZIALE (18/08/2026, giro E).
+         Fino a oggi era un SEGNALIBRO: aperta dall'icona restava dentro
+         Safari, con le barre dell'indirizzo e dei comandi che si mangiano
+         145 punti degli 844 dello schermo — misurati da Alessio sul suo
+         telefono, non presi da un listino. Da qui quei 145 tornano alla
+         pianta.
+         ⚠️ iOS NON legge il manifest per l'icona: guarda apple-touch-icon,
+         e la vuole PNG. Le tre misure si rifanno dal logo vero con
+         "node scripts/icone-app.mjs", non si incollano a mano. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#b5502e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Borgo 58" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Impedisce a Google Translate di tradurre/manipolare il DOM: la
          traduzione automatica va in conflitto con React (crash

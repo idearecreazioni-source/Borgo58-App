@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Borgo 58 · Gestionale",
+  "short_name": "Borgo 58",
+  "description": "Il gestionale di Borgo 58 — Osteria Contemporanea.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6efe2",
+  "theme_color": "#b5502e",
+  "icons": [
+    { "src": "/icona-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icona-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

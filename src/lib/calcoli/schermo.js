@@ -86,11 +86,34 @@ export function modalitaInstallata(finestra = window) {
   return Boolean(finestra.matchMedia?.("(display-mode: standalone)")?.matches);
 }
 
+/**
+ * Quanto misura davvero il tavolo più piccolo su questo schermo.
+ *
+ * ⚠️ AGGIUNTA IL 18/08 PERCHÉ MANCAVA LA META' CHE CONTA: la riga
+ * riportava l'altezza, e il problema della pianta è la LARGHEZZA. Quindi
+ * la prima lettura di Alessio non poteva dire se la sala entrava — e il
+ * numero su cui si è dimensionato il giro E (390 punti di iPhone) era
+ * dedotto dal modello, non letto.
+ *
+ * Il secondo numero è la difesa vera: se un giorno la pianta tornasse a
+ * sbordare — per un telefono diverso, o perché qualcuno calibra il
+ * righello di QUESTO dispositivo, cosa che raddoppierebbe la larghezza
+ * pretesa — si legge il perché invece di indovinarlo.
+ */
+export function tavoloPiuPiccoloMm(m, salaCm = 1030, latoCm = 90) {
+  if (!m?.larghezzaUtile || !m?.altezzaSchermo) return null;
+  // Il disegno riempie la larghezza utile meno i margini della pagina.
+  const puntiPianta = Math.max(0, m.larghezzaUtile - 32);
+  return Math.round((puntiPianta / salaCm) * latoCm * 10) / 10;
+}
+
 /** La riga che Alessio legge e riferisce, in parole sue. */
 export function fraseMisura(m) {
   const stabili =
     m.piccola && m.grande
       ? ` · stabile fra ${m.piccola} e ${m.grande}`
       : "";
-  return `${m.installata ? "Dall'icona" : "Da Safari"}: ${m.altezzaUtile} di altezza (schermo ${m.altezzaSchermo}, barre ${m.barre})${stabili}.`;
+  const tavolo = tavoloPiuPiccoloMm(m);
+  const quadrato = tavolo ? ` · tavolo ${tavolo} punti` : "";
+  return `${m.installata ? "Dall'icona" : "Da Safari"}: ${m.larghezzaUtile} × ${m.altezzaUtile} (schermo ${m.altezzaSchermo}, barre ${m.barre})${stabili}${quadrato}.`;
 }
