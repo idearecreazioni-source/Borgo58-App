@@ -267,10 +267,10 @@ che serve nel momento in cui si smonta, e serve alla **correzione a mano, che
 ha per chiave proprio l'insieme dei tavoli**. La linea sottile dice tutte e
 due le cose: *«questo è un tavolone»* e *«è fatto di tre»*.
 
-⚠️ **Non va nel giro C.** È lavoro di disegno, e sta con la **stessa mano** che
-tocca il **giro D** (evidenziazione incrociata) e il **giro E** (la pianta
-nello schermo): tre modifiche alla stessa pianta fatte insieme costano meno di
-tre passaggi separati, **e si giudicano guardandole tutte e tre**.
+⚠️ **Non va nel giro C.** È lavoro di disegno, e sta con la **stessa mano**
+che tocca la pianta. ✅ **Deciso il 18/08 dopo il giro C: va col giro E**, che
+è il prossimo — la pianta che entra nello schermo del telefono e i lati di
+giunzione sottili sono la stessa mano sullo stesso disegno.
 
 ## 5. Evidenziazione incrociata
 
@@ -312,9 +312,9 @@ cosa succede davvero su uno schermo da telefono prima di cambiarla.
 |---|---|---|
 | **A** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_a_la_sala_non_si_perde.md)). Il punto 0: `--azzera` dichiara cosa butta via, e la sala «di sempre» può tornare | è un difetto che **agisce adesso** — ogni ricostruzione del progetto di prova costa ad Alessio il lavoro di ridisegnare la sala |
 | **B** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md)). I punti **2 + 1**: i coperti dentro il tavolo, poi «c'è posto?» | il secondo **non esiste senza il primo**: senza i posti sul tavolo non c'è niente da contare. E il 2 tocca un vincolo del database, quindi va da solo |
-| **C** | I punti **3 + 4**: le tre fasce e «da liberare entro le…» | ⚠️ **non si separano**: il 3 senza il 4 è una regola che vale solo sulla carta, perché in servizio nessuno la vede |
+| **C** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_c_le_tre_fasce_e_il_turno.md)). I punti **3 + 4**: le tre fasce e «da liberare entro le…» | ⚠️ **non si separano**: il 3 senza il 4 è una regola che vale solo sulla carta, perché in servizio nessuno la vede |
 | **D** | I punti **5 + 6** e il **4-bis**: evidenziazione incrociata, lista riordinata e i lati di giunzione come linea sottile | sono la stessa fatica vista da due lati, e toccano le stesse due schermate |
-| **E** | Il punto **7**: la pianta nello schermo | va misurato per ultimo, perché B e C cambiano cosa c'è **dentro** una sagoma — e quindi quanto spazio serve |
+| **E** | ⏭️ **IL PROSSIMO** (deciso da Alessio il 18/08, dopo il giro C), insieme alla **linea di giunzione sottile** del 4-bis. Il punto **7**: la pianta nello schermo | ⚠️ **Non è una rifinitura: è ciò che sblocca il collaudo di tutto il resto.** Ogni prova che Alessio fa dal telefono — e le prenotazioni si prendono per lo più da lì — **inciampa nella pianta troppo grande prima ancora di arrivare a ciò che stava provando**. Ed è la seconda volta che ci inciampa. Va con la linea di giunzione perché sono la stessa mano sulla stessa pianta |
 
 ⚠️ **Il punto 0 non è un preliminare da sbrigare**: è l'unico che oggi fa
 perdere lavoro vero a ogni ricostruzione.

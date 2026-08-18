@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
+import { FASCE } from "../../lib/calcoli/serata";
 import { useAuth } from "../../context/AuthContext";
 import {
   getCopertiDelGiorno,
   getPiantaDelGiorno,
   getPostoPerLaSerata,
-  getRegolePrenotazione,
+  getTurniDelGiorno,
   isSoldOut,
   promuoviDisposizione,
   rimuoviCorrezioneCoperti,
@@ -120,15 +121,17 @@ export default function PiantaGiornata() {
   const [prenotazioni, setPrenotazioni] = useState([]);
   const [assegnazioni, setAssegnazioni] = useState([]);
   const [pieno, setPieno] = useState(false);
-  // L'ora che separa il primo giro dal secondo: sta nelle impostazioni,
-  // perche' d'estate o di sabato cambia e non deve servire una modifica al
-  // programma. Formato del database (HH:MM:SS), per confrontarla con
-  // reservation_time senza tagliare stringhe.
-  const [soglia, setSoglia] = useState("20:00:00");
+  // ⚠️ L'ora che separa le fasce NON è più uno stato di questa schermata.
+  // Fino al 18/08 era una sola per tutto il locale e si confrontava qui;
+  // dal giro C appartiene al SERVIZIO (una domenica è pranzo) e la fascia
+  // la calcola il database, che è anche l'unico posto dove sta la regola.
   // I tavoloni della giornata coi loro coperti, e la risposta a «c'è
   // posto?». Vengono dal database — la pianta e il conteggio devono dire
   // lo stesso numero, quindi il calcolo è uno solo e non sta qui.
   const [gruppi, setGruppi] = useState([]);
+  // Le fasce e «da liberare entro le…», calcolate dal database sugli orari
+  // di QUEL servizio. Non si ricalcolano qui: due posti direbbero due cose.
+  const [turni, setTurni] = useState([]);
   const [posto, setPosto] = useState(null);
   // Quale tavolone si sta correggendo a mano, e con che numero.
   const [correzione, setCorrezione] = useState(null);
@@ -152,22 +155,23 @@ export default function PiantaGiornata() {
   const [toccato, setToccato] = useState(null);
 
   const ricarica = useCallback(async () => {
-    const [p, r, a, s, reg, g, po] = await Promise.all([
+    const [p, r, a, s, g, po, tu] = await Promise.all([
       getPiantaDelGiorno(data),
       listReservations({ date: data }),
       listTavoliPrenotatiPerData(data),
       isSoldOut(data),
-      getRegolePrenotazione(),
       getCopertiDelGiorno(data),
       getPostoPerLaSerata(data),
+      getTurniDelGiorno(data),
     ]);
     setSagome(p);
     setGruppi(g);
     setPosto(po);
+    setTurni(tu);
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
-    if (reg?.ora_primo_turno) setSoglia(reg.ora_primo_turno);
+
   }, [data]);
 
   const azzera = () => {
@@ -244,14 +248,22 @@ export default function PiantaGiornata() {
   // una dimensione leggibile: sul telefono le righe si accavallavano, sul
   // computer l'ora usciva tagliata.
   //
-  // Il colore però dice la cosa che serve a colpo d'occhio: **giallo** chi
-  // arriva entro l'ora di soglia (il tavolo può liberarsi per un secondo
-  // giro), **verde** chi arriva dopo (ultimo giro), **mezzo e mezzo** un
-  // tavolo che ha già tutt'e due.
+  // Il colore però dice la cosa che serve a colpo d'occhio: **giallo**
+  // primo giro, **verde** occupa la serata, **arancio** ultimo giro (dopo
+  // l'ultimo ingresso), **mezzo e mezzo** un tavolo che ha più di una
+  // fascia — tipicamente un giallo e un arancio, cioè il secondo giro.
+  // ⚠️ Le fasce arrivano dal database: i loro confini sono gli orari **di
+  // quel servizio**, e una domenica di pranzo non ha gli stessi di una
+  // cena. Ricalcolarle qui darebbe due risposte alla stessa domanda.
   //
   // ⚠️ E dal 18/08 porta anche la CIFRA dei coperti. Il numero è quello
   // del tavolone: tre tavoli accostati mostrano tutti e tre il numero del
   // rettangolo, perché è quello il posto che c'è — non un terzo a testa.
+  const fasciaPerPrenotazione = useMemo(
+    () => new Map(turni.map((t) => [t.reservation_id, t.fascia])),
+    [turni]
+  );
+
   const stato = useMemo(() => {
     const s = {};
     for (const g of gruppi) {
@@ -262,15 +274,15 @@ export default function PiantaGiornata() {
     for (const sagoma of sagome) {
       const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
       if (altri.length === 0) continue;
-      const presto = altri.some((a) => (a.reservation.reservation_time ?? "") <= soglia);
-      const tardi = altri.some((a) => (a.reservation.reservation_time ?? "") > soglia);
+      const fasce = [...new Set(altri.map((a) => fasciaPerPrenotazione.get(a.reservation.id)).filter(Boolean))];
+      if (fasce.length === 0) continue;
       s[sagoma.id] = {
         ...s[sagoma.id],
-        colore: presto && tardi ? "misto" : presto ? "presto" : "tardi",
+        colore: fasce.length > 1 ? "misto" : fasce[0],
       };
     }
     return s;
-  }, [sagome, perTavolo, evidenziata, soglia, gruppi]);
+  }, [sagome, perTavolo, evidenziata, fasciaPerPrenotazione, gruppi]);
 
   const tocca = (sagoma) => {
     setAvviso("");
@@ -320,7 +332,10 @@ export default function PiantaGiornata() {
   // La prenotazione aperta arriva dopo la soglia? Allora quel tavolo non
   // servirà una seconda volta — e vale la pena dirlo lì, accanto al
   // pulsante che ne aggiungerebbe un'altra.
-  const ultimoGiro = Boolean(aperta && (aperta.reservation_time ?? "") > soglia);
+  // La fascia della prenotazione aperta, letta dal database e non
+  // ricalcolata: la regola vive in un posto solo.
+  const turnoDi = (id) => turni.find((t) => t.reservation_id === id);
+  const ultimoGiro = turnoDi(aperta?.id)?.fascia === "tardi";
 
   // Le prenotazioni già presenti sui tavoli che si stanno scegliendo.
   const giaPromessi = scelti.flatMap((id) =>
@@ -689,11 +704,15 @@ export default function PiantaGiornata() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px] text-b58-charcoal-soft">
             <span>
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
-              arriva entro le {soglia.slice(0, 5)} — il tavolo può liberarsi per una seconda serata
+              primo giro — il tavolo può liberarsi per una seconda serata
             </span>
             <span>
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-olive align-middle mr-1" />
-              arriva dopo — è l'ultimo giro di quel tavolo
+              occupa la serata
+            </span>
+            <span>
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-terracotta align-middle mr-1" />
+              ultimo giro — arriva dopo l'ultimo ingresso
             </span>
             <span>
               <span className="inline-block w-2.5 h-2.5 rounded-sm align-middle mr-1 bg-gradient-to-r from-b58-gold from-50% to-b58-olive to-50%" />
@@ -818,14 +837,23 @@ export default function PiantaGiornata() {
               <p className="text-sm text-b58-charcoal-soft mb-4">
                 Su {tavoliDi(aperta.id).map((a) => a.etichetta_al_momento).join(" · ")}. Cambia quello
                 che serve, oppure spostali su altri tavoli.{" "}
-                {ultimoGiro ? (
-                  <strong>
-                    Arriva dopo le {soglia.slice(0, 5)}: è l'ultimo giro di questo tavolo.
-                  </strong>
-                ) : (
-                  <>Arriva entro le {soglia.slice(0, 5)}: il tavolo può servire una seconda volta.</>
-                )}
+                {FASCE[turnoDi(aperta.id)?.fascia]?.spiega}
+                {ultimoGiro && " "}
               </p>
+
+              {/* ⚠️ «DA LIBERARE ENTRO LE…», ed è il punto che fa valere le
+                  fasce. Senza, si accetta gente alle 19:30 «purché liberi
+                  per le 22» e quella nota resta nella scheda: in servizio
+                  non la vede nessuno, il tavolo non si libera e il secondo
+                  turno salta. L'ora non è scritta a mano — si legge dalla
+                  prenotazione successiva, quindi la segue se si sposta e
+                  sparisce se viene annullata. */}
+              {turnoDi(aperta.id)?.liberare_entro && (
+                <p className="rounded-lg bg-b58-gold/20 ring-1 ring-b58-gold px-3 py-2 text-sm mb-4">
+                  <strong>Da liberare entro le {turnoDi(aperta.id).liberare_entro.slice(0, 5)}</strong> —
+                  su questo tavolo c'è un altro turno dopo.
+                </p>
+              )}
 
               <CampiPrenotazione valori={modifica} cambia={setModifica} />
 

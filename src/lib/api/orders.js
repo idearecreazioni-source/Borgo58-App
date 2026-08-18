@@ -91,7 +91,12 @@ export async function findOpenOrderByTable(diningTableId) {
 export async function getServiceSettings() {
   const { data, error } = await supabase
     .from("service_settings")
-    .select("coperto_price")
+    // ⚠️ `ora_fine_serata` serve a Comande per sapere QUALE SERA è: alle
+    // 00:30, col locale ancora aperto, la data di calendario dice già
+    // domani. Il numero sta nel database e non nel codice perché lo stesso
+    // valore lo leggeranno le funzioni SQL quando saranno convertite: un
+    // numero, due lettori — mai due copie che possono divergere.
+    .select("coperto_price, ora_fine_serata")
     .eq("id", 1)
     .single();
   if (error) throw error;

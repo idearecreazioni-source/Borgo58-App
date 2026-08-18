@@ -218,6 +218,22 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
+                    {/* ⚠️ L'ora del primo giro sta QUI, sulla riga del
+                        servizio, e non piu' una sola per tutto il locale:
+                        la domenica e' pranzo, e un'ora buona per la cena
+                        direbbe «puo' servire una seconda volta» a chiunque
+                        pranzi. Vuota = non deciso, e quel servizio ha due
+                        fasce invece di tre. */}
+                    <span className="text-xs text-b58-charcoal-soft">primo giro fino alle</span>
+                    <CampoAutosalvato
+                      type="time"
+                      value={o.ora_primo_turno?.slice(0, 5) ?? ""}
+                      onSave={(v) =>
+                        esegui(() => updateServiceHour(o.id, { ora_primo_turno: v || null }))
+                      }
+                      className={inputClass}
+                      disabled={!o.attivo}
+                    />
                   </div>
                 ))}
               </div>
@@ -315,6 +331,37 @@ export default function SalaEOrari() {
               Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
               liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
               colpo d'occhio: non impedisce niente.
+            </p>
+          </div>
+          <div>
+            {/* ⚠️ FIN QUANDO È ANCORA IERI SERA. È il parametro che decide
+                quale sera mostrano le Comande dopo la mezzanotte, e domani
+                lo leggeranno anche le funzioni del database che scrivono
+                cassa e mance: un numero, due lettori — mai due copie che
+                possono divergere. */}
+            <label className={labelClass}>Fino a che ora è ancora la sera prima</label>
+            <CampoAutosalvato
+              type="time"
+              value={regole?.ora_fine_serata?.slice(0, 5) ?? ""}
+              onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_fine_serata: v }))}
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Un conto chiuso all'una di notte appartiene alla <strong>sera prima</strong>, non al
+              giorno dopo. Fino a quest'ora la sala continua a mostrare la serata in corso.
+            </p>
+          </div>
+          <div>
+            <label className={labelClass}>Minuti fra un turno e l'altro</label>
+            <CampoAutosalvato
+              type="number"
+              value={regole?.minuti_fra_turni ?? ""}
+              onSave={(v) => esegui(() => updateRegolePrenotazione({ minuti_fra_turni: Number(v) }))}
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Quanto serve per sparecchiare e riapparecchiare. A zero, «da liberare entro le…»
+              dice l'ora esatta della prenotazione dopo.
             </p>
           </div>
           <div>

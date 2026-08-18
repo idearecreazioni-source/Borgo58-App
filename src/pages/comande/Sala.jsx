@@ -19,9 +19,10 @@ import {
   updateOrderNote,
   voidSentItem,
 } from "../../lib/api/orders";
-import { getPiantaDelGiorno } from "../../lib/api/sala";
+import { getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
+import { serataDiServizio } from "../../lib/calcoli/serata";
 import { listBarItems } from "../../lib/api/barItems";
-import { RECIPE_CATEGORIES, formatEUR, oggiLocale } from "../../lib/constants";
+import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
@@ -55,6 +56,13 @@ export default function Sala() {
   const [barItems, setBarItems] = useState([]);
   const [showWines, setShowWines] = useState(false);
   const [copertoPrice, setCopertoPrice] = useState(null);
+  // Quale sera è questa. Resta nullo finché non si sa: senza, la pianta
+  // si caricherebbe per il giorno sbagliato e poi si correggerebbe sotto
+  // gli occhi di chi sta servendo.
+  const [serata, setSerata] = useState(null);
+  // I turni di stasera: servono per «da liberare entro le…», che senza
+  // questa schermata resterebbe una nota che vede solo chi prenota.
+  const [turni, setTurni] = useState([]);
   const [order, setOrder] = useState(null);
 
   const [error, setError] = useState("");
@@ -73,23 +81,38 @@ export default function Sala() {
   const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
   const [priceDraft, setPriceDraft] = useState("");
 
-  // La pianta è quella di OGGI: se Alessio ha accostato dei tavoli per
-  // stasera, in sala si vedono accostati. Data locale, non UTC — fra
-  // mezzanotte e le due la sala di ieri è ancora quella giusta.
+  // La pianta è quella di STASERA: se Alessio ha accostato dei tavoli per
+  // il servizio, in sala si vedono accostati.
+  //
+  // 🔴 E fino al 18/08/2026 qui c'era `oggiLocale()`, col commento che
+  // diceva *«fra mezzanotte e le due la sala di ieri è ancora quella
+  // giusta»* — cioè **il contrario di quello che il codice faceva**.
+  // `oggiLocale()` cura la trappola del fuso, non quella della serata:
+  // alle 00:30, col locale aperto, dice **domani**. La sala cambiava sotto
+  // le mani dei camerieri a mezzanotte, e il commento rassicurava che non
+  // succedesse. È la stessa famiglia della frase sulla correzione dei
+  // coperti trovata ieri: un testo che descrive male il proprio programma.
+  //
+  // ⚠️ `serataDiServizio()` decide il giorno PREDEFINITO, non l'unico
+  // visitabile: la pianta del Calendario ha il suo selettore di data e
+  // resta libera, così alle 00:30 si può comunque preparare domani.
   const loadBoard = () =>
-    Promise.all([getPiantaDelGiorno(oggiLocale()), listOpenOrders()]).then(([p, o]) => {
-      setSagome(p);
-      setOpenOrders(o);
-    });
+    Promise.all([getPiantaDelGiorno(serata), listOpenOrders(), getTurniDelGiorno(serata)]).then(
+      ([p, o, t]) => {
+        setSagome(p);
+        setOpenOrders(o);
+        setTurni(t);
+      }
+    );
 
   useEffect(() => {
-    loadBoard().catch((e) => setError(e.message));
     listMenuForOrder().then(setMenu).catch((e) => setError(e.message));
     listBarItems().then(setBarItems).catch((e) => setError(e.message));
     getServiceSettings()
       .then((s) => {
         setCopertoPrice(Number(s.coperto_price));
         setPriceDraft(String(s.coperto_price));
+        setSerata(serataDiServizio(new Date(), s.ora_fine_serata));
       })
       .catch((e) =>
         // Messaggio esplicito invece di un fallback silenzioso: un conto
@@ -99,6 +122,13 @@ export default function Sala() {
         )
       );
   }, []);
+
+  // La pianta si carica quando si sa che sera è, non prima.
+  useEffect(() => {
+    if (!serata) return;
+    loadBoard().catch((e) => setError(e.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serata]);
 
   // Quale conto sta su quale sagoma. Il legame è una chiave esterna, non
   // il nome del tavolo: «T5 · T6 · T7» non è un tavolo.
@@ -152,6 +182,18 @@ export default function Sala() {
       setLoadingOrder(false);
     }
   };
+
+  // L'ora entro cui questo tavolo va liberato: la più stretta fra quelle
+  // dei turni che insistono sui suoi tavoli.
+  const liberareEntro = (() => {
+    if (!order) return null;
+    const miei = new Set((order.tavoli ?? []).map((t) => t.dining_table_id));
+    const ore = turni
+      .filter((t) => (t.tavoli ?? []).some((id) => miei.has(id)) && t.liberare_entro)
+      .map((t) => t.liberare_entro)
+      .sort();
+    return ore[0] ?? null;
+  })();
 
   const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
 
@@ -511,6 +553,20 @@ export default function Sala() {
 
       {order && (
         <>
+          {/* ⚠️ «DA LIBERARE ENTRO LE…», ED È QUI CHE VALE SOLDI. Il punto 3
+              del mandato (le tre fasce) senza questo è una regola che vive
+              solo dove si prendono le prenotazioni: chi serve non la vede,
+              il tavolo non si libera e il secondo turno salta. L'ora arriva
+              dallo stesso calcolo della pianta — non è ricopiata qui, e non
+              è scritta a mano da nessuno: se la seconda prenotazione si
+              sposta o viene annullata, questa riga la segue. */}
+          {liberareEntro && (
+            <p className="rounded-lg bg-b58-gold/25 ring-1 ring-b58-gold px-3 py-2 text-base mb-4">
+              <strong>Da liberare entro le {liberareEntro.slice(0, 5)}</strong> — su questo tavolo
+              c&apos;è un altro turno dopo.
+            </p>
+          )}
+
           {/* COPERTI --------------------------------------------------- */}
           <p className={sectionLabel}>Coperti</p>
           <div className="flex items-center gap-2 mb-4">

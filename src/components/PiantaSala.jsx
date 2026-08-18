@@ -59,17 +59,25 @@ const COLORI = {
   selezionato: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
   occupato: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
   prenotato: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
-  // ⚠️ I DUE COLORI DELLA SERATA (idea di Alessio, 14/08). Giallo = chi
-  // arriva entro l'ora di soglia, quindi il tavolo può liberarsi per un
-  // secondo giro; verde = chi arriva dopo, ed è l'ultimo giro di quel
-  // tavolo. Non è un vincolo e non impedisce niente: è l'ora resa
+  // ⚠️ LE TRE FASCE DELLA SERATA (idea di Alessio, 14/08; il terzo colore
+  // è del 18/08). Non è un vincolo e non impedisce niente: è l'ora resa
   // visibile senza doverla leggere. Ha sostituito una spunta che chiedeva
   // ad Alessio di dichiarare a mano una cosa che si deduce dall'orario.
+  //   giallo  = arriva prima dell'ora del primo giro → il tavolo può
+  //             servire una seconda volta;
+  //   verde   = arriva a servizio avviato → il tavolo resta suo;
+  //   arancio = arriva dopo l'ultimo ingresso → è l'ultimo turno, e può
+  //             stare sullo stesso tavolo di un giallo.
+  // ⚠️ I confini NON sono qui e non sono due ore fisse: vengono dagli
+  // orari **di quel servizio** (`service_hours`). La domenica è pranzo, e
+  // tre fasce calcolate sugli orari della cena direbbero «primo giro» a
+  // chiunque pranzi.
   presto: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
-  tardi: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
-  // Mezzo e mezzo: il tavolo ha sia un primo che un secondo giro. Chi ha
-  // prenotato dopo sa implicitamente di poter aspettare — che è esattamente
-  // ciò che la spunta diceva a parole.
+  pieno: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  tardi: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
+  // Mezzo e mezzo: sul tavolo c'è più di una fascia — tipicamente un
+  // giallo e un arancio, che è proprio il secondo giro. Chi ha prenotato
+  // dopo sa implicitamente di poter aspettare.
   misto: { riempimento: "url(#mezzoEmezzo)", bordo: "var(--color-b58-olive-dark)" },
   fisso: { riempimento: "var(--color-b58-cream-dark)", bordo: "var(--color-b58-charcoal-soft)" },
 };

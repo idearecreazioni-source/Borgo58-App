@@ -140,6 +140,21 @@ export async function getCopertiDelGiorno(data) {
   return righe ?? [];
 }
 
+// --- Le fasce e il turno (18/08/2026, giro C) ---
+//
+// Per ogni prenotazione: in che fascia cade e, se sul suo tavolo c'è
+// qualcuno dopo, entro che ora va liberato.
+//
+// ⚠️ «Da liberare entro le…» è una CONSEGUENZA, non un dato scritto a
+// mano: si legge dalla prenotazione successiva. Se quella si sposta la
+// nota la segue, se sparisce la nota sparisce — senza che nessuno debba
+// ricordarsene. Un secondo posto dove scriverla resterebbe indietro.
+export async function getTurniDelGiorno(data) {
+  const { data: righe, error } = await supabase.rpc("turni_del_giorno", { p_data: data });
+  if (error) throw error;
+  return righe ?? [];
+}
+
 export async function getPostoPerLaSerata(data) {
   const { data: righe, error } = await supabase.rpc("posto_per_la_serata", { p_data: data });
   if (error) throw error;
@@ -236,7 +251,7 @@ export async function setSoldOut(data, pieno) {
 export async function listServiceHours() {
   const { data, error } = await supabase
     .from("service_hours")
-    .select("id, weekday, servizio, apertura, ultimo_ingresso, attivo")
+    .select("id, weekday, servizio, apertura, ultimo_ingresso, ora_primo_turno, attivo")
     .order("weekday")
     .order("apertura");
   if (error) throw error;
@@ -286,7 +301,7 @@ export async function getRegolePrenotazione() {
   const { data, error } = await supabase
     .from("service_settings")
     .select(
-      "giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva, ora_primo_turno, soglia_coperti_serata"
+      "giorni_prenotabili, preavviso_minuti, prenotazioni_online_attive, email_conferma_attiva, soglia_coperti_serata, minuti_fra_turni, ora_fine_serata"
     )
     .eq("id", 1)
     .single();
