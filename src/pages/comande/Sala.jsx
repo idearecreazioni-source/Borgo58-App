@@ -623,20 +623,13 @@ export default function Sala() {
             // spazio c'è; il colore e la sbarratura si leggono senza leggere.
             stato={statoSagome}
           />
-          {/* ⚠️ Perché questa sala non somiglia a quella del Calendario
-              (difetto n. 2 del collaudo). È lo STESSO locale con gli
-              STESSI tavoli — misurato: le due schermate chiedono la pianta
-              alla stessa funzione e ricevono le stesse coordinate. Qui è
-              girata in piedi perché il tablet si tiene verticale, e resta
-              così sempre: una mappa mentale vale solo se non si ribalta
-              mai (decisione di Alessio del 14/08, riconfermata il 17/08).
-              La riga c'è perché chi confronta le due schermate deve poter
-              capire il perché, invece di sospettare due disposizioni. */}
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
-            Sala girata in piedi per il tablet. In Calendario si gira da sola quando lo schermo è
-            stretto e resta sdraiata quando c&apos;è spazio: è lo stesso locale, girato — non
-            un&apos;altra disposizione.
-          </p>
+          {/* 🔴 QUI C'ERA LA RIGA CHE SPIEGAVA PERCHÉ QUESTA SALA È GIRATA
+              rispetto a quella del Calendario — tolta da Alessio il 18/08
+              (rovesciamento n. 11). Era una sua decisione del 17/08, presa
+              perché chi confronta le due schermate non sospetti due
+              disposizioni diverse: **è lo stesso locale**, e le due schermate
+              chiedono la pianta alla stessa funzione. Il fatto resta vero,
+              sparisce la frase che lo diceva. */}
           {/* ⚠️ QUI C'ERA LA LEGENDA DEI COLORI, TOLTA DA ALESSIO il 18/08
               perché la considera superflua — conosce i suoi colori. Gli era
               stata proposta anche la via di mezzo (nasconderla dietro un

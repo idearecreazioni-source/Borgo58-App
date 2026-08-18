@@ -41,20 +41,32 @@ import {
 // compilare un modulo altrove e poi tornare a cercare dove metterli è il
 // modo sicuro per non farlo mai.
 //
-// ⚠️ UN TOCCO VUOL DIRE UNA COSA SOLA — dal giro D3 (18/08), e fino a quel
-// giorno ne voleva dire tre a seconda di cosa c'era sotto il dito (tavolo
-// libero → prenotazione nuova, tavolo promesso → apre quella prenotazione,
-// lavoro in corso → aggiunge alla scelta). La ragione di allora era che le
-// tre cose «non possono essere ambigue», e vale ancora: la forma nuova la
-// serve meglio. Adesso il tocco apre **il riquadro di quel tavolo**, e le
-// strade stanno lì dentro con le parole che dicono quale fa cosa.
-// L'unica eccezione è il lavoro in corso — mentre si sceglie dove far sedere
-// qualcuno, il tocco aggiunge e toglie: lì il gesto è già dichiarato da un
-// riquadro aperto sopra la pianta.
+// ⚠️ COSA VUOL DIRE UN TOCCO — e la risposta è cambiata due volte il 18/08,
+// quindi vale la pena scriverla per intero.
+//   · Fino al giro D3 ne voleva dire TRE, a seconda di cosa c'era sotto il
+//     dito. La ragione, del 14/08, era che le tre cose «non possono essere
+//     ambigue» — ma tre esiti per lo stesso gesto sono ambigui per
+//     costruzione, perché chi tocca deve ricordarsi cosa c'era sotto.
+//   · Col giro D3 ne voleva dire UNA: apriva il riquadro del tavolo, e le
+//     strade stavano lì dentro.
+//   · Provandolo, Alessio ha chiesto che su un tavolo LIBERO si arrivi
+//     «direttamente ai campi da compilare»: lì il riquadro non faceva
+//     scegliere niente, era una tappa. Quindi gli esiti tornano a essere DUE.
 //
-// ⚠️ E il riquadro ha ASSORBITO anche l'elenco dei tavoli che stava sotto la
+// ⚠️ E DUE ESITI SI REGGONO SOLO SE LA CONDIZIONE SI VEDE PRIMA DI TOCCARE.
+// Qui si vede: **un tavolo bianco è libero, uno colorato ha qualcuno**, e il
+// colore è il segno più leggibile di questa schermata. Il modulo lo dichiara
+// comunque a parole, una volta, nel posto dove la regola agisce.
+// (Resta fuori il lavoro in corso: mentre si sceglie dove far sedere
+// qualcuno il tocco aggiunge e toglie, e lì il gesto è già dichiarato da un
+// riquadro aperto sopra la pianta.)
+//
+// ⚠️ E il riquadro ha ASSORBITO l'elenco dei tavoli che stava sotto la
 // pianta: i coperti si correggono da lì, dove si è appena toccato il tavolo,
-// invece che da una seconda lista con la sua riga da cercare.
+// invece che da una seconda lista con la sua riga da cercare. **Sul tavolo
+// libero la stessa casella sta nel modulo della prenotazione** — senza,
+// correggere il numero di un tavolo libero non si potrebbe più fare da
+// nessuna parte.
 //
 // ⚠️ La pianta mostra TUTTA la serata, non un momento. Un tavolo
 // prenotato alle 19:30 resta colorato anche se alle 22 si libera: non
@@ -121,6 +133,118 @@ function CampiPrenotazione({ valori, cambia }) {
   );
 }
 
+// I COPERTI DI UN TAVOLONE, con la loro casella — e sta FUORI dal componente
+// per la stessa ragione di `CampiPrenotazione`: definita dentro sarebbe un
+// componente nuovo a ogni render, e il cursore salterebbe fuori dalla casella
+// a ogni cifra digitata.
+//
+// ⚠️ ED È UNA SOLA, USATA IN DUE POSTI: il riquadro del tavolo (tavolo
+// occupato) e il modulo della prenotazione nuova (tavolo libero). Dal 18/08 il
+// tocco su un tavolo libero salta il riquadro e va dritto ai campi — richiesta
+// di Alessio — e senza portare la casella anche lì, correggere i coperti di un
+// tavolo libero non si potrebbe più fare da nessuna parte: è il gesto che
+// faceva l'elenco sotto la pianta, che questo giro ha tolto.
+// Due copie della stessa casella sarebbero due posti che divergono.
+function CopertiDelGruppo({ gruppo, sagomaLabel, correzione, setCorrezione, salvando, salva, azzeraCorrezione }) {
+  if (!gruppo) return null;
+  const chiave = (gruppo.tavoli ?? []).join(",");
+  const inCorrezione = correzione?.chiave === chiave;
+  const piuTavoli = (gruppo.tavoli ?? []).length > 1;
+  return (
+    <div className="mb-3">
+      <p className="text-sm text-b58-charcoal">
+        {piuTavoli && !sagomaLabel && (
+          <span className="text-b58-charcoal-soft">{(gruppo.etichette ?? []).join(" · ")}: </span>
+        )}
+        Ci stanno <strong>{gruppo.coperti}</strong>
+        {gruppo.corretto ? (
+          <span className="text-b58-charcoal-soft">
+            {" "}
+            — corretto a mano, la regola direbbe {gruppo.coperti_calcolati}
+            {gruppo.ragione ? ` · ${gruppo.ragione}` : ""}
+          </span>
+        ) : (
+          <span className="text-b58-charcoal-soft"> — calcolato</span>
+        )}
+      </p>
+      {/* ⚠️ LA FRASE CHE DISTINGUE LE DUE COSE, e compare SOLO quando il
+          gruppo è di più tavoli: il tocco è del tavolo, il numero è del
+          tavolone. Una spiegazione che c'è sempre si smette di leggere, e
+          questa deve farsi notare proprio nel caso in cui serve. */}
+      {piuTavoli && sagomaLabel && (
+        <p className="text-[11px] text-b58-charcoal-soft/80 mt-0.5">
+          È il numero di <strong>{(gruppo.etichette ?? []).join(" · ")}</strong> insieme, non del
+          solo {sagomaLabel}: correggendolo cambi il tavolone.
+        </p>
+      )}
+
+      {inCorrezione ? (
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <input
+            type="number"
+            min="0"
+            value={correzione.coperti}
+            onChange={(e) => setCorrezione((c) => ({ ...c, coperti: e.target.value }))}
+            className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+          />
+          <input
+            type="text"
+            placeholder="perché (es. uno contro il muro)"
+            value={correzione.ragione}
+            onChange={(e) => setCorrezione((c) => ({ ...c, ragione: e.target.value }))}
+            className="flex-1 min-w-[10rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+          />
+          <button
+            type="button"
+            disabled={salvando || correzione.coperti === ""}
+            onClick={() => salva(gruppo)}
+            className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
+          >
+            Salva
+          </button>
+          <button
+            type="button"
+            onClick={() => setCorrezione(null)}
+            className="text-sm text-b58-charcoal-soft underline"
+          >
+            Lascia stare
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3 mt-1">
+          <button
+            type="button"
+            onClick={() =>
+              setCorrezione({
+                chiave,
+                coperti: String(gruppo.coperti),
+                ragione: gruppo.ragione ?? "",
+              })
+            }
+            className="text-[12px] text-b58-charcoal-soft underline"
+          >
+            Correggi il numero
+          </button>
+          {gruppo.corretto && (
+            <button
+              type="button"
+              disabled={salvando}
+              onClick={() => azzeraCorrezione(gruppo)}
+              className="text-[12px] text-b58-charcoal-soft underline"
+            >
+              Torna al calcolato ({gruppo.coperti_calcolati})
+            </button>
+          )}
+        </div>
+      )}
+      {/* ⚠️ «Chi ha corretto e quando» NON è più a schermo — Alessio lo
+          considera superfluo qui (giro D3, rovesciamento n. 8). Resta scritto
+          nel database dal trigger, ed è quello che permette di spiegare un
+          numero tre giorni dopo. */}
+    </div>
+  );
+}
+
 export default function PiantaGiornata() {
   const { isTitolare } = useAuth();
   // Da dove si arriva: la scheda di una prenotazione può mandare qui la
@@ -182,6 +306,9 @@ export default function PiantaGiornata() {
   // la pianta se si è toccata una prenotazione.
   const piantaRef = useRef(null);
   const righeRef = useRef({});
+  // Il modulo della prenotazione: sta sotto la pianta, e sul telefono dopo un
+  // tocco resta fuori schermo. Stessa ragione degli altri due appigli.
+  const moduloRef = useRef(null);
 
   const ricarica = useCallback(async () => {
     const [p, r, a, s, g, po, tu, reg] = await Promise.all([
@@ -319,6 +446,14 @@ export default function PiantaGiornata() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toccato]);
 
+  // E lo stesso per il modulo: toccato un tavolo libero si è già nei campi,
+  // ma sul telefono i campi stanno sotto la pianta — cioè fuori schermo.
+  // Arrivarci «direttamente» vuol dire anche vederli.
+  useEffect(() => {
+    if (!modo) return;
+    moduloRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [modo]);
+
   // IL RITARDO, E LA SOLA GIORNATA IN CUI HA SENSO.
   //
   // ⚠️ Questa schermata visita QUALUNQUE data — è il suo mestiere: alle 00:30
@@ -394,8 +529,50 @@ export default function PiantaGiornata() {
     setAperta(null);
     setModifica(null);
     setCorrezione(null);
+
+    // ⚠️ TAVOLO LIBERO → DRITTO AI CAMPI, senza passare dal riquadro
+    // (richiesta di Alessio, 18/08: *«l'ideale sarebbe che si arrivasse
+    // direttamente ai campi da compilare non appena si tocca un tavolo»*).
+    // Su un tavolo libero il riquadro non aveva niente da far scegliere: era
+    // una tappa, e una tappa che non decide niente è un tocco in più.
+    //
+    // ⚠️ QUINDI IL TOCCO HA DI NUOVO DUE ESITI, e la condizione dev'essere
+    // prevedibile: lo è, e si vede **prima di toccare** — un tavolo bianco è
+    // libero, uno colorato ha qualcuno. Il modulo lo dichiara comunque a
+    // parole, perché una regola che si deduce da un colore va detta almeno
+    // una volta nel posto dove agisce.
+    if ((perTavolo.get(sagoma.id) ?? []).length === 0) {
+      setToccato(null);
+      setModo("nuova");
+      setScelti([sagoma.id]);
+      return;
+    }
+
     setToccato(sagoma.id);
   };
+
+  // La correzione dei coperti, dai due posti da cui si può fare (il riquadro
+  // del tavolo e il modulo della prenotazione nuova). Una funzione sola: due
+  // strade che scrivono lo stesso numero sono due strade che possono
+  // scriverlo diverso.
+  const salvaCoperti = (gruppo) => {
+    const n = Number(correzione.coperti);
+    // ⚠️ Il vuoto non è zero (lezione del 17/08): un campo svuotato non deve
+    // diventare «questo tavolo non tiene nessuno».
+    if (!Number.isFinite(n) || correzione.coperti === "") return;
+    esegui(async () => {
+      await salvaCorrezioneCoperti({
+        data,
+        tavoli: gruppo.tavoli,
+        coperti: n,
+        ragione: correzione.ragione,
+      });
+      setCorrezione(null);
+    });
+  };
+
+  const tornaAlCalcolato = (gruppo) =>
+    esegui(() => rimuoviCorrezioneCoperti({ data, tavoli: gruppo.tavoli }));
 
   // Aprire la scheda di una prenotazione — dal riquadro del tavolo o
   // dall'elenco sotto. Una funzione sola: due strade che riempiono a mano
@@ -437,10 +614,13 @@ export default function PiantaGiornata() {
   const gruppoDelToccato = toccato
     ? (gruppi.find((g) => (g.tavoli ?? []).includes(toccato)) ?? null)
     : null;
-  const chiaveDelToccato = (gruppoDelToccato?.tavoli ?? []).join(",");
   const prenotazioniDelToccato = (perTavolo.get(toccato) ?? [])
     .map((a) => prenotazioni.find((p) => p.id === a.reservation.id))
     .filter(Boolean);
+
+  // I tavoloni toccati dalla scelta in corso, senza doppioni: toccando due
+  // tavoli dello stesso tavolone il numero è uno, e va mostrato una volta.
+  const gruppiScelti = gruppi.filter((g) => (g.tavoli ?? []).some((id) => scelti.includes(id)));
 
   // «È arrivato o no» in tre parole — il dato del giro D2, che nell'elenco
   // non c'era mai stato. ⚠️ Non è un campo scritto da nessuno: si deduce dal
@@ -525,12 +705,13 @@ export default function PiantaGiornata() {
       <Link to="/calendario-eventi" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">La sala</h1>
-      <p className="text-sm text-b58-charcoal-soft mb-5">
-        Guarda dove c'è spazio, accosta i tavoli se serve, poi <strong>tocca i tavoli</strong>: se
-        sono liberi ci prendi una prenotazione, se sono già promessi apri quella che c'è. Quello che
-        sposti oggi vale <strong>solo per oggi</strong>.
-      </p>
+      {/* ⚠️ QUI C'ERA IL PARAGRAFO CHE SPIEGAVA COSA FA IL TOCCO, tolto da
+          Alessio il 18/08 insieme alle legende e alle altre due spiegazioni.
+          Non era sbagliato: era rivolto a chi non sapeva, e lui ormai sa.
+          La regola generale sta in CLAUDE.md §6 — *la documentazione a
+          schermo ha un destinatario, e il destinatario cambia*. Il giorno che
+          entrerà personale nuovo va rimessa, e non nella stessa forma. */}
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">La sala</h1>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
@@ -579,11 +760,12 @@ export default function PiantaGiornata() {
                 <span className="block text-b58-charcoal font-medium">
                   Per questa sera siamo al completo
                 </span>
-                <span className="block text-sm text-b58-charcoal-soft mt-1">
-                  Acceso: dal sito non arrivano più richieste per questo giorno, e al cliente compare
-                  che siamo pieni. Si toglie quando vuoi. <strong>Non è una chiusura</strong>: quella
-                  si mette da Sala e orari e resta un'altra cosa.
-                </span>
+                {/* ⚠️ Qui sotto c'era la spiegazione di cosa fa questo
+                    interruttore, tolta da Alessio il 18/08. La distinzione
+                    che spiegava — «pieno» non è «chiuso» — resta vera e resta
+                    scritta nel database (sono due tabelle diverse, e la
+                    differenza deve restare leggibile fra un anno). Sparisce
+                    la spiegazione a schermo, non la regola. */}
               </span>
             </label>
           </div>
@@ -661,15 +843,19 @@ export default function PiantaGiornata() {
           />
           </div>
 
-          {/* ⚠️ La stessa riga sta anche in Comande, e sta QUI soprattutto:
-              chi si accorge della discrepanza parte da questa schermata,
-              perché è quella dove si sta seduti a ragionare (rilievo di
-              Alessio, 17/08). Dirlo solo di là servirebbe a chi ha già
-              capito. */}
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
-            In Comande questa stessa sala è disegnata in piedi, per il tablet tenuto
-            verticale: è lo stesso locale girato — non un&apos;altra disposizione.
-          </p>
+          {/* 🔴 QUI C'ERA LA RIGA CHE SPIEGAVA PERCHÉ IN COMANDE LA SALA È
+              GIRATA — tolta da Alessio il 18/08, ed è un ROVESCIAMENTO
+              (n. 11 in docs/decisioni_rovesciate.md): quella riga nasce da
+              una sua decisione del 17/08, che l'aveva voluta su ENTRAMBE le
+              schermate perché chi confronta le due sale non sospetti due
+              disposizioni diverse.
+              ⚠️ Il prezzo, accettato e dichiarato: sul telefono la riga non
+              spiegava più niente (lì la pianta si gira da sola e le due
+              schermate mostrano la stessa cosa), ma **sul computer la ragione
+              vale ancora** — chi aprirà le due schermate su un monitor largo
+              vedrà due sale girate diversamente, senza niente che glielo
+              spieghi. Gli era stato proposto di tenerla solo lì; ha deciso di
+              toglierla ovunque. */}
 
           {/* IL RIQUADRO DEL TAVOLO (giro D3, richiesta di Alessio).
               ⚠️ ASSORBE il tocco, non gli si affianca: prima toccare un
@@ -706,113 +892,17 @@ export default function PiantaGiornata() {
                 </button>
               </div>
 
-              {/* I COPERTI. Il numero è del gruppo, e quando il gruppo è più
-                  di un tavolo la frase lo dice per esteso. */}
-              {gruppoDelToccato && (
-                <div className="mb-3">
-                  <p className="text-sm text-b58-charcoal">
-                    Ci stanno <strong>{gruppoDelToccato.coperti}</strong>
-                    {gruppoDelToccato.corretto ? (
-                      <span className="text-b58-charcoal-soft">
-                        {" "}
-                        — corretto a mano, la regola direbbe {gruppoDelToccato.coperti_calcolati}
-                        {gruppoDelToccato.ragione ? ` · ${gruppoDelToccato.ragione}` : ""}
-                      </span>
-                    ) : (
-                      <span className="text-b58-charcoal-soft"> — calcolato</span>
-                    )}
-                  </p>
-                  {(gruppoDelToccato.tavoli ?? []).length > 1 && (
-                    <p className="text-[11px] text-b58-charcoal-soft/80 mt-0.5">
-                      È il numero di <strong>{(gruppoDelToccato.etichette ?? []).join(" · ")}</strong>{" "}
-                      insieme, non del solo {sagomaToccata?.label}: correggendolo cambi il tavolone.
-                    </p>
-                  )}
-
-                  {correzione?.chiave === chiaveDelToccato ? (
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={correzione.coperti}
-                        onChange={(e) => setCorrezione((c) => ({ ...c, coperti: e.target.value }))}
-                        className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
-                      />
-                      <input
-                        type="text"
-                        placeholder="perché (es. uno contro il muro)"
-                        value={correzione.ragione}
-                        onChange={(e) => setCorrezione((c) => ({ ...c, ragione: e.target.value }))}
-                        className="flex-1 min-w-[10rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
-                      />
-                      <button
-                        type="button"
-                        disabled={salvando || correzione.coperti === ""}
-                        onClick={() => {
-                          const n = Number(correzione.coperti);
-                          // ⚠️ Il vuoto non è zero (lezione del 17/08): un
-                          // campo svuotato non deve diventare «questo tavolo
-                          // non tiene nessuno».
-                          if (!Number.isFinite(n) || correzione.coperti === "") return;
-                          esegui(async () => {
-                            await salvaCorrezioneCoperti({
-                              data,
-                              tavoli: gruppoDelToccato.tavoli,
-                              coperti: n,
-                              ragione: correzione.ragione,
-                            });
-                            setCorrezione(null);
-                          });
-                        }}
-                        className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
-                      >
-                        Salva
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCorrezione(null)}
-                        className="text-sm text-b58-charcoal-soft underline"
-                      >
-                        Lascia stare
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-3 mt-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCorrezione({
-                            chiave: chiaveDelToccato,
-                            coperti: String(gruppoDelToccato.coperti),
-                            ragione: gruppoDelToccato.ragione ?? "",
-                          })
-                        }
-                        className="text-[12px] text-b58-charcoal-soft underline"
-                      >
-                        Correggi il numero
-                      </button>
-                      {gruppoDelToccato.corretto && (
-                        <button
-                          type="button"
-                          disabled={salvando}
-                          onClick={() =>
-                            esegui(() =>
-                              rimuoviCorrezioneCoperti({ data, tavoli: gruppoDelToccato.tavoli })
-                            )
-                          }
-                          className="text-[12px] text-b58-charcoal-soft underline"
-                        >
-                          Torna al calcolato ({gruppoDelToccato.coperti_calcolati})
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {/* ⚠️ «Chi ha corretto e quando» NON è più a schermo —
-                      Alessio lo considera superfluo qui (giro D3). Resta
-                      scritto nel database dal trigger, ed è quello che
-                      permette di spiegare un numero tre giorni dopo. */}
-                </div>
-              )}
+              {/* I COPERTI — la stessa casella che compare nel modulo della
+                  prenotazione nuova, scritta una volta sola. */}
+              <CopertiDelGruppo
+                gruppo={gruppoDelToccato}
+                sagomaLabel={sagomaToccata?.label}
+                correzione={correzione}
+                setCorrezione={setCorrezione}
+                salvando={salvando}
+                salva={salvaCoperti}
+                azzeraCorrezione={tornaAlCalcolato}
+              />
 
               {/* CHI C'È SU QUESTO TAVOLO — e da qui si apre la sua scheda.
                   Il riquadro non ripete la scheda: la introduce. */}
@@ -905,7 +995,7 @@ export default function PiantaGiornata() {
 
           {/* PRENOTAZIONE NUOVA — il gesto principale di questa pagina */}
           {modo === "nuova" && (
-            <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
+            <div ref={moduloRef} className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
               <p className="text-b58-charcoal font-medium mb-1">
                 Prenotazione su {etichetteScelte || <em className="text-b58-charcoal-soft">nessun tavolo</em>}
               </p>
@@ -914,6 +1004,34 @@ export default function PiantaGiornata() {
                 qualcun altro</strong>. Se sono in tanti, accostali prima e poi toccali tutti. Il
                 cliente <strong>non riceve nessuna email</strong>: gliel'hai appena detto tu.
               </p>
+
+              {/* ⚠️ LA REGOLA DEL TOCCO, DETTA DOVE AGISCE. Su un tavolo
+                  libero si arriva qui subito; su uno colorato il tocco apre
+                  invece chi c'è già. Si vede dal colore prima di toccare, ma
+                  una regola che si deduce va detta almeno una volta. */}
+              <p className="text-[11px] text-b58-charcoal-soft/80 mb-3">
+                Sei qui perché hai toccato un <strong>tavolo libero</strong>: su quelli colorati il
+                tocco apre invece chi c&apos;è già.
+              </p>
+
+              {/* I COPERTI DEI TAVOLI SCELTI — la stessa casella del riquadro.
+                  ⚠️ Senza di lei, dopo che il tocco sul tavolo libero salta il
+                  riquadro, il numero di un tavolo libero non si potrebbe più
+                  correggere da nessuna parte: era il gesto dell'elenco sotto
+                  la pianta, che questo giro ha tolto. E qui serve davvero —
+                  è il numero su cui si decide se accettare la prenotazione
+                  che si sta scrivendo. */}
+              {gruppiScelti.map((g) => (
+                <CopertiDelGruppo
+                  key={(g.tavoli ?? []).join(",")}
+                  gruppo={g}
+                  correzione={correzione}
+                  setCorrezione={setCorrezione}
+                  salvando={salvando}
+                  salva={salvaCoperti}
+                  azzeraCorrezione={tornaAlCalcolato}
+                />
+              ))}
 
               {/* Chi c'è già su quei tavoli. Non è un avviso e non blocca
                   niente: è il secondo giro, e la sola cosa che serve è
