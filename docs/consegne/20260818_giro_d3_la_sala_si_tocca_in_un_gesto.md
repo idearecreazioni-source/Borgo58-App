@@ -4,11 +4,11 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `278cfe5` — il giro è in **quattro commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`) perché il collaudo di Alessio è passato **tre volte** in mezzo alla consegna
+- **HEAD dichiarato**: `c6bac45` — il giro è in **cinque commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`, `c6bac45`) perché il collaudo di Alessio è passato **quattro volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
-- **Prove**: **111** pure (erano 102) + **174** sul progetto di prova (erano 172)
+- **Prove**: **118** pure (erano 102) + **174** sul progetto di prova (erano 172)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **niente da applicare**
 - **Contratto**: non toccato · **Corridoio**: non ridistribuito
@@ -66,7 +66,12 @@ E quelle che apre questo giro:
     la metà che sparisce è quella visibile. ⚠️ Il giorno che ci saranno accessi
     **per persona** quella riga va rimessa a schermo — e diventerà leggibile
     all'indietro, perché nel frattempo è stata scritta lo stesso.
-13. ✅ **Due domande su tre hanno risposta**: toccando un tavolo bianco **la
+13. ✅ **CHIUSO DA ALESSIO**: i blocchetti del Calendario Eventi vanno bene, il
+    riquadro sul tavolo occupato ci sta nello schermo, la cura del tocco sul
+    tavolone è a posto e toccando un tavolo bianco la pagina scorre da sola
+    fino ai campi. 🔴 **Ma il pannello dentro la pianta è arrivato DOPO**, e
+    quello non l'ha visto nessuno.
+13-ter. ✅ **Due domande su tre avevano risposta già ieri**: toccando un tavolo bianco **la
     pagina scorre da sola fino ai campi**, e **il riquadro sul tavolo occupato
     ci sta nello schermo senza scorrere**. 🟡 Resta senza risposta se i
     blocchetti del Calendario Eventi si leggano meglio della tabella: non ci è
@@ -516,5 +521,91 @@ alla sagoma **anche passando sopra un pannello**. Quindi trascinare un tavolo
 un tavolo che sta già sotto il pannello**: oggi non ce n'è nessuno lì, ma è uno
 spazio libero sul disegno e **non vietato**, e Alessio i tavoli li sposta.
 
-**Non costruito**: è una proposta, e i numeri servono a decidere prima di
-partire.
+**COSTRUITO il 19/08**, dopo che Alessio ha risposto alla misura con una
+soluzione invece che con una rinuncia — vedi la sezione qui sotto.
+
+---
+
+## Il pannello dentro la pianta — la misura scavalcata, e come
+
+I numeri dicevano che **sul telefono il modulo non ci stava**: 179 punti di
+larghezza, metà schermo. Alessio ha risposto con una soluzione:
+
+> *«Facciamoci entrare tutto, basterà fare i riquadri da compilare più alti in
+> modo che siano più facili da toccare con il dito. A quel punto si aprirà la
+> tastiera dell'iPhone e la dimensione del riquadro non conterà più, anche
+> perché se ci scrivo dentro del testo che non entra in un'unica riga potrà
+> sempre andare a capo.»*
+
+⚠️ **Il ragionamento regge, e va scritto perché è il metodo, non la
+soluzione.** Il vincolo misurato era la **larghezza**; lui ha **spostato la
+spesa sull'altezza**, che in quell'area ce n'è 487 punti. Una casella alta si
+prende col dito anche se è stretta, e appena la si tocca la tastiera copre lo
+schermo — da quel momento la larghezza non conta più. *Una misura dice dove sta
+il vincolo, non che il problema è insolubile.*
+
+Quindi **un comportamento solo** — niente doppio comportamento telefono/computer
+— coi campi **in colonna e più alti**. ⚠️ E **sopra** la soglia toccabile: si
+allargano le caselle in altezza, non si stringono per farcele stare. Quella
+soglia è già stata sfondata una volta nel giro E, e a salvarla è stata la sua
+mano, non un ragionamento.
+
+### ✅ Il costo dichiarato ieri non si paga più
+
+Ieri era stato scritto che **un tavolo finito sotto il pannello non si potrebbe
+più afferrare**. Non è stato dichiarato a schermo e lasciato succedere: **il
+conflitto non si fa esistere**. Se c'è un tavolo sopra la cucina, il pannello
+**esce dalla pianta e torna sotto**. Si perde una comodità, non un gesto.
+
+*Quello spazio è vuoto sul disegno ma non è vietato, ed è esattamente il genere
+di cosa che Alessio fa: i tavoli li muove lui.*
+
+### La tastiera
+
+Il pannello sta in fondo alla pianta, e su iPhone la tastiera copre metà
+schermo: il campo su cui si sta scrivendo **si porta in vista** appena riceve il
+fuoco, chiedendo la **distanza minima** — così dove la tastiera non c'è non si
+muove niente. ⚠️ **Non verificato su un iPhone vero**: è la voce più esposta di
+questa consegna.
+
+### ⚠️ Quali zone è una scelta, la geometria no
+
+Le due zone — Servizi e Cucina — sono **nominate** nel codice, perché quali
+siano è una decisione (sono quelle in cui non c'è mai niente da guardare). Dove
+stanno e quanto sono grandi **lo dice il fondale**: se la cucina cambia misura
+il pannello la segue. E se una delle due venisse rinominata, il pannello **non
+si disegna** e il modulo torna sotto: si perde una comodità, **non si disegna
+un pannello sopra il pavimento della sala**.
+
+### 🔴 Una prova che non discriminava, trovata dalla rottura
+
+Rompendo apposta la lettura del **verso** della sagoma — misure sulla carta
+invece del verso vero — **nessuna prova è diventata rossa**. La ragione:
+l'area del pannello parte dall'**angolo** (0,0), quindi una sagoma la tocca se
+e solo se il suo spigolo in alto a sinistra ci cade dentro, e **quanto è grande
+non conta**.
+
+Il verso resta letto — è giusto in generale, e il fondale può cambiare — ma la
+prova che *fingeva* di provarlo è stata **tolta** e sostituita con una che
+dichiara il fatto. ⚠️ *È la stessa regola applicata a sé stessa: una prova che
+passa anche sul codice rotto non prova niente, e vale anche quando è nostra e
+appena scritta.*
+
+---
+
+## ⚠️ Voce di coda, da MISURARE e non da fare adesso
+
+**Quante altre schermate fanno più letture insieme e disegnano lo stesso se una
+fallisce?** Rilievo del validatore, e nasce da un conto semplice: **due ne sono
+saltate fuori in un pomeriggio senza cercarle** (la sala del Calendario e quella
+delle Comande).
+
+Magazzino, Cassa e Proiezione fanno tutte più letture, e lì il fallimento si
+legge nello stesso modo: **un elenco vuoto si legge «non c'è niente», un saldo
+mancante si legge «zero»**. È la stessa confusione fra *assenza di informazione*
+e *informazione di assenza* — che in tre giorni questo progetto ha commesso tre
+volte: la sala vuota, «Nessun tavolo configurato», e il manuale HACCP che
+stampava «conforme».
+
+**Il numero che esce da quella misura decide se è una voce piccola o un lavoro a
+sé**, e per questo si misura prima di aprirlo.
