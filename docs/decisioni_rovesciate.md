@@ -40,6 +40,8 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 2 | 18/08/2026 | *Nel sistema non esiste una capacità per tavolo* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
 | 3 | 18/08/2026 | *Dentro la sagoma ci sta il suo nome e basta* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
 | 4 | 18/08/2026 | *Il tavolo più piccolo non scende mai sotto 1,05 cm reali* (14/08) | [giro E, la sala entra nel telefono](consegne/20260818_giro_e_la_sala_entra_nel_telefono.md) |
+| 5 | 18/08/2026 | *Il ritardo prende tutto il tavolo al posto del colore della fascia* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
+| 6 | 18/08/2026 | *In Comande il tavolo con un conto aperto è dorato* (08/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
 
 ---
 
@@ -146,3 +148,65 @@ posti», non l'ora, non la ragione della correzione. Le parole stanno
 nell'elenco sotto, dove lo spazio c'è — sulla sagoma il segno, sotto la
 spiegazione. Se durante il collaudo dovesse risultare illeggibile anche così,
 cade il numero e non l'elenco.
+
+---
+
+## 5 · 18/08/2026 — «il ritardo prende tutto il tavolo al posto del colore della fascia»
+
+**Cosa era stato deciso, e quando.** Il **18/08/2026**, aprendo il giro D:
+*«il rosso prende tutto il tavolo al posto del colore della fascia, non si
+aggiunge come bordo»*. Decisione di Alessio, con la sua ragione accanto.
+
+**La ragione di allora.** *Il ritardo è l'unica delle due informazioni su cui
+deve agire subito*: se fosse un segno più debole della fascia — un bordo, un
+pallino — chi guarda la sala leggerebbe prima l'ora di arrivo e poi, forse, il
+ritardo. Il rosso doveva **vincere**.
+
+**Cosa si decide adesso.** Il tavolo in ritardo si **sbarra**: un tratteggio
+scuro che passa **sopra** il riempimento, invece di sostituirlo. Il colore
+sotto resta quello che dice la precedenza — la fascia, il conto aperto, o il
+tavolo che si sta toccando.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, ed è proprio
+lei a chiedere il cambio di segno.** Quello che è caduto non è il principio ma
+**il colore disponibile**: il rosso era già preso due volte. Il terracotta è
+la fascia «ultimo giro» **ed è anche il tavolo selezionato**, e un terzo rosso
+avrebbe fatto dire tre cose diverse allo stesso segno — cioè avrebbe reso il
+ritardo *meno* visibile, non di più.
+⚠️ E la sbarratura soddisfa la ragione **meglio** del rosso pieno: non è
+subordinata a niente (passa sopra qualunque colore, compreso il selezionato) e
+**non toglie l'informazione che copriva**. Un tavolo in ritardo continua a
+dire a che ora doveva arrivare quella gente, che è il dato con cui si decide
+se telefonare o se ridarlo via.
+⚠️ **Il prezzo accettato**: un tratteggio è un segno di *texture*, e su uno
+schermo piccolo si riconosce peggio di un colore pieno. Se al collaudo non si
+distinguerà a colpo d'occhio, si ispessisce il tratteggio — non si torna al
+terzo rosso, che il problema ce l'ha per costruzione.
+
+---
+
+## 6 · 18/08/2026 — «in Comande il tavolo con un conto aperto è dorato»
+
+**Cosa era stato deciso, e quando.** Dall'**08/08/2026**, da quando la
+schermata Sala esiste: nella pianta delle Comande il dorato vuol dire «questo
+tavolo ha già un conto aperto», e la legenda lo dichiarava.
+
+**La ragione di allora.** ⚠️ **Non ce n'è una scritta**, ed è un fatto che
+vale la pena registrare invece di inventarne una a posteriori: quella
+schermata mostrava **due soli** stati — occupato e «lo sto servendo» — e due
+colori qualsiasi bastavano. Il dorato non fu scelto contro qualcosa.
+
+**Cosa si decide adesso.** Il tavolo con un conto aperto diventa **scuro**
+(`charcoal-soft`). Il dorato resta al «primo giro», che è il significato che
+ha nel Calendario dal 14/08.
+
+**Perché la ragione di allora non vale più.** Perché la premessa è cambiata:
+da questo giro le **fasce orarie arrivano anche in Comande**, e lì il dorato
+vuol già dire «arriva presto». Sulla stessa schermata lo stesso quadratino
+avrebbe detto «sono seduti» su un tavolo e «arriveranno fra poco» su quello
+accanto — e **nessuna legenda può sciogliere un'ambiguità così**: chi guarda
+non ha modo di sapere quale dei due sta guardando.
+⚠️ **Il terracotta resta doppio** (fascia «ultimo giro» e tavolo selezionato)
+ed è una scelta, non una dimenticanza: lì l'ambiguità si scioglie da sé,
+perché il tavolo selezionato è al massimo uno ed è quello che si è appena
+toccato. La legenda lo dichiara nell'ordine di precedenza.

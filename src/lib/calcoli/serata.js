@@ -68,3 +68,36 @@ export const FASCE = {
     spiega: "arriva dopo l'ultimo ingresso: è l'ultimo turno del tavolo",
   },
 };
+
+/**
+ * L'ISTANTE VERO di un'ora prenotata dentro una serata — l'inverso di
+ * `serataDiServizio()`, e sta qui accanto apposta.
+ *
+ * ⚠️ PERCHÉ SERVE. «Sono passati più di 30 minuti dalle 22:30?» non si
+ * risponde con un'ora: alle 00:15 la sottrazione fra due orologi darebbe
+ * meno ventidue ore, cioè «arriva fra un giorno». Serve il momento vero,
+ * e il momento vero dipende da quale sera è — che è precisamente la cosa
+ * che questo file custodisce.
+ *
+ * ⚠️ E LA REGOLA È LA STESSA, LETTA AL CONTRARIO: se l'ora prenotata sta
+ * PRIMA del confine della serata, quell'ora cade nel giorno di calendario
+ * SUCCESSIVO. Scriverla altrove sarebbe il dodicesimo orologio; scritta
+ * qui, la prova del giro d'andata e ritorno la tiene incollata alla sua
+ * gemella.
+ *
+ * @param serata        "AAAA-MM-GG" — la serata di servizio
+ * @param ora           "HH:MM" o "HH:MM:SS" — l'ora prenotata
+ * @param oraFineSerata "HH:MM" — da service_settings
+ * @returns Date, oppure null se manca l'ora
+ */
+export function istanteDellaSerata(serata, ora, oraFineSerata) {
+  if (!serata || !ora) return null;
+  const [aa, mm, gg] = String(serata).split("-").map(Number);
+  const [h, m] = String(ora).split(":").map(Number);
+  if (!aa || !mm || !gg || Number.isNaN(h)) return null;
+  const d = new Date(aa, mm - 1, gg, h, m || 0, 0, 0);
+  // Le ore piccole appartengono alla serata precedente: quindi cadono nel
+  // giorno di calendario dopo. Stesso confine, verso opposto.
+  if (h * 60 + (m || 0) < minutiDa(oraFineSerata)) d.setDate(d.getDate() + 1);
+  return d;
+}

@@ -20,7 +20,12 @@ export async function listOpenOrders() {
       // silenzio, che è il modo peggiore. È la lezione del 16/08 sulle
       // mance, allo specchio: lì un campo non arrivava al database, qui
       // non arriva alla schermata.
-      "*, items:order_items(id, quantity, unit_price, voided_at, sent_at), tavoli:order_tables(dining_table_id, etichetta_al_momento)"
+      // ⚠️ `prenotazione` è il legame scritto dal giro D1 e che fino al D2
+      // NESSUNA SCHERMATA MOSTRAVA — per chi usa l'app, un dato scritto che
+      // nessuno può vedere è indistinguibile da un dato non scritto.
+      // L'incorporamento funziona perché è una vera chiave esterna
+      // (orders.reservation_id → reservations.id).
+      "*, items:order_items(id, quantity, unit_price, voided_at, sent_at), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time)"
     )
     .eq("status", "aperto")
     .order("opened_at", { ascending: true });
@@ -29,7 +34,30 @@ export async function listOpenOrders() {
 }
 
 const ORDER_SELECT =
-  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento)";
+  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes)";
+
+// I CONTI CHE NOMINANO QUESTE PRENOTAZIONI — è così che si sa chi è arrivato.
+//
+// ⚠️ SI CHIEDE «ESISTE UN CONTO IN QUESTA SERATA», NON «C'È UN CONTO APERTO»,
+// ed è la differenza che fa funzionare la cosa: con la seconda domanda, un
+// tavolo che ha cenato e pagato tornerebbe in ritardo nel momento in cui il
+// conto si chiude — ogni sera, su ogni tavolo, dopo che è andato tutto bene.
+// Per questo qui NON si filtra per stato: gli stati li pesa
+// `contoProvaArrivo()` in lib/calcoli/ritardo.js, che è l'unico posto dove
+// sta scritto quale conto prova un arrivo e quale no.
+//
+// ⚠️ E si passa per il LEGAME, non per il tavolo: un tavolo con due turni
+// può avere addosso il conto del turno precedente, e contarlo per tavolo
+// direbbe «arrivato» a chi non è ancora entrato.
+export async function listContiPerPrenotazioni(reservationIds = []) {
+  if (reservationIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, reservation_id, status")
+    .in("reservation_id", reservationIds);
+  if (error) throw error;
+  return data ?? [];
+}
 
 export async function getOrder(id) {
   const { data, error } = await supabase.from("orders").select(ORDER_SELECT).eq("id", id).single();
@@ -107,7 +135,11 @@ export async function getServiceSettings() {
     // domani. Il numero sta nel database e non nel codice perché lo stesso
     // valore lo leggeranno le funzioni SQL quando saranno convertite: un
     // numero, due lettori — mai due copie che possono divergere.
-    .select("coperto_price, ora_fine_serata")
+    // ⚠️ E `minuti_tolleranza_ritardo` serve alla stessa schermata: dopo
+    // quanto un tavolo prenotato su cui nessuno ha aperto la comanda si segna
+    // in ritardo. È un numero di Alessio (30), non una costante del codice —
+    // e la sala e il calendario devono leggere lo stesso.
+    .select("coperto_price, ora_fine_serata, minuti_tolleranza_ritardo")
     .eq("id", 1)
     .single();
   if (error) throw error;

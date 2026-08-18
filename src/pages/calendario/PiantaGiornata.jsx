@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
+import LegendaSala from "../../components/LegendaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
-import { FASCE } from "../../lib/calcoli/serata";
+import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
+import { ritardiDellaSerata, segnoDelTavolo } from "../../lib/calcoli/ritardo";
+import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
   getCopertiDelGiorno,
   getPiantaDelGiorno,
   getPostoPerLaSerata,
+  getRegolePrenotazione,
   getTurniDelGiorno,
   isSoldOut,
   promuoviDisposizione,
@@ -133,6 +137,15 @@ export default function PiantaGiornata() {
   // di QUEL servizio. Non si ricalcolano qui: due posti direbbero due cose.
   const [turni, setTurni] = useState([]);
   const [posto, setPosto] = useState(null);
+  // I conti che nominano le prenotazioni di questa data, e i parametri della
+  // sala: servono al ritardo, che è calcolato e non scritto.
+  const [contiDellaSerata, setContiDellaSerata] = useState([]);
+  const [regole, setRegole] = useState(null);
+  // ⚠️ L'orologio batte anche qui, e non è una copia inutile di quello delle
+  // Comande: questa schermata resta aperta sul telefono mentre si prendono
+  // prenotazioni, e un tavolo che sfora mentre la si guarda deve sbarrarsi da
+  // sé. Un minuto — la tolleranza è di trenta.
+  const [adesso, setAdesso] = useState(() => new Date());
   // Quale tavolone si sta correggendo a mano, e con che numero.
   const [correzione, setCorrezione] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
@@ -155,7 +168,7 @@ export default function PiantaGiornata() {
   const [toccato, setToccato] = useState(null);
 
   const ricarica = useCallback(async () => {
-    const [p, r, a, s, g, po, tu] = await Promise.all([
+    const [p, r, a, s, g, po, tu, reg] = await Promise.all([
       getPiantaDelGiorno(data),
       listReservations({ date: data }),
       listTavoliPrenotatiPerData(data),
@@ -163,11 +176,17 @@ export default function PiantaGiornata() {
       getCopertiDelGiorno(data),
       getPostoPerLaSerata(data),
       getTurniDelGiorno(data),
+      getRegolePrenotazione(),
     ]);
     setSagome(p);
     setGruppi(g);
     setPosto(po);
     setTurni(tu);
+    setRegole(reg);
+    // I conti che nominano le prenotazioni di questa giornata: è così che si
+    // sa chi è già arrivato, senza chiedere a nessuno di segnarlo. La stessa
+    // domanda che si fa la sala, con la stessa risposta.
+    setContiDellaSerata(await listContiPerPrenotazioni([...new Set(tu.map((t) => t.reservation_id))]));
     setPrenotazioni(r.filter((x) => x.status === "richiesta_in_attesa" || x.status === "confermata"));
     setAssegnazioni(a);
     setPieno(s);
@@ -264,6 +283,39 @@ export default function PiantaGiornata() {
     [turni]
   );
 
+  useEffect(() => {
+    const battito = setInterval(() => setAdesso(new Date()), 60_000);
+    return () => clearInterval(battito);
+  }, []);
+
+  // IL RITARDO, E LA SOLA GIORNATA IN CUI HA SENSO.
+  //
+  // ⚠️ Questa schermata visita QUALUNQUE data — è il suo mestiere: alle 00:30
+  // si prepara domani. Ma «in ritardo» è un'affermazione sull'adesso: su una
+  // sera di tre settimane fa nessuno può più arrivare, e ogni prenotazione
+  // senza conto risulterebbe in ritardo per sempre. Sarebbe un allarme che
+  // grida su tutto lo storico, cioè un allarme che si spegne.
+  // Quindi il ritardo si calcola solo quando la data guardata È la serata in
+  // corso, e la serata in corso si chiede alla funzione unica — non a
+  // `oggiLocale()`, che alle 00:30 dice già domani.
+  const ritardi = useMemo(() => {
+    const vuoto = { perPrenotazione: new Map(), tavoli: new Set() };
+    if (!regole?.ora_fine_serata) return vuoto;
+    if (serataDiServizio(adesso, regole.ora_fine_serata) !== data) return vuoto;
+    return ritardiDellaSerata({
+      prenotazioni: turni,
+      conti: contiDellaSerata,
+      adesso,
+      minutiTolleranza: regole.minuti_tolleranza_ritardo,
+      serata: data,
+      oraFineSerata: regole.ora_fine_serata,
+    });
+  }, [regole, adesso, data, turni, contiDellaSerata]);
+
+  // ⚠️ IL COLORE LO DECIDE `segnoDelTavolo()`, non questa schermata — la
+  // stessa funzione che usano le Comande. Due schermate che tengono ciascuna
+  // la propria precedenza finiscono per colorare due sale diverse, ed è lo
+  // stesso motivo per cui la pianta si chiede a una funzione sola.
   const stato = useMemo(() => {
     const s = {};
     for (const g of gruppi) {
@@ -273,16 +325,18 @@ export default function PiantaGiornata() {
     }
     for (const sagoma of sagome) {
       const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
-      if (altri.length === 0) continue;
       const fasce = [...new Set(altri.map((a) => fasciaPerPrenotazione.get(a.reservation.id)).filter(Boolean))];
-      if (fasce.length === 0) continue;
-      s[sagoma.id] = {
-        ...s[sagoma.id],
-        colore: fasce.length > 1 ? "misto" : fasce[0],
-      };
+      const segno = segnoDelTavolo({
+        // Qui «selezionato» lo gestisce la pianta da sé (la scelta in corso),
+        // quindi non passa da qui: resta il colore dell'ora e la sbarratura.
+        fasce,
+        inRitardo: ritardi.tavoli.has(sagoma.id),
+      });
+      if (!segno.colore && !segno.barrato) continue;
+      s[sagoma.id] = { ...s[sagoma.id], ...segno };
     }
     return s;
-  }, [sagome, perTavolo, evidenziata, fasciaPerPrenotazione, gruppi]);
+  }, [sagome, perTavolo, evidenziata, fasciaPerPrenotazione, gruppi, ritardi]);
 
   const tocca = (sagoma) => {
     setAvviso("");
@@ -702,24 +756,24 @@ export default function PiantaGiornata() {
 
           {/* La legenda dei colori: la scritta che non sta dentro il
               tavolo, detta una volta invece che su ognuno. */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px] text-b58-charcoal-soft">
-            <span>
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
-              primo giro — il tavolo può liberarsi per una seconda serata
-            </span>
-            <span>
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-olive align-middle mr-1" />
-              occupa la serata
-            </span>
-            <span>
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-terracotta align-middle mr-1" />
-              ultimo giro — arriva dopo l'ultimo ingresso
-            </span>
-            <span>
-              <span className="inline-block w-2.5 h-2.5 rounded-sm align-middle mr-1 bg-gradient-to-r from-b58-gold from-50% to-b58-olive to-50%" />
-              tutti e due
-            </span>
-          </div>
+          {/* ⚠️ ELENCAVA QUATTRO COLORI E NON DICEVA CHE UNO NE COPRE UN
+              ALTRO. Adesso la precedenza arriva dallo stesso dato con cui il
+              colore viene deciso, quindi la spiegazione non può più
+              raccontare un ordine diverso da quello che si vede. La
+              sbarratura si dichiara solo sulla serata in corso: sulle altre
+              date non compare, e una legenda che promettesse un segno
+              impossibile sarebbe peggio di nessuna legenda. */}
+          <LegendaSala
+            chiavi={["selezionato", "presto", "pieno", "tardi", "misto"]}
+            testi={{
+              selezionato: "i tavoli che stai scegliendo adesso",
+              presto: "primo giro — il tavolo può liberarsi per una seconda serata",
+              pieno: "occupa la serata",
+              tardi: "ultimo giro — arriva dopo l'ultimo ingresso",
+              misto: "sullo stesso tavolo due giri",
+            }}
+            conRitardo={ritardi.perPrenotazione.size > 0}
+          />
 
           <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
             <span>
@@ -841,6 +895,22 @@ export default function PiantaGiornata() {
                 {FASCE[turnoDi(aperta.id)?.fascia]?.spiega}
                 {ultimoGiro && " "}
               </p>
+
+              {/* IL RITARDO, IN PAROLE. Sulla pianta è una sbarratura, che si
+                  legge a colpo d'occhio e non dice di quanto. Qui c'è il
+                  numero, perché è dove si decide se telefonare o se ridare via
+                  il tavolo. ⚠️ E «è arrivato» non lo segna nessuno: lo dice
+                  il conto aperto in sala. */}
+              {ritardi.perPrenotazione.get(aperta.id)?.inRitardo && (
+                <p className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/40 px-3 py-2 text-sm mb-4">
+                  <strong>
+                    Non ancora arrivati — {ritardi.perPrenotazione.get(aperta.id).minuti} minuti
+                    oltre l&apos;ora prenotata
+                  </strong>{" "}
+                  e in sala nessuno ha aperto la comanda su questo tavolo. Decidi tu: il
+                  gestionale avvisa e basta.
+                </p>
+              )}
 
               {/* ⚠️ «DA LIBERARE ENTRO LE…», ed è il punto che fa valere le
                   fasce. Senza, si accetta gente alle 19:30 «purché liberi

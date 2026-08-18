@@ -416,6 +416,29 @@ export default function SalaEOrari() {
             </p>
           </div>
           <div>
+            {/* ⚠️ IL NUMERO C'ERA GIÀ NEL DATABASE DAL GIRO D1 E NESSUNO LO
+                LEGGEVA: la colonna esisteva col valore di Alessio (30), e da
+                nessuna schermata si poteva né vedere né cambiare. Un
+                parametro che sembra governare qualcosa e non governa niente
+                è la famiglia della soglia che non si poteva scrivere (13/08)
+                — tutto acceso, e muto. */}
+            <label className={labelClass}>Dopo quanti minuti un tavolo si sbarra</label>
+            <CampoAutosalvato
+              type="number"
+              value={regole?.minuti_tolleranza_ritardo ?? ""}
+              onSave={(v) =>
+                esegui(() => updateRegolePrenotazione({ minuti_tolleranza_ritardo: Number(v) }))
+              }
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Passati questi minuti dall&apos;ora prenotata, se nessuno ha aperto la comanda su
+              quel tavolo, in sala si vede <strong>sbarrato</strong>. Serve a decidere se
+              riassegnarlo: <strong>avvisa soltanto</strong>. «È arrivato» non lo segna nessuno —
+              lo dice l&apos;apertura del conto.
+            </p>
+          </div>
+          <div>
             <label className={labelClass}>Con quanto anticipo minimo (minuti)</label>
             <CampoAutosalvato
               type="number"

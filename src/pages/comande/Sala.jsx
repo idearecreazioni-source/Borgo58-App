@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addDraftItem,
@@ -6,6 +6,7 @@ import {
   cancelOrder,
   getOrder,
   getServiceSettings,
+  listContiPerPrenotazioni,
   listMenuForOrder,
   listOpenOrders,
   orderTotals,
@@ -20,7 +21,10 @@ import {
   voidSentItem,
 } from "../../lib/api/orders";
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
-import { serataDiServizio } from "../../lib/calcoli/serata";
+import { listReservations } from "../../lib/api/reservations";
+import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
+import { ritardiDellaSerata, segnoDelTavolo } from "../../lib/calcoli/ritardo";
+import LegendaSala from "../../components/LegendaSala";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -69,6 +73,24 @@ export default function Sala() {
   // I turni di stasera: servono per «da liberare entro le…», che senza
   // questa schermata resterebbe una nota che vede solo chi prenota.
   const [turni, setTurni] = useState([]);
+  // CHI HA PRENOTATO STASERA, e su quale tavolo. Fino al giro D2 questa
+  // schermata non lo sapeva: la sala si apriva bianca, senza coperti, senza
+  // colori e senza nomi, e chi serviva doveva tenere le prenotazioni su un
+  // altro dispositivo o a memoria.
+  const [prenotati, setPrenotati] = useState([]);
+  // I conti che nominano quelle prenotazioni — di QUALUNQUE stato. È l'unico
+  // modo di sapere chi è già arrivato senza chiedere a nessuno di segnarlo.
+  const [contiDellaSerata, setContiDellaSerata] = useState([]);
+  // I minuti dopo i quali un tavolo prenotato e senza comanda si sbarra.
+  // Numero di Alessio, letto dal database.
+  const [tolleranza, setTolleranza] = useState(null);
+  const [oraFineSerata, setOraFineSerata] = useState(null);
+  // ⚠️ L'OROLOGIO DEVE BATTERE, altrimenti il ritardo si vedrebbe solo
+  // riaprendo la pagina. Un tavolo che diventa in ritardo mentre il tablet è
+  // acceso sul tavolino è precisamente il caso per cui questa cosa esiste.
+  // Un minuto: la tolleranza è di trenta, un battito più fitto non
+  // aggiungerebbe niente e ridisegnerebbe la sala sotto le mani.
+  const [adesso, setAdesso] = useState(() => new Date());
   const [order, setOrder] = useState(null);
 
   const [error, setError] = useState("");
@@ -108,11 +130,27 @@ export default function Sala() {
       listOpenOrders(),
       getTurniDelGiorno(serata),
       getCopertiDelGiorno(serata),
-    ]).then(([p, o, t, g]) => {
+      listReservations({ date: serata }),
+    ]).then(async ([p, o, t, g, pr]) => {
       setSagome(p);
       setOpenOrders(o);
       setTurni(t);
       setGruppi(g);
+      // ⚠️ SOLO LE CONFERMATE. Una richiesta ancora in attesa non tiene
+      // nessun tavolo (decisione del 14/08): mostrarla in sala prometterebbe
+      // un posto che nessuno ha promesso, e la farebbe risultare in ritardo
+      // per qualcuno che non è stato invitato.
+      //
+      // ⚠️ E I NOMI SI PRENDONO DALLE PRENOTAZIONI, non dai tavoli
+      // prenotati: una confermata a cui Alessio non ha ancora assegnato un
+      // tavolo esiste eccome — arriva stasera — e chiedendo l'elenco per
+      // tavolo sarebbe sparita dalla lista senza che niente lo dicesse. Chi
+      // sta con chi lo dicono i turni, che portano già i tavoli.
+      setPrenotati((pr ?? []).filter((r) => r.status === "confermata"));
+      // I conti si chiedono DOPO, perché servono gli id delle prenotazioni.
+      // Senza nessuna prenotazione non si chiede niente al database.
+      const ids = [...new Set(t.map((x) => x.reservation_id))];
+      setContiDellaSerata(await listContiPerPrenotazioni(ids));
     });
 
   useEffect(() => {
@@ -122,6 +160,8 @@ export default function Sala() {
       .then((s) => {
         setCopertoPrice(Number(s.coperto_price));
         setPriceDraft(String(s.coperto_price));
+        setTolleranza(s.minuti_tolleranza_ritardo);
+        setOraFineSerata(s.ora_fine_serata);
         setSerata(serataDiServizio(new Date(), s.ora_fine_serata));
       })
       .catch((e) =>
@@ -140,10 +180,113 @@ export default function Sala() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serata]);
 
+  // L'orologio che fa scattare il ritardo senza che nessuno ricarichi la
+  // pagina. ⚠️ Fa battere il RITARDO, non la serata: se il tablet resta
+  // acceso oltre l'ora di fine serata, la sala mostrata resta quella di
+  // stanotte finché non si ricarica — com'era prima di questo giro.
+  useEffect(() => {
+    const battito = setInterval(() => setAdesso(new Date()), 60_000);
+    return () => clearInterval(battito);
+  }, []);
+
   // Quale conto sta su quale sagoma. Il legame è una chiave esterna, non
   // il nome del tavolo: «T5 · T6 · T7» non è un tavolo.
   const orderForTable = (sagomaId) =>
     openOrders.find((o) => (o.tavoli ?? []).some((t) => t.dining_table_id === sagomaId));
+
+  // CHI È IN RITARDO. Il calcolo è la funzione pura, la stessa che usa il
+  // Calendario: due schermate che decidessero per conto proprio quando un
+  // tavolo è in ritardo finirebbero per sbarrarne di diversi, e quella su cui
+  // si agisce è questa.
+  const ritardi = useMemo(
+    () =>
+      ritardiDellaSerata({
+        prenotazioni: turni,
+        conti: contiDellaSerata,
+        adesso,
+        minutiTolleranza: tolleranza,
+        serata,
+        oraFineSerata,
+      }),
+    [turni, contiDellaSerata, adesso, tolleranza, serata, oraFineSerata]
+  );
+
+  // Chi siede (o siederà) su quale tavolo, per nome. Il nome non entra nella
+  // sagoma — in un quadrato di 90 cm non ci sta (decisione del 14/08) — ma
+  // entra nell'elenco qui sotto e sulla scheda del conto aperto.
+  const prenotazioniPerTavolo = useMemo(() => {
+    const m = new Map();
+    for (const t of turni) {
+      for (const id of t.tavoli ?? []) {
+        const elenco = m.get(id) ?? [];
+        elenco.push(t.reservation_id);
+        m.set(id, elenco);
+      }
+    }
+    return m;
+  }, [turni]);
+
+  const fasciaDi = useMemo(
+    () => new Map(turni.map((t) => [t.reservation_id, t.fascia])),
+    [turni]
+  );
+
+  // LO STATO DI OGNI SAGOMA — coperti, colore e sbarratura, decisi in un
+  // posto solo (`segnoDelTavolo`). Fino al giro D2 qui arrivava soltanto
+  // «occupato / selezionato»: la sala in servizio era bianca proprio nelle
+  // ore in cui serve sapere chi arriva e quanti sono.
+  const statoSagome = useMemo(() => {
+    const s = {};
+    for (const g of gruppi) {
+      for (const id of g.tavoli ?? []) s[id] = { coperti: g.coperti, corretto: g.corretto };
+    }
+    for (const sagoma of sagome) {
+      const conto = orderForTable(sagoma.id);
+      const sopra = prenotazioniPerTavolo.get(sagoma.id) ?? [];
+      // Le fasce dei soli clienti che devono ancora sedersi: chi ha già il
+      // conto aperto ha smesso di essere un'ora e ha cominciato a essere un
+      // tavolo da servire.
+      const fasce = [
+        ...new Set(
+          sopra
+            .filter((id) => !ritardi.perPrenotazione.get(id)?.arrivata)
+            .map((id) => fasciaDi.get(id))
+            .filter(Boolean)
+        ),
+      ];
+      const segno = segnoDelTavolo({
+        selezionato: conto ? conto.id === order?.id : selezione.includes(sagoma.id),
+        contoAperto: Boolean(conto),
+        fasce,
+        inRitardo: ritardi.tavoli.has(sagoma.id),
+      });
+      s[sagoma.id] = { ...s[sagoma.id], ...segno };
+    }
+    return s;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sagome, gruppi, openOrders, order, selezione, prenotazioniPerTavolo, fasciaDi, ritardi]);
+
+  // L'elenco della serata, in ordine di ora: quello che chi serve guarda
+  // quando suona il campanello. Porta il tavolo, che è il dato che manca di
+  // più a chi accompagna qualcuno al posto.
+  const elencoSerata = useMemo(
+    () =>
+      turni.map((t) => {
+        const r = prenotati.find((p) => p.id === t.reservation_id);
+        return {
+          id: t.reservation_id,
+          ora: t.ora,
+          fascia: t.fascia,
+          liberareEntro: t.liberare_entro,
+          etichette: t.etichette ?? [],
+          nome: r?.customer_name ?? "—",
+          persone: r?.party_size ?? null,
+          ritardo: ritardi.perPrenotazione.get(t.reservation_id),
+          conto: openOrders.find((o) => o.reservation_id === t.reservation_id) ?? null,
+        };
+      }),
+    [turni, prenotati, ritardi, openOrders]
+  );
 
   const apriConoscendoIlConto = async (orderId) => {
     setError("");
@@ -472,19 +615,11 @@ export default function Sala() {
             gruppi={gruppi}
             selezione={selezione}
             onSeleziona={toccaSagoma}
-            stato={Object.fromEntries(
-              sagome
-                .map((s) => {
-                  const conto = orderForTable(s.id);
-                  if (!conto) return null;
-                  // Nessuna scritta dentro la sagoma: dentro un quadrato
-                  // di 90 cm girato non ci sta niente di leggibile, e il
-                  // colore lo dice meglio. La legenda qui sotto lo spiega
-                  // una volta invece di ripeterlo su ogni tavolo.
-                  return [s.id, { colore: conto.id === order?.id ? "selezionato" : "occupato" }];
-                })
-                .filter(Boolean)
-            )}
+            // Nessuna scritta dentro la sagoma oltre alla cifra dei coperti:
+            // dentro un quadrato di 90 cm girato non ci sta niente di
+            // leggibile. Chi c'è si legge nell'elenco qui sotto, dove lo
+            // spazio c'è; il colore e la sbarratura si leggono senza leggere.
+            stato={statoSagome}
           />
           {/* ⚠️ Perché questa sala non somiglia a quella del Calendario
               (difetto n. 2 del collaudo). È lo STESSO locale con gli
@@ -500,12 +635,83 @@ export default function Sala() {
             stretto e resta sdraiata quando c&apos;è spazio: è lo stesso locale, girato — non
             un&apos;altra disposizione.
           </p>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-gold align-middle mr-1" />
-            hanno già un conto aperto ·{" "}
-            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-b58-terracotta align-middle mr-1" />
-            il conto che stai servendo
-          </p>
+          {/* ⚠️ LA LEGENDA DICHIARA LA PRECEDENZA, e non è la vecchia riga
+              con un quadratino in più. Prima elencava due colori; adesso i
+              segni sono cinque e uno copre l'altro — senza dirlo, chi cerca
+              il verde su un tavolo diventato scuro conclude che il gestionale
+              ha sbagliato. L'ordine non è scritto qui: è lo stesso dato con
+              cui si decide il colore. */}
+          <LegendaSala
+            chiavi={["selezionato", "occupato", "presto", "pieno", "tardi", "misto"]}
+            testi={{
+              selezionato: "il conto che stai servendo",
+              occupato: "sono seduti: c'è un conto aperto",
+              presto: "primo giro — può liberarsi per una seconda serata",
+              pieno: "occupa la serata",
+              tardi: "ultimo giro",
+              misto: "sullo stesso tavolo due giri",
+            }}
+          />
+        </div>
+      )}
+
+      {/* CHI ARRIVA STASERA -------------------------------------------- */}
+      {/* ⚠️ Fino al giro D2 questa schermata NON SAPEVA CHI AVEVA PRENOTATO:
+          la sala si apriva bianca, e chi serviva doveva incrociare due
+          dispositivi con gli occhi. Le informazioni vanno a capo invece di
+          scorrere di lato, perché qui si guarda da un tablet tenuto in
+          verticale — e il tavolo è la prima cosa che serve, non l'ultima. */}
+      {elencoSerata.length > 0 && (
+        <div className="mb-4">
+          <p className={sectionLabel}>Stasera</p>
+          <div className="space-y-1.5">
+            {elencoSerata.map((p) => (
+              <div
+                key={p.id}
+                className={`rounded-lg px-3 py-2 ring-1 ${
+                  p.ritardo?.inRitardo
+                    ? "bg-b58-parchment ring-b58-charcoal/40"
+                    : "bg-b58-parchment ring-b58-charcoal/10"
+                }`}
+              >
+                <p className="text-sm text-b58-charcoal">
+                  <strong>{p.ora?.slice(0, 5)}</strong> · {p.nome}
+                  {p.persone ? ` · ${p.persone} pers.` : ""}
+                  {" · "}
+                  {p.etichette.length > 0 ? (
+                    <strong>{p.etichette.join(" · ")}</strong>
+                  ) : (
+                    // ⚠️ Detto, non taciuto: una confermata senza tavolo
+                    // arriva lo stesso, e chi apre la porta deve saperlo
+                    // prima di trovarsela davanti.
+                    <em className="text-b58-charcoal-soft">tavolo da assegnare</em>
+                  )}
+                </p>
+                <p className="text-[11px] text-b58-charcoal-soft/80 leading-relaxed">
+                  {p.ritardo?.arrivata
+                    ? p.conto
+                      ? "seduti — il conto è aperto"
+                      : "arrivati"
+                    : p.ritardo?.inRitardo
+                      ? `non ancora arrivati — ${p.ritardo.minuti} minuti oltre l'ora`
+                      : FASCE[p.fascia]?.spiega}
+                  {p.liberareEntro && (
+                    <>
+                      {" · "}
+                      <strong>da liberare entro le {p.liberareEntro.slice(0, 5)}</strong>
+                    </>
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+          {tolleranza != null && (
+            <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
+              Un tavolo si sbarra quando passano più di {tolleranza} minuti dall&apos;ora
+              prenotata e nessuno ha aperto la comanda. <strong>Avvisa soltanto</strong>: se
+              ridare via il tavolo lo decidi tu.
+            </p>
+          )}
         </div>
       )}
 
@@ -558,13 +764,37 @@ export default function Sala() {
           <span className="text-xs">
             Se hanno accostato più tavoli, toccali tutti: si apre un conto solo.
             <br />
-            I tavoli dorati hanno già un conto aperto.
+            I tavoli scuri hanno già un conto aperto; i colorati aspettano qualcuno.
           </span>
         </p>
       )}
 
       {order && (
         <>
+          {/* CHI STA A QUESTO TAVOLO. ⚠️ Il legame fra il conto e la sua
+              prenotazione è scritto dal 18/08 (giro D1) e fino a qui NON LO
+              MOSTRAVA NESSUNA SCHERMATA — rilievo di Alessio la sera stessa:
+              *«non ho visto l'associazione con la prenotazione»*. Per chi usa
+              l'app, un dato scritto che nessuno può vedere è indistinguibile
+              da un dato non scritto.
+              ⚠️ E il vuoto è NORMALE, quindi non si scrive niente: un conto
+              senza prenotazione è qualcuno entrato senza prenotare, non un
+              errore da segnalare. */}
+          {order.prenotazione && (
+            <p className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 px-3 py-2 text-sm mb-3">
+              <strong>{order.prenotazione.customer_name}</strong>
+              {order.prenotazione.party_size ? ` · ${order.prenotazione.party_size} persone` : ""}
+              {order.prenotazione.reservation_time
+                ? ` · prenotato per le ${order.prenotazione.reservation_time.slice(0, 5)}`
+                : ""}
+              {order.prenotazione.notes && (
+                <span className="block text-[11px] text-b58-charcoal-soft mt-0.5">
+                  {order.prenotazione.notes}
+                </span>
+              )}
+            </p>
+          )}
+
           {/* ⚠️ «DA LIBERARE ENTRO LE…», ED È QUI CHE VALE SOLDI. Il punto 3
               del mandato (le tre fasce) senza questo è una regola che vive
               solo dove si prendono le prenotazioni: chi serve non la vede,

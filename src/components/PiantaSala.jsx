@@ -4,6 +4,7 @@ import {
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
 } from "../lib/api/sala";
+import { COLORI } from "../lib/coloriSala";
 import {
   GRIGLIA_CM,
   RIDUZIONE_DISEGNO,
@@ -80,33 +81,9 @@ export const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDU
 // devono accordarsi. Il rapporto è scritto in `lib/calcoli/sala.js`, in un
 // posto solo — prima stavano in due file che non si nominavano.
 
-const COLORI = {
-  libero: { riempimento: "var(--color-b58-parchment)", bordo: "var(--color-b58-charcoal)" },
-  selezionato: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
-  occupato: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
-  prenotato: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
-  // ⚠️ LE TRE FASCE DELLA SERATA (idea di Alessio, 14/08; il terzo colore
-  // è del 18/08). Non è un vincolo e non impedisce niente: è l'ora resa
-  // visibile senza doverla leggere. Ha sostituito una spunta che chiedeva
-  // ad Alessio di dichiarare a mano una cosa che si deduce dall'orario.
-  //   giallo  = arriva prima dell'ora del primo giro → il tavolo può
-  //             servire una seconda volta;
-  //   verde   = arriva a servizio avviato → il tavolo resta suo;
-  //   arancio = arriva dopo l'ultimo ingresso → è l'ultimo turno, e può
-  //             stare sullo stesso tavolo di un giallo.
-  // ⚠️ I confini NON sono qui e non sono due ore fisse: vengono dagli
-  // orari **di quel servizio** (`service_hours`). La domenica è pranzo, e
-  // tre fasce calcolate sugli orari della cena direbbero «primo giro» a
-  // chiunque pranzi.
-  presto: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
-  pieno: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
-  tardi: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
-  // Mezzo e mezzo: sul tavolo c'è più di una fascia — tipicamente un
-  // giallo e un arancio, che è proprio il secondo giro. Chi ha prenotato
-  // dopo sa implicitamente di poter aspettare.
-  misto: { riempimento: "url(#mezzoEmezzo)", bordo: "var(--color-b58-olive-dark)" },
-  fisso: { riempimento: "var(--color-b58-cream-dark)", bordo: "var(--color-b58-charcoal-soft)" },
-};
+// I colori vivono in lib/coloriSala.js: li leggono il disegno e la legenda,
+// e due copie divergerebbero alla prima ritoccata.
+
 
 // ⚠️ IL SEGNO CHE IL MAGNETE HA PRESO, e deve vedersi MENTRE si trascina,
 // non dopo aver lasciato. Un aggancio che si scopre solo al rilascio non
@@ -133,10 +110,15 @@ const limita = (v, min, max) => Math.min(max, Math.max(min, v));
  *                    e' accostato lo decide `coperti_del_giorno()`, e una
  *                    seconda regola in JavaScript finirebbe per disegnare
  *                    un tavolone dove il numero non ne vede nessuno.
- * @param stato       { [id]: { colore, coperti, corretto } } — il colore,
- *                    e dal 18/08 la sola CIFRA dei coperti col punto che
- *                    segna «corretto a mano». Niente altro: dentro una
- *                    sagoma di 90 cm non ci sta altro di leggibile.
+ * @param stato       { [id]: { colore, barrato, coperti, corretto } } — il
+ *                    colore, la sbarratura del ritardo, e dal 18/08 la sola
+ *                    CIFRA dei coperti col punto che segna «corretto a mano».
+ *                    Niente altro: dentro una sagoma di 90 cm non ci sta
+ *                    altro di leggibile.
+ *                    ⚠️ Chi decide il colore NON è questa componente: è
+ *                    `segnoDelTavolo()` in lib/calcoli/ritardo.js, che tiene
+ *                    la precedenza in un posto solo per le due schermate. Qui
+ *                    si disegna quello che quella funzione ha deciso.
  */
 export default function PiantaSala({
   sagome = [],
@@ -351,6 +333,32 @@ export default function PiantaSala({
             <stop offset="50%" stopColor="var(--color-b58-gold)" />
             <stop offset="50%" stopColor="var(--color-b58-olive)" />
           </linearGradient>
+          {/* ⚠️ LA SBARRATURA DEL RITARDO. Non è un colore: è un tratteggio
+              che passa SOPRA qualunque riempimento, e per questo può convivere
+              col tavolo selezionato e con la fascia oraria invece di
+              cancellarli. Un terzo rosso non era disponibile — il terracotta
+              è già la fascia «ultimo giro» ed è già il tavolo che stai
+              toccando. Le misure sono in centimetri di sala, quindi il passo
+              del tratteggio si rimpicciolisce insieme al disegno: qui è
+              giusto così, perché non è un bersaglio da prendere col dito ma
+              una texture da riconoscere. */}
+          <pattern
+            id="sbarrato"
+            patternUnits="userSpaceOnUse"
+            width="34"
+            height="34"
+            patternTransform="rotate(45)"
+          >
+            <line
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="34"
+              stroke="var(--color-b58-charcoal)"
+              strokeWidth="11"
+              strokeOpacity="0.5"
+            />
+          </pattern>
         </defs>
         <g transform={verticale ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
@@ -494,6 +502,19 @@ export default function PiantaSala({
                 strokeOpacity={!inMano && inGruppo ? 0.3 : 1}
                 opacity={inMano ? 0.85 : 1}
               />
+              {/* IN RITARDO — sopra il colore e SOTTO il nome: il tavolo si
+                  vede sbarrato e si continua a leggere quale tavolo è. Chi
+                  sta in sala deve poterlo chiamare per nome mentre decide se
+                  ridarlo via. */}
+              {info?.barrato && (
+                <rect
+                  width={misure.larghezza}
+                  height={misure.profondita}
+                  rx={tondo ? Math.min(misure.larghezza, misure.profondita) / 2 : 12}
+                  fill="url(#sbarrato)"
+                  pointerEvents="none"
+                />
+              )}
               {/* ⚠️ UN SOLO gruppo per tutte le scritte della sagoma, e non
                   una controrotazione per ciascuna. Girando ogni etichetta
                   attorno a sé stessa, due righe che stanno una SOTTO
