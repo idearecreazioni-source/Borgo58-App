@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
-import { ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
+import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -76,11 +76,17 @@ import {
 
 const NUOVA_VUOTA = { nome: "", telefono: "", persone: 2, ora: "20:00", note: "" };
 
+// C'è del lavoro dentro il modulo? Serve a decidere se il modulo può sparire
+// da solo quando resta senza tavoli. ⚠️ Si confronta con lo stato di partenza
+// per INTERO e non solo col nome: chi ha già messo «6 persone alle 21» ha
+// scritto qualcosa, anche se non ha ancora digitato una lettera.
+const moduloScritto = (v) =>
+  Object.keys(NUOVA_VUOTA).some((k) => String(v?.[k] ?? "") !== String(NUOVA_VUOTA[k]));
+
 const BOTTONE =
   "rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2";
 const PRINCIPALE =
   "rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-semibold px-4 py-2";
-const SEZIONE = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-5";
 const CAMPO =
   "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const ETICHETTA = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
@@ -440,7 +446,7 @@ export default function PiantaGiornata() {
   // curare un problema che lì non esiste.
   useEffect(() => {
     if (!toccato) return;
-    const primo = (perTavolo.get(toccato) ?? [])[0];
+    const primo = assegnazioniDelGruppo(toccato)[0];
     const riga = primo && righeRef.current[primo.reservation.id];
     riga?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -522,7 +528,24 @@ export default function PiantaGiornata() {
     // tavolo già promesso — è il secondo giro della serata, che al
     // telefono si fa: il sistema non lo impedisce e non avvisa.
     if (modo) {
-      setScelti((s) => (s.includes(sagoma.id) ? s.filter((x) => x !== sagoma.id) : [...s, sagoma.id]));
+      const dopo = scelti.includes(sagoma.id)
+        ? scelti.filter((x) => x !== sagoma.id)
+        : [...scelti, sagoma.id];
+      setScelti(dopo);
+      // 🔴 IL MODULO SENZA TAVOLI SE NE VA — difetto trovato da Alessio:
+      // togliendo l'ultimo tavolo il modulo restava lì, intitolato
+      // «Prenotazione su nessun tavolo». *«Mi sembra poco sensato»*, ed è
+      // giusto: quel modulo esiste perché ha toccato un tavolo, e senza
+      // tavolo non ha più oggetto. È la famiglia della schermata che continua
+      // a proporre un gesto che non ha più senso.
+      //
+      // ⚠️ MA SOLO SE NON CI HA GIÀ SCRITTO DENTRO, ed è la parte misurata
+      // invece che decisa a priori: far sparire un modulo con dentro un nome e
+      // un telefono digitati sarebbe **peggio del difetto** — è la stessa
+      // perdita silenziosa del 12/08. Se c'è del testo il modulo resta, e la
+      // riga qui sotto dice cosa manca; il pulsante di conferma è già spento
+      // da sé, perché senza tavoli non si conferma niente.
+      if (modo === "nuova" && dopo.length === 0 && !moduloScritto(nuova)) azzera();
       return;
     }
 
@@ -541,7 +564,11 @@ export default function PiantaGiornata() {
     // libero, uno colorato ha qualcuno. Il modulo lo dichiara comunque a
     // parole, perché una regola che si deduce da un colore va detta almeno
     // una volta nel posto dove agisce.
-    if ((perTavolo.get(sagoma.id) ?? []).length === 0) {
+    // ⚠️ «Libero» si chiede al TAVOLONE, non alla sagoma: toccando T7 di un
+    // tavolone dove qualcuno ha prenotato su T8, il tavolo è occupato — e si
+    // vede, perché dal giro D2 il colore si propaga a tutto il gruppo. Chiedere
+    // per sagoma faceva contraddire il tocco col colore.
+    if (assegnazioniDelGruppo(sagoma.id).length === 0) {
       setToccato(null);
       setModo("nuova");
       setScelti([sagoma.id]);
@@ -614,7 +641,23 @@ export default function PiantaGiornata() {
   const gruppoDelToccato = toccato
     ? (gruppi.find((g) => (g.tavoli ?? []).includes(toccato)) ?? null)
     : null;
-  const prenotazioniDelToccato = (perTavolo.get(toccato) ?? [])
+  // ⚠️ CHI C'È SU UN TAVOLO SI CHIEDE AL TAVOLONE, non alla sagoma.
+  // Tre tavoli accostati sono un tavolo solo: una prenotazione agganciata a T8
+  // occupa anche T7 e T9, e dal giro D2 li colora. Chiedere per sagoma faceva
+  // dire «libero» a un tavolo che si vede colorato — vedi `insiemiPerTavolo`.
+  const insiemeDi = useMemo(() => insiemiPerTavolo(sagome, gruppi), [sagome, gruppi]);
+  const assegnazioniDelGruppo = (sagomaId) => {
+    if (!sagomaId) return [];
+    const insieme = insiemeDi.get(sagomaId) ?? [sagomaId];
+    // Le stesse prenotazioni non si contano due volte quando un gruppo ha più
+    // tavoli e la prenotazione ne occupa più d'uno.
+    const viste = new Set();
+    return insieme
+      .flatMap((id) => perTavolo.get(id) ?? [])
+      .filter((a) => !viste.has(a.reservation.id) && viste.add(a.reservation.id));
+  };
+
+  const prenotazioniDelToccato = assegnazioniDelGruppo(toccato)
     .map((a) => prenotazioni.find((p) => p.id === a.reservation.id))
     .filter(Boolean);
 
@@ -654,10 +697,16 @@ export default function PiantaGiornata() {
     aperta ? [aperta.id] : prenotazioniDelToccato.map((p) => p.id)
   );
 
-  // Le prenotazioni già presenti sui tavoli che si stanno scegliendo.
-  const giaPromessi = scelti.flatMap((id) =>
-    (perTavolo.get(id) ?? []).filter((a) => a.reservation.id !== evidenziata)
-  );
+  // Le prenotazioni già presenti sui tavoli che si stanno scegliendo — e sui
+  // loro TAVOLONI: scegliendo T7 si sta scegliendo anche il tavolo su cui
+  // qualcuno ha già prenotato, se T7 è accostato a T8.
+  const giaPromessi = (() => {
+    const viste = new Set();
+    return scelti
+      .flatMap((id) => assegnazioniDelGruppo(id))
+      .filter((a) => a.reservation.id !== evidenziata)
+      .filter((a) => !viste.has(a.reservation.id) && viste.add(a.reservation.id));
+  })();
 
   const etichetteScelte = sagome
     .filter((s) => scelti.includes(s.id))
@@ -740,35 +789,28 @@ export default function PiantaGiornata() {
             </>
           )}
         </span>
+        {/* «SIAMO AL COMPLETO» — un interruttore piccolo sulla riga della
+            data, non più un riquadro (Alessio, 18/08). ⚠️ È l'unico freno
+            alle richieste dal sito e il rifiuto sta **dentro** la funzione
+            pubblica, non qui: una casella spenta nella schermata non è un
+            freno. E resta una cosa diversa da «siamo chiusi», che si mette da
+            Sala e orari — sono due fatti diversi e due tabelle diverse. */}
+        <label className="flex items-center gap-2 text-sm text-b58-charcoal-soft">
+          <input
+            type="checkbox"
+            checked={pieno}
+            disabled={!isTitolare}
+            onChange={(e) => esegui(() => setSoldOut(data, e.target.checked))}
+            className="h-4 w-4"
+          />
+          al completo
+        </label>
       </div>
 
       {caricamento ? (
         <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
-          {/* La serata al completo — l'unico freno alle richieste dal sito */}
-          <div className={SEZIONE}>
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                checked={pieno}
-                disabled={!isTitolare}
-                onChange={(e) => esegui(() => setSoldOut(data, e.target.checked))}
-                className="mt-1 h-5 w-5"
-              />
-              <span>
-                <span className="block text-b58-charcoal font-medium">
-                  Per questa sera siamo al completo
-                </span>
-                {/* ⚠️ Qui sotto c'era la spiegazione di cosa fa questo
-                    interruttore, tolta da Alessio il 18/08. La distinzione
-                    che spiegava — «pieno» non è «chiuso» — resta vera e resta
-                    scritta nel database (sono due tabelle diverse, e la
-                    differenza deve restare leggibile fra un anno). Sparisce
-                    la spiegazione a schermo, non la regola. */}
-              </span>
-            </label>
-          </div>
 
           {/* «C'È POSTO?» — la domanda del telefono, prima della pianta.
               ⚠️ AVVISA, NON IMPEDISCE: qui non c'è niente che si spenga o
@@ -780,10 +822,22 @@ export default function PiantaGiornata() {
                 <span className="text-sm">
                   <strong className="text-lg">{posto.restanti}</strong> posti liberi
                 </span>
-                <span className="text-[13px] text-b58-charcoal-soft">
-                  {posto.capienza} in questa disposizione · {posto.prenotati} prenotati
-                  {posto.in_attesa > 0 && ` · ${posto.in_attesa} da confermare`}
-                </span>
+                {/* ⚠️ Qui c'era la scomposizione («31 in questa disposizione ·
+                    6 prenotati»), tolta da Alessio il 18/08. Il numero grande
+                    resta — è la risposta a «c'è posto stasera?» che aveva
+                    chiesto lui nel giro B.
+                    ⚠️ E resta anche il suo limite, che ora **non è più scritto
+                    da nessuna parte a schermo**: quel numero conta i soli
+                    TAVOLI, e lascia fuori divani e Chef Table (sono due
+                    formule diverse: chi chiama per cenare vuole un tavolo).
+                    Finché lo legge Alessio va bene, perché la regola l'ha
+                    decisa lui; per chi verrà dopo è un numero che sembra dire
+                    «la sala tiene 25» e non lo dice. */}
+                {posto.in_attesa > 0 && (
+                  <span className="text-[13px] text-b58-charcoal-soft">
+                    {posto.in_attesa} da confermare
+                  </span>
+                )}
               </div>
               {posto.oltre_soglia && (
                 <p className="text-[13px] mt-1.5 font-medium text-b58-terracotta">
@@ -795,6 +849,9 @@ export default function PiantaGiornata() {
                   insieme, e la frase arriva dal database insieme al numero:
                   un avviso scritto qui dentro non proteggerebbe la seconda
                   schermata che mostrasse lo stesso totale. */}
+              {/* ⚠️ L'avvertenza del database resta: arriva insieme al numero
+                  proprio perché non possano separarsi, e non è una
+                  spiegazione della schermata ma il limite del calcolo. */}
               <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">{posto.avvertenza}</p>
             </div>
           )}
@@ -978,40 +1035,43 @@ export default function PiantaGiornata() {
                 ? `${scostamenti} ${scostamenti === 1 ? "tavolo spostato" : "tavoli spostati"} solo per questo giorno`
                 : "Sala nella disposizione di sempre"}
             </span>
-            {isTitolare &&
-              sagome
-                .filter((s) => s.spostato)
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => esegui(() => riportaSagomaAllaBase({ data, sagomaId: s.id }))}
-                    className="underline hover:text-b58-terracotta-dark"
-                  >
-                    rimetti {s.label} a posto
-                  </button>
-                ))}
+            {/* ⚠️ UN SOLO COMANDO al posto di un collegamento per tavolo
+                (Alessio, 18/08). Prima, con sei tavoli spostati, questa riga
+                era sei pulsanti. Il gesto fine — rimettere a posto un tavolo
+                solo — si fa trascinandolo, che è come lo si è mosso. */}
+            {isTitolare && scostamenti > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  esegui(async () => {
+                    for (const s of sagome.filter((x) => x.spostato)) {
+                      await riportaSagomaAllaBase({ data, sagomaId: s.id });
+                    }
+                  })
+                }
+                className="underline hover:text-b58-terracotta-dark"
+              >
+                rimetti tutti a posto
+              </button>
+            )}
           </div>
 
           {/* PRENOTAZIONE NUOVA — il gesto principale di questa pagina */}
           {modo === "nuova" && (
             <div ref={moduloRef} className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
-              <p className="text-b58-charcoal font-medium mb-1">
-                Prenotazione su {etichetteScelte || <em className="text-b58-charcoal-soft">nessun tavolo</em>}
-              </p>
-              <p className="text-sm text-b58-charcoal-soft mb-3">
-                Tocca i tavoli per aggiungerli o toglierli — <strong>anche quelli già promessi a
-                qualcun altro</strong>. Se sono in tanti, accostali prima e poi toccali tutti. Il
-                cliente <strong>non riceve nessuna email</strong>: gliel'hai appena detto tu.
-              </p>
-
-              {/* ⚠️ LA REGOLA DEL TOCCO, DETTA DOVE AGISCE. Su un tavolo
-                  libero si arriva qui subito; su uno colorato il tocco apre
-                  invece chi c'è già. Si vede dal colore prima di toccare, ma
-                  una regola che si deduce va detta almeno una volta. */}
-              <p className="text-[11px] text-b58-charcoal-soft/80 mb-3">
-                Sei qui perché hai toccato un <strong>tavolo libero</strong>: su quelli colorati il
-                tocco apre invece chi c&apos;è già.
+              {/* ⚠️ Qui c'erano due spiegazioni — come si aggiungono i tavoli
+                  e perché si è arrivati qui — tolte da Alessio il 18/08
+                  insieme alle altre cinque. Le regole restano: il tocco
+                  aggiunge e toglie, e il cliente non riceve nessuna email
+                  (l'invio parte su un cambio di stato, e qui non ce n'è
+                  nessuno — verificato il 14/08, non dedotto). */}
+              <p className="text-b58-charcoal font-medium mb-3">
+                Prenotazione su{" "}
+                {etichetteScelte || (
+                  // Resta possibile solo quando c'è già del lavoro dentro:
+                  // senza testo scritto il modulo si chiude da sé.
+                  <em className="text-b58-terracotta-dark">nessun tavolo — toccane uno</em>
+                )}
               </p>
 
               {/* I COPERTI DEI TAVOLI SCELTI — la stessa casella del riquadro.

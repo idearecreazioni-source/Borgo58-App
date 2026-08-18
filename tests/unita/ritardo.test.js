@@ -4,6 +4,7 @@ import {
   contoProvaArrivo,
   ritardiDellaSerata,
   ritardoPrenotazione,
+  insiemiPerTavolo,
   segniDellaSala,
   segnoDelTavolo,
 } from "../../src/lib/calcoli/ritardo";
@@ -274,5 +275,50 @@ describe("Il tavolone si colora intero", () => {
       fatti: { t8: { selezionato: true }, t9: { inRitardo: true } },
     });
     expect(segni.t8).toEqual({ colore: "selezionato", barrato: true });
+  });
+});
+
+describe("Da un tavolo al suo tavolone", () => {
+  // 🔴 Nasce da un difetto vero trovato da Alessio provando il giro D3:
+  // toccando T8 (prenotato) compariva l'avviso «c'è già qualcuno», toccando
+  // T7 — lo stesso tavolone — no. E il difetto era più largo del messaggio:
+  // il TOCCO stesso trattava T7 da libero, cioè contraddiceva il colore, che
+  // dal giro D2 si propaga a tutto il gruppo.
+  const sagome = [{ id: "t7" }, { id: "t8" }, { id: "t9" }, { id: "t3" }, { id: "divano" }];
+  const gruppi = [{ tavoli: ["t7", "t8", "t9"] }, { tavoli: ["t3"] }];
+
+  it("ogni tavolo del tavolone risponde con LO STESSO insieme", () => {
+    // È la proprietà che regge la cura: chiedere «chi c'è su T7» e «chi c'è su
+    // T8» deve voler dire chiedere la stessa cosa.
+    const per = insiemiPerTavolo(sagome, gruppi);
+    expect([...per.get("t7")].sort()).toEqual(["t7", "t8", "t9"]);
+    expect(per.get("t8")).toEqual(per.get("t7"));
+    expect(per.get("t9")).toEqual(per.get("t7"));
+  });
+
+  it("un tavolo da solo è un insieme di uno — la gemella al contrario", () => {
+    // Senza questa, una funzione che mettesse tutta la sala in un insieme
+    // solo passerebbe la prova qui sopra.
+    const per = insiemiPerTavolo(sagome, gruppi);
+    expect(per.get("t3")).toEqual(["t3"]);
+    expect(per.get("divano")).toEqual(["divano"]);
+  });
+
+  it("copre TUTTE le sagome, anche quelle che in nessun gruppo compaiono", () => {
+    // Divani e Chef Table non entrano nel conteggio della cena, ma si toccano
+    // e si prenotano: se cadessero fuori dalla mappa, il tocco su un divano
+    // non troverebbe mai nessuno sopra.
+    const per = insiemiPerTavolo(sagome, gruppi);
+    expect([...per.keys()].sort()).toEqual(["divano", "t3", "t7", "t8", "t9"]);
+  });
+
+  it("è la STESSA regola che colora la sala, non una seconda", () => {
+    // ⚠️ La prova che tiene ferma la cura: se un giorno i due raggruppamenti
+    // si separassero, il colore e il tocco tornerebbero a dire cose diverse —
+    // che è esattamente il difetto che questa funzione chiude.
+    const per = insiemiPerTavolo(sagome, gruppi);
+    const segni = segniDellaSala({ sagome, gruppi, fatti: { t8: { fasce: ["pieno"] } } });
+    for (const id of per.get("t8")) expect(segni[id].colore).toBe("pieno");
+    expect(segni.t3.colore).toBeNull();
   });
 });

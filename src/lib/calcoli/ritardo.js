@@ -251,6 +251,34 @@ export function insiemiDiTavoli(sagome = [], gruppi = []) {
 }
 
 /**
+ * Da un tavolo al suo insieme — la stessa domanda di sopra, girata per chi ha
+ * in mano un tavolo e non un gruppo.
+ *
+ * 🔴 ESISTE PER UN DIFETTO VERO, trovato da Alessio provando il giro D3 e più
+ * largo di come si vedeva. Toccando T8 (prenotato) compariva l'avviso «su
+ * questi tavoli c'è già…»; toccando T7 — **lo stesso tavolone** — non
+ * compariva. E il difetto non era solo nel messaggio: erano **tre** posti a
+ * chiedere «chi c'è su QUESTO tavolo» invece che «su questo tavolone» — il
+ * tocco (che quindi trattava T7 come libero e andava dritto ai campi), il
+ * riquadro, e l'avviso.
+ *
+ * ⚠️ E il primo dei tre era il peggiore, perché **il tocco contraddiceva il
+ * colore**: T7 si vedeva colorato — dal giro D2 il tavolone si colora intero —
+ * e si comportava da libero. Tutto il disegno del giro D3 poggia su *«bianco è
+ * libero, colorato ha qualcuno»*, e lì quella regola era falsa.
+ *
+ * La cura è **una strada sola**: gli insiemi li conta già `insiemiDiTavoli`,
+ * che è quello che colora la sala. Nessun secondo raggruppamento.
+ */
+export function insiemiPerTavolo(sagome = [], gruppi = []) {
+  const m = new Map();
+  for (const insieme of insiemiDiTavoli(sagome, gruppi)) {
+    for (const id of insieme) m.set(id, insieme);
+  }
+  return m;
+}
+
+/**
  * Il segno di ogni sagoma, deciso UNA VOLTA PER INSIEME e poi dato a tutti i
  * suoi tavoli.
  *
