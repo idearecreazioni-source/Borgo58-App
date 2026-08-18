@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { FASCE } from "../../lib/calcoli/serata";
+import { fraseMisura, misureSchermo } from "../../lib/calcoli/schermo";
 import { useAuth } from "../../context/AuthContext";
 import {
   getCopertiDelGiorno,
@@ -478,6 +479,21 @@ export default function PiantaGiornata() {
                   schermata che mostrasse lo stesso totale. */}
               <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">{posto.avvertenza}</p>
             </div>
+          )}
+
+          {/* ⚠️ LA MISURA DEL GIRO E, e NON sta in un angolo. Serve a sapere
+              quanto spazio guadagna la pianta quando l'app è aggiunta alla
+              schermata iniziale invece che aperta in Safari — un numero che
+              da un terminale non si può sapere, perché dipende dalle barre
+              di Safari su QUEL telefono.
+              Compare solo se l'indirizzo lo chiede (`?misura=1`): così non
+              c'è niente da dimenticare in un angolo, che è la famiglia di
+              «fisco_scadenze» — rumore che fra un mese nessuno sa perché
+              c'è. ⚠️ Da togliere quando il giro E chiude. */}
+          {ricerca.get("misura") && (
+            <p className="rounded-lg bg-b58-charcoal/5 px-3 py-2 mb-3 text-[13px] font-mono">
+              {fraseMisura(misureSchermo())}
+            </p>
           )}
 
           {/* La pianta */}
