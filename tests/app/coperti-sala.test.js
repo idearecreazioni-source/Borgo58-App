@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { credenziali } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
+import { GRIGLIA_CM, sagomeFuoriGriglia } from "../../src/lib/calcoli/sala";
 import {
   getCopertiDelGiorno,
   getPostoPerLaSerata,
@@ -266,6 +267,33 @@ describe("I coperti dentro il tavolo", () => {
     gruppi = await getCopertiDelGiorno(GIORNO);
     expect(gruppoDi(gruppi, quadrati[0].id).corretto).toBe(false);
     expect(gruppoDi(gruppi, quadrati[0].id).coperti).toBe(2 * baseQ - 2);
+  });
+
+  it("7 · le misure della sala reggono l'ipotesi su cui poggia la tolleranza", async () => {
+    // ⚠️ Rilievo della validazione del 18/08. La tolleranza di contatto (5)
+    // e il passo della griglia (10) sono due numeri in due posti che devono
+    // accordarsi. Si accordano SOLO finché ogni misura di sagoma è multipla
+    // del passo: allora ogni bordo cade su un multiplo del passo, le
+    // distanze possibili sono 0, 10, 20… e «≤ 5» vuol dire esattamente
+    // «= 0». Con un tavolo da 95 cm smetterebbe di essere vero, e la
+    // tolleranza diventerebbe una decisione che nessuno ha preso — sul
+    // numero con cui si accettano le prenotazioni.
+    //
+    // Non è un vincolo del database di proposito: vietare ad Alessio un
+    // mobile di una misura qualsiasi sarebbe una regola scritta da noi
+    // sulle sue cose. È una prova che diventa rossa da sola.
+    const { data: sagome, error } = await titolare
+      .from("dining_tables")
+      .select("label, larghezza_cm, profondita_cm");
+    expect(error).toBeNull();
+
+    const fuori = sagomeFuoriGriglia(sagome);
+    expect(
+      fuori,
+      `Queste sagome non hanno misure multiple di ${GRIGLIA_CM} cm: ${fuori.join(", ")}. ` +
+        "La tolleranza di contatto non è più equivalente al contatto esatto e va rivista " +
+        "insieme al passo della griglia (src/lib/calcoli/sala.js)."
+    ).toEqual([]);
   });
 
   it("6 · «c'è posto?» avvisa e non impedisce, e dichiara chi resta fuori", async () => {

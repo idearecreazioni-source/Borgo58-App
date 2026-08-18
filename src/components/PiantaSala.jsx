@@ -4,6 +4,7 @@ import {
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
 } from "../lib/api/sala";
+import { GRIGLIA_CM } from "../lib/calcoli/sala";
 
 // LA PIANTA DELLA SALA — la stessa in Calendario e in Comande.
 //
@@ -47,7 +48,11 @@ const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05;
 // L'aggancio a griglia: 10 cm. Abbastanza fine da accostare due tavoli
 // senza fatica, abbastanza grosso da non lasciare fessure di 3 cm che a
 // schermo sembrano un errore di chi trascina.
-const GRIGLIA_CM = 10;
+//
+// ⚠️ Dal 18/08/2026 NON è più un numero di questo file: è legato alla
+// tolleranza con cui il database decide che due tavoli si toccano, e i due
+// devono accordarsi. Il rapporto è scritto in `lib/calcoli/sala.js`, in un
+// posto solo — prima stavano in due file che non si nominavano.
 
 const COLORI = {
   libero: { riempimento: "var(--color-b58-parchment)", bordo: "var(--color-b58-charcoal)" },

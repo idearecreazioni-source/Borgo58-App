@@ -647,14 +647,19 @@ export default function PiantaGiornata() {
                   );
                 })}
               </ul>
-              {/* ⚠️ LA SPARIZIONE SI DICE. Una correzione decade quando
-                  l'insieme cambia, ed è il comportamento voluto: sciolto
-                  un tavolone, quel numero non descrive più niente. Ciò che
-                  rende un valore che sparisce un difetto altrove non è la
-                  sparizione — è il silenzio. */}
+              {/* ⚠️ LA SPARIZIONE SI DICE — e per intero. La prima stesura
+                  diceva solo «decade», ed era una mezza verità: la riga non
+                  si cancella, quindi rifacendo lo stesso accostamento nello
+                  stesso giorno il numero TORNA. Detta a metà, la schermata
+                  prometteva una cosa e il gestionale ne faceva un'altra
+                  (rilievo della validazione del 18/08). La scelta di non
+                  cancellare resta — un trascinamento per sbaglio non deve
+                  distruggere un numero scritto a mano — ma va detta. */}
               <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
-                Se sciogli o cambi un tavolone, il numero corretto a mano decade e torna quello
-                calcolato: si riferiva a quei tavoli messi così.
+                Se sciogli o cambi un tavolone il numero corretto a mano non vale più e torna
+                quello calcolato: si riferiva a quei tavoli messi così. Non lo perdi — se
+                rimetti insieme <strong>gli stessi</strong> tavoli oggi stesso, torna anche il
+                tuo numero.
               </p>
             </div>
           )}

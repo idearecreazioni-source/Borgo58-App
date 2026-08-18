@@ -6,9 +6,12 @@ non ancora validato: il validatore guarda A e B insieme.
 
 - **HEAD dichiarato**: `3188233`
 - **Working tree**: pulito
-- **Migrazioni**: `20260818000001_i_coperti_dentro_il_tavolo.sql` e
-  `20260818000002_chi_ha_corretto_e_quando.sql`
-- **Prove**: 49 pure + **150** sul progetto di prova (erano 144) — tutte verdi
+- **Migrazioni**: `20260818000001_i_coperti_dentro_il_tavolo.sql`,
+  `20260818000002_chi_ha_corretto_e_quando.sql` e
+  `20260818000003_gli_orfani_e_la_traccia_della_sala.sql` (i cinque rilievi
+  della validazione)
+- **Prove**: **53** pure (erano 49) + **151** sul progetto di prova (erano 144)
+  — tutte verdi
 - **Lint**: zero avvisi · **Build**: ok
 
 ---
@@ -374,6 +377,136 @@ Corretto — è una descrizione di come sono messi, non una regola.
 
 ---
 
+## I cinque rilievi della validazione — cosa è stato fatto
+
+Migrazione **`20260818000003_gli_orfani_e_la_traccia_della_sala.sql`**.
+
+### 1 · Tolleranza 5 cm contro aggancio a 10 — misurato, e il rapporto ora è scritto
+
+**Misura chiesta, misura fatta.** Nella sala vera le tre coppie accostate
+(T5-T6, T7-T8, T8-T9) stanno a distanza **0**, non a 10. E la ragione non è
+fortuna: **tutte e 13 le sagome hanno misure multiple di 10** (misurato: 0
+fuori). Con le posizioni agganciate a un passo di 10 e ogni misura multipla di
+10, **ogni bordo cade su un multiplo di 10** — quindi le distanze possibili
+sono 0, 10, 20… e mai qualcosa in mezzo. Una tolleranza strettamente fra 0 e
+10 è perciò **equivalente a «distanza esattamente zero»**: assorbe un
+arrotondamento, non accosta tavoli lontani.
+
+**Quindi il difetto non è vivo, ma i due numeri non erano collegati.** Ora:
+
+- vivono in **un posto solo** ([`src/lib/calcoli/sala.js`](../../src/lib/calcoli/sala.js)),
+  col rapporto scritto per esteso, e `PiantaSala.jsx` importa il passo da lì
+  invece di dichiararlo per conto suo;
+- una **prova pura** congela il rapporto (`tolleranza < griglia`) **e lo prova
+  al contrario** — senza, la funzione potrebbe restituire `true` sempre;
+- una **prova sui dati veri** verifica l'ipotesi che regge tutto: ogni misura
+  è multipla del passo. ⚠️ Il giorno che entra in sala un tavolo da 95 cm
+  quella prova diventa **rossa da sola**, e si scopre leggendo un errore
+  invece che contando male i coperti di una serata.
+
+⚠️ **Non è un vincolo del database, ed è una scelta**: vietare ad Alessio un
+mobile di una misura qualsiasi sarebbe una regola scritta da noi sulle sue
+cose. La rete avvisa, non impedisce — come tutto il resto di questo giro.
+
+### 2 · La sovrapposizione ≥ 30 cm è aritmetica scritta, non geometria
+
+Dichiarata qui e nel codice, **insieme al «meno due per giunzione»**: sono
+due numeri della stessa natura. Nessuno ha misurato che a 29 cm non ci si
+sieda — è la soglia sotto la quale due tavoli che si toccano non fanno un
+piano su cui apparecchiare.
+
+**Vista lavorare sui dati veri, e il validatore l'ha confermata per conto
+suo**: T5-T8 e T6-T7 stanno a distanza **zero** e hanno sovrapposizione
+**−190** (cioè nessuna), e correttamente **non** risultano accostati. Senza
+quella soglia, quattro tavoli che si sfiorano agli spigoli sarebbero diventati
+un tavolone.
+
+### 3 · `greatest(somma − 2·giunzioni, 0)` — limite dichiarato, e una domanda
+
+**Fatta l'aritmetica prima di chiedere.** La regola non è approssimativa sui
+blocchi: quattro quadrati 2×2 fanno un quadrato di 180×180, e la regola dà
+16 − 2·4 = **8**, che è esattamente «due per lato». Tre in fila danno 8, e un
+3×3 darebbe 12 — sempre il perimetro. **Il taglio a zero non si attiva in
+nessuna disposizione ragionevole.**
+
+⚠️ **Resta che, se si attivasse, nasconderebbe in silenzio un risultato
+assurdo** — ed è la famiglia dello scarto a zero. Dichiarato come limite. **La
+domanda ad Alessio è se 8 su un blocco 2×2 è il numero che si aspetta**: la
+geometria dice di sì, ma è la sua sala. Se dicesse un altro numero, non è la
+regola a essere sbagliata — è che quel caso vuole una correzione a mano, che
+esiste già.
+
+### 4 · La resurrezione della correzione — decisa, e la schermata lo diceva a metà
+
+🔴 **Il difetto vero era la frase, non il comportamento.** La schermata diceva
+solo *«decade e torna quello calcolato»*, e poi rifacendo lo stesso
+accostamento nello stesso giorno il numero **tornava**: la schermata prometteva
+una cosa e il gestionale ne faceva un'altra.
+
+**Decisione, scritta invece che subita**: la riga **non si cancella**. Un
+trascinamento per sbaglio non deve distruggere un numero scritto a mano, e la
+correzione è legata a *quei tavoli in quella giornata* — se tornano insieme, è
+di nuovo il caso per cui era stata scritta. **Ora la schermata lo dice per
+intero**: «non lo perdi — se rimetti insieme gli stessi tavoli oggi stesso,
+torna anche il tuo numero».
+
+### 5 · Le correzioni orfane
+
+Un array non può avere una chiave esterna, quindi il vincolo si scrive come
+**reazione**: un trigger su `dining_tables` che, cancellata una sagoma,
+**toglie le correzioni che la nominano**. ⚠️ Cancella la riga **intera** e non
+l'elemento: togliere un tavolo da un insieme lo farebbe combaciare con un
+gruppo *diverso*, cioè un numero deciso per tre tavoli finirebbe addosso a due.
+
+⚠️ **Provato nei due versi**: la correzione che nomina la sagoma sparita se ne
+va, **e** una che non la nomina resta. Senza il secondo, un trigger che
+cancellasse tutto avrebbe passato il primo.
+
+⚠️ **Il caso che il trigger non prende, dichiarato**: una **ricostruzione** rifà
+le sagome con identificativi nuovi senza cancellare le vecchie, quindi le
+orfanerebbe tutte in un colpo — la lezione del giro A. Non si chiude con un
+vincolo: si chiude sapendo che `correzioni_coperti` è **un appunto per una
+giornata, non uno storico**. Se un giorno servisse conservarlo, servirà prima
+una regola su quanto.
+
+### E la colonna che il connettore chiedeva
+
+`dining_tables.updated_at`, aggiunta **adesso perché adesso si tocca quella
+tabella**. Non serve a sorvegliare nessuno: serve perché una verifica futura
+possa distinguere da sola **«non l'ho toccata»** da **«l'ho toccata e rimessa
+uguale»** — cosa che oggi il connettore non può dire e che è rimasta sulla
+parola.
+
+⚠️ **Nasce senza valore predefinito** (lezione del 14/08): su una riga già
+esistente un predefinito dichiarerebbe una modifica mai avvenuta. Vuoto vuol
+dire «mai toccata da quando la colonna esiste», che è la verità — e la verifica
+controlla proprio questo, che **nessuna delle 13 sagome preesistenti dichiari
+una modifica**. Si chiama `updated_at` e non `aggiornato_il` perché
+`set_updated_at()` scrive quel nome, e riusarla su un nome diverso fallisce a
+tempo di esecuzione (trappola del 12/08).
+
+---
+
+## Le due scelte che la validazione ha riconosciuto migliori del richiesto
+
+Registrate qui **come scelte** e non come dettagli, perché siano ripetibili:
+
+1. **L'autore lo scrive il database, non la schermata.** La schermata non può
+   dimenticarlo, e non c'è nessun campo da passare che qualcuno possa omettere.
+   È la **cura strutturale** della famiglia dei 33 posti dove una dimenticanza
+   sbaglia in silenzio — invece di aggiungere il trentaquattresimo.
+2. **`dining_tables_formato_check` è un biconditional** (`(tipo = 'tavolo') =
+   (formato_id is not null)`) e non due controlli separati. Il verso che conta
+   è quello meno ovvio: **impedisce a un tavolo senza formato di sparire in
+   silenzio** dall'`inner join` di `coperti_del_giorno()`, cioè di far
+   risultare la sala più piccola del vero senza nessun errore.
+
+E un terzo, di forma: `is not distinct from` sul confronto dell'autore, perché
+con `auth.uid()` nullo un `=` darebbe `NULL` — che a schermo si legge «non
+l'ho fatto io», cioè una risposta al posto di «non lo so».
+
+---
+
 ## Cosa NON è verificato
 
 - ⚠️ **Nessuna mano vera l'ha ancora usato.** Il numero sulla sagoma, la
@@ -390,6 +523,12 @@ Corretto — è una descrizione di come sono messi, non una regola.
   silenziosa. La pianta base ha un controllo sulle sovrapposizioni, la
   disposizione di una giornata no. Non è stato chiuso in questo giro:
   un'occlusione è un errore di trascinamento, non un tavolone.
+- **Il taglio a zero di `greatest()`** non è mai stato visto attivarsi, perché
+  non si attiva su nessuna disposizione ragionevole (vedi rilievo 3). Resta un
+  ramo di codice mai percorso.
+- **Il trigger delle correzioni orfane non è mai scattato su una sagoma vera**:
+  le sagome si disattivano, non si cancellano. È provato solo su sagome create
+  dalla verifica.
 - **`prova:base` non semina né formati né correzioni**: lo stato di partenza
   del progetto di prova non ha ancora una serata con un tavolone corretto a
   mano da guardare.
