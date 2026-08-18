@@ -224,6 +224,22 @@ export default function SalaEOrari() {
                         direbbe «puo' servire una seconda volta» a chiunque
                         pranzi. Vuota = non deciso, e quel servizio ha due
                         fasce invece di tre. */}
+                    {/* ⚠️ «Ultimi arrivi» NON chiude niente: dopo
+                        quest'ora si prenota, si arriva e si viene serviti.
+                        Serve solo a colorare il tavolo di arancio sulla
+                        pianta. Il nome dice questo di proposito — uno che
+                        somigliasse a una chiusura, fra tre mesi, verrebbe
+                        usato per impedire qualcosa. */}
+                    <span className="text-xs text-b58-charcoal-soft">ultimi arrivi dalle</span>
+                    <CampoAutosalvato
+                      type="time"
+                      value={o.ora_ultimi_arrivi?.slice(0, 5) ?? ""}
+                      onSave={(v) =>
+                        esegui(() => updateServiceHour(o.id, { ora_ultimi_arrivi: v || null }))
+                      }
+                      className={inputClass}
+                      disabled={!o.attivo}
+                    />
                     <span className="text-xs text-b58-charcoal-soft">primo giro fino alle</span>
                     <CampoAutosalvato
                       type="time"
@@ -349,6 +365,21 @@ export default function SalaEOrari() {
             <p className="text-xs text-b58-charcoal-soft/80 mt-1">
               Un conto chiuso all'una di notte appartiene alla <strong>sera prima</strong>, non al
               giorno dopo. Fino a quest'ora la sala continua a mostrare la serata in corso.
+            </p>
+          </div>
+          <div>
+            <label className={labelClass}>Ogni quanti minuti un orario sul sito</label>
+            <CampoAutosalvato
+              type="number"
+              value={regole?.passo_prenotazioni_minuti ?? ""}
+              onSave={(v) =>
+                esegui(() => updateRegolePrenotazione({ passo_prenotazioni_minuti: Number(v) }))
+              }
+              className={`${inputClass} w-full`}
+            />
+            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+              Con 15, il sito propone 20:00, 20:15, 20:30… Deve dividere l&apos;ora esatta,
+              altrimenti la griglia si sposterebbe di ora in ora.
             </p>
           </div>
           <div>

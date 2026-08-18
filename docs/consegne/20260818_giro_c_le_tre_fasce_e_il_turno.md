@@ -6,10 +6,13 @@ punti **3 + 4**. Segue i giri [A](20260818_giro_a_la_sala_non_si_perde.md) e
 
 - **HEAD dichiarato**: `a008c8c`
 - **Working tree**: pulito
-- **Migrazione**: `20260818000004_le_tre_fasce_e_il_turno.sql`
+- **Migrazioni**: `20260818000004_le_tre_fasce_e_il_turno.sql`,
+  `20260818000005_il_giallo_comprende_la_sua_ora.sql`,
+  `20260818000006_gli_orari_veri_e_il_passo.sql`
 - **Prove**: **60** pure (erano 53) + **157** sul progetto di prova (erano 151)
 - **Lint**: zero avvisi · **Build**: ok
-- **In produzione**: ⏳ non ancora applicata
+- **In produzione**: la `…004` è **applicata** (133 migrazioni); la `…005` e la
+  `…006` ⏳ non ancora
 
 ---
 
@@ -238,3 +241,129 @@ usa-e-getta cancellato.
 I tavoli prenotati adesso hanno tre colori invece di due, e dove c'è un
 secondo turno la sala legge **entro che ora liberare** — anche in Comande. E
 dopo mezzanotte il gestionale sa che è ancora la sera prima.
+
+
+---
+
+## La coda del giro C: gli orari veri, e i due numeri che non erano uno
+
+### 🔴 «Fino a che ora si prenota» e «da che ora è arancio» sono DUE numeri
+
+Il rilievo è nato fermandosi invece che indovinando, e la risposta stava nelle
+parole di Alessio. `ultimo_ingresso` faceva **un lavoro solo** — *fin quando il
+sito offre orari* — e i suoi numeri ne chiedono due:
+
+| | si prenota fino alle | arancio dalle |
+|---|---|---|
+| **cena** | **22:30** | **22:00** (quindi 22:00 · 22:15 · 22:30) |
+| **pranzo** | **14:00** | **14:00** — coincidono |
+
+Con una casella sola bisognava scegliere fra **offrire meno orari** (mettendo
+22:00) e **colorare meno tavoli** (mettendo 22:30). Nessuna delle due è ciò che
+ha chiesto.
+
+⚠️ **E NESSUNO DEI DUE NUMERI CHIUDE NIENTE.** Alle 22:30 si prenota, si
+arriva e si viene serviti; l'ora dell'arancio serve **solo a colorare il tavolo
+sulla pianta**. Per questo la colonna si chiama `ora_ultimi_arrivi` e in
+schermata è **«ultimi arrivi dalle»** — un nome che somigliasse a una chiusura
+(`ora_limite`, `fine_servizio`) verrebbe usato, fra tre mesi, per **impedire**
+qualcosa. È la stessa forma del «verde avvisa, non blocca» che questo mandato
+ripete da tre giri.
+
+⚠️ **Facoltativa, e vuota vale quanto l'ultimo orario prenotabile** — che è il
+caso del pranzo. Renderla obbligatoria vorrebbe dire, nel caso normale,
+**ripetere un altro campo**: il doppione che poi si contraddice.
+
+### Il giallo comprende la propria ora — e senza, era vuoto per costruzione
+
+La precisazione («giallo fino all'ora del primo turno **compresa**») non era un
+dettaglio di scrittura. Coi suoi orari **il primo slot prenotabile coincide con
+l'ora del primo turno** (cena 20:00/20:00, pranzo 12:30/12:30): con la regola
+stretta il giallo **non avrebbe mai toccato nessuno** — una fascia che esiste
+nel codice ed è vuota per costruzione. Tutto acceso, e muto.
+
+⚠️ **Provato sul bordo esatto**, che è il solo punto in cui la correzione cambia
+qualcosa: un arrivo *all'ora* del primo turno era «pieno» e ora è «presto». E
+anche il quarto d'ora dopo, perché un `<=` diventato per sbaglio un confronto
+sempre vero passerebbe la prima. **Terzo caso in due giorni in cui il risultato
+arriva dal chiedersi come far fallire una prova.**
+
+### Il passo dei 15 minuti, e il buco delle 20:07 — chiusi insieme
+
+Le tre misure chieste sul form pubblico:
+
+1. **non è un campo libero**: è un **elenco** di orari generato da
+   `public_reservation_options`;
+2. **il passo di 15 minuti era scritto dentro quella funzione** — un numero di
+   Alessio nel posto sbagliato, come la soglia dei 25 prima di ieri. Ora è
+   `service_settings.passo_prenotazioni_minuti`, con un vincolo che pretende
+   che **divida l'ora esatta** (altrimenti la griglia si sposterebbe di ora in
+   ora);
+3. **la finestra era difesa nel database, il passo no**: chi inviava a mano le
+   **20:07** passava. È la stessa forma del vocabolario chiuso in tre posti —
+   la schermata offre un elenco, e chi non passa dalla schermata non è tenuto a
+   rispettarlo.
+
+**Chiusi nello stesso passaggio**, ed è il criterio del rimando applicato al
+contrario: la colonna «arrivati N di M» fu rimandata perché *l'avrei fatta con
+meno attenzione di quanta ne merita*; qui il contesto è già aperto, e riaprirlo
+fra due giorni costerebbe di più.
+
+⚠️ **Misurato prima**: **0 orari fuori griglia** su 4 prenotazioni in
+produzione. Nessuna sanatoria, nessuna riga da decidere — l'argomento per farlo
+adesso invece che con le prenotazioni vere dentro.
+
+⚠️ **La difesa è un TRIGGER e vale solo per il varco pubblico.** Sulla tabella
+e non dentro la funzione, così vale anche per una funzione futura che
+dimenticasse il controllo. E solo su `source = 'form_pubblico'`, perché **dalla
+pianta Alessio deve poter scrivere le 20:07** se un cliente arriva alle 20:07:
+il freno sta dove sta il rischio. **Provato nei due versi** — respinto da
+fuori, accettato da dentro.
+
+### Gli orari veri, scritti una volta sola
+
+Cena **20:00 → 22:30** (primo giro 20:00, ultimi arrivi 22:00), pranzo
+**12:30 → 14:00** (primo giro 12:30). ⚠️ **La sanatoria si applica una volta e
+basta**, e la guardia è il registro delle migrazioni: questi sono **dati suoi**,
+e rieseguirli a ogni riapplicazione riporterebbe indietro un orario cambiato
+dalla schermata — lo stesso difetto del giro A, dove una ricostruzione gli
+buttava via la sala.
+
+---
+
+## L'app sull'iPhone — misurato, e l'ipotesi regge
+
+Alessio ha messo il gestionale sulla schermata iniziale; toccando l'icona si
+apre in Safari e rientrando riparte dalla pagina iniziale.
+
+**Misurato**: **nessun manifest**, **nessun meta iOS**, **nessuna icona** in
+`public/` né in `index.html` (c'è solo il `viewport`). È **un segnalibro, non
+un'app**: il sintomo è spiegato per intero.
+
+⚠️ **E la parte che si temeva non c'è**: il collegamento principale usa i
+valori predefiniti di Supabase (`persistSession`, `autoRefreshToken`), quindi la
+sessione si conserva già — e **da installata dura di più**, perché iOS smette di
+ripulire lo spazio delle app aggiunte alla schermata. Alessio rifarà l'accesso
+**una volta**, non a ogni rientro.
+
+Quindi l'installabile **può stare nel giro E**, con la sequenza già decisa:
+**prima si misura lo spazio verticale guadagnato**, poi si dimensiona la pianta
+— altrimenti la si dimensiona su un'area che sta per cambiare. Restano da fare
+in quel giro: ricordare l'ultima schermata e riaprirla (**verificato forzando
+la chiusura**, non solo passando a un'altra app), perché iOS può chiudere l'app
+quando ha bisogno di memoria.
+
+⚠️ **Da dire ad Alessio quando sarà pronto**: deve **togliere il collegamento
+vecchio** dalla schermata iniziale e rifarlo.
+
+---
+
+## Un buco dichiarato, e NON colmato
+
+**Non esiste nessuna eccezione per una data precisa.** Si può cambiare solo la
+griglia settimanale: chiusura per ferie, festa con orario diverso, evento
+privato con orari suoi non hanno dove essere scritti. Per il **periodo** la
+griglia basta — ed è ciò che Alessio ha chiesto; per il **singolo giorno** no.
+
+Non è stato colmato di proposito: **allargare il giro C sarebbe il difetto che
+continuiamo a evitare.** Voce a sé negli appunti.

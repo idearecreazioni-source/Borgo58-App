@@ -87,15 +87,26 @@ beforeAll(async () => {
   // alla fine rimette quello che c'era — non «quello giusto».
   const { data: righe } = await titolare
     .from("service_hours")
-    .select("id, weekday, servizio, attivo, ora_primo_turno")
+    .select("id, weekday, servizio, attivo, apertura, ultimo_ingresso, ora_primo_turno, ora_ultimi_arrivi")
     .in("weekday", [3, 0]);
   orariPrima = righe;
 
   for (const r of righe) {
     if (r.weekday === 3 && r.servizio === "cena") {
+      // ⚠️ La prova dichiara il proprio orario PER INTERO invece di
+      // ereditarne metà: sono gli orari veri di Alessio (cena 20:00 →
+      // 22:30, primo giro alle 20:00, ultimi arrivi dalle 22:00), e
+      // scriverli qui rende la prova indipendente da cosa ha lasciato
+      // l'ultima migrazione.
       await titolare
         .from("service_hours")
-        .update({ attivo: true, ora_primo_turno: "20:00" })
+        .update({
+          attivo: true,
+          apertura: "20:00",
+          ultimo_ingresso: "22:30",
+          ora_primo_turno: "20:00",
+          ora_ultimi_arrivi: "22:00",
+        })
         .eq("id", r.id);
     }
     if (r.weekday === 0 && r.servizio === "pranzo") {
@@ -103,7 +114,13 @@ beforeAll(async () => {
       // nessuno l'ha decisa, e quel servizio ha due fasce invece di tre.
       await titolare
         .from("service_hours")
-        .update({ attivo: true, ora_primo_turno: null })
+        .update({
+          attivo: true,
+          apertura: "12:30",
+          ultimo_ingresso: "14:00",
+          ora_primo_turno: null,
+          ora_ultimi_arrivi: null,
+        })
         .eq("id", r.id);
     }
   }
@@ -126,7 +143,13 @@ afterAll(async () => {
   for (const r of orariPrima) {
     await titolare
       .from("service_hours")
-      .update({ attivo: r.attivo, ora_primo_turno: r.ora_primo_turno })
+      .update({
+        attivo: r.attivo,
+        apertura: r.apertura,
+        ultimo_ingresso: r.ultimo_ingresso,
+        ora_primo_turno: r.ora_primo_turno,
+        ora_ultimi_arrivi: r.ora_ultimi_arrivi,
+      })
       .eq("id", r.id);
   }
   await titolare.auth.signOut({ scope: "local" });
@@ -134,22 +157,25 @@ afterAll(async () => {
 
 describe("Le fasce e il turno", () => {
   it("1 · a cena le fasce sono tre, e i confini sono gli orari di quel servizio", async () => {
-    await prenota(CENA, "19:30", t1);
-    await prenota(CENA, "20:30", t2);
-    await prenota(CENA, "22:30", t1);
+    // ⚠️ Gli orari veri: il primo slot COINCIDE con l'ora del primo giro,
+    // quindi il giallo vale per le 20:00 esatte e basta. E l'arancio
+    // comincia alle 22:00, PRIMA dell'ultimo orario prenotabile (22:30).
+    await prenota(CENA, "20:00", t1);
+    await prenota(CENA, "21:00", t2);
+    await prenota(CENA, "22:15", t1);
 
     const turni = await getTurniDelGiorno(CENA);
-    expect(alleOre(turni, "19:30").fascia).toBe("presto");
-    expect(alleOre(turni, "20:30").fascia).toBe("pieno");
-    expect(alleOre(turni, "22:30").fascia).toBe("tardi");
-    expect(alleOre(turni, "19:30").servizio).toBe("cena");
+    expect(alleOre(turni, "20:00").fascia).toBe("presto");
+    expect(alleOre(turni, "21:00").fascia).toBe("pieno");
+    expect(alleOre(turni, "22:15").fascia).toBe("tardi");
+    expect(alleOre(turni, "20:00").servizio).toBe("cena");
   });
 
   it("2 · la nota c'è dove c'è un turno dopo, e solo lì", async () => {
     const turni = await getTurniDelGiorno(CENA);
-    const presto = turni.find((t) => t.ora.startsWith("19:30"));
-    const pieno = turni.find((t) => t.ora.startsWith("20:30"));
-    const tardi = turni.find((t) => t.ora.startsWith("22:30"));
+    const presto = turni.find((t) => t.ora.startsWith("20:00"));
+    const pieno = turni.find((t) => t.ora.startsWith("21:00"));
+    const tardi = turni.find((t) => t.ora.startsWith("22:15"));
 
     expect(presto.liberare_entro).toBeTruthy();
     // Il tavolo di mezzo non ha nessuno dopo: nessuna nota.
@@ -160,20 +186,20 @@ describe("Le fasce e il turno", () => {
 
   it("3 · la nota segue la seconda prenotazione se si sposta", async () => {
     const prima = await getTurniDelGiorno(CENA);
-    const tardi = prima.find((t) => t.ora.startsWith("22:30"));
+    const tardi = prima.find((t) => t.ora.startsWith("22:15"));
     await titolare
       .from("reservations")
-      .update({ reservation_time: "23:00" })
+      .update({ reservation_time: "22:30" })
       .eq("id", tardi.reservation_id);
 
     const dopo = await getTurniDelGiorno(CENA);
-    const presto = dopo.find((t) => t.ora.startsWith("19:30"));
-    expect(presto.liberare_entro.startsWith("23:00")).toBe(true);
+    const presto = dopo.find((t) => t.ora.startsWith("20:00"));
+    expect(presto.liberare_entro.startsWith("22:30")).toBe(true);
   });
 
   it("4 · e sparisce se la seconda viene annullata", async () => {
     const turni = await getTurniDelGiorno(CENA);
-    const tardi = turni.find((t) => t.ora.startsWith("23:00"));
+    const tardi = turni.find((t) => t.ora.startsWith("22:30"));
     // Annullata, non cancellata: è il gesto vero della sala.
     await titolare
       .from("reservations")
@@ -181,7 +207,7 @@ describe("Le fasce e il turno", () => {
       .eq("id", tardi.reservation_id);
 
     const dopo = await getTurniDelGiorno(CENA);
-    const presto = dopo.find((t) => t.ora.startsWith("19:30"));
+    const presto = dopo.find((t) => t.ora.startsWith("20:00"));
     expect(presto.liberare_entro).toBeNull();
   });
 
