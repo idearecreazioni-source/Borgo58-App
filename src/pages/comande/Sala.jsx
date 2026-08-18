@@ -181,7 +181,7 @@ export default function Sala() {
     setError("");
     setLoadingOrder(true);
     try {
-      const orderId = await apriConto(selezione);
+      const orderId = await apriConto(selezione, { serata });
       const full = await getOrder(orderId);
       setOrder(full);
       setSelezione([]);

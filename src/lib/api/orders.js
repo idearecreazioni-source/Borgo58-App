@@ -54,11 +54,22 @@ export async function getOrder(id) {
 //
 // entity_id non si passa: le comande sono sempre della S.r.l.s. e lo
 // decide un default lato database (20260804000006).
-export async function apriConto(tavoliIds, { deviceId, note } = {}) {
+// ⚠️ LA SERATA SI PASSA, non la calcola il database — ed è la condizione
+// scritta nel giro C: «se serve sapere che sera è, si usa UN SOLO POSTO e
+// lo si nomina». Quel posto è `serataDiServizio()`. Calcolarla dentro la
+// funzione SQL avrebbe scritto il dodicesimo punto dell'elenco dei posti
+// dove il database chiede da sé che giorno è, e la serata di un locale che
+// chiude all'una non coincide col giorno di calendario.
+//
+// Serve perché il conto si aggancia alla PRENOTAZIONE di quella serata su
+// quel tavolo. Senza serata il legame resta vuoto: si perde
+// l'informazione, non si scrive quella sbagliata.
+export async function apriConto(tavoliIds, { deviceId, note, serata } = {}) {
   const esito = await eseguiOperazione("apri_conto", {
     p_tavoli: tavoliIds,
     p_device_id: deviceId || null,
     p_note: note || null,
+    p_serata: serata || null,
   });
   return esito?.order_id ?? null;
 }
