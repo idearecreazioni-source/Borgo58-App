@@ -548,6 +548,14 @@ export default function PiantaGiornata() {
                               {" "}
                               corretto a mano · la regola direbbe {g.coperti_calcolati}
                               {g.ragione ? ` · ${g.ragione}` : ""}
+                              {/* ⚠️ CHI e QUANDO, perché una correzione senza
+                                  autore è un numero che nessuno può spiegare
+                                  tre giorni dopo — e quel numero decide se si
+                                  accetta gente. «Un altro accesso» e non un
+                                  nome: oggi si entra per ruolo e non per
+                                  persona, e dire un nome sarebbe inventarlo. */}
+                              {g.corretto_il &&
+                                ` · ${g.corretto_da_me ? "l'hai messo tu" : "da un altro accesso"} il ${formatDate(g.corretto_il.slice(0, 10))}`}
                             </span>
                           ) : (
                             <span className="text-[12px] text-b58-charcoal-soft"> calcolato</span>

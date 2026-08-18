@@ -221,6 +221,11 @@ describe("I coperti dentro il tavolo", () => {
     // saprebbe quale dei due si sta guardando.
     expect(gruppoDi(gruppi, quadrati[0].id).coperti_calcolati).toBe(2 * baseQ - 2);
     expect(gruppoDi(gruppi, quadrati[0].id).ragione).toBe("uno contro il muro");
+    // ⚠️ Chi e quando: una correzione senza autore è un numero che nessuno
+    // può spiegare tre giorni dopo. Lo scrive il database, non la
+    // schermata — quindi qui si controlla che sia arrivato davvero.
+    expect(gruppoDi(gruppi, quadrati[0].id).corretto_da_me).toBe(true);
+    expect(gruppoDi(gruppi, quadrati[0].id).corretto_il).toBeTruthy();
     expect(gruppoDi(gruppi, lunghi[0].id).coperti).toBe(11);
 
     // Il tavolone si sposta INTERO: stesso insieme, geometria ricalcolata
