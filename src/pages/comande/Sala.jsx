@@ -23,8 +23,7 @@ import {
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
-import { ritardiDellaSerata, segnoDelTavolo } from "../../lib/calcoli/ritardo";
-import LegendaSala from "../../components/LegendaSala";
+import { ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -240,31 +239,34 @@ export default function Sala() {
     for (const g of gruppi) {
       for (const id of g.tavoli ?? []) s[id] = { coperti: g.coperti, corretto: g.corretto };
     }
+    // Quello che si sa del SINGOLO tavolo. Il segno però si decide per
+    // insieme: tre tavoli accostati sono un tavolone, e un tavolone si
+    // colora intero (richiesta di Alessio, 18/08).
+    const fatti = {};
     for (const sagoma of sagome) {
       const conto = orderForTable(sagoma.id);
       const sopra = prenotazioniPerTavolo.get(sagoma.id) ?? [];
-      // Le fasce dei soli clienti che devono ancora sedersi: chi ha già il
-      // conto aperto ha smesso di essere un'ora e ha cominciato a essere un
-      // tavolo da servire.
-      const fasce = [
-        ...new Set(
-          sopra
-            .filter((id) => !ritardi.perPrenotazione.get(id)?.arrivata)
-            .map((id) => fasciaDi.get(id))
-            .filter(Boolean)
-        ),
-      ];
-      const segno = segnoDelTavolo({
-        selezionato: conto ? conto.id === order?.id : selezione.includes(sagoma.id),
+      fatti[sagoma.id] = {
+        // ⚠️ Solo il conto che si sta servendo: la selezione col dito la
+        // disegna già la pianta, e propagarla al gruppo prometterebbe di
+        // aprire tre tavoli mentre se ne apre uno.
+        selezionato: Boolean(conto) && conto.id === order?.id,
         contoAperto: Boolean(conto),
-        fasce,
+        // Le fasce dei soli clienti che devono ancora sedersi: chi ha già il
+        // conto aperto ha smesso di essere un'ora e ha cominciato a essere un
+        // tavolo da servire.
+        fasce: sopra
+          .filter((id) => !ritardi.perPrenotazione.get(id)?.arrivata)
+          .map((id) => fasciaDi.get(id)),
         inRitardo: ritardi.tavoli.has(sagoma.id),
-      });
-      s[sagoma.id] = { ...s[sagoma.id], ...segno };
+      };
+    }
+    for (const [id, segno] of Object.entries(segniDellaSala({ sagome, gruppi, fatti }))) {
+      s[id] = { ...s[id], ...segno };
     }
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sagome, gruppi, openOrders, order, selezione, prenotazioniPerTavolo, fasciaDi, ritardi]);
+  }, [sagome, gruppi, openOrders, order, prenotazioniPerTavolo, fasciaDi, ritardi]);
 
   // L'elenco della serata, in ordine di ora: quello che chi serve guarda
   // quando suona il campanello. Porta il tavolo, che è il dato che manca di
@@ -635,23 +637,16 @@ export default function Sala() {
             stretto e resta sdraiata quando c&apos;è spazio: è lo stesso locale, girato — non
             un&apos;altra disposizione.
           </p>
-          {/* ⚠️ LA LEGENDA DICHIARA LA PRECEDENZA, e non è la vecchia riga
-              con un quadratino in più. Prima elencava due colori; adesso i
-              segni sono cinque e uno copre l'altro — senza dirlo, chi cerca
-              il verde su un tavolo diventato scuro conclude che il gestionale
-              ha sbagliato. L'ordine non è scritto qui: è lo stesso dato con
-              cui si decide il colore. */}
-          <LegendaSala
-            chiavi={["selezionato", "occupato", "presto", "pieno", "tardi", "misto"]}
-            testi={{
-              selezionato: "il conto che stai servendo",
-              occupato: "sono seduti: c'è un conto aperto",
-              presto: "primo giro — può liberarsi per una seconda serata",
-              pieno: "occupa la serata",
-              tardi: "ultimo giro",
-              misto: "sullo stesso tavolo due giri",
-            }}
-          />
+          {/* ⚠️ QUI C'ERA LA LEGENDA DEI COLORI, TOLTA DA ALESSIO il 18/08
+              perché la considera superflua — conosce i suoi colori. Gli era
+              stata proposta anche la via di mezzo (nasconderla dietro un
+              tocco, per chi lavorerà in sala e non li ha imparati), e ha
+              scelto di toglierla.
+              ⚠️ La conseguenza va detta invece di essere subita: **la
+              precedenza dei segni resta dichiarata solo nel codice**
+              (`segnoDelTavolo` in lib/calcoli/ritardo.js) **e nel riepilogo
+              del giro D2**. Il giorno che entrerà personale nuovo, è di lì
+              che va ripescata — non da questa schermata. */}
         </div>
       )}
 

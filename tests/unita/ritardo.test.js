@@ -4,8 +4,8 @@ import {
   contoProvaArrivo,
   ritardiDellaSerata,
   ritardoPrenotazione,
+  segniDellaSala,
   segnoDelTavolo,
-  vociLegenda,
 } from "../../src/lib/calcoli/ritardo";
 import { istanteDellaSerata, serataDiServizio } from "../../src/lib/calcoli/serata";
 
@@ -184,26 +184,95 @@ describe("La precedenza dei segni sulla sala", () => {
   });
 });
 
-describe("La legenda dichiara la precedenza", () => {
-  it("mette le voci nell'ordine in cui vincono, non in quello in cui le ricevi", () => {
-    // ⚠️ La prova al contrario: le chiavi si passano nell'ordine sbagliato
-    // apposta. Se la legenda le stampasse così come arrivano, direbbe che la
-    // fascia oraria viene prima del conto aperto — cioè il contrario di
-    // quello che si vede sulla pianta.
-    const voci = vociLegenda(["tardi", "occupato", "selezionato"], {
-      tardi: "ultimo giro",
-      occupato: "sono seduti",
-      selezionato: "lo stai toccando",
+describe("Il tavolone si colora intero", () => {
+  // La sala della foto di Alessio: T7·T8·T9 accostati, T3 da solo, e un
+  // divano che in nessun gruppo compare perché non è un tavolo.
+  const sagome = [{ id: "t7" }, { id: "t8" }, { id: "t9" }, { id: "t3" }, { id: "divano" }];
+  const gruppi = [{ tavoli: ["t7", "t8", "t9"] }, { tavoli: ["t3"] }];
+
+  it("la prenotazione agganciata a UN tavolo colora tutti quelli accostati", () => {
+    // ⚠️ È la richiesta di Alessio: nella sua foto T8 era colorato e T7 e T9
+    // bianchi, mentre i tre sono un tavolone solo. Stesso principio del giro
+    // B — se l'unità è il gruppo per contare i coperti, lo è per il colore.
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t8: { fasce: ["pieno"] } },
     });
-    expect(voci.map((v) => v.chiave)).toEqual(["selezionato", "occupato", "tardi"]);
-    expect(voci[0].testo).toBe("lo stai toccando");
+    expect(segni.t7.colore).toBe("pieno");
+    expect(segni.t8.colore).toBe("pieno");
+    expect(segni.t9.colore).toBe("pieno");
   });
 
-  it("mostra solo i segni che quella schermata sa fare", () => {
-    // In Calendario non esiste «conto aperto»: una legenda che lo elencasse
-    // prometterebbe un colore che lì non compare mai.
-    const voci = vociLegenda(["presto", "pieno", "tardi", "misto", "selezionato"]);
-    expect(voci.map((v) => v.chiave)).not.toContain("occupato");
-    expect(voci).toHaveLength(5);
+  it("e NON esce dal tavolone — la gemella al contrario", () => {
+    // Senza questa, una funzione che colorasse tutta la sala passerebbe
+    // la prova qui sopra.
+    const segni = segniDellaSala({ sagome, gruppi, fatti: { t8: { fasce: ["pieno"] } } });
+    expect(segni.t3.colore).toBeNull();
+    expect(segni.divano.colore).toBeNull();
+  });
+
+  it("una sagoma che in nessun gruppo compare resta un insieme di uno", () => {
+    // Divani e Chef Table non sono tavoli e non entrano nel conteggio della
+    // cena, ma si prenotano: senza questo ramo sparirebbero dai colori.
+    const segni = segniDellaSala({ sagome, gruppi, fatti: { divano: { fasce: ["tardi"] } } });
+    expect(segni.divano.colore).toBe("tardi");
+    expect(segni.t7.colore).toBeNull();
+  });
+
+  it("IL CASO INCROCIATO: due fasce diverse sul tavolone fanno «misto»", () => {
+    // ⚠️ Dal giro C sullo stesso tavolone possono esserci due prenotazioni in
+    // due fasce (un giallo alle 19:30 su T7, un arancio alle 22:30 su T9). Il
+    // gruppo non sceglie fra le due e non inventa una precedenza: le fasce si
+    // uniscono, ed è la regola che valeva già per due prenotazioni sullo
+    // stesso tavolo singolo.
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t7: { fasce: ["presto"] }, t9: { fasce: ["tardi"] } },
+    });
+    expect(segni.t7.colore).toBe("misto");
+    expect(segni.t8.colore).toBe("misto");
+    expect(segni.t9.colore).toBe("misto");
+  });
+
+  it("il conto aperto su un tavolo del gruppo copre la fascia di TUTTI", () => {
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t7: { contoAperto: true }, t9: { fasce: ["tardi"] } },
+    });
+    expect(segni.t8.colore).toBe("occupato");
+  });
+
+  it("la sbarratura si propaga: se uno tarda, il tavolone è tutto in gioco", () => {
+    const segni = segniDellaSala({ sagome, gruppi, fatti: { t9: { inRitardo: true } } });
+    expect(segni.t7.barrato).toBe(true);
+    expect(segni.t8.barrato).toBe(true);
+    expect(segni.t3.barrato).toBe(false);
+  });
+
+  it("LA SELEZIONE NON SI PROPAGA — è l'unica cosa esclusa, ed è voluto", () => {
+    // ⚠️ Toccare un tavolo per aggiungerlo a un conto riguarda QUEL tavolo:
+    // colorando tutto il gruppo, lo schermo prometterebbe di aprirne tre
+    // mentre ne apre uno. La selezione risponde al dito, e il dito ne ha
+    // toccato uno solo.
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t8: { selezionato: true, fasce: ["pieno"] } },
+    });
+    expect(segni.t8.colore).toBe("selezionato");
+    expect(segni.t7.colore).toBe("pieno");
+    expect(segni.t9.colore).toBe("pieno");
+  });
+
+  it("ma la sbarratura passa anche sopra il tavolo selezionato", () => {
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t8: { selezionato: true }, t9: { inRitardo: true } },
+    });
+    expect(segni.t8).toEqual({ colore: "selezionato", barrato: true });
   });
 });

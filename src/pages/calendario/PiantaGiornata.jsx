@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
-import LegendaSala from "../../components/LegendaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
-import { ritardiDellaSerata, segnoDelTavolo } from "../../lib/calcoli/ritardo";
+import { ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -323,17 +322,21 @@ export default function PiantaGiornata() {
         s[id] = { coperti: g.coperti, corretto: g.corretto };
       }
     }
+    // Quello che si sa del singolo tavolo; il segno si decide per INSIEME —
+    // tre tavoli accostati sono un tavolone, e un tavolone si colora intero
+    // (richiesta di Alessio, 18/08). «Selezionato» non passa di qui: la
+    // scelta in corso la disegna la pianta da sé, ed è del singolo tavolo.
+    const fatti = {};
     for (const sagoma of sagome) {
       const altri = (perTavolo.get(sagoma.id) ?? []).filter((a) => a.reservation.id !== evidenziata);
-      const fasce = [...new Set(altri.map((a) => fasciaPerPrenotazione.get(a.reservation.id)).filter(Boolean))];
-      const segno = segnoDelTavolo({
-        // Qui «selezionato» lo gestisce la pianta da sé (la scelta in corso),
-        // quindi non passa da qui: resta il colore dell'ora e la sbarratura.
-        fasce,
+      fatti[sagoma.id] = {
+        fasce: altri.map((a) => fasciaPerPrenotazione.get(a.reservation.id)),
         inRitardo: ritardi.tavoli.has(sagoma.id),
-      });
+      };
+    }
+    for (const [id, segno] of Object.entries(segniDellaSala({ sagome, gruppi, fatti }))) {
       if (!segno.colore && !segno.barrato) continue;
-      s[sagoma.id] = { ...s[sagoma.id], ...segno };
+      s[id] = { ...s[id], ...segno };
     }
     return s;
   }, [sagome, perTavolo, evidenziata, fasciaPerPrenotazione, gruppi, ritardi]);
@@ -756,24 +759,12 @@ export default function PiantaGiornata() {
 
           {/* La legenda dei colori: la scritta che non sta dentro il
               tavolo, detta una volta invece che su ognuno. */}
-          {/* ⚠️ ELENCAVA QUATTRO COLORI E NON DICEVA CHE UNO NE COPRE UN
-              ALTRO. Adesso la precedenza arriva dallo stesso dato con cui il
-              colore viene deciso, quindi la spiegazione non può più
-              raccontare un ordine diverso da quello che si vede. La
-              sbarratura si dichiara solo sulla serata in corso: sulle altre
-              date non compare, e una legenda che promettesse un segno
-              impossibile sarebbe peggio di nessuna legenda. */}
-          <LegendaSala
-            chiavi={["selezionato", "presto", "pieno", "tardi", "misto"]}
-            testi={{
-              selezionato: "i tavoli che stai scegliendo adesso",
-              presto: "primo giro — il tavolo può liberarsi per una seconda serata",
-              pieno: "occupa la serata",
-              tardi: "ultimo giro — arriva dopo l'ultimo ingresso",
-              misto: "sullo stesso tavolo due giri",
-            }}
-            conRitardo={ritardi.perPrenotazione.size > 0}
-          />
+          {/* ⚠️ QUI C'ERA LA LEGENDA DEI COLORI, TOLTA DA ALESSIO il 18/08
+              perché la considera superflua. La conseguenza, detta invece che
+              subita: **la precedenza dei segni resta dichiarata solo nel
+              codice** (`segnoDelTavolo` in lib/calcoli/ritardo.js) **e nel
+              riepilogo del giro D2** — è di lì che va ripescata il giorno che
+              entrerà in sala qualcuno che non conosce i colori a memoria. */}
 
           <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
             <span>

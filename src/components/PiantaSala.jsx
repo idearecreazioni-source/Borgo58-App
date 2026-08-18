@@ -4,7 +4,6 @@ import {
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
 } from "../lib/api/sala";
-import { COLORI } from "../lib/coloriSala";
 import {
   GRIGLIA_CM,
   RIDUZIONE_DISEGNO,
@@ -81,8 +80,43 @@ export const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDU
 // devono accordarsi. Il rapporto è scritto in `lib/calcoli/sala.js`, in un
 // posto solo — prima stavano in due file che non si nominavano.
 
-// I colori vivono in lib/coloriSala.js: li leggono il disegno e la legenda,
-// e due copie divergerebbero alla prima ritoccata.
+const COLORI = {
+  libero: { riempimento: "var(--color-b58-parchment)", bordo: "var(--color-b58-charcoal)" },
+  selezionato: {
+    riempimento: "var(--color-b58-terracotta)",
+    bordo: "var(--color-b58-terracotta-dark)",
+  },
+  // ⚠️ SCURO, E FINO AL 18/08 ERA DORATO. Il cambio non è estetico: dal giro
+  // D2 le fasce arrivano anche in Comande, e lì il dorato vuol già dire
+  // «primo giro». Sulla stessa schermata lo stesso quadratino avrebbe detto
+  // «sono seduti» su un tavolo e «arriveranno presto» su quello accanto, e
+  // nessuna legenda può disfare un'ambiguità così: chi guarda non ha modo di
+  // sapere quale dei due sta guardando. Il terracotta della selezione resta
+  // doppio (è anche la fascia «ultimo giro»), e lì l'ambiguità si scioglie da
+  // sé — il tavolo selezionato è al massimo uno, ed è quello che hai appena
+  // toccato tu.
+  occupato: { riempimento: "var(--color-b58-charcoal-soft)", bordo: "var(--color-b58-charcoal)" },
+  prenotato: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  // ⚠️ LE TRE FASCE DELLA SERATA (idea di Alessio, 14/08; il terzo colore
+  // è del 18/08). Non è un vincolo e non impedisce niente: è l'ora resa
+  // visibile senza doverla leggere.
+  //   giallo  = arriva prima dell'ora del primo giro → il tavolo può
+  //             servire una seconda volta;
+  //   verde   = arriva a servizio avviato → il tavolo resta suo;
+  //   arancio = arriva dopo l'ultimo ingresso → è l'ultimo turno, e può
+  //             stare sullo stesso tavolo di un giallo.
+  // ⚠️ I confini NON sono qui e non sono due ore fisse: vengono dagli
+  // orari **di quel servizio** (`service_hours`). La domenica è pranzo, e
+  // tre fasce calcolate sugli orari della cena direbbero «primo giro» a
+  // chiunque pranzi.
+  presto: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
+  pieno: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  tardi: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
+  // Mezzo e mezzo: sul tavolo c'è più di una fascia — tipicamente un
+  // giallo e un arancio, che è proprio il secondo giro.
+  misto: { riempimento: "url(#mezzoEmezzo)", bordo: "var(--color-b58-olive-dark)" },
+  fisso: { riempimento: "var(--color-b58-cream-dark)", bordo: "var(--color-b58-charcoal-soft)" },
+};
 
 
 // ⚠️ IL SEGNO CHE IL MAGNETE HA PRESO, e deve vedersi MENTRE si trascina,

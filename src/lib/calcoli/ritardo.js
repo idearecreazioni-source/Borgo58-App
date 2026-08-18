@@ -152,34 +152,25 @@ export function ritardiDellaSerata({
 // 3. LA PRECEDENZA — quale segno vince, e in che ordine
 // =====================================================================
 //
-// ⚠️ LA PRECEDENZA È UN DATO, NON UNA CATENA DI `if`. La legenda si costruisce
-// da qui, quindi non può raccontare un ordine diverso da quello che il disegno
-// applica: fino a oggi le due legende elencavano dei colori senza dire che uno
-// ne copre un altro, e *un colore che ne sovrascrive altri, senza che la
-// legenda lo dica, si legge come un colore che non esiste da nessuna parte*
-// (mandato, giro D).
+// ⚠️ DOVE VIVE LA PRECEDENZA, DOPO IL 18/08. Questa consegna l'aveva scritta
+// **due volte**: qui come regola, e in una legenda a schermo che la elencava
+// per chi guarda. Alessio ha deciso di **togliere le legende** — le ha
+// giudicate superflue — e la conseguenza va detta invece di essere subita:
+// **da oggi la precedenza è dichiarata solo nel codice e nel riepilogo del
+// giro D2.** Chi entrerà in sala senza aver seguito questi giorni non ha in
+// schermata niente che gli spieghi perché un tavolo prenotato per le 20 si è
+// fatto scuro. È il posto da cui ripescarla il giorno che servirà.
+//
+// L'ordine, che è quello scritto nel corpo della funzione:
+//   1. SELEZIONATO — è la risposta al dito di chi guarda, e un tavolo che non
+//      cambia quando lo si tocca è un tavolo che sembra rotto;
+//   2. CONTO APERTO — sono seduti, e la fascia ha già fatto il suo lavoro;
+//   3. LA FASCIA ORARIA — presto / pieno / tardi, o «misto» se ce n'è più di
+//      una sullo stesso insieme di tavoli;
+//   4. niente — il tavolo resta com'è disegnato.
 //
 // ⚠️ E LA SBARRATURA NON È IN QUESTA GARA: è un secondo canale, che si
 // aggiunge sopra qualunque colore. Vedi sotto il perché.
-export const PRECEDENZA = [
-  {
-    chiave: "selezionato",
-    ordine: 1,
-    // Sta in cima perché è la risposta al dito di chi guarda: un tavolo che
-    // non cambia quando lo si tocca è un tavolo che sembra rotto.
-    perche: "è la risposta al tuo tocco, e dura un istante",
-  },
-  {
-    chiave: "occupato",
-    ordine: 2,
-    perche: "sono seduti: la fascia ha già fatto il suo lavoro",
-  },
-  { chiave: "tardi", ordine: 3, perche: "l'ora di arrivo" },
-  { chiave: "pieno", ordine: 3, perche: "l'ora di arrivo" },
-  { chiave: "presto", ordine: 3, perche: "l'ora di arrivo" },
-  { chiave: "misto", ordine: 3, perche: "l'ora di arrivo" },
-  { chiave: "libero", ordine: 4, perche: "nessuno l'ha ancora chiesto" },
-];
 
 /**
  * Che segno porta un tavolo. UNA funzione per le due schermate.
@@ -194,8 +185,8 @@ export const PRECEDENZA = [
  * La sbarratura non è subordinata a niente: passa sopra tutto, compreso il
  * tavolo selezionato, e non toglie l'ora di arrivo a chi la stava leggendo.
  *
- * @returns { colore, barrato } — `colore` è una chiave di PRECEDENZA (o null
- *          quando la sagoma non ha niente da dire e resta com'è disegnata).
+ * @returns { colore, barrato } — `colore` è una delle chiavi elencate qui
+ *          sopra, oppure null quando la sagoma non ha niente da dire.
  */
 export function segnoDelTavolo({ selezionato, contoAperto, fasce = [], inRitardo }) {
   const colore = selezionato
@@ -208,15 +199,83 @@ export function segnoDelTavolo({ selezionato, contoAperto, fasce = [], inRitardo
   return { colore, barrato: Boolean(inRitardo) };
 }
 
+// =====================================================================
+// 4. IL TAVOLONE SI COLORA INTERO — richiesta di Alessio, 18/08
+// =====================================================================
+//
+// *«Non possiamo far sì che i tavoli uniti prenotati o con comande aperte
+// cambino tutti di colore?»* — guardando la sua foto: T7·T8·T9 sono un
+// tavolone, la prenotazione è agganciata a T8, e T7 e T9 restavano bianchi.
+//
+// ⚠️ NON È UNA RIFINITURA: È LO STESSO PRINCIPIO DEL GIRO B. Lì un tavolone
+// ha **un** numero di coperti e non tre, perché l'unità che si guarda per
+// decidere è il gruppo. Se l'unità è il gruppo per il conteggio, deve esserlo
+// anche per il colore — altrimenti la stessa sala dice «qui c'è posto per
+// otto» e «due di questi tre tavoli sono liberi», che non possono essere vere
+// insieme.
+//
+// ⚠️ E IL CONTO APERTO GIÀ SI COMPORTAVA COSÌ, misurato: un conto sta su un
+// INSIEME di tavoli (`order_tables` ha una riga per ciascuno), quindi tutte e
+// tre le sagome trovavano il proprio conto e si coloravano. A restare
+// indietro era solo la **prenotazione**, che è agganciata ai soli tavoli che
+// Alessio ha scelto.
+//
+// ⚠️ IL CASO INCROCIATO, DICHIARATO INVECE CHE LASCIATO AL CASO. Dal giro C
+// sullo stesso tavolone possono esserci due prenotazioni in due fasce diverse
+// (un giallo alle 19:30 su T7, un arancio alle 22:30 su T9). Il gruppo NON
+// sceglie fra le due e non prende quella «più importante»: le fasce si
+// uniscono, e due fasce diverse fanno **«misto»** — che è esattamente la
+// regola che già esisteva per due prenotazioni sullo stesso tavolo singolo.
+// Nessuna precedenza nuova inventata da chi scrive il codice.
+//
+// ⚠️ E LA SELEZIONE NON SI PROPAGA, che è l'unica cosa esclusa. Toccare un
+// tavolo per aggiungerlo a un conto o a una prenotazione riguarda **quel**
+// tavolo: colorando tutto il gruppo, lo schermo prometterebbe di aprirne tre
+// mentre ne apre uno. La selezione risponde al dito, e il dito ne ha toccato
+// uno solo.
+
 /**
- * Le voci della legenda, nell'ordine in cui vincono.
+ * Gli insiemi di tavoli con cui la sala si guarda.
  *
- * Ogni schermata passa le chiavi che sa mostrare e la frase con cui chiama
- * la selezione — in Calendario è «i tavoli che stai scegliendo», in Comande
- * «il conto che stai servendo»: la stessa precedenza, due mestieri.
+ * I gruppi li conta il database (`coperti_del_giorno`), e comprendono anche i
+ * tavoli singoli — un tavolo da solo è un insieme di uno. Le sagome che in
+ * nessun gruppo compaiono (divani, Chef Table: non sono tavoli e non entrano
+ * nel conteggio della cena) diventano insiemi di uno qui, perché anche loro
+ * si prenotano e si colorano.
  */
-export function vociLegenda(chiavi, testi = {}) {
-  return PRECEDENZA.filter((v) => chiavi.includes(v.chiave))
-    .sort((a, b) => a.ordine - b.ordine)
-    .map((v) => ({ ...v, testo: testi[v.chiave] ?? v.chiave }));
+export function insiemiDiTavoli(sagome = [], gruppi = []) {
+  const insiemi = gruppi.map((g) => g.tavoli ?? []).filter((t) => t.length > 0);
+  const dentro = new Set(insiemi.flat());
+  for (const s of sagome) if (!dentro.has(s.id)) insiemi.push([s.id]);
+  return insiemi;
+}
+
+/**
+ * Il segno di ogni sagoma, deciso UNA VOLTA PER INSIEME e poi dato a tutti i
+ * suoi tavoli.
+ *
+ * @param sagome  le sagome della pianta
+ * @param gruppi  i tavoloni come li conta il database
+ * @param fatti   { [sagomaId]: { contoAperto, fasce, inRitardo, selezionato } }
+ *                — quello che ciascuna schermata sa del singolo tavolo
+ * @returns { [sagomaId]: { colore, barrato } }
+ */
+export function segniDellaSala({ sagome = [], gruppi = [], fatti = {} }) {
+  const segni = {};
+  for (const insieme of insiemiDiTavoli(sagome, gruppi)) {
+    const dentro = insieme.map((id) => fatti[id] ?? {});
+    const delGruppo = segnoDelTavolo({
+      contoAperto: dentro.some((f) => f.contoAperto),
+      fasce: [...new Set(dentro.flatMap((f) => f.fasce ?? []).filter(Boolean))],
+      inRitardo: dentro.some((f) => f.inRitardo),
+    });
+    for (const id of insieme) {
+      // La selezione resta del singolo tavolo, e si rimette qui sopra: è
+      // l'unico segno che risponde al dito invece di descrivere il gruppo.
+      segni[id] = fatti[id]?.selezionato
+        ? { colore: "selezionato", barrato: delGruppo.barrato }
+        : delGruppo;
+    }
+  }
+  return segni;
 }
