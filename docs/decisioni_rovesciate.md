@@ -47,6 +47,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 9 | 18/08/2026 | *Un tocco sulla sagoma vuol dire tre cose diverse* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 10 | 18/08/2026 | *Un tocco fa sempre la stessa cosa: apre il riquadro* (18/08, rovescia il n. 9) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 11 | 18/08/2026 | *La riga «è lo stesso locale girato» sta su entrambe le schermate* (17/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 12 | 18/08/2026 | *Il riquadro del sold out, la scomposizione dei posti, un comando per ogni tavolo spostato* | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -383,3 +384,39 @@ computer no: lì il Calendario mostra la sala sdraiata e le Comande in piedi, e
 diversamente senza niente che glielo spieghi**. Il fatto resta vero — le due
 schermate chiedono la pianta alla stessa funzione e ricevono le stesse
 coordinate — sparisce la frase che lo diceva.
+
+---
+
+## 12 · 18/08/2026 — «il riquadro del sold out, e l'elenco dei tavoli rimessi a posto uno per uno»
+
+⚠️ **È il quarto rovesciamento della stessa giornata sullo stesso tema**, e va
+letto insieme ai nn. 7, 8 e 11: cambia il **peso** delle cose a schermo, non le
+regole.
+
+**Cosa era stato deciso, e quando.** Nei giri precedenti: «Per questa sera
+siamo al completo» era un **riquadro** con la sua spiegazione sotto, i posti
+liberi portavano la loro **scomposizione** («31 in questa disposizione · 6
+prenotati») e i tavoli spostati avevano **un collegamento per ciascuno**
+(«rimetti T5 a posto»).
+
+**La ragione di allora.** Ogni pezzo aveva la sua: il sold out è l'unico freno
+alle richieste dal sito e sembrava meritare spazio; la scomposizione spiega da
+dove viene il numero; il collegamento per tavolo permette di rimetterne a posto
+uno solo.
+
+**Cosa si decide adesso.** Il sold out diventa **un interruttore piccolo sulla
+riga della data**; la scomposizione **sparisce** e resta il numero grande; dei
+tavoli spostati resta **un comando solo**, «rimetti tutti a posto».
+
+**Perché le ragioni di allora non valgono più — anzi: valgono ancora, e il
+prezzo è dichiarato.** ⚠️ **Nessuna delle tre regole è toccata**: il sold out
+frena esattamente come prima (e il rifiuto sta dentro la funzione pubblica, non
+nella casella); il numero dei posti è lo stesso; un tavolo si rimette a posto
+da solo **trascinandolo**, che è come lo si è mosso. Quello che cambia è quanto
+spazio si prendono.
+⚠️ **E un prezzo c'è, sui posti liberi**: quel numero conta i **soli tavoli** e
+lascia fuori divani e Chef Table — sono due formule diverse, chi chiama per
+cenare vuole un tavolo. Finché lo legge Alessio va bene, perché la regola l'ha
+decisa lui; **per chi verrà dopo è un numero che sembra dire «la sala tiene 25»
+e non lo dice**, e ora non c'è più niente a schermo che lo spieghi. Sta
+nell'elenco delle sette spiegazioni tolte, che è lo stesso elenco.

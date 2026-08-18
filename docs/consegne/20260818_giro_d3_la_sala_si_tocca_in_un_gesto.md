@@ -4,11 +4,11 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `28d20dc` (la prima metà del giro è `8222222`; in mezzo c'è passato il collaudo di Alessio, e le sue due richieste sono il secondo commit)
+- **HEAD dichiarato**: `af29bc7` — il giro è in **tre commit di codice** (`8222222`, `28d20dc`, `af29bc7`) perché il collaudo di Alessio è passato **due volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
-- **Prove**: **107** pure (erano 102) + **174** sul progetto di prova (erano 172)
+- **Prove**: **111** pure (erano 102) + **174** sul progetto di prova (erano 172)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **niente da applicare**
 - **Contratto**: non toccato · **Corridoio**: non ridistribuito
@@ -67,9 +67,14 @@ E quelle che apre questo giro:
     **per persona** quella riga va rimessa a schermo — e diventerà leggibile
     all'indietro, perché nel frattempo è stata scritta lo stesso.
 13. 🟡 **Restano senza risposta due domande poste ad Alessio**: se il riquadro
-    ci sta nello schermo senza scorrere, e se i blocchetti del Calendario
-    Eventi si leggono meglio della tabella. Non le ha guardate perché era
-    sulla versione precedente al push.
+    sul tavolo **occupato** ci sta nello schermo senza scorrere, e se i
+    blocchetti del Calendario Eventi si leggono meglio della tabella. Si è
+    fermato sui difetti prima di arrivarci. ✅ **La terza ha risposta**:
+    toccando un tavolo bianco **la pagina scorre da sola fino ai campi**.
+13-bis. 🟡 **La cura del difetto (b) non è stata vista da nessuno.** Il tocco su
+    un tavolo di un tavolone prenotato adesso apre il riquadro invece di
+    andare ai campi, e l'avviso compare da qualunque tavolo del gruppo: è
+    provato dalle prove pure sulla mappa dei gruppi, **mai da un dito**.
 14. 🔴 **Sul computer, da oggi, il Calendario mostra la sala sdraiata e le
     Comande in piedi senza niente che lo spieghi** (rovesciamento n. 11). Il
     fatto resta vero — le due schermate chiedono la pianta alla stessa
@@ -86,9 +91,9 @@ E quelle che apre questo giro:
 
 ## Cosa abbiamo rovesciato
 
-**Quattro rovesciamenti**, tutti nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. **8**, **9**,
-**10** e **11**), dove stanno per esteso con le quattro righe.
+**Cinque rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **12**),
+dove stanno per esteso con le quattro righe.
 
 ⚠️ **Sono tanti, e la ragione è una sola**: il collaudo di Alessio è passato
 **in mezzo** a questo giro. Il n. 10 rovescia il n. 9 di poche ore prima — non
@@ -181,17 +186,93 @@ registra chi e quando, e si vede»*.
 
 ---
 
+### 12 · il riquadro del sold out, la scomposizione dei posti, un comando per tavolo
+
+⚠️ **Quarto rovesciamento della giornata sullo stesso tema** (coi nn. 7, 8 e
+11): cambia il **peso** delle cose a schermo, non le regole.
+
+- **Cosa si decide adesso.** «Siamo al completo» diventa un **interruttore
+  piccolo sulla riga della data**; la scomposizione dei posti («31 in questa
+  disposizione · 6 prenotati») **sparisce** e resta il numero grande; dei
+  tavoli spostati resta **un comando solo**, «rimetti tutti a posto».
+- **Perché — le ragioni di allora valgono ancora, e il prezzo è dichiarato.**
+  ⚠️ **Nessuna delle tre regole è toccata**: il sold out frena come prima (e il
+  rifiuto sta dentro la funzione pubblica, non nella casella); il numero dei
+  posti è lo stesso; un tavolo si rimette a posto da solo **trascinandolo**,
+  che è come lo si è mosso.
+  ⚠️ **Il prezzo sta sui posti liberi**: quel numero conta i **soli tavoli** e
+  lascia fuori divani e Chef Table — sono due formule diverse, chi chiama per
+  cenare vuole un tavolo. Finché lo legge Alessio va bene, perché la regola
+  l'ha decisa lui; **per chi verrà dopo è un numero che sembra dire «la sala
+  tiene 25» e non lo dice**, e ora non c'è più niente a schermo che lo spieghi.
+
+---
+
+## 🔴 I due difetti trovati provando, e cosa hanno mostrato
+
+### (a) Il modulo che non se ne andava
+
+Togliendo l'ultimo tavolo, il modulo restava a schermo intitolato
+**«Prenotazione su nessun tavolo»**. *«Mi sembra poco sensato»* — ed è giusto:
+quel modulo esiste **perché** si è toccato un tavolo, e senza tavolo non ha più
+oggetto. È la famiglia della schermata che continua a proporre un gesto che non
+ha più senso.
+
+⚠️ **Ma la cura ovvia sarebbe stata peggiore del difetto**, e la misura è stata
+fatta prima di scrivere: far sparire un modulo con dentro **un nome e un
+telefono già digitati** è la perdita silenziosa del 12/08. Quindi il modulo se
+ne va **solo se non ci si è ancora scritto niente**; se c'è del lavoro dentro
+resta, e dice che manca il tavolo (il pulsante di conferma era già spento da
+sé).
+⚠️ **E «scritto» si misura sullo stato di partenza per intero**, non sul solo
+nome: chi ha già messo «6 persone alle 21» ha scritto qualcosa, anche senza
+aver digitato una lettera.
+
+### (b) L'avviso che compariva su un tavolo solo del tavolone
+
+Toccando T8 (prenotato) compariva *«su questi tavoli c'è già…»*; toccando T7 —
+**lo stesso tavolone** — non compariva.
+
+🔴 **Misurando, il difetto era più largo del messaggio: erano TRE i posti** che
+chiedevano «chi c'è su questo **tavolo**» invece che «su questo **tavolone**» —
+l'avviso, il riquadro, e **il tocco**.
+
+⚠️ **E il terzo era il peggiore**, perché non sbagliava un messaggio: **faceva
+contraddire il tocco col colore**. T7 si vede colorato — dal giro D2 il
+tavolone si colora intero — e si comportava da libero, andando dritto ai campi
+di una prenotazione nuova. Tutto il disegno del giro D3 poggia su *«bianco è
+libero, colorato ha qualcuno»* (è la ragione per cui il n. 10 può reggere due
+esiti), e lì quella regola **era falsa**.
+
+**La cura è una strada sola**, come chiesto: gli insiemi li conta già
+`insiemiDiTavoli`, che è quello che colora la sala. `insiemiPerTavolo` è **la
+stessa mappa girata** — da un tavolo al suo insieme — e una prova pura tiene
+ferma proprio quella proprietà: *il colore e il tocco devono raggruppare allo
+stesso modo*.
+
+---
+
 ## ⚠️ La documentazione a schermo ha un destinatario, e il destinatario cambia
 
 Rilievo del validatore, e vale più delle cinque righe che l'hanno prodotto.
 In tre giorni erano state aggiunte molte spiegazioni; **oggi Alessio ne ha
-tolte cinque in due passaggi** — le due legende dei colori, il paragrafo che
+tolte SETTE in tre passaggi** — le due legende dei colori, il paragrafo che
 spiegava il tocco, quello del «siamo al completo» e la riga sulla sala girata.
 
 ⚠️ **Non erano sbagliate**: erano rivolte a chi non sa, e lui ormai sa — quelle
 regole le ha decise lui. Quindi il criterio non è «una spiegazione in più non
 fa male»: una spiegazione che il lettore ha già in testa **è ingombro**, e
 l'ingombro su una schermata che si usa in servizio si paga in secondi.
+
+⚠️ **E il criterio più preciso, che vale oltre questo giro** (rilievo del
+validatore): *una spiegazione a schermo la si legge una volta e poi diventa
+arredamento*. Quindi va **dove sta il dubbio** — dentro il gesto, come
+l'avvertenza del righello che compare mentre si sposta il cursore — e **non
+sopra la schermata**, dove la si legge il primo giorno e mai più.
+⚠️ Alessio l'ha detto anche in forma generale, e sta in  §6 perché
+si legga **prima** di costruire: *«in generale preferisco una linea essenziale
+e minimal»*. Non è un commento su questa schermata: è il criterio con cui
+giudicherà tutte le altre.
 
 ⚠️ **E il problema tornerà, non nella stessa forma.** Il giorno che entrerà
 personale nuovo servirà di nuovo dire cosa fa un tocco e cosa vuol dire un
@@ -353,6 +434,5 @@ l'avesse apparecchiata**.
 ## Per Alessio, in una riga
 
 Tocca un tavolo **bianco** e sei già nei campi della prenotazione, col numero
-dei coperti lì accanto; tocca un tavolo **colorato** e si apre chi c'è già.
-**L'elenco dei tavoli che stava sotto la pianta non c'è più**: quello che
-facevi lì lo fai adesso toccando il tavolo.
+dei coperti lì accanto; tocca un tavolo **colorato** — anche se è colorato
+perché il suo vicino accostato è prenotato — e si apre chi c'è già.
