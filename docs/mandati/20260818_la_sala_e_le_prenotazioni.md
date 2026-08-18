@@ -313,8 +313,77 @@ cosa succede davvero su uno schermo da telefono prima di cambiarla.
 | **A** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_a_la_sala_non_si_perde.md)). Il punto 0: `--azzera` dichiara cosa butta via, e la sala «di sempre» può tornare | è un difetto che **agisce adesso** — ogni ricostruzione del progetto di prova costa ad Alessio il lavoro di ridisegnare la sala |
 | **B** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md)). I punti **2 + 1**: i coperti dentro il tavolo, poi «c'è posto?» | il secondo **non esiste senza il primo**: senza i posti sul tavolo non c'è niente da contare. E il 2 tocca un vincolo del database, quindi va da solo |
 | **C** | ✅ **FATTO il 18/08** ([riepilogo](../consegne/20260818_giro_c_le_tre_fasce_e_il_turno.md)). I punti **3 + 4**: le tre fasce e «da liberare entro le…» | ⚠️ **non si separano**: il 3 senza il 4 è una regola che vale solo sulla carta, perché in servizio nessuno la vede |
-| **D** | I punti **5 + 6** e il **4-bis**: evidenziazione incrociata, lista riordinata e i lati di giunzione come linea sottile | sono la stessa fatica vista da due lati, e toccano le stesse due schermate |
+| **D** | ⏭️ **IL PROSSIMO.** I punti **5 + 6** (il 4-bis è andato col giro E): evidenziazione incrociata, lista riordinata e i lati di giunzione come linea sottile | sono la stessa fatica vista da due lati, e toccano le stesse due schermate. ⚠️ **Tre cose decise il 18/08 dopo il giro E**, sotto |
 | **E** | ⏭️ **IL PROSSIMO** (deciso da Alessio il 18/08, dopo il giro C), insieme alla **linea di giunzione sottile** del 4-bis. Il punto **7**: la pianta nello schermo | ⚠️ **Non è una rifinitura: è ciò che sblocca il collaudo di tutto il resto.** Ogni prova che Alessio fa dal telefono — e le prenotazioni si prendono per lo più da lì — **inciampa nella pianta troppo grande prima ancora di arrivare a ciò che stava provando**. Ed è la seconda volta che ci inciampa. Va con la linea di giunzione perché sono la stessa mano sulla stessa pianta |
 
 ⚠️ **Il punto 0 non è un preliminare da sbrigare**: è l'unico che oggi fa
 perdere lavoro vero a ogni ricostruzione.
+
+
+---
+
+## Il giro D — cosa è già deciso, prima di cominciare (18/08, dopo il giro E)
+
+### 1. «Arrivato» non si segna: si deduce. Terza strada, di Alessio
+
+*«Il tavolo si presume arrivato quando viene aperta la comanda e, se dopo 30
+minuti non viene ancora aperta, il tavolo diventa rosso — così vediamo a colpo
+d'occhio se un cliente ha sforato l'orario utile per conservargli il tavolo e
+poterlo eventualmente riassegnare.»*
+
+⚠️ **Batte tutte e due le strade che avevo proposto** (un quinto stato,
+oppure un orario di arrivo) per una ragione sola: **non chiede a nessuno di
+segnare niente.** L'arrivo si deduce da un gesto che in sala si fa comunque,
+quindi non esiste il caso «arrivato ma nessuno l'ha segnato» — che è il modo in
+cui questi campi muoiono. E risponde alla domanda operativa vera, che non è
+*«è arrivato?»* ma **«posso ridare via questo tavolo?»**.
+
+- **I 30 minuti sono un parametro di Alessio**, in *Sala e orari*, come la
+  soglia dei 25 coperti. Non un numero nel codice.
+- **Il rosso prende tutto il tavolo** al posto del colore della fascia, non si
+  aggiunge come bordo. Sua decisione, con la ragione: *il ritardo è l'unica
+  delle due informazioni su cui deve agire subito.*
+- ⚠️ **Il rosso è CALCOLATO, mai scritto**: nasce dal confronto fra l'ora
+  della prenotazione, i minuti di tolleranza e l'esistenza del conto. Nessuna
+  colonna «in ritardo» — sarebbe un dato che invecchia da solo.
+- ⚠️ **La legenda deve dichiarare la precedenza.** Oggi elenca quattro voci; un
+  colore che ne sovrascrive altri, senza che la legenda lo dica, si legge come
+  un colore che non esiste da nessuna parte.
+
+### 2. Le due colonne sul computer — RIMANDATE, con la ragione
+
+Deciso da Alessio dopo la misura: per farcele stare la pianta dovrebbe girare
+in piedi anche sul monitor, cioè **rovesciare la decisione della mattina** — e
+il computer non è mai stato il problema. Con l'elenco dei tavoli che sparisce
+(punto 4 qui sotto) c'è anche **meno da mettere di fianco**. Si riprendono
+quando si lavorerà sul computer sul serio.
+
+### 3. La seconda lista — dentro il giro D, e la cura è sua
+
+*«Nella schermata eventi bisogna scorrere verso destra per vedere tutti i
+dettagli delle prenotazioni, mentre basterebbe fare come è dentro la sala dove
+i dati vanno a capo.»*
+
+Sul telefono ogni prenotazione diventa **un blocchetto con le informazioni a
+capo**, non una riga di tabella che scorre di lato. Sul computer la tabella
+resta: lì funziona, ed è la stessa distinzione del punto 2 — *si cura dove fa
+male.* ⚠️ **E il tavolo entra fra le informazioni**: oggi non c'è, ed è il
+dato che serve di più a chi guarda dal telefono. ⚠️ **I due mestieri restano
+separati**: quella schermata cerca fra tutte le date, l'altra governa una
+giornata. Non si fondono.
+
+### 4. Il riquadro del tavolo — richiesta di Alessio
+
+Sparisce l'elenco dei tavoli sotto la pianta coi pulsanti «Correggi il
+numero». Toccando un tavolo si apre **un riquadro con tutto**: prendere o
+aprire la prenotazione **e** la casella dei coperti insieme, non due gesti
+diversi. Le altre due informazioni dell'elenco — quali tavoli sono accostati,
+chi ha corretto e quando — le considera superflue **a schermo**.
+
+⚠️ **Non si tolgono dal DATABASE**: «chi ha corretto e quando» lo scrive il
+trigger da sé, ed è ciò che permette di spiegare un numero tre giorni dopo. Se
+il riquadro ha spazio, una riga piccola in fondo costa poco.
+
+⚠️ **Il riquadro ASSORBE il tocco che oggi apre la prenotazione, non gli si
+affianca**: due strade per lo stesso gesto è il doppione che questo progetto
+continua a togliere.

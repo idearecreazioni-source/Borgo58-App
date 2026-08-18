@@ -399,3 +399,18 @@ la correzione a mano resta l'unico meccanismo che scrive*.
 ⚠️ Annotato apposta, con la richiesta accanto alla rinuncia: se torna fra sei
 mesi si riparte **da qui** — dalla via intermedia già disegnata e dalla
 ragione per cui il flag separato non si fa — e non da zero.
+
+### ✅ E la prova che lo scarto era GIUSTO, non solo prudente
+
+Misurato in produzione **dopo** la rinuncia, dal collegamento in sola lettura:
+
+    correzioni_coperti — 1 riga: T1 → 5 coperti, ragione «Contro il muro»,
+    data 2026-08-18
+
+Cioè: **la correzione a mano copre già il caso** per cui la mattina stessa
+stavamo per costruire un meccanismo apposta, e lo copre **in due tocchi**, con
+la ragione scritta accanto in parole sue. Non è una scelta prudente che
+rinuncia a una comodità: è che il meccanismo separato **non avrebbe aggiunto
+niente** se non una seconda strada allo stesso numero, con una precedenza da
+inventare. *Un caso d'uso che si risolve col meccanismo generale è la prova
+che il meccanismo speciale era di troppo.*
