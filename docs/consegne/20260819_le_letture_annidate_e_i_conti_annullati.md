@@ -130,7 +130,33 @@ c'è nessun punto in cui possa succedere davvero.
 
 ---
 
-**Commit del lavoro**: `02ce387` — «Le letture annidate misurate: il segnale
+## 5 · Le due precisazioni di Alessio, aggiunte a chiusura
+
+**"Non può succedere" non è una proprietà del programma.** Quello che è
+scritto sulle letture annidate ora dice **quando smetterebbe di valere**:
+nessun vincolo impedisce a un conto di avere mille righe, lo impedisce
+un'osteria da 34 coperti — e la risposta cambia il giorno in cui una lettura
+annidata nuova pesca da una tabella che **cresce nel tempo sotto un solo
+padre**. ⚠️ *Chi legge «non può succedere» fra un anno si ferma lì.* Riscritto
+in tutti e tre i posti: nel codice accanto al confronto che non le vede, nel
+referto e nella coda.
+
+**L'indizio non si costruisce** (decisione sua, e la ragione vale altrove):
+una protezione per un caso irraggiungibile è **un avviso che non scatta mai**,
+e un avviso che non scatta mai nessuno sa interpretarlo il giorno che scatta.
+
+**Le tre cose mai viste entrano nel collaudo generale con la RICETTA**
+([annotazioni](../collaudo/annotazioni.md), ultima sezione), perché sono tutte
+e tre invisibili nelle condizioni normali. ✅ **La prima ricetta è stata
+provata dal vivo**: milleduecento clienti finti sul progetto di prova, aperto
+Clienti, i due avvisi comparivano davvero (1000 su 1211). Righe poi tolte.
+⚠️ Per la riga del tablet **non si sposta l'orologio del computer** — si
+sposta l'ora di fine serata di due minuti e la si lascia scattare **senza
+toccare niente**, perché è quello il caso che deve coprire.
+
+---
+
+**Commit del lavoro**: `02ce387` e `7cd076f` (le due precisazioni); — «Le letture annidate misurate: il segnale
 non le vede, e il tetto è per riga padre». ⚠️ Quel commit porta **anche questo
 file** e l'addendum al referto: la consegna è fatta di una misura e di
 correzioni a documenti, e spezzarla avrebbe prodotto un commit di lavoro con
