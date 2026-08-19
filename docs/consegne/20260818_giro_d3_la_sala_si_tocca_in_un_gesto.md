@@ -4,11 +4,11 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `713d973` — il giro è in **otto commit di codice** perché il collaudo di Alessio è passato **sette volte** in mezzo alla consegna
+- **HEAD dichiarato**: `b27a3f9` — il giro è in **nove commit di codice** perché il collaudo di Alessio è passato **otto volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
-- **Prove**: **120** pure (erano 102) + **174** sul progetto di prova (erano 172)
+- **Prove**: **127** pure (erano 102) + **174** sul progetto di prova (erano 172)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **niente da applicare**
 - **Contratto**: non toccato · **Corridoio**: non ridistribuito
@@ -94,12 +94,21 @@ E quelle che apre questo giro:
     Cassa, Proiezione): Alessio ha deciso di **non misurarlo adesso**. La
     voce resta in coda, ed è quella che decide se è una cosa piccola o un
     lavoro a sé.
+18. 🟡 **Il varco fra le sagome è una proprietà della SALA DI OGGI, non del
+    codice** (rovesciamento n. 14): il disegno ingrandito regge perché il
+    varco più stretto misurato è 80 cm. **Il giorno che entra un mobile che
+    lo riduce sotto i 33, la misura va rifatta** — e nessun controllo
+    automatico se ne accorgerà.
+19. 🟡 **Da oggi lo spazio fra i tavoli si vede più stretto di com'è**, ed è
+    il prezzo del n. 14: chi guarda la pianta per capire se in un corridoio
+    ci si passa, sbaglia in difetto.
+
 ---
 
 ## Cosa abbiamo rovesciato
 
-**Sei rovesciamenti**, tutti nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **13**),
+**Sette rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **14**),
 dove stanno per esteso con le quattro righe.
 
 ⚠️ **Sono tanti, e la ragione è una sola**: il collaudo di Alessio è passato
@@ -853,3 +862,87 @@ che è il caso della fotografia.
   i dati sono di pochi secondi prima, e l'invio è avvenuto davvero.
 - **Quante altre schermate fanno più letture insieme** (Magazzino, Cassa,
   Proiezione): Alessio ha deciso di **non misurarlo adesso**. La voce resta.
+
+---
+
+## L'ottavo collaudo (19/08, foto delle 02:17) — e il rovesciamento più grosso
+
+### 🔴 Le sagome più grandi del vero — e la misura fatta prima di scrivere
+
+Alessio vuole tavoli più facili da afferrare col dito: *«giusto 2 o 3 mm in
+più»*. ⚠️ **Ha rifiutato le tre strade che conservavano la proporzione**
+(ingrandire tutta la pianta accettando lo scorrimento laterale, togliere dal
+disegno la metà di cucina e servizi, ingrandire solo i testi) e sceglie
+consapevolmente di **sacrificare la proporzione**. È il rovesciamento **n. 14**,
+e sta per esteso nel registro.
+
+**La misura, fatta prima di scrivere codice**, in produzione e in sola lettura,
+sulla pianta base e su tutte e tre le disposizioni di giornata esistenti:
+
+| | |
+|---|---|
+| varco più stretto fra due sagome che **non** si toccano | **80 cm** (i tre divani) |
+| quanto valgono 3 mm di schermo, sul suo telefono | **~32,6 cm di sala** |
+| quel varco, dopo l'ingrandimento | **47 cm** |
+| sagoma più vicina al muro | **T2, distanza zero** |
+
+**Via libera**: nessuna coppia di tavoli separati arriva a sembrare accostata —
+ed è la sola cosa su cui il disegno non poteva mentire, perché è quella su cui
+Alessio decide se accettare gente. ⚠️ **Ma al muro morde**, e lì la sagoma si
+taglia al perimetro: *un tavolo mezzo fuori dalla stanza è una cosa che il
+disegno non deve poter dire.*
+
+⚠️ **Se un domani entrasse in sala un mobile che riduce quel varco sotto i
+33 cm, la misura va rifatta**: non è una proprietà del codice, è una proprietà
+della sala di oggi.
+
+**Le quattro condizioni** poste dalla validazione sono rispettate e scritte nel
+registro: l'ingrandimento vive solo nel disegno; **il bersaglio di tocco segue
+la sagoma disegnata** (è tutto il punto); `pannelloNellaPianta()` guarda le
+misure **disegnate**, altrimenti tornerebbe il costo eliminato il 18/08 — il
+tavolo sotto il pannello; e al muro si taglia.
+
+### «Dai un tavolo» sembrava non fare niente — e l'ipotesi era giusta
+
+L'assegnazione compariva **sotto la pianta** mentre il pannello dentro la
+pianta si svuotava: con `modo === "assegna"` il contenuto del pannello non era
+previsto. ⚠️ **Era la stessa forma del difetto che la striscia doveva curare**:
+la cura giusta nel posto sbagliato.
+
+Adesso **dalla striscia non si scende**: si toccano i tavoli sulla pianta e si
+conferma da lì, con la via d'uscita accanto. Il blocco in fondo resta **solo
+per chi un tavolo ce l'ha già** (il «Cambia tavolo» dell'elenco) — due posti
+per lo stesso gesto sarebbero un doppione, e quello in fondo è proprio quello
+che non si vede.
+
+### Le altre tre
+
+- **Nella striscia il pulsante va a destra e il numero sotto il nome**: prima
+  erano scambiati, e la cosa che si tocca stava dove cade l'occhio invece che
+  dove cade il dito.
+- **Numero e note più grandi** in tutti e tre i posti. ⚠️ **Il numero è un
+  bersaglio di tocco, non una didascalia**: rispetta la soglia toccabile del
+  progetto come i campi. A 11 punti Alessio faticava a prenderlo, e lo spazio
+  per farlo grande c'è.
+- **Il bollino «da confermare» anche nella striscia** (rilievo della
+  validazione): lì finivano due cose che si leggevano uguali — una confermata a
+  cui manca il tavolo e una richiesta dal sito non ancora accettata. **Chiedono
+  due gesti diversi**: un tavolo l'una, una decisione l'altra.
+
+### La controprova — sei rotture, e tre hanno insegnato qualcosa
+
+| rottura | prove rosse |
+|---|---|
+| il pannello entra anche con un tavolo sotto | 3 |
+| le zone perdono il nome «tanto non si disegnano più» | 2 |
+| il pannello torna a guardare le misure vere | 1 |
+| **le sagome non crescono più** | **0** → mancava la prova |
+| **nessun taglio al muro** | **0** → mancava la prova |
+| **cresce del doppio per lato** | **0** → mancava la prova |
+
+⚠️ **Le tre righe in fondo sono il risultato che conta**: rompendo, si è
+scoperto che le regole appena scritte **non erano provate da niente**. Le prove
+sono state aggiunte, e la più istruttiva è quella sull'ingrandimento: non
+diventava rossa perché **tutte le prove gli passavano il numero a mano** invece
+di usare quello deciso. *Una prova che non usa il valore vero non lo sta
+provando* — ed è la seconda volta in due giorni che questa forma salta fuori.

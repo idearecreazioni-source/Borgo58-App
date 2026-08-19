@@ -49,6 +49,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 11 | 18/08/2026 | *La riga «è lo stesso locale girato» sta su entrambe le schermate* (17/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 12 | 18/08/2026 | *Il riquadro del sold out, la scomposizione dei posti, un comando per ogni tavolo spostato* | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 13 | 18/08/2026 | *Il numero e la frase che ne dichiara il limite viaggiano insieme* (15/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 14 | 19/08/2026 | *Il disegno dice il vero sullo spazio* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -491,3 +492,67 @@ la regola l'ha decisa lui; **per chiunque altro «25 posti liberi» si legge «l
 sala tiene 25»**, e non è quello che dice.
 ⚠️ **Il giorno che quel numero lo guarderà qualcun altro, la frase va
 rimessa** — ed è lo stesso giorno degli accessi per persona (nn. 8 e 7).
+
+---
+
+## 14 · 19/08/2026 — «il disegno dice il vero sullo spazio»
+
+**Cosa era stato deciso, e quando.** Dal **14/08**, con la pianta viva, e mai
+messo in discussione fino a oggi: le sagome si disegnano **in scala** — la
+proporzione fra i tavoli e la sala è quella vera, e quello che si vede sullo
+schermo corrisponde a com'è messa la stanza.
+
+**La ragione di allora.** È **la ragione per cui la pianta esiste**: Alessio la
+guarda per rispondere a «c'è posto?», e due tavoli separati che sembrassero un
+tavolone — o il contrario — gli farebbero accettare o rifiutare gente
+sbagliando. Il giro E aveva già dichiarato che *lo schermo dice «attaccati» e
+il numero dice «separati»* è il guasto peggiore che questa schermata può avere.
+
+**Cosa si decide adesso.** Le sagome si disegnano **3 mm più grandi del vero**
+(misurati sullo schermo, non in centimetri di sala). Deciso da Alessio: vuole
+tavoli più facili da afferrare col dito — *«giusto 2 o 3 mm in più»*.
+⚠️ **Ha rifiutato le tre strade che conservavano la proporzione**, e la scelta è
+consapevole: ingrandire tutta la pianta accettando lo scorrimento laterale,
+togliere dal disegno la metà occupata da cucina e servizi, ingrandire soltanto
+i testi.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora per intero, e il
+prezzo è stato MISURATO prima di accettarlo.** La ragione regge, e per questo
+non si è proceduto sulla fiducia: **qual è il varco più stretto fra due sagome
+che non si toccano?** Misurato in produzione, in sola lettura, sulla pianta
+base e su tutte e tre le disposizioni di giornata esistenti:
+
+| | |
+|---|---|
+| varco più stretto fra due sagome separate | **80 cm** (i tre divani) |
+| quanto vale 3 mm di schermo, sul telefono di Alessio | **~32,6 cm di sala** |
+| quel varco, dopo l'ingrandimento | **47 cm** — largo mezzo tavolo |
+| sagoma più vicina al muro | **T2, distanza zero** |
+
+Quindi: **nessuna coppia di tavoli separati arriva a sembrare accostata**, ed è
+la sola cosa su cui il disegno non poteva mentire. ⚠️ Se un domani entrasse in
+sala un mobile che riduce quel varco sotto i 33 cm, **la misura va rifatta**:
+non è una proprietà del codice, è una proprietà della sala di oggi.
+
+⚠️ **Il prezzo che si paga comunque**, e va scritto: da oggi lo spazio fra i
+tavoli **si vede più stretto di com'è**, e i corridoi della sala sembrano più
+angusti. Chi guarda la pianta per capire se ci si passa, sbaglia in difetto.
+
+**Le quattro condizioni, poste dalla validazione e rispettate.**
+- **(a) L'ingrandimento vive solo nel disegno.** Accostamento, coperti,
+  tavoloni e colore restano sulle misure vere: la regola *«nessuno legge
+  `larghezza_cm` senza passare da `misureSagoma()`»* non è stata toccata.
+- **(b) Il bersaglio di tocco segue la sagoma DISEGNATA**, ed è tutto il punto
+  della richiesta: il rettangolo che si vede **è** quello che intercetta il
+  dito. Un tavolo che si vede grande e si prende piccolo sarebbe peggio di
+  prima.
+- **(c) `pannelloNellaPianta()` guarda le misure disegnate**, col margine più
+  grande che l'ingrandimento può assumere. Guardando quelle vere, un tavolo
+  potrebbe apparire sopra la cucina senza far uscire il pannello — e finirgli
+  sotto, cioè **tornerebbe il costo eliminato il 18/08**. ⚠️ Il margine sbaglia
+  **per eccesso** su schermi larghi (il pannello esce un po' prima del
+  necessario): è la direzione giusta in cui sbagliare, si perde una comodità e
+  mai un gesto.
+- **(d) Al muro la sagoma si taglia.** T2 tocca il bordo in alto: senza taglio
+  uscirebbe dalla sala disegnata, e *un tavolo mezzo fuori dalla stanza è una
+  cosa che il disegno non deve poter dire*.
