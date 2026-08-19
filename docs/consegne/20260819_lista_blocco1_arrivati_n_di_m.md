@@ -216,5 +216,6 @@ dice «arrivati 5 di 20» invece di sparire o di riscriversi da sola.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
-**Working tree**: pulito.
+**Commit**: `3aa4aa5` — «La lista dice quanto ne è arrivato, e le righe
+ordinate tornano a vedersi».
+**Working tree**: pulito (questo riepilogo è l'ultimo commit della consegna).
