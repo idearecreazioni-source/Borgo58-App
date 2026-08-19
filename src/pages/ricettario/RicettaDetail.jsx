@@ -188,6 +188,9 @@ export default function RicettaDetail() {
 
   // Preparazioni e finger: stessa forma (una resa, non delle porzioni).
   const isPreparazione = eComponente(recipe.recipe_type);
+  // Il prezzo a pezzo invece è solo dei finger: su un piatto sarebbe un
+  // secondo prezzo accanto a quello della carta, e il database lo rifiuta.
+  const isFinger = recipe.recipe_type === "finger";
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 
@@ -237,6 +240,13 @@ export default function RicettaDetail() {
         tags: recipe.tags,
         notes: recipe.notes,
         menu_description: recipe.menu_description,
+        // ⚠️ Vuoto -> `null`, mai zero: zero vorrebbe dire «lo regalo».
+        // E su una ricetta che non è un finger si manda `null` comunque,
+        // altrimenti il database rifiuta con un messaggio suo.
+        prezzo_al_pezzo:
+          isFinger && String(recipe.prezzo_al_pezzo ?? "").trim() !== ""
+            ? Number(recipe.prezzo_al_pezzo)
+            : null,
       });
       setRecipe(saved);
       setCost(await getRecipeCost(id));
@@ -469,6 +479,33 @@ export default function RicettaDetail() {
                 onChange={(e) => handleHeaderChange("portions_yield", e.target.value)}
                 className={inputClass}
               />
+            </div>
+          )}
+
+          {/* 🔴 IL PREZZO A PEZZO — solo sui finger (19/08/2026, blocco 2 del
+              mandato). Serve per i clienti che si scelgono i bocconcini uno
+              per uno per un evento: la selezione ha il suo prezzo in carta,
+              il singolo bocconcino ha il suo.
+              ⚠️ Sta a schermo e non solo nel database perché un dato scritto
+              che nessuno può vedere è indistinguibile da un dato non scritto
+              (lezione del 18/08 sul legame conto-prenotazione).
+              ⚠️ E vuoto vuol dire «non l'ho ancora deciso», non «gratis»: per
+              questo si manda `null` e non zero. */}
+          {isFinger && (
+            <div>
+              <label className={labelClass}>Prezzo a pezzo (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={recipe.prezzo_al_pezzo ?? ""}
+                onChange={(e) => handleHeaderChange("prezzo_al_pezzo", e.target.value)}
+                className={inputClass}
+              />
+              <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
+                Quanto costa questo bocconcino venduto da solo. Lascialo vuoto finché non l&apos;hai
+                deciso: vuoto non vuol dire gratis.
+              </p>
             </div>
           )}
         </div>

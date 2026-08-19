@@ -40,9 +40,16 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    decine**. Farlo dopo significa fargliele rifare.
    ✅ **BLOCCO 1 FATTO il 19/08** — [consegna](consegne/20260819_i_finger_si_compongono.md),
    migrazione `20260819000012`: i finger sono un tipo a sé, entrano nelle
-   selezioni, non si ripetono, e un piatto finito resta fuori. **Restano il
-   blocco 2** (prezzo a pezzo e schermata per comporre) **e il blocco 3** (lo
-   storico dei costi).
+   selezioni, non si ripetono, e un piatto finito resta fuori.
+   🔄 **BLOCCO 2 A METÀ il 19/08** — [consegna](consegne/20260819_il_prezzo_al_pezzo.md),
+   migrazione `20260819000013`: il **prezzo a pezzo** sta sulla ricetta del
+   finger, un piatto finito non lo accetta, e vuoto vuol dire «non l'ho ancora
+   deciso». ⚠️ **La schermata per comporre una selezione è FERMA in attesa di
+   tre risposte di Alessio** — quanti tocchi per aggiungere un bocconcino, se
+   il costo si aggiorna sotto gli occhi mentre si compone, se una selezione si
+   può duplicare per farne una variante. *È la schermata su cui passerà ore di
+   seguito inserendo decine di ricette: sceglierle al posto suo costerebbe più
+   di chiederle.* **Resta poi il blocco 3** (lo storico dei costi).
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
    misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.

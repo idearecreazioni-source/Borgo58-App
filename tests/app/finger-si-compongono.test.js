@@ -161,6 +161,41 @@ describe("i finger si compongono, e un piatto finito no", () => {
     expect(error, "un finger è entrato nelle Produzioni").not.toBeNull();
   });
 
+  it("il prezzo a pezzo sta sul finger, e vuoto resta vuoto", async () => {
+    // ⚠️ Il prezzo a pezzo serve ai clienti che si scelgono i bocconcini per
+    // un evento. **Non è un secondo prezzo dello stesso oggetto** (decisione
+    // di Alessio): quello della carta è di un piatto, questo di un finger.
+    const { error: eOk } = await titolare
+      .from("recipes")
+      .update({ prezzo_al_pezzo: 2.5 })
+      .eq("id", fingers[0]);
+    expect(eOk, "un finger non ha accettato il prezzo a pezzo").toBeNull();
+
+    const { data } = await titolare
+      .from("recipes")
+      .select("prezzo_al_pezzo")
+      .eq("id", fingers[0])
+      .single();
+    expect(Number(data.prezzo_al_pezzo)).toBeCloseTo(2.5, 2);
+
+    // Vuoto = «non l'ho ancora deciso», che è diverso da gratis.
+    const { error: eVuoto } = await titolare
+      .from("recipes")
+      .update({ prezzo_al_pezzo: null })
+      .eq("id", fingers[0]);
+    expect(eVuoto).toBeNull();
+  });
+
+  it("un piatto finito NON può avere un prezzo a pezzo", async () => {
+    // Lì sarebbe davvero un secondo prezzo accanto a quello della carta —
+    // ed è la metà della contraddizione che si può impedire.
+    const { error } = await titolare
+      .from("recipes")
+      .update({ prezzo_al_pezzo: 9 })
+      .eq("id", piatto);
+    expect(error, "un piatto finito ha accettato un prezzo a pezzo").not.toBeNull();
+  });
+
   it("i finger si possono scegliere come componente dall'app", async () => {
     // ⚠️ Senza questo il database permetterebbe una cosa che nessuna
     // schermata può fare: codice che nessuno chiama (lezione del 18/08).
