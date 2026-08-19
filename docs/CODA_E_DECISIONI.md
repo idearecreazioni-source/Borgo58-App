@@ -60,11 +60,11 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    decide chi ha il tablet in mano.
    ⚠️ **Cosa resta aperto qui**: nessuna prova automatica guarda una
    schermata (in questo progetto non c'è un ambiente DOM), quindi che
-   l'avviso di Comande **si veda** non l'ha verificato nessuno; e il
-   predefinito del database su `cash_movements.movement_date` resta il
-   calendario mentre la schermata propone la serata — misurato che oggi
-   quel predefinito non lo usa nessuno (tutte e quattro le funzioni che
-   scrivono in prima nota passano una data), ma è una domanda per Alessio.
+   l'avviso di Comande **si veda** non l'ha verificato nessuno.
+   ✅ **E la domanda sul predefinito ha avuto risposta la sera stessa**: non
+   si allinea, **si toglie** — insieme agli altri sette (rovesciamento n. 18,
+   [consegna](consegne/20260819_niente_date_riempite_da_sole.md)). Un
+   predefinito allineato sarebbe stato *meno sbagliato*, non giusto.
 6. **Finire la serata recitata**: restano comande, storni, conto diviso,
    omaggio, chiusura, conteggio del cassetto.
 7. **Quante altre schermate fanno più letture insieme e disegnano lo stesso se
