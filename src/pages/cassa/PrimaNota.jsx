@@ -15,10 +15,12 @@ import {
   formatEUR,
   labelFor,
   oggiLocale,
+  primoDelMeseLocale,
 } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import CampoGiornata from "../../components/CampoGiornata";
+import { letturaTagliata } from "../../lib/lettureTagliate";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 
 const today = oggiLocale;
@@ -50,7 +52,17 @@ export default function PrimaNota() {
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [from, setFrom] = useState("");
+  // 🔴 IL PERIODO PARTE DAL MESE IN CORSO, e prima partiva VUOTO (19/08/2026).
+  // Con i campi vuoti questa schermata chiedeva TUTTI i movimenti — e su
+  // quell'elenco calcola entrate, uscite e il file da esportare. Il database
+  // ne consegna al massimo mille senza dirlo, quindi i due totali e l'export
+  // fiscale potevano essere parziali con l'aria di essere completi.
+  //
+  // ⚠️ Un valore di partenza non basta da solo: chi svuota i campi torna nel
+  // caso di prima. Per questo la difesa vera è l'altra — l'export si RIFIUTA
+  // se la lettura è tornata tagliata (vedi `handleExport`) — e questa riga
+  // serve a non farci arrivare quasi mai.
+  const [from, setFrom] = useState(primoDelMeseLocale);
   const [to, setTo] = useState("");
 
   // 🔴 LA GIORNATA PROPOSTA È LA SERATA, NON «OGGI» (seconda metà della
@@ -163,6 +175,20 @@ export default function PrimaNota() {
   };
 
   const handleExport = () => {
+    // 🔴 O COMPLETO PER COSTRUZIONE, O DICHIARATO PARZIALE: non c'è una terza
+    // strada su un file che si porta al commercialista. Se il database ha
+    // consegnato meno righe di quelle che ci sono, il file NON esce — e la
+    // schermata dice perché e cosa fare. Un export che si scarica lo stesso,
+    // con un avviso da qualche parte, è un export incompleto che qualcuno
+    // aprirà fra sei mesi senza ricordarsi dell'avviso.
+    if (letturaTagliata("cash_movements")) {
+      setError(
+        "Non esporto: il gestionale ha ricevuto solo una parte dei movimenti, " +
+          "quindi il file sarebbe incompleto senza sembrarlo. Restringi il periodo e riprova."
+      );
+      return;
+    }
+    setError("");
     downloadCsv(`prima_nota${from ? `_${from}` : ""}${to ? `_${to}` : ""}.csv`, movements, [
       { label: "Data", value: (m) => m.movement_date },
       { label: "Direzione", value: (m) => m.direction },

@@ -13,6 +13,7 @@ import {
 import { esitoRicevimento } from "../../lib/calcoli/haccp";
 import { CLEANING_FREQUENCIES, NC_CATEGORIES, PEST_CONTROL_TYPES, formatDate, labelFor, oggiLocale, traGiorniLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
+import { dimenticaLettureTagliate, elencoLettureTagliate } from "../../lib/lettureTagliate";
 
 const SectionTitle = ({ children }) => (
   <h2 className="font-display text-lg text-b58-charcoal mt-8 mb-3 pb-1 border-b border-b58-charcoal/15">
@@ -31,11 +32,18 @@ export default function ManualeCompleto() {
   const [dal, setDal] = useState(traGiorniLocale(-30));
   const [al, setAl] = useState(oggiLocale());
   const [tutto, setTutto] = useState(false);
+  // Quali registri sono tornati a metà. Si guarda dopo ogni caricamento,
+  // non una volta sola: cambiando periodo cambia la risposta.
+  const [tagliati, setTagliati] = useState([]);
 
   const periodo = tutto ? undefined : { dal, al };
 
   useEffect(() => {
     setData(null);
+    // ⚠️ Si dimentica PRIMA di leggere: le letture tagliate del giro
+    // precedente parlavano di un altro periodo, e lasciarle direbbe
+    // «incompleto» su un documento che nel frattempo è diventato completo.
+    dimenticaLettureTagliate();
     Promise.all([
       listEquipment(),
       listTemperatureLogs(null, periodo),
@@ -46,9 +54,12 @@ export default function ManualeCompleto() {
       listNonConformities(periodo),
       listForagedItems(periodo),
     ])
-      .then(([equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems]) =>
-        setData({ equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems })
-      )
+      .then(([equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems]) => {
+        setData({ equipment, temperatureLogs, goodsReceiving, cleaningTasks, cleaningLogs, pestLogs, nonConformities, foragedItems });
+        // Si guarda DOPO che tutte e otto sono arrivate: prima non si
+        // saprebbe ancora quali sono state tagliate.
+        setTagliati(elencoLettureTagliate());
+      })
       .catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dal, al, tutto]);
@@ -87,6 +98,24 @@ export default function ManualeCompleto() {
           : `Registrazioni dal ${formatDate(dal)} al ${formatDate(al)}.`}{" "}
         Le non conformità aperte sono sempre incluse.
       </p>
+
+      {/* 🔴 SE UN REGISTRO È TORNATO A META', IL DOCUMENTO LO DICE — e lo dice
+          STAMPATO, perché il destinatario di questo foglio non è chi sta
+          davanti allo schermo: è chi viene a controllare. Il database consegna
+          al massimo mille righe per elenco senza segnalarlo (misurato il
+          19/08/2026), e l'interruttore «Tutto» è precisamente il gesto che ci
+          arriva. Un documento che dichiara «registro completo» e ne mostra
+          mille è una dichiarazione falsa, non un'imprecisione.
+          ⚠️ Niente `print:hidden` qui: nasconderlo alla stampa lascerebbe il
+          difetto esattamente dov'era. */}
+      {tagliati.length > 0 && (
+        <p className="mt-2 rounded-lg border-2 border-b58-terracotta bg-b58-terracotta/10 px-3 py-2 text-sm text-b58-charcoal">
+          <strong>ATTENZIONE — QUESTO DOCUMENTO È INCOMPLETO.</strong> Il gestionale non è
+          riuscito a leggere per intero {tagliati.length === 1 ? "un registro" : "alcuni registri"}:{" "}
+          {tagliati.map((x) => `${x.dove} (${x.ricevute} righe su ${x.totali})`).join("; ")}. Non
+          va esibito così: restringi il periodo e rigeneralo.
+        </p>
+      )}
 
       <div className="flex items-center gap-2 flex-wrap mt-3 print:hidden">
         <button type="button" onClick={() => impostaGiorni(30)} className={chipClass(!tutto && dal === traGiorniLocale(-30))}>

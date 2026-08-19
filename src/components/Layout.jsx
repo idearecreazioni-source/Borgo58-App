@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Logo from "./Logo";
+import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,6 +46,9 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          {/* Sopra ogni schermata: se una lettura e tornata a meta, chi guarda
+              deve saperlo prima di leggere i numeri, non dopo. */}
+          <AvvisoLettureTagliate />
           <Outlet />
         </main>
       </div>
