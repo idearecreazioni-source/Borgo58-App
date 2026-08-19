@@ -199,4 +199,6 @@ puoi spostarlo sull'altra con un tocco.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: `64fe05b` — «L'arrivo dice su quale riga della lista va, e lì si
+cambia».
+**Working tree**: pulito (questo riepilogo è l'ultimo commit della consegna).
