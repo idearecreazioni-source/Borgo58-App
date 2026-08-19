@@ -174,5 +174,10 @@ prova che restano in produzione, perché l'elenco era vecchio in tre punti.
 
 ---
 
+**Commit del lavoro**: `a070fa7` — «La misura del taglio a mille righe, e
+l'elenco di collaudo rimisurato». ⚠️ Quel commit porta **anche questo file** e
+il referto: la consegna è fatta di sole misure e correzioni a documenti, e
+spezzarla in due avrebbe prodotto un commit di lavoro vuoto.
+**Working tree**: pulito.
 **Migrazioni**: nessuna in questo blocco. `20260819000009` e `…010`
 **applicate in produzione** (147 in totale).
