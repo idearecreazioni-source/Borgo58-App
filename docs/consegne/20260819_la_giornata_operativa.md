@@ -210,4 +210,6 @@ la fa correggere.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: 9d0cb0b — «Una risposta sola a *a quale giornata appartiene
+questo istante*».
+**Working tree**: pulito.
