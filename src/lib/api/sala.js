@@ -25,22 +25,6 @@ export const GIORNI = [
   { weekday: 0, nome: "Domenica" },
 ];
 
-// La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
-// non è interattivo — pareti e zone non si spostano, non si
-// ridimensionano, non hanno stato. Le proporzioni vengono dalla
-// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
-// sala, serve che le zone siano riconoscibili a colpo d'occhio.
-export const SALA_LARGHEZZA_CM = 2070;
-export const SALA_PROFONDITA_CM = 1030;
-
-export const ZONE_FONDALE = [
-  { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
-  { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
-  { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
-  { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
-  { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
-];
-
 // --- Le sagome (pianta base) ---
 
 export async function listSagome() {

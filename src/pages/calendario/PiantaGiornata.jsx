@@ -4,11 +4,10 @@ import PiantaSala from "../../components/PiantaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
-import { pannelloNellaPianta } from "../../lib/calcoli/sala";
+import { ZONE_FONDALE, pannelloNellaPianta } from "../../lib/calcoli/sala";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
-  ZONE_FONDALE,
   getCopertiDelGiorno,
   getPiantaDelGiorno,
   getPostoPerLaSerata,
@@ -116,15 +115,20 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
   // siamo»*). L'altezza dei campi è la soglia toccabile, ed è già stata
   // sfondata una volta nel giro E: quello che si accorcia è lo spazio fra un
   // campo e l'altro e sotto le etichette, non i campi.
-  const campo = stretto ? `${CAMPO} py-3 text-base` : CAMPO;
+  // ⚠️ `min-w-0` sulle celle E sul campo, `appearance-none` sull'ora: sono
+  // le tre cose che tolgono al campo la sua larghezza minima intrinseca.
+  // Senza, la casella dell'ora resta piu' larga delle altre e sfora il
+  // pannello — visto nella fotografia del 19/08, coi due angoli destri
+  // squadrati perche' tagliati dal bordo.
+  const campo = `${stretto ? `${CAMPO} py-3 text-base` : CAMPO} min-w-0`;
   const etichetta = stretto ? `${ETICHETTA} mb-0.5` : ETICHETTA;
   return (
     <div className={stretto ? "grid grid-cols-2 gap-x-2 gap-y-1 mb-2" : "grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3"}>
-      <div className="col-span-2">
+      <div className="col-span-2 min-w-0">
         <label className={etichetta}>Nome</label>
         <input value={valori.nome} onChange={(e) => cambia({ ...valori, nome: e.target.value })} className={campo} />
       </div>
-      <div>
+      <div className="min-w-0">
         <label className={etichetta}>Persone</label>
         <input
           type="number"
@@ -134,16 +138,16 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
           className={campo}
         />
       </div>
-      <div>
+      <div className="min-w-0">
         <label className={etichetta}>Ora</label>
         <input
           type="time"
           value={valori.ora}
           onChange={(e) => cambia({ ...valori, ora: e.target.value })}
-          className={campo}
+          className={`${campo} appearance-none`}
         />
       </div>
-      <div className="col-span-2">
+      <div className="col-span-2 min-w-0">
         <label className={etichetta}>Telefono</label>
         <input
           value={valori.telefono}
@@ -151,7 +155,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
           className={campo}
         />
       </div>
-      <div className="col-span-2">
+      <div className="col-span-2 min-w-0">
         <label className={etichetta}>{stretto ? "Note" : "Note (allergie, occasione…)"}</label>
         <input value={valori.note} onChange={(e) => cambia({ ...valori, note: e.target.value })} className={campo} />
       </div>
@@ -438,12 +442,17 @@ export default function PiantaGiornata() {
   //
   // ⚠️ Ed è l'unico posto dove possono essere viste: una prenotazione senza
   // tavolo **non compare da nessuna parte sulla pianta**.
-  const prenotazioniInElenco = [...prenotazioni].sort((a, b) => {
-    const senzaA = tavoliDi(a.id).length === 0;
-    const senzaB = tavoliDi(b.id).length === 0;
-    if (senzaA !== senzaB) return senzaA ? -1 : 1;
-    return (a.reservation_time ?? "").localeCompare(b.reservation_time ?? "");
-  });
+  // 🔴 E METTERLE IN CIMA ALL'ELENCO NON BASTAVA: l'elenco sta **sotto la
+  // pianta**, e sul telefono resta fuori schermo — cioè esattamente il
+  // problema che dovevano risolvere (rilievo di Alessio, 19/08). Quindi
+  // finché non hanno un tavolo stanno in una striscia **sopra** la pianta;
+  // appena il tavolo c'è, tornano nell'elenco insieme alle altre.
+  // ⚠️ Sono in un posto solo per volta, non in due: una riga che compare due
+  // volte fa contare due prenotazioni dove ce n'è una.
+  const senzaTavolo = prenotazioni.filter((p) => tavoliDi(p.id).length === 0);
+  const prenotazioniInElenco = prenotazioni
+    .filter((p) => tavoliDi(p.id).length > 0)
+    .sort((a, b) => (a.reservation_time ?? "").localeCompare(b.reservation_time ?? ""));
 
   const evidenziata = inCorso?.id ?? aperta?.id ?? null;
 
@@ -720,6 +729,16 @@ export default function PiantaGiornata() {
         }
       }
     }
+    // ⚠️ IN ORDINE DI POSIZIONE NELLA SALA, non nell'ordine in cui il
+    // database raggruppa. Rilievo della validazione sulla fotografia del
+    // 19/08: la pianta mostrava «T9 T8 T7» e il titolo scriveva «T8 · T7 ·
+    // T9». *Il titolo esiste per dire quale tavolone si sta guardando: se le
+    // due letture non coincidono, chi legge deve ricostruirle.*
+    // Prima per profondità e poi per larghezza — la sala letta come una
+    // pagina: con la sala in piedi (il telefono) quella profondità diventa la
+    // sinistra-destra dello schermo, che è il caso della fotografia.
+    const dove = (t) => sagome.find((s) => s.id === t) ?? { x: 0, y: 0 };
+    fuori.sort((a, b) => dove(a).y - dove(b).y || dove(a).x - dove(b).x);
     return fuori.map((t) => ({
       id: t,
       label: sagome.find((s) => s.id === t)?.label ?? "?",
@@ -874,18 +893,38 @@ export default function PiantaGiornata() {
               {prenotazioniDelToccato.length > 0 ? (
                 <ul className="divide-y divide-b58-charcoal/10 rounded-lg ring-1 ring-b58-charcoal/10 mb-2">
                   {prenotazioniDelToccato.map((p) => (
-                    <li key={p.id} className="px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="text-sm text-b58-charcoal-soft w-12">
-                        {p.reservation_time?.slice(0, 5)}
-                      </span>
-                      <span className="text-sm text-b58-charcoal flex-1 min-w-[8rem]">
-                        {p.customer_name}
-                        <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
-                      </span>
-                      <span className="text-[11px] text-b58-charcoal-soft">{statoArrivo(p.id)}</span>
-                      <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
-                        Apri
-                      </button>
+                    <li key={p.id} className="px-3 py-2">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="text-sm text-b58-charcoal-soft w-12">
+                          {p.reservation_time?.slice(0, 5)}
+                        </span>
+                        <span className="text-sm text-b58-charcoal flex-1 min-w-[6rem]">
+                          {p.customer_name}
+                          <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
+                        </span>
+                        <span className="text-[11px] text-b58-charcoal-soft">
+                          {statoArrivo(p.id)}
+                        </span>
+                        <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
+                          Apri
+                        </button>
+                      </div>
+                      {/* ⚠️ IL TELEFONO E LA NOTA compaiono SOLO se ci sono
+                          (Alessio, 19/08): una riga con l'etichetta e niente
+                          dentro è arredamento. E il numero è cliccabile —
+                          chi guarda questo riquadro sta decidendo se
+                          telefonare a chi non è arrivato. */}
+                      {(p.customer_phone || p.notes) && (
+                        <p className="text-[11px] text-b58-charcoal-soft mt-0.5">
+                          {p.customer_phone && (
+                            <a href={`tel:${p.customer_phone}`} className="underline">
+                              {p.customer_phone}
+                            </a>
+                          )}
+                          {p.customer_phone && p.notes && " · "}
+                          {p.notes}
+                        </p>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -1160,6 +1199,42 @@ export default function PiantaGiornata() {
               </button>
             )}
           </div>
+
+          {/* CHI ASPETTA UN TAVOLO — sopra la pianta, dove si guarda.
+              ⚠️ La striscia **non esiste** quando non c'è nessuno: una striscia
+              che dice «nessuna» è arredamento, e questa deve farsi notare
+              proprio perché compare di rado. */}
+          {senzaTavolo.length > 0 && (
+            <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-3 mb-3">
+              <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-terracotta-dark mb-1.5">
+                {senzaTavolo.length === 1 ? "Aspetta un tavolo" : "Aspettano un tavolo"}
+              </p>
+              <ul className="space-y-1.5">
+                {senzaTavolo.map((p) => (
+                  <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-sm text-b58-charcoal-soft w-12 shrink-0">
+                      {p.reservation_time?.slice(0, 5)}
+                    </span>
+                    <span className="text-sm text-b58-charcoal flex-1 min-w-[6rem]">
+                      {p.customer_name}
+                      <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
+                    </span>
+                    {p.customer_phone && (
+                      <a
+                        href={`tel:${p.customer_phone}`}
+                        className="text-[11px] text-b58-charcoal-soft underline"
+                      >
+                        {p.customer_phone}
+                      </a>
+                    )}
+                    <button type="button" onClick={() => iniziaAssegnazione(p)} className={BOTTONE}>
+                      Dai un tavolo
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div ref={piantaRef}>
           <PiantaSala
@@ -1493,6 +1568,24 @@ export default function PiantaGiornata() {
                         </span>
                       )}
                     </button>
+                    {/* ⚠️ TELEFONO E NOTA SOTTO IL BOTTONE, non dentro: un
+                        collegamento dentro un bottone non e' HTML valido, e sul
+                        telefono il tocco finisce a chi capita. Compaiono solo se
+                        ci sono — una riga vuota con l'etichetta e' arredamento —
+                        e il numero e' cliccabile perche' chi guarda questo elenco
+                        sta decidendo se telefonare a chi non e' arrivato.
+                        (Richiesta di Alessio, 19/08: in tutti e due i posti.) */}
+                    {(p.customer_phone || p.notes) && (
+                      <p className="text-[11px] text-b58-charcoal-soft mt-1">
+                        {p.customer_phone && (
+                          <a href={`tel:${p.customer_phone}`} className="underline">
+                            {p.customer_phone}
+                          </a>
+                        )}
+                        {p.customer_phone && p.notes && " · "}
+                        {p.notes}
+                      </p>
+                    )}
 
                     {accesa && (
                       <div className="flex flex-wrap items-center gap-3 mt-2">

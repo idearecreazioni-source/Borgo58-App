@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTATTO_MINIMO_CM,
+  ZONE_FONDALE,
   GRIGLIA_CM,
   TOLLERANZA_CONTATTO_CM,
   pannelloNellaPianta,
@@ -320,5 +321,31 @@ describe("Il pannello dentro la pianta", () => {
       expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }])).toBeNull();
       expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }])).not.toBeNull();
     }
+  });
+});
+
+describe("Le zone restano nominate anche se non si scrivono più a schermo", () => {
+  // 🔴 LA TRAPPOLA CHE QUESTA PROVA DICHIARA. Il 19/08 i nomi delle zone
+  // (SALA ALTA, CUCINA, SERVIZI…) sono spariti dal disegno: Alessio li ha
+  // tolti. Ma `riquadroDelPannello()` filtra le zone **per nome** per sapere
+  // dove mettere il pannello dentro la pianta.
+  //
+  // ⚠️ Se un domani qualcuno togliesse anche il campo `nome` dai dati —
+  // «tanto non si vede più» — il pannello smetterebbe di comparire **senza
+  // nessun errore**: si limiterebbe a non succedere, e la schermata
+  // continuerebbe a funzionare benissimo con il modulo sotto la pianta.
+  // È la stessa forma del difetto che nessuna prova prende: non un guasto,
+  // una cosa che smette di avvenire.
+  it("il fondale vero porta ancora le zone del pannello, e il pannello ci sta", () => {
+    expect(riquadroDelPannello(ZONE_FONDALE)).toEqual({
+      x: 0,
+      y: 0,
+      larghezza: 1400,
+      profondita: 515,
+    });
+  });
+
+  it("ogni zona del fondale ha un nome — anche quelle che non lo mostrano", () => {
+    for (const z of ZONE_FONDALE) expect(z.nome).toBeTruthy();
   });
 });

@@ -1,11 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
+  GRIGLIA_CM,
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
-} from "../lib/api/sala";
-import {
-  GRIGLIA_CM,
   RIDUZIONE_DISEGNO,
   agganciaAiVicini,
   misureSagoma,
@@ -251,8 +249,6 @@ export default function PiantaSala({
     return { x: fx * SALA_LARGHEZZA_CM, y: fy * SALA_PROFONDITA_CM };
   };
 
-  // La controrotazione di un'etichetta, perché resti diritta.
-  const testoDiritto = (tx, ty) => (verticale ? `rotate(90 ${tx} ${ty})` : undefined);
 
   const iniziaTrascinamento = (evento, sagoma) => {
     if (!onSposta || !sagoma.spostabile) return;
@@ -434,46 +430,32 @@ export default function PiantaSala({
         <g transform={verticale ? `translate(0 ${SALA_LARGHEZZA_CM}) rotate(-90)` : undefined}>
         {/* IL FONDALE — sfondo statico, mai interattivo: pareti e zone non
             si spostano, non si ridimensionano, non hanno stato. */}
+        {/* ⚠️ LE ZONE SI DISEGNANO, I LORO NOMI NO (Alessio, 19/08:
+            via SALA ALTA, SALA BASSA, BANCONE, CUCINA, SERVIZI e l'ingresso
+            per intero, parola e segno della porta). Con le sagome, i colori,
+            i coperti e il pannello dentro la pianta, quelle scritte erano
+            diventate rumore — e una si sovrapponeva all'etichetta NOTE del
+            modulo.
+            🔴 MA I NOMI RESTANO NEI DATI, ed è la trappola da non prendere:
+            `riquadroDelPannello()` filtra le zone PER NOME per sapere dove
+            mettere il pannello. Se sparisse il campo `nome`, il pannello
+            smetterebbe di comparire **senza nessun errore** — si limiterebbe
+            a non succedere. La prova che dichiara il fatto sta in
+            tests/unita/sala-misure.test.js. */}
         {ZONE_FONDALE.map((z) => (
-          <g key={z.nome}>
-            <rect
-              x={z.x}
-              y={z.y}
-              width={z.larghezza}
-              height={z.profondita}
-              fill={z.servizio ? "var(--color-b58-cream-dark)" : "var(--color-b58-parchment)"}
-              fillOpacity={z.servizio ? 0.6 : 0.45}
-              stroke="var(--color-b58-charcoal)"
-              strokeOpacity="0.18"
-              strokeWidth="4"
-            />
-            <text
-              x={z.x + 18}
-              y={z.y + 46}
-              transform={testoDiritto(z.x + 18, z.y + 46)}
-              fontSize="34"
-              fill="var(--color-b58-charcoal)"
-              fillOpacity="0.35"
-              style={{ textTransform: "uppercase", letterSpacing: "2px" }}
-            >
-              {z.nome}
-            </text>
-          </g>
+          <rect
+            key={z.nome}
+            x={z.x}
+            y={z.y}
+            width={z.larghezza}
+            height={z.profondita}
+            fill={z.servizio ? "var(--color-b58-cream-dark)" : "var(--color-b58-parchment)"}
+            fillOpacity={z.servizio ? 0.6 : 0.45}
+            stroke="var(--color-b58-charcoal)"
+            strokeOpacity="0.18"
+            strokeWidth="4"
+          />
         ))}
-
-        {/* L'ingresso, sulla parete di sinistra della sala bassa. */}
-        <line
-          x1="0"
-          y1="700"
-          x2="0"
-          y2="880"
-          stroke="var(--color-b58-olive)"
-          strokeWidth="16"
-          strokeLinecap="round"
-        />
-        <text x="24" y="800" transform={testoDiritto(24, 800)} fontSize="30" fill="var(--color-b58-olive-dark)">
-          Ingresso
-        </text>
 
         {/* LE SAGOME — le uniche cose vive del disegno. */}
         {sagome.map((sagoma) => {

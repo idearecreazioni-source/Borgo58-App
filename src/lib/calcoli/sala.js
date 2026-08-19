@@ -261,6 +261,37 @@ export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti }
 }
 
 // =====================================================================
+// IL FONDALE — la sala disegnata sotto le sagome
+// =====================================================================
+//
+// ⚠️ STA QUI E NON IN api/sala.js dal 19/08: non è un accesso al database,
+// è un dato del DISEGNO. E qui si può provare senza collegarsi a niente —
+// che è precisamente ciò che serve, perché `riquadroDelPannello()` filtra
+// queste zone PER NOME.
+//
+// 🔴 LA TRAPPOLA, dichiarata: i nomi delle zone non si disegnano più a
+// schermo (Alessio li ha tolti il 19/08), ma **devono restare nei dati**. Se
+// sparissero, il pannello dentro la pianta smetterebbe di comparire e
+// nessuno se ne accorgerebbe: è una cosa che non dà nessun errore, si limita
+// a non succedere. La prova che lo dichiara sta in
+// tests/unita/sala-misure.test.js.
+// La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
+// non è interattivo — pareti e zone non si spostano, non si
+// ridimensionano, non hanno stato. Le proporzioni vengono dalla
+// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
+// sala, serve che le zone siano riconoscibili a colpo d'occhio.
+export const SALA_LARGHEZZA_CM = 2070;
+export const SALA_PROFONDITA_CM = 1030;
+
+export const ZONE_FONDALE = [
+  { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
+  { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
+  { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
+  { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
+  { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
+];
+
+// =====================================================================
 // LO SPAZIO VUOTO DENTRO LA PIANTA (19/08/2026, idea di Alessio)
 // =====================================================================
 //
