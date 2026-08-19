@@ -185,6 +185,87 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(ora).toEqual(attese);
   });
 
+  // 🔴 IL SECONDO ELENCO CONGELATO, e nasce da un difetto vivo: fino al
+  // 19/08/2026 `uscite_future` era `security definer` SENZA il controllo del
+  // titolare — quindi chi entrava con l'accesso della sala (uno solo,
+  // condiviso) poteva chiedere quanto doveva uscire e quando. Non era una
+  // scelta: le funzioni accanto a lei il portiere ce l'hanno tutte.
+  //
+  // ⚠️ E il numero era DICHIARATO in CLAUDE.md — «13» — mentre erano 15.
+  // Un conteggio scritto a mano in un documento è un'affermazione che
+  // nessuna verifica controlla: qui diventa un elenco che il database si
+  // costruisce dal catalogo, e questa prova diventa rossa da sola.
+  //
+  // ⚠️ QUESTO ELENCO SCENDE SOLO CON UNA RIGA TOLTA E DICHIARATA nella
+  // stessa consegna, e sale solo se qualcuno spiega perché. Le tre che il
+  // 13/08 erano nominate solo come gruppo («la lista della spesa») adesso
+  // hanno il loro nome: un elenco per categorie non si può confrontare.
+  //
+  // ⚠️ E DUE SONO SPARITE ACCENDENDO LA RETE, non prima: le diagnostiche
+  // che raccontano com'è fatto il database — `funzioni_multi_tabella` e le
+  // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
+  // Hanno preso il portiere nella stessa consegna, come
+  // `funzioni_aperte_ad_anon` dal 13/08.
+  it("solo 16 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+    const attese = [
+      // La lista della spesa: la scrive chi va a fare la spesa.
+      "add_below_threshold_items",
+      "add_shopping_list_item",
+      "remove_shopping_list_item",
+      // ⚠️ NATA OGGI SENZA DICHIARAZIONE, ed è il motivo per cui questa
+      // prova esiste: `righe_lista_aperte` è comparsa il 19/08 con il
+      // blocco degli arrivi. Non espone prezzi — quantità e date di righe
+      // che chi va a fare la spesa vede comunque — ma nessuno lo aveva
+      // scritto da nessuna parte.
+      "righe_lista_aperte",
+      // Lo scadenziario: chi butta una partita scaduta è chi la trova.
+      "chiudi_partita",
+      "partite_in_scadenza",
+      "record_stock_consumption",
+      // Il totale di un conto, che in sala si vede comunque. Il portiere ce
+      // l'ha per interposta persona: passa da `totale_conto()`, che pretende
+      // un utente autenticato.
+      "incasso_conto",
+      // Funzioni di trigger e di sistema: le esegue il motore.
+      "link_reservation_customer",
+      "notify_reservation_telegram",
+      "segnala_allarme",
+      "send_due_task_reminders",
+      "set_order_entity_srls",
+      // Il form pubblico.
+      "public_reservation_options",
+      // ⚠️ COMPARSE QUANDO LA RETE HA SMESSO DI CERCARE LA PAROLA E HA
+      // CERCATO IL GESTO: non sono nuove, non si vedevano. Chiudere un
+      // conto come sconto o omaggio è un gesto di sala, e gli importi che
+      // tocca sono quelli del conto che il cameriere ha davanti;
+      // `log_deleted_record` è il trigger che scrive nel registro delle
+      // cancellazioni, e usa `auth.uid()` per annotare CHI ha cancellato,
+      // non per chiedere chi sta chiamando.
+      "close_order_as_discount_gift",
+      "log_deleted_record",
+    ].sort();
+
+    const r = await titolare.rpc("funzioni_senza_portiere");
+    expect(r.error).toBeNull();
+    const ora = (r.data ?? []).map((x) => x.nome).sort();
+    expect(ora).toEqual(attese);
+  });
+
+  it("lo staff non può chiedere quanto deve uscire dalla cassa", async () => {
+    const entita = await primaEntita(titolare);
+    const r = await staff.rpc("uscite_future", { p_entity_id: entita });
+    // ⚠️ Un RIFIUTO, non un elenco vuoto: una schermata vuota è una
+    // rassicurazione falsa (regola del 13/08).
+    expect(r.error, "lo staff ha ottenuto le uscite future").not.toBeNull();
+  });
+
+  it("...e il titolare sì, altrimenti il portiere sarebbe un muro", async () => {
+    const entita = await primaEntita(titolare);
+    const r = await titolare.rpc("uscite_future", { p_entity_id: entita });
+    expect(r.error).toBeNull();
+    expect(Array.isArray(r.data) ? r.data.length : 0).toBe(1);
+  });
+
   it.skipIf(!CORRIDOIO)("il corridoio respinge chi non è autenticato", async () => {
     const r = await anonimo.functions.invoke("operazioni-atomiche", {
       body: { operazione: "close_order_as_discount_gift", parametri: {} },

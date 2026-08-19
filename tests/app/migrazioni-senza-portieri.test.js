@@ -75,6 +75,17 @@ function regioniEseguiteOra(sql) {
     const tag = m[1];
     if (aperti.length && aperti[aperti.length - 1].tag === tag) {
       const apertura = aperti.pop();
+      // 🔴 UNA REGIONE ANNIDATA NON È UNA REGIONE, e ignorarlo produceva un
+      // allarme falso — il difetto peggiore per un guardiano, che infatti
+      // questa stessa prova nomina due volte più sotto. Una verifica che
+      // crea una funzione finta per rompere apposta una regola
+      // (`execute 'create function … as $x$ … $x$'`) contiene un blocco
+      // dentro il proprio blocco: chiudendolo, il testo che lo precedeva
+      // veniva spacciato per SQL «di primo livello» e risultava senza
+      // claims, mentre i claims erano impostati in cima al blocco che lo
+      // contiene. Quello che conta è il blocco PIÙ ESTERNO: il suo testo
+      // comprende anche gli annidati, quindi niente sfugge.
+      if (aperti.length > 0) continue;
       const prima = senzaCommenti.slice(Math.max(0, apertura.inizio - 60), apertura.inizio).toLowerCase();
       const corpoDiFunzione = /\bas\s*$/.test(prima.trimEnd() + " ") || /\bas\s+$/.test(prima);
       regioni.push({
@@ -117,6 +128,13 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
       if (file.slice(0, 14) < DA_QUESTA_IN_POI) continue;
       const sql = readFileSync(join(CARTELLA, file), "utf8");
       for (const regione of regioniEseguiteOra(sql)) {
+        // ⚠️ LIMITE TROVATO IL 19/08, e va dichiarato invece che scoperto:
+        // qui si guarda SE i claims compaiono, non QUANDO. Ogni blocco di
+        // verifica finisce con `set_config(…, null, …)` per ripulirsi, e
+        // quella riga da sola basta a zittire il guardiano. Un blocco che
+        // chiamasse una funzione col portiere **prima** di impostare i
+        // claims passerebbe. È la stessa voce di coda del controllo che
+        // guarda la forma invece del comportamento.
         const haIClaims = /set_config\s*\(\s*'request\.jwt\.claims'/.test(regione.testo);
         if (haIClaims) continue;
         // ⚠️ CI SONO TRE MODI DI NOMINARE UNA FUNZIONE SENZA CHIAMARLA, e
