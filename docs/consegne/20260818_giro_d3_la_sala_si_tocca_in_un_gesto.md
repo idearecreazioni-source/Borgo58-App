@@ -4,11 +4,11 @@
 **punti 5 e 6** più i punti **3 e 4** del perimetro deciso per il giro D.
 È **l'ultimo giro del mandato**: A, B, C, E, D1 e D2 sono chiusi e validati.
 
-- **HEAD dichiarato**: `4459a99` — il giro è in **sei commit di codice** (`8222222`, `28d20dc`, `af29bc7`, `278cfe5`, `c6bac45`, `4459a99`) perché il collaudo di Alessio è passato **cinque volte** in mezzo alla consegna
+- **HEAD dichiarato**: `713d973` — il giro è in **otto commit di codice** perché il collaudo di Alessio è passato **sette volte** in mezzo alla consegna
 - **Working tree**: pulito
 - **Migrazione**: **nessuna** — nessun dato nuovo, solo dati già scritti che
   arrivano dove non arrivavano
-- **Prove**: **118** pure (erano 102) + **174** sul progetto di prova (erano 172)
+- **Prove**: **120** pure (erano 102) + **174** sul progetto di prova (erano 172)
 - **Lint**: zero avvisi · **Build**: ok
 - **In produzione**: **niente da applicare**
 - **Contratto**: non toccato · **Corridoio**: non ridistribuito
@@ -79,12 +79,21 @@ E quelle che apre questo giro:
     funzione — ma **la frase che lo diceva è stata tolta da tutte e due**. Sul
     telefono non serviva più (lì la pianta si gira da sola e le due schermate
     sono identiche); sul computer serviva, e il prezzo è dichiarato.
-15. 🟡 **Il tocco su un tavolo libero non è mai stato provato su un tavolo che
-    fa parte di un TAVOLONE.** Lì il modulo mostra i coperti del gruppo, e la
-    frase che distingue tavolo e tavolone **non compare** (compare solo nel
-    riquadro): sul modulo il numero è etichettato con le etichette del gruppo,
-    che è un'altra forma di dirlo. **Non è stato guardato da nessuno.**
-
+15. 🔴 **LA CASELLA DELL'ORA E LE ALTRE QUATTRO COSE DEL 19/08 non le ha
+    ancora guardate nessuno**: la cura della larghezza è una cura di
+    meccanismo (`min-w-0` e `appearance-none`), non una misura — a misurare
+    sarà la prossima fotografia. Con lei restano non viste: la striscia
+    sopra la pianta, il telefono cliccabile, la sala senza didascalie e
+    l'ordine nuovo del titolo.
+16. 🟡 **In Comande `handleSend` non ha un `catch`**: se l'invio riesce ma la
+    rilettura fallisce, non compare nessun avviso e resta a schermo la
+    situazione di prima. Stessa famiglia della sala disegnata vuota, **molto
+    meno grave** — i dati sono di pochi secondi prima e l'invio è avvenuto
+    davvero. **Annotato, non fatto.**
+17. 🟡 **Quante altre schermate fanno più letture insieme** (Magazzino,
+    Cassa, Proiezione): Alessio ha deciso di **non misurarlo adesso**. La
+    voce resta in coda, ed è quella che decide se è una cosa piccola o un
+    lavoro a sé.
 ---
 
 ## Cosa abbiamo rovesciato
@@ -763,3 +772,84 @@ hanno trovato cose che nessuna rilettura avrebbe visto — ma **nessuna di loro
 guarda una schermata**, e i difetti di questo giro vivevano quasi tutti lì.
 *Il collaudo con le mani non è la conferma finale di un lavoro finito: è lo
 strumento che ha trovato di più.*
+
+---
+
+## Il settimo collaudo (19/08, foto delle 01:48) — cinque cose
+
+### La casella dell'ora sforava, e la causa era il meccanismo
+
+Nella fotografia il campo ORA esce dal bordo del pannello e i suoi due angoli
+destri sono **squadrati** — tagliati dal ritaglio del contenitore, non disegnati
+così. **L'ipotesi posta dalla validazione era giusta**: le celle di una griglia
+hanno `min-width: auto`, quindi non scendono sotto la larghezza **minima
+intrinseca** del contenuto, e un campo `type="time"` ne porta una sua più
+grande di metà pannello (~179 punti). La colonna si allargava, il pannello no.
+
+Cura: `min-w-0` sulle celle **e** sul campo, `appearance-none` sull'ora.
+⚠️ **Non verificata da un occhio**: è una cura di meccanismo, e a misurare sarà
+la prossima fotografia. Il criterio è scritto: stessa larghezza di PERSONE,
+dentro il bordo, quattro angoli arrotondati.
+
+### Note e telefono, in tutti e due i posti
+
+Nel riquadro del tavolo e nell'elenco sotto la pianta, **col numero
+cliccabile** — chi guarda quelle righe sta decidendo se telefonare a chi non è
+arrivato. ⚠️ **Compaiono solo se ci sono**: una riga con l'etichetta e niente
+dentro è arredamento.
+
+⚠️ **E stanno FUORI dal bottone della riga**, non dentro: un collegamento
+dentro un bottone non è HTML valido, e sul telefono il tocco finisce a chi
+capita. Era il modo più naturale di scriverlo ed è quello sbagliato.
+
+### Le prenotazioni senza tavolo salgono SOPRA la pianta
+
+🔴 **Metterle in cima all'elenco non bastava**, ed è un difetto della cura
+precedente: l'elenco sta **sotto la pianta**, e sul telefono resta fuori
+schermo — cioè *esattamente il problema che dovevano risolvere*. Finché non
+hanno un tavolo stanno in una striscia sopra la pianta; appena ce l'hanno
+tornano nell'elenco con le altre.
+
+⚠️ **In un posto solo per volta**, mai in due: una riga che compare due volte fa
+contare due prenotazioni dove ce n'è una. ⚠️ E la striscia **non esiste** quando
+non c'è nessuno — una striscia che dice «nessuna» è arredamento, e questa deve
+farsi notare proprio perché compare di rado.
+
+### Via le didascalie del fondale — e la trappola non presa
+
+Tolti dal disegno i nomi delle zone e l'ingresso per intero (parola e segno
+della porta). Con le sagome, i colori, i coperti e il pannello, quelle scritte
+erano diventate rumore — e una si sovrapponeva all'etichetta NOTE del modulo.
+
+🔴 **La trappola era segnalata, e non è stata presa**: `riquadroDelPannello()`
+filtra le zone **per nome**. I nomi **restano nei dati** — si è tolto solo il
+`<text>` che li disegna — e adesso c'è una **prova che dichiara il fatto**,
+perché togliendoli il pannello dentro la pianta smetterebbe di comparire
+**senza nessun errore**: si limiterebbe a non succedere.
+
+⚠️ **Per poter scrivere quella prova, il fondale si è spostato** da
+`api/sala.js` a `calcoli/sala.js`: non è un accesso al database, è un dato del
+disegno, e lì si prova senza collegarsi a niente. **Controprova fatta**: tolti i
+nomi dai dati, due prove diventano rosse.
+
+### L'ordine del titolo segue la sala, non il raggruppamento
+
+Rilievo della validazione sulla stessa fotografia: la pianta mostrava «T9 T8
+T7» e il titolo scriveva «T8 · T7 · T9», perché l'ordine veniva dal
+raggruppamento del database. ⚠️ *Il titolo esiste per dire quale tavolone si sta
+guardando: se le due letture non coincidono, chi legge deve ricostruirle.*
+Adesso le etichette si ordinano per **posizione nella sala** — prima per
+profondità, poi per larghezza, cioè la sala letta come una pagina. Con la sala
+in piedi (il telefono) quella profondità è la sinistra-destra dello schermo,
+che è il caso della fotografia.
+
+---
+
+## ⚠️ In coda, annotato e non fatto
+
+- **In Comande `handleSend` non ha un `catch`**: se l'invio riesce ma la
+  rilettura fallisce, non compare nessun avviso e resta a schermo la situazione
+  di prima. Stessa famiglia della sala disegnata vuota, **molto meno grave** —
+  i dati sono di pochi secondi prima, e l'invio è avvenuto davvero.
+- **Quante altre schermate fanno più letture insieme** (Magazzino, Cassa,
+  Proiezione): Alessio ha deciso di **non misurarlo adesso**. La voce resta.
