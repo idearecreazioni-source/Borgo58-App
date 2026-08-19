@@ -53,7 +53,22 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    strada che non calcola lo stesso numero in due posti), e **«Fai una copia»**
    per farne una variante. ⚠️ **Nessuna mano ha toccato una spunta**: in questo
    progetto nessuna prova guarda una schermata, ed è il limite che qui pesa di
-   più. **Resta il blocco 3** (lo storico dei costi).
+   più.
+   ✅ **APPLICATO IN PRODUZIONE il 20/08** — [consegna](consegne/20260820_applicato_e_le_due_verifiche.md):
+   **151 migrazioni**, corridoio **v30**, e nessun numero del locale mosso (26
+   tracce, 0 movimenti, 8 conti di cui 0 aperti, tutte le reti ferme).
+   🔴 **Le due verifiche hanno trovato un difetto silenzioso**: nell'elenco
+   delle ricette un bocconcino era **indistinguibile da un piatto** e mostrava
+   «1 porzione» invece della sua resa. Corretto passando da `eComponente()`,
+   così un tipo nuovo domani entra da solo.
+   🟡 **E una decisione da prendere, dichiarata e non presa**: gli elenchi del
+   menu offrono **tutte** le ricette, preparazioni comprese — da sempre, non
+   per colpa dei finger. Filtrare i bocconcini vorrebbe dire **rispondere di
+   nascosto** alla domanda lasciata aperta («un bocconcino può andare in carta
+   da solo?», che se accade dà due prezzi per la stessa cosa); filtrare le
+   preparazioni è una decisione ancora diversa (una conserva in vasetto è un
+   caso vero). **Restano due domande per Alessio.**
+   **Resta il blocco 3** (lo storico dei costi).
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
    misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.

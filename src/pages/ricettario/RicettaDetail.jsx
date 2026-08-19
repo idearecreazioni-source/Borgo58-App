@@ -944,7 +944,11 @@ export default function RicettaDetail() {
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
               >
-                Preparazione
+                {/* ⚠️ Il cartellino dice quello che la tendina contiene
+                    davvero: da qui si scelgono anche i bocconcini, e la
+                    parola «Preparazione» da sola sarebbe piu' stretta del
+                    vero. Si allarga solo quando i bocconcini esistono. */}
+                {fingers.length > 0 ? "Preparazione o bocconcino" : "Preparazione"}
               </button>
             </div>
           )}
@@ -971,7 +975,9 @@ export default function RicettaDetail() {
                 >
                   <option value="">Seleziona…</option>
                   {filteredPreparations.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.recipe_type === "finger" ? `${p.name} · bocconcino` : p.name}
+                    </option>
                   ))}
                 </select>
               ) : (

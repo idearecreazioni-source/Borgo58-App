@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, labelFor, formatEUR, recipeStatusLabel } from "../../lib/constants";
+import { RECIPE_CATEGORIES, eComponente, labelFor, formatEUR, recipeStatusLabel } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 const STATUS_FILTERS = [
@@ -129,9 +129,13 @@ export default function RicetteList() {
                   >
                     <td className="px-4 py-3 text-b58-charcoal font-medium">
                       {r.name}
-                      {r.recipe_type === "preparazione" && (
+                      {/* 🔴 Il cartellino guardava solo le preparazioni, e
+                          dal 19/08 esistono i bocconcini: senza questa riga
+                          un bocconcino era indistinguibile da un piatto
+                          nell'elenco, senza nessun errore. */}
+                      {eComponente(r.recipe_type) && (
                         <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                          preparazione
+                          {r.recipe_type === "finger" ? "bocconcino" : "preparazione"}
                         </span>
                       )}
                     </td>
@@ -139,7 +143,10 @@ export default function RicetteList() {
                       {labelFor(RECIPE_CATEGORIES, r.category)}
                     </td>
                     <td className="px-4 py-3 text-b58-charcoal-soft">
-                      {r.recipe_type === "preparazione"
+                      {/* 🔴 Stessa causa: un bocconcino ha una RESA, non
+                          delle porzioni. Prima mostrava «1» — un numero
+                          plausibile e sbagliato di specie. */}
+                      {eComponente(r.recipe_type)
                         ? `${r.yield_quantity ?? "—"} ${r.yield_unit ?? ""}`
                         : r.portions_yield}
                     </td>

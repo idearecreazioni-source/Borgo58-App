@@ -32,9 +32,26 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // sentirebbe — e sarebbe comunque il momento in cui serve saperlo.
 //
 // ⚠️ COSA NON COPRE, ed è dichiarato invece che scoperto:
-//   · le **Edge Function** (`posta-leggi`, `assistente-archivio`,
+//   · 🔴 le **Edge Function** (`posta-leggi`, `assistente-archivio`,
 //     `documento-leggi`, `operazioni-atomiche`), che leggono con una loro
-//     chiave e non passano di qui;
+//     chiave e non passano di qui. Dal 20/08 ci nasce dentro anche del
+//     lavoro **nuovo** — `duplica_ricetta` — e la zona d'ombra smette di
+//     essere solo un'eredità.
+//
+//     ⚠️ Come per le letture annidate, la cosa utile non è «non può
+//     succedere» ma **da cosa dipende**. Oggi non morde perché le letture
+//     che quelle funzioni fanno sono **piccole per costruzione**: una
+//     selezione non ha mille bocconcini, una mail non ha mille allegati,
+//     una copia legge le righe di UNA ricetta. La risposta cambia il giorno
+//     in cui una funzione online legge **una tabella che cresce nel tempo**
+//     — l'archivio documenti intero, lo storico dei prezzi, un registro —
+//     e quel giorno tornerebbe più corta **senza dirlo a nessuno**, perché
+//     lì dentro questo confronto non c'è.
+//
+//     ⚠️ Quindi la domanda da farsi scrivendo una funzione online nuova è
+//     la stessa delle letture annidate: **questa lettura può tornare più
+//     corta senza dirlo?** Se sì, o si chiede `count=exact` e si confronta
+//     lì dentro, o si dichiara il taglio a chi legge il risultato.
 //   · 🔴 le **letture annidate** (`select("*, righe(*)")`), MISURATE la notte
 //     del 19/08: **questo confronto non le vede**. `Content-Range` porta un
 //     totale solo — quello delle righe PADRE — quindi un conto che arriva con

@@ -16,6 +16,24 @@
 //  - nessun segreto nel codice (SUPABASE_URL/ANON_KEY sono iniettate
 //    dall'ambiente, e la anon key non è un segreto).
 //
+// 🔴 QUESTO FILE STA NELLA ZONA D'OMBRA DEL SEGNALE DELLE LETTURE TAGLIATE
+// (misurata il 19/08/2026, scritta il 20/08). Il gestionale ha un punto unico
+// da cui passano le sue letture, e lì una risposta più corta del vero si
+// denuncia da sola: le Edge Function **non passano di lì** — leggono con una
+// chiave loro. Dal 20/08 qui dentro nasce anche lavoro nuovo
+// (`duplica_ricetta`), quindi non è più solo un'eredità.
+//
+// ⚠️ La cosa utile non è «non può succedere», è **da cosa dipende**: oggi non
+// morde perché le letture di queste operazioni sono piccole per costruzione —
+// le righe di UNA ricetta, gli allegati di UNA mail. Cambia il giorno in cui
+// un'operazione legge una tabella che **cresce nel tempo** (l'archivio
+// intero, uno storico prezzi, un registro): quel giorno tornerebbe più corta
+// senza che niente lo dica.
+//
+// ⚠️ Quindi, scrivendo un'operazione nuova, la domanda è: **questa lettura
+// può tornare più corta senza dirlo?** Se sì, o si chiede `count=exact` e si
+// confronta qui dentro, o si dichiara il taglio a chi legge il risultato.
+//
 // Per aggiungere un'operazione nuova: una riga nell'elenco OPERAZIONI.
 // Può precedere la migrazione che crea la funzione Postgres: un nome in
 // elenco senza funzione nel database è inerte (la chiamata fallisce con

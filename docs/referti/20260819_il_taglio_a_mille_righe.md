@@ -376,3 +376,50 @@ c'è nessun punto raggiungibile da proteggere.
 4. ⚠️ **La misura del tetto per riga padre è stata fatta con due padri**: non
    è stato provato che regga con centinaia di padri che superano il tetto
    insieme.
+
+---
+
+## Addendum del 20/08/2026 — le funzioni online, e quando smetterebbe di reggere
+
+Il segnale delle letture tagliate vive nel punto unico da cui passano le
+letture **dell'app**. Le **Edge Function** non passano di lì: leggono con una
+chiave loro. Era già dichiarato come limite; dal 20/08 cambia una cosa —
+**lì dentro nasce anche lavoro nuovo**, `duplica_ricetta` (blocco 2 dei finger
+food), quindi la zona d'ombra smette di essere solo un'eredità.
+
+⚠️ **La scelta di metterla lì è giusta** e non è in discussione: copiare una
+selezione scrive in tre tabelle, o riesce tutto o non riesce niente, ed è la
+strada protetta prevista dal Contratto. Per una volta un lavoro nuovo ci nasce
+dentro invece di arrivarci dopo.
+
+### Perché oggi non morde, e da cosa dipende
+
+| funzione | cosa legge | perché è piccola |
+|---|---|---|
+| `operazioni-atomiche` → `duplica_ricetta` | le righe e i passi di **una** ricetta | una selezione non ha mille bocconcini |
+| `posta-leggi` | le mail non ancora lette, e gli allegati di **una** | la posta di un'osteria |
+| `documento-leggi` | **un** documento | uno per volta, a richiesta |
+| `assistente-archivio` | i documenti pertinenti a una domanda | il taglio lo fa già lei, e **lo dichiara** |
+
+🔴 **Non è una proprietà del programma: è una proprietà di cosa quelle
+funzioni leggono oggi.** La risposta cambia il giorno in cui una funzione
+online legge una tabella che **cresce nel tempo** — l'archivio documenti
+intero, lo storico prezzi di un ingrediente, un registro HACCP, le fatture di
+un fornitore. Quel giorno la risposta tornerebbe più corta **senza nessun
+errore**, e nessuno se ne accorgerebbe: lì dentro il confronto non c'è.
+
+### La domanda da farsi, che è la stessa delle letture annidate
+
+> **Questa lettura può tornare più corta senza dirlo?**
+
+Se sì: o si chiede `count=exact` e si confronta **dentro la funzione**, o si
+dichiara il taglio a chi legge il risultato. Nessuna delle due è stata
+costruita adesso, perché nessuna delle quattro funzioni oggi ne ha bisogno —
+ed è scritto qui **con la condizione che lo farebbe cadere**, non come un
+«non può succedere».
+
+Scritto in tre posti: in cima a
+`supabase/functions/operazioni-atomiche/index.ts` (dove sta chi ne scrive una
+nuova), in `src/lib/supabase.js` (accanto al segnale, fra i limiti dichiarati)
+e in CLAUDE.md §8, nella famiglia della «risposta più corta che ha l'aria di
+essere intera».
