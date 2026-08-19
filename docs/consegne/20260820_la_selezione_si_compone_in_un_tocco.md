@@ -160,7 +160,9 @@ capo, e ti dice cosa c'è dentro.
 
 ---
 
-**Commit del lavoro**: dichiarato nel commit di questo riepilogo.
+**Commit del lavoro**: `bb3fadf` — «La selezione si compone in un tocco —
+blocco 2, seconda metà».
+**Working tree**: pulito.
 **Migrazione**: `20260820000001` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
 **Corridoio**: da installare in produzione dopo il push
