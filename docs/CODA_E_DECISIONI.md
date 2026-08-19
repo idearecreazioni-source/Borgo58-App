@@ -80,10 +80,9 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## ⚠️ Cosa resta da guardare dopo il 19/08 sera
 
-1. **Due migrazioni aspettano il push**: `20260819000009` (i predefiniti tolti) e
-   `20260819000010` (le cinque lapidi finte da togliere dal registro). Finché non
-   sono applicate, in produzione un inserimento senza data prende ancora una data
-   inventata, e il registro delle cancellazioni contiene cinque righe di prova.
+1. ✅ **Le due migrazioni sono state applicate** dopo il push: **147 migrazioni in
+   produzione**, 26 lapidi, **zero** righe di prova nel registro, **zero**
+   riempimenti automatici di date.
 2. 🔴 **Nessuno ha chiuso un conto in sala dopo la modifica di
    `close_order_as_discount_gift`.** È provato dentro la migrazione — che apre un
    conto vero e lo omaggia — ma con i claims impostati, non con un tablet in mano.
@@ -94,11 +93,21 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    non è un problema, ma vuol dire che il numero delle lapidi su quel database non
    dice niente — e che una prova che le contasse invece di guardare una proprietà
    sarebbe inutile.
-4. ⚠️ **Il limite di mille righe di PostgREST non è stato cercato altrove.** È stato
-   trovato perché una prova non diventava rossa; nessuno ha misurato **quali altre
-   prove o schermate leggono un elenco intero dal client** e potrebbero guardarne
-   solo una parte credendo di guardarlo tutto. Sta nella stessa famiglia
-   dell'avvertenza sui `.limit()` (§8), ma da una porta che il codice non mostra.
+4. 🔴 **IL TAGLIO A MILLE RIGHE — misurato il 19/08 sera, NON corretto** (decisione
+   di Alessio: prima la misura, poi lui decide se è mezz'ora o un giro a sé).
+   Referto: [`referti/20260819_il_taglio_a_mille_righe.md`](referti/20260819_il_taglio_a_mille_righe.md).
+   In breve: **144 letture dell'app** chiedono un elenco senza dire quante righe.
+   Oggi nessuna tabella ci arriva — la più popolata ne ha **26** — ma
+   **`order_items` passa mille in 2-3 settimane di servizio**, e `orders` e
+   `reservations` in 3-4 mesi. I due punti che fanno male non sono quelli: sono
+   **i totali della Prima nota con l'esportazione CSV** (elenco non filtrato:
+   i campi «dal» e «al» partono vuoti) e **il Manuale HACCP con l'interruttore
+   «tutto»** — un documento esibibile che dichiara «tutto» e ne mostra mille.
+   ⚠️ **E la cosa che vale di più è che si può sapere**: chiedendo l'elenco con
+   `{ count: "exact" }` il database dichiara **quante righe c'erano davvero**
+   (misurato: 1000 consegnate, **1930 dichiarate**). Il confronto starebbe in un
+   posto solo, e trasformerebbe la correzione futura da «cercarli tutti» a «se ne
+   accorge da solo».
 
 ---
 
