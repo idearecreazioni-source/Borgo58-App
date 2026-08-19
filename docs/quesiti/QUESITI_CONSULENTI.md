@@ -152,6 +152,45 @@ significa rifare le righe già registrate.
 
 ---
 
+## L17 · Su quale costo si calcola il food cost — imponibile o pagato
+
+**Contesto.** Il costo di un ingrediente entra nel gestionale da due strade
+diverse, e dal 19/08/2026 tutte e due scrivono il prezzo di listino:
+
+- **da un documento** (il carico da fattura): il costo unitario è quello che
+  il documento dichiara, cioè di norma l'**imponibile**;
+- **da una spesa senza documento** (la lista della spesa, il mercato):
+  l'importo **pagato**, che non ha nessuna IVA da scorporare.
+
+Decisione di Alessio del 19/08: le due basi convivono, perché **tutti e due
+sono il costo vero per il locale**.
+
+⚠️ **Il caso che resta aperto è il terzo**: un acquisto con **scontrino**.
+Lì l'IVA c'è scritta, ma se non è recuperabile il costo vero per il locale è
+l'importo **pieno** — mentre il gestionale, seguendo il documento,
+userebbe l'imponibile e sottostimerebbe il food cost.
+
+**Domanda.** «Per un ristorante, su quali acquisti l'IVA è effettivamente
+recuperabile? Quando non lo è, il costo da usare per calcolare il food cost
+e i margini è l'importo pieno pagato?»
+
+**Cosa cambia nell'app.** Decide se il costo unitario che entra in
+`price_history` debba essere l'imponibile o il lordo **a seconda del tipo di
+documento**. Oggi non c'è nessuna regola che distingua i due casi.
+
+⚠️ **Quanto è grande il problema oggi, misurato in produzione il 19/08 e non
+stimato**: zero fatture fornitori registrate, zero movimenti di prima nota,
+zero movimenti con scontrino. Le 26 righe di storico prezzi vengono tutte
+dalle fatture di collaudo. **È una possibilità teorica, non un problema
+vivo** — ed è il momento giusto per deciderlo, perché ogni riga scritta
+prima della risposta è una riga da rivedere dopo.
+
+**Stato**: aperto. ⚠️ Fino alla risposta **non si tocca niente**: il
+gestionale scrive quello che il documento dichiara, e quello che si paga
+quando un documento non c'è.
+
+---
+
 ## L12 · In che forma vuoi i documenti che non passano dallo SdI
 
 **Contesto.** Corrispettivi, ricevute, autofatture, prospetti del

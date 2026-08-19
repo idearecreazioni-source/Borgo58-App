@@ -227,9 +227,26 @@ export default function ListaSpesa() {
     }
   };
 
+  // La causale che il gestionale PROPONE per l'uscita. ⚠️ Si cerca per
+  // nome fra le sue causali, e se non c'è non se ne inventa nessuna: le
+  // causali sono dati di Alessio (Cassa → Causali), e il giorno che la
+  // rinominasse è meglio nessuna proposta che una scelta sbagliata fatta
+  // in silenzio — è la causale a decidere dove quel costo finisce nei
+  // conti.
+  const causalePropostaId = useMemo(
+    () => causali.find((c) => c.label.toLowerCase() === "spesa alimentare")?.id ?? "",
+    [causali]
+  );
+
   const openClose = (itemId, quantityNeeded) => {
     setClosingItemId(itemId);
-    setCloseForm({ ...emptyCloseForm, quantity_received: quantityNeeded ?? "" });
+    setCloseForm({
+      ...emptyCloseForm,
+      quantity_received: quantityNeeded ?? "",
+      // ⚠️ Proposta e VISIBILE nel menu accanto al mezzo: non si scrive mai
+      // una causale su un'uscita senza mostrarla, nemmeno per comodità.
+      causale_id: causalePropostaId,
+    });
   };
 
   const handleClose = async (itemId) => {

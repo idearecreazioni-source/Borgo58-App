@@ -206,4 +206,52 @@ describe("i tre esiti di una riga chiusa a mano", () => {
     });
     expect(r.error).not.toBeNull();
   });
+
+  it.skipIf(!CORRIDOIO)("quello che hai pagato diventa il prezzo, TALE E QUALE", async () => {
+    // 🔴 DECISIONE DI ALESSIO, 19/08, che ha scartato la domanda «l'importo
+    // è con o senza IVA?»: *«esistono solo due tipi di acquisti, con
+    // documento e senza. Quelli con documento deducono da esso se c'è l'IVA
+    // e a quanto ammonta; quelli senza, per forza di cose, non hanno IVA.»*
+    //
+    // ⚠️ QUESTA PROVA PUÒ FALLIRE, ed è il punto: 40 € per 10 kg fanno 4,00
+    // al chilo. Con uno scorporo dell'IVA al 22% verrebbero 3,28 — e il food
+    // cost di ogni ricetta che usa quel prodotto scenderebbe di un quinto
+    // senza che nessuno se ne accorga.
+    await nuovoIngrediente(9.99);
+    const riga = await nuovaRiga(10);
+
+    const r = await chiudi({
+      p_item_id: riga,
+      p_esito: "comprata",
+      p_importo: 40,
+      p_metodo_pagamento: "contante",
+      p_quantita_ricevuta: 10,
+    });
+    expect(r.error).toBeNull();
+
+    const ing = await titolare.from("ingredients").select("current_price").eq("id", ingrediente).single();
+    expect(Number(ing.data.current_price)).toBe(4);
+
+    const storico = await titolare
+      .from("price_history")
+      .select("price, note")
+      .eq("ingredient_id", ingrediente);
+    expect(storico.data).toHaveLength(1);
+    expect(Number(storico.data[0].price)).toBe(4);
+    // ⚠️ E la riga dice da dove viene: in `current_price` convivono da oggi
+    // un imponibile letto da una fattura e un pagato al mercato, ed è
+    // giusto così — ma chi rilegge deve poterli distinguere.
+    expect(storico.data[0].note).toMatch(/senza documento/i);
+  });
+
+  it.skipIf(!CORRIDOIO)("...ma il regalo continua a non toccare il listino", async () => {
+    await nuovoIngrediente(4);
+    const riga = await nuovaRiga(5);
+    await chiudi({ p_item_id: riga, p_esito: "gratis", p_quantita_ricevuta: 5 });
+
+    const ing = await titolare.from("ingredients").select("current_price").eq("id", ingrediente).single();
+    expect(Number(ing.data.current_price)).toBe(4);
+    const storico = await titolare.from("price_history").select("id").eq("ingredient_id", ingrediente);
+    expect(storico.data).toHaveLength(0);
+  });
 });
