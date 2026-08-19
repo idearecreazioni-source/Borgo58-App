@@ -23,7 +23,8 @@
     "prova:base": "node scripts/prova-base.mjs",
     "collaudo:documenti": "node scripts/documenti-finti.mjs",
     "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai",
-    "funzione:viva": "node scripts/funzione-viva.mjs"
+    "funzione:viva": "node scripts/funzione-viva.mjs",
+    "collaudo:stato": "node scripts/collaudo-stato.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
