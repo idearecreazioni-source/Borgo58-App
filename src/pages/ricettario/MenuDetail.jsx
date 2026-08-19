@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { puoAndareInCarta } from "../../lib/calcoli/carta";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import {
   addMenuItem,
@@ -416,8 +417,15 @@ export default function MenuDetail() {
       {SECTIONS.map(({ category, label, target }) => {
         const sectionItems = itemsByCategory[category];
         const catAvg = categoryAverages[category];
+        // ⚠️ Solo i piatti pronti per la carta (20/08/2026, decisione di
+        // Alessio). Il criterio sta in un posto solo, e chiede una
+        // proprietà invece di elencare i tipi: un tipo nuovo domani non
+        // ricompare qui da sé.
         const candidates = allRecipes.filter(
-          (r) => r.category === category && !items.some((i) => i.recipe_id === r.id)
+          (r) =>
+            puoAndareInCarta(r) &&
+            r.category === category &&
+            !items.some((i) => i.recipe_id === r.id)
         );
         const form = addForms[category] ?? { recipe_id: "", selling_price: "" };
 
@@ -667,7 +675,14 @@ export default function MenuDetail() {
                 {allRecipes
                   .filter((r) => {
                     const current = items.find((i) => i.id === simSwapItemId);
-                    return current && r.category === current.category && r.id !== current.recipe_id;
+                    // Stesso criterio: si simula uno scambio con qualcosa
+                    // che in carta ci potrebbe andare davvero.
+                    return (
+                      puoAndareInCarta(r) &&
+                      current &&
+                      r.category === current.category &&
+                      r.id !== current.recipe_id
+                    );
                   })
                   .map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>

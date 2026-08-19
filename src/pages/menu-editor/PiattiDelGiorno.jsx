@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { puoAndareInCarta } from "../../lib/calcoli/carta";
 import { Link } from "react-router-dom";
 import {
   addDailyMenuItem,
@@ -198,7 +199,10 @@ export default function PiattiDelGiorno() {
                 {itemForm.mode === "recipe" ? (
                   <select value={itemForm.recipe_id} onChange={(e) => setItemForm((f) => ({ ...f, recipe_id: e.target.value }))} className={`${inputClass} col-span-2`}>
                     <option value="">Seleziona ricetta…</option>
-                    {recipes.map((r) => (
+                    {/* ⚠️ Solo i piatti pronti per la carta, stesso criterio
+                        della carta (20/08/2026). Chi non c'è non manca: il
+                        database rifiuterebbe comunque una preparazione. */}
+                    {recipes.filter(puoAndareInCarta).map((r) => (
                       <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>

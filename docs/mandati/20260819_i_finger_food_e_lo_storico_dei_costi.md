@@ -162,11 +162,19 @@ oggetto.* Il prezzo della carta è di un **piatto**, il prezzo a pezzo è di un
 **finger** — cose diverse, ognuna col suo, e non si contraddicono perché non
 parlano della stessa cosa.
 
-⚠️ **Il caso in cui si contraddirebbero esiste, e si scrive adesso invece di
-risolverlo**: il giorno in cui **lo stesso finger andasse in carta anche da
-solo**, ci sarebbero due prezzi per la stessa cosa e servirebbe una regola su
-quale vince. Oggi non succede — nessun finger è un piatto in carta. *Scriverlo
-evita che fra sei mesi qualcuno lo scopra vendendo.*
+⚠️ **QUEL CASO NON SI PRESENTERÀ PIÙ, e questa riga sostituisce
+un'avvertenza che c'era** (20/08/2026). Fino al 20/08 qui era scritto che il
+giorno in cui lo stesso finger fosse andato in carta anche da solo ci
+sarebbero stati due prezzi per la stessa cosa, e sarebbe servita una regola
+su quale vince. **Alessio l'ha superata**: *«semmai un bocconcino dovesse
+diventare un piatto a sé, creerò una ricetta nuova con un nome diverso»*.
+Non sarà la stessa cosa, quindi non ci saranno due prezzi della stessa cosa,
+e **il prezzo a pezzo resta l'unico prezzo di un bocconcino**.
+
+⚠️ E dal 20/08 non è più nemmeno possibile per sbaglio: **un menu accetta
+solo i piatti** (trigger `solo_piatti_in_menu`). L'avvertenza vecchia è
+dichiarata decaduta e non cancellata in silenzio — vedi il n. 19 di
+[`decisioni_rovesciate.md`](../decisioni_rovesciate.md).
 
 ### Blocco 1 — cosa comprendeva
 

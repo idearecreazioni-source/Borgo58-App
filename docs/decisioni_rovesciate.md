@@ -773,3 +773,40 @@ passare la data, e non se ne accorgerà leggendo: se ne accorgerà provando.
 Misurato prima di togliere che **oggi nessuna strada si appoggiava al
 predefinito tranne una**, la chiusura di un conto come sconto o omaggio in
 sala, sistemata nella stessa migrazione.
+
+---
+
+## 19 · 20/08/2026 — «il caso dei due prezzi si scrive invece di risolverlo»
+
+**Cosa era stato deciso, e quando.** Il 19/08, insieme al prezzo a pezzo dei
+bocconcini, era stato scritto in tre posti — il commento della colonna
+`recipes.prezzo_al_pezzo`, la migrazione `20260819000013` e il mandato — che
+il giorno in cui **lo stesso finger fosse andato in carta anche da solo** ci
+sarebbero stati due prezzi per la stessa cosa, e sarebbe servita **una regola
+su quale vince**. Il caso era dichiarato possibile e non impedito.
+
+**La ragione di allora.** Era la scelta giusta con quello che si sapeva: il
+prezzo della carta è di un piatto, il prezzo a pezzo è di un bocconcino, e
+finché sono cose diverse non si contraddicono. Il caso limite però esisteva e
+niente lo escludeva, quindi valeva la regola del progetto — *un caso che non
+si risolve si scrive, perché chi lo scoprirà vendendo non avrà tempo di
+cercarne la ragione*.
+
+**Cosa si decide adesso.** Alessio: *«semmai un bocconcino dovesse diventare
+un piatto a sé, creerò una ricetta nuova con un nome diverso»*. Quindi il
+prezzo a pezzo **resta l'unico prezzo di un bocconcino**, e non serve nessuna
+regola su quale vince. In più, dallo stesso giorno **un menu accetta solo i
+piatti** (trigger `solo_piatti_in_menu`, migrazione `20260820000002`): il caso
+non è più raggiungibile nemmeno per sbaglio.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Non perché fosse
+sbagliata: perché descriveva un caso che una decisione ha cancellato.** La
+regola su quale prezzo vince serviva solo se lo *stesso* oggetto avesse potuto
+avere due prezzi — e la decisione di Alessio dice che in quel caso l'oggetto
+sarà **un altro**, con un nome suo. Non si è risolto il conflitto: si è
+smesso di poterlo generare, che è il modo migliore.
+
+⚠️ **E l'avvertenza non è stata cancellata in silenzio**: nei tre posti dove
+stava è stata **sostituita** da una riga che dice che c'era e cosa l'ha
+superata. Un'avvertenza sparita senza spiegazione è indistinguibile da una
+dimenticata.

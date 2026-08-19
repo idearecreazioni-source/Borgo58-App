@@ -22,7 +22,7 @@ fondo a questo riepilogo, e il lavoro riprende con le sue risposte.
    che è in coda e non esiste. ⚠️ È la ragione per cui il campo è **a
    schermo** e non solo nel database: *un dato scritto che nessuno può vedere
    è indistinguibile da un dato non scritto* (lezione del 18/08).
-3. ⚠️ **La contraddizione futura è scritta, non impedita**: vedi sotto.
+3. ⚠️ **La contraddizione futura era scritta e non impedita**: il 20/08 la decisione di Alessio l’ha superata, e ora un menu accetta solo i piatti. Vedi sotto.
 
 ---
 
@@ -44,13 +44,19 @@ contraddicono.
 stesso oggetto. Il prezzo della carta è di un **piatto**; questo è di un
 **bocconcino**. Cose diverse, ognuna col suo.
 
-🔴 **Il caso in cui si contraddirebbero esiste, e si SCRIVE invece di
-risolverlo** (decisione sua): il giorno in cui **lo stesso finger andasse in
-carta anche da solo** ci sarebbero due prezzi per la stessa cosa e servirebbe
-una regola su quale vince. Oggi non succede, e **niente lo impedisce**. Sta
-scritto in tre posti — nel commento della colonna nel database, nella
-migrazione e nel mandato — perché *chi lo scoprirà vendendo non avrà tempo di
-cercarne la ragione*.
+⚠️ **QUEL CASO NON SI PRESENTERÀ PIÙ, e questa riga sostituisce
+un'avvertenza che c'era** (20/08/2026). Fino al 20/08 qui era scritto che il
+giorno in cui lo stesso finger fosse andato in carta anche da solo ci
+sarebbero stati due prezzi per la stessa cosa, e sarebbe servita una regola
+su quale vince. **Alessio l'ha superata**: *«semmai un bocconcino dovesse
+diventare un piatto a sé, creerò una ricetta nuova con un nome diverso»*.
+Non sarà la stessa cosa, quindi non ci saranno due prezzi della stessa cosa,
+e **il prezzo a pezzo resta l'unico prezzo di un bocconcino**.
+
+⚠️ E dal 20/08 non è più nemmeno possibile per sbaglio: **un menu accetta
+solo i piatti** (trigger `solo_piatti_in_menu`). L'avvertenza vecchia è
+dichiarata decaduta e non cancellata in silenzio — vedi il n. 19 di
+[`decisioni_rovesciate.md`](../decisioni_rovesciate.md).
 
 ⚠️ **E metà della contraddizione è impedita**: un prezzo a pezzo **non si può
 scrivere su un piatto finito**, dove sarebbe davvero un secondo prezzo

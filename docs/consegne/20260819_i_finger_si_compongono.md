@@ -79,10 +79,19 @@ L'obiezione dei «due prezzi che si contraddicono» è stata **ricollocata, non
 scartata**: non sono due prezzi dello stesso oggetto — uno è di un **piatto**,
 l'altro di un **finger**.
 
-⚠️ **Il caso in cui si contraddirebbero esiste e sta scritto nel mandato**: il
-giorno in cui lo stesso finger andasse in carta **anche da solo**, servirebbe
-una regola su quale prezzo vince. Oggi non succede. *Scriverlo evita che fra
-sei mesi qualcuno lo scopra vendendo.*
+⚠️ **QUEL CASO NON SI PRESENTERÀ PIÙ, e questa riga sostituisce
+un'avvertenza che c'era** (20/08/2026). Fino al 20/08 qui era scritto che il
+giorno in cui lo stesso finger fosse andato in carta anche da solo ci
+sarebbero stati due prezzi per la stessa cosa, e sarebbe servita una regola
+su quale vince. **Alessio l'ha superata**: *«semmai un bocconcino dovesse
+diventare un piatto a sé, creerò una ricetta nuova con un nome diverso»*.
+Non sarà la stessa cosa, quindi non ci saranno due prezzi della stessa cosa,
+e **il prezzo a pezzo resta l'unico prezzo di un bocconcino**.
+
+⚠️ E dal 20/08 non è più nemmeno possibile per sbaglio: **un menu accetta
+solo i piatti** (trigger `solo_piatti_in_menu`). L'avvertenza vecchia è
+dichiarata decaduta e non cancellata in silenzio — vedi il n. 19 di
+[`decisioni_rovesciate.md`](../decisioni_rovesciate.md).
 
 ---
 
