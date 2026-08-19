@@ -123,5 +123,9 @@ gestionale li rifiuta anche se ci arrivano per un'altra strada.
 
 ---
 
+**Commit del lavoro**: `b515309` — «In un menu ci vanno solo i piatti, e il
+caso dei due prezzi non esisterà».
+**Commit del mandato del registratore**: `18ee23f` — sola documentazione.
+**Working tree**: pulito.
 **Migrazione**: `20260820000002` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
