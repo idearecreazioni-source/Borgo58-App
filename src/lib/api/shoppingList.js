@@ -100,3 +100,13 @@ export async function closeShoppingListItem({
     p_expiry_date: expiryDate ?? null,
   });
 }
+
+// «È arrivato, chiudo la riga»: la via del DOCUMENTO, e si distingue dalla
+// chiusura a mano proprio in questo — non scrive nessun costo e non carica
+// nessun lotto. Il lotto c'è già (l'ha creato il carico) e il costo sta
+// nella fattura: la lista non scrive mai un'uscita.
+// Una tabella sola, nessuna conseguenza altrove → niente corridoio.
+export async function chiudiRigaArrivata(itemId) {
+  const { error } = await supabase.rpc("chiudi_riga_arrivata", { p_item_id: itemId });
+  if (error) throw error;
+}

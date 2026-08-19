@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   addBelowThresholdItems,
   addShoppingListItem,
+  chiudiRigaArrivata,
   closeShoppingListItem,
   listaSpesa,
   listShoppingList,
@@ -85,7 +86,18 @@ export default function ListaSpesa() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTitolare]);
 
-  const daComprare = useMemo(() => items.filter((i) => i.status === "da_comprare"), [items]);
+  // 🔴 LE RIGHE «ORDINATA» NON COMPARIVANO DA NESSUNA PARTE, trovato
+  // misurando il 19/08: il filtro prendeva solo «da_comprare» e l'altro
+  // elenco solo «acquistato», quindi una riga ordinata spariva dalla
+  // schermata pur essendo viva nel database. ⚠️ In produzione le uniche
+  // due righe sono ordinate: la lista della spesa si apriva VUOTA mentre
+  // c'era roba dentro — e una lista vuota si legge «non manca niente».
+  // ⚠️ Ed è proprio la riga ordinata quella che aspetta gli arrivi: senza
+  // vederla, «arrivati 5 di 20» non lo leggerebbe nessuno.
+  const daComprare = useMemo(
+    () => items.filter((i) => i.status === da_comprare || i.status === ordinata),
+    [items]
+  );
   const acquistati = useMemo(() => items.filter((i) => i.status === "acquistato"), [items]);
 
   const groupedDaComprare = useMemo(() => {
@@ -167,6 +179,20 @@ export default function ListaSpesa() {
       setError(e.message);
     } finally {
       setAdding(false);
+    }
+  };
+
+  // Quanto ne è arrivato: il titolare lo legge dalla lista completa, lo
+  // staff dalla vista senza importi. La colonna si chiama uguale nei due
+  // posti, quindi la riga qui sopra non deve sapere chi sta guardando.
+  const arrivati = (item) => Number(item.quantita_arrivata ?? 0);
+
+  const handleArrivata = async (itemId) => {
+    try {
+      await chiudiRigaArrivata(itemId);
+      await loadAll();
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -291,6 +317,11 @@ export default function ListaSpesa() {
                             sotto soglia
                           </span>
                         )}
+                        {item.status === "ordinata" && (
+                          <span className="text-[11px] text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5 ml-1.5">
+                            ordinata
+                          </span>
+                        )}
                         {/* Comprata altrove nel frattempo: la riga non
                             sparisce da sola — la lista è sua — ma smette
                             di far comprare due volte la stessa cosa. */}
@@ -309,6 +340,28 @@ export default function ListaSpesa() {
                             )}
                             {" · in lista dal "}
                             {formatDate(item.numeri.in_lista_dal)}
+                          </div>
+                        )}
+                        {/* ⚠️ «ARRIVATI 5 DI 20» — e il fabbisogno NON si
+                            riscrive a 15. La riga resta aperta e PROPONE la
+                            chiusura: il gestionale segnala, Alessio decide se
+                            ne compra ancora o se gli bastano. Una riga che
+                            sparisce quando la merce è arrivata a metà lascia
+                            senza scorte, ed è la normalità coi fornitori. */}
+                        {arrivati(item) > 0 && (
+                          <div className="text-xs text-b58-charcoal mt-0.5">
+                            arrivati {formatQta(arrivati(item))}
+                            {item.quantity_needed != null && <> di {formatQta(item.quantity_needed)}</>}{" "}
+                            {item.unit}
+                            {isTitolare && (
+                              <button
+                                type="button"
+                                onClick={() => handleArrivata(item.id)}
+                                className="ml-2 text-b58-terracotta hover:text-b58-terracotta-dark"
+                              >
+                                mi bastano, chiudi la riga
+                              </button>
+                            )}
                           </div>
                         )}
                         {item.note && (
