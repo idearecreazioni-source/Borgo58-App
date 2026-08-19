@@ -233,4 +233,5 @@ esce un euro), oppure non l'ho presa (la riga sparisce e non entra niente).
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: 0873610 — «I tre esiti della lista, e l'uscita che esce davvero».
+**Working tree**: pulito (questo riepilogo è l'ultimo commit della consegna).
