@@ -189,5 +189,8 @@ porzioni ordinate tolgono dal magazzino due pezzi per tipo.
 
 ---
 
+**Commit del lavoro**: `005e077` — «I finger si compongono — blocco 1 del
+mandato dei finger food».
+**Working tree**: pulito.
 **Migrazione**: `20260819000012` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.

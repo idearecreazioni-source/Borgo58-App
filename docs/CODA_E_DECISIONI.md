@@ -38,6 +38,11 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    il Ricettario è **vuoto** (0 ricette, 0 piatti in menu, misurato), questo
    lavoro ne cambia la forma, e le ricette le inserirà Alessio **a mano, a
    decine**. Farlo dopo significa fargliele rifare.
+   ✅ **BLOCCO 1 FATTO il 19/08** — [consegna](consegne/20260819_i_finger_si_compongono.md),
+   migrazione `20260819000012`: i finger sono un tipo a sé, entrano nelle
+   selezioni, non si ripetono, e un piatto finito resta fuori. **Restano il
+   blocco 2** (prezzo a pezzo e schermata per comporre) **e il blocco 3** (lo
+   storico dei costi).
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
    misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.
