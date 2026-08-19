@@ -354,7 +354,12 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
         coperti: 0,
         coperto_unit_price: 5,
         opened_at: GIORNO,
-        closed_at: GIORNO,
+        // 🔴 UN'ORA DI SERVIZIO VERA, non la mezzanotte (19/08). Scrivendo
+        // solo la data, il conto nasce a mezzanotte di Greenwich — le 02:00
+        // italiane — e dal 19/08 quel conto appartiene alla SERATA PRIMA,
+        // che è esattamente la regola voluta. La prova sbagliava a datare,
+        // non il codice: un conto chiuso alle 02:00 è la sera prima.
+        closed_at: `${GIORNO}T21:00:00+02:00`,
         note: "TEST-AUTO fisc",
         documento_fiscale: documento ?? null,
         documento_emesso_il: documento === "fattura" ? GIORNO : null,
@@ -495,7 +500,12 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
         coperti: 0,
         coperto_unit_price: 5,
         opened_at: GIORNO,
-        closed_at: GIORNO,
+        // 🔴 UN'ORA DI SERVIZIO VERA, non la mezzanotte (19/08). Scrivendo
+        // solo la data, il conto nasce a mezzanotte di Greenwich — le 02:00
+        // italiane — e dal 19/08 quel conto appartiene alla SERATA PRIMA,
+        // che è esattamente la regola voluta. La prova sbagliava a datare,
+        // non il codice: un conto chiuso alle 02:00 è la sera prima.
+        closed_at: `${GIORNO}T21:00:00+02:00`,
         note: "TEST-AUTO imp",
       })
       .select()

@@ -12,6 +12,8 @@ import {
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, labelFor, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import { serataDiServizio } from "../../lib/calcoli/serata";
+import { getServiceSettings } from "../../lib/api/orders";
 import { CASH_DIRECTIONS } from "../../lib/constants";
 
 // Primo del mese in ora locale: la versione precedente passava per
@@ -363,7 +365,39 @@ export default function CassaHome() {
 function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
   const [contato, setContato] = useState("");
   const [versamento, setVersamento] = useState("");
+  // 🔴 LA SERATA, NON «OGGI» (regola di Alessio, 19/08). Il conteggio del
+  // cassetto è uno dei due soli gesti che seguono la serata: contando alle
+  // 00:30 si sta chiudendo la sera prima, e datarlo a domani farebbe
+  // confrontare i soldi contati stanotte con gli incassi di un'altra
+  // giornata — un ammanco che non esiste.
+  //
+  // ⚠️ Si PROPONE e si vede, non si scrive in silenzio: il caso che lo
+  // rende necessario esiste davvero — il cassetto contato prima di
+  // mezzanotte a locale chiuso presto, o la mattina dopo prima di aprire.
+  // È la stessa forma del mezzo di pagamento, della riga della lista e
+  // della causale: *si fa da sé, ma si vede.*
   const [data, setData] = useState(oggiLocale());
+  const [oraFineSerata, setOraFineSerata] = useState(null);
+
+  useEffect(() => {
+    let vivo = true;
+    getServiceSettings()
+      .then((s) => {
+        if (!vivo) return;
+        setOraFineSerata(s?.ora_fine_serata ?? null);
+        // ⚠️ La proposta si calcola con l'ora VERA di Alessio, non con un
+        // numero scritto qui: due orologi che possono divergere sono il
+        // modo in cui la schermata e il database datano lo stesso gesto su
+        // due giorni diversi.
+        if (s?.ora_fine_serata) setData(serataDiServizio(new Date(), s.ora_fine_serata));
+      })
+      // Se le impostazioni non si leggono resta «oggi», che è la proposta
+      // di prima: si perde la comodità, non il gesto.
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [inCorso, setInCorso] = useState("");
   const [esito, setEsito] = useState(null);
 
@@ -427,8 +461,15 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className={labelClass}>Data</label>
+          <label className={labelClass}>Serata che stai chiudendo</label>
           <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputClass} />
+          {oraFineSerata && (
+            <p className="text-xs text-b58-charcoal-soft mt-1">
+              Stai chiudendo la serata di{" "}
+              <strong className="text-b58-charcoal">{formatDate(data)}</strong>. Fino alle{" "}
+              {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">

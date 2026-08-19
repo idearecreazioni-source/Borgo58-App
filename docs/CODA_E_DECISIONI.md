@@ -30,15 +30,17 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    verifica controlla.
 4. **Il n. 12 del collaudo: la serata sulla Dashboard**
    ([annotazioni del collaudo](collaudo/annotazioni.md)).
-5. **La regola delle 5 del mattino su cassa e conti** — ✅ **misurata il
-   19/08**: il censimento è in
-   [`docs/referti/20260819_censimento_giornata_operativa.md`](referti/20260819_censimento_giornata_operativa.md).
-   I punti sono **32** e non 18 (9 funzioni in UTC, 15 già in ora di Roma,
-   8 predefiniti di colonna), più 35 punti nel client. **Nessuna correzione
-   fatta**: la prossima passata è scrivere la funzione SQL gemella di
-   `serataDiServizio()` e farla chiamare dai punti che riguardano soldi e
-   conti. ⚠️ Oggi costa zero perché in produzione non c'è nessun movimento
-   di cassa e nessun conto chiuso; dopo il collaudo generale ce ne saranno.
+5. **La regola delle 5 del mattino su cassa e conti** — ✅ **misurata e
+   fatta il 19/08**: censimento in
+   [`referti/20260819_censimento_giornata_operativa.md`](referti/20260819_censimento_giornata_operativa.md),
+   consegna in
+   [`consegne/20260819_la_giornata_operativa.md`](consegne/20260819_la_giornata_operativa.md).
+   Il perimetro l'ha deciso Alessio: seguono la serata **due gesti soli** —
+   il conto incassato dopo mezzanotte e il conteggio del cassetto; tutto il
+   resto segue il calendario. ⚠️ **Resta aperta la seconda metà**: i 35
+   punti del client che calcolano «oggi» non sono stati toccati, e le
+   schermate dei soldi alle 00:30 propongono ancora domani. E resta il
+   difetto di Comande: la serata decisa all'apertura e mai più aggiornata.
 6. **Finire la serata recitata**: restano comande, storni, conto diviso,
    omaggio, chiusura, conteggio del cassetto.
 7. **Quante altre schermate fanno più letture insieme e disegnano lo stesso se
