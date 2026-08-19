@@ -168,27 +168,27 @@ export const PAYMENT_METHODS = [
   { value: "carta", label: "Carta" },
 ];
 
-// Come si paga una spesa CHIUSA DALLA LISTA — e sono due vocabolari, non
-// uno.
+// 🔴 `PAYMENT_METHODS_SPESA` NON ESISTE PIÙ — 19/08/2026, decisione di
+// Alessio. Era nato il 17/08 perché la lista della spesa e le fatture
+// avevano due vocabolari diversi: la lista rifiutava l'assegno, e il menu
+// lo offriva lo stesso. ⚠️ Ma la separazione poggiava su una ragione che
+// è caduta: quella schermata **non sapeva cosa farsene del mezzo** — lo
+// registrava e non ne conseguiva niente. Da quando «l'ho comprato e
+// pagato» scrive un'uscita vera in prima nota, il mezzo *serve*, e i due
+// elenchi sono tornati uno solo: `PAYMENT_METHODS`, assegno compreso.
 //
-// 🔴 Fino al 17/08 la lista della spesa usava l'elenco delle fatture, e
-// finché i due coincidevano non si vedeva. Aggiungendo l'assegno alle
-// fatture, questo menu ha cominciato a offrire un valore che il database
-// rifiuta (`shopping_list_items_payment_method_check` ammette contante,
-// bonifico, carta): sceglierlo faceva fallire la chiusura della riga.
-// Trovato costruendo la rete dei vocabolari, non da un errore.
-//
-// ⚠️ NON si è allargato il vincolo per far posto all'assegno: quale sia il
-// vocabolario della sua spesa lo decide Alessio, e aggiungere un valore per
-// far tornare un conto sarebbe una regola scritta da me sul suo modo di
-// comprare. Se un giorno pagherà la spesa con un assegno, è una riga qui e
-// una migrazione.
-export const PAYMENT_METHODS_SPESA = [
-  { value: "contante", label: "Contante" },
-  { value: "bonifico", label: "Bonifico" },
-  { value: "carta", label: "Carta" },
-];
+// ⚠️ Se qualcuno li riseparasse, la rete del 17/08 se ne accorge: il
+// vincolo sul database e questo elenco vengono confrontati da
+// `tests/app/vocabolari.test.js`.
 
+// Com'è finita una riga della lista della spesa. ⚠️ «Non presa» non c'è, e
+// non è una dimenticanza: quella riga viene cancellata, quindi non lascia
+// un esito da conservare.
+export const ESITI_RIGA_LISTA = [
+  { value: "comprata", label: "Comprata e pagata" },
+  { value: "gratis", label: "Avuta gratis" },
+  { value: "arrivata_con_documento", label: "Arrivata con un documento" },
+];
 export const CLEANING_FREQUENCIES = [
   { value: "giornaliera", label: "Giornaliera" },
   { value: "settimanale", label: "Settimanale" },

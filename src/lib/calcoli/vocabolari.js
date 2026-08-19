@@ -49,8 +49,8 @@ import {
   NC_CATEGORIES,
   ORDER_DESTINATIONS,
   ORDER_PAYMENT_METHODS,
+  ESITI_RIGA_LISTA,
   PAYMENT_METHODS,
-  PAYMENT_METHODS_SPESA,
   PEST_CONTROL_TYPES,
   RECIPE_CATEGORIES,
   RECIPE_TYPES,
@@ -87,18 +87,18 @@ export const SPECCHIATI = [
   { costante: "COOKING_TECHNIQUES", valori: COOKING_TECHNIQUES, tabella: "recipe_steps", colonna: "technique" },
   { costante: "CONSUMPTION_REASONS", valori: CONSUMPTION_REASONS, tabella: "stock_consumptions", colonna: "reason" },
   { costante: "TIP_MEZZI", valori: TIP_MEZZI, tabella: "tips_collected", colonna: "mezzo" },
-  // ⚠️ I DUE METODI DI PAGAMENTO SONO DUE VOCABOLARI, non uno. Fino al
-  // 17/08 coincidevano e un solo elenco serviva entrambe le schermate;
-  // aggiungendo l'assegno alle fatture, il menu della lista della spesa ha
-  // cominciato a offrire un valore che il database rifiuta. Tenerli
-  // separati è la cura, e la rete è ciò che impedisce che ricapiti.
+  // 🔴 I DUE METODI DI PAGAMENTO SONO TORNATI UNO, il 19/08 (decisione di
+  // Alessio). Il 17/08 erano stati separati perché la lista della spesa
+  // rifiutava l'assegno, e la separazione era giusta *allora*: quella
+  // schermata non sapeva cosa farsene del mezzo — lo registrava e non ne
+  // conseguiva niente. Da quando la chiusura scrive un'uscita vera in prima
+  // nota, «con che cosa hai pagato» ha la stessa risposta in tutte e due, e
+  // lo stesso elenco copre due tabelle.
+  // ⚠️ La rete resta, e adesso sorveglia entrambe: se qualcuno riseparasse
+  // i vincoli, una delle due righe qui sotto diventerebbe rossa.
   { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "supplier_invoices", colonna: "payment_method" },
-  {
-    costante: "PAYMENT_METHODS_SPESA",
-    valori: PAYMENT_METHODS_SPESA,
-    tabella: "shopping_list_items",
-    colonna: "payment_method",
-  },
+  { costante: "PAYMENT_METHODS", valori: PAYMENT_METHODS, tabella: "shopping_list_items", colonna: "payment_method" },
+  { costante: "ESITI_RIGA_LISTA", valori: ESITI_RIGA_LISTA, tabella: "shopping_list_items", colonna: "esito" },
   { costante: "CLEANING_FREQUENCIES", valori: CLEANING_FREQUENCIES, tabella: "haccp_cleaning_tasks", colonna: "frequency" },
   { costante: "PEST_CONTROL_TYPES", valori: PEST_CONTROL_TYPES, tabella: "haccp_pest_control_logs", colonna: "type" },
   { costante: "NC_CATEGORIES", valori: NC_CATEGORIES, tabella: "haccp_non_conformities", colonna: "category" },
@@ -160,6 +160,12 @@ export const GUARDIE_ESENTI = [
     parametro: "p_conservazione",
     perche:
       "non è una guardia ma un ramo: il frigo prende due giorni di preavviso, dispensa e freezer quattordici. Non rifiuta niente",
+  },
+  {
+    funzione: "chiudi_riga_lista",
+    parametro: "p_esito",
+    perche:
+      "i tre esiti che si SCELGONO chiudendo a mano (comprata, gratis, non_presa) non sono i tre che si possono SCRIVERE nella colonna: «non_presa» cancella la riga e non lascia un esito, e «arrivata_con_documento» lo scrive il gestionale quando la merce arriva con una fattura, non chi chiude. Sono due elenchi che rispondono a due domande diverse — e il 17/08 il discriminante dice che allora non si fondono",
   },
 ];
 

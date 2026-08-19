@@ -117,7 +117,7 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 | Ricettario | Costruito | A |
 | Agenda / promemoria | Costruito, notifica Telegram in produzione | A + B2/B5 (Edge Function + pg_cron) |
 | Fatture fornitori | Costruito (manuale, senza sincronizzazione automatica) | A — B2/B3 non ancora rilevanti (integrazione Fatture in Cloud non implementata) |
-| Magazzino | Costruito | A |
+| Magazzino | Costruito | A + una scrittura su due tabelle fuori dal corridoio — vedi la constatazione in fondo |
 | Cassa / Prima Nota | Costruito | A |
 | Comande | **Parziale**: Sala rifatta e verificata dal vivo (08/08); Bar e Cucina rifatte (08-09/08); carta dei vini non costruita (manca la fonte dati) | A per lettura/presa ordini; **B1 obbligatorio quando arriva il mini-PC**; **B4 rispettato: il difetto sotto è stato corretto il 09/08** |
 
@@ -149,6 +149,25 @@ Il fatto, per esteso, perché il validatore possa verificarlo invece di crederci
 - **Le sei tabelle scritte in quella singola transazione**: `scenari_proiezione`, `scenario_personale`, `scenario_extra`, `scenario_costi_fissi`, `scenario_linee_accessorie`, `scenario_mesi`. A metà resterebbe una previsione che **sembra buona** — parametri senza mesi, o mesi senza costi fissi — e produrrebbe numeri plausibili e falsi.
 - **Operazione `congela_scenario`.** Ne scrive **due**: `scenario_risultati` (i dodici mesi calcolati) e poi `scenari_proiezione` (il sigillo), **in quest'ordine obbligato**. Invertendo, il trigger che vieta le modifiche a uno scenario congelato rifiuterebbe il congelamento stesso — ed è la ragione per cui in quel trigger non esiste nessuna scappatoia: una scappatoia sarebbe anche la strada per aggirarlo.
 - **Tutto il resto del modulo resta categoria A**: leggere una previsione, chiudere un mese (`consuntivi_mensili`, una tabella sola), segnare un periodo anomalo, marcare una causale come costo fisso. A rendere necessario il corridoio è la seconda tabella, non il numero di righe — come già stabilito per `completa_task` in Agenda.
+
+---
+
+*Riga del Magazzino aggiornata il 19/08/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarata al validatore** nel riepilogo del blocco 2 del mandato «la lista non scrive mai un'uscita». **Il testo originale era `| Magazzino | Costruito | A |`**, e resta qui perché il confronto sia possibile.*
+
+📌 **CONSTATAZIONE, NON LASCIAPASSARE** — stessa condizione posta il 15/08 per la Proiezione fiscale: la riga dice **cosa fa il codice**, non cosa gli è permesso fare. Non autorizza il Magazzino a scrivere due tabelle fuori dal corridoio: **constata che oggi lo fa**, e nomina ciò che manca perché chi controlla non debba dedurlo.
+
+Il fatto, per esteso:
+
+- **La funzione è `register_stock_delivery`**, chiamata dal client **direttamente via RPC** (`src/lib/api/stock.js`) e dalla schermata *Magazzino → Registra carico*.
+- **Le due tabelle**: `stock_lots` (il lotto che entra) e `shopping_list_items` (la riga della lista della spesa che quella merce spegne). La seconda è arrivata il **19/08/2026** col blocco 1 del mandato: prima di quel giorno la funzione ne scriveva **una sola**, e la riga «A» diceva il vero.
+- **L'atomicità c'è**, e va detto perché è la parte che il Contratto protegge: le due scritture stanno dentro **una sola** funzione Postgres, quindi in **una sola** transazione — o entrano tutte e due o nessuna. Non sono due chiamate in fila dal browser, che è la forma che B4 vieta.
+- ⚠️ **QUELLO CHE MANCA NON È L'ATOMICITÀ: È L'OSSERVABILITÀ.** Il corridoio non serve solo a rendere atomica un'operazione — è **il punto unico in cui un'operazione che fallisce si vede, si registra e si può ritentare**, ed è anche l'elenco che rende controllabile *quali* scritture multi-tabella esistono. Passando per RPC diretta, un fallimento di questa funzione non compare in quell'elenco.
+
+⚠️ **E NON È UNA DERIVA DI OGGI**, che è il motivo per cui questa traccia è scritta invece di essere risolta di corsa. Lo stesso schema esiste già altrove nel progetto, da prima:
+
+- **`esegui_azione_posta`** (Archivio documenti, elencato «A») scrive in una sola transazione `documents`, `tasks`, `articoli_fornitore`, `haccp_goods_receiving`, `posta_azioni`, `posta_ricevuta` — **sei tabelle** — ed è invocata dal client via RPC diretta.
+
+**La condizione posta da Alessio autorizzando questo aggiornamento**, e va rispettata quando il discorso si affronterà per intero: *si dovrà ricontrollare che questa eccezione non causi problemi.* Cioè il lavoro non è «spostare due funzioni dietro il corridoio», ma **decidere che cosa il corridoio debba coprire davvero** — e verificarlo su tutte le operazioni che oggi stanno nella stessa condizione, non solo su quella che ha fatto emergere il caso.
 
 **Aperto, non "non conforme"**: conto diviso, storni post-invio, asporto (§3.2.2) restano da specificare con l'esperienza diretta di Alessio in sala — non sono un difetto architetturale, sono una decisione di prodotto non ancora presa.
 

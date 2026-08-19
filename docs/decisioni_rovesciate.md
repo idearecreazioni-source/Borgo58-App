@@ -52,6 +52,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 14 | 19/08/2026 | *Il disegno dice il vero sullo spazio* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 15 | 19/08/2026 | *Ogni sagoma è disegnata dove sta davvero* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 16 | 19/08/2026 | *Un tavolo si può trascinare ovunque nella sala* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 17 | 19/08/2026 | *La lista della spesa ha un vocabolario dei pagamenti tutto suo* (17/08) | [blocco 2 della lista](consegne/20260819_lista_blocco2_i_tre_esiti.md) |
 
 ---
 
@@ -687,3 +688,44 @@ sbagliata* — e il segno è un comportamento che nessuno sa spiegare.
 ⚠️ **Il prezzo**: un tavolo appoggiato esattamente al confine della cucina si
 disegna ~15 cm dentro il bordo del pannello, perché la sagoma cresce. Resta
 visibile e afferrabile — un filo di accavallamento, non un tavolo nascosto.
+
+---
+
+## 17 · 19/08/2026 — «la lista della spesa ha un vocabolario dei pagamenti tutto suo»
+
+**Cosa era stato deciso, e quando.** Il 17/08, costruendo la rete sui
+vocabolari chiusi: `PAYMENT_METHODS_SPESA` separato da `PAYMENT_METHODS`.
+Era nato da un difetto vero — il menu della lista offriva «assegno» e il
+database lo rifiutava — e la scelta era stata **non allargare il vincolo**:
+*quale sia il vocabolario della sua spesa lo decide Alessio, e aggiungere un
+valore per far tornare un conto sarebbe una regola scritta da me sul suo modo
+di comprare.*
+
+**La ragione di allora.** Regge ancora oggi, ed è il motivo per cui la
+separazione non era un errore: due schermate che chiedono la stessa cosa
+possono avere due risposte legittimamente diverse, e unificarle per comodità
+inventa una regola.
+
+**Cosa si decide adesso.** I due elenchi tornano **uno solo**
+(`PAYMENT_METHODS`, assegno compreso), e il vincolo sulla lista si allarga.
+Decisione di Alessio del 19/08, per fare una migrazione sola insieme al
+blocco dei tre esiti.
+
+**Perché la ragione di allora non vale più.** Perché **la separazione
+poggiava su un fatto che è cambiato**: il 17/08 quella schermata *non sapeva
+cosa farsene del mezzo* — lo registrava e non ne conseguiva niente, quindi
+chiedere «assegno o bonifico?» era una domanda senza risposta. Da oggi
+«l'ho comprato e pagato» **scrive un'uscita vera in prima nota**, e quindi
+deve sapere da dove escono i soldi: la domanda è la stessa delle fatture, e
+la risposta anche.
+
+⚠️ **La rete del 17/08 resta, e adesso sorveglia due tabelle**: se qualcuno
+riseparasse i vincoli, `tests/app/vocabolari.test.js` diventerebbe rosso su
+una delle due righe. *Si toglie il doppione, non il guardiano.*
+
+⚠️ **E resta vero il criterio del 17/08**: «i mezzi di pagamento» non sono un
+vocabolario solo, sono quattro concetti. Questo rovesciamento ne unifica
+**due** — lo strumento con cui si paga una fattura e quello con cui si paga
+la spesa — e **non tocca** la forma d'incasso in sala, la tracciabilità
+fiscale, né la destinazione (cassa/banca), che resta una cosa diversa
+calcolata da `mezzo_del_pagamento()`.

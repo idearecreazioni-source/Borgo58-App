@@ -110,7 +110,11 @@ describe("le scritture su più tabelle passano dal corridoio", () => {
     for (const nome of [
       "annulla_prenotazione",
       "merge_customers",
-      "close_shopping_list_item",
+      // ⚠️ Era `close_shopping_list_item`, cancellata dal database il
+      // 19/08 e sostituita da questa: la stessa cosa piu' i tre esiti e
+      // l'uscita in prima nota. Se la prova nominasse ancora la vecchia,
+      // sorveglierebbe una porta che non esiste.
+      "chiudi_riga_lista",
       "record_stock_consumption",
       "update_ingredient_price",
     ]) {

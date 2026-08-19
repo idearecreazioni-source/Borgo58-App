@@ -4,7 +4,7 @@ import {
   addBelowThresholdItems,
   addShoppingListItem,
   chiudiRigaArrivata,
-  closeShoppingListItem,
+  chiudiRigaLista,
   listaSpesa,
   listShoppingList,
   listShoppingListDisplay,
@@ -15,7 +15,8 @@ import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
-import { PAYMENT_METHODS_SPESA, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
+import { ESITI_RIGA_LISTA, PAYMENT_METHODS, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
+import { listCausali } from "../../lib/api/cash";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -28,12 +29,27 @@ const emptyAddForm = {
 };
 
 const emptyCloseForm = {
+  // ⚠️ «Comprata e pagata» è la partenza, ed è una scelta: è la via
+  // normale, e chiudere una riga senza registrare l'uscita è il buco che
+  // questo blocco chiude — 40 € usciti dal cassetto che nessuno ha scritto.
+  esito: "comprata",
   purchased_amount: "",
   payment_method: "contante",
   quantity_received: "",
   document_reference: "",
   expiry_date: "",
+  causale_id: "",
 };
+
+// I due esiti che si scelgono a mano più quello che li nega. ⚠️ Non si
+// costruisce da ESITI_RIGA_LISTA: quell'elenco contiene anche
+// «arrivata_con_documento», che NON è una scelta di chi chiude — la scrive
+// il gestionale quando la merce arriva con una fattura.
+const ESITI_SCELTA = [
+  { value: "comprata", label: "L'ho comprato e pagato" },
+  { value: "gratis", label: "Me l'hanno regalato" },
+  { value: "non_presa", label: "Non l'ho preso" },
+];
 
 export default function ListaSpesa() {
   const { isTitolare } = useAuth();
@@ -50,6 +66,10 @@ export default function ListaSpesa() {
   const [closingItemId, setClosingItemId] = useState(null);
   const [closeForm, setCloseForm] = useState(emptyCloseForm);
   const [closing, setClosing] = useState(false);
+  // Le causali d'uscita, per dire dove va a finire quella spesa in prima
+  // nota. ⚠️ `listCausali` esclude quelle di sistema, ed è giusto:
+  // sceglierne una a mano per una spesa vera la farebbe sparire dai costi.
+  const [causali, setCausali] = useState([]);
 
   const load = () => (isTitolare ? listShoppingList() : listShoppingListDisplay());
 
@@ -59,11 +79,12 @@ export default function ListaSpesa() {
     // premere — cioè una lista che diceva la verità solo a chi sapeva
     // che andava aggiornata.
     if (isTitolare) await addBelowThresholdItems().catch(() => {});
-    const [listData, numeri, levels, sup] = await Promise.all([
+    const [listData, numeri, levels, sup, caus] = await Promise.all([
       load(),
       isTitolare ? listaSpesa() : Promise.resolve([]),
       listStockLevels(),
       isTitolare ? getEntities().then((e) => listSuppliers(e.srls.id)) : listSuppliersDisplay(),
+      isTitolare ? listCausali("uscita") : Promise.resolve([]),
     ]);
     // I numeri veri (giacenza, soglia, quanto manca, se è rientrata) li
     // calcola il database sullo stesso conteggio che usa il Magazzino:
@@ -72,6 +93,7 @@ export default function ListaSpesa() {
     setItems(listData.map((i) => ({ ...i, numeri: perId.get(i.id) ?? null })));
     setIngredients(levels);
     setSuppliers(sup);
+    setCausali(caus);
   };
 
   useEffect(() => {
@@ -211,17 +233,21 @@ export default function ListaSpesa() {
   };
 
   const handleClose = async (itemId) => {
-    if (!closeForm.purchased_amount) return;
+    if (closeForm.esito === "comprata" && !closeForm.purchased_amount) return;
     setClosing(true);
     setError("");
     try {
-      await closeShoppingListItem({
+      await chiudiRigaLista({
         itemId,
-        purchasedAmount: Number(closeForm.purchased_amount),
-        paymentMethod: closeForm.payment_method,
-        quantityReceived: closeForm.quantity_received ? Number(closeForm.quantity_received) : null,
-        documentReference: closeForm.document_reference || null,
-        expiryDate: closeForm.expiry_date || null,
+        esito: closeForm.esito,
+        // ⚠️ Importo e mezzo si mandano SOLO per «comprata»: mandarli
+        // sempre vorrebbe dire scrivere «pagato in contanti» su un regalo.
+        importo: closeForm.esito === "comprata" ? Number(closeForm.purchased_amount) : null,
+        metodoPagamento: closeForm.esito === "comprata" ? closeForm.payment_method : null,
+        quantitaRicevuta: closeForm.quantity_received ? Number(closeForm.quantity_received) : null,
+        riferimentoDocumento: closeForm.document_reference || null,
+        scadenza: closeForm.expiry_date || null,
+        causaleId: closeForm.esito === "comprata" ? closeForm.causale_id || null : null,
       });
       setClosingItemId(null);
       await loadAll();
@@ -407,86 +433,165 @@ export default function ListaSpesa() {
                       </div>
                     </div>
 
+                    {/* I TRE ESITI — mandato del 17/08, blocco 2.
+                        ⚠️ «Comprata e pagata» è LA VIA NORMALE e sta per
+                        prima: 40 € in contanti al contadino, riga chiusa
+                        senza scrivere niente, e la sera il cassetto accusa
+                        un ammanco che non esiste. È lo stesso meccanismo
+                        delle mance su carta.
+                        ⚠️ E i tre esiti restano TRE: «avuta gratis» fa
+                        entrare la merce, «non presa» no. Confonderli mette
+                        in magazzino roba mai arrivata. */}
                     {closingItemId === item.id && (
-                      <div className="mt-3 pt-3 border-t border-b58-charcoal/10 flex flex-wrap gap-2 items-end">
-                        <div className="w-28">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={closeForm.purchased_amount}
-                            onChange={(e) =>
-                              setCloseForm((f) => ({ ...f, purchased_amount: e.target.value }))
-                            }
-                            placeholder="Importo €"
-                            className={inputClass}
-                          />
+                      <div className="mt-3 pt-3 border-t border-b58-charcoal/10">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {ESITI_SCELTA.map((e) => (
+                            <button
+                              key={e.value}
+                              type="button"
+                              onClick={() => setCloseForm((f) => ({ ...f, esito: e.value }))}
+                              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                                closeForm.esito === e.value
+                                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                              }`}
+                            >
+                              {e.label}
+                            </button>
+                          ))}
                         </div>
-                        <div className="w-36">
-                          <select
-                            value={closeForm.payment_method}
-                            onChange={(e) =>
-                              setCloseForm((f) => ({ ...f, payment_method: e.target.value }))
-                            }
-                            className={inputClass}
-                          >
-                            {PAYMENT_METHODS_SPESA.map((p) => (
-                              <option key={p.value} value={p.value}>{p.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        {item.ingredient?.id && (
-                          <>
-                            <div className="w-24">
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={closeForm.quantity_received}
-                                onChange={(e) =>
-                                  setCloseForm((f) => ({ ...f, quantity_received: e.target.value }))
-                                }
-                                placeholder="Qtà ricevuta"
-                                className={inputClass}
-                              />
-                            </div>
-                            <div className="w-36">
-                              <input
-                                type="date"
-                                value={closeForm.expiry_date}
-                                onChange={(e) =>
-                                  setCloseForm((f) => ({ ...f, expiry_date: e.target.value }))
-                                }
-                                className={inputClass}
-                              />
-                            </div>
-                          </>
+
+                        {closeForm.esito === "non_presa" ? (
+                          <p className="text-xs text-b58-charcoal-soft mb-2">
+                            La riga sparisce. Niente costo e <strong>niente merce in
+                            magazzino</strong>: se invece te l&apos;hanno regalata, scegli
+                            «Avuta gratis».
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 items-end">
+                            {closeForm.esito === "comprata" && (
+                              <>
+                                <div className="w-28">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={closeForm.purchased_amount}
+                                    onChange={(e) =>
+                                      setCloseForm((f) => ({ ...f, purchased_amount: e.target.value }))
+                                    }
+                                    placeholder="Importo €"
+                                    className={inputClass}
+                                  />
+                                </div>
+                                {/* ⚠️ IL MEZZO SI VEDE, e lì si cambia: contante
+                                    di partenza perché il caso normale è il
+                                    mercato. Un predefinito che si vede è una
+                                    comodità; uno che riempie un campo che
+                                    nessuno guarda è la famiglia dei 33 posti
+                                    silenziosi — è così che si è perso il mezzo
+                                    delle mance. */}
+                                <div className="w-32">
+                                  <select
+                                    value={closeForm.payment_method}
+                                    onChange={(e) =>
+                                      setCloseForm((f) => ({ ...f, payment_method: e.target.value }))
+                                    }
+                                    className={inputClass}
+                                  >
+                                    {PAYMENT_METHODS.map((m) => (
+                                      <option key={m.value} value={m.value}>{m.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="w-44">
+                                  <select
+                                    value={closeForm.causale_id}
+                                    onChange={(e) =>
+                                      setCloseForm((f) => ({ ...f, causale_id: e.target.value }))
+                                    }
+                                    className={inputClass}
+                                  >
+                                    <option value="">Senza causale</option>
+                                    {causali.map((c) => (
+                                      <option key={c.id} value={c.id}>{c.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </>
+                            )}
+                            {item.ingredient?.id && (
+                              <>
+                                <div className="w-24">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={closeForm.quantity_received}
+                                    onChange={(e) =>
+                                      setCloseForm((f) => ({ ...f, quantity_received: e.target.value }))
+                                    }
+                                    placeholder="Qtà ricevuta"
+                                    className={inputClass}
+                                  />
+                                </div>
+                                <div className="w-36">
+                                  <input
+                                    type="date"
+                                    value={closeForm.expiry_date}
+                                    onChange={(e) =>
+                                      setCloseForm((f) => ({ ...f, expiry_date: e.target.value }))
+                                    }
+                                    className={inputClass}
+                                  />
+                                </div>
+                              </>
+                            )}
+                            {closeForm.esito === "comprata" && (
+                              <div className="flex-1 min-w-[140px]">
+                                <input
+                                  value={closeForm.document_reference}
+                                  onChange={(e) =>
+                                    setCloseForm((f) => ({ ...f, document_reference: e.target.value }))
+                                  }
+                                  placeholder="Rif. documento (opz.)"
+                                  className={inputClass}
+                                />
+                              </div>
+                            )}
+                          </div>
                         )}
-                        <div className="flex-1 min-w-[140px]">
-                          <input
-                            value={closeForm.document_reference}
-                            onChange={(e) =>
-                              setCloseForm((f) => ({ ...f, document_reference: e.target.value }))
+
+                        {/* Cosa succede confermando, detto prima di confermare. */}
+                        <p className="text-xs text-b58-charcoal-soft mt-2">
+                          {closeForm.esito === "comprata" &&
+                            "Esce un'uscita di prima nota dalla " +
+                              (closeForm.payment_method === "contante" ? "cassa" : "banca") +
+                              ", e la merce entra in magazzino."}
+                          {closeForm.esito === "gratis" &&
+                            "La merce entra in magazzino a costo zero. Il prezzo di listino non si tocca: il regalo vale zero per questa volta, non per sempre."}
+                        </p>
+
+                        <div className="flex gap-3 items-center mt-2">
+                          <button
+                            type="button"
+                            disabled={
+                              closing ||
+                              (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
-                            placeholder="Rif. documento (opz.)"
-                            className={inputClass}
-                          />
+                            onClick={() => handleClose(item.id)}
+                            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                          >
+                            {closing ? "Chiudo…" : "Conferma"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setClosingItemId(null)}
+                            className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          >
+                            Annulla
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          disabled={closing || !closeForm.purchased_amount}
-                          onClick={() => handleClose(item.id)}
-                          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
-                        >
-                          {closing ? "Chiudo…" : "Conferma"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setClosingItemId(null)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-                        >
-                          Annulla
-                        </button>
                       </div>
                     )}
                   </li>
@@ -611,7 +716,8 @@ export default function ListaSpesa() {
                 {isTitolare && item.purchased_amount != null && (
                   <span className="text-b58-charcoal">
                     {formatEUR(item.purchased_amount)}
-                    {item.payment_method && ` · ${labelFor(PAYMENT_METHODS_SPESA, item.payment_method)}`}
+                    {item.payment_method && ` · ${labelFor(PAYMENT_METHODS, item.payment_method)}`}
+                    {item.esito && ` · ${labelFor(ESITI_RIGA_LISTA, item.esito)}`}
                   </span>
                 )}
               </li>

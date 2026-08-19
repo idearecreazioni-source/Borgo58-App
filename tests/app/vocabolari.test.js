@@ -107,10 +107,18 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
     }
   });
 
-  it("e il difetto trovato costruendo la rete resta chiuso", () => {
-    // I due metodi di pagamento sono DUE vocabolari e devono restare
-    // diversi. Finché coincidevano un elenco solo bastava e il difetto non
-    // si vedeva; è tornando a coincidere che ricomparirebbe.
+  it("e il difetto trovato costruendo la rete resta chiuso — dall'altra parte", () => {
+    // 🔴 QUESTA PROVA È STATA GIRATA IL 19/08, e il perché va letto prima di
+    // rigirarla. Il 17/08 difendeva la SEPARAZIONE dei due vocabolari:
+    // «assegno» era offerto nel menu della lista della spesa e il database
+    // lo rifiutava, e la cura scelta era stata tenerli distinti.
+    //
+    // ⚠️ Il 19/08 Alessio li ha unificati, perché la ragione della
+    // separazione è caduta: quella schermata **non sapeva cosa farsene del
+    // mezzo**, e da quando «l'ho comprato e pagato» scrive un'uscita vera in
+    // prima nota lo sa. Il difetto resta chiuso, ma dall'altra parte: non
+    // più «i due elenchi devono restare diversi», bensì **devono restare
+    // uguali, e il database deve ammettere quello che il menu offre**.
     const fatture = vocabolari.find(
       (v) => v.tabella === "supplier_invoices" && v.colonna === "payment_method"
     );
@@ -118,9 +126,11 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
       (v) => v.tabella === "shopping_list_items" && v.colonna === "payment_method"
     );
     expect(fatture.valori).toContain("assegno");
-    expect(spesa.valori).not.toContain("assegno");
-    // E la schermata della spesa non lo offre.
-    expect(costanti.PAYMENT_METHODS_SPESA.map((p) => p.value)).not.toContain("assegno");
+    expect(spesa.valori).toContain("assegno");
+    expect(spesa.valori).toEqual(fatture.valori);
+    // E il vocabolario separato non esiste più: se qualcuno lo rimettesse,
+    // questa riga direbbe subito che ne è tornato un secondo.
+    expect(costanti.PAYMENT_METHODS_SPESA).toBeUndefined();
     expect(costanti.PAYMENT_METHODS.map((p) => p.value)).toContain("assegno");
   });
 });

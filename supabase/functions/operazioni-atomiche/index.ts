@@ -134,7 +134,13 @@ const OPERAZIONI = new Set([
   // browser le chiama, ed è la forma che rende l'elenco controllabile.
   "annulla_prenotazione",
   "merge_customers",
-  "close_shopping_list_item",
+  // ⚠️ `close_shopping_list_item` NON C'È PIÙ (19/08/2026): l'ha
+  // sostituita `chiudi_riga_lista`, che è la stessa cosa più i tre esiti e
+  // l'uscita in prima nota. La vecchia è stata **cancellata dal database**,
+  // non lasciata accanto: due modi di chiudere una riga, uno dei quali col
+  // vocabolario vecchio e senza uscita, sarebbe il difetto che il mandato
+  // chiude, ancora raggiungibile.
+  "chiudi_riga_lista",
   "record_stock_consumption",
   "update_ingredient_price",
   // ⚠️ ECCEZIONE DICHIARATA (16/08/2026, decisione di Alessio su rilievo

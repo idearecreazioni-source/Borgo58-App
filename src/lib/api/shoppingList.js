@@ -80,24 +80,35 @@ export async function removeShoppingListItem(itemId) {
   if (error) throw error;
 }
 
-export async function closeShoppingListItem({
+// I TRE ESITI di una riga chiusa a mano — mandato del 17/08, blocco 2.
+//
+//   comprata  → costo, merce dentro, E l'uscita vera in prima nota
+//   gratis    → nessun costo, MA la merce entra lo stesso
+//   non_presa → la riga sparisce e basta
+//
+// ⚠️ Confondere gli ultimi due mette in magazzino merce mai arrivata.
+// ⚠️ Tre tabelle in una transazione (riga, lotto, prima nota), quindi
+// corridoio (Contratto B4): a metà sarebbe merce comprata che non risulta
+// arrivata, o soldi usciti dal cassetto per roba che non c'è.
+export async function chiudiRigaLista({
   itemId,
-  purchasedAmount,
-  paymentMethod,
-  quantityReceived,
-  documentReference,
-  expiryDate,
+  esito,
+  importo,
+  metodoPagamento,
+  quantitaRicevuta,
+  scadenza,
+  riferimentoDocumento,
+  causaleId,
 }) {
-  // ⚠️ Chiude la riga della lista E carica il lotto in magazzino: due
-  // tabelle, quindi corridoio (Contratto B4, 16/08/2026). A metà sarebbe
-  // merce comprata che non risulta arrivata, o arrivata due volte.
-  return eseguiOperazione("close_shopping_list_item", {
+  return eseguiOperazione("chiudi_riga_lista", {
     p_item_id: itemId,
-    p_purchased_amount: purchasedAmount,
-    p_payment_method: paymentMethod,
-    p_quantity_received: quantityReceived ?? null,
-    p_document_reference: documentReference ?? null,
-    p_expiry_date: expiryDate ?? null,
+    p_esito: esito,
+    p_importo: importo ?? null,
+    p_metodo_pagamento: metodoPagamento ?? null,
+    p_quantita_ricevuta: quantitaRicevuta ?? null,
+    p_scadenza: scadenza ?? null,
+    p_riferimento_documento: riferimentoDocumento ?? null,
+    p_causale_id: causaleId ?? null,
   });
 }
 
