@@ -729,3 +729,47 @@ vocabolario solo, sono quattro concetti. Questo rovesciamento ne unifica
 la spesa — e **non tocca** la forma d'incasso in sala, la tracciabilità
 fiscale, né la destinazione (cassa/banca), che resta una cosa diversa
 calcolata da `mezzo_del_pagamento()`.
+
+---
+
+## 18 · 19/08/2026 — «un predefinito sbagliato si corregge»
+
+**Cosa era stato deciso, e quando.** La mattina del 19/08, con
+`20260819000006`, gli **otto predefiniti di data** delle colonne economiche
+sono stati **rifatti** invece che tolti: sette portati a `oggi_a_roma()` e
+uno a `serata_di_servizio()`. Ognuno deciso uno per uno, e scritto nel
+riepilogo della giornata operativa: *«nessuno è rimasto com'era perché tanto
+di solito va bene»*.
+
+**La ragione di allora.** Erano tutti a `current_date`, cioè all'orario di
+Greenwich: fra mezzanotte e le due scrivevano **ieri** a chiunque. Fra
+lasciarli sbagliati e correggerne il fuso, correggerli era meglio.
+
+**Cosa si decide adesso.** Si **tolgono tutti e otto** (`20260819000009`).
+Le colonne restano obbligatorie, quindi chi scrive senza la data ottiene un
+**errore** invece di una data inventata. Decisione di Alessio: *«togliamole
+per ora»*.
+
+**Perché la ragione di allora non vale più.** Non perché fosse sbagliata:
+perché era **una cura a metà, e si vede solo adesso che l'altra metà è
+stata fatta**. Finché la schermata proponeva la data sbagliata — alle 00:30
+proponeva domani — il predefinito era l'ultima difesa. Da stasera la
+schermata propone la risposta giusta e **la mostra**, e allora il predefinito
+smette di essere una difesa e diventa quello che è sempre stato: **una
+seconda regola che decide una giornata al posto di Alessio, in silenzio**.
+Sarebbe stata anche la **terza copia** della stessa regola — la funzione del
+database, la schermata, il predefinito.
+
+⚠️ **Parole sue, e valgono come criterio oltre queste colonne**: allineare il
+predefinito alla serata lo renderebbe **meno sbagliato**, ma resterebbe una
+regola che risponde al posto suo senza dirlo. È la famiglia dei **33 posti
+silenziosi** del 17/08, ed è il motivo per cui «meno sbagliato» non era una
+risposta.
+
+⚠️ **Il prezzo, dichiarato.** Un inserimento che dimenticasse la data adesso
+**fallisce** invece di scrivere una riga plausibile. È esattamente ciò che si
+vuole — ma vuol dire che ogni strada nuova verso quelle otto tabelle deve
+passare la data, e non se ne accorgerà leggendo: se ne accorgerà provando.
+Misurato prima di togliere che **oggi nessuna strada si appoggiava al
+predefinito tranne una**, la chiusura di un conto come sconto o omaggio in
+sala, sistemata nella stessa migrazione.
