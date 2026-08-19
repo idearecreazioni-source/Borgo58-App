@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  duplicaRicetta,
   getRecipe,
   getRecipeAllergens,
   getRecipeCost,
   listPreparationUsage,
   listPreparations,
+  listRecipeCostsFor,
   listRecipeStatusHistory,
   updateRecipe,
 } from "../../lib/api/recipes";
@@ -68,6 +70,7 @@ const emptyStepForm = {
 
 export default function RicettaDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [recipe, setRecipe] = useState(null);
   const [notFound, setNotFound] = useState(false);
@@ -86,6 +89,11 @@ export default function RicettaDetail() {
   const [menuAttivo, setMenuAttivo] = useState(null);
   const [videos, setVideos] = useState([]);
   const [preparations, setPreparations] = useState([]);
+  const [costiFinger, setCostiFinger] = useState({});
+  const [spuntando, setSpuntando] = useState(null);
+  const [componiAperto, setComponiAperto] = useState(null);
+  const [copiando, setCopiando] = useState(false);
+  const avviso = useLocation().state?.avviso ?? "";
   const [preparationUsage, setPreparationUsage] = useState([]);
   const [rowCosts, setRowCosts] = useState({});
 
@@ -105,18 +113,27 @@ export default function RicettaDetail() {
   // quantità e ricaricare le sole righe mostrerebbe una quantità nuova col
   // costo di prima — che è peggio del vecchio ricalcolo nel browser,
   // perché sbaglia in silenzio invece di essere solo una copia.
-  const ricaricaRighe = async () => {
-    const [ri, costi, c] = await Promise.all([
+  //
+  // ⚠️ E i costi dei bocconcini si rileggono INSIEME (20/08/2026): il
+  // pannello per comporre li mostra accanto a ogni spunta, e leggerli una
+  // volta sola all'apertura della pagina farebbe convivere sullo stesso
+  // schermo un totale di adesso e dei costi di prima. Sono numeri piccoli e
+  // una lettura in più; un numero vecchio accanto a uno nuovo no.
+  const ricaricaRighe = async (elencoComponenti = preparations) => {
+    const idFinger = elencoComponenti.filter((p) => p.recipe_type === "finger").map((p) => p.id);
+    const [ri, costi, c, cf] = await Promise.all([
       listRecipeIngredients(id),
       getRecipeRowCosts(id),
       getRecipeCost(id),
+      listRecipeCostsFor(idFinger),
     ]);
     setRecipeIngredients(ri);
     setRowCosts(costi);
     setCost(c);
+    setCostiFinger(cf);
   };
 
-  const loadAll = async () => {
+  const loadAll = async (elencoComponenti) => {
     const [rec, st, al, hist, vids, prepUsage, menus] = await Promise.all([
       getRecipe(id),
       listRecipeSteps(id),
@@ -133,17 +150,21 @@ export default function RicettaDetail() {
     setVideos(vids);
     setStatusHistory(hist);
     setPreparationUsage(prepUsage);
-    await ricaricaRighe();
+    await ricaricaRighe(elencoComponenti);
   };
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      loadAll(),
-      listIngredients().then(setAllIngredients),
-      listPreparations({ excludeId: id }).then(setPreparations),
-    ])
+    // ⚠️ L'elenco dei componenti si legge PRIMA e si passa avanti: da lì si
+    // ricavano quali sono i bocconcini, e senza, la prima lettura dei costi
+    // partirebbe con l'elenco ancora vuoto e il pannello si aprirebbe senza
+    // nessun prezzo accanto alle spunte.
+    listPreparations({ excludeId: id })
+      .then((comp) => {
+        setPreparations(comp);
+        return Promise.all([loadAll(comp), listIngredients().then(setAllIngredients)]);
+      })
       .catch((e) => {
         if (e.code === "PGRST116") setNotFound(true);
         else if (!cancelled) setError(e.message);
@@ -155,6 +176,21 @@ export default function RicettaDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+
+  // I BOCCONCINI, e quali sono già dentro questa selezione.
+  const fingers = useMemo(
+    () => preparations.filter((p) => p.recipe_type === "finger"),
+    [preparations]
+  );
+  const fingerDentro = useMemo(
+    () =>
+      new Map(
+        recipeIngredients
+          .filter((ri) => ri.component?.recipe_type === "finger")
+          .map((ri) => [ri.component.id, ri])
+      ),
+    [recipeIngredients]
+  );
 
   const totalPrepMin = useMemo(
     () => steps.reduce((sum, s) => sum + (s.duration_min || 0), 0),
@@ -387,6 +423,68 @@ export default function RicettaDetail() {
     }
   };
 
+  // UN TOCCO METTE O TOGLIE UN BOCCONCINO, e il costo si rilegge subito.
+  //
+  // Scelta di Alessio (20/08/2026) fra le tre che gli sono state poste: la
+  // spunta **salva davvero**, e il totale che compare sopra è quello del
+  // gestionale — non un conto rifatto qui. ⚠️ Rifarlo nella schermata per
+  // avere l'anteprima senza scrivere sarebbe **lo stesso numero calcolato in
+  // due posti**, che è il difetto tolto da nove punti col mandato di
+  // correzione: il giorno che uno dei due cambia, cominciano a dire due
+  // cifre diverse e nessuno sa quale credere.
+  //
+  // ⚠️ La quantità non si chiede: un bocconcino per tipo. Se una volta ne
+  // servissero due dello stesso, il numero si corregge nella riga qui sotto
+  // — dove si correggono tutte le altre quantità, non in un secondo posto.
+  const toggleFinger = async (finger) => {
+    if (spuntando) return;
+    setSpuntando(finger.id);
+    setError("");
+    try {
+      const dentro = fingerDentro.get(finger.id);
+      if (dentro) await removeRecipeIngredient(dentro.id);
+      else
+        await addRecipeIngredient(id, {
+          component_recipe_id: finger.id,
+          quantity: 1,
+          unit: finger.yield_unit ?? "pz",
+        });
+      await ricaricaRighe();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSpuntando(null);
+    }
+  };
+
+  // FAI UNA COPIA — richiesta di Alessio: «Selezione da 6» e «Selezione da
+  // 8» si somigliano, e ricomporre da zero la seconda è lavoro ripetuto.
+  //
+  // ⚠️ Passa dal corridoio perché tocca tre tabelle: a metà resterebbe una
+  // ricetta col nome giusto e dentro niente — nessun errore, e un costo di
+  // zero euro con l'aria di essere un numero.
+  const handleCopia = async () => {
+    setCopiando(true);
+    setError("");
+    try {
+      const esito = await duplicaRicetta(id, null);
+      // ⚠️ Il messaggio VIAGGIA con lo spostamento, non resta qui: fra un
+      // istante questa schermata non esiste più, e un avviso scritto qui
+      // sparirebbe insieme a lei. Chi arriva sulla copia deve sapere cosa
+      // c'è dentro senza contarlo — un «fatto» che non porta i numeri è la
+      // stessa forma di una lettura tagliata che non si denuncia.
+      navigate(`/ricettario/ricette/${esito.id}`, {
+        state: {
+          avviso: `Copia di «${recipe.name}»: dentro ci sono ${esito.righe} righe e ${esito.passi} passi. Il nome e «pronta per carta» non sono stati copiati.`,
+        },
+      });
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCopiando(false);
+    }
+  };
+
   const handleRemoveVideo = async (videoId) => {
     try {
       await removeRecipeVideo(videoId);
@@ -402,12 +500,27 @@ export default function RicettaDetail() {
         <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Ricette
         </Link>
-        <PrintButton />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleCopia}
+            disabled={copiando}
+            className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+          >
+            {copiando ? "Copio…" : "Fai una copia"}
+          </button>
+          <PrintButton />
+        </div>
       </div>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
+        </p>
+      )}
+
+      {avviso && (
+        <p className="print:hidden text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
+          {avviso}
         </p>
       )}
 
@@ -661,6 +774,65 @@ export default function RicettaDetail() {
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Ingredienti</h2>
 
+        {/* I BOCCONCINI — un tocco mette, un tocco toglie.
+            ⚠️ Si apre da sé se questa ricetta è già una selezione, e resta
+            chiuso sugli altri piatti: una spiegazione o un pannello che c'è
+            sempre diventa arredamento, e questa schermata si usa a lungo. */}
+        {!isFinger && fingers.length > 0 && (
+          <div className="print:hidden mb-4">
+            <button
+              onClick={() => setComponiAperto(!(componiAperto ?? fingerDentro.size > 0))}
+              className="w-full flex items-center justify-between rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm"
+            >
+              <span className="text-b58-charcoal">
+                Bocconcini
+                {fingerDentro.size > 0 && (
+                  <span className="text-b58-charcoal-soft"> · {fingerDentro.size} dentro</span>
+                )}
+              </span>
+              <span className="text-b58-charcoal-soft text-xs">
+                {(componiAperto ?? fingerDentro.size > 0) ? "chiudi" : "apri"}
+              </span>
+            </button>
+
+            {(componiAperto ?? fingerDentro.size > 0) && (
+              <div className="mt-2 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
+                {fingers.map((f) => {
+                  const dentro = fingerDentro.has(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => toggleFinger(f)}
+                      disabled={spuntando !== null}
+                      className="tocco-riga w-full flex items-center gap-3 px-3 text-left disabled:opacity-60"
+                    >
+                      <span
+                        className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center text-xs ${
+                          dentro
+                            ? "bg-b58-olive border-b58-olive text-b58-parchment"
+                            : "border-b58-charcoal/25 text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                      <span className="flex-1 text-sm text-b58-charcoal">{f.name}</span>
+                      <span className="text-sm text-b58-charcoal-soft">
+                        {formatEUR(costiFinger[f.id])}
+                      </span>
+                    </button>
+                  );
+                })}
+                <div className="px-3 py-2 flex items-center justify-between text-sm">
+                  <span className="text-b58-charcoal-soft">Costo della selezione</span>
+                  <span className="text-b58-charcoal font-medium">
+                    {cost ? formatEUR(cost.food_cost_base) : "—"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {recipeIngredients.length > 0 && (
           <table className="w-full text-sm mb-4">
             <thead>
@@ -695,9 +867,12 @@ export default function RicettaDetail() {
                       >
                         {isComponent ? ri.component.name : ri.ingredient.name}
                       </Link>
+                      {/* ⚠️ Il componente si chiama col SUO nome: dal 19/08
+                          può essere un bocconcino, e un'etichetta fissa
+                          «preparazione» direbbe una cosa falsa. */}
                       {isComponent && (
                         <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                          preparazione
+                          {ri.component.recipe_type === "finger" ? "bocconcino" : "preparazione"}
                         </span>
                       )}
                       {ri.is_optional && (

@@ -163,6 +163,12 @@ const OPERAZIONI = new Set([
   // controllabile.
   "registra_nota_credito",
   "elimina_nota_credito",
+  // Blocco 2 del mandato dei finger food (20/08/2026). Copiare una ricetta
+  // tocca TRE tabelle — la scheda, le sue righe, i suoi passi — ed e'
+  // tutto-o-niente per senso: a meta' resterebbe **una ricetta col nome
+  // giusto e dentro niente**, cioe' nessun errore e un food cost di zero
+  // euro che ha l'aria di essere un numero.
+  "duplica_ricetta",
 ]);
 
 const CORS = {

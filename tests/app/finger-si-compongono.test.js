@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
-import { listPreparations } from "../../src/lib/api/recipes";
+import { duplicaRicetta, listPreparations, listRecipeCostsFor } from "../../src/lib/api/recipes";
 // ⚠️ `listPreparations` usa il collegamento dell'APP, non quello della prova:
 // senza entrare anche da lì risponderebbe «permission denied» e la prova
 // direbbe una cosa falsa sul motivo. È la lezione del 18/08, ed è costata
 // un giro anche stavolta.
+import { listRecipeIngredients } from "../../src/lib/api/recipeIngredients";
 import { supabase } from "../../src/lib/supabase";
 
 // I FINGER SI COMPONGONO — blocco 1 del mandato dei finger food.
@@ -194,6 +195,52 @@ describe("i finger si compongono, e un piatto finito no", () => {
       .update({ prezzo_al_pezzo: 9 })
       .eq("id", piatto);
     expect(error, "un piatto finito ha accettato un prezzo a pezzo").not.toBeNull();
+  });
+
+  it("una riga di componente porta con sé il TIPO, o l'etichetta mente", async () => {
+    // ⚠️ Senza `recipe_type` nell'incorporamento non ci sarebbe nessun
+    // errore: la scheda scriverebbe «preparazione» sotto ogni bocconcino.
+    // È la famiglia di difetto vista tre volte in tre giorni — due parti
+    // dello stesso programma che raccontano cose diverse dello stesso fatto.
+    const righe = await listRecipeIngredients(selezione);
+    const comp = righe.filter((r) => r.component);
+    expect(comp.length, "la selezione non ha componenti").toBe(QUANTI);
+    expect(
+      comp.every((r) => r.component.recipe_type === "finger"),
+      "il tipo del componente non arriva alla schermata"
+    ).toBe(true);
+  });
+
+  it("il costo di ogni bocconcino si legge in una volta sola", async () => {
+    // Alimenta la cifra accanto a ogni spunta: senza, si compone al buio.
+    const costi = await listRecipeCostsFor(fingers);
+    expect(Object.keys(costi).length).toBe(QUANTI);
+    for (const id of fingers) expect(costi[id]).toBeCloseTo(GRAMMI * 20, 4);
+  });
+
+  it("una selezione si copia INTERA, e la copia costa quanto l'originale", async () => {
+    // 🔴 Passa dal corridoio: un'operazione non in elenco risponde 404, e
+    // nessuna prova SQL se ne accorgerebbe.
+    // ⚠️ E il controllo che conta è il COSTO, non il numero di righe: righe
+    // copiate senza la quantità darebbero sei righe e zero euro.
+    const esito = await duplicaRicetta(selezione, `${MARCA} copia`);
+    expect(esito.righe, "la copia non ha portato tutte le righe").toBe(QUANTI);
+
+    const [{ data: orig }, { data: copia }] = await Promise.all([
+      titolare.from("v_recipe_costs").select("food_cost_base").eq("recipe_id", selezione).single(),
+      titolare.from("v_recipe_costs").select("food_cost_base").eq("recipe_id", esito.id).single(),
+    ]);
+    expect(Number(copia.food_cost_base)).toBeCloseTo(Number(orig.food_cost_base), 4);
+    expect(Number(orig.food_cost_base)).toBeGreaterThan(0);
+
+    // «Pronta per carta» non si eredita: la copia non l'ha riletta nessuno.
+    const { data: nuova } = await titolare
+      .from("recipes")
+      .select("name, pronta_per_carta")
+      .eq("id", esito.id)
+      .single();
+    expect(nuova.pronta_per_carta).toBe(false);
+    expect(nuova.name).toBe(`${MARCA} copia`);
   });
 
   it("i finger si possono scegliere come componente dall'app", async () => {

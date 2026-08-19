@@ -1,8 +1,13 @@
 import { supabase } from "../supabase";
 
+// ⚠️ `recipe_type` sul componente serve a chiamarlo col suo nome: dal
+// 19/08 dentro una ricetta possono entrare le preparazioni **e i finger**, e
+// l'etichetta fissa «preparazione» direbbe una cosa falsa su un bocconcino.
+// È la famiglia di difetto vista tre volte in tre giorni — due parti dello
+// stesso programma che raccontano cose diverse dello stesso fatto.
 const SELECT =
   "*, ingredient:ingredient_id(id, name, unit, current_price, waste_percentage_default, allergens), " +
-  "component:component_recipe_id(id, name, yield_quantity, yield_unit)";
+  "component:component_recipe_id(id, name, yield_quantity, yield_unit, recipe_type)";
 
 export async function listRecipeIngredients(recipeId) {
   const { data, error } = await supabase

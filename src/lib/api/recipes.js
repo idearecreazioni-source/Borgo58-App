@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { eseguiOperazione } from "../operazioni";
 
 // statusFilter: "in_carta" | "pronta" | "in_sviluppo" | undefined (tutte)
 export async function listRecipes({ search, category, statusFilter } = {}) {
@@ -123,4 +124,41 @@ export async function listPreparationUsage(recipeId) {
     .eq("preparation_id", recipeId);
   if (error) throw error;
   return data;
+}
+
+// Copiare una ricetta con dentro le sue righe e i suoi passi (20/08/2026,
+// blocco 2 del mandato dei finger food, richiesta di Alessio: «Selezione da
+// 6» e «Selezione da 8» si somigliano).
+//
+// ⚠️ PASSA DAL CORRIDOIO perché tocca tre tabelle ed è tutto-o-niente per
+// senso: a metà resterebbe una ricetta col nome giusto e dentro niente —
+// nessun errore, e un food cost di zero euro che ha l'aria di essere un
+// numero.
+//
+// ⚠️ Restituisce anche QUANTE righe e quanti passi ha copiato, e la
+// schermata li dice: un «fatto» che non porta i numeri è la stessa forma di
+// una lettura tagliata che non si denuncia.
+export async function duplicaRicetta(recipeId, nome) {
+  return eseguiOperazione("duplica_ricetta", {
+    p_recipe_id: recipeId,
+    p_nome: nome ?? null,
+  });
+}
+
+// Quanto costa OGNI ricetta di un elenco, in una lettura sola (20/08/2026).
+//
+// ⚠️ Serve al pannello dei bocconcini, dove accanto a ogni spunta si vede
+// quanto costa quel bocconcino: senza, si compone una selezione al buio e il
+// totale si scopre solo alla fine.
+// ⚠️ Chiede solo gli identificativi che le servono, mai la vista intera: una
+// lettura senza confini torna con al massimo mille righe e nessun errore
+// (misurato il 19/08).
+export async function listRecipeCostsFor(recipeIds) {
+  if (recipeIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from("v_recipe_costs")
+    .select("recipe_id, food_cost_base")
+    .in("recipe_id", recipeIds);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).map((r) => [r.recipe_id, Number(r.food_cost_base)]));
 }
