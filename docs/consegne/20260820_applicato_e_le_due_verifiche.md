@@ -155,6 +155,8 @@ piatto, e l'ho sistemato.
 
 ---
 
+**Commit delle correzioni**: `952db8d` — «Un bocconcino non sembra più un piatto, e la zona d'ombra è scritta».
+**Working tree**: pulito.
 **Migrazioni**: 151 in produzione, **2 applicate in questo giro**.
 **Corridoio**: v30 in produzione.
 **Prove**: 146 pure + **224** sull'app, tutte verdi.
