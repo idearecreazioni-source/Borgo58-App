@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listStockLevels, registerStockDelivery } from "../../lib/api/stock";
+import { righeListaAperte } from "../../lib/api/shoppingList";
+import { formatDate, formatQta } from "../../lib/constants";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
@@ -23,6 +25,10 @@ export default function RegistraCarico() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  // Le righe della lista della spesa che aspettano questo prodotto, e
+  // quale di loro riceverà l'arrivo.
+  const [righeLista, setRigheLista] = useState([]);
+  const [rigaScelta, setRigaScelta] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -43,6 +49,27 @@ export default function RegistraCarico() {
     };
   }, [isTitolare]);
 
+  // ⚠️ SI GUARDA PRIMA DI CONFERMARE, non dopo (Alessio, 19/08): «dopo
+  // non è più una correzione, è una riparazione». Quando l'ingrediente
+  // cambia, cambia anche la riga che riceverà l'arrivo.
+  useEffect(() => {
+    let annullato = false;
+    setRigaScelta("");
+    if (!form.ingredient_id) {
+      setRigheLista([]);
+      return undefined;
+    }
+    righeListaAperte(form.ingredient_id)
+      .then((r) => !annullato && setRigheLista(r))
+      .catch(() => !annullato && setRigheLista([]));
+    return () => {
+      annullato = true;
+    };
+  }, [form.ingredient_id]);
+
+  const rigaPredefinita = righeLista.find((r) => r.predefinita) ?? null;
+  const rigaChePrende = righeLista.find((r) => r.id === rigaScelta) ?? rigaPredefinita;
+
   const selectedIngredient = ingredients.find((i) => i.ingredient_id === form.ingredient_id);
 
   const inputClass =
@@ -62,6 +89,7 @@ export default function RegistraCarico() {
         expiryDate: form.expiry_date || null,
         note: form.note || null,
         unitCost: isTitolare && form.unit_cost ? Number(form.unit_cost) : null,
+        rigaLista: rigaScelta || null,
       });
       navigate("/magazzino");
     } catch (e) {
@@ -165,6 +193,46 @@ export default function RegistraCarico() {
             className={inputClass}
           />
         </div>
+
+        {/* ⚠️ IL PREDEFINITO SI VEDE, E LÌ SI CAMBIA — la forma decisa da
+            Alessio il 19/08, la stessa già scelta il 17/08 per il mezzo di
+            pagamento: *si fa da sé, ma si vede, e lì si cambia*. Andare
+            sulla riga più vecchia in silenzio è un predefinito che può
+            sbagliare senza che nessuno se ne accorga; chiedere ogni volta
+            aggiunge un gesto a un'operazione che ne ha già tre. */}
+        {rigaChePrende && (
+          <div className="rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm text-b58-charcoal">
+            Questo carico va sulla riga della lista della spesa
+            {rigaChePrende.quantita_richiesta != null && (
+              <>
+                {" "}da {formatQta(rigaChePrende.quantita_richiesta)} {rigaChePrende.unita}
+              </>
+            )}{" "}
+            del {formatDate(rigaChePrende.in_lista_dal)}
+            {Number(rigaChePrende.quantita_arrivata ?? 0) > 0 && (
+              <> · finora arrivati {formatQta(rigaChePrende.quantita_arrivata)}</>
+            )}
+            .
+            {/* La scelta compare SOLO quando c'è davvero qualcosa da
+                scegliere: con una riga sola non c'è niente da correggere, e
+                un menu che ha una voce sola è ingombro. */}
+            {righeLista.length > 1 && (
+              <select
+                value={rigaScelta || rigaPredefinita?.id || ""}
+                onChange={(e) => setRigaScelta(e.target.value)}
+                className="mt-2 w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm"
+              >
+                {righeLista.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.quantita_richiesta != null
+                      ? `${formatQta(r.quantita_richiesta)} ${r.unita} — in lista dal ${formatDate(r.in_lista_dal)}`
+                      : `in lista dal ${formatDate(r.in_lista_dal)}`}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
 
         <button
           type="submit"

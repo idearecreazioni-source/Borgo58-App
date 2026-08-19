@@ -138,7 +138,16 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
           // proprio la riga che cancella la firma vecchia — ed è la riga
           // obbligatoria ogni volta che una funzione cambia parametri.
           .replace(
-            /\b(create|drop)\s+(or\s+replace\s+)?function\s+(if\s+exists\s+)?\w+\s*\([^)]*\)/gi,
+          // ⚠️ E IL NOME PUÒ ESSERE QUALIFICATO DALLO SCHEMA (`public.nome`),
+          // che è come lo scrive Postgres quando una funzione viene RIPRESA
+          // DAL DATABASE con `pg_get_functiondef` — la strada obbligata dal
+          // 18/08 per non annullare in silenzio le migrazioni che l'hanno
+          // toccata dopo. Senza il pezzo dello schema, la depurazione mancava
+          // proprio quelle intestazioni, e il guardiano accusava una
+          // migrazione di «chiamare» la funzione che stava scrivendo.
+          // Trovato il 19/08, ed è un allarme falso: quelli spengono i
+          // guardiani.
+            /\b(create|drop)\s+(or\s+replace\s+)?function\s+(if\s+exists\s+)?(\w+\.)?\w+\s*\([^)]*\)/gi,
             " "
           );
         for (const nome of guardiane) {

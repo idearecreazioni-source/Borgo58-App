@@ -9,6 +9,7 @@ import {
 } from "../../lib/api/posta";
 import { listIngredients } from "../../lib/api/ingredients";
 import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
+import { righeListaAperte } from "../../lib/api/shoppingList";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate } from "../../lib/constants";
@@ -129,10 +130,18 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
   const [numeriAperti, setNumeriAperti] = useState(null);
   const [notiAperti, setNotiAperti] = useState(false);
   const [rincari, setRincari] = useState({});
+  // Le righe della lista della spesa che questo carico andrà a spegnere,
+  // per ingrediente. ⚠️ Si guardano PRIMA di confermare: dopo non è più
+  // una correzione, è una riparazione (Alessio, 19/08).
+  const [listaPerIngrediente, setListaPerIngrediente] = useState({});
 
   // Cosa fa ricontrollare i prezzi: solo l'abbinamento, il costo e la
   // conversione. Estratto in una variabile perché un'espressione dentro
   // l'elenco delle dipendenze non è controllabile da nessuno.
+  // Cosa fa ricontrollare la lista della spesa: solo quali ingredienti
+  // stanno per entrare.
+  const chiaveIngredienti = JSON.stringify(righe.map((r) => r.ingrediente_id ?? null));
+
   const chiavePrezzi = JSON.stringify(
     righe.map((r) => [r.articolo_id, r.ingrediente_id, r.costo_unitario, r.fattore])
   );
@@ -170,6 +179,26 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chiavePrezzi]);
+
+  useEffect(() => {
+    let vivo = true;
+    const ids = [...new Set(righe.map((r) => r.ingrediente_id).filter(Boolean))];
+    Promise.all(
+      ids.map(async (id) => {
+        try {
+          return [id, await righeListaAperte(id)];
+        } catch {
+          return null; // la lista è un di più: non blocca la conferma
+        }
+      })
+    ).then((esiti) => {
+      if (vivo) setListaPerIngrediente(Object.fromEntries(esiti.filter(Boolean)));
+    });
+    return () => {
+      vivo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chiaveIngredienti]);
 
   // ⚠️ Una sola chiamata anche quando i campi da toccare sono due: due di
   // fila partono dalla stessa fotografia e la seconda cancella la prima.
@@ -452,6 +481,53 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             Apri il documento ({allegati[0].file_name})
           </button>
         </p>
+      )}
+
+      {/* ⚠️ LE RIGHE DELLA LISTA DELLA SPESA CHE QUESTO CARICO SPEGNE.
+          Il predefinito — la riga più vecchia ancora aperta — si vede, e lì
+          si cambia: è la forma decisa da Alessio il 19/08, la stessa già
+          scelta il 17/08 per il mezzo di pagamento. Un predefinito che si
+          vede è una comodità; uno che riempie un campo che nessuno guarda è
+          la famiglia dei 33 posti silenziosi.
+          ⚠️ Il menu compare SOLO dove c'è più di una riga aperta: dove la
+          scelta non esiste, un menu con una voce sola è ingombro — e questa
+          schermata è già stata bocciata una volta per troppa roba. */}
+      {dentro.some(({ r }) => (listaPerIngrediente[r.ingrediente_id] ?? []).length > 0) && (
+        <div className="mb-3 rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2">
+          <p className="text-sm text-b58-charcoal mb-1">Sulla lista della spesa:</p>
+          <ul className="text-sm text-b58-charcoal-soft space-y-1">
+            {dentro.map(({ r, i }) => {
+              const aperte = listaPerIngrediente[r.ingrediente_id] ?? [];
+              if (aperte.length === 0) return null;
+              const scelta = aperte.find((x) => x.id === r.riga_lista)
+                ?? aperte.find((x) => x.predefinita)
+                ?? aperte[0];
+              return (
+                <li key={i}>
+                  · <strong className="text-b58-charcoal">{nomeRiga(r)}</strong> va sulla riga
+                  {scelta.quantita_richiesta != null && (
+                    <> da {Number(scelta.quantita_richiesta)} {scelta.unita}</>
+                  )}{" "}
+                  in lista dal {new Date(scelta.in_lista_dal).toLocaleDateString("it-IT")}
+                  {aperte.length > 1 && (
+                    <select
+                      value={r.riga_lista ?? scelta.id}
+                      onChange={(e) => patchRiga(i, { riga_lista: e.target.value })}
+                      className="ml-2 rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 text-xs"
+                    >
+                      {aperte.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.quantita_richiesta != null ? `${Number(x.quantita_richiesta)} ${x.unita} · ` : ""}
+                          {new Date(x.in_lista_dal).toLocaleDateString("it-IT")}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
 
       {/* 3. Quello che il gestionale conosce già: si guarda solo se si vuole. */}

@@ -51,6 +51,7 @@ export async function registerStockDelivery({
   expiryDate,
   note,
   unitCost,
+  rigaLista,
 }) {
   const { data, error } = await supabase.rpc("register_stock_delivery", {
     p_ingredient_id: ingredientId,
@@ -59,6 +60,9 @@ export async function registerStockDelivery({
     p_expiry_date: expiryDate ?? null,
     p_note: note ?? null,
     p_unit_cost: unitCost ?? null,
+    // Su quale riga della lista della spesa va questo arrivo. Vuoto = la
+    // più vecchia aperta, ed è il predefinito che la schermata dichiara.
+    p_riga_lista: rigaLista ?? null,
   });
   if (error) throw error;
   return data;

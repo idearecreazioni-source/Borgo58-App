@@ -108,6 +108,7 @@ npm run dominio:verifica     # la posta del dominio riceve? il sito risponde? (d
 npm run migra                # cosa manca in produzione (sola lettura); con -- --conferma lo applica
 npm run consegne             # quali migrazioni sono in produzione senza riepilogo
 npm run funzione <nome>      # installa una funzione online; con -- --conferma
+npm run funzione:viva -- <nome>   # il corpo VIVO di una funzione del database
 ```
 
 **Due progetti Supabase, non uno** (10/08/2026): `borgo58` (produzione) e

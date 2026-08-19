@@ -22,7 +22,8 @@
     "prova:stato": "node scripts/prova-stato.mjs",
     "prova:base": "node scripts/prova-base.mjs",
     "collaudo:documenti": "node scripts/documenti-finti.mjs",
-    "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai"
+    "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai",
+    "funzione:viva": "node scripts/funzione-viva.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

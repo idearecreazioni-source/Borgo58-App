@@ -167,4 +167,77 @@ describe("la merce che entra spegne la voce della lista", () => {
     expect(r.error.message).toMatch(/non è ancora arrivato niente/i);
     expect((await riga(id)).status).not.toBe("acquistato");
   });
+
+
+  // ⚠️ LA META' DELLA DECISIONE CHE, SENZA QUESTE PROVE, NON SAREBBE
+  // PROVATA DA NIENTE (condizione posta il 19/08): togliendo la
+  // possibilità di correggere, tutto il resto resterebbe verde.
+  it("due righe dello stesso prodotto: senza scelta l'arrivo va sulla PIU' VECCHIA", async () => {
+    await nuovoIngrediente();
+    const vecchia = await nuovaRiga(20);
+    // ⚠️ Le due righe nascono nello stesso istante se non si datano a mano,
+    // e allora «la più vecchia» la sceglie l'ordinamento a caso: la prova
+    // direbbe di sì qualunque cosa faccia il codice (lezione del 16/08 su
+    // now() dentro una transazione).
+    await titolare
+      .from("shopping_list_items")
+      .update({ created_at: new Date(Date.now() - 3 * 86400000).toISOString() })
+      .eq("id", vecchia);
+    const nuova = await nuovaRiga(10);
+
+    const elenco = await titolare.rpc("righe_lista_aperte", { p_ingredient_id: ingrediente });
+    expect(elenco.error).toBeNull();
+    expect(elenco.data).toHaveLength(2);
+    expect(elenco.data.find((r) => r.predefinita).id).toBe(vecchia);
+
+    await titolare.rpc("register_stock_delivery", {
+      p_ingredient_id: ingrediente,
+      p_quantity: 5,
+      p_note: "TEST-AUTO",
+    });
+    expect(Number((await riga(vecchia)).quantita_arrivata)).toBe(5);
+    expect((await riga(nuova)).quantita_arrivata).toBeNull();
+  });
+
+  it("...e con la scelta va DOVE DICE LUI", async () => {
+    await nuovoIngrediente();
+    const vecchia = await nuovaRiga(20);
+    await titolare
+      .from("shopping_list_items")
+      .update({ created_at: new Date(Date.now() - 3 * 86400000).toISOString() })
+      .eq("id", vecchia);
+    const nuova = await nuovaRiga(10);
+
+    await titolare.rpc("register_stock_delivery", {
+      p_ingredient_id: ingrediente,
+      p_quantity: 4,
+      p_note: "TEST-AUTO",
+      p_riga_lista: nuova,
+    });
+    expect(Number((await riga(nuova)).quantita_arrivata)).toBe(4);
+    expect((await riga(vecchia)).quantita_arrivata).toBeNull();
+  });
+
+  it("una riga di un ALTRO prodotto viene respinta, non corretta in silenzio", async () => {
+    // ⚠️ Ripiegare sulla più vecchia vorrebbe dire scrivere l'arrivo da
+    // un'altra parte dicendo di aver fatto quel che si chiedeva: è il modo
+    // silenzioso di far mentire la lista.
+    await nuovoIngrediente();
+    const mia = await nuovaRiga(5);
+    const primo = ingrediente;
+
+    await nuovoIngrediente();
+    const altrui = await nuovaRiga(5);
+
+    const r = await titolare.rpc("register_stock_delivery", {
+      p_ingredient_id: primo,
+      p_quantity: 2,
+      p_note: "TEST-AUTO",
+      p_riga_lista: altrui,
+    });
+    expect(r.error).not.toBeNull();
+    expect(r.error.message).toMatch(/un altro prodotto/i);
+    expect((await riga(mia)).quantita_arrivata).toBeNull();
+    expect((await riga(altrui)).quantita_arrivata).toBeNull();
+  });
 });

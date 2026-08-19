@@ -110,3 +110,16 @@ export async function chiudiRigaArrivata(itemId) {
   const { error } = await supabase.rpc("chiudi_riga_arrivata", { p_item_id: itemId });
   if (error) throw error;
 }
+
+// Quali righe della lista aspettano questo prodotto, con l'indicazione di
+// quella che riceverà l'arrivo se nessuno dice il contrario.
+// ⚠️ Serve PRIMA di confermare un carico, non dopo: dopo non è più una
+// correzione, è una riparazione (Alessio, 19/08).
+export async function righeListaAperte(ingredientId) {
+  if (!ingredientId) return [];
+  const { data, error } = await supabase.rpc("righe_lista_aperte", {
+    p_ingredient_id: ingredientId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
