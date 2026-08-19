@@ -72,8 +72,18 @@ describe("la serata: il database e il client dicono la stessa cosa", () => {
     // ⚠️ Si chiede al database, non al testo delle migrazioni, e senza i
     // commenti: un censimento che conta le parole nei commenti gonfia il
     // problema — è il falso positivo trovato nel censimento del 19/08.
+    //
+    // ⚠️ DAL 19/08 (seconda metà) LA RETE GUARDA TRE FORME, non una:
+    // `current_date`, `now()::date`, e il **taglio nudo** di una colonna con
+    // l'ora dentro (`created_at::date`), che chiede il giorno a Greenwich
+    // esattamente come le altre due. Con la rete vecchia
+    // `quadratura_pagamenti` — che tocca soldi, e lo faceva tre volte —
+    // sarebbe rimasta invisibile.
     const r = await titolare.rpc("funzioni_con_data_utc");
     expect(r.error).toBeNull();
-    expect(r.data ?? [], "funzioni che usano current_date").toEqual([]);
+    // Il messaggio deve dire QUALE e PERCHÉ: chi legge una prova rossa deve
+    // poter decidere senza riaprire il database.
+    const trovate = (r.data ?? []).map((x) => `${x.nome} (${x.perche})`);
+    expect(trovate, "funzioni che decidono la data a Greenwich").toEqual([]);
   });
 });
