@@ -101,3 +101,27 @@ export function istanteDellaSerata(serata, ora, oraFineSerata) {
   if (h * 60 + (m || 0) < minutiDa(oraFineSerata)) d.setDate(d.getDate() + 1);
   return d;
 }
+
+/**
+ * LA SERATA MOSTRATA È SCADUTA? — cioè: quella che si sta guardando non è
+ * più quella in corso.
+ *
+ * ⚠️ PERCHÉ ESISTE, ed è una decisione di Alessio: in Comande la sala
+ * **non deve cambiare da sola** — chi sta chiudendo alle 5 non se la deve
+ * veder muovere sotto le mani. Ma non dirlo affatto è il caso che nessuno
+ * ha coperto finora: il tablet in carica sul bancone, ripreso la mattina,
+ * mostra la sala di stanotte con l'aria di essere quella di oggi. *È la
+ * stessa forma dei tavoli di ieri sotto la data di oggi* (19/08): non una
+ * schermata vuota, che si nota, ma una plausibile.
+ *
+ * Quindi il passaggio lo decide chi ha il tablet in mano, e questa funzione
+ * risponde soltanto alla domanda «c'è qualcosa da dirgli?».
+ *
+ * @param serataMostrata "AAAA-MM-GG" — quella che la schermata sta usando
+ * @param adesso         Date
+ * @param oraFineSerata  "HH:MM" — da service_settings
+ */
+export function serataScaduta(serataMostrata, adesso, oraFineSerata) {
+  if (!serataMostrata || !oraFineSerata || !adesso) return false;
+  return serataDiServizio(adesso, oraFineSerata) !== serataMostrata;
+}

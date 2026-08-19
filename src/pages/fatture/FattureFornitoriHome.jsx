@@ -76,6 +76,8 @@ export default function FattureFornitoriHome() {
   // Il giorno in cui i soldi escono: di partenza oggi, e con l'assegno lo
   // si sposta in avanti. Non ha un valore predefinito «fra 30 giorni»: una
   // data inventata da me sposterebbe il saldo di chi non ci ha pensato.
+  // ⚠️ CALENDARIO: un bonifico non appartiene a una serata (perimetro del
+  // 19/08). Qui `oggiLocale()` è la risposta giusta, non una dimenticanza.
   const [dataUscita, setDataUscita] = useState(oggiLocale());
   const [riferimento, setRiferimento] = useState("");
   const [paying, setPaying] = useState(false);

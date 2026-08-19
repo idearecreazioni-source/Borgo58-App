@@ -10,6 +10,8 @@ import { formatEUR, oggiLocale } from "../lib/constants";
 // lo dicesse, il secondo caso sembrerebbe una nota che non ha fatto niente.
 export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
   const [numero, setNumero] = useState("");
+  // ⚠️ CALENDARIO: la data di un documento del fornitore. Vedi il
+  // perimetro della serata in lib/giornataOperativa.js.
   const [data, setData] = useState(oggiLocale());
   const [importo, setImporto] = useState("");
   const [note, setNote] = useState("");

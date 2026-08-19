@@ -22,10 +22,10 @@ import {
 } from "../../lib/api/orders";
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
 import { listReservations } from "../../lib/api/reservations";
-import { FASCE, serataDiServizio } from "../../lib/calcoli/serata";
+import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
 import { ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
 import { listBarItems } from "../../lib/api/barItems";
-import { RECIPE_CATEGORIES, formatEUR } from "../../lib/constants";
+import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
@@ -509,6 +509,33 @@ export default function Sala() {
 
   return (
     <div className="max-w-md mx-auto pb-6">
+      {/* 🔴 LA SERATA È FINITA, E LA SALA NON CAMBIA DA SOLA.
+          È una decisione di Alessio: chi sta chiudendo alle 5 non deve
+          vedersi muovere la sala sotto le mani. Ma tacere del tutto lascia
+          scoperto il caso vero — il tablet in carica sul bancone, ripreso
+          la mattina, che mostra la sala di stanotte con l'aria di essere
+          quella di oggi. ⚠️ È la stessa forma dei tavoli di ieri sotto la
+          data di oggi (19/08): non una schermata vuota, che si nota, ma una
+          plausibile.
+          ⚠️ E COMPARE SENZA CHE NESSUNO TOCCHI NIENTE: si appoggia
+          all'orologio che batte ogni minuto per il ritardo — se aspettasse
+          un gesto, coprirebbe tutti i casi tranne quello per cui esiste. */}
+      {serataScaduta(serata, adesso, oraFineSerata) && (
+        <div className="mb-3 rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 px-3 py-2">
+          <p className="text-sm text-b58-charcoal">
+            È cominciata una giornata nuova. Questa è ancora la sala della serata di{" "}
+            <strong>{formatDate(serata)}</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSerata(serataDiServizio(new Date(), oraFineSerata))}
+            className="mt-1 text-sm underline text-b58-terracotta-dark hover:text-b58-charcoal tocco-bottone"
+          >
+            Passa alla serata di oggi
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2 mb-3">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Sala</h1>

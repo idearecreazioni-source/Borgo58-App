@@ -11,6 +11,8 @@ import {
 } from "../../lib/api/cash";
 import { listCustomers } from "../../lib/api/customers";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import CampoGiornata from "../../components/CampoGiornata";
+import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import { getEntities } from "../../lib/api/entities";
 import { DISCOUNT_GIFT_TYPES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 
@@ -46,6 +48,17 @@ export default function ScontiOmaggi() {
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  // 🔴 LA SERATA, NON «OGGI» — seconda metà della regola delle 5 (19/08).
+  // Uno sconto o un omaggio nascono in sala, di sera: alle 00:30
+  // `oggiLocale()` li datava al giorno dopo, e il budget degli omaggi
+  // della Proiezione li avrebbe contati nel mese sbagliato l'ultima notte
+  // di ogni mese. Si propone e si vede; la data resta correggibile.
+  const { serata, oraFineSerata } = useGiornataOperativa();
+  useEffect(() => {
+    if (!serata) return;
+    setForm((f) => (f.movement_date === today() ? { ...f, movement_date: serata } : f));
+  }, [serata]);
 
   const [showDeviceForm, setShowDeviceForm] = useState(false);
   const [newDevice, setNewDevice] = useState({ name: "", isOwnerDevice: false });
@@ -288,15 +301,15 @@ export default function ScontiOmaggi() {
                 />
               </div>
             )}
-            <div>
-              <label className={labelClass}>Data</label>
-              <input
-                type="date"
-                value={form.movement_date}
-                onChange={(e) => setForm((f) => ({ ...f, movement_date: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
+            <CampoGiornata
+              label="Giornata"
+              value={form.movement_date}
+              onChange={(v) => setForm((f) => ({ ...f, movement_date: v }))}
+              oraFineSerata={oraFineSerata}
+              frase={`Questo ${form.type === "omaggio" ? "omaggio" : "sconto"} va sulla serata di`}
+              labelClass={labelClass}
+              inputClass={inputClass}
+            />
             <div>
               <label className={labelClass}>Causale (obbligatoria)</label>
               <select

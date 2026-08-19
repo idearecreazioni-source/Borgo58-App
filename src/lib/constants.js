@@ -424,6 +424,20 @@ export const formatDate = (value) =>
 //
 // Queste funzioni leggono giorno, mese e anno dall'orologio locale, che è
 // esattamente quello che intende una persona quando dice "oggi".
+//
+// 🔴 E QUI SI FERMANO, perché rispondono a UNA delle due domande. «Che
+// giorno è» non è «che serata è»: alle 00:30, col locale aperto,
+// `oggiLocale()` dice **domani**, ed è giusto — un giorno di calendario è
+// cambiato davvero. Chi data un gesto della **cassa** o di un **conto**
+// non vuole quella risposta: vuole `useGiornataOperativa()` in
+// `lib/giornataOperativa.js`, che risponde come il database.
+//
+// ⚠️ DOVE `oggiLocale()` È LA RISPOSTA GIUSTA, e va lasciata: prenotazioni,
+// turni e ferie, scadenze e adempimenti, fatture e spese dei fornitori,
+// registrazioni HACCP, giorni bancari. Sono tutte cose che parlano di
+// giorni di calendario, non di serate. *Uniformarle alla serata sarebbe un
+// difetto, non una pulizia* — ed è scritto qui perché il prossimo che passa
+// non lo faccia credendo di sistemare una dimenticanza.
 export const dataLocale = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 

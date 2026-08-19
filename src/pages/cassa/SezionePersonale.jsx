@@ -26,6 +26,10 @@ import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 const annoCorrente = new Date().getFullYear();
 const meseCorrente = new Date().getMonth() + 1;
 
+// ⚠️ CALENDARIO, e non serata: una nota pagata di tasca propria è una
+// spesa fatta in un giorno, non in un servizio. Dichiarato qui perché non
+// venga «uniformato» alla cassa: il perimetro della serata è di due gesti
+// soli (19/08).
 const formaVuota = {
   importo: "",
   pagataIl: oggiLocale(),

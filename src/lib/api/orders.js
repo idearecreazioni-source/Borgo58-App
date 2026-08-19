@@ -397,6 +397,12 @@ export async function setDocumentoFiscale(orderId, { tipo, numero, emessoIl }) {
     documento_numero: numero?.trim() || null,
     // Una fattura dichiarata emessa senza data la rifiuta il database: è
     // la sola cosa che distingue «fatta» da «promessa».
+    // ⚠️ LA DATA LA PASSA CHI CHIAMA, ed è la SERATA del conto (19/08,
+    // seconda metà della regola delle 5): un conto e il suo documento
+    // fiscale devono stare sulla stessa giornata, o la quadratura fra
+    // incassato e scontrinato accusa una differenza che non esiste.
+    // `oggiLocale()` resta solo come ultima spiaggia se le impostazioni non
+    // si leggono — non è la strada normale.
     documento_emesso_il: tipo === "fattura" ? emessoIl || oggiLocale() : null,
   };
   const { error } = await supabase.from("orders").update(patch).eq("id", orderId);

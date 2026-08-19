@@ -5,6 +5,7 @@ import { listContiFiscalizzati, setDocumentoFiscale } from "../../lib/api/orders
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import { useGiornataOperativa } from "../../lib/giornataOperativa";
 
 // Incassato e scontrinato — chiesto da Alessio il 15/08/2026.
 //
@@ -27,6 +28,23 @@ export default function Scontrinato() {
   const [inCorso, setInCorso] = useState("");
   const [numeroFattura, setNumeroFattura] = useState({});
   const [fiscalizzati, setFiscalizzati] = useState([]);
+
+  // 🔴 QUI SI CONTA A SERATE, NON A GIORNI DI CALENDARIO, e non è una
+  // scelta di questa schermata: `quadratura_fiscale` e
+  // `conti_da_fiscalizzare` confrontano gli estremi del periodo con
+  // `serata_di_servizio(closed_at)`. Un «al» preso da `oggiLocale()` alle
+  // 00:30 chiedeva al database una serata che non è ancora cominciata.
+  //
+  // ⚠️ E il documento fiscale si data alla SERATA del conto: sono la stessa
+  // cosa, e datarli in due modi diversi vorrebbe dire avere un incasso su
+  // una giornata e il suo scontrino su un'altra — che è precisamente ciò
+  // che questa schermata serve a scoprire. ⚠️ Il giorno del registratore
+  // telematico questa data va riconfrontata con la sua chiusura fiscale:
+  // è la stessa voce aperta di «chi comanda sui ricavi».
+  const { serata, oraFineSerata } = useGiornataOperativa();
+  useEffect(() => {
+    if (serata) setAl((a) => (a === oggiLocale() ? serata : a));
+  }, [serata]);
 
   useEffect(() => {
     getEntities()
@@ -66,7 +84,7 @@ export default function Scontrinato() {
       await setDocumentoFiscale(orderId, {
         tipo,
         numero: tipo === "fattura" ? numeroFattura[orderId] : null,
-        emessoIl: oggiLocale(),
+        emessoIl: serata ?? oggiLocale(),
       });
       await ricarica();
     } catch (e) {
@@ -116,6 +134,17 @@ export default function Scontrinato() {
           <input type="date" value={al} onChange={(e) => setAl(e.target.value)} className={inputClass} />
         </div>
       </div>
+
+      {/* ⚠️ La riga compare SOLO quando la serata e il calendario non
+          coincidono — cioè fra mezzanotte e le 05:00. Una spiegazione che
+          c'è sempre si smette di leggere; questa sta dove sta il dubbio. */}
+      {serata && oraFineSerata && serata !== oggiLocale() && (
+        <p className="text-xs text-b58-charcoal-soft mb-3">
+          Si sta guardando fino alla serata di{" "}
+          <strong className="text-b58-charcoal">{formatDate(serata)}</strong>: fino alle{" "}
+          {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
+        </p>
+      )}
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Incassato e scontrinato</h1>
       <p className="text-xs text-b58-charcoal-soft/80 mb-6">

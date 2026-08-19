@@ -18,6 +18,8 @@ import {
 } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import CampoGiornata from "../../components/CampoGiornata";
+import { useGiornataOperativa } from "../../lib/giornataOperativa";
 
 const today = oggiLocale;
 
@@ -50,6 +52,25 @@ export default function PrimaNota() {
   const [saving, setSaving] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  // 🔴 LA GIORNATA PROPOSTA È LA SERATA, NON «OGGI» (seconda metà della
+  // regola delle 5, 19/08). Alle 00:30 col locale aperto `oggiLocale()`
+  // propone **domani**: un movimento di stanotte finiva su una giornata in
+  // cui il locale non ha ancora aperto, e nessuna riga risultava fuori
+  // posto. La data resta correggibile e si vede sotto il campo.
+  //
+  // ⚠️ Il predefinito del database su `cash_movements.movement_date` resta
+  // il **calendario** (decisione di Alessio del 19/08, perimetro stretto):
+  // non è una contraddizione, è che quel predefinito si usa solo quando
+  // nessuno sceglie — e misurando, tutte e quattro le funzioni che scrivono
+  // in prima nota passano una data esplicita, e questa schermata pure.
+  const { serata, oraFineSerata } = useGiornataOperativa();
+  useEffect(() => {
+    if (!serata) return;
+    // Non si sovrascrive ciò che l'utente sta scrivendo (trappola del 12/08):
+    // si corregge solo la proposta di partenza, se è ancora quella.
+    setForm((f) => (f.movement_date === today() ? { ...f, movement_date: serata } : f));
+  }, [serata]);
 
   useEffect(() => {
     Promise.all([getEntities(), listCausali("entrata"), listCausali("uscita")])
@@ -274,15 +295,15 @@ export default function PrimaNota() {
                 className={inputClass}
               />
             </div>
-            <div>
-              <label className={labelClass}>Data</label>
-              <input
-                type="date"
-                value={form.movement_date}
-                onChange={(e) => setForm((f) => ({ ...f, movement_date: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
+            <CampoGiornata
+              label="Giornata"
+              value={form.movement_date}
+              onChange={(v) => setForm((f) => ({ ...f, movement_date: v }))}
+              oraFineSerata={oraFineSerata}
+              frase="Questo movimento va sulla serata di"
+              labelClass={labelClass}
+              inputClass={inputClass}
+            />
             <div>
               <label className={labelClass}>Causale</label>
               <select

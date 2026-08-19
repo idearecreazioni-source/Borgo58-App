@@ -12,8 +12,8 @@ import {
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, labelFor, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
-import { serataDiServizio } from "../../lib/calcoli/serata";
-import { getServiceSettings } from "../../lib/api/orders";
+import { useGiornataOperativa } from "../../lib/giornataOperativa";
+import CampoGiornata from "../../components/CampoGiornata";
 import { CASH_DIRECTIONS } from "../../lib/constants";
 
 // Primo del mese in ora locale: la versione precedente passava per
@@ -376,28 +376,22 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
   // mezzanotte a locale chiuso presto, o la mattina dopo prima di aprire.
   // È la stessa forma del mezzo di pagamento, della riga della lista e
   // della causale: *si fa da sé, ma si vede.*
+  //
+  // ⚠️ DAL 19/08 (seconda metà) LA LETTURA NON STA PIÙ QUI: era scritta a
+  // mano in questa schermata, ed era l'unica corretta di tutta la Cassa.
+  // Adesso è `useGiornataOperativa()`, la stessa che usano prima nota,
+  // sconti e scontrinato — *una regola vive in un posto solo*, e finché
+  // viveva qui le altre schermate non potevano che averne una diversa.
   const [data, setData] = useState(oggiLocale());
-  const [oraFineSerata, setOraFineSerata] = useState(null);
+  const { serata, oraFineSerata } = useGiornataOperativa();
 
+  // La proposta arriva quando le impostazioni sono state lette, e non
+  // sovrascrive niente: se nel frattempo si è già corretta la data a mano,
+  // quella vince. Ricaricare sopra a ciò che l'utente sta scrivendo è il
+  // difetto del 12/08.
   useEffect(() => {
-    let vivo = true;
-    getServiceSettings()
-      .then((s) => {
-        if (!vivo) return;
-        setOraFineSerata(s?.ora_fine_serata ?? null);
-        // ⚠️ La proposta si calcola con l'ora VERA di Alessio, non con un
-        // numero scritto qui: due orologi che possono divergere sono il
-        // modo in cui la schermata e il database datano lo stesso gesto su
-        // due giorni diversi.
-        if (s?.ora_fine_serata) setData(serataDiServizio(new Date(), s.ora_fine_serata));
-      })
-      // Se le impostazioni non si leggono resta «oggi», che è la proposta
-      // di prima: si perde la comodità, non il gesto.
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, []);
+    if (serata) setData((d) => (d === oggiLocale() ? serata : d));
+  }, [serata]);
   const [inCorso, setInCorso] = useState("");
   const [esito, setEsito] = useState(null);
 
@@ -460,17 +454,15 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className={labelClass}>Serata che stai chiudendo</label>
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputClass} />
-          {oraFineSerata && (
-            <p className="text-xs text-b58-charcoal-soft mt-1">
-              Stai chiudendo la serata di{" "}
-              <strong className="text-b58-charcoal">{formatDate(data)}</strong>. Fino alle{" "}
-              {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
-            </p>
-          )}
-        </div>
+        <CampoGiornata
+          label="Serata che stai chiudendo"
+          value={data}
+          onChange={setData}
+          oraFineSerata={oraFineSerata}
+          frase="Stai chiudendo la serata di"
+          labelClass={labelClass}
+          inputClass={inputClass}
+        />
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>Ho contato €</label>

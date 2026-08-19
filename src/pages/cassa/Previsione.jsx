@@ -36,6 +36,7 @@ const ORIZZONTI = [
   { giorni: 90, label: "90 giorni" },
 ];
 
+// ⚠️ CALENDARIO: una scadenza cade in un giorno, non in una serata.
 const formaVuota = { descrizione: "", importo: "", scadeIl: oggiLocale(), ogniMesi: "0", mezzo: "banca" };
 
 export default function Previsione() {
