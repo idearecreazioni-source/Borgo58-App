@@ -6,7 +6,9 @@ import {
   ZONE_FONDALE,
   RIDUZIONE_DISEGNO,
   agganciaAiVicini,
+  ingrandimentoCm,
   misureSagoma,
+  sagomaDisegnata,
   raggioAggancioCm,
 } from "../lib/calcoli/sala";
 
@@ -166,6 +168,9 @@ export default function PiantaSala({
   const svgRef = useRef(null);
   const contenitoreRef = useRef(null);
   const [stretto, setStretto] = useState(false);
+  // Quanto è largo il DISEGNO adesso, in punti di schermo. Serve a tradurre
+  // in centimetri di sala i millimetri veri dell'ingrandimento delle sagome.
+  const [largPx, setLargPx] = useState(0);
 
   // ⚠️ SI GIRA DA SOLA QUANDO LO SCHERMO È STRETTO. Trovato da Alessio
   // aprendo il Calendario dal cellulare: la sala sdraiata si vedeva a
@@ -185,6 +190,7 @@ export default function PiantaSala({
       // questa riga, al primo istante la pianta risulterebbe "stretta" e
       // si vedrebbe girare sotto gli occhi a ogni apertura della pagina.
       if (!el.clientWidth) return;
+      setLargPx(el.clientWidth);
       setStretto(el.clientWidth / leggiPxCm() < SOGLIA_IN_PIEDI_CM_REALI);
     };
     misura();
@@ -200,6 +206,22 @@ export default function PiantaSala({
   // rilascio. La posizione vera resta quella del database finché non
   // arriva la conferma della scrittura.
   const [trascina, setTrascina] = useState(null);
+
+  // 🔴 LE SAGOME SI DISEGNANO PIÙ GRANDI DEL VERO (19/08, decisione di
+  // Alessio: tavoli più facili da afferrare col dito). Qui il disegno
+  // smette di dire il vero sullo spazio — il perché e il prezzo stanno in
+  // `lib/calcoli/sala.js` e nel registro dei rovesciamenti.
+  //
+  // ⚠️ SOLO IL DISEGNO: accostamento, coperti, tavoloni e colore restano
+  // sulle misure vere, e `misureSagoma()` non si tocca.
+  // ⚠️ MA IL BERSAGLIO DI TOCCO SEGUE LA SAGOMA DISEGNATA, ed è tutto il
+  // punto della richiesta: il rettangolo che si vede **è** quello che
+  // intercetta il dito. Un tavolo che si vede grande e si prende piccolo
+  // sarebbe peggio di prima.
+  const crescitaCm = largPx
+    ? ingrandimentoCm((verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / largPx, leggiPxCm())
+    : 0;
+  const limitiSala = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
 
   const selezionati = new Set(selezione);
 
@@ -515,9 +537,18 @@ export default function PiantaSala({
           // "Chef Table" su un bancone profondo 70 cm sborderebbe sui
           // vicini. Si raddrizza solo ciò che ci sta; il resto corre lungo
           // il lato lungo, come le piante di sala scrivono da sempre.
-          const raddrizza = verticale && serve <= misure.profondita * 0.95;
-          const cx = misure.larghezza / 2;
-          const cy = misure.profondita / 2;
+          // Il rettangolo COME SI DISEGNA: cresciuto e tagliato al muro.
+          // Le coordinate sono relative al translate(x y) del gruppo.
+          const box = sagomaDisegnata(
+            { x, y, larghezza: misure.larghezza, profondita: misure.profondita },
+            crescitaCm,
+            limitiSala
+          );
+          const bx = box.x - x;
+          const by = box.y - y;
+          const raddrizza = verticale && serve <= box.profondita * 0.95;
+          const cx = bx + box.larghezza / 2;
+          const cy = by + box.profondita / 2;
           const chiaro = selezionati.has(sagoma.id) || Boolean(info?.colore);
 
           return (
@@ -546,9 +577,11 @@ export default function PiantaSala({
                   proprio l'insieme dei tavoli. Il perimetro forte del
                   tavolone lo ridisegna il riquadro del gruppo. */}
               <rect
-                width={misure.larghezza}
-                height={misure.profondita}
-                rx={tondo ? Math.min(misure.larghezza, misure.profondita) / 2 : 12}
+                x={bx}
+                y={by}
+                width={box.larghezza}
+                height={box.profondita}
+                rx={tondo ? Math.min(box.larghezza, box.profondita) / 2 : 12}
                 fill={colore.riempimento}
                 stroke={
                   inMano && trascina?.fuori
@@ -573,9 +606,11 @@ export default function PiantaSala({
                   ridarlo via. */}
               {info?.barrato && (
                 <rect
-                  width={misure.larghezza}
-                  height={misure.profondita}
-                  rx={tondo ? Math.min(misure.larghezza, misure.profondita) / 2 : 12}
+                  x={bx}
+                  y={by}
+                  width={box.larghezza}
+                  height={box.profondita}
+                  rx={tondo ? Math.min(box.larghezza, box.profondita) / 2 : 12}
                   fill="url(#sbarrato)"
                   pointerEvents="none"
                 />
@@ -630,13 +665,17 @@ export default function PiantaSala({
           const scelto = t.ids.some((id) => selezionati.has(id));
           const primo = perId.get(t.ids[0]);
           const colore = scelto ? COLORI.selezionato : coloreDi(primo);
+          // ⚠️ Cresce insieme alle sagome che racchiude: col solo ingombro
+          // vero il perimetro finirebbe DENTRO i tavoli, e il tavolone
+          // sembrerebbe segnato da una riga che gli passa in mezzo.
+          const b = sagomaDisegnata(t, crescitaCm, limitiSala);
           return (
             <rect
               key={`tavolone-${t.chiave}`}
-              x={t.x}
-              y={t.y}
-              width={t.larghezza}
-              height={t.profondita}
+              x={b.x}
+              y={b.y}
+              width={b.larghezza}
+              height={b.profondita}
               rx={12}
               fill="none"
               stroke={colore.bordo}

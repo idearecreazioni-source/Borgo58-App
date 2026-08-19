@@ -915,9 +915,12 @@ export default function PiantaGiornata() {
                           chi guarda questo riquadro sta decidendo se
                           telefonare a chi non è arrivato. */}
                       {(p.customer_phone || p.notes) && (
-                        <p className="text-[11px] text-b58-charcoal-soft mt-0.5">
+                        <p className="text-sm text-b58-charcoal-soft mt-0.5">
                           {p.customer_phone && (
-                            <a href={`tel:${p.customer_phone}`} className="underline">
+                            <a
+                              href={`tel:${p.customer_phone}`}
+                              className="tocco-bottone inline-flex items-center underline mr-2"
+                            >
                               {p.customer_phone}
                             </a>
                           )}
@@ -1209,30 +1212,83 @@ export default function PiantaGiornata() {
               <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-terracotta-dark mb-1.5">
                 {senzaTavolo.length === 1 ? "Aspetta un tavolo" : "Aspettano un tavolo"}
               </p>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {senzaTavolo.map((p) => (
-                  <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="text-sm text-b58-charcoal-soft w-12 shrink-0">
-                      {p.reservation_time?.slice(0, 5)}
-                    </span>
-                    <span className="text-sm text-b58-charcoal flex-1 min-w-[6rem]">
-                      {p.customer_name}
-                      <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
-                    </span>
-                    {p.customer_phone && (
-                      <a
-                        href={`tel:${p.customer_phone}`}
-                        className="text-[11px] text-b58-charcoal-soft underline"
+                  <li key={p.id} className="flex items-start gap-3">
+                    {/* ⚠️ IL NUMERO SOTTO IL NOME e il pulsante a DESTRA
+                        (Alessio, 19/08): prima erano scambiati, e il pulsante
+                        — la cosa che si tocca — stava dove cade l'occhio e non
+                        dove cade il dito. */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-b58-charcoal">
+                        <span className="text-b58-charcoal-soft">
+                          {p.reservation_time?.slice(0, 5)}
+                        </span>{" "}
+                        {p.customer_name}
+                        <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
+                        {/* ⚠️ IL BOLLINO ANCHE QUI (rilievo della validazione,
+                            accettato da Alessio): nella striscia finiscono due
+                            cose che si leggevano uguali — una confermata a cui
+                            manca il tavolo, e una richiesta dal sito non ancora
+                            accettata. Chiedono due gesti diversi: un tavolo
+                            l'una, una decisione l'altra. */}
+                        {p.status === "richiesta_in_attesa" && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                            da confermare
+                          </span>
+                        )}
+                      </p>
+                      {/* ⚠️ IL NUMERO È UN BERSAGLIO DI TOCCO, non una
+                          didascalia: rispetta la soglia toccabile del progetto
+                          come i campi. A 11 punti Alessio faticava a prenderlo,
+                          e lo spazio per farlo grande c'è. */}
+                      {p.customer_phone && (
+                        <a
+                          href={`tel:${p.customer_phone}`}
+                          className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft underline"
+                        >
+                          {p.customer_phone}
+                        </a>
+                      )}
+                    </div>
+                    {modo === "assegna" && inCorso?.id === p.id ? (
+                      // ⚠️ DALLA STRISCIA NON SI SCENDE PIÙ (Alessio, 19/08).
+                      // Prima «Dai un tavolo» sembrava non fare niente: il
+                      // pannello dentro la pianta si svuotava e l'assegnazione
+                      // compariva **sotto la pianta**, fuori schermo. Era la
+                      // stessa forma del difetto che la striscia doveva curare:
+                      // la cura giusta nel posto sbagliato.
+                      <div className="flex flex-col gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          disabled={salvando || scelti.length === 0}
+                          onClick={confermaAssegnazione}
+                          className={PRINCIPALE}
+                        >
+                          Conferma {scelti.length || ""}
+                        </button>
+                        {/* Ogni rifiuto vuole la sua via di ritorno. */}
+                        <button type="button" onClick={azzera} className={BOTTONE}>
+                          Annulla
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => iniziaAssegnazione(p)}
+                        className={`${BOTTONE} shrink-0`}
                       >
-                        {p.customer_phone}
-                      </a>
+                        Dai un tavolo
+                      </button>
                     )}
-                    <button type="button" onClick={() => iniziaAssegnazione(p)} className={BOTTONE}>
-                      Dai un tavolo
-                    </button>
                   </li>
                 ))}
               </ul>
+              {modo === "assegna" && senzaTavolo.some((x) => x.id === inCorso?.id) && (
+                <p className="text-[11px] text-b58-charcoal-soft mt-2">
+                  Tocca sulla pianta i tavoli dove li fai sedere, poi Conferma.
+                </p>
+              )}
             </div>
           )}
 
@@ -1345,7 +1401,12 @@ export default function PiantaGiornata() {
           {!dentroLaPianta && moduloNuova}
 
           {/* ASSEGNAZIONE di una richiesta arrivata dal sito */}
-          {modo === "assegna" && inCorso && (
+          {/* ⚠️ QUESTO BLOCCO VALE SOLO PER CHI UN TAVOLO CE L'HA GIÀ — il
+              «Cambia tavolo» dell'elenco sotto. Chi il tavolo lo aspetta sta
+              nella striscia in cima, e da lì conferma senza scendere: due
+              posti per lo stesso gesto sarebbero un doppione, e quello in
+              fondo è proprio quello che non si vede. */}
+          {modo === "assegna" && inCorso && !senzaTavolo.some((x) => x.id === inCorso.id) && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 p-5 mb-5">
               <p className="text-b58-charcoal font-medium mb-1">
                 {inCorso.customer_name} · {inCorso.party_size} persone ·{" "}
@@ -1576,9 +1637,12 @@ export default function PiantaGiornata() {
                         sta decidendo se telefonare a chi non e' arrivato.
                         (Richiesta di Alessio, 19/08: in tutti e due i posti.) */}
                     {(p.customer_phone || p.notes) && (
-                      <p className="text-[11px] text-b58-charcoal-soft mt-1">
+                      <p className="text-sm text-b58-charcoal-soft mt-1">
                         {p.customer_phone && (
-                          <a href={`tel:${p.customer_phone}`} className="underline">
+                          <a
+                            href={`tel:${p.customer_phone}`}
+                            className="tocco-bottone inline-flex items-center underline mr-2"
+                          >
                             {p.customer_phone}
                           </a>
                         )}

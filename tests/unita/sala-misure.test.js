@@ -3,6 +3,9 @@ import {
   CONTATTO_MINIMO_CM,
   ZONE_FONDALE,
   GRIGLIA_CM,
+  INGRANDIMENTO_MM,
+  ingrandimentoCm,
+  sagomaDisegnata,
   TOLLERANZA_CONTATTO_CM,
   pannelloNellaPianta,
   riquadroDelPannello,
@@ -300,10 +303,23 @@ describe("Il pannello dentro la pianta", () => {
     expect(pannelloNellaPianta(ZONE, [tavolo(600, 200)])).toBeNull();
   });
 
-  it("un tavolo che lo sfiora appena basta a farlo uscire", () => {
-    // Il bordo conta: 1400 è il primo centimetro fuori, 1390 è dentro.
-    expect(pannelloNellaPianta(ZONE, [tavolo(1400, 100)])).not.toBeNull();
-    expect(pannelloNellaPianta(ZONE, [tavolo(1390, 100)])).toBeNull();
+  it("il bordo conta, e si misura sulle sagome COME SI DISEGNANO", () => {
+    // ⚠️ Dal 19/08 le sagome si disegnano più grandi del vero, e questa
+    // funzione guarda l'ingombro DISEGNATO: se guardasse quello vero, un
+    // tavolo potrebbe apparire sopra la cucina senza far uscire il pannello
+    // — e finirgli sotto, che è il costo eliminato il 18/08.
+    // Con margine ZERO conta la sola posizione: 1400 è il primo centimetro
+    // fuori, 1390 è dentro.
+    expect(pannelloNellaPianta(ZONE, [tavolo(1400, 100)], 0)).not.toBeNull();
+    expect(pannelloNellaPianta(ZONE, [tavolo(1390, 100)], 0)).toBeNull();
+  });
+
+  it("col margine dell'ingrandimento il pannello esce PRIMA — la gemella", () => {
+    // La stessa sagoma, lo stesso posto: cambia solo se si guarda il vero o
+    // il disegnato. Senza questa coppia, il margine potrebbe essere zero e
+    // nessuna prova lo direbbe.
+    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 0)).not.toBeNull();
+    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 40)).toBeNull();
   });
 
   it("su QUESTO fondale basta la posizione — e la prova lo dichiara", () => {
@@ -318,8 +334,8 @@ describe("Il pannello dentro la pianta", () => {
     // provarlo è peggio di nessuna prova.
     const lungo = { id: "L", larghezza_cm: 180, profondita_cm: 90 };
     for (const ruotato of [false, true]) {
-      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }])).toBeNull();
-      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }])).not.toBeNull();
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }], 0)).toBeNull();
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }], 0)).not.toBeNull();
     }
   });
 });
@@ -347,5 +363,69 @@ describe("Le zone restano nominate anche se non si scrivono più a schermo", () 
 
   it("ogni zona del fondale ha un nome — anche quelle che non lo mostrano", () => {
     for (const z of ZONE_FONDALE) expect(z.nome).toBeTruthy();
+  });
+});
+
+describe("Le sagome si disegnano più grandi del vero", () => {
+  // 🔴 Rovesciamento di Alessio del 19/08: il disegno smette di dire il vero
+  // sullo spazio, per rendere i tavoli afferrabili col dito. La misura che
+  // l'ha reso possibile sta nel riepilogo del giro D3 — il varco più stretto
+  // fra due sagome separate, in produzione, è **80 cm**.
+  const SALA = { larghezza: 2070, profondita: 1030 };
+
+  it("l'ingrandimento si misura in millimetri VERI, non in centimetri di sala", () => {
+    // ⚠️ La stessa regola del raggio del magnete: scritto in unità del
+    // disegno, si accorcerebbe da solo a ogni ridimensionamento — e il tavolo
+    // tornerebbe piccolo proprio sullo schermo dove serve grande.
+    // Sul telefono di Alessio: 1030 cm di sala su 358 punti → 2,877 cm per
+    // punto; 3 mm veri fanno ~32,6 cm di sala.
+    expect(ingrandimentoCm(1030 / 358, 37.79528, 3)).toBeCloseTo(32.6, 0);
+    // Su uno schermo largo il doppio, lo stesso dito vale la metà dei
+    // centimetri: è il senso di misurarlo in dito e non in sala.
+    expect(ingrandimentoCm(1030 / 716, 37.79528, 3)).toBeCloseTo(16.3, 0);
+  });
+
+  it("e il valore predefinito è quello che ha detto Alessio: fra 2 e 3 mm", () => {
+    // 🔴 QUESTA PROVA ESISTE PER UNA ROTTURA CHE NON DIVENTAVA ROSSA:
+    // portando l'ingrandimento a zero, nessuna prova se ne accorgeva —
+    // perché tutte gli passavano il numero a mano invece di usare quello
+    // deciso. Una prova che non usa il valore vero non lo sta provando.
+    // ⚠️ E congela una DECISIONE, non un gusto: *«giusto 2 o 3 mm in più»*.
+    // Alzarlo oltre significa rimisurare i varchi fra le sagome (il più
+    // stretto in produzione è 80 cm), non cambiare un numero.
+    expect(INGRANDIMENTO_MM).toBeGreaterThanOrEqual(2);
+    expect(INGRANDIMENTO_MM).toBeLessThanOrEqual(3);
+    // e il valore predefinito è davvero quello, non un altro:
+    expect(ingrandimentoCm(2.877, 37.79528)).toBeCloseTo(
+      ingrandimentoCm(2.877, 37.79528, INGRANDIMENTO_MM),
+      6
+    );
+  });
+
+  it("senza una scala nota non cresce niente — meglio piccolo che sbagliato", () => {
+    expect(ingrandimentoCm(0, 37.8)).toBe(0);
+    expect(ingrandimentoCm(2.9, 0)).toBe(0);
+  });
+
+  it("cresce di METÀ per lato, così resta centrata dov'era", () => {
+    const s = sagomaDisegnata({ x: 500, y: 400, larghezza: 90, profondita: 90 }, 30, SALA);
+    expect(s).toEqual({ x: 485, y: 385, larghezza: 120, profondita: 120 });
+  });
+
+  it("MA AL MURO SI FERMA — ed è il caso vero di T2", () => {
+    // ⚠️ Misurato in produzione il 19/08: **T2 tocca il muro in alto**
+    // (distanza zero). Senza il taglio, la sagoma ingrandita uscirebbe dalla
+    // sala disegnata — e un tavolo mezzo fuori dalla stanza è una cosa che il
+    // disegno non deve poter dire.
+    const alto = sagomaDisegnata({ x: 1600, y: 0, larghezza: 90, profondita: 180 }, 30, SALA);
+    expect(alto.y).toBe(0);
+    expect(alto.profondita).toBe(195); // cresciuta solo verso il basso
+    const destra = sagomaDisegnata({ x: 1980, y: 400, larghezza: 90, profondita: 90 }, 30, SALA);
+    expect(destra.x + destra.larghezza).toBe(2070);
+  });
+
+  it("con crescita zero è la sagoma vera — la gemella al contrario", () => {
+    const s = sagomaDisegnata({ x: 500, y: 400, larghezza: 90, profondita: 90 }, 0, SALA);
+    expect(s).toEqual({ x: 500, y: 400, larghezza: 90, profondita: 90 });
   });
 });

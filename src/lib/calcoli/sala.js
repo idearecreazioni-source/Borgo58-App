@@ -327,6 +327,25 @@ export function riquadroDelPannello(zone = []) {
 }
 
 /**
+ * Il margine con cui `pannelloNellaPianta()` guarda le sagome.
+ *
+ * ⚠️ È UNA SCELTA DICHIARATA, e la condizione posta dalla validazione la
+ * chiedeva esplicitamente. Il pannello dentro la pianta esce quando un tavolo
+ * gli finisce sopra (cura del 18/08); ma da oggi una sagoma si DISEGNA più
+ * grande di quanto è, quindi guardando le misure vere il pannello potrebbe
+ * restare e il tavolo finirgli sotto — cioè tornerebbe esattamente il costo
+ * che si era eliminato.
+ *
+ * Quindi si guardano le misure **disegnate**, con il valore più grande che
+ * l'ingrandimento può assumere: cresce al calare della larghezza dello
+ * schermo, e sul telefono più stretto che il progetto considera (375 punti,
+ * 343 di pianta) vale ~34 cm. ⚠️ Sbaglia quindi **per eccesso** su schermi
+ * larghi — il pannello esce un po' prima del necessario. È la direzione
+ * giusta in cui sbagliare: si perde una comodità, mai un gesto.
+ */
+export const MARGINE_INGRANDIMENTO_CM = 35;
+
+/**
  * Il pannello può stare DENTRO la pianta? Solo se là dentro non c'è nessun
  * tavolo.
  *
@@ -341,9 +360,15 @@ export function riquadroDelPannello(zone = []) {
  * *Quello spazio è vuoto sul disegno ma non è vietato, ed è esattamente il
  * genere di cosa che Alessio fa: i tavoli li muove lui.*
  */
-export function pannelloNellaPianta(zone = [], sagome = []) {
+export function pannelloNellaPianta(zone = [], sagome = [], margine = MARGINE_INGRANDIMENTO_CM) {
   const r = riquadroDelPannello(zone);
   if (!r) return null;
+  // ⚠️ SI GUARDANO LE MISURE DISEGNATE, NON QUELLE VERE (19/08, condizione
+  // posta dalla validazione). Dal 19/08 una sagoma si disegna più grande di
+  // quanto è: guardando l'ingombro vero, un tavolo potrebbe apparire sopra
+  // la cucina senza far uscire il pannello — e finirgli sotto, che è
+  // esattamente il costo eliminato il 18/08.
+  const m = Math.max(0, margine) / 2;
   // ⚠️ SI GUARDA IL VERSO VERO DELLA SAGOMA, ma su QUESTO fondale non decide
   // niente — e la cosa è emersa da una rottura fatta apposta, non rileggendo:
   // sostituendo `misureSagoma` con le misure sulla carta, **nessuna prova
@@ -352,13 +377,60 @@ export function pannelloNellaPianta(zone = [], sagome = []) {
   // ci cade dentro, e quanto è grande non conta. Resta scritto giusto perché
   // il fondale può cambiare; la prova che fingeva di provarlo è stata tolta.
   const tocca = sagome.some((s) => {
-    const m = misureSagoma(s);
+    const mis = misureSagoma(s);
     return (
-      s.x < r.x + r.larghezza &&
-      s.x + m.larghezza > r.x &&
-      s.y < r.y + r.profondita &&
-      s.y + m.profondita > r.y
+      s.x - m < r.x + r.larghezza &&
+      s.x + mis.larghezza + m > r.x &&
+      s.y - m < r.y + r.profondita &&
+      s.y + mis.profondita + m > r.y
     );
   });
   return tocca ? null : r;
 }
+
+// =====================================================================
+// LE SAGOME PIÙ GRANDI DEL VERO (19/08/2026) — rovesciamento di Alessio
+// =====================================================================
+//
+// 🔴 QUI IL DISEGNO SMETTE DI DIRE IL VERO SULLO SPAZIO, ed è una scelta sua,
+// presa dopo aver rifiutato le tre strade che conservavano la proporzione
+// (ingrandire tutta la pianta accettando lo scorrimento laterale, togliere dal
+// disegno la metà di cucina e servizi, ingrandire solo i testi). Vuole tavoli
+// più facili da afferrare col dito: *«giusto 2 o 3 mm in più»*.
+// Il racconto per esteso, col prezzo, sta in `docs/decisioni_rovesciate.md`.
+//
+// ⚠️ SI MISURA IN MILLIMETRI VERI, MAI IN CENTIMETRI DI SALA — la stessa
+// ragione del raggio del magnete: un ingrandimento scritto in unità del
+// disegno cambierebbe da solo a ogni ridimensionamento, cioè il tavolo
+// tornerebbe piccolo proprio sullo schermo dove serve grande.
+export const INGRANDIMENTO_MM = 3;
+
+/**
+ * Quanto cresce il LATO di una sagoma, in centimetri di sala.
+ *
+ * @param cmPerPixel quanti centimetri di sala vale un punto di schermo
+ * @param pxcm       quanti punti di schermo vale un centimetro vero
+ */
+export function ingrandimentoCm(cmPerPixel, pxcm, mm = INGRANDIMENTO_MM) {
+  if (!(cmPerPixel > 0) || !(pxcm > 0)) return 0;
+  return (mm / 10) * pxcm * cmPerPixel;
+}
+
+/**
+ * La sagoma come va DISEGNATA: cresciuta di metà per lato, e tagliata al
+ * perimetro della sala.
+ *
+ * ⚠️ IL TAGLIO AL BORDO NON È PRUDENZA: **T2 tocca il muro in alto** (misurato
+ * in produzione il 19/08, distanza zero), quindi senza taglio una sagoma
+ * ingrandita uscirebbe dalla sala disegnata — e un tavolo mezzo fuori dalla
+ * stanza è una cosa che il disegno non deve poter dire.
+ */
+export function sagomaDisegnata({ x, y, larghezza, profondita }, crescita, sala) {
+  const m = Math.max(0, crescita) / 2;
+  const x1 = Math.max(0, x - m);
+  const y1 = Math.max(0, y - m);
+  const x2 = Math.min(sala.larghezza, x + larghezza + m);
+  const y2 = Math.min(sala.profondita, y + profondita + m);
+  return { x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 };
+}
+
