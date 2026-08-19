@@ -118,3 +118,12 @@ scritti a mano che non erano più veri.
 ## Le domande
 
 Nessuna.
+
+---
+
+**Commit del lavoro**: `e6428dc` — «Le tre pulizie, e i due contatori che
+smettono di essere numeri». ⚠️ Quel commit porta **anche questo file**, che è
+documentazione: qui la consegna è fatta di sole correzioni a documenti, e
+spezzarla in due commit avrebbe prodotto un commit di lavoro vuoto.
+**Migrazioni**: nessuna.
+**Working tree**: pulito.
