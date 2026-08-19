@@ -78,6 +78,23 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ---
 
+## ⚠️ Una lezione di ORDINE, imparata sbagliandolo il 19/08
+
+`npm run migra` applica **tutte** le migrazioni mancanti o **nessuna**, e si
+ferma se anche una sola non è ancora su GitHub. Quel rifiuto è giusto — la
+produzione non deve mai correre avanti al repository — ma ha una conseguenza
+sull'ordine dei gesti, che il 19/08 è costata l'applicazione di sei migrazioni
+già pronte:
+
+> **Le migrazioni già su GitHub si applicano PRIMA di committarne di nuove.**
+
+La sera del 19/08 le sei del mattino erano pushate e documentate, quindi
+applicabili; committando le due nuove **prima** di applicarle, la rete le ha
+bloccate tutte e otto insieme, e per sbloccarle serve comunque il push di
+Alessio. Nessun danno — solo un giro in più.
+
+---
+
 ## Le decisioni di Alessio ancora aperte
 
 - **Simulatore col registratore fiscale virtuale** (nato dalla casella del
