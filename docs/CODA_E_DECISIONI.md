@@ -67,7 +67,16 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    nascosto** alla domanda lasciata aperta («un bocconcino può andare in carta
    da solo?», che se accade dà due prezzi per la stessa cosa); filtrare le
    preparazioni è una decisione ancora diversa (una conserva in vasetto è un
-   caso vero). **Restano due domande per Alessio.**
+   caso vero). ✅ **Deciso la sera del 20/08 e chiuso**: negli elenchi restano
+   **solo i piatti pronti per la carta** — via preparazioni e bocconcini
+   ([lavoro](consegne/20260820_in_menu_solo_i_piatti.md),
+   [applicazione](consegne/20260820_applicato_in_menu_solo_i_piatti.md),
+   migrazione `20260820000002`, **152 in produzione**). ⚠️ Il criterio chiede
+   una **proprietà**, non elenca i tipi: un tipo nuovo domani non ricompare lì
+   da sé.
+   ✅ **E il caso dei due prezzi non si presenterà** (rovesciamento n. 19):
+   *«semmai un bocconcino dovesse diventare un piatto a sé, creerò una ricetta
+   nuova con un nome diverso»*.
    **Resta il blocco 3** (lo storico dei costi).
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
