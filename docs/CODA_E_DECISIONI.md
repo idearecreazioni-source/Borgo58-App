@@ -58,3 +58,51 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 - **Autoprodotti in magazzino** — rimandati all'apertura dell'azienda agricola.
 - **Sito web**: dopo l'app, col gestionale spostato su un sottodominio.
 - **Le due colonne sul computer** nella schermata della sala.
+
+---
+
+## Cosa il disegno della sala NON dice, per scelta (19/08/2026)
+
+⚠️ **Non è una coda e non è un difetto: sono due bugie volute**, e stanno qui
+perché fra sei mesi somiglieranno a errori da correggere. Chi le tocca deve
+sapere che erano decisioni, con la loro ragione e il loro prezzo.
+
+**1 · Le sagome sono disegnate più grandi del vero.** Ogni sagoma cresce fino
+a **3 mm sullo schermo** perché si possa afferrare col dito (rovesciamento
+n. 14, deciso da Alessio il 19/08 dopo aver rifiutato le tre strade che
+conservavano la proporzione). **Il disegno quindi non è in scala**, e lo spazio
+fra i tavoli si vede **più stretto di com'è**: chi guarda la pianta per capire
+se in un corridoio ci si passa, sbaglia in difetto — mai il contrario.
+
+⚠️ **Il numero su cui la decisione fu accettata era sbagliato, ed è la parte
+da ricordare.** Si era misurato che *«il varco più stretto fra due sagome
+separate è 80 cm»*: era il minimo della **sola pianta base**. Rimisurando su
+tutte le disposizioni di giornata — cioè dove i tavoli stanno davvero — il
+minimo è **40 cm** (T5/T6 e T7/T8, misurati in produzione il **19/08/2026**).
+Con una crescita di ~33 cm quel varco sarebbe sceso a **7 cm**: due tavoli
+separati che si vedono attaccati.
+
+⚠️ **E rimisurare non era la cura.** La griglia di aggancio è a passi di
+10 cm, quindi qualunque sera si possono mettere due tavoli a 20 cm: **nessuna
+misura di oggi può garantire le disposizioni di domani.** Al posto del numero
+c'è una regola — *la sagoma cresce fino a 3 mm ma si ferma prima del vicino, e
+fra due sagome separate resta sempre una riga visibile* (`VARCO_MINIMO_MM` in
+`src/lib/calcoli/sala.js`), provata a 40, a 20 e a 10 cm di varco vero.
+**Da qui in avanti la misura della sala non è più una condizione**: se entra
+un mobile nuovo, il disegno si stringe da sé.
+
+**2 · La Chef Table è disegnata dove non sta.** In sala è accanto alla cucina;
+sulla pianta compare **sotto i divani, in orizzontale** (rovesciamento n. 15,
+deciso da Alessio il 19/08: in pianta accanto alla cucina gli dà fastidio, e
+la postazione è una sola e inconfondibile). ⚠️ **Solo il disegno**: la
+posizione vera resta nel database, e coperti, accostamento, tavoloni,
+prenotazioni **e i gesti** continuano a usare quella. L'elenco delle sagome
+spostate è `SPOSTATE_NEL_DISEGNO`, e oggi contiene una riga sola.
+
+⚠️ **«Sotto» e «orizzontale» sono quelli del telefono**: lì la pianta si mette
+in piedi e gli assi si scambiano, quindi nel codice i numeri sembrano dire
+un'altra cosa. **Sul computer la stessa sagoma si vede a sinistra dei divani e
+in piedi.** Due prove sui dati veri la sorvegliano: che il nome esista ancora
+(se il tavolo venisse rinominato l'elenco smetterebbe di riconoscerlo, senza
+nessun errore) e che la posizione finta **non finisca sopra un altro mobile**
+il giorno che la sala intorno cambia.

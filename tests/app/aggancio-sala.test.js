@@ -4,6 +4,10 @@ import { supabase } from "../../src/lib/supabase";
 import {
   TOLLERANZA_CONTATTO_CM,
   agganciaAiVicini,
+  SALA_LARGHEZZA_CM,
+  SALA_PROFONDITA_CM,
+  SPOSTATE_NEL_DISEGNO,
+  sagomaPerIlDisegno,
   misureSagoma,
   raggioAggancioCm,
 } from "../../src/lib/calcoli/sala";
@@ -190,5 +194,55 @@ describe("Il magnete sulla sala vera", () => {
     // E non «quasi»: zero. La tolleranza è lì per assorbire un
     // arrotondamento, non per accostare tavoli lontani.
     expect(distanza).toBe(0);
+  });
+});
+
+describe("le sagome spostate solo nel disegno esistono davvero", () => {
+  // ⚠️ PERCHE' QUESTA PROVA VIVE SUI DATI VERI. L'elenco delle sagome
+  // disegnate altrove ha per chiave il NOME del tavolo. Se qualcuno
+  // rinominasse la Chef Table, l'elenco smetterebbe di riconoscerla e la
+  // sagoma tornerebbe al suo posto **senza nessun errore**: nessuna prova
+  // pura può accorgersene, perché il nome vero sta solo nel database.
+  it("ogni nome dell'elenco è un tavolo che esiste in sala", async () => {
+    const { data, error } = await supabase
+      .from("dining_tables")
+      .select("label")
+      .eq("active", true);
+    expect(error).toBeNull();
+    const nomi = new Set((data ?? []).map((t) => t.label));
+    for (const nome of Object.keys(SPOSTATE_NEL_DISEGNO)) {
+      expect(nomi.has(nome)).toBe(true);
+    }
+  });
+
+  it("la sagoma spostata non finisce sopra un'altra, né fuori dalla sala", async () => {
+    // ⚠️ PERCHE' SUI DATI VERI. La posizione finta è scritta a mano una
+    // volta; **la sala intorno cambia** ogni volta che Alessio sposta un
+    // mobile o ne aggiunge uno. Il giorno che qualcosa occupa quel posto,
+    // la Chef Table si vedrebbe **sopra un altro tavolo** — e sarebbe una
+    // sovrapposizione che nel database non esiste, quindi nessun conteggio
+    // e nessuna prova pura potrebbe accorgersene.
+    const pianta = await getPiantaDelGiorno(new Date().toISOString().slice(0, 10));
+    const disegnate = pianta.map((v) => {
+      const d = sagomaPerIlDisegno(v);
+      return { label: v.label, x: d.x, y: d.y, ...misureSagoma(d) };
+    });
+    for (const nome of Object.keys(SPOSTATE_NEL_DISEGNO)) {
+      const s = disegnate.find((d) => d.label === nome);
+      expect(s).toBeTruthy();
+      expect(s.x).toBeGreaterThanOrEqual(0);
+      expect(s.y).toBeGreaterThanOrEqual(0);
+      expect(s.x + s.larghezza).toBeLessThanOrEqual(SALA_LARGHEZZA_CM);
+      expect(s.y + s.profondita).toBeLessThanOrEqual(SALA_PROFONDITA_CM);
+      for (const altra of disegnate) {
+        if (altra.label === nome) continue;
+        const separate =
+          s.x + s.larghezza <= altra.x ||
+          altra.x + altra.larghezza <= s.x ||
+          s.y + s.profondita <= altra.y ||
+          altra.y + altra.profondita <= s.y;
+        expect(separate, `${nome} finisce sopra ${altra.label}`).toBe(true);
+      }
+    }
   });
 });

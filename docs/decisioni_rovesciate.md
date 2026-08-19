@@ -50,6 +50,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 12 | 18/08/2026 | *Il riquadro del sold out, la scomposizione dei posti, un comando per ogni tavolo spostato* | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 13 | 18/08/2026 | *Il numero e la frase che ne dichiara il limite viaggiano insieme* (15/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 14 | 19/08/2026 | *Il disegno dice il vero sullo spazio* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 15 | 19/08/2026 | *Ogni sagoma è disegnata dove sta davvero* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -524,15 +525,38 @@ base e su tutte e tre le disposizioni di giornata esistenti:
 
 | | |
 |---|---|
-| varco più stretto fra due sagome separate | **80 cm** (i tre divani) |
+| varco più stretto **sulla sola pianta base** | 80 cm (i tre divani) |
+| varco più stretto **su tutte le disposizioni** | **40 cm** (T5/T6 e T7/T8, 19/08) |
 | quanto vale 3 mm di schermo, sul telefono di Alessio | **~32,6 cm di sala** |
-| quel varco, dopo l'ingrandimento | **47 cm** — largo mezzo tavolo |
+| quel varco da 40, se la sagoma crescesse liberamente | **7 cm** — cioè attaccati |
 | sagoma più vicina al muro | **T2, distanza zero** |
 
-Quindi: **nessuna coppia di tavoli separati arriva a sembrare accostata**, ed è
-la sola cosa su cui il disegno non poteva mentire. ⚠️ Se un domani entrasse in
-sala un mobile che riduce quel varco sotto i 33 cm, **la misura va rifatta**:
-non è una proprietà del codice, è una proprietà della sala di oggi.
+🔴 **LA PRIMA VERSIONE DI QUESTA TABELLA DICEVA 80 CM, ED ERA SBAGLIATA.** Il
+rovesciamento è stato accettato su quel numero, e quel numero era il minimo
+della **sola pianta base**: le disposizioni di giornata — cioè dove Alessio
+mette davvero i tavoli — non erano state guardate. Il minimo vero è **40 cm**
+(T5/T6 e T7/T8, misurati il 19/08). Con una crescita di ~33 cm quel varco
+sarebbe sceso a **7 cm**, meno di un millimetro sullo schermo: **due tavoli
+separati che si vedono attaccati**, cioè esattamente il guasto che la misura
+doveva escludere. La riga sbagliata resta scritta qui sopra invece di sparire:
+*un numero corretto in silenzio non insegna niente a chi rilegge.*
+
+⚠️ **E LA CURA NON ERA RIMISURARE**, ed è la parte che vale oltre questo caso.
+La griglia di aggancio è a passi di **10 cm**: qualunque sera Alessio può
+accostare due tavoli a 20 cm senza fare niente di strano. **Nessuna misura di
+oggi può garantire le disposizioni di domani** — una misura descrive uno stato,
+e qui serviva una proprietà. Al posto del numero c'è quindi una **regola**:
+
+> La sagoma cresce fino a 3 mm, **ma si ferma prima del vicino**: fra due
+> sagome che nella sala sono separate resta sempre una riga visibile
+> (`VARCO_MINIMO_MM`, mezzo millimetro di schermo). Tanto più il varco vero è
+> stretto, tanto meno la sagoma cresce da quel lato — e a varco zero (un
+> tavolone) da quel lato non cresce affatto, così la giunzione resta.
+
+Provata a 40, a 20 e a 10 cm di varco vero, e **rompendola**: tolto il freno,
+le prove a 20 e a 10 diventano rosse. Da qui in avanti **nessuna coppia di
+tavoli separati può sembrare accostata**, e non perché la sala di oggi lo
+consente: perché il disegno non è in grado di farlo.
 
 ⚠️ **Il prezzo che si paga comunque**, e va scritto: da oggi lo spazio fra i
 tavoli **si vede più stretto di com'è**, e i corridoi della sala sembrano più
@@ -556,3 +580,54 @@ angusti. Chi guarda la pianta per capire se ci si passa, sbaglia in difetto.
 - **(d) Al muro la sagoma si taglia.** T2 tocca il bordo in alto: senza taglio
   uscirebbe dalla sala disegnata, e *un tavolo mezzo fuori dalla stanza è una
   cosa che il disegno non deve poter dire*.
+
+---
+
+## 15 · 19/08/2026 — «ogni sagoma è disegnata dove sta davvero»
+
+**Cosa era stato deciso, e quando.** Dal 14/08, con la pianta viva: la pianta
+**è** la sala, e ogni sagoma sta sul foglio dove il mobile sta nella stanza.
+Il 18/08 (giro E) quella regola era stata perfino **rinforzata**: si era
+scoperto che il verso di T1 e T2 era onorato dal conteggio e ignorato dal
+disegno, e si era chiuso il buco — *due parti dello stesso programma non
+possono raccontare cose diverse dello stesso fatto*.
+
+**La ragione di allora.** È la ragione per cui la pianta esiste: Alessio la
+guarda per rispondere a «dove li metto?», e una sagoma disegnata dove non sta
+è la forma di bugia peggiore, perché **è plausibile** — nessuno la mette in
+dubbio.
+
+**Cosa si decide adesso.** La **Chef Table** viene disegnata **sotto i divani,
+in orizzontale**, dove nella sala non è. Deciso da Alessio il 19/08, con la
+sua ragione: in pianta, accanto alla cucina, gli dà fastidio; e la postazione
+è **una sola e inconfondibile**, quindi in sala nessuno la cerca sul foglio.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, ed è per
+questo che il rovesciamento è STRETTO.** La regola generale non è toccata: c'è
+**una** sagoma spostata, la Chef Table, e sta scritta in un elenco che si
+chiama `SPOSTATE_NEL_DISEGNO`. Non esiste nessun meccanismo per spostarne
+altre dalla schermata: aggiungerne una vuol dire scrivere una riga di codice,
+col proprio nome sopra.
+
+⚠️ **«Sotto i divani, in orizzontale» è detto guardando il TELEFONO**, dove la
+pianta si mette in piedi e gli assi si scambiano. In coordinate di sala la
+richiesta sarebbe impossibile — sotto i divani restano 30 cm e la Chef Table
+ne è profonda 70 — e la si sarebbe potuta dichiarare irrealizzabile. *Una
+richiesta che sembra impossibile va riletta sullo schermo di chi l'ha fatta.*
+⚠️ **Il prezzo**: sul computer la sala è sdraiata, quindi lì la sagoma si vede
+a sinistra dei divani e in piedi.
+
+⚠️ **Solo il disegno mente.** La posizione vera resta in `dining_tables`, e
+tutto ciò che decide qualcosa — accostamento, coperti, tavoloni, prenotazioni
+— continua a leggere quella. **Anche i gesti**: chi tocca o trascina agisce
+sulla sagoma vera, non su quella disegnata.
+
+⚠️ **Ed è scritto in tre posti apposta** (qui, accanto all'elenco nel codice, e
+nel riepilogo del giro D3): *una sagoma disegnata dove non sta è la prima cosa
+che qualcuno raddrizzerebbe fra sei mesi credendo di sistemare un errore.*
+
+⚠️ **Il prezzo, e il giorno in cui si paga.** Se un domani la Chef Table
+diventasse spostabile, o se ne aggiungesse una seconda, il foglio direbbe una
+cosa e la sala un'altra **senza che nessun controllo se ne accorga**. Oggi non
+può succedere — il vincolo `dining_tables_sagoma_check` le impedisce di essere
+spostabile — ma è lì che questa decisione va rivista.

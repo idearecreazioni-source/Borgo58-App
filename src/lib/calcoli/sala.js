@@ -389,6 +389,47 @@ export function pannelloNellaPianta(zone = [], sagome = [], margine = MARGINE_IN
 }
 
 // =====================================================================
+// SAGOME DISEGNATE DOVE NON STANNO (19/08/2026)
+// =====================================================================
+//
+// 🔴 QUESTA È UNA BUGIA VOLUTA, E VA LETTA PRIMA DI «CORREGGERLA».
+// La **Chef Table** in sala sta accanto alla cucina; sulla pianta viene
+// disegnata **sotto i divani, in orizzontale**. Decisione di Alessio del
+// 19/08, con la sua ragione: *la postazione è una sola e in sala non può
+// confondersi con niente, mentre lì in pianta gli dà fastidio.*
+//
+// ⚠️ **Solo il disegno**: la posizione vera resta quella scritta in
+// `dining_tables`, e tutto il resto — accostamento, coperti, tavoloni,
+// prenotazioni — continua a usarla. Se un domani la Chef Table si spostasse
+// davvero, è la riga del database che va cambiata, non questa.
+//
+// ⚠️ **Ed è scritto qui perché è la prima cosa che qualcuno raddrizzerebbe
+// fra sei mesi credendo di sistemare un errore.** Sta anche nel registro dei
+// rovesciamenti.
+// ⚠️ IL «SOTTO» E L'«ORIZZONTALE» SONO QUELLI DEL SUO SCHERMO, e senza
+// questa riga i numeri qui sotto sembrano sbagliati. Sul telefono la sala
+// si mette in piedi (`translate(0 LARGHEZZA) rotate(-90)`), e quel giro
+// scambia i due assi: **x della sala = alto/basso dello schermo, al
+// contrario** (x piccola = in basso), **y della sala = sinistra/destra**.
+// Quindi «sotto i divani» vuol dire x più piccola della loro (300), e
+// «in orizzontale» vuol dire lunga lungo la y — cioè `ruotato`.
+// I divani stanno a y 800→1000: la Chef Table si affianca a quella colonna
+// e resta 80 cm sotto di loro.
+// ⚠️ IL PREZZO, DICHIARATO: sul computer la sala è sdraiata, quindi lì la
+// Chef Table si vede **a sinistra dei divani e in piedi**. La richiesta è
+// nata guardando il telefono, che è la strada maestra; sul computer non è
+// sbagliata, è solo l'altra faccia dello stesso spostamento.
+export const SPOSTATE_NEL_DISEGNO = {
+  "Chef Table": { x: 150, y: 800, ruotato: true },
+};
+
+/** La sagoma come va disegnata, se qualcuno l'ha spostata solo sul foglio. */
+export function sagomaPerIlDisegno(sagoma) {
+  const finta = SPOSTATE_NEL_DISEGNO[sagoma?.label];
+  return finta ? { ...sagoma, ...finta } : sagoma;
+}
+
+// =====================================================================
 // LE SAGOME PIÙ GRANDI DEL VERO (19/08/2026) — rovesciamento di Alessio
 // =====================================================================
 //
@@ -417,20 +458,84 @@ export function ingrandimentoCm(cmPerPixel, pxcm, mm = INGRANDIMENTO_MM) {
 }
 
 /**
- * La sagoma come va DISEGNATA: cresciuta di metà per lato, e tagliata al
- * perimetro della sala.
+ * Quanto spazio deve restare fra due sagome DISEGNATE che nella sala sono
+ * separate davvero. Una riga sottile, ma che si vede.
  *
- * ⚠️ IL TAGLIO AL BORDO NON È PRUDENZA: **T2 tocca il muro in alto** (misurato
- * in produzione il 19/08, distanza zero), quindi senza taglio una sagoma
- * ingrandita uscirebbe dalla sala disegnata — e un tavolo mezzo fuori dalla
- * stanza è una cosa che il disegno non deve poter dire.
+ * 🔴 ESISTE PERCHÉ UN NUMERO NON BASTAVA. Il 19/08 l'ingrandimento era stato
+ * accettato su una misura: *«il varco più stretto fra due sagome è 80 cm»*.
+ * **Quel numero era sbagliato** — era il minimo della sola pianta base;
+ * rimisurando su tutte le disposizioni di giornata, T5/T6 e T7/T8 stanno a
+ * **40 cm** (19/08). Con una crescita di ~33 cm quel varco sarebbe sceso a 7,
+ * cioè meno di un millimetro sullo schermo: **due tavoli separati che si
+ * vedono attaccati**, esattamente il caso che la misura doveva escludere.
+ *
+ * ⚠️ E RIMISURARE NON BASTAVA, che è la lezione: la griglia è a passi di
+ * 10 cm, quindi qualunque sera Alessio può mettere due tavoli a 20 cm.
+ * **Nessuna misura di oggi può garantire le disposizioni di domani.** Serve
+ * una regola, e la regola è questa: la sagoma cresce **fino a**
+ * `INGRANDIMENTO_MM`, ma mai al punto di chiudere lo spazio verso un vicino.
  */
-export function sagomaDisegnata({ x, y, larghezza, profondita }, crescita, sala) {
-  const m = Math.max(0, crescita) / 2;
-  const x1 = Math.max(0, x - m);
-  const y1 = Math.max(0, y - m);
-  const x2 = Math.min(sala.larghezza, x + larghezza + m);
-  const y2 = Math.min(sala.profondita, y + profondita + m);
+export const VARCO_MINIMO_MM = 0.5;
+
+/**
+ * La sagoma come va DISEGNATA: cresciuta, ma non oltre i suoi vicini, e
+ * tagliata al perimetro della sala.
+ *
+ * ⚠️ IL TAGLIO AL BORDO NON È PRUDENZA: **T2 tocca il muro in alto**
+ * (misurato in produzione il 19/08, distanza zero), quindi senza taglio una
+ * sagoma ingrandita uscirebbe dalla sala disegnata — e un tavolo mezzo fuori
+ * dalla stanza è una cosa che il disegno non deve poter dire.
+ *
+ * ⚠️ VERSO UN VICINO ATTACCATO NON SI CRESCE. Se il varco vero è dentro la
+ * tolleranza di contatto, quei due sono un **tavolone**: il bordo è già lì,
+ * e crescere li farebbe sovrapporre cancellando la linea di giunzione — che
+ * dal 18/08 dice «è un tavolone **e** è fatto di tre». Il tavolone cresce
+ * verso fuori, non su sé stesso.
+ *
+ * @param sagoma  { x, y, larghezza, profondita } — già nel verso vero
+ * @param vicini  le altre sagome, nella stessa forma
+ * @param crescita quanto crescerebbe il lato se fosse sola
+ * @param sala    { larghezza, profondita }
+ * @param varcoMinimo quanto spazio deve restare fra due sagome separate
+ */
+export function sagomaDisegnata(sagoma, crescita, sala, vicini = [], varcoMinimo = 0) {
+  const { x, y, larghezza, profondita } = sagoma;
+  const meta = Math.max(0, crescita) / 2;
+  // Quanto si può crescere verso un lato, guardando chi c'è di là.
+  const versoIlLato = (prendiVarco, siGuardano) => {
+    let libero = meta;
+    for (const v of vicini) {
+      if (v === sagoma) continue;
+      if (!siGuardano(v)) continue;
+      const varco = prendiVarco(v);
+      if (varco < 0) continue;
+      // Attaccati: il bordo è già lì, non si cresce da quella parte —
+      // crescere farebbe sparire la linea di giunzione, che dal 18/08 dice
+      // «è un tavolone **e** è fatto di tre».
+      // ⚠️ OGGI QUESTA RIGA È RIDONDANTE, e va detto invece di lasciarla
+      // sembrare necessaria: a varco zero la formula qui sotto dà già zero,
+      // e la fascia fra zero e la tolleranza **non può esistere** perché
+      // ogni varco è un multiplo del passo della griglia (10 cm). Resta
+      // perché il giorno che entrasse un mobile fuori griglia sarebbe
+      // l'unica cosa a tenere ferma la giunzione — ed è la stessa ragione
+      // per cui la tolleranza esiste. Una rottura fatta apposta non la
+      // rende rossa: è un ramo che oggi non si percorre.
+      if (varco <= TOLLERANZA_CONTATTO_CM) return 0;
+      // Separati: si cresce al massimo per metà dello spazio che avanza,
+      // così anche il vicino ha la sua metà e una riga resta in mezzo.
+      libero = Math.min(libero, Math.max(0, (varco - varcoMinimo) / 2));
+    }
+    return libero;
+  };
+  const inFila = (v) => v.y < y + profondita && v.y + v.profondita > y;
+  const inColonna = (v) => v.x < x + larghezza && v.x + v.larghezza > x;
+  const sinistra = versoIlLato((v) => x - (v.x + v.larghezza), inFila);
+  const destra = versoIlLato((v) => v.x - (x + larghezza), inFila);
+  const sopra = versoIlLato((v) => y - (v.y + v.profondita), inColonna);
+  const sotto = versoIlLato((v) => v.y - (y + profondita), inColonna);
+  const x1 = Math.max(0, x - sinistra);
+  const y1 = Math.max(0, y - sopra);
+  const x2 = Math.min(sala.larghezza, x + larghezza + destra);
+  const y2 = Math.min(sala.profondita, y + profondita + sotto);
   return { x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 };
 }
-

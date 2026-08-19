@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTATTO_MINIMO_CM,
+  SPOSTATE_NEL_DISEGNO,
+  sagomaPerIlDisegno,
   ZONE_FONDALE,
   GRIGLIA_CM,
+  MARGINE_INGRANDIMENTO_CM,
   INGRANDIMENTO_MM,
   ingrandimentoCm,
   sagomaDisegnata,
@@ -316,10 +319,23 @@ describe("Il pannello dentro la pianta", () => {
 
   it("col margine dell'ingrandimento il pannello esce PRIMA — la gemella", () => {
     // La stessa sagoma, lo stesso posto: cambia solo se si guarda il vero o
-    // il disegnato. Senza questa coppia, il margine potrebbe essere zero e
-    // nessuna prova lo direbbe.
+    // il disegnato.
     expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 0)).not.toBeNull();
     expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 40)).toBeNull();
+  });
+
+  it("e il margine PREDEFINITO protegge davvero — la prova che mancava", () => {
+    // 🔴 QUESTA PROVA NASCE DA UNA CONTROPROVA DELLA VALIDAZIONE: azzerando
+    // `MARGINE_INGRANDIMENTO_CM` **nessuna prova diventava rossa**. Era la
+    // condizione posta il 19/08 per non riaprire il difetto chiuso il 18/08 —
+    // il tavolo che finisce sotto il pannello — scritta, commentata bene, e
+    // non provata da niente. Il taglio al muro e l'ingrandimento invece
+    // reagivano: non era una lacuna di metodo, era questa che mancava.
+    // ⚠️ La sagoma sta FUORI dal riquadro con le misure vere e DENTRO con
+    // quelle disegnate: è esattamente il caso che il margine deve prendere.
+    expect(MARGINE_INGRANDIMENTO_CM).toBeGreaterThan(0);
+    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 0)).not.toBeNull();
+    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)])).toBeNull();
   });
 
   it("su QUESTO fondale basta la posizione — e la prova lo dichiara", () => {
@@ -427,5 +443,96 @@ describe("Le sagome si disegnano più grandi del vero", () => {
   it("con crescita zero è la sagoma vera — la gemella al contrario", () => {
     const s = sagomaDisegnata({ x: 500, y: 400, larghezza: 90, profondita: 90 }, 0, SALA);
     expect(s).toEqual({ x: 500, y: 400, larghezza: 90, profondita: 90 });
+  });
+});
+
+describe("La crescita si ferma prima del vicino", () => {
+  // 🔴 NASCE DA UN NUMERO SBAGLIATO. Il 19/08 l'ingrandimento era stato
+  // accettato su una misura — «il varco più stretto è 80 cm» — che era il
+  // minimo della sola PIANTA BASE: nelle disposizioni di giornata T5/T6 e
+  // T7/T8 stanno a **40 cm**. Con una crescita di ~33 cm il varco sarebbe
+  // sceso a 7, meno di un millimetro sullo schermo.
+  // ⚠️ E rimisurare non bastava: la griglia è a passi di 10 cm, quindi
+  // qualunque sera due tavoli possono finire a 20. **Nessuna misura di oggi
+  // garantisce le disposizioni di domani** — serve una regola.
+  const SALA = { larghezza: 2070, profondita: 1030 };
+  const CRESCITA = 33; // ~3 mm sullo schermo di Alessio
+  const VARCO = 2; // il minimo che deve restare, in centimetri di sala
+  const q = (x, y) => ({ x, y, larghezza: 90, profondita: 90 });
+  // Il varco DISEGNATO fra due sagome affiancate in orizzontale.
+  const varcoDisegnato = (distanza) => {
+    const a = q(500, 400);
+    const b = q(500 + 90 + distanza, 400);
+    const da = sagomaDisegnata(a, CRESCITA, SALA, [a, b], VARCO);
+    const db = sagomaDisegnata(b, CRESCITA, SALA, [a, b], VARCO);
+    return db.x - (da.x + da.larghezza);
+  };
+
+  it("a 40 cm restano staccate — è il caso vero della disposizione del 19/08", () => {
+    expect(varcoDisegnato(40)).toBeGreaterThanOrEqual(VARCO);
+  });
+
+  it("a 20 cm restano staccate — è quello che la griglia permette domani", () => {
+    expect(varcoDisegnato(20)).toBeGreaterThanOrEqual(VARCO);
+  });
+
+  it("e anche a 10 cm, che è il passo della griglia", () => {
+    expect(varcoDisegnato(10)).toBeGreaterThanOrEqual(VARCO);
+  });
+
+  it("ma da sola cresce tutto — altrimenti la regola non servirebbe a niente", () => {
+    // ⚠️ La gemella al contrario: una funzione che non crescesse mai passerebbe
+    // le tre prove qui sopra.
+    const sola = q(500, 400);
+    const cresciuta = sagomaDisegnata(sola, CRESCITA, SALA, [sola], VARCO);
+    expect(cresciuta.larghezza).toBe(90 + CRESCITA);
+  });
+
+  it("verso un vicino ATTACCATO non cresce: il tavolone non si mangia la giunzione", () => {
+    // Due tavoli a distanza zero sono un tavolone: crescere verso l'interno
+    // farebbe sparire la linea sottile che dice «è fatto di due».
+    // ⚠️ Questa prova NON discrimina la riga che tratta gli attaccati come
+    // caso a sé: a varco zero la formula generale dà già zero. È dichiarato
+    // nel codice — quel ramo oggi non si percorre, e una rottura fatta
+    // apposta non lo mostra.
+    const a = q(500, 400);
+    const b = q(590, 400);
+    const da = sagomaDisegnata(a, CRESCITA, SALA, [a, b], VARCO);
+    const db = sagomaDisegnata(b, CRESCITA, SALA, [a, b], VARCO);
+    expect(da.x + da.larghezza).toBe(590); // il bordo interno resta dov'era
+    expect(db.x).toBe(590);
+    expect(da.x).toBe(500 - CRESCITA / 2); // e verso fuori cresce
+  });
+});
+
+describe("le sagome spostate solo nel disegno", () => {
+  it("la Chef Table è l'unica spostata, e il resto della sagoma non cambia", () => {
+    // ⚠️ Se questa prova diventa rossa, qualcuno ha aggiunto o tolto una
+    // sagoma finta: è una bugia voluta e va letta prima di cambiarla
+    // (docs/decisioni_rovesciate.md n. 15).
+    expect(Object.keys(SPOSTATE_NEL_DISEGNO)).toEqual(["Chef Table"]);
+
+    const vera = {
+      id: "x",
+      label: "Chef Table",
+      x: 980,
+      y: 530,
+      larghezza_cm: 200,
+      profondita_cm: 70,
+      ruotato: false,
+    };
+    const disegnata = sagomaPerIlDisegno(vera);
+    expect([disegnata.x, disegnata.y]).not.toEqual([vera.x, vera.y]);
+    expect(disegnata.ruotato).toBe(true);
+    // le misure del mobile NON si toccano: si sposta, non si rimpicciolisce
+    expect(disegnata.larghezza_cm).toBe(200);
+    expect(disegnata.profondita_cm).toBe(70);
+    // e la sagoma vera resta intatta
+    expect(vera.x).toBe(980);
+  });
+
+  it("ogni altra sagoma torna identica, non una copia", () => {
+    const t = { id: "t", label: "T5", x: 100, y: 100 };
+    expect(sagomaPerIlDisegno(t)).toBe(t);
   });
 });

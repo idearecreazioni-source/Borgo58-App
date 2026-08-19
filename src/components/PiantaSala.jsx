@@ -6,9 +6,11 @@ import {
   ZONE_FONDALE,
   RIDUZIONE_DISEGNO,
   agganciaAiVicini,
+  VARCO_MINIMO_MM,
   ingrandimentoCm,
   misureSagoma,
   sagomaDisegnata,
+  sagomaPerIlDisegno,
   raggioAggancioCm,
 } from "../lib/calcoli/sala";
 
@@ -221,7 +223,23 @@ export default function PiantaSala({
   const crescitaCm = largPx
     ? ingrandimentoCm((verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / largPx, leggiPxCm())
     : 0;
+  // ⚠️ Il varco che deve restare fra due sagome disegnate, nella stessa
+  // unità dell'ingrandimento: millimetri veri, tradotti in centimetri di
+  // sala. Perché serve — e perché un numero misurato non bastava — sta in
+  // `lib/calcoli/sala.js`.
+  const varcoMinimoCm = largPx
+    ? ingrandimentoCm(
+        (verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM) / largPx,
+        leggiPxCm(),
+        VARCO_MINIMO_MM
+      )
+    : 0;
   const limitiSala = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+  // I vicini con cui una sagoma deve fare i conti quando cresce: tutti, in
+  // misure VERE — è il varco vero che decide quanto si può crescere.
+  const viciniVeri = sagome
+    .map(sagomaPerIlDisegno)
+    .map((v) => ({ x: v.x, y: v.y, ...misureSagoma(v) }));
 
   const selezionati = new Set(selezione);
 
@@ -332,7 +350,16 @@ export default function PiantaSala({
         .map((v) => ({ id: v.id, formato_id: v.formato_id, x: v.x, y: v.y, ...misureSagoma(v) })),
       x,
       y,
-      raggioCm: raggioAggancioCm(cmPerPunto, leggiPxCm()),
+      // ⚠️ IL MAGNETE SI MISURA SUL DISEGNO, non sulle misure vere (19/08,
+      // rilievo di Alessio: *«si è perso il magnetismo»*). Non si era perso:
+      // gli era passato davanti l'ingrandimento. Il magnete scattava a ~22 cm
+      // di distanza VERA mentre le sagome si disegnano ~33 cm più grandi,
+      // quindi quando sullo schermo i due tavoli si toccavano erano ancora
+      // fuori portata e bisognava spingere fino a sovrapporli.
+      // ⚠️ Cambia la metrica del GESTO e del DISEGNO, non quella del
+      // database: cosa conta come accostato — la tolleranza, i coperti, i
+      // tavoloni — non si tocca.
+      raggioCm: raggioAggancioCm(cmPerPunto, leggiPxCm()) + crescitaCm,
       limiti,
     });
     x = preso.x;
@@ -473,14 +500,36 @@ export default function PiantaSala({
             height={z.profondita}
             fill={z.servizio ? "var(--color-b58-cream-dark)" : "var(--color-b58-parchment)"}
             fillOpacity={z.servizio ? 0.6 : 0.45}
-            stroke="var(--color-b58-charcoal)"
-            strokeOpacity="0.18"
-            strokeWidth="4"
           />
         ))}
 
+        {/* ⚠️ LE ZONE NON HANNO PIÙ IL BORDO (Alessio, 19/08). Tolte le
+            didascalie, restavano due righe che non separavano più niente —
+            il confine fra servizi e cucina e quello fra sala bassa e
+            bancone. Le altre coincidevano col perimetro o fra colori uguali,
+            e non si notavano.
+            ⚠️ Le zone restano nei dati, coi loro nomi: sparisce la riga
+            disegnata, come per le didascalie — e `riquadroDelPannello()`
+            continua a cercarle per nome.
+            Il perimetro della sala invece resta, ed è uno solo: senza, la
+            stanza non avrebbe più un contorno. */}
+        <rect
+          x={0}
+          y={0}
+          width={SALA_LARGHEZZA_CM}
+          height={SALA_PROFONDITA_CM}
+          fill="none"
+          stroke="var(--color-b58-charcoal)"
+          strokeOpacity="0.18"
+          strokeWidth="4"
+        />
+
         {/* LE SAGOME — le uniche cose vive del disegno. */}
-        {sagome.map((sagoma) => {
+        {sagome.map((vera) => {
+          // ⚠️ La sola riga che puo` far comparire una sagoma dove non sta:
+          // vedi SPOSTATE_NEL_DISEGNO in lib/calcoli/sala.js. Il tocco, il
+          // trascinamento e tutto il resto continuano a usare la sagoma vera.
+          const sagoma = sagomaPerIlDisegno(vera);
           const inMano = trascina?.id === sagoma.id;
           const x = inMano ? trascina.x : sagoma.x;
           const y = inMano ? trascina.y : sagoma.y;
@@ -542,7 +591,9 @@ export default function PiantaSala({
           const box = sagomaDisegnata(
             { x, y, larghezza: misure.larghezza, profondita: misure.profondita },
             crescitaCm,
-            limitiSala
+            limitiSala,
+            viciniVeri,
+            varcoMinimoCm
           );
           const bx = box.x - x;
           const by = box.y - y;
@@ -561,12 +612,15 @@ export default function PiantaSala({
                 // poter scorrere la pianta.
                 touchAction: onSposta && sagoma.spostabile ? "none" : undefined,
               }}
-              onPointerDown={(e) => iniziaTrascinamento(e, sagoma)}
-              onPointerUp={() => rilascia(sagoma)}
+              // ⚠️ I gesti ricevono la sagoma VERA, non quella disegnata: chi
+              // tocca sta agendo sul mobile, e il mobile sta dove dice il
+              // database. Solo il disegno può mentire (SPOSTATE_NEL_DISEGNO).
+              onPointerDown={(e) => iniziaTrascinamento(e, vera)}
+              onPointerUp={() => rilascia(vera)}
               onClick={() => {
                 // Chi non si trascina (divani, Chef Table) non passa mai
                 // da rilascia(): il tocco arriva da qui.
-                if (!sagoma.spostabile || !onSposta) onSeleziona?.(sagoma);
+                if (!vera.spostabile || !onSposta) onSeleziona?.(vera);
               }}
             >
               {/* ⚠️ LA LINEA DI GIUNZIONE (4-bis del mandato). Dentro un
@@ -702,12 +756,20 @@ export default function PiantaSala({
           const y1 = Math.min(...pezzi.map((p) => p.y));
           const x2 = Math.max(...pezzi.map((p) => p.x + p.m.larghezza));
           const y2 = Math.max(...pezzi.map((p) => p.y + p.m.profondita));
+          // ⚠️ Cresce insieme alle sagome: prima si allargava di 10 cm per
+          // lato mentre le sagome crescono di ~16, quindi il tratteggio
+          // cadeva DENTRO i tavoli invece che intorno.
+          const b = sagomaDisegnata(
+            { x: x1, y: y1, larghezza: x2 - x1, profondita: y2 - y1 },
+            crescitaCm + 20,
+            limitiSala
+          );
           return (
             <rect
-              x={x1 - 10}
-              y={y1 - 10}
-              width={x2 - x1 + 20}
-              height={y2 - y1 + 20}
+              x={b.x}
+              y={b.y}
+              width={b.larghezza}
+              height={b.profondita}
               rx={16}
               fill="none"
               stroke={COLORE_AGGANCIO}

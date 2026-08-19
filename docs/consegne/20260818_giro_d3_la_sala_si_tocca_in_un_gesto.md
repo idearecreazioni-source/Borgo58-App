@@ -94,11 +94,19 @@ E quelle che apre questo giro:
     Cassa, Proiezione): Alessio ha deciso di **non misurarlo adesso**. La
     voce resta in coda, ed è quella che decide se è una cosa piccola o un
     lavoro a sé.
-18. 🟡 **Il varco fra le sagome è una proprietà della SALA DI OGGI, non del
-    codice** (rovesciamento n. 14): il disegno ingrandito regge perché il
-    varco più stretto misurato è 80 cm. **Il giorno che entra un mobile che
-    lo riduce sotto i 33, la misura va rifatta** — e nessun controllo
-    automatico se ne accorgerà.
+18. 🔴 **LA MISURA DEGLI 80 CM SCRITTA QUI IL 19/08 ERA SBAGLIATA**, e il
+    testo qui sotto è stato corretto invece che riscritto in silenzio. 80 cm
+    era il varco più stretto della **sola pianta base**; rimisurando su tutte
+    le disposizioni di giornata, **T5/T6 e T7/T8 stanno a 40 cm** (19/08).
+    Con una crescita di ~33 cm quel varco sarebbe sceso a **7 cm**, cioè meno
+    di un millimetro sullo schermo: due tavoli separati che si vedono
+    attaccati — esattamente il caso che la misura doveva escludere.
+    ⚠️ **E rimisurare non bastava**: la griglia è a passi di 10 cm, quindi
+    qualunque sera Alessio può mettere due tavoli a 20 cm. **Nessuna misura di
+    oggi garantisce le disposizioni di domani.** Al posto del numero c'è una
+    regola — la sagoma cresce fino a 3 mm **ma mai oltre il vicino**, e fra
+    due sagome separate resta sempre una riga visibile (`VARCO_MINIMO_MM`).
+    Provata a 40, a 20 e a 10 cm di varco vero.
 19. 🟡 **Da oggi lo spazio fra i tavoli si vede più stretto di com'è**, ed è
     il prezzo del n. 14: chi guarda la pianta per capire se in un corridoio
     ci si passa, sbaglia in difetto.
@@ -107,8 +115,8 @@ E quelle che apre questo giro:
 
 ## Cosa abbiamo rovesciato
 
-**Sette rovesciamenti**, tutti nell'elenco
-([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **14**),
+**Otto rovesciamenti**, tutti nell'elenco
+([`decisioni_rovesciate.md`](../decisioni_rovesciate.md), nn. da **8** a **15**),
 dove stanno per esteso con le quattro righe.
 
 ⚠️ **Sono tanti, e la ragione è una sola**: il collaudo di Alessio è passato
@@ -881,20 +889,40 @@ sulla pianta base e su tutte e tre le disposizioni di giornata esistenti:
 
 | | |
 |---|---|
-| varco più stretto fra due sagome che **non** si toccano | **80 cm** (i tre divani) |
+| varco più stretto **sulla sola pianta base** | 80 cm (i tre divani) |
+| varco più stretto **su tutte le disposizioni** | **40 cm** (T5/T6 e T7/T8, 19/08) |
 | quanto valgono 3 mm di schermo, sul suo telefono | **~32,6 cm di sala** |
-| quel varco, dopo l'ingrandimento | **47 cm** |
+| quel varco da 40, se la sagoma crescesse liberamente | **7 cm** — cioè attaccati |
 | sagoma più vicina al muro | **T2, distanza zero** |
 
-**Via libera**: nessuna coppia di tavoli separati arriva a sembrare accostata —
-ed è la sola cosa su cui il disegno non poteva mentire, perché è quella su cui
-Alessio decide se accettare gente. ⚠️ **Ma al muro morde**, e lì la sagoma si
-taglia al perimetro: *un tavolo mezzo fuori dalla stanza è una cosa che il
+🔴 **LA PRIMA VERSIONE DI QUESTA TABELLA DICEVA 80 CM, ED ERA SBAGLIATA.** Il
+numero veniva dalla **sola pianta base**; le disposizioni di giornata — cioè
+dove Alessio mette davvero i tavoli — non erano state guardate. Rimisurando,
+**il varco più stretto è 40 cm**. La riga sbagliata è rimasta qui sopra invece
+di sparire: *un numero corretto in silenzio non insegna niente a chi rilegge.*
+
+⚠️ **E la cura non era rimisurare.** La griglia di aggancio è a passi di
+10 cm: qualunque sera Alessio può accostare due tavoli a 20 cm senza fare
+niente di strano. **Nessuna misura di oggi può garantire le disposizioni di
+domani** — quindi al posto del numero c'è una **regola**, e vale su qualunque
+sala futura:
+
+> La sagoma cresce fino a 3 mm, **ma si ferma prima del vicino**: fra due
+> sagome che nella sala sono separate resta sempre una riga visibile
+> (`VARCO_MINIMO_MM`, mezzo millimetro di schermo). Quanto più il varco vero
+> è stretto, tanto meno la sagoma cresce da quel lato — e a varco zero (un
+> tavolone) da quel lato non cresce affatto, così la linea di giunzione resta.
+
+**Il risultato**: due tavoli separati non possono più *sembrare* accostati, e
+non perché la sala di oggi lo permette — perché il disegno non è in grado di
+farlo. È la sola cosa su cui il disegno non poteva mentire, ed è quella su cui
+Alessio decide se accettare gente. ⚠️ **Al muro invece morde**, e lì la sagoma
+si taglia al perimetro: *un tavolo mezzo fuori dalla stanza è una cosa che il
 disegno non deve poter dire.*
 
-⚠️ **Se un domani entrasse in sala un mobile che riduce quel varco sotto i
-33 cm, la misura va rifatta**: non è una proprietà del codice, è una proprietà
-della sala di oggi.
+⚠️ **Resta vero il prezzo**: lo spazio fra i tavoli si vede più stretto di
+com'è. Chi guarda la pianta per capire se in un corridoio ci si passa, sbaglia
+in difetto — mai il contrario.
 
 **Le quattro condizioni** poste dalla validazione sono rispettate e scritte nel
 registro: l'ingrandimento vive solo nel disegno; **il bersaglio di tocco segue
@@ -946,3 +974,121 @@ sono state aggiunte, e la più istruttiva è quella sull'ingrandimento: non
 diventava rossa perché **tutte le prove gli passavano il numero a mano** invece
 di usare quello deciso. *Una prova che non usa il valore vero non lo sta
 provando* — ed è la seconda volta in due giorni che questa forma salta fuori.
+
+---
+
+## Il nono collaudo (19/08) — la misura sbagliata, e cosa ne è uscito
+
+### 🔴 Gli 80 cm erano sbagliati, e non bastava rimisurare
+
+**Il rilievo è della validazione**: il varco più stretto fra due sagome
+separate **non è 80 cm**. Quel numero veniva dalla **sola pianta base**; le
+disposizioni di giornata — dove i tavoli stanno davvero — non erano state
+guardate. Il minimo vero è **40 cm** (T5/T6 e T7/T8, 19/08). Con una crescita
+di ~33 cm quel varco sarebbe sceso a **7 cm**: **due tavoli separati che si
+vedono attaccati**, cioè il solo caso che la misura doveva escludere.
+
+⚠️ **Il numero sbagliato è stato corretto DICENDO che era sbagliato**, qui e
+nel registro dei rovesciamenti, e la riga vecchia è rimasta accanto alla
+nuova: *un numero corretto in silenzio non insegna niente a chi rilegge* — ed
+è la stessa regola per cui questo progetto scrive i rovesciamenti invece di
+riscrivere le decisioni.
+
+⚠️ **E LA CURA NON ERA RIMISURARE**, che è la parte che vale oltre il caso.
+La griglia di aggancio è a passi di **10 cm**: qualunque sera Alessio può
+accostare due tavoli a 20 cm senza fare niente di strano. **Una misura
+descrive uno stato; qui serviva una proprietà.** Al posto del numero c'è una
+regola:
+
+> La sagoma cresce fino a 3 mm **ma si ferma prima del vicino**: fra due
+> sagome separate nella sala resta sempre una riga visibile
+> (`VARCO_MINIMO_MM`, mezzo millimetro di schermo). Più il varco vero è
+> stretto, meno la sagoma cresce da quel lato; a varco zero (un tavolone) da
+> quel lato non cresce affatto, e la linea di giunzione resta.
+
+**Provata sui tre casi che contano** — varco vero a 40, a 20 e a 10 cm — e
+**per rottura**: tolto il freno, le prove a 20 e a 10 diventano rosse. Il
+risultato è che **la misura della sala non è più una condizione del disegno**:
+se domani entra un mobile, il disegno si stringe da sé.
+
+⚠️ **Un ramo dichiarato ridondante invece di far finta**: il codice ha una
+scorciatoia per «vicino già attaccato». Togliendola **non diventa rossa
+nessuna prova**, perché a varco zero la formula generale dà comunque zero, e
+la fascia fra zero e la tolleranza non può esistere su una griglia da 10 cm.
+È scritto così nel codice **e** nella prova: *un ramo che nessuna prova
+distingue va dichiarato, non provato con una prova finta.*
+
+**Il magnete e la sua anteprima tratteggiata guardano ora le misure
+DISEGNATE**: il raggio comprende la crescita, e il rettangolo tratteggiato
+cresce come crescerà la sagoma. Senza, si vedeva il tratteggio agganciare
+dove il bordo disegnato non arrivava. ⚠️ **Il significato nel database non è
+toccato**: accostato resta *distanza zero fra le misure vere*.
+
+**E `MARGINE_INGRANDIMENTO_CM` non era guardato da nessuna prova.** Ora ce
+n'è una che discrimina: col margine a zero il pannello entrerebbe anche con
+un tavolo che gli finirebbe sotto, quindi portandolo a zero **diventa rossa**.
+
+### La Chef Table disegnata dove non sta
+
+**Richiesta di Alessio**: in pianta, accanto alla cucina, gli dà fastidio. Ora
+è disegnata **sotto i divani, in orizzontale**. È il rovesciamento **n. 15**,
+e rovescia una regola che il giro E aveva appena **rinforzato** — *il disegno
+dice il vero sulla sala*.
+
+⚠️ **«Sotto» e «in orizzontale» sono quelli del SUO schermo**, ed è la misura
+che ha deciso i numeri: sul telefono la pianta si mette in piedi, e quel giro
+**scambia gli assi** — la *x* della sala diventa l'alto/basso dello schermo,
+al contrario (x piccola = in basso), la *y* diventa sinistra/destra. Quindi la
+sagoma va a **x 150** (i divani sono a 300) e **ruotata**, che sullo schermo
+si legge «sotto i divani, coricata». ⚠️ **Letto in coordinate di sala non
+sarebbe stato possibile**: sotto i divani, nella sala, restano 30 cm e la Chef
+Table ne è profonda 70. *Una richiesta che sembra irrealizzabile va riletta
+sullo schermo di chi l'ha fatta.*
+
+⚠️ **Il prezzo, dichiarato**: sul computer la sala è sdraiata, quindi lì la
+Chef Table si vede **a sinistra dei divani e in piedi**. Non è sbagliata — è
+l'altra faccia dello stesso spostamento — ma non è quello che ha chiesto.
+
+⚠️ **Solo il disegno mente, e in un posto solo**: `SPOSTATE_NEL_DISEGNO` in
+`src/lib/calcoli/sala.js`, oggi una riga. La posizione vera resta nel
+database, e coperti, accostamento, tavoloni e prenotazioni continuano a
+leggere quella. ⚠️ **Anche i gesti**: chi tocca o trascina agisce sulla
+sagoma vera — se un domani la Chef Table diventasse spostabile, trascinarla
+salverebbe la posizione vera e non quella finta.
+
+⚠️ **Scritto in tre posti apposta** (accanto all'elenco nel codice, nel
+registro dei rovesciamenti, e in [`CODA_E_DECISIONI.md`](../CODA_E_DECISIONI.md)):
+*una sagoma disegnata dove non sta è la prima cosa che qualcuno
+raddrizzerebbe fra sei mesi credendo di sistemare un errore.*
+
+### Via le ultime due righe del fondale
+
+Tolte le didascalie, restavano **due segmenti che non separavano più niente**:
+il confine fra servizi e cucina in alto, e quello fra sala bassa e bancone in
+basso. Le altre coincidevano col perimetro o cadevano fra due colori uguali, e
+non si notavano. ⚠️ **Le zone restano nei dati coi loro nomi** — sparisce solo
+la riga disegnata, ed è la stessa forma con cui erano sparite le didascalie:
+`riquadroDelPannello()` continua a cercarle per nome, e la prova che lo
+dichiara è ancora verde. **Il perimetro della sala invece resta**: senza, la
+stanza non avrebbe più un contorno.
+
+### La controprova del nono collaudo — quattro rotture
+
+| rottura | prove rosse |
+|---|---|
+| tolto il freno alla crescita verso il vicino | **2** (varco 20 e varco 10) |
+| `MARGINE_INGRANDIMENTO_CM` portato a zero | **1** |
+| la Chef Table rinominata nell'elenco delle spostate | **1**, e solo sui dati veri |
+| la Chef Table spostata sopra un divano | **1**, e solo sui dati veri |
+| tolta la scorciatoia «vicino già attaccato» | **0** → ramo dichiarato ridondante |
+
+⚠️ **La terza riga è quella che non poteva stare fra le prove pure**: l'elenco
+delle sagome spostate ha per chiave il **nome** del tavolo, e il nome vero sta
+solo nel database. Rinominandolo, il disegno tornerebbe onesto **senza nessun
+errore** — che è il modo silenzioso di fallire, quello che questo progetto
+insegue da giorni.
+
+⚠️ **La quarta è dichiarata, non nascosta**: nessuna prova la distingue perché
+a varco zero la formula generale dà già zero, e la fascia fra zero e la
+tolleranza non può esistere su una griglia da 10 cm. *Un ramo che nessuna
+prova distingue va dichiarato, non coperto con una prova finta.*
