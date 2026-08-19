@@ -75,6 +75,23 @@ export async function leggiContenutoDocumento(documentoId, { rileggi = false } =
  * non registrarla. La stessa regola è applicata dal database quando il
  * carico viene eseguito — qui si legge soltanto.
  */
+/**
+ * Lo stesso confronto, ma sul PRODOTTO invece che sulla versione di un
+ * fornitore: è la strada della spesa al mercato, dove una dicitura non
+ * c'è (decisione di Alessio, 19/08).
+ *
+ * ⚠️ La regola è la stessa e sta in un posto solo: `variazione_prezzo`
+ * qui sopra passa dalla medesima funzione del database.
+ */
+export async function variazionePrezzoProdotto({ ingredienteId, prezzo }) {
+  const { data, error } = await supabase.rpc("variazione_prezzo_su", {
+    p_ingredient_id: ingredienteId,
+    p_articolo_id: null,
+    p_prezzo: prezzo,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
 export async function variazionePrezzo({ articoloId, prezzo }) {
   const { data, error } = await supabase.rpc("variazione_prezzo", {
     p_articolo_id: articoloId,

@@ -254,4 +254,54 @@ describe("i tre esiti di una riga chiusa a mano", () => {
     const storico = await titolare.from("price_history").select("id").eq("ingredient_id", ingrediente);
     expect(storico.data).toHaveLength(0);
   });
+
+  it.skipIf(!CORRIDOIO)("due spese dello stesso prodotto: la seconda al doppio fa scattare l'avviso", async () => {
+    // 🔴 DECISIONE DI ALESSIO, 19/08: l'avviso di rincaro vale anche sulle
+    // spese, con un confronto solo. La sua ragione, che smonta l'obiezione
+    // sull'IVA: *«un acquisto con IVA comporta un esborso momentaneo
+    // maggiore, ma quell'IVA si recupera»* — quindi i due numeri sono
+    // confrontabili, e una differenza è reale.
+    await nuovoIngrediente();
+    const prima = await nuovaRiga(10);
+    await chiudi({
+      p_item_id: prima,
+      p_esito: "comprata",
+      p_importo: 40,
+      p_metodo_pagamento: "contante",
+      p_quantita_ricevuta: 10,
+    });
+
+    // Il confronto si chiede alla funzione che decide, non all'avviso: la
+    // decisione è separata dall'invio apposta (13/08), così una prova non
+    // fa suonare il telefono di Alessio.
+    const doppio = await titolare.rpc("variazione_prezzo_su", {
+      p_ingredient_id: ingrediente,
+      p_articolo_id: null,
+      p_prezzo: 8,
+    });
+    expect(doppio.error).toBeNull();
+    expect(doppio.data[0].da_segnalare).toBe(true);
+    expect(Number(doppio.data[0].variazione)).toBe(100);
+  });
+
+  it.skipIf(!CORRIDOIO)("...e allo stesso prezzo TACE", async () => {
+    // ⚠️ È la metà che rende la prova capace di fallire: un avviso che non
+    // sa tacere non sta misurando niente.
+    await nuovoIngrediente();
+    const riga = await nuovaRiga(10);
+    await chiudi({
+      p_item_id: riga,
+      p_esito: "comprata",
+      p_importo: 40,
+      p_metodo_pagamento: "contante",
+      p_quantita_ricevuta: 10,
+    });
+
+    const uguale = await titolare.rpc("variazione_prezzo_su", {
+      p_ingredient_id: ingrediente,
+      p_articolo_id: null,
+      p_prezzo: 4,
+    });
+    expect(uguale.data[0].da_segnalare).toBe(false);
+  });
 });

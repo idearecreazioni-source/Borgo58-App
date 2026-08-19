@@ -17,6 +17,7 @@ import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
 import { ESITI_RIGA_LISTA, PAYMENT_METHODS, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
 import { listCausali } from "../../lib/api/cash";
+import { variazionePrezzoProdotto } from "../../lib/api/assistente";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -70,6 +71,11 @@ export default function ListaSpesa() {
   // nota. ⚠️ `listCausali` esclude quelle di sistema, ed è giusto:
   // sceglierne una a mano per una spesa vera la farebbe sparire dai costi.
   const [causali, setCausali] = useState([]);
+  // Quanto costava prima, e di quanto si sta salendo. ⚠️ Si guarda PRIMA
+  // di confermare: se si è pagato più del solito ci si accorge mentre non
+  // registrarlo è ancora gratis. È la stessa scelta del 12/08 sulle
+  // fatture — l'avviso in due posti, la schermata prima e Telegram dopo.
+  const [rincaro, setRincaro] = useState(null);
 
   const load = () => (isTitolare ? listShoppingList() : listShoppingListDisplay());
 
@@ -248,6 +254,31 @@ export default function ListaSpesa() {
       causale_id: causalePropostaId,
     });
   };
+
+  // L'ingrediente e il prezzo unitario su cui si sta per chiudere.
+  const rigaInChiusura = items.find((i) => i.id === closingItemId) ?? null;
+  const prezzoUnitario =
+    closeForm.esito === "comprata" &&
+    Number(closeForm.purchased_amount) > 0 &&
+    Number(closeForm.quantity_received) > 0
+      ? Number(closeForm.purchased_amount) / Number(closeForm.quantity_received)
+      : null;
+
+  useEffect(() => {
+    let vivo = true;
+    const ingrediente = rigaInChiusura?.ingredient?.id;
+    if (!ingrediente || prezzoUnitario === null) {
+      setRincaro(null);
+      return undefined;
+    }
+    variazionePrezzoProdotto({ ingredienteId: ingrediente, prezzo: prezzoUnitario })
+      .then((v) => vivo && setRincaro(v))
+      // Il prezzo di prima è un di più: non blocca la conferma.
+      .catch(() => vivo && setRincaro(null));
+    return () => {
+      vivo = false;
+    };
+  }, [rigaInChiusura?.ingredient?.id, prezzoUnitario]);
 
   const handleClose = async (itemId) => {
     if (closeForm.esito === "comprata" && !closeForm.purchased_amount) return;
@@ -577,6 +608,17 @@ export default function ListaSpesa() {
                               </div>
                             )}
                           </div>
+                        )}
+
+                        {rincaro?.da_segnalare && (
+                          <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
+                            ⚠️ Prima lo pagavi {formatEUR(rincaro.prezzo_precedente)}, adesso{" "}
+                            {formatEUR(prezzoUnitario)} ({rincaro.variazione > 0 ? "+" : ""}
+                            {rincaro.variazione}%)
+                            {rincaro.variazione_totale != null && (
+                              <> · da quando lo compri: {rincaro.variazione_totale > 0 ? "+" : ""}{rincaro.variazione_totale}%</>
+                            )}
+                          </p>
                         )}
 
                         {/* Cosa succede confermando, detto prima di confermare. */}
