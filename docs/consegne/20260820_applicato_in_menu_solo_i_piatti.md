@@ -101,5 +101,8 @@ per la carta**, e un piatto pronto entra come prima.
 
 ---
 
+**Commit**: `53384d8` — «Applicata in produzione: in un menu ci vanno solo
+i piatti».
+**Working tree**: pulito.
 **Migrazione**: 152 in produzione, **1 applicata in questo giro**.
 **Prove**: 152 pure + 229 sull'app, tutte verdi.
