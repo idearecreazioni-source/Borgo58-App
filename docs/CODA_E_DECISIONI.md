@@ -131,6 +131,21 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    `catch`**: se l'invio riesce ma la rilettura fallisce, nessun avviso e resta
    a schermo la situazione di prima. Stessa famiglia della sala disegnata
    vuota, molto meno grave.
+9. 🔴 **IL REGISTRATORE TELEMATICO — mandato del 20/08**, deciso da Alessio la
+   sera del 20/08: [`mandati/20260820_il_registratore_telematico.md`](mandati/20260820_il_registratore_telematico.md).
+   **Da fare quando tocca**, non è il prossimo lavoro.
+   ⚠️ **Metà esiste già ed è misurata**: `orders.documento_fiscale`,
+   `documento_numero`, `documento_emesso_il`, `conti_da_fiscalizzare()` e
+   `quadratura_fiscale()` sono in produzione. **Mancano tre cose**: il
+   simulatore, l'avviso che si fa notare a fine giornata, e la segnalazione
+   manuale di sala.
+   🔴 **Il pezzo che vale è il simulatore che SI RIFIUTA DI STAMPARE**: il caso
+   che fa male non è quello in cui i totali coincidono, è il conto chiuso e lo
+   scontrino non uscito — l'incasso c'è, fiscalmente non esiste, e il cliente è
+   già fuori. ⚠️ E il buco che nessun protocollo copre: la stampante che
+   risponde «fatto» e stampa **una pagina bianca**.
+   ⚠️ **Il blocco 1 non ha bisogno di nessun hardware** ed è utile dal primo
+   giorno: se una fattura resta da emettere, quell'elenco deve parlare da sé.
 
 ---
 
