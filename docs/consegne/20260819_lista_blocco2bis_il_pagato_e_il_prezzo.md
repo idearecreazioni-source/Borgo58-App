@@ -154,4 +154,6 @@ perché senza documento l'IVA non c'è.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: 227622b — «Quello che hai pagato diventa il prezzo, e l'IVA non si
+chiede».
+**Working tree**: pulito (questo riepilogo è l'ultimo commit della consegna).
