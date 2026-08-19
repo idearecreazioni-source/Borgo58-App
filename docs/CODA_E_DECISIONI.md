@@ -74,17 +74,18 @@ conservavano la proporzione). **Il disegno quindi non è in scala**, e lo spazio
 fra i tavoli si vede **più stretto di com'è**: chi guarda la pianta per capire
 se in un corridoio ci si passa, sbaglia in difetto — mai il contrario.
 
-⚠️ **Il numero su cui la decisione fu accettata era sbagliato, ed è la parte
-da ricordare.** Si era misurato che *«il varco più stretto fra due sagome
-separate è 80 cm»*: era il minimo della **sola pianta base**. Rimisurando su
-tutte le disposizioni di giornata — cioè dove i tavoli stanno davvero — il
-minimo è **40 cm** (T5/T6 e T7/T8, misurati in produzione il **19/08/2026**).
-Con una crescita di ~33 cm quel varco sarebbe sceso a **7 cm**: due tavoli
-separati che si vedono attaccati.
+⚠️ **Il varco misurato, e la storia dei due numeri sbagliati.** Il minimo vero,
+rimisurato in produzione il **19/08/2026** sulla pianta base **e** su tutte e
+tre le giornate esistenti, è **80 cm** — fra i divani, identico in ogni
+disposizione. Prima era stato scritto che 80 valeva solo per la pianta base e
+che il minimo vero era 40 (T5/T6 e T7/T8): **falso**, quelle coppie stanno a
+**distanza zero**, sono tavoloni. *Un numero si chiede al database, anche
+quando arriva da chi controlla.*
 
-⚠️ **E rimisurare non era la cura.** La griglia di aggancio è a passi di
-10 cm, quindi qualunque sera si possono mettere due tavoli a 20 cm: **nessuna
-misura di oggi può garantire le disposizioni di domani.** Al posto del numero
+⚠️ **E NESSUNO DEI DUE NUMERI È LA RAGIONE DELLA REGOLA** — è per questo che
+l'errore non è costato niente. La griglia di aggancio è a passi di 10 cm,
+quindi qualunque sera si possono mettere due tavoli a 20 cm: **nessuna misura
+di oggi può garantire le disposizioni di domani.** Al posto del numero
 c'è una regola — *la sagoma cresce fino a 3 mm ma si ferma prima del vicino, e
 fra due sagome separate resta sempre una riga visibile* (`VARCO_MINIMO_MM` in
 `src/lib/calcoli/sala.js`), provata a 40, a 20 e a 10 cm di varco vero.
@@ -106,3 +107,12 @@ in piedi.** Due prove sui dati veri la sorvegliano: che il nome esista ancora
 (se il tavolo venisse rinominato l'elenco smetterebbe di riconoscerlo, senza
 nessun errore) e che la posizione finta **non finisca sopra un altro mobile**
 il giorno che la sala intorno cambia.
+
+**3 · I tavoli non possono più stare in cucina.** Dal 19/08 (idea di Alessio)
+l'area di cucina e servizi è **vietata ai mobili**: la sala dei tavoli è una
+**L capovolta**. Vale nel trascinamento e nel magnete. ⚠️ Misurato prima di
+scriverlo: nessuna sagoma è mai stata là dentro, né nella pianta base né nelle
+tre giornate esistenti. È anche la ragione per cui il **margine di sicurezza**
+del pannello è stato tolto — difendeva un caso che ora non può accadere, e nel
+frattempo faceva sparire il pannello tutti i giorni per colpa della Chef
+Table. ⚠️ Il controllo resta come rete: si è tolto il numero, non la regola.

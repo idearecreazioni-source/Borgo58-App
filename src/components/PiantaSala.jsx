@@ -6,12 +6,14 @@ import {
   ZONE_FONDALE,
   RIDUZIONE_DISEGNO,
   agganciaAiVicini,
+  areaVietataAiMobili,
+  dentroAreaVietata,
   VARCO_MINIMO_MM,
   ingrandimentoCm,
   misureSagoma,
   sagomaDisegnata,
   sagomaPerIlDisegno,
-  raggioAggancioCm,
+  raggioMagneteCm,
 } from "../lib/calcoli/sala";
 
 // LA PIANTA DELLA SALA — la stessa in Calendario e in Comande.
@@ -235,6 +237,11 @@ export default function PiantaSala({
       )
     : 0;
   const limitiSala = { larghezza: SALA_LARGHEZZA_CM, profondita: SALA_PROFONDITA_CM };
+  // ⚠️ DOVE I MOBILI NON POSSONO ANDARE (19/08, idea di Alessio): cucina e
+  // servizi. La sala dei tavoli è una L capovolta, non un rettangolo — e
+  // l'area è **la stessa** del pannello, perché il pannello sta lì proprio
+  // in quanto lì non ci sono mobili.
+  const vietata = areaVietataAiMobili(ZONE_FONDALE);
   // I vicini con cui una sagoma deve fare i conti quando cresce: tutti, in
   // misure VERE — è il varco vero che decide quanto si può crescere.
   const viciniVeri = sagome
@@ -332,7 +339,12 @@ export default function PiantaSala({
     // ⚠️ Ma si vede PRIMA di lasciare, altrimenti sarebbe una sorpresa: la
     // sagoma si fa trasparente e cambia bordo mentre il dito è fuori. È la
     // stessa scelta del segno del magnete, che si vede mentre si trascina.
-    const fuori = grezzoX !== x || grezzoY !== y;
+    // ⚠️ CUCINA E SERVIZI SI COMPORTANO COME IL FUORI SALA: stessa
+    // trasparenza, stesso bordo tratteggiato, stesso annullamento al
+    // rilascio. Non è una scorciatoia — per chi trascina sono la stessa
+    // cosa (*«lì non ci va»*), e due segni diversi per due divieti che si
+    // comportano uguale si imparano peggio di uno solo.
+    const fuoriDaiBordi = grezzoX !== x || grezzoY !== y;
 
     // ⚠️ IL MAGNETE, e il suo raggio si misura in DITO. Il riquadro dice
     // quanti punti di schermo occupa la pianta adesso, quindi quanti
@@ -359,11 +371,18 @@ export default function PiantaSala({
       // ⚠️ Cambia la metrica del GESTO e del DISEGNO, non quella del
       // database: cosa conta come accostato — la tolleranza, i coperti, i
       // tavoloni — non si tocca.
-      raggioCm: raggioAggancioCm(cmPerPunto, leggiPxCm()) + crescitaCm,
+      raggioCm: raggioMagneteCm(cmPerPunto, leggiPxCm()),
       limiti,
+      vietata,
     });
     x = preso.x;
     y = preso.y;
+    // Il divieto si guarda DOPO il magnete: è l'aggancio a decidere dove la
+    // sagoma finisce davvero, e proporla lì per poi rifiutarla al rilascio
+    // sarebbe una sorpresa.
+    const fuori =
+      fuoriDaiBordi ||
+      dentroAreaVietata({ x, y, larghezza: mia.larghezza, profondita: mia.profondita }, vietata);
     setTrascina((t) =>
       t
         ? { ...t, x, y, fuori, agganci: preso.agganci, mosso: t.mosso || x !== sagoma.x || y !== sagoma.y }

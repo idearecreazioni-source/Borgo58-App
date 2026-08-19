@@ -139,9 +139,24 @@ export const RIDUZIONE_DISEGNO = 0.75;
  * di Alessio fa circa 8 punti di schermo di raggio, cioè una ventina di
  * centimetri di sala.
  *
- * ⚠️ IL PREZZO, DICHIARATO: due tavoli **dello stesso formato** che si
- * guardano da meno di una ventina di centimetri non si possono più
- * lasciare staccati — il magnete li unisce. In una sala vera è un
+ * ⚠️ MA IL RAGGIO VERO DEL MAGNETE NON È QUESTO, dal 19/08: chi trascina
+ * usa `raggioMagneteCm()`, che ci somma l'ingrandimento del disegno —
+ * sul telefono di Alessio si passa da ~22 a **~54 cm di sala**. Il numero
+ * qui sopra descrive solo il pezzo che dipende dal dito.
+ *
+ * ⚠️ IL PREZZO, DICHIARATO E MISURATO (aggiornato il 19/08): due tavoli
+ * **dello stesso formato** che si guardano da meno di **una cinquantina**
+ * di centimetri non si possono più lasciare staccati — il magnete li
+ * unisce. Alessio ha guardato come si comporta e ha deciso di tenerlo così.
+ *
+ * ⚠️ MISURATO IN PRODUZIONE, e la misura ridimensiona il prezzo: nella
+ * pianta base e in tutte e tre le giornate esistenti **non c'è nessuna
+ * coppia di tavoli separati entro il raggio** — i tavoli o si toccano
+ * (distanza zero: sono i tavoloni T5·T6, T7·T8, T8·T9) o stanno a 90 cm e
+ * oltre. Il varco più stretto fra due sagome separate è **80 cm**, fra i
+ * divani, che non sono tavoli e non si agganciano. Quindi oggi il magnete
+ * più largo **non impedisce nessuna delle disposizioni esistenti**; il
+ * prezzo esiste per quelle future. In una sala vera è un
  * passaggio in cui non ci si passa comunque, e la via d'uscita c'è: si
  * scostano di lato finché la sovrapposizione scende sotto CONTATTO_MINIMO_CM.
  */
@@ -157,6 +172,25 @@ export const AGGANCIO_DITO_CM = 0.2;
 export function raggioAggancioCm(cmPerPixel, pxcm, ditoCm = AGGANCIO_DITO_CM) {
   if (!(cmPerPixel > 0) || !(pxcm > 0)) return 0;
   return ditoCm * pxcm * cmPerPixel;
+}
+
+/**
+ * IL RAGGIO VERO DEL MAGNETE: il dito **più** l'ingrandimento del disegno.
+ *
+ * 🔴 ESISTE PERCHÉ LE PROVE STAVANO SORVEGLIANDO UN NUMERO CHE L'APP NON USA
+ * PIÙ (rilievo della validazione, 19/08). Il 19/08 la schermata ha aggiunto
+ * `+ crescitaCm` al raggio, e la prova sui dati veri ha continuato a chiamare
+ * `raggioAggancioCm()` da sola: sorvegliava un magnete più piccolo di quello
+ * che si usa. *Una prova che non usa il numero deciso dal codice non lo sta
+ * provando* — terza volta in due giorni, e la cura è sempre la stessa: **un
+ * posto solo**, e chi prova chiama quello.
+ *
+ * ⚠️ Cambia la metrica del GESTO e del DISEGNO, mai quella del database:
+ * cosa conta come accostato — `TOLLERANZA_CONTATTO_CM`, i coperti, i
+ * tavoloni — non si tocca.
+ */
+export function raggioMagneteCm(cmPerPixel, pxcm) {
+  return raggioAggancioCm(cmPerPixel, pxcm) + ingrandimentoCm(cmPerPixel, pxcm);
 }
 
 /**
@@ -180,17 +214,21 @@ export function raggioAggancioCm(cmPerPixel, pxcm, ditoCm = AGGANCIO_DITO_CM) {
  * @param vicini   [{ id, formato_id, x, y, larghezza, profondita }]
  * @param raggioCm il raggio del magnete in centimetri di sala
  * @param limiti   { larghezza, profondita } della sala: fuori non si va
+ * @param vietata  il riquadro dove i mobili non possono stare (la L capovolta):
+ *                 il magnete non deve nemmeno PROPORRE una posizione lì dentro
  */
-export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti }) {
+export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti, vietata = null }) {
   const nulla = { x, y, agganci: [] };
   if (!(raggioCm > 0) || !sagoma) return nulla;
 
   const w = sagoma.larghezza;
   const h = sagoma.profondita;
   const sovrapposizione = (a1, a2, b1, b2) => Math.min(a2, b2) - Math.max(a1, b1);
-  const dentro = (px, py) =>
-    !limiti ||
-    (px >= 0 && py >= 0 && px + w <= limiti.larghezza && py + h <= limiti.profondita);
+  const dentro = (px, py) => {
+    if (dentroAreaVietata({ x: px, y: py, larghezza: w, profondita: h }, vietata)) return false;
+    if (!limiti) return true;
+    return px >= 0 && py >= 0 && px + w <= limiti.larghezza && py + h <= limiti.profondita;
+  };
 
   let scelta = null;
   for (const v of vicini) {
@@ -326,24 +364,29 @@ export function riquadroDelPannello(zone = []) {
   return { x, y, larghezza: x2 - x, profondita: y2 - y };
 }
 
-/**
- * Il margine con cui `pannelloNellaPianta()` guarda le sagome.
- *
- * ⚠️ È UNA SCELTA DICHIARATA, e la condizione posta dalla validazione la
- * chiedeva esplicitamente. Il pannello dentro la pianta esce quando un tavolo
- * gli finisce sopra (cura del 18/08); ma da oggi una sagoma si DISEGNA più
- * grande di quanto è, quindi guardando le misure vere il pannello potrebbe
- * restare e il tavolo finirgli sotto — cioè tornerebbe esattamente il costo
- * che si era eliminato.
- *
- * Quindi si guardano le misure **disegnate**, con il valore più grande che
- * l'ingrandimento può assumere: cresce al calare della larghezza dello
- * schermo, e sul telefono più stretto che il progetto considera (375 punti,
- * 343 di pianta) vale ~34 cm. ⚠️ Sbaglia quindi **per eccesso** su schermi
- * larghi — il pannello esce un po' prima del necessario. È la direzione
- * giusta in cui sbagliare: si perde una comodità, mai un gesto.
- */
-export const MARGINE_INGRANDIMENTO_CM = 35;
+// 🔴 `MARGINE_INGRANDIMENTO_CM` È STATO TOLTO IL 19/08, e la ragione va letta
+// prima di rimetterlo. Esisteva perché una sagoma si disegna più grande del
+// vero, quindi un tavolo appoggiato al confine della cucina poteva finire
+// **sotto** il pannello pur non toccandolo nelle misure vere. Il margine
+// guardava 17,5 cm per lato — e la **Chef Table**, che sta 15 cm sotto quel
+// confine, faceva sparire il pannello **tutti i giorni**.
+//
+// ⚠️ IL PARADOSSO CHE CI HA PORTATI LÌ, perché è il genere di cosa che torna:
+// sullo schermo la Chef Table è disegnata **sotto i divani**, quindi il
+// pannello spariva per una sagoma che in quel punto non si vede. Due
+// decisioni giuste dello stesso giorno — il margine di sicurezza e le sagome
+// spostate sul foglio — si sono pestate i piedi.
+//
+// La cura è a monte ed è di Alessio: quel rettangolo è **vietato ai mobili**
+// (vedi `AREA_VIETATA_AI_MOBILI`), quindi il caso che il margine difendeva
+// non può più presentarsi. ⚠️ **La regola resta**: `pannelloNellaPianta()`
+// continua a guardare, come rete, se un dato mettesse comunque un mobile là
+// dentro — si toglie il margine, non il controllo.
+//
+// ⚠️ IL PREZZO, DICHIARATO: un tavolo appoggiato **esattamente** al confine
+// della cucina si disegna ~15 cm dentro il bordo del pannello, perché la
+// sagoma cresce. Resta visibile e afferrabile — è un filo di accavallamento,
+// non un tavolo nascosto.
 
 /**
  * Il pannello può stare DENTRO la pianta? Solo se là dentro non c'è nessun
@@ -360,15 +403,12 @@ export const MARGINE_INGRANDIMENTO_CM = 35;
  * *Quello spazio è vuoto sul disegno ma non è vietato, ed è esattamente il
  * genere di cosa che Alessio fa: i tavoli li muove lui.*
  */
-export function pannelloNellaPianta(zone = [], sagome = [], margine = MARGINE_INGRANDIMENTO_CM) {
+export function pannelloNellaPianta(zone = [], sagome = []) {
   const r = riquadroDelPannello(zone);
   if (!r) return null;
-  // ⚠️ SI GUARDANO LE MISURE DISEGNATE, NON QUELLE VERE (19/08, condizione
-  // posta dalla validazione). Dal 19/08 una sagoma si disegna più grande di
-  // quanto è: guardando l'ingombro vero, un tavolo potrebbe apparire sopra
-  // la cucina senza far uscire il pannello — e finirgli sotto, che è
-  // esattamente il costo eliminato il 18/08.
-  const m = Math.max(0, margine) / 2;
+  // ⚠️ SENZA MARGINE dal 19/08: l'area è vietata ai mobili, quindi non c'è
+  // più un caso da anticipare. Questo controllo è la rete per il giorno in
+  // cui un dato ci finisse dentro lo stesso.
   // ⚠️ SI GUARDA IL VERSO VERO DELLA SAGOMA, ma su QUESTO fondale non decide
   // niente — e la cosa è emersa da una rottura fatta apposta, non rileggendo:
   // sostituendo `misureSagoma` con le misure sulla carta, **nessuna prova
@@ -379,13 +419,57 @@ export function pannelloNellaPianta(zone = [], sagome = [], margine = MARGINE_IN
   const tocca = sagome.some((s) => {
     const mis = misureSagoma(s);
     return (
-      s.x - m < r.x + r.larghezza &&
-      s.x + mis.larghezza + m > r.x &&
-      s.y - m < r.y + r.profondita &&
-      s.y + mis.profondita + m > r.y
+      s.x < r.x + r.larghezza &&
+      s.x + mis.larghezza > r.x &&
+      s.y < r.y + r.profondita &&
+      s.y + mis.profondita > r.y
     );
   });
   return tocca ? null : r;
+}
+
+// =====================================================================
+// DOVE I MOBILI POSSONO STARE — LA L CAPOVOLTA (19/08/2026)
+// =====================================================================
+//
+// 🔴 IDEA DI ALESSIO, ed è la cura di un difetto vero: fino a oggi un tavolo
+// si poteva trascinare **ovunque** dentro il rettangolo della sala, cucina e
+// servizi compresi. Da adesso quell'area è vietata ai mobili, e il perimetro
+// in cui i tavoli vivono non è più un rettangolo ma una **L capovolta** —
+// sala alta, sala bassa e bancone.
+//
+// ⚠️ MISURATO PRIMA DI SCRIVERLO, in produzione e in sola lettura: nella
+// pianta base (13 sagome) e in **tutti** i 14 scostamenti delle 3 giornate
+// esistenti, nessuna sagoma sta dentro quel rettangolo. **Il divieto non
+// invalida niente di esistente** — non è una regola che rifiuta il passato.
+//
+// ⚠️ L'AREA È LA STESSA DEL PANNELLO, e non per comodità: il pannello sta lì
+// **perché** lì non ci sono mobili, quindi la definizione dev'essere una
+// sola. Due elenchi di zone che possono divergere direbbero che il pannello
+// può stare dove un tavolo può andare.
+//
+// ⚠️ E VALE IN DUE POSTI, non solo nel trascinamento: anche **il magnete**
+// non deve poter proporre una posizione là dentro. È la stessa ragione per
+// cui già oggi controlla i bordi della sala — un aggancio che porta il
+// tavolo in un posto vietato è un aggancio che non si può accettare.
+export function areaVietataAiMobili(zone = []) {
+  return riquadroDelPannello(zone);
+}
+
+/**
+ * La sagoma finirebbe dentro l'area vietata?
+ *
+ * @param rett   { x, y, larghezza, profondita } — misure VERE, già nel verso
+ * @param vietata il riquadro vietato, o null se non ce n'è
+ */
+export function dentroAreaVietata(rett, vietata) {
+  if (!vietata || !rett) return false;
+  return (
+    rett.x < vietata.x + vietata.larghezza &&
+    rett.x + rett.larghezza > vietata.x &&
+    rett.y < vietata.y + vietata.profondita &&
+    rett.y + rett.profondita > vietata.y
+  );
 }
 
 // =====================================================================
@@ -461,16 +545,21 @@ export function ingrandimentoCm(cmPerPixel, pxcm, mm = INGRANDIMENTO_MM) {
  * Quanto spazio deve restare fra due sagome DISEGNATE che nella sala sono
  * separate davvero. Una riga sottile, ma che si vede.
  *
- * 🔴 ESISTE PERCHÉ UN NUMERO NON BASTAVA. Il 19/08 l'ingrandimento era stato
- * accettato su una misura: *«il varco più stretto fra due sagome è 80 cm»*.
- * **Quel numero era sbagliato** — era il minimo della sola pianta base;
- * rimisurando su tutte le disposizioni di giornata, T5/T6 e T7/T8 stanno a
- * **40 cm** (19/08). Con una crescita di ~33 cm quel varco sarebbe sceso a 7,
- * cioè meno di un millimetro sullo schermo: **due tavoli separati che si
- * vedono attaccati**, esattamente il caso che la misura doveva escludere.
+ * 🔴 ESISTE PERCHÉ UN NUMERO NON BASTAVA — E I NUMERI SONO STATI DUE, uno
+ * sbagliato dopo l'altro. Il 19/08 l'ingrandimento era stato accettato su una
+ * misura: *«il varco più stretto fra due sagome separate è 80 cm»*. Una
+ * validazione l'ha corretta in 40 cm (T5/T6 e T7/T8), io ho scritto la
+ * correzione **senza rimisurarla**, e rimisurando davvero:
+ *   · gli 80 cm erano GIUSTI, e valgono sulla pianta base *e* su
+ *     tutte e tre le giornate esistenti (sono i divani);
+ *   · le coppie nominate dalla correzione — T5/T6, T7/T8 — stanno a
+ *     **distanza zero**: sono tavoloni, non tavoli vicini.
+ * ⚠️ *In questo progetto un numero si chiede al database, anche — e
+ * soprattutto — quando arriva da chi controlla.*
  *
- * ⚠️ E RIMISURARE NON BASTAVA, che è la lezione: la griglia è a passi di
- * 10 cm, quindi qualunque sera Alessio può mettere due tavoli a 20 cm.
+ * ⚠️ MA LA REGOLA RESTA, e non poggia su nessuno dei due numeri — è questo
+ * che la rende una regola: la griglia di aggancio è a passi di 10 cm,
+ * quindi qualunque sera Alessio può mettere due tavoli a 20 cm.
  * **Nessuna misura di oggi può garantire le disposizioni di domani.** Serve
  * una regola, e la regola è questa: la sagoma cresce **fino a**
  * `INGRANDIMENTO_MM`, ma mai al punto di chiudere lo spazio verso un vicino.

@@ -9,7 +9,7 @@ import {
   SPOSTATE_NEL_DISEGNO,
   sagomaPerIlDisegno,
   misureSagoma,
-  raggioAggancioCm,
+  raggioMagneteCm,
 } from "../../src/lib/calcoli/sala";
 import { getCopertiDelGiorno, getPiantaDelGiorno } from "../../src/lib/api/sala";
 
@@ -88,7 +88,7 @@ describe("Il magnete sulla sala vera", () => {
       y: s.y,
       ...misureSagoma(s),
     }));
-    const raggio = raggioAggancioCm(CM_PER_PUNTO, PXCM);
+    const raggio = raggioMagneteCm(CM_PER_PUNTO, PXCM);
     const archi = [];
     for (const s of scatole) {
       const preso = agganciaAiVicini({
@@ -134,7 +134,7 @@ describe("Il magnete sulla sala vera", () => {
       .map((s) => ({ id: s.id, formato_id: s.formato_id, x: s.x, y: s.y, ...misureSagoma(s) }));
     const insieme = new Map();
     for (const g of gruppiVeri) for (const id of g.tavoli ?? []) insieme.set(id, g.tavoli.join("+"));
-    const raggio = raggioAggancioCm(CM_PER_PUNTO, PXCM);
+    const raggio = raggioMagneteCm(CM_PER_PUNTO, PXCM);
 
     let coppieGuardate = 0;
     for (const a of scatole) {
@@ -185,7 +185,7 @@ describe("Il magnete sulla sala vera", () => {
       vicini: tavoli,
       x: bersaglio.x + bersaglio.larghezza + 20,
       y: bersaglio.y,
-      raggioCm: raggioAggancioCm(CM_PER_PUNTO, PXCM),
+      raggioCm: raggioMagneteCm(CM_PER_PUNTO, PXCM),
       limiti: null,
     });
     expect(preso.agganci).toContain(bersaglio.id);

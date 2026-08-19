@@ -51,6 +51,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 13 | 18/08/2026 | *Il numero e la frase che ne dichiara il limite viaggiano insieme* (15/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 14 | 19/08/2026 | *Il disegno dice il vero sullo spazio* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 15 | 19/08/2026 | *Ogni sagoma è disegnata dove sta davvero* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
+| 16 | 19/08/2026 | *Un tavolo si può trascinare ovunque nella sala* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 
 ---
 
@@ -531,6 +532,19 @@ base e su tutte e tre le disposizioni di giornata esistenti:
 | quel varco da 40, se la sagoma crescesse liberamente | **7 cm** — cioè attaccati |
 | sagoma più vicina al muro | **T2, distanza zero** |
 
+🔴 **E LA CORREZIONE QUI SOTTO ERA SBAGLIATA A SUA VOLTA — rimisurato il
+19/08.** Sulla pianta base **e** su tutte e tre le giornate esistenti il varco
+più stretto fra due sagome separate è **80 cm** in ogni disposizione (i
+divani), e le coppie nominate dalla correzione — T5/T6, T7/T8 — stanno a
+**distanza zero**: sono tavoloni, non tavoli vicini. Gli 80 cm erano giusti;
+sbagliata era la correzione, che ho scritto **senza rimisurarla**.
+⚠️ *In questo progetto un numero si chiede al database — anche, e
+soprattutto, quando arriva da chi controlla.*
+⚠️ **E la regola regge lo stesso**, che è il motivo per cui l'errore non
+costa: `VARCO_MINIMO_MM` non poggia su nessuno dei due numeri, ma sul passo
+della griglia. *Se fosse nata da una misura, adesso andrebbe rifatta.*
+Il testo che segue resta com'era scritto, sbagliato, perché si veda la strada:
+
 🔴 **LA PRIMA VERSIONE DI QUESTA TABELLA DICEVA 80 CM, ED ERA SBAGLIATA.** Il
 rovesciamento è stato accettato su quel numero, e quel numero era il minimo
 della **sola pianta base**: le disposizioni di giornata — cioè dove Alessio
@@ -631,3 +645,45 @@ diventasse spostabile, o se ne aggiungesse una seconda, il foglio direbbe una
 cosa e la sala un'altra **senza che nessun controllo se ne accorga**. Oggi non
 può succedere — il vincolo `dining_tables_sagoma_check` le impedisce di essere
 spostabile — ma è lì che questa decisione va rivista.
+
+---
+
+## 16 · 19/08/2026 — «un tavolo si può trascinare ovunque nella sala»
+
+**Cosa era stato deciso, e quando.** Dal 14/08, con la pianta viva: la sala è
+un rettangolo e una sagoma spostabile si può portare **ovunque** dentro i suoi
+bordi. L'unico limite era il perimetro. Lo spazio di cucina e servizi era
+*«vuoto sul disegno ma non vietato, ed esattamente il genere di cosa che
+Alessio fa: i tavoli li muove lui»* — scritto così, apposta, il 18/08.
+
+**La ragione di allora.** Non inventare regole sulle cose sue. La pianta serve
+a **rispecchiare** la sala, e un gestionale che decide dove può stare un
+mobile di Alessio decide al posto suo.
+
+**Cosa si decide adesso.** Cucina e servizi diventano **vietati ai mobili**: i
+tavoli vivono in una **L capovolta** (sala alta, sala bassa, bancone). Vale
+nel trascinamento e nel magnete. Idea di Alessio, il 19/08.
+
+**Perché la ragione di allora non vale più.** Perché il divieto **non è una
+regola nostra su una cosa sua: è la sala vera**. Misurato prima di scriverlo,
+in produzione e in sola lettura: nella pianta base e in tutti i 14 scostamenti
+delle 3 giornate esistenti, **nessuna sagoma è mai stata là dentro**. Non si
+vieta un uso: si scrive nel programma una cosa che era già vera.
+
+⚠️ **E c'era un difetto vero da chiudere**, che è ciò che ha fatto nascere
+l'idea: il pannello dentro la pianta si difendeva da un tavolo che gli finisse
+sopra con un **margine di sicurezza**, e quel margine — 17,5 cm per lato —
+vedeva la **Chef Table**, che sta 15 cm sotto il confine. Il pannello era
+sparito **tutti i giorni**. Col divieto, il caso che il margine difendeva non
+può più presentarsi, quindi il margine si toglie. ⚠️ **Il controllo resta
+come rete**: si toglie il numero, non la regola.
+
+⚠️ **Il paradosso da ricordare**, perché tornerà in altre forme: sullo schermo
+la Chef Table è disegnata **sotto i divani** (n. 15). Il pannello spariva per
+una sagoma che in quel punto **non si vede**. *Due decisioni giuste prese lo
+stesso giorno possono pestarsi i piedi senza che nessuna delle due sia
+sbagliata* — e il segno è un comportamento che nessuno sa spiegare.
+
+⚠️ **Il prezzo**: un tavolo appoggiato esattamente al confine della cucina si
+disegna ~15 cm dentro il bordo del pannello, perché la sagoma cresce. Resta
+visibile e afferrabile — un filo di accavallamento, non un tavolo nascosto.

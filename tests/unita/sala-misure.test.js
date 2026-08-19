@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTATTO_MINIMO_CM,
+  areaVietataAiMobili,
+  dentroAreaVietata,
   SPOSTATE_NEL_DISEGNO,
   sagomaPerIlDisegno,
+  VARCO_MINIMO_MM,
   ZONE_FONDALE,
   GRIGLIA_CM,
-  MARGINE_INGRANDIMENTO_CM,
   INGRANDIMENTO_MM,
   ingrandimentoCm,
   sagomaDisegnata,
@@ -65,6 +67,7 @@ import {
   AGGANCIO_DITO_CM,
   RIDUZIONE_DISEGNO,
   agganciaAiVicini,
+  raggioMagneteCm,
   misureSagoma,
   raggioAggancioCm,
 } from "../../src/lib/calcoli/sala";
@@ -307,37 +310,25 @@ describe("Il pannello dentro la pianta", () => {
   });
 
   it("il bordo conta, e si misura sulle sagome COME SI DISEGNANO", () => {
-    // ⚠️ Dal 19/08 le sagome si disegnano più grandi del vero, e questa
-    // funzione guarda l'ingombro DISEGNATO: se guardasse quello vero, un
-    // tavolo potrebbe apparire sopra la cucina senza far uscire il pannello
-    // — e finirgli sotto, che è il costo eliminato il 18/08.
-    // Con margine ZERO conta la sola posizione: 1400 è il primo centimetro
-    // fuori, 1390 è dentro.
-    expect(pannelloNellaPianta(ZONE, [tavolo(1400, 100)], 0)).not.toBeNull();
-    expect(pannelloNellaPianta(ZONE, [tavolo(1390, 100)], 0)).toBeNull();
+    // Conta la posizione: 1400 è il primo centimetro fuori dal riquadro,
+    // 1390 è dentro.
+    expect(pannelloNellaPianta(ZONE, [tavolo(1400, 100)])).not.toBeNull();
+    expect(pannelloNellaPianta(ZONE, [tavolo(1390, 100)])).toBeNull();
   });
 
-  it("col margine dell'ingrandimento il pannello esce PRIMA — la gemella", () => {
-    // La stessa sagoma, lo stesso posto: cambia solo se si guarda il vero o
-    // il disegnato.
-    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 0)).not.toBeNull();
-    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 40)).toBeNull();
+  it("il margine di sicurezza è stato TOLTO, e al suo posto c'è il divieto", () => {
+    // 🔴 IL 19/08 `MARGINE_INGRANDIMENTO_CM` guardava 17,5 cm per lato, e la
+    // **Chef Table** — che sta 15 cm sotto il confine della cucina — faceva
+    // sparire il pannello tutti i giorni. Il margine difendeva un caso che
+    // da oggi **non può più presentarsi**: quell'area è vietata ai mobili.
+    // ⚠️ La rete resta: un mobile che ci finisse comunque fa uscire il
+    // pannello invece di essere coperto.
+    const chefTable = { id: "chef", x: 980, y: 530, larghezza_cm: 200, profondita_cm: 70 };
+    expect(pannelloNellaPianta(ZONE, [chefTable])).not.toBeNull();
+    // e la sagoma vietata la prende comunque, che è la rete
+    expect(dentroAreaVietata({ x: 600, y: 200, larghezza: 90, profondita: 90 }, areaVietataAiMobili(ZONE))).toBe(true);
+    expect(pannelloNellaPianta(ZONE, [tavolo(600, 200)])).toBeNull();
   });
-
-  it("e il margine PREDEFINITO protegge davvero — la prova che mancava", () => {
-    // 🔴 QUESTA PROVA NASCE DA UNA CONTROPROVA DELLA VALIDAZIONE: azzerando
-    // `MARGINE_INGRANDIMENTO_CM` **nessuna prova diventava rossa**. Era la
-    // condizione posta il 19/08 per non riaprire il difetto chiuso il 18/08 —
-    // il tavolo che finisce sotto il pannello — scritta, commentata bene, e
-    // non provata da niente. Il taglio al muro e l'ingrandimento invece
-    // reagivano: non era una lacuna di metodo, era questa che mancava.
-    // ⚠️ La sagoma sta FUORI dal riquadro con le misure vere e DENTRO con
-    // quelle disegnate: è esattamente il caso che il margine deve prendere.
-    expect(MARGINE_INGRANDIMENTO_CM).toBeGreaterThan(0);
-    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)], 0)).not.toBeNull();
-    expect(pannelloNellaPianta(ZONE, [tavolo(1410, 100)])).toBeNull();
-  });
-
   it("su QUESTO fondale basta la posizione — e la prova lo dichiara", () => {
     // 🔴 QUI C'ERA UNA PROVA CHE NON DISCRIMINAVA, e se n'è accorta la
     // rottura fatta apposta, non la rilettura: guardando le misure sulla
@@ -350,8 +341,8 @@ describe("Il pannello dentro la pianta", () => {
     // provarlo è peggio di nessuna prova.
     const lungo = { id: "L", larghezza_cm: 180, profondita_cm: 90 };
     for (const ruotato of [false, true]) {
-      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }], 0)).toBeNull();
-      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }], 0)).not.toBeNull();
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1390, y: 100, ruotato }])).toBeNull();
+      expect(pannelloNellaPianta(ZONE, [{ ...lungo, x: 1400, y: 520, ruotato }])).not.toBeNull();
     }
   });
 });
@@ -456,8 +447,24 @@ describe("La crescita si ferma prima del vicino", () => {
   // qualunque sera due tavoli possono finire a 20. **Nessuna misura di oggi
   // garantisce le disposizioni di domani** — serve una regola.
   const SALA = { larghezza: 2070, profondita: 1030 };
-  const CRESCITA = 33; // ~3 mm sullo schermo di Alessio
-  const VARCO = 2; // il minimo che deve restare, in centimetri di sala
+  // 🔴 I DUE NUMERI SI CHIEDONO AL CODICE, NON SI SCRIVONO QUI (19/08,
+  // controprova della validazione). Prima erano `33` e `2` battuti a mano:
+  // azzerando `VARCO_MINIMO_MM` **nessuna prova diventava rossa**, cioè la
+  // regola che impedisce a due tavoli separati di vedersi attaccati non era
+  // sorvegliata **nel valore che l'app usa davvero**. Stessa forma trovata
+  // il giorno prima su `INGRANDIMENTO_MM`: *una prova che non usa il numero
+  // deciso dal codice non lo sta provando.*
+  //
+  // Le due misure dello schermo sono quelle del telefono di Alessio con la
+  // pianta in piedi: 1030 cm di sala su ~341 punti, e 37,8 punti per
+  // centimetro vero. Da lì il codice ricava tutto il resto.
+  const CM_PER_PUNTO = 3.02;
+  const PXCM = 37.8;
+  const CRESCITA = ingrandimentoCm(CM_PER_PUNTO, PXCM);
+  const VARCO = ingrandimentoCm(CM_PER_PUNTO, PXCM, VARCO_MINIMO_MM);
+  // Il varco che resta, riportato in MILLIMETRI DI SCHERMO: è lì che la
+  // regola vuol dire qualcosa — «una riga che si vede».
+  const inMillimetriDiSchermo = (cm) => (cm / CM_PER_PUNTO / PXCM) * 10;
   const q = (x, y) => ({ x, y, larghezza: 90, profondita: 90 });
   // Il varco DISEGNATO fra due sagome affiancate in orizzontale.
   const varcoDisegnato = (distanza) => {
@@ -468,16 +475,24 @@ describe("La crescita si ferma prima del vicino", () => {
     return db.x - (da.x + da.larghezza);
   };
 
-  it("a 40 cm restano staccate — è il caso vero della disposizione del 19/08", () => {
-    expect(varcoDisegnato(40)).toBeGreaterThanOrEqual(VARCO);
+  // ⚠️ SI GUARDA IL VARCO IN MILLIMETRI DI SCHERMO E SI PRETENDE > 0, non
+  // «≥ VARCO»: quest'ultima passerebbe **anche col varco azzerato**, perché
+  // zero è sempre maggiore o uguale a zero. È la differenza fra una prova
+  // che descrive il codice e una che lo mette alla prova.
+  it("a 40 cm resta una riga visibile — è il caso vero della disposizione del 19/08", () => {
+    expect(inMillimetriDiSchermo(varcoDisegnato(40))).toBeGreaterThan(0);
   });
 
-  it("a 20 cm restano staccate — è quello che la griglia permette domani", () => {
-    expect(varcoDisegnato(20)).toBeGreaterThanOrEqual(VARCO);
+  it("a 20 cm resta una riga visibile — è quello che la griglia permette domani", () => {
+    expect(inMillimetriDiSchermo(varcoDisegnato(20))).toBeGreaterThan(0);
+    // e il varco che resta è ESATTAMENTE quello deciso: sotto i 20 cm la
+    // crescita non arriva a riempire, quindi il limite è il varco minimo.
+    expect(varcoDisegnato(20)).toBeCloseTo(VARCO, 6);
   });
 
   it("e anche a 10 cm, che è il passo della griglia", () => {
-    expect(varcoDisegnato(10)).toBeGreaterThanOrEqual(VARCO);
+    expect(inMillimetriDiSchermo(varcoDisegnato(10))).toBeGreaterThan(0);
+    expect(varcoDisegnato(10)).toBeCloseTo(VARCO, 6);
   });
 
   it("ma da sola cresce tutto — altrimenti la regola non servirebbe a niente", () => {
@@ -485,7 +500,7 @@ describe("La crescita si ferma prima del vicino", () => {
     // le tre prove qui sopra.
     const sola = q(500, 400);
     const cresciuta = sagomaDisegnata(sola, CRESCITA, SALA, [sola], VARCO);
-    expect(cresciuta.larghezza).toBe(90 + CRESCITA);
+    expect(cresciuta.larghezza).toBeCloseTo(90 + CRESCITA, 6);
   });
 
   it("verso un vicino ATTACCATO non cresce: il tavolone non si mangia la giunzione", () => {
@@ -501,7 +516,7 @@ describe("La crescita si ferma prima del vicino", () => {
     const db = sagomaDisegnata(b, CRESCITA, SALA, [a, b], VARCO);
     expect(da.x + da.larghezza).toBe(590); // il bordo interno resta dov'era
     expect(db.x).toBe(590);
-    expect(da.x).toBe(500 - CRESCITA / 2); // e verso fuori cresce
+    expect(da.x).toBeCloseTo(500 - CRESCITA / 2, 6); // e verso fuori cresce
   });
 });
 
@@ -534,5 +549,75 @@ describe("le sagome spostate solo nel disegno", () => {
   it("ogni altra sagoma torna identica, non una copia", () => {
     const t = { id: "t", label: "T5", x: 100, y: 100 };
     expect(sagomaPerIlDisegno(t)).toBe(t);
+  });
+});
+
+describe("La sala dei tavoli è una L capovolta", () => {
+  // Idea di Alessio, 19/08: cucina e servizi sono vietati ai mobili. Prima un
+  // tavolo si poteva trascinare ovunque nel rettangolo della sala.
+  const ZONE = [
+    { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
+    { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
+    { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
+    { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
+  ];
+  const VIETATA = areaVietataAiMobili(ZONE);
+
+  it("l'area vietata e il riquadro del pannello sono LA STESSA COSA", () => {
+    // ⚠️ Non è una comodità: il pannello sta lì **perché** lì non ci sono
+    // mobili. Due definizioni che possono divergere direbbero che il
+    // pannello può stare dove un tavolo può andare.
+    expect(VIETATA).toEqual(riquadroDelPannello(ZONE));
+  });
+
+  it("il magnete non PROPONE una posizione dentro l'area vietata", () => {
+    // A sta appena sotto il confine della cucina, dove è lecito. B, tirato
+    // sopra di lui, si aggancerebbe a y = 425 — cioè dentro la cucina.
+    const a = { id: "a", formato_id: "q", x: 600, y: 515, larghezza: 90, profondita: 90 };
+    const b = { id: "b", formato_id: "q", larghezza: 90, profondita: 90 };
+    const limiti = { larghezza: 2070, profondita: 1030 };
+
+    const senzaDivieto = agganciaAiVicini({ sagoma: b, vicini: [a], x: 600, y: 430, raggioCm: 20, limiti });
+    expect(senzaDivieto.y).toBe(425); // la gemella: senza divieto ci andrebbe
+
+    const conDivieto = agganciaAiVicini({
+      sagoma: b, vicini: [a], x: 600, y: 430, raggioCm: 20, limiti, vietata: VIETATA,
+    });
+    expect(conDivieto.y).toBe(430); // resta dove il dito l'ha lasciata
+    expect(conDivieto.agganci).toEqual([]);
+  });
+
+  it("ma un aggancio LECITO continua a scattare — il divieto non spegne il magnete", () => {
+    const a = { id: "a", formato_id: "q", x: 600, y: 600, larghezza: 90, profondita: 90 };
+    const b = { id: "b", formato_id: "q", larghezza: 90, profondita: 90 };
+    const preso = agganciaAiVicini({
+      sagoma: b, vicini: [a], x: 600, y: 695, raggioCm: 20,
+      limiti: { larghezza: 2070, profondita: 1030 }, vietata: VIETATA,
+    });
+    expect(preso.y).toBe(690);
+    expect(preso.agganci).toEqual(["a"]);
+  });
+
+  it("e il divieto si misura sull'ingombro, non sull'angolo", () => {
+    // Una sagoma che comincia fuori ma ci entra col corpo è dentro.
+    expect(dentroAreaVietata({ x: 1350, y: 400, larghezza: 90, profondita: 90 }, VIETATA)).toBe(true);
+    expect(dentroAreaVietata({ x: 1400, y: 400, larghezza: 90, profondita: 90 }, VIETATA)).toBe(false);
+    expect(dentroAreaVietata({ x: 600, y: 515, larghezza: 90, profondita: 90 }, VIETATA)).toBe(false);
+    // e senza area vietata non vieta niente
+    expect(dentroAreaVietata({ x: 0, y: 0, larghezza: 90, profondita: 90 }, null)).toBe(false);
+  });
+
+  it("il raggio del magnete è UNO, e comprende l'ingrandimento", () => {
+    // 🔴 La prova sui dati veri chiamava `raggioAggancioCm()` da sola, cioè
+    // sorvegliava un magnete più piccolo di quello che l'app usa. Adesso il
+    // numero lo decide una funzione sola, e chi prova chiama quella.
+    const cmPerPunto = 3.02;
+    const pxcm = 37.8;
+    expect(raggioMagneteCm(cmPerPunto, pxcm)).toBeCloseTo(
+      raggioAggancioCm(cmPerPunto, pxcm) + ingrandimentoCm(cmPerPunto, pxcm),
+      6
+    );
+    // ed è sensibilmente più grande del solo dito: è il prezzo dichiarato
+    expect(raggioMagneteCm(cmPerPunto, pxcm)).toBeGreaterThan(raggioAggancioCm(cmPerPunto, pxcm));
   });
 });

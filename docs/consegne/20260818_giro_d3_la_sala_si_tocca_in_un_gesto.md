@@ -1092,3 +1092,127 @@ insegue da giorni.
 a varco zero la formula generale dà già zero, e la fascia fra zero e la
 tolleranza non può esistere su una griglia da 10 cm. *Un ramo che nessuna
 prova distingue va dichiarato, non coperto con una prova finta.*
+
+---
+
+## Il decimo collaudo (19/08) — la regressione, e un numero sbagliato due volte
+
+### 🔴 Il pannello non entrava più nella pianta
+
+**Rilievo di Alessio**: toccando un tavolo la scheda si apriva sotto la
+pianta, non più nello spazio di cucina e servizi. **Causa misurata**
+eseguendo la funzione vera sui dati di produzione: con
+`MARGINE_INGRANDIMENTO_CM = 35` il controllo guardava 17,5 cm per lato, e la
+**Chef Table** — che nella sua posizione VERA sta a y 530, cioè **15 cm**
+sotto il confine del riquadro — lo faceva sparire **tutti i giorni**.
+
+⚠️ **Il paradosso che ci ha portati lì va tenuto, perché è la lezione**: sullo
+schermo la Chef Table è disegnata **sotto i divani**. Il pannello spariva per
+una sagoma che in quel punto **non si vede**. Due decisioni giuste dello
+stesso giorno — il margine di sicurezza e le sagome spostate sul foglio — si
+sono pestate i piedi, e nessuna delle due era sbagliata da sola.
+
+### La cura è di Alessio: la sala dei tavoli diventa una L capovolta
+
+**Idea sua.** Fino a oggi un tavolo si poteva trascinare **ovunque** dentro il
+rettangolo della sala, cucina e servizi compresi. Da adesso quell'area è
+**vietata ai mobili**: il perimetro in cui i tavoli vivono è una **L
+capovolta** — sala alta, sala bassa e bancone.
+
+⚠️ **Misurato prima di scrivere**, in produzione e in sola lettura: nella
+pianta base (13 sagome) e in **tutti** i 14 scostamenti delle 3 giornate
+esistenti, **nessuna sagoma sta dentro quel rettangolo**. Il divieto non
+invalida niente di esistente — *una regola nuova che rifiuta il passato è una
+regola che qualcuno aggirerà*.
+
+**Vale in due posti**, e il secondo non è un di più: nel **trascinamento** e
+nel **magnete**, che non deve nemmeno *proporre* una posizione là dentro — la
+stessa ragione per cui già oggi controlla i bordi della sala.
+
+⚠️ **Per il dito, cucina e fuori sala sono la stessa cosa**: stessa
+trasparenza, stesso bordo tratteggiato, stesso annullamento al rilascio. Due
+segni diversi per due divieti che si comportano uguale si imparano peggio di
+uno solo.
+
+**E il margine di sicurezza si toglie.** Esisteva solo per il caso che la L
+rende impossibile. ⚠️ **Il controllo resta**, come rete: se un domani un dato
+mettesse comunque un mobile là dentro, il pannello **esce invece di essere
+coperto**. Si toglie il margine, non la regola.
+
+⚠️ **Prezzo dichiarato**: un tavolo appoggiato *esattamente* al confine della
+cucina si disegna ~15 cm dentro il bordo del pannello, perché la sagoma
+cresce. Resta visibile e afferrabile — è un filo di accavallamento, non un
+tavolo nascosto.
+
+### 🔴 Il varco minimo: sbagliato ieri, e sbagliata anche la correzione
+
+Ieri avevo scritto che gli **80 cm** erano sbagliati e che il minimo vero era
+**40 cm** (T5/T6 e T7/T8), su segnalazione della validazione. **Ho scritto
+quella correzione senza rimisurarla.** Rimisurando adesso, sulla pianta base
+**e** su tutte e tre le giornate esistenti:
+
+| | |
+|---|---|
+| varco più stretto fra due sagome separate | **80 cm** — i divani, **identico in ogni disposizione** |
+| T5/T6, T7/T8, T8/T9 | **distanza zero**: sono i tavoloni, non tavoli vicini |
+| coppie di tavoli separati entro il raggio del magnete | **nessuna** |
+
+Quindi: **gli 80 cm erano giusti**, e quello che era sbagliato è ciò che ho
+scritto ieri. ⚠️ *In questo progetto un numero si chiede al database — anche,
+e soprattutto, quando arriva da chi controlla.* È la stessa regola che il
+19/08 mi era stata applicata addosso, presa dal verso opposto.
+
+⚠️ **E LA REGOLA RESTA IN PIEDI LO STESSO**, che è il motivo per cui questa
+storia non costa niente: `VARCO_MINIMO_MM` non poggia su nessuno dei due
+numeri. La griglia di aggancio è a passi di 10 cm, quindi qualunque sera si
+possono mettere due tavoli a 20: *nessuna misura di oggi può garantire le
+disposizioni di domani*. Se la regola fosse nata da un numero, adesso andrebbe
+rifatta; essendo nata da una proprietà, il numero sbagliato non la tocca.
+
+### Le prove passavano ancora i numeri a mano — due volte
+
+Controprove della validazione, su un clone pulito:
+
+- **Azzerando `VARCO_MINIMO_MM` nessuna prova diventava rossa**: la prova pura
+  usava `const VARCO = 2` scritto nel file. Ora i due numeri li ricava da
+  `ingrandimentoCm()` con le misure dello schermo di Alessio, e **il varco si
+  legge in millimetri di schermo pretendendo `> 0`** — «≥ VARCO» passerebbe
+  anche col varco azzerato, perché zero è ≥ zero.
+- **La prova sui dati veri chiamava `raggioAggancioCm()` da sola**, cioè
+  sorvegliava un magnete più piccolo di quello che l'app usa da ieri. Il
+  raggio adesso ha **un posto solo** — `raggioMagneteCm()`, dito più
+  ingrandimento — e la prova chiama quello.
+
+⚠️ **È la terza volta in tre giorni**, ed è sempre la stessa forma: *una prova
+che non usa il numero deciso dal codice non lo sta provando.* La cura non è
+ricordarsene: è che il numero abbia **un posto solo** da cui tutti lo
+chiedono.
+
+### Il magnete a ~54 cm — Alessio l'ha guardato e lo tiene
+
+Il raggio è passato da ~22 a **~54 cm** (dito + ingrandimento). ⚠️ **Il prezzo
+è più piccolo di come era stato descritto, e la misura lo ridimensiona**: in
+produzione **non esiste nessuna coppia di tavoli separati entro quel raggio**
+— i tavoli o si toccano (i tre tavoloni) o stanno a 90 cm e oltre; il varco da
+80 è fra divani, che non si agganciano. Quindi oggi il magnete più largo **non
+impedisce nessuna delle disposizioni esistenti**: il prezzo esiste per quelle
+future, ed è dichiarato accanto ad `AGGANCIO_DITO_CM`, dove prima si leggeva
+ancora «una ventina di centimetri».
+
+### La controprova del decimo collaudo — tre rotture
+
+| rottura | prove rosse |
+|---|---|
+| `VARCO_MINIMO_MM` azzerato | **2** (varco 20 e varco 10) |
+| `INGRANDIMENTO_MM` azzerato | **4** |
+| il magnete smette di guardare l'area vietata | **1** |
+
+⚠️ **A 40 cm la prova NON diventa rossa quando il varco è azzerato, ed è
+giusto**: a quella distanza la crescita non arriva a chiudere il varco, quindi
+lì la regola non sta lavorando. Una prova che diventasse rossa anche lì
+starebbe misurando qualcos'altro.
+
+⚠️ **Quello che nessuna prova guarda**: che la schermata *passi* davvero
+l'area vietata al magnete e al trascinamento. In questo progetto le prove non
+hanno un ambiente DOM, quindi il collegamento fra `PiantaSala` e la regola
+resta verificabile **solo con le mani**.
