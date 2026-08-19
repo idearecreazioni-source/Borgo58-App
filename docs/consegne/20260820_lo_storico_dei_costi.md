@@ -198,5 +198,8 @@ e sulla scheda del piatto puoi vedere quanto costava prima.
 
 ---
 
+**Commit del lavoro**: `f8838a7` — «Lo storico dei costi — blocco 3, e il
+mandato dei finger food è chiuso».
+**Working tree**: pulito.
 **Migrazione**: `20260820000003` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
