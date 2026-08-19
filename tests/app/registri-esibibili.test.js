@@ -122,4 +122,34 @@ describe("i registri che si esibiscono non accettano righe che mentono", () => {
       .eq("id", conto.id);
     expect(eScontrino).toBeNull();
   });
+
+  // 🔴 NATA DA UN DIFETTO VERO, il 19/08/2026: applicando otto migrazioni in
+  // produzione, le lapidi del registro delle cancellazioni sono passate da
+  // 26 a 31. Cinque righe finte, lasciate dalle verifiche di tre migrazioni
+  // che cancellavano i propri movimenti di prova senza ripulire la copia
+  // che il trigger ne conserva.
+  //
+  // ⚠️ `deleted_records` è un registro **esibibile** e nessuno lo può
+  // ripulire dall'app: righe finte lì dentro sono dati di prova in mezzo ai
+  // dati veri, ed è la regola di Alessio del 12/08. E rompono il guardiano
+  // che ogni migrazione usa per difendersi — *«le lapidi prima e dopo devono
+  // essere le stesse»* — che smette di poter essere affermato da chiunque.
+  //
+  // ⚠️ Questa prova guarda una PROPRIETÀ e non un numero: quante lapidi ci
+  // siano non lo dice (cresce coi dati veri), dice che nessuna nomina una
+  // verifica. Un conteggio qui sarebbe il fossile del 16/08.
+  //
+  // 🔴 E LA DOMANDA SI FA AL DATABASE, non leggendo le righe da qui: la
+  // prima stesura le leggeva tutte e cercava la parola fra quelle — e
+  // mettendole davanti una lapide finta apposta **non è diventata rossa**.
+  // Misurato: PostgREST ne restituisce al massimo **mille**, e sul progetto
+  // di prova sono ben oltre. Guardava una parte del registro credendo di
+  // guardarlo tutto — la famiglia dell'avvertenza sui `.limit()` (§8), con
+  // l'aggravante che quel limite non si vede leggendo il codice.
+  it("il registro delle cancellazioni non conserva le righe delle verifiche", async () => {
+    const { data, error } = await titolare.rpc("lapidi_di_prova");
+    expect(error).toBeNull();
+    const finte = (data ?? []).map((r) => `${r.tabella}: ${r.firma}`);
+    expect(finte, "lapidi lasciate da una verifica").toEqual([]);
+  });
 });
