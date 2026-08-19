@@ -30,8 +30,15 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    verifica controlla.
 4. **Il n. 12 del collaudo: la serata sulla Dashboard**
    ([annotazioni del collaudo](collaudo/annotazioni.md)).
-5. **La regola delle 5 del mattino su cassa e conti** — 18 punti SQL, oggi a
-   costo zero perché in produzione non c'è nessun movimento.
+5. **La regola delle 5 del mattino su cassa e conti** — ✅ **misurata il
+   19/08**: il censimento è in
+   [`docs/referti/20260819_censimento_giornata_operativa.md`](referti/20260819_censimento_giornata_operativa.md).
+   I punti sono **32** e non 18 (9 funzioni in UTC, 15 già in ora di Roma,
+   8 predefiniti di colonna), più 35 punti nel client. **Nessuna correzione
+   fatta**: la prossima passata è scrivere la funzione SQL gemella di
+   `serataDiServizio()` e farla chiamare dai punti che riguardano soldi e
+   conti. ⚠️ Oggi costa zero perché in produzione non c'è nessun movimento
+   di cassa e nessun conto chiuso; dopo il collaudo generale ce ne saranno.
 6. **Finire la serata recitata**: restano comande, storni, conto diviso,
    omaggio, chiusura, conteggio del cassetto.
 7. **Quante altre schermate fanno più letture insieme e disegnano lo stesso se
