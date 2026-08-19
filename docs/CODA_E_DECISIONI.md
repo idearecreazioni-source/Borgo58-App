@@ -77,7 +77,27 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    ✅ **E il caso dei due prezzi non si presenterà** (rovesciamento n. 19):
    *«semmai un bocconcino dovesse diventare un piatto a sé, creerò una ricetta
    nuova con un nome diverso»*.
-   **Resta il blocco 3** (lo storico dei costi).
+   ✅ **BLOCCO 3 CHIUSO il 20/08 — IL MANDATO È COMPLETO** su tutti e tre i
+   blocchi: [consegna](consegne/20260820_lo_storico_dei_costi.md), migrazione
+   `20260820000003`, **non ancora in produzione**.
+   ✅ **La misura della condizione (b), fatta prima di scegliere**: su un
+   albero di **76 ricette** con la profondità che Alessio descrive, una
+   fattura da venti righe fa cambiare il costo a **51 ricette** (233 se si
+   contano le coppie ricetta-ingrediente). **Niente migliaia di righe**: il
+   ventaglio è limitato dal numero di ricette, non dal prodotto. Il disegno
+   non cambia.
+   🔴 **Le strade sono SEI, non quattro**: oltre a prezzo, composizione,
+   quantità e scarto ci sono **la resa** di una preparazione e **le porzioni**.
+   Coprendone quattro il registro avrebbe avuto due buchi silenziosi.
+   🔴 **Un difetto trovato applicando**: dentro una transazione `now()` non
+   avanza, quindi «l'ultima voce» sarebbe stata scelta a caso fra quelle di
+   una stessa fattura. Curato con un progressivo. ⚠️ Era **già scritto** in
+   CLAUDE.md §8 dal 16/08: *una trappola scritta non è una trappola chiusa*.
+   ⚠️ **Zero non vuol dire gratis, e resta una decisione di Alessio**:
+   `ingredients.current_price` è `not null default 0`, quindi un ingrediente
+   mai comprato abbassa in silenzio il food cost. Il registro lo **dichiara**
+   («parziale: N ingredienti senza prezzo»), il resto del gestionale no.
+   Misurato: **0 su 8** oggi — armato, non vivo.
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
    misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.

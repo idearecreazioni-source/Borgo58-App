@@ -25,6 +25,8 @@ import {
   swapStepOrder,
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
+import { storicoCostoRicetta } from "../../lib/api/storicoCosti";
+import { useAuth } from "../../context/AuthContext";
 import { listMenus } from "../../lib/api/menus";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
@@ -71,6 +73,7 @@ const emptyStepForm = {
 export default function RicettaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isTitolare } = useAuth();
 
   const [recipe, setRecipe] = useState(null);
   const [notFound, setNotFound] = useState(false);
@@ -93,6 +96,8 @@ export default function RicettaDetail() {
   const [spuntando, setSpuntando] = useState(null);
   const [componiAperto, setComponiAperto] = useState(null);
   const [copiando, setCopiando] = useState(false);
+  const [storico, setStorico] = useState([]);
+  const [mostraStorico, setMostraStorico] = useState(false);
   const avviso = useLocation().state?.avviso ?? "";
   const [preparationUsage, setPreparationUsage] = useState([]);
   const [rowCosts, setRowCosts] = useState({});
@@ -121,16 +126,21 @@ export default function RicettaDetail() {
   // una lettura in più; un numero vecchio accanto a uno nuovo no.
   const ricaricaRighe = async (elencoComponenti = preparations) => {
     const idFinger = elencoComponenti.filter((p) => p.recipe_type === "finger").map((p) => p.id);
-    const [ri, costi, c, cf] = await Promise.all([
+    const [ri, costi, c, cf, st] = await Promise.all([
       listRecipeIngredients(id),
       getRecipeRowCosts(id),
       getRecipeCost(id),
       listRecipeCostsFor(idFinger),
+      // ⚠️ Lo storico si rilegge INSIEME: ogni modifica di questa schermata
+      // scrive una voce, e un elenco caricato una volta sola mostrerebbe la
+      // storia di prima accanto al costo di adesso.
+      isTitolare ? storicoCostoRicetta(id) : Promise.resolve([]),
     ]);
     setRecipeIngredients(ri);
     setRowCosts(costi);
     setCost(c);
     setCostiFinger(cf);
+    setStorico(st);
   };
 
   const loadAll = async (elencoComponenti) => {
@@ -540,8 +550,45 @@ export default function RicettaDetail() {
             <div className="text-xs text-b58-charcoal-soft">
               {cost ? formatEUR(cost.food_cost_base) : "—"} totale ricetta base
             </div>
+            {/* ⚠️ Il registro compare solo se ha qualcosa da dire: una
+                ricetta appena nata non ha una storia, e un riquadro vuoto
+                sarebbe ingombro su una schermata che si usa a lungo. */}
+            {isTitolare && storico.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMostraStorico((v) => !v)}
+                className="print:hidden text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta mt-1"
+              >
+                {mostraStorico ? "Nascondi com'è cambiato" : "Com'è cambiato"}
+              </button>
+            )}
           </div>
         </div>
+
+        {mostraStorico && storico.length > 0 && (
+          <div className="print:hidden mb-4 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
+            {storico.map((v, i) => (
+              <div key={i} className="px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
+                <div>
+                  <div className="text-b58-charcoal">{v.dettaglio}</div>
+                  <div className="text-xs text-b58-charcoal-soft">{formatDate(v.rilevato_il)}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-b58-charcoal">{formatEUR(v.food_cost_base)}</div>
+                  {/* ⚠️ Un costo parziale lo DICE: un ingrediente mai
+                      comprato vale zero, e uno zero silenzioso fa sembrare
+                      il piatto più economico di quanto sia. */}
+                  {v.parziale && (
+                    <div className="text-xs text-b58-terracotta-dark">
+                      parziale: {v.righe_senza_prezzo}{" "}
+                      {v.righe_senza_prezzo === 1 ? "ingrediente" : "ingredienti"} senza prezzo
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
