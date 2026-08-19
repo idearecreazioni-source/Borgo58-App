@@ -156,11 +156,12 @@ toccare niente**, perché è quello il caso che deve coprire.
 
 ---
 
-**Commit del lavoro**: `02ce387` e `7cd076f` (le due precisazioni); — «Le letture annidate misurate: il segnale
-non le vede, e il tetto è per riga padre». ⚠️ Quel commit porta **anche questo
-file** e l'addendum al referto: la consegna è fatta di una misura e di
-correzioni a documenti, e spezzarla avrebbe prodotto un commit di lavoro con
-dentro una riga di commento.
+**Commit del lavoro**: `02ce387` — «Le letture annidate misurate: il segnale
+non le vede, e il tetto è per riga padre» — e `7cd076f`, le due precisazioni
+di chiusura. ⚠️ Quei commit portano **anche questo file** e l'addendum al
+referto: la consegna è fatta di una misura e di correzioni a documenti, e
+spezzarla avrebbe prodotto un commit di lavoro con dentro una riga di
+commento.
 **Working tree**: pulito.
 **Migrazione**: `20260819000011` — **applicata in produzione** (148 in totale),
 con la migrazione committata in `d4bab12` del giro precedente.

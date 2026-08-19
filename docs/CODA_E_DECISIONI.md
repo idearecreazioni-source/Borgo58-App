@@ -14,10 +14,35 @@ decisioni di Alessio ancora aperte.
 **Il suo compito.** Questo file è il posto dove la coda vive, e **va aggiornato
 alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
+> 🔴 **COME SI AGGIORNA QUESTO FILE, e non è un dettaglio di stile.** Il
+> 19/08/2026 **tre sezioni intere sono sparite** — la lezione sull'ordine
+> delle migrazioni, le decisioni di Alessio ancora aperte, e cosa il disegno
+> della sala non dice — perché un comando che riscriveva una voce cercava un
+> punto di riferimento nel testo, **non lo trovava**, e invece di fermarsi
+> tagliava tutto quello che veniva dopo. Nessun errore, nessun avviso: il
+> file era più corto e sembrava intero. *È la stessa forma della lettura
+> tagliata misurata la stessa notte.*
+>
+> Quindi: **questo file si modifica a mano, o con un comando che si FERMA se
+> non trova il punto che cerca.** Un aggiornamento che non trova il suo posto
+> deve fallire rumorosamente, mai proseguire.
+
 ---
 
 ## La coda dei lavori, nell'ordine deciso
 
+0. 🔴 **I FINGER FOOD E LO STORICO DEI COSTI — mandato del 19/08, e viene
+   PRIMA di tutto il resto**:
+   [`mandati/20260819_i_finger_food_e_lo_storico_dei_costi.md`](mandati/20260819_i_finger_food_e_lo_storico_dei_costi.md).
+   ⚠️ **La ragione della priorità non è l'importanza, è il costo del ritardo**:
+   il Ricettario è **vuoto** (0 ricette, 0 piatti in menu, misurato), questo
+   lavoro ne cambia la forma, e le ricette le inserirà Alessio **a mano, a
+   decine**. Farlo dopo significa fargliele rifare.
+   ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
+   copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
+   misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.
+   Mancano tre cose: il rifiuto di comporre un piatto con un altro piatto, il
+   prezzo a pezzo, e lo storico dei costi.
 1. **La colonna «arrivati N di M» sulla lista della spesa** — comportamento già
    deciso, resta da fare.
 2. **La lista della spesa** — mandato
@@ -145,3 +170,105 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 6. **La sera prima dell'apertura**: `npm run collaudo:stato` dice cosa c'è ancora
    di prova nel gestionale vero. ⚠️ Il paragrafo scritto a mano **non esiste più**,
    e non deve tornare: aveva sbagliato tre volte in sei giorni.
+
+---
+
+## ⚠️ Una lezione di ORDINE, imparata sbagliandolo il 19/08
+
+`npm run migra` applica **tutte** le migrazioni mancanti o **nessuna**, e si
+ferma se anche una sola non è ancora su GitHub. Quel rifiuto è giusto — la
+produzione non deve mai correre avanti al repository — ma ha una conseguenza
+sull'ordine dei gesti, che il 19/08 è costata l'applicazione di sei migrazioni
+già pronte:
+
+> **Le migrazioni già su GitHub si applicano PRIMA di committarne di nuove.**
+
+La sera del 19/08 le sei del mattino erano pushate e documentate, quindi
+applicabili; committando le due nuove **prima** di applicarle, la rete le ha
+bloccate tutte e otto insieme, e per sbloccarle serve comunque il push di
+Alessio. Nessun danno — solo un giro in più.
+
+---
+
+## Le decisioni di Alessio ancora aperte
+
+> ⚠️ **Questa sezione è sparita una volta**, il 19/08/2026, e con lei altre
+> due — vedi il riquadro in testa al file. Se manca, si recupera da git.
+
+- **Simulatore col registratore fiscale virtuale** (nato dalla casella del
+  documento fiscale scrivibile da tutto lo staff: prima si guarda cosa
+  succede, poi si decide).
+- 🔄 **Finger food**: piatti composti da più ricette. **In corso dal 19/08** —
+  mandato [`20260819_i_finger_food_e_lo_storico_dei_costi.md`](mandati/20260819_i_finger_food_e_lo_storico_dei_costi.md).
+- **Estrazione ricette** col pulsante «estrapola» e aiuto alla lista della
+  spesa.
+- **Casella dedicata e mail dei clienti** dentro il gestionale.
+- **Finanziamenti da terzi** dentro «Ce la faccio?».
+- **Autoprodotti in magazzino e raccolta propria col registro HACCP** —
+  rimandati all'apertura dell'azienda agricola.
+- **Sito web**: dopo l'app, col gestionale spostato su un sottodominio.
+- **Le due colonne sul computer** nella schermata della sala.
+- 🆕 **Un modulo PREVENTIVI per i clienti**, sullo stile dell'editor del menu
+  (19/08/2026). È nata parlando dei finger food scelti per un evento: chi
+  organizza una cena sceglie i bocconcini uno per uno, e da quella scelta
+  deve poter uscire un foglio da mandargli. ⚠️ **Non è il modulo finger
+  food**: quello dà il prezzo a pezzo, questo lo mette in una proposta con un
+  totale e un aspetto presentabile.
+
+---
+
+## Cosa il disegno della sala NON dice, per scelta (19/08/2026)
+
+⚠️ **Non è una coda e non è un difetto: sono due bugie volute**, e stanno qui
+perché fra sei mesi somiglieranno a errori da correggere. Chi le tocca deve
+sapere che erano decisioni, con la loro ragione e il loro prezzo.
+
+**1 · Le sagome sono disegnate più grandi del vero.** Ogni sagoma cresce fino
+a **3 mm sullo schermo** perché si possa afferrare col dito (rovesciamento
+n. 14, deciso da Alessio il 19/08 dopo aver rifiutato le tre strade che
+conservavano la proporzione). **Il disegno quindi non è in scala**, e lo spazio
+fra i tavoli si vede **più stretto di com'è**: chi guarda la pianta per capire
+se in un corridoio ci si passa, sbaglia in difetto — mai il contrario.
+
+⚠️ **Il varco misurato, e la storia dei due numeri sbagliati.** Il minimo vero,
+rimisurato in produzione il **19/08/2026** sulla pianta base **e** su tutte e
+tre le giornate esistenti, è **80 cm** — fra i divani, identico in ogni
+disposizione. Prima era stato scritto che 80 valeva solo per la pianta base e
+che il minimo vero era 40 (T5/T6 e T7/T8): **falso**, quelle coppie stanno a
+**distanza zero**, sono tavoloni. *Un numero si chiede al database, anche
+quando arriva da chi controlla.*
+
+⚠️ **E NESSUNO DEI DUE NUMERI È LA RAGIONE DELLA REGOLA** — è per questo che
+l'errore non è costato niente. La griglia di aggancio è a passi di 10 cm,
+quindi qualunque sera si possono mettere due tavoli a 20 cm: **nessuna misura
+di oggi può garantire le disposizioni di domani.** Al posto del numero
+c'è una regola — *la sagoma cresce fino a 3 mm ma si ferma prima del vicino, e
+fra due sagome separate resta sempre una riga visibile* (`VARCO_MINIMO_MM` in
+`src/lib/calcoli/sala.js`), provata a 40, a 20 e a 10 cm di varco vero.
+**Da qui in avanti la misura della sala non è più una condizione**: se entra
+un mobile nuovo, il disegno si stringe da sé.
+
+**2 · La Chef Table è disegnata dove non sta.** In sala è accanto alla cucina;
+sulla pianta compare **sotto i divani, in orizzontale** (rovesciamento n. 15,
+deciso da Alessio il 19/08: in pianta accanto alla cucina gli dà fastidio, e
+la postazione è una sola e inconfondibile). ⚠️ **Solo il disegno**: la
+posizione vera resta nel database, e coperti, accostamento, tavoloni,
+prenotazioni **e i gesti** continuano a usare quella. L'elenco delle sagome
+spostate è `SPOSTATE_NEL_DISEGNO`, e oggi contiene una riga sola.
+
+⚠️ **«Sotto» e «orizzontale» sono quelli del telefono**: lì la pianta si mette
+in piedi e gli assi si scambiano, quindi nel codice i numeri sembrano dire
+un'altra cosa. **Sul computer la stessa sagoma si vede a sinistra dei divani e
+in piedi.** Due prove sui dati veri la sorvegliano: che il nome esista ancora
+(se il tavolo venisse rinominato l'elenco smetterebbe di riconoscerlo, senza
+nessun errore) e che la posizione finta **non finisca sopra un altro mobile**
+il giorno che la sala intorno cambia.
+
+**3 · I tavoli non possono più stare in cucina.** Dal 19/08 (idea di Alessio)
+l'area di cucina e servizi è **vietata ai mobili**: la sala dei tavoli è una
+**L capovolta**. Vale nel trascinamento e nel magnete. ⚠️ Misurato prima di
+scriverlo: nessuna sagoma è mai stata là dentro, né nella pianta base né nelle
+tre giornate esistenti. È anche la ragione per cui il **margine di sicurezza**
+del pannello è stato tolto — difendeva un caso che ora non può accadere, e nel
+frattempo faceva sparire il pannello tutti i giorni per colpa della Chef
+Table. ⚠️ Il controllo resta come rete: si è tolto il numero, non la regola.
