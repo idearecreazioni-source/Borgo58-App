@@ -119,5 +119,8 @@ il mandato di correzione ha chiuso in nove punti.
 
 ---
 
+**Commit del lavoro**: `09ec133` — «Il prezzo a pezzo del finger — blocco 2,
+prima metà».
+**Working tree**: pulito.
 **Migrazione**: `20260819000013` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
