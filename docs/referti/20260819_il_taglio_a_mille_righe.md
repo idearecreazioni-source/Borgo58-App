@@ -328,9 +328,23 @@ tornerebbe con quello che si vede a schermo** — nessuno avrebbe modo di
 accorgersene.
 
 🟢 Oggi non è raggiungibile: mille righe su un conto solo vorrebbero dire
-mille piatti a un tavolo. **Ma è la ragione per cui questa voce non si
-archivia**: il giorno che una lettura annidata nuova pescasse da una tabella
-che cresce, il difetto sarebbe già armato e silenzioso.
+mille piatti a un tavolo.
+
+🔴 **MA «NON PUÒ SUCCEDERE» NON È UNA PROPRIETÀ DEL PROGRAMMA — è una
+proprietà del LOCALE**, e chi legge questo referto fra un anno deve sapere
+cosa la farebbe cadere, altrimenti si ferma alla prima riga e archivia.
+
+**Nessun vincolo impedisce a un conto di avere mille righe**: lo impedisce
+un'osteria da 34 coperti. La risposta cambia il giorno in cui una lettura
+annidata **nuova** pesca da una tabella che **cresce nel tempo sotto un solo
+padre** — lo storico prezzi di un ingrediente, le voci di un registro HACCP,
+le fatture di un fornitore, i movimenti di una causale. Quel giorno il
+difetto è **già lì e muto**: non arriva nessun errore, e questo confronto
+non lo vede.
+
+⚠️ **La domanda da farsi scrivendo una lettura annidata nuova** non è
+«capiterà mai di avere mille righe?» ma: **questa tabella figlia cresce col
+tempo sotto un solo padre?** Se la risposta è sì, il tetto è già armato.
 
 ## 5 · ⚠️ E il segnale, per le righe figlie, non si può fare allo stesso modo
 

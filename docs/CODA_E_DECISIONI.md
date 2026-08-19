@@ -114,12 +114,34 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    le sue fatture, un ingrediente con tutto lo storico prezzi, un registro
    HACCP intero) **non sono letture annidate**: sono piatte, quindi già coperte
    dal segnale, e due hanno già un limite esplicito.
-   ⚠️ **Quello che resta è strutturale**: `orders → order_items` alimenta il
-   totale del conto, e il giorno che una lettura annidata nuova pescasse da una
-   tabella che cresce, il difetto sarebbe **già armato e muto**. Per le righe
-   figlie il trucco del conteggio **non esiste**: si può solo sospettare da una
-   lista di esattamente mille elementi, e chiedere conferma al database. Non
-   costruito: decisione di Alessio, e oggi non c'è niente da proteggere.
-5. **La sera prima dell'apertura**: `npm run collaudo:stato` dice cosa c'è ancora
+   🔴 **Quello che resta è strutturale, e «non può succedere» NON è una
+   proprietà del programma: è una proprietà del locale.** Nessun vincolo
+   impedisce a un conto di avere mille righe — lo impedisce un'osteria da 34
+   coperti. `orders → order_items` alimenta il totale del conto, e **la
+   risposta cambia il giorno in cui una lettura annidata nuova pesca da una
+   tabella che cresce nel tempo sotto un solo padre** (lo storico prezzi di un
+   ingrediente, le voci di un registro, le fatture di un fornitore): quel
+   giorno il difetto è già lì e muto.
+   ⚠️ **La domanda da farsi scrivendo una lettura annidata nuova** non è
+   «capiterà mai mille righe?» ma *questa tabella figlia cresce col tempo sotto
+   un solo padre?*
+   ⚠️ **L'indizio NON si costruisce** (decisione di Alessio del 19/08): una
+   protezione per un caso irraggiungibile è **un avviso che non scatta mai**, e
+   un avviso che non scatta mai nessuno saprà interpretarlo il giorno che
+   scatta. Resta scritto dove serve — in `supabase.js`, accanto al confronto
+   che non le vede.
+5. 🔴 **TRE COSE NON LE HA MAI VISTE NESSUN OCCHIO**, e sono nell'elenco del
+   collaudo generale **con la ricetta per farle comparire**
+   ([annotazioni del collaudo](collaudo/annotazioni.md), ultima sezione):
+   l'**avviso «quello che vedi è incompleto»** (serve una tabella con più di
+   mille righe: la ricetta le costruisce sul progetto di prova, ed è stata
+   provata dal vivo il 19/08), la **riga sul tablet delle comande** quando la
+   serata è finita (si sposta **l'ora di fine serata** di due minuti, non
+   l'orologio del computer), e la **sala dopo l'annullamento dei due conti**
+   — l'unica che si guarda sul gestionale vero.
+   ⚠️ *Una voce di collaudo che nessuno sa come far scattare è una voce che al
+   collaudo verrà saltata*: è il motivo per cui la ricetta sta scritta accanto
+   a ognuna, e non basta l'elenco.
+6. **La sera prima dell'apertura**: `npm run collaudo:stato` dice cosa c'è ancora
    di prova nel gestionale vero. ⚠️ Il paragrafo scritto a mano **non esiste più**,
    e non deve tornare: aveva sbagliato tre volte in sei giorni.

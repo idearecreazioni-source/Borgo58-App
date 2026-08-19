@@ -314,3 +314,115 @@ gesto** che Alessio avrebbe fatto aprendo la schermata. Scritto anche in
   il 16/08 sulla richiesta di Alessio — spostare il rifiuto dove nasce il
   problema invece di lasciarlo scattare dentro il trigger.
 - La scomposizione del contante torna col numero grande.
+
+---
+
+## Le cose che nessuno ha mai visto con gli occhi — e COME farle comparire
+
+**Deciso da Alessio il 19/08/2026.** Vanno nell'elenco del collaudo
+generale, e non basta elencarle: **sono tutte e tre invisibili nelle
+condizioni normali**, quindi per ciascuna è scritto come farla scattare.
+
+> ⚠️ *Una voce di collaudo che nessuno sa come far scattare è una voce che al
+> collaudo verrà saltata.* È il motivo per cui queste righe sono lunghe:
+> senza la ricetta, l'elenco è un promemoria di cose che non si guarderanno.
+
+⚠️ **Le prime due si provano sul PROGETTO DI PROVA**, mai sul locale vero:
+il gestionale si apre con `npm run dev:prova`, e la striscia in cima alla
+pagina dice a quale database si sta parlando (16/08). La preparazione la fa
+Code; Alessio guarda e basta.
+
+---
+
+### 1 · L'avviso «quello che vedi è incompleto»
+
+**Cos'è**: dal 19/08 il gestionale si accorge quando il database gli ha
+consegnato solo una parte delle righe, e lo dice in una striscia sopra la
+schermata. Provato dal codice, **mai visto da un occhio**.
+
+**Perché non si vede mai**: serve una tabella con **più di mille righe**, e
+in produzione la più popolata ne ha 26.
+
+**Come farlo comparire** — quattro passi, cinque minuti:
+
+1. *(Code)* Crea milleduecento clienti finti sul progetto di prova. Il
+   telefono deve essere fatto di sole cifre, e il prefisso `999` li rende
+   riconoscibili per toglierli dopo:
+   ```sql
+   insert into customers (name, phone)
+   select 'PROVA MILLE ' || g, '999' || lpad(g::text, 7, '0')
+     from generate_series(1, 1200) g;
+   ```
+2. *(Alessio)* Apre il gestionale sul progetto di prova con
+   `npm run dev:prova` — la striscia in cima deve dire che è la **prova** — e
+   va in **Calendario Eventi → Clienti**.
+3. **Cosa deve succedere**: sopra l'elenco compare una striscia con
+   *«Quello che vedi è incompleto»* e sotto **due righe** — quella schermata
+   fa due letture — del tipo `customers: 1000 righe ricevute su 1211` e
+   `v_customer_stats: 1000 righe ricevute su 1211`. Sotto ancora, il pulsante
+   per toglierla. ⚠️ **Il totale sarà 1200 più i clienti che c'erano già**:
+   il numero esatto non conta, conta che la prima cifra sia 1000 e la seconda
+   più grande.
+   *(Provato dal vivo il 19/08 sul progetto di prova: la ricetta scatta, e i
+   due avvisi comparivano davvero.)*
+4. *(Code)* Toglie le righe finte:
+   ```sql
+   delete from customers where phone like '999%';
+   ```
+
+⚠️ **Cosa guardare, oltre al fatto che compaia**: che si legga senza
+ingrandire, che non copra il contenuto, e che **non sparisca da sola**
+cambiando schermata dentro la stessa sessione — è voluto: sparisce solo
+premendo.
+
+---
+
+### 2 · La riga sul tablet delle comande quando la serata è finita
+
+**Cos'è**: dal 19/08, se il tablet resta acceso oltre l'ora di fine serata,
+in Comande compare una riga che dice *«È cominciata una giornata nuova.
+Questa è ancora la sala della serata di …»*, col gesto per passare. La sala
+**non cambia da sola** — quella è una decisione di Alessio — ma lo dice.
+
+**Perché non si vede mai**: il confine è alle **05:00**, e nessuno passa la
+notte davanti al tablet per vederlo.
+
+**Come farlo comparire senza aspettare le cinque del mattino** — e la strada
+NON è spostare l'orologio del computer, che è più invasivo e meno fedele:
+si sposta **l'ora di fine serata**, che è un dato di Alessio.
+
+1. *(Alessio)* Sul progetto di prova (`npm run dev:prova`), va in
+   **Calendario Eventi → Sala e orari** e mette come ora di fine serata
+   **un orario di due-tre minuti nel futuro** (se sono le 22:14, mette 22:17).
+2. Apre **Comande** e la lascia aperta **senza toccare niente**.
+3. **Cosa deve succedere**: passato quell'orario, entro un minuto la riga
+   compare **da sola**, senza nessun gesto. ⚠️ È la parte che conta: se
+   comparisse solo toccando qualcosa, coprirebbe tutti i casi tranne quello
+   per cui esiste — il tablet in carica sul bancone, ripreso la mattina.
+4. Preme il gesto: la sala deve passare alla serata nuova e la riga sparire.
+5. *(Alessio)* Rimette l'ora di fine serata a **05:00**.
+
+⚠️ **Sul progetto di prova e non sul vero**: cambiare l'ora di fine serata
+in produzione sposterebbe la giornata di cassa e dei conti per il tempo in
+cui resta cambiata.
+
+---
+
+### 3 · La sala dopo l'annullamento dei due conti di prova
+
+**Cos'è**: il 19/08 i due conti rimasti aperti dal 18/08 (T1 e T6) sono stati
+**annullati** da una migrazione. Il database dice **zero conti aperti** — ma
+nessuno ha guardato la sala.
+
+**Come guardarlo**: è l'unica delle tre che si prova **sul gestionale vero**,
+perché è lì che è successo, e non richiede nessuna preparazione.
+
+1. *(Alessio)* Apre **Comande** sul locale vero.
+2. **Cosa deve succedere**: **T1 e T6 sono liberi** — nessun conto aperto
+   sopra, e il colore è quello di un tavolo libero.
+3. In cima alla schermata deve esserci scritto *«Nessun tavolo aperto»*.
+
+⚠️ **E la cosa da non fare**: se uno dei due risultasse ancora occupato, **non
+va chiuso** — chiudere un conto scrive un incasso, e in produzione i movimenti
+di cassa devono restare zero fino al collaudo generale. Si annulla, o si dice
+a Code.

@@ -41,12 +41,27 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 //     mille righe su milleduecento passa di qui senza che niente lo dica.
 //     ⚠️ E il tetto è **per riga padre, non per interrogazione**: misurato,
 //     nella stessa richiesta un conto ha ricevuto 1000 righe e un altro le
-//     sue 5. Oggi nessuna delle sette letture annidate dell'app può arrivarci
-//     — un conto con mille righe non esiste — ma il giorno che una lettura
-//     annidata nuova pescasse da una tabella che cresce, il difetto sarebbe
-//     già armato e muto. Per le righe figlie il trucco del conteggio non
-//     esiste: si può solo sospettare da una lista di **esattamente** mille
-//     elementi e chiedere conferma al database.
+//     sue 5. Delle sette letture annidate dell'app, oggi nessuna può
+//     arrivarci.
+//
+//     🔴 MA QUEL «NON PUÒ SUCCEDERE» NON È UNA PROPRIETÀ DEL PROGRAMMA — è
+//     una proprietà del LOCALE, e va letta sapendo cosa la farebbe cadere.
+//     Nessun vincolo impedisce a un conto di avere mille righe: lo impedisce
+//     un'osteria da 34 coperti. La risposta cambia il giorno in cui una
+//     lettura annidata **nuova** pesca da una tabella che cresce nel tempo —
+//     lo storico prezzi di un ingrediente, le voci di un registro HACCP, le
+//     fatture di un fornitore. Quel giorno il difetto è **già lì e muto**, e
+//     nessuno lo scoprirà da un errore: questo confronto non lo vede.
+//
+//     ⚠️ Quindi la domanda da farsi scrivendo una lettura annidata nuova non
+//     è «capiterà mai mille righe?» ma «**questa tabella figlia cresce col
+//     tempo sotto un solo padre?**». Se la risposta è sì, il tetto è già
+//     armato. Per le righe figlie il trucco del conteggio non esiste: si può
+//     solo sospettare da una lista di **esattamente** mille elementi e
+//     chiedere conferma al database — non costruito (19/08, decisione di
+//     Alessio: una protezione per un caso irraggiungibile è un avviso che
+//     non scatta mai, e un avviso che non scatta mai nessuno sa
+//     interpretarlo il giorno che scatta).
 const OGGETTO_SOLO = "pgrst.object";
 
 function bersaglio(url) {
