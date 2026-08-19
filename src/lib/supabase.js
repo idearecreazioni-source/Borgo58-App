@@ -35,9 +35,18 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 //   · le **Edge Function** (`posta-leggi`, `assistente-archivio`,
 //     `documento-leggi`, `operazioni-atomiche`), che leggono con una loro
 //     chiave e non passano di qui;
-//   · le **letture annidate** (`select("*, righe(*)")`), che possono essere
-//     tagliate **nelle righe figlie** senza che il totale delle righe padre
-//     lo mostri. È la forma più silenziosa, e nessuno l'ha ancora misurata.
+//   · 🔴 le **letture annidate** (`select("*, righe(*)")`), MISURATE la notte
+//     del 19/08: **questo confronto non le vede**. `Content-Range` porta un
+//     totale solo — quello delle righe PADRE — quindi un conto che arriva con
+//     mille righe su milleduecento passa di qui senza che niente lo dica.
+//     ⚠️ E il tetto è **per riga padre, non per interrogazione**: misurato,
+//     nella stessa richiesta un conto ha ricevuto 1000 righe e un altro le
+//     sue 5. Oggi nessuna delle sette letture annidate dell'app può arrivarci
+//     — un conto con mille righe non esiste — ma il giorno che una lettura
+//     annidata nuova pescasse da una tabella che cresce, il difetto sarebbe
+//     già armato e muto. Per le righe figlie il trucco del conteggio non
+//     esiste: si può solo sospettare da una lista di **esattamente** mille
+//     elementi e chiedere conferma al database.
 const OGGETTO_SOLO = "pgrst.object";
 
 function bersaglio(url) {

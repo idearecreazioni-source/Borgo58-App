@@ -251,3 +251,114 @@ vedere.
 6. ⚠️ **Il conteggio delle letture è fatto sul testo del codice**, con una
    ricerca che riconosce le catene `.from(...)` e `.rpc(...)`. Una lettura
    scritta in un modo che quella ricerca non riconosce non è in elenco.
+
+---
+
+# ADDENDUM — le letture annidate (19/08/2026, notte)
+
+**Misurato dopo la correzione della sera**, su richiesta di Alessio, e con la
+sua istruzione di rispondere **prima** alla domanda che decide l'ordine delle
+cose: *il segnale appena fatto le vede?*
+
+## 🔴 1 · No, il segnale NON le vede
+
+Costruiti sul progetto di prova due conti — uno con **1200 righe**, uno con
+**5** — e letti in un colpo solo, come fa la sala:
+
+| lettura | cosa è tornato | il gestionale se n'è accorto? |
+|---|---|---|
+| `orders` con dentro `order_items` | il conto grande con **1000 righe**, il piccolo con 5 | 🔴 **NO — nessun avviso** |
+| le stesse 1200 righe chieste da sole | 1000 | ✅ sì, «1000 su 1200» |
+
+**Perché**: il confronto fra righe consegnate e righe dichiarate si legge
+dall'intestazione `Content-Range`, e quell'intestazione parla **solo delle
+righe padre**. Nella prova i padri erano 2 su 2 — nessuna bugia — mentre il
+figlio grande era tagliato di 200 righe senza che niente lo dicesse.
+
+⚠️ **Va detto chiaro perché oggi sembra coperto e non lo è**: la protezione
+della sera copre le letture semplici e **lascia scoperto esattamente il caso
+peggiore**.
+
+## 2 · Il tetto è PER RIGA PADRE, non per interrogazione
+
+Misurato, non dedotto, ed è la domanda che Alessio ha chiesto di non dare per
+scontata: nella **stessa** richiesta il conto grande ha ricevuto **1000**
+righe e il piccolo le sue **5**. Se il tetto fosse per interrogazione, il
+piccolo sarebbe rimasto senza.
+
+⚠️ **La conseguenza cambia il quadro, e in meglio**: non è il *numero
+complessivo* di righe figlie a contare, ma quante ne ha **una singola riga
+padre**. Un elenco di mille conti con tre righe l'uno non tocca il tetto.
+
+## 3 · Quali letture annidate esistono, e quali possono arrivarci
+
+Sono **sette**, tutte nel livello che parla col database:
+
+| padre → figli | dove | può superare mille **per padre**? |
+|---|---|---|
+| `orders` → `order_items` | `listOpenOrders`, `getOrder`, `listContiPerPrenotazioni` | 🟢 no: un conto con più di mille righe non esiste |
+| `orders` → `order_tables` | idem | 🟢 no: i tavoli di un conto sono una manciata |
+| `reservations` → `prenotazione_tavoli` | `listReservations` | 🟢 no |
+| `posta_ricevuta` → `posta_allegati` | `listPostaInAttesa` | 🟢 no: gli allegati di una mail |
+| `posta_ricevuta` → `posta_azioni` | idem | 🟢 no |
+| `tip_distributions` → `tip_distribution_lines` | `listTipDistributions` | 🟢 no: una riga per dipendente |
+| `supplier_invoices` → `note_credito_utilizzi` e `documents` | `listSupplierInvoices` | 🟢 no: le note e i DDT di **una** fattura |
+
+🟢 **Nessuna delle sette può arrivarci**, ed è la parte tranquillizzante
+della misura: il tetto morde su quante righe ha **un singolo padre**, e in
+questo gestionale nessun padre ne ha mille.
+
+⚠️ **E i tre casi che Alessio ha nominato come pericolosi non sono letture
+annidate** — sono letture piatte, quindi **già coperte dal segnale**:
+
+- un **fornitore con tutte le sue fatture**: le fatture si leggono da
+  `supplier_invoices` filtrando per fornitore, col fornitore incorporato al
+  contrario (uno solo);
+- un **ingrediente con tutto il suo storico prezzi**: `listPriceHistory` ha
+  già un `.limit(100)` esplicito, e quello del fornitore un `.limit(50)`;
+- un **registro HACCP con tutte le sue voci**: si legge piatto, ed è il
+  punto già sistemato col filtro di periodo e la dichiarazione stampata.
+
+## 4 · Quali alimentano un calcolo
+
+Una sola, e va nominata: **`orders` → `order_items` alimenta `orderTotals()`**,
+cioè il totale del conto che si legge sul preconto e alla chiusura. Se un
+conto avesse più di mille righe, il totale sarebbe più basso del vero **e
+tornerebbe con quello che si vede a schermo** — nessuno avrebbe modo di
+accorgersene.
+
+🟢 Oggi non è raggiungibile: mille righe su un conto solo vorrebbero dire
+mille piatti a un tavolo. **Ma è la ragione per cui questa voce non si
+archivia**: il giorno che una lettura annidata nuova pescasse da una tabella
+che cresce, il difetto sarebbe già armato e silenzioso.
+
+## 5 · ⚠️ E il segnale, per le righe figlie, non si può fare allo stesso modo
+
+Il trucco della sera — farsi dichiarare dal database quante righe c'erano —
+**non esiste per gli incorporamenti**: l'intestazione `Content-Range` porta un
+totale solo, quello dei padri. Le strade possibili sono due, e sono entrambe
+diverse da quella già fatta:
+
+1. **l'indizio**: una lista figlia con **esattamente** mille elementi è quasi
+   certamente tagliata. Costa zero, ma è un sospetto, non una certezza;
+2. **la domanda in più**: quando l'indizio scatta, chiedere al database
+   quante righe figlie ci sono per quel padre. Costa una lettura, e solo nel
+   caso sospetto.
+
+⚠️ **Non è stato costruito niente**: la decisione è di Alessio, e oggi non
+c'è nessun punto raggiungibile da proteggere.
+
+## Cosa questa misura NON dice
+
+1. ⚠️ **Non copre le Edge Function**, che leggono con una loro chiave: se una
+   di loro facesse una lettura annidata, non passerebbe né dal segnale né da
+   questo censimento.
+2. ⚠️ **Le sette letture sono quelle scritte nel livello che parla col
+   database**: una lettura annidata scritta dentro una schermata, o
+   costruita a pezzi, non sarebbe in elenco.
+3. ⚠️ **Il «non può arrivarci» è un giudizio sul locale**, non una regola del
+   programma: nessun vincolo impedisce a un conto di avere mille righe — è la
+   realtà di un'osteria da 34 coperti a impedirlo.
+4. ⚠️ **La misura del tetto per riga padre è stata fatta con due padri**: non
+   è stato provato che regga con centinaia di padri che superano il tetto
+   insieme.

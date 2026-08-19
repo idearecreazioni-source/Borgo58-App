@@ -99,12 +99,27 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    Il segnale vive nel punto unico da cui passano le letture; la prima nota parte
    dal mese in corso e **rifiuta l'export** se la lettura è tagliata; il manuale
    HACCP **dichiara stampato** di essere incompleto.
-   ⚠️ **Cosa resta scoperto, ed è dichiarato**: le **Edge Function** (leggono con
-   una loro chiave e non passano di lì) e le **letture annidate**
-   (`select("*, righe(*)")`), che possono essere tagliate **nelle righe figlie**
-   senza che il numero di righe padre lo mostri — la forma più silenziosa, mai
-   misurata. E **nessuna mano ha visto l'avviso a schermo**: le prove di questo
-   progetto non guardano una schermata.
+   ⚠️ **Restano scoperte le Edge Function**, che leggono con una loro chiave e
+   non passano di lì. E **nessuna mano ha visto l'avviso a schermo**: le prove
+   di questo progetto non guardano una schermata.
+   🔴 **LE LETTURE ANNIDATE SONO STATE MISURATE la notte del 19/08**, e la
+   risposta alla domanda che contava è **no: il segnale NON le vede** — il
+   confronto legge un'intestazione che parla solo delle righe padre. Addendum
+   in [`referti/20260819_il_taglio_a_mille_righe.md`](referti/20260819_il_taglio_a_mille_righe.md).
+   ⚠️ **Ma il rischio oggi non è raggiungibile**, ed è la parte che cambia la
+   priorità: il tetto è **per riga padre** (misurato: nella stessa richiesta un
+   conto ha ricevuto 1000 righe e un altro le sue 5), e delle **sette** letture
+   annidate dell'app **nessuna** può avere mille figli sotto un solo padre — un
+   conto con mille righe non esiste. I tre casi temuti (un fornitore con tutte
+   le sue fatture, un ingrediente con tutto lo storico prezzi, un registro
+   HACCP intero) **non sono letture annidate**: sono piatte, quindi già coperte
+   dal segnale, e due hanno già un limite esplicito.
+   ⚠️ **Quello che resta è strutturale**: `orders → order_items` alimenta il
+   totale del conto, e il giorno che una lettura annidata nuova pescasse da una
+   tabella che cresce, il difetto sarebbe **già armato e muto**. Per le righe
+   figlie il trucco del conteggio **non esiste**: si può solo sospettare da una
+   lista di esattamente mille elementi, e chiedere conferma al database. Non
+   costruito: decisione di Alessio, e oggi non c'è niente da proteggere.
 5. **La sera prima dell'apertura**: `npm run collaudo:stato` dice cosa c'è ancora
    di prova nel gestionale vero. ⚠️ Il paragrafo scritto a mano **non esiste più**,
    e non deve tornare: aveva sbagliato tre volte in sei giorni.
