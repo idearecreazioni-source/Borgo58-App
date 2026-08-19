@@ -149,4 +149,6 @@ succede con le fatture.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: b716fe1 — «L'avviso di rincaro vale anche sulle spese, con un
+confronto solo».
+**Working tree**: pulito.
