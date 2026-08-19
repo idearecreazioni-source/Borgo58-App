@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createRecipe } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, RECIPE_TYPES, UNITS } from "../../lib/constants";
+import { RECIPE_CATEGORIES, RECIPE_TYPES, UNITS, eComponente } from "../../lib/constants";
 
 export default function RicettaForm() {
   const navigate = useNavigate();
@@ -17,7 +17,9 @@ export default function RicettaForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const isPreparazione = form.recipe_type === "preparazione";
+  // Preparazioni e finger si comportano allo stesso modo qui: hanno una
+  // RESA invece delle porzioni, e la resa è obbligatoria.
+  const isPreparazione = eComponente(form.recipe_type);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";

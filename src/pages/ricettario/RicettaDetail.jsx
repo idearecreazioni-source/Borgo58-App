@@ -32,6 +32,7 @@ import {
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
   RECIPE_TYPES,
+  eComponente,
   SEASONS,
   STEP_PHASES,
   UNITS,
@@ -185,7 +186,8 @@ export default function RicettaDetail() {
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
-  const isPreparazione = recipe.recipe_type === "preparazione";
+  // Preparazioni e finger: stessa forma (una resa, non delle porzioni).
+  const isPreparazione = eComponente(recipe.recipe_type);
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 

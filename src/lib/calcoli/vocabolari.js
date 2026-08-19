@@ -167,6 +167,12 @@ export const GUARDIE_ESENTI = [
     perche:
       "i tre esiti che si SCELGONO chiudendo a mano (comprata, gratis, non_presa) non sono i tre che si possono SCRIVERE nella colonna: «non_presa» cancella la riga e non lascia un esito, e «arrivata_con_documento» lo scrive il gestionale quando la merce arriva con una fattura, non chi chiude. Sono due elenchi che rispondono a due domande diverse — e il 17/08 il discriminante dice che allora non si fondono",
   },
+  {
+    funzione: "check_recipe_component",
+    parametro: "p_type",
+    perche:
+      "elenca cosa PUÒ STARE DENTRO un'altra ricetta (preparazione, finger), che è di proposito un sottoinsieme dei tipi di ricetta: un piatto finito è un tipo legittimo e non può essere un componente. Sono due domande diverse — «che ricetta è» e «può entrare in un'altra» — e il discriminante del 17/08 dice che allora non si fondono. ⚠️ E il verso conta: la funzione elenca ciò che è ammesso, quindi un tipo nuovo domani sarebbe rifiutato finché nessuno lo nomina lì (19/08/2026, blocco 1 dei finger food)",
+  },
 ];
 
 // ---------------------------------------------------------------------

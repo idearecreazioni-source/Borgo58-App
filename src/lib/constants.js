@@ -87,7 +87,31 @@ export const RECIPE_CATEGORIES = [
 export const RECIPE_TYPES = [
   { value: "piatto_finito", label: "Piatto finito" },
   { value: "preparazione", label: "Preparazione (semilavorato)" },
+  // 🔴 IL FINGER (19/08/2026, blocco 1 del mandato dei finger food). È un
+  // bocconcino finito che entra in una selezione — non una preparazione, e
+  // la differenza non è di parole: una preparazione si PRODUCE a dosi, e
+  // finisce in Produzioni e sotto la sorveglianza delle rese. Un finger no:
+  // si compone e basta.
+  //
+  // ⚠️ E come una preparazione, un finger DEVE avere una resa (1 pezzo): il
+  // calcolo del costo e dello scarico divide per la resa del componente, e
+  // senza resa il risultato è NULL — cioè costo e merce che spariscono
+  // senza nessun errore. Il vincolo è nel database (`componente_richiede_resa`).
+  { value: "finger", label: "Finger (bocconcino di una selezione)" },
 ];
+
+// PUÒ STARE DENTRO UN'ALTRA RICETTA? — la domanda in un posto solo.
+//
+// Preparazioni e finger sì, piatti finiti no: è la regola che il database
+// impone in `check_recipe_component`, e qui serve alle schermate per sapere
+// quando chiedere la RESA — che per un componente è obbligatoria (senza, il
+// calcolo del costo e dello scarico dà NULL e sparisce in silenzio).
+//
+// ⚠️ Si scrive «non è un piatto finito» e non «è preparazione o finger»
+// apposta: un tipo nuovo domani sarebbe trattato da componente, che è il
+// verso prudente — gli si chiederebbe la resa invece di lasciarlo passare
+// senza. Il permesso vero lo dà comunque il database.
+export const eComponente = (recipeType) => recipeType !== "piatto_finito";
 
 // Sostituisce il vecchio status unico: due flag indipendenti, non un enum
 // (§4 del brief, revisione 02/08/2026). Etichetta derivata, non salvata.

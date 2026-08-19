@@ -87,14 +87,27 @@ export async function listAllRecipeCosts() {
   return data;
 }
 
-// Preparazioni disponibili come componente di un'altra ricetta.
+// Cosa può entrare dentro un'altra ricetta: le preparazioni **e i finger**.
+//
+// 🔴 I finger si sono aggiunti il 19/08/2026 (blocco 1 del mandato). Senza
+// questa riga il database permetterebbe di comporre una selezione e nessuna
+// schermata potrebbe farlo: *codice che nessuno chiama*, che è il difetto
+// dichiarato il 18/08 sul legame conto-prenotazione.
+//
+// ⚠️ L'elenco dei tipi ammessi vive qui E nel trigger `check_recipe_component`,
+// e i due dicono cose diverse: questo dice **cosa proporre**, quello dice
+// **cosa è legale**. Non è un doppione da togliere — è il discriminante del
+// 17/08: se dicessero esattamente la stessa cosa se ne toglierebbe uno.
+// ⚠️ Ma se divergessero, la schermata proporrebbe qualcosa che il database
+// rifiuta: si vedrebbe subito, con un errore rosso, e non in silenzio.
+//
 // excludeId: la ricetta corrente non può usare se stessa (già bloccato anche
 // dal DB, ma niente di male a non proporla nella lista).
 export async function listPreparations({ excludeId } = {}) {
   let query = supabase
     .from("recipes")
-    .select("id, name, yield_quantity, yield_unit")
-    .eq("recipe_type", "preparazione")
+    .select("id, name, yield_quantity, yield_unit, recipe_type")
+    .in("recipe_type", ["preparazione", "finger"])
     .order("name");
   if (excludeId) query = query.neq("id", excludeId);
   const { data, error } = await query;

@@ -134,7 +134,41 @@ vuota, la lettura tagliata che si denuncia, l'export che si rifiuta.
 è negoziabile: il blocco 1 è quello che sblocca l'inserimento a mano delle
 ricette, ed è l'unico che Alessio sta aspettando per lavorare.
 
-### Blocco 1 — i finger si possono comporre
+### ✅ Blocco 1 — i finger si possono comporre — **FATTO il 19/08**
+
+Consegna: [`consegne/20260819_i_finger_si_compongono.md`](../consegne/20260819_i_finger_si_compongono.md).
+Migrazione `20260819000012`. **Le due scelte di Alessio sono qui sotto.**
+
+#### 🔴 Un TIPO NUOVO, non la strada larga — e la ragione va conservata
+
+Deciso da Alessio, e scritto qui perché non venga «semplificata» fra sei mesi:
+
+- marcare un finger come **preparazione** lo farebbe finire in Produzioni e
+  sotto la sorveglianza delle rese: **il gestionale gli chiederebbe conto di
+  cose che non è**;
+- lasciar entrare **qualunque ricetta dentro qualunque altra** è meno lavoro
+  oggi, ma toglie l'unica protezione che impedisce di comporre per sbaglio un
+  piatto dentro un altro piatto. *Quella protezione va conservata, non
+  allargata* — infatti si è **ristretta**: prima ammetteva solo le
+  preparazioni, adesso preparazioni e finger, e continua a rifiutare i piatti;
+- il tipo nuovo dà l'**elenco dei finger**, che serve per comporre le
+  selezioni e servirà al modulo preventivi.
+
+#### 🔴 Il PREZZO A PEZZO sta sulla ricetta del finger
+
+Deciso da Alessio, e l'obiezione dei «due prezzi che si contraddicono» è
+stata **ricollocata, non scartata**: *non sono due prezzi dello stesso
+oggetto.* Il prezzo della carta è di un **piatto**, il prezzo a pezzo è di un
+**finger** — cose diverse, ognuna col suo, e non si contraddicono perché non
+parlano della stessa cosa.
+
+⚠️ **Il caso in cui si contraddirebbero esiste, e si scrive adesso invece di
+risolverlo**: il giorno in cui **lo stesso finger andasse in carta anche da
+solo**, ci sarebbero due prezzi per la stessa cosa e servirebbe una regola su
+quale vince. Oggi non succede — nessun finger è un piatto in carta. *Scriverlo
+evita che fra sei mesi qualcuno lo scopra vendendo.*
+
+### Blocco 1 — cosa comprendeva
 
 Togliere il rifiuto, senza perdere quello che quel rifiuto proteggeva.
 
@@ -205,9 +239,16 @@ vere non c'è niente di cui registrare la storia.
    due domande diverse e per ora restano separate.
 3. ⚠️ **Non tocca il prezzo di vendita dei piatti in carta**, che resta dove
    è sempre stato.
-4. ⚠️ **La misura è stata fatta con due finger e un ingrediente**: è
-   sufficiente a dire che la macchina esiste e funziona, non a dire come si
-   comporta con una selezione da dodici bocconcini a tre livelli.
+4. ⚠️ **La misura esplorativa è stata fatta con due finger e un
+   ingrediente**: sufficiente a dire che la macchina esiste, non a dire come
+   si comporta con una selezione da dodici bocconcini a tre livelli.
+   🔴 **E due non bastavano a provarla**: con due bocconcini e due porzioni le
+   due risposte *sbagliate* dello scarico coincidono (0,020 kg sia ignorando
+   le porzioni sia contando i bocconcini come porzioni). Le prove del blocco 1
+   usano **sei** bocconcini, dove le tre risposte si distinguono — 0,120
+   giusta, 0,060 e 0,360 sbagliate in due modi diversi. *Un numero scelto per
+   comodità può rendere una prova incapace di distinguere il giusto dallo
+   sbagliato.*
 
 ---
 
