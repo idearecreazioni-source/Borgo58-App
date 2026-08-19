@@ -93,109 +93,18 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    non è un problema, ma vuol dire che il numero delle lapidi su quel database non
    dice niente — e che una prova che le contasse invece di guardare una proprietà
    sarebbe inutile.
-4. 🔴 **IL TAGLIO A MILLE RIGHE — misurato il 19/08 sera, NON corretto** (decisione
-   di Alessio: prima la misura, poi lui decide se è mezz'ora o un giro a sé).
-   Referto: [`referti/20260819_il_taglio_a_mille_righe.md`](referti/20260819_il_taglio_a_mille_righe.md).
-   In breve: **144 letture dell'app** chiedono un elenco senza dire quante righe.
-   Oggi nessuna tabella ci arriva — la più popolata ne ha **26** — ma
-   **`order_items` passa mille in 2-3 settimane di servizio**, e `orders` e
-   `reservations` in 3-4 mesi. I due punti che fanno male non sono quelli: sono
-   **i totali della Prima nota con l'esportazione CSV** (elenco non filtrato:
-   i campi «dal» e «al» partono vuoti) e **il Manuale HACCP con l'interruttore
-   «tutto»** — un documento esibibile che dichiara «tutto» e ne mostra mille.
-   ⚠️ **E la cosa che vale di più è che si può sapere**: chiedendo l'elenco con
-   `{ count: "exact" }` il database dichiara **quante righe c'erano davvero**
-   (misurato: 1000 consegnate, **1930 dichiarate**). Il confronto starebbe in un
-   posto solo, e trasformerebbe la correzione futura da «cercarli tutti» a «se ne
-   accorge da solo».
-
----
-
-## ⚠️ Una lezione di ORDINE, imparata sbagliandolo il 19/08
-
-`npm run migra` applica **tutte** le migrazioni mancanti o **nessuna**, e si
-ferma se anche una sola non è ancora su GitHub. Quel rifiuto è giusto — la
-produzione non deve mai correre avanti al repository — ma ha una conseguenza
-sull'ordine dei gesti, che il 19/08 è costata l'applicazione di sei migrazioni
-già pronte:
-
-> **Le migrazioni già su GitHub si applicano PRIMA di committarne di nuove.**
-
-La sera del 19/08 le sei del mattino erano pushate e documentate, quindi
-applicabili; committando le due nuove **prima** di applicarle, la rete le ha
-bloccate tutte e otto insieme, e per sbloccarle serve comunque il push di
-Alessio. Nessun danno — solo un giro in più.
-
----
-
-## Le decisioni di Alessio ancora aperte
-
-- **Simulatore col registratore fiscale virtuale** (nato dalla casella del
-  documento fiscale scrivibile da tutto lo staff: prima si guarda cosa
-  succede, poi si decide).
-- **Finger food**: piatti composti da più ricette.
-- **Estrazione ricette** col pulsante «estrapola» e aiuto alla lista della
-  spesa.
-- **Casella dedicata e mail dei clienti** dentro il gestionale.
-- **Finanziamenti da terzi** dentro «Ce la faccio?».
-- **Autoprodotti in magazzino** — rimandati all'apertura dell'azienda agricola.
-- **Sito web**: dopo l'app, col gestionale spostato su un sottodominio.
-- **Le due colonne sul computer** nella schermata della sala.
-
----
-
-## Cosa il disegno della sala NON dice, per scelta (19/08/2026)
-
-⚠️ **Non è una coda e non è un difetto: sono due bugie volute**, e stanno qui
-perché fra sei mesi somiglieranno a errori da correggere. Chi le tocca deve
-sapere che erano decisioni, con la loro ragione e il loro prezzo.
-
-**1 · Le sagome sono disegnate più grandi del vero.** Ogni sagoma cresce fino
-a **3 mm sullo schermo** perché si possa afferrare col dito (rovesciamento
-n. 14, deciso da Alessio il 19/08 dopo aver rifiutato le tre strade che
-conservavano la proporzione). **Il disegno quindi non è in scala**, e lo spazio
-fra i tavoli si vede **più stretto di com'è**: chi guarda la pianta per capire
-se in un corridoio ci si passa, sbaglia in difetto — mai il contrario.
-
-⚠️ **Il varco misurato, e la storia dei due numeri sbagliati.** Il minimo vero,
-rimisurato in produzione il **19/08/2026** sulla pianta base **e** su tutte e
-tre le giornate esistenti, è **80 cm** — fra i divani, identico in ogni
-disposizione. Prima era stato scritto che 80 valeva solo per la pianta base e
-che il minimo vero era 40 (T5/T6 e T7/T8): **falso**, quelle coppie stanno a
-**distanza zero**, sono tavoloni. *Un numero si chiede al database, anche
-quando arriva da chi controlla.*
-
-⚠️ **E NESSUNO DEI DUE NUMERI È LA RAGIONE DELLA REGOLA** — è per questo che
-l'errore non è costato niente. La griglia di aggancio è a passi di 10 cm,
-quindi qualunque sera si possono mettere due tavoli a 20 cm: **nessuna misura
-di oggi può garantire le disposizioni di domani.** Al posto del numero
-c'è una regola — *la sagoma cresce fino a 3 mm ma si ferma prima del vicino, e
-fra due sagome separate resta sempre una riga visibile* (`VARCO_MINIMO_MM` in
-`src/lib/calcoli/sala.js`), provata a 40, a 20 e a 10 cm di varco vero.
-**Da qui in avanti la misura della sala non è più una condizione**: se entra
-un mobile nuovo, il disegno si stringe da sé.
-
-**2 · La Chef Table è disegnata dove non sta.** In sala è accanto alla cucina;
-sulla pianta compare **sotto i divani, in orizzontale** (rovesciamento n. 15,
-deciso da Alessio il 19/08: in pianta accanto alla cucina gli dà fastidio, e
-la postazione è una sola e inconfondibile). ⚠️ **Solo il disegno**: la
-posizione vera resta nel database, e coperti, accostamento, tavoloni,
-prenotazioni **e i gesti** continuano a usare quella. L'elenco delle sagome
-spostate è `SPOSTATE_NEL_DISEGNO`, e oggi contiene una riga sola.
-
-⚠️ **«Sotto» e «orizzontale» sono quelli del telefono**: lì la pianta si mette
-in piedi e gli assi si scambiano, quindi nel codice i numeri sembrano dire
-un'altra cosa. **Sul computer la stessa sagoma si vede a sinistra dei divani e
-in piedi.** Due prove sui dati veri la sorvegliano: che il nome esista ancora
-(se il tavolo venisse rinominato l'elenco smetterebbe di riconoscerlo, senza
-nessun errore) e che la posizione finta **non finisca sopra un altro mobile**
-il giorno che la sala intorno cambia.
-
-**3 · I tavoli non possono più stare in cucina.** Dal 19/08 (idea di Alessio)
-l'area di cucina e servizi è **vietata ai mobili**: la sala dei tavoli è una
-**L capovolta**. Vale nel trascinamento e nel magnete. ⚠️ Misurato prima di
-scriverlo: nessuna sagoma è mai stata là dentro, né nella pianta base né nelle
-tre giornate esistenti. È anche la ragione per cui il **margine di sicurezza**
-del pannello è stato tolto — difendeva un caso che ora non può accadere, e nel
-frattempo faceva sparire il pannello tutti i giorni per colpa della Chef
-Table. ⚠️ Il controllo resta come rete: si è tolto il numero, non la regola.
+4. ✅ **IL TAGLIO A MILLE RIGHE — misurato e SISTEMATO il 19/08 notte**:
+   referto in [`referti/20260819_il_taglio_a_mille_righe.md`](referti/20260819_il_taglio_a_mille_righe.md),
+   consegna in [`consegne/20260819_una_lettura_tagliata_si_denuncia.md`](consegne/20260819_una_lettura_tagliata_si_denuncia.md).
+   Il segnale vive nel punto unico da cui passano le letture; la prima nota parte
+   dal mese in corso e **rifiuta l'export** se la lettura è tagliata; il manuale
+   HACCP **dichiara stampato** di essere incompleto.
+   ⚠️ **Cosa resta scoperto, ed è dichiarato**: le **Edge Function** (leggono con
+   una loro chiave e non passano di lì) e le **letture annidate**
+   (`select("*, righe(*)")`), che possono essere tagliate **nelle righe figlie**
+   senza che il numero di righe padre lo mostri — la forma più silenziosa, mai
+   misurata. E **nessuna mano ha visto l'avviso a schermo**: le prove di questo
+   progetto non guardano una schermata.
+5. **La sera prima dell'apertura**: `npm run collaudo:stato` dice cosa c'è ancora
+   di prova nel gestionale vero. ⚠️ Il paragrafo scritto a mano **non esiste più**,
+   e non deve tornare: aveva sbagliato tre volte in sei giorni.
