@@ -134,6 +134,40 @@ decisione ancora valida — ma *cosa succede a un tablet acceso alle 05:00* non
 
 ---
 
+---
+
+## 🔴 CORREZIONE DEL 19/08 (sera) — tre righe erano in disaccordo col codice
+
+Le due tabelle qui sopra **restano scritte come erano**, apposta: erano la
+proposta con cui si è arrivati alla decisione, e cancellarle farebbe perdere
+il motivo. Ma su **tre punti** la colonna «regola giusta» dice una cosa e il
+codice consegnato ne fa un'altra — e **il codice ha ragione**, perché nel
+frattempo Alessio ha ristretto il perimetro.
+
+| punto | il censimento diceva | il codice fa | chi ha ragione |
+|---|---|---|---|
+| `versa_in_banca` | 🔴 serata | calendario | **il codice** |
+| `scarichi_senza_ricavo` | 🔴 serata | calendario | **il codice** |
+| `pareggia_anticipazione` e `anticipazioni_socio.pagata_il` | 🟡 da decidere | calendario | **il codice** — la decisione è stata presa |
+
+**Il perimetro deciso da Alessio il 19/08** è di **due gesti soli**: il conto
+incassato dopo mezzanotte e il conteggio del cassetto. Tutto il resto —
+banca, carte, fatture, scadenze, uscite, spese, prenotazioni, turni, HACCP —
+segue il **calendario**, in ora italiana.
+
+⚠️ **Perché questa correzione vale la pena di essere scritta**: senza,
+chiunque riaprisse questo documento fra sei mesi confronterebbe la tabella
+col database e aprirebbe **tre segnalazioni che non sono difetti**. Un
+censimento superato dalle decisioni prese dopo di lui non è più una misura:
+è una fonte di falsi allarmi.
+
+⚠️ **E il verso conta**: non è che il codice sia stato scritto in fretta ed
+è finito diverso — è che la proposta era **più larga** e Alessio l'ha
+**ristretta**. La regola scritta il 19/08: *«non è una semplificazione da
+allargare col tempo»*.
+
+---
+
 ## Cosa proporre, quando si passerà a correggere
 
 ⚠️ **Non «correggere 32 punti»**, che è il modo in cui questa trappola è già

@@ -28,6 +28,17 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    del vincolo composito `dining_tables_sagoma_check` nei suoi tre vocabolari,
    il ternario di `SalaEOrari`, i conteggi scritti negli appunti che nessuna
    verifica controlla.
+   ⚠️ **Una voce aggiunta il 19/08 (sera)**, trovata usandola:
+   `migrazioni-senza-portieri` guarda **se** i claims compaiono, non
+   **quando** — e ogni verifica finisce con un `set_config(…, null, …)` per
+   ripulirsi, che da solo basta a zittire il guardiano. Una migrazione che
+   chiamasse una funzione col portiere *prima* di impostare i claims
+   passerebbe. *(La seconda voce di quella coppia — la rete che cercava la
+   parola `is_titolare()` invece del gesto — è stata **chiusa lo stesso
+   giorno** con `20260819000007`: cercando il gesto sono comparse due
+   funzioni che c'erano già e non si vedevano, e `promuovi_disposizione`,
+   che scrive `not (select is_titolare())`, ha smesso di essere invisibile a
+   tutte e due le reti.)*
 4. **Il n. 12 del collaudo: la serata sulla Dashboard**
    ([annotazioni del collaudo](collaudo/annotazioni.md)).
 5. **La regola delle 5 del mattino su cassa e conti** — ✅ **misurata e
@@ -37,10 +48,23 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    [`consegne/20260819_la_giornata_operativa.md`](consegne/20260819_la_giornata_operativa.md).
    Il perimetro l'ha deciso Alessio: seguono la serata **due gesti soli** —
    il conto incassato dopo mezzanotte e il conteggio del cassetto; tutto il
-   resto segue il calendario. ⚠️ **Resta aperta la seconda metà**: i 35
-   punti del client che calcolano «oggi» non sono stati toccati, e le
-   schermate dei soldi alle 00:30 propongono ancora domani. E resta il
-   difetto di Comande: la serata decisa all'apertura e mai più aggiornata.
+   resto segue il calendario.
+   ✅ **E la seconda metà è chiusa il 19/08 (sera)**:
+   [`consegne/20260819_la_giornata_proposta.md`](consegne/20260819_la_giornata_proposta.md).
+   Le schermate della cassa e dei conti propongono la serata e **la
+   mostrano**; le altre restano sul calendario, e adesso è **scritto dove**
+   (in `constants.js`, accanto a `oggiLocale()`), perché il prossimo che
+   passa non le «uniformi» credendo di sistemare una dimenticanza. In
+   Comande la sala **continua a non cambiare da sola** — decisione di
+   Alessio — ma alle 5 compare una riga che lo dice, e il passaggio lo
+   decide chi ha il tablet in mano.
+   ⚠️ **Cosa resta aperto qui**: nessuna prova automatica guarda una
+   schermata (in questo progetto non c'è un ambiente DOM), quindi che
+   l'avviso di Comande **si veda** non l'ha verificato nessuno; e il
+   predefinito del database su `cash_movements.movement_date` resta il
+   calendario mentre la schermata propone la serata — misurato che oggi
+   quel predefinito non lo usa nessuno (tutte e quattro le funzioni che
+   scrivono in prima nota passano una data), ma è una domanda per Alessio.
 6. **Finire la serata recitata**: restano comande, storni, conto diviso,
    omaggio, chiusura, conteggio del cassetto.
 7. **Quante altre schermate fanno più letture insieme e disegnano lo stesso se

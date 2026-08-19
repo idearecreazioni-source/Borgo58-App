@@ -39,3 +39,13 @@ ricostruzione_*.log
 # `npm run collaudo:documenti`: nel repository sta il generatore, che e'
 # la fonte, non sei PDF binari da tenere allineati a mano.
 docs/collaudo/documenti/
+
+# 🔴 I file di servizio della riga di comando di Supabase (19/08/2026).
+# "supabase/.temp/linked-project.json" dichiara a quale progetto il comando
+# "supabase" e' collegato — e nel repository c'era quello di PRODUZIONE.
+# Un clone pulito nasceva gia' puntato ai dati veri: e' il genere di cosa
+# che un domani fa applicare a mano una migrazione sul locale vero credendo
+# di essere sul progetto di prova. Gli strumenti di questo repository
+# ("npm run migra", "npm run prova:migra") leggono .env.db e non questo
+# file: toglierlo non spegne niente.
+supabase/.temp/

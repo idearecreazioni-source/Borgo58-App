@@ -148,5 +148,12 @@ devi pagare e quando. Per te non cambia niente: entri come sempre.
 
 **Commit del lavoro**: `7e75a48` — «Il portiere che mancava sulle uscite future».
 **Working tree**: pulito al momento del commit del lavoro.
+⚠️ **CORREZIONE, e va detta invece che lasciata trovare**: quel commit porta
+dentro anche la **cancellazione di `supabase/.temp/`**, che appartiene alla
+consegna [«tre pulizie»](20260819_le_tre_pulizie.md) e che il messaggio di
+`7e75a48` non nomina. È finita lì perché la cancellazione era già in attesa
+nell'indice di git. Non è stata riscritta la storia — *un commit corretto a
+posteriori è un commit che nessuno può più confrontare con quello che
+dichiarava* — si dichiara qui e nell'altro riepilogo.
 **Migrazioni**: `20260819000007` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
