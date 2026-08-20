@@ -274,8 +274,25 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     nuovo avevo rimesso `new Date().toISOString()`, la data UTC che fra
     mezzanotte e le due dà **ieri**. È la trappola dell'audit dell'08/08,
     riaperta in un posto nuovo.
-    **Restano i blocchi 3-5**: i documenti, l'accettazione, la sera
-    dell'evento.
+    ✅ **BLOCCO 3 FATTO il 20/08** — [consegna](consegne/20260820_il_foglio_del_preventivo.md),
+    migrazione `20260820000007`, **non ancora in produzione**. Tre gesti
+    separati — prepara il foglio, apri su WhatsApp, manda la mail — e **solo
+    la mail è irreversibile**, quindi solo lei chiede conferma.
+    🔴 **Una misura ha cambiato due promesse del mandato**: in questo progetto
+    **non esiste nessuna libreria PDF** — il PDF è la stampa del browser,
+    quindi il gestionale non ha mai un file fra le mani. La mail manda il
+    preventivo **scritto nel messaggio**, WhatsApp apre il testo, e l'allegato
+    lo mette Alessio. *Costruire qualcosa che allega un file inesistente
+    sarebbe stato il difetto peggiore: un allegato che non arriva non produce
+    nessun errore.*
+    🔴 **Il foglio si rifiuta se manca la scadenza**, e **nel foglio non c'è
+    nessun costo** — garantito dal database, non dalle schermate, perché il
+    foglio viaggia. La vista dei costi è `print:hidden`.
+    🔴 **SERVE UNA DECISIONE DI ALESSIO: per quanti giorni vale un
+    preventivo.** La colonna nasce vuota — una durata inventata deciderebbe
+    per quanto tempo resta legato a un prezzo.
+    **Restano i blocchi 4-5**: l'accettazione con la spunta «sala piena», e la
+    sera dell'evento.
 
 ---
 

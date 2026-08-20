@@ -104,6 +104,56 @@ async function avvisaSuTelegram(messaggio: string) {
   }
 }
 
+// IL FOGLIO DEL PREVENTIVO (20/08/2026, blocco 3 del mandato).
+//
+// 🔴 IL CONTENUTO ARRIVA GIÀ COMPOSTO DAL DATABASE (`foglio_preventivo`), e
+// qui si impagina soltanto. Non si legge niente dal database e non si
+// aggiunge nessun numero: **il foglio viaggia**, finisce nella posta del
+// cliente e magari lo gira a qualcun altro, e comporlo in due posti sarebbe
+// due occasioni di lasciarci dentro un costo.
+function testoPreventivo(v: Record<string, unknown>) {
+  const persone = Number(v.persone ?? 0);
+  const menu = (v.menu as { nome: string }[] ?? []).map((r) => `· ${r.nome}`).join("\n");
+  const extra = (v.extra as { descrizione: string; importo: number }[] ?? [])
+    .map((r) => `· ${r.descrizione} — ${euro(r.importo)}`)
+    .join("\n");
+  const data = v.data_evento ? dataItaliana(String(v.data_evento)) : "";
+  const scadenza = v.valido_fino_al ? dataItaliana(String(v.valido_fino_al)) : "";
+
+  const oggetto = `Borgo 58 — preventivo per il ${data}`;
+  const testo = [
+    `Gentile ${v.cliente ?? ""},`,
+    "",
+    `ecco il preventivo per il ${data}, per ${persone} ${persone === 1 ? "persona" : "persone"}.`,
+    "",
+    menu ? "IL MENU\n" + menu : "",
+    extra ? "\nIN PIÙ\n" + extra : "",
+    "",
+    `Prezzo a persona: ${euro(Number(v.prezzo_a_persona))}`,
+    `Totale: ${euro(Number(v.totale))}`,
+    "",
+    // ⚠️ La scadenza è la riga che impedisce a questo foglio di restare
+    // valido per sempre in mano a chi lo riceve.
+    `Questo preventivo è valido fino al ${scadenza}.`,
+    "",
+    "A presto,",
+    "Borgo 58 — Osteria Contemporanea",
+  ]
+    .filter((r) => r !== "")
+    .join("\n");
+
+  const html = testo
+    .split("\n")
+    .map((r) => `<p style="margin:0 0 8px">${r || "&nbsp;"}</p>`)
+    .join("");
+
+  return { oggetto, testo, html };
+}
+
+function euro(n: number): string {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n ?? 0);
+}
+
 Deno.serve(async (req) => {
   // 1. La parola d'ordine, prima di leggere qualunque cosa.
   if (!NOTIFICHE_FIRMA) {
@@ -139,15 +189,27 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (payload.tipo !== "conferma" || !payload.prenotazione?.email) {
+  // ⚠️ DUE TIPI, non un «manda mail» generico: la conferma di una
+  // prenotazione e un preventivo sono due cose diverse, e il giorno che
+  // arriveranno le comunicazioni commerciali (mandato della posta dei
+  // clienti) quelle vorranno il consenso — che qui non c'entra.
+  const destinatario =
+    payload.tipo === "conferma"
+      ? payload.prenotazione?.email
+      : payload.tipo === "preventivo"
+        ? payload.preventivo?.email
+        : null;
+
+  if (!destinatario) {
     return new Response(JSON.stringify({ saltata: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  const p = payload.prenotazione as Prenotazione;
-  const { oggetto, testo, html } = testoConferma(p);
+  const p = (payload.prenotazione ?? {}) as Prenotazione;
+  const { oggetto, testo, html } =
+    payload.tipo === "preventivo" ? testoPreventivo(payload.preventivo) : testoConferma(p);
 
   const risposta = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -157,7 +219,7 @@ Deno.serve(async (req) => {
     },
     body: JSON.stringify({
       from: MITTENTE,
-      to: [p.email],
+      to: [destinatario],
       reply_to: RISPOSTE_A,
       subject: oggetto,
       text: testo,
@@ -168,7 +230,8 @@ Deno.serve(async (req) => {
   if (!risposta.ok) {
     const dettaglio = await risposta.text();
     await avvisaSuTelegram(
-      `Non sono riuscito a mandare la conferma a ${p.nome ?? "un cliente"} ` +
+      `Non sono riuscito a mandare ${payload.tipo === "preventivo" ? "il preventivo" : "la conferma"} ` +
+        `a ${p.nome ?? payload.preventivo?.cliente ?? "un cliente"} ` +
         `(${p.data ?? "?"} alle ${(p.ora ?? "").slice(0, 5)}). Chiamalo tu. ` +
         `Motivo: ${risposta.status}.`,
     );

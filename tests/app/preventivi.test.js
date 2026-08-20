@@ -2,9 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 import {
   fabbisognoPreventivo,
+  foglioPreventivo,
   getPreventivo,
   nuovaVersionePreventivo,
   prezzoPreventivo,
+  registraFoglioPreventivo,
   salvaPreventivo,
 } from "../../src/lib/api/preventivi";
 import { supabase } from "../../src/lib/supabase";
@@ -37,6 +39,7 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
 
   async function pulisci() {
     const { data: p } = await titolare.from("preventivi").select("id").like("cliente_nome", `${MARCA}%`);
+    for (const r of p ?? []) await titolare.from("preventivo_fogli").delete().eq("preventivo_id", r.id);
     // ⚠️ Le versioni si cancellano prima delle originali: il collegamento è
     // `restrict`, ed è proprio la protezione che questo file verifica.
     for (const r of p ?? []) await titolare.from("preventivi").delete().eq("id", r.id).not("versione_di", "is", null);
@@ -231,6 +234,49 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     const cibo = p.righe.find((r) => r.natura === "cibo");
     expect(cibo.recipe, "il nome del piatto non arriva con la riga").toBeTruthy();
     expect(cibo.recipe.name).toContain("piatto");
+  });
+
+  it("senza scadenza il foglio SI RIFIUTA di essere prodotto", async () => {
+    // 🔴 Un preventivo senza scadenza scritta sopra resta valido per sempre
+    // in mano a chi lo riceve. È la stessa forma dell'esportazione della
+    // prima nota che si rifiuta quando la lettura è tagliata (19/08).
+    await expect(foglioPreventivo(prev)).rejects.toThrow(/fino a quando vale/);
+  });
+
+  it("il foglio NON contiene nessun costo", async () => {
+    // 🔴 È il controllo che vale di più: quel foglio finisce nella posta del
+    // cliente, e magari lo gira a qualcun altro.
+    await titolare.from("preventivi").update({ valido_fino_al: "1995-09-01" }).eq("id", prev);
+    const f = await foglioPreventivo(prev);
+    const vietate = ["costo_cibo", "costo_cibo_a_persona", "extra_totale",
+                     "food_cost_obiettivo_percento", "avvertenza"];
+    for (const chiave of vietate) {
+      expect(f[chiave], "il foglio contiene " + chiave).toBeUndefined();
+    }
+    expect(JSON.stringify(f).toLowerCase()).not.toContain("food cost");
+    // ⚠️ E il prezzo c'è: senza, il controllo di sopra passerebbe anche su
+    // un foglio vuoto.
+    expect(Number(f.prezzo_a_persona)).toBeGreaterThan(0);
+    expect(f.valido_fino_al).toBe("1995-09-01");
+  });
+
+  it("la fotografia del foglio non cambia se il preventivo cambia dopo", async () => {
+    // ⚠️ Serve a sapere cosa diceva il foglio che il cliente HA IN MANO:
+    // ricostruirlo dai dati di oggi darebbe il preventivo di oggi.
+    const f = await registraFoglioPreventivo(prev, "foglio", null);
+    const prezzoAllora = Number(f.prezzo_a_persona);
+
+    await titolare.from("preventivi").update({ prezzo_a_persona_scavalcato: 99 }).eq("id", prev);
+    const { data } = await titolare
+      .from("preventivo_fogli")
+      .select("contenuto")
+      .eq("preventivo_id", prev)
+      .order("prodotto_il", { ascending: false })
+      .limit(1)
+      .single();
+    await titolare.from("preventivi").update({ prezzo_a_persona_scavalcato: null }).eq("id", prev);
+
+    expect(Number(data.contenuto.prezzo_a_persona)).toBeCloseTo(prezzoAllora, 2);
   });
 
   it("lo staff non vede i preventivi", async () => {

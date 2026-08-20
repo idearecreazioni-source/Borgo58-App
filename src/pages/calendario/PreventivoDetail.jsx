@@ -3,13 +3,15 @@ import { Link, useParams } from "react-router-dom";
 import {
   fabbisognoPreventivo,
   getPreventivo,
+  inviaPreventivoPerEmail,
   nuovaVersionePreventivo,
   prezzoPreventivo,
+  registraFoglioPreventivo,
   salvaPreventivo,
 } from "../../lib/api/preventivi";
 import { listRecipes } from "../../lib/api/recipes";
 import { puoAndareInCarta } from "../../lib/calcoli/carta";
-import { formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR } from "../../lib/constants";
 
 // IL PREVENTIVO — la schermata che commuta (blocco 2 del mandato).
 //
@@ -47,6 +49,8 @@ export default function PreventivoDetail() {
   const [vista, setVista] = useState(VISTA_CLIENTE);
   const [errore, setErrore] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [inCorso, setInCorso] = useState("");
+  const [esito, setEsito] = useState("");
 
   const carica = async () => {
     setErrore("");
@@ -113,6 +117,74 @@ export default function PreventivoDetail() {
       setErrore(e.message);
     } finally {
       setSalvando(false);
+    }
+  };
+
+  // 🔴 I TRE GESTI, e sono tre cose diverse. Nessuno dei tre ne fa un altro.
+
+  // 1 · IL FOGLIO si produce e basta. Fotografa cosa diceva, poi apre la
+  //     stampa del browser — da cui Alessio salva il PDF.
+  const preparaFoglio = async () => {
+    setInCorso("foglio");
+    setErrore("");
+    setEsito("");
+    try {
+      await registraFoglioPreventivo(id, "foglio", null);
+      window.print();
+    } catch (e) {
+      setErrore(e.message);
+    } finally {
+      setInCorso("");
+    }
+  };
+
+  // 2 · 🔴 LA MAIL PARTE DAVVERO: è l'unico dei tre irreversibile, e per
+  //     questo chiede conferma — non per prudenza generica, ma perché dopo
+  //     non si torna indietro.
+  const mandaLaMail = async () => {
+    if (!window.confirm(`Mando il preventivo a ${prev.cliente_email}? Dopo non si può richiamare.`)) return;
+    setInCorso("mail");
+    setErrore("");
+    setEsito("");
+    try {
+      await inviaPreventivoPerEmail(id);
+      setEsito(`Mandato a ${prev.cliente_email}.`);
+    } catch (e) {
+      setErrore(e.message);
+    } finally {
+      setInCorso("");
+    }
+  };
+
+  // 3 · WHATSAPP apre il messaggio: lo manda lui con le sue mani.
+  //     ⚠️ Si COPIA SEMPRE PRIMA (lezione del 14/08): la copia riesce
+  //     sempre, l'apertura è un di più — e se WhatsApp non è installato non
+  //     succede niente, senza nessun errore.
+  const apriWhatsApp = async () => {
+    setInCorso("whatsapp");
+    setErrore("");
+    setEsito("");
+    try {
+      const f = await registraFoglioPreventivo(id, "whatsapp", prev.cliente_telefono);
+      const testo = testoWhatsApp(f);
+      try {
+        await navigator.clipboard.writeText(testo);
+      } catch {
+        // La copia può essere negata dal browser: non è un guasto.
+      }
+      const numero = numeroInternazionale(prev.cliente_telefono);
+      setEsito(
+        numero
+          ? "Testo copiato. Se WhatsApp non si apre, incollalo tu."
+          : "Testo copiato: di questo cliente non hai il telefono, incollalo dove serve."
+      );
+      if (numero) {
+        window.location.href = `whatsapp://send?phone=${numero}&text=${encodeURIComponent(testo)}`;
+      }
+    } catch (e) {
+      setErrore(e.message);
+    } finally {
+      setInCorso("");
     }
   };
 
@@ -202,6 +274,20 @@ export default function PreventivoDetail() {
             />
           </div>
           <div>
+            {/* 🔴 Senza questa data il foglio NON si produce: un preventivo
+                senza scadenza resta valido per sempre in mano a chi lo
+                riceve. Il rifiuto arriva dal database, non da qui. */}
+            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+              Valido fino al
+            </label>
+            <input
+              type="date"
+              value={prev.valido_fino_al ?? ""}
+              onChange={(e) => salva({ valido_fino_al: e.target.value || null })}
+              className={inputClass}
+            />
+          </div>
+          <div>
             <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Telefono</label>
             <input
               value={prev.cliente_telefono ?? ""}
@@ -213,9 +299,54 @@ export default function PreventivoDetail() {
         </div>
       </div>
 
+      {esito && (
+        <p className="print:hidden text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
+          {esito}
+        </p>
+      )}
+
       {vista === VISTA_CLIENTE ? (
-        <VistaCliente prev={prev} prezzo={prezzo} righeCibo={righeCibo} righeExtra={righeExtra} />
+        <>
+          <VistaCliente prev={prev} prezzo={prezzo} righeCibo={righeCibo} righeExtra={righeExtra} />
+          {/* 🔴 TRE GESTI, TRE PULSANTI, e non si somigliano apposta: il
+              foglio è una cosa che si produce, la mail è una cosa che parte,
+              WhatsApp è una cosa che apri. Mai un tocco che manda tutto. */}
+          <div className="print:hidden flex flex-wrap gap-3 mt-6">
+            <button
+              type="button"
+              onClick={preparaFoglio}
+              disabled={inCorso !== ""}
+              className="rounded-lg border border-b58-charcoal/20 text-sm px-4 py-2 text-b58-charcoal disabled:opacity-60"
+            >
+              {inCorso === "foglio" ? "…" : "Prepara il foglio"}
+            </button>
+            <button
+              type="button"
+              onClick={apriWhatsApp}
+              disabled={inCorso !== ""}
+              className="rounded-lg border border-b58-charcoal/20 text-sm px-4 py-2 text-b58-charcoal disabled:opacity-60"
+            >
+              {inCorso === "whatsapp" ? "…" : "Apri su WhatsApp"}
+            </button>
+            <button
+              type="button"
+              onClick={mandaLaMail}
+              disabled={inCorso !== "" || !prev.cliente_email}
+              title={prev.cliente_email ? undefined : "Di questo cliente non hai l'email"}
+              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            >
+              {inCorso === "mail" ? "…" : "Manda la mail"}
+            </button>
+          </div>
+          <p className="print:hidden text-xs text-b58-charcoal-soft mt-2">
+            Il foglio si salva in PDF dalla finestra di stampa. La mail parte
+            davvero; su WhatsApp il messaggio lo mandi tu.
+          </p>
+        </>
       ) : (
+        /* ⚠️ `print:hidden`: il foglio VIAGGIA, e una stampa fatta per
+           sbaglio dalla vista dei costi finirebbe nella posta del cliente. */
+        <div className="print:hidden">
         <VistaCosto
           prev={prev}
           prezzo={prezzo}
@@ -230,9 +361,39 @@ export default function PreventivoDetail() {
             window.location.href = `/calendario-eventi/preventivi/${nuovo}`;
           }}
         />
+        </div>
       )}
     </div>
   );
+}
+
+// ⚠️ Il testo di WhatsApp si compone dallo STESSO foglio del database: se lo
+// scrivesse la schermata per conto suo, sarebbe un terzo posto dove può
+// finirci dentro un numero di troppo.
+function testoWhatsApp(f) {
+  const menu = (f.menu ?? []).map((r) => `· ${r.nome}`).join("\n");
+  const extra = (f.extra ?? []).map((r) => `· ${r.descrizione}`).join("\n");
+  return [
+    `Preventivo Borgo 58 — ${formatDate(f.data_evento)}, ${f.persone} persone`,
+    "",
+    menu,
+    extra ? "\nIn più:\n" + extra : "",
+    "",
+    `${formatEUR(f.prezzo_a_persona)} a persona — totale ${formatEUR(f.totale)}`,
+    `Valido fino al ${formatDate(f.valido_fino_al)}`,
+  ]
+    .filter((r) => r !== "")
+    .join("\n");
+}
+
+// ⚠️ Lo zero del prefisso NON si toglie: in Italia resta anche
+// nell'internazionale (+39 0932…). Toglierlo manderebbe il messaggio a uno
+// sconosciuto, in silenzio. È la regola del 14/08 sugli ordini ai fornitori.
+function numeroInternazionale(telefono) {
+  const cifre = (telefono ?? "").replace(/[^0-9]/g, "");
+  if (!cifre) return null;
+  if (cifre.startsWith("39") && cifre.length >= 12) return cifre;
+  return "39" + cifre;
 }
 
 // ---------------------------------------------------------------------

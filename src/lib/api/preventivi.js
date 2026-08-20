@@ -77,3 +77,43 @@ export async function prezzoPreventivo(id) {
   if (error) throw error;
   return data?.[0] ?? null;
 }
+
+// I TRE GESTI DEL FOGLIO (20/08/2026, blocco 3) — e sono TRE COSE DIVERSE,
+// non tre pulsanti dello stesso tipo:
+//   · il foglio si produce e basta — reversibile, non esce di qui;
+//   · la mail parte davvero — **irreversibile**;
+//   · WhatsApp apre un messaggio che manda Alessio con le sue mani.
+//
+// ⚠️ Mai un tocco che manda tutto: il giorno che di un cliente si ha solo il
+// telefono, un invio unico spedirebbe una mail a un indirizzo inventato pur
+// di partire.
+//
+// ⚠️ E il CONTENUTO lo compone il database, in un posto solo: il foglio
+// viaggia, e tre schermate che se lo costruiscono per conto proprio sono tre
+// occasioni di lasciarci dentro un costo.
+
+export async function foglioPreventivo(id) {
+  const { data, error } = await supabase.rpc("foglio_preventivo", { p_preventivo_id: id });
+  if (error) throw error;
+  return data;
+}
+
+// Fotografa cosa diceva il foglio, e lo restituisce. ⚠️ Serve quando si farà
+// una versione nuova: ricostruirlo dai dati di allora è impossibile, perché
+// nel frattempo i prezzi si sono mossi.
+export async function registraFoglioPreventivo(id, canale, destinatario) {
+  const { data, error } = await supabase.rpc("registra_foglio_preventivo", {
+    p_preventivo_id: id,
+    p_canale: canale,
+    p_destinatario: destinatario ?? null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// 🔴 L'UNICO DEI TRE CHE È IRREVERSIBILE.
+export async function inviaPreventivoPerEmail(id) {
+  const { data, error } = await supabase.rpc("invia_preventivo_per_email", { p_preventivo_id: id });
+  if (error) throw error;
+  return data;
+}
