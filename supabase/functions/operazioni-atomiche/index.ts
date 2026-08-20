@@ -193,6 +193,13 @@ const OPERAZIONI = new Set([
   // rimesso in elenco senza che si sappia perche', o una segnalazione che
   // non ha rimesso niente in elenco.
   "segnala_scontrino_non_uscito",
+  // Blocco 1 del mandato dei preventivi (20/08/2026). Un preventivo e'
+  // testata piu' righe: a meta' resterebbe il nome di un cliente senza
+  // dentro niente, e un costo di zero euro che sembra un numero. La
+  // versione nuova ne scrive due, e il collegamento fra le due e' la sola
+  // cosa che conserva cosa era stato promesso e quando.
+  "salva_preventivo",
+  "nuova_versione_preventivo",
 ]);
 
 const CORS = {

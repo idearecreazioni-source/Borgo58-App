@@ -234,8 +234,24 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     fabbisogno di un evento e lo scarico vero del magazzino **si comportano
     identicamente**. ⚠️ `listRecipeIngredientsForRecipes` è rimasta senza
     chiamanti, ed è dichiarato nel file.
-    **Restano i blocchi 1-5**: il preventivo, la schermata che commuta, i
-    documenti, l'accettazione, la sera dell'evento.
+    ✅ **BLOCCO 1 FATTO il 20/08** — [consegna](consegne/20260820_il_preventivo_esiste.md),
+    migrazione `20260820000006`, corridoio **v16 sulla prova**, **non ancora in
+    produzione**. Il preventivo esiste: testata, righe di due nature che non si
+    mescolano, **porzioni modificate sul preventivo** (la ricetta in carta
+    resta intatta), prezzo a persona proposto dal ricarico e **scavalcabile**,
+    **versioni collegate**.
+    🔴 **Due numeri tenuti separati fin dall'inizio**: il prezzo promesso, che
+    non cambia più, e il costo **fotografato con la sua data**, che invecchia.
+    ⚠️ **Il ricarico predefinito nasce VUOTO** — è l'unico punto in cui non ho
+    seguito la lettera del mandato: Alessio ha chiesto un valore predefinito
+    ma non ha detto quale, e un ricarico inventato **decide un prezzo**. Finché
+    non lo scrive lui il gestionale non propone e lo dichiara. **Serve una sua
+    riga.**
+    🔴 **La rete dei permessi è diventata rossa da sola** (16 → 17): una
+    funzione nuova aveva il portiere in un'altra funzione invece che nel
+    proprio corpo. Porta chiusa, conto tornato a 16.
+    **Restano i blocchi 2-5**: la schermata che commuta, i documenti,
+    l'accettazione, la sera dell'evento.
 
 ---
 
