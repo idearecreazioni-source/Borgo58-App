@@ -86,7 +86,12 @@ begin
     -- crea (`origine_modulo` vuoto), non dal titolo. Cancellare per parola
     -- chiave qui dentro vorrebbe dire perdere adempimenti societari con
     -- importi e codici F24.
-    'tasks_di_alessio',         (select count(*) from tasks where origine_modulo is null)
+    'tasks_di_alessio',         (select count(*) from tasks where origine_modulo is null),
+    -- ⚠️ AGGIUNTA IL 21/08 coi preventivi: le spunte «sala piena» che ha
+    -- messo Alessio a mano hanno `preventivo_id` vuoto, e la pulizia non le
+    -- deve sfiorare. Senza questo conteggio, toglierle sarebbe passato
+    -- inosservato — e una sala sbloccata per errore gli costa una serata.
+    'sold_out_di_alessio',      (select count(*) from giornate_sold_out where preventivo_id is null)
   ) into v_prima;
 
   -- =================================================================
@@ -120,18 +125,64 @@ begin
   --     lascia passare perché il conto non c'è più.
   delete from orders;
 
-  -- 3 · LE PRENOTAZIONI — e solo ora: orders→reservations è RESTRICT.
+  -- 3 · I PREVENTIVI DI COLLAUDO — e vanno PRIMA delle prenotazioni.
+  --
+  -- 🔴 AGGIUNTI IL 21/08, decisione di Alessio, dopo che il collaudo ha
+  --    creato il primo preventivo vero in produzione. La ragione della
+  --    scelta, perche' resti scritta: l'alternativa — lasciarli fuori —
+  --    chiede ad Alessio di **ricordarsi di togliere una cosa a mano prima
+  --    di lanciare un comando**, ed e' la forma che questo progetto ha
+  --    passato una sera intera a smontare.
+  --
+  -- ⚠️ L'ORDINE LO IMPONE IL VINCOLO, e sbagliarlo si ferma A META' con il
+  --    resto gia' cancellato: `preventivi.reservation_id` e' `restrict`,
+  --    quindi togliere prima le prenotazioni viene RESPINTO. E' lo stesso
+  --    genere di trappola degli scarichi di magazzino del passo 1.
+  --
+  -- 🔴 E MISURANDO SONO USCITI DUE VINCOLI CHE NESSUNO AVEVA NOMINATO:
+  --    · `preventivi.versione_di` → `preventivi`, **restrict**: una versione
+  --      nuova trattiene quella da cui nasce. Vanno via prima le versioni;
+  --    · `giornate_sold_out.preventivo_id` → `preventivi`, **restrict**: una
+  --      spunta «sala piena» accesa da un preventivo lo trattiene.
+  --    ⚠️ E lì la distinzione conta: si tolgono **solo le spunte accese da un
+  --    preventivo**. Quelle con `preventivo_id` vuoto le ha messe Alessio a
+  --    mano, e nessuna pulizia le tocca — e' la stessa regola scritta ieri
+  --    nel trigger dell'annullamento.
+  --
+  -- ⚠️ `preventivo_righe` e `preventivo_fogli` NON si nominano: sono in
+  --    cascata su `preventivi` (misurato), quindi scendono da sole. Elencarle
+  --    non farebbe danno, ma direbbe che servono — e chi legge fra sei mesi
+  --    penserebbe che il vincolo sia un altro.
+  -- 🔴 E UN TERZO OSTACOLO, trovato dalla prova sui dati veri e non
+  --    leggendo: il trigger `vieta_cancellazione_preventivo_accettato`
+  --    respinge un preventivo che ha un evento in calendario — *«Annulla
+  --    prima l''evento»*. L''ho scritto io ieri, e fa quello che deve:
+  --    impedisce che un preventivo sparisca lasciando in sala una cena che
+  --    nessuno rivendica.
+  --
+  -- ⚠️ NON SI SPEGNE. Si SCOLLEGA PRIMA e si cancella dopo — la stessa
+  --    strada che il progetto usa per gli storni legittimi dal 16/08, e che
+  --    non apre nessuna scappatoia nel trigger (una scappatoia sarebbe anche
+  --    la strada per aggirarlo). Qui il caso che il trigger difende non si
+  --    presenta: la cena viene cancellata due passi piu' sotto.
+  update preventivi set reservation_id = null where reservation_id is not null;
+  delete from giornate_sold_out where preventivo_id is not null;
+  delete from preventivi where versione_di is not null;
+  delete from preventivi;
+
+  -- 4 · LE PRENOTAZIONI — e solo ora: orders→reservations è RESTRICT, e
+  --     anche preventivi→reservations lo e'.
   delete from prenotazione_tavoli;
   delete from reservation_deposits;
   delete from reservations;
   delete from correzioni_coperti;
 
-  -- 4 · ORDINI AI FORNITORI E LISTA DELLA SPESA.
+  -- 5 · ORDINI AI FORNITORI E LISTA DELLA SPESA.
   delete from ordini_fornitore_righe;
   delete from ordini_fornitore;
   delete from shopping_list_items;
 
-  -- 5 · IL MAGAZZINO, poi le diciture e i prezzi, poi i prodotti, poi i
+  -- 6 · IL MAGAZZINO, poi le diciture e i prezzi, poi i prodotti, poi i
   --     fornitori. `stock_lots`→`ingredients` è RESTRICT.
   delete from rettifiche_giacenza;
   delete from stock_lots;
@@ -140,10 +191,10 @@ begin
   delete from ingredients;
   delete from suppliers;
 
-  -- 6 · LE NON CONFORMITÀ HACCP del collaudo.
+  -- 7 · LE NON CONFORMITÀ HACCP del collaudo.
   delete from haccp_non_conformities;
 
-  -- 7 · LA POSTA PRIMA DEI DOCUMENTI.
+  -- 8 · LA POSTA PRIMA DEI DOCUMENTI.
   --     🔴 `posta_ricevuta.documento_id` e `posta_azioni.documento_id` sono
   --     SET NULL: invertendo si perde il legame **senza che nessuno se ne
   --     accorga**, e poi non si sa più quale mail aveva prodotto quale
@@ -152,19 +203,19 @@ begin
   delete from posta_allegati;
   delete from posta_ricevuta;
 
-  -- 8 · GLI IMPEGNI GENERATI, poi i documenti.
+  -- 9 · GLI IMPEGNI GENERATI, poi i documenti.
   --     ⚠️ Per MECCANISMO, non per parola chiave: sono quelli nati
   --     dall'archivio e dalla posta. Gli altri li ha scritti Alessio.
   delete from tasks where origine_modulo in ('archivio_documenti', 'posta');
   delete from documents;
 
-  -- 9 · GLI AVVISI DI COLLAUDO.
+  -- 10 · GLI AVVISI DI COLLAUDO.
   --     ⚠️ NON tutti: `lavoro_fermo_lettura_posta` del 12/08 è un avviso VERO
   --     — la storia di un guasto che è successo davvero — e cancellarlo
   --     toglierebbe la prova che la sentinella funziona.
   delete from allarmi where tipo like 'rincaro\_%' or tipo like 'scadenze\_%';
 
-  -- 10 · I CLIENTI del collaudo. ⚠️ Vanno DOPO le prenotazioni, che li
+  -- 11 · I CLIENTI del collaudo. ⚠️ Vanno DOPO le prenotazioni, che li
   --      nominano.
   delete from customers;
 
@@ -189,7 +240,12 @@ begin
     'lavori_sorvegliati',       (select count(*) from lavori_sorvegliati),
     'stato_lavori',             (select count(*) from stato_lavori),
     'cash_movements',           (select count(*) from cash_movements),
-    'tasks_di_alessio',         (select count(*) from tasks where origine_modulo is null)
+    'tasks_di_alessio',         (select count(*) from tasks where origine_modulo is null),
+    -- ⚠️ AGGIUNTA IL 21/08 coi preventivi: le spunte «sala piena» che ha
+    -- messo Alessio a mano hanno `preventivo_id` vuoto, e la pulizia non le
+    -- deve sfiorare. Senza questo conteggio, toglierle sarebbe passato
+    -- inosservato — e una sala sbloccata per errore gli costa una serata.
+    'sold_out_di_alessio',      (select count(*) from giornate_sold_out where preventivo_id is null)
   ) into v_dopo;
 
   -- ⚠️ Si confrontano TUTTE le chiavi e si nomina QUALE è cambiata: dire solo
@@ -228,6 +284,8 @@ begin
        + (select count(*) from documents) + (select count(*) from posta_ricevuta)
        + (select count(*) from stock_lots) + (select count(*) from customers)
        + (select count(*) from tasks where origine_modulo is not null)
+       + (select count(*) from preventivi) + (select count(*) from preventivo_righe)
+       + (select count(*) from giornate_sold_out where preventivo_id is not null)
     into v_n;
   if v_n <> 0 then
     raise exception 'È rimasto del residuo di collaudo: % righe.', v_n;
