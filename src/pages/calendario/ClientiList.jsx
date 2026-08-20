@@ -56,6 +56,13 @@ export default function ClientiList() {
       </Link>
       <div className="flex items-center justify-between gap-4 flex-wrap mt-1 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">Clienti</h1>
+        <div className="flex gap-2">
+        <Link
+          to="/calendario-eventi/comunicazioni"
+          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal font-medium px-4 py-2 text-sm"
+        >
+          Scrivere a più clienti
+        </Link>
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
@@ -63,6 +70,7 @@ export default function ClientiList() {
         >
           {showNew ? "Annulla" : "+ Nuovo cliente"}
         </button>
+        </div>
       </div>
 
       {showNew && (

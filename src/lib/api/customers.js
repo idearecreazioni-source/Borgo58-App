@@ -98,3 +98,74 @@ export async function deleteCustomer(id) {
 export async function mergeCustomers(keepId, mergeId) {
   return eseguiOperazione("merge_customers", { p_keep_id: keepId, p_merge_id: mergeId });
 }
+
+// LA POSTA DEI CLIENTI — 20/08/2026, blocco 1 del suo mandato.
+//
+// 🔴 LA DISTINZIONE CHE REGGE TUTTO, ed è di Alessio: scrivere a chi ha
+// prenotato per confermargli il tavolo **non ha bisogno di niente**; mandare
+// il menu del mese a duecento persone **sì**.
+//
+// ⚠️ E le due strade non sono la stessa funzione con un parametro diverso:
+// sono due nomi diversi, e quella commerciale **pretende il consenso nel
+// database**. Una sola «manda mail» prima o poi lascia uscire una
+// comunicazione commerciale dalla porta di servizio.
+
+// ⚠️ Si pretende COME l'ha dato: fra un anno «c'è la spunta» non risponde a
+// nessuna contestazione, «me l'ha detto al telefono il 3 marzo» sì.
+export async function registraConsenso(customerId, come) {
+  const { data, error } = await supabase.rpc("registra_consenso", {
+    p_customer_id: customerId,
+    p_come: come,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// ⚠️ TOGLIE DAVVERO, non registra una richiesta: è la stessa colonna che il
+// calcolo legge, quindi il caso «registrata e non applicata» non esiste —
+// e quel caso è peggio di nessuna cancellazione, perché resta la prova
+// scritta che l'aveva chiesto.
+export async function revocaConsenso(customerId) {
+  const { data, error } = await supabase.rpc("revoca_consenso", {
+    p_customer_id: customerId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// ⚠️ Dice anche CHI RESTA FUORI e perché: un elenco di destinatari senza gli
+// esclusi si legge «sono tutti».
+export async function destinatariCommerciali() {
+  const { data, error } = await supabase.rpc("destinatari_commerciali");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// 🔴 IL RIFIUTO ARRIVA DAL DATABASE, non da qui: una schermata che filtra è
+// una schermata che qualcuno può scavalcare.
+export async function registraInvioCommerciale(customerId, oggetto) {
+  const { data, error } = await supabase.rpc("registra_invio_commerciale", {
+    p_customer_id: customerId,
+    p_oggetto: oggetto,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Cosa gli è stato mandato, cosa ha scritto lui, e le sue prenotazioni.
+export async function storiaCliente(customerId) {
+  const { data, error } = await supabase.rpc("storia_cliente", { p_customer_id: customerId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// 🔴 IL GESTIONALE NON MANDA LISTE WHATSAPP — misurato prima di prometterlo.
+// Prepara l'elenco dei numeri da copiare, che è la parte noiosa del lavoro a
+// mano. ⚠️ E l'avvertenza sul limite della rubrica viaggia INSIEME
+// all'elenco: un broadcast non arriva a chi non ha il numero di Alessio
+// salvato, e WhatsApp non lo segnala.
+export async function numeriPerBroadcast() {
+  const { data, error } = await supabase.rpc("numeri_per_broadcast");
+  if (error) throw error;
+  return data?.[0] ?? null;
+}

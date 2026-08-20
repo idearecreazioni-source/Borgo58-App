@@ -8,8 +8,13 @@ import {
   listCustomerReservations,
   listCustomers,
   mergeCustomers,
+  registraConsenso,
+  revocaConsenso,
+  storiaCliente,
   updateCustomer,
 } from "../../lib/api/customers";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
   DISCOUNT_GIFT_TYPES,
   RESERVATION_STATUSES,
@@ -40,16 +45,23 @@ export default function ClienteDetail() {
   const [mergeSearch, setMergeSearch] = useState("");
   const [mergeOptions, setMergeOptions] = useState([]);
   const [merging, setMerging] = useState(false);
+  const [storia, setStoria] = useState([]);
+  const [comeConsenso, setComeConsenso] = useState("");
+  const [salvandoConsenso, setSalvandoConsenso] = useState(false);
 
   const load = () =>
     Promise.all([
       getCustomer(id),
       listCustomerReservations(id),
       isTitolare ? listCustomerDiscounts(id) : Promise.resolve([]),
-    ]).then(([c, res, dg]) => {
+      // ⚠️ La storia è del titolare, e se non arriva NON si finge un elenco
+      // vuoto: si dichiara (regola del blocco A).
+      isTitolare ? leggi(storiaCliente(id)) : Promise.resolve([]),
+    ]).then(([c, res, dg, st]) => {
       setCustomer(c);
       setReservations(res);
       setDiscounts(dg);
+      setStoria(st);
     });
 
   useEffect(() => {
@@ -192,6 +204,107 @@ export default function ClienteDetail() {
             className={inputClass}
           />
         </div>
+
+        {/* 🔴 IL CONSENSO — e sono DUE COSE DIVERSE, tenute separate apposta:
+            confermargli il tavolo non ha bisogno di niente, mandargli il menu
+            del mese sì. Qui si registra solo la seconda. */}
+        {isTitolare && (
+          <div className="mb-4 rounded-lg bg-b58-cream-dark/40 px-3 py-2.5">
+            {/* 🔴 SI LEGGE LA RISPOSTA, non si rifà il conto sulle due date:
+                `puo_ricevere_commerciali` è calcolata dal database, e
+                ricalcolarla qui sarebbe un secondo posto dove vive la stessa
+                regola — cioè due posti che possono contraddirsi. */}
+            {customer.puo_ricevere_commerciali ? (
+              <>
+                <p className="text-sm text-b58-charcoal">
+                  Gli si può scrivere anche fuori dalle sue prenotazioni — te l&apos;ha detto{" "}
+                  {customer.consenso_come} il {formatDate(customer.consenso_commerciale_il)}.
+                </p>
+                <button
+                  type="button"
+                  disabled={salvandoConsenso}
+                  onClick={async () => {
+                    setSalvandoConsenso(true);
+                    setError("");
+                    try {
+                      const r = await revocaConsenso(id);
+                      await load();
+                      setError("");
+                      window.alert(r.frase);
+                    } catch (e) {
+                      setError(e.message);
+                    } finally {
+                      setSalvandoConsenso(false);
+                    }
+                  }}
+                  className="text-xs text-b58-charcoal-soft underline mt-1"
+                >
+                  Ha chiesto di non ricevere più niente
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-b58-charcoal mb-2">
+                  {customer.consenso_revocato_il
+                    ? `Si è cancellato il ${formatDate(customer.consenso_revocato_il)}: non riceve comunicazioni.`
+                    : "Non gli è mai stato chiesto se gli si può scrivere fuori dalle sue prenotazioni."}
+                </p>
+                <div className="flex flex-wrap gap-2 items-end">
+                  <input
+                    value={comeConsenso}
+                    onChange={(e) => setComeConsenso(e.target.value)}
+                    placeholder="Come te l'ha detto (al telefono, di persona…)"
+                    className={`${inputClass} max-w-xs`}
+                  />
+                  <button
+                    type="button"
+                    disabled={salvandoConsenso || !comeConsenso.trim()}
+                    onClick={async () => {
+                      setSalvandoConsenso(true);
+                      setError("");
+                      try {
+                        await registraConsenso(id, comeConsenso);
+                        setComeConsenso("");
+                        await load();
+                      } catch (e) {
+                        setError(e.message);
+                      } finally {
+                        setSalvandoConsenso(false);
+                      }
+                    }}
+                    className="rounded-lg bg-b58-olive text-b58-parchment text-sm px-3 py-2 disabled:opacity-60"
+                  >
+                    Ha detto di sì
+                  </button>
+                </div>
+                {/* ⚠️ Il «come» si pretende: fra un anno «c'è la spunta» non
+                    risponde a nessuna contestazione. */}
+              </>
+            )}
+          </div>
+        )}
+
+        {isTitolare && nonLetto(storia) && (
+          <DatoNonLetto cosa="cosa gli è stato mandato e cosa ha scritto" className="mb-4" />
+        )}
+        {isTitolare && !nonLetto(storia) && storia.length > 0 && (
+          <details className="mb-4">
+            <summary className="text-sm text-b58-charcoal-soft cursor-pointer">
+              Cosa ci siamo detti ({storia.length})
+            </summary>
+            <ul className="mt-2 space-y-1">
+              {storia.map((r, i) => (
+                <li key={i} className="text-xs text-b58-charcoal">
+                  <span className="text-b58-charcoal-soft">
+                    {formatDate(r.quando)} ·{" "}
+                    {r.verso === "uscita" ? "→" : r.verso === "entrata" ? "←" : "·"}{" "}
+                  </span>
+                  {r.dettaglio}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
 
         {customer.stats?.first_reservation_date && (
           <p className="text-xs text-b58-charcoal-soft mb-4">

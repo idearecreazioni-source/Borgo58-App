@@ -19,6 +19,7 @@ import MenuDetail from "./pages/ricettario/MenuDetail";
 import ReservationsList from "./pages/calendario/ReservationsList";
 import ReservationForm from "./pages/calendario/ReservationForm";
 import ClientiList from "./pages/calendario/ClientiList";
+import Comunicazioni from "./pages/calendario/Comunicazioni";
 import PreventiviList from "./pages/calendario/PreventiviList";
 import PreventivoDetail from "./pages/calendario/PreventivoDetail";
 import ClienteDetail from "./pages/calendario/ClienteDetail";
@@ -166,6 +167,10 @@ function AppRoutes() {
         <Route path="/calendario-eventi/preventivi" element={<RequireTitolare><PreventiviList /></RequireTitolare>} />
         <Route path="/calendario-eventi/preventivi/:id" element={<RequireTitolare><PreventivoDetail /></RequireTitolare>} />
         <Route path="/calendario-eventi/clienti" element={<ClientiList />} />
+        <Route
+          path="/calendario-eventi/comunicazioni"
+          element={<RequireTitolare><Comunicazioni /></RequireTitolare>}
+        />
         <Route path="/calendario-eventi/clienti/:id" element={<ClienteDetail />} />
         <Route path="/calendario-eventi/:id" element={<ReservationForm />} />
 
