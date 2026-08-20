@@ -12,6 +12,8 @@ import {
 } from "../../lib/api/reservations";
 import { listMenus } from "../../lib/api/menus";
 import { trattativeDelGiorno } from "../../lib/api/preventivi";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -107,10 +109,10 @@ export default function ReservationForm() {
     };
   }, [id, isEdit, isTitolare]);
 
-  // Le trattative aperte di quella sera. ⚠️ Se la lettura fallisce l'elenco
-  // resta VUOTO e l'avviso non compare: qui è l'unico esito accettabile —
-  // scrivere «nessuna trattativa» sarebbe una rassicurazione che nessuno ha
-  // verificato, e la prenotazione si prende comunque.
+  // Le trattative aperte di quella sera. ⚠️ Se la lettura fallisce NON si
+  // tace: «non ci sono trattative» è una rassicurazione, e chi sta per
+  // promettere un tavolo la prenderebbe per buona. La prenotazione si
+  // registra comunque — l'avviso non è un blocco — ma si dice.
   useEffect(() => {
     if (!form.reservation_date) {
       setTrattative([]);
@@ -122,7 +124,7 @@ export default function ReservationForm() {
         if (!cancelled) setTrattative(r);
       })
       .catch(() => {
-        if (!cancelled) setTrattative([]);
+        if (!cancelled) setTrattative(NON_LETTO);
       });
     return () => {
       cancelled = true;
@@ -329,7 +331,14 @@ export default function ReservationForm() {
             gestionale avvisa e lascia decidere. ⚠️ Sta **sotto la data**, dove
             nasce il dubbio, e non in cima alla schermata: un avviso lontano dal
             gesto è un avviso che non c'è (lezione del 17/08). */}
-        {trattative.length > 0 && (
+        {nonLetto(trattative) && (
+          <DatoNonLetto
+            cosa="se per quella sera c'è una trattativa in corso"
+            className="mb-1"
+          />
+        )}
+
+        {!nonLetto(trattative) && trattative.length > 0 && (
           <p className="text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2">
             Per quella sera {trattative.length === 1 ? "c'è" : "ci sono"}{" "}
             {trattative.length === 1

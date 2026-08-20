@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { chiediAllArchivio, listDomandeArchivio } from "../../lib/api/assistente";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { formatDate } from "../../lib/constants";
 
 // «Chiedi all'archivio» — una domanda in italiano, la risposta letta dai
@@ -40,10 +42,7 @@ export default function ChiediArchivio() {
   const [storico, setStorico] = useState([]);
   const [mostraStorico, setMostraStorico] = useState(false);
 
-  const ricaricaStorico = () =>
-    listDomandeArchivio(20)
-      .then(setStorico)
-      .catch(() => {});
+  const ricaricaStorico = () => leggi(listDomandeArchivio(20)).then(setStorico);
 
   useEffect(() => {
     ricaricaStorico();
@@ -191,12 +190,17 @@ export default function ChiediArchivio() {
         onClick={() => setMostraStorico((v) => !v)}
         className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal underline"
       >
-        {mostraStorico ? "Nascondi le domande già fatte" : `Domande già fatte (${storico.length})`}
+        {mostraStorico
+          ? "Nascondi le domande già fatte"
+          : nonLetto(storico)
+            ? "Domande già fatte"
+            : `Domande già fatte (${storico.length})`}
       </button>
 
       {mostraStorico && (
         <div className="mt-3 space-y-2">
-          {storico.length === 0 && (
+          {nonLetto(storico) && <DatoNonLetto cosa="le domande già fatte" />}
+          {!nonLetto(storico) && storico.length === 0 && (
             <p className="text-sm text-b58-charcoal-soft">Nessuna domanda ancora.</p>
           )}
           {storico.map((d) => (

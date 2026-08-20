@@ -18,6 +18,8 @@ import { useAuth } from "../../context/AuthContext";
 import { ESITI_RIGA_LISTA, PAYMENT_METHODS, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
 import { listCausali } from "../../lib/api/cash";
 import { variazionePrezzoProdotto } from "../../lib/api/assistente";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -76,6 +78,9 @@ export default function ListaSpesa() {
   // registrarlo è ancora gratis. È la stessa scelta del 12/08 sulle
   // fatture — l'avviso in due posti, la schermata prima e Telegram dopo.
   const [rincaro, setRincaro] = useState(null);
+  // Se il controllo delle scorte non è riuscito, la lista non è completa e
+  // lo dice: chi la legge sta per andare a fare la spesa.
+  const [scorteGuardate, setScorteGuardate] = useState(true);
 
   const load = () => (isTitolare ? listShoppingList() : listShoppingListDisplay());
 
@@ -84,7 +89,12 @@ export default function ListaSpesa() {
     // sotto soglia entra da solo. Prima era un pulsante da ricordarsi di
     // premere — cioè una lista che diceva la verità solo a chi sapeva
     // che andava aggiornata.
-    if (isTitolare) await addBelowThresholdItems().catch(() => {});
+    // 🔴 Se questo passaggio fallisce la lista si apre CORTA e sembra
+    // completa — cioè esattamente il difetto che il commento qui sopra
+    // dichiara di aver tolto. Prima veniva ingoiato in silenzio.
+    let scorteGuardate = true;
+    if (isTitolare) scorteGuardate = !nonLetto(await leggi(addBelowThresholdItems()));
+    setScorteGuardate(scorteGuardate);
     const [listData, numeri, levels, sup, caus] = await Promise.all([
       load(),
       isTitolare ? listaSpesa() : Promise.resolve([]),
@@ -274,7 +284,12 @@ export default function ListaSpesa() {
     variazionePrezzoProdotto({ ingredienteId: ingrediente, prezzo: prezzoUnitario })
       .then((v) => vivo && setRincaro(v))
       // Il prezzo di prima è un di più: non blocca la conferma.
-      .catch(() => vivo && setRincaro(null));
+      // ⚠️ Non blocca la conferma — ma NON tace: un rincaro che non si è
+      // potuto leggere e «nessun rincaro» si leggono uguali, e il rincaro è
+      // la ragione per cui questo modulo esiste (decisione di Alessio del
+      // 12/08: «se un fornitore aumenta un prezzo senza dirmelo voglio
+      // saperlo»).
+      .catch(() => vivo && setRincaro(NON_LETTO));
     return () => {
       vivo = false;
     };
@@ -336,6 +351,15 @@ export default function ListaSpesa() {
           )}
         </div>
       </div>
+
+      {!scorteGuardate && (
+        <DatoNonLetto
+          cosa="quali prodotti sono sotto scorta"
+          nonVuolDire="Non vuol dire che non ne manca nessuno: vuol dire che non lo so. Quello che vedi qui sotto potrebbe essere incompleto."
+          onRiprova={() => loadAll().catch((e) => setError(e.message))}
+          className="mb-4"
+        />
+      )}
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -610,7 +634,14 @@ export default function ListaSpesa() {
                           </div>
                         )}
 
-                        {rincaro?.da_segnalare && (
+                        {nonLetto(rincaro) && (
+                          <DatoNonLetto
+                            cosa="quanto lo pagavi prima"
+                            className="mt-2"
+                          />
+                        )}
+
+                        {!nonLetto(rincaro) && rincaro?.da_segnalare && (
                           <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
                             ⚠️ Prima lo pagavi {formatEUR(rincaro.prezzo_precedente)}, adesso{" "}
                             {formatEUR(prezzoUnitario)} ({rincaro.variazione > 0 ? "+" : ""}

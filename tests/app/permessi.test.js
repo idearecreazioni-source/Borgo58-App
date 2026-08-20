@@ -1,12 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import {
-  almenoUnaRiga,
-  clientAnonimo,
-  clientAutenticato,
-  corridoioInstallato,
-  credenziali,
-  primaEntita,
-} from "./aiuto";
+import { almenoUnaRiga, clientAnonimo, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // Il corridoio si cerca PRIMA di definire le prove: se la funzione online
 // non è installata su questo progetto, le prove che la riguardano vengono
@@ -14,6 +7,9 @@ import {
 // anche lui, e "mi aspetto un errore" sarebbe soddisfatto da quello).
 const sonda = await clientAutenticato(credenziali().staff);
 const CORRIDOIO = await corridoioInstallato(sonda);
+// ⚠️ La sentinella sta in OGNI file che salta prove, non in uno solo: chi
+// lancia solo questo file deve vedere che ci sono prove che non sono partite.
+await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 await sonda.auth.signOut({ scope: "local" });
 
 // La matrice dei permessi, riprovabile in venti secondi.
@@ -299,14 +295,9 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(corpo?.errore?.messaggio).toContain("Conto non trovato");
   });
 
-  // Sentinella: una prova saltata in silenzio, dopo un mese, è una prova
-  // che nessuno sa di non avere più. Finché il corridoio non è installato
-  // qui, questa riga resta rossa e lo ricorda.
-  it("il corridoio è installato anche su questo progetto", () => {
-    expect(
-      CORRIDOIO,
-      "La funzione online 'operazioni-atomiche' non è installata sul progetto di prova: " +
-        "le tre prove del corridoio sono state SALTATE (docs/AMBIENTE_PROVA.md §6)."
-    ).toBe(true);
-  });
+  // ⚠️ LA SENTINELLA È USCITA DA QUI il 20/08, e non è sparita: sta in
+  // `denunciaSaltiCorridoio()` (tests/app/aiuto.js), chiamata in cima a
+  // questo file e agli altri OTTO che saltano prove. Il suo messaggio
+  // diceva «le tre prove del corridoio»: erano tre quando è stata scritta,
+  // oggi sono 26 — adesso il numero se lo conta da solo.
 });

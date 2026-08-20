@@ -10,6 +10,7 @@ import {
   riepilogoScenario,
 } from "../../lib/api/proiezione";
 import { formatEUR } from "../../lib/constants";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
 
@@ -30,6 +31,10 @@ export default function PrevisioneDettaglio() {
   const [confronto, setConfronto] = useState([]);
   const [calendario, setCalendario] = useState([]);
   const [annoPrima, setAnnoPrima] = useState(null);
+  // ⚠️ «Non c'è una previsione dell'anno prima» e «non sono riuscito a
+  // cercarla» dicevano la stessa frase, e la prima è una risposta mentre
+  // la seconda è la sua assenza.
+  const [precedentiNonLette, setPrecedentiNonLette] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [congelando, setCongelando] = useState(false);
@@ -57,10 +62,16 @@ export default function PrevisioneDettaglio() {
       // società, preferendo quella chiusa — una previsione congelata è
       // l'unica che non cambierà più. Se non ce n'è, resta `null` e la
       // schermata lo DICHIARA invece di far sembrare giugno leggero.
-      const precedenti = await listaScenari(s.entity_id).catch(() => []);
-      const anteriore =
-        precedenti.filter((x) => x.anno === s.anno - 1).sort((a, b) => (b.congelato_il ? 1 : 0) - (a.congelato_il ? 1 : 0))[0] ?? null;
-      const rPrec = anteriore ? await riepilogoScenario(anteriore.id).catch(() => null) : null;
+      // ⚠️ Se l'elenco non arriva, «non c'è una previsione dell'anno prima»
+      // e «non sono riuscito a cercarla» si leggono uguali — e la seconda
+      // farebbe sembrare giugno leggero, che è proprio ciò che il commento
+      // qui sopra vuole evitare.
+      const precedenti = await leggi(listaScenari(s.entity_id));
+      const anteriore = nonLetto(precedenti)
+        ? null
+        : precedenti.filter((x) => x.anno === s.anno - 1).sort((a, b) => (b.congelato_il ? 1 : 0) - (a.congelato_il ? 1 : 0))[0] ?? null;
+      const rPrec = anteriore ? await leggi(riepilogoScenario(anteriore.id)) : null;
+      setPrecedentiNonLette(nonLetto(precedenti) || nonLetto(rPrec));
       setAnnoPrima(rPrec?.imposte != null ? { nome: anteriore.nome, imposte: rPrec.imposte } : null);
       setCalendario(await calendarioImposte(s.entity_id, s.anno, r.imposte, rPrec?.imposte ?? null));
     } else {
@@ -247,7 +258,9 @@ export default function PrevisioneDettaglio() {
           <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
             {annoPrima
               ? `Il saldo dell'anno prima è compreso, e viene dalla previsione «${annoPrima.nome}».`
-              : "Il saldo dell'anno prima NON è compreso: non c'è nessuna previsione dell'anno precedente da cui prenderlo. Giugno sarà più pesante di così."}
+              : precedentiNonLette
+                ? "Il saldo dell'anno prima NON è compreso, e non so dirti se una previsione dell'anno precedente esista: non sono riuscito a leggerla. Giugno potrebbe essere più pesante di così."
+                : "Il saldo dell'anno prima NON è compreso: non c'è nessuna previsione dell'anno precedente da cui prenderlo. Giugno sarà più pesante di così."}
           </p>
           <table className="w-full text-sm">
             <tbody>

@@ -19,6 +19,8 @@ import {
   statoConfrontoMensile,
 } from "../../lib/api/proiezione";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const MESI = [
@@ -102,7 +104,7 @@ export default function AndamentoMensile() {
       setDueImposte(
         fa?.ante_imposte_proiettato == null
           ? null
-          : await imposteEFiscalizzato(entityId, anno, fa.ante_imposte_proiettato).catch(() => null)
+          : await leggi(imposteEFiscalizzato(entityId, anno, fa.ante_imposte_proiettato))
       );
     } else {
       setScostamento([]);
@@ -437,7 +439,17 @@ export default function AndamentoMensile() {
                       pertinente. La cifra vera sta fra le due, e si sposta
                       verso la prima man mano che i conti in sospeso vengono
                       regolarizzati. */}
-                  {dueImposte && Number(dueImposte.conti_sospesi) > 0 && (
+                  {/* 🔴 Senza questa riga, «non ho potuto leggerle» si legge
+                      come «non ci sono conti da sistemare»: cioè come una
+                      stima delle imposte già affidabile. */}
+                  {nonLetto(dueImposte) && (
+                    <DatoNonLetto
+                      cosa="quanta parte dell'incassato è già scontrinata"
+                      nonVuolDire="Non vuol dire che è tutto a posto: vuol dire che non lo so. La stima qui sopra potrebbe essere più bassa del dovuto."
+                      className="mt-3"
+                    />
+                  )}
+                  {!nonLetto(dueImposte) && dueImposte && Number(dueImposte.conti_sospesi) > 0 && (
                     <div className="mt-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 px-3 py-2.5">
                       <p className="text-xs font-medium text-b58-charcoal mb-1.5">
                         Imposte: la cifra vera sta fra queste due

@@ -27,6 +27,24 @@ describe("il magazzino scende chiudendo un conto", () => {
   let ricetta;
   let conto;
 
+  // 🔴 QUESTA PULIZIA NON PUÒ TOGLIERE TUTTO, ed è un fatto misurato il
+  // 20/08: `stock_consumptions` ha **una sola policy, quella di lettura**
+  // (decisione del 16/08: «ricrearla `for all` per uniformità avrebbe
+  // aperto una porta che non c'era»). Quindi da qui un `delete` su quella
+  // tabella **non cancella niente e non dà errore** — e l'ingrediente
+  // resta, perché lo trattiene con un vincolo `restrict`.
+  //
+  // ⚠️ Per dieci giorni ogni esecuzione ne ha lasciato uno: misurati **74**
+  // ingredienti `TEST-AUTO scarico` sul progetto di prova, e la pulizia che
+  // ci ciclava sopra ha cominciato a sforare i 30 secondi dell'hook —
+  // facendo SALTARE tutte e sei le prove di questo file, in silenzio.
+  // *La stessa famiglia del blocco A, vista dal lato delle prove.*
+  //
+  // ⚠️ E LA CURA NON È APRIRE LA POLICY: una prova che allarga un permesso
+  // per potersi ripulire è il primo passo verso una che lo lascia aperto.
+  // Ci si gira attorno — l'ingrediente si RIUSA invece di crearne uno nuovo
+  // ogni volta, come questo stesso file fa già col tavolo — così il residuo
+  // resta uno e non cresce.
   async function pulisci() {
     const { data: conti } = await titolare.from("orders").select("id").eq("table_label", TAVOLO);
     for (const o of conti ?? []) {
@@ -41,12 +59,12 @@ describe("il magazzino scende chiudendo un conto", () => {
       await titolare.from("recipe_status_history").delete().eq("recipe_id", r.id);
       await titolare.from("recipes").delete().eq("id", r.id);
     }
-    const { data: ing } = await titolare.from("ingredients").select("id").eq("name", NOME);
+    // ⚠️ NON si cicla più su tutti quelli che esistono: l'ingrediente è uno
+    // e resta, e i suoi lotti si tolgono quando la prova riparte.
+    const { data: ing } = await titolare.from("ingredients").select("id").eq("name", NOME).limit(1);
     for (const i of ing ?? []) {
-      await titolare.from("stock_consumptions").delete().eq("ingredient_id", i.id);
       await titolare.from("stock_lots").delete().eq("ingredient_id", i.id);
       await titolare.from("price_history").delete().eq("ingredient_id", i.id);
-      await titolare.from("ingredients").delete().eq("id", i.id);
     }
   }
 
@@ -68,13 +86,23 @@ describe("il magazzino scende chiudendo un conto", () => {
       await titolare.from("dining_tables").insert({ label: TAVOLO, position: 998 });
     }
 
-    const i = await titolare
-      .from("ingredients")
-      .insert({ entity_id: ente, name: NOME, category: "verdura", unit: "kg", waste_percentage_default: 0 })
-      .select()
-      .single();
-    expect(i.error).toBeNull();
-    ingrediente = i.data.id;
+    // ⚠️ Si riusa quello di ieri se c'è: vedi il commento su `pulisci()`.
+    const gia = await titolare.from("ingredients").select("id").eq("name", NOME).limit(1).maybeSingle();
+    if (gia.data) {
+      ingrediente = gia.data.id;
+      // I lotti di ieri sì che si tolgono: quelli non hanno vincoli addosso,
+      // e senza, il FEFO partirebbe da una giacenza che non è quella scritta
+      // in questa prova.
+      await titolare.from("stock_lots").delete().eq("ingredient_id", ingrediente);
+    } else {
+      const i = await titolare
+        .from("ingredients")
+        .insert({ entity_id: ente, name: NOME, category: "verdura", unit: "kg", waste_percentage_default: 0 })
+        .select()
+        .single();
+      expect(i.error).toBeNull();
+      ingrediente = i.data.id;
+    }
 
     // Mezzo chilo che scade domani a 2,00 €/kg, cinque chili fra un mese
     // a 4,00: se lo scarico non partisse dal primo, il costo non tornerebbe.

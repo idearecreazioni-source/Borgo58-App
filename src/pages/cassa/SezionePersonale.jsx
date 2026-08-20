@@ -15,6 +15,8 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 // La sezione personale del titolare (Blocco 7).
@@ -72,7 +74,7 @@ export default function SezionePersonale() {
       listTagAnticipazioni({ soloAttivi: true }),
       listAnticipazioniPerTag(entityId, annoCorrente),
       listDaComunicare(entityId, annoCorrente, meseCorrente),
-      listSupplierInvoices({ status: "da_pagare" }).catch(() => []),
+      leggi(listSupplierInvoices({ status: "da_pagare" })),
     ]).then(([s, n, t, pt, dc, f]) => {
       setSaldo(s);
       setNote(n);
@@ -162,7 +164,7 @@ export default function SezionePersonale() {
 
   const aperte = note.filter((n) => !n.pareggiata_il);
   const chiuse = note.filter((n) => n.pareggiata_il).slice(0, 10);
-  const fattureAperte = fatture;
+  const fattureAperte = nonLetto(fatture) ? [] : fatture;
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -355,6 +357,14 @@ export default function SezionePersonale() {
                         </option>
                       ))}
                     </select>
+                    {/* 🔴 Un menu vuoto qui non è innocuo: si legge «non c'è
+                        nessuna fattura aperta», e si registra la nota come
+                        spesa a sé — cioè LA STESSA SPESA CONTATA DUE VOLTE,
+                        che è precisamente quello che questo campo esiste per
+                        evitare. */}
+                    {nonLetto(fatture) && (
+                      <DatoNonLetto cosa="le fatture ancora da pagare" className="mt-1" />
+                    )}
                   </div>
                 </div>
 

@@ -11,6 +11,7 @@ import {
   salvaPreventivo,
 } from "../../lib/api/preventivi";
 import { listRecipes } from "../../lib/api/recipes";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { puoAndareInCarta } from "../../lib/calcoli/carta";
 import { formatDate, formatEUR } from "../../lib/constants";
 
@@ -70,9 +71,9 @@ export default function PreventivoDetail() {
 
   useEffect(() => {
     carica();
-    listRecipes()
-      .then((r) => setPiatti(r.filter(puoAndareInCarta)))
-      .catch(() => setPiatti([]));
+    // ⚠️ Vuoto si legge «non c'è nessun piatto pronto per la carta»
+    // davanti a un cliente, mentre il Ricettario è pieno.
+    leggi(listRecipes()).then((r) => setPiatti(nonLetto(r) ? r : r.filter(puoAndareInCarta)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -619,7 +620,10 @@ function VistaCosto({
         <div className="flex gap-2 mt-4">
           <select value={nuovoPiatto} onChange={(e) => setNuovoPiatto(e.target.value)} className="flex-1 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm">
             <option value="">Aggiungi un piatto…</option>
-            {piatti.map((p) => (
+            {nonLetto(piatti) && (
+              <option disabled>— non riesco a leggere il Ricettario —</option>
+            )}
+            {(nonLetto(piatti) ? [] : piatti).map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // La lista della spesa (Fase A del mandato «filiera della spesa»).
 //
@@ -20,6 +20,9 @@ const NOME_SENZA = "TEST-AUTO spesa senza soglia";
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
+// ⚠️ La sentinella sta in OGNI file che salta prove, non in uno solo: chi
+// lancia solo questo file deve vedere che ci sono prove che non sono partite.
+await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 
 describe("lista della spesa: la soglia decide, e nessuna viene inventata", () => {
   let titolare;

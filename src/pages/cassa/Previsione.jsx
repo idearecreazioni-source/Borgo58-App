@@ -15,6 +15,8 @@ import {
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, traGiorniLocale } from "../../lib/constants";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // «Ce la faccio al 16?» — Blocco 6b del mandato.
 //
@@ -78,7 +80,7 @@ export default function Previsione() {
       // ⚠️ Con l'orizzonte, per sapere cosa cade OLTRE. Il conto lo fa il
       // database: sottrarre qui «tutte le future meno quelle in elenco»
       // sarebbe un secondo calcolo dello stesso numero.
-      getUsciteFuture(entityId, finoAl()).catch(() => null),
+      leggi(getUsciteFuture(entityId, finoAl())),
     ]).then(([p, t, a, s, imp, uf]) => {
       setPrevisione(p);
       setPos(t);
@@ -301,7 +303,16 @@ export default function Previsione() {
                 ⚠️ Non si allunga l'orizzonte da soli: se «fra 30 giorni»
                 comprendesse anche il 31° quando lì c'è qualcosa, «30» non
                 vorrebbe più dire 30. Si dice cosa resta fuori. */}
-            {oltre?.quante_oltre > 0 && (
+            {/* 🔴 Senza questa riga «non l'ho letto» e «non c'è niente oltre
+                l'orizzonte» si leggono uguali — e la seconda è una
+                rassicurazione su soldi che devono uscire. */}
+            {nonLetto(oltre) && (
+              <DatoNonLetto
+                cosa="cosa cade oltre l'orizzonte che hai scelto"
+                className="mt-2"
+              />
+            )}
+            {!nonLetto(oltre) && oltre?.quante_oltre > 0 && (
               <p className="text-xs text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
                 Oltre questa data{" "}
                 {oltre.quante_oltre === 1

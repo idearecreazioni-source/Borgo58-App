@@ -1,0 +1,142 @@
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { NON_LETTO, leggi, nonLetto, statoLettura } from "../../src/lib/calcoli/letture";
+
+// QUELLO CHE NON TROVA QUELLO CHE CERCA DEVE DIRLO — 20/08/2026.
+//
+// Due prove diverse, e servono tutte e due:
+//   · la REGOLA — «non lo so» e «non c'è niente» non si confondono più;
+//   · la RETE — nessuna schermata la aggira scrivendo un catch che ingoia.
+//
+// ⚠️ IL LIMITE, DICHIARATO: in questo progetto le prove non hanno un
+// ambiente DOM, quindi **nessuna prova automatica può guardare una
+// schermata**. Quello che si prova qui è *quale delle tre cose la schermata
+// dirà* e *che nessun punto sia rimasto muto*. Che la riga si veda davvero
+// lo può dire solo una mano — sta nel collaudo.
+
+describe("«non lo so» non è «non c'è niente»", () => {
+  it("le tre risposte sono TRE, e non si confondono", () => {
+    // 🔴 È il cuore: prima queste due erano lo stesso `[]`.
+    expect(statoLettura(NON_LETTO)).toBe("non_letto");
+    expect(statoLettura([])).toBe("vuoto");
+    expect(statoLettura([{ id: 1 }])).toBe("pieno");
+  });
+
+  it("`null` resta «vuoto», e non diventa «non lo so»", () => {
+    // ⚠️ `null` è già un valore legittimo in mezzo gestionale (una caparra
+    // che non c'è, un prezzo non deciso). Confonderlo con «non l'ho letto»
+    // riaprirebbe il difetto da un'altra porta.
+    expect(statoLettura(null)).toBe("vuoto");
+    expect(statoLettura(undefined)).toBe("vuoto");
+    expect(nonLetto(null)).toBe(false);
+    expect(nonLetto([])).toBe(false);
+    expect(nonLetto(0)).toBe(false);
+  });
+
+  it("un oggetto vuoto è «vuoto», uno pieno è «pieno», lo zero è un numero", () => {
+    expect(statoLettura({})).toBe("vuoto");
+    expect(statoLettura({ quante: 0 })).toBe("pieno");
+    // ⚠️ Zero uscite future è un'informazione vera, non un vuoto: la
+    // schermata deve poterla mostrare.
+    expect(statoLettura(0)).toBe("pieno");
+  });
+
+  it("`leggi` conserva il risultato quando la lettura riesce", async () => {
+    await expect(leggi(Promise.resolve([1, 2]))).resolves.toEqual([1, 2]);
+    await expect(leggi(Promise.resolve(null))).resolves.toBeNull();
+  });
+
+  it("`leggi` MARCA invece di ingoiare quando la lettura fallisce", async () => {
+    const r = await leggi(Promise.reject(new Error("rete giù")));
+    expect(nonLetto(r), "la lettura fallita è stata ingoiata").toBe(true);
+    expect(statoLettura(r)).toBe("non_letto");
+  });
+
+  it("e non fa cadere le letture accanto: è la ragione per cui i catch esistevano", async () => {
+    const [a, b, c] = await Promise.all([
+      leggi(Promise.resolve("primo")),
+      leggi(Promise.reject(new Error("guasto"))),
+      leggi(Promise.resolve("terzo")),
+    ]);
+    expect(a).toBe("primo");
+    expect(nonLetto(b)).toBe(true);
+    expect(c).toBe("terzo");
+  });
+});
+
+// ---------------------------------------------------------------------
+// LA RETE
+// ---------------------------------------------------------------------
+// 🔴 Senza questa, fra un mese la regola ricompare: la correzione punto per
+// punto è «trovarli tutti», e il prossimo che scrive una lettura nuova
+// ricomincia da capo. Qui un catch nuovo diventa rosso da solo.
+//
+// ⚠️ È un controllo di FORMA, non di comportamento — come quello sulle
+// migrazioni senza portiere. Non sa se la schermata mostra davvero la riga:
+// sa che quel punto non è stato lasciato muto. Il caso che resta possibile è
+// marcare `NON_LETTO` e poi non guardarlo mai; quello lo prende una mano.
+const RADICE = "src";
+const MARCATORE = "SILENZIO MOTIVATO";
+// Il modulo che definisce la regola parla di sé stesso nei commenti.
+const ESENTI = ["src/lib/calcoli/letture.js"];
+
+function tuttiIFile(dir) {
+  const fuori = [];
+  for (const nome of readdirSync(dir)) {
+    const p = join(dir, nome);
+    if (statSync(p).isDirectory()) fuori.push(...tuttiIFile(p));
+    else if (/\.(js|jsx)$/.test(nome)) fuori.push(p.replace(/\\/g, "/"));
+  }
+  return fuori;
+}
+
+describe("nessuna lettura resta muta", () => {
+  it("ogni `catch` che ingoia o marca «non letto» o dichiara perché tace", () => {
+    const colpevoli = [];
+    for (const file of tuttiIFile(RADICE)) {
+      if (ESENTI.includes(file)) continue;
+      const righe = readFileSync(file, "utf8").split("\n");
+      righe.forEach((riga, i) => {
+        if (!/\.catch\(\s*\(\s*\)\s*=>/.test(riga)) return;
+        // Il corpo del catch può stare sulla riga o poco sotto.
+        const corpo = righe.slice(i, i + 6).join("\n");
+        if (corpo.includes("NON_LETTO")) return;
+        // Oppure il silenzio è dichiarato, e la ragione sta lì sopra.
+        const sopra = righe.slice(Math.max(0, i - 14), i + 6).join("\n");
+        if (sopra.includes(MARCATORE)) return;
+        colpevoli.push(`${file}:${i + 1}`);
+      });
+    }
+    // ⚠️ Il messaggio dice QUALI, non solo quanti: chi legge una prova rossa
+    // deve poter decidere, non ricominciare la misura da capo.
+    expect(
+      colpevoli,
+      `Queste letture ingoiano un guasto senza dirlo e senza dichiarare perché.\n` +
+        `O si marca il risultato con NON_LETTO (src/lib/calcoli/letture.js) e la\n` +
+        `schermata lo mostra, oppure si scrive «${MARCATORE}» col motivo:\n  ` +
+        colpevoli.join("\n  ")
+    ).toEqual([]);
+  });
+
+  it("e i silenzi dichiarati sono quelli che ci aspettiamo, non uno di più", () => {
+    // ⚠️ Un elenco che cresce in silenzio non è più un controllo: la stessa
+    // forma delle funzioni aperte ad anon. Chi ne aggiunge uno lo dichiara
+    // QUI, con la sua ragione nel codice.
+    const attesi = [
+      // La giornata proposta: senza l'ora di fine serata la schermata dice
+      // di MENO (non dichiara la serata), invece di affermarla su un'ora
+      // che nessuno ha detto.
+      "src/lib/giornataOperativa.js",
+      // Il modulo pubblico: il destinatario è un ospite, e senza le opzioni
+      // torna all'orario libero — che è uno stato dichiarato della pagina,
+      // non una rassicurazione.
+      "src/pages/public/PublicReservationForm.jsx",
+    ].sort();
+
+    const trovati = tuttiIFile(RADICE)
+      .filter((f) => !ESENTI.includes(f) && readFileSync(f, "utf8").includes(MARCATORE))
+      .sort();
+    expect(trovati).toEqual(attesi);
+  });
+});

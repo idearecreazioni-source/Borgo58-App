@@ -183,3 +183,73 @@ export async function clientAutenticato({ email, password }) {
   }
   return c;
 }
+
+// ---------------------------------------------------------------------
+// LA SENTINELLA DEI SALTI — 20/08/2026
+// ---------------------------------------------------------------------
+// 🔴 IL DIFETTO CHE CHIUDE. Le prove condizionate al corridoio sono **26**,
+// sparse su **nove** file. La sentinella che denunciava il salto viveva in
+// UN SOLO file (`permessi.test.js`) e il suo messaggio diceva «le tre prove
+// del corridoio»: erano tre quando è stata scritta.
+//
+// Due cose sbagliate insieme, e sono di natura diversa:
+//   · **il numero era scritto a mano**, quindi invecchiava da solo — la
+//     stessa forma che questo progetto ha già tolto con `collaudo:stato`;
+//   · **il salto si denunciava da un file solo**, quindi chi lanciasse
+//     `vitest run tests/app/tesoreria.test.js` con il corridoio spento
+//     vedrebbe tre prove «passate» che non sono mai partite.
+//
+// ⚠️ *Una prova saltata in silenzio, dopo un mese, è una prova che nessuno
+// sa di non avere più.*
+
+/**
+ * Quante prove di un file sono condizionate al corridoio.
+ *
+ * ⚠️ Il numero si CONTA, non si scrive: è una funzione pura che legge il
+ * sorgente, e la prova che la sorveglia sta in `tests/unita/`.
+ */
+export function proveCondizionate(sorgente) {
+  // 🔴 DUE FORME, NON UNA, e la seconda è stata trovata dalla prova scritta
+  // al contrario — non rileggendo. `allarmi.test.js` salta un `describe`
+  // INTERO, non le singole prove: cercando solo `it.skipIf` risultava «zero
+  // prove condizionate» su un file che ne salta tre. È la stessa forma del
+  // guardiano del 19/08 che riconosceva una sola delle due scritture dello
+  // stesso gesto.
+  const singole = (sorgente.match(/it\.skipIf\(\s*!\s*CORRIDOIO\s*\)/g) ?? []).length;
+  if (!/describe\.skipIf\(\s*!\s*CORRIDOIO\s*\)/.test(sorgente)) return singole;
+
+  // ⚠️ LIMITE DICHIARATO: quando un `describe` intero è condizionato, si
+  // contano TUTTE le prove del file. È esatto finché quel describe copre il
+  // file (il caso di oggi) e sovrastima se un domani ne convivessero due.
+  // Sovrastimare qui è il verso giusto: il numero serve a dire «non sono
+  // partite», e dirne una in più non fa spegnere una sentinella.
+  const tutte = (sorgente.match(/\bit(\.skipIf\([^)]*\))?\s*\(/g) ?? []).length;
+  return Math.max(singole, tutte);
+}
+
+/**
+ * Da chiamare in OGNI file che ha prove condizionate al corridoio, passando
+ * `import.meta.url`. Se il corridoio non è installato, questo file diventa
+ * rosso e dice **quante** delle sue prove non sono partite.
+ */
+export async function denunciaSaltiCorridoio(installato, urlDelFile) {
+  const { describe, expect, it } = await import("vitest");
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+
+  const percorso = fileURLToPath(urlDelFile);
+  const nome = percorso.split(/[\\/]/).pop();
+  const quante = proveCondizionate(readFileSync(percorso, "utf8"));
+
+  describe(`sentinella dei salti — ${nome}`, () => {
+    it("il corridoio è installato, quindi nessuna prova di questo file è stata saltata", () => {
+      expect(
+        installato,
+        `La funzione online 'operazioni-atomiche' non è installata sul progetto di prova: ` +
+          `${quante} prove di ${nome} sono state SALTATE, e sono passate senza partire. ` +
+          `Si installa con \`npm run funzione operazioni-atomiche -- --prova --conferma\` ` +
+          `(docs/AMBIENTE_PROVA.md §6).`
+      ).toBe(true);
+    });
+  });
+}

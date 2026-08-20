@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // Blocco 1 del mandato di correzione: un documento che ha generato un
 // effetto altrove o è respinto, o storna anche l'effetto. Non esiste il
@@ -22,6 +22,9 @@ const ANNO = 2094;
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
+// ⚠️ La sentinella sta in OGNI file che salta prove, non in uno solo: chi
+// lancia solo questo file deve vedere che ci sono prove che non sono partite.
+await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 
 describe("un documento che ha generato un effetto non si cancella e basta", () => {
   let titolare;

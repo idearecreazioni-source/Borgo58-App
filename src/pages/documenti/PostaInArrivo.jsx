@@ -8,6 +8,7 @@ import {
   scartaPosta,
 } from "../../lib/api/posta";
 import { listIngredients } from "../../lib/api/ingredients";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
 import { righeListaAperte } from "../../lib/api/shoppingList";
 import { listSuppliers } from "../../lib/api/suppliers";
@@ -299,7 +300,10 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       className={campo}
     >
       <option value="">— scegli —</option>
-      {(ingredienti ?? []).map((ing) => (
+      {nonLetto(ingredienti) && (
+        <option disabled>— non riesco a leggere il Ricettario —</option>
+      )}
+      {(nonLetto(ingredienti) ? [] : ingredienti ?? []).map((ing) => (
         <option key={ing.id} value={ing.id}>{ing.name}</option>
       ))}
       <option value="__nuovo__">+ è un prodotto nuovo</option>
@@ -677,7 +681,10 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             className={campo}
           >
             <option value="">— nessuno —</option>
-            {(fornitori ?? []).map((f) => (
+            {nonLetto(fornitori) && (
+              <option disabled>— non riesco a leggere i fornitori —</option>
+            )}
+            {(nonLetto(fornitori) ? [] : fornitori ?? []).map((f) => (
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
@@ -793,9 +800,12 @@ export default function PostaInArrivo() {
       // davvero il 12/08/2026: Alessio ha confermato il primo carico e
       // sulla fattura dopo non trovava i sette ingredienti appena nati.
       // Non sembrava un guasto: sembrava un menu senza niente dentro.
+      // 🔴 E se questa lettura fallisce il menu resta vuoto — cioè
+      // ESATTAMENTE il difetto che il commento qui sopra racconta, con
+      // un'altra causa. Ora non si tace: il menu lo dichiara.
       await Promise.all([
-        listIngredients().then(setIngredienti).catch(() => {}),
-        listSuppliers().then(setFornitori).catch(() => {}),
+        leggi(listIngredients()).then(setIngredienti),
+        leggi(listSuppliers()).then(setFornitori),
       ]);
     } catch (e) {
       setError(e.message);

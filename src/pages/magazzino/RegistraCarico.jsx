@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { listStockLevels, registerStockDelivery } from "../../lib/api/stock";
 import { righeListaAperte } from "../../lib/api/shoppingList";
 import { formatDate, formatQta } from "../../lib/constants";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
@@ -61,14 +63,19 @@ export default function RegistraCarico() {
     }
     righeListaAperte(form.ingredient_id)
       .then((r) => !annullato && setRigheLista(r))
-      .catch(() => !annullato && setRigheLista([]));
+      // 🔴 Vuoto qui si legge «non c'era niente in lista per questo
+      // prodotto», e il carico si registra senza chiudere la riga della
+      // spesa — che è il blocco degli arrivi del 19/08 disinnescato in
+      // silenzio.
+      .catch(() => !annullato && setRigheLista(NON_LETTO));
     return () => {
       annullato = true;
     };
   }, [form.ingredient_id]);
 
-  const rigaPredefinita = righeLista.find((r) => r.predefinita) ?? null;
-  const rigaChePrende = righeLista.find((r) => r.id === rigaScelta) ?? rigaPredefinita;
+  const righe = nonLetto(righeLista) ? [] : righeLista;
+  const rigaPredefinita = righe.find((r) => r.predefinita) ?? null;
+  const rigaChePrende = righe.find((r) => r.id === rigaScelta) ?? rigaPredefinita;
 
   const selectedIngredient = ingredients.find((i) => i.ingredient_id === form.ingredient_id);
 
@@ -200,6 +207,10 @@ export default function RegistraCarico() {
             sulla riga più vecchia in silenzio è un predefinito che può
             sbagliare senza che nessuno se ne accorga; chiedere ogni volta
             aggiunge un gesto a un'operazione che ne ha già tre. */}
+        {nonLetto(righeLista) && (
+          <DatoNonLetto cosa="le righe della lista della spesa per questo prodotto" />
+        )}
+
         {rigaChePrende && (
           <div className="rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm text-b58-charcoal">
             Questo carico va sulla riga della lista della spesa
@@ -216,13 +227,13 @@ export default function RegistraCarico() {
             {/* La scelta compare SOLO quando c'è davvero qualcosa da
                 scegliere: con una riga sola non c'è niente da correggere, e
                 un menu che ha una voce sola è ingombro. */}
-            {righeLista.length > 1 && (
+            {righe.length > 1 && (
               <select
                 value={rigaScelta || rigaPredefinita?.id || ""}
                 onChange={(e) => setRigaScelta(e.target.value)}
                 className="mt-2 w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm"
               >
-                {righeLista.map((r) => (
+                {righe.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.quantita_richiesta != null
                       ? `${formatQta(r.quantita_richiesta)} ${r.unita} — in lista dal ${formatDate(r.in_lista_dal)}`

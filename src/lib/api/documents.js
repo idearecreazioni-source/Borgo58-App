@@ -72,18 +72,42 @@ export async function updateDocument(id, patch) {
   return data;
 }
 
-// Promemoria completato e riga cancellata nella STESSA transazione
-// (funzione Postgres delete_document, Contratto B4). Il file si rimuove
-// DOPO, a riga già sparita: prima la riga, poi il file — un file orfano è
-// invisibile e innocuo, una riga che punta a un file cancellato è un
-// documento che l'app mostra e non si apre (era l'ordine di prima).
+// 🔴 PRIMA IL FILE, POI LA RIGA — ordine INVERTITO il 20/08/2026, e la
+// ragione vecchia era misurabile e sbagliata.
+//
+// Diceva: *«un file orfano è invisibile e innocuo»*. Misurato il 20/08: nel
+// deposito ci sono **tre file che nessun documento nomina più**. Non sono
+// innocui — sono documenti che Alessio ha cancellato dall'app **credendo di
+// averli tolti**, e che nessuna schermata può più raggiungere per toglierli.
+// E la parola che li descriveva meglio era proprio «invisibile»: è il motivo
+// per cui ci sono voluti dieci giorni per accorgersene.
+//
+// ⚠️ E NON ESISTE UNA TRANSAZIONE FRA DATABASE E DEPOSITO: sono due sistemi
+// diversi, quindi se il secondo passo fallisce qualcosa resta a metà **in
+// tutti e due gli ordini**. Non si sceglie fra «tutto o niente» e «metà»: si
+// sceglie **quale metà**.
+//
+//   · ordine vecchio → riga via, file rimasto: **invisibile**, e non si
+//     ripara mai, perché dall'app quel file non si nomina più;
+//   · ordine nuovo → file via, riga rimasta: **si vede** (il documento è in
+//     elenco e non si apre) e **si ripara da sé** al tentativo successivo,
+//     perché togliere un file già assente non dà errore.
+//
+// È lo stesso criterio del blocco A: un difetto che si vede batte uno che
+// tace, e uno che si ripara batte uno che resta.
+//
+// ⚠️ E IL FALLIMENTO NON SI INGOIA PIÙ: se il file non si toglie, la riga
+// NON si cancella e chi ha premuto lo sa. Prima l'app diceva «fatto» con
+// metà lavoro svolto.
 export async function deleteDocument(doc) {
-  const storagePath = await eseguiOperazione("delete_document", { p_document_id: doc.id });
-  if (storagePath) {
-    try {
-      await supabase.storage.from(BUCKET).remove([storagePath]);
-    } catch {
-      /* file già assente o storage non raggiungibile: la riga è la verità */
+  if (doc.storage_path) {
+    const { error } = await supabase.storage.from(BUCKET).remove([doc.storage_path]);
+    if (error) {
+      throw new Error(
+        "Non sono riuscito a togliere il file dal deposito, quindi non ho tolto neanche il documento: " +
+          "resta tutto com'era. Riprova fra poco. (" + error.message + ")"
+      );
     }
   }
+  await eseguiOperazione("delete_document", { p_document_id: doc.id });
 }

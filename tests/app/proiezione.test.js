@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // La Proiezione economico-fiscale (Blocco 3).
 //
@@ -22,6 +22,9 @@ const NOME = "TEST-AUTO previsione";
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
+// ⚠️ La sentinella sta in OGNI file che salta prove, non in uno solo: chi
+// lancia solo questo file deve vedere che ci sono prove che non sono partite.
+await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 
 function scenarioDiProva(ente) {
   return {

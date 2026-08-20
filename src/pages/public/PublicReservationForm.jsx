@@ -60,8 +60,14 @@ export default function PublicReservationForm() {
         }
       })
       .catch(() => {
-        // Se la disponibilità non arriva, non si blocca la prenotazione:
-        // si torna all'orario libero e decide comunque il titolare.
+        // ⚠️ SILENZIO MOTIVATO, e la ragione è che qui il vuoto NON è
+        // ambiguo: senza le opzioni il modulo torna all'orario libero, che
+        // è lo stato dichiarato di questa pagina quando le prenotazioni
+        // online sono spente. Chi legge non riceve nessuna rassicurazione
+        // falsa — non gli viene detto che c'è posto — e la richiesta la
+        // conferma comunque il titolare, a mano, come sempre.
+        // ⚠️ E il destinatario è un OSPITE, non Alessio: una riga tecnica
+        // su una pagina pubblica non gli servirebbe a decidere niente.
         if (!annullato) setOpzioni(null);
       })
       .finally(() => {

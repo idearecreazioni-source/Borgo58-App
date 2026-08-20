@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio } from "./aiuto";
 
 // Gli allarmi: il sistema avvisa quando si rompe.
 //
@@ -13,6 +13,9 @@ import { clientAutenticato, corridoioInstallato, credenziali } from "./aiuto";
 
 const sonda = await clientAutenticato(credenziali().staff);
 const CORRIDOIO = await corridoioInstallato(sonda);
+// ⚠️ La sentinella sta in OGNI file che salta prove, non in uno solo: chi
+// lancia solo questo file deve vedere che ci sono prove che non sono partite.
+await denunciaSaltiCorridoio(CORRIDOIO, import.meta.url);
 await sonda.auth.signOut({ scope: "local" });
 
 const TIPO = "corridoio_close_order_as_discount_gift";

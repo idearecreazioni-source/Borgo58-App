@@ -7,6 +7,8 @@ import {
 } from "../../lib/api/stock";
 import { CONSUMPTION_REASONS, formatDate, formatQta} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, statoLettura } from "../../lib/calcoli/letture";
 
 const emptyConsumptionForm = { quantity: "", reason: "consumo", note: "" };
 
@@ -51,11 +53,15 @@ export default function MagazzinoHome() {
   // Cio' che i conti chiusi non hanno potuto scaricare. Solo titolare: il
   // database rifiuta gli altri, e chiederlo lo stesso produrrebbe un
   // errore rosso in faccia allo staff per una cosa che non lo riguarda.
+  // 🔴 Il catch NON ingoia più: il guard qui sopra copre già il caso
+  // legittimo (lo staff non deve chiedere), quindi sotto restavano solo i
+  // guasti VERI — e il riquadro compare solo se la lista non è vuota, cioè
+  // spariva esattamente come quando è sceso tutto.
+  const caricaNonScaricate = () => leggi(listScarichiNonRiusciti()).then(setNonScaricate);
   useEffect(() => {
     if (!isTitolare) return;
-    listScarichiNonRiusciti()
-      .then(setNonScaricate)
-      .catch(() => setNonScaricate([]));
+    caricaNonScaricate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTitolare]);
 
   const toggleRow = (ingredientId) => {
@@ -182,7 +188,19 @@ export default function MagazzinoHome() {
 
       {/* Compare SOLO quando c'è qualcosa: un riquadro che dice «tutto a
           posto» ogni giorno si impara a non guardare. */}
-      {nonScaricate.length > 0 && (
+      {statoLettura(nonScaricate) === "non_letto" && (
+        /* 🔴 «Non lo so» al posto del silenzio: senza questa riga, una
+           lettura fallita e «è sceso tutto» si leggono uguali — e sotto c'è
+           una giacenza che sarebbe più alta del vero senza dirlo. */
+        <DatoNonLetto
+          cosa="cosa non è sceso dal magazzino"
+          nonVuolDire="Non vuol dire che è sceso tutto: vuol dire che non lo so. La giacenza qui sotto potrebbe essere più alta del vero."
+          onRiprova={caricaNonScaricate}
+          className="mb-6"
+        />
+      )}
+
+      {statoLettura(nonScaricate) === "pieno" && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-6">
           <h2 className="text-sm font-semibold text-b58-charcoal">
             Cosa non è sceso dal magazzino ({nonScaricate.length})

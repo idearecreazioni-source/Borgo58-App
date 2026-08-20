@@ -14,6 +14,8 @@ import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, labelFor, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import CampoGiornata from "../../components/CampoGiornata";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { CASH_DIRECTIONS } from "../../lib/constants";
 
 // Primo del mese in ora locale: la versione precedente passava per
@@ -51,7 +53,7 @@ export default function CassaHome() {
     const monthStart = currentMonthStart();
     Promise.all([
       getCashBalance(entityId),
-      getUsciteFuture(entityId).catch(() => null),
+      leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
       listCashMovements({ entityId, from: monthStart }),
       listCashMovements({ entityId }),
@@ -101,7 +103,7 @@ export default function CassaHome() {
   const ricaricaSaldi = () =>
     Promise.all([
       getCashBalance(entityId),
-      getUsciteFuture(entityId).catch(() => null),
+      leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
       listCashMovements({ entityId }),
       listCashMovements({ entityId, from: currentMonthStart() }),
@@ -196,7 +198,16 @@ export default function CassaHome() {
                   saldo finché non arriva il giorno. Senza queste due righe,
                   la prima volta che il saldo scende senza che nessuno abbia
                   fatto niente sembra un errore del gestionale. */}
-              {future?.quante > 0 && (
+              {/* 🔴 «Non lo so» invece del silenzio: senza queste uscite il saldo
+                  qui sopra SEMBRA PULITO, ed è la forma peggiore — un numero
+                  che ha l'aria di essere completo senza esserlo. */}
+              {nonLetto(future) && (
+                <DatoNonLetto
+                  cosa="le uscite già registrate e non ancora nel saldo"
+                  className="mt-2"
+                />
+              )}
+              {!nonLetto(future) && future?.quante > 0 && (
                 <div className="text-[11px] text-b58-charcoal-soft mt-2">
                   {future.quante === 1 ? "Un'uscita già registrata" : `${future.quante} uscite già registrate`}{" "}
                   per {formatEUR(future.totale)} <strong>non è ancora nel saldo</strong>: la prima
@@ -208,7 +219,7 @@ export default function CassaHome() {
                       lette. Una schermata non deve promettere quello che un'altra farà. */}
                 </div>
               )}
-              {future?.entrate_oggi > 0 && (
+              {!nonLetto(future) && future?.entrate_oggi > 0 && (
                 <div className="text-[11px] text-b58-charcoal-soft mt-1">
                   Oggi {future.entrate_oggi === 1 ? "è entrata nel saldo un'uscita" : `sono entrate nel saldo ${future.entrate_oggi} uscite`}{" "}
                   per {formatEUR(future.totale_oggi)}: erano state registrate prima, e oggi è il

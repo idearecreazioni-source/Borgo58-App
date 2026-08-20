@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { listSuppliers, createSupplier } from "../../lib/api/suppliers";
 import {
   assegnaFornitoreArticolo,
@@ -100,7 +102,10 @@ export default function IngredienteForm() {
             alimentare: ing.alimentare !== false,
           });
           setPriceHistory(await listPriceHistory(id));
-          setVarianti(await variantiIngrediente(id).catch(() => []));
+          // ⚠️ Vuoto si legge «questo prodotto non ha altre versioni», e
+          // da lì nasce un doppione in anagrafica — che in magazzino è una
+          // giacenza sbagliata per sempre.
+          setVarianti(await leggi(variantiIngrediente(id)));
         }
       } catch (e) {
         if (!cancelled) setError(e.message);
@@ -614,7 +619,17 @@ export default function IngredienteForm() {
           consapevolmente cosa continuare a comprare», e serve anche a
           vedere se un fornitore è più caro di un altro sullo stesso
           identico prodotto. */}
-      {isEdit && varianti.length > 0 && (
+      {isEdit && nonLetto(varianti) && (
+        /* 🔴 Vuoto qui si legge «questo prodotto non ha altre versioni», e
+           da lì nasce un doppione in anagrafica — che in magazzino è una
+           giacenza sbagliata per sempre. */
+        <DatoNonLetto
+          cosa="le altre versioni di questo prodotto"
+          className="mt-6"
+        />
+      )}
+
+      {isEdit && !nonLetto(varianti) && varianti.length > 0 && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
           <h2 className="font-display text-lg text-b58-charcoal mb-1">
             Versioni che compri

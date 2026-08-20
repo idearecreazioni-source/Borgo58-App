@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createDocument, getDocumentUrl, listDocuments, uploadDocumentFile } from "../../lib/api/documents";
 import { getEntities } from "../../lib/api/entities";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { contaPostaInAttesa } from "../../lib/api/posta";
 import { formatDate, formatEUR } from "../../lib/constants";
 
@@ -41,8 +43,12 @@ export default function ArchivioDocumentiHome() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getEntities().then(setEntities).catch(() => {});
-    contaPostaInAttesa().then(setPostaInAttesa).catch(() => {});
+    // 🔴 Due letture accessorie che tacevano. La prima riempie il menu
+    // delle società: vuoto, si archivia un documento SENZA società e
+    // nessuno lo segnala. La seconda è il numero sul pulsante della posta:
+    // assente, si legge «non c'è niente in attesa».
+    leggi(getEntities()).then(setEntities);
+    leggi(contaPostaInAttesa()).then(setPostaInAttesa);
   }, []);
 
   const reload = () => listDocuments({ search: cercato || undefined }).then(setDocuments);
@@ -129,7 +135,10 @@ export default function ArchivioDocumentiHome() {
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >
             Posta in arrivo
-            {postaInAttesa > 0 && (
+            {nonLetto(postaInAttesa) && (
+              <span className="ml-2 text-[11px] text-b58-terracotta-dark">· non so quanta ce n&apos;è</span>
+            )}
+            {!nonLetto(postaInAttesa) && postaInAttesa > 0 && (
               <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2 py-0.5">
                 {postaInAttesa}
               </span>
@@ -178,7 +187,10 @@ export default function ArchivioDocumentiHome() {
                 <label className={labelClass}>Importo €</label>
                 <input type="number" step="0.01" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputClass} />
               </div>
-              {entities && (
+              {nonLetto(entities) && (
+                <DatoNonLetto cosa="le società" className="self-end pb-2" />
+              )}
+              {!nonLetto(entities) && entities && (
                 <div>
                   <label className={labelClass}>Entità</label>
                   <select value={form.entity_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, entity_id: e.target.value }))} className={inputClass}>

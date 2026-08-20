@@ -68,6 +68,11 @@ export function useGiornataOperativa() {
         setOraFineSerata(s.ora_fine_serata);
         setSerata(serataDiServizio(new Date(), s.ora_fine_serata));
       })
+      // ⚠️ SILENZIO MOTIVATO, e la ragione è che qui il vuoto NON è
+      // ambiguo: se l'ora di fine serata non arriva, `oraFineSerata`
+      // resta nulla e <CampoGiornata> lo sa — mostra la data senza
+      // dichiarare che è la serata di servizio, invece di affermarlo su
+      // un'ora che nessuno ha detto. La schermata non tace: dice di meno.
       .catch(() => {});
     return () => {
       vivo = false;

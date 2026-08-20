@@ -10,6 +10,8 @@ import {
 } from "../../lib/api/suppliers";
 import { listRegoleDeducibilita, setRegolaFornitore } from "../../lib/api/deducibilita";
 import { SUPPLIER_CATEGORIES, formatDate, formatEUR, formatQta} from "../../lib/constants";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 export default function FornitoreDetail() {
   const { id } = useParams();
@@ -28,7 +30,9 @@ export default function FornitoreDetail() {
       getSupplier(id),
       listSupplierPriceHistory(id),
       listSupplierDeliveries(id),
-      listRegoleDeducibilita({ soloAttive: true }).catch(() => []),
+      // Un menu vuoto qui si legge «non ci sono regole», e si lascia il
+      // fornitore senza: ogni sua fattura risulterà «da classificare».
+      leggi(listRegoleDeducibilita({ soloAttive: true })),
     ])
       .then(([s, p, d, r]) => {
         setSupplier(s);
@@ -243,12 +247,16 @@ export default function FornitoreDetail() {
               className={inputClass}
             >
               <option value="">da dire</option>
-              {regole.map((r) => (
+              {nonLetto(regole) && <option disabled>— non riesco a leggerle —</option>}
+              {(nonLetto(regole) ? [] : regole).map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.etichetta} ({Number(r.percentuale_deducibile)}%)
                 </option>
               ))}
             </select>
+            {nonLetto(regole) && (
+              <DatoNonLetto cosa="le regole di deducibilità" className="mt-1" />
+            )}
           </div>
         </div>
 

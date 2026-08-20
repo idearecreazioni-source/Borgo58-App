@@ -918,3 +918,47 @@ chiude una sala da trentaquattro.
 venisse usata per **impedire** qualcosa invece che per proporlo — per esempio
 se il form pubblico ricominciasse a leggerla per rifiutare richieste. Lì
 tornerebbe il difetto del 14/08 intero, con lo stesso destinatario di allora.
+
+---
+
+## 22 · 20/08/2026 — «un file orfano nel deposito è invisibile e innocuo»
+
+**Cosa era stato deciso, e quando.** Il 09/08, in `src/lib/api/documents.js`:
+cancellando un documento si toglie **prima la riga e poi il file**, e il
+fallimento della rimozione del file si ingoia. La ragione era scritta accanto:
+*«un file orfano è invisibile e innocuo, una riga che punta a un file
+cancellato è un documento che l'app mostra e non si apre»*.
+
+**La ragione di allora.** Vera per metà, e quella metà regge ancora: una riga
+che punta a un file assente **è** un documento rotto in elenco.
+
+**Cosa si decide adesso.** L'ordine si inverte — **prima il file, poi la
+riga** — e il fallimento **non si ingoia più**: se il file non si toglie, la
+riga resta e chi ha premuto lo sa.
+
+**Perché la ragione di allora non vale più.** La parola sbagliata era
+**«innocuo»**, e a smentirla è una misura del 20/08: nel deposito ci sono
+**13 file** e **3 che nessun documento nomina più**. Non sono innocui — sono
+documenti che Alessio ha cancellato **credendo di averli tolti**, e che
+dall'app non si possono più nominare. Due dei tre sono documenti veri (la
+partita IVA e il contratto di locazione). ⚠️ E **«invisibile» era esatto**: è
+il motivo per cui ci sono voluti dieci giorni per accorgersene — e la parola
+che descriveva il difetto era stata usata per giustificarlo.
+
+⚠️ **NON ESISTE UNA TRANSAZIONE FRA DATABASE E DEPOSITO**, ed è il punto che
+rende la decisione non ovvia: sono due sistemi diversi, quindi se il secondo
+passo fallisce qualcosa resta a metà **in tutti e due gli ordini**. Non si
+sceglie fra «tutto o niente» e «metà»: si sceglie **quale metà**.
+
+|  | cosa resta se il secondo passo fallisce | si vede? | si ripara? |
+|---|---|---|---|
+| ordine vecchio | il file nel deposito | **no** | mai: dall'app non si nomina più |
+| ordine nuovo | il documento in elenco, che non si apre | **sì** | **sì**, al tentativo dopo |
+
+È lo stesso criterio del blocco A consegnato insieme: *un difetto che si vede
+batte uno che tace, e uno che si ripara batte uno che resta*.
+
+⚠️ **Il prezzo, dichiarato**: nell'ordine nuovo può comparire in Archivio un
+documento il cui file non c'è più. È brutto e **non è muto** — e basta premere
+di nuovo «elimina» perché sparisca, visto che togliere un file già assente non
+dà errore.
