@@ -847,3 +847,74 @@ libreria PDF. Sarebbe stata una decisione architetturale — un modo nuovo di
 produrre documenti accanto a quello che il gestionale usa da sempre — e
 questo mandato non la chiedeva. È dichiarata qui perché resti una scelta e
 non una dimenticanza: **il giorno che servisse un allegato vero, si riapre**.
+
+---
+
+## 21 · 20/08/2026 — «nel gestionale non esiste più una capienza della sala»
+
+**Cosa era stato deciso, e quando.** Il 14/08, col mandato della pianta viva
+(migrazione `20260814000007`), **il calcolo dei posti è stato RIMOSSO** — non
+spento: via `dining_tables.seats`, via `posti_liberi()`, via
+`durata_tavolo_minuti` e `max_coperti_contemporanei`. La frase scritta allora:
+*«il sistema non decide più se un gruppo entra. Lo decide Alessio guardando la
+sala, e il sistema registra cosa ha deciso.»* Le giornate al completo si
+segnano a mano in `giornate_sold_out`.
+
+**La ragione di allora**, testuale dalla migrazione: *«Il modello attuale conta
+un secchio di posti (somma dei coperti dei tavoli) e sottrae le persone
+prenotate. Con i tavoli veri quel conto è sbagliato PER COSTRUZIONE: due
+persone a un tavolo da sei lasciano quattro posti che non esistono. Un numero
+sbagliato in modo sistematico e sempre nella stessa direzione è peggio di
+nessun numero, perché ha l'aria di essere un dato.»*
+
+**Cosa si decide adesso.** Il blocco 4 dei preventivi introduce
+`capienza_della_sala(data)`: **somma i coperti della sala di quel giorno e li
+confronta con la somma delle persone attese**. Se l'evento appena accettato
+satura quel numero, la spunta «sala piena» si accende da sola. È la decisione
+di Alessio scritta nel mandato dei preventivi: *«"Sala piena" la decide la
+CAPIENZA, non l'evento»*.
+
+**Perché la ragione di allora non vale più — 🔴 VALE ANCORA, E QUESTO È IL
+PREZZO CHE ACCETTIAMO.**
+
+Il conto nuovo è **la stessa aritmetica** di quello rimosso, con una parte
+curata e una no:
+
+- ✅ **curata**: il numero non è più un secchio fisso. Viene da
+  `coperti_del_giorno()`, che legge la **disposizione di quella sera** — due
+  tavoli accostati valgono meno di due separati — e onora le correzioni a mano
+  di Alessio. Il difetto che il 14/08 nominava per primo (una capienza
+  indipendente da come è messa la sala) **non esiste più**;
+- 🔴 **non curata, ed è quella che conta**: *due persone a un tavolo da sei
+  lasciano quattro posti che non esistono* è **ancora vero**. Quattro
+  prenotazioni da due su quattro tavoli da quattro bruciano 16 posti e nel
+  conto ne risultano 8.
+
+**La conseguenza, scritta perché nessuno la scopra dopo:** l'errore va **sempre
+nella stessa direzione** — sottostima l'occupazione, quindi **la spunta può NON
+accendersi su una serata che in sala è piena**. Il mandato dice «si accende da
+sola»: va letto come **un aiuto, non una garanzia**.
+
+**Perché lo accettiamo lo stesso**, e sono tre cose diverse dal 14/08:
+
+1. **cambia chi paga l'errore.** Nel 14/08 il numero sbagliato **rifiutava
+   clienti veri dal form pubblico**, e nessuno lo vedeva: il cliente leggeva
+   «non c'è posto» e se ne andava. Qui l'errore fa **non accendere una spunta**
+   che Alessio accende a mano dalla stessa schermata in un tocco;
+2. **il numero non esce al pubblico.** Non decide se un cliente può prenotare,
+   non compare sul form, non è mostrato a nessuno fuori dal gestionale. Decide
+   solo se **proporre** una spunta di cui Alessio resta padrone — che è
+   esattamente il ruolo che il 14/08 gli ha assegnato;
+3. **la decisione resta sua in tutti i casi.** La spunta si toglie e si mette a
+   mano, e dal blocco 4 il gestionale **sa distinguere la propria spunta dalla
+   sua**: quella messa da Alessio nessun annullamento la spegne.
+
+⚠️ **La strada che non è stata presa**: far decidere all'evento («è un evento,
+quindi blocca»). Era più semplice e non avrebbe avuto questo prezzo — ma è
+esattamente ciò che Alessio ha escluso, perché un evento da dieci persone non
+chiude una sala da trentaquattro.
+
+⚠️ **Quando questa riga va riaperta**: il giorno in cui la spunta automatica
+venisse usata per **impedire** qualcosa invece che per proporlo — per esempio
+se il form pubblico ricominciasse a leggerla per rifiutare richieste. Lì
+tornerebbe il difetto del 14/08 intero, con lo stesso destinatario di allora.

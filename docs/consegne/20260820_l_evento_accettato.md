@@ -16,8 +16,39 @@
 
 ## Cosa abbiamo rovesciato
 
-**Niente.** Nessuna decisione presa prima è stata ribaltata da questo blocco.
-Il riquadro c'è lo stesso, per il precedente del riepilogo del Magazzino: *un
+🔴 **CORRETTO IL 20/08, DOPO LA CONSEGNA: qui c'era scritto «Niente», ed era
+sbagliato.** Il rilievo è del validatore, e la sezione era esattamente il posto
+dove doveva comparire — *un rovesciamento non dichiarato è la forma di deriva
+che nessun controllo automatico può prendere*. Il racconto per intero sta al
+**n. 21** di [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md); qui
+la sostanza.
+
+**Cosa era stato deciso, e quando.** Il 14/08, col mandato della pianta viva,
+il calcolo dei posti è stato **RIMOSSO** dal database — non spento: via
+`dining_tables.seats`, via `posti_liberi()`, via la durata del tavolo e il tetto
+dei coperti. *«Il sistema non decide più se un gruppo entra. Lo decide Alessio
+guardando la sala.»*
+
+**La ragione di allora**, testuale: *«conta un secchio di posti e sottrae le
+persone prenotate. Con i tavoli veri quel conto è sbagliato PER COSTRUZIONE:
+due persone a un tavolo da sei lasciano quattro posti che non esistono.»*
+
+**Cosa si decide adesso.** `capienza_della_sala(data)` **rifà quell'aritmetica**:
+somma i coperti della sala di quel giorno e li confronta con le persone attese.
+
+**Perché la ragione di allora non vale più — 🔴 VALE ANCORA, E QUESTO È IL
+PREZZO CHE ACCETTIAMO.** *Due persone a un tavolo da sei lasciano quattro posti
+che non esistono* è ancora vero, quindi **la spunta può NON accendersi su una
+serata che in sala è piena**: è un aiuto, non una garanzia. Lo accettiamo
+perché cambia **chi paga l'errore** — nel 14/08 quel numero rifiutava clienti
+veri dal form pubblico senza che nessuno lo vedesse; qui non esce dal
+gestionale, non impedisce niente, e la spunta Alessio la mette e la toglie a
+mano in un tocco. Le tre ragioni per esteso sono al n. 21.
+
+---
+
+Per il resto **niente è stato ribaltato**. Il riquadro c'è lo stesso anche quando
+è vuoto, per il precedente del riepilogo del Magazzino: *un
 riquadro che compare solo nei guai fa dubitare, quando manca, di non averlo
 visto.*
 
@@ -268,3 +299,75 @@ proprietarie e un difetto di permessi non si vedrebbe mai (lezione del 16/08).
 4. `npm run funzione notify-telegram-reservation -- --conferma` — senza,
    l'avviso di un evento annullato arriva sotto il titolo dei guasti;
 5. riepilogo coi numeri veri, secondo push.
+
+---
+
+# Coda scritta il 20/08 sera, su due rilievi del validatore
+
+## R1 · Da dove viene il numero della capienza
+
+Nel riepilogo avevo scritto che *«la capienza è leggibile dal client»* senza
+dire **cosa** si legge. Ecco la catena esatta, misurata:
+
+```
+dining_tables (larghezza, profondità, posizione, formato)
+  → formati_tavolo.coperti_base        ← QUI sta il numero di coperti
+  → pianta_del_giorno(data)            ← base + scostamento di quella giornata
+  → coperti_del_giorno(data)           ← accosta, toglie 2 per giunzione,
+                                          applica le correzioni a mano
+  → somma dei `coperti`                ← capienza_della_sala(data)  [NUOVO]
+```
+
+🔴 **Sì, è una nozione di capienza, ed è stata reintrodotta.** Non da
+`dining_tables.seats` — quella colonna resta rimossa e il vincolo che vieta i
+coperti su un tavolo **non è stato toccato** — ma da `formati_tavolo`, nata il
+18/08 col giro B, che è **il rovesciamento n. 2** già registrato («nel sistema
+non esiste una capacità per tavolo»).
+
+Quindi il numero **esisteva già dal 18/08** e questo blocco non l'ha creato:
+`coperti_del_giorno()` è in produzione da allora e la pianta lo mostra dentro
+ogni tavolo. **La cosa nuova è l'uso**: sommarlo per l'intera sala e
+confrontarlo con le persone attese — che è l'aritmetica rimossa il 14/08.
+
+⚠️ **La differenza fra i due numeri, perché non si confondano:**
+
+| | `posti_liberi()` (rimossa il 14/08) | `capienza_della_sala()` (oggi) |
+|---|---|---|
+| da dove | secchio fisso su `dining_tables.seats` | disposizione **di quel giorno** |
+| accostamenti | ignorati | contati (−2 per giunzione) |
+| correzioni a mano | non esistevano | onorate |
+| chi la legge | **il form pubblico**, per rifiutare | solo l'accettazione, per **proporre** una spunta |
+| se sbaglia | un cliente vero se ne va | Alessio mette la spunta a mano |
+
+Il difetto residuo, il prezzo e la riga «vale ancora» stanno nella sezione
+«Cosa abbiamo rovesciato» qui sopra e al **n. 21** del registro.
+
+⚠️ **Una cosa che il mandato dei preventivi dava per scontata e non era vera**:
+diceva *«la capienza la sa già `coperti_del_giorno()`»* — vero — ma non diceva
+che sommarla per l'intera sala è **la stessa operazione rimossa il 14/08**.
+Vince la misura: è dichiarata, non eseguita in silenzio.
+
+## R2 · Quante prove sono state SALTATE
+
+Nel riepilogo avevo scritto *«152 + 265, tutte verdi»*, e **quel conto non
+distingue una prova verde da una che non è mai partita**. Il numero vero della
+sessione del blocco 4:
+
+| | |
+|---|---|
+| prove pure | **152 passate**, 0 saltate |
+| prove sui dati veri | **265 passate**, **0 saltate** |
+| di cui condizionate al corridoio | **26**, tutte eseguite |
+
+Le 26 sono `it.skipIf(!CORRIDOIO)` sparse su **nove** file: `permessi` (3),
+`proiezione` (3), `anticipazioni` (1), `lista-spesa` (1), `tesoreria` (3),
+`note-di-credito` (1), `allarmi` (1), `tre-esiti-lista` (10),
+`documento-con-effetto` (3). Stasera erano **tutte verdi** perché il corridoio
+è installato sul progetto di prova (v17, installato in questa consegna).
+
+🔴 **Ma la sentinella che denuncia il salto vive in UN SOLO file** e il suo
+messaggio dice ancora *«le tre prove del corridoio»*: erano tre quando è stata
+scritta, oggi sono 26. **Un numero contato a mano dentro un testo è la forma
+che questo progetto ha già tolto con `collaudo:stato`.** È il blocco A3 del
+mandato della sera, e viene chiuso lì — non qui, per non rimettere le mani su
+un blocco già consegnato.
