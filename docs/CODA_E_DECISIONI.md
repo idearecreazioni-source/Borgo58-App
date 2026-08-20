@@ -343,7 +343,9 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ---
 
-11. 🟡 **LA POSTA DEI CLIENTI — mandato del 20/08, NON per adesso**:
+11. 🔄 **LA POSTA DEI CLIENTI — mandato del 20/08, TRE BLOCCHI SU QUATTRO
+    FATTI la sera del 20/08** ([consegna](consegne/20260820_il_consenso_prima_di_tutto.md),
+    migrazione `20260820000011`, **non applicata**):
     [`mandati/20260820_la_posta_dei_clienti.md`](mandati/20260820_la_posta_dei_clienti.md).
     Scritto mentre le decisioni erano fresche. Tre cose: **mandare** ai clienti
     quello che il gestionale già produce, **leggere** le mail che arrivano da
@@ -361,11 +363,30 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     può fare è preparare **l'elenco dei numeri**, col limite scritto **lì**:
     un messaggio che non arriva a chi non ha il numero in rubrica risulta
     «mandato» e nessuno lo segnala.
+    ✅ **FATTI i blocchi 1, 2 e 4**: il consenso con **due date** (non una
+    spunta: «ha acconsentito» e «si è cancellato» sono due fatti con due
+    quando, e un booleano che si spegne cancellerebbe la prova), la
+    cancellazione che **toglie davvero** perché è la stessa colonna che il
+    calcolo legge, le **due porte separate** con quella commerciale che
+    pretende il consenso **nel database**, la storia sulla scheda del cliente
+    e l'elenco dei numeri **col limite della rubrica scritto accanto**.
+    🔴 **UN DIFETTO MIO, trovato da una rete**: la regola stava in una funzione
+    e la scheda cliente **la ricalcolava in JavaScript** — due posti che
+    possono contraddirsi. Ora è una **colonna calcolata da Postgres**: nessuno
+    la scrive, e la schermata legge la risposta.
+    🔴 **RESTA IL BLOCCO 3 — leggere le mail dei clienti**: la Posta in arrivo
+    continua a trattare ogni mail come un documento da archiviare. Serviva
+    toccare il giro delle proposte, che è il pezzo più delicato del gestionale,
+    e non l'ho aperto di sera.
+    ⚠️ **E nessuna mail commerciale è mai partita davvero**: il blocco
+    costruisce *chi può riceverla* e il registro di *cosa è uscito*, non
+    l'invio — che è un invio vero a indirizzi veri.
 
 ---
 
-12. 🟡 **L'ALLINEAMENTO DEL MAGAZZINO E IL FOOD COST REALE — mandato del
-    20/08, NON per adesso**:
+12. ✅ **L'ALLINEAMENTO DEL MAGAZZINO E IL FOOD COST REALE — FATTO la sera del
+    20/08 su tutti e tre i blocchi** ([consegna](consegne/20260820_ce_n_e_questo.md),
+    migrazione `20260820000010`, **non applicata**):
     [`mandati/20260820_l_allineamento_del_magazzino.md`](mandati/20260820_l_allineamento_del_magazzino.md).
     🔴 **Il problema l'ha posto Alessio**: le quantità che il gestionale
     scarica sono **stimate**, quindi quel numero **non è una giacenza, è una
@@ -379,9 +400,62 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     ⚠️ **Niente causale** (scartata da Alessio: un elenco che si riempie di
     «non so» produce righe che sembrano informazione), **niente avvisi**, e
     **non nella lista della spesa**.
-    ⚠️ **Una misura da fare prima di costruire**: partite dello stesso
-    prodotto hanno prezzi diversi, quindi **da quale si toglie cambia il
-    valore dello scostamento**. Da misurare e dichiarare.
+    ✅ **LA MISURA CHIESTA, fatta**: su due partite a prezzi diversi,
+    togliendone 3, FEFO dà **9,00 €** — dalla più cara 15,00, a un prezzo medio
+    13,50. **Il 67% di differenza**, quindi il mandato aveva ragione a chiedere
+    che fosse detta e non nascosta in una scelta di implementazione.
+    ✅ La colonna in Magazzino non si chiama più «Giacenza» ma **«Dovrebbe
+    esserci»**.
+    🔴 **DUE DIFETTI VERI trovati dalle prove, non rileggendo**: il costo della
+    merce trovata in più veniva da «l'ultima partita» ordinata per data — ma un
+    carico da fattura le scrive tutte in **una transazione**, quindi l'ordine
+    era casuale (trappola del 16/08, **terza ricomparsa**); e `da_allineare()`
+    **moltiplicava la giacenza per il numero di correzioni** (6 kg con 12
+    correzioni → 72), senza nessun errore e sempre **più alto del vero**.
+    ⚠️ **E la prima rottura non ha reso rossa nessuna prova**: la verifica
+    diceva solo «lo scostamento non è vuoto», e ignorando gli scostamenti
+    valeva 0 — che non è vuoto. Riscritta per misurare una differenza che
+    produce lei.
+
+---
+
+## ⚠️ Cosa resta da guardare dopo la sera del 20/08
+
+**Quattro blocchi consegnati la sera del 20/08**, tutti **non applicati in
+produzione**: al database vero ci si va con Alessio presente.
+
+1. 🔴 **NIENTE È IN PRODUZIONE**: 158 migrazioni là, **162 sul progetto di
+   prova**. Aspettano il push, e con loro il **corridoio v18** e la funzione
+   `notify-telegram-reservation` (categoria `evento`).
+   ⚠️ **Senza il corridoio, due pulsanti rispondono 404**: «Il cliente ha
+   accettato» e «È questo» dell'allineamento.
+2. 🔴 **NESSUNA MANO HA VISTO NIENTE**, ed è il limite che pesa di più in tutta
+   la serata: in questo progetto **le prove non hanno un ambiente DOM**, quindi
+   nessuna prova automatica guarda una schermata. Non sono state guardate: le
+   righe «non lo so» del blocco A (13 file), la schermata dell'allineamento, il
+   riquadro del consenso sulla scheda cliente, «Scrivere a più clienti».
+   ⚠️ **Aggiungere un ambiente DOM è una decisione architetturale** (una
+   dipendenza nuova) e non l'ho presa: è la **domanda 1** del riepilogo del
+   blocco A.
+3. 🔴 **I due documenti veri nel deposito** — la partita IVA e il contratto di
+   locazione sono fra i **3 file che nessun documento nomina più**, e il
+   deposito è l'unico posto dove il gestionale ce li ha. **Vanno nominati ad
+   Alessio prima** di qualunque pulizia.
+4. ⚠️ **La pulizia del blocco D non è mai girata su dati veri**: sul progetto
+   di prova ha girato su un database appena costruito, dove quasi tutte le
+   tabelle erano vuote. **I suoi 18 guardiani non sono mai stati messi alla
+   prova con numeri diversi da zero.**
+5. ⚠️ **Il food cost reale non ha niente di vero da dire**: il Ricettario è
+   vuoto, quindi lo «stimato» resta 0,00 finché non ci saranno ricette e conti.
+   Le prove misurano che i due numeri **si muovono in modo diverso**, non che
+   siano giusti su dati veri — perché dati veri non ce ne sono.
+6. 🔴 **Nessuna mail commerciale è mai partita**, e nessun avviso Telegram di
+   evento annullato è mai arrivato: le prove usano il freno anti-tempesta per
+   non far suonare il telefono. La faccia del messaggio («📆 EVENTO ANNULLATO»)
+   è nel collaudo con la ricetta per farla comparire.
+7. 🟡 **Resta il blocco 3 della posta dei clienti** (leggere le mail dei
+   clienti) e il **blocco 5 dei preventivi** (la sera dell'evento il magazzino
+   scarica le porzioni modificate).
 
 ---
 
