@@ -187,6 +187,18 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    risponde «fatto» e stampa **una pagina bianca**.
    ⚠️ **Il blocco 1 non ha bisogno di nessun hardware** ed è utile dal primo
    giorno: se una fattura resta da emettere, quell'elenco deve parlare da sé.
+   ✅ **BLOCCO 1 FATTO il 20/08** — [consegna](consegne/20260820_l_elenco_che_si_fa_notare.md),
+   migrazione `20260820000004`, corridoio **v15 sulla prova**, **non ancora in
+   produzione**. La chiusura della giornata **si rifiuta** se restano conti
+   incassati senza documento, si può chiudere prendendone atto e **il permesso
+   resta scritto**; la sala segnala da `/comande/scontrini`; lo scarto fra le
+   due giornate si dichiara.
+   🔴 **Un difetto trovato misurando**: la data del documento si scriveva solo
+   sulle fatture, quindi lo scarto **non era nemmeno rappresentabile**.
+   ⚠️ **Restano i blocchi 2 (il simulatore), 3 (la ristampa) e 4 (l'apparecchio
+   vero)**. Il punto di contatto col registratore è preparato in un posto solo
+   (`src/lib/registratore.js`) — ma **non è mai stato sostituito da niente**,
+   quindi che sia sostituibile è un'affermazione, non una misura.
 
 ---
 

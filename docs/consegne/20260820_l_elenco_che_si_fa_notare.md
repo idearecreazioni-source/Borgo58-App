@@ -173,6 +173,9 @@ uno scontrino che non è uscito.
 
 ---
 
+**Commit del lavoro**: `947766f` — «L'elenco che si fa notare — blocco 1 del
+registratore telematico».
+**Working tree**: pulito.
 **Migrazione**: `20260820000004` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
 **Corridoio**: da installare in produzione dopo il push, altrimenti la
