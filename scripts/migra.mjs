@@ -107,6 +107,32 @@ function nonAncoraSuGitHub(migrazioni) {
 
 const conferma = process.argv.includes("--conferma");
 
+// --- `--salta <versione>`: tutte tranne quella -------------------------
+//
+// 🔴 NASCE IL 21/08 DA UN LIMITE DI `--fino-a`, trovato lanciandolo e non
+// leggendolo: la pulizia dei dati di collaudo e' la 012, e le tre da
+// applicare erano le 001, 002 e 003 del giorno dopo. `--fino-a` taglia
+// DALL'ALTO, quindi la 012 — che viene prima — ci rientrava lo stesso.
+//
+// ⚠️ Sono due bisogni diversi e servono tutti e due: `--fino-a` ferma la
+// coda, `--salta` toglie una migrazione IN MEZZO che aspetta una decisione.
+// Si possono usare insieme.
+const daSaltare = (() => {
+  const fuori = [];
+  process.argv.forEach((a, i) => {
+    if (a !== "--salta") return;
+    const v = process.argv[i + 1];
+    if (!v || !/^[0-9]{14}$/.test(v)) {
+      fermati(
+        "L'argomento --salta vuole un numero di versione di 14 cifre.",
+        "Esempio: npm run migra -- --salta 20260820000012 --conferma"
+      );
+    }
+    fuori.push(v);
+  });
+  return fuori;
+})();
+
 // --- `--fino-a <versione>`: applica solo fino a quella, compresa --------
 //
 // 🔴 NASCE IL 20/08/2026 DA UNA COSA CHE NON SI POTEVA FARE. Quella notte
@@ -171,9 +197,8 @@ const inProduzione = versioniApplicate(urlProduzione);
 const tutteMancanti = sulDisco.filter((m) => !inProduzione.has(m.versione));
 // ⚠️ Il taglio si fa QUI, prima dei controlli: cosi' i sei vincoli guardano
 // esattamente cio' che sta per essere applicato, non un elenco piu' lungo.
-const mancanti = fermatiA
-  ? tutteMancanti.filter((m) => m.versione <= fermatiA)
-  : tutteMancanti;
+const mancanti = (fermatiA ? tutteMancanti.filter((m) => m.versione <= fermatiA) : tutteMancanti)
+  .filter((m) => !daSaltare.includes(m.versione));
 const tenuteIndietro = tutteMancanti.filter((m) => !mancanti.includes(m));
 
 console.log(`  migrazioni nel repository: ${sulDisco.length}`);
@@ -185,7 +210,7 @@ console.log(`  gia' applicate in produzione: ${inProduzione.size}`);
 // intera*.
 if (tenuteIndietro.length > 0) {
   console.log("");
-  console.log(`  TENUTE INDIETRO da --fino-a ${fermatiA} (${tenuteIndietro.length}):`);
+  console.log(`  TENUTE INDIETRO (${tenuteIndietro.length}):`);
   for (const m of tenuteIndietro) console.log(`    · ${m.file}`);
   console.log("    Restano mancanti: la prossima volta ricompaiono in elenco.");
 }
