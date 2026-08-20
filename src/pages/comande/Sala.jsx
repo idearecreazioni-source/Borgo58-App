@@ -573,6 +573,17 @@ export default function Sala() {
           >
             Cucina
           </Link>
+          {/* 🔴 QUESTA SCHERMATA NON AVEVA NESSUNA PORTA — misurato il
+              20/08 insieme a quella dei preventivi: la rotta esisteva e
+              nessun file la nominava. E il posto è QUESTO, non un menu:
+              chi si accorge che lo scontrino non è uscito è chi ha il
+              tavolo davanti. */}
+          <Link
+            to="/comande/scontrini"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+          >
+            Scontrini
+          </Link>
           {isTitolare && (
             <button
               type="button"

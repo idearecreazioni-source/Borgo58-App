@@ -220,3 +220,26 @@ un elenco deciso prima da chi non li ha ancora visti.*
 vive solo a schermo può passare**. È successo davvero — il modulo che restava
 aperto, il tocco che contraddiceva il colore, la sala disegnata vuota: li ha
 trovati tutti e tre una mano o una fotografia, non una prova.
+---
+
+## Le prime voci misurate — 20/08, notte
+
+I primi due difetti trovati dalle mani di Alessio, con la risposta già
+scritta. ⚠️ **Sono le prime due righe dell'elenco della decisione 2**: a fine
+collaudo questo elenco dirà, per misura, quali schermate meritano una prova.
+
+| # | difetto | una prova automatica l'avrebbe preso? |
+|---|---|---|
+| 1 | **La sezione Preventivi non aveva nessuna porta**: la rotta c'era, la schermata funzionava, e gli unici collegamenti stavano dentro la pagina stessa | 🔴 **NO** — le prove non guardano le schermate, e questa era irraggiungibile a schermo |
+| 2 | **«Nuovo preventivo» non creava niente**: `entita[0]?.id` su un oggetto che non è un array → `entity_id` nullo al database | 🔴 **NO** — nessuna prova esercita quel pulsante; la funzione del database era giusta e rifiutava correttamente |
+
+⚠️ **Il secondo è il più istruttivo**, e va letto insieme al blocco A della
+stessa sera: lì sono stati curati i `.catch` che ingoiavano un guasto. **Qui a
+ingoiare è stato un `?.`** — l'optional chaining su un dato che *deve*
+esserci. È la stessa famiglia con un'altra faccia: *«non l'ho trovato»
+trasformato in un vuoto che nessuno annuncia.*
+
+✅ **E una cosa ha funzionato come doveva**: il guasto **ha fatto rumore
+appena successo** — errore chiaro a schermo e avviso su Telegram, col freno di
+uno all'ora. È il comportamento che questo progetto insegue da giorni:
+*meglio un errore che si vede di un dato sbagliato che passa.*

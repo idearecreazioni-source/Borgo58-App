@@ -76,6 +76,22 @@ export default function ReservationsList() {
               Sala e orari
             </Link>
           )}
+          {/* 🔴 SENZA QUESTO PULSANTE LA SEZIONE NON ESISTEVA, e non è una
+              sfumatura: la rotta c'era, la schermata funzionava, e gli unici
+              collegamenti stavano DENTRO la scheda di un preventivo — utili
+              solo a chi ci era già dentro. Quattro blocchi di lavoro per una
+              schermata che nessuna mano poteva raggiungere.
+              ⚠️ Trovato da Alessio al primo gesto del collaudo, e NESSUNA
+              PROVA L'AVREBBE PRESO: in questo progetto le prove non guardano
+              le schermate. */}
+          {isTitolare && (
+            <Link
+              to="/calendario-eventi/preventivi"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            >
+              Preventivi
+            </Link>
+          )}
           <Link
             to="/calendario-eventi/clienti"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"

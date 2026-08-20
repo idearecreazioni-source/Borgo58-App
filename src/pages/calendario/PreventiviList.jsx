@@ -39,9 +39,22 @@ export default function PreventiviList() {
     setErrore("");
     try {
       const entita = await getEntities();
+      // 🔴 QUI C'ERA `entita[0]?.id`, ED È ARRIVATO NULL AL DATABASE.
+      // `getEntities()` restituisce un OGGETTO `{ srls, agricola }`, non un
+      // array: `entita[0]` è undefined, **e l'optional chaining l'ha lasciato
+      // passare zitto**. Trovato da Alessio al primo «Nuovo preventivo».
+      //
+      // ⚠️ E LA LEZIONE È PIÙ LARGA DELLA RIGA: a ingoiare non è stato un
+      // `catch` — quelli sono curati — ma un `?.` **su un dato che DEVE
+      // esserci**. `?.` trasforma «non l'ho trovato» in undefined senza
+      // dirlo: è la stessa famiglia della sala disegnata vuota, con un'altra
+      // faccia. Su un dato obbligatorio non si scrive `?.`, si scrive il
+      // percorso vero — e se quello non c'è, deve rompersi.
+      //
+      // ⚠️ I preventivi sono della S.r.l.s.: è l'azienda che fa gli eventi.
       const id = await salvaPreventivo({
         testata: {
-          entity_id: entita[0]?.id,
+          entity_id: entita.srls.id,
           cliente_nome: "Nuovo preventivo",
           // ⚠️ oggiLocale(), non new Date().toISOString(): quello è il
           // giorno UTC, e fra mezzanotte e le due restituisce IERI. È la

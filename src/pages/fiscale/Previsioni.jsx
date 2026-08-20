@@ -120,6 +120,18 @@ export default function Previsioni() {
       </Link>
       <div className="flex items-center justify-between gap-3 flex-wrap mt-1 mb-2">
         <h1 className="font-display text-2xl text-b58-charcoal">Le previsioni</h1>
+        {/* 🔴 ANCHE QUESTA ERA SENZA PORTA, ed è la più grave delle tre: la
+            schermata per SCRIVERE una previsione a mano è stata costruita il
+            15/08 proprio perché Alessio aveva detto che non esisteva — *«mi
+            immaginavo dei campi da riempire»* — e poi nessun collegamento la
+            raggiungeva. Il caricamento del foglio, che è la scorciatoia, era
+            l'unica strada. */}
+        <Link
+          to="/fiscale/previsioni/nuova"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+        >
+          + Scrivi una previsione
+        </Link>
         {entities && (
           <select
             value={entityId}
