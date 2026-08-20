@@ -133,7 +133,7 @@ export default function ListaSpesa() {
   // ⚠️ Ed è proprio la riga ordinata quella che aspetta gli arrivi: senza
   // vederla, «arrivati 5 di 20» non lo leggerebbe nessuno.
   const daComprare = useMemo(
-    () => items.filter((i) => i.status === da_comprare || i.status === ordinata),
+    () => items.filter((i) => i.status === "da_comprare" || i.status === "ordinata"),
     [items]
   );
   const acquistati = useMemo(() => items.filter((i) => i.status === "acquistato"), [items]);

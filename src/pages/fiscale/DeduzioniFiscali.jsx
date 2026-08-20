@@ -141,7 +141,7 @@ export default function DeduzioniFiscali() {
     setError("");
     try {
       await updateDeductibleExpense(id, patch);
-      await ricarica();
+      await reload();
     } catch (e) {
       setError(e.message);
     }
