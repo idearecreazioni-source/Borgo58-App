@@ -394,6 +394,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
   }, [serata]);
   const [inCorso, setInCorso] = useState("");
   const [esito, setEsito] = useState(null);
+  const [daFiscalizzare, setDaFiscalizzare] = useState("");
 
   const teorico = tesoreria ? Number(tesoreria.contante_atteso) : null;
   const differenza =
@@ -404,13 +405,26 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
   const labelClass =
     "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
-  const conta = async () => {
+  // 🔴 CHIUDERE LA GIORNATA NON SI COMPLETA IN SILENZIO se restano conti
+  // incassati senza documento fiscale: il database rifiuta, e qui si mostra
+  // il perché **accanto al pulsante che è stato premuto**, non in cima alla
+  // pagina (lezione del 17/08: un rifiuto lontano dal gesto è un rifiuto che
+  // non c'è). ⚠️ E la via d'uscita c'è: si può chiudere lo stesso prendendone
+  // atto, e quel permesso resta scritto sul conteggio.
+  const conta = async (presoAtto = false) => {
     if (contato === "" || Number(contato) < 0) return;
     setInCorso("conteggio");
     setEsito(null);
+    setDaFiscalizzare("");
     onErrore("");
     try {
-      await registraConteggioCassa({ entityId, contato: Number(contato), data, nota: null });
+      await registraConteggioCassa({
+        entityId,
+        contato: Number(contato),
+        data,
+        nota: null,
+        presoAtto,
+      });
       const scarto = differenza;
       setContato("");
       await onFatto();
@@ -420,7 +434,10 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
           : `Differenza di ${formatEUR(Math.abs(scarto))} ${scarto < 0 ? "in meno" : "in più"}, registrata in prima nota.`
       );
     } catch (e) {
-      onErrore(e.message);
+      // Il messaggio del database è scritto per Alessio e dice cosa fare:
+      // si mostra intatto, sotto il pulsante, con la via d'uscita accanto.
+      if (/senza documento fiscale/.test(e.message)) setDaFiscalizzare(e.message);
+      else onErrore(e.message);
     } finally {
       setInCorso("");
     }
@@ -479,12 +496,36 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
             <button
               type="button"
               disabled={inCorso !== "" || contato === ""}
-              onClick={conta}
+              onClick={() => conta(false)}
               className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-2 disabled:opacity-60 shrink-0"
             >
               {inCorso === "conteggio" ? "…" : "Conta"}
             </button>
           </div>
+          {/* 🔴 L ELENCO CHE SI FA NOTARE. Compare solo quando c e davvero
+              qualcosa da sistemare: un avviso che compare sempre e un avviso
+              che si impara a ignorare. */}
+          {daFiscalizzare && (
+            <div className="mt-2 rounded-lg bg-b58-terracotta/10 border border-b58-terracotta/30 px-3 py-2">
+              <p className="text-[12px] text-b58-terracotta-dark">{daFiscalizzare}</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Link
+                  to="/cassa/scontrinato"
+                  className="text-[12px] underline text-b58-charcoal hover:text-b58-terracotta"
+                >
+                  Vai a sistemarli
+                </Link>
+                <button
+                  type="button"
+                  disabled={inCorso !== ""}
+                  onClick={() => conta(true)}
+                  className="text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+                >
+                  Chiudi lo stesso, ne prendo atto
+                </button>
+              </div>
+            </div>
+          )}
           {differenza != null && differenza !== 0 && (
             <p className="text-[11px] text-b58-gold-dark mt-1.5">
               {differenza < 0 ? "Mancano" : "Ci sono"} {formatEUR(Math.abs(differenza))}{" "}

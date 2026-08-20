@@ -187,6 +187,12 @@ const OPERAZIONI = new Set([
   // giusto e dentro niente**, cioe' nessun errore e un food cost di zero
   // euro che ha l'aria di essere un numero.
   "duplica_ricetta",
+  // Blocco 1 del mandato del registratore (20/08/2026). Segnalare che uno
+  // scontrino non e' uscito tocca due tabelle: il conto torna senza
+  // documento E resta scritto chi l'ha detto. A meta' sarebbe o un conto
+  // rimesso in elenco senza che si sappia perche', o una segnalazione che
+  // non ha rimesso niente in elenco.
+  "segnala_scontrino_non_uscito",
 ]);
 
 const CORS = {

@@ -403,7 +403,14 @@ export async function setDocumentoFiscale(orderId, { tipo, numero, emessoIl }) {
     // incassato e scontrinato accusa una differenza che non esiste.
     // `oggiLocale()` resta solo come ultima spiaggia se le impostazioni non
     // si leggono — non è la strada normale.
-    documento_emesso_il: tipo === "fattura" ? emessoIl || oggiLocale() : null,
+    // 🔴 LA DATA SI SCRIVE ANCHE SUGLI SCONTRINI (20/08/2026, blocco 1 del
+    // mandato del registratore). Prima valeva solo per le fatture, e per gli
+    // scontrini veniva azzerata: uno scontrino ristampato tre giorni dopo
+    // non aveva nessuna data, quindi lo scarto fra la serata del cliente e
+    // il giorno del documento **non era nemmeno rappresentabile**. Ed è
+    // esattamente lo scarto che Alessio ha deciso di dichiarare invece di
+    // appianare.
+    documento_emesso_il: tipo ? emessoIl || oggiLocale() : null,
   };
   const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
   if (error) throw error;
@@ -432,6 +439,37 @@ export async function listContiFiscalizzati({ entityId, dal, al } = {}) {
   if (dal) query = query.gte("closed_at", `${dal}T00:00:00`);
   if (al) query = query.lte("closed_at", `${al}T23:59:59`);
   const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+// LA SEGNALAZIONE DELLA SALA: «questo scontrino non è uscito» (20/08/2026).
+//
+// ⚠️ La può fare CHIUNQUE sia in sala, non solo il titolare, e non è una
+// comodità: esiste un buco che nessun protocollo copre — la stampante che
+// risponde «fatto» e stampa una pagina bianca. Solo un occhio umano la vede.
+//
+// ⚠️ Passa dal corridoio perché tocca due tabelle: il conto torna senza
+// documento **e** resta scritto chi l'ha segnalato. A metà sarebbe o un
+// conto rimesso in elenco senza che si sappia perché, o una segnalazione
+// registrata che non ha rimesso niente in elenco.
+export async function segnalaScontrinoNonUscito(orderId, nota) {
+  return eseguiOperazione("segnala_scontrino_non_uscito", {
+    p_order_id: orderId,
+    p_nota: nota ?? null,
+  });
+}
+
+// I conti fiscalizzati in un giorno diverso dalla serata in cui il cliente
+// ha pagato. ⚠️ Non è un errore da correggere: l'incasso resta nella serata
+// giusta, e questo elenco dice dove ritrovarlo nella giornata del
+// registratore. Spostarlo farebbe risultare quella serata più magra del vero.
+export async function listContiFiscalizzatiInRitardo({ entityId, dal, al } = {}) {
+  const { data, error } = await supabase.rpc("conti_fiscalizzati_in_ritardo", {
+    p_entity_id: entityId,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
   if (error) throw error;
   return data ?? [];
 }

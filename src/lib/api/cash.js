@@ -131,12 +131,17 @@ export async function getSaldoTesoreria(entityId) {
 
 // Conteggio del cassetto e versamento in banca toccano due tabelle
 // ciascuno, quindi passano dal corridoio (Contratto B4).
-export async function registraConteggioCassa({ entityId, contato, data, nota }) {
+// ⚠️ `presoAtto` NON è un dettaglio: senza, il database rifiuta di chiudere
+// la giornata finché restano conti incassati senza documento fiscale. È
+// l'unica rete di questo blocco — *un elenco che nessuno guarda non è una
+// rete* — e il permesso, quando serve, **resta scritto** sul conteggio.
+export async function registraConteggioCassa({ entityId, contato, data, nota, presoAtto }) {
   return eseguiOperazione("registra_conteggio_cassa", {
     p_entity_id: entityId,
     p_contato: contato,
     p_data: data,
     p_nota: nota ?? null,
+    p_preso_atto: presoAtto === true,
   });
 }
 

@@ -53,6 +53,7 @@ import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
+import Scontrini from "./pages/comande/Scontrini";
 import Sala from "./pages/comande/Sala";
 import ProiezioneFiscaleHome from "./pages/fiscale/ProiezioneFiscaleHome";
 import DeduzioniFiscali from "./pages/fiscale/DeduzioniFiscali";
@@ -240,6 +241,7 @@ function AppRoutes() {
         <Route path="/comande" element={<Sala />} />
         <Route path="/comande/bar" element={<Bar />} />
         <Route path="/comande/cucina" element={<Cucina />} />
+        <Route path="/comande/scontrini" element={<Scontrini />} />
         {/* Il vecchio indirizzo resta come reindirizzo: qualche tablet
             potrebbe averlo ancora nei preferiti. */}
         <Route path="/comande/reparti" element={<Navigate to="/comande/cucina" replace />} />
