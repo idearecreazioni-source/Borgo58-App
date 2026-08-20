@@ -233,6 +233,13 @@ collaudo questo elenco dirà, per misura, quali schermate meritano una prova.
 | 1 | **La sezione Preventivi non aveva nessuna porta**: la rotta c'era, la schermata funzionava, e gli unici collegamenti stavano dentro la pagina stessa | 🔴 **NO** — le prove non guardano le schermate, e questa era irraggiungibile a schermo |
 | 2 | **«Nuovo preventivo» non creava niente**: `entita[0]?.id` su un oggetto che non è un array → `entity_id` nullo al database | 🔴 **NO** — nessuna prova esercita quel pulsante; la funzione del database era giusta e rifiutava correttamente |
 | 3 | **«Food cost obiettivo 25.0#%»**: un cancelletto in mezzo al numero. In PostgreSQL `#` non è un simbolo di formato e i caratteri non riconosciuti escono letteralmente | 🔴 **NO** — nessuna prova legge il testo di quella frase; il calcolo dietro era giusto |
+| 4 | **La capienza si conta una volta sola**: il conto si fa dentro l'accettazione e non si rifà mai più. Cambiando le persone o il giorno, la spunta «sala piena» resta com'era | 🔴 **NO** — nessuna prova esercita una modifica *dopo* l'accettazione; le prove del blocco 4 provano il conto **al momento in cui si fa**, ed è giusto |
+
+⚠️ **Il quarto è il più serio dei quattro**, ed è anche quello che dice di più
+sul limite di stanotte: le prove del blocco 4 misurano che la regola è giusta,
+e **non** che venga applicata tutte le volte che servirebbe. *Una prova che
+esercita un gesto non sta provando cosa succede dopo quel gesto.*
+Misura per intero in [`referti/20260821_la_capienza_si_conta_una_volta_sola.md`](../referti/20260821_la_capienza_si_conta_una_volta_sola.md).
 
 ⚠️ **E cercando se il gesto si fosse ripetuto ne sono usciti due in più**, uno
 dei quali **vivo su ogni riga**: `FM990.99` su un numero intero dà «25.», e
