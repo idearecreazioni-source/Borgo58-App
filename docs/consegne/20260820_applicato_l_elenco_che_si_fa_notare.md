@@ -87,7 +87,9 @@ prima volta che conti il cassetto il gestionale ti fermerà, perché il conto
 
 ---
 
-**Commit**: dichiarato nel commit di questo riepilogo.
+**Commit**: `ec98196` — «Applicato in produzione: l'elenco che si fa
+notare».
+**Working tree**: pulito.
 **Migrazioni**: 154 in produzione, **1 applicata in questo giro**.
 **Corridoio**: v31 in produzione.
 **Prove**: 152 pure + 242 sull'app, tutte verdi.
