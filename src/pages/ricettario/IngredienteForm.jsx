@@ -722,6 +722,18 @@ export default function IngredienteForm() {
         </div>
       )}
 
+      {/* 🔴 L'ALLINEAMENTO SI RAGGIUNGE ANCHE DA QUI, in un tocco: il momento
+          in cui uno se ne accorge è **mentre guarda quel prodotto**, non
+          quando apre una sezione apposta. */}
+      {isEdit && (
+        <Link
+          to="/magazzino/allineamento"
+          className="inline-block mt-6 text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta"
+        >
+          Quanto ce n&apos;è davvero? Allinea la dispensa →
+        </Link>
+      )}
+
       {isEdit && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
           <div className="flex items-center justify-between mb-4">

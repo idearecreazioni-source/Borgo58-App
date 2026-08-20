@@ -206,6 +206,12 @@ const OPERAZIONI = new Set([
   // un evento in sala che nessun preventivo rivendica, o un preventivo che si
   // dichiara accettato per una cena che in calendario non c'e'.
   "accetta_preventivo",
+  // Blocco 1 del mandato dell'allineamento (20/08/2026). Dichiarare quanto
+  // c'e' davvero scrive la correzione nel suo registro E muove le partite in
+  // magazzino: a meta' resterebbe una partita scaricata che nessuna
+  // correzione spiega, oppure una correzione registrata che non ha tolto
+  // niente. Nessuna delle due sembrerebbe sbagliata guardando la schermata.
+  "allinea_giacenza",
 ]);
 
 const CORS = {

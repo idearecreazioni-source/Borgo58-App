@@ -166,6 +166,12 @@ export default function MagazzinoHome() {
             Produzioni
           </Link>
           <Link
+            to="/magazzino/allineamento"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          >
+            Allineamento
+          </Link>
+          <Link
             to="/magazzino/lista-spesa"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
           >
@@ -244,7 +250,12 @@ export default function MagazzinoHome() {
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Ingrediente</th>
-                <th className="px-4 py-3 font-medium">Giacenza</th>
+                {/* 🔴 NON «Giacenza», e non è una sfumatura: quel numero
+                    è quanto ci SAREBBE se ogni ricetta fosse rispettata al
+                    grammo. Chiamandolo giacenza si smette di controllarlo —
+                    è una stima presentata come dato, la stessa famiglia
+                    della sala disegnata vuota. */}
+                <th className="px-4 py-3 font-medium">Dovrebbe esserci</th>
                 <th className="px-4 py-3 font-medium">Soglia minima</th>
                 <th className="px-4 py-3 font-medium">Scade prima</th>
                 <th className="px-4 py-3"></th>

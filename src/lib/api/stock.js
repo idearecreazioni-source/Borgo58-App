@@ -119,3 +119,56 @@ export async function scarichiSenzaRicavo(entityId, dal, al) {
   if (error) throw error;
   return data ?? [];
 }
+
+// L'ALLINEAMENTO DEL MAGAZZINO — 20/08/2026.
+//
+// 🔴 QUEL NUMERO NON È UNA GIACENZA, È UNA PREVISIONE — parole di Alessio:
+// *«le quantità che scarica sono solo stimate a monte e sicuramente saranno
+// variabili nella realtà»*. Il giorno che lo si chiama «giacenza» si smette
+// di controllarlo: è la differenza fra un dato e **una stima presentata come
+// dato**, la stessa famiglia della sala disegnata vuota.
+//
+// ⚠️ SI SCRIVE QUANTO C'È, NON QUANTO TOGLIERE: la differenza la calcola il
+// database. Davanti allo scaffale non si fanno conti — chiedere «quanto
+// togli» sposterebbe l'aritmetica su chi ha in mano il barattolo.
+//
+// ⚠️ E la fa CHIUNQUE, anche dalla sala: chi si accorge che ne manca è chi
+// sta guardando lo scaffale.
+// ⚠️ Passa dal CORRIDOIO, e non per uniformità: scrive **due tabelle** — la
+// correzione nel suo registro e le partite in magazzino. A metà resterebbe o
+// una partita scaricata che nessuna correzione spiega, o una correzione
+// registrata che non ha toccato niente. Nessuna delle due sembrerebbe
+// sbagliata guardando la schermata.
+// 🔴 E non l'ho deciso io: l'ha trovato la rete del Contratto B4
+// (`tests/app/scritture-dal-corridoio.test.js`), diventando rossa da sola.
+export async function allineaGiacenza(ingredientId, quantoCe, note) {
+  return eseguiOperazione("allinea_giacenza", {
+    p_ingredient_id: ingredientId,
+    p_quanto_ce: Number(quantoCe),
+    p_note: note ?? null,
+  });
+}
+
+// Cosa c'è da allineare, coi prodotti in esaurimento in cima: è il momento in
+// cui quel numero serve per decidere.
+export async function daAllineare() {
+  const { data, error } = await supabase.rpc("da_allineare");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// 🔴 DUE NUMERI CHE RESTANO DISTINTI, MAI FUSI IN UNO «AGGIORNATO»: lo
+// stimato è quello con cui Alessio decide i prezzi del menu, il reale è
+// quello che sta vivendo. Fusi, i prezzi si farebbero su un numero che si
+// muove da sé.
+export async function foodCostReale(dal, al) {
+  const { data, error } = await supabase.rpc("food_cost_reale", { p_dal: dal, p_al: al });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function scostamentiPerProdotto(dal, al) {
+  const { data, error } = await supabase.rpc("scostamenti_per_prodotto", { p_dal: dal, p_al: al });
+  if (error) throw error;
+  return data ?? [];
+}

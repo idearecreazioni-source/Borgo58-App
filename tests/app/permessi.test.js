@@ -202,7 +202,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 17 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 18 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -246,6 +246,16 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // decidere — quante persone, in che stato — e il NOME del cliente
       // solo al titolare: nessun prezzo, nessun costo.
       "trattative_del_giorno",
+      // ⚠️ AGGIUNTA IL 20/08 col mandato dell'allineamento, aperta a tutto lo
+      // staff APPOSTA: chi si accorge che di un prodotto ne manca è chi sta
+      // guardando lo scaffale, non chi ha il gestionale aperto in ufficio
+      // (decisione di Alessio). Dice quanto dovrebbe esserci e la soglia —
+      // numeri che in sala si vedono già in Magazzino. Nessun costo.
+      // ⚠️ E `allinea_giacenza` NON è in questo elenco pur essendo aperta
+      // allo staff: un portiere ce l'ha — pretende un accesso — e la rete lo
+      // riconosce. Il food cost e gli scostamenti in euro restano
+      // titolare-only e si RIFIUTANO, non tornano vuoti.
+      "da_allineare",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");
