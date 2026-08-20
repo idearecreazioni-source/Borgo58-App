@@ -199,6 +199,12 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    vero)**. Il punto di contatto col registratore è preparato in un posto solo
    (`src/lib/registratore.js`) — ma **non è mai stato sostituito da niente**,
    quindi che sia sostituibile è un'affermazione, non una misura.
+   ✅ **APPLICATO IN PRODUZIONE il 20/08** — [consegna](consegne/20260820_applicato_l_elenco_che_si_fa_notare.md):
+   **154 migrazioni**, corridoio **v31**, nessun numero del locale mosso.
+   🔴 **E LA RETE È GIÀ ARMATA**: misurato subito dopo, **un conto** la farebbe
+   scattare oggi — «Divano 3» del 15/08, incassato e senza documento. Alla
+   prima chiusura di cassa Alessio verrà fermato. **Non l'ho sistemato io**:
+   è un dato vero e la scelta fra segnarlo scontrinato o prenderne atto è sua.
 
 ---
 
