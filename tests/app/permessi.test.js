@@ -206,7 +206,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 16 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 17 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -243,6 +243,13 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // non per chiedere chi sta chiamando.
       "close_order_as_discount_gift",
       "log_deleted_record",
+      // ⚠️ AGGIUNTA IL 20/08 col blocco 4 dei preventivi, e dichiarata qui
+      // perché è li' che si rischia di promettere un tavolo per una sera
+      // che Alessio sta trattando: l'avviso serve a chi prende la
+      // prenotazione, e in sala si prenota. Restituisce il minimo per
+      // decidere — quante persone, in che stato — e il NOME del cliente
+      // solo al titolare: nessun prezzo, nessun costo.
+      "trattative_del_giorno",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

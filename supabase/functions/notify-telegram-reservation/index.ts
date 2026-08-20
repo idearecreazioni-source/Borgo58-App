@@ -112,6 +112,20 @@ function formatAlarmMessage(allarme: Record<string, unknown>): string {
     ].join("\n");
   }
 
+  // Un evento annullato non e' un guasto: e' una serata che si e' liberata,
+  // e chi legge non deve chiamare aiuto — deve decidere se rimetterla in
+  // vendita. Sotto il triangolo dei guasti si leggerebbe come rumore, ed e'
+  // esattamente l'errore chiuso il 13/08 per i rincari.
+  if (categoria === "evento") {
+    return [
+      "📆 EVENTO ANNULLATO",
+      "",
+      messaggio,
+      "",
+      "Se la sala si e' liberata, quella sera torna prenotabile.",
+    ].join("\n");
+  }
+
   if (categoria === "rincaro") {
     return [
       "💶 RINCARO",

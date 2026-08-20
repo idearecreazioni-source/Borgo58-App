@@ -300,8 +300,46 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     nessuno se ne sarebbe accorto.
     ✅ **APPLICATO IN PRODUZIONE il blocco 3**: **157 migrazioni**, funzione
     online `email-cliente` **v4**, tutto il resto invariato.
-    **Restano i blocchi 4-5**: l'accettazione con la spunta «sala piena», e la
-    sera dell'evento.
+    ✅ **APPLICATA ANCHE `20260820000008`** (i trenta giorni) il 20/08:
+    **158 migrazioni**, validità proposta **30 giorni**, 0 preventivi,
+    0 movimenti, **26** tracce nel registro cancellazioni — invariate.
+    ✅ **BLOCCO 4 FATTO il 20/08** — [consegna](consegne/20260820_l_evento_accettato.md),
+    migrazione `20260820000009`, **non ancora in produzione**. È Alessio a dire
+    «accettato»: da lì nasce l'evento in calendario, il preventivo si collega, e
+    la spunta «sala piena» si accende **se la capienza è esaurita**.
+    🔴 **La regola è una proprietà, non un elenco di casi**: quante persone sono
+    attese contro quanti posti ha la sala quel giorno. L'evento entra in
+    calendario *prima* che il conto si faccia, quindi nel conto è una
+    prenotazione come le altre — **nessun ramo «se è un evento»**. Il caso che
+    lo dimostra è **C** (30 persone con 8 già prenotate su 34): senza di lui,
+    «guardo solo l'evento» sarebbe passata verde.
+    🔴 **`giornate_sold_out` ha imparato DA DOVE VIENE la spunta**, e non era
+    nel mandato: vuota vuol dire «l'ha messa Alessio a mano», e in quel caso
+    nessun annullamento la spegne. *Senza quella colonna, annullare un evento
+    avrebbe spento anche una decisione sua, in silenzio.*
+    ⚠️ **Annullare fa due cose**: la spunta si spegne **e** parte l'avviso, con
+    una faccia sua (categoria `evento`, «📆 EVENTO ANNULLATO») — non sotto il
+    triangolo dei guasti, perché chi legge deve decidere se rimettere in vendita
+    quella sera, non chiamare aiuto.
+    🔴 **Una versione nuova NON crea un secondo evento**: riusa la prenotazione
+    dell'antenato risalendo la catena. Tolto il collegamento, **due prove
+    diventano rosse** (la verifica della migrazione e quella sui dati veri) —
+    la rottura chiesta dal mandato, fatta e rimessa a posto.
+    ✅ **DECISO DA ALESSIO: un preventivo scaduto si accetta lo stesso, e il
+    gestionale lo dice.** La scadenza serve a rinegoziare, non a impedire.
+    ⚠️ **Nessuna colonna nuova per «era scaduto»**: è `accettato_il >
+    valido_fino_al`, cioè un riflesso.
+    🔴 **Una misura ha aggiunto lavoro fuori mandato**: senza l'ora l'evento non
+    si può accettare (il calendario non ammette orari vuoti) — e misurando,
+    **`ora_evento` non era scrivibile da nessuna schermata**. Il rifiuto sarebbe
+    stato un vicolo cieco. Campo aggiunto.
+    ⚠️ **L'elenco delle funzioni senza portiere passa da 16 a 17**:
+    `trattative_del_giorno` è aperta a tutto lo staff **apposta** — in sala si
+    prende una prenotazione, ed è lì che si rischia di promettere un tavolo per
+    una sera in trattativa. Restituisce quante persone e in che stato; **il nome
+    del cliente solo al titolare**.
+    **Resta il blocco 5**: la sera dell'evento il magazzino deve scaricare le
+    porzioni **modificate**, non quelle della carta.
 
 ---
 

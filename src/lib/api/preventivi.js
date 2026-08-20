@@ -62,6 +62,31 @@ export async function nuovaVersionePreventivo(id) {
   return eseguiOperazione("nuova_versione_preventivo", { p_preventivo_id: id });
 }
 
+// 🔴 È ALESSIO A DIRE «ACCETTATO» (blocco 4). Un evento si conferma con una
+// caparra, una telefonata, un messaggio: il momento in cui diventa certo lo
+// decide lui, e da lì il gestionale crea il resto — prenotazione compresa.
+//
+// ⚠️ Passa dal corridoio: nasce l'evento in calendario, il preventivo si
+// collega, e la spunta «sala piena» si accende se la capienza è esaurita. A
+// metà resterebbe un evento che nessun preventivo rivendica, o un preventivo
+// che si dichiara accettato per una cena che in calendario non c'è.
+//
+// ⚠️ Restituisce il risultato E le avvertenze, insieme: «era scaduto», «questa
+// versione aggiorna l'evento che c'era già», «i posti non si sono potuti
+// contare». Un avviso separato dal numero che qualifica si perde.
+export async function accettaPreventivo(id) {
+  return eseguiOperazione("accetta_preventivo", { p_preventivo_id: id });
+}
+
+// Le trattative aperte di un giorno: un preventivo non ancora accettato non
+// blocca niente, ma chi sta per prendere una prenotazione per quella sera
+// deve saperlo. ⚠️ Il gestionale avvisa e lascia decidere — non decide.
+export async function trattativeDelGiorno(data) {
+  const { data: righe, error } = await supabase.rpc("trattative_del_giorno", { p_data: data });
+  if (error) throw error;
+  return righe ?? [];
+}
+
 export async function fabbisognoPreventivo(id) {
   const { data, error } = await supabase.rpc("fabbisogno_preventivo", { p_preventivo_id: id });
   if (error) throw error;

@@ -11,6 +11,7 @@ import {
   updateReservation,
 } from "../../lib/api/reservations";
 import { listMenus } from "../../lib/api/menus";
+import { trattativeDelGiorno } from "../../lib/api/preventivi";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
@@ -62,6 +63,7 @@ export default function ReservationForm() {
 
   const [needs, setNeeds] = useState(null);
   const [loadingNeeds, setLoadingNeeds] = useState(false);
+  const [trattative, setTrattative] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +106,28 @@ export default function ReservationForm() {
       cancelled = true;
     };
   }, [id, isEdit, isTitolare]);
+
+  // Le trattative aperte di quella sera. ⚠️ Se la lettura fallisce l'elenco
+  // resta VUOTO e l'avviso non compare: qui è l'unico esito accettabile —
+  // scrivere «nessuna trattativa» sarebbe una rassicurazione che nessuno ha
+  // verificato, e la prenotazione si prende comunque.
+  useEffect(() => {
+    if (!form.reservation_date) {
+      setTrattative([]);
+      return;
+    }
+    let cancelled = false;
+    trattativeDelGiorno(form.reservation_date)
+      .then((r) => {
+        if (!cancelled) setTrattative(r);
+      })
+      .catch(() => {
+        if (!cancelled) setTrattative([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.reservation_date]);
 
   const isEvent = form.type === "evento";
 
@@ -299,6 +323,21 @@ export default function ReservationForm() {
             />
           </div>
         </div>
+
+        {/* 🔴 UN PREVENTIVO NON ANCORA ACCETTATO NON BLOCCA NIENTE, ma chi sta
+            prendendo una prenotazione per quella sera deve saperlo: il
+            gestionale avvisa e lascia decidere. ⚠️ Sta **sotto la data**, dove
+            nasce il dubbio, e non in cima alla schermata: un avviso lontano dal
+            gesto è un avviso che non c'è (lezione del 17/08). */}
+        {trattative.length > 0 && (
+          <p className="text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2">
+            Per quella sera {trattative.length === 1 ? "c'è" : "ci sono"}{" "}
+            {trattative.length === 1
+              ? `una trattativa in corso per ${trattative[0].persone} persone`
+              : `${trattative.length} trattative in corso per ${trattative.reduce((s, t) => s + t.persone, 0)} persone in tutto`}
+            {trattative[0].cliente ? ` (${trattative.map((t) => t.cliente).join(", ")})` : ""}. Decidi tu.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>

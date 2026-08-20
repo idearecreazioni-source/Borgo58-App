@@ -426,3 +426,36 @@ perché è lì che è successo, e non richiede nessuna preparazione.
 va chiuso** — chiudere un conto scrive un incasso, e in produzione i movimenti
 di cassa devono restare zero fino al collaudo generale. Si annulla, o si dice
 a Code.
+
+---
+
+### 4 · L'avviso di un evento annullato su Telegram
+
+**Cos'è**: dal blocco 4 dei preventivi (20/08), annullare un evento accettato
+spegne la spunta «sala piena» **e manda un messaggio su Telegram**, con una
+faccia sua — «📆 EVENTO ANNULLATO», non il triangolo dei guasti.
+
+🔴 **Nessun occhio l'ha mai visto, e non per distrazione**: tutte le prove
+automatiche usano il freno anti-tempesta del gestionale per **non far suonare
+il telefono di Alessio** per un evento finto (§8, già successo l'11/08). Che il
+messaggio *parta* è provato leggendo il corpo della funzione; **come si vede**
+non è provato da niente.
+
+⚠️ *Una voce di collaudo che nessuno sa come far scattare è una voce che al
+collaudo verrà saltata* — quindi la ricetta:
+
+1. *(Alessio)* Sul progetto di prova (`npm run dev:prova`), va in
+   **Calendario Eventi → Preventivi**, ne fa uno nuovo per una sera qualunque,
+   scrive **data, ora e persone** (bastano 4) e salva.
+2. Passa alla vista **«Per me»** e preme **«Il cliente ha accettato»**.
+3. Va in **Calendario Eventi**, apre l'evento appena nato e preme **Annulla**.
+4. **Cosa deve succedere**: entro pochi secondi arriva un messaggio Telegram che
+   comincia con **📆 EVENTO ANNULLATO**, nomina il cliente, le persone e la
+   data. ⚠️ Se comincia con **⚠️ QUALCOSA NON VA** la funzione online non è
+   stata reinstallata: il messaggio arriva sotto il titolo dei guasti, che è
+   proprio quello che questo blocco evita.
+5. Se l'evento aveva riempito la sala, il messaggio deve anche dire che *«la
+   sala di quella sera è tornata libera»*.
+
+⚠️ **Sul progetto di prova**: gli avvisi Telegram arrivano allo stesso telefono,
+ma i dati finti restano fuori dal gestionale vero.

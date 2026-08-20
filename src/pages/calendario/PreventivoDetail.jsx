@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  accettaPreventivo,
   fabbisognoPreventivo,
   getPreventivo,
   inviaPreventivoPerEmail,
@@ -188,6 +189,47 @@ export default function PreventivoDetail() {
     }
   };
 
+  // 🔴 L'ACCETTAZIONE — blocco 4. Non è il quarto dei tre gesti del foglio:
+  //    quelli mandano un documento, questo mette una cena in calendario e può
+  //    chiudere la sala di quella sera. Per questo chiede conferma dicendo
+  //    **quando** e **per quante persone**: è irreversibile quanto la mail.
+  const accetta = async () => {
+    if (
+      !window.confirm(
+        `Metto in calendario ${prev.persone} persone il ${formatDate(prev.data_evento)}?`
+      )
+    )
+      return;
+    setInCorso("accetta");
+    setErrore("");
+    setEsito("");
+    try {
+      const r = await accettaPreventivo(id);
+      // ⚠️ L'esito porta con sé le avvertenze che arrivano dal database — «era
+      // scaduto», «i posti non si sono potuti contare» — invece di riscriverle
+      // qui: un avviso separato dal fatto che qualifica si perde alla prima
+      // schermata che mostra lo stesso fatto.
+      setEsito(
+        [
+          "L'evento è in calendario.",
+          r.sala_piena
+            ? `Quella sera la sala risulta piena (${r.prenotati} attesi su ${r.capienza} posti): è segnata come non prenotabile.`
+            : r.capienza != null
+              ? `Quella sera restano ${r.capienza - r.prenotati} posti su ${r.capienza}.`
+              : null,
+          ...(r.avvertenze ?? []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
+      await carica();
+    } catch (e) {
+      setErrore(e.message);
+    } finally {
+      setInCorso("");
+    }
+  };
+
   if (errore && !prev) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -259,6 +301,19 @@ export default function PreventivoDetail() {
               type="date"
               value={prev.data_evento ?? ""}
               onChange={(e) => salva({ data_evento: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            {/* 🔴 Senza l'ora l'evento non si accetta: in sala serve a sapere
+                quando arrivano, e inventarla lo metterebbe a un orario che
+                nessuno ha detto. Fino al blocco 4 questo campo non esisteva
+                da nessuna parte — e il rifiuto sarebbe stato un vicolo cieco. */}
+            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Ora</label>
+            <input
+              type="time"
+              value={(prev.ora_evento ?? "").slice(0, 5)}
+              onChange={(e) => salva({ ora_evento: e.target.value || null })}
               className={inputClass}
             />
           </div>
@@ -360,6 +415,8 @@ export default function PreventivoDetail() {
             const nuovo = await nuovaVersionePreventivo(id);
             window.location.href = `/calendario-eventi/preventivi/${nuovo}`;
           }}
+          onAccetta={accetta}
+          accettando={inCorso === "accetta"}
         />
         </div>
       )}
@@ -475,7 +532,19 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
 // ---------------------------------------------------------------------
 // LA VISTA DI ALESSIO
 // ---------------------------------------------------------------------
-function VistaCosto({ prev, prezzo, fabbisogno, righeCibo, righeExtra, piatti, salvando, salva, onVersione }) {
+function VistaCosto({
+  prev,
+  prezzo,
+  fabbisogno,
+  righeCibo,
+  righeExtra,
+  piatti,
+  salvando,
+  salva,
+  onVersione,
+  onAccetta,
+  accettando,
+}) {
   const [nuovoPiatto, setNuovoPiatto] = useState("");
   const [extraNome, setExtraNome] = useState("");
   const [extraPrezzo, setExtraPrezzo] = useState("");
@@ -638,12 +707,36 @@ function VistaCosto({ prev, prezzo, fabbisogno, righeCibo, righeExtra, piatti, s
         </div>
       )}
 
-      <button
-        onClick={onVersione}
-        className="text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta"
-      >
-        Fai una versione nuova
-      </button>
+      {/* 🔴 IL GESTO CHE CHIUDE LA TRATTATIVA, e sta in questa vista e non
+          nell'altra: dire «accettato» è una decisione di Alessio, non una
+          cosa che si fa mentre si mostra il preventivo a un ospite.
+          ⚠️ Non si somiglia a «fai una versione nuova»: quello è un ripensamento,
+          questo mette una cena in calendario. */}
+      <div className="flex flex-wrap items-center gap-4 pt-2">
+        {prev.stato === "accettato" ? (
+          <Link
+            to={`/calendario-eventi/${prev.reservation_id}`}
+            className="text-sm text-b58-charcoal underline hover:text-b58-terracotta"
+          >
+            L&apos;evento è in calendario →
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onAccetta}
+            disabled={accettando}
+            className="rounded-lg bg-b58-olive hover:bg-b58-olive/90 text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+          >
+            {accettando ? "…" : "Il cliente ha accettato"}
+          </button>
+        )}
+        <button
+          onClick={onVersione}
+          className="text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta"
+        >
+          Fai una versione nuova
+        </button>
+      </div>
     </div>
   );
 }

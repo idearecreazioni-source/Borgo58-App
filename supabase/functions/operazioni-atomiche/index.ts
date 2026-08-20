@@ -200,6 +200,12 @@ const OPERAZIONI = new Set([
   // cosa che conserva cosa era stato promesso e quando.
   "salva_preventivo",
   "nuova_versione_preventivo",
+  // Blocco 4 (20/08/2026). Accettare tocca quattro tabelle: nasce l'evento in
+  // calendario, il preventivo diventa accettato e si collega, e la spunta
+  // «sala piena» si accende se la capienza e' esaurita. A meta' resterebbe o
+  // un evento in sala che nessun preventivo rivendica, o un preventivo che si
+  // dichiara accettato per una cena che in calendario non c'e'.
+  "accetta_preventivo",
 ]);
 
 const CORS = {
