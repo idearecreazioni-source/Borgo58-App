@@ -262,9 +262,14 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     schermata, due viste: quella del cliente **non mostra nessun costo, nessuna
     percentuale e nemmeno la parola food cost**, e se il prezzo non c'è lo dice
     invece di scrivere zero.
-    🔴 **SERVE UNA DECISIONE DI ALESSIO**: come proteggere il passaggio alla
-    vista dei costi. Oggi c'è una conferma esplicita — sicura, ma provvisoria —
-    e si sostituisce cambiando **una funzione sola** (`chiediPermessoCosti`).
+    ✅ **DECISO da Alessio: nessuna protezione** sul passaggio fra le due
+    viste — *«mi sembra un eccesso di prudenza»*. Via la conferma. ⚠️ Restano
+    due cose che **non sono protezioni**, sono il modo in cui il comando è
+    fatto: è **neutro a schermo** («Per il cliente» / «Per me», che dicono
+    quale vista è attiva e non cosa contiene l'altra, perché quel comando si
+    legge anche senza toccarlo), e la **vista del cliente è quella di
+    partenza, sempre** — se la schermata ricordasse l'ultima vista usata, un
+    preventivo riaperto davanti a un ospite si aprirebbe sui costi.
     ⚠️ **Un difetto riscritto da me e corretto subito**: creando un preventivo
     nuovo avevo rimesso `new Date().toISOString()`, la data UTC che fra
     mezzanotte e le due dà **ieri**. È la trappola dell'audit dell'08/08,

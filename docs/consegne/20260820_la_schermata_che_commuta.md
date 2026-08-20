@@ -12,8 +12,8 @@ tutti dal blocco 1.
 
 1. 🔴 **Nessuna mano ha aperto la schermata**, e nessuna prova di questo
    progetto guarda un disegno: quello che è provato sono i numeri sotto.
-2. 🔴 **LA PROTEZIONE DEL PASSAGGIO AI COSTI È PROVVISORIA** e aspetta una
-   decisione di Alessio. Vedi sotto — è la domanda in fondo.
+2. ✅ **Il passaggio fra le due viste l'ha deciso Alessio: nessuna
+   protezione.** Vedi sotto — restano due cose che non sono protezioni.
 3. ⚠️ **In produzione non ci sono ricette**, quindi l'elenco dei piatti da
    aggiungere è vuoto e il costo è zero: la schermata non ha mai incontrato
    dati veri.
@@ -62,21 +62,33 @@ pagina.
 
 ---
 
-## 🔴 Il passaggio ai costi è protetto, e le due direzioni NON sono simmetriche
+## 🔴 Il passaggio fra le due viste: nessuna protezione
 
-Tornare alla vista del cliente è **libero**; andare ai costi passa da un
-**gesto protetto**. È voluto: *il rischio è tutto da una parte.*
+**Deciso da Alessio**: *«mi sembra un eccesso di prudenza. Basterà qualcosa di
+generico che mi consenta di switchare da una schermata all'altra»*. Via la
+conferma, niente PIN, niente tenere premuto — **un comando semplice**.
 
-### ⚠️ Ma la protezione di adesso è PROVVISORIA, e la scelta è di Alessio
+⚠️ **Ma due cose restano, e non sono protezioni: sono il modo in cui il comando
+è fatto.**
 
-Oggi c'è una **conferma esplicita** («Mostrare i costi? Se hai il cliente
-davanti, non farlo»). È sicura — **non si apre mai per sbaglio** — ma non è
-la sua scelta: quel gesto lo farà lui, davanti a un cliente, e la protezione
-va misurata **sul suo modo di lavorare**, non su quello che sembra
-ragionevole a me.
+**1 · Il comando è NEUTRO a schermo.** Le due parole sono «Per il cliente» e
+«Per me»: dicono **quale vista è attiva**, non cosa contiene l'altra. Niente
+«vedi i costi», niente «food cost» — quel comando sta sulla schermata che
+Alessio apre **davanti al cliente**, e una parola del genere *si legge anche
+senza toccarla*.
 
-✅ **E si sostituisce cambiando una funzione sola**: `chiediPermessoCosti`, in
-cima al file. Il giorno che decide, si tocca lì e basta.
+**2 · La vista del cliente è quella di PARTENZA, sempre**, anche riaprendo il
+preventivo di ieri. ⚠️ *Non è prudenza: è il valore iniziale giusto.* Se la
+schermata ricordasse l'ultima vista usata, un preventivo riaperto davanti a un
+ospite si aprirebbe **sui costi**. Nel codice non c'è nessuna memoria — niente
+`localStorage`, niente parametro nell'indirizzo — **ed è scritto che è
+deliberato**, così nessuno lo aggiunge fra sei mesi credendo di fare una
+comodità.
+
+⚠️ **Nessuna prova è caduta con la decisione**: la conferma non era asseritata
+da nessuna parte — era un gesto della schermata, e in questo progetto nessuna
+prova guarda una schermata. Non c'è quindi niente da togliere né da lasciare
+rosso, ed è dichiarato qui perché la domanda era legittima.
 
 ---
 
@@ -120,19 +132,10 @@ progetto, e su questa schermata pesa più del solito.
 
 ## Per Alessio, in una riga
 
-Il preventivo si compila da una schermata sola: «Per il cliente» mostra il
-menu e il prezzo, «Per me» mostra i costi, le porzioni e cosa comprare — e per
-passare ai costi devi confermare, così non ci finisci per sbaglio col cliente
-davanti.
-
----
-
-## 🔴 La domanda, in fondo perché è l'unica
-
-**Come vuoi che si protegga il passaggio alla vista dei costi?**
-
-Oggi c'è una finestrella che chiede conferma. Funziona, ma la scelta è tua
-perché quel gesto lo farai tu, in piedi, con qualcuno davanti.
+Il preventivo si compila da una schermata sola: «Per il cliente» mostra il menu
+e il prezzo, «Per me» mostra i costi, le porzioni e cosa comprare — si passa
+da una all'altra con un tocco, e aprendo un preventivo si comincia sempre da
+quella del cliente.
 
 ---
 

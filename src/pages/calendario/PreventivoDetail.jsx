@@ -17,26 +17,21 @@ import { formatEUR } from "../../lib/constants";
 // cui Alessio l'ha chiesta così. Gli stessi dati, letti dagli stessi numeri
 // del database, mostrati in due modi.
 //
-// 🔴 E IL PASSAGGIO ALLA VISTA DEI COSTI È PROTETTO. Alessio compila il
-// preventivo **davanti al cliente**: un tocco sbagliato gli mostra il food
-// cost, e chi scopre di pagare 55 € una cena che ne costa 14 non ragiona su
-// affitto e personale — ragiona sulla differenza.
+// 🔴 IL PASSAGGIO FRA LE DUE VISTE NON È PROTETTO — decisione di Alessio del
+// 20/08: *«mi sembra un eccesso di prudenza. Basterà qualcosa di generico che
+// mi consenta di switchare da una schermata all'altra»*. Niente conferma,
+// niente PIN, niente tenere premuto: un comando semplice.
 //
-// ⚠️ LA PROTEZIONE QUI È PROVVISORIA, ED È DICHIARATO. Alessio deve ancora
-// scegliere COME proteggerlo: quel gesto lo farà lui, davanti a un cliente, e
-// la protezione va misurata sul suo modo di lavorare. Finché non decide c'è
-// una conferma esplicita — che è sicura (non si apre mai per sbaglio) e si
-// sostituisce cambiando una funzione sola, `chiediPermessoCosti`.
+// ⚠️ MA DUE COSE RESTANO, e non sono protezioni — sono il modo in cui il
+// comando è fatto:
+//   1 · **è NEUTRO a schermo**. Nessuna scritta come «vedi i costi» o «food
+//       cost»: questo comando sta sulla schermata che Alessio apre DAVANTI AL
+//       CLIENTE, e la parola è visibile anche senza toccarla. Dice quale
+//       vista è attiva, non cosa contiene l'altra;
+//   2 · **la vista del cliente è quella di PARTENZA, sempre**, anche
+//       riaprendo il preventivo di ieri — vedi `useState` più sotto.
 const VISTA_CLIENTE = "cliente";
 const VISTA_COSTO = "costo";
-
-// ⚠️ Il gesto protetto vive in UN POSTO SOLO: il giorno che Alessio sceglie
-// come vuole proteggerlo, si cambia qui e basta.
-async function chiediPermessoCosti() {
-  return window.confirm(
-    "Mostrare i costi? Se hai il cliente davanti, non farlo.\n\n(Protezione provvisoria: Alessio deve ancora scegliere come vuole proteggere questo passaggio.)"
-  );
-}
 
 export default function PreventivoDetail() {
   const { id } = useParams();
@@ -44,6 +39,11 @@ export default function PreventivoDetail() {
   const [prezzo, setPrezzo] = useState(null);
   const [fabbisogno, setFabbisogno] = useState([]);
   const [piatti, setPiatti] = useState([]);
+  // 🔴 SI PARTE SEMPRE DALLA VISTA DEL CLIENTE, e non è prudenza: è il
+  // valore iniziale giusto. Se la schermata ricordasse l'ultima vista usata,
+  // un preventivo riaperto davanti a un ospite si aprirebbe **sui costi**.
+  // ⚠️ Quindi qui non c'è nessuna memoria — niente localStorage, niente
+  // parametro nell'indirizzo — ed è deliberato, non una dimenticanza.
   const [vista, setVista] = useState(VISTA_CLIENTE);
   const [errore, setErrore] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -116,10 +116,6 @@ export default function PreventivoDetail() {
     }
   };
 
-  const passaAiCosti = async () => {
-    if (await chiediPermessoCosti()) setVista(VISTA_COSTO);
-  };
-
   if (errore && !prev) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -144,9 +140,10 @@ export default function PreventivoDetail() {
         >
           ← Preventivi
         </Link>
-        {/* 🔴 IL COMMUTATORE. Tornare al cliente è libero; andare ai costi
-            passa dal gesto protetto. Le due direzioni NON sono simmetriche,
-            ed è voluto: il rischio è tutto da una parte. */}
+        {/* 🔴 IL COMMUTATORE, e le due parole sono scelte: dicono QUALE
+            vista è attiva, non cosa contiene l'altra. Sta su una schermata
+            che Alessio apre davanti al cliente, e una scritta come «vedi i
+            costi» si legge anche senza toccarla. */}
         <div className="flex items-center gap-1 rounded-full bg-b58-cream-dark p-1">
           <button
             type="button"
@@ -159,7 +156,7 @@ export default function PreventivoDetail() {
           </button>
           <button
             type="button"
-            onClick={passaAiCosti}
+            onClick={() => setVista(VISTA_COSTO)}
             className={`rounded-full text-xs px-3 py-1.5 ${
               vista === VISTA_COSTO ? "bg-b58-terracotta text-b58-parchment" : "text-b58-charcoal-soft"
             }`}
