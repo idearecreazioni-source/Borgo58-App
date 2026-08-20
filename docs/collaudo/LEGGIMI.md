@@ -194,3 +194,29 @@ se i numeri hanno senso**, senza toccare niente:
 
 **Quello che ti sembra strano qui è il difetto più prezioso di tutto il
 collaudo**, perché è quello che vedrai ogni giorno per anni.
+---
+
+## 🔴 Una cosa da annotare per ogni difetto trovato — decisa il 20/08
+
+Quando trovi qualcosa che non va, oltre a dirmi **cos'è** serve una riga in
+più: **una prova automatica l'avrebbe preso?**
+
+Bastano tre parole — «sì», «no», «forse». Non devi saperlo con certezza: se
+hai dubbi scrivi «forse» e ci guardo io.
+
+⚠️ **A cosa serve, perché non è burocrazia.** Oggi in questo progetto
+**nessuna prova automatica guarda una schermata**: le prove esercitano il
+database e i calcoli, non quello che si vede. Aggiungere quella capacità è
+una decisione presa e **rimandata apposta al 20/08** — non per il costo, ma
+perché oggi sceglieremmo *a indovinare* quali schermate provare, su schermate
+che stanno ancora cambiando sotto le mani.
+
+🔴 **Quell'elenco di «sì / no» È la risposta.** A fine collaudo dirà, per
+misura e non per intuizione, quali difetti vivevano solo a schermo — e quindi
+quali schermate meritano una prova. *Un elenco ricavato dai difetti veri batte
+un elenco deciso prima da chi non li ha ancora visti.*
+
+⚠️ **E il prezzo dell'attesa è dichiarato**: fino ad allora **un difetto che
+vive solo a schermo può passare**. È successo davvero — il modulo che restava
+aperto, il tocco che contraddiceva il colore, la sala disegnata vuota: li ha
+trovati tutti e tre una mano o una fotografia, non una prova.

@@ -421,6 +421,55 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## ⚠️ Cosa resta da guardare dopo la sera del 20/08
 
+**Le quattro decisioni della notte del 20/08**, prese da Alessio dopo le
+consegne. Scritte qui perché nessuna di loro è stata costruita quella notte.
+
+- **1 · IL FRENO SULLE MIGRAZIONI — strada 3**, nella forma *«la chiave non
+  vive sul computer»*, accettando il costo di un gesto ogni volta.
+  ✅ **La misura è fatta** e sta in
+  [`proposte/20260820_la_chiave_che_scrive.md`](proposte/20260820_la_chiave_che_scrive.md).
+  🔴 **E ha ridotto il lavoro invece di allargarlo, due volte**: dei dieci
+  comandi che leggono la chiave di produzione **uno solo scrive** (`npm run
+  migra -- --conferma`), quindi togliere la chiave e basta spegnerebbe **nove
+  strumenti di misura, backup compreso**; e il ruolo di sola lettura **esiste
+  già** — Supabase fornisce `supabase_read_only_user`, misurato: ha `select`
+  su tutto ciò che serve e **non** ha `insert`.
+  ⚠️ **Due cose restano in dubbio e vanno provate**: la password di quel ruolo
+  (dal pannello) e che `pg_dump` giri davvero con lui — *i permessi che ci
+  sono e il comando che riesce sono due cose diverse*. **Prima si prova il
+  backup con la chiave nuova, e solo se riesce si toglie quella vecchia.**
+  ⚠️ **Rovescia in parte la decisione del 12/08** («le migrazioni le applico
+  io»): il prompt non si può soddisfare da questo terminale, quindi l'ultimo
+  tasto lo premerà Alessio. **Ma non è lo stesso gesto che allora era fallito
+  tre volte** — lì si incollava un file SQL lungo che si troncava a metà, qui
+  si incolla una riga e se si tronca il collegamento fallisce subito.
+  🔴 **Non chiude la `SERVICE_ROLE_PRODUZIONE`**, che resta nel file e sullo
+  storage può cancellare file. Lavoro a sé, non aperto.
+
+- **2 · LE PROVE CHE GUARDANO LE SCHERMATE — rimandate, e non per il costo.**
+  Oggi si sceglierebbe *a indovinare* quali schermate provare, su schermate
+  che stanno ancora cambiando. ✅ **La cosa da fare adesso è fatta**: nel
+  [copione del collaudo](collaudo/LEGGIMI.md) c'è la riga da annotare per ogni
+  difetto trovato dal vivo — *una prova automatica l'avrebbe preso?* A fine
+  collaudo **quell'elenco È la risposta**, ricavata dai difetti veri invece che
+  decisa prima. ⚠️ **Il prezzo dell'attesa, dichiarato**: fino ad allora un
+  difetto che vive solo a schermo può passare.
+
+- **3 · LE QUATTRO PRENOTAZIONI del 20, 21 e 23 agosto sono FINTE**, confermato
+  da Alessio. ✅ Il blocco D non ha più ostacoli su quel punto.
+
+- **4 · LE COMUNICAZIONI AI CLIENTI PARTONO DAL GESTIONALE**, non dalla posta
+  di Alessio. 🔴 **La ragione, perché resti scritta**: il cancello del consenso
+  vive **nel database e non nella schermata** — copiando gli indirizzi a mano
+  quel cancello non ci sarebbe, e il consenso tornerebbe a dipendere da chi se
+  lo ricorda. ⚠️ **Per WhatsApp resta com'è**: lì il gestionale prepara solo i
+  numeri **perché non può fare altro**, non per scelta — e la differenza fra le
+  due cose va tenuta, perché il giorno che WhatsApp cambiasse la risposta
+  cambierebbe con lei. **Non costruito**: è il terzo di blocco C.
+
+---
+
+
 0. 🔴 **IL PUSH HA UNA SECONDA STRADA, E NESSUNA AUTOMAZIONE LA COPRE** —
    misurato il 20/08. Dal terminale di Claude Code `git push` fallisce sempre,
    ma **la stessa copia di lavoro è aperta anche nell'interfaccia grafica, che
