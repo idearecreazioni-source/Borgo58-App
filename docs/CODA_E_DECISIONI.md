@@ -205,6 +205,26 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    scattare oggi — «Divano 3» del 15/08, incassato e senza documento. Alla
    prima chiusura di cassa Alessio verrà fermato. **Non l'ho sistemato io**:
    è un dato vero e la scelta fra segnarlo scontrinato o prenderne atto è sua.
+10. 🔴 **I PREVENTIVI PER GLI EVENTI — mandato del 20/08**:
+    [`mandati/20260820_i_preventivi_per_gli_eventi.md`](mandati/20260820_i_preventivi_per_gli_eventi.md).
+    Deciso da Alessio in due giri di domande il 19 e il 20/08. Usa il **prezzo
+    a pezzo dei bocconcini**, già in produzione.
+    ⚠️ **Un preventivo è il posto dove Alessio promette un prezzo PRIMA di
+    conoscere il costo**: è l'unico punto del gestionale dove questo succede,
+    ed è da lì che discendono quasi tutte le sue decisioni.
+    🔴 **La misura ha trovato un difetto VIVO**: `computeEventIngredientNeeds`
+    stima il fabbisogno di un evento **nel browser**, guarda solo gli
+    ingredienti diretti e ignora lo scarto. Su un menu che contenga una
+    preparazione — cioè quasi ogni menu vero, perché Alessio *«scompone
+    sempre»* — **non dà un numero sbagliato: si rompe**. Per questo il
+    **blocco 0 è la riparazione**, e quella funzione **si toglie** invece di
+    restare accanto.
+    🔴 **Il cuore è la schermata che commuta** fra «il costo per me» e «il
+    prezzo per il cliente», una sola schermata, **col passaggio protetto**:
+    un tocco sbagliato davanti a un ospite gli mostra il food cost.
+    ⚠️ **E la trappola da scrivere dove si legge**: il ricarico si applica al
+    **solo cibo**, quindi un preventivo può risultare in linea sul cibo e in
+    perdita sulla serata.
 
 ---
 
