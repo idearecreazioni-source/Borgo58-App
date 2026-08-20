@@ -130,5 +130,7 @@ riempirsi da solo.
 
 ---
 
+**Commit**: `b7406ad` — «Applicato in produzione: lo storico dei costi».
+**Working tree**: pulito.
 **Migrazioni**: 153 in produzione, **1 applicata in questo giro**.
 **Prove**: 152 pure + 236 sull'app, tutte verdi.
