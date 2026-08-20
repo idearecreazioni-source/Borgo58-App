@@ -9,6 +9,15 @@
   applicata in produzione**
 - **Funzioni online**: nessuna toccata
 
+🔴 **LA MIGRAZIONE È STATA CORRETTA DOPO QUESTO RIEPILOGO**, e va detto qui
+perché l'hash dichiarato sopra non contiene la correzione: rileggendo a
+serata finita ho trovato che `storia_cliente` confrontava il mittente con
+«contiene» invece che per uguale — la corrispondenza di `mario.rossi@x.it`
+sarebbe comparsa nella scheda di `rossi@x.it`. Corretto nel commit
+`915dfb4`, con la prova che costruisce il caso e diventa rossa rimettendo la
+versione vecchia. Il racconto sta in
+[cosa non mi convince](20260820_cosa_non_mi_convince.md).
+
 ⚠️ **Il mandato della serata era stato scritto con una restrizione — «fai due
 terzi, lascia fuori il consenso» — e il validatore l'ha RITIRATA a metà
 lavoro**, perché contraddiceva il mandato della posta, dove il consenso è il
