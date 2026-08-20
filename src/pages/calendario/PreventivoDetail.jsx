@@ -458,6 +458,15 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
             <span className="text-b58-charcoal">{formatEUR(totale)}</span>
           </div>
         )}
+        {/* 🔴 LA SCADENZA STA SUL FOGLIO, non solo dentro al gestionale:
+            serve a poter rinegoziare senza discussioni con chi tiene in mano
+            un preventivo di tre mesi fa. ⚠️ La mail e WhatsApp la portavano
+            già; qui — cioè sul foglio che si STAMPA — mancava. */}
+        {prev.valido_fino_al && (
+          <p className="text-xs text-b58-charcoal-soft mt-4">
+            Questo preventivo è valido fino al {formatDate(prev.valido_fino_al)}.
+          </p>
+        )}
       </div>
     </div>
   );

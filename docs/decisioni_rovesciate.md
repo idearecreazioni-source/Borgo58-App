@@ -810,3 +810,40 @@ smesso di poterlo generare, che è il modo migliore.
 stava è stata **sostituita** da una riga che dice che c'era e cosa l'ha
 superata. Un'avvertenza sparita senza spiegazione è indistinguibile da una
 dimenticata.
+
+---
+
+## 20 · 20/08/2026 — «il preventivo si manda col PDF allegato»
+
+**Cosa era stato deciso, e quando.** Il mandato dei preventivi, scritto il
+20/08 su decisioni di Alessio, prevedeva tre documenti: *«PDF, mail e
+messaggio WhatsApp col PDF allegato»*.
+
+**La ragione di allora.** È il modo normale in cui un preventivo viaggia, e
+descriveva esattamente quello che Alessio voleva ottenere: un foglio che il
+cliente riceve e può girare a qualcun altro.
+
+**Cosa si decide adesso.** La mail manda il preventivo **scritto nel
+messaggio**, e WhatsApp apre il testo pronto: **nessuno dei due allega un
+file**. Se Alessio vuole allegare il foglio, lo allega **lui** dopo averlo
+salvato dalla stampa.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Non perché fosse
+sbagliata: perché dava per scontata una cosa che in questo gestionale non
+esiste.** Misurato prima di costruire: **non c'è nessuna libreria per
+produrre un file PDF**, e non è una mancanza — è la scelta del progetto fin
+dall'inizio (il PDF si fa con la **stampa del browser**, ed è così per il
+manuale HACCP, le deduzioni, la tracciabilità, gli adempimenti). Il
+gestionale **non ha mai un file PDF fra le mani**.
+
+🔴 **E cosa sarebbe successo eseguendo alla lettera**: messaggi che annunciano
+un allegato che non c'è. **Nessun errore da nessuna parte** — la mail parte,
+il messaggio si apre, tutto sembra funzionare — e a scoprirlo sarebbe stato
+**il cliente**, non Alessio. È la stessa famiglia inseguita da tre giorni:
+*una risposta più corta che ha l'aria di essere intera.*
+
+⚠️ **La strada alternativa esisteva e non è stata presa**: aggiungere una
+libreria PDF. Sarebbe stata una decisione architetturale — un modo nuovo di
+produrre documenti accanto a quello che il gestionale usa da sempre — e
+questo mandato non la chiedeva. È dichiarata qui perché resti una scelta e
+non una dimenticanza: **il giorno che servisse un allegato vero, si riapre**.

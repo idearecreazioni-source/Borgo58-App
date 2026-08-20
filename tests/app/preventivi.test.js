@@ -236,10 +236,26 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     expect(cibo.recipe.name).toContain("piatto");
   });
 
+  it("un preventivo nuovo nasce valido trenta giorni", async () => {
+    // Deciso da Alessio il 20/08, come valore proposto e modificabile.
+    const { data: s } = await titolare
+      .from("service_settings")
+      .select("giorni_validita_preventivo")
+      .eq("id", 1)
+      .single();
+    expect(s.giorni_validita_preventivo).toBe(30);
+    const p = await getPreventivo(prev);
+    expect(p.valido_fino_al, "un preventivo nuovo nasce senza scadenza").toBeTruthy();
+  });
+
   it("senza scadenza il foglio SI RIFIUTA di essere prodotto", async () => {
     // 🔴 Un preventivo senza scadenza scritta sopra resta valido per sempre
     // in mano a chi lo riceve. È la stessa forma dell'esportazione della
     // prima nota che si rifiuta quando la lettura è tagliata (19/08).
+    // ⚠️ Il caso VA COSTRUITO: da quando la scadenza si propone da sé, un
+    // preventivo senza non nasce più da solo. Una prova che non lo
+    // costruisce smetterebbe di guardare il rifiuto senza diventare rossa.
+    await titolare.from("preventivi").update({ valido_fino_al: null }).eq("id", prev);
     await expect(foglioPreventivo(prev)).rejects.toThrow(/fino a quando vale/);
   });
 

@@ -288,9 +288,18 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     🔴 **Il foglio si rifiuta se manca la scadenza**, e **nel foglio non c'è
     nessun costo** — garantito dal database, non dalle schermate, perché il
     foglio viaggia. La vista dei costi è `print:hidden`.
-    🔴 **SERVE UNA DECISIONE DI ALESSIO: per quanti giorni vale un
-    preventivo.** La colonna nasce vuota — una durata inventata deciderebbe
-    per quanto tempo resta legato a un prezzo.
+    ✅ **DECISO: TRENTA GIORNI**, come valore proposto e modificabile su ogni
+    preventivo ([consegna](consegne/20260820_la_validita_di_trenta_giorni.md),
+    migrazione `20260820000008`, non ancora in produzione).
+    🔴 **E costruendolo è saltata fuori una cosa che non era vera**: la
+    scadenza c'era nella mail e su WhatsApp ma **non nella vista che si
+    stampa** — cioè proprio sul foglio che il cliente si porta via. Il pezzo
+    che viaggia di più era l'unico senza. Corretto.
+    ⚠️ **E correggere un preventivo non riporta avanti la scadenza** che
+    Alessio aveva accorciato a mano: è la più insidiosa delle tre cure, perché
+    nessuno se ne sarebbe accorto.
+    ✅ **APPLICATO IN PRODUZIONE il blocco 3**: **157 migrazioni**, funzione
+    online `email-cliente` **v4**, tutto il resto invariato.
     **Restano i blocchi 4-5**: l'accettazione con la spunta «sala piena», e la
     sera dell'evento.
 
@@ -314,6 +323,27 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     può fare è preparare **l'elenco dei numeri**, col limite scritto **lì**:
     un messaggio che non arriva a chi non ha il numero in rubrica risulta
     «mandato» e nessuno lo segnala.
+
+---
+
+12. 🟡 **L'ALLINEAMENTO DEL MAGAZZINO E IL FOOD COST REALE — mandato del
+    20/08, NON per adesso**:
+    [`mandati/20260820_l_allineamento_del_magazzino.md`](mandati/20260820_l_allineamento_del_magazzino.md).
+    🔴 **Il problema l'ha posto Alessio**: le quantità che il gestionale
+    scarica sono **stimate**, quindi quel numero **non è una giacenza, è una
+    previsione**. ⚠️ E va **chiamato così a schermo**: il giorno che lo si
+    chiama «giacenza» si smette di controllarlo.
+    ✅ **Metà esiste già** (partite col loro costo, sotto-scorta, `rettifica`
+    già fra i motivi di scarico, meccanica FEFO): manca il gesto di
+    **dichiarare quanto c'è** — oggi si può solo togliere una quantità — e i
+    **due numeri del food cost**, stimato e reale, che restano **distinti**
+    perché lo stimato è quello con cui si decidono i prezzi del menu.
+    ⚠️ **Niente causale** (scartata da Alessio: un elenco che si riempie di
+    «non so» produce righe che sembrano informazione), **niente avvisi**, e
+    **non nella lista della spesa**.
+    ⚠️ **Una misura da fare prima di costruire**: partite dello stesso
+    prodotto hanno prezzi diversi, quindi **da quale si toglie cambia il
+    valore dello scostamento**. Da misurare e dichiarare.
 
 ---
 
