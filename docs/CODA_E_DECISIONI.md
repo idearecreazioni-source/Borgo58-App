@@ -225,6 +225,17 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     ⚠️ **E la trappola da scrivere dove si legge**: il ricarico si applica al
     **solo cibo**, quindi un preventivo può risultare in linea sul cibo e in
     perdita sulla serata.
+    ✅ **BLOCCO 0 FATTO il 20/08** — [consegna](consegne/20260820_il_fabbisogno_di_un_evento.md),
+    migrazione `20260820000005`, **non ancora in produzione**. La prova è stata
+    scritta **prima** e vista diventare rossa con l'errore vero
+    (*«Cannot read properties of null»*, 3 su 3), poi la riparazione l'ha resa
+    verde. Il calcolo non si fa più nel browser: `fabbisogno_menu_evento`
+    **riusa `fabbisogno_preparazione`** — nessuna ricorsione nuova, quindi il
+    fabbisogno di un evento e lo scarico vero del magazzino **si comportano
+    identicamente**. ⚠️ `listRecipeIngredientsForRecipes` è rimasta senza
+    chiamanti, ed è dichiarato nel file.
+    **Restano i blocchi 1-5**: il preventivo, la schermata che commuta, i
+    documenti, l'accettazione, la sera dell'evento.
 
 ---
 

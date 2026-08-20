@@ -2,7 +2,6 @@ import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
 import { filtroRicerca } from "../calcoli/ricerca";
-import { listRecipeIngredientsForRecipes } from "./recipeIngredients";
 
 export async function listReservations({ status, type, search, date } = {}) {
   let query = supabase
@@ -215,43 +214,30 @@ export async function setReservationDeposit(reservationId, amount) {
   if (error) throw error;
 }
 
-// Simulatore fabbisogno ingredienti per un evento: scala le quantità delle
-// ricette del menu scelto sul numero di ospiti (assume che ogni ospite
-// consumi ogni piatto del menu evento — coerente con un menu fisso da
-// evento, diverso dall'à la carte).
-export async function computeEventIngredientNeeds(menuId, partySize) {
-  const { data: menuItems, error } = await supabase
-    .from("menu_items")
-    .select("recipe_id, recipe:recipe_id(id, name, portions_yield)")
-    .eq("menu_id", menuId);
+// IL FABBISOGNO DI UN EVENTO — quanta materia prima serve, e quanto costa.
+//
+// 🔴 IL CALCOLO NON SI FA PIÙ QUI (20/08/2026, blocco 0 del mandato dei
+// preventivi). La versione precedente sommava nel browser i soli ingredienti
+// DIRETTI delle ricette del menu: una riga che contiene una preparazione o un
+// bocconcino non ha nessun ingrediente, e la funzione ne leggeva il prezzo.
+// Non dava un numero sbagliato — **si rompeva**, e si sarebbe rotta su quasi
+// ogni menu vero, perché Alessio scompone sempre. Ignorava anche lo scarto e
+// la resa dei componenti.
+//
+// ⚠️ E il difetto di fondo era che quel calcolo esisteva DUE VOLTE: il
+// database lo sa già fare, ricorsivamente, con lo scarto e con la resa. Due
+// posti che rispondono alla stessa domanda prima o poi dicono cose diverse, e
+// nessuno sa quale credere.
+//
+// ⚠️ Restituisce { ingredient_id, nome, unita, quantita, costo }: sono i nomi
+// del database, non tradotti — una traduzione in mezzo è un altro posto dove
+// due cose possono divergere.
+export async function fabbisognoEvento(menuId, persone) {
+  if (!menuId || !persone) return [];
+  const { data, error } = await supabase.rpc("fabbisogno_menu_evento", {
+    p_menu_id: menuId,
+    p_persone: Number(persone),
+  });
   if (error) throw error;
-
-  const recipeIds = menuItems.map((mi) => mi.recipe_id);
-  const recipeIngredients = await listRecipeIngredientsForRecipes(recipeIds);
-  const portionsByRecipe = Object.fromEntries(
-    menuItems.map((mi) => [mi.recipe_id, mi.recipe.portions_yield || 1])
-  );
-
-  const needs = {};
-  recipeIngredients
-    .filter((ri) => !ri.is_optional)
-    .forEach((ri) => {
-      const portions = portionsByRecipe[ri.recipe_id] || 1;
-      const scaledQty = ri.quantity * (partySize / portions);
-      const key = ri.ingredient_id;
-      if (!needs[key]) {
-        needs[key] = {
-          ingredient: ri.ingredient,
-          quantity: 0,
-        };
-      }
-      needs[key].quantity += scaledQty;
-    });
-
-  return Object.values(needs)
-    .map((n) => ({
-      ...n,
-      estimatedCost: n.quantity * n.ingredient.current_price,
-    }))
-    .sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name));
+  return data ?? [];
 }

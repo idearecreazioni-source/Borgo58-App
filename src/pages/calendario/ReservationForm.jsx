@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
-  computeEventIngredientNeeds,
+  fabbisognoEvento,
   annullaPrenotazione,
   createReservation,
   getReservation,
@@ -112,7 +112,7 @@ export default function ReservationForm() {
     setLoadingNeeds(true);
     setError("");
     try {
-      setNeeds(await computeEventIngredientNeeds(form.event_menu_id, Number(form.party_size)));
+      setNeeds(await fabbisognoEvento(form.event_menu_id, Number(form.party_size)));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -121,7 +121,7 @@ export default function ReservationForm() {
   };
 
   const totalEstimatedCost = useMemo(
-    () => needs?.reduce((sum, n) => sum + n.estimatedCost, 0) ?? 0,
+    () => needs?.reduce((sum, n) => sum + Number(n.costo), 0) ?? 0,
     [needs]
   );
 
@@ -437,12 +437,12 @@ export default function ReservationForm() {
                   </thead>
                   <tbody>
                     {needs.map((n) => (
-                      <tr key={n.ingredient.id} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">{n.ingredient.name}</td>
+                      <tr key={n.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
+                        <td className="py-2 text-b58-charcoal">{n.nome}</td>
                         <td className="py-2 text-right text-b58-charcoal-soft">
-                          {n.quantity.toFixed(2)} {n.ingredient.unit}
+                          {Number(n.quantita).toFixed(2)} {n.unita}
                         </td>
-                        <td className="py-2 text-right text-b58-charcoal">{formatEUR(n.estimatedCost)}</td>
+                        <td className="py-2 text-right text-b58-charcoal">{formatEUR(n.costo)}</td>
                       </tr>
                     ))}
                   </tbody>

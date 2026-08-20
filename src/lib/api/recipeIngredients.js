@@ -57,6 +57,12 @@ export async function listRecipeIngredientsDisplay(recipeId) {
   return data;
 }
 
+// ⚠️ CODICE MORTO DAL 20/08/2026: l'unico chiamante era il calcolo del
+// fabbisogno di un evento, che si faceva nel browser ed e' stato tolto
+// (blocco 0 del mandato dei preventivi). Non e' stata cancellata perche' il
+// simulatore what-if del Menu potrebbe volerla — ma oggi non la chiama
+// nessuno, ed e' dichiarato qui invece di lasciarlo scoprire.
+//
 // Per il simulatore what-if: tutti gli ingredienti di più ricette in una
 // sola query, per poter ricalcolare il food cost con un prezzo ipotetico
 // senza fare N richieste separate.
