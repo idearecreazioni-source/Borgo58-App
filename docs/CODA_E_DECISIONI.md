@@ -253,8 +253,45 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     🔴 **La rete dei permessi è diventata rossa da sola** (16 → 17): una
     funzione nuova aveva il portiere in un'altra funzione invece che nel
     proprio corpo. Porta chiusa, conto tornato a 16.
-    **Restano i blocchi 2-5**: la schermata che commuta, i documenti,
-    l'accettazione, la sera dell'evento.
+    ✅ **APPLICATO IN PRODUZIONE il 20/08**: **156 migrazioni**, corridoio
+    **v32**, food cost obiettivo **25** scritto, e tutto il resto invariato
+    (0 ricette, 26 tracce, 0 movimenti, 8 conti di cui 0 aperti, 0 preventivi).
+    ✅ **BLOCCO 2 FATTO il 20/08** — [consegna](consegne/20260820_la_schermata_che_commuta.md),
+    **nessuna migrazione**: al database non serviva niente. Le schermate sono
+    `/calendario-eventi/preventivi` e `…/:id`, titolare-only. Una sola
+    schermata, due viste: quella del cliente **non mostra nessun costo, nessuna
+    percentuale e nemmeno la parola food cost**, e se il prezzo non c'è lo dice
+    invece di scrivere zero.
+    🔴 **SERVE UNA DECISIONE DI ALESSIO**: come proteggere il passaggio alla
+    vista dei costi. Oggi c'è una conferma esplicita — sicura, ma provvisoria —
+    e si sostituisce cambiando **una funzione sola** (`chiediPermessoCosti`).
+    ⚠️ **Un difetto riscritto da me e corretto subito**: creando un preventivo
+    nuovo avevo rimesso `new Date().toISOString()`, la data UTC che fra
+    mezzanotte e le due dà **ieri**. È la trappola dell'audit dell'08/08,
+    riaperta in un posto nuovo.
+    **Restano i blocchi 3-5**: i documenti, l'accettazione, la sera
+    dell'evento.
+
+---
+
+11. 🟡 **LA POSTA DEI CLIENTI — mandato del 20/08, NON per adesso**:
+    [`mandati/20260820_la_posta_dei_clienti.md`](mandati/20260820_la_posta_dei_clienti.md).
+    Scritto mentre le decisioni erano fresche. Tre cose: **mandare** ai clienti
+    quello che il gestionale già produce, **leggere** le mail che arrivano da
+    loro, **conservare la storia** sulla scheda del cliente.
+    ⚠️ **Metà esiste già** (la Posta in arrivo, la funzione che manda le mail,
+    la scheda cliente): la domanda non è «come si legge una casella», è **cosa
+    cambia quando chi scrive è un cliente**.
+    🔴 **Il consenso si costruisce COL modulo, non dopo**, e la distinzione che
+    regge tutto è che confermare un tavolo non ha bisogno di niente mentre
+    mandare il menu del mese a duecento persone sì — **due funzioni separate**,
+    o prima o poi una comunicazione commerciale esce dalla porta di servizio.
+    🔴 **Le liste WhatsApp il gestionale NON le manda**, misurato prima di
+    prometterlo: le liste broadcast si fanno a mano, arrivano **solo a chi ha
+    il numero di Alessio in rubrica**, e tengono **256 contatti**. Quello che
+    può fare è preparare **l'elenco dei numeri**, col limite scritto **lì**:
+    un messaggio che non arriva a chi non ha il numero in rubrica risulta
+    «mandato» e nessuno lo segnala.
 
 ---
 

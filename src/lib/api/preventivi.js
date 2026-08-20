@@ -14,10 +14,17 @@ import { eseguiOperazione } from "../operazioni";
 // al cliente e quello del magazzino nascessero in due posti, prima o poi
 // divergerebbero — e la differenza la vedrebbe un ospite.
 
+// ⚠️ Il nome del piatto arriva INSIEME alle righe, non con una seconda
+// interrogazione: due elenchi che si incontrano nel browser sono due letture
+// che possono raccontare stati diversi. E se l incorporamento smettesse di
+// funzionare non ci sarebbe nessun errore rosso — comparirebbe un trattino
+// su ogni riga, cioe una schermata che dice con calma che il menu e vuoto.
+const RIGHE = "*, righe:preventivo_righe(*, recipe:recipe_id(id, name))";
+
 export async function listPreventivi({ dal, al } = {}) {
   let query = supabase
     .from("preventivi")
-    .select("*, righe:preventivo_righe(*)")
+    .select(RIGHE)
     .order("data_evento", { ascending: false })
     .limit(200);
   if (dal) query = query.gte("data_evento", dal);
@@ -30,7 +37,7 @@ export async function listPreventivi({ dal, al } = {}) {
 export async function getPreventivo(id) {
   const { data, error } = await supabase
     .from("preventivi")
-    .select("*, righe:preventivo_righe(*)")
+    .select(RIGHE)
     .eq("id", id)
     .single();
   if (error) throw error;

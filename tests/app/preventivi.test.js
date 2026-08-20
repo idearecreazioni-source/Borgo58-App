@@ -222,6 +222,17 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     expect(error, "la storia delle versioni è perdibile").not.toBeNull();
   });
 
+  it("il nome del piatto arriva INSIEME alle righe", async () => {
+    // ⚠️ Se l incorporamento smettesse di funzionare non ci sarebbe nessun
+    // errore rosso: comparirebbe un trattino su ogni riga, cioe una
+    // schermata che dice con calma che il menu e vuoto. Stessa forma del
+    // difetto del 18/08 sulle prenotazioni senza tavolo.
+    const p = await getPreventivo(prev);
+    const cibo = p.righe.find((r) => r.natura === "cibo");
+    expect(cibo.recipe, "il nome del piatto non arriva con la riga").toBeTruthy();
+    expect(cibo.recipe.name).toContain("piatto");
+  });
+
   it("lo staff non vede i preventivi", async () => {
     // Dentro c'è il costo, e il prezzo promesso a un cliente.
     const staff = await clientAutenticato(credenziali().staff);
