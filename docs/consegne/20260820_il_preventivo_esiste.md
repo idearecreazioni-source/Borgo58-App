@@ -15,9 +15,9 @@ nuove: `salva_preventivo`, `nuova_versione_preventivo`.
 2. 🔴 **Nessuna mano ha scritto un preventivo**: tutto passa dalle prove.
 3. ⚠️ **In produzione non ci sono ricette né menu**, quindi il costo non ha
    mai incontrato dati veri.
-4. ⚠️ **Il ricarico predefinito è vuoto** in produzione, quindi oggi il
-   gestionale **non proporrebbe nessun prezzo** — e lo dichiara. Vedi sotto:
-   è una scelta, e uno scarto dalla lettera del mandato.
+4. ✅ **Il valore di partenza l'ha deciso Alessio**: food cost al **25%**,
+   cioè 10 € di cibo si propongono a **40 €** a persona. Vedi sotto — ha
+   comportato un cambio di forma della colonna, non solo un numero.
 5. ⚠️ **I vini sono trattati come extra**, con un prezzo scritto a mano: non
    esiste ancora una fonte dati per le bottiglie (è il blocco 3 del mandato
    cumulativo, «cantina e bevande»).
@@ -79,8 +79,8 @@ che distingue «vale per l'evento» da «ho modificato la ricetta»*.
 
 ## Il prezzo, e la trappola scritta dove si legge
 
-Il ricarico si applica al **solo cibo**; gli extra si sommano dopo, **senza
-ricarico**.
+Il **food cost obiettivo** si applica al **solo cibo**; gli extra si sommano
+dopo, **senza nessun ricarico**.
 
 ⚠️ **L'avvertenza esce insieme al numero** (`prezzo_preventivo` restituisce il
 prezzo *e* la frase), come per `calcola_imposte()`: un avviso che vive nel
@@ -88,20 +88,34 @@ testo di una schermata non protegge la seconda schermata che mostra lo stesso
 numero. È la trappola naturale del modulo — *un preventivo può risultare in
 linea sul cibo e in perdita sulla serata*.
 
-**Il prezzo scritto a mano vince sempre**, e resta anche cambiando il ricarico
-dopo.
+**Il prezzo scritto a mano vince sempre**, e resta anche cambiando il food
+cost obiettivo dopo.
 
-### ⚠️ Il ricarico predefinito nasce VUOTO — uno scarto dal mandato, dichiarato
+### 🔴 Il valore l'ha deciso Alessio, e ha cambiato la forma della colonna
 
-Alessio ha chiesto *«un valore predefinito, modificabile»*. **Il numero però
-non l'ha detto**, e un ricarico inventato da me **decide un prezzo**: sposta la
-proposta sempre nella stessa direzione, esattamente come i parametri del POS
-del 15/08, che per questa ragione nascono vuoti.
+Prima l'avevo lasciata vuota, perché un ricarico inventato **decide un
+prezzo** — e infatti la domanda è servita: Alessio l'aveva detto come
+**«400%»** intendendo *food cost al 25%*, cioè **10 € di cibo → 40 €**, il
+costo per **quattro**. Con la colonna scritta come «ricarico percento», 400
+avrebbe dato **50 €**: il costo per cinque.
 
-Finché non lo scrive lui, il gestionale **non propone e lo dichiara**
-(*«Nessun ricarico impostato…»*) invece di proporre un numero mio. **È l'unico
-punto in cui non ho seguito la lettera del mandato**, ed è qui perché la
-scelta è sua, non mia.
+⚠️ **Quindi non ho scritto un commento accanto al numero: ho tolto
+l'ambiguità.** La colonna adesso si chiama
+**food_cost_obiettivo_percento** e vale **25** — «quanto pesa il cibo sul
+prezzo». Un ricarico si può leggere in due modi; un food cost obiettivo no, e
+il dubbio su cui ci siamo fermati **non si può più presentare**.
+
+⚠️ **E la formula è una divisione, non una moltiplicazione**: costo diviso 0,25.
+Scritta come ×(1+x/100) sarebbe rimasta leggibile in due modi.
+
+⚠️ **La schermata dirà il RISULTATO, non la percentuale**, ed è già così
+nell'avvertenza che esce dal database: *«Food cost obiettivo 25%: 10,00 € di
+cibo diventano 40,00 €»*. Una percentuale si legge in due modi, un prezzo no.
+Una prova controlla che quella frase contenga il risultato.
+
+⚠️ **Il valore si scrive solo se la colonna è ancora vuota**: è un valore di
+partenza, e riapplicare la migrazione non deve riportare indietro una scelta
+di Alessio (lezione del 15/08).
 
 ---
 
@@ -124,16 +138,17 @@ porzioni a mezza porzione, extra da 120 €.
 
 | | a persona |
 |---|---|
-| ✅ giusto: (10 × 3) + 120 = 150 | **15,00** |
-| ✗ ricarico anche sugli extra | 39,00 |
-| ✗ porzioni ignorate | il costo raddoppia a 20,00 |
+| ✅ giusto: 10 / 0,25 = 40 di cibo venduto, + 120 = 160 | **16,00** |
+| ✗ food cost applicato anche agli extra | 52,00 |
+| ✗ letto come «aggiungi il 25%» | 13,25 |
+| ✗ porzioni ignorate | 20,00 |
 | ✗ costo da un secondo posto | 0,00 |
 
 | rottura | cosa è diventato rosso |
 |---|---|
 | **il costo calcolato da un SECONDO posto** | *«Il costo fotografato è 0,0000 invece di 10,00»* |
 | le porzioni dell'evento ignorate | *«Il costo fotografato è 20,0000 invece di 10,00»* |
-| il ricarico applicato anche agli extra | *«Il prezzo proposto è 39,00 invece di 15,00»* |
+| il ricarico applicato anche agli extra | *«Il prezzo proposto è 39,00 invece di 15,00»* (prima della riscrittura in food cost) |
 | **il collegamento fra versione nuova e vecchia tolto** | *«Il preventivo vecchio è stato cancellato: la versione nuova è rimasta senza storia»* |
 | il costo non si fotografa più | *«Il costo è stato scritto senza dire quando»* |
 
@@ -180,3 +195,14 @@ preventivi».
 **Migrazione**: `20260820000006` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
 **Corridoio**: da installare in produzione dopo il push.
+
+---
+
+## Nota sul file della migrazione
+
+⚠️ **La migrazione 20260820000006 è stata riscritta dopo il primo commit**, per portare la
+decisione di Alessio sul food cost: non era ancora né su GitHub né in
+produzione, quindi la strada pulita era correggere il file invece di
+aggiungerne uno che disfa quello di un'ora prima. Il progetto di prova è stato
+riportato allo stato di partenza (tabelle tolte e rifatte) prima di
+riapplicarlo.

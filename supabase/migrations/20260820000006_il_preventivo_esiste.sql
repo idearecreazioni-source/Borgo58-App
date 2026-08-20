@@ -43,14 +43,15 @@
 -- =====================================================================
 
 alter table service_settings
-  add column if not exists ricarico_eventi_percento numeric;
+  add column if not exists food_cost_obiettivo_percento numeric;
 
-alter table service_settings drop constraint if exists ricarico_eventi_non_negativo;
-alter table service_settings add constraint ricarico_eventi_non_negativo
-  check (ricarico_eventi_percento is null or ricarico_eventi_percento >= 0);
+alter table service_settings drop constraint if exists food_cost_obiettivo_valido;
+alter table service_settings add constraint food_cost_obiettivo_valido
+  check (food_cost_obiettivo_percento is null
+         or (food_cost_obiettivo_percento > 0 and food_cost_obiettivo_percento <= 100));
 
-comment on column service_settings.ricarico_eventi_percento is
-  'Il ricarico con cui il gestionale PROPONE il prezzo a persona di un evento, sul SOLO cibo (20/08/2026). ⚠️ Nasce vuoto apposta: un ricarico inventato deciderebbe un prezzo, e finche'' non lo scrive Alessio il gestionale non propone niente e lo dichiara.';
+comment on column service_settings.food_cost_obiettivo_percento is
+  'Quanto deve pesare il cibo sul prezzo di un evento, in percentuale (20/08/2026, deciso da Alessio: 25). ⚠️ SI LEGGE COSI'': 25 vuol dire che 10 € di cibo si propongono a 40 € — il costo diviso 0,25. NON vuol dire «aggiungi il 25%». La colonna e'' scritta come food cost, e non come ricarico, apposta: un ricarico si puo'' leggere in due modi (×4 o ×5) e ci siamo gia'' fermati a chiedere quale fosse; un food cost obiettivo no.';
 
 
 -- ---------------------------------------------------------------------
@@ -72,8 +73,9 @@ create table if not exists preventivi (
   ora_evento        time,
   persone           integer not null,
   stato             text not null default 'bozza',
-  -- Fotografato quando il preventivo si scrive: il ricarico di ALLORA.
-  ricarico_percento numeric,
+  -- Fotografato quando il preventivo si scrive: il food cost obiettivo di
+  -- ALLORA. 25 = il cibo pesa un quarto del prezzo.
+  food_cost_obiettivo_percento numeric,
   -- Il prezzo scritto a mano da Alessio, che vince sempre sul proposto.
   prezzo_a_persona_scavalcato numeric,
   -- 🔴 IL COSTO DEL MOMENTO, fotografato. Non si ricalcola mai: e' l'unica
@@ -87,7 +89,8 @@ create table if not exists preventivi (
   constraint preventivo_stato_ammesso check (
     stato in ('bozza', 'inviato', 'accettato', 'rifiutato', 'annullato')
   ),
-  constraint preventivo_ricarico_non_negativo check (ricarico_percento is null or ricarico_percento >= 0),
+  constraint preventivo_food_cost_valido check (food_cost_obiettivo_percento is null
+         or (food_cost_obiettivo_percento > 0 and food_cost_obiettivo_percento <= 100)),
   constraint preventivo_prezzo_non_negativo check (prezzo_a_persona_scavalcato is null or prezzo_a_persona_scavalcato >= 0),
   constraint preventivo_non_e_versione_di_se_stesso check (versione_di is null or versione_di <> id)
 );
@@ -215,12 +218,17 @@ as $$
   select coalesce(sum(costo), 0)::numeric(14,4) from fabbisogno_preventivo(p_preventivo_id);
 $$;
 
+-- ⚠️ Si CANCELLA e si rifa': cambia una colonna del risultato, e Postgres
+-- non lascia sostituire una funzione che restituisce una forma diversa.
+-- Dopo un drop i permessi tornano aperti al mondo, quindi si richiudono a
+-- mano piu' sotto (lezione del 13/08).
+drop function if exists prezzo_preventivo(uuid);
 create or replace function prezzo_preventivo(p_preventivo_id uuid)
 returns table(
   costo_cibo            numeric,
   costo_cibo_a_persona  numeric,
   extra_totale          numeric,
-  ricarico_percento     numeric,
+  food_cost_obiettivo_percento numeric,
   prezzo_a_persona      numeric,
   scavalcato            boolean,
   avvertenza            text
@@ -252,12 +260,16 @@ begin
     from preventivo_righe
    where preventivo_id = p_preventivo_id and natura = 'extra';
 
-  v_ric := coalesce(v_p.ricarico_percento,
-                    (select s.ricarico_eventi_percento from service_settings s where s.id = 1));
+  v_ric := coalesce(v_p.food_cost_obiettivo_percento,
+                    (select s.food_cost_obiettivo_percento from service_settings s where s.id = 1));
 
-  -- 🔴 IL RICARICO SUL SOLO CIBO, e gli extra si sommano dopo.
+  -- 🔴 IL FOOD COST OBIETTIVO SI APPLICA AL SOLO CIBO, e gli extra si
+  -- sommano dopo, senza nessun ricarico.
+  -- ⚠️ La formula e' una DIVISIONE, non una moltiplicazione: 25% vuol dire
+  -- che il cibo pesa un quarto del prezzo, quindi 10 € di cibo fanno 40 € di
+  -- cibo venduto. Scritta come «+X%» sarebbe stata leggibile in due modi.
   if v_ric is not null then
-    v_prop := round((v_costo * (1 + v_ric / 100.0) + v_extra) / v_p.persone, 2);
+    v_prop := round((v_costo / (v_ric / 100.0) + v_extra) / v_p.persone, 2);
   end if;
 
   return query select
@@ -272,11 +284,15 @@ begin
     -- stesso numero.
     case
       when v_ric is null then
-        'Nessun ricarico impostato: il gestionale non puo'' proporre un prezzo. Scrivilo in Sala e orari, oppure metti tu il prezzo a persona.'
+        'Nessun food cost obiettivo impostato: il gestionale non puo'' proporre un prezzo. Scrivilo in Sala e orari, oppure metti tu il prezzo a persona.'
       when v_p.prezzo_a_persona_scavalcato is not null then
-        'Prezzo scritto a mano: il ricarico non lo tocca piu''.'
+        'Prezzo scritto a mano: il food cost obiettivo non lo tocca piu''.'
       else
-        'Il ricarico del ' || trim(to_char(v_ric, 'FM999990.0#')) || '% si applica al SOLO cibo; gli extra sono sommati dopo, senza ricarico.'
+        -- ⚠️ SI DICE COL RISULTATO, non con la percentuale: «10 € di cibo
+        -- → 40 €». Una percentuale si puo'' leggere in due modi, un prezzo no.
+        'Food cost obiettivo ' || trim(to_char(v_ric, 'FM999990.0#')) || '%: '
+        || euro(10) || ' di cibo diventano ' || euro(round(10 / (v_ric / 100.0), 2))
+        || '. Vale sul SOLO cibo; gli extra sono sommati dopo, senza ricarico.'
     end
     || case when v_p.costo_cibo is null then ' ⚠️ Costo di adesso: questo preventivo non e'' ancora stato salvato.'
             else ' Costo fotografato il ' || to_char(v_p.costo_rilevato_il at time zone 'Europe/Rome', 'DD/MM/YYYY') || '.' end;
@@ -323,7 +339,7 @@ begin
     insert into preventivi (
       entity_id, versione_di, customer_id, cliente_nome, cliente_telefono,
       cliente_email, data_evento, ora_evento, persone, stato,
-      ricarico_percento, prezzo_a_persona_scavalcato, note
+      food_cost_obiettivo_percento, prezzo_a_persona_scavalcato, note
     ) values (
       (p_testata->>'entity_id')::uuid,
       nullif(p_testata->>'versione_di','')::uuid,
@@ -335,10 +351,10 @@ begin
       nullif(p_testata->>'ora_evento','')::time,
       (p_testata->>'persone')::integer,
       coalesce(nullif(p_testata->>'stato',''), 'bozza'),
-      -- ⚠️ Il ricarico si FOTOGRAFA dal predefinito: cambiarlo domani non
-      -- deve riscrivere il prezzo di una promessa gia' fatta.
-      coalesce(nullif(p_testata->>'ricarico_percento','')::numeric,
-               (select s.ricarico_eventi_percento from service_settings s where s.id = 1)),
+      -- ⚠️ Il food cost obiettivo si FOTOGRAFA dal predefinito: cambiarlo
+      -- domani non deve riscrivere il prezzo di una promessa gia' fatta.
+      coalesce(nullif(p_testata->>'food_cost_obiettivo_percento','')::numeric,
+               (select s.food_cost_obiettivo_percento from service_settings s where s.id = 1)),
       nullif(p_testata->>'prezzo_a_persona_scavalcato','')::numeric,
       nullif(p_testata->>'note','')
     ) returning id into v_id;
@@ -408,11 +424,11 @@ begin
   insert into preventivi (
     entity_id, versione_di, customer_id, cliente_nome, cliente_telefono,
     cliente_email, data_evento, ora_evento, persone, stato,
-    ricarico_percento, prezzo_a_persona_scavalcato, note
+    food_cost_obiettivo_percento, prezzo_a_persona_scavalcato, note
   )
   select entity_id, id, customer_id, cliente_nome, cliente_telefono,
          cliente_email, data_evento, ora_evento, persone, 'bozza',
-         ricarico_percento, prezzo_a_persona_scavalcato, note
+         food_cost_obiettivo_percento, prezzo_a_persona_scavalcato, note
     from preventivi where id = p_preventivo_id
   returning id into v_nuovo;
 
@@ -465,7 +481,7 @@ begin
     json_build_object('sub', v_tit, 'role', 'authenticated')::text, true);
   select count(*) into v_lap_p from deleted_records;
   select id into v_ente from entities order by created_at limit 1;
-  select ricarico_eventi_percento into v_ric from service_settings where id = 1;
+  select food_cost_obiettivo_percento into v_ric from service_settings where id = 1;
 
   -- Catena: ingrediente -> preparazione -> piatto. 10 persone, piatto da 4
   -- porzioni, mezza porzione a testa = 1,25 dosi.
@@ -486,7 +502,7 @@ begin
   v_prev := salva_preventivo(null,
     jsonb_build_object('entity_id', v_ente, 'cliente_nome', '__VERIFICA__ cliente',
                        'data_evento', '1995-09-10', 'persone', 10,
-                       'ricarico_percento', 200),
+                       'food_cost_obiettivo_percento', 25),
     jsonb_build_array(
       jsonb_build_object('natura', 'cibo', 'recipe_id', v_piatto, 'porzioni_per_persona', 0.5),
       jsonb_build_object('natura', 'extra', 'descrizione', 'Cameriere in piu''',
@@ -520,20 +536,24 @@ begin
     raise exception 'Le porzioni dell''evento hanno cambiato le porzioni della ricetta.';
   end if;
 
-  -- 5 · IL PREZZO: ricarico sul SOLO cibo, extra sommati dopo.
-  --     (10,00 x 3) + 120 = 150 / 10 persone = 15,00 a persona.
+  -- 5 · IL PREZZO: food cost obiettivo sul SOLO cibo, extra sommati dopo.
+  --     10,00 / 0,25 = 40,00 di cibo venduto; + 120 = 160 / 10 = 16,00.
+  --     ⚠️ I numeri distinguono: col food cost applicato anche agli extra
+  --     farebbe 52,00; letto come «+25%» farebbe 13,25.
   select prezzo_a_persona, scavalcato, avvertenza into v_prezzo, v_scav, v_avv
     from prezzo_preventivo(v_prev);
-  if round(v_prezzo, 2) <> 15.00 then
-    raise exception 'Il prezzo proposto e'' % invece di 15,00 a persona.', v_prezzo;
+  if round(v_prezzo, 2) <> 16.00 then
+    raise exception 'Il prezzo proposto e'' % invece di 16,00 a persona.', v_prezzo;
   end if;
   if v_scav then raise exception 'Il prezzo risulta scavalcato senza che nessuno l''abbia scritto.'; end if;
   if v_avv not like '%SOLO cibo%' then
-    raise exception 'L''avvertenza non dice che il ricarico e'' sul solo cibo: «%».', v_avv;
+    raise exception 'L''avvertenza non dice che vale sul solo cibo: «%».', v_avv;
   end if;
-
-  -- ⚠️ E la controprova del ricarico: senza extra farebbe 3,00 a persona.
-  --    Se il ricarico si applicasse anche agli extra, farebbero 39,00.
+  -- ⚠️ E DICE IL RISULTATO, non solo la percentuale: una percentuale si
+  --    legge in due modi, un prezzo no.
+  if v_avv not like '%40,00%' then
+    raise exception 'L''avvertenza non dice come si legge il food cost: «%».', v_avv;
+  end if;
 
   -- 6 · IL PREZZO SCAVALCATO VINCE, e resta anche cambiando il ricarico.
   perform salva_preventivo(v_prev,
@@ -545,11 +565,11 @@ begin
       jsonb_build_object('natura', 'extra', 'descrizione', 'Cameriere in piu''',
                          'quantita', 1, 'prezzo', 120)
     ));
-  update service_settings set ricarico_eventi_percento = 900 where id = 1;
+  update service_settings set food_cost_obiettivo_percento = 10 where id = 1;
   select prezzo_a_persona, scavalcato into v_prezzo, v_scav from prezzo_preventivo(v_prev);
-  update service_settings set ricarico_eventi_percento = v_ric where id = 1;
+  update service_settings set food_cost_obiettivo_percento = v_ric where id = 1;
   if round(v_prezzo, 2) <> 55.00 or not v_scav then
-    raise exception 'Il prezzo scritto a mano e'' cambiato con il ricarico: % .', v_prezzo;
+    raise exception 'Il prezzo scritto a mano e'' cambiato col food cost obiettivo: % .', v_prezzo;
   end if;
 
   -- 7 · LA VERSIONE NUOVA E' COLLEGATA, e porta le righe con se'.
@@ -604,8 +624,8 @@ begin
      or exists (select 1 from recipes where name like '__VERIFICA__ prev%') then
     raise exception 'La verifica ha lasciato delle righe finte.';
   end if;
-  if (select ricarico_eventi_percento from service_settings where id = 1) is distinct from v_ric then
-    raise exception 'La verifica ha lasciato il ricarico cambiato.';
+  if (select food_cost_obiettivo_percento from service_settings where id = 1) is distinct from v_ric then
+    raise exception 'La verifica ha lasciato il food cost obiettivo cambiato.';
   end if;
 
   -- 10 . E il costo nudo NON e' una porta: la rete dei permessi conta le
@@ -616,8 +636,20 @@ begin
   end if;
 
   perform set_config('request.jwt.claims', null, true);
-  raise notice 'Il preventivo esiste: costo dalla catena, ricarico sul solo cibo, porzioni sull''evento e versioni collegate.';
+  raise notice 'Il preventivo esiste: costo dalla catena, food cost obiettivo sul solo cibo, porzioni sull''evento e versioni collegate.';
 end $verifica$;
+
+-- 🔴 IL VALORE DECISO DA ALESSIO: food cost al 25%, cioe' 10 € di cibo si
+-- propongono a 40 € a persona — il costo per QUATTRO.
+-- ⚠️ Lui l'aveva detto come «400%», intendendo questo: il numero giusto e'
+-- quello che porta 10 a 40, non a 50. E' precisamente l'ambiguita' su cui ci
+-- si e' fermati a chiedere, ed e' il motivo per cui la colonna non si chiama
+-- «ricarico»: scritta come food cost obiettivo, quel dubbio non si presenta.
+-- ⚠️ Si scrive solo se e' ancora vuota: e' un valore di partenza, e
+-- riapplicando la migrazione non deve riportare indietro una sua scelta.
+update service_settings
+   set food_cost_obiettivo_percento = 25
+ where id = 1 and food_cost_obiettivo_percento is null;
 
 insert into applied_migrations (version, name)
 values ('20260820000006', 'il_preventivo_esiste')

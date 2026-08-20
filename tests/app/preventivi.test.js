@@ -13,15 +13,17 @@ import { supabase } from "../../src/lib/supabase";
 //
 // 🔴 I NUMERI SONO SCELTI PERCHÉ DISTINGUANO. 10 persone, un piatto da 4
 // porzioni preso a MEZZA porzione a testa = 1,25 dosi × 2 kg × 4 €/kg =
-// 10,00 € di cibo. Più un extra da 120 €.
-//   ✅ giusto:                 (10 × 3) + 120 = 150 → 15,00 a persona
-//   ✗ porzioni ignorate:       il costo raddoppia a 20,00
-//   ✗ ricarico anche sugli extra: 39,00 a persona
-//   ✗ costo da un secondo posto: 0,00
+// 10,00 € di cibo. Più un extra da 120 €. Food cost obiettivo 25%: il cibo
+// pesa un QUARTO del prezzo, quindi 10 € di cibo si vendono a 40 €.
+//   ✅ giusto: 10 / 0,25 = 40 di cibo venduto, + 120 = 160 → 16,00 a persona
+//   ✗ porzioni ignorate:           il costo raddoppia → 20,00
+//   ✗ food cost anche sugli extra: (10+120)/0,25 → 52,00
+//   ✗ letto come «+25%»:           10 × 1,25 + 120 → 13,25
+//   ✗ costo da un secondo posto:    0,00
 // Sono tutte diverse: con numeri comodi avrebbero coinciso.
 const MARCA = "TEST-AUTO preventivo";
 const PERSONE = 10;
-const RICARICO = 200;
+const FOOD_COST = 25;
 const EXTRA = 120;
 const COSTO_CIBO = 10;
 
@@ -109,7 +111,7 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
         cliente_nome: `${MARCA} cliente`,
         data_evento: "1995-09-10",
         persone: PERSONE,
-        ricarico_percento: RICARICO,
+        food_cost_obiettivo_percento: FOOD_COST,
       },
       righe: [
         { natura: "cibo", recipe_id: piatto, porzioni_per_persona: 0.5 },
@@ -160,16 +162,20 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     expect(Number(riga.quantity)).toBe(2);
   });
 
-  it("il ricarico si applica al SOLO cibo, e l'avvertenza lo dice", async () => {
+  it("il food cost obiettivo vale sul SOLO cibo, e l'avvertenza dice il risultato", async () => {
     const p = await prezzoPreventivo(prev);
-    // (10 × 3) + 120 = 150 / 10 = 15,00. Col ricarico anche sugli extra
-    // farebbe 39,00.
-    expect(Number(p.prezzo_a_persona)).toBeCloseTo(15, 2);
+    // 10 / 0,25 = 40 di cibo venduto, + 120 di extra = 160 / 10 = 16,00.
+    // ⚠️ 25 NON vuol dire «aggiungi il 25%»: vuol dire che il cibo pesa un
+    // quarto del prezzo. Letto nell'altro modo farebbe 13,25.
+    expect(Number(p.prezzo_a_persona)).toBeCloseTo(16, 2);
     expect(p.scavalcato).toBe(false);
     expect(p.avvertenza, "l'avvertenza non viaggia col numero").toContain("SOLO cibo");
+    // ⚠️ E dice il RISULTATO, non solo la percentuale: una percentuale si
+    // legge in due modi, un prezzo no.
+    expect(p.avvertenza, "l'avvertenza non dice come si legge").toContain("40,00");
   });
 
-  it("il prezzo scritto a mano vince, e resta anche cambiando il ricarico dopo", async () => {
+  it("il prezzo scritto a mano vince, e resta anche cambiando il food cost dopo", async () => {
     await salvaPreventivo({
       id: prev,
       testata: {
@@ -186,16 +192,16 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     });
     const { data: prima } = await titolare
       .from("service_settings")
-      .select("ricarico_eventi_percento")
+      .select("food_cost_obiettivo_percento")
       .eq("id", 1)
       .single();
-    await titolare.from("service_settings").update({ ricarico_eventi_percento: 900 }).eq("id", 1);
+    await titolare.from("service_settings").update({ food_cost_obiettivo_percento: 10 }).eq("id", 1);
 
     const p = await prezzoPreventivo(prev);
 
     await titolare
       .from("service_settings")
-      .update({ ricarico_eventi_percento: prima.ricarico_eventi_percento })
+      .update({ food_cost_obiettivo_percento: prima.food_cost_obiettivo_percento })
       .eq("id", 1);
 
     expect(Number(p.prezzo_a_persona)).toBeCloseTo(55, 2);

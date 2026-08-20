@@ -242,11 +242,14 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     **versioni collegate**.
     🔴 **Due numeri tenuti separati fin dall'inizio**: il prezzo promesso, che
     non cambia più, e il costo **fotografato con la sua data**, che invecchia.
-    ⚠️ **Il ricarico predefinito nasce VUOTO** — è l'unico punto in cui non ho
-    seguito la lettera del mandato: Alessio ha chiesto un valore predefinito
-    ma non ha detto quale, e un ricarico inventato **decide un prezzo**. Finché
-    non lo scrive lui il gestionale non propone e lo dichiara. **Serve una sua
-    riga.**
+    ✅ **Il valore l'ha deciso Alessio: food cost al 25%**, cioè 10 € di cibo
+    si propongono a 40 € a persona — il costo per QUATTRO.
+    🔴 **E la domanda è servita**: lui l'aveva detto come «400%» intendendo
+    questo, e con una colonna scritta come «ricarico» 400 avrebbe dato **50 €**.
+    Quindi non è stato scritto un commento accanto al numero: **l'ambiguità è
+    stata tolta**. La colonna si chiama food_cost_obiettivo_percento, la
+    formula è una divisione, e l'avvertenza dice **il risultato** («10,00 € di
+    cibo diventano 40,00 €») invece della sola percentuale.
     🔴 **La rete dei permessi è diventata rossa da sola** (16 → 17): una
     funzione nuova aveva il portiere in un'altra funzione invece che nel
     proprio corpo. Porta chiusa, conto tornato a 16.
