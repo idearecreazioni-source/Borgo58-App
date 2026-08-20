@@ -107,6 +107,38 @@ function nonAncoraSuGitHub(migrazioni) {
 
 const conferma = process.argv.includes("--conferma");
 
+// --- `--fino-a <versione>`: applica solo fino a quella, compresa --------
+//
+// 🔴 NASCE IL 20/08/2026 DA UNA COSA CHE NON SI POTEVA FARE. Quella notte
+// erano pendenti quattro migrazioni, e **tre andavano applicate e una no**:
+// la quarta e' la pulizia dei dati di collaudo, che dentro di se' dichiara
+// «non si applica da sola e non si applica di sera», e aspetta una conferma
+// di Alessio sui documenti.
+//
+// ⚠️ Le due strade senza questo argomento erano tutte e due peggiori:
+// applicarle a mano con `psql` **aggira tutti e sei i controlli** qui sotto,
+// e spostare un file fuori dalla cartella lo fa sparire dal conteggio senza
+// che nessuno lo dichiari. *Quando un comando non sa fare una cosa
+// legittima, la cosa da correggere e' il comando — non il modo di
+// aggirarlo.*
+//
+// ⚠️ E NON INDEBOLISCE NIENTE: il filtro sceglie **quali** migrazioni
+// applicare, e tutti i controlli girano poi su quelle scelte. Una migrazione
+// tenuta indietro resta mancante, quindi la volta dopo ricompare in elenco —
+// non sparisce.
+const fermatiA = (() => {
+  const i = process.argv.indexOf("--fino-a");
+  if (i === -1) return null;
+  const v = process.argv[i + 1];
+  if (!v || !/^[0-9]{14}$/.test(v)) {
+    fermati(
+      "L'argomento --fino-a vuole un numero di versione di 14 cifre.",
+      "Esempio: npm run migra -- --fino-a 20260820000011 --conferma"
+    );
+  }
+  return v;
+})();
+
 const config = leggiConfigurazione();
 const urlProduzione = obbligatorio(
   config,
@@ -136,10 +168,27 @@ titolo("Cosa manca in produzione");
 
 const sulDisco = migrazioniSulDisco();
 const inProduzione = versioniApplicate(urlProduzione);
-const mancanti = sulDisco.filter((m) => !inProduzione.has(m.versione));
+const tutteMancanti = sulDisco.filter((m) => !inProduzione.has(m.versione));
+// ⚠️ Il taglio si fa QUI, prima dei controlli: cosi' i sei vincoli guardano
+// esattamente cio' che sta per essere applicato, non un elenco piu' lungo.
+const mancanti = fermatiA
+  ? tutteMancanti.filter((m) => m.versione <= fermatiA)
+  : tutteMancanti;
+const tenuteIndietro = tutteMancanti.filter((m) => !mancanti.includes(m));
 
 console.log(`  migrazioni nel repository: ${sulDisco.length}`);
 console.log(`  gia' applicate in produzione: ${inProduzione.size}`);
+
+// ⚠️ Cio' che resta fuori si DICHIARA, e con la ragione per cui e' fuori: un
+// elenco piu' corto senza dire perche' e' la forma che questo progetto
+// insegue da giorni — *una risposta piu' corta che ha l'aria di essere
+// intera*.
+if (tenuteIndietro.length > 0) {
+  console.log("");
+  console.log(`  TENUTE INDIETRO da --fino-a ${fermatiA} (${tenuteIndietro.length}):`);
+  for (const m of tenuteIndietro) console.log(`    · ${m.file}`);
+  console.log("    Restano mancanti: la prossima volta ricompaiono in elenco.");
+}
 
 if (mancanti.length === 0) {
   console.log("  da applicare: nessuna — la produzione e' aggiornata.");
