@@ -98,6 +98,18 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    mai comprato abbassa in silenzio il food cost. Il registro lo **dichiara**
    («parziale: N ingredienti senza prezzo»), il resto del gestionale no.
    Misurato: **0 su 8** oggi — armato, non vivo.
+   ✅ **APPLICATO IN PRODUZIONE il 20/08** — [consegna](consegne/20260820_applicato_lo_storico_dei_costi.md):
+   **153 migrazioni**, e nessun numero del locale mosso. ⚠️ In produzione il
+   Ricettario è vuoto, quindi applicare **non ha scritto nemmeno una voce**:
+   «tutto invariato» lì è vero e non dimostra niente. Verificato su tre
+   livelli — il **catalogo** dice dove sono attaccate le registrazioni (e le
+   colonne sorvegliate: `current_price`; tutte su `recipe_ingredients`;
+   `portions_yield` **e** `yield_quantity`), le **sei strade** risultano
+   collegate ognuna alla sua funzione, e il **blocco di verifica le ha
+   esercitate sui dati veri**. 🔴 Il primo controllo sul catalogo era
+   sbagliato — leggevo il bit «per riga» come «AFTER» — e rifatto sul bit
+   giusto dice AFTER su tutti e tre.
+   ⚠️ **Il mandato dei finger food è ora in produzione per intero.**
    ✅ **La misura è già fatta e sta nel mandato**: la struttura esistente
    copre food cost, scarico di magazzino («due porzioni, due pezzi per tipo»:
    misurato, 0,040 kg) e comanda a riga sola. **Non serve una tabella nuova**.
