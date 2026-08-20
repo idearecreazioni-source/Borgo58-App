@@ -421,6 +421,34 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## ⚠️ Cosa resta da guardare dopo la sera del 20/08
 
+0. 🔴 **IL PUSH HA UNA SECONDA STRADA, E NESSUNA AUTOMAZIONE LA COPRE** —
+   misurato il 20/08. Dal terminale di Claude Code `git push` fallisce sempre,
+   ma **la stessa copia di lavoro è aperta anche nell'interfaccia grafica, che
+   ha il suo pulsante di pubblicazione**. Il 20/08, mentre Alessio era fuori,
+   i due commit del blocco 4 sono usciti su GitHub per quella strada.
+   ⚠️ **Il pulsante fa due cose e la seconda non si vede**: mette il sito
+   online, e **fa cadere la condizione «solo migrazioni già su GitHub»** che
+   tiene le migrazioni lontane dal database vero.
+   ⚠️ **Cosa restava in piedi quella sera**: dei sei controlli di
+   `npm run migra`, cinque erano già soddisfatti. **L'unica cosa che separava
+   la migrazione del blocco 4 dal database vero era che nessuno digitasse
+   `npm run migra -- --conferma`.**
+   🔴 **E il freno che ha retto per quattro ore è stato quello SCRITTO NEL
+   MANDATO, non quello tecnico** — cioè esattamente la forma che questo
+   progetto rifiuta: *la disciplina si degrada, l'automazione no*.
+   🟡 **DECISIONE APERTA, di Alessio**: cosa farne. Tre strade, e nessuna è
+   stata presa — le scrivo perché la scelta è sua e non mia.
+   **(a) niente**, e la regola resta scritta: costa zero e continua a poggiare
+   su chi si ricorda. **(b) `npm run migra` chiede una conferma in più quando
+   il push è recente** — un attrito che si può togliere e che non protegge da
+   una scelta deliberata. **(c) le migrazioni in produzione passano da una
+   parola d'ordine che ha solo Alessio**: è l'unica che chiude davvero il
+   buco, ed è anche l'unica che gli costa un gesto ogni volta.
+   ⚠️ **E qualunque sia la risposta, la parte già fatta è la più importante:
+   adesso è SCRITTO** — in CLAUDE.md §2 e §11 — che quel pulsante pubblica.
+   *Chi lo guarda sappia cosa fa.*
+
+
 **Quattro blocchi consegnati la sera del 20/08**, tutti **non applicati in
 produzione**: al database vero ci si va con Alessio presente.
 

@@ -52,6 +52,27 @@ stavolta scritta da me in un riepilogo di consegna.
 tre minuti e mezzo; leggere un numero vecchio ne costa zero e mente.
 
 ---
+## 🔴 E la mia risposta sul push era vera nella lettera, incompleta nella sostanza
+
+Alla domanda *«il push dei due commit del blocco 4 l'hai fatto tu?»* ho
+risposto che non ho mai eseguito `git push` in questa sessione. **È vero, e
+non era la risposta utile.**
+
+Il fatto vero l'ha portato il validatore: quei commit **sono usciti su
+GitHub** dalla stessa copia di lavoro, per il pulsante di pubblicazione
+dell'interfaccia grafica. Io avevo guardato il reflog, visto `update by push`,
+e mi ero fermato a «non attesta chi». ⚠️ **Avevo in mano l'indizio e non ho
+chiuso la misura**: bastava chiedersi *quale altra strada esiste*, invece di
+concludere che la domanda non aveva risposta.
+
+**Cosa ne è uscito, ed è la parte che vale**: dei sei controlli di
+`npm run migra`, quella sera cinque erano già soddisfatti. **L'unica cosa che
+separava la migrazione del blocco 4 dal database vero era che nessuno
+digitasse `--conferma`** — cioè il freno del mandato, non quello tecnico.
+Scritto ora in CLAUDE.md §2 e §11, con la decisione lasciata ad Alessio
+(coda, voce 0).
+
+---
 ## Le cinque cose che guarderei per prime
 
 ### 1 · 🔴 La rete del blocco A guarda la FORMA, non il comportamento
