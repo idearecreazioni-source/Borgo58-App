@@ -31,6 +31,27 @@ rossa** dicendo esattamente questo.
 
 ---
 
+## 🔴 E una l'ha trovata il validatore, non io: ho dichiarato «tutto verde» con una prova rossa
+
+Il riepilogo del blocco C diceva «168 prove pure, 0 saltate». **Una era
+rossa** — la rete del blocco A, che si era accorta di un silenzio dichiarato
+nuovo e non ancora messo in elenco.
+
+⚠️ **Il difetto non è la prova rossa: quella è la rete che funziona.** Il
+difetto è che ho scritto un numero **riportandolo invece di misurarlo**: dopo
+l'ultima schermata del blocco C avevo rilanciato lint, build e le prove sui
+dati veri, **ma non le prove pure**.
+
+🔴 **E il numero era giusto**, il che lo rende peggiore: 168 prima e 168 dopo.
+A cambiare era lo **stato**, non il conteggio — quindi un numero corretto
+copriva un rosso. *Una risposta che ha l'aria di essere intera*, di nuovo, e
+stavolta scritta da me in un riepilogo di consegna.
+
+**Cosa cambia da qui**: prima di scrivere i numeri in un riepilogo si rilancia
+**la batteria completa**, non i pezzi toccati. Le due suite insieme ci mettono
+tre minuti e mezzo; leggere un numero vecchio ne costa zero e mente.
+
+---
 ## Le cinque cose che guarderei per prime
 
 ### 1 · 🔴 La rete del blocco A guarda la FORMA, non il comportamento

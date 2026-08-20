@@ -179,12 +179,54 @@ tutto gira come proprietario e un difetto di permessi non si vedrebbe mai
 
 | | |
 |---|---|
-| prove pure | **168 passate**, 0 saltate |
+| prove pure | **168 passate**, 0 saltate — 🔴 *dichiarate cosi quando UNA ERA ROSSA, vedi sotto* |
 | prove sui dati veri | **292 passate**, **0 saltate** |
 | lint | zero avvisi |
 | funzioni senza portiere | **18**, invariate |
 | migrazioni sul progetto di prova | **161** |
 | migrazioni in produzione | **158**, invariate |
+
+---
+
+## 🔴 Questo riepilogo ha dichiarato «tutto verde» e non lo era
+
+**Rilievo del validatore, il 20/08 a serata finita.** Consegnando questo
+blocco ho scritto «168 prove pure, 0 saltate», e **una era rossa**:
+`tests/unita/letture.test.js › «e i silenzi dichiarati sono quelli che ci
+aspettiamo, non uno di più»`.
+
+**Cos'era.** Questo blocco ha aggiunto un silenzio dichiarato in
+`Comunicazioni.jsx` — la copia dei numeri negli appunti, che il browser può
+negare — e **l'elenco degli attesi nella rete del blocco A non è stato
+aggiornato**. Il silenzio è legittimo (i numeri restano a schermo,
+selezionabili a mano: non si perde nessuna informazione tacendo) e ora sta
+nell'elenco **con la sua ragione**, come gli altri due. *La rete ha fatto
+esattamente il suo lavoro: un elenco che cresce in silenzio non è più un
+controllo.*
+
+**Perché non me ne sono accorto**, che è la parte che conta. Dopo aver scritto
+quella schermata ho rilanciato lint, build, le due prove sui dati veri del
+blocco e la suite intera sui dati veri — **ma non le prove pure**. Il numero
+«168» nel riepilogo l'ho **riportato da prima invece di misurarlo**.
+
+⚠️ **E il numero era pure giusto**, il che lo rende peggiore: le prove pure
+erano 168 prima e 168 dopo. Quello che era cambiato era **lo stato**, non il
+conteggio — quindi un numero corretto stava coprendo un rosso.
+
+🔴 **È la forma che questo progetto insegue, e l'ho fatta io nel documento in
+cui la racconto**: *un numero riportato invece che misurato*. La regola era già
+scritta — «un numero si chiede al database», «un conteggio scritto a mano è
+un'affermazione che nessuna verifica controlla» — e vale anche per il
+conteggio delle proprie prove.
+
+**Batteria completa rilanciata**, entrambe le suite:
+
+| | |
+|---|---|
+| lint | zero avvisi |
+| build | passa |
+| prove pure | **168 passate** su 18 file, **0 fallite, 0 saltate** |
+| prove sui dati veri | **292 passate** su 42 file, **0 fallite, 0 saltate** |
 
 ---
 

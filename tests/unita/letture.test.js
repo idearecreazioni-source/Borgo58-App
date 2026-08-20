@@ -132,6 +132,14 @@ describe("nessuna lettura resta muta", () => {
       // torna all'orario libero — che è uno stato dichiarato della pagina,
       // non una rassicurazione.
       "src/pages/public/PublicReservationForm.jsx",
+      // ⚠️ AGGIUNTO IL 20/08 col blocco C, e questa riga mancava: la copia dei
+      // numeri negli appunti può essere negata dal browser, e non è un guasto
+      // — **i numeri sono già a schermo, dentro una casella selezionabile a
+      // mano**. Non si perde nessuna informazione tacendo, ed è il
+      // discriminante di tutto il modulo: qui il vuoto NON è ambiguo, perché
+      // non c'è nessun vuoto — c'è l'elenco, e c'è pure un messaggio che dice
+      // di selezionarlo a mano.
+      "src/pages/calendario/Comunicazioni.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)
