@@ -185,6 +185,50 @@ nel giorno peggiore.
 
 ---
 
+## 🔴 RIMISURATO IL 21/08: il collaudo ha cambiato il perimetro, e la pulizia ora SI FERMEREBBE
+
+Il collaudo con le mani di Alessio ha scritto in produzione, ed era previsto.
+Ma due numeri di questo riepilogo non sono più veri, e uno dei due **blocca la
+pulizia**.
+
+| | quando ho scritto il riepilogo | adesso |
+|---|---|---|
+| prenotazioni | 16 | **17** — la cena nata dal preventivo accettato |
+| preventivi | 0 | **1**, con **1 foglio** prodotto |
+| movimenti, tracce, conti | 0 · 26 · 8 | **invariati** ✅ |
+
+🔴 **E il preventivo NON è nell'elenco delle cose che la pulizia toglie.** La
+conseguenza però non è «resterebbe lì»: `preventivi.reservation_id` è
+**`on delete restrict`** (misurato), quindi `delete from reservations`
+**verrebbe respinto** e la pulizia si fermerebbe a metà strada — dopo aver già
+cancellato scarichi e conti.
+
+⚠️ **Ed è il vincolo che ho scritto io il 20/08**, per la ragione giusta: *un
+documento che ha generato un effetto non si scollega in silenzio*. Sta
+funzionando esattamente come deve. Il difetto non è il vincolo: è che questa
+pulizia è stata scritta **prima** che i preventivi esistessero in produzione, e
+un elenco scritto a mano invecchia al primo gesto di Alessio nell'app — che è
+la stessa lezione per cui l'elenco dei dati di collaudo era stato tolto dagli
+appunti il 19/08.
+
+### 🟡 La decisione è di Alessio, e non l'ho presa
+
+**Aggiungere i preventivi di collaudo all'elenco?** Le due strade:
+
+- **sì**: la pulizia toglie anche `preventivo_fogli`, `preventivo_righe` e
+  `preventivi` **prima** delle prenotazioni, e la produzione torna davvero
+  vuota. ⚠️ Va messo **prima** delle prenotazioni, o il `restrict` blocca lo
+  stesso;
+- **no**: il preventivo di collaudo resta, e con lui la cena del 26/08 — che
+  però è una prenotazione confermata futura in un gestionale che dovrebbe
+  essere pulito.
+
+⚠️ **In nessuno dei due casi la 012 si applica com'è adesso**: o si aggiunge
+il passo, o si toglie a mano il preventivo prima. **Rimisurare di nuovo il
+giorno che si applica**, perché il collaudo continua.
+
+---
+
 ## 🔴 Cosa deve succedere PRIMA di applicarla, in quest'ordine
 
 1. Alessio pusha;

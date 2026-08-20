@@ -232,6 +232,19 @@ collaudo questo elenco dirà, per misura, quali schermate meritano una prova.
 |---|---|---|
 | 1 | **La sezione Preventivi non aveva nessuna porta**: la rotta c'era, la schermata funzionava, e gli unici collegamenti stavano dentro la pagina stessa | 🔴 **NO** — le prove non guardano le schermate, e questa era irraggiungibile a schermo |
 | 2 | **«Nuovo preventivo» non creava niente**: `entita[0]?.id` su un oggetto che non è un array → `entity_id` nullo al database | 🔴 **NO** — nessuna prova esercita quel pulsante; la funzione del database era giusta e rifiutava correttamente |
+| 3 | **«Food cost obiettivo 25.0#%»**: un cancelletto in mezzo al numero. In PostgreSQL `#` non è un simbolo di formato e i caratteri non riconosciuti escono letteralmente | 🔴 **NO** — nessuna prova legge il testo di quella frase; il calcolo dietro era giusto |
+
+⚠️ **E cercando se il gesto si fosse ripetuto ne sono usciti due in più**, uno
+dei quali **vivo su ogni riga**: `FM990.99` su un numero intero dà «25.», e
+tutte e sei le regole di deducibilità dicevano «100.% deducibile». *Il difetto
+segnalato era il più visibile, non l'unico.*
+
+✅ **E il punto 1 del collaudo è chiuso e verde**, verificato in produzione in
+tutte e due le metà: il preventivo accettato ha generato **una sola** cena
+(26/08, 20:30, 10 persone, confermata), e dopo la correzione a 20 coperti c'è
+**ancora una sola** cena, aggiornata a 20. **Nessun doppione** — è la prima
+verifica dal vivo del blocco 4, e conferma la parte che le prove automatiche
+provavano solo sui dati finti.
 
 ⚠️ **Il secondo è il più istruttivo**, e va letto insieme al blocco A della
 stessa sera: lì sono stati curati i `.catch` che ingoiavano un guasto. **Qui a
