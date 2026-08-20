@@ -174,6 +174,9 @@ prometti dal costo di quando l'hai promesso.
 
 ---
 
+**Commit del lavoro**: `8583b04` — «Il preventivo esiste — blocco 1 dei
+preventivi».
+**Working tree**: pulito.
 **Migrazione**: `20260820000006` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
 **Corridoio**: da installare in produzione dopo il push.
