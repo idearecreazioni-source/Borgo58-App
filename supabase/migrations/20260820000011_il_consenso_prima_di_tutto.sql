@@ -323,7 +323,17 @@ begin
     union all
     select p.ricevuta_il, 'entrata'::text, 'mail'::text, coalesce(p.oggetto, '(senza oggetto)')
       from posta_ricevuta p
-     where v_email is not null and lower(p.mittente) like '%' || lower(v_email) || '%'
+     -- 🔴 UGUAGLIANZA, NON «CONTIENE», e questo l'ho trovato rileggendo il
+     -- lavoro appena scritto. Con `like '%mail%'` la storia di `rossi@x.it`
+     -- avrebbe mostrato anche le mail di `mario.rossi@x.it`: **la
+     -- corrispondenza di un cliente dentro la scheda di un altro**, e nessuna
+     -- schermata l'avrebbe segnalato — le righe sembrano legittime.
+     -- ⚠️ Il mittente può arrivare come `Nome <mail@dominio>` o come sola
+     -- mail: si estrae quello che sta fra le parentesi angolari se ci sono, e
+     -- si confronta per uguale.
+     where v_email is not null
+       and lower(coalesce(substring(p.mittente from '<([^>]+)>'), p.mittente))
+           = lower(btrim(v_email))
     union all
     select (r.reservation_date + r.reservation_time) at time zone 'Europe/Rome',
            'prenotazione'::text, r.status::text,
@@ -523,6 +533,21 @@ begin
   if v_n <> 1 then
     raise exception 'La storia del cliente riporta % invii invece di 1.', v_n;
   end if;
+
+  -- 8 · 🔴 E NON VEDE LA CORRISPONDENZA DI UN ALTRO CLIENTE.
+  --     Il cliente 1 ha 'a@esempio.it'; questa mail arriva da 'xa@esempio.it',
+  --     che CONTIENE il suo indirizzo. Con un confronto «contiene» sarebbe
+  --     comparsa nella sua storia — la posta di uno dentro la scheda di un
+  --     altro, e nessuna schermata l'avrebbe segnalato.
+  insert into posta_ricevuta (messaggio_id, casella, mittente, oggetto, stato)
+  values ('__VERIFICA__msg', 'info@borgo58.it', 'Tale <xa@esempio.it>',
+          '__VERIFICA__ non è sua', 'archiviata');
+  select count(*) into v_n from storia_cliente(v_c1) where verso = 'entrata';
+  if v_n <> 0 then
+    raise exception
+      'La storia del cliente mostra % mail che non sono sue: il mittente è confrontato con «contiene» invece che per uguale.', v_n;
+  end if;
+  delete from posta_ricevuta where messaggio_id = '__VERIFICA__msg';
 
   -- =========== PULIZIA ===========
   delete from email_inviate where customer_id in (v_c1, v_c2, v_c3);
