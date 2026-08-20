@@ -1,7 +1,11 @@
 # Il fabbisogno di un evento — blocco 0 dei preventivi, la riparazione
 
 **Migrazione**: `20260820000005_il_fabbisogno_di_un_evento.sql`
-— applicata sul progetto di prova, **NON ancora in produzione**.
+— **applicata in produzione il 20/08**, 1 su 1 dopo il push.
+✅ **Numeri veri dopo**: **155 migrazioni**, 0 ricette, 0 voci di storia, 26
+tracce, 0 movimenti, 8 conti di cui 0 aperti, 0 menu — **tutto invariato**. Reti
+di sorveglianza ferme: 16 senza portiere, 10 aperte ad anon, 0 date a
+Greenwich, 0 lapidi di prova, 0 predefiniti di data, 0 policy pubbliche.
 **Mandato**: [`20260820_i_preventivi_per_gli_eventi.md`](../mandati/20260820_i_preventivi_per_gli_eventi.md).
 Nessuna operazione nuova nel corridoio.
 
@@ -136,5 +140,4 @@ compreso.
 **Commit del lavoro**: `91abf69` — «Il fabbisogno di un evento — blocco 0
 dei preventivi, la riparazione».
 **Working tree**: pulito.
-**Migrazione**: `20260820000005` — sul progetto di prova sì, in produzione
-**no**, in attesa del `git push`.
+**Migrazione**: `20260820000005` — **in produzione**, 155 in tutto.
