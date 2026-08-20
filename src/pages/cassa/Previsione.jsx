@@ -69,7 +69,16 @@ export default function Previsione() {
 
   const finoAl = () => traGiorniLocale(giorni);
 
-  const ricarica = () => {
+  // ⚠️ `ancheImpostazioni` NASCE FALSO, ed è la parte che conta: i due campi
+  // del POS (giorni di accredito, commissione) sono gli unici di questa
+  // schermata che si scrivono a mano, e prima OGNI gesto — aggiungere una
+  // scadenza, chiudere un'uscita — li rileggeva dal database, portandosi via
+  // quello che si stava scrivendo. Sono anche i due che nascono VUOTI in
+  // attesa della banca: cioè quelli che verranno scritti per la prima volta
+  // proprio qui. Chi aggiunge una chiamata nuova non deve ricordarsi
+  // niente — il predefinito è dalla parte che non perde lavoro.
+  // Regola generale in `src/lib/calcoli/ricarica.js` (21/08).
+  const ricarica = ({ ancheImpostazioni = false } = {}) => {
     if (!entityId) return Promise.resolve();
     return Promise.all([
       getPrevisioneCassa(entityId, finoAl()),
@@ -87,17 +96,20 @@ export default function Previsione() {
       setAttesi(a);
       setScadenze(s);
       setOltre(uf);
-      setImpostazioni({
-        giorniAccredito: imp?.giorni_accredito_pos ?? "",
-        commissione: imp?.commissione_pos_percento ?? "",
-      });
+      if (ancheImpostazioni) {
+        setImpostazioni({
+          giorniAccredito: imp?.giorni_accredito_pos ?? "",
+          commissione: imp?.commissione_pos_percento ?? "",
+        });
+      }
     });
   };
 
   useEffect(() => {
     if (!entityId) return;
     setLoading(true);
-    ricarica()
+    // Qui sì: si cambia società o orizzonte, e le impostazioni sono di quella società.
+    ricarica({ ancheImpostazioni: true })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,7 +123,8 @@ export default function Previsione() {
   const salvaPos = async () => {
     try {
       await salvaImpostazioniTesoreria(entityId, impostazioni);
-      await ricarica();
+      // E qui: le ha appena salvate lui, quindi il database ha ragione.
+      await ricarica({ ancheImpostazioni: true });
     } catch (e) {
       setError(e.message);
     }

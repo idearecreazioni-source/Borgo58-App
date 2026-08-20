@@ -169,3 +169,50 @@ blocco.
 ⚠️ Era dentro il tema del blocco A — *qualcosa che non trova quello che cerca e
 continua zitto* — ma resta **lavoro non chiesto**, e lo dichiaro qui invece di
 lasciarlo scoprire.
+
+---
+
+## 🔴 Perché la mia ricerca aveva mancato il punto orfano delle quantità
+
+*Aggiunto il 21/08 su richiesta esplicita: capire **perché** una misura fatta
+apposta non ha trovato quello che cercava.*
+
+Stanotte ho cercato «ogni altra maschera `to_char` con un `#` dentro» dopo il
+terzo difetto, e l'ho fatto: **nove maschere numeriche**, elencate. La quinta
+volta, poche ore dopo, Alessio ha letto a schermo *«ne risultavano 54. kg, ne
+hai 58..»* — e la maschera colpevole, `FM999999990.999`, **era la seconda del
+mio elenco**.
+
+**Non è stato un buco nella ricerca. È stato un buco nel giudizio**, e ha
+avuto due tempi:
+
+1. **Ho provato solo quelle che *sembravano* sospette.** Cercavo un `#`,
+   perché il `#` era il difetto che avevo appena visto. `FM999999990.999` non
+   ha nessun `#`: l'ho letta, mi è sembrata a posto, e non l'ho eseguita. ⚠️
+   *Ho cercato la forma del difetto che conoscevo, non il comportamento che
+   volevo escludere.*
+2. **Ho fermato la misura alla prima conferma.** Trovata una maschera che
+   riproduceva il difetto, ho considerato chiusa la domanda. Le altre otto non
+   sono mai state chiamate.
+
+**Provarle tutte costava una riga di SQL** — `select to_char(54, m)` su
+ognuna — e l'ho scritta dopo, quando ormai il difetto l'aveva trovato una
+mano. Il risultato: **due su nove** lasciavano il punto.
+
+### Le due regole che ne escono
+
+> ⚠️ **Una misura si fa sul COMPORTAMENTO, non sulla somiglianza.** «Questa
+> maschera assomiglia a quella rotta» è un'ipotesi; `to_char(54, maschera)` è
+> una misura. Se la misura costa una riga, l'ipotesi non serve a niente.
+
+> ⚠️ **Una misura non si ferma alla prima conferma.** Trovare *un* colpevole
+> risponde alla domanda «esiste?», non a «quanti?» — e questo progetto ha
+> bisogno della seconda: è la differenza fra curare un punto e chiudere una
+> famiglia.
+
+⚠️ **E la conferma che serviva**: il difetto è ricomparso **esattamente dove
+il posto unico mancava**. C'era un posto solo per gli euro dal 17/08, nessuno
+per le percentuali e nessuno per le quantità — e sono usciti tutti e due, a
+poche ore di distanza. *Il rimedio ripetuto a memoria (due migrazioni del
+14/08 toglievano il punto a mano, e chi le ha scritte lo sapeva) non è una
+regola: è un difetto che aspetta il terzo chiamante.*

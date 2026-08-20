@@ -15,6 +15,7 @@ import {
 } from "../../lib/api/customers";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { campiCambiatiDalGesto, ilConsenso } from "../../lib/calcoli/ricarica";
 import {
   DISCOUNT_GIFT_TYPES,
   RESERVATION_STATUSES,
@@ -61,6 +62,22 @@ export default function ClienteDetail() {
       setCustomer(c);
       setReservations(res);
       setDiscounts(dg);
+      setStoria(st);
+    });
+
+
+  // ⚠️ DOPO UN GESTO SI RIPRENDE DAL SERVER SOLO CIÒ CHE IL GESTO HA
+  // CAMBIATO. Registrare il consenso cambia le sue date e la storia: NON il
+  // nome, non il telefono, non l'email — che possono essere in mezzo a una
+  // modifica non ancora salvata. Prima si rileggeva tutta la scheda, e
+  // l'email appena scritta spariva senza nessun errore (trovato dalle mani
+  // di Alessio, 21/08). La regola sta in `src/lib/calcoli/ricarica.js`.
+  const ricaricaIlConsenso = () =>
+    Promise.all([
+      getCustomer(id),
+      isTitolare ? leggi(storiaCliente(id)) : Promise.resolve([]),
+    ]).then(([fresco, st]) => {
+      setCustomer((c) => ({ ...c, ...campiCambiatiDalGesto(fresco, ilConsenso) }));
       setStoria(st);
     });
 
@@ -228,7 +245,7 @@ export default function ClienteDetail() {
                     setError("");
                     try {
                       const r = await revocaConsenso(id);
-                      await load();
+                      await ricaricaIlConsenso();
                       setError("");
                       window.alert(r.frase);
                     } catch (e) {
@@ -265,7 +282,7 @@ export default function ClienteDetail() {
                       try {
                         await registraConsenso(id, comeConsenso);
                         setComeConsenso("");
-                        await load();
+                        await ricaricaIlConsenso();
                       } catch (e) {
                         setError(e.message);
                       } finally {
