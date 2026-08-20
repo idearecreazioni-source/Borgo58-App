@@ -133,5 +133,8 @@ compreso.
 
 ---
 
+**Commit del lavoro**: `91abf69` — «Il fabbisogno di un evento — blocco 0
+dei preventivi, la riparazione».
+**Working tree**: pulito.
 **Migrazione**: `20260820000005` — sul progetto di prova sì, in produzione
 **no**, in attesa del `git push`.
