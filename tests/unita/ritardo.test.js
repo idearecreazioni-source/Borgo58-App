@@ -157,8 +157,30 @@ describe("Quale conto prova che sono arrivati", () => {
 });
 
 describe("La precedenza dei segni sulla sala", () => {
-  it("il conto aperto copre la fascia oraria", () => {
-    expect(segnoDelTavolo({ contoAperto: true, fasce: ["presto"] }).colore).toBe("occupato");
+  // 🔴 CAMBIATO IL 21/08: prima un conto aperto copriva la fascia col marrone,
+  // e il marrone voleva dire «ci sono seduti adesso». Alessio: in una sala da
+  // tredici tavoli quello si vede guardando la sala. Adesso il marrone dice
+  // «la comanda è partita», e un conto aperto SENZA invii lascia la fascia
+  // dov'era — a dire che c'è qualcuno ci pensa il pallino.
+  it("un conto aperto senza invii NON copre più la fascia oraria", () => {
+    const s = segnoDelTavolo({ contoAperto: true, fasce: ["presto"] });
+    expect(s.colore).toBe("presto");
+    expect(s.pallino).toBe("vuoto");
+  });
+
+  it("...ma la comanda INVIATA sì: quello è il marrone di adesso", () => {
+    const s = segnoDelTavolo({ contoAperto: true, comandaInviata: true, fasce: ["presto"] });
+    expect(s.colore).toBe("inviata");
+    expect(s.pallino).toBe(null);
+  });
+
+  it("🔴 e il pallino PIENO vince sul vuoto: c'è roba da mandare", () => {
+    // Il caso che costa di più: piatti segnati e mai partiti.
+    expect(segnoDelTavolo({ contoAperto: true, daInviare: true }).pallino).toBe("pieno");
+    // Anche quando una parte è già partita: il gesto che manca resta quello.
+    expect(
+      segnoDelTavolo({ contoAperto: true, comandaInviata: true, daInviare: true }).pallino
+    ).toBe("pieno");
   });
 
   it("e il tavolo che stai toccando copre anche il conto aperto", () => {
@@ -179,9 +201,9 @@ describe("La precedenza dei segni sulla sala", () => {
     // sarebbe giusto, perché quel giorno il tavolo in ritardo smetterebbe di
     // dire a che ora doveva arrivare, o smetterebbe di rispondere al dito.
     const scelto = segnoDelTavolo({ selezionato: true, fasce: ["presto"], inRitardo: true });
-    expect(scelto).toEqual({ colore: "selezionato", barrato: true });
+    expect(scelto).toEqual({ colore: "selezionato", barrato: true, pallino: null });
     const solo = segnoDelTavolo({ fasce: [], inRitardo: true });
-    expect(solo).toEqual({ colore: null, barrato: true });
+    expect(solo).toEqual({ colore: null, barrato: true, pallino: null });
   });
 });
 
@@ -237,13 +259,23 @@ describe("Il tavolone si colora intero", () => {
     expect(segni.t9.colore).toBe("misto");
   });
 
-  it("il conto aperto su un tavolo del gruppo copre la fascia di TUTTI", () => {
+  it("la comanda inviata su un tavolo del gruppo copre la fascia di TUTTI", () => {
     const segni = segniDellaSala({
       sagome,
       gruppi,
-      fatti: { t7: { contoAperto: true }, t9: { fasce: ["tardi"] } },
+      fatti: { t7: { contoAperto: true, comandaInviata: true }, t9: { fasce: ["tardi"] } },
     });
-    expect(segni.t8.colore).toBe("occupato");
+    expect(segni.t8.colore).toBe("inviata");
+  });
+
+  it("🔴 e il pallino si propaga al tavolone: uno solo che aspetta li segna tutti", () => {
+    // Un tavolone è UN conto: se c'è roba da mandare, riguarda tutto il gruppo.
+    const segni = segniDellaSala({
+      sagome,
+      gruppi,
+      fatti: { t7: { contoAperto: true, daInviare: true } },
+    });
+    expect(segni.t9.pallino).toBe("pieno");
   });
 
   it("la sbarratura si propaga: se uno tarda, il tavolone è tutto in gioco", () => {
@@ -274,7 +306,7 @@ describe("Il tavolone si colora intero", () => {
       gruppi,
       fatti: { t8: { selezionato: true }, t9: { inRitardo: true } },
     });
-    expect(segni.t8).toEqual({ colore: "selezionato", barrato: true });
+    expect(segni.t8).toEqual({ colore: "selezionato", barrato: true, pallino: null });
   });
 });
 

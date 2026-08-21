@@ -1026,3 +1026,29 @@ strumento nuovo.
 ⚠️ **La pagina di ACCESSO resta fuori dall'elenco**, ed è voluto: chi digita
 il PIN sta per scrivere nel gestionale, ed è il momento in cui sapere su
 quale database si entra conta di più.
+
+---
+
+## 25 · Il marrone non dice più «ci sono seduti adesso»
+
+**21/08/2026** · deciso da Alessio.
+
+- **Cosa era stato deciso, e quando.** Il 14/08 il marrone scuro segnava il
+  **conto aperto**, cioè «a questo tavolo ci sono seduti». Il 18/08 il colore
+  era stato pure cambiato apposta (da dorato a scuro) per non confonderlo con
+  la fascia «primo giro».
+- **La ragione di allora.** Sapere a colpo d'occhio quali tavoli sono
+  occupati, senza contare le righe dell'elenco.
+- **Cosa si decide adesso.** Il marrone dice **la comanda è partita per la
+  cucina**. Chi è seduto lo dicono le fasce e i pallini.
+- ⚠️ **Perché la ragione di allora non vale più — e la risposta è di
+  Alessio**: *in una sala da tredici tavoli, chi è seduto si vede guardando
+  la sala.* Quel colore stava spendendo il canale più forte del disegno per
+  un'informazione che l'occhio ha già. **Quello che non si vede da nessuna
+  parte è se l'ordine è andato in cucina** — e adesso il canale è suo.
+
+⚠️ **Il prezzo, dichiarato**: un conto aperto **senza niente ordinato** perde
+il colore che aveva. Non resta muto — è il caso del **pallino vuoto**, che
+nasce apposta per questo — ma il segno è più discreto di prima. È voluto: un
+tavolo dove non è stato ordinato niente è meno urgente di uno che aspetta di
+mandare in cucina.

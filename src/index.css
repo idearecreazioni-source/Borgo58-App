@@ -15,6 +15,15 @@
   --color-b58-charcoal: #2b2621;
   --color-b58-charcoal-soft: #4a4239;
   --color-b58-gold: #c99a3d;
+  /* Il colore della FASCIA DI MEZZO in sala, nato il 21/08/2026 perche' il
+     verde oliva e' passato a significare «tavolo selezionato».
+     MISURATO, non scelto a occhio: e' il punto medio esatto fra oro
+     (#c99a3d) e terracotta (#b5502e), ed e' il punto che MASSIMIZZA la
+     distanza dal vicino piu' vicino — 19,0 di differenza percettiva da
+     entrambi, dove sopra 10 si distingue a colpo d'occhio. Spostandolo
+     verso l'uno o verso l'altro il minimo scende. */
+  --color-b58-ambra: #bf7536;
+  --color-b58-ambra-dark: #8f5726;
   --color-b58-gold-dark: #8a6420;
 }
 

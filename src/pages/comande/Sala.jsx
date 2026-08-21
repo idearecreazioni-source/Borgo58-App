@@ -23,7 +23,12 @@ import {
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
-import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
+import {
+  insiemiPerTavolo,
+  ritardiDellaSerata,
+  segniDellaSala,
+  statoDelConto,
+} from "../../lib/calcoli/ritardo";
 import { cosaSiVede, esitoDelTocco, siVedeLaBarraDeiTavoli } from "../../lib/calcoli/selezione";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
@@ -216,8 +221,23 @@ export default function Sala() {
 
   // Quale conto sta su quale sagoma. Il legame è una chiave esterna, non
   // il nome del tavolo: «T5 · T6 · T7» non è un tavolo.
-  const orderForTable = (sagomaId) =>
-    openOrders.find((o) => (o.tavoli ?? []).some((t) => t.dining_table_id === sagomaId));
+  // 🔴 E IL CONTO CHE SI STA SERVENDO SI PRENDE DA `order`, NON DA QUI.
+  // Trovato il 21/08 guardando la schermata viva: segnando un piatto il
+  // pallino restava **vuoto**, perché `openOrders` è la fotografia
+  // dell'ultima lettura della sala e non sa niente di quello che si sta
+  // scrivendo adesso. In servizio vorrebbe dire che il cameriere segna i
+  // piatti e la sala continua a dire «non c'è niente da mandare» — cioè il
+  // pallino, che esiste apposta per non far dimenticare l'invio, mentirebbe
+  // proprio mentre serve.
+  //
+  // ⚠️ Solo per QUEL conto: gli altri tavoli cambiano per mano d'altri, e
+  // per quelli la fotografia della sala è la cosa giusta.
+  const orderForTable = (sagomaId) => {
+    const dallaSala = openOrders.find((o) =>
+      (o.tavoli ?? []).some((t) => t.dining_table_id === sagomaId)
+    );
+    return dallaSala && order?.id === dallaSala.id ? order : dallaSala;
+  };
 
   // CHI È IN RITARDO. Il calcolo è la funzione pura, la stessa che usa il
   // Calendario: due schermate che decidessero per conto proprio quando un
@@ -265,6 +285,21 @@ export default function Sala() {
     for (const g of gruppi) {
       for (const id of g.tavoli ?? []) s[id] = { coperti: g.coperti, corretto: g.corretto };
     }
+    // 🔴 SUL TAVOLO PRENOTATO IL NUMERO DIVENTA LE PERSONE ATTESE (21/08,
+    // deciso da Alessio). Prima T4 diceva «4» — la sua capienza — anche se la
+    // prenotazione era per due, e su quel numero si regge il gesto di
+    // cercare chi è arrivato: davanti a due persone, un tavolo che dice «4»
+    // non aiuta a riconoscerle.
+    //
+    // ⚠️ CON DUE TURNI SULLO STESSO TAVOLO IL NUMERO RESTA LA CAPIENZA, ed è
+    // una scelta dichiarata: le persone attese sarebbero due numeri diversi,
+    // e in una cifra sola non ci stanno. Sceglierne uno vorrebbe dire
+    // inventare quale dei due gruppi «è» quel tavolo.
+    for (const [id, ids] of prenotazioniPerTavolo) {
+      if (ids.length !== 1) continue;
+      const p = prenotati.find((r) => r.id === ids[0]);
+      if (p?.party_size && s[id]) s[id] = { ...s[id], coperti: p.party_size, attese: true };
+    }
     // Quello che si sa del SINGOLO tavolo. Il segno però si decide per
     // insieme: tre tavoli accostati sono un tavolone, e un tavolone si
     // colora intero (richiesta di Alessio, 18/08).
@@ -278,6 +313,10 @@ export default function Sala() {
         // aprire tre tavoli mentre se ne apre uno.
         selezionato: Boolean(conto) && conto.id === order?.id,
         contoAperto: Boolean(conto),
+        // I due fatti da cui nascono i pallini. La regola sta in
+        // `statoDelConto`, non qui: le righe annullate non contano, ed è
+        // esattamente il genere di dettaglio che si dimentica ricopiandolo.
+        ...statoDelConto(conto),
         // Le fasce dei soli clienti che devono ancora sedersi: chi ha già il
         // conto aperto ha smesso di essere un'ora e ha cominciato a essere un
         // tavolo da servire.
@@ -292,7 +331,7 @@ export default function Sala() {
     }
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sagome, gruppi, openOrders, order, prenotazioniPerTavolo, fasciaDi, ritardi]);
+  }, [sagome, gruppi, openOrders, order, prenotati, prenotazioniPerTavolo, fasciaDi, ritardi]);
 
   // L'elenco della serata, in ordine di ora: quello che chi serve guarda
   // quando suona il campanello. Porta il tavolo, che è il dato che manca di

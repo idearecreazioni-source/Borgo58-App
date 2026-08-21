@@ -188,15 +188,73 @@ export function ritardiDellaSerata({
  * @returns { colore, barrato } — `colore` è una delle chiavi elencate qui
  *          sopra, oppure null quando la sagoma non ha niente da dire.
  */
-export function segnoDelTavolo({ selezionato, contoAperto, fasce = [], inRitardo }) {
+// 🔴 RIFATTO IL 21/08 su decisione di Alessio, e DUE SIGNIFICATI CAMBIANO.
+//
+// ⚠️ Il MARRONE non dice più «ci sono seduti adesso»: in una sala da tredici
+// tavoli quell'informazione si vede guardando la sala. Adesso dice **la
+// comanda è partita per la cucina**, che invece non si vede da nessuna parte.
+//
+// ⚠️ Il VERDE OLIVA non dice più «occupa la serata»: dice **tavolo
+// selezionato**. Prima quel posto ce l'aveva il terracotta, che era anche la
+// fascia «ultimo giro» — un colore per due cose, ed è l'ambiguità che finisce
+// qui.
+//
+// ⚠️ E DA LÌ NASCE IL COLORE NUOVO: tolto il verde alla fascia di mezzo,
+// quella fascia resterebbe senza. L'ambra è il punto medio **misurato** fra i
+// suoi due vicini — vedi `index.css`.
+//
+// 🔴 I DUE PALLINI SONO UNA COPPIA A DUE GRADI, e la forma è la stessa
+// apposta: **vuoto = devo tornare al tavolo**, **pieno = devo mandare in
+// cucina**. Il pieno è più forte perché è il caso che costa di più: dei
+// piatti segnati e mai partiti sono un tavolo che aspetta e una cucina che
+// non sa.
+//
+// ⚠️ E il pallino VUOTO chiude un buco che non aveva nessun segno: un conto
+// aperto dove non è ancora stato ordinato niente. Non è marrone (niente è
+// partito), non ha il pallino pieno (niente è segnato), e non può vedersi
+// come un tavolo libero. Nasce da una scena vera: il cameriere si avvicina e
+// i clienti chiedono qualche minuto.
+/**
+ * Che cosa sta succedendo dentro un conto aperto — i due fatti da cui
+ * nascono i pallini.
+ *
+ * ⚠️ Le righe ANNULLATE non contano, ed è la stessa regola del 16/08 («una
+ * riga mai mandata in cucina non entra nel conto»): un piatto stornato non è
+ * né qualcosa da mandare né qualcosa che è partito.
+ *
+ * ⚠️ E i due fatti NON si escludono: metà comanda può essere partita e metà
+ * no. Chi decide cosa mostrare è `segnoDelTavolo`, qui si dice solo com'è
+ * fatto il conto.
+ */
+export function statoDelConto(conto) {
+  const righe = (conto?.items ?? []).filter((r) => !r.voided_at);
+  return {
+    comandaInviata: righe.some((r) => r.sent_at),
+    daInviare: righe.some((r) => !r.sent_at),
+  };
+}
+
+export function segnoDelTavolo({
+  selezionato,
+  contoAperto,
+  comandaInviata = false,
+  daInviare = false,
+  fasce = [],
+  inRitardo,
+}) {
   const colore = selezionato
     ? "selezionato"
-    : contoAperto
-      ? "occupato"
+    : comandaInviata
+      ? "inviata"
       : fasce.length > 1
         ? "misto"
         : (fasce[0] ?? null);
-  return { colore, barrato: Boolean(inRitardo) };
+
+  // ⚠️ Il pieno vince sul vuoto: se c'è roba da mandare, quello è il gesto
+  // che manca — anche quando una parte è già partita.
+  const pallino = daInviare ? "pieno" : contoAperto && !comandaInviata ? "vuoto" : null;
+
+  return { colore, barrato: Boolean(inRitardo), pallino };
 }
 
 // =====================================================================
@@ -294,14 +352,19 @@ export function segniDellaSala({ sagome = [], gruppi = [], fatti = {} }) {
     const dentro = insieme.map((id) => fatti[id] ?? {});
     const delGruppo = segnoDelTavolo({
       contoAperto: dentro.some((f) => f.contoAperto),
+      comandaInviata: dentro.some((f) => f.comandaInviata),
+      daInviare: dentro.some((f) => f.daInviare),
       fasce: [...new Set(dentro.flatMap((f) => f.fasce ?? []).filter(Boolean))],
       inRitardo: dentro.some((f) => f.inRitardo),
     });
     for (const id of insieme) {
       // La selezione resta del singolo tavolo, e si rimette qui sopra: è
       // l'unico segno che risponde al dito invece di descrivere il gruppo.
+      // ⚠️ Il pallino NON si perde selezionando: è un canale a sé, come la
+      // sbarratura. Un tavolo che aspetta di mandare in cucina continua ad
+      // aspettare anche mentre lo si tocca.
       segni[id] = fatti[id]?.selezionato
-        ? { colore: "selezionato", barrato: delGruppo.barrato }
+        ? { colore: "selezionato", barrato: delGruppo.barrato, pallino: delGruppo.pallino }
         : delGruppo;
     }
   }

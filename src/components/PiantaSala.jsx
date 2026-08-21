@@ -86,9 +86,15 @@ export const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDU
 
 const COLORI = {
   libero: { riempimento: "var(--color-b58-parchment)", bordo: "var(--color-b58-charcoal)" },
+  // 🔴 VERDE OLIVA DAL 21/08, e prima era terracotta. Il terracotta era
+  // **doppio** — è anche la fascia «ultimo giro» — e quel doppio uso finisce
+  // qui: l'ambiguità si scioglieva «da sé» solo finché il tavolo selezionato
+  // era al massimo uno, e da quando la selezione prende un tavolone intero
+  // non è più vero. Il verde si è liberato perché la fascia di mezzo è
+  // passata all'ambra.
   selezionato: {
-    riempimento: "var(--color-b58-terracotta)",
-    bordo: "var(--color-b58-terracotta-dark)",
+    riempimento: "var(--color-b58-olive)",
+    bordo: "var(--color-b58-olive-dark)",
   },
   // ⚠️ SCURO, E FINO AL 18/08 ERA DORATO. Il cambio non è estetico: dal giro
   // D2 le fasce arrivano anche in Comande, e lì il dorato vuol già dire
@@ -99,8 +105,11 @@ const COLORI = {
   // doppio (è anche la fascia «ultimo giro»), e lì l'ambiguità si scioglie da
   // sé — il tavolo selezionato è al massimo uno, ed è quello che hai appena
   // toccato tu.
-  occupato: { riempimento: "var(--color-b58-charcoal-soft)", bordo: "var(--color-b58-charcoal)" },
-  prenotato: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  // 🔴 E DAL 21/08 QUESTO MARRONE DICE UN'ALTRA COSA: non più «ci sono
+  // seduti adesso», ma **la comanda è partita per la cucina**. Alessio:
+  // *in una sala da tredici tavoli, chi è seduto si vede guardando la sala* —
+  // quello che non si vede da nessuna parte è se l'ordine è andato.
+  inviata: { riempimento: "var(--color-b58-charcoal-soft)", bordo: "var(--color-b58-charcoal)" },
   // ⚠️ LE TRE FASCE DELLA SERATA (idea di Alessio, 14/08; il terzo colore
   // è del 18/08). Non è un vincolo e non impedisce niente: è l'ora resa
   // visibile senza doverla leggere.
@@ -114,7 +123,14 @@ const COLORI = {
   // tre fasce calcolate sugli orari della cena direbbero «primo giro» a
   // chiunque pranzi.
   presto: { riempimento: "var(--color-b58-gold)", bordo: "var(--color-b58-gold-dark)" },
-  pieno: { riempimento: "var(--color-b58-olive)", bordo: "var(--color-b58-olive-dark)" },
+  // 🔴 AMBRA DAL 21/08, e il verde è passato a «selezionato». Il colore non è
+  // stato scelto a occhio: è il punto medio **misurato** fra i suoi due
+  // vicini in questa stessa mappa, ed è il punto che massimizza la distanza
+  // dal più vicino dei due — 19,0 di differenza percettiva da entrambi, dove
+  // sopra 10 si distingue a colpo d'occhio. Misurato anche contro TUTTI gli
+  // altri colori della sala: il minimo resta 19,0. Il conto è in
+  // `index.css`.
+  pieno: { riempimento: "var(--color-b58-ambra)", bordo: "var(--color-b58-ambra-dark)" },
   tardi: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
   // Mezzo e mezzo: sul tavolo c'è più di una fascia — tipicamente un
   // giallo e un arancio, che è proprio il secondo giro.
@@ -701,6 +717,31 @@ export default function PiantaSala({
                   height={box.profondita}
                   rx={tondo ? Math.min(box.larghezza, box.profondita) / 2 : 12}
                   fill="url(#sbarrato)"
+                  pointerEvents="none"
+                />
+              )}
+              {/* 🔴 I DUE PALLINI DEL CONTO (21/08). Sono UNA COPPIA A DUE
+                  GRADI e hanno la stessa forma apposta:
+                    · CONTORNO  → il conto è aperto e non è stato ordinato
+                      ancora niente: **devo tornare al tavolo**;
+                    · PIENO     → ci sono piatti segnati e mai partiti:
+                      **devo mandare in cucina**.
+                  Il pieno è più forte perché costa di più — un tavolo che
+                  aspetta e una cucina che non sa.
+                  ⚠️ Non inventare un secondo simbolo per il vuoto: è la
+                  stessa cosa a un grado minore, e due forme diverse
+                  direbbero che sono due fatti scollegati.
+                  ⚠️ Sta nell'angolo in alto a destra della sagoma VERA e
+                  fuori dal gruppo delle scritte, perché non deve girare col
+                  testo: un pallino è un pallino in tutti i versi. */}
+              {info?.pallino && (
+                <circle
+                  cx={bx + box.larghezza - 22}
+                  cy={by + 22}
+                  r={11}
+                  fill={info.pallino === "pieno" ? "var(--color-b58-terracotta)" : "none"}
+                  stroke="var(--color-b58-terracotta-dark)"
+                  strokeWidth={5}
                   pointerEvents="none"
                 />
               )}
