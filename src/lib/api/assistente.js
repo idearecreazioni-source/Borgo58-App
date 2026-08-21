@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { fraseDelGuasto } from "../calcoli/erroriDiRete";
 
 // L'assistente che risponde sui documenti archiviati (12/08/2026).
 //
@@ -24,14 +25,16 @@ export async function chiediAllArchivio(domanda) {
     // La funzione risponde { errore: { messaggio } } con frasi scritte per
     // Alessio ("Limite di spesa raggiunto"): vanno mostrate intatte, non
     // sostituite da un generico "non-2xx".
-    let messaggio = error.message;
+    let dalCorpo = null;
     try {
       const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) messaggio = corpo.errore.messaggio;
+      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
     } catch {
-      // risposta senza corpo JSON: si tiene il messaggio generico
+      // risposta senza corpo JSON: decide `fraseDelGuasto`
     }
-    throw new Error(messaggio);
+    // Col telefono staccato la richiesta non parte, quindi non c'è nessun
+    // corpo: fino al 21/08 usciva il messaggio inglese della libreria.
+    throw new Error(fraseDelGuasto(error, "chiedere all'archivio", dalCorpo));
   }
 
   return data?.risultato ?? null;
@@ -53,14 +56,14 @@ export async function leggiContenutoDocumento(documentoId, { rileggi = false } =
   });
 
   if (error) {
-    let messaggio = error.message;
+    let dalCorpo = null;
     try {
       const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) messaggio = corpo.errore.messaggio;
+      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
     } catch {
-      // risposta senza corpo JSON: si tiene il messaggio generico
+      // risposta senza corpo JSON: decide `fraseDelGuasto`
     }
-    throw new Error(messaggio);
+    throw new Error(fraseDelGuasto(error, "leggere il documento", dalCorpo));
   }
 
   return data?.risultato ?? null;

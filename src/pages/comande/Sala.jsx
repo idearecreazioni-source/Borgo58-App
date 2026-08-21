@@ -675,6 +675,15 @@ export default function Sala() {
         </div>
       </div>
 
+      {/* 🔴 IL MESSAGGIO STA IN CIMA, e con la barra dei tavoli in fondo alla
+          sala i due si trovano a **1556 punti** di distanza su uno schermo
+          alto 1024 — misurato il 21/08 facendo cadere la rete. Cioè: si preme
+          «Apri 2 tavoli insieme», non succede niente, e la spiegazione è
+          fuori schermo. È il difetto del 17/08 («un rifiuto lontano dal gesto
+          è un rifiuto che non c'è»), qui su una distanza che si può contare.
+          ⚠️ Resta anche qui, perché gli altri gesti di questa schermata sono
+          in cima: quello che si aggiunge è una COPIA accanto alla barra, non
+          uno spostamento — vedi sotto. */}
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">{error}</p>
       )}
@@ -871,6 +880,14 @@ export default function Sala() {
       {/* La barra che compare solo quando c'è qualcosa da decidere. */}
       {siVedeLaBarraDeiTavoli(cosaSiVede({ conto: order, selezione, spostando })) && (
         <div className="mb-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
+          {/* Lo stesso messaggio, ma DOVE STA IL DITO. Non è un doppione per
+              distrazione: chi preme qui non vede la cima della pagina, e
+              senza questa riga il gesto sembra non aver fatto niente. */}
+          {error && (
+            <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2">
+              {error}
+            </p>
+          )}
           <p className="text-sm text-b58-charcoal mb-2">
             {sagome
               .filter((s) => selezione.includes(s.id))
