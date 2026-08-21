@@ -822,7 +822,13 @@ export default function PiantaSala({
                   x={cx}
                   y={cy + (posti ? -6 : 12)}
                   textAnchor="middle"
-                  fontSize="36"
+                  // 🔴 MISURATO ALLA CALIBRAZIONE VERA (21/08): 36 unità di
+                  // sala fanno 3,5 mm sul tablet di Alessio — appena sopra la
+                  // soglia dei 3 mm. 44 ne fanno 4,2, che è la misura del testo
+                  // grande delle Comande. ⚠️ Sono unità di SALA, non punti: la
+                  // scritta cresce e rimpicciolisce insieme al disegno, che è
+                  // ciò che la tiene dentro la sagoma su ogni schermo.
+                  fontSize="44"
                   fontWeight="600"
                   fill={chiaro ? "var(--color-b58-parchment)" : "var(--color-b58-charcoal)"}
                 >
@@ -833,7 +839,9 @@ export default function PiantaSala({
                     x={cx}
                     y={cy + 32}
                     textAnchor="middle"
-                    fontSize="26"
+                    // La cifra dei coperti: 26 unità facevano 2,5 mm, sotto la
+                    // soglia. 34 ne fanno 3,2.
+                    fontSize="34"
                     fill={chiaro ? "var(--color-b58-parchment)" : "var(--color-b58-charcoal-soft)"}
                   >
                     {posti}

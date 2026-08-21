@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addDraftItem,
@@ -30,7 +30,7 @@ import {
   segniDellaSala,
   statoDelConto,
 } from "../../lib/calcoli/ritardo";
-import { cosaSiVede, esitoDelTocco, siVedeLaBarraDeiTavoli } from "../../lib/calcoli/selezione";
+import { esitoDelTocco } from "../../lib/calcoli/selezione";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -120,6 +120,21 @@ export default function Sala() {
   // Si sta cambiando l'insieme dei tavoli di questo conto: unire,
   // separare, spostare. È lo «sposta» del 09/08, che ora sa fare tutt'e tre.
   const [spostando, setSpostando] = useState(false);
+  // 🔴 APRENDO UN TAVOLO LA SCHERMATA SCENDE SUL MENU (21/08, chiesto da
+  // Alessio). Col menu sotto la pianta, dopo aver aperto un tavolo si
+  // scorreva di mille punti ogni volta — ed è il gesto che viene subito
+  // dopo, sempre.
+  //
+  // ⚠️ SOLO SU «APRI IL TAVOLO», e i due casi passano da due funzioni
+  // DIVERSE, quindi non c'è niente da separare: `apriSelezione` apre un
+  // tavolo nuovo, `apriConoscendoIlConto` entra in un conto che esiste già
+  // — e lì non si scende, perché chi tocca un tavolo aperto può volere il
+  // riepilogo o i pulsanti, non i piatti.
+  //
+  // ⚠️ E NON SI SCENDE A OGNI TOCCO: guardando un tavolo per leggere chi
+  // c'è, la sala scapperebbe via sotto le dita.
+  const [scendiAlMenu, setScendiAlMenu] = useState(false);
+  const menuRef = useRef(null);
 
   const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
   const [priceDraft, setPriceDraft] = useState("");
@@ -434,11 +449,11 @@ export default function Sala() {
       <div className="h-full overflow-auto p-1.5">
         {nomiDelTavolo.map((p) => (
           <div key={p.id} className="mb-1.5 last:mb-0">
-            <p className="text-[11px] text-b58-charcoal-soft leading-none">
+            <p className="testo-sala text-b58-charcoal-soft leading-none">
               {p.ora?.slice(0, 5)}
               {p.persone ? ` · ${p.persone}` : ""}
             </p>
-            <p className="text-sm font-semibold text-b58-charcoal leading-tight">{p.nome}</p>
+            <p className="testo-sala-grande font-semibold text-b58-charcoal leading-tight">{p.nome}</p>
           </div>
         ))}
       </div>
@@ -544,6 +559,7 @@ export default function Sala() {
       const orderId = await apriConto(selezione, { serata });
       const full = await getOrder(orderId);
       setOrder(full);
+      setScendiAlMenu(true);
       setSelezione([]);
       await loadBoard();
     } catch (e) {
@@ -564,6 +580,14 @@ export default function Sala() {
       .sort();
     return ore[0] ?? null;
   })();
+
+  useEffect(() => {
+    if (!scendiAlMenu || !order || !menuRef.current) return;
+    // ⚠️ `behavior: auto`, non `smooth`: in servizio un movimento che dura
+    // mezzo secondo si legge come un ritardo dell'app.
+    menuRef.current.scrollIntoView({ block: "start", behavior: "auto" });
+    setScendiAlMenu(false);
+  }, [scendiAlMenu, order]);
 
   const reloadOrder = () => (order ? getOrder(order.id).then(setOrder) : Promise.resolve());
 
@@ -697,13 +721,13 @@ export default function Sala() {
       onClick={() => handleAddBarItem(v)}
       className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50 border-b border-b58-charcoal/5"
     >
-      <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight">
+      <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
         {v.name}
         {v.serving && <span className="text-b58-charcoal-soft"> · {v.serving}</span>}
-        {v.producer && <span className="block text-[11px] text-b58-charcoal-soft/70">{v.producer}</span>}
+        {v.producer && <span className="block testo-sala text-b58-charcoal-soft/70">{v.producer}</span>}
       </span>
-      <span className="text-xs text-b58-charcoal-soft shrink-0">{formatEUR(v.selling_price)}</span>
-      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
+      <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(v.selling_price)}</span>
+      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
         +
       </span>
     </button>
@@ -712,87 +736,109 @@ export default function Sala() {
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const sectionLabel =
-    "text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
+    "testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
 
   // Il contenuto del pannello dei gesti. Cambia con quello che si sta
   // toccando, e per questo non ha un titolo: il titolo sarebbe sempre lo
   // stesso mentre il contenuto cambia.
   const pannelloGesti = order ? (
     <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5">
-      <p className="text-[11px] font-semibold text-b58-charcoal-soft leading-none">
+      <p className="testo-sala font-semibold text-b58-charcoal-soft leading-none">
         {order.table_label}
       </p>
+
+      {/* 🔴 UNA COSA, UN POSTO SOLO (21/08, deciso da Alessio guardando la
+          schermata in scala reale). Gli stessi quattro gesti stavano anche
+          in un riquadro sotto la pianta: due pulsanti che fanno la stessa
+          cosa a mezzo metro di distanza sono due cose da imparare, non una
+          comodità. Il posto è QUESTO, dentro la pianta, dove li ha visti e
+          approvati.
+          ⚠️ E sono IMPILATI a tutta larghezza, non affiancati a due a due:
+          la colonna è larga 368 punti sul suo tablet e alta mille, quindi
+          l'altezza c'è — mentre affiancati «Lascia aperto» non ci starebbe
+          con le scritte ingrandite. */}
       <button
         type="button"
         disabled={busy || draftItems.length === 0}
         onClick={handleSend}
-        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment text-xs font-semibold px-2"
+        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
       >
         Invia{draftItems.length > 0 ? ` (${draftItems.length})` : ""}
       </button>
-      <div className="flex gap-1.5">
-        <button
-          type="button"
-          disabled={sentItems.length === 0}
-          onClick={() => setShowPrecon(true)}
-          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white disabled:opacity-40 text-b58-charcoal text-xs px-1"
-        >
-          Preconto
-        </button>
-        <button
-          type="button"
-          disabled={sentItems.length === 0}
-          onClick={() => setShowClose(true)}
-          className="tocco-bottone flex-1 rounded-lg bg-b58-terracotta disabled:opacity-40 text-b58-parchment text-xs font-semibold px-1"
-        >
-          {/* 🔴 «CHIUDI CONTO», MAI «CHIUDI» (21/08, rilievo del collaudo).
-              Avevo accorciato l'etichetta per farla stare nella colonna dei
-              gesti, e non l'avevo dichiarato. Su «Invia» l'accorciamento
-              passa; qui no: in sala **«chiudi» vuol dire incassare**, ed è la
-              ragione per cui l'uscita dal conto si chiama «Lascia il tavolo
-              aperto». Accanto a «Preconto», un cameriere di fretta può
-              leggerlo come «chiudi questo riquadro» — e invece incassa.
-              ⚠️ Se non ci sta, si stringe il resto: la parola sbagliata su
-              quel pulsante costa un incasso. */}
-          Chiudi conto
-        </button>
-      </div>
-      {/* 🔴 GLI ALTRI DUE GESTI DELLO STESSO CONTO (21/08, deciso da
-          Alessio). Stavano sotto la pianta, a 1279 punti dall'alto: chi
-          serviva non li trovava. Qui sono dove sono gli altri.
-          ⚠️ E LA PAROLA È «LASCIA … APERTO», mai «chiudi»: in sala
-          «chiudere» vuol dire incassare, e la parola sbagliata su quel
-          pulsante costa un incasso. Il tavolo è nominato perché chi legge
-          sappia da cosa sta uscendo. */}
-      <div className="flex gap-1.5">
+      <button
+        type="button"
+        disabled={sentItems.length === 0}
+        onClick={() => setShowPrecon(true)}
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white disabled:opacity-40 text-b58-charcoal testo-sala px-2"
+      >
+        Preconto
+      </button>
+      {/* ⚠️ «CHIUDI CONTO», MAI «CHIUDI»: in sala «chiudere» vuol dire
+          incassare, ed è la ragione per cui l'uscita dal conto si chiama
+          «Lascia il tavolo aperto». */}
+      <button
+        type="button"
+        disabled={sentItems.length === 0}
+        onClick={() => setShowClose(true)}
+        className="tocco-bottone w-full rounded-lg bg-b58-terracotta disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
+      >
+        Chiudi conto
+      </button>
+
+      {/* 🔴 «ANNULLA TAVOLO» STA COI GRANDI (21/08, deciso da Alessio).
+          Era un link piccolo in fondo alla pagina: è un gesto definitivo
+          come gli altri tre e merita lo stesso peso.
+          ⚠️ LA CONDIZIONE NON CAMBIA: si può solo se non è stato inviato
+          niente in cucina — dopo, un conto si chiude, non si annulla.
+          Cambia dove sta e quanto è grande. */}
+      {sentItems.length === 0 && (
         <button
           type="button"
           onClick={() => {
-            setOrder(null);
-            setSelezione([]);
-            setError("");
+            if (
+              !window.confirm(
+                `Annullare ${order.table_label}?\n\nNon è stato inviato niente in cucina, quindi non si butta via nessun ordine. I tavoli tornano liberi.`
+              )
+            )
+              return;
+            withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(() => {
+              setOrder(null);
+              setSelezione([]);
+              loadBoard();
+            });
           }}
-          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal text-xs px-1"
+          className="tocco-bottone w-full rounded-lg border border-b58-terracotta/40 bg-white text-b58-terracotta-dark testo-sala px-2"
         >
-          &lsaquo; Lascia aperto
+          Annulla tavolo
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSpostando(true);
-            setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
-          }}
-          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal-soft text-xs px-1"
-        >
-          Cambia tavoli
-        </button>
-      </div>
-      {/* ⚠️ IL RIEPILOGO QUI E' A COLPO D'OCCHIO, e non ha i gesti per
-          togliere o annotare: quelli restano nella lista sotto la pianta,
-          dove c'e' lo spazio per premerli. Non e' un doppione — sono due
-          cose diverse: qui si LEGGE cosa e' stato segnato, li' si CORREGGE. */}
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          setSpostando(true);
+          setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
+        }}
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal-soft testo-sala px-2"
+      >
+        Cambia tavoli
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setOrder(null);
+          setSelezione([]);
+          setError("");
+        }}
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-2"
+      >
+        &lsaquo; Lascia aperto
+      </button>
+
+      {/* Qui si LEGGE cosa è stato segnato; si corregge nella lista sotto
+          la pianta, dove c'è lo spazio per premere. */}
       {(draftItems.length > 0 || sentItems.length > 0) && (
-        <div className="text-[11px] leading-tight border-t border-b58-charcoal/10 pt-1">
+        <div className="testo-sala leading-tight border-t border-b58-charcoal/10 pt-1">
           {draftItems.map((it) => (
             <p key={it.id} className="text-b58-terracotta-dark">
               {it.quantity}× {lineLabel(it)}
@@ -807,16 +853,69 @@ export default function Sala() {
         </div>
       )}
     </div>
-  ) : selezione.length > 0 && !spostando ? (
-    <div className="h-full overflow-auto p-1.5 flex flex-col justify-center">
+  ) : selezione.length > 0 ? (
+    // 🔴 ANCHE LA SCELTA DEI TAVOLI STA QUI DENTRO (21/08). Prima compariva
+    // in un riquadro SOTTO la pianta, e «Apri il tavolo» era in due posti.
+    // Alessio: *«preferisco farli comparire di fianco a sinistra, non
+    // sotto»* — ed è dove questa colonna sta già, nello spazio di cucina e
+    // servizi.
+    <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5 justify-center">
+      <p className="testo-sala font-semibold text-b58-charcoal leading-tight">
+        {sagome
+          .filter((s) => selezione.includes(s.id))
+          .map((s) => s.label)
+          .join(" · ")}
+      </p>
+      {error && (
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1 leading-tight">
+          {error}
+        </p>
+      )}
       <button
         type="button"
-        disabled={busy}
-        onClick={apriSelezione}
-        className="tocco-riga w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment text-xs font-semibold px-2"
+        disabled={loadingOrder}
+        onClick={spostando ? confermaSpostamento : apriSelezione}
+        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
       >
-        Apri {selezione.length === 1 ? "il tavolo" : `${selezione.length} tavoli`}
+        {spostando
+          ? `Sposta qui (${selezione.length})`
+          : `Apri ${selezione.length === 1 ? "il tavolo" : `${selezione.length} tavoli`}`}
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          setSelezione([]);
+          setSpostando(false);
+        }}
+        className="tocco-bottone w-full rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-2"
+      >
+        Annulla
+      </button>
+
+      {/* ⚠️ «NON SONO ARRIVATI» COMPARE SOLO SUL TAVOLO TRATTEGGIATO: su un
+          tavolo che deve ancora arrivare sarebbe un invito a disdire per
+          sbaglio. E la parola dice CHI non è arrivato e COSA succede al
+          tavolo — non deve somigliare ad «annulla il conto», che è un'altra
+          cosa. */}
+      {!spostando &&
+        prenotazioniDeiTavoli(selezione)
+          .filter((p) => p.ritardo?.inRitardo)
+          .map((p) => (
+            <div key={p.id} className="border-t border-b58-charcoal/10 pt-1.5">
+              <ConfermaDistruttiva
+                etichetta={`${p.nome} non è arrivato`}
+                domanda="Il tavolo torna libero e si può ridare a qualcun altro. La prenotazione risulterà annullata."
+                etichettaConferma="Sì, libera il tavolo"
+                disabilitato={busy}
+                onConferma={() =>
+                  withBusy(() => annullaPrenotazione(p.id)).then(() => {
+                    setSelezione([]);
+                    loadBoard();
+                  })
+                }
+              />
+            </div>
+          ))}
     </div>
   ) : null;
 
@@ -840,7 +939,7 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => setCategoriaScelta(null)}
-            className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+            className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
               categoriaScelta === null
                 ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -853,7 +952,7 @@ export default function Sala() {
               key={c.chiave}
               type="button"
               onClick={() => setCategoriaScelta(c.chiave)}
-              className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+              className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
                 categoriaScelta === c.chiave
                   ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -865,7 +964,7 @@ export default function Sala() {
         </div>
       )}
       {menuByCategory.length === 0 ? (
-        <p className="text-xs text-b58-charcoal-soft/60 mb-3">Nessun menu attivo.</p>
+        <p className="testo-sala text-b58-charcoal-soft/60 mb-3">Nessun menu attivo.</p>
       ) : (
         <div className="mb-3">
           {menuByCategory
@@ -876,7 +975,7 @@ export default function Sala() {
                   acceso: ripeterlo qui sarebbe la stessa parola due
                   volte a due centimetri, come «Sala» stamattina. */}
               {categoriaScelta === null && (
-              <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+              <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                 {cat.label}
               </p>
               )}
@@ -901,13 +1000,13 @@ export default function Sala() {
                       ⚠️ E il prezzo si allinea in alto (`self-start`):
                       con un nome su due righe, centrato finirebbe in
                       mezzo alle due — accanto a niente. */}
-                  <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight py-1">
+                  <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight py-1">
                     {mi.recipe_name}
                   </span>
-                  <span className="text-xs text-b58-charcoal-soft shrink-0 self-start pt-1.5">
+                  <span className="testo-sala text-b58-charcoal-soft shrink-0 self-start pt-1.5">
                     {formatEUR(mi.selling_price)}
                   </span>
-                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
+                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
                     +
                   </span>
                 </button>
@@ -922,7 +1021,7 @@ export default function Sala() {
         <div className="mb-3">
           {bevande.map((cat) => (
             <div key={cat.nome} className="mb-2">
-              <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+              <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                 {cat.nome}
               </p>
               {cat.voci.map((v) => (
@@ -940,7 +1039,7 @@ export default function Sala() {
       <button
         type="button"
         onClick={() => setShowFreeForm((v) => !v)}
-        className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
+        className="testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
       >
         {showFreeForm ? "Nascondi voce libera" : "+ Voce libera (bevande, fuori menu)"}
       </button>
@@ -976,7 +1075,7 @@ export default function Sala() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal text-sm font-medium py-2"
+            className="w-full rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal testo-sala-grande font-medium py-2"
           >
             + Aggiungi alla comanda
           </button>
@@ -1017,14 +1116,14 @@ export default function Sala() {
           un gesto, coprirebbe tutti i casi tranne quello per cui esiste. */}
       {serataScaduta(serata, adesso, oraFineSerata) && (
         <div className="mb-3 rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 px-3 py-2">
-          <p className="text-sm text-b58-charcoal">
+          <p className="testo-sala-grande text-b58-charcoal">
             È cominciata una giornata nuova. Questa è ancora la sala della serata di{" "}
             <strong>{formatDate(serata)}</strong>.
           </p>
           <button
             type="button"
             onClick={() => setSerata(serataDiServizio(new Date(), oraFineSerata))}
-            className="mt-1 text-sm underline text-b58-terracotta-dark hover:text-b58-charcoal tocco-bottone"
+            className="mt-1 testo-sala-grande underline text-b58-terracotta-dark hover:text-b58-charcoal tocco-bottone"
           >
             Passa alla serata di oggi
           </button>
@@ -1034,7 +1133,7 @@ export default function Sala() {
       <div className="flex items-center justify-between gap-2 mb-3">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Sala</h1>
-          <p className="text-xs text-b58-charcoal-soft/70 mt-1">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
             {/* 🔴 «CAMBIA TAVOLI» NON STA PIÙ QUI (21/08, deciso da Alessio).
                 Stava in cima alla pagina, all'estremità opposta rispetto al
                 conto su cui si sta lavorando: con la comanda aperta davanti,
@@ -1048,13 +1147,13 @@ export default function Sala() {
         <div className="flex gap-1.5">
           <Link
             to="/comande/bar"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Bar
           </Link>
           <Link
             to="/comande/cucina"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Cucina
           </Link>
@@ -1065,7 +1164,7 @@ export default function Sala() {
               tavolo davanti. */}
           <Link
             to="/comande/scontrini"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Scontrini
           </Link>
@@ -1073,7 +1172,7 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setPanel((p) => (p ? null : "tavoli"))}
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs font-medium px-3 py-2"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
             >
               {panel ? "Chiudi" : "Impostazioni"}
             </button>
@@ -1091,7 +1190,7 @@ export default function Sala() {
           in cima: quello che si aggiunge è una COPIA accanto alla barra, non
           uno spostamento — vedi sotto. */}
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">{error}</p>
       )}
 
       {panel && isTitolare && (
@@ -1100,14 +1199,14 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setPanel("coperto")}
-              className={`text-xs rounded-full px-3 py-1.5 border ${panel === "coperto" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
+              className={`testo-sala rounded-full px-3 py-1.5 border ${panel === "coperto" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
             >
               Coperto
             </button>
             <button
               type="button"
               onClick={() => setPanel("calibrazione")}
-              className={`text-xs rounded-full px-3 py-1.5 border ${panel === "calibrazione" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
+              className={`testo-sala rounded-full px-3 py-1.5 border ${panel === "calibrazione" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
             >
               Dimensione dei tocchi
             </button>
@@ -1128,25 +1227,19 @@ export default function Sala() {
                     onChange={(e) => setPriceDraft(e.target.value)}
                     className={`${inputClass} w-28`}
                   />
-                  <span className="text-sm text-b58-charcoal-soft">€ a persona</span>
+                  <span className="testo-sala-grande text-b58-charcoal-soft">€ a persona</span>
                   <button
                     type="button"
                     onClick={handleSavePrice}
-                    className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                    className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
                   >
                     Salva
                   </button>
                 </div>
-                <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
-                  Vale dai conti aperti da adesso in poi: i conti già chiusi conservano
-                  il prezzo che avevano quando sono stati pagati.
-                </p>
+
               </div>
 
-              <p className="text-[11px] text-b58-charcoal-soft/70 leading-relaxed">
-                I tavoli si spostano e si rinominano dalla pianta, in Calendario Eventi →
-                La sala.
-              </p>
+
             </div>
           )}
         </div>
@@ -1218,7 +1311,7 @@ export default function Sala() {
            che l'ha prodotto è passeggero. */
         <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-6 text-center mb-3">
           <p className="text-b58-charcoal font-medium mb-1">Non riesco a leggere la sala.</p>
-          <p className="text-xs text-b58-charcoal-soft mb-3">
+          <p className="testo-sala text-b58-charcoal-soft mb-3">
             Non vuol dire che è vuota: vuol dire che non lo so.
           </p>
           <button
@@ -1227,13 +1320,13 @@ export default function Sala() {
               setError("");
               loadBoard().catch((e) => setError(e.message));
             }}
-            className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-base font-semibold px-6"
+            className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala-grande font-semibold px-6"
           >
             Riprova
           </button>
         </div>
       ) : sagome.length === 0 ? (
-        <p className="text-xs text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
+        <p className="testo-sala text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
       ) : (
         <div className="mb-3">
           {/* In piedi, non sdraiata: la sala è larga il doppio di quanto è
@@ -1285,7 +1378,7 @@ export default function Sala() {
             ⚠️ E i GESTI del conto non chiedono quello scorrimento: stanno
             dentro la pianta, e la loro colonna comincia a 479 punti da
             dove la pianta comincia — cioe' si vedono sul primo schermo. */}
-        {order && <div>{pannelloMenu}</div>}
+        {order && <div ref={menuRef}>{pannelloMenu}</div>}
       </div>
 
       {/* 🔴 LA LISTA «STASERA» È SPARITA (21/08, deciso da Alessio), e la
@@ -1310,10 +1403,10 @@ export default function Sala() {
           che serve a chi apre la porta. */}
       {senzaTavolo.length > 0 && (
         <div className="mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold/40 px-3 py-2">
-          <p className="text-xs font-semibold text-b58-gold-dark mb-0.5">
+          <p className="testo-sala font-semibold text-b58-gold-dark mb-0.5">
             {senzaTavolo.length === 1 ? "Una prenotazione senza tavolo" : `${senzaTavolo.length} prenotazioni senza tavolo`}
           </p>
-          <p className="text-sm text-b58-charcoal leading-snug">
+          <p className="testo-sala-grande text-b58-charcoal leading-snug">
             {senzaTavolo
               .map((p) => `${p.ora?.slice(0, 5)} · ${p.nome}${p.persone ? ` (${p.persone})` : ""}`)
               .join(" — ")}
@@ -1321,103 +1414,18 @@ export default function Sala() {
         </div>
       )}
 
-      {/* La barra che compare solo quando c'è qualcosa da decidere. */}
-      {siVedeLaBarraDeiTavoli(cosaSiVede({ conto: order, selezione, spostando })) && (
-        <div className="mb-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
-          {/* Lo stesso messaggio, ma DOVE STA IL DITO. Non è un doppione per
-              distrazione: chi preme qui non vede la cima della pagina, e
-              senza questa riga il gesto sembra non aver fatto niente. */}
-          {error && (
-            <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2">
-              {error}
-            </p>
-          )}
-          <p className="text-sm text-b58-charcoal mb-2">
-            {sagome
-              .filter((s) => selezione.includes(s.id))
-              .map((s) => s.label)
-              .join(" · ")}
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={loadingOrder}
-              onClick={spostando ? confermaSpostamento : apriSelezione}
-              className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment text-base font-semibold"
-            >
-              {spostando
-                ? `Sposta qui (${selezione.length})`
-                : `Apri ${selezione.length === 1 ? "il tavolo" : `${selezione.length} tavoli insieme`}`}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelezione([]);
-                setSpostando(false);
-              }}
-              className="tocco-azione rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal text-sm font-medium px-4"
-            >
-              Annulla
-            </button>
-          </div>
-          {!spostando && selezione.length > 1 && (
-            <p className="text-[11px] text-b58-charcoal-soft/70 mt-2 leading-relaxed">
-              Un conto solo per tutti e {selezione.length}: una comanda, un totale, un
-              preconto.
-            </p>
-          )}
-          {/* 🔴 «NON SONO ARRIVATI» — il gesto che nasce dalla lista sparita.
-              Col tavolo tratteggiato, chi decide di ridarlo via deve poterlo
-              fare da lì: prima l'unica strada era il Calendario, cioè uscire
-              da Comande in mezzo al servizio.
+      {/* 🔴 LA BARRA DEI TAVOLI SOTTO LA PIANTA È SPARITA (21/08, deciso da
+          Alessio): diceva le stesse cose della colonna dei gesti dentro la
+          pianta — «Apri il tavolo», «Annulla», «non è arrivato» — a mezzo
+          metro di distanza. **Una cosa, un posto solo**, e il posto è dentro
+          la pianta, dove lui li ha visti e approvati. */}
 
-              ⚠️ COMPARE SOLO SUL TAVOLO TRATTEGGIATO. Non è prudenza: è che
-              su un tavolo che deve ancora arrivare quel pulsante sarebbe un
-              invito a disdire per sbaglio una prenotazione che non ha fatto
-              niente di male.
-
-              ⚠️ E LA PAROLA NON DEVE SOMIGLIARE A «ANNULLA IL CONTO», che
-              esiste ed è un'altra cosa. Qui si dice **chi** non è arrivato e
-              **cosa succede al tavolo**: chi legge non deve dedurre niente. */}
-          {!spostando &&
-            prenotazioniDeiTavoli(selezione)
-              .filter((p) => p.ritardo?.inRitardo)
-              .map((p) => (
-                <div key={p.id} className="mt-2 pt-2 border-t border-b58-charcoal/10">
-                  <p className="text-[11px] text-b58-charcoal-soft/80 mb-1.5 leading-relaxed">
-                    <strong>{p.nome}</strong> aveva prenotato per le{" "}
-                    {p.ora?.slice(0, 5)} e non è arrivato
-                    {p.ritardo?.minuti ? ` (${p.ritardo.minuti} minuti fa)` : ""}.
-                  </p>
-                  <ConfermaDistruttiva
-                    etichetta={`Non è arrivato: libera il tavolo`}
-                    cosaSparisce={`la prenotazione di ${p.nome} delle ${p.ora?.slice(0, 5)}`}
-                    domanda="Il tavolo torna libero e si può ridare a qualcun altro. La prenotazione risulterà annullata."
-                    etichettaConferma="Sì, libera il tavolo"
-                    disabilitato={busy}
-                    onConferma={() =>
-                      withBusy(() => annullaPrenotazione(p.id)).then(() => {
-                        setSelezione([]);
-                        loadBoard();
-                      })
-                    }
-                  />
-                </div>
-              ))}
-        </div>
-      )}
-
-      {loadingOrder && <p className="text-xs text-b58-charcoal-soft">Apro il tavolo…</p>}
+      {loadingOrder && <p className="testo-sala text-b58-charcoal-soft">Apro il tavolo…</p>}
 
       {!loadingOrder && !order && selezione.length === 0 && (
-        <p className="text-sm text-b58-charcoal-soft/70 text-center py-6">
+        <p className="testo-sala-grande text-b58-charcoal-soft/70 text-center py-6">
           Tocca un tavolo per aprirlo.
-          <br />
-          <span className="text-xs">
-            Se hanno accostato più tavoli, toccali tutti: si apre un conto solo.
-            <br />
-            I tavoli scuri hanno già un conto aperto; i colorati aspettano qualcuno.
-          </span>
+
         </p>
       )}
 
@@ -1455,14 +1463,14 @@ export default function Sala() {
               senza prenotazione è qualcuno entrato senza prenotare, non un
               errore da segnalare. */}
           {order.prenotazione && (
-            <p className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 px-3 py-2 text-sm mb-3">
+            <p className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 px-3 py-2 testo-sala-grande mb-3">
               <strong>{order.prenotazione.customer_name}</strong>
               {order.prenotazione.party_size ? ` · ${order.prenotazione.party_size} persone` : ""}
               {order.prenotazione.reservation_time
                 ? ` · prenotato per le ${order.prenotazione.reservation_time.slice(0, 5)}`
                 : ""}
               {order.prenotazione.notes && (
-                <span className="block text-[11px] text-b58-charcoal-soft mt-0.5">
+                <span className="block testo-sala text-b58-charcoal-soft mt-0.5">
                   {order.prenotazione.notes}
                 </span>
               )}
@@ -1477,9 +1485,8 @@ export default function Sala() {
               è scritta a mano da nessuno: se la seconda prenotazione si
               sposta o viene annullata, questa riga la segue. */}
           {liberareEntro && (
-            <p className="rounded-lg bg-b58-gold/25 ring-1 ring-b58-gold px-3 py-2 text-base mb-4">
-              <strong>Da liberare entro le {liberareEntro.slice(0, 5)}</strong> — su questo tavolo
-              c&apos;è un altro turno dopo.
+            <p className="rounded-lg bg-b58-gold/25 ring-1 ring-b58-gold px-3 py-2 testo-sala-grande mb-4">
+              <strong>Da liberare entro le {liberareEntro.slice(0, 5)}</strong>
             </p>
           )}
 
@@ -1490,7 +1497,7 @@ export default function Sala() {
               type="button"
               disabled={busy || coperti === 0}
               onClick={() => handleCoperti(coperti - 1)}
-              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 text-lg text-b58-charcoal disabled:opacity-40"
+              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
             >
               −
             </button>
@@ -1499,17 +1506,17 @@ export default function Sala() {
               min="0"
               value={coperti}
               onChange={(e) => handleCoperti(e.target.value)}
-              className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-white text-base"
+              className="tocco-bottone w-16 text-center rounded-lg border border-b58-charcoal/15 bg-white testo-sala-grande"
             />
             <button
               type="button"
               disabled={busy}
               onClick={() => handleCoperti(coperti + 1)}
-              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 text-lg text-b58-charcoal disabled:opacity-40"
+              className="tocco-bottone rounded-lg bg-white ring-1 ring-b58-charcoal/15 testo-sala-grande text-b58-charcoal disabled:opacity-40"
             >
               +
             </button>
-            <span className="text-xs text-b58-charcoal-soft/70 ml-1">
+            <span className="testo-sala text-b58-charcoal-soft/70 ml-1">
               {copertoPrice != null ? `${formatEUR(copertoPrice)} a persona` : "prezzo non disponibile"}
             </span>
           </div>
@@ -1522,10 +1529,10 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(true)}
-              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold text-sm"
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold testo-sala-grande"
             >
               <span>🍷 Carta dei vini</span>
-              <span className="text-lg">›</span>
+              <span className="testo-sala-grande">›</span>
             </button>
           )}
 
@@ -1533,13 +1540,13 @@ export default function Sala() {
           <p className={sectionLabel}>Comanda in corso — {order.table_label}</p>
           <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-3 mb-3">
             {draftItems.length === 0 && sentItems.length === 0 && (
-              <p className="text-xs text-b58-charcoal-soft/60 text-center py-3">Nessun piatto selezionato.</p>
+              <p className="testo-sala text-b58-charcoal-soft/60 text-center py-3">Nessun piatto selezionato.</p>
             )}
 
             {draftItems.map((it) => (
               <div key={it.id} className="border-b border-b58-charcoal/5 last:border-0 py-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight">{lineLabel(it)}</span>
+                  <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">{lineLabel(it)}</span>
                   <button
                     type="button"
                     onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
@@ -1547,7 +1554,7 @@ export default function Sala() {
                   >
                     −
                   </button>
-                  <b className="w-5 text-center text-sm">{it.quantity}</b>
+                  <b className="w-5 text-center testo-sala-grande">{it.quantity}</b>
                   <button
                     type="button"
                     onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
@@ -1555,7 +1562,7 @@ export default function Sala() {
                   >
                     +
                   </button>
-                  <span className="w-14 text-right text-xs text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
+                  <span className="w-14 text-right testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
                   <button
                     type="button"
                     onClick={() => withBusy(() => removeDraftItem(it.id))}
@@ -1572,23 +1579,23 @@ export default function Sala() {
                     updateItemNote(it.id, testo).catch((err) => setError(err.message))
                   }
                   placeholder="nota per questo piatto (es. senza glutine)"
-                  className="w-full mt-1 rounded-md border border-dashed border-b58-charcoal/20 bg-b58-cream/40 px-2 py-1.5 text-xs text-b58-charcoal-soft"
+                  className="w-full mt-1 rounded-md border border-dashed border-b58-charcoal/20 bg-b58-cream/40 px-2 py-1.5 testo-sala text-b58-charcoal-soft"
                 />
               </div>
             ))}
 
             {sentItems.map((it) => (
               <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-b58-charcoal/5 last:border-0 opacity-70">
-                <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight">
+                <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
                   {it.quantity}× {lineLabel(it)}
-                  <span className="text-xs text-b58-charcoal-soft"> · inviata</span>
-                  {it.note && <span className="block text-xs italic text-b58-charcoal-soft">↳ {it.note}</span>}
+                  <span className="testo-sala text-b58-charcoal-soft"> · inviata</span>
+                  {it.note && <span className="block testo-sala italic text-b58-charcoal-soft">↳ {it.note}</span>}
                 </span>
-                <span className="text-xs text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
+                <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
                 <button
                   type="button"
                   onClick={() => handleVoid(it.id)}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
+                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
                 >
                   annulla
                 </button>
@@ -1604,81 +1611,24 @@ export default function Sala() {
             />
           </div>
 
-          {/* TOTALE E AZIONI ------------------------------------------ */}
+          {/* IL TOTALE. 🔴 I QUATTRO PULSANTI CHE STAVANO QUI SONO SPARITI
+              (21/08): Invia comanda, Preconto, Chiudi conto e «Annulla il
+              tavolo» esistevano **anche** nella colonna dei gesti dentro la
+              pianta. Due pulsanti che fanno la stessa cosa sono due cose da
+              imparare, non una comodità.
+              ⚠️ Il totale invece RESTA: non è un gesto, è un numero — e qui
+              sta sotto le righe da cui nasce. */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3 space-y-2">
             {coperti > 0 && (
-              <div className="flex justify-between text-xs text-b58-charcoal-soft">
+              <div className="flex justify-between testo-sala text-b58-charcoal-soft">
                 <span>{coperti} coperti</span>
                 <span>{formatEUR(copertoTotal)}</span>
               </div>
             )}
-            <div className="flex justify-between text-base font-semibold text-b58-charcoal">
+            <div className="flex justify-between testo-sala-grande font-semibold text-b58-charcoal">
               <span>Totale</span>
               <span>{formatEUR(total)}</span>
             </div>
-
-            <button
-              type="button"
-              disabled={busy || draftItems.length === 0}
-              onClick={handleSend}
-              className="tocco-azione w-full rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-40 transition-colors text-b58-parchment text-base font-semibold"
-            >
-              Invia comanda{draftItems.length > 0 && ` (${draftItems.length})`}
-            </button>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={sentItems.length === 0}
-                onClick={() => setShowPrecon(true)}
-                className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 bg-white hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal text-sm font-medium"
-              >
-                Preconto
-              </button>
-              <button
-                type="button"
-                disabled={sentItems.length === 0}
-                onClick={() => setShowClose(true)}
-                className="tocco-azione flex-1 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-40 transition-colors text-b58-parchment text-sm font-semibold"
-              >
-                Chiudi conto
-              </button>
-            </div>
-
-            {/* ⚠️ IL VICOLO CIECO, trovato da Alessio con un tavolo aperto
-                per sbaglio che non riusciva a togliere.
-                «Annulla tavolo» esisteva, ma viveva DENTRO la finestra di
-                chiusura — che si apre dal pulsante «Chiudi conto», che è
-                spento finché non è stato inviato niente. Quindi un tavolo
-                aperto e mai usato non si poteva chiudere né annullare: **in
-                nessun modo**. E dal 14/08 pesa il doppio, perché quel conto
-                tiene occupati i suoi tavoli e impedisce di riaprirli.
-                Regola generale: se un pulsante si spegne, va guardato cosa
-                resta raggiungibile da lì — spegnerlo non deve chiudere
-                l'unica porta. */}
-            {sentItems.length === 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      `Annullare ${order.table_label}?\n\nNon è stato inviato niente in cucina, quindi non si butta via nessun ordine. I tavoli tornano liberi.`
-                    )
-                  )
-                    return;
-                  withBusy(() => cancelOrder(order.id, "aperto per sbaglio, nessun ordine inviato")).then(
-                    () => {
-                      setOrder(null);
-                      setSelezione([]);
-                      loadBoard();
-                    }
-                  );
-                }}
-                className="w-full text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark py-1"
-              >
-                Annulla il tavolo (non è stato ordinato niente)
-              </button>
-            )}
           </div>
         </>
       )}
@@ -1691,14 +1641,14 @@ export default function Sala() {
           <button
             type="button"
             onClick={() => setShowWines(false)}
-            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-gold-dark text-b58-parchment font-semibold text-sm uppercase tracking-wide"
+            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-gold-dark text-b58-parchment font-semibold testo-sala-grande uppercase tracking-wide"
           >
-            <span className="text-lg">‹</span> Torna al menu — {order.table_label}
+            <span className="testo-sala-grande">‹</span> Torna al menu — {order.table_label}
           </button>
           <div className="flex-1 overflow-y-auto p-3 max-w-md mx-auto w-full">
             {vini.map((cat) => (
               <div key={cat.nome} className="mb-3">
-                <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                <p className="testo-sala font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                   {cat.nome}
                 </p>
                 {cat.voci.map((v) => (
@@ -1711,7 +1661,7 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(false)}
-              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment text-base font-semibold"
+              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande font-semibold"
             >
               Fatto — torna alla comanda
             </button>

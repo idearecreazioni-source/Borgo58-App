@@ -77,6 +77,32 @@ body {
   min-width: calc(var(--pxcm) * 0.85);
 }
 
+/* 🔴 IL TESTO DELLE SCHERMATE DI SERVIZIO SI MISURA IN MILLIMETRI VERI
+   (21/08/2026, dal collaudo di Alessio in scala reale).
+
+   ⚠️ IL PROBLEMA È LO STESSO DEI BERSAGLI DI TOCCO, e per anni è passato
+   inosservato perché si guardava da un monitor: un `text-xs` sono 12 pixel,
+   che su un computer (37,8 punti per centimetro) fanno 3,2 mm — leggibili —
+   e sul tablet della sala (74) fanno **1,6 mm**. Su quello schermo quasi
+   tutto il testo delle Comande era illeggibile.
+
+   ⚠️ SOTTO I 3 mm un testo non si legge in piedi, con la luce di un
+   ristorante e il tablet a distanza di braccio. Da qui i due valori: 3,2 mm
+   per tutto, 4 mm per quello che si cerca da lontano (nomi dei piatti,
+   prezzi, nomi dei tavoli).
+
+   ⚠️ E NON CAMBIA NIENTE SU UN COMPUTER: 0,32 cm a 37,8 punti fanno 12,1
+   punti, cioè esattamente il `text-xs` di prima. Cresce solo dove serve. */
+.testo-sala {
+  font-size: calc(var(--pxcm) * 0.32);
+  line-height: 1.25;
+}
+
+.testo-sala-grande {
+  font-size: calc(var(--pxcm) * 0.4);
+  line-height: 1.25;
+}
+
 /* Azione principale a fondo schermata (invia comanda, chiudi conto). */
 .tocco-azione {
   min-height: calc(var(--pxcm) * 1.2);
