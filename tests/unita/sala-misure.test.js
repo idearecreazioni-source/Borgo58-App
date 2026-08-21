@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTATTO_MINIMO_CM,
+  TOCCO_TAVOLO_CM,
+  marginePiantaInPiedi,
   areaVietataAiMobili,
   dentroAreaVietata,
   SPOSTATE_NEL_DISEGNO,
@@ -619,5 +621,48 @@ describe("La sala dei tavoli è una L capovolta", () => {
     );
     // ed è sensibilmente più grande del solo dito: è il prezzo dichiarato
     expect(raggioMagneteCm(cmPerPunto, pxcm)).toBeGreaterThan(raggioAggancioCm(cmPerPunto, pxcm));
+  });
+});
+
+describe("La pianta entra in larghezza negli schermi veri", () => {
+  // 🔴 QUESTA PROVA NASCE DA UN DIFETTO VISTO CON GLI OCCHI (21/08): Alessio
+  // ha calibrato la simulazione al valore di un mini tablet e **la pianta è
+  // sbordata dallo schermo**. Nessuna prova poteva accorgersene — la
+  // larghezza minima viveva dentro la schermata, e il disegno delle due
+  // colonne era stato misurato con la calibrazione da computer.
+  //
+  // ⚠️ LA REGOLA DI ALESSIO, che è ciò che queste prove tengono fermo:
+  // *quello che si vede deve entrare in larghezza; se serve scorrere, si
+  // scorre in verticale.*
+  //
+  // ⚠️ E I DUE ERRORI VANNO NELLA STESSA DIREZIONE, che è il motivo per cui
+  // non si vedono: sul tablet i punti disponibili sono MENO e tutto ciò che
+  // è dimensionato in centimetri veri diventa PIÙ GRANDE.
+  const SCHERMI = [
+    { nome: "Android 8 pollici", viewport: 800, pxcm: 74, padding: 32 },
+    { nome: 'iPad mini 7,9"', viewport: 768, pxcm: 64, padding: 32 },
+    { nome: 'iPad mini 8,3"', viewport: 744, pxcm: 59.5, padding: 16 },
+  ];
+
+  for (const s of SCHERMI) {
+    it(`${s.nome}: a tutta larghezza la pianta ci sta`, () => {
+      const utili = s.viewport - s.padding * 2;
+      expect(marginePiantaInPiedi(utili, s.pxcm)).toBeGreaterThan(0);
+    });
+
+    it(`${s.nome}: in una colonna del 62% NON ci starebbe — ecco perché non ci sono più`, () => {
+      // ⚠️ La gemella al contrario, e senza di lei la prima non direbbe
+      // niente: se la pianta entrasse comunque, «a tutta larghezza» non
+      // sarebbe una condizione ma una coincidenza.
+      const utili = s.viewport - s.padding * 2;
+      expect(marginePiantaInPiedi(utili * 0.62, s.pxcm)).toBeLessThan(0);
+    });
+  }
+
+  it("e la soglia del tocco è rimasta 1,05 cm — non è stata abbassata per far entrare le colonne", () => {
+    // ⚠️ Era stato proposto di portarla a 0,7 per far stare menu e pianta
+    // affiancati. Quelle colonne non esistono più, e il numero non si abbassa
+    // per prudenza: un bersaglio più piccolo si paga in servizio.
+    expect(TOCCO_TAVOLO_CM).toBe(1.05);
   });
 });

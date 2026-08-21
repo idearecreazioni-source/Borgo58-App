@@ -4,7 +4,9 @@ import {
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
-  RIDUZIONE_DISEGNO,
+  LARGHEZZA_MINIMA_IN_PIEDI,
+  LARGHEZZA_MINIMA_SDRAIATA,
+  SOGLIA_IN_PIEDI_CM_REALI,
   agganciaAiVicini,
   areaVietataAiMobili,
   dentroAreaVietata,
@@ -43,7 +45,9 @@ import {
 // una convenzione presa da fuori, non una misura su questa app: Alessio
 // oggi trascina i tavoli col dito a 6,6 mm senza inciampare. Il perche' del
 // numero, e il prezzo che accettiamo, stanno in lib/calcoli/sala.js.
-const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
+// ⚠️ Le tre soglie si sono spostate in `lib/calcoli/sala.js` il 21/08:
+// sono misure, e una misura si deve poter provare senza un browser.
+const LARGHEZZA_MINIMA_CM_REALI = LARGHEZZA_MINIMA_SDRAIATA;
 
 // ⚠️ E DA QUI IN POI SONO DUE NUMERI DIVERSI, che prima erano lo stesso.
 // «Quanto piccolo può diventare il disegno» e «quando la sala sta male
@@ -56,7 +60,7 @@ const LARGHEZZA_MINIMA_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05 * RIDUZIONE_DI
 // Quindi il verso si decide con la misura di PRIMA: nessuno schermo
 // cambia orientamento per via di questo giro, cambia solo quanto è grande
 // il disegno.
-const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
+
 
 // ⚠️ LA SALA IN PIEDI, per il tablet della sala (chiesto da Alessio il
 // 14/08 dopo aver aperto il primo tavolo dal vivo: la pianta sbordava di
@@ -73,7 +77,7 @@ const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * 1.05;
 // quarto in senso contrario, altrimenti si leggerebbe di traverso — e un
 // nome di tavolo che si legge piegando la testa, durante un servizio,
 // non si legge.
-export const LARGHEZZA_MINIMA_IN_PIEDI = (SALA_PROFONDITA_CM / 90) * 1.05 * RIDUZIONE_DISEGNO;
+
 
 // L'aggancio a griglia: 10 cm. Abbastanza fine da accostare due tavoli
 // senza fatica, abbastanza grosso da non lasciare fessure di 3 cm che a

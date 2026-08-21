@@ -53,6 +53,7 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 | 15 | 19/08/2026 | *Ogni sagoma è disegnata dove sta davvero* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 16 | 19/08/2026 | *Un tavolo si può trascinare ovunque nella sala* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 17 | 19/08/2026 | *La lista della spesa ha un vocabolario dei pagamenti tutto suo* (17/08) | [blocco 2 della lista](consegne/20260819_lista_blocco2_i_tre_esiti.md) |
+| 18 | 21/08/2026 | *Menu e pianta stanno affiancati su due colonne* (20/08) | [le Comande in larghezza](consegne/20260821_le_comande_in_larghezza.md) |
 
 ---
 
@@ -1052,3 +1053,61 @@ il colore che aveva. Non resta muto — è il caso del **pallino vuoto**, che
 nasce apposta per questo — ma il segno è più discreto di prima. È voluto: un
 tavolo dove non è stato ordinato niente è meno urgente di uno che aspetta di
 mandare in cucina.
+
+---
+
+## 18 · 21/08/2026 — «menu e pianta stanno affiancati su due colonne»
+
+**Cosa era stato deciso, e quando.** La sera del 20/08: durante la comanda
+si cercano i piatti, e il menu stava in fondo alla schermata — sotto tutta
+la pianta. Si è messo **accanto** alla pianta, in due colonne (pianta 62%,
+menu il resto), così che le due cose che si usano insieme si vedessero
+insieme.
+
+**La ragione di allora.** Giusta, e resta vera: *il menu è la cosa che si
+guarda più spesso, e stava nel posto più lontano.*
+
+**Cosa si decide adesso.** Le due colonne spariscono. La pianta torna a
+tutta larghezza e il menu sotto. Deciso da Alessio il 21/08 dopo aver
+guardato la schermata **in scala reale** su un Android da 8 pollici, e da lì
+viene anche la regola generale:
+
+> **Quello che si vede deve entrare in larghezza. Mai scorrimento laterale.
+> Se serve scorrere, si scorre in verticale.**
+
+**Perché la ragione di allora non vale più.** ⚠️ **Non è che fosse
+sbagliata: era misurata con la lente sbagliata.** Tutte le larghezze su cui
+quel disegno è stato approvato — menu 250 punti, pianta 427 — venivano dalla
+calibrazione da **computer** (37,8 punti per centimetro). Alla calibrazione
+vera di un mini tablet (**74**) la pianta da sola ne chiede **667**, e due
+colonne in 10,8 cm di schermo non ci stanno: la pianta sbordava di lato.
+
+⚠️ **E la lente era sbagliata per tutti, validatore compreso.** Il disegno è
+stato proposto, misurato, discusso e approvato senza che nessuno si
+accorgesse che i numeri erano di un altro schermo. *Non l'ha trovato un
+controllo: l'ha trovato Alessio chiedendo di vedere le cose in scala reale.*
+
+⚠️ **La regola che ne esce è più grande del caso**, ed è scritta in
+`CLAUDE.md` §6 e in testa a `src/lib/touch.js`: *ogni misura su una
+schermata operativa si fa col valore del TABLET, non con la stima da
+computer.* I due errori vanno nella stessa direzione — sul tablet i punti
+sono meno **e** tutto ciò che è in centimetri veri diventa più grande — ed è
+per questo che non si vedono.
+
+⚠️ **Quello che NON si rovescia**: la soglia di tocco del tavolo resta
+**1,05 cm**. Era stato proposto di abbassarla a 0,7 per far stare le due
+colonne; senza quelle colonne non serve più. *Un numero si abbassa quando
+serve, non per prudenza.*
+
+⚠️ **E non si torna indietro fino in fondo**: la larghezza massima della
+schermata resta 768 punti e **non** torna ai 448 di prima del 20/08. Serviva
+alle due colonne, ma serve anche alla pianta da sola — con 448 sborderebbe
+di duecento punti. *Tornare «come prima» rimetterebbe il difetto che si sta
+chiudendo.*
+
+⚠️ **Il prezzo, dichiarato**: il menu è di nuovo sotto la pianta, e per
+arrivarci si scorre di circa mille punti. È esattamente il fastidio che il
+n. 18 aveva provato a togliere, e che adesso si riaccetta — perché
+l'alternativa misurata è una pianta che esce dallo schermo. **I gesti del
+conto invece non chiedono quello scorrimento**: stanno dentro la pianta, e
+la loro colonna comincia a 479 punti da dove la pianta comincia.

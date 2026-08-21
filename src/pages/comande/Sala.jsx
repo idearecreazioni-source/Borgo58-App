@@ -757,6 +757,36 @@ export default function Sala() {
           Chiudi conto
         </button>
       </div>
+      {/* 🔴 GLI ALTRI DUE GESTI DELLO STESSO CONTO (21/08, deciso da
+          Alessio). Stavano sotto la pianta, a 1279 punti dall'alto: chi
+          serviva non li trovava. Qui sono dove sono gli altri.
+          ⚠️ E LA PAROLA È «LASCIA … APERTO», mai «chiudi»: in sala
+          «chiudere» vuol dire incassare, e la parola sbagliata su quel
+          pulsante costa un incasso. Il tavolo è nominato perché chi legge
+          sappia da cosa sta uscendo. */}
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            setOrder(null);
+            setSelezione([]);
+            setError("");
+          }}
+          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal text-xs px-1"
+        >
+          &lsaquo; Lascia aperto
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSpostando(true);
+            setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
+          }}
+          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal-soft text-xs px-1"
+        >
+          Cambia tavoli
+        </button>
+      </div>
       {/* ⚠️ IL RIEPILOGO QUI E' A COLPO D'OCCHIO, e non ha i gesti per
           togliere o annotare: quelli restano nella lista sotto la pianta,
           dove c'e' lo spazio per premerli. Non e' un doppione — sono due
@@ -958,21 +988,21 @@ export default function Sala() {
 
 
   return (
-    // 🔴 LA LARGHEZZA MASSIMA SI ALLARGA QUANDO C'È UN CONTO APERTO (21/08).
+    // 🔴 LA LARGHEZZA MASSIMA È QUELLA CHE SERVE ALLA PIANTA (21/08, dopo
+    // la prova in scala reale di Alessio).
     //
-    // `max-w-md` sono 448 punti, e c'erano da sempre: questa schermata è
-    // nata come **una colonna sola** per un tablet in verticale, e su uno
-    // schermo largo una colonna di novecento punti si legge male.
+    // ⚠️ `max-w-md` (448 punti) c'era da sempre, ed era giusto finché questa
+    // schermata era una colonna di testo. **Non lo è più**: la pianta in
+    // piedi, alla calibrazione vera di un tablet (74 punti per centimetro),
+    // chiede **667 punti**. Con 448 sborderebbe di duecento.
     //
-    // ⚠️ E qui c'è la misura che ha corretto quella di ieri sera. Avevo
-    // scritto che «restano 241 punti liberi a destra della pianta»: non era
-    // vero — **erano margine vuoto ai lati**, perché tutta la schermata si
-    // fermava a 448. La colonna del menu non avrebbe avuto 241 punti,
-    // ne avrebbe avuti 108. *Una misura giusta su un numero sbagliato.*
+    // ⚠️ E NON SI TORNA INDIETRO PIÙ DI COSÌ. Le due colonne di ieri sera
+    // sono sparite (misurate con la lente sbagliata), ma **questa larghezza
+    // resta**: serviva anche a loro, e serve alla pianta da sola. Tornare a
+    // 448 «come prima» rimetterebbe il difetto che si sta chiudendo.
     //
-    // ⚠️ Col conto aperto servono DUE colonne, e lì la ragione dei 448 non
-    // vale più: non è una riga di testo da leggere, sono due pannelli
-    // affiancati. Senza conto la schermata torna stretta e centrata.
+    // Su un Android da 8 pollici (800 punti, meno 32 per lato) restano 736
+    // punti utili: la pianta ne chiede 667 e ne avanzano 69.
     <div className="max-w-3xl mx-auto pb-6">
       {/* 🔴 LA SERATA È FINITA, E LA SALA NON CAMBIA DA SOLA.
           È una decisione di Alessio: chi sta chiudendo alle 5 non deve
@@ -1148,8 +1178,28 @@ export default function Sala() {
           ⚠️ Senza conto la colonna di sinistra e' vuota, ed e' voluto: lo
           spazio resta suo, cosi' quando il menu compare la pianta non si
           muove di un punto. */}
-      <div className="sm:flex sm:flex-row-reverse sm:items-start sm:gap-3">
-        <div className="sm:w-[62%] sm:shrink-0">
+      {/* 🔴 LE DUE COLONNE SONO SPARITE (21/08, dopo la prova in SCALA
+          REALE di Alessio su un Android da 8 pollici). Non erano sbagliate
+          nel principio: erano **misurate con la lente sbagliata** — la
+          calibrazione da computer (37,8 punti per centimetro) invece di
+          quella vera del tablet (74). In scala reale menu e pianta
+          affiancati non ci stanno in 10,8 cm di schermo, e la pianta
+          sbordava di lato.
+
+          🔴 LA REGOLA CHE NE ESCE, ed è di Alessio: **quello che si vede
+          deve entrare in larghezza. Mai scorrimento laterale — se serve
+          scorrere, si scorre in verticale.**
+
+          ⚠️ E la lente sbagliata era di tutti, validatore compreso: le
+          larghezze su cui il disegno fu approvato (menu 250, pianta 427)
+          erano numeri da monitor. Rovesciamento n. 18 nel registro.
+
+          ⚠️ LA SOGLIA DEL TAVOLO RESTA A 10,5 mm. Era stato proposto di
+          abbassarla a 7 per far stare due colonne: adesso non servono più
+          affiancate, e a tutta larghezza la pianta chiede 667 punti sui
+          736 utili. *Un numero si abbassa quando serve, non per prudenza.* */}
+      <div>
+        <div>
       {/* LA SALA ------------------------------------------------------ */}
       {/* La stessa pianta del Calendario: se stasera tre tavoli sono
           accostati, qui si vedono accostati — e si aprono insieme, con UN
@@ -1228,7 +1278,14 @@ export default function Sala() {
         </div>
       )}
         </div>
-        {order && <div className="sm:flex-1 sm:min-w-0">{pannelloMenu}</div>}
+        {/* ⚠️ IL MENU STA SOTTO LA PIANTA, e ci si arriva scorrendo IN
+            GIU' — che e' la regola di Alessio del 21/08. Misurato a 800
+            punti con la calibrazione vera: la pianta e' alta 1479 punti,
+            quindi i primi piatti compaiono scorrendo di circa mille.
+            ⚠️ E i GESTI del conto non chiedono quello scorrimento: stanno
+            dentro la pianta, e la loro colonna comincia a 479 punti da
+            dove la pianta comincia — cioe' si vedono sul primo schermo. */}
+        {order && <div>{pannelloMenu}</div>}
       </div>
 
       {/* 🔴 LA LISTA «STASERA» È SPARITA (21/08, deciso da Alessio), e la
@@ -1381,34 +1438,12 @@ export default function Sala() {
               «chiudere» vuol dire incassare, e la parola sbagliata su
               quel pulsante costa un incasso. Il tavolo e' nominato perche'
               chi legge sappia da cosa sta uscendo. */}
-          {/* ⚠️ I DUE GESTI DELLO STESSO CONTO, UNO ACCANTO ALL'ALTRO.
-              «Cambia tavoli» stava in cima alla pagina e Alessio l'ha
-              cercato QUI: è dove uno lo cerca, perché è il posto dei gesti
-              che riguardano *questo* conto. */}
-          <div className="flex gap-2 mb-2 print:hidden">
-            <button
-              type="button"
-              onClick={() => {
-                setOrder(null);
-                setSelezione([]);
-                setError("");
-              }}
-              className="tocco-riga flex-1 flex items-center gap-2 px-3 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal text-sm font-medium"
-            >
-              <span className="text-lg leading-none">&lsaquo;</span>
-              Lascia {order.table_label} aperto
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSpostando(true);
-                setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
-              }}
-              className="tocco-riga shrink-0 flex items-center px-3 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal-soft text-sm"
-            >
-              Cambia tavoli
-            </button>
-          </div>
+          {/* 🔴 I DUE GESTI SI SONO SPOSTATI DENTRO LA COLONNA DEI GESTI
+              (21/08, deciso da Alessio guardando la schermata in scala
+              reale). Qui sotto cadevano a **1279 punti dall'alto**, cioè
+              oltre tutta la pianta: c'erano e non li trovava nessuno.
+              Adesso stanno accanto a Invia / Preconto / Chiudi conto, che
+              è dove stanno **tutti** i gesti di questo conto. */}
 
           {/* CHI STA A QUESTO TAVOLO. ⚠️ Il legame fra il conto e la sua
               prenotazione è scritto dal 18/08 (giro D1) e fino a qui NON LO

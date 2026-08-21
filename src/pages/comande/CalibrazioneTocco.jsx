@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PXCM_DEFAULT, getPxCm, resetPxCm, setPxCm } from "../../lib/touch";
-import { LARGHEZZA_MINIMA_IN_PIEDI } from "../../components/PiantaSala";
+import { LARGHEZZA_MINIMA_IN_PIEDI } from "../../lib/calcoli/sala";
 
 // Righello di calibrazione (§3.2.1). Si appoggia un righello vero sullo
 // schermo del tablet e si regola finche' la barra non misura 10 cm esatti:

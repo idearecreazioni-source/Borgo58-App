@@ -104,6 +104,30 @@ export function misureSagoma(sagoma) {
     : { larghezza: sagoma.larghezza_cm, profondita: sagoma.profondita_cm };
 }
 
+
+// =====================================================================
+// IL FONDALE — la sala disegnata sotto le sagome
+// =====================================================================
+//
+// ⚠️ STA QUI E NON IN api/sala.js dal 19/08: non è un accesso al database,
+// è un dato del DISEGNO. E qui si può provare senza collegarsi a niente —
+// che è precisamente ciò che serve, perché `riquadroDelPannello()` filtra
+// queste zone PER NOME.
+//
+// 🔴 LA TRAPPOLA, dichiarata: i nomi delle zone non si disegnano più a
+// schermo (Alessio li ha tolti il 19/08), ma **devono restare nei dati**. Se
+// sparissero, il pannello dentro la pianta smetterebbe di comparire e
+// nessuno se ne accorgerebbe: è una cosa che non dà nessun errore, si limita
+// a non succedere. La prova che lo dichiara sta in
+// tests/unita/sala-misure.test.js.
+// La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
+// non è interattivo — pareti e zone non si spostano, non si
+// ridimensionano, non hanno stato. Le proporzioni vengono dalla
+// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
+// sala, serve che le zone siano riconoscibili a colpo d'occhio.
+export const SALA_LARGHEZZA_CM = 2070;
+export const SALA_PROFONDITA_CM = 1030;
+
 /**
  * Quanto si rimpicciolisce il disegno della sala rispetto alla regola dei
  * tocchi (1,05 cm reali per il tavolo più piccolo).
@@ -126,6 +150,55 @@ export function misureSagoma(sagoma) {
  * separa «entra» da «scorre».
  */
 export const RIDUZIONE_DISEGNO = 0.75;
+
+// 🔴 IL BERSAGLIO DI TOCCO DEL TAVOLO PIÙ PICCOLO, in centimetri reali.
+//
+// ⚠️ È UNA CONVENZIONE PRESA DA FUORI, NON UNA MISURA su questa app: viene
+// dal §3.2.1 del brief. E la realtà l'ha già smentita due volte, tutte e
+// due con le mani di Alessio: trascina i tavoli a 6,6 mm senza inciampare
+// (18/08), e sui quadrati rimpiccioliti ha detto che **a ~5,3 mm si
+// prendono bene**. *Un numero preso da fuori si può discutere; uno
+// misurato su un gesto no.*
+//
+// ⚠️ RESTA A 1,05 (deciso il 21/08): era stato proposto di abbassarlo a
+// 0,7 per far stare menu e pianta affiancati, e quelle due colonne non
+// esistono più — a tutta larghezza la pianta ci sta comunque. *Un numero
+// si abbassa quando serve, non per prudenza.*
+export const TOCCO_TAVOLO_CM = 1.05;
+
+/**
+ * Quanto deve essere larga la pianta, in centimetri REALI, nei due versi.
+ *
+ * ⚠️ STANNO QUI E NON NELLA SCHERMATA perché sono misure, e le misure si
+ * devono poter provare senza un browser: dal 21/08 una prova pura
+ * controlla che la pianta in piedi entri negli schermi veri.
+ */
+export const LARGHEZZA_MINIMA_IN_PIEDI =
+  (SALA_PROFONDITA_CM / 90) * TOCCO_TAVOLO_CM * RIDUZIONE_DISEGNO;
+export const LARGHEZZA_MINIMA_SDRAIATA =
+  (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM * RIDUZIONE_DISEGNO;
+
+// ⚠️ E DA QUI IN POI SONO DUE NUMERI DIVERSI, che prima erano lo stesso.
+// «Quanto piccolo può diventare il disegno» e «quando la sala sta male
+// sdraiata» sono due domande: se la soglia del verso si rimpicciolisse
+// insieme al disegno, un tablet in verticale smetterebbe di girare la sala.
+export const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_CM;
+
+/**
+ * La pianta in piedi entra in una schermata larga `puntiUtili`, con questa
+ * calibrazione? Restituisce i punti di margine: negativo = sborda.
+ *
+ * 🔴 ESISTE PERCHÉ IL 21/08 LA PIANTA È SBORDATA DALLO SCHERMO DI ALESSIO,
+ * e nessuna prova poteva accorgersene: la larghezza minima viveva dentro
+ * la schermata, e il disegno delle due colonne era stato misurato con la
+ * calibrazione da computer (37,8 punti per centimetro) invece che con
+ * quella vera del tablet (74). ⚠️ **I due errori vanno nella stessa
+ * direzione**, ed è per questo che non si vedono: sul tablet i punti sono
+ * meno E tutto ciò che è in centimetri veri diventa più grande.
+ */
+export function marginePiantaInPiedi(puntiUtili, pxcm) {
+  return puntiUtili - LARGHEZZA_MINIMA_IN_PIEDI * pxcm;
+}
 
 /**
  * Quanto vicino deve arrivare il DITO perché due tavoli si aggancino.
@@ -297,29 +370,6 @@ export function agganciaAiVicini({ sagoma, vicini = [], x, y, raggioCm, limiti, 
 
   return { x: scelta.x, y: scelta.y, agganci };
 }
-
-// =====================================================================
-// IL FONDALE — la sala disegnata sotto le sagome
-// =====================================================================
-//
-// ⚠️ STA QUI E NON IN api/sala.js dal 19/08: non è un accesso al database,
-// è un dato del DISEGNO. E qui si può provare senza collegarsi a niente —
-// che è precisamente ciò che serve, perché `riquadroDelPannello()` filtra
-// queste zone PER NOME.
-//
-// 🔴 LA TRAPPOLA, dichiarata: i nomi delle zone non si disegnano più a
-// schermo (Alessio li ha tolti il 19/08), ma **devono restare nei dati**. Se
-// sparissero, il pannello dentro la pianta smetterebbe di comparire e
-// nessuno se ne accorgerebbe: è una cosa che non dà nessun errore, si limita
-// a non succedere. La prova che lo dichiara sta in
-// tests/unita/sala-misure.test.js.
-// La sala disegnata come sfondo: perimetro e zone, non dati. Il fondale
-// non è interattivo — pareti e zone non si spostano, non si
-// ridimensionano, non hanno stato. Le proporzioni vengono dalla
-// planimetria Sweet Home 3D di Alessio: non servono le misure reali della
-// sala, serve che le zone siano riconoscibili a colpo d'occhio.
-export const SALA_LARGHEZZA_CM = 2070;
-export const SALA_PROFONDITA_CM = 1030;
 
 export const ZONE_FONDALE = [
   { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
