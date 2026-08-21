@@ -650,24 +650,14 @@ export default function Sala() {
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Sala</h1>
           <p className="text-xs text-b58-charcoal-soft/70 mt-1">
-            {order ? (
-              <>
-                {order.table_label} aperto
-                {" · "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSpostando(true);
-                    setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
-                  }}
-                  className="underline hover:text-b58-terracotta-dark"
-                >
-                  cambia tavoli
-                </button>
-              </>
-            ) : (
-              "Nessun tavolo aperto"
-            )}
+            {/* 🔴 «CAMBIA TAVOLI» NON STA PIÙ QUI (21/08, deciso da Alessio).
+                Stava in cima alla pagina, all'estremità opposta rispetto al
+                conto su cui si sta lavorando: con la comanda aperta davanti,
+                per spostare un tavolo bisognava risalire tutta la schermata.
+                **Lui l'ha cercato accanto al conto e non l'ha trovato.**
+                Adesso è accanto a «‹ Lascia … aperto»: sono i due gesti che
+                riguardano lo stesso conto, e stanno insieme. */}
+            {order ? `${order.table_label} aperto` : "Nessun tavolo aperto"}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -781,9 +771,12 @@ export default function Sala() {
       {/* La stessa pianta del Calendario: se stasera tre tavoli sono
           accostati, qui si vedono accostati — e si aprono insieme, con UN
           conto solo. */}
-      <p className={sectionLabel}>
-        {spostando ? "Su quali tavoli lo sposti?" : "Sala"}
-      </p>
+      {/* ⚠️ «SALA» NON SI SCRIVE DUE VOLTE. C'è già il titolo in cima alla
+          schermata, e questa riga diceva la stessa cosa a due centimetri di
+          distanza. Resta solo quando ha qualcosa di DIVERSO da dire — cioè
+          mentre si scelgono i tavoli di uno spostamento, dove è una domanda
+          e non un'etichetta. */}
+      {spostando && <p className={sectionLabel}>Su quali tavoli lo sposti?</p>}
       {!letta ? (
         /* 🔴 «NON LO SO» INVECE DI «NON C'È NIENTE». Prima qui compariva
            «Nessun tavolo configurato» anche quando la lettura era fallita —
@@ -987,18 +980,34 @@ export default function Sala() {
               «chiudere» vuol dire incassare, e la parola sbagliata su
               quel pulsante costa un incasso. Il tavolo e' nominato perche'
               chi legge sappia da cosa sta uscendo. */}
-          <button
-            type="button"
-            onClick={() => {
-              setOrder(null);
-              setSelezione([]);
-              setError("");
-            }}
-            className="tocco-riga w-full flex items-center gap-2 px-3 mb-2 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal text-sm font-medium print:hidden"
-          >
-            <span className="text-lg leading-none">&lsaquo;</span>
-            Lascia {order.table_label} aperto
-          </button>
+          {/* ⚠️ I DUE GESTI DELLO STESSO CONTO, UNO ACCANTO ALL'ALTRO.
+              «Cambia tavoli» stava in cima alla pagina e Alessio l'ha
+              cercato QUI: è dove uno lo cerca, perché è il posto dei gesti
+              che riguardano *questo* conto. */}
+          <div className="flex gap-2 mb-2 print:hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setOrder(null);
+                setSelezione([]);
+                setError("");
+              }}
+              className="tocco-riga flex-1 flex items-center gap-2 px-3 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal text-sm font-medium"
+            >
+              <span className="text-lg leading-none">&lsaquo;</span>
+              Lascia {order.table_label} aperto
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSpostando(true);
+                setSelezione((order.tavoli ?? []).map((t) => t.dining_table_id));
+              }}
+              className="tocco-riga shrink-0 flex items-center px-3 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal-soft text-sm"
+            >
+              Cambia tavoli
+            </button>
+          </div>
 
           {/* CHI STA A QUESTO TAVOLO. ⚠️ Il legame fra il conto e la sua
               prenotazione è scritto dal 18/08 (giro D1) e fino a qui NON LO
