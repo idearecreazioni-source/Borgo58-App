@@ -24,7 +24,7 @@ import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../.
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
-import { cosaSiVede, esitoDelTocco } from "../../lib/calcoli/selezione";
+import { cosaSiVede, esitoDelTocco, siVedeLaBarraDeiTavoli } from "../../lib/calcoli/selezione";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -830,7 +830,7 @@ export default function Sala() {
       )}
 
       {/* La barra che compare solo quando c'è qualcosa da decidere. */}
-      {cosaSiVede({ conto: order, selezione }) === "selezione" && (
+      {siVedeLaBarraDeiTavoli(cosaSiVede({ conto: order, selezione, spostando })) && (
         <div className="mb-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
           <p className="text-sm text-b58-charcoal mb-2">
             {sagome

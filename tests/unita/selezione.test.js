@@ -106,3 +106,47 @@ describe("da un conto aperto si deve poter uscire, e i due pannelli non convivon
     expect(r.lasciaIlConto).toBe(false);
   });
 });
+
+import { siVedeLaBarraDeiTavoli } from "../../src/lib/calcoli/selezione.js";
+
+// 🔴 REGRESSIONE VERA, trovata da Alessio col tablet il 21/08 e non da qui.
+// Nel blocco A `cosaSiVede` non sapeva niente dello spostamento: durante uno
+// spostamento il conto è SEMPRE aperto, quindi rispondeva "conto" e la barra
+// col pulsante «Sposta qui» spariva. Si sceglievano i tavoli e non c'era
+// nessun modo di confermare.
+//
+// ⚠️ Le prove di allora non potevano prenderlo: misuravano cosa resta
+// SELEZIONATO, nessuna misurava cosa COMPARE. Queste interrogano `cosaSiVede`
+// con `spostando` acceso, che è precisamente il buco.
+describe("mentre si sposta un conto, la barra per confermare si vede", () => {
+  it("🔴 spostando, la vista NON è «conto» — era questa la regressione", () => {
+    expect(cosaSiVede({ conto: "c1", selezione: ["T4"], spostando: true })).not.toBe("conto");
+  });
+
+  it("...è «spostamento», che è un caso suo", () => {
+    expect(cosaSiVede({ conto: "c1", selezione: ["T4"], spostando: true })).toBe("spostamento");
+  });
+
+  it("🔴 e la barra dei tavoli si vede: senza, non si può confermare", () => {
+    const vista = cosaSiVede({ conto: "c1", selezione: ["T4"], spostando: true });
+    expect(siVedeLaBarraDeiTavoli(vista)).toBe(true);
+  });
+
+  it("si vede anche quando si sceglie dove APRIRE un conto", () => {
+    expect(siVedeLaBarraDeiTavoli(cosaSiVede({ conto: null, selezione: ["T4"] }))).toBe(true);
+  });
+
+  it("...e NON si vede col conto aperto senza spostare: è il difetto dei due pannelli", () => {
+    expect(siVedeLaBarraDeiTavoli(cosaSiVede({ conto: "c1", selezione: ["T5"] }))).toBe(false);
+  });
+
+  it("...né sulla sala vuota", () => {
+    expect(siVedeLaBarraDeiTavoli(cosaSiVede({}))).toBe(false);
+  });
+
+  it("spostando vince anche prima che sia stato scelto un tavolo", () => {
+    // Si entra in «cambia tavoli» e la selezione è ancora vuota: la barra
+    // deve poter comparire appena si tocca il primo tavolo, non dopo.
+    expect(cosaSiVede({ conto: "c1", selezione: [], spostando: true })).toBe("spostamento");
+  });
+});

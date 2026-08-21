@@ -63,11 +63,39 @@ export function selezioneDopoIlTocco(selezione = [], insieme = []) {
  * mandare i piatti di un tavolo a un altro — **un errore che si scopre dalla
  * cucina, non dallo schermo**. Con una risposta sola non possono più
  * convivere: non è una regola da rispettare, è un caso che non esiste.
+ *
+ * 🔴 I CASI SONO QUATTRO, NON TRE, e il quarto è costato una regressione.
+ * Nella prima stesura questa funzione non sapeva niente dello **spostamento**
+ * — e durante uno spostamento il conto è SEMPRE aperto, quindi rispondeva
+ * «conto» e la barra col pulsante «Sposta qui» non compariva più. Spostare
+ * un conto era diventato impossibile: si sceglievano i tavoli e non c'era
+ * nessun modo di confermare.
+ *
+ * ⚠️ Nel blocco A avevo protetto la SELEZIONE dall'essere azzerata mentre si
+ * sposta, e l'avevo pure dichiarato — ma non mi ero chiesto se la barra per
+ * **confermare** si vedesse ancora. *Cosa resta selezionato e cosa compare
+ * sono due domande diverse*, e le prove di allora rispondevano solo alla
+ * prima.
+ *
+ * ⚠️ E lo spostamento NON è il difetto dei due pannelli: lì la barra dice
+ * «Sposta qui» e il conto sotto è **lo stesso** che si sta spostando. Il
+ * difetto era un conto di un tavolo e la proposta di aprirne **un altro**.
  */
-export function cosaSiVede({ conto = null, selezione = [] } = {}) {
+export function cosaSiVede({ conto = null, selezione = [], spostando = false } = {}) {
+  if (spostando) return "spostamento";
   if (conto) return "conto";
   if (selezione.length > 0) return "selezione";
   return "sala";
+}
+
+/**
+ * La barra che conferma una scelta di tavoli si vede in DUE viste: quando si
+ * sta scegliendo dove aprire un conto, e quando si sta scegliendo dove
+ * spostarne uno. Sta qui e non nella schermata perché è la domanda su cui la
+ * regressione è passata.
+ */
+export function siVedeLaBarraDeiTavoli(vista) {
+  return vista === "selezione" || vista === "spostamento";
 }
 
 /**
