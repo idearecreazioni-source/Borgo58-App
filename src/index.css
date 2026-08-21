@@ -24,6 +24,22 @@
      verso l'uno o verso l'altro il minimo scende. */
   --color-b58-ambra: #bf7536;
   --color-b58-ambra-dark: #8f5726;
+  /* 🔴 IL COLORE DELLA FASCIA «ULTIMO TURNO», E NON È IL TERRACOTTA DEL
+     MARCHIO. Scelto da Alessio il 21/08 guardando il tablet in sala: serviva
+     staccare meglio l'ultimo turno dall'ambra nuova.
+
+     ⚠️ ED È UNA VARIABILE SUA APPOSTA. Fino a oggi la fascia usava
+     `--color-b58-terracotta`, che è il colore identitario del progetto —
+     pulsanti, accenti, logo, in tutta l'app. Cambiarlo lì avrebbe ridipinto
+     il gestionale intero per una decisione presa su un tavolo. **È lo stesso
+     doppio uso che questa revisione sta smontando**: un colore, una cosa
+     sola.
+
+     ⚠️ Misurato: 33,8 dall'ambra e 52,9 dall'oro (soglia utile ~10). Contro
+     tutti i colori della sala la coppia più vicina resta panna/crema scuro a
+     11,1, che c'era già. */
+  --color-b58-turno: #bd301b;
+  --color-b58-turno-dark: #8f2414;
   --color-b58-gold-dark: #8a6420;
 }
 

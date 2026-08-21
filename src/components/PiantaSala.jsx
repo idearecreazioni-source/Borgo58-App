@@ -131,7 +131,12 @@ const COLORI = {
   // altri colori della sala: il minimo resta 19,0. Il conto è in
   // `index.css`.
   pieno: { riempimento: "var(--color-b58-ambra)", bordo: "var(--color-b58-ambra-dark)" },
-  tardi: { riempimento: "var(--color-b58-terracotta)", bordo: "var(--color-b58-terracotta-dark)" },
+  // 🔴 ROSSO SCURO DAL 21/08, e **non è il terracotta del marchio**: è una
+  // variabile sua (`--color-b58-turno` in `index.css`). Scelto da Alessio
+  // guardando il tablet in sala, per staccare meglio l'ultimo turno
+  // dall'ambra. Cambiare il terracotta avrebbe ridipinto pulsanti, accenti e
+  // logo di tutta l'app per una decisione presa su un tavolo.
+  tardi: { riempimento: "var(--color-b58-turno)", bordo: "var(--color-b58-turno-dark)" },
   // Mezzo e mezzo: sul tavolo c'è più di una fascia — tipicamente un
   // giallo e un arancio, che è proprio il secondo giro.
   misto: { riempimento: "url(#mezzoEmezzo)", bordo: "var(--color-b58-olive-dark)" },
@@ -222,6 +227,36 @@ export default function PiantaSala({
 
   // In Comande è sempre in piedi (tablet verticale, deciso). Altrove
   // decide lo spazio che c'è.
+  // 🔴 UN TAVOLONE È UN CONTO SOLO, QUINDI UN BADGE SOLO — regola di Alessio,
+  // 21/08. Su T7·T8·T9 accostati tre badge direbbero «tre cose da fare» dove
+  // ce n'è una: il conto è uno, e il gesto che manca è uno.
+  //
+  // ⚠️ Lo porta il tavolo più in ALTO A DESTRA del gruppo, che è dove il
+  // badge sta comunque. Si sceglie confrontando `x + larghezza` e poi `y`, e
+  // non l'ordine in cui i tavoli arrivano: quell'ordine lo decide il
+  // database e cambierebbe il badge di posto senza che nessuno l'abbia
+  // spostato.
+  const portaIlBadge = (() => {
+    const capofila = new Set();
+    const soli = new Set(sagome.map((s) => s.id));
+    for (const g of gruppi) {
+      const dentro = (g.tavoli ?? []).map((id) => sagome.find((s) => s.id === id)).filter(Boolean);
+      if (dentro.length === 0) continue;
+      dentro.forEach((s) => soli.delete(s.id));
+      const scelto = dentro.reduce((a, b) => {
+        const da = a.x + (a.larghezza ?? 0);
+        const db = b.x + (b.larghezza ?? 0);
+        if (db !== da) return db > da ? b : a;
+        return b.y < a.y ? b : a;
+      });
+      capofila.add(scelto.id);
+    }
+    // Le sagome che in nessun gruppo compaiono (divani, Chef Table) portano
+    // il proprio badge: sono insiemi di uno.
+    for (const id of soli) capofila.add(id);
+    return capofila;
+  })();
+
   const verticale = inPiedi === true || (inPiedi !== false && stretto);
   // La sagoma che si sta trascinando adesso: vive solo qui, e sparisce al
   // rilascio. La posizione vera resta quella del database finché non
@@ -734,16 +769,34 @@ export default function PiantaSala({
                   ⚠️ Sta nell'angolo in alto a destra della sagoma VERA e
                   fuori dal gruppo delle scritte, perché non deve girare col
                   testo: un pallino è un pallino in tutti i versi. */}
-              {info?.pallino && (
-                <circle
-                  cx={bx + box.larghezza - 22}
-                  cy={by + 22}
-                  r={11}
-                  fill={info.pallino === "pieno" ? "var(--color-b58-terracotta)" : "none"}
-                  stroke="var(--color-b58-terracotta-dark)"
-                  strokeWidth={5}
-                  pointerEvents="none"
-                />
+              {info?.pallino && portaIlBadge.has(sagoma.id) && (
+                <>
+                  {/* ⚠️ L'ANELLO CHIARO, ed è la parte che fa funzionare tutto
+                      il resto. Un badge sovrapposto poggia su qualunque
+                      colore: il rosso dell'ultimo turno, l'ambra, il marrone,
+                      il bianco. Senza l'anello andrebbe misurato contro
+                      ognuno — e col rosso nuovo il pallino pieno starebbe a
+                      **17,5** di distanza, a contatto diretto. Con l'anello
+                      il problema non si fa esistere: il badge è staccato da
+                      tutto per costruzione, ed è anche come sono fatte le
+                      notifiche che Alessio aveva in mente. */}
+                  <circle
+                    cx={bx + box.larghezza}
+                    cy={by}
+                    r={20}
+                    fill="var(--color-b58-parchment)"
+                    pointerEvents="none"
+                  />
+                  <circle
+                    cx={bx + box.larghezza}
+                    cy={by}
+                    r={15}
+                    fill={info.pallino === "pieno" ? "var(--color-b58-terracotta)" : "none"}
+                    stroke="var(--color-b58-terracotta-dark)"
+                    strokeWidth={6}
+                    pointerEvents="none"
+                  />
+                </>
               )}
               {/* ⚠️ UN SOLO gruppo per tutte le scritte della sagoma, e non
                   una controrotazione per ciascuna. Girando ogni etichetta
