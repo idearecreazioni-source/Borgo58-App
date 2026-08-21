@@ -39,6 +39,7 @@ import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
+import { ZONE_DEL_BANCO, ZONE_FONDALE, pannelloNellaPianta } from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
@@ -405,6 +406,39 @@ export default function Sala() {
   const prenotazioniDeiTavoli = (ids = []) =>
     elencoSerata.filter((p) => (p.tavoli ?? []).some((t) => ids.includes(t)));
 
+  // 🔴 IL BANCO BAR: chi ha prenotato il tavolo che si sta toccando.
+  //
+  // ⚠️ La scena che l'ha fatto nascere, e spiega perché **il nome** e non
+  // altro: *il cliente arriva e dice «ho prenotato a nome tale per due», il
+  // cameriere non se lo ricorda, tocca il tavolo e legge lì.*
+  //
+  // ⚠️ E L'AMBIGUITÀ SI DICHIARA, non si risolve indovinando: se sul tavolo
+  // toccato c'è più di una prenotazione — due turni — si mostrano **tutte**,
+  // con l'ora. Sceglierne una vorrebbe dire decidere al posto di chi ha il
+  // cliente davanti.
+  //
+  // ⚠️ Tavolo libero → **niente**, non un riquadro vuoto: un pannello che
+  // dice «nessuno» occupa lo stesso spazio di uno che dice qualcosa.
+  const riquadroBanco = useMemo(
+    () => pannelloNellaPianta(ZONE_FONDALE, sagome, ZONE_DEL_BANCO),
+    [sagome]
+  );
+  const nomiDelTavolo = prenotazioniDeiTavoli(selezione);
+  const bancoBar =
+    selezione.length > 0 && nomiDelTavolo.length > 0 ? (
+      <div className="h-full overflow-auto p-1.5">
+        {nomiDelTavolo.map((p) => (
+          <div key={p.id} className="mb-1.5 last:mb-0">
+            <p className="text-[11px] text-b58-charcoal-soft leading-none">
+              {p.ora?.slice(0, 5)}
+              {p.persone ? ` · ${p.persone}` : ""}
+            </p>
+            <p className="text-sm font-semibold text-b58-charcoal leading-tight">{p.nome}</p>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
   const apriConoscendoIlConto = async (orderId) => {
     setError("");
     setLoadingOrder(true);
@@ -653,8 +687,189 @@ export default function Sala() {
   const sectionLabel =
     "text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
 
+  // 🔴 IL MENU È UNA VARIABILE, non un pezzo di JSX in mezzo al conto — ed è
+  // quello che permette di metterlo ACCANTO alla pianta invece che sotto.
+  // ⚠️ Non è un rimescolamento estetico: durante la comanda si cercano i
+  // piatti che il cliente sceglie, mentre quello che è già segnato si guarda
+  // di rado. Il menu è la cosa che si guarda più spesso, e stava in fondo.
+  const pannelloMenu = !order ? null : (
+    <>
+      {/* MENU ------------------------------------------------------ */}
+      {/* 🔴 LE CATEGORIE IN CIMA, E FILTRANO (21/08, disegno di Alessio).
+          Prima erano intestazioni dentro una lista sola: si scorreva
+          tutto il menu per arrivare ai dolci. Adesso si sceglie la
+          portata e restano i suoi tre o quattro piatti.
+          ⚠️ «Tutte» resta, ed è il valore di partenza: chi non conosce
+          ancora la carta non deve dover scegliere per vedere. */}
+      {menuByCategory.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <button
+            type="button"
+            onClick={() => setCategoriaScelta(null)}
+            className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+              categoriaScelta === null
+                ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                : "border-b58-charcoal/15 text-b58-charcoal-soft"
+            }`}
+          >
+            Tutte
+          </button>
+          {categorieDelMenu.map((c) => (
+            <button
+              key={c.chiave}
+              type="button"
+              onClick={() => setCategoriaScelta(c.chiave)}
+              className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+                categoriaScelta === c.chiave
+                  ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
+              }`}
+            >
+              {c.nome}
+            </button>
+          ))}
+        </div>
+      )}
+      {menuByCategory.length === 0 ? (
+        <p className="text-xs text-b58-charcoal-soft/60 mb-3">Nessun menu attivo.</p>
+      ) : (
+        <div className="mb-3">
+          {menuByCategory
+            .filter((cat) => categoriaScelta === null || cat.value === categoriaScelta)
+            .map((cat) => (
+            <div key={cat.value} className="mb-2">
+              {/* Con una categoria scelta il suo nome è già nel filtro
+                  acceso: ripeterlo qui sarebbe la stessa parola due
+                  volte a due centimetri, come «Sala» stamattina. */}
+              {categoriaScelta === null && (
+              <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                {cat.label}
+              </p>
+              )}
+              {cat.items.map((mi) => (
+                // Riga INTERA tappabile, non un "+" da centrare: e' la
+                // correzione numero uno emersa dalla prova del simulatore.
+                <button
+                  key={mi.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => handleAddMenuItem(mi)}
+                  className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50 border-b border-b58-charcoal/5"
+                >
+                  {/* 🔴 IL NOME VA A CAPO (21/08, scelta di Alessio fra
+                      le tre strade). `min-w-0` è la riga che lo rende
+                      possibile: dentro un contenitore flessibile un
+                      elemento non si stringe sotto la larghezza del suo
+                      contenuto, quindi senza quella un nome lungo
+                      spingerebbe fuori il prezzo invece di andare a
+                      capo. La riga cresce in altezza perché
+                      `.tocco-riga` fissa un'altezza MINIMA, non fissa.
+                      ⚠️ E il prezzo si allinea in alto (`self-start`):
+                      con un nome su due righe, centrato finirebbe in
+                      mezzo alle due — accanto a niente. */}
+                  <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight py-1">
+                    {mi.recipe_name}
+                  </span>
+                  <span className="text-xs text-b58-charcoal-soft shrink-0 self-start pt-1.5">
+                    {formatEUR(mi.selling_price)}
+                  </span>
+                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
+                    +
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* BEVANDE --------------------------------------------------- */}
+      {bevande.length > 0 && (
+        <div className="mb-3">
+          {bevande.map((cat) => (
+            <div key={cat.nome} className="mb-2">
+              <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
+                {cat.nome}
+              </p>
+              {cat.voci.map((v) => (
+                <RigaBar key={v.id} v={v} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* VOCE LIBERA ---------------------------------------------- */}
+      {/* Finche' vini e bevande non vivono nell'Editor Menu (deciso
+          l'08/08, ancora da costruire) questa e' l'unica strada per
+          metterli in comanda: si tiene, ma chiusa. */}
+      <button
+        type="button"
+        onClick={() => setShowFreeForm((v) => !v)}
+        className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
+      >
+        {showFreeForm ? "Nascondi voce libera" : "+ Voce libera (bevande, fuori menu)"}
+      </button>
+      {showFreeForm && (
+        <form onSubmit={handleAddFree} className="space-y-1.5 mb-3">
+          <input
+            required
+            value={freeForm.name}
+            onChange={(e) => setFreeForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder={'Es. "Calice Nero d\'Avola"'}
+            className={inputClass}
+          />
+          <div className="flex gap-1.5">
+            <input
+              required
+              type="number"
+              step="0.01"
+              min="0"
+              value={freeForm.price}
+              onChange={(e) => setFreeForm((f) => ({ ...f, price: e.target.value }))}
+              placeholder="€"
+              className={inputClass}
+            />
+            <select
+              value={freeForm.destination}
+              onChange={(e) => setFreeForm((f) => ({ ...f, destination: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="bar">Bar</option>
+              <option value="cucina">Cucina</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal text-sm font-medium py-2"
+          >
+            + Aggiungi alla comanda
+          </button>
+        </form>
+      )}
+
+    </>
+  );
+
+
   return (
-    <div className="max-w-md mx-auto pb-6">
+    // 🔴 LA LARGHEZZA MASSIMA SI ALLARGA QUANDO C'È UN CONTO APERTO (21/08).
+    //
+    // `max-w-md` sono 448 punti, e c'erano da sempre: questa schermata è
+    // nata come **una colonna sola** per un tablet in verticale, e su uno
+    // schermo largo una colonna di novecento punti si legge male.
+    //
+    // ⚠️ E qui c'è la misura che ha corretto quella di ieri sera. Avevo
+    // scritto che «restano 241 punti liberi a destra della pianta»: non era
+    // vero — **erano margine vuoto ai lati**, perché tutta la schermata si
+    // fermava a 448. La colonna del menu non avrebbe avuto 241 punti,
+    // ne avrebbe avuti 108. *Una misura giusta su un numero sbagliato.*
+    //
+    // ⚠️ Col conto aperto servono DUE colonne, e lì la ragione dei 448 non
+    // vale più: non è una riga di testo da leggere, sono due pannelli
+    // affiancati. Senza conto la schermata torna stretta e centrata.
+    <div className={`mx-auto pb-6 ${order ? "max-w-3xl" : "max-w-md"}`}>
       {/* 🔴 LA SERATA È FINITA, E LA SALA NON CAMBIA DA SOLA.
           È una decisione di Alessio: chi sta chiudendo alle 5 non deve
           vedersi muovere la sala sotto le mani. Ma tacere del tutto lascia
@@ -803,6 +1018,25 @@ export default function Sala() {
         </div>
       )}
 
+      {/* 🔴 LE DUE COLONNE (21/08, disegno di Alessio area per area sul suo
+          tablet in verticale): a SINISTRA il menu, a DESTRA la pianta.
+
+          ⚠️ Il menu a sinistra e in basso non e' una preferenza: **e' la cosa
+          che si guarda piu' spesso**. Durante la comanda si cercano i piatti
+          che il cliente sceglie, mentre quello che e' gia' segnato si guarda
+          di rado — e stava in fondo alla pagina.
+
+          ⚠️ SI DIVIDE SOLO CON UN CONTO APERTO, e a schermo largo abbastanza.
+          Senza conto il menu non esiste, e la pianta si prende tutto: due
+          colonne di cui una vuota sarebbero spazio buttato proprio nella
+          schermata che ne ha meno.
+
+          ⚠️ E LA PIANTA NON SI STRINGE SOTTO LA SUA SOGLIA: il `min-width` in
+          centimetri veri che la tiene toccabile vive dentro `PiantaSala` e
+          vale anche qui. Se lo spazio non basta, le due colonne tornano una
+          sopra l'altra invece di rimpicciolire i tavoli. */}
+      <div className={order ? "sm:flex sm:flex-row-reverse sm:items-start sm:gap-3" : ""}>
+        <div className={order ? "sm:w-[62%] sm:shrink-0" : ""}>
       {/* LA SALA ------------------------------------------------------ */}
       {/* La stessa pianta del Calendario: se stasera tre tavoli sono
           accostati, qui si vedono accostati — e si aprono insieme, con UN
@@ -851,6 +1085,8 @@ export default function Sala() {
             onSfondo={toccaSfondo}
             selezione={selezione}
             onSeleziona={toccaSagoma}
+            pannello={bancoBar}
+            riquadroPannello={riquadroBanco}
             // Nessuna scritta dentro la sagoma oltre alla cifra dei coperti:
             // dentro un quadrato di 90 cm girato non ci sta niente di
             // leggibile. Chi c'è si legge nell'elenco qui sotto, dove lo
@@ -876,6 +1112,9 @@ export default function Sala() {
               che va ripescata — non da questa schermata. */}
         </div>
       )}
+        </div>
+        {order && <div className="sm:flex-1 sm:min-w-0">{pannelloMenu}</div>}
+      </div>
 
       {/* 🔴 LA LISTA «STASERA» È SPARITA (21/08, deciso da Alessio), e la
           ragione ribalta un parere del validatore: **il segnale del ritardo è
@@ -1138,161 +1377,6 @@ export default function Sala() {
               <span>🍷 Carta dei vini</span>
               <span className="text-lg">›</span>
             </button>
-          )}
-
-          {/* MENU ------------------------------------------------------ */}
-          {/* 🔴 LE CATEGORIE IN CIMA, E FILTRANO (21/08, disegno di Alessio).
-              Prima erano intestazioni dentro una lista sola: si scorreva
-              tutto il menu per arrivare ai dolci. Adesso si sceglie la
-              portata e restano i suoi tre o quattro piatti.
-              ⚠️ «Tutte» resta, ed è il valore di partenza: chi non conosce
-              ancora la carta non deve dover scegliere per vedere. */}
-          {menuByCategory.length > 1 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              <button
-                type="button"
-                onClick={() => setCategoriaScelta(null)}
-                className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
-                  categoriaScelta === null
-                    ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
-                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
-                }`}
-              >
-                Tutte
-              </button>
-              {categorieDelMenu.map((c) => (
-                <button
-                  key={c.chiave}
-                  type="button"
-                  onClick={() => setCategoriaScelta(c.chiave)}
-                  className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
-                    categoriaScelta === c.chiave
-                      ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
-                      : "border-b58-charcoal/15 text-b58-charcoal-soft"
-                  }`}
-                >
-                  {c.nome}
-                </button>
-              ))}
-            </div>
-          )}
-          {menuByCategory.length === 0 ? (
-            <p className="text-xs text-b58-charcoal-soft/60 mb-3">Nessun menu attivo.</p>
-          ) : (
-            <div className="mb-3">
-              {menuByCategory
-                .filter((cat) => categoriaScelta === null || cat.value === categoriaScelta)
-                .map((cat) => (
-                <div key={cat.value} className="mb-2">
-                  {/* Con una categoria scelta il suo nome è già nel filtro
-                      acceso: ripeterlo qui sarebbe la stessa parola due
-                      volte a due centimetri, come «Sala» stamattina. */}
-                  {categoriaScelta === null && (
-                  <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
-                    {cat.label}
-                  </p>
-                  )}
-                  {cat.items.map((mi) => (
-                    // Riga INTERA tappabile, non un "+" da centrare: e' la
-                    // correzione numero uno emersa dalla prova del simulatore.
-                    <button
-                      key={mi.id}
-                      type="button"
-                      disabled={busy}
-                      onClick={() => handleAddMenuItem(mi)}
-                      className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50 border-b border-b58-charcoal/5"
-                    >
-                      {/* 🔴 IL NOME VA A CAPO (21/08, scelta di Alessio fra
-                          le tre strade). `min-w-0` è la riga che lo rende
-                          possibile: dentro un contenitore flessibile un
-                          elemento non si stringe sotto la larghezza del suo
-                          contenuto, quindi senza quella un nome lungo
-                          spingerebbe fuori il prezzo invece di andare a
-                          capo. La riga cresce in altezza perché
-                          `.tocco-riga` fissa un'altezza MINIMA, non fissa.
-                          ⚠️ E il prezzo si allinea in alto (`self-start`):
-                          con un nome su due righe, centrato finirebbe in
-                          mezzo alle due — accanto a niente. */}
-                      <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight py-1">
-                        {mi.recipe_name}
-                      </span>
-                      <span className="text-xs text-b58-charcoal-soft shrink-0 self-start pt-1.5">
-                        {formatEUR(mi.selling_price)}
-                      </span>
-                      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
-                        +
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* BEVANDE --------------------------------------------------- */}
-          {bevande.length > 0 && (
-            <div className="mb-3">
-              {bevande.map((cat) => (
-                <div key={cat.nome} className="mb-2">
-                  <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
-                    {cat.nome}
-                  </p>
-                  {cat.voci.map((v) => (
-                    <RigaBar key={v.id} v={v} />
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* VOCE LIBERA ---------------------------------------------- */}
-          {/* Finche' vini e bevande non vivono nell'Editor Menu (deciso
-              l'08/08, ancora da costruire) questa e' l'unica strada per
-              metterli in comanda: si tiene, ma chiusa. */}
-          <button
-            type="button"
-            onClick={() => setShowFreeForm((v) => !v)}
-            className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
-          >
-            {showFreeForm ? "Nascondi voce libera" : "+ Voce libera (bevande, fuori menu)"}
-          </button>
-          {showFreeForm && (
-            <form onSubmit={handleAddFree} className="space-y-1.5 mb-3">
-              <input
-                required
-                value={freeForm.name}
-                onChange={(e) => setFreeForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={'Es. "Calice Nero d\'Avola"'}
-                className={inputClass}
-              />
-              <div className="flex gap-1.5">
-                <input
-                  required
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={freeForm.price}
-                  onChange={(e) => setFreeForm((f) => ({ ...f, price: e.target.value }))}
-                  placeholder="€"
-                  className={inputClass}
-                />
-                <select
-                  value={freeForm.destination}
-                  onChange={(e) => setFreeForm((f) => ({ ...f, destination: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="bar">Bar</option>
-                  <option value="cucina">Cucina</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                disabled={busy}
-                className="w-full rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal text-sm font-medium py-2"
-              >
-                + Aggiungi alla comanda
-              </button>
-            </form>
           )}
 
           {/* COMANDA IN CORSO ----------------------------------------- */}

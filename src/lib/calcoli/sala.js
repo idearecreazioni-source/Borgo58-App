@@ -347,10 +347,30 @@ export const ZONE_FONDALE = [
 // nel posto sbagliato.
 export const ZONE_DEL_PANNELLO = ["Servizi", "Cucina"];
 
+// 🔴 IL BANCO BAR, per le Comande (21/08/2026, disegno di Alessio). È la
+// stessa idea del pannello del Calendario, su un'altra zona: lì c'è il
+// modulo per prenotare, qui **il nome di chi ha prenotato il tavolo che si
+// sta toccando**.
+//
+// ⚠️ La scena che l'ha fatto nascere, e spiega perché il nome e non altro:
+// *il cliente arriva e dice «ho prenotato a nome tale per due», il cameriere
+// non se lo ricorda, tocca il tavolo e legge lì.*
+//
+// ⚠️ ZONA DIVERSA DA QUELLA DEL CALENDARIO, e non per caso: in Comande la
+// cucina e i servizi stanno in cima alla pianta girata, cioè **lontano dal
+// pollice** di chi tiene il tablet. Il bancone sta in fondo a destra, che è
+// dove il dito arriva senza spostare la presa.
+export const ZONE_DEL_BANCO = ["Bancone"];
+
 /** Il rettangolo che le zone scelte formano, o null se non lo formano. */
-export function riquadroDelPannello(zone = []) {
-  const scelte = zone.filter((z) => ZONE_DEL_PANNELLO.includes(z.nome));
-  if (scelte.length !== ZONE_DEL_PANNELLO.length) return null;
+// ⚠️ `quali` e' un parametro dal 21/08: la stessa geometria serve a due
+// pannelli diversi — quello del Calendario su cucina e servizi, e il banco
+// bar delle Comande. **Il codice e' lo stesso, la scelta delle zone no**, e
+// questo e' precisamente il discriminante del 17/08: due cose che direbbero
+// esattamente la stessa cosa si fondono, e qui la geometria la dice.
+export function riquadroDelPannello(zone = [], quali = ZONE_DEL_PANNELLO) {
+  const scelte = zone.filter((z) => quali.includes(z.nome));
+  if (scelte.length !== quali.length) return null;
   const x = Math.min(...scelte.map((z) => z.x));
   const y = Math.min(...scelte.map((z) => z.y));
   const x2 = Math.max(...scelte.map((z) => z.x + z.larghezza));
@@ -403,8 +423,8 @@ export function riquadroDelPannello(zone = []) {
  * *Quello spazio è vuoto sul disegno ma non è vietato, ed è esattamente il
  * genere di cosa che Alessio fa: i tavoli li muove lui.*
  */
-export function pannelloNellaPianta(zone = [], sagome = []) {
-  const r = riquadroDelPannello(zone);
+export function pannelloNellaPianta(zone = [], sagome = [], quali = ZONE_DEL_PANNELLO) {
+  const r = riquadroDelPannello(zone, quali);
   if (!r) return null;
   // ⚠️ SENZA MARGINE dal 19/08: l'area è vietata ai mobili, quindi non c'è
   // più un caso da anticipare. Questo controllo è la rete per il giorno in
