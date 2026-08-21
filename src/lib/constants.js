@@ -394,6 +394,13 @@ export const TASK_STATUSES = [
 export const RESERVATION_STATUSES = [
   { value: "richiesta_in_attesa", label: "Richiesta in attesa" },
   { value: "confermata", label: "Confermata" },
+  // 🔴 «SERVITA» È NATA IL 21/08 da un difetto trovato da Alessio: chiudendo
+  // il conto, il tavolo tornava «prenotato» invece di liberarsi. Mancava lo
+  // stato che dice *è venuto, ha mangiato, se n'è andato*.
+  // ⚠️ Non la scrive nessuno a mano: la scrive il database quando un conto
+  // si chiude (`trg_conto_chiuso_servita`). È qui perché i filtri e gli
+  // elenchi possano nominarla, non perché si scelga.
+  { value: "servita", label: "Servita" },
   { value: "rifiutata", label: "Rifiutata" },
   { value: "annullata", label: "Annullata" },
 ];

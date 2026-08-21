@@ -24,6 +24,7 @@ import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../.
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
 import {
+  fascePerIlTavolo,
   insiemiPerTavolo,
   ritardiDellaSerata,
   segniDellaSala,
@@ -153,7 +154,11 @@ export default function Sala() {
       // tavolo esiste eccome — arriva stasera — e chiedendo l'elenco per
       // tavolo sarebbe sparita dalla lista senza che niente lo dicesse. Chi
       // sta con chi lo dicono i turni, che portano già i tavoli.
-      setPrenotati((pr ?? []).filter((r) => r.status === "confermata"));
+      // ⚠️ E DAL 21/08 anche le SERVITE, che è come si chiama una
+      // prenotazione onorata: senza, chi ha già mangiato spariva dal nome
+      // dell'elenco e restava una riga «—». Il colore e le persone attese
+      // le escludono comunque, perché passano da `prenotazioniPerTavolo`.
+      setPrenotati((pr ?? []).filter((r) => ["confermata", "servita"].includes(r.status)));
       // I conti si chiedono DOPO, perché servono gli id delle prenotazioni.
       // Senza nessuna prenotazione non si chiede niente al database.
       const ids = [...new Set(t.map((x) => x.reservation_id))];
@@ -259,9 +264,14 @@ export default function Sala() {
   // Chi siede (o siederà) su quale tavolo, per nome. Il nome non entra nella
   // sagoma — in un quadrato di 90 cm non ci sta (decisione del 14/08) — ma
   // entra nell'elenco qui sotto e sulla scheda del conto aperto.
+  // ⚠️ CHI DEVE ANCORA ARRIVARE SU QUESTO TAVOLO — e le servite non ci sono.
+  // Da qui passano due cose: le fasce del colore e il numero delle persone
+  // attese. Lasciandoci una servita, un tavolo dove hanno già mangiato e
+  // pagato continuerebbe a dire «arrivano in due».
   const prenotazioniPerTavolo = useMemo(() => {
     const m = new Map();
     for (const t of turni) {
+      if (t.servita) continue;
       for (const id of t.tavoli ?? []) {
         const elenco = m.get(id) ?? [];
         elenco.push(t.reservation_id);
@@ -273,6 +283,15 @@ export default function Sala() {
 
   const fasciaDi = useMemo(
     () => new Map(turni.map((t) => [t.reservation_id, t.fascia])),
+    [turni]
+  );
+
+  // 🔴 CHI È GIÀ STATO SERVITO. Il database lo dice da quando chiudere un
+  // conto marca la sua prenotazione (21/08): qui serve per applicare la
+  // regola di Alessio — **il tavolo mostra la fascia che deve ancora
+  // arrivare, non quella già passata**.
+  const servite = useMemo(
+    () => new Set(turni.filter((t) => t.servita).map((t) => t.reservation_id)),
     [turni]
   );
 
@@ -320,9 +339,21 @@ export default function Sala() {
         // Le fasce dei soli clienti che devono ancora sedersi: chi ha già il
         // conto aperto ha smesso di essere un'ora e ha cominciato a essere un
         // tavolo da servire.
-        fasce: sopra
-          .filter((id) => !ritardi.perPrenotazione.get(id)?.arrivata)
-          .map((id) => fasciaDi.get(id)),
+        // 🔴 «IL TAVOLO MOSTRA LA FASCIA CHE DEVE ANCORA ARRIVARE, NON QUELLA
+        // GIÀ PASSATA» — regola di Alessio, e la funzione porta il suo nome
+        // per esteso in `ritardo.js`. Si tolgono DUE cose: chi si è già
+        // seduto (aveva il conto aperto: ha smesso di essere un'ora e ha
+        // cominciato a essere un tavolo da servire) e chi è già stato
+        // **servito** — cioè ha mangiato e se n'è andato.
+        //
+        // ⚠️ È da qui che il tavolo del primo giro torna bianco a conto
+        // chiuso, **e resta rosso se stasera ci arriva un secondo turno.**
+        // I due casi non sono scritti da nessuna parte: li produce la regola.
+        fasce: fascePerIlTavolo(
+          sopra.filter((id) => !ritardi.perPrenotazione.get(id)?.arrivata),
+          fasciaDi,
+          servite
+        ),
         inRitardo: ritardi.tavoli.has(sagoma.id),
       };
     }
@@ -331,7 +362,7 @@ export default function Sala() {
     }
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sagome, gruppi, openOrders, order, prenotati, prenotazioniPerTavolo, fasciaDi, ritardi]);
+  }, [sagome, gruppi, openOrders, order, prenotati, prenotazioniPerTavolo, fasciaDi, servite, ritardi]);
 
   // L'elenco della serata, in ordine di ora: quello che chi serve guarda
   // quando suona il campanello. Porta il tavolo, che è il dato che manca di

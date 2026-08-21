@@ -370,3 +370,44 @@ export function segniDellaSala({ sagome = [], gruppi = [], fatti = {} }) {
   }
   return segni;
 }
+
+// =====================================================================
+// IL TAVOLO MOSTRA LA FASCIA CHE DEVE ANCORA ARRIVARE,
+// NON QUELLA GIÀ PASSATA
+// =====================================================================
+// 🔴 LA REGOLA È DI ALESSIO, 21/08/2026, e va tenuta scritta con le sue
+// parole: è il criterio che copre anche i casi che nessuno ha nominato.
+//
+// Nasce da un difetto che ha trovato lui col tablet: chiudendo il conto di
+// un tavolo prenotato, **il tavolo tornava «prenotato» invece di
+// liberarsi**. Mancava lo stato che dice *è venuto, ha mangiato, se n'è
+// andato* — e mordeva dove fa più male, perché il «primo giro» esiste
+// apposta perché il tavolo possa servire **due volte**.
+//
+// I due casi che aveva nominato:
+//   · a conto chiuso il tavolo torna libero per la sera;
+//   · **ma** se su quel tavolo c'è una SECONDA prenotazione non torna
+//     bianco: perde il giallo del primo giro e resta il rosso dell'ultimo
+//     turno.
+//
+// ⚠️ La regola li produce **entrambi senza elencarli**, ed è il motivo per
+// cui è scritta come una frase e non come due condizioni: si tolgono le
+// fasce già passate, e quello che resta è quello che deve ancora arrivare.
+
+/**
+ * Le fasce che un tavolo deve ancora mostrare.
+ *
+ * @param prenotazioni  gli id delle prenotazioni su quel tavolo
+ * @param fasciaDi      id → fascia
+ * @param servite       gli id di quelle già servite
+ *
+ * ⚠️ Un tavolo dove TUTTE le prenotazioni sono state servite non resta
+ * grigio o mezzo colorato: **torna bianco**, cioè libero, che è la cosa che
+ * il difetto impediva.
+ */
+export function fascePerIlTavolo(prenotazioni = [], fasciaDi, servite) {
+  return prenotazioni
+    .filter((id) => !servite?.has(id))
+    .map((id) => fasciaDi?.get(id))
+    .filter(Boolean);
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARRIVO_PER_STATO,
   contoProvaArrivo,
+  fascePerIlTavolo,
   ritardiDellaSerata,
   ritardoPrenotazione,
   insiemiPerTavolo,
@@ -352,5 +353,45 @@ describe("Da un tavolo al suo tavolone", () => {
     const segni = segniDellaSala({ sagome, gruppi, fatti: { t8: { fasce: ["pieno"] } } });
     for (const id of per.get("t8")) expect(segni[id].colore).toBe("pieno");
     expect(segni.t3.colore).toBeNull();
+  });
+});
+
+// 🔴 «IL TAVOLO MOSTRA LA FASCIA CHE DEVE ANCORA ARRIVARE, NON QUELLA GIÀ
+// PASSATA» — regola di Alessio, 21/08, dal difetto che ha trovato col
+// tablet: chiudendo il conto il tavolo tornava «prenotato» invece di
+// liberarsi.
+describe("la fascia che deve ancora arrivare", () => {
+  const fasce = new Map([
+    ["primo", "presto"],
+    ["secondo", "tardi"],
+  ]);
+
+  it("senza nessuna servita, le fasce restano tutte", () => {
+    expect(fascePerIlTavolo(["primo", "secondo"], fasce, new Set())).toEqual(["presto", "tardi"]);
+  });
+
+  it("🔴 il PRIMO CASO di Alessio: servito il primo giro, il tavolo torna libero", () => {
+    // Con una sola prenotazione e quella servita, non resta nessuna fascia:
+    // il tavolo si disegna bianco. È l'effetto che il difetto impediva.
+    expect(fascePerIlTavolo(["primo"], fasce, new Set(["primo"]))).toEqual([]);
+  });
+
+  it("🔴 il SECONDO CASO: c'è un altro turno, quindi NON torna bianco", () => {
+    // Perde il giallo del primo giro e resta il rosso dell'ultimo turno.
+    expect(fascePerIlTavolo(["primo", "secondo"], fasce, new Set(["primo"]))).toEqual(["tardi"]);
+  });
+
+  it("...e i due casi NON sono scritti da nessuna parte: li produce la regola", () => {
+    // La stessa funzione, senza rami dedicati, risponde a un terzo caso che
+    // nessuno ha nominato: servite tutte e due.
+    expect(fascePerIlTavolo(["primo", "secondo"], fasce, new Set(["primo", "secondo"]))).toEqual([]);
+  });
+
+  it("una prenotazione senza fascia non inventa un colore", () => {
+    expect(fascePerIlTavolo(["ignota"], fasce, new Set())).toEqual([]);
+  });
+
+  it("regge senza l'elenco delle servite", () => {
+    expect(fascePerIlTavolo(["primo"], fasce, undefined)).toEqual(["presto"]);
   });
 });
