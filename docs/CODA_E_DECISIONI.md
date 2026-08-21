@@ -721,7 +721,7 @@ scorre, cambiare la soglia, altre — e **dipendono da cosa Alessio vuole
 vedere insieme**.
 
 **I numeri che servono alla decisione** stanno in
-[](referti/20260821_le_comande_sul_tablet_vero.md),
+[`referti/20260821_le_comande_sul_tablet_vero.md`](referti/20260821_le_comande_sul_tablet_vero.md),
 e il più importante è questo: la soglia della pianta poggia su **1,05 cm**,
 che è una convenzione presa da fuori — mentre Alessio ha provato con le mani
 che **5,3 mm bastano**. Con quel numero la pianta **entrerebbe** su tutti e
