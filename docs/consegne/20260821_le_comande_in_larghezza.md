@@ -177,4 +177,6 @@ pianta, dove si vedono senza scorrere.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: ebd15cf — «Le Comande entrano in larghezza: via le due colonne,
+misurate col monitor».
+**Working tree**: pulito.
