@@ -745,7 +745,16 @@ export default function Sala() {
           onClick={() => setShowClose(true)}
           className="tocco-bottone flex-1 rounded-lg bg-b58-terracotta disabled:opacity-40 text-b58-parchment text-xs font-semibold px-1"
         >
-          Chiudi
+          {/* 🔴 «CHIUDI CONTO», MAI «CHIUDI» (21/08, rilievo del collaudo).
+              Avevo accorciato l'etichetta per farla stare nella colonna dei
+              gesti, e non l'avevo dichiarato. Su «Invia» l'accorciamento
+              passa; qui no: in sala **«chiudi» vuol dire incassare**, ed è la
+              ragione per cui l'uscita dal conto si chiama «Lascia il tavolo
+              aperto». Accanto a «Preconto», un cameriere di fretta può
+              leggerlo come «chiudi questo riquadro» — e invece incassa.
+              ⚠️ Se non ci sta, si stringe il resto: la parola sbagliata su
+              quel pulsante costa un incasso. */}
+          Chiudi conto
         </button>
       </div>
       {/* ⚠️ IL RIEPILOGO QUI E' A COLPO D'OCCHIO, e non ha i gesti per

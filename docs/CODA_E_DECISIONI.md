@@ -705,3 +705,28 @@ tre giornate esistenti. È anche la ragione per cui il **margine di sicurezza**
 del pannello è stato tolto — difendeva un caso che ora non può accadere, e nel
 frattempo faceva sparire il pannello tutti i giorni per colpa della Chef
 Table. ⚠️ Il controllo resta come rete: si è tolto il numero, non la regola.
+
+---
+
+## 🔴 Aperta e non decisa: le due colonne delle Comande sul tablet (21/08)
+
+**Il fatto, misurato**: la pianta **sborda dallo schermo** di un mini tablet
+— di **140 punti** su un 7,9" e di **95** su un 8,3". Tutto il disegno a due
+colonne era stato misurato con la stima da monitor (37,8 punti per
+centimetro) invece che col valore vero del tablet (64 e 59,5).
+
+⚠️ **Nessuna cura è stata proposta**, per decisione: le strade sono più di
+una — tornare alla pianta sopra e il menu sotto, accettare una pianta che
+scorre, cambiare la soglia, altre — e **dipendono da cosa Alessio vuole
+vedere insieme**.
+
+**I numeri che servono alla decisione** stanno in
+[](referti/20260821_le_comande_sul_tablet_vero.md),
+e il più importante è questo: la soglia della pianta poggia su **1,05 cm**,
+che è una convenzione presa da fuori — mentre Alessio ha provato con le mani
+che **5,3 mm bastano**. Con quel numero la pianta **entrerebbe** su tutti e
+due i tablet.
+
+⚠️ **E restano fuori schermo due gesti**: «Cambia tavoli» e «‹ Lascia … aperto»
+cadono a ~1279 punti dall'alto su uno schermo alto 1024. Non sono stati
+spostati: dove vadano è parte della stessa decisione.

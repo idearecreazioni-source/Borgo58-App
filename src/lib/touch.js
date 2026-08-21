@@ -14,6 +14,22 @@ const STORAGE_KEY = "b58_pxcm";
 
 // Stima a 96 dpi: 1 cm = 96/2.54 pixel. Punto di partenza ragionevole
 // prima che qualcuno calibri davvero.
+// 🔴 QUESTO VALORE È UN PUNTO DI PARTENZA, NON UNA LENTE PER PROGETTARE
+// (21/08/2026, dal collaudo di Alessio). È la stima di un monitor a 96 dpi.
+// Le schermate operative — Comande, la pianta, il Calendario in servizio —
+// vivono su un **mini tablet**, dove un centimetro vale **64 punti** (7,9")
+// o **59,5** (8,3"), non 38.
+//
+// ⚠️ E L'ERRORE HA DUE EFFETTI CHE VANNO NELLA STESSA DIREZIONE, che è il
+// motivo per cui non si vede: sul tablet i punti disponibili sono **meno**
+// (768 contro i 960 di un monitor da 1280) e tutto ciò che è dimensionato
+// in centimetri veri diventa **più grande** in punti — una riga del menu
+// passa da 40 a 67 punti. Misurando col 37,8 si progetta con più spazio e
+// con elementi più piccoli di quelli veri, ed è così che il 21/08 la
+// pianta delle Comande è sbordata dallo schermo di Alessio.
+//
+// **Da adesso: ogni misura su una schermata operativa si fa col valore del
+// TABLET.** I numeri veri sono in docs/referti/20260821_le_comande_sul_tablet_vero.md.
 export const PXCM_DEFAULT = 37.79528;
 
 // Limiti di sicurezza: fuori da qui il valore e' certamente sbagliato e
