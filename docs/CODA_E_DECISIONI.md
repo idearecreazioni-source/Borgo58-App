@@ -730,3 +730,28 @@ due i tablet.
 ⚠️ **E restano fuori schermo due gesti**: «Cambia tavoli» e «‹ Lascia … aperto»
 cadono a ~1279 punti dall'alto su uno schermo alto 1024. Non sono stati
 spostati: dove vadano è parte della stessa decisione.
+
+---
+
+## 🔴 Da fare, misurato e non costruito: i turni dei pasti (21/08)
+
+**Cosa manca**: la cucina non sa con quali turni escono le pietanze — oggi
+tutta la comanda arriva come un blocco solo. Alessio li compone lui (nel suo
+esempio il primo turno ha due antipasti **e** una pasta): 🔴 **i turni non
+sono le categorie, e non si deducono mai dal piatto**.
+
+**La misura è in**
+[`referti/20260821_i_turni_dei_pasti.md`](referti/20260821_i_turni_dei_pasti.md),
+e dice tre cose:
+
+- il turno **non** può appoggiarsi all'invio (): un invio contiene
+  tutti i turni, e un turno può stare in due invii — il difetto si vede nei
+  due versi;
+- il conto e il preconto **non cambiano di un centesimo**;
+- 🔴 **il biglietto «avanti col prossimo turno» non ha un posto ovvio**,
+  perché la cucina non ha uno schermo: le tre strade e il loro costo sono
+  nel referto.
+
+⚠️ **Tre domande aspettano Alessio** (fine del referto): dove esce il
+biglietto, se si conserva, e cosa fare quando un piatto dello stesso turno
+viene aggiunto dopo.
