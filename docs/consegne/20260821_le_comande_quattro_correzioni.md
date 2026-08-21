@@ -178,4 +178,6 @@ come gli altri; e aprendo un tavolo la schermata scende da sola sul menu.
 
 ---
 
-**Commit**: dichiarato al momento del commit finale di questa consegna.
+**Commit**: eaa415c — «Comande: niente pulsanti doppi, scritte da 3,2 mm, e il
+menu si raggiunge da solo».
+**Working tree**: pulito.
