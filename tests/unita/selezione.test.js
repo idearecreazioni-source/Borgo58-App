@@ -45,3 +45,64 @@ describe("si seleziona un tavolo o un tavolone, mai due tavoli lontani", () => {
     expect(selezioneDopoIlTocco(["T1"], [])).toEqual(["T1"]);
   });
 });
+
+import { cosaSiVede, esitoDelTocco } from "../../src/lib/calcoli/selezione.js";
+
+describe("da un conto aperto si deve poter uscire, e i due pannelli non convivono", () => {
+  it("🔴 con un conto aperto si vede IL CONTO, anche se c'è una selezione", () => {
+    // Era questo il difetto visto da Alessio: «Divano 3 · Apri il tavolo»
+    // sopra e «COMANDA IN CORSO — T3» sotto, insieme.
+    expect(cosaSiVede({ conto: "c1", selezione: ["T5"] })).toBe("conto");
+  });
+
+  it("senza conto e con una selezione si vede la selezione", () => {
+    expect(cosaSiVede({ conto: null, selezione: ["T5"] })).toBe("selezione");
+  });
+
+  it("senza niente si vede la sala", () => {
+    expect(cosaSiVede({})).toBe("sala");
+  });
+
+  it("modalità veloce: toccare un ALTRO tavolo con un conto lo apre e lascia il precedente", () => {
+    const r = esitoDelTocco({ contoAperto: "c1", contoDelTavolo: "c2", insieme: ["T5"] });
+    expect(r.azione).toBe("apri-conto");
+    expect(r.contoId).toBe("c2");
+    expect(r.lasciaIlConto).toBe(true);
+  });
+
+  it("...e toccare un tavolo LIBERO lascia il conto e seleziona", () => {
+    const r = esitoDelTocco({ contoAperto: "c1", contoDelTavolo: null, selezione: [], insieme: ["T5"] });
+    expect(r.azione).toBe("seleziona");
+    expect(r.selezione).toEqual(["T5"]);
+    expect(r.lasciaIlConto).toBe(true);
+  });
+
+  it("toccare il tavolo del conto che si sta già guardando non fa niente", () => {
+    // ⚠️ L'uscita è la riga in cima, non il tocco: il pavimento e il proprio
+    // tavolo sono a portata di gomito quando si tiene il tablet con due mani.
+    const r = esitoDelTocco({ contoAperto: "c1", contoDelTavolo: "c1", insieme: ["T5"] });
+    expect(r.azione).toBe("resta");
+    expect(r.lasciaIlConto).toBe(false);
+  });
+
+  it("🔴 MENTRE SI SPOSTA un conto, il conto NON si lascia mai", () => {
+    // Lasciarlo perderebbe proprio la cosa che si sta spostando.
+    const r = esitoDelTocco({
+      contoAperto: "c1", contoDelTavolo: null, selezione: [], insieme: ["T5"], spostando: true,
+    });
+    expect(r.azione).toBe("seleziona");
+    expect(r.lasciaIlConto).toBe(false);
+  });
+
+  it("...e un tavolo già occupato non si può scegliere come destinazione", () => {
+    const r = esitoDelTocco({
+      contoAperto: "c1", contoDelTavolo: "c2", insieme: ["T5"], spostando: true,
+    });
+    expect(r.azione).toBe("rifiuta");
+  });
+
+  it("senza nessun conto aperto non c'è niente da lasciare", () => {
+    const r = esitoDelTocco({ contoAperto: null, contoDelTavolo: null, selezione: [], insieme: ["T1"] });
+    expect(r.lasciaIlConto).toBe(false);
+  });
+});

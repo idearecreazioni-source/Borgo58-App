@@ -24,7 +24,7 @@ import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../.
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
-import { selezioneDopoIlTocco } from "../../lib/calcoli/selezione";
+import { cosaSiVede, esitoDelTocco } from "../../lib/calcoli/selezione";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -353,13 +353,28 @@ export default function Sala() {
   // avere due definizioni di «accostati» che possono discordare.
   const toccaSagoma = (sagoma) => {
     const conto = orderForTable(sagoma.id);
-    if (conto) {
-      if (spostando) return setError("Quel tavolo ha già un conto aperto: scegline un altro.");
-      return apriConoscendoIlConto(conto.id);
-    }
-    setError("");
     const insieme = insiemiPerTavolo(sagome, gruppi).get(sagoma.id) ?? [sagoma.id];
-    setSelezione((s) => selezioneDopoIlTocco(s, insieme));
+    const esito = esitoDelTocco({
+      contoAperto: order?.id ?? null,
+      contoDelTavolo: conto?.id ?? null,
+      selezione,
+      insieme,
+      spostando,
+    });
+
+    if (esito.azione === "rifiuta")
+      return setError("Quel tavolo ha già un conto aperto: scegline un altro.");
+    if (esito.azione === "resta") return;
+
+    setError("");
+    // ⚠️ IL CONTO SI LASCIA PRIMA, mai dopo: e' la condizione della modalita'
+    // veloce. Il pannello vecchio deve sparire prima che compaia il nuovo —
+    // due comande davanti agli occhi in servizio e' il modo piu' diretto per
+    // mandare i piatti di un tavolo a un altro.
+    if (esito.lasciaIlConto) setOrder(null);
+
+    if (esito.azione === "apri-conto") return apriConoscendoIlConto(esito.contoId);
+    setSelezione(esito.selezione);
   };
 
   // Il vuoto della sala annulla la scelta: e' l'altra meta' del gesto.
@@ -815,7 +830,7 @@ export default function Sala() {
       )}
 
       {/* La barra che compare solo quando c'è qualcosa da decidere. */}
-      {selezione.length > 0 && (
+      {cosaSiVede({ conto: order, selezione }) === "selezione" && (
         <div className="mb-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
           <p className="text-sm text-b58-charcoal mb-2">
             {sagome
@@ -870,6 +885,34 @@ export default function Sala() {
 
       {order && (
         <>
+          {/* 🔴 L'USCITA DAL CONTO. Fino al 21/08 NON ESISTEVA: il conto
+              lasciava lo schermo solo incassando o annullando, e annullare
+              non si puo' piu' appena qualcosa e' andato in cucina. Chi
+              apriva il tavolo sbagliato in servizio aveva una via sola:
+              **incassare**.
+
+              ⚠️ E' UNA RIGA IN CIMA, non il tocco sul pavimento (decisione
+              di Alessio): tenendo il tablet con due mani il pavimento e' a
+              portata di gomito, e **un'uscita accidentale da un conto in
+              corso costa piu' di un gesto in piu'**.
+
+              ⚠️ E LA PAROLA E' «LASCIA … APERTO», mai «chiudi»: in sala
+              «chiudere» vuol dire incassare, e la parola sbagliata su
+              quel pulsante costa un incasso. Il tavolo e' nominato perche'
+              chi legge sappia da cosa sta uscendo. */}
+          <button
+            type="button"
+            onClick={() => {
+              setOrder(null);
+              setSelezione([]);
+              setError("");
+            }}
+            className="tocco-riga w-full flex items-center gap-2 px-3 mb-2 rounded-lg border border-b58-charcoal/15 bg-b58-parchment text-b58-charcoal text-sm font-medium print:hidden"
+          >
+            <span className="text-lg leading-none">&lsaquo;</span>
+            Lascia {order.table_label} aperto
+          </button>
+
           {/* CHI STA A QUESTO TAVOLO. ⚠️ Il legame fra il conto e la sua
               prenotazione è scritto dal 18/08 (giro D1) e fino a qui NON LO
               MOSTRAVA NESSUNA SCHERMATA — rilievo di Alessio la sera stessa:
