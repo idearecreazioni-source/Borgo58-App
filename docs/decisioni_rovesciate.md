@@ -962,3 +962,67 @@ batte uno che tace, e uno che si ripara batte uno che resta*.
 documento il cui file non c'è più. È brutto e **non è muto** — e basta premere
 di nuovo «elimina» perché sparisca, visto che togliere un file già assente non
 dà errore.
+
+---
+
+## 23 · La striscia del database non è più una striscia
+
+**21/08/2026** · deciso da Alessio collaudando sul tablet.
+
+- **Cosa era stato deciso, e quando.** Il 16/08 il segno che dice a quale
+  database si sta scrivendo è diventato **una striscia in cima**, alta e
+  piena, uguale nei due stati. Ci sono volute **due correzioni di Alessio**
+  per arrivarci: prima una targhetta in basso a sinistra (che vide *solo
+  perché la stava cercando*), poi una striscia grigia sottile (troppo
+  discreta accanto a quella rossa).
+- **La ragione di allora.** Due: *non serve accorgersi del segno, serve
+  accorgersi quando CAMBIA* — quindi i due stati devono avere **la stessa
+  forma**, o sono due segni diversi; e la posizione deve essere **una sola**,
+  perché l'occhio impari a controllare un punto solo.
+- **Cosa si decide adesso.** Diventa un **pallino fisso in basso a destra**,
+  16×16. Motivo di Alessio: la fascia **ruba spazio verticale**, e sul tablet
+  in verticale quello spazio è precisamente la cosa che stiamo misurando.
+- 🔴 **La ragione di allora VALE ANCORA, INTERA, e non è il prezzo: è il
+  vincolo.** Il pallino **non sparisce mai**, in nessuno dei tre stati, e
+  cambiano **solo il colore e le parole del suggerimento** — stessa
+  posizione, stessa dimensione, sempre. Se in produzione non ci fosse
+  niente, il segnale diventerebbe **un'assenza**, e le assenze non si
+  notano.
+
+⚠️ **Il prezzo vero, e non è quello che sembra**: il pallino è più piccolo,
+quindi **si nota meno la prima volta**. Ma la proprietà che serve non è
+«farsi notare»: è «essere confrontabile». Un pallino terracotta e uno scuro
+nello stesso angolo si distinguono a colpo d'occhio quanto due strisce.
+
+⚠️ **E una cosa da verificare quando i pulsanti scenderanno in basso**
+(disegno delle tre aree): il pallino **intercetta il tocco**. Oggi sotto non
+c'è nessun comando — misurato — ma nel disegno nuovo «invia comanda» e
+«chiudi conto» finiscono proprio in fondo.
+
+---
+
+## 24 · Il segnale del database sparisce dalle pagine dei clienti
+
+**21/08/2026** · difetto trovato aprendo `borgo58.it/prenota` con lo
+strumento nuovo.
+
+- **Cosa era stato deciso, e quando.** Che il segnale stesse **sopra tutte le
+  rotte**, fuori dal Layout. Il commento in `App.jsx` lo dichiarava:
+  *«vale anche sulle Comande e sulla pagina pubblica, che il Layout non lo
+  usano»*.
+- **La ragione di allora.** Giusta e ancora valida: le Comande e il modulo
+  pubblico **non usano il Layout**, quindi mettere il segnale lì dentro
+  l'avrebbe lasciato fuori proprio dalla schermata che si usa in servizio.
+- **Cosa si decide adesso.** Il segnale **non compare sulle pagine dei
+  clienti** (`/prenota`, `/privacy`). Elenco in `lib/ambiente.js`, con la sua
+  prova.
+- ⚠️ **Perché la ragione di allora non basta più — e non era sbagliata, era
+  incompleta.** «Stare fuori dal Layout» risolveva *dove* mettere il segnale;
+  non diceva niente su *chi lo legge*. E ha portato con sé un destinatario
+  che non c'entra: **un cliente che prenota un tavolo**, che leggeva «DATI
+  VERI — quello che scrivi qui conta davvero». Per lui quella frase non vuol
+  dire niente.
+
+⚠️ **La pagina di ACCESSO resta fuori dall'elenco**, ed è voluto: chi digita
+il PIN sta per scrivere nel gestionale, ed è il momento in cui sapere su
+quale database si entra conta di più.

@@ -1,4 +1,5 @@
-import { ambienteCorrente } from "../lib/ambiente";
+import { useLocation } from "react-router-dom";
+import { ambienteCorrente, paginaDeiClienti } from "../lib/ambiente";
 
 // A quale database sto parlando — scritto in schermata, non solo in un
 // file di configurazione.
@@ -44,19 +45,19 @@ import { ambienteCorrente } from "../lib/ambiente";
 // identico per costruzione, perché è scritto una volta sola più sotto.
 const STATI = {
   produzione: {
-    fondo: "bg-b58-charcoal text-b58-parchment",
+    fondo: "bg-b58-charcoal",
     titolo: "DATI VERI",
     // ⚠️ Simmetrica a quella rossa, e il verso è opposto apposta: la rossa
     // dice cosa NON succede, la grigia dice cosa succede.
     spiegazione: "quello che scrivi qui conta davvero.",
   },
   prova: {
-    fondo: "bg-b58-terracotta text-b58-parchment",
+    fondo: "bg-b58-terracotta",
     titolo: "DATABASE DI PROVA",
     spiegazione: "quello che scrivi qui non è vero, e quello che leggi nemmeno.",
   },
   sconosciuto: {
-    fondo: "bg-b58-terracotta text-b58-parchment",
+    fondo: "bg-b58-gold",
     titolo: "DATABASE SCONOSCIUTO",
     spiegazione: "nessuno ha dichiarato questo database: non fidarti di quello che leggi.",
   },
@@ -65,24 +66,34 @@ const STATI = {
 export default function SegnaleDatabase() {
   const ambiente = ambienteCorrente();
   const stato = STATI[ambiente.genere] ?? STATI.sconosciuto;
+  const { pathname } = useLocation();
 
-  // ⚠️ Una sola striscia, scritta una volta: posizione, altezza, peso e
-  // testo vengono tutti da qui, e fra uno stato e l'altro cambiano solo il
-  // colore e le parole. Non è eleganza — è la proprietà che Alessio ha
-  // chiesto di rendere vera nel codice e non nell'intenzione: due stati
-  // dello stesso segno **devono avere la stessa forma**, altrimenti sono
-  // due segni diversi e si imparano peggio.
+  // 🔴 SULLE PAGINE CHE VEDONO I CLIENTI NON COMPARE NIENTE. Fino al 21/08
+  // la striscia stava sopra TUTTE le rotte, e chi prenotava dal sito leggeva
+  // «DATI VERI — quello che scrivi qui conta davvero». Il segnale serve a chi
+  // scrive nel gestionale; un cliente non scrive nel gestionale, manda una
+  // richiesta. L'elenco sta in `lib/ambiente.js`, non qui.
+  if (paginaDeiClienti(pathname)) return null;
+
+  // ⚠️ UN PALLINO, NON PIU' UNA STRISCIA (deciso da Alessio il 21/08): la
+  // fascia in cima rubava spazio verticale, e sul tablet in verticale quello
+  // spazio e' la cosa che si sta misurando.
+  //
+  // 🔴 MA LA CONDIZIONE CHE LA STRISCIA AVEVA RESTA INTERA, e vale identica:
+  // **il pallino non sparisce mai, in nessuno dei tre stati**. Il segnale non
+  // serve a farsi notare — serve ad accorgersi **quando CAMBIA**, e questo
+  // funziona solo se c'e' sempre qualcosa da confrontare. Se in produzione
+  // non ci fosse niente, il segnale diventerebbe un'**assenza**, e le assenze
+  // non si notano.
+  //
+  // ⚠️ E per la stessa ragione del 16/08 cambiano SOLO il colore e le parole:
+  // stessa posizione, stessa dimensione, sempre. *Due stati dello stesso
+  // segno devono avere la stessa forma, o sono due segni diversi.*
   return (
     <div
-      title={`Progetto Supabase ${ambiente.riferimento || "(nessuno)"}`}
-      className={`print:hidden sticky top-0 z-50 w-full text-center px-4 py-2 text-sm ${stato.fondo}`}
-    >
-      <strong>{stato.titolo}</strong> — {stato.spiegazione}
-      {/* ⚠️ Il riferimento del progetto NON si stampa più nella striscia
-          (piccolezza del collaudo, 17/08): «oudjuqbqszisdtwzbxdo» accanto a
-          «DATI VERI» non dice niente a chi legge, e una sigla incomprensibile
-          in un avviso insegna che quell'avviso è roba da tecnici. Resta nel
-          titolo al passaggio del mouse, dove serve a me e non disturba lui. */}
-    </div>
+      title={`${stato.titolo} — ${stato.spiegazione} (progetto ${ambiente.riferimento || "nessuno"})`}
+      aria-label={stato.titolo}
+      className={`print:hidden fixed bottom-3 right-3 z-50 w-4 h-4 rounded-full ring-2 ring-b58-parchment shadow-md ${stato.fondo}`}
+    />
   );
 }

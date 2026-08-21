@@ -44,3 +44,37 @@ export function ambienteDa(url) {
 export function ambienteCorrente() {
   return ambienteDa(import.meta.env.VITE_SUPABASE_URL);
 }
+
+// =====================================================================
+// LE PAGINE CHE VEDONO I CLIENTI
+// =====================================================================
+// 🔴 TROVATO IL 21/08 aprendo borgo58.it/prenota: in cima al modulo con cui
+// un cliente prenota un tavolo campeggiava **«DATI VERI — quello che scrivi
+// qui conta davvero»**. Misurato che si vedeva per davvero: visibile, opaco,
+// alto 17 punti, a 9 punti dal bordo.
+//
+// ⚠️ E ERA VOLUTO: il commento in `App.jsx` diceva *«vale anche sulla pagina
+// pubblica»*. La ragione era buona — il segnale sta fuori dal Layout perché
+// le Comande e il modulo pubblico non lo usano — ma **ha portato con sé un
+// destinatario che non c'entra**.
+//
+// Il segnale serve a chi **scrive nel gestionale**, per sapere se quello che
+// scrive è vero. Un cliente che prenota un tavolo non scrive nel gestionale:
+// manda una richiesta. Per lui quella frase non vuol dire niente, e nel
+// migliore dei casi è rumore tecnico sul sito del ristorante.
+//
+// ⚠️ L'elenco vive QUI e non dentro il segnale, perché la domanda *«questa
+// pagina la vede un cliente?»* tornerà: ogni pagina nuova aperta al pubblico
+// dovrà comparire in questo elenco, e il posto per cercarlo è uno solo.
+export const PAGINE_DEI_CLIENTI = ["/prenota", "/privacy"];
+
+/**
+ * Questa pagina la vede un cliente?
+ *
+ * ⚠️ La pagina di accesso NON è fra queste, ed è voluto: chi digita il PIN
+ * sta per scrivere nel gestionale, ed è il momento in cui sapere su quale
+ * database si sta entrando conta di più.
+ */
+export function paginaDeiClienti(percorso = "") {
+  return PAGINE_DEI_CLIENTI.some((p) => percorso === p || percorso.startsWith(p + "/"));
+}
