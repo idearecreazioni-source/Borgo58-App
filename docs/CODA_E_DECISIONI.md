@@ -744,7 +744,7 @@ sono le categorie, e non si deducono mai dal piatto**.
 [`referti/20260821_i_turni_dei_pasti.md`](referti/20260821_i_turni_dei_pasti.md),
 e dice tre cose:
 
-- il turno **non** può appoggiarsi all'invio (): un invio contiene
+- il turno **non** può appoggiarsi all'invio (`sent_at`): un invio contiene
   tutti i turni, e un turno può stare in due invii — il difetto si vede nei
   due versi;
 - il conto e il preconto **non cambiano di un centesimo**;
