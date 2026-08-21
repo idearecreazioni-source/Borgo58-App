@@ -162,6 +162,7 @@ export default function PiantaSala({
   sagome = [],
   selezione = [],
   onSeleziona,
+  onSfondo,
   onSposta,
   stato = {},
   gruppi = [],
@@ -435,8 +436,22 @@ export default function PiantaSala({
           minWidth: `calc(${(verticale ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
         }}
       >
+      {/* ⚠️ IL TOCCO SUL VUOTO. Serve a DESELEZIONARE, ed e' meta' del
+          gesto: senza, l'unico modo di annullare una scelta sbagliata e'
+          ritoccare esattamente il tavolo giusto.
+
+          ⚠️ Si riconosce dal BERSAGLIO, non dalla propagazione: `closest`
+          risale dal punto toccato e, se sopra c'e' una sagoma, questo
+          gesto non e' suo. Fermare la propagazione sulle sagome avrebbe
+          funzionato uguale oggi e rotto il giorno che qualcuno aggiunge
+          un elemento dentro una sagoma dimenticandosi di fermarla. */}
       <svg
         ref={svgRef}
+        onClick={(e) => {
+          if (!onSfondo) return;
+          if (e.target.closest && e.target.closest("[data-sagoma]")) return;
+          onSfondo();
+        }}
         viewBox={
           verticale
             ? `0 0 ${SALA_PROFONDITA_CM} ${SALA_LARGHEZZA_CM}`
@@ -624,6 +639,7 @@ export default function PiantaSala({
           return (
             <g
               key={sagoma.id}
+              data-sagoma=""
               transform={`translate(${x} ${y})`}
               style={{
                 cursor: selezionabile ? "pointer" : "default",

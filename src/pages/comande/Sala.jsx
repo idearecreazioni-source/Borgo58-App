@@ -23,7 +23,8 @@ import {
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
 import { listReservations } from "../../lib/api/reservations";
 import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
-import { ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
+import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
+import { selezioneDopoIlTocco } from "../../lib/calcoli/selezione";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -332,6 +333,24 @@ export default function Sala() {
 
   // Un tocco sulla pianta: se il tavolo ha già un conto lo apre, altrimenti
   // lo aggiunge (o lo toglie) a quelli che si stanno per aprire insieme.
+  // 🔴 SI SELEZIONA UN TAVOLO O UN TAVOLONE, MAI DUE TAVOLI LONTANI.
+  //
+  // Prima ogni tocco SOMMAVA: si potevano prendere T1 e T9, che stanno ai due
+  // capi della sala, e aprirci sopra una comanda sola. Un conto unico su due
+  // tavoli distanti non e' una comanda: e' un errore che nessuno vede finche'
+  // non arriva il preconto.
+  //
+  // ⚠️ CHE COSA SIA UN TAVOLONE NON SI DECIDE QUI. Lo conta il database
+  // (`coperti_del_giorno`) e lo ridice `insiemiPerTavolo` — **la stessa mappa
+  // che COLORA la sala**. E' l'unica scelta che tiene: se il tocco usasse una
+  // definizione sua, tornerebbe il difetto del 18/08, dove **il tocco
+  // contraddiceva il colore** — un tavolo si vedeva colorato e si comportava
+  // da libero. Tutto il disegno di questa schermata poggia su *bianco e'
+  // libero, colorato ha qualcuno*.
+  //
+  // ⚠️ E NON e' la tolleranza geometrica di `sala.js`: quella e' il magnete
+  // che aggancia i tavoli mentre si trascinano. Usarla qui vorrebbe dire
+  // avere due definizioni di «accostati» che possono discordare.
   const toccaSagoma = (sagoma) => {
     const conto = orderForTable(sagoma.id);
     if (conto) {
@@ -339,7 +358,13 @@ export default function Sala() {
       return apriConoscendoIlConto(conto.id);
     }
     setError("");
-    setSelezione((s) => (s.includes(sagoma.id) ? s.filter((x) => x !== sagoma.id) : [...s, sagoma.id]));
+    const insieme = insiemiPerTavolo(sagome, gruppi).get(sagoma.id) ?? [sagoma.id];
+    setSelezione((s) => selezioneDopoIlTocco(s, insieme));
+  };
+
+  // Il vuoto della sala annulla la scelta: e' l'altra meta' del gesto.
+  const toccaSfondo = () => {
+    if (selezione.length > 0) setSelezione([]);
   };
 
   // L'elenco dei tavoli occupati che ha in mano questa schermata può
@@ -700,6 +725,7 @@ export default function Sala() {
             inPiedi
             sagome={sagome}
             gruppi={gruppi}
+            onSfondo={toccaSfondo}
             selezione={selezione}
             onSeleziona={toccaSagoma}
             // Nessuna scritta dentro la sagoma oltre alla cifra dei coperti:
