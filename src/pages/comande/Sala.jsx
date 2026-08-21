@@ -117,6 +117,11 @@ export default function Sala() {
   const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
   const [priceDraft, setPriceDraft] = useState("");
 
+  // Quale portata si sta guardando. Nasce vuota: la prima volta si vedono
+  // tutte, poi si sceglie. ⚠️ NON si ricorda fra un conto e l'altro — chi
+  // apre un tavolo nuovo comincia dagli antipasti, non da dove era rimasto.
+  const [categoriaScelta, setCategoriaScelta] = useState(null);
+
   // La pianta è quella di STASERA: se Alessio ha accostato dei tavoli per
   // il servizio, in sala si vedono accostati.
   //
@@ -581,6 +586,23 @@ export default function Sala() {
     ...c,
     items: menu.filter((mi) => mi.category === c.value),
   })).filter((c) => c.items.length > 0);
+
+  // 🔴 LE CATEGORIE FILTRANO, non fanno più solo da intestazione (21/08,
+  // disegno di Alessio). Ed è **la ragione per cui il menu ci sta in una
+  // colonna stretta**: il menu intero è di una quindicina di portate, ma con
+  // una categoria scelta ne restano tre o quattro per volta — non una lista
+  // da scorrere.
+  //
+  // ⚠️ E questo scioglie il vincolo che avevo misurato la sera prima. Avevo
+  // trovato che «il nome di piatto più lungo è più largo della colonna», ma
+  // quel nome era **inventato**: il gestionale vero ha zero ricette e zero
+  // menu, e la larghezza veniva da nomi di prova. *La misura era giusta come
+  // metodo e priva di dati veri come contenuto* — ed è il motivo per cui i
+  // nomi adesso vanno a capo invece di stringere la pianta: **un nome lungo
+  // costa altezza, e di altezza ce n'è.**
+  const categorieDelMenu = [
+    ...menuByCategory.map((c) => ({ chiave: c.value, nome: c.label })),
+  ];
 
   // I vini stanno in una schermata separata (§3.2.1: incolonnati nel menu
   // lo allungavano troppo), le altre bevande restano nell'elenco
@@ -1094,16 +1116,57 @@ export default function Sala() {
           )}
 
           {/* MENU ------------------------------------------------------ */}
-          <p className={sectionLabel}>Menu</p>
+          {/* 🔴 LE CATEGORIE IN CIMA, E FILTRANO (21/08, disegno di Alessio).
+              Prima erano intestazioni dentro una lista sola: si scorreva
+              tutto il menu per arrivare ai dolci. Adesso si sceglie la
+              portata e restano i suoi tre o quattro piatti.
+              ⚠️ «Tutte» resta, ed è il valore di partenza: chi non conosce
+              ancora la carta non deve dover scegliere per vedere. */}
+          {menuByCategory.length > 1 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <button
+                type="button"
+                onClick={() => setCategoriaScelta(null)}
+                className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+                  categoriaScelta === null
+                    ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                }`}
+              >
+                Tutte
+              </button>
+              {categorieDelMenu.map((c) => (
+                <button
+                  key={c.chiave}
+                  type="button"
+                  onClick={() => setCategoriaScelta(c.chiave)}
+                  className={`tocco-bottone rounded-full px-3 text-xs font-medium border ${
+                    categoriaScelta === c.chiave
+                      ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                      : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                  }`}
+                >
+                  {c.nome}
+                </button>
+              ))}
+            </div>
+          )}
           {menuByCategory.length === 0 ? (
             <p className="text-xs text-b58-charcoal-soft/60 mb-3">Nessun menu attivo.</p>
           ) : (
             <div className="mb-3">
-              {menuByCategory.map((cat) => (
+              {menuByCategory
+                .filter((cat) => categoriaScelta === null || cat.value === categoriaScelta)
+                .map((cat) => (
                 <div key={cat.value} className="mb-2">
+                  {/* Con una categoria scelta il suo nome è già nel filtro
+                      acceso: ripeterlo qui sarebbe la stessa parola due
+                      volte a due centimetri, come «Sala» stamattina. */}
+                  {categoriaScelta === null && (
                   <p className="text-xs font-semibold text-b58-terracotta-dark border-b border-dashed border-b58-charcoal/15 pb-1 mb-0.5">
                     {cat.label}
                   </p>
+                  )}
                   {cat.items.map((mi) => (
                     // Riga INTERA tappabile, non un "+" da centrare: e' la
                     // correzione numero uno emersa dalla prova del simulatore.
@@ -1114,8 +1177,23 @@ export default function Sala() {
                       onClick={() => handleAddMenuItem(mi)}
                       className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50 border-b border-b58-charcoal/5"
                     >
-                      <span className="flex-1 text-sm text-b58-charcoal leading-tight">{mi.recipe_name}</span>
-                      <span className="text-xs text-b58-charcoal-soft shrink-0">{formatEUR(mi.selling_price)}</span>
+                      {/* 🔴 IL NOME VA A CAPO (21/08, scelta di Alessio fra
+                          le tre strade). `min-w-0` è la riga che lo rende
+                          possibile: dentro un contenitore flessibile un
+                          elemento non si stringe sotto la larghezza del suo
+                          contenuto, quindi senza quella un nome lungo
+                          spingerebbe fuori il prezzo invece di andare a
+                          capo. La riga cresce in altezza perché
+                          `.tocco-riga` fissa un'altezza MINIMA, non fissa.
+                          ⚠️ E il prezzo si allinea in alto (`self-start`):
+                          con un nome su due righe, centrato finirebbe in
+                          mezzo alle due — accanto a niente. */}
+                      <span className="flex-1 min-w-0 text-sm text-b58-charcoal leading-tight py-1">
+                        {mi.recipe_name}
+                      </span>
+                      <span className="text-xs text-b58-charcoal-soft shrink-0 self-start pt-1.5">
+                        {formatEUR(mi.selling_price)}
+                      </span>
                       <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center text-lg pointer-events-none">
                         +
                       </span>
