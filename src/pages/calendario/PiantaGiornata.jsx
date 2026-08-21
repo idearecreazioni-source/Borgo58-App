@@ -1298,8 +1298,7 @@ export default function PiantaGiornata() {
             selezione={tavoliEvidenziati}
             stato={stato}
             gruppi={gruppi}
-            pannello={dentroLaPianta ? contenutoPannello : null}
-            riquadroPannello={dentroLaPianta}
+            pannelli={[{ contenuto: dentroLaPianta ? contenutoPannello : null, riquadro: dentroLaPianta }]}
             onSeleziona={tocca}
             onSposta={
               isTitolare

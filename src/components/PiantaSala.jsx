@@ -187,8 +187,14 @@ export default function PiantaSala({
   onSposta,
   stato = {},
   gruppi = [],
-  pannello,
-  riquadroPannello,
+  // 🔴 I PANNELLI DENTRO LA PIANTA SONO PIU' D'UNO (21/08). Prima era
+  // uno solo, e bastava: il Calendario ne ha uno. In Comande ne servono
+  // due — i nomi delle prenotazioni nel bancone, e i pulsanti del conto
+  // nell'area di cucina e servizi.
+  // ⚠️ Ognuno porta il suo riquadro, calcolato da `pannelloNellaPianta`:
+  // qui si disegna quello che e' stato deciso, e la decisione «c'e' un
+  // tavolo sopra?» resta di chi chiama.
+  pannelli = [],
   inPiedi = "auto",
 }) {
   const svgRef = useRef(null);
@@ -921,8 +927,11 @@ export default function PiantaSala({
           ⚠️ E ci arriva SOLO se là dentro non c'è nessun tavolo. La decisione
           la prende chi chiama (`pannelloNellaPianta` in lib/calcoli/sala.js);
           qui si disegna quello che è stato deciso. */}
-      {pannello && riquadroPannello && (
+      {pannelli
+        .filter((p) => p && p.contenuto && p.riquadro)
+        .map((p, i) => (
         <div
+          key={i}
           // ⚠️ TRASPARENTE E SENZA BORDO: il contenuto porta già il suo
           // riquadro, e due riquadri uno dentro l'altro costavano 24 punti di
           // altezza su 487 — che è quello che faceva sforare la casella
@@ -931,27 +940,27 @@ export default function PiantaSala({
           style={
             verticale
               ? {
-                  left: `${(riquadroPannello.y / SALA_PROFONDITA_CM) * 100}%`,
-                  top: `${((SALA_LARGHEZZA_CM - riquadroPannello.x - riquadroPannello.larghezza) / SALA_LARGHEZZA_CM) * 100}%`,
-                  width: `${(riquadroPannello.profondita / SALA_PROFONDITA_CM) * 100}%`,
-                  height: `${(riquadroPannello.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                  left: `${(p.riquadro.y / SALA_PROFONDITA_CM) * 100}%`,
+                  top: `${((SALA_LARGHEZZA_CM - p.riquadro.x - p.riquadro.larghezza) / SALA_LARGHEZZA_CM) * 100}%`,
+                  width: `${(p.riquadro.profondita / SALA_PROFONDITA_CM) * 100}%`,
+                  height: `${(p.riquadro.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
                 }
               : {
-                  left: `${(riquadroPannello.x / SALA_LARGHEZZA_CM) * 100}%`,
-                  top: `${(riquadroPannello.y / SALA_PROFONDITA_CM) * 100}%`,
-                  width: `${(riquadroPannello.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
-                  height: `${(riquadroPannello.profondita / SALA_PROFONDITA_CM) * 100}%`,
+                  left: `${(p.riquadro.x / SALA_LARGHEZZA_CM) * 100}%`,
+                  top: `${(p.riquadro.y / SALA_PROFONDITA_CM) * 100}%`,
+                  width: `${(p.riquadro.larghezza / SALA_LARGHEZZA_CM) * 100}%`,
+                  height: `${(p.riquadro.profondita / SALA_PROFONDITA_CM) * 100}%`,
                 }
           }
-          /* ⚠️ LA TASTIERA DELL'IPHONE copre metà schermo, e questo pannello
-             sta in fondo alla pianta: senza questa riga il campo su cui si
+          /* ⚠️ LA TASTIERA DELL'IPHONE copre metà schermo, e questi pannelli
+             stanno dentro la pianta: senza questa riga il campo su cui si
              sta scrivendo finirebbe sotto la tastiera. Si chiede la distanza
              MINIMA, così dove la tastiera non c'è non si muove niente. */
           onFocus={(e) => e.target?.scrollIntoView?.({ block: "nearest" })}
         >
-          {pannello}
+          {p.contenuto}
         </div>
-      )}
+      ))}
       </div>
     </div>
   );

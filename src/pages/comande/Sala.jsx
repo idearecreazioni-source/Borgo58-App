@@ -39,7 +39,12 @@ import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
-import { ZONE_DEL_BANCO, ZONE_FONDALE, pannelloNellaPianta } from "../../lib/calcoli/sala";
+import {
+  ZONE_DEL_BANCO,
+  ZONE_DEL_PANNELLO,
+  ZONE_FONDALE,
+  pannelloNellaPianta,
+} from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
@@ -439,6 +444,28 @@ export default function Sala() {
       </div>
     ) : null;
 
+  // 🔴 I GESTI DEL TAVOLO, DENTRO LA PIANTA (21/08, disegno di Alessio).
+  //
+  // ⚠️ ROVESCIA UNA SUA DECISIONE DI POCHE ORE PRIMA, e va detto: aveva
+  // scelto che riepilogo e pulsanti si raggiungessero con una **strisciata**,
+  // rifiutando la proposta del validatore di tenerli fissi. La ragione era
+  // buona — *un pulsante fisso in fondo sta dove poggiano i pollici quando si
+  // tiene il tablet con due mani*. Adesso c'è una colonna sua **al centro
+  // della pianta**, lontana dai bordi: la ragione di allora non vale più.
+  //
+  // ⚠️ SONO CONTESTUALI AL TAVOLO TOCCATO, ed è il punto: tavolo libero →
+  // «Apri il tavolo»; tavolo con un conto → i tre gesti del conto. Chi guarda
+  // non deve scegliere fra pulsanti che non c'entrano.
+  //
+  // ⚠️ L'area è quella di cucina e servizi (`ZONE_DEL_PANNELLO`), la stessa
+  // che il Calendario usa per il modulo di prenotazione — ed **eredita la
+  // sua rete**: se un tavolo finisse là dentro, il pannello sparisce invece
+  // di coprirlo.
+  const riquadroGesti = useMemo(
+    () => pannelloNellaPianta(ZONE_FONDALE, sagome, ZONE_DEL_PANNELLO),
+    [sagome]
+  );
+
   const apriConoscendoIlConto = async (orderId) => {
     setError("");
     setLoadingOrder(true);
@@ -687,6 +714,74 @@ export default function Sala() {
   const sectionLabel =
     "text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
 
+  // Il contenuto del pannello dei gesti. Cambia con quello che si sta
+  // toccando, e per questo non ha un titolo: il titolo sarebbe sempre lo
+  // stesso mentre il contenuto cambia.
+  const pannelloGesti = order ? (
+    <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5">
+      <p className="text-[11px] font-semibold text-b58-charcoal-soft leading-none">
+        {order.table_label}
+      </p>
+      <button
+        type="button"
+        disabled={busy || draftItems.length === 0}
+        onClick={handleSend}
+        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment text-xs font-semibold px-2"
+      >
+        Invia{draftItems.length > 0 ? ` (${draftItems.length})` : ""}
+      </button>
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          disabled={sentItems.length === 0}
+          onClick={() => setShowPrecon(true)}
+          className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 bg-white disabled:opacity-40 text-b58-charcoal text-xs px-1"
+        >
+          Preconto
+        </button>
+        <button
+          type="button"
+          disabled={sentItems.length === 0}
+          onClick={() => setShowClose(true)}
+          className="tocco-bottone flex-1 rounded-lg bg-b58-terracotta disabled:opacity-40 text-b58-parchment text-xs font-semibold px-1"
+        >
+          Chiudi
+        </button>
+      </div>
+      {/* ⚠️ IL RIEPILOGO QUI E' A COLPO D'OCCHIO, e non ha i gesti per
+          togliere o annotare: quelli restano nella lista sotto la pianta,
+          dove c'e' lo spazio per premerli. Non e' un doppione — sono due
+          cose diverse: qui si LEGGE cosa e' stato segnato, li' si CORREGGE. */}
+      {(draftItems.length > 0 || sentItems.length > 0) && (
+        <div className="text-[11px] leading-tight border-t border-b58-charcoal/10 pt-1">
+          {draftItems.map((it) => (
+            <p key={it.id} className="text-b58-terracotta-dark">
+              {it.quantity}× {lineLabel(it)}
+            </p>
+          ))}
+          {sentItems.map((it) => (
+            <p key={it.id} className="text-b58-charcoal-soft/70">
+              {it.quantity}× {lineLabel(it)}
+            </p>
+          ))}
+          <p className="mt-1 font-semibold text-b58-charcoal">{formatEUR(total)}</p>
+        </div>
+      )}
+    </div>
+  ) : selezione.length > 0 && !spostando ? (
+    <div className="h-full overflow-auto p-1.5 flex flex-col justify-center">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={apriSelezione}
+        className="tocco-riga w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment text-xs font-semibold px-2"
+      >
+        Apri {selezione.length === 1 ? "il tavolo" : `${selezione.length} tavoli`}
+      </button>
+    </div>
+  ) : null;
+
+
   // 🔴 IL MENU È UNA VARIABILE, non un pezzo di JSX in mezzo al conto — ed è
   // quello che permette di metterlo ACCANTO alla pianta invece che sotto.
   // ⚠️ Non è un rimescolamento estetico: durante la comanda si cercano i
@@ -869,7 +964,7 @@ export default function Sala() {
     // ⚠️ Col conto aperto servono DUE colonne, e lì la ragione dei 448 non
     // vale più: non è una riga di testo da leggere, sono due pannelli
     // affiancati. Senza conto la schermata torna stretta e centrata.
-    <div className={`mx-auto pb-6 ${order ? "max-w-3xl" : "max-w-md"}`}>
+    <div className="max-w-3xl mx-auto pb-6">
       {/* 🔴 LA SERATA È FINITA, E LA SALA NON CAMBIA DA SOLA.
           È una decisione di Alessio: chi sta chiudendo alle 5 non deve
           vedersi muovere la sala sotto le mani. Ma tacere del tutto lascia
@@ -1035,8 +1130,17 @@ export default function Sala() {
           centimetri veri che la tiene toccabile vive dentro `PiantaSala` e
           vale anche qui. Se lo spazio non basta, le due colonne tornano una
           sopra l'altra invece di rimpicciolire i tavoli. */}
-      <div className={order ? "sm:flex sm:flex-row-reverse sm:items-start sm:gap-3" : ""}>
-        <div className={order ? "sm:w-[62%] sm:shrink-0" : ""}>
+      {/* 🔴 LA PIANTA STA A DESTRA SEMPRE, con conto o senza (21/08).
+          Prima le due colonne comparivano solo col conto aperto, e Alessio
+          l'ha notato al primo tocco: **«swicha da destra al centro in base
+          a cosa si tocca»**. Era l'ultimo residuo della schermata a colonna
+          singola — e una sala che si sposta sotto gli occhi mentre si lavora
+          costringe a ricercarla ogni volta.
+          ⚠️ Senza conto la colonna di sinistra e' vuota, ed e' voluto: lo
+          spazio resta suo, cosi' quando il menu compare la pianta non si
+          muove di un punto. */}
+      <div className="sm:flex sm:flex-row-reverse sm:items-start sm:gap-3">
+        <div className="sm:w-[62%] sm:shrink-0">
       {/* LA SALA ------------------------------------------------------ */}
       {/* La stessa pianta del Calendario: se stasera tre tavoli sono
           accostati, qui si vedono accostati — e si aprono insieme, con UN
@@ -1085,8 +1189,10 @@ export default function Sala() {
             onSfondo={toccaSfondo}
             selezione={selezione}
             onSeleziona={toccaSagoma}
-            pannello={bancoBar}
-            riquadroPannello={riquadroBanco}
+            pannelli={[
+              { contenuto: bancoBar, riquadro: riquadroBanco },
+              { contenuto: pannelloGesti, riquadro: riquadroGesti },
+            ]}
             // Nessuna scritta dentro la sagoma oltre alla cifra dei coperti:
             // dentro un quadrato di 90 cm girato non ci sta niente di
             // leggibile. Chi c'è si legge nell'elenco qui sotto, dove lo
