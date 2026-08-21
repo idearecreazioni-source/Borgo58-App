@@ -21,8 +21,8 @@ import {
   voidSentItem,
 } from "../../lib/api/orders";
 import { getCopertiDelGiorno, getPiantaDelGiorno, getTurniDelGiorno } from "../../lib/api/sala";
-import { listReservations } from "../../lib/api/reservations";
-import { FASCE, serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
+import { annullaPrenotazione, listReservations } from "../../lib/api/reservations";
+import { serataDiServizio, serataScaduta } from "../../lib/calcoli/serata";
 import {
   fascePerIlTavolo,
   insiemiPerTavolo,
@@ -37,6 +37,7 @@ import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
 import PrecontoModal from "./PrecontoModal";
 
@@ -382,6 +383,7 @@ export default function Sala() {
           fascia: t.fascia,
           liberareEntro: t.liberare_entro,
           etichette: t.etichette ?? [],
+          tavoli: t.tavoli ?? [],
           nome: r?.customer_name ?? "—",
           persone: r?.party_size ?? null,
           ritardo: ritardi.perPrenotazione.get(t.reservation_id),
@@ -390,6 +392,18 @@ export default function Sala() {
       }),
     [turni, prenotati, ritardi, openOrders]
   );
+
+  // Le sole prenotazioni che la pianta NON può mostrare: quelle a cui nessuno
+  // ha ancora dato un tavolo. Sono l'unica riga rimasta dell'elenco.
+  const senzaTavolo = useMemo(
+    () => elencoSerata.filter((p) => p.etichette.length === 0 && !p.ritardo?.arrivata),
+    [elencoSerata]
+  );
+
+  // 🔴 CHI HA PRENOTATO IL TAVOLO CHE SI STA TOCCANDO. Serve al riquadro del
+  // banco bar dentro la pianta, e al gesto «non sono arrivati».
+  const prenotazioniDeiTavoli = (ids = []) =>
+    elencoSerata.filter((p) => (p.tavoli ?? []).some((t) => ids.includes(t)));
 
   const apriConoscendoIlConto = async (orderId) => {
     setError("");
@@ -863,63 +877,36 @@ export default function Sala() {
         </div>
       )}
 
-      {/* CHI ARRIVA STASERA -------------------------------------------- */}
-      {/* ⚠️ Fino al giro D2 questa schermata NON SAPEVA CHI AVEVA PRENOTATO:
-          la sala si apriva bianca, e chi serviva doveva incrociare due
-          dispositivi con gli occhi. Le informazioni vanno a capo invece di
-          scorrere di lato, perché qui si guarda da un tablet tenuto in
-          verticale — e il tavolo è la prima cosa che serve, non l'ultima. */}
-      {elencoSerata.length > 0 && (
-        <div className="mb-4">
-          <p className={sectionLabel}>Stasera</p>
-          <div className="space-y-1.5">
-            {elencoSerata.map((p) => (
-              <div
-                key={p.id}
-                className={`rounded-lg px-3 py-2 ring-1 ${
-                  p.ritardo?.inRitardo
-                    ? "bg-b58-parchment ring-b58-charcoal/40"
-                    : "bg-b58-parchment ring-b58-charcoal/10"
-                }`}
-              >
-                <p className="text-sm text-b58-charcoal">
-                  <strong>{p.ora?.slice(0, 5)}</strong> · {p.nome}
-                  {p.persone ? ` · ${p.persone} pers.` : ""}
-                  {" · "}
-                  {p.etichette.length > 0 ? (
-                    <strong>{p.etichette.join(" · ")}</strong>
-                  ) : (
-                    // ⚠️ Detto, non taciuto: una confermata senza tavolo
-                    // arriva lo stesso, e chi apre la porta deve saperlo
-                    // prima di trovarsela davanti.
-                    <em className="text-b58-charcoal-soft">tavolo da assegnare</em>
-                  )}
-                </p>
-                <p className="text-[11px] text-b58-charcoal-soft/80 leading-relaxed">
-                  {p.ritardo?.arrivata
-                    ? p.conto
-                      ? "seduti — il conto è aperto"
-                      : "arrivati"
-                    : p.ritardo?.inRitardo
-                      ? `non ancora arrivati — ${p.ritardo.minuti} minuti oltre l'ora`
-                      : FASCE[p.fascia]?.spiega}
-                  {p.liberareEntro && (
-                    <>
-                      {" · "}
-                      <strong>da liberare entro le {p.liberareEntro.slice(0, 5)}</strong>
-                    </>
-                  )}
-                </p>
-              </div>
-            ))}
-          </div>
-          {tolleranza != null && (
-            <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5 leading-relaxed">
-              Un tavolo si sbarra quando passano più di {tolleranza} minuti dall&apos;ora
-              prenotata e nessuno ha aperto la comanda. <strong>Avvisa soltanto</strong>: se
-              ridare via il tavolo lo decidi tu.
-            </p>
-          )}
+      {/* 🔴 LA LISTA «STASERA» È SPARITA (21/08, deciso da Alessio), e la
+          ragione ribalta un parere del validatore: **il segnale del ritardo è
+          il tratteggio dentro il tavolo**, che si vede senza cercarlo. Visto
+          quello, si tocca il tavolo e si leggono i dettagli. La lista
+          ripeteva a parole quello che il tavolo già dice — e in servizio una
+          ripetizione si paga in secondi e in spazio.
+          ⚠️ Via anche «da liberare entro le…»: a lui basta sapere che il
+          tavolo si può ridare quando è tratteggiato.
+
+          ⚠️ COSA SI PERDE DAVVERO — misurato prima di toglierla, e sono
+          TRE cose (il riepilogo le elenca per intero):
+          l'ORA prenotata, i MINUTI di ritardo, e — la sola grave — le
+          prenotazioni SENZA TAVOLO.
+
+          🔴 Quelle restano, ed è l'unica riga sopravvissuta: **una
+          prenotazione senza tavolo non compare sulla pianta per
+          costruzione**, quindi togliendo la lista sparirebbe del tutto.
+          Misurato: in produzione oggi sono 0 su 3, sul progetto di prova 4
+          su 7 — cioè è un caso normale, non un residuo. Il nome è quello
+          che serve a chi apre la porta. */}
+      {senzaTavolo.length > 0 && (
+        <div className="mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold/40 px-3 py-2">
+          <p className="text-xs font-semibold text-b58-gold-dark mb-0.5">
+            {senzaTavolo.length === 1 ? "Una prenotazione senza tavolo" : `${senzaTavolo.length} prenotazioni senza tavolo`}
+          </p>
+          <p className="text-sm text-b58-charcoal leading-snug">
+            {senzaTavolo
+              .map((p) => `${p.ora?.slice(0, 5)} · ${p.nome}${p.persone ? ` (${p.persone})` : ""}`)
+              .join(" — ")}
+          </p>
         </div>
       )}
 
@@ -968,6 +955,44 @@ export default function Sala() {
               preconto.
             </p>
           )}
+          {/* 🔴 «NON SONO ARRIVATI» — il gesto che nasce dalla lista sparita.
+              Col tavolo tratteggiato, chi decide di ridarlo via deve poterlo
+              fare da lì: prima l'unica strada era il Calendario, cioè uscire
+              da Comande in mezzo al servizio.
+
+              ⚠️ COMPARE SOLO SUL TAVOLO TRATTEGGIATO. Non è prudenza: è che
+              su un tavolo che deve ancora arrivare quel pulsante sarebbe un
+              invito a disdire per sbaglio una prenotazione che non ha fatto
+              niente di male.
+
+              ⚠️ E LA PAROLA NON DEVE SOMIGLIARE A «ANNULLA IL CONTO», che
+              esiste ed è un'altra cosa. Qui si dice **chi** non è arrivato e
+              **cosa succede al tavolo**: chi legge non deve dedurre niente. */}
+          {!spostando &&
+            prenotazioniDeiTavoli(selezione)
+              .filter((p) => p.ritardo?.inRitardo)
+              .map((p) => (
+                <div key={p.id} className="mt-2 pt-2 border-t border-b58-charcoal/10">
+                  <p className="text-[11px] text-b58-charcoal-soft/80 mb-1.5 leading-relaxed">
+                    <strong>{p.nome}</strong> aveva prenotato per le{" "}
+                    {p.ora?.slice(0, 5)} e non è arrivato
+                    {p.ritardo?.minuti ? ` (${p.ritardo.minuti} minuti fa)` : ""}.
+                  </p>
+                  <ConfermaDistruttiva
+                    etichetta={`Non è arrivato: libera il tavolo`}
+                    cosaSparisce={`la prenotazione di ${p.nome} delle ${p.ora?.slice(0, 5)}`}
+                    domanda="Il tavolo torna libero e si può ridare a qualcun altro. La prenotazione risulterà annullata."
+                    etichettaConferma="Sì, libera il tavolo"
+                    disabilitato={busy}
+                    onConferma={() =>
+                      withBusy(() => annullaPrenotazione(p.id)).then(() => {
+                        setSelezione([]);
+                        loadBoard();
+                      })
+                    }
+                  />
+                </div>
+              ))}
         </div>
       )}
 
