@@ -1,5 +1,4 @@
-import { supabase } from "./supabase";
-import { fraseDelGuasto } from "./calcoli/erroriDiRete";
+import { chiamaFunzione } from "./chiamaFunzione";
 
 // COME SI CHIAMA, IN ITALIANO, QUELLO CHE STA FACENDO IL CORRIDOIO.
 //
@@ -42,28 +41,19 @@ const comeSiChiama = (operazione) =>
 // invece dirette (categoria A del contratto): questo modulo non le
 // riguarda.
 export async function eseguiOperazione(operazione, parametri) {
-  const { data, error } = await supabase.functions.invoke("operazioni-atomiche", {
-    body: { operazione, parametri },
-  });
-
-  if (error) {
-    // La Edge Function risponde con { errore: { messaggio } } e il
-    // messaggio è quello scritto per l'operatore dalla funzione Postgres
-    // (es. "Questo conto è già stato chiuso"): va mostrato intatto, non
-    // sostituito da un generico "Edge Function returned a non-2xx".
-    let dalCorpo = null;
-    try {
-      const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
-    } catch {
-      // risposta senza corpo JSON: decide `fraseDelGuasto`
-    }
-    // 🔴 E QUANDO LA RICHIESTA NON È PARTITA NON C'È NESSUN CORPO da leggere:
-    // fino al 21/08 si ricadeva sul messaggio della libreria, in inglese.
-    // La regola sta in `calcoli/erroriDiRete.js`, non qui: le chiamate alle
-    // funzioni online sono quattro e avevano tutte lo stesso buco.
-    throw new Error(fraseDelGuasto(error, comeSiChiama(operazione), dalCorpo));
-  }
-
+  // ⚠️ IL MODO DI CHIAMARE STA IN UN POSTO SOLO (`chiamaFunzione`), e non è
+  // una pulizia: lo stesso identico blocco era ricopiato in **quattro**
+  // punti, e la correzione del 22/08 — distinguere «la connessione manca»
+  // da «quel servizio non è installato qui» — avrebbe dovuto essere fatta
+  // quattro volte, cioè avrebbe potuto fermarsi a tre.
+  //
+  // Le frasi scritte per chi sta in sala («Questo conto è già stato
+  // chiuso») continuano ad arrivare intatte: le legge `chiamaFunzione` dal
+  // corpo della risposta e vincono su qualunque frase generica.
+  const data = await chiamaFunzione(
+    "operazioni-atomiche",
+    { operazione, parametri },
+    comeSiChiama(operazione)
+  );
   return data?.risultato ?? null;
 }

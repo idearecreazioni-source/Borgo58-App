@@ -22,8 +22,31 @@
 // La differenza: là il difetto era che *non si sapeva*, qui che *si sa e non
 // si capisce*. È più piccolo, e per questo più facile da lasciare lì.
 
-/** Le tre cose che possono andare storte, e sono davvero tre. */
+/** Le cose che possono andare storte. */
 export const NON_PARTITA = "non-partita";
+/**
+ * 🔴 IL QUARTO CASO, TROVATO DA ALESSIO SUL GESTIONALE DI PROVA (22/08).
+ *
+ * Premendo «Compila con l'assistente» compariva *«sembra che manchi la
+ * connessione»* — **e la connessione c'era**. Misurato nel browser vero, non
+ * dedotto:
+ *
+ * | funzione | cosa succede |
+ * |---|---|
+ * | installata | risposta HTTP regolare, anche se è un 401 |
+ * | **non installata** | `TypeError: Failed to fetch` — **identico alla rete staccata** |
+ *
+ * ⚠️ E NON È UN DIFETTO DEL DISCRIMINANTE: quando una funzione non esiste il
+ * gateway risponde 404 **senza le intestazioni CORS**, quindi il browser
+ * blocca la risposta e non dice perché. È una protezione voluta dei browser
+ * — serve a impedire che una pagina scandagli la rete di chi la guarda — e
+ * **quell'informazione lato client non esiste**.
+ *
+ * 🔴 Quindi la distinzione non si può leggere nell'errore: **si misura**. Se
+ * il gestionale sta parlando col database in questo istante, la rete c'è, e
+ * allora il guasto è di quel servizio. È quello che fa `reteViva`.
+ */
+export const SERVIZIO_ASSENTE = "servizio-assente";
 export const NESSUNA_RISPOSTA = "nessuna-risposta";
 export const HA_RISPOSTO = "ha-risposto";
 
@@ -44,7 +67,7 @@ export const HA_RISPOSTO = "ha-risposto";
  * onesto — il messaggio *descrive* il guasto, il `context` dice solo che
  * qualcosa è stato allegato.
  */
-export function genereDelGuasto(errore) {
+export function genereDelGuasto(errore, { reteViva = null } = {}) {
   if (!errore) return null;
   const nome = String(errore.name || "");
   const m = String(errore.message || "").toLowerCase();
@@ -55,7 +78,11 @@ export function genereDelGuasto(errore) {
     m.includes("networkerror") ||
     m.includes("network error")
   )
-    return NON_PARTITA;
+    // ⚠️ `reteViva` ha tre valori e il terzo conta: `null` vuol dire «non
+    // l'ho misurato», e allora si resta sulla frase prudente di prima.
+    // Trasformare «non lo so» in «la rete c'è» sarebbe la stessa forma
+    // dello zero al posto del vuoto.
+    return reteViva === true ? SERVIZIO_ASSENTE : NON_PARTITA;
   if (errore.context) return HA_RISPOSTO;
   return NESSUNA_RISPOSTA;
 }
@@ -72,8 +99,8 @@ export function genereDelGuasto(errore) {
  *                    cosa è rimasto indietro.
  * @param dalCorpo    la frase italiana letta dalla risposta, se c'era
  */
-export function fraseDelGuasto(errore, cosa, dalCorpo = null) {
-  const genere = genereDelGuasto(errore);
+export function fraseDelGuasto(errore, cosa, dalCorpo = null, { reteViva = null } = {}) {
+  const genere = genereDelGuasto(errore, { reteViva });
   // ⚠️ «a aprire» si legge male e si nota: davanti a vocale ci vuole «ad».
   // Trovato leggendo la frase vera a schermo, non scrivendola.
   const gesto = cosa ? `${/^[aeiou]/i.test(cosa) ? "d" : ""} ${cosa}` : "";
@@ -84,6 +111,13 @@ export function fraseDelGuasto(errore, cosa, dalCorpo = null) {
 
   if (genere === NON_PARTITA)
     return `Non sono riuscito a${gesto}: sembra che manchi la connessione. Riprova appena torna.`;
+
+  // ⚠️ La rete c'è — l'abbiamo appena misurata — quindi il guasto è di
+  // QUESTO servizio, e la frase non deve mandare a cercare una causa che
+  // non esiste. È la famiglia delle frasi diventate false: una frase giusta
+  // per un caso, usata per tutti.
+  if (genere === SERVIZIO_ASSENTE)
+    return `Non sono riuscito a${gesto}: questa parte del gestionale non e' installata qui. La connessione c'e' — l'ho appena controllata.`;
 
   if (genere === NESSUNA_RISPOSTA)
     return `Non sono riuscito a${gesto}: il gestionale non ha risposto. Riprova.`;

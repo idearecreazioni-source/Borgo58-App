@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { fraseDelGuasto } from "../calcoli/erroriDiRete";
+import { chiamaFunzione } from "../chiamaFunzione";
 
 // L'assistente che risponde sui documenti archiviati (12/08/2026).
 //
@@ -17,26 +17,11 @@ import { fraseDelGuasto } from "../calcoli/erroriDiRete";
  * "non risulta" che vuol dire solo "non ho guardato lì".
  */
 export async function chiediAllArchivio(domanda) {
-  const { data, error } = await supabase.functions.invoke("assistente-archivio", {
-    body: { domanda },
-  });
-
-  if (error) {
-    // La funzione risponde { errore: { messaggio } } con frasi scritte per
-    // Alessio ("Limite di spesa raggiunto"): vanno mostrate intatte, non
-    // sostituite da un generico "non-2xx".
-    let dalCorpo = null;
-    try {
-      const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
-    } catch {
-      // risposta senza corpo JSON: decide `fraseDelGuasto`
-    }
-    // Col telefono staccato la richiesta non parte, quindi non c'è nessun
-    // corpo: fino al 21/08 usciva il messaggio inglese della libreria.
-    throw new Error(fraseDelGuasto(error, "chiedere all'archivio", dalCorpo));
-  }
-
+  const data = await chiamaFunzione(
+    "assistente-archivio",
+    { domanda },
+    "chiedere all'archivio"
+  );
   return data?.risultato ?? null;
 }
 
@@ -51,21 +36,11 @@ export async function chiediAllArchivio(domanda) {
  * quindi si chiede per nome.
  */
 export async function leggiContenutoDocumento(documentoId, { rileggi = false } = {}) {
-  const { data, error } = await supabase.functions.invoke("documento-leggi", {
-    body: { documento_id: documentoId, rileggi },
-  });
-
-  if (error) {
-    let dalCorpo = null;
-    try {
-      const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
-    } catch {
-      // risposta senza corpo JSON: decide `fraseDelGuasto`
-    }
-    throw new Error(fraseDelGuasto(error, "leggere il documento", dalCorpo));
-  }
-
+  const data = await chiamaFunzione(
+    "documento-leggi",
+    { documento_id: documentoId, rileggi },
+    "leggere il documento"
+  );
   return data?.risultato ?? null;
 }
 

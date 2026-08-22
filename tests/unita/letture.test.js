@@ -124,6 +124,17 @@ describe("nessuna lettura resta muta", () => {
     // forma delle funzioni aperte ad anon. Chi ne aggiunge uno lo dichiara
     // QUI, con la sua ragione nel codice.
     const attesi = [
+      // ⚠️ AGGIUNTO IL 22/08 con la sonda che distingue «manca la
+      // connessione» da «questo servizio non c'è». I due silenzi qui dentro
+      // stanno **dentro un guasto già in corso**, e sono l'unico posto del
+      // progetto dove tacere è la risposta più informativa delle altre:
+      //   · la sonda che fallisce lascia `null` — «non lo so» — e la frase
+      //     resta quella prudente invece di affermare una causa precisa che
+      //     nessuno ha verificato;
+      //   · la risposta senza corpo JSON è **il caso previsto**: è ciò che
+      //     succede quando la richiesta non parte, e chi decide la frase è
+      //     `fraseDelGuasto`, che ha già tutto quello che serve.
+      "src/lib/chiamaFunzione.js",
       // La giornata proposta: senza l'ora di fine serata la schermata dice
       // di MENO (non dichiara la serata), invece di affermarla su un'ora
       // che nessuno ha detto.

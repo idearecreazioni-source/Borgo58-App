@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import { fraseDelGuasto } from "../calcoli/erroriDiRete";
+import { chiamaFunzione } from "../chiamaFunzione";
 
 // Le schede dei prodotti: quello che un prodotto nato da una fattura non
 // ha (allergeni, stagionalità, conservazione, durata, temperatura di
@@ -17,22 +17,11 @@ export async function listProdottiDaCompilare() {
 // Una chiamata sola per tutti i prodotti: il costo di un giro sta quasi
 // tutto nelle istruzioni, non nei nomi.
 export async function compilaSchede(ids) {
-  const { data, error } = await supabase.functions.invoke("schede-prodotto", {
-    body: ids?.length ? { prodotti: ids } : {},
-  });
-  if (error) {
-    let dalCorpo = null;
-    try {
-      const corpo = await error.context?.json();
-      if (corpo?.errore?.messaggio) dalCorpo = corpo.errore.messaggio;
-    } catch {
-      // risposta senza corpo JSON: decide `fraseDelGuasto`
-    }
-    // Col telefono staccato la richiesta non parte e non c'e' nessun corpo
-    // da leggere: fino al 21/08 usciva il messaggio inglese della libreria.
-    throw new Error(fraseDelGuasto(error, "compilare le schede dei prodotti", dalCorpo));
-  }
-  return data;
+  return chiamaFunzione(
+    "schede-prodotto",
+    ids?.length ? { prodotti: ids } : {},
+    "compilare le schede dei prodotti"
+  );
 }
 
 // I prodotti i cui allergeni sono ancora solo una stima del modello.

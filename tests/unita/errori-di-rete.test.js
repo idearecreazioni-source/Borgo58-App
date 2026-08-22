@@ -3,6 +3,7 @@ import {
   HA_RISPOSTO,
   NESSUNA_RISPOSTA,
   NON_PARTITA,
+  SERVIZIO_ASSENTE,
   fraseDelGuasto,
   genereDelGuasto,
 } from "../../src/lib/calcoli/erroriDiRete.js";
@@ -88,5 +89,56 @@ describe("l'errore della libreria quando la rete è staccata", () => {
   it("«ad aprire», non «a aprire»: davanti a vocale ci vuole la d", () => {
     expect(fraseDelGuasto(comeArrivaDavvero, "aprire il conto")).toContain("ad aprire");
     expect(fraseDelGuasto(comeArrivaDavvero, "chiudere il conto")).toContain("a chiudere");
+  });
+});
+
+// 🔴 IL QUARTO CASO, trovato da Alessio sul gestionale di prova il 22/08:
+// «Compila con l'assistente» diceva «sembra che manchi la connessione», e la
+// connessione c'era — mancava la FUNZIONE, che sulla prova non è installata.
+//
+// ⚠️ Misurato nel browser vero: una funzione che non esiste fa fallire il
+// `fetch` con `TypeError: Failed to fetch`, **identico** al telefono
+// staccato, perché il 404 del gateway non porta le intestazioni CORS. Il
+// browser non dice perché, ed è voluto. Quindi la differenza non si legge
+// nell'errore: si misura chiedendo al database se risponde.
+describe("la funzione che non c'è non è la rete che manca", () => {
+  const staccata = new TypeError("Failed to fetch");
+
+  it("senza misura resta la frase prudente di prima", () => {
+    expect(genereDelGuasto(staccata)).toBe(NON_PARTITA);
+    expect(fraseDelGuasto(staccata, "compilare le schede")).toContain("manchi la connessione");
+  });
+
+  it("🔴 con la rete misurata VIVA, la causa cambia", () => {
+    expect(genereDelGuasto(staccata, { reteViva: true })).toBe(SERVIZIO_ASSENTE);
+    const frase = fraseDelGuasto(staccata, "compilare le schede", null, { reteViva: true });
+    expect(frase).toContain("non e' installata qui");
+    // ⚠️ E soprattutto NON deve più mandare a cercare la connessione.
+    expect(frase).not.toContain("connessione. Riprova");
+  });
+
+  it("con la rete misurata MORTA resta la connessione, ed è giusto", () => {
+    expect(genereDelGuasto(staccata, { reteViva: false })).toBe(NON_PARTITA);
+  });
+
+  it("⚠️ «non l'ho misurato» non diventa «la rete c'è»", () => {
+    // null è il terzo stato: la sonda non si è potuta fare. Trattarlo come
+    // `true` direbbe con sicurezza una cosa che nessuno ha verificato.
+    expect(genereDelGuasto(staccata, { reteViva: null })).toBe(NON_PARTITA);
+  });
+
+  it("la misura non tocca gli altri due generi", () => {
+    const risposto = Object.assign(new Error("non-2xx"), { context: { status: 404 } });
+    expect(genereDelGuasto(risposto, { reteViva: true })).toBe(HA_RISPOSTO);
+    expect(genereDelGuasto(new Error("altro"), { reteViva: true })).toBe(NESSUNA_RISPOSTA);
+  });
+
+  it("una frase scritta per la sala vince comunque su tutto", () => {
+    // Se la funzione ha risposto con una frase nostra, quella si mostra
+    // intatta: è scritta per chi ha il cliente davanti.
+    const frase = fraseDelGuasto(staccata, "chiudere il conto", "Questo conto e' gia' chiuso.", {
+      reteViva: true,
+    });
+    expect(frase).toBe("Questo conto e' gia' chiuso.");
   });
 });
