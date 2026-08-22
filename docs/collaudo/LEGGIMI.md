@@ -263,3 +263,90 @@ trasformato in un vuoto che nessuno annuncia.*
 appena successo** — errore chiaro a schermo e avviso su Telegram, col freno di
 uno all'ora. È il comportamento che questo progetto insegue da giorni:
 *meglio un errore che si vede di un dato sbagliato che passa.*
+
+---
+
+## 🔴 Dove guardare — le sei domande che hanno trovato di più
+
+*Aggiunto il 22/08, dopo cinque giorni di difetti veri.* Non è un elenco di
+casi da spuntare — quello lo hai già escluso, e aveva ragione: un elenco
+scritto da chi i difetti non li ha ancora visti trova solo quelli che aveva
+in mente. **Queste sono le domande che hanno prodotto i reperti migliori**,
+ognuna con accanto il difetto che ha tirato fuori.
+
+### 1. «Questa schermata mi sta dicendo un dato, o che non lo sa?»
+
+La più produttiva di tutte. Una sala disegnata **vuota** e una sala che **non
+si è riusciti a leggere** si vedono uguali — ma la prima dice «non ha
+prenotato nessuno» e la seconda non dice niente.
+
+> Ha trovato: la pianta disegnata vuota quando una lettura falliva · «Nessun
+> tavolo configurato» in Comande · e al contrario, il **tavolo aperto nel
+> database che la schermata non mostrava**.
+
+Quando una schermata è vuota, chiediti sempre: *vuota, o rotta?*
+
+### 2. «Questo numero l'ho contato io, o l'ho chiesto al gestionale?»
+
+Ogni volta che un numero è stato scritto a mano da qualche parte, prima o poi
+è diventato falso — e nessuno se n'è accorto, perché **nessun controllo
+guarda una frase**.
+
+> Ha trovato: le prenotazioni «6» che erano 16 · i conti «5» che erano 8 ·
+> le causali «4» che sono 5 · «le sei fatture di collaudo» che erano
+> documenti, e le fatture erano zero.
+
+### 3. «Se questa lettura fallisse a metà, me ne accorgerei?»
+
+È la famiglia che ci ha morso più volte: **una risposta più corta che ha
+l'aria di essere intera**.
+
+> Ha trovato: le liste tagliate a mille righe senza nessun errore · il
+> registro delle cancellazioni controllato su 1000 righe di 1930 · il foglio
+> del menu del giorno stampato **completamente bianco**.
+
+### 4. «Cosa fanno DAVVERO questi due pulsanti?»
+
+Prima di dire «questi due sono troppo vicini», aprili. Su **quindici** coppie
+segnalate in tre giorni, **nove erano falsi allarmi**: «Annulla» che chiude
+un modulo, un impegno che si chiama «Pagare fattura», due riquadri di
+navigazione.
+
+> Ha trovato (i veri): «È arrivato» accanto ad «Annulla l'ordine» · due
+> «Rimuovi» delle mance a mezzo millimetro · e la freccia «↓» che stava a
+> 4,59 mm dal «Rimuovi» **della fase sopra** — sbagliando il tocco non
+> cancellavi quella che stavi spostando.
+
+### 5. «Questa frase è ancora vera?»
+
+Le frasi non hanno controlli. Erano tutte giuste il giorno in cui sono state
+scritte, e nessuno le ha più rilette quando il gestionale è cambiato sotto.
+
+> Ha trovato: «Cerco i posti liberi…» quando il conteggio dei posti non
+> esiste più · «Prima nota **manuale**» quando gli incassi entrano da soli ·
+> un commento nel codice che diceva l'opposto di quello che il codice faceva.
+
+⚠️ **La peggiore è quella falsa a metà**: la parte ancora vera la fa sembrare
+giusta tutta.
+
+### 6. «Come lo faccio fallire?» — invece di rileggerlo
+
+Rileggere il proprio lavoro appena fatto non ha mai trovato niente. **Romperlo
+di proposito sì**, tutte le volte.
+
+> Ha trovato: prove che passavano senza misurare niente · una verifica che
+> si sarebbe rotta al primo tavolo rinominato · e due volte **il difetto era
+> nello strumento di misura**, non nel gestionale.
+
+---
+
+## ⚠️ E due cose sul come guardare, imparate a spese nostre
+
+- **Le fotografie mentono.** Una era ritagliata dallo strumento, una era
+  vecchia per la cache del browser. Se una schermata ti sembra sbagliata,
+  **ricarica forzando l'aggiornamento** prima di segnalarla — e se puoi
+  dimmi l'ora dello scatto.
+- **Misura sul tablet, non sul computer.** Le stesse identiche righe di
+  codice danno numeri diversi sui due schermi: sul tablet i punti sono meno
+  e tutto ciò che è in centimetri veri diventa più grande. Un difetto di
+  ingombro che dal computer non si vede, sul tablet sborda.

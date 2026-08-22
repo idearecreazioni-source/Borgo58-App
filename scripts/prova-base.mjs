@@ -1057,6 +1057,33 @@ if (scenario) {
   }
   segna("documenti in archivio, col testo dentro (l'assistente ci può rispondere)", DOCUMENTI.length);
 
+  // --- I DUE MESI DI VITA (22/08/2026) ---
+  //
+  // 🔴 VA PRIMA DELLA PREVISIONE, e l'ordine non è estetico: qui sotto si
+  // chiudono due mesi col consuntivo, e il consuntivo FOTOGRAFA quello che
+  // trova. Costruire i conti dopo la chiusura vorrebbe dire fotografare
+  // zero, e la Proiezione direbbe la stessa cosa sia che funzioni sia che
+  // no — cioè non si potrebbe collaudare.
+  const { costruisciDueMesi } = await import("./prova-due-mesi.mjs");
+  const { salvaPreventivo } = await carica("/src/lib/api/preventivi.js");
+  const { recordStockConsumption, allineaGiacenza } = await carica("/src/lib/api/stock.js");
+  const { registraConteggioCassa, versaInBanca } = await carica("/src/lib/api/cash.js");
+  await costruisciDueMesi({
+    MARCA, ente, segna, supabase, orders, oggi,
+    dispensa, DISPENSA,
+    createRecipe, addRecipeIngredient, updateRecipe,
+    createMenu, addMenuItem, setActiveMenu,
+    createIngredient, updateIngredientPrice,
+    registerStockDelivery, createReservation,
+    createCashMovement, listAllCausali,
+    registraConteggioCassa, versaInBanca,
+    recordStockConsumption, allineaGiacenza,
+    createSupplierInvoice, markInvoicePaid,
+    salvaPreventivo,
+    fornitori: Object.values(fornitori),
+    copertoPrezzo: impostazioni?.coperto_price ?? null,
+  });
+
   // --- La Proiezione: una previsione aperta, dell'anno in corso ---
   //
   // ⚠️ L'anno è quello CORRENTE e non il 2027 dell'apertura vera, ed è una
