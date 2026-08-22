@@ -65,3 +65,9 @@ supabase/.temp/
 # senza digitare il PIN, e dentro c'e' un token vero — in "public/" per
 # giunta, cioe' in una cartella che il sito servirebbe a chiunque.
 public/sessione.local
+
+# ⚠️ E anche i file di servizio che NON sono .mjs (22/08/2026): il corpo di
+# una funzione tirato giu' dal database con `npm run funzione:viva` finisce
+# in un `.sql` usa-e-getta, e la riga qui sopra non lo copriva — infatti
+# uno c'e' finito dentro un commit. Stessa regola, estensione diversa.
+_*.local.*
