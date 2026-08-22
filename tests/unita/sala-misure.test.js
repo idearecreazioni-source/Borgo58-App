@@ -5,6 +5,7 @@ import {
   SALA_PROFONDITA_CM,
   bersaglioTavoloCm,
   sagomeFuoriDalDisegno,
+  sagomeTagliateDallaVista,
   CONTATTO_MINIMO_CM,
   TOCCO_TAVOLO_CM,
   marginePiantaInPiedi,
@@ -803,5 +804,76 @@ describe("il bersaglio del dito quando la pianta si adatta", () => {
 
   it("più punti, bersaglio più grande — il verso del rapporto", () => {
     expect(bersaglioTavoloCm(1000, 74)).toBeGreaterThan(bersaglioTavoloCm(500, 74));
+  });
+});
+
+// =====================================================================
+// 🔴 «STA DENTRO QUELLO CHE SI VEDE?» — la terza domanda (22/08/2026)
+// =====================================================================
+//
+// Le prime sette prove chiedono *«il riquadro entra nella pagina?»*, quelle
+// del 22/08 mattina *«la sagoma sta dentro il foglio?»*. Restava fuori
+// quella che conta per chi guarda: **la sagoma sta dentro il riquadro che si
+// VEDE?** — che non è geometria della sala, è geometria della pagina, e
+// dipende da ogni antenato, da un margine, da un ritaglio che nessuno ha
+// misurato.
+//
+// ⚠️ La misura vive nella schermata (là c'è una pagina); qui vive la
+// DECISIONE, che è la parte che si può rompere e provare senza browser.
+describe("le sagome che non si vedono per intero", () => {
+  const riquadro = { sinistra: 0, cima: 0, destra: 700, fondo: 1400 };
+  const sagoma = (nome, sinistra, destra, cima = 10, fondo = 90) => ({
+    nome,
+    sinistra,
+    destra,
+    cima,
+    fondo,
+  });
+
+  it("dentro il riquadro: nessuna denuncia", () => {
+    expect(
+      sagomeTagliateDallaVista([sagoma("T1", 10, 90), sagoma("T2", 600, 690)], riquadro)
+    ).toEqual([]);
+  });
+
+  it("🔴 una che sfora a destra viene nominata, e col verso", () => {
+    const fuori = sagomeTagliateDallaVista([sagoma("T7", 660, 740)], riquadro);
+    expect(fuori).toEqual([{ nome: "T7", versi: ["destra"] }]);
+  });
+
+  it("🔴 anche mezza sagoma conta: basta che il bordo esca", () => {
+    // È esattamente quello che si vede: metà tavolo con la lettera, il
+    // resto fuori. Se il controllo guardasse il CENTRO, questa passerebbe.
+    const fuori = sagomeTagliateDallaVista([sagoma("T7", 660, 701)], riquadro);
+    expect(fuori).toHaveLength(1);
+  });
+
+  it("e sotto, e sopra, e a sinistra", () => {
+    const fuori = sagomeTagliateDallaVista(
+      [
+        sagoma("giu", 10, 90, 1350, 1450),
+        sagoma("su", 10, 90, -20, 40),
+        sagoma("sx", -30, 40),
+      ],
+      riquadro
+    );
+    expect(fuori.map((f) => f.nome + ":" + f.versi.join("+"))).toEqual([
+      "giu:sotto",
+      "su:sopra",
+      "sx:sinistra",
+    ]);
+  });
+
+  it("mezzo punto di tolleranza, perché i bordi arrotondano", () => {
+    // ⚠️ Un guardiano che grida per un decimo di punto si impara a
+    // spegnere — ed è la lezione del freno dei rincari (13/08).
+    expect(sagomeTagliateDallaVista([sagoma("T1", 0, 700.4)], riquadro)).toEqual([]);
+    expect(sagomeTagliateDallaVista([sagoma("T1", 0, 701)], riquadro)).toHaveLength(1);
+  });
+
+  it("senza riquadro non inventa un allarme", () => {
+    // Prima che la pagina sia disegnata non si sa niente, e «non lo so» non
+    // è «è tagliata» (regola del 19/08).
+    expect(sagomeTagliateDallaVista([sagoma("T1", 0, 9999)], null)).toEqual([]);
   });
 });

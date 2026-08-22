@@ -241,6 +241,42 @@ export function bersaglioTavoloCm(puntiUtili, pxcm, verticale = true) {
  *
  * @returns {{label: string, destra: number, fondo: number}[]} i colpevoli
  */
+/**
+ * 🔴 LE SAGOME CHE NON SI VEDONO PER INTERO — la domanda giusta, e la
+ * terza versione di questa storia (22/08/2026).
+ *
+ * `sagomeFuoriDalDisegno()` chiede *«la sagoma sta dentro il FOGLIO?»*, e
+ * risponde sulla geometria della sala. Ma il foglio può a sua volta essere
+ * più largo di quello che si vede: basta un antenato più stretto, un
+ * ritaglio, una colonna che nessuno ha misurato. **La domanda che conta per
+ * chi guarda è se la sagoma sta dentro il RIQUADRO VISIBILE**, e quella non
+ * si risponde con la geometria: si risponde **misurando la pagina vera**.
+ *
+ * ⚠️ PER QUESTO LA DECISIONE STA QUI, PURA, E LA MISURA STA NELLA
+ * SCHERMATA: qui si può rompere e provare senza un browser; là si legge
+ * `getBoundingClientRect()`, che in una prova non esiste. È la stessa
+ * divisione di `email_conferma_dovuta()` — chi decide non è chi guarda.
+ *
+ * @param rettangoli [{ nome, sinistra, destra, cima, fondo }] in punti di schermo
+ * @param riquadro   { sinistra, destra, cima, fondo } la parte VISIBILE
+ * @returns i nomi delle sagome che escono, con da che parte
+ */
+export function sagomeTagliateDallaVista(rettangoli = [], riquadro) {
+  if (!riquadro) return [];
+  const tagliate = [];
+  for (const r of rettangoli) {
+    const versi = [];
+    // ⚠️ Mezzo punto di tolleranza: i bordi arrotondano, e un guardiano che
+    // grida per un decimo di punto si impara a spegnere (13/08).
+    if (r.destra > riquadro.destra + 0.5) versi.push("destra");
+    if (r.sinistra < riquadro.sinistra - 0.5) versi.push("sinistra");
+    if (r.fondo > riquadro.fondo + 0.5) versi.push("sotto");
+    if (r.cima < riquadro.cima - 0.5) versi.push("sopra");
+    if (versi.length > 0) tagliate.push({ nome: r.nome, versi });
+  }
+  return tagliate;
+}
+
 export function sagomeFuoriDalDisegno(sagome = []) {
   const fuori = [];
   for (const s of sagome) {

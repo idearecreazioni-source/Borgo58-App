@@ -12,6 +12,7 @@ import {
   ingrandimentoCm,
   misureSagoma,
   sagomaDisegnata,
+  sagomeTagliateDallaVista,
   sagomaPerIlDisegno,
   raggioMagneteCm,
 } from "../lib/calcoli/sala";
@@ -209,6 +210,20 @@ export default function PiantaSala({
   // Quanto è largo il DISEGNO adesso, in punti di schermo. Serve a tradurre
   // in centimetri di sala i millimetri veri dell'ingrandimento delle sagome.
   const [largPx, setLargPx] = useState(0);
+  // 🔴 QUALI SAGOME NON SI VEDONO PER INTERO — il guardiano nato il
+  // 22/08, dopo che una sala tagliata è arrivata fino al collaudo **due
+  // volte** senza che nessun controllo la nominasse.
+  //
+  // ⚠️ VIVE NEL BROWSER PERCHÉ LA DOMANDA VIVE LÌ. Le prove di questo
+  // progetto non hanno una pagina: possono dire se una sagoma sta dentro
+  // il FOGLIO (geometria), non se sta dentro quello che si VEDE — che
+  // dipende da ogni antenato della pagina, dai margini, da un ritaglio
+  // che nessuno ha misurato. Qui invece si legge la pagina vera.
+  //
+  // ⚠️ E SI DENUNCIA, non si registra in un angolo: è la stessa scelta
+  // dell'avviso delle letture tagliate (19/08). Una sala con meno tavoli
+  // non somiglia a un errore — somiglia a una sala.
+  const [tagliate, setTagliate] = useState([]);
 
   // ⚠️ SI GIRA DA SOLA QUANDO LO SCHERMO È STRETTO. Trovato da Alessio
   // aprendo il Calendario dal cellulare: la sala sdraiata si vedeva a
@@ -217,6 +232,46 @@ export default function PiantaSala({
   // basta per la sala sdraiata, si mette in piedi. E si misura in
   // centimetri VERI, con la calibrazione del dispositivo, non in pixel:
   // due schermi con gli stessi pixel possono essere grandi il doppio.
+  // La misura del guardiano, chiamata da due posti: quando il riquadro
+  // cambia taglia e quando cambia il disegno. ⚠️ Servono tutti e due —
+  // una sagoma spostata non fa cambiare taglia a niente.
+  const misuraTagliate = () => {
+    const el = contenitoreRef.current;
+    if (!el || !el.clientWidth) return;
+    // ⚠️ Il riquadro VISIBILE è `clientWidth/clientHeight`, non
+    // `getBoundingClientRect()`: il primo esclude quello che è fuori
+    // dallo scorrimento, il secondo no. È esattamente la differenza
+    // fra «c'è» e «si vede».
+    const b = el.getBoundingClientRect();
+    const riquadro = {
+      sinistra: b.left,
+      cima: b.top,
+      destra: b.left + el.clientWidth,
+      fondo: b.top + el.clientHeight,
+    };
+    const rettangoli = [...el.querySelectorAll("[data-sagoma]")].map((g) => {
+      const r = g.getBoundingClientRect();
+      const testo = g.querySelector("text");
+      return {
+        nome: testo ? testo.textContent.trim() : "?",
+        sinistra: r.left,
+        destra: r.right,
+        cima: r.top,
+        fondo: r.bottom,
+      };
+    });
+    // 🔴 SI SCRIVE SOLO SE È CAMBIATO, e non è un'ottimizzazione: questo
+    // controllo gira **dopo ogni disegno**, e `sagomeTagliateDallaVista`
+    // restituisce ogni volta un elenco nuovo. Scriverlo sempre farebbe
+    // ridisegnare, che farebbe ricontrollare, all'infinito — «Maximum
+    // update depth exceeded», e la pianta non si disegna affatto.
+    // ⚠️ Trovato aprendo la schermata, non rileggendo: la compilazione
+    // passava e il lint pure.
+    const adesso = sagomeTagliateDallaVista(rettangoli, riquadro);
+    const firma = (e) => e.map((s) => s.nome + ":" + s.versi.join("+")).join("|");
+    setTagliate((prima) => (firma(prima) === firma(adesso) ? prima : adesso));
+  };
+
   // useLayoutEffect e non useEffect: la misura avviene PRIMA che il
   // browser disegni, cosi la pianta non si vede girare per un istante a
   // ogni apertura della pagina.
@@ -230,12 +285,26 @@ export default function PiantaSala({
       if (!el.clientWidth) return;
       setLargPx(el.clientWidth);
       setStretto(el.clientWidth / leggiPxCm() < SOGLIA_IN_PIEDI_CM_REALI);
+      misuraTagliate();
     };
     misura();
     const osservatore = new ResizeObserver(misura);
     osservatore.observe(el);
+    // 🔴 E ANCHE IL DISEGNO, non solo il riquadro (22/08, trovato
+    // rompendolo dal vivo). Il disegno può cambiare taglia **senza che il
+    // riquadro cambi**: un carattere che finisce di caricarsi, un foglio
+    // di stile che arriva, un antenato che si stringe. Osservando solo il
+    // contenitore, il guardiano dormiva proprio nel caso per cui esiste —
+    // messo apposta un disegno più largo del riquadro, non ha detto
+    // niente.
+    if (svgRef.current) osservatore.observe(svgRef.current);
     return () => osservatore.disconnect();
   }, []);
+
+  // ⚠️ E dopo OGNI ridisegno: un tavolo trascinato, una sagoma che compare,
+  // la sala che si gira. Nessuno di questi cambia la taglia del riquadro,
+  // quindi l'osservatore qui sopra non se ne accorgerebbe.
+  useLayoutEffect(misuraTagliate);
 
   // In Comande è sempre in piedi (tablet verticale, deciso). Altrove
   // decide lo spazio che c'è.
@@ -489,6 +558,21 @@ export default function PiantaSala({
       ref={contenitoreRef}
       className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
     >
+      {/* 🔴 LA SALA TAGLIATA SI DENUNCIA (22/08/2026). Due volte una
+          pianta monca è arrivata fino al collaudo, e le due volte nessun
+          controllo l'ha nominata: il difetto non fa rumore — **una sala
+          con meno tavoli somiglia a una sala**, e un tavolo che non c'è
+          non si può nemmeno toccare per accorgersene.
+          ⚠️ Sta DENTRO il riquadro della pianta e non in cima alla pagina:
+          il dubbio nasce guardando la sala, e lì deve trovare la
+          risposta. E non sparisce da sola. */}
+      {tagliate.length > 0 && (
+        <p className="testo-sala bg-b58-terracotta/15 text-b58-terracotta-dark px-3 py-2 leading-tight">
+          <b>Attenzione: la sala non si vede tutta.</b> Non ci stanno per intero{" "}
+          {tagliate.map((t) => t.nome).join(", ")}. Gira il tablet o allarga la
+          finestra: quello che non si vede non si può toccare.
+        </p>
+      )}
       {/* 🔴 IL DISEGNO NON HA PIÙ UN PAVIMENTO IN CENTIMETRI REALI
           (22/08/2026, difetto trovato da Alessio col tablet).
 
