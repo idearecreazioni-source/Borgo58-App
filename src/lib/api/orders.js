@@ -179,7 +179,7 @@ export async function updateOrderNote(orderId, note) {
 
 // --- Righe della comanda ---
 
-export async function addDraftItem(orderId, { recipeId, freeTextName, destination, quantity, unitPrice, note }) {
+export async function addDraftItem(orderId, { recipeId, freeTextName, destination, quantity, unitPrice, note, turno }) {
   const { data, error } = await supabase
     .from("order_items")
     .insert({
@@ -190,6 +190,10 @@ export async function addDraftItem(orderId, { recipeId, freeTextName, destinatio
       quantity,
       unit_price: unitPrice,
       note: note || null,
+      // Il turno con cui questa pietanza esce dalla cucina: lo compone chi
+      // serve, e senza indicazione e' il primo — che e' come si lavorava
+      // prima del 21/08.
+      turno: turno ?? 1,
     })
     .select()
     .single();
@@ -472,4 +476,50 @@ export async function listContiFiscalizzatiInRitardo({ entityId, dal, al } = {})
   });
   if (error) throw error;
   return data ?? [];
+}
+
+// --- I turni dei pasti (21/08/2026) ---
+
+// «Avanti col prossimo turno»: il biglietto che esce dalla stampante della
+// cucina, con la frase e il numero del tavolo.
+//
+// 🔴 GENERICO E SENZA LIMITAZIONI, deciso da Alessio: non conta i turni, non
+// si spegne quando sono finiti, non impedisce di premerlo due volte. La
+// cucina ha già la comanda completa e vede da sé cosa resta da cucinare —
+// il biglietto dice solo «adesso».
+//
+// ⚠️ Una tabella sola, nessuna conseguenza altrove → scrittura diretta con
+// la RLS come barriera (Contratto, categoria A). L'invariante che conta —
+// niente biglietti su un conto chiuso — è un trigger del database, non un
+// controllo di schermata.
+export async function chiamaProssimoTurno(orderId) {
+  const { data: utente } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("chiamate_turno")
+    .insert({ order_id: orderId, creata_da: utente?.user?.id ?? null });
+  if (error) throw error;
+}
+
+// I biglietti ancora da stampare, col tavolo. ⚠️ Nessun limite di tempo: un
+// biglietto che nessuno ha stampato resta in coda finché non esce — è il
+// pattern §4.2 dell'architettura, dove una stampante spenta non fa perdere
+// niente.
+export async function listChiamateTurno() {
+  const { data, error } = await supabase
+    .from("chiamate_turno")
+    .select("*, order:order_id!inner(table_label, status)")
+    .eq("order.status", "aperto")
+    .order("creata_il", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+// «È uscito dalla stampante», come `prepared_at` sulle righe: non vuol dire
+// che la cucina l'ha letto.
+export async function segnaChiamataStampata(id, stampata) {
+  const { error } = await supabase
+    .from("chiamate_turno")
+    .update({ stampata_il: stampata ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) throw error;
 }

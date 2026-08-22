@@ -11,6 +11,7 @@ import {
   listOpenOrders,
   orderTotals,
   removeDraftItem,
+  chiamaProssimoTurno,
   sendDraftItems,
   setOrderCoperti,
   spostaConto,
@@ -31,6 +32,7 @@ import {
   statoDelConto,
 } from "../../lib/calcoli/ritardo";
 import { esitoDelTocco } from "../../lib/calcoli/selezione";
+import { etichettaTurno, righePerTurno } from "../../lib/calcoli/turni";
 import { listBarItems } from "../../lib/api/barItems";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
@@ -134,6 +136,18 @@ export default function Sala() {
   // ⚠️ E NON SI SCENDE A OGNI TOCCO: guardando un tavolo per leggere chi
   // c'è, la sala scapperebbe via sotto le dita.
   const [scendiAlMenu, setScendiAlMenu] = useState(false);
+  const [esitoChiamata, setEsitoChiamata] = useState("");
+  // 🔴 IL TURNO CHE SI STA SEGNANDO (21/08, deciso da Alessio). Le pietanze
+  // che si aggiungono adesso finiscono in questo turno; «Prossimo turno» lo
+  // fa avanzare di uno.
+  //
+  // ⚠️ NON SI DEDUCE MAI DALLA CATEGORIA DEL PIATTO: nel primo turno di
+  // Alessio ci sono due antipasti E una pasta. Li compone lui, secondo come
+  // vuole far mangiare quel tavolo.
+  //
+  // ⚠️ E RIPARTE DA UNO A OGNI CONTO: è una proprietà della comanda che si
+  // sta scrivendo, non dello schermo.
+  const [turnoCorrente, setTurnoCorrente] = useState(1);
   const menuRef = useRef(null);
 
   const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
@@ -582,6 +596,11 @@ export default function Sala() {
   })();
 
   useEffect(() => {
+    // Il turno riparte da uno su ogni tavolo che si apre.
+    setTurnoCorrente(1);
+  }, [order?.id]);
+
+  useEffect(() => {
     if (!scendiAlMenu || !order || !menuRef.current) return;
     // ⚠️ `behavior: auto`, non `smooth`: in servizio un movimento che dura
     // mezzo secondo si legge come un ritardo dell'app.
@@ -611,6 +630,7 @@ export default function Sala() {
         destination: "cucina",
         quantity: 1,
         unitPrice: mi.selling_price,
+        turno: turnoCorrente,
       })
     );
 
@@ -624,6 +644,7 @@ export default function Sala() {
         destination: "bar",
         quantity: 1,
         unitPrice: item.selling_price,
+        turno: turnoCorrente,
       })
     );
 
@@ -636,6 +657,7 @@ export default function Sala() {
         destination: freeForm.destination,
         quantity: 1,
         unitPrice: Number(freeForm.price),
+        turno: turnoCorrente,
       })
     ).then(() => setFreeForm({ name: "", price: "", destination: "bar" }));
   };
@@ -646,6 +668,20 @@ export default function Sala() {
   // quindi qui non c'e' niente da ricordarsi di salvare prima dell'invio.
   // Si mandano SOLO le righe visibili su questo schermo: se il Bar sta
   // componendo un altro giro sullo stesso tavolo, il suo non parte.
+  // 🔴 «AVANTI COL PROSSIMO TURNO»: il biglietto che esce dalla stampante
+  // della cucina, con la frase e il numero del tavolo.
+  //
+  // ⚠️ GENERICO E SENZA LIMITAZIONI, deciso da Alessio: non conta i turni,
+  // non si spegne quando sono finiti, non impedisce di premerlo due volte.
+  // **La cucina ha già la comanda completa e vede da sé cosa resta da
+  // cucinare** — il biglietto dice solo «adesso». La versione che dichiarava
+  // quale turno stava chiamando e si spegneva alla fine è stata scartata da
+  // lui, e non si rimette da qui.
+  const handleChiamaTurno = () =>
+    withBusy(() => chiamaProssimoTurno(order.id)).then(() =>
+      setEsitoChiamata(`Mandato in cucina: avanti col prossimo turno per ${order.table_label}.`)
+    );
+
   const handleSend = () =>
     withBusy(() => sendDraftItems(order.id, draftItems.map((i) => i.id))).then(loadBoard);
 
@@ -677,6 +713,11 @@ export default function Sala() {
 
   const draftItems = order?.items.filter((i) => !i.sent_at && !i.voided_at) ?? [];
   const sentItems = order?.items.filter((i) => i.sent_at && !i.voided_at) ?? [];
+  // Le righe della comanda divise per turno. ⚠️ Si guarda l'insieme di
+  // inviate E da segnare: un turno che è già tutto partito deve continuare
+  // a comparire, altrimenti il «2° turno» che si sta scrivendo sembrerebbe
+  // il primo.
+  const gruppiComanda = righePerTurno([...sentItems, ...draftItems]);
   const { coperti, copertoTotal, total } = orderTotals(order, copertoPrice);
 
   // Menu raggruppato per portata, nell'ordine in cui si mangia — non in
@@ -785,6 +826,28 @@ export default function Sala() {
         Chiudi conto
       </button>
 
+      {/* 🔴 «AVANTI COL PROSSIMO TURNO» (21/08, deciso da Alessio): manda in
+          cucina un biglietto con la frase e il numero del tavolo, e sta fra i
+          gesti del tavolo aperto perché è un gesto del tavolo, non del menu.
+          ⚠️ GENERICO E SENZA LIMITAZIONI, per sua decisione: non conta i
+          turni, non si spegne quando sono finiti, non impedisce di premerlo
+          due volte. La cucina ha già la comanda completa e vede da sé cosa
+          resta da cucinare — il biglietto dice solo «adesso».
+          ⚠️ E NON DIPENDE DALL'AVER INVIATO: si può chiamare il prossimo
+          turno di una comanda mandata in cucina tutta insieme all'inizio,
+          che è precisamente il caso per cui esiste. */}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={handleChiamaTurno}
+        className="tocco-bottone w-full rounded-lg bg-b58-gold disabled:opacity-40 text-b58-charcoal testo-sala font-semibold px-2"
+      >
+        Avanti prossimo turno
+      </button>
+      {esitoChiamata && (
+        <p className="testo-sala text-b58-olive-dark leading-tight">{esitoChiamata}</p>
+      )}
+
       {/* 🔴 «ANNULLA TAVOLO» STA COI GRANDI (21/08, deciso da Alessio).
           Era un link piccolo in fondo alla pagina: è un gesto definitivo
           come gli altri tre e merita lo stesso peso.
@@ -839,15 +902,22 @@ export default function Sala() {
           la pianta, dove c'è lo spazio per premere. */}
       {(draftItems.length > 0 || sentItems.length > 0) && (
         <div className="testo-sala leading-tight border-t border-b58-charcoal/10 pt-1">
-          {draftItems.map((it) => (
-            <p key={it.id} className="text-b58-terracotta-dark">
-              {it.quantity}× {lineLabel(it)}
-            </p>
-          ))}
-          {sentItems.map((it) => (
-            <p key={it.id} className="text-b58-charcoal-soft/70">
-              {it.quantity}× {lineLabel(it)}
-            </p>
+          {gruppiComanda.map(({ turno, items }) => (
+            <div key={turno}>
+              {/* Nel riepilogo dentro la pianta il turno si dice in una riga
+                  sola e solo se ce n'è più di uno: la colonna è stretta. */}
+              {gruppiComanda.length > 1 && (
+                <p className="font-semibold text-b58-charcoal-soft">{etichettaTurno(turno)}</p>
+              )}
+              {items.map((it) => (
+                <p
+                  key={it.id}
+                  className={it.sent_at ? "text-b58-charcoal-soft/70" : "text-b58-terracotta-dark"}
+                >
+                  {it.quantity}× {lineLabel(it)}
+                </p>
+              ))}
+            </div>
           ))}
           <p className="mt-1 font-semibold text-b58-charcoal">{formatEUR(total)}</p>
         </div>
@@ -927,6 +997,27 @@ export default function Sala() {
   // di rado. Il menu è la cosa che si guarda più spesso, e stava in fondo.
   const pannelloMenu = !order ? null : (
     <>
+      {/* 🔴 «PROSSIMO TURNO» (21/08, disegno di Alessio): si segnano i piatti,
+          si preme, e da lì in poi quello che si segna va nel turno dopo. Sta
+          accanto al menu perché è lì che si compone la comanda.
+          ⚠️ IL TURNO IN CORSO SI VEDE SEMPRE: senza, dopo due tocchi non si
+          sa più in quale turno stanno finendo i piatti — ed è la cosa che
+          chi serve deve sapere mentre il cliente parla.
+          ⚠️ E NON C'È UN «TORNA INDIETRO»: un turno sbagliato si corregge
+          togliendo la riga e rimettendola, che è il gesto che già esiste.
+          Aggiungerne uno nuovo non è stato chiesto. */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="testo-sala font-semibold text-b58-charcoal">
+          {etichettaTurno(turnoCorrente)}
+        </span>
+        <button
+          type="button"
+          onClick={() => setTurnoCorrente((t) => t + 1)}
+          className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-3"
+        >
+          Prossimo turno
+        </button>
+      </div>
       {/* MENU ------------------------------------------------------ */}
       {/* 🔴 LE CATEGORIE IN CIMA, E FILTRANO (21/08, disegno di Alessio).
           Prima erano intestazioni dentro una lista sola: si scorreva
@@ -1543,62 +1634,83 @@ export default function Sala() {
               <p className="testo-sala text-b58-charcoal-soft/60 text-center py-3">Nessun piatto selezionato.</p>
             )}
 
-            {draftItems.map((it) => (
-              <div key={it.id} className="border-b border-b58-charcoal/5 last:border-0 py-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">{lineLabel(it)}</span>
-                  <button
-                    type="button"
-                    onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
-                    className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
-                  >
-                    −
-                  </button>
-                  <b className="w-5 text-center testo-sala-grande">{it.quantity}</b>
-                  <button
-                    type="button"
-                    onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
-                    className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
-                  >
-                    +
-                  </button>
-                  <span className="w-14 text-right testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
-                  <button
-                    type="button"
-                    onClick={() => withBusy(() => removeDraftItem(it.id))}
-                    className="text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {/* Nota del SINGOLO piatto, distinta da quella del tavolo:
-                    "senza glutine" riguarda un piatto, non tutti. */}
-                <CampoAutosalvato
-                  value={it.note ?? ""}
-                  onSave={(testo) =>
-                    updateItemNote(it.id, testo).catch((err) => setError(err.message))
-                  }
-                  placeholder="nota per questo piatto (es. senza glutine)"
-                  className="w-full mt-1 rounded-md border border-dashed border-b58-charcoal/20 bg-b58-cream/40 px-2 py-1.5 testo-sala text-b58-charcoal-soft"
-                />
-              </div>
-            ))}
+            {/* 🔴 I TURNI SI SEPARANO CON UNA RIGA DI STACCO (21/08, disegno
+                di Alessio): «2° turno», «3° turno».
+                ⚠️ SOLO QUANDO I TURNI SONO PIÙ DI UNO: su una comanda che
+                esce tutta insieme — il caso normale fino a ieri — un «1°
+                turno» solitario sarebbe una parola in più che non separa
+                niente.
+                ⚠️ E DENTRO IL TURNO VENGONO PRIMA LE RIGHE GIÀ INVIATE:
+                quello che si sta segnando adesso resta in fondo al suo turno,
+                che è dove sta il dito. Prima del 21/08 l'ordine era
+                «tutte le bozze, poi tutte le inviate»: con i turni quella
+                separazione racconterebbe una comanda che non esiste. */}
+            {gruppiComanda.map(({ turno, items }) => (
+              <div key={turno}>
+                {gruppiComanda.length > 1 && (
+                  <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 border-b border-b58-charcoal/15 pb-0.5 mb-1 mt-3 first:mt-0">
+                    {etichettaTurno(turno)}
+                  </p>
+                )}
 
-            {sentItems.map((it) => (
-              <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-b58-charcoal/5 last:border-0 opacity-70">
-                <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
-                  {it.quantity}× {lineLabel(it)}
-                  <span className="testo-sala text-b58-charcoal-soft"> · inviata</span>
-                  {it.note && <span className="block testo-sala italic text-b58-charcoal-soft">↳ {it.note}</span>}
-                </span>
-                <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
-                <button
-                  type="button"
-                  onClick={() => handleVoid(it.id)}
-                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
-                >
-                  annulla
-                </button>
+                {items.filter((i) => i.sent_at).map((it) => (
+                  <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-b58-charcoal/5 last:border-0 opacity-70">
+                    <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
+                      {it.quantity}× {lineLabel(it)}
+                      <span className="testo-sala text-b58-charcoal-soft"> · inviata</span>
+                      {it.note && <span className="block testo-sala italic text-b58-charcoal-soft">↳ {it.note}</span>}
+                    </span>
+                    <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleVoid(it.id)}
+                      className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
+                    >
+                      annulla
+                    </button>
+                  </div>
+                ))}
+
+                {items.filter((i) => !i.sent_at).map((it) => (
+                  <div key={it.id} className="border-b border-b58-charcoal/5 last:border-0 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">{lineLabel(it)}</span>
+                      <button
+                        type="button"
+                        onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity - 1))}
+                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                      >
+                        −
+                      </button>
+                      <b className="w-5 text-center testo-sala-grande">{it.quantity}</b>
+                      <button
+                        type="button"
+                        onClick={() => withBusy(() => updateDraftItemQuantity(it.id, it.quantity + 1))}
+                        className="tocco-bottone rounded-lg ring-1 ring-b58-charcoal/15 text-b58-charcoal"
+                      >
+                        +
+                      </button>
+                      <span className="w-14 text-right testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
+                      <button
+                        type="button"
+                        onClick={() => withBusy(() => removeDraftItem(it.id))}
+                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {/* Nota del SINGOLO piatto, distinta da quella del tavolo:
+                        "senza glutine" riguarda un piatto, non tutti. */}
+                    <CampoAutosalvato
+                      value={it.note ?? ""}
+                      onSave={(testo) =>
+                        updateItemNote(it.id, testo).catch((err) => setError(err.message))
+                      }
+                      placeholder="nota per questo piatto (es. senza glutine)"
+                      className="w-full mt-1 rounded-md border border-dashed border-b58-charcoal/20 bg-b58-cream/40 px-2 py-1.5 testo-sala text-b58-charcoal-soft"
+                    />
+                  </div>
+                ))}
               </div>
             ))}
 
