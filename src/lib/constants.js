@@ -401,6 +401,14 @@ export const RESERVATION_STATUSES = [
   // si chiude (`trg_conto_chiuso_servita`). È qui perché i filtri e gli
   // elenchi possano nominarla, non perché si scelga.
   { value: "servita", label: "Servita" },
+  // 🔴 «NON PRESENTATA» È NATA IL 22/08, dal difetto trovato costruendo i
+  // due mesi finti: chi non veniva restava «confermata» per sempre, e non
+  // si distingueva da un conto che qualcuno si era dimenticato di
+  // chiudere. Due fatti opposti con la stessa faccia.
+  // ⚠️ Questa invece SI SCEGLIE a mano — è l'unico modo di saperlo: nessun
+  // gesto del gestionale dice «non è venuto», perché non è successo
+  // niente. È il contrario di «servita», che la scrive il database.
+  { value: "non_presentata", label: "Non si è presentato" },
   { value: "rifiutata", label: "Rifiutata" },
   { value: "annullata", label: "Annullata" },
 ];

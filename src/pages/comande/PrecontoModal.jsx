@@ -46,7 +46,34 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
         <div className="p-4 overflow-y-auto space-y-3">
           {/* Questo blocco e' l'unica cosa che finisce sulla carta: vedi
               .stampa-ticket in index.css. */}
-          <div className="print:text-sm stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
+          {/* 🔴 LA VIA DI MEZZO — 3,44 mm invece di 3,70 (22/08).
+              ⚠️ E IL NUMERO CHE CONTA NON È «QUANTE RIGHE VANNO A CAPO»,
+              che dipende da come si chiamano i piatti di quel giorno:
+              è **quanti caratteri stanno su una riga**, che è una
+              proprietà del foglio. Misurato sui 57,1 mm che restano al
+              nome dopo il prezzo:
+
+                3,17 mm → 29 caratteri   (il «2× » compreso)
+                3,44 mm → 27      ← questa
+                3,70 mm → 25
+
+              Sui nomi della carta vera, che arrivano a 29 caratteri
+              («Tonno in crosta di pistacchio»), i 27 lasciano intera la
+              gran parte delle righe; i 25 ne spezzano il doppio.
+
+              ⚠️ MISURANDOLO MI ERO SBAGLIATO UNA VOLTA, e vale la pena
+              dirlo: sul progetto di prova i piatti si chiamano
+              «BASE-Tonno in crosta di pistacchio» — **cinque caratteri di
+              prefisso che nella realtà non esistono** — e lì a 3,44 mm
+              vanno a capo cinque righe su sei invece di due. *Un conto di
+              collaudo può essere più severo del vero, e la misura giusta
+              è quella che non dipende dai dati.*
+
+              ⚠️ Il minimo del foglio resta comunque 3,44 mm contro i 2,65
+              di partenza: la ragione per cui Alessio aveva chiesto di
+              ingrandire — *è il foglio che legge chi sta pagando* — è
+              soddisfatta lo stesso. */}
+          <div className="print:text-[13px] stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
             <div className="text-center font-bold tracking-wide border border-b58-gold-dark/40 bg-b58-gold/15 rounded py-1 mb-2">
               DOCUMENTO NON FISCALE
             </div>

@@ -35,7 +35,17 @@ const STATUS_ACTIONS = {
     { to: "confermata", label: "Conferma", cls: "bg-b58-olive" },
     { to: "rifiutata", label: "Rifiuta", cls: "bg-b58-terracotta" },
   ],
-  confermata: [{ to: "annullata", label: "Annulla", cls: "bg-b58-charcoal-soft" }],
+  // ⚠️ DUE ESITI DIVERSI PER UNA CONFERMATA, e non sono la stessa cosa:
+  // «Annulla» è il cliente che avvisa prima — il tavolo torna libero in
+  // tempo per darlo a qualcun altro. «Non si è presentato» è la sedia
+  // rimasta vuota tutta la sera: il posto non torna utile a nessuno, e
+  // domani è la cosa che vale la pena ricordarsi di quel cliente.
+  confermata: [
+    { to: "non_presentata", label: "Non si è presentato", cls: "bg-b58-charcoal-soft" },
+    { to: "annullata", label: "Annulla", cls: "bg-b58-charcoal-soft" },
+  ],
+  // Anche questa si disfa: capita di segnarlo e poi vederlo arrivare tardi.
+  non_presentata: [{ to: "confermata", label: "In realtà è arrivato", cls: "bg-b58-olive" }],
   rifiutata: [{ to: "confermata", label: "Conferma comunque", cls: "bg-b58-olive" }],
   // ⚠️ Era una casella vuota: una prenotazione annullata per sbaglio non
   // si poteva più riprendere da nessuna parte, e l'unico rimedio era
