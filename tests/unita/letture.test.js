@@ -140,6 +140,17 @@ describe("nessuna lettura resta muta", () => {
       // non c'è nessun vuoto — c'è l'elenco, e c'è pure un messaggio che dice
       // di selezionarlo a mano.
       "src/pages/calendario/Comunicazioni.jsx",
+      // ⚠️ AGGIUNTO IL 22/08 con lo scontrino automatico. Alla chiusura del
+      // conto si legge la serata per datare il documento fiscale; se quella
+      // lettura fallisce, `setDocumentoFiscale` ripiega su `oggiLocale()` —
+      // che nel caso normale (conto chiuso nella sua serata) è **lo stesso
+      // giorno**.
+      // 🔴 Non si dichiara a schermo per una ragione precisa: lì davanti c'è
+      // un cliente che aspetta il resto, e fermare la chiusura per la data
+      // di un documento sarebbe la sala bloccata — cioè proprio quello che
+      // tutto questo blocco evita. Se uno scarto nasce, non resta invisibile:
+      // si vede in Cassa fra i conti fiscalizzati in ritardo.
+      "src/pages/comande/CloseOrderModal.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)

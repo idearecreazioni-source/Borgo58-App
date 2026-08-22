@@ -1286,3 +1286,51 @@ ha davanti la schermata dove è stato composto.
 ⚠️ **E misurato prima di chiudere**: il foglio unico con tre turni e sette
 piatti è lungo **11,6 cm** su una termica da 80 mm. Con tre fogli sarebbe
 stata più carta, non meno — tre intestazioni e tre orari invece di uno.
+
+---
+
+## 30 · 22/08/2026 — «la segnalazione dello scontrino la fa chiunque sia in sala»
+
+**Cosa era stato deciso, e quando.** Il **20/08**, blocco 1 del mandato del
+registratore, e scritto in due posti. Nel mandato:
+
+> *«Deve poterlo fare un utente dello staff, non il solo titolare: se la
+> prova gira col titolare, non sta provando il gesto vero.»*
+
+E nel commento in cima a `Scontrini.jsx`:
+
+> *«LA PUÒ FARE CHIUNQUE SIA IN SALA, non solo il titolare (decisione di
+> Alessio): chi ha il cliente davanti è chi se ne accorge.»*
+
+**La ragione di allora.** Vera, e **resta vera**: la pagina bianca la vede
+soltanto chi ha il foglio in mano. Nessun protocollo la riporta — il
+registratore crede di aver stampato.
+
+**Cosa si decide adesso.** La rettifica la fa **il titolare**. Parole di
+Alessio, 22/08: *«il gesto sia di Alessio, non dello staff: è un dato
+fiscale»*.
+
+**Perché la ragione di allora non vale più — ⚠️ e in buona parte vale
+ancora.** **Cade la conclusione, non la premessa.** Chi *si accorge* del
+foglio bianco resta il cameriere, e questo non cambia di una virgola. Cambia
+**chi tocca il dato**, perché lo stesso 22/08 la fiscalizzazione è diventata
+**automatica**: da oggi il gestionale scrive il documento da sé quando il
+conto si chiude, e la rettifica smette di essere un gesto di sala fra tanti —
+diventa **l'unico punto in cui una persona disfa a mano un dato fiscale già
+registrato**. Quel gesto pesa diversamente da quando la fiscalizzazione era
+tutta manuale e uno «scontrino» sul conto era solo un'annotazione che
+qualcuno aveva messo a mano.
+
+⚠️ **E il prezzo si paga, dichiarato.** Il cameriere che vede la pagina
+bianca adesso **deve dirlo ad Alessio**, e finché non glielo dice il conto
+risulta a posto. Se Alessio non è in sala in quel momento, la finestra resta
+aperta. **Il rimedio non è tecnico**: è che quel conto resta ritrovabile in
+*Cassa → Incassato e scontrinato* per tutto il periodo, e quell'elenco non si
+svuota da solo.
+
+⚠️ **Quello che NON è stato rovesciato**: la schermata *Scontrini* **resta in
+sala**, in sola lettura. Chi serve deve poter **vedere** se lo scontrino è
+uscito — è lui che ha il foglio in mano — e toglierla vorrebbe dire che non
+se ne accorge nessuno. Al posto del pulsante c'è la riga che dice cosa fare:
+*un rifiuto senza gesto d'uscita è un vicolo cieco*, e qui il rifiuto non
+sarebbe nemmeno visibile.

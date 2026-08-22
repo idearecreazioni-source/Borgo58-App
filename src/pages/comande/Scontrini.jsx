@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { segnalaScontrinoNonUscito } from "../../lib/api/orders";
 import { formatDate } from "../../lib/constants";
 import { serataCorrente } from "../../lib/giornataOperativa";
+import { useAuth } from "../../context/AuthContext";
 
 // «QUESTO SCONTRINO NON È USCITO» — la segnalazione della sala.
 //
@@ -13,9 +14,22 @@ import { serataCorrente } from "../../lib/giornataOperativa";
 // che vede il foglio bianco è chi lo ha in mano. Serve anche col
 // registratore più moderno.
 //
-// ⚠️ LA PUÒ FARE CHIUNQUE SIA IN SALA, non solo il titolare (decisione di
-// Alessio): chi ha il cliente davanti è chi se ne accorge.
+// 🔴 LA RETTIFICA LA FA IL TITOLARE (22/08/2026, rovesciamento n. 30).
+// Fino al 21/08 la faceva chiunque fosse in sala, e la ragione era buona:
+// *chi ha il cliente davanti è chi se ne accorge*. **Quella ragione resta
+// vera** — cade la conclusione, non la premessa.
+//
+// ⚠️ Cambia perché da oggi la fiscalizzazione è **automatica**: il
+// gestionale scrive il documento da sé quando il conto si chiude, e la
+// rettifica smette di essere un gesto di sala fra tanti — diventa l'unico
+// punto in cui una persona **disfa a mano un dato fiscale già registrato**.
+// Parole di Alessio: *«è un dato fiscale»*.
+//
+// ⚠️ E QUESTA SCHERMATA RESTA IN SALA, in sola lettura per lo staff: chi
+// serve deve poter **vedere** se lo scontrino è uscito — è lui che ha il
+// foglio in mano. Toglierla vorrebbe dire che se ne accorge nessuno.
 export default function Scontrini() {
+  const { isTitolare } = useAuth();
   const [conti, setConti] = useState(null);
   const [errore, setErrore] = useState("");
   const [esito, setEsito] = useState("");
@@ -93,6 +107,18 @@ export default function Scontrini() {
       )}
 
       {conti === null && !errore && <p className="testo-sala text-b58-charcoal-soft">Sto guardando…</p>}
+      {/* ⚠️ LA VIA D'USCITA PER CHI NON PUÒ RETTIFICARE. Senza questa
+          riga la schermata sarebbe muta proprio con chi ha il foglio bianco
+          in mano: vedrebbe «Scontrino n. 14» accanto a un conto per cui non
+          è uscito niente, e nessuna indicazione di cosa fare. Un rifiuto
+          senza gesto d'uscita è un vicolo cieco — e qui il rifiuto non è
+          nemmeno visibile, perché il pulsante non c'è. */}
+      {!isTitolare && conti !== null && conti.length > 0 && (
+        <p className="testo-sala text-b58-charcoal-soft mb-4">
+          Se uno scontrino non è uscito davvero, dillo ad Alessio: la rettifica la fa lui.
+        </p>
+      )}
+
       {conti !== null && conti.length === 0 && (
         <p className="testo-sala text-b58-charcoal-soft">Stasera non è ancora stato chiuso nessun conto.</p>
       )}
@@ -117,7 +143,7 @@ export default function Scontrini() {
                     compare: ha un numero, e un numero emesso non si disfa
                     con un tocco in sala — il database lo rifiuterebbe, e un
                     pulsante che esiste per essere rifiutato è un inganno. */}
-                {c.documento_fiscale !== "fattura" && (
+                {c.documento_fiscale !== "fattura" && isTitolare && (
                   <button
                     type="button"
                     disabled={inCorso !== null}

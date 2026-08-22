@@ -13,6 +13,8 @@ import {
   formatEUR,
   labelFor,
 } from "../../lib/constants";
+import { fiscalizzaConto } from "../../lib/fiscalizzazione";
+import { serataCorrente } from "../../lib/giornataOperativa";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
 const lineTotal = (item) => item.quantity * Number(item.unit_price);
@@ -72,16 +74,51 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
-  const run = async (fn) => {
+  // 🔴 LO SCONTRINO PARTE DA SOLO (22/08/2026, decisione di Alessio):
+  // *«viene considerato emesso fino a prova contraria, non viceversa. Il
+  // sistema deve essere automatico e la rettifica è solo una via d'uscita
+  // per le rare volte che servirà.»*
+  //
+  // ⚠️ QUINDI QUI NON SI CHIEDE NIENTE A NESSUNO: nessuna conferma, nessuna
+  // spunta, nessun «hai controllato?». Il flusso normale non prende attriti
+  // in più — che è tutto il senso della decisione.
+  //
+  // ⚠️ E STA DENTRO `run`, che è il punto unico da cui passano TUTTE le
+  // chiusure: contante, carta, misto, alla romana, sconto. Metterla nei
+  // singoli gestori vorrebbe dire cinque copie, e la sesta chiusura che
+  // qualcuno aggiungerà domani nascerebbe senza scontrino.
+  //
+  // ⚠️ `fiscalizza: false` per annullamento e OMAGGIO, e non è una
+  // dimenticanza: un omaggio non incassa niente, quindi non c'è nessun
+  // corrispettivo da emettere — è la stessa riga che `quadratura_fiscale`
+  // dice a parole da agosto.
+  const run = async (fn, { fiscalizza = true } = {}) => {
     setBusy(true);
     setError("");
     try {
       await fn();
-      onDone();
     } catch (e) {
       setError(e.message);
       setBusy(false);
+      return;
     }
+    // ⚠️ DA QUI IN POI IL CONTO È CHIUSO, e niente può più rimetterlo in
+    // discussione: la stampa è una conseguenza, e la sala non si blocca
+    // davanti al cliente. `fiscalizzaConto` non lancia mai; se lo scontrino
+    // non esce, il conto resta nell'elenco «da fiscalizzare» che a fine
+    // giornata si fa notare da solo.
+    if (fiscalizza) {
+      // SILENZIO MOTIVATO: se la serata non si legge, `setDocumentoFiscale`
+      // ripiega su `oggiLocale()` — che nel caso normale (conto chiuso nella
+      // sua serata) è lo stesso giorno. Non si dichiara a schermo perché
+      // qui il cliente sta aspettando il resto: fermare la chiusura per la
+      // data di un documento sarebbe la sala bloccata davanti a lui, che è
+      // proprio ciò che questo blocco evita. Lo scarto, se nasce, si vede
+      // in Cassa fra i conti fiscalizzati in ritardo.
+      const serata = await serataCorrente().catch(() => null);
+      await fiscalizzaConto(order, { serata });
+    }
+    onDone();
   };
 
   const handlePaid = (method) => run(() => closeOrderPaid(order.id, method, copertoUnitPrice));
@@ -157,7 +194,8 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
   const handleCancel = () => {
     if (!form.cancelReason.trim()) return;
-    run(() => cancelOrder(order.id, form.cancelReason.trim()));
+    // Un conto annullato non incassa: niente scontrino.
+    run(() => cancelOrder(order.id, form.cancelReason.trim()), { fiscalizza: false });
   };
 
   const handleDiscountGift = () => {
