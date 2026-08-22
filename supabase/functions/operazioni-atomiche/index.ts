@@ -129,6 +129,13 @@ const OPERAZIONI = new Set([
   // dall'altra — l'incoerenza piu' facile da non notare, perche' ognuno
   // dei due saldi resta un numero plausibile.
   "versa_in_banca",
+  // I prestiti di privati (22/08/2026). Il prestito e il movimento sono le
+  // DUE META' DELLO STESSO FATTO: un prestito senza movimento sarebbe un
+  // debito che nessun saldo vede, e un movimento senza prestito sarebbe
+  // denaro che nessuno sa di dover restituire — e finirebbe fra gli
+  // incassi, che e' proprio la confusione da togliere.
+  "registra_prestito_privato",
+  "registra_restituzione_prestito",
   // La sezione personale del titolare (15/08/2026). Il pareggio chiude la
   // nota E fa uscire il rimborso dalla cassa: a meta' resterebbe o un
   // debito gia' pagato che risulta ancora aperto, o soldi usciti dal

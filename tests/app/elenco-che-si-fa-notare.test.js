@@ -120,15 +120,39 @@ describe("la chiusura della giornata non si completa in silenzio", () => {
       .eq("id", conto);
 
     const staff = await clientAutenticato(credenziali().staff);
+
+    // 🔴 PRIMA LA CONTROPROVA: LO STAFF NON PUÒ PIÙ (rovesciamento del
+    // 22/08). Fino a quel giorno questa prova segnalava **dallo staff**, col
+    // commento «chi ha il cliente davanti è chi si accorge della pagina
+    // bianca» — ed era vero, e resta vero. Ma lo stesso giorno la
+    // fiscalizzazione è diventata automatica, e la rettifica è diventata
+    // **l'unico punto in cui una persona disfa a mano un dato fiscale già
+    // registrato**: Alessio ha deciso che quel gesto è suo.
+    //
+    // ⚠️ E il rifiuto si prova **con l'effetto**, non solo con l'errore: un
+    // rifiuto che intanto ha cambiato il conto sarebbe peggio di nessun
+    // rifiuto.
     await supabase.auth.signOut({ scope: "local" });
     await supabase.auth.signInWithPassword({
       email: credenziali().staff.email,
       password: credenziali().staff.password,
     });
+    await expect(segnalaScontrinoNonUscito(conto, "pagina bianca")).rejects.toThrow(/Alessio/i);
 
-    // 🔴 LA FA LO STAFF, non il titolare: chi ha il cliente davanti è chi si
-    // accorge della pagina bianca. Se questa prova girasse col titolare non
-    // starebbe provando il gesto vero.
+    const { data: intatto } = await staff
+      .from("orders")
+      .select("documento_fiscale, documento_numero")
+      .eq("id", conto)
+      .single();
+    expect(intatto.documento_fiscale, "il rifiuto non deve aver toccato niente").toBe("scontrino");
+    expect(intatto.documento_numero).toBe("9");
+
+    // E adesso il gesto vero, dal titolare.
+    await supabase.auth.signOut({ scope: "local" });
+    await supabase.auth.signInWithPassword({
+      email: credenziali().titolare.email,
+      password: credenziali().titolare.password,
+    });
     const r = await segnalaScontrinoNonUscito(conto, "pagina bianca");
     expect(r.stato_prima).toBe("scontrino");
 

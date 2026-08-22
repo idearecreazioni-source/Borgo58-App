@@ -424,10 +424,24 @@ export const foodCostLevel = (pct) => {
 export const labelFor = (list, value) =>
   list.find((item) => item.value === value)?.label ?? value;
 
+// 🔴 `useGrouping: "always"` — TROVATO IL 22/08 GUARDANDO I PRESTITI, e
+// non è una preferenza tipografica: l'italiano di `Intl` **non raggruppa
+// sotto le cinque cifre**, quindi 4.990 usciva «4990,00 €» a schermo mentre
+// la funzione `euro()` del database, nello stesso gestionale e a volte
+// nella stessa schermata, scriveva «4.990,00 €».
+//
+// ⚠️ È la famiglia chiusa il 17/08 col database — *un importo si scrive in
+// un modo solo* — vista dal lato che era rimasto fuori. E si notava poco
+// perché quasi tutti gli importi di prova sono sotto i 1.000 o sopra i
+// 10.000: **i numeri a quattro cifre sono la fascia in cui i due mondi
+// divergono**, e sono quelli dei prestiti, degli stipendi e delle fatture
+// grosse.
 export const formatEUR = (value) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(
-    value ?? 0
-  );
+  new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: "EUR",
+    useGrouping: "always",
+  }).format(value ?? 0);
 
 // Una quantità come la scrive una persona.
 //

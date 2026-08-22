@@ -366,7 +366,16 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
       .insert({
         entity_id: ente,
         table_label: etichetta,
-        status: "chiuso",
+        // 🔴 NASCE APERTO, E SI CHIUDE DOPO LE RIGHE (dal 22/08).
+        //
+        // Prima nasceva già chiuso e le righe si aggiungevano sopra: dal
+        // vincolo del 22/08 quell'inserimento è **respinto**, perché in sala
+        // aggiungere un piatto a un conto chiuso è il gesto che si vuole
+        // impedire. ⚠️ La prova non stava provando quel gesto — stava
+        // *apparecchiando* uno stato storico — ma lo faceva in un ordine che
+        // la realtà non consente, e il vincolo ha ragione: **si apparecchia
+        // come farebbe una sala**, aprendo, servendo e poi chiudendo.
+        status: "aperto",
         payment_method: "contante",
         coperti: 0,
         coperto_unit_price: 5,
@@ -384,7 +393,7 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
       .select()
       .single();
     if (error) throw error;
-    await titolare.from("order_items").insert({
+    const { error: eRighe } = await titolare.from("order_items").insert({
       order_id: data.id,
       free_text_name: "Piatto",
       destination: "cucina",
@@ -392,6 +401,14 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
       sent_at: new Date().toISOString(),
       unit_price: prezzo,
     });
+    if (eRighe) throw eRighe;
+
+    // Solo adesso il conto si chiude: è l'ordine dei gesti veri.
+    const { error: eChiusura } = await titolare
+      .from("orders")
+      .update({ status: "chiuso" })
+      .eq("id", data.id);
+    if (eChiusura) throw eChiusura;
     return data.id;
   }
 
@@ -512,7 +529,8 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
       .insert({
         entity_id: ente,
         table_label: "TEST-AUTO imp",
-        status: "chiuso",
+        // Come sopra: si apre, si serve, si chiude (vincolo del 22/08).
+        status: "aperto",
         payment_method: "contante",
         coperti: 0,
         coperto_unit_price: 5,
@@ -527,7 +545,7 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
       })
       .select()
       .single();
-    await titolare.from("order_items").insert({
+    const { error: eRighe } = await titolare.from("order_items").insert({
       order_id: o.id,
       free_text_name: "Piatto",
       destination: "cucina",
@@ -535,6 +553,8 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
       sent_at: new Date().toISOString(),
       unit_price: 250,
     });
+    expect(eRighe).toBeNull();
+    await titolare.from("orders").update({ status: "chiuso" }).eq("id", o.id);
 
     const { data } = await titolare.rpc("ricavi_non_fiscalizzati", {
       p_entity_id: ente,

@@ -181,6 +181,16 @@ export default function CassaHome() {
                   {Number(tesoreria.mance_in_cassa) > 0 && (
                     <> + {formatEUR(tesoreria.mance_in_cassa)} di mance</>
                   )}
+                  {/* 🔴 I PRESTITI, per la stessa ragione delle mance
+                      (22/08): stanno nel cassetto ma NON sono incassi, e
+                      se non comparissero qui la scomposizione smetterebbe
+                      di sommare al numero grande — il difetto che il 16/08
+                      costò le mance in contanti.
+                      ⚠️ E soprattutto: chiamarli «incassi» era la
+                      confusione da togliere. Qui hanno un nome loro. */}
+                  {Number(balance.prestiti_in_cassa) > 0 && (
+                    <> + {formatEUR(balance.prestiti_in_cassa)} di prestiti da restituire</>
+                  )}
                 </div>
               )}
               {/* La parte che non è sua, come DATO e non solo come frase:
@@ -337,6 +347,12 @@ export default function CassaHome() {
             </Link>
             <Link to="/cassa/personale" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Ho messo di tasca mia
+            </Link>
+            {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
+                Preventivi è rimasta irraggiungibile per giorni perché la
+                rotta c'era e nessun collegamento ci portava. */}
+            <Link to="/cassa/prestiti" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+              Prestiti da privati
             </Link>
             <Link to="/cassa/sconti-omaggi" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Sconti e omaggi

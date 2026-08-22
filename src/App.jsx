@@ -54,6 +54,7 @@ import ScontiOmaggi from "./pages/cassa/ScontiOmaggi";
 import Causali from "./pages/cassa/Causali";
 import Previsione from "./pages/cassa/Previsione";
 import SezionePersonale from "./pages/cassa/SezionePersonale";
+import Prestiti from "./pages/cassa/Prestiti";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
@@ -234,6 +235,9 @@ function AppRoutes() {
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
+        {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
+            gliene deve ancora è un fatto suo e di quelle persone. */}
+        <Route path="/cassa/prestiti" element={<RequireTitolare><Prestiti /></RequireTitolare>} />
         <Route path="/cassa/scontrinato" element={<RequireTitolare><Scontrinato /></RequireTitolare>} />
         {/* Comande (§3.2, §4 mod. 5): staff-accessibile, voce propria in
             sidebar — non sotto /cassa, dato che è una modalità operativa

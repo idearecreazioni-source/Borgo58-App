@@ -406,3 +406,51 @@ export async function listContiDaFiscalizzare(entityId, dal, al) {
   if (error) throw error;
   return data ?? [];
 }
+
+// --- I PRESTITI DI PRIVATI (22/08/2026) ------------------------------
+//
+// ⚠️ NON sono ricavi e NON sono incassi: sono denaro che sta in cassa e va
+// restituito. Il gestionale deve saper rispondere a due domande che prima
+// avevano la stessa risposta — «quanti soldi ho?» e «quanti sono miei?».
+
+export async function listPrestiti(entityId) {
+  const { data, error } = await supabase.rpc("prestiti_aperti", { p_entity_id: entityId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// 🔴 IL NUMERO CHE CONTA, ed è il secondo non il primo: *sapere di dovere
+// 30.000 non serve a decidere niente; sapere che oggi puoi restituirne 3.000
+// sì.* Dietro non c'è nessun calcolo nuovo — è «Ce la faccio?» chiesto a sei
+// mesi invece che a trenta giorni, meno la riserva.
+export async function getSpazioDiManovra(entityId) {
+  const { data, error } = await supabase.rpc("spazio_di_manovra", { p_entity_id: entityId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// Il prestito e il movimento che ne consegue: due tabelle, quindi passa dal
+// corridoio (Contratto B4). I soldi sono entrati davvero e il saldo deve
+// vederli — ma con un nome che non sia «incasso».
+export async function registraPrestito({ entityId, daChi, importo, mezzo, ricevutoIl, causaleId, nota }) {
+  return eseguiOperazione("registra_prestito_privato", {
+    p_entity_id: entityId,
+    p_da_chi: daChi,
+    p_importo: importo,
+    p_mezzo: mezzo,
+    p_ricevuto_il: ricevutoIl,
+    p_causale_id: causaleId ?? null,
+    p_nota: nota ?? null,
+  });
+}
+
+export async function registraRestituzione({ prestitoId, importo, mezzo, restituitoIl, causaleId, nota }) {
+  return eseguiOperazione("registra_restituzione_prestito", {
+    p_prestito_id: prestitoId,
+    p_importo: importo,
+    p_mezzo: mezzo,
+    p_restituito_il: restituitoIl,
+    p_causale_id: causaleId ?? null,
+    p_nota: nota ?? null,
+  });
+}
