@@ -317,8 +317,22 @@ describe("previsione di cassa: cosa deve ancora uscire", () => {
       p_fino_al: null,
     });
     const p = data[0];
-    expect(Number(p.saldo_previsto)).toBe(
-      Number(p.oggi_cassa) + Number(p.oggi_banca) + Number(p.pos_in_arrivo) - Number(p.uscite_attese)
+    // 🔴 `toBeCloseTo` AL CENTESIMO, e non `toBe` (22/08/2026). Questa prova
+    // è diventata rossa quando il progetto di prova ha preso due mesi di
+    // dati veri: `expected 1288.86 to be 1288.8600000000001`.
+    //
+    // ⚠️ **A sbagliare non era il gestionale, era la prova.** Il database
+    // somma in `numeric`, che è aritmetica esatta; qui si risomma in
+    // JavaScript, dove 0,1 + 0,2 non fa 0,3. Con numeri tondi le due strade
+    // coincidevano e nessuno se n'era accorto — è la stessa forma del caso
+    // vuoto: *finché i dati non hanno niente da far emergere, una prova
+    // fragile passa.*
+    //
+    // ⚠️ E la tolleranza è **due decimali** perché quelli sono euro: un
+    // confronto più largo lascerebbe passare uno scarto vero.
+    expect(Number(p.saldo_previsto)).toBeCloseTo(
+      Number(p.oggi_cassa) + Number(p.oggi_banca) + Number(p.pos_in_arrivo) - Number(p.uscite_attese),
+      2
     );
     // Il buco più grosso è dichiarato: senza, un saldo previsto ottimista
     // sembrerebbe una promessa.
