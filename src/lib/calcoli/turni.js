@@ -38,34 +38,51 @@ export function righePerTurno(righe = []) {
 /**
  * I fogli che la cucina deve stampare.
  *
- * 🔴 SI RAGGRUPPA PER TURNO, NON PER INVIO — ed è tutto il lavoro. Fino al
- * 21/08 la chiave era `order_id + sent_at`, cioè l'invio: ma `sendDraftItems`
- * scrive **un solo istante su tutte le righe** che partono insieme, quindi
- * una comanda segnata tutta e mandata una volta usciva come **un foglio
- * solo**. Il difetto si vedeva anche al contrario: un piatto aggiunto dopo,
- * ma dello stesso turno, faceva un secondo foglio.
+ * 🔴 UN FOGLIO PER INVIO, COI TURNI SEPARATI DENTRO (22/08/2026).
+ * Il 21/08 questa funzione faceva **un foglio per turno**, e non era quello
+ * che Alessio aveva chiesto: le sue parole erano *«io ho già la comanda
+ * completa e vedrò cosa devo ancora cucinare per quel tavolo»* — cioè un
+ * foglio solo, con dentro le righe di stacco. Tre fogli lo obbligherebbero
+ * a tenere in mano tre pezzi di carta per un tavolo.
  *
- * ⚠️ E LE RIGHE GIÀ USCITE NON RIENTRANO NEL FOGLIO NUOVO. Un piatto del 2°
- * turno aggiunto dopo che il 2° turno è già stato stampato fa un foglio
- * **suo**, con dentro solo lui: rimettere anche le righe vecchie farebbe
- * ricucinare roba già fatta. È il caso che Alessio ha accettato il 21/08 —
- * *la cucina lo legge come un'aggiunta a quel turno.*
+ * ⚠️ E IL DIFETTO DI PARTENZA RESTA CHIUSO, che è il punto delicato: il
+ * problema del 21/08 non era il foglio unico — era che i turni **non si
+ * vedevano**. Ora si vedono, con la stessa banda della schermata. *Un
+ * foglio solo con dentro le divisioni non è la stessa cosa di un foglio
+ * solo senza.*
  *
- * ⚠️ PER QUESTO IL FOGLIO PORTA SEMPRE IL TURNO, e dice «aggiunta» quando di
- * quel turno era già uscito qualcosa: senza, chi cucina non sa se ha in mano
- * roba nuova o roba già fatta. È l'unica cosa in più che quel secondo foglio
- * deve avere.
+ * ⚠️ L'AGGIUNTA RESTA UN FOGLIO A PARTE, e non è un'eccezione: è **roba
+ * che la cucina non ha mai visto**, arrivata dopo che quel turno era già
+ * uscito. Rimetterla dentro un foglio ristampato farebbe ricucinare i
+ * piatti già fatti; lasciarla senza il suo turno la renderebbe
+ * indistinguibile da un turno nuovo.
+ *
+ * ⚠️ E LE RIGHE GIÀ USCITE SI RAGGRUPPANO PER `prepared_at`, non per
+ * invio: è **la firma del foglio con cui sono uscite**, quindi una
+ * ristampa riproduce esattamente la carta di prima. Riordinarle per
+ * qualunque altra cosa darebbe una ristampa diversa dall'originale.
  *
  * @param righe    le righe inviate del reparto, con `turno`, `sent_at`, `prepared_at`
  * @param chiamate i biglietti «avanti col prossimo turno»
  */
 export function bigliettiCucina(righe = [], chiamate = []) {
-  const gruppi = new Map();
+  // Di quali turni, per ogni conto, è già uscito qualcosa: serve a
+  // riconoscere le aggiunte.
+  const giaUsciti = new Set();
+  for (const r of righe) {
+    if (r?.prepared_at) giaUsciti.add(`${r.order_id}__${Number(r.turno) || 1}`);
+  }
 
+  const gruppi = new Map();
   for (const r of righe) {
     const turno = Number(r?.turno) || 1;
     const uscito = Boolean(r?.prepared_at);
-    const chiave = `${r.order_id}__${turno}__${uscito ? "uscito" : "da_stampare"}`;
+    const aggiunta = !uscito && giaUsciti.has(`${r.order_id}__${turno}`);
+    const chiave = uscito
+      ? `${r.order_id}__uscito__${r.prepared_at}`
+      : aggiunta
+        ? `${r.order_id}__aggiunta__${turno}`
+        : `${r.order_id}__da_stampare`;
     if (!gruppi.has(chiave)) {
       gruppi.set(chiave, {
         chiave,
@@ -73,10 +90,12 @@ export function bigliettiCucina(righe = [], chiamate = []) {
         orderId: r.order_id,
         tavolo: r.order?.table_label ?? "—",
         notaTavolo: r.order?.note ?? null,
-        turno,
         stampato: uscito,
+        aggiunta,
+        // ⚠️ Solo il foglio dell'aggiunta ha UN turno; gli altri ne hanno
+        // dentro quanti ne servono, ed è tutto il senso di questa versione.
+        turno: aggiunta ? turno : null,
         quando: r.sent_at,
-        aggiunta: false,
         items: [],
       });
     }
@@ -86,15 +105,7 @@ export function bigliettiCucina(righe = [], chiamate = []) {
     if (r.sent_at && (!g.quando || new Date(r.sent_at) < new Date(g.quando))) g.quando = r.sent_at;
   }
 
-  // «Aggiunta»: di questo turno, su questo tavolo, era già uscito qualcosa.
-  for (const g of gruppi.values()) {
-    if (g.stampato) continue;
-    g.aggiunta = righe.some(
-      (r) => r.order_id === g.orderId && (Number(r.turno) || 1) === g.turno && r.prepared_at
-    );
-  }
-
-  const fogli = [...gruppi.values()];
+  const fogli = [...gruppi.values()].map((g) => ({ ...g, turni: righePerTurno(g.items) }));
 
   for (const c of chiamate) {
     fogli.push({
@@ -106,6 +117,7 @@ export function bigliettiCucina(righe = [], chiamate = []) {
       quando: c.creata_il,
       stampato: Boolean(c.stampata_il),
       items: [],
+      turni: [],
     });
   }
 

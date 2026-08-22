@@ -1,0 +1,10 @@
+import fs from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+const env = Object.fromEntries(fs.readFileSync(".env.test","utf8").split(/\r?\n/).filter(r=>r.includes("=")&&!r.trim().startsWith("#")).map(r=>[r.slice(0,r.indexOf("=")).trim(), r.slice(r.indexOf("=")+1).trim()]));
+if (new URL(env.VITE_SUPABASE_URL).hostname.split(".")[0] === "oudjuqbqszisdtwzbxdo") throw new Error("PRODUZIONE");
+const c = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
+const auth = await c.auth.signInWithPassword({ email: env.TEST_TITOLARE_EMAIL, password: env.TEST_TITOLARE_PASSWORD });
+console.log("login:", auth.error ? auth.error.message : "ok");
+const { data: o, error } = await c.from("orders").select("id,table_label,status").order("opened_at", { ascending: false }).limit(5);
+console.log("errore:", error?.message ?? "nessuno", "| conti:", o?.length);
+console.log(JSON.stringify(o, null, 1));

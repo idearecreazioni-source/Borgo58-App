@@ -91,10 +91,16 @@ describe("i turni dei pasti", () => {
     expect(error).not.toBeNull();
   });
 
-  it("una comanda a tre turni mandata TUTTA INSIEME esce in tre fogli", async () => {
+  it("una comanda a tre turni mandata TUTTA INSIEME esce in UN foglio, coi turni dentro", async () => {
     // 🔴 La prova che discrimina, sui dati veri: un solo `sent_at` per sei
-    // righe. Con la regola vecchia (raggruppo per invio) qui usciva un
-    // foglio solo.
+    // righe. ⚠️ Capovolta il 22/08 — il 21/08 pretendeva TRE fogli, ed era
+    // una traduzione sbagliata: Alessio aveva chiesto le righe di stacco
+    // dentro la comanda, non tre pezzi di carta.
+    //
+    // ⚠️ E quello che deve restare vero è che **i turni si vedano**: prima
+    // del 21/08 queste sei righe uscivano su un foglio solo mescolate, e
+    // adesso escono su un foglio solo separate. Per questo la prova guarda
+    // `turni`, non il numero dei fogli.
     await staff.from("order_items").delete().eq("order_id", ordine);
 
     for (const [nome, turno] of [
@@ -134,9 +140,10 @@ describe("i turni dei pasti", () => {
     expect(righe[0].order.table_label).toContain("__PROVA__");
 
     const fogli = bigliettiCucina(righe, []);
-    expect(fogli.map((f) => f.turno)).toEqual([1, 2, 3]);
-    expect(fogli.map((f) => f.items.length)).toEqual([3, 2, 1]);
-    expect(fogli.every((f) => f.tavolo.includes("__PROVA__"))).toBe(true);
+    expect(fogli).toHaveLength(1);
+    expect(fogli[0].turni.map((g) => g.turno)).toEqual([1, 2, 3]);
+    expect(fogli[0].turni.map((g) => g.items.length)).toEqual([3, 2, 1]);
+    expect(fogli[0].tavolo).toContain("__PROVA__");
   });
 
   it("lo staff chiama il prossimo turno, e il biglietto compare in coda col tavolo", async () => {

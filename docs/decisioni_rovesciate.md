@@ -1247,3 +1247,42 @@ colore cambia solo quando qualcosa è partito per la cucina. Il pallino unico
 avrebbe cancellato l'informazione invece di semplificarla. Non è registrato
 qui perché **non è avvenuto**: un elenco dei rovesciamenti che contiene
 anche quelli non fatti smette di rispondere alla domanda per cui esiste.
+
+---
+
+## 29 · 22/08/2026 — «la cucina stampa un foglio per turno»
+
+**Cosa era stato deciso, e quando.** Il 21/08, col rovesciamento n. 26: il
+foglio della cucina smette di essere un invio e diventa **un turno**, quindi
+una comanda a tre turni esce in tre fogli.
+
+**La ragione di allora.** Vera e misurata: `sendDraftItems` scrive **un solo
+istante** su tutte le righe che partono insieme, quindi una comanda segnata
+tutta e mandata una volta usciva come **un foglio solo coi tre turni
+mescolati**, e la cucina avrebbe fatto partire il dolce con l'antipasto.
+
+**Cosa si decide adesso.** **Un foglio per invio, coi turni separati dentro**
+— la stessa banda che si vede a schermo nella comanda in corso.
+
+**Perché la ragione di allora non vale più — ⚠️ e in realtà vale ancora, ed è
+per questo che il rovesciamento è parziale.** La ragione era *«i turni non si
+vedono»*, non *«i fogli sono pochi»*. Adesso si vedono: la banda è dentro il
+foglio, a 6,35 mm sulla carta, prima dei piatti di quel turno. **Si rovescia
+il rimedio, non la diagnosi.**
+
+🔴 **E il rimedio era MIO, non di Alessio.** La sua richiesta erano le righe
+di separazione dentro la comanda — *«io ho già la comanda completa e vedrò
+cosa devo ancora cucinare per quel tavolo»* — e il foglio in più l'ho aggiunto
+io traducendola male, in un mandato scritto da chi aveva capito «per turno».
+⚠️ *Un errore di traduzione di una richiesta non somiglia a un difetto: il
+codice fa esattamente quello che il mandato dice, le prove sono verdi, e
+l'unico che se ne accorge è chi aveva parlato.*
+
+⚠️ **Cosa NON si rovescia del n. 26**: la chiave del raggruppamento non torna
+a essere `sent_at` e basta, l'aggiunta resta un foglio suo, e il turno si
+scrive **sempre** sul foglio — anche quando è uno solo, perché chi cucina non
+ha davanti la schermata dove è stato composto.
+
+⚠️ **E misurato prima di chiudere**: il foglio unico con tre turni e sette
+piatti è lungo **11,6 cm** su una termica da 80 mm. Con tre fogli sarebbe
+stata più carta, non meno — tre intestazioni e tre orari invece di uno.

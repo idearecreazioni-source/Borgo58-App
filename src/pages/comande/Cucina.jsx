@@ -143,44 +143,46 @@ export default function Cucina() {
         </>
       ) : (
         <>
-          {/* ⚠️ IL TURNO STA NELL'INTESTAZIONE, SEMPRE — anche quando è il
-              primo. È la condizione posta da Alessio il 21/08 per accettare
-              che un piatto aggiunto dopo faccia un secondo foglio dello
-              stesso turno: **il foglio deve dire chiaramente a che turno
-              appartiene**, altrimenti chi cucina non sa se ha in mano roba
-              nuova o roba già cucinata. */}
+          {/* 🔴 UN FOGLIO SOLO, COI TURNI SEPARATI DENTRO (22/08). Il
+              21/08 questa pagina stampava **un foglio per turno**: era una
+              traduzione sbagliata della richiesta di Alessio, che aveva
+              chiesto le righe di separazione dentro la comanda — *«io ho
+              già la comanda completa e vedrò cosa devo ancora cucinare per
+              quel tavolo»*.
+              ⚠️ E il difetto di partenza resta chiuso: quello che mancava
+              non era il foglio in più, era che **i turni non si vedevano**.
+              Ora si vedono, con la stessa banda della schermata. */}
           <div className="print:text-base text-center font-bold testo-sala-grande border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
             CUCINA — {g.tavolo}
-            {/* 🔴 IL TURNO È LA RIGA PIÙ GRANDE DEL FOGLIO (22/08). Era
-                della stessa taglia del nome del tavolo, cioè si leggeva
-                solo cercandola — e **questo è il posto dove conta di
-                più**: a schermo chi ha segnato i piatti sa già che turno
-                sta guardando, sulla carta no.
-                ⚠️ Niente banda nera piena come a schermo: una termica la
-                stampa male e consuma. Le righe sopra e sotto fanno lo
-                stesso lavoro con l'inchiostro che una stampante di
-                reparto sa fare. */}
-            {/* ⚠️ QUI LE TAGLIE SONO IN PIXEL E NON IN CENTIMETRI VERI, ed è
-                voluto: questo foglio è disegnato per la CARTA da 72 mm, dove
-                `--pxcm` non vuol dire niente. Misurato: 24px diventano ~6,3
-                mm sulla stampa (più grandi del nome del tavolo, che è quello
-                che serve) e 3,2 mm sullo schermo della cucina alla
-                calibrazione 74 — sopra la soglia dei 3 mm. Con le classi
-                scalate il biglietto stampato verrebbe fuori misura. */}
-            <div className="text-2xl font-bold border-y-2 border-b58-charcoal py-1 my-1">
-              {etichettaTurno(g.turno)}
-              {g.aggiunta && " · AGGIUNTA"}
-            </div>
             <div className="print:text-xs font-normal testo-sala">{ora(g.quando)}</div>
           </div>
-          {g.items.map((i) => (
-            <div key={i.id} className="py-0.5">
-              <div className="print:text-base testo-sala-grande leading-tight">
-                <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
+
+          {g.turni.map(({ turno, items }) => (
+            <div key={turno}>
+              {/* ⚠️ QUI LE TAGLIE SONO IN PIXEL E NON IN CENTIMETRI VERI, ed
+                  è voluto: questo foglio è disegnato per la CARTA da 72 mm,
+                  dove `--pxcm` non vuol dire niente. Misurato: 24px
+                  diventano ~6,3 mm sulla stampa e 3,2 mm sullo schermo alla
+                  calibrazione 74.
+                  ⚠️ Niente banda nera piena come a schermo: una termica la
+                  stampa male e consuma nastro. Le righe sopra e sotto fanno
+                  lo stesso lavoro con l'inchiostro che una stampante di
+                  reparto sa fare. */}
+              <div className="text-2xl font-bold text-center border-y-2 border-b58-charcoal py-1 my-1">
+                {etichettaTurno(turno)}
+                {g.aggiunta && " · AGGIUNTA"}
               </div>
-              {i.note && <div className="print:text-sm testo-sala italic pl-5">↳ {i.note}</div>}
+              {items.map((i) => (
+                <div key={i.id} className="py-0.5">
+                  <div className="print:text-base testo-sala-grande leading-tight">
+                    <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
+                  </div>
+                  {i.note && <div className="print:text-sm testo-sala italic pl-5">↳ {i.note}</div>}
+                </div>
+              ))}
             </div>
           ))}
+
           {g.notaTavolo && (
             <div className="print:text-sm testo-sala italic border-t border-dashed border-b58-charcoal/30 mt-1.5 pt-1.5">
               Nota tavolo: {g.notaTavolo}
@@ -201,10 +203,10 @@ export default function Cucina() {
           </p>
         </div>
         <div className="flex gap-1.5">
-          <Link to="/comande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2">
+          <Link to="/comande" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
             Sala
           </Link>
-          <Link to="/comande/bar" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2">
+          <Link to="/comande/bar" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
             Bar
           </Link>
         </div>

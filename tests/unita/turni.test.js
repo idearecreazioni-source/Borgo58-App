@@ -58,10 +58,17 @@ describe("righePerTurno", () => {
 });
 
 describe("bigliettiCucina", () => {
-  it("una comanda mandata TUTTA INSIEME esce in tre fogli, uno per turno", () => {
-    // 🔴 QUESTA È LA PROVA CHE DISCRIMINA. Con la regola vecchia
-    // (`order_id + sent_at`) queste sei righe facevano UN foglio solo,
-    // perché `sendDraftItems` scrive lo stesso istante su tutte.
+  it("una comanda mandata TUTTA INSIEME esce in UN foglio, coi tre turni dentro", () => {
+    // 🔴 QUESTA PROVA È STATA CAPOVOLTA IL 22/08, e vale la pena dire
+    // perché: il 21/08 pretendeva **tre fogli**, uno per turno. Era la
+    // traduzione sbagliata di una richiesta di Alessio — lui voleva le
+    // righe di separazione DENTRO la comanda, non tre pezzi di carta.
+    //
+    // ⚠️ E il difetto che l'aveva fatta nascere resta chiuso: prima del
+    // 21/08 queste sei righe uscivano su un foglio solo **coi turni
+    // invisibili**. Adesso escono su un foglio solo **coi turni separati**,
+    // che è un'altra cosa — e infatti la prova guarda `turni`, non il
+    // numero dei fogli.
     const righe = [
       riga({ id: "a1", turno: 1 }),
       riga({ id: "a2", turno: 1 }),
@@ -71,10 +78,11 @@ describe("bigliettiCucina", () => {
       riga({ id: "c1", turno: 3 }),
     ];
     const fogli = bigliettiCucina(righe, []);
-    expect(fogli).toHaveLength(3);
-    expect(fogli.map((f) => f.turno)).toEqual([1, 2, 3]);
-    expect(fogli.map((f) => f.items.length)).toEqual([3, 2, 1]);
-    expect(fogli.every((f) => f.tipo === "comanda")).toBe(true);
+    expect(fogli).toHaveLength(1);
+    expect(fogli[0].turni.map((t) => t.turno)).toEqual([1, 2, 3]);
+    expect(fogli[0].turni.map((t) => t.items.length)).toEqual([3, 2, 1]);
+    expect(fogli[0].items).toHaveLength(6);
+    expect(fogli[0].tipo).toBe("comanda");
   });
 
   it("due tavoli non finiscono mai nello stesso foglio", () => {
@@ -153,5 +161,72 @@ describe("bigliettiCucina", () => {
 
   it("senza righe e senza biglietti non inventa fogli", () => {
     expect(bigliettiCucina([], [])).toEqual([]);
+  });
+});
+
+// =====================================================================
+// 🔴 UN FOGLIO PER INVIO, COI TURNI DENTRO (22/08/2026)
+// =====================================================================
+describe("il foglio della cucina è uno solo", () => {
+  const riga2 = (o) => ({
+    id: o.id,
+    order_id: o.order ?? "conto-1",
+    turno: o.turno,
+    sent_at: o.sent ?? "2026-08-22T20:00:00Z",
+    prepared_at: o.uscito ?? null,
+    order: { table_label: "T3", note: null },
+  });
+
+  it("🔴 le righe già uscite si raggruppano per la STAMPA con cui sono uscite", () => {
+    // ⚠️ È la firma del foglio, non l'invio: una ristampa deve riprodurre
+    // esattamente la carta di prima. Qui due stampe diverse dello stesso
+    // tavolo restano due fogli, anche se le righe erano partite insieme.
+    const fogli = bigliettiCucina(
+      [
+        riga2({ id: "a", turno: 1, uscito: "2026-08-22T20:10:00Z" }),
+        riga2({ id: "b", turno: 2, uscito: "2026-08-22T20:10:00Z" }),
+        riga2({ id: "c", turno: 3, uscito: "2026-08-22T20:40:00Z" }),
+      ],
+      []
+    );
+    expect(fogli).toHaveLength(2);
+    expect(fogli.map((f) => f.items.length).sort()).toEqual([1, 2]);
+    // e il foglio con due turni li tiene separati dentro
+    const doppio = fogli.find((f) => f.items.length === 2);
+    expect(doppio.turni.map((t) => t.turno)).toEqual([1, 2]);
+  });
+
+  it("l'aggiunta esce da sola e porta il SUO turno, il resto sta insieme", () => {
+    // Il 2° turno è già uscito; arrivano un piatto del 2° (aggiunta) e uno
+    // del 3° (mai visto). Devono essere DUE fogli diversi: il primo dice
+    // «2° turno · AGGIUNTA», il secondo è comanda normale.
+    const fogli = bigliettiCucina(
+      [
+        riga2({ id: "vecchio", turno: 2, uscito: "2026-08-22T20:10:00Z" }),
+        riga2({ id: "agg", turno: 2, sent: "2026-08-22T20:30:00Z" }),
+        riga2({ id: "nuovo", turno: 3, sent: "2026-08-22T20:30:00Z" }),
+      ],
+      []
+    );
+    const daStampare = fogli.filter((f) => !f.stampato);
+    expect(daStampare).toHaveLength(2);
+
+    const aggiunta = daStampare.find((f) => f.aggiunta);
+    const normale = daStampare.find((f) => !f.aggiunta);
+    expect(aggiunta.items.map((i) => i.id)).toEqual(["agg"]);
+    expect(aggiunta.turno).toBe(2);
+    expect(normale.items.map((i) => i.id)).toEqual(["nuovo"]);
+    // ⚠️ Solo l'aggiunta ha UN turno dichiarato: gli altri fogli ne
+    // portano dentro quanti ne servono.
+    expect(normale.turno).toBeNull();
+  });
+
+  it("un turno solo: un foglio, e la banda c'è lo stesso", () => {
+    // ⚠️ Sulla carta il turno si scrive SEMPRE, anche quando è uno: chi
+    // cucina non ha davanti la schermata dove l'ha composto.
+    const fogli = bigliettiCucina([riga2({ id: "a", turno: 1 }), riga2({ id: "b", turno: 1 })], []);
+    expect(fogli).toHaveLength(1);
+    expect(fogli[0].turni).toHaveLength(1);
+    expect(fogli[0].turni[0].turno).toBe(1);
   });
 });

@@ -69,7 +69,7 @@ export default function Scontrini() {
   return (
     <div className="max-w-2xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4">
-        <Link to="/comande" className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/comande" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Sala
         </Link>
       </div>
