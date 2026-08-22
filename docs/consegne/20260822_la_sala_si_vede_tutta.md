@@ -3,6 +3,12 @@
 **Nato da**: il collaudo di Alessio col tablet. La pianta appariva **tagliata
 a destra** — T9 a metà, i divani e la Chef Table non disegnati affatto.
 **Nessuna migrazione.**
+**Commit del codice**: `b07ef8e`.
+⚠️ **E qui c'è un mio strappo alla convenzione, dichiarato**: il riepilogo
+è finito *dentro* quel commit invece che dopo, quindi non poteva nominarne
+l'hash. Questa riga è il commit successivo, che lo nomina. La convenzione
+esiste perché chi controlla parta da un hash certo: senza, deve indovinare
+quale commit sta sotto il documento.
 **Insieme a questo**: le due migrazioni pendenti sono state **applicate in
 produzione** (§6).
 
