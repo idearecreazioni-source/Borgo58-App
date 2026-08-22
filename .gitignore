@@ -49,3 +49,12 @@ docs/collaudo/documenti/
 # ("npm run migra", "npm run prova:migra") leggono .env.db e non questo
 # file: toglierlo non spegne niente.
 supabase/.temp/
+
+# 🔴 GLI SCRIPT USA-E-GETTA NON ENTRANO NEL REPOSITORY (22/08/2026).
+# Ne sono finiti due in un commit (`_q3.local.mjs`, `_q4.local.mjs`): erano
+# comandi di misura scritti al volo e cancellati subito dopo, e ci sono
+# arrivati con un `git add -A`. Non contenevano chiavi — leggono `.env.test`
+# a ogni esecuzione — ma un file che nessuno saprebbe spiegare fra sei mesi
+# non deve stare qui. E la regola sta nel file, non nell'attenzione di chi
+# committa: la convenzione è che finiscano per `.local.mjs`.
+*.local.mjs
