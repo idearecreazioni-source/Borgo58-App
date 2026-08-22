@@ -64,7 +64,7 @@ export default function FornitoriList() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/magazzino" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
 

@@ -169,7 +169,7 @@ export default function SezionePersonale() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa, Banca e Prima Nota
         </Link>
         {entities && (

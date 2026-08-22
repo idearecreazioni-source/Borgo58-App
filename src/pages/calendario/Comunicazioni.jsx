@@ -32,7 +32,7 @@ export default function Comunicazioni() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/calendario-eventi/clienti"
-        className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
       >
         ← Clienti
       </Link>

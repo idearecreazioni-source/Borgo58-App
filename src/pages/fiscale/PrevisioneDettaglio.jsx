@@ -128,7 +128,7 @@ export default function PrevisioneDettaglio() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/fiscale/previsioni" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Le previsioni
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-4">

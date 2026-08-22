@@ -97,7 +97,7 @@ export default function Cessioni() {
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/agricolo" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/agricolo" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Agricolo / Orto
         </Link>
         <button onClick={() => setShowForm((v) => !v)} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2">

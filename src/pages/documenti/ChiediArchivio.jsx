@@ -68,7 +68,7 @@ export default function ChiediArchivio() {
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="mb-6">
-        <Link to="/documenti" className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal">
+        <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-charcoal">
           ← Archivio Documenti
         </Link>
         <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Chiedi all'archivio</h1>

@@ -167,7 +167,7 @@ export default function ClienteDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/calendario-eventi/clienti" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi/clienti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Clienti
       </Link>
 

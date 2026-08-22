@@ -113,7 +113,7 @@ export default function PiattiDelGiorno() {
       {/* Controlli — non stampati */}
       <div className="print:hidden">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-          <Link to="/editor-menu" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+          <Link to="/editor-menu" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
             ← Editor menu
           </Link>
           {selected && items.length > 0 && <PrintButton label="Stampa inserto / PDF" />}

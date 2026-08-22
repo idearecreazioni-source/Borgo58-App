@@ -106,7 +106,7 @@ export default function Deducibilita() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/fiscale" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/fiscale" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Proiezione fiscale
         </Link>
         <div className="flex items-center gap-2">

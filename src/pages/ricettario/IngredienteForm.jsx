@@ -262,7 +262,7 @@ export default function IngredienteForm() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/ricettario/ingredienti"
-        className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
       >
         ← Ingredienti
       </Link>

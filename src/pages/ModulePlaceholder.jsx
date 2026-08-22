@@ -14,7 +14,7 @@ export default function ModulePlaceholder() {
     <div className="max-w-3xl mx-auto">
       <Link
         to="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-b58-charcoal-soft hover:text-b58-terracotta mb-6"
+        className="tocco-bottone inline-flex items-center gap-1.5 text-sm text-b58-charcoal-soft hover:text-b58-terracotta mb-6"
       >
         ← Torna alla dashboard
       </Link>

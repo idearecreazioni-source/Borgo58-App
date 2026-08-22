@@ -335,7 +335,7 @@ export default function MenuDetail() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/ricettario/menu" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/ricettario/menu" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Menu
       </Link>
 

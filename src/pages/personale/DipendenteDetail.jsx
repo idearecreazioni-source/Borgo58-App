@@ -215,7 +215,7 @@ export default function DipendenteDetail() {
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/personale" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/personale" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Personale
         </Link>
         <PrintButton label="Esporta dossier PDF" />

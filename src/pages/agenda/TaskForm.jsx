@@ -144,7 +144,7 @@ export default function TaskForm() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link to="/agenda" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/agenda" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">

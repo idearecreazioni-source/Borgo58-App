@@ -51,7 +51,7 @@ export default function ClientiList() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/calendario-eventi" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
       <div className="flex items-center justify-between gap-4 flex-wrap mt-1 mb-6">

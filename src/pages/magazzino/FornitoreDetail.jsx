@@ -112,7 +112,7 @@ export default function FornitoreDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/magazzino/fornitori" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Fornitori
       </Link>
 

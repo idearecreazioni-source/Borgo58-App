@@ -251,7 +251,7 @@ export default function PreventivoDetail() {
       <div className="flex items-center justify-between gap-4 print:hidden">
         <Link
           to="/calendario-eventi/preventivi"
-          className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
         >
           ← Preventivi
         </Link>

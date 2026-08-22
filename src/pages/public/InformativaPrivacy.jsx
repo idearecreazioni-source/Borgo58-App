@@ -85,7 +85,7 @@ export default function InformativaPrivacy() {
         <div className="mt-10 text-center">
           <a
             href="/prenota"
-            className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark underline"
+            className="tocco-bottone inline-flex items-center text-sm text-b58-terracotta hover:text-b58-terracotta-dark underline"
           >
             ← Torna alla richiesta di prenotazione
           </a>

@@ -20,7 +20,7 @@ export default function MenuList() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <Link to="/ricettario" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+          <Link to="/ricettario" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
             ← Ricettario
           </Link>
           <h1 className="font-display text-2xl text-b58-charcoal mt-1">Menu</h1>

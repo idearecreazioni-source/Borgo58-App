@@ -89,7 +89,7 @@ export default function Causali() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/cassa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Cassa
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Causali</h1>

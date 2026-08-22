@@ -103,7 +103,7 @@ export default function DocumentoDetail() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/documenti" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Archivio documenti
       </Link>
 

@@ -71,7 +71,7 @@ export default function StaffRicettaDetail() {
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/ricettario/ricette" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Ricette
         </Link>
         <PrintButton />

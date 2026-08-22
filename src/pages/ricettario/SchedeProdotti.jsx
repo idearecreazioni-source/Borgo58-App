@@ -103,7 +103,7 @@ export default function SchedeProdotti() {
 
   return (
     <div className="mx-auto max-w-3xl p-4">
-      <Link to="/ricettario" className="text-sm text-stone-600">
+      <Link to="/ricettario" className="tocco-bottone inline-flex items-center text-sm text-stone-600">
         ← Ricettario
       </Link>
       <h1 className="mb-1 mt-2 text-2xl font-semibold">Schede dei prodotti</h1>

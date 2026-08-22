@@ -118,7 +118,7 @@ export default function BevandeVini() {
         <h1 className="font-display text-2xl text-b58-charcoal">Bevande e vini</h1>
         <Link
           to="/editor-menu"
-          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+          className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
         >
           ← Editor Menu
         </Link>

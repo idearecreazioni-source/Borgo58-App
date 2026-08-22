@@ -826,7 +826,7 @@ export default function PostaInArrivo() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/documenti" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Archivio Documenti
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Posta in arrivo</h1>

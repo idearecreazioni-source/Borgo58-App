@@ -34,7 +34,7 @@ export default function IngredientiList() {
         <div>
           <Link
             to="/ricettario"
-            className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
           >
             ← Ricettario
           </Link>
