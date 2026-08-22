@@ -58,7 +58,9 @@ Nessuna termica ha ancora stampato niente.
 
 ## 3 · Come si raggruppa adesso — e una firma invece di una posizione
 
-- **le righe da stampare** di un conto: **un foglio**, coi turni dentro;
+- **le righe da stampare** di un conto: **un foglio**, coi turni dentro —
+  ⚠️ e la chiave è il **conto**, non l'invio: due invii mai stampati
+  finiscono sullo stesso foglio, che è quello che serve a chi cucina;
 - **le righe già uscite**: raggruppate per `prepared_at`, cioè **la firma
   della stampa con cui sono uscite**. ⚠️ Così una ristampa riproduce
   *esattamente* la carta di prima; raggruppandole per invio, una ristampa
@@ -120,9 +122,17 @@ fretta, non fanno niente di pericoloso, e **nessuno li conta fra i pulsanti
 importanti** — infatti non erano in nessuno dei due giri, e li ha visti
 Alessio in due secondi.
 
-⚠️ **Non li ho toccati fuori dalle Comande**: cadono quasi tutti nel terzo
-gruppo, quello che aspetta le crocette. Se una schermata si guarda solo dal
-computer, un ritorno da 4 mm col mouse non è un problema.
+⚠️ **Io non li ho toccati fuori dalle Comande** — cadono quasi tutti nel
+terzo gruppo, quello che aspetta le crocette. ✅ **Li ha fatti tutti e 44
+una sessione parallela poco dopo** (commit `40c2bb3`), quindi il conto qui
+sopra è la fotografia di com'erano, non di come sono.
+
+⚠️ **E c'è un pezzo che nessuno dei due elenchi poteva contenere**: il
+pulsante «Apri menu» e le voci della barra laterale — **5,14** e **5,07
+mm** — stanno nel layout condiviso, cioè *in nessuna schermata e in tutte*.
+Il mio censimento guardava dentro `<main>`, quindi non li vedeva; li ha
+trovati la sessione parallela e li ho sistemati io (`8dfd653`). *Un difetto
+che sta dappertutto non compare in un elenco fatto per posti.*
 
 ---
 
@@ -144,14 +154,24 @@ computer, un ritorno da 4 mm col mouse non è un problema.
 ## Cosa abbiamo rovesciato
 
 **Uno, ed è la correzione stessa**: il foglio della cucina torna a essere
-**uno per invio**.
+**uno solo**.
+
+⚠️ **E qui c'era una frase falsa scritta da me poche ore fa, corretta da
+una sessione parallela**: avevo scritto *«un foglio per invio»* in tre
+punti di questo documento e nel commento del codice. **È il conto che fa
+il foglio, non l'invio**: nella chiave di ciò che deve ancora uscire
+l'istante dell'invio non c'è, quindi **due invii mai stampati fanno un
+foglio solo** — che è anche il comportamento giusto, perché la cucina
+vuole in mano tutto quello che deve ancora cucinare per quel tavolo.
+*Una frase diventata falsa il giorno stesso in cui è stata scritta* — la
+quarta in tre giorni, e la prima che non ha avuto bisogno di invecchiare.
 
 - **cosa era stato deciso, e quando**: 21/08, un foglio per turno
   (rovesciamento n. 26, *«un ticket è un INVIO»* → un turno);
 - **la ragione di allora**: una comanda mandata tutta insieme usciva come un
   foglio solo coi tre turni **mescolati**, e la cucina avrebbe fatto partire
   il dolce con l'antipasto;
-- **cosa si decide adesso**: un foglio per invio, **coi turni separati
+- **cosa si decide adesso**: un foglio per **conto**, **coi turni separati
   dentro**;
 - **perché quella ragione non vale più — ⚠️ e in realtà vale ancora, ed è per
   questo che il rovesciamento è parziale**: la ragione era *«i turni non si
