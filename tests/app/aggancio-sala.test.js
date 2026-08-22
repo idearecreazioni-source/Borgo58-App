@@ -7,11 +7,13 @@ import {
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   SPOSTATE_NEL_DISEGNO,
+  sagomeFuoriDalDisegno,
   sagomaPerIlDisegno,
   misureSagoma,
   raggioMagneteCm,
 } from "../../src/lib/calcoli/sala";
 import { getCopertiDelGiorno, getPiantaDelGiorno } from "../../src/lib/api/sala";
+import { oggiLocale } from "../../src/lib/constants";
 
 // IL MAGNETE E IL CONTEGGIO DEVONO DIRE LA STESSA COSA (18/08, giro E).
 //
@@ -243,6 +245,48 @@ describe("le sagome spostate solo nel disegno esistono davvero", () => {
           altra.y + altra.profondita <= s.y;
         expect(separate, `${nome} finisce sopra ${altra.label}`).toBe(true);
       }
+    }
+  });
+});
+
+// =====================================================================
+// 🔴 LA SALA SI VEDE TUTTA — sui dati veri (22/08/2026)
+// =====================================================================
+//
+// La gemella viva della prova pura in `tests/unita/sala-misure.test.js`.
+// Quella tiene ferma la REGOLA su sagome inventate; questa la mette davanti
+// alla sala che c'è davvero, oggi, **con gli scostamenti della giornata
+// dentro** — che è la cosa che una prova pura non può conoscere: Alessio
+// trascina i tavoli, e una disposizione di una sera qualunque può portarne
+// uno oltre il bordo del foglio.
+//
+// ⚠️ E il modo in cui fallirebbe è il solito: la sagoma non verrebbe
+// disegnata. Nessun errore, nessuna striscia rossa — **una sala con meno
+// tavoli**, che è una cosa plausibile.
+describe("la sala vera si vede tutta", () => {
+  it("nessuna sagoma della pianta di oggi cade fuori dal disegno", async () => {
+    const pianta = await getPiantaDelGiorno(oggiLocale());
+    expect(pianta.length).toBeGreaterThan(0);
+    expect(sagomeFuoriDalDisegno(pianta)).toEqual([]);
+  });
+
+  it("e nemmeno quelle delle giornate già apparecchiate", async () => {
+    // ⚠️ Le disposizioni salvate sono lo scostamento di una serata: se una
+    // di quelle porta un tavolo oltre il bordo, la sala di quella sera si
+    // presenterà tagliata — e nessuno la guarda finché non arriva.
+    const { data, error } = await supabase
+      .from("disposizioni_giornaliere")
+      .select("data")
+      .order("data", { ascending: false })
+      .limit(5);
+    expect(error).toBeNull();
+    const giornate = [...new Set((data ?? []).map((r) => r.data))];
+    for (const g of giornate) {
+      const pianta = await getPiantaDelGiorno(g);
+      expect({ giornata: g, fuori: sagomeFuoriDalDisegno(pianta) }).toEqual({
+        giornata: g,
+        fuori: [],
+      });
     }
   });
 });

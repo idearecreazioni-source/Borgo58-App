@@ -4,8 +4,6 @@ import {
   SALA_LARGHEZZA_CM,
   SALA_PROFONDITA_CM,
   ZONE_FONDALE,
-  LARGHEZZA_MINIMA_IN_PIEDI,
-  LARGHEZZA_MINIMA_SDRAIATA,
   SOGLIA_IN_PIEDI_CM_REALI,
   agganciaAiVicini,
   areaVietataAiMobili,
@@ -47,7 +45,11 @@ import {
 // numero, e il prezzo che accettiamo, stanno in lib/calcoli/sala.js.
 // ⚠️ Le tre soglie si sono spostate in `lib/calcoli/sala.js` il 21/08:
 // sono misure, e una misura si deve poter provare senza un browser.
-const LARGHEZZA_MINIMA_CM_REALI = LARGHEZZA_MINIMA_SDRAIATA;
+// 🔴 LE DUE LARGHEZZE MINIME NON VIVONO PIÙ QUI (22/08): erano il pavimento
+// che tagliava la sala. Restano in `lib/calcoli/sala.js`, dove adesso
+// rispondono a un'altra domanda — *«quanti punti servono per avere il
+// bersaglio pieno di 1,05 cm?»* — e chi le legge è la calibrazione, che
+// dice il prezzo invece di imporlo.
 
 // ⚠️ E DA QUI IN POI SONO DUE NUMERI DIVERSI, che prima erano lo stesso.
 // «Quanto piccolo può diventare il disegno» e «quando la sala sta male
@@ -487,16 +489,28 @@ export default function PiantaSala({
       ref={contenitoreRef}
       className="overflow-auto rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10"
     >
-      {/* ⚠️ IL RIQUADRO CHE TIENE INSIEME DISEGNO E PANNELLO. La larghezza
-          minima si è spostata qui dallo SVG: il pannello si posiziona in
-          percentuale del DISEGNO, non del contenitore, e quando la pianta è
-          più larga dello schermo le due cose non coincidono. */}
-      <div
-        className="relative"
-        style={{
-          minWidth: `calc(${(verticale ? LARGHEZZA_MINIMA_IN_PIEDI : LARGHEZZA_MINIMA_CM_REALI).toFixed(1)} * var(--pxcm))`,
-        }}
-      >
+      {/* 🔴 IL DISEGNO NON HA PIÙ UN PAVIMENTO IN CENTIMETRI REALI
+          (22/08/2026, difetto trovato da Alessio col tablet).
+
+          Qui c'era `min-width: 9,01 cm × --pxcm` — 667 punti alla
+          calibrazione 74. L'SVG è `w-full`, quindi prendeva la larghezza
+          di QUESTO riquadro: **una misura fissa in centimetri veri dentro
+          un contenitore elastico**. Sotto quella soglia il disegno teneva
+          la sua taglia e la parte che avanzava finiva fuori dalla vista —
+          T9 a metà, i divani e la Chef Table non disegnati affatto.
+
+          ⚠️ E NON SOMIGLIAVA A UN ERRORE: somigliava a una sala con meno
+          tavoli. Il contenitore scorreva di lato (che è già vietato), ma
+          nessuno scorre di lato una pianta — la si guarda e basta. *Un
+          tavolo che non c'è non si può toccare.*
+
+          ⚠️ COSA SI PAGA, dichiarato: sotto i 667 punti il bersaglio del
+          tavolo più piccolo scende sotto 1,05 cm. Si vede con
+          `bersaglioTavoloCm()`, e resta sopra i **5,3 mm che Alessio ha
+          provato con le mani** fino a ~449 punti (alla calibrazione 74).
+          Fra «i tavoli si toccano un po' più piccoli» e «tre tavoli non
+          ci sono», la scelta non è in dubbio. */}
+      <div className="relative">
       {/* ⚠️ IL TOCCO SUL VUOTO. Serve a DESELEZIONARE, ed e' meta' del
           gesto: senza, l'unico modo di annullare una scelta sbagliata e'
           ritoccare esattamente il tavolo giusto.

@@ -196,6 +196,65 @@ export const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_
  * direzione**, ed è per questo che non si vedono: sul tablet i punti sono
  * meno E tutto ciò che è in centimetri veri diventa più grande.
  */
+/**
+ * 🔴 IL BERSAGLIO PROVATO CON LE MANI (18/08/2026, Alessio col tablet in
+ * mano): **a ~5,3 mm i quadrati si prendono bene** — *«è proprio tutto
+ * perfetto»*. È l'unico numero di questa famiglia che sia stato misurato
+ * su un gesto invece che preso da fuori: 1,05 cm è una convenzione del
+ * brief, questo no.
+ *
+ * ⚠️ SERVE DA QUANDO IL DISEGNO NON HA PIÙ UN PAVIMENTO (22/08): sotto
+ * questa misura non si taglia la sala — si dichiara che i bersagli sono
+ * scesi sotto ciò che una mano ha approvato.
+ */
+export const BERSAGLIO_PROVATO_CM = 0.53;
+
+/**
+ * Quanto misura, in centimetri REALI, il lato del tavolo più piccolo
+ * (90 cm) quando la pianta è larga `puntiUtili` punti.
+ *
+ * ⚠️ È l'inverso di LARGHEZZA_MINIMA_IN_PIEDI: quella dice «quanti punti
+ * servono per avere 1,05 cm», questa dice «con i punti che ci sono, quanto
+ * viene». Il verso del rapporto è tutto: **il disegno non detta più la
+ * larghezza, la subisce** — e questa funzione è il prezzo, in chiaro.
+ */
+export function bersaglioTavoloCm(puntiUtili, pxcm, verticale = true) {
+  const lato = verticale ? SALA_PROFONDITA_CM : SALA_LARGHEZZA_CM;
+  return (puntiUtili * 90) / lato / pxcm;
+}
+
+/**
+ * 🔴 LE SAGOME CHE IL DISEGNO TAGLIA — il controllo nato dal difetto del
+ * 22/08/2026, e la domanda è **diversa** da quella che le sette prove del
+ * 21/08 facevano.
+ *
+ * Quelle chiedevano *«il RIQUADRO entra nella pagina?»*. Questa chiede
+ * *«il DISEGNO entra nel riquadro?»*, che è quella che conta per chi
+ * guarda: una sagoma fuori dal `viewBox` **non viene disegnata affatto**,
+ * e una sala con meno tavoli non somiglia a un errore — somiglia a una
+ * sala. ⚠️ *Un tavolo che non c'è non si può toccare, e in servizio non
+ * te ne accorgi finché non lo cerchi.*
+ *
+ * ⚠️ Guarda la sagoma **come viene disegnata**: verso compreso (`ruotato`)
+ * e spostamenti del solo foglio (`SPOSTATE_NEL_DISEGNO`). Guardare i dati
+ * veri direbbe che la Chef Table sta dentro mentre sul foglio è altrove.
+ *
+ * @returns {{label: string, destra: number, fondo: number}[]} i colpevoli
+ */
+export function sagomeFuoriDalDisegno(sagome = []) {
+  const fuori = [];
+  for (const s of sagome) {
+    const d = sagomaPerIlDisegno(s);
+    const m = misureSagoma(d);
+    const destra = (d.x ?? 0) + m.larghezza;
+    const fondo = (d.y ?? 0) + m.profondita;
+    if (destra > SALA_LARGHEZZA_CM || fondo > SALA_PROFONDITA_CM || (d.x ?? 0) < 0 || (d.y ?? 0) < 0) {
+      fuori.push({ label: d.label, destra, fondo });
+    }
+  }
+  return fuori;
+}
+
 export function marginePiantaInPiedi(puntiUtili, pxcm) {
   return puntiUtili - LARGHEZZA_MINIMA_IN_PIEDI * pxcm;
 }

@@ -1161,3 +1161,49 @@ un turno **già stampato** fa comunque un foglio suo, con dentro **solo lui**
 condizione che lui ha posto per accettarlo è che *il foglio dica chiaramente
 a che turno appartiene*: per questo il turno è nell'intestazione **sempre**,
 anche quando è il primo, e compare la parola **AGGIUNTA**.
+
+---
+
+## 27 · 22/08/2026 — «la pianta non si rimpicciolisce sotto la larghezza che tiene i tavoli afferrabili»
+
+**Cosa era stato deciso, e quando.** Il 18/08, giro E del mandato sala. Il
+riquadro della pianta ha una **larghezza minima in centimetri REALI** —
+`(1030/90) × 1,05 × 0,75 = 9,012 cm`, cioè 667 punti alla calibrazione 74 —
+e sotto quella misura il disegno non scende: si scorre.
+
+**La ragione di allora.** Un bersaglio troppo piccolo non si prende, e in
+servizio si paga. Era la ragione giusta per la domanda che ci si era posti.
+
+**Cosa si decide adesso.** Il pavimento sparisce: **il disegno è largo
+esattamente quanto la parte visibile del riquadro, sempre.** Nessuna
+condizione in cui una sagoma resti fuori.
+
+**Perché la ragione di allora non vale più — ⚠️ e in parte vale ancora,
+ed è il prezzo che accettiamo.** Un bersaglio piccolo si paga davvero, e sul
+telefono adesso lo paghiamo: misurato, il lato di T5 passa a **5,0 mm**
+contro i **5,3 provati con le mani** il 18/08. Sui due tablet non cambia
+niente (10,0 mm a 800 punti).
+
+⚠️ **Ma la decisione del 18/08 era stata presa senza vedere l'altra faccia.**
+Quel pavimento non faceva «scorrere» la sala: **la faceva sparire in parte**.
+Misurato il 22/08 stringendo la finestra a 600 punti — il disegno restava a
+666 dentro un riquadro da 568, e **sei sagome finivano fuori dalla vista**:
+T5, T7, i tre divani e la Chef Table. Sono esattamente quelle che Alessio non
+vedeva sul tablet.
+
+⚠️ **E il modo in cui falliva è quello che decide**: una sagoma fuori dal
+foglio **non viene disegnata affatto**. Non si vede un errore — si vede *una
+sala con meno tavoli*, che è una cosa plausibile. *Un tavolo che non c'è non
+si può toccare, e in servizio non te ne accorgi finché non lo cerchi.* Fra un
+tavolo un filo più piccolo e un tavolo che non esiste, il secondo non si
+recupera in nessun modo.
+
+⚠️ **Quello che NON si rovescia**: `TOCCO_TAVOLO_CM` resta **1,05** e
+`RIDUZIONE_DISEGNO` resta **0,75**. Non sono stati abbassati — hanno cambiato
+mestiere: da **pavimento che taglia** a **misura di riferimento** che dice
+quanti punti servirebbero per avere il bersaglio pieno. Chi la legge adesso è
+la calibrazione, che **dichiara il prezzo invece di imporlo**.
+
+⚠️ **E i sette controlli del 21/08 restano tutti**, perché rispondono a una
+domanda che continua a valere (*il riquadro entra nella pagina?*). Accanto è
+nato quello che mancava: *il disegno entra nel riquadro?*

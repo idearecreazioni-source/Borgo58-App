@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  BERSAGLIO_PROVATO_CM,
+  SALA_LARGHEZZA_CM,
+  SALA_PROFONDITA_CM,
+  bersaglioTavoloCm,
+  sagomeFuoriDalDisegno,
   CONTATTO_MINIMO_CM,
   TOCCO_TAVOLO_CM,
   marginePiantaInPiedi,
@@ -664,5 +669,139 @@ describe("La pianta entra in larghezza negli schermi veri", () => {
     // affiancati. Quelle colonne non esistono più, e il numero non si abbassa
     // per prudenza: un bersaglio più piccolo si paga in servizio.
     expect(TOCCO_TAVOLO_CM).toBe(1.05);
+  });
+});
+
+// =====================================================================
+// 🔴 IL DISEGNO ENTRA NEL RIQUADRO — la domanda che le sette prove qui
+// sopra NON facevano (22/08/2026)
+// =====================================================================
+//
+// Quelle chiedono *«il RIQUADRO entra nella pagina?»*, e passavano tutte
+// mentre Alessio guardava una sala tagliata: T9 a metà, i divani e la Chef
+// Table non disegnati affatto. **Sono due domande diverse**, e la seconda è
+// quella che conta per chi guarda.
+//
+// ⚠️ E IL MODO IN CUI FALLIVA È IL PUNTO: una sagoma fuori dal disegno non
+// viene mostrata affatto. Non si vede un errore — si vede *una sala con meno
+// tavoli*, che è una cosa plausibile. Un tavolo che non c'è non si può
+// toccare, e in servizio non te ne accorgi finché non lo cerchi.
+describe("la sala si vede tutta", () => {
+  const tavolo = (label, x, y, extra = {}) => ({
+    label,
+    x,
+    y,
+    larghezza_cm: 90,
+    profondita_cm: 90,
+    ruotato: false,
+    ...extra,
+  });
+
+  it("una sagoma dentro i limiti non viene segnalata", () => {
+    expect(sagomeFuoriDalDisegno([tavolo("T1", 0, 0), tavolo("T2", 1900, 900)])).toEqual([]);
+  });
+
+  it("🔴 una sagoma che sfora a destra viene nominata", () => {
+    const fuori = sagomeFuoriDalDisegno([tavolo("T9", SALA_LARGHEZZA_CM - 40, 0)]);
+    expect(fuori).toHaveLength(1);
+    expect(fuori[0].label).toBe("T9");
+  });
+
+  it("🔴 e una che sfora in fondo, che è il verso che sul telefono diventa «a destra»", () => {
+    // ⚠️ Sul telefono la sala si mette in piedi e i due assi si scambiano:
+    // il fondo della stanza diventa il bordo destro dello schermo. È
+    // esattamente il bordo da cui sono sparite le sagome il 22/08.
+    const fuori = sagomeFuoriDalDisegno([tavolo("Divano", 0, SALA_PROFONDITA_CM - 40, { profondita_cm: 200 })]);
+    expect(fuori.map((f) => f.label)).toEqual(["Divano"]);
+  });
+
+  it("guarda la sagoma COME VIENE DISEGNATA: il verso conta", () => {
+    // Un tavolo da 180×90 messo a 40 cm dal fondo ci sta sdraiato e non ci
+    // sta girato. Guardare i dati senza il verso direbbe che va bene.
+    const posto = { larghezza_cm: 180, profondita_cm: 90, x: 0, y: SALA_PROFONDITA_CM - 100 };
+    expect(sagomeFuoriDalDisegno([{ ...posto, label: "diritto", ruotato: false }])).toEqual([]);
+    expect(sagomeFuoriDalDisegno([{ ...posto, label: "girato", ruotato: true }])).toHaveLength(1);
+  });
+
+  it("guarda il posto DEL DISEGNO, non quello vero", () => {
+    // 🔴 QUESTA PROVA È STATA RISCRITTA PERCHÉ NON DISCRIMINAVA (22/08).
+    // La prima versione usava la Chef Table alle sue coordinate vere, che
+    // stanno dentro il foglio **come la sua posizione disegnata**: rotto
+    // apposta il codice — fatto guardare il dato vero invece del disegno —
+    // **nessuna prova diventava rossa**. Misurava una coincidenza.
+    //
+    // ⚠️ Adesso il caso è costruito perché le due risposte siano DIVERSE:
+    // una Chef Table messa fuori dal foglio nei dati, e dentro nel disegno
+    // (rovesciamento n. 15: in pianta si disegna sotto i divani).
+    const fuoriNeiDati = {
+      label: "Chef Table",
+      x: SALA_LARGHEZZA_CM - 20,
+      y: SALA_PROFONDITA_CM - 20,
+      larghezza_cm: 200,
+      profondita_cm: 70,
+      ruotato: false,
+    };
+    // Il disegno la mette a (150, 800) girata: ci sta.
+    expect(sagomeFuoriDalDisegno([fuoriNeiDati])).toEqual([]);
+    // E la controprova che il caso sia davvero discriminante: senza lo
+    // spostamento, quella stessa sagoma sfora.
+    expect(sagomeFuoriDalDisegno([{ ...fuoriNeiDati, label: "T1" }])).toHaveLength(1);
+  });
+
+  it("🔴 la pianta VERA di partenza sta tutta dentro il disegno", () => {
+    // Le 13 sagome come le ha messe Alessio. Se un domani qualcuno ne
+    // spostasse una oltre il bordo, questa diventa rossa **prima** che la
+    // sala si presenti in servizio con un tavolo in meno.
+    expect(sagomeFuoriDalDisegno(PIANTA_DI_PARTENZA)).toEqual([]);
+  });
+});
+
+// La pianta base di produzione al 22/08/2026 — ⚠️ è una FOTOGRAFIA, e come
+// tale invecchia: serve a provare la regola, non a descrivere la sala di
+// oggi. Quella la guarda la prova sui dati veri.
+const PIANTA_DI_PARTENZA = [
+  { label: "T1", x: 1860, y: 330, larghezza_cm: 180, profondita_cm: 90, ruotato: true },
+  { label: "T2", x: 1600, y: 0, larghezza_cm: 180, profondita_cm: 90, ruotato: true },
+  { label: "T3", x: 1600, y: 360, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T4", x: 1860, y: 60, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T5", x: 1330, y: 870, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T6", x: 1330, y: 780, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T7", x: 1610, y: 870, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T8", x: 1610, y: 780, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "T9", x: 1610, y: 690, larghezza_cm: 90, profondita_cm: 90, ruotato: false },
+  { label: "Divano 1", x: 300, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
+  { label: "Divano 2", x: 620, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
+  { label: "Divano 3", x: 940, y: 800, larghezza_cm: 240, profondita_cm: 200, ruotato: false },
+  { label: "Chef Table", x: 980, y: 530, larghezza_cm: 200, profondita_cm: 70, ruotato: false },
+];
+
+// =====================================================================
+// IL PREZZO DEL DISEGNO SENZA PAVIMENTO (22/08/2026)
+// =====================================================================
+describe("il bersaglio del dito quando la pianta si adatta", () => {
+  const SCHERMI_VERI = [
+    { nome: "Android 8 pollici", utili: 800 - 64, pxcm: 74 },
+    { nome: 'iPad mini 7,9"', utili: 768 - 64, pxcm: 64 },
+    { nome: 'iPad mini 8,3"', utili: 744 - 32, pxcm: 59.5 },
+  ];
+
+  for (const s of SCHERMI_VERI) {
+    it(`${s.nome}: il bersaglio resta sopra i 5,3 mm provati con le mani`, () => {
+      // ⚠️ Il confronto è col numero MISURATO SU UN GESTO (18/08), non con
+      // la convenzione di 1,05 cm presa dal brief. È l'unico dei due che la
+      // realtà abbia confermato.
+      expect(bersaglioTavoloCm(s.utili, s.pxcm)).toBeGreaterThan(BERSAGLIO_PROVATO_CM);
+    });
+  }
+
+  it("🔴 e su un telefono scende sotto: è il prezzo, e va detto", () => {
+    // 375 punti di iPhone meno i margini. Lì il bersaglio va sotto i 5,3 mm
+    // provati — ma la sala si vede TUTTA, che prima non era vero. La
+    // calibrazione lo dice a chi sposta il righello.
+    expect(bersaglioTavoloCm(375 - 64, 74)).toBeLessThan(BERSAGLIO_PROVATO_CM);
+  });
+
+  it("più punti, bersaglio più grande — il verso del rapporto", () => {
+    expect(bersaglioTavoloCm(1000, 74)).toBeGreaterThan(bersaglioTavoloCm(500, 74));
   });
 });

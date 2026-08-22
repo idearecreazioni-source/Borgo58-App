@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PXCM_DEFAULT, getPxCm, resetPxCm, setPxCm } from "../../lib/touch";
-import { LARGHEZZA_MINIMA_IN_PIEDI } from "../../lib/calcoli/sala";
+import { BERSAGLIO_PROVATO_CM, bersaglioTavoloCm } from "../../lib/calcoli/sala";
 
 // Righello di calibrazione (§3.2.1). Si appoggia un righello vero sullo
 // schermo del tablet e si regola finche' la barra non misura 10 cm esatti:
@@ -22,9 +22,18 @@ export default function CalibrazioneTocco({ onClose }) {
   // in un messaggio di chat, che sarebbe perso: e' il CONTO VERO, fatto
   // con la stessa misura che usa la pianta, e cambia mentre si sposta il
   // righello. Cosi' dice «stai per fare questo», non «attento in generale».
-  const larghezzaPianta = Math.round(Number(pxcm) * LARGHEZZA_MINIMA_IN_PIEDI);
+  // 🔴 IL CONTO È CAMBIATO IL 22/08, e con lui quello che l'avviso dice.
+  // Prima diceva «la sala sborderà»: era vero finché il disegno aveva un
+  // pavimento in centimetri reali, e quel pavimento **tagliava la sala**.
+  // Tolto il pavimento, la pianta entra sempre — quello che cambia con la
+  // calibrazione non è più se la sala si vede, è **quanto è grande il
+  // bersaglio del dito**. L'avviso dice quello, in millimetri.
   const spazio = typeof window === "undefined" ? 0 : window.innerWidth - 32;
-  const sborda = spazio > 0 && larghezzaPianta > spazio;
+  const bersaglioMm = spazio > 0 ? bersaglioTavoloCm(spazio, Number(pxcm)) * 10 : 0;
+  // ⚠️ Il confronto è coi 5,3 mm PROVATI CON LE MANI, non con la
+  // convenzione di 1,05 cm: sotto quelli si entra in un terreno che
+  // nessuno ha verificato.
+  const stretto = spazio > 0 && bersaglioMm < BERSAGLIO_PROVATO_CM * 10;
 
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 space-y-3">
@@ -56,13 +65,14 @@ export default function CalibrazioneTocco({ onClose }) {
         }}
       />
 
-      {sborda && (
+            {stretto && (
         <p className="text-[13px] leading-relaxed rounded-lg bg-b58-gold/15 px-3 py-2 text-b58-charcoal">
-          <b>Su questo schermo la sala non ci starà più.</b> Con questa misura la pianta chiede{" "}
-          {larghezzaPianta} punti e qui ce ne sono {spazio}: la sala tornerà a sbordare di lato,
-          come prima. La calibrazione col righello è pensata per il <b>tablet</b>, dove serve a
-          prendere il piatto giusto col dito. Su un telefono conviene lasciare la stima di
-          partenza.
+          <b>Con questa misura i tavoli diventano piccoli da prendere.</b> Su questo
+          schermo il tavolo più piccolo verrebbe {bersaglioMm.toFixed(1)} mm, e col dito
+          ne servono almeno {(BERSAGLIO_PROVATO_CM * 10).toFixed(1)}. La sala si vede
+          tutta lo stesso — non sborda più — ma il dito sbaglia più spesso. La
+          calibrazione col righello è pensata per il <b>tablet</b>; su un telefono
+          conviene lasciare la stima di partenza.
         </p>
       )}
 
