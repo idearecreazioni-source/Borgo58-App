@@ -203,7 +203,18 @@ export default function PublicReservationForm() {
             <div>
               <label className={labelClass}>Orario</label>
               {cercaOrari ? (
-                <p className="text-sm text-b58-charcoal-soft">Cerco i posti liberi…</p>
+                // 🔴 DICEVA «Cerco i posti liberi…» (corretta il 22/08). Il
+                // calcolo dei posti liberi **non esiste piu' dal 14/08**:
+                // `posti_liberi()` e `dining_tables.seats` sono stati
+                // rimossi con la pianta viva, e quanta gente entra lo decide
+                // Alessio guardando la sala. Qui si cercano gli **orari
+                // prenotabili**, che e' un'altra cosa.
+                //
+                // ⚠️ E' l'unica frase diventata falsa che leggono i CLIENTI:
+                // prometteva un conteggio di posti che nessuno fa piu', e
+                // chi la leggeva poteva aspettarsi che il sito sapesse dire
+                // quanto spazio c'e'.
+                <p className="text-sm text-b58-charcoal-soft">Cerco gli orari disponibili…</p>
               ) : opzioni.chiuso ? (
                 <p className="text-sm text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
                   {opzioni.motivo}
