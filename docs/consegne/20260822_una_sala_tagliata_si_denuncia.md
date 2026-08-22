@@ -1,4 +1,4 @@
-# Una sala tagliata si denuncia — e il taglio segnalato non l'ho trovato
+# Una sala tagliata si denuncia — e il taglio era la cache
 
 **Nato da**: il rilievo *«la pianta si taglia ancora, e i numeri dicono che
 non dovrebbe»*, con l'ordine di andare a guardare invece di dedurre.
@@ -128,19 +128,25 @@ volta quella prova sembrerà di nuovo negativa.
 
 ## ⚠️ Cosa NON è verificato
 
-1. 🔴 **Il taglio segnalato resta senza spiegazione.** Con tutti gli
-   strumenti che ho, sulla stessa taglia di schermo e la stessa
-   calibrazione, non c'è. **Adesso però non serve più cercarlo a mano**: se
-   c'è, la prossima volta che Alessio apre quella schermata **il gestionale
-   lo dice da solo**, e nomina le sagome. È l'unica risposta onesta che
-   potevo dare a un difetto che non riesco a riprodurre.
+1. ✅ **CHIUSA IL 22/08: il taglio c'era davvero, e la spiegazione è la
+   cache.** Alessio ha riaperto la schermata a 800 × 1280 con calibrazione
+   74 e **la sala si vede tutta**, divani e Chef Table compresi. Le
+   fotografie in cui compariva tagliata mostravano la versione **prima**
+   della correzione `b07ef8e`, rimasta nella memoria del browser.
+   ⚠️ **Quindi il difetto era reale e il pavimento in centimetri reali ne
+   era la causa**: quello che non tornava non era la sala, era *quale
+   versione del programma stavamo guardando*. Il §1 qui sopra resta com'è
+   scritto — le misure erano giuste, e cercavano un difetto già corretto.
+   ⚠️ **E per non rifarla, due ipotesi sono ARCHIVIATE**: non era il
+   contenitore che ritaglia (`max-w-3xl`) e non era lo stato «conto
+   aperto» — il taglio si vedeva anche senza nessun conto aperto.
 2. 🔴 **Non l'ha visto un occhio**: il pannello del browser di questa
    sessione non produce immagini, e l'unica fotografia che sono riuscito a
    fare era ritagliata e mi ha ingannato. Quello che riporto sono misure.
 3. ⚠️ **Lo stato «conto aperto» non è stato misurato**: il tocco sulla
    pianta comandato da qui non risponde più dopo un ricaricamento — limite
-   dello strumento, non dell'app. È lo stato in cui Alessio stava
-   collaudando, e resta l'ipotesi più viva.
+   dello strumento, non dell'app. ✅ **Ma come ipotesi sul taglio è
+   archiviata**: Alessio l'ha visto anche senza nessun conto aperto.
 4. ⚠️ **La striscia non l'ha vista una mano**: so che compare e cosa dice,
    non se si nota mentre si lavora.
 
@@ -166,11 +172,19 @@ sette controlli del 21/08 restano tutti. Si **aggiunge** un guardiano.
 
 ---
 
-## 5 · Cosa serve da Alessio
+## 5 · Come è finita
 
-1. **Il push**, e poi riaprire la schermata dove l'aveva vista tagliata:
-   **se il taglio c'è, adesso la striscia lo dice e nomina i tavoli**. Quella
-   frase è la misura che a me manca.
-2. Se la striscia **non** compare e la sala **sembra** ancora tagliata:
-   allora quello che sta guardando è una fotografia ritagliata, non la sala —
-   è successo a me un'ora fa.
+**Verificato da Alessio**: la sala si vede tutta, e i turni funzionano dal
+vivo — 1°, 2° e 3° separati nella comanda, totale 97 €, e «Avanti prossimo
+turno» in colonna con gli altri gesti.
+
+⚠️ **La striscia resta comunque**, ed è la parte che sopravvive a questo
+giro: il difetto di oggi si è chiuso da sé, ma **era silenzioso** — nessuno
+l'avrebbe visto se Alessio non avesse guardato la sala con l'occhio. Da
+adesso un taglio, da qualunque causa venga, si annuncia e nomina i tavoli.
+
+⚠️ **E la lezione che vale più del difetto**: per due giri di seguito
+abbiamo inseguito un difetto guardando **fotografie**, e per due volte
+l'immagine ha mentito — la mia perché ritagliata, le sue perché vecchie.
+*Una fotografia non è una misura*, ed è la stessa regola che questo
+progetto applica già ai conteggi scritti a mano.
