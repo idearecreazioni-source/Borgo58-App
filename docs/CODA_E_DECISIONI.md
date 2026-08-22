@@ -31,6 +31,37 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
+0-bis. 🔴 **IL CENSIMENTO DI QUELLO CHE STA FUORI DALLE SCHERMATE** — deciso
+   da Alessio il 22/08/2026, **da fare appena la sessione parallela chiude**.
+
+   **Cosa**: misurare, con lo stesso criterio del censimento del 22/08
+   (testo ≥ 3,20 mm, bersagli ≥ 8,50 mm, gesti pericolosi distanti ≥ 5 mm),
+   tutto ciò che **non appartiene a nessuna schermata**: la barra in alto,
+   il menu laterale, gli avvisi che compaiono sopra qualunque pagina
+   (`AvvisoLettureTagliate`, `DatoNonLetto`), il segno del database
+   (`SegnaleDatabase`), le finestre condivise.
+
+   🔴 **PERCHÉ ESISTE QUESTA VOCE, e la frase va tenuta com'è**:
+
+   > **Un difetto che sta dappertutto non compare in un elenco fatto per
+   > posti.**
+
+   Il censimento del 22/08 ha aperto **67 schermate una per una** e ha
+   guardato dentro `<main>` — cioè *la schermata*. Il pulsante «Apri menu»
+   (**5,14 × 5,14 mm**) e le 17 voci della barra (**5,07 mm**, testo 1,89)
+   stavano **fuori**, e quindi non sono comparsi in nessuna delle 67 righe:
+   non erano in nessuna schermata, ed erano in tutte. Li ha visti una
+   sessione parallela, e Alessio il pulsante l'aveva notato in due secondi.
+
+   ⚠️ **La forma vale oltre le misure**: ogni volta che si costruisce un
+   elenco «per posto» — schermate, tabelle, moduli, migrazioni — quello che
+   vive *fra* i posti non ci finisce dentro. Vale per gli avvisi condivisi,
+   per i componenti riusati, e per qualunque regola che il codice applica
+   in un punto solo e mostra in cinquanta.
+
+   **Già fatti** (22/08, commit `8dfd653`): il pulsante del menu e le 17
+   voci della barra, tutti a 8,50 mm con testo 3,20. **Il resto è da
+   censire**, e il censimento viene prima di qualunque correzione.
 0. 🔴 **I FINGER FOOD E LO STORICO DEI COSTI — mandato del 19/08, e viene
    PRIMA di tutto il resto**:
    [`mandati/20260819_i_finger_food_e_lo_storico_dei_costi.md`](mandati/20260819_i_finger_food_e_lo_storico_dei_costi.md).
