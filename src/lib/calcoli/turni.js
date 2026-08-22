@@ -38,7 +38,18 @@ export function righePerTurno(righe = []) {
 /**
  * I fogli che la cucina deve stampare.
  *
- * 🔴 UN FOGLIO PER INVIO, COI TURNI SEPARATI DENTRO (22/08/2026).
+ * 🔴 UN FOGLIO PER STAMPA, COI TURNI SEPARATI DENTRO (22/08/2026).
+ *
+ * ⚠️ «PER STAMPA», NON «PER INVIO» — è una correzione misurata, non una
+ * sfumatura: la chiave di ciò che deve ancora uscire è **il solo conto**,
+ * senza `sent_at`. Quindi due invii diversi che la cucina non ha ancora
+ * stampato escono **su un foglio solo** (provato: due righe con istanti di
+ * invio diversi → un foglio). Ed è la cosa giusta — finché la carta non è
+ * uscita, ciò che la cucina non ha mai visto sta comodo insieme. *La
+ * prima stesura di questo commento diceva «per invio», e descriveva una
+ * regola che questo codice non ha: era già una frase falsa il giorno che
+ * è stata scritta.*
+ *
  * Il 21/08 questa funzione faceva **un foglio per turno**, e non era quello
  * che Alessio aveva chiesto: le sue parole erano *«io ho già la comanda
  * completa e vedrò cosa devo ancora cucinare per quel tavolo»* — cioè un

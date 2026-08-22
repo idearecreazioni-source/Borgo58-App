@@ -58,3 +58,10 @@ supabase/.temp/
 # non deve stare qui. E la regola sta nel file, non nell'attenzione di chi
 # committa: la convenzione è che finiscano per `.local.mjs`.
 *.local.mjs
+
+# ⚠️ E la sessione di collaudo scritta in "public/" (22/08/2026): non
+# finisce per ".local.mjs", quindi la riga qui sopra NON la copre. E'
+# il file che "scripts/_sess.local.mjs" scrive per entrare nel browser
+# senza digitare il PIN, e dentro c'e' un token vero — in "public/" per
+# giunta, cioe' in una cartella che il sito servirebbe a chiunque.
+public/sessione.local

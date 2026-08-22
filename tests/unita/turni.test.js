@@ -230,3 +230,44 @@ describe("il foglio della cucina è uno solo", () => {
     expect(fogli[0].turni[0].turno).toBe(1);
   });
 });
+
+// =====================================================================
+// ⚠️ «PER STAMPA», NON «PER INVIO» (22/08/2026)
+//
+// Il commento in cima a `bigliettiCucina` diceva «un foglio per invio», e
+// descriveva una regola che il codice non ha: la chiave di ciò che deve
+// ancora uscire è il **solo conto**. Questa prova congela il fatto vero,
+// così la frase non può tornare a divergere dal comportamento.
+// =====================================================================
+describe("due invii mai stampati", () => {
+  const r = (id, turno, sent) => ({
+    id,
+    order_id: "c1",
+    turno,
+    sent_at: sent,
+    prepared_at: null,
+    order: { table_label: "T3", note: null },
+  });
+
+  it("escono su UN foglio solo, coi turni separati dentro", () => {
+    const fogli = bigliettiCucina(
+      [r("primo", 1, "2026-08-22T20:00:00Z"), r("secondo", 2, "2026-08-22T20:25:00Z")],
+      []
+    );
+    expect(fogli).toHaveLength(1);
+    expect(fogli[0].items.map((i) => i.id)).toEqual(["primo", "secondo"]);
+    expect(fogli[0].turni.map((t) => t.turno)).toEqual([1, 2]);
+  });
+
+  it("⚠️ un turno SALTATO non si rinumera: il foglio dice quello che dice la comanda", () => {
+    // Caso vero, visto in collaudo: chi preme «Prossimo turno» e poi cambia
+    // idea lascia un buco (1, 2, 4). Il foglio deve portare **gli stessi
+    // numeri della schermata** — rinumerarli a 1, 2, 3 farebbe dire due
+    // cose diverse ai due posti sullo stesso piatto.
+    const fogli = bigliettiCucina(
+      [r("a", 1, "2026-08-22T20:00:00Z"), r("b", 2, "2026-08-22T20:00:00Z"), r("c", 4, "2026-08-22T20:00:00Z")],
+      []
+    );
+    expect(fogli[0].turni.map((t) => t.turno)).toEqual([1, 2, 4]);
+  });
+});
