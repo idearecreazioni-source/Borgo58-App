@@ -57,7 +57,7 @@ export default function ConfermaDistruttiva({
         type="button"
         disabled={disabilitato}
         onClick={() => setChiesto(true)}
-        className={`text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
+        className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
       >
         {etichetta}
       </button>
@@ -65,7 +65,17 @@ export default function ConfermaDistruttiva({
   }
 
   return (
-    <span className="inline-flex items-center gap-2 text-xs">
+    // 🔴 I DUE PULSANTI SI ALLONTANANO (22/08, dal collaudo in scala
+    // reale). Stavano a 8 punti l'uno dall'altro — **1,1 mm veri** — e
+    // sono «Sì, elimina» e «Annulla»: il gesto piu' irreversibile della
+    // schermata accanto al suo contrario, a un decimo della larghezza di
+    // un dito. Adesso ce ne sono **5 mm**, misurati in centimetri veri
+    // come i bersagli.
+    //
+    // ⚠️ Non e' prudenza generica: il secondo tocco deve cadere lontano
+    // dal primo, che e' gia' la ragione per cui questa conferma nasce sul
+    // posto invece che in una finestra.
+    <span className="inline-flex items-center testo-sala" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
       <span className="text-b58-terracotta-dark">
         {domanda ?? `Elimino ${cosaSparisce}?`}
       </span>

@@ -39,8 +39,8 @@ export default function CalibrazioneTocco({ onClose }) {
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-base text-b58-charcoal">Calibrazione dei tocchi</h2>
-          <p className="text-xs text-b58-charcoal-soft/80 leading-relaxed mt-0.5">
+          <h2 className="font-display testo-sala-grande text-b58-charcoal">Calibrazione dei tocchi</h2>
+          <p className="testo-sala text-b58-charcoal-soft/80 leading-relaxed mt-0.5">
             Appoggia un righello sullo schermo e regola finché la barra non misura
             <b> 10 cm esatti</b>. Serve una volta sola per ogni tablet: da lì in poi i
             pulsanti hanno la stessa dimensione reale su qualunque schermo.
@@ -49,7 +49,7 @@ export default function CalibrazioneTocco({ onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="text-b58-charcoal-soft hover:text-b58-terracotta-dark text-lg leading-none px-1"
+          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala-grande leading-none px-1"
         >
           ×
         </button>
@@ -85,16 +85,16 @@ export default function CalibrazioneTocco({ onClose }) {
           step="0.1"
           value={Number(pxcm).toFixed(2)}
           onChange={(e) => change(e.target.value)}
-          className="w-24 text-center rounded-lg border border-b58-charcoal/15 bg-white px-2 py-2 text-sm"
+          className="w-24 text-center rounded-lg border border-b58-charcoal/15 bg-white px-2 py-2 testo-sala"
         />
-        <span className="text-xs text-b58-charcoal-soft">pixel per cm</span>
+        <span className="testo-sala text-b58-charcoal-soft">pixel per cm</span>
         <button type="button" onClick={() => change(pxcm + 0.5)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal">
           +
         </button>
         <button
           type="button"
           onClick={() => setValue(resetPxCm())}
-          className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta-dark"
+          className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark"
         >
           ripristina stima ({PXCM_DEFAULT.toFixed(0)})
         </button>

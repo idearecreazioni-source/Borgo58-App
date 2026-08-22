@@ -115,20 +115,20 @@ export default function Bar() {
       }`}
     >
       <div className="flex items-center justify-between border-b border-dashed border-b58-charcoal/20 pb-1.5 mb-1.5">
-        <span className="font-display text-lg text-b58-charcoal">{g.table}</span>
-        <span className="text-xs text-b58-charcoal-soft">{ora(g.sentAt)}</span>
+        <span className="font-display testo-sala-grande text-b58-charcoal">{g.table}</span>
+        <span className="testo-sala text-b58-charcoal-soft">{ora(g.sentAt)}</span>
       </div>
       {g.items.map((i) => (
-        <div key={i.id} className="text-sm text-b58-charcoal py-0.5">
+        <div key={i.id} className="testo-sala text-b58-charcoal py-0.5">
           <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
-          {i.note && <div className="text-xs italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
+          {i.note && <div className="testo-sala italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
         </div>
       ))}
       <button
         type="button"
         disabled={busy}
         onClick={() => toggleGruppo(g, !evaso)}
-        className={`tocco-azione w-full mt-2 rounded-lg text-sm font-semibold disabled:opacity-50 ${
+        className={`tocco-azione w-full mt-2 rounded-lg testo-sala font-semibold disabled:opacity-50 ${
           evaso
             ? "border border-b58-charcoal/15 text-b58-charcoal-soft"
             : "bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment"
@@ -144,7 +144,7 @@ export default function Bar() {
       <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Bar</h1>
-          <p className="text-xs text-b58-charcoal-soft/70 mt-1">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
             {daPreparare.length === 0
               ? "Niente da preparare"
               : `${daPreparare.length} ${daPreparare.length === 1 ? "ticket" : "ticket"} da preparare`}
@@ -153,13 +153,13 @@ export default function Bar() {
         <div className="flex gap-1.5">
           <Link
             to="/comande"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2"
           >
             Sala
           </Link>
           <Link
             to="/comande/cucina"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2"
           >
             Cucina
           </Link>
@@ -167,7 +167,7 @@ export default function Bar() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 shrink-0">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
@@ -175,12 +175,12 @@ export default function Bar() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
         {/* DA PREPARARE ---------------------------------------------- */}
         <div className="flex flex-col min-h-0">
-          <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
+          <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
             Da preparare
           </p>
           <div className="overflow-y-auto flex-1 pr-1">
             {daPreparare.length === 0 && evasi.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl">
+              <p className="testo-sala text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl">
                 Nessuna comanda al bar.
               </p>
             ) : (
@@ -189,7 +189,7 @@ export default function Bar() {
                   <Ticket key={g.key} g={g} evaso={false} />
                 ))}
                 {evasi.length > 0 && (
-                  <p className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft/50 mt-3 mb-1">
+                  <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft/50 mt-3 mb-1">
                     Evasi
                   </p>
                 )}
@@ -203,12 +203,12 @@ export default function Bar() {
 
         {/* CASSA ------------------------------------------------------ */}
         <div className="flex flex-col min-h-0">
-          <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
+          <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
             Conti aperti — preconto e chiusura
           </p>
           <div className="overflow-y-auto flex-1 pr-1">
             {openOrders.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl">
+              <p className="testo-sala text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl">
                 Nessun conto aperto.
               </p>
             ) : (
@@ -223,12 +223,12 @@ export default function Bar() {
                 return (
                   <div key={o.id} className="rounded-xl bg-white ring-1 ring-b58-charcoal/15 p-3 mb-2">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-display text-lg text-b58-charcoal">{o.table_label}</span>
-                      <span className="text-base font-semibold text-b58-charcoal">
+                      <span className="font-display testo-sala-grande text-b58-charcoal">{o.table_label}</span>
+                      <span className="testo-sala-grande font-semibold text-b58-charcoal">
                         {formatEUR(totale)}
                       </span>
                     </div>
-                    <p className="text-xs text-b58-charcoal-soft mb-2">
+                    <p className="testo-sala text-b58-charcoal-soft mb-2">
                       {righe.length} {righe.length === 1 ? "riga" : "righe"}
                       {coperti > 0 && ` · ${coperti} coperti`} · aperto alle {ora(o.opened_at)}
                     </p>
@@ -237,7 +237,7 @@ export default function Bar() {
                         quelle righe in silenzio. Qui si vede prima di
                         aprire la chiusura. */}
                     {nonInviate.length > 0 && (
-                      <p className="text-xs text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-2 py-1 mb-2">
+                      <p className="testo-sala text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-2 py-1 mb-2">
                         {nonInviate.length} {nonInviate.length === 1 ? "riga mai mandata" : "righe mai mandate"} in
                         cucina — fuori dal totale
                       </p>
@@ -246,14 +246,14 @@ export default function Bar() {
                       <button
                         type="button"
                         onClick={() => apriConto(o.id, "precon")}
-                        className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal text-sm font-medium"
+                        className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium"
                       >
                         Preconto
                       </button>
                       <button
                         type="button"
                         onClick={() => apriConto(o.id, "close")}
-                        className="tocco-azione flex-1 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment text-sm font-semibold"
+                        className="tocco-azione flex-1 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala font-semibold"
                       >
                         Chiudi conto
                       </button>
@@ -263,7 +263,7 @@ export default function Bar() {
               })
             )}
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2 mt-2 shrink-0">
+          <p className="testo-sala text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2 mt-2 shrink-0">
             Il Bar è anche punto cassa: può chiudere il conto di qualunque tavolo, non
             solo dei propri ordini.
           </p>

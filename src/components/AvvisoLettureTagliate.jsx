@@ -28,12 +28,12 @@ export default function AvvisoLettureTagliate() {
 
   return (
     <div className="bg-b58-terracotta/15 ring-1 ring-b58-terracotta/50 rounded-lg px-3 py-2 mb-4 print:hidden">
-      <p className="text-sm text-b58-charcoal">
+      <p className="testo-sala text-b58-charcoal">
         <strong>Quello che vedi è incompleto.</strong> Il gestionale ha ricevuto solo una parte
         delle righe, quindi anche i totali calcolati qui sopra sono parziali. Restringi il periodo
         o i filtri e riprova.
       </p>
-      <ul className="text-xs text-b58-charcoal-soft mt-1 space-y-0.5">
+      <ul className="testo-sala text-b58-charcoal-soft mt-1 space-y-0.5">
         {tagliate.map((t) => (
           <li key={t.dove}>
             {t.dove}: <strong>{t.ricevute}</strong> righe ricevute su <strong>{t.totali}</strong>
@@ -43,7 +43,7 @@ export default function AvvisoLettureTagliate() {
       <button
         type="button"
         onClick={dimenticaLettureTagliate}
-        className="mt-1 text-xs underline text-b58-terracotta-dark hover:text-b58-charcoal"
+        className="tocco-bottone mt-1 testo-sala underline text-b58-terracotta-dark hover:text-b58-charcoal"
       >
         Ho ristretto la ricerca, togli l&apos;avviso
       </button>

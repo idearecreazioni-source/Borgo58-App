@@ -31,10 +31,14 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-sm w-full overflow-hidden flex flex-col max-h-[92vh]">
+      {/* ⚠️ Allargata come la chiusura conto (22/08): con le scritte a 3,20 mm
+          dentro 384 punti le righe del conto andavano a capo. Il preconto è il
+          foglio che finisce in mano al cliente — una riga spezzata lì è una
+          domanda a voce mentre si ha altro da fare. */}
+      <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[92vh]">
         <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between shrink-0 print:hidden">
-          <span className="font-display text-base">Preconto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="text-b58-parchment/80 hover:text-b58-parchment text-lg leading-none">
+          <span className="font-display testo-sala-grande">Preconto — {order.table_label}</span>
+          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
             ×
           </button>
         </div>
@@ -42,7 +46,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
         <div className="p-4 overflow-y-auto space-y-3">
           {/* Questo blocco e' l'unica cosa che finisce sulla carta: vedi
               .stampa-ticket in index.css. */}
-          <div className="stampa-ticket font-mono text-xs bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
+          <div className="print:text-xs stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
             <div className="text-center font-bold tracking-wide border border-b58-gold-dark/40 bg-b58-gold/15 rounded py-1 mb-2">
               DOCUMENTO NON FISCALE
             </div>
@@ -69,7 +73,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               </div>
             )}
 
-            <div className="flex justify-between border-t border-dashed border-b58-charcoal/40 mt-1.5 pt-1.5 font-bold text-sm">
+            <div className="print:text-sm flex justify-between border-t border-dashed border-b58-charcoal/40 mt-1.5 pt-1.5 font-bold testo-sala">
               <span>TOTALE</span>
               <span>{formatEUR(total)}</span>
             </div>
@@ -77,13 +81,13 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
             {/* Divisione informativa (§3.2.2): sul preconto si vede subito
                 quanto viene a testa. L'arrotondamento si fa alla chiusura. */}
             {coperti >= 2 && total > 0 && (
-              <div className="flex justify-between text-[10.5px] pt-0.5">
+              <div className="print:text-[10.5px] flex justify-between testo-sala pt-0.5">
                 <span>A testa ({coperti})</span>
                 <span>{formatEUR(total / coperti)}</span>
               </div>
             )}
 
-            <div className="text-center text-[10px] mt-2 leading-snug">
+            <div className="print:text-[10px] text-center testo-sala mt-2 leading-snug">
               Documento non fiscale, privo di valore ai fini IVA.<br />
               Il conto resta aperto.
             </div>
@@ -94,14 +98,14 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               lavori in corso. Stessa scelta degli allergeni da verificare,
               che stanno sullo schermo e non sul menu. */}
           {nonInviate.length > 0 && (
-            <p className="print:hidden text-[11px] text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
+            <p className="print:hidden testo-sala text-b58-charcoal bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
               {nonInviate.length === 1
                 ? "1 riga non è mai stata mandata in cucina e non è su questo preconto."
                 : `${nonInviate.length} righe non sono mai state mandate in cucina e non sono su questo preconto.`}
             </p>
           )}
 
-          <p className="print:hidden text-[11px] text-b58-charcoal-soft/80 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
+          <p className="print:hidden testo-sala text-b58-charcoal-soft/80 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
             Solo un'anteprima per il cliente: nessun pagamento registrato, nessuno
             scontrino emesso, il tavolo resta aperto. Piatti {formatEUR(itemsTotal)}
             {coperti > 0 && <> + coperti {formatEUR(copertoTotal)}</>}.
@@ -112,14 +116,14 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm font-medium px-3"
+            className="tocco-azione flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-3"
           >
             Stampa
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3"
+            className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3"
           >
             Chiudi anteprima
           </button>

@@ -35,7 +35,7 @@ export default function CampoGiornata({
           sarebbe il secondo orologio, e direbbe «fino alle 05:00» anche il
           giorno che Alessio cambia quel numero. */}
       {oraFineSerata && (
-        <p className="text-xs text-b58-charcoal-soft mt-1">
+        <p className="testo-sala text-b58-charcoal-soft mt-1">
           {frase} <strong className="text-b58-charcoal">{formatDate(value)}</strong>. Fino alle{" "}
           {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
         </p>

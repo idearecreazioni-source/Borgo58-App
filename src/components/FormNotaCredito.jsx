@@ -42,7 +42,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
 
   return (
     <div className="mt-3 pt-3 border-t border-b58-charcoal/10">
-      <p className="text-xs text-b58-charcoal-soft mb-2">
+      <p className="testo-sala text-b58-charcoal-soft mb-2">
         Nota di credito su questa fattura
         {fattura.invoice_number ? ` (#${fattura.invoice_number})` : ""}.
       </p>
@@ -84,14 +84,14 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
           type="button"
           disabled={salvando || !(valore > 0) || !data}
           onClick={salva}
-          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
         >
           {salvando ? "Registro…" : "Registra la nota"}
         </button>
         <button
           type="button"
           onClick={onAnnulla}
-          className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal pb-2"
+          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal pb-2"
         >
           Annulla
         </button>
@@ -99,7 +99,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
 
       {/* Cosa succederà: detto prima, non scoperto dopo. */}
       {valore > 0 && (
-        <p className="text-[11px] text-b58-charcoal-soft mt-2">
+        <p className="testo-sala text-b58-charcoal-soft mt-2">
           {pagata ? (
             <>
               Questa fattura è già pagata, quindi la nota <strong>non cambia quel pagamento</strong>: resta

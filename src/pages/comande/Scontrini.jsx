@@ -69,32 +69,32 @@ export default function Scontrini() {
   return (
     <div className="max-w-2xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4">
-        <Link to="/comande" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/comande" className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Sala
         </Link>
       </div>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Scontrini</h1>
       {serata && (
-        <p className="text-xs text-b58-charcoal-soft mb-4">
+        <p className="testo-sala text-b58-charcoal-soft mb-4">
           Conti chiusi nella serata del {formatDate(serata)}
         </p>
       )}
 
       {errore && (
-        <div className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <p>{errore}</p>
-          <button onClick={carica} className="underline text-xs mt-1">
+          <button onClick={carica} className="tocco-bottone underline testo-sala mt-1">
             Riprova
           </button>
         </div>
       )}
       {esito && (
-        <p className="text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{esito}</p>
+        <p className="testo-sala text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{esito}</p>
       )}
 
-      {conti === null && !errore && <p className="text-sm text-b58-charcoal-soft">Sto guardando…</p>}
+      {conti === null && !errore && <p className="testo-sala text-b58-charcoal-soft">Sto guardando…</p>}
       {conti !== null && conti.length === 0 && (
-        <p className="text-sm text-b58-charcoal-soft">Stasera non è ancora stato chiuso nessun conto.</p>
+        <p className="testo-sala text-b58-charcoal-soft">Stasera non è ancora stato chiuso nessun conto.</p>
       )}
 
       {conti !== null && conti.length > 0 && (
@@ -105,7 +105,7 @@ export default function Scontrini() {
               <div key={c.id} className="tocco-riga flex items-center gap-3 px-4">
                 <div className="flex-1 min-w-0">
                   <div className="text-b58-charcoal">{c.table_label}</div>
-                  <div className="text-xs text-b58-charcoal-soft">
+                  <div className="testo-sala text-b58-charcoal-soft">
                     {uscito
                       ? `${c.documento_fiscale === "fattura" ? "Fattura" : "Scontrino"}${
                           c.documento_numero ? ` n. ${c.documento_numero}` : ""
@@ -122,7 +122,7 @@ export default function Scontrini() {
                     type="button"
                     disabled={inCorso !== null}
                     onClick={() => segnala(c)}
-                    className="tocco-bottone shrink-0 rounded-lg border border-b58-charcoal/20 text-xs px-3 text-b58-charcoal-soft disabled:opacity-60"
+                    className="tocco-bottone shrink-0 rounded-lg border border-b58-charcoal/20 testo-sala px-3 text-b58-charcoal-soft disabled:opacity-60"
                   >
                     {inCorso === c.id ? "…" : "Non è uscito"}
                   </button>
@@ -133,7 +133,7 @@ export default function Scontrini() {
         </div>
       )}
 
-      <p className="text-xs text-b58-charcoal-soft mt-4">
+      <p className="testo-sala text-b58-charcoal-soft mt-4">
         Segnalando, il conto torna fra quelli da fiscalizzare e Alessio lo trova a fine serata.
       </p>
     </div>

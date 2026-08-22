@@ -228,7 +228,7 @@ export default function Sala() {
         // Messaggio esplicito invece di un fallback silenzioso: un conto
         // calcolato senza coperto sembrerebbe giusto e sarebbe sbagliato.
         setError(
-          `Impostazioni di sala non leggibili (${e.message}). Se la migrazione dei coperti non è ancora stata applicata, il coperto non verrà conteggiato.`
+          `Impostazioni di sala non leggibili (${e.message}): il coperto non verrà conteggiato su questo conto. Riprova, e se continua avvisa Alessio.`
         )
       );
   }, []);
@@ -1153,7 +1153,7 @@ export default function Sala() {
       <button
         type="button"
         onClick={() => setShowFreeForm((v) => !v)}
-        className="testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
+        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta-dark mb-2"
       >
         {showFreeForm ? "Nascondi voce libera" : "+ Voce libera (bevande, fuori menu)"}
       </button>
@@ -1286,9 +1286,15 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setPanel((p) => (p ? null : "tavoli"))}
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
+              className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3"
             >
-              {panel ? "Chiudi" : "Impostazioni"}
+              {/* ⚠️ «CHIUDI IMPOSTAZIONI», non «Chiudi» (22/08). In sala
+                  «chiudere» vuol dire **incassare**: è la regola per cui il
+                  gesto del conto si chiama «Chiudi conto» e l'uscita dal
+                  tavolo «Lascia il tavolo aperto». Un «Chiudi» solitario, a
+                  due dita da un tavolo aperto, è la parola sbagliata nel
+                  posto peggiore. */}
+              {panel ? "Chiudi impostazioni" : "Impostazioni"}
             </button>
           )}
         </div>
@@ -1696,7 +1702,11 @@ export default function Sala() {
                     <button
                       type="button"
                       onClick={() => handleVoid(it.id)}
-                      className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-1"
+                      // 🔴 4,0 mm, ed e' il gesto che STORNA un piatto gia'
+                      // andato in cucina (22/08). Un bersaglio piccolo su
+                      // una cosa che si disfa e' fastidio; su una che non
+                      // si disfa e' un'altra cosa.
+                      className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2"
                     >
                       annulla
                     </button>

@@ -133,11 +133,11 @@ export default function Cucina() {
         // completa e vede da sé cosa resta da cucinare — questo foglio dice
         // «adesso», e su quale tavolo.
         <>
-          <div className="text-center font-bold text-base border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
+          <div className="print:text-base text-center font-bold testo-sala-grande border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
             {g.tavolo}
-            <div className="font-normal text-xs">{ora(g.quando)}</div>
+            <div className="print:text-xs font-normal testo-sala">{ora(g.quando)}</div>
           </div>
-          <div className="text-center text-lg font-bold leading-tight py-2">
+          <div className="print:text-lg text-center testo-sala-grande font-bold leading-tight py-2">
             AVANTI COL PROSSIMO TURNO
           </div>
         </>
@@ -149,7 +149,7 @@ export default function Cucina() {
               stesso turno: **il foglio deve dire chiaramente a che turno
               appartiene**, altrimenti chi cucina non sa se ha in mano roba
               nuova o roba già cucinata. */}
-          <div className="text-center font-bold text-base border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
+          <div className="print:text-base text-center font-bold testo-sala-grande border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
             CUCINA — {g.tavolo}
             {/* 🔴 IL TURNO È LA RIGA PIÙ GRANDE DEL FOGLIO (22/08). Era
                 della stessa taglia del nome del tavolo, cioè si leggeva
@@ -171,18 +171,18 @@ export default function Cucina() {
               {etichettaTurno(g.turno)}
               {g.aggiunta && " · AGGIUNTA"}
             </div>
-            <div className="font-normal text-xs">{ora(g.quando)}</div>
+            <div className="print:text-xs font-normal testo-sala">{ora(g.quando)}</div>
           </div>
           {g.items.map((i) => (
             <div key={i.id} className="py-0.5">
-              <div className="text-base leading-tight">
+              <div className="print:text-base testo-sala-grande leading-tight">
                 <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
               </div>
-              {i.note && <div className="text-sm italic pl-5">↳ {i.note}</div>}
+              {i.note && <div className="print:text-sm testo-sala italic pl-5">↳ {i.note}</div>}
             </div>
           ))}
           {g.notaTavolo && (
-            <div className="text-sm italic border-t border-dashed border-b58-charcoal/30 mt-1.5 pt-1.5">
+            <div className="print:text-sm testo-sala italic border-t border-dashed border-b58-charcoal/30 mt-1.5 pt-1.5">
               Nota tavolo: {g.notaTavolo}
             </div>
           )}
@@ -196,40 +196,45 @@ export default function Cucina() {
       <div className="flex items-center justify-between gap-3 mb-3 print:hidden">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Cucina — stampa</h1>
-          <p className="text-xs text-b58-charcoal-soft/70 mt-1">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
             {daStampare.length === 0 ? "Niente da stampare" : `${daStampare.length} da stampare`}
           </p>
         </div>
         <div className="flex gap-1.5">
-          <Link to="/comande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+          <Link to="/comande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2">
             Sala
           </Link>
-          <Link to="/comande/bar" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+          <Link to="/comande/bar" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4 py-2">
             Bar
           </Link>
         </div>
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3 print:hidden">
           Elenco non aggiornato: {error}. Quello che vedi potrebbe essere incompleto.
         </p>
       )}
 
-      <p className="text-[11px] text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2 mb-4 print:hidden">
-        La cucina lavora di carta (§3.2.1): ogni invio dalla Sala compare qui e si
-        stampa con un tocco, già impaginato come uscirà dalla stampante termica.
-        Quando arriverà il mini-PC, la stampa partirà da sola.
-      </p>
+      {/* 🔴 QUI C'ERA UNA DIDASCALIA (tolta il 22/08): «La cucina lavora di
+          carta (§3.2.1)… Quando arriverà il mini-PC, la stampa partirà da
+          sola.» È una **spiegazione**, non un avviso: dice come funziona una
+          cosa che il pulsante «🖨 Stampa» dice già da sé, e promette una
+          cosa futura.
+          ⚠️ Il criterio è quello del 18/08: *una spiegazione a schermo la si
+          legge una volta e poi diventa arredamento* — e questa sta su una
+          schermata che si guarda in servizio, dove l'ingombro si paga in
+          secondi. La regola resta scritta dove serve: nel commento in testa
+          a questo file, che il mini-PC lo nomina per esteso. */}
 
       {/* ⚠️ «Non ho ancora letto» non è «non c'è niente»: finché la prima
           lettura non è tornata non si dichiara la serata vuota (§6). */}
       {!letto ? (
-        <p className="text-sm text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl print:hidden">
+        <p className="testo-sala text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl print:hidden">
           Sto leggendo la coda…
         </p>
       ) : fogli.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl print:hidden">
+        <p className="testo-sala text-b58-charcoal-soft/60 text-center py-10 border border-dashed border-b58-charcoal/15 rounded-xl print:hidden">
           Nessuna comanda per la cucina.
         </p>
       ) : (
@@ -241,7 +246,7 @@ export default function Cucina() {
                 type="button"
                 disabled={busy}
                 onClick={() => stampa(g, false)}
-                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment text-base font-semibold disabled:opacity-50 print:hidden"
+                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande font-semibold disabled:opacity-50 print:hidden"
               >
                 🖨 Stampa
               </button>
@@ -249,7 +254,7 @@ export default function Cucina() {
           ))}
 
           {stampati.length > 0 && (
-            <p className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft/50 pt-2 print:hidden">
+            <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft/50 pt-2 print:hidden">
               Già stampati
             </p>
           )}
@@ -261,7 +266,7 @@ export default function Cucina() {
                   type="button"
                   disabled={busy}
                   onClick={() => stampa(g, true)}
-                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal text-sm font-medium disabled:opacity-50"
+                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium disabled:opacity-50"
                 >
                   Ristampa
                 </button>
@@ -269,7 +274,7 @@ export default function Cucina() {
                   type="button"
                   disabled={busy}
                   onClick={() => nonStampato(g)}
-                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal-soft text-sm disabled:opacity-50"
+                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal-soft testo-sala disabled:opacity-50"
                 >
                   ↺ Segna non stampato
                 </button>

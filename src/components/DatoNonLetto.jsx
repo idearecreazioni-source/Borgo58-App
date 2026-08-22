@@ -24,13 +24,13 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
         className={`rounded-xl border border-dashed border-b58-terracotta/40 p-6 text-center ${className}`}
       >
         <p className="text-b58-charcoal font-medium mb-1">Non riesco a leggere {cosa}.</p>
-        <p className="text-xs text-b58-charcoal-soft mb-3">
+        <p className="testo-sala text-b58-charcoal-soft mb-3">
           {nonVuolDire ?? "Non vuol dire che non c'è niente: vuol dire che non lo so."}
         </p>
         <button
           type="button"
           onClick={onRiprova}
-          className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-base font-semibold px-6"
+          className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala-grande font-semibold px-6"
         >
           Riprova
         </button>
@@ -39,7 +39,7 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
   }
 
   return (
-    <p className={`text-xs text-b58-terracotta-dark ${className}`}>
+    <p className={`testo-sala text-b58-terracotta-dark ${className}`}>
       Non riesco a leggere {cosa}: non vuol dire che non ce n&apos;è, vuol dire che non lo so.
     </p>
   );
