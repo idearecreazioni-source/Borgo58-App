@@ -153,12 +153,34 @@ silenzio è ora scritto lì, con la sua ragione.
 
 ---
 
+## 6 · ✅ Provato con le mani, perché `run` è il punto più rischioso
+
+Ho toccato **il punto da cui passano tutte le chiusure**: se l'avessi rotto,
+in sala non si chiuderebbe più nessun conto. Quindi un conto vero sul
+progetto di prova, dal browser: aperto T2, segnato un piatto, inviato,
+**«Paga contante»**.
+
+| | esito |
+|---|---|
+| il modale si chiude | ✅ |
+| errori a schermo | **nessuno** |
+| il tavolo torna libero | ✅ |
+| il conto nel database | **chiuso**, pagato contante |
+| documento fiscale | **vuoto — ed è giusto**: il registratore non è collegato |
+| l'elenco «da fiscalizzare» | **lo contiene** |
+
+⚠️ **Quello che questa prova NON dimostra** è che lo scontrino venga scritto
+quando la stampante c'è: qui `emettiScontrino` risponde `non_collegato`, come
+in produzione. Quel pezzo è provato dal simulatore (§4), non da una mano — e
+non può esserlo finché l'apparecchio non esiste.
+
+---
+
 ## ⚠️ Cosa NON è verificato
 
-1. 🔴 **Nessuna mano ha chiuso un conto** con questa modifica: le prove
-   chiamano `fiscalizzaConto` direttamente, **non passano dal modale**. Che
-   l'aggancio dentro `run` scatti davvero su tutte e cinque le strade di
-   chiusura è letto nel codice, non visto.
+1. ⚠️ **Le altre quattro strade di chiusura** — carta, misto, alla romana,
+   sconto — passano dallo stesso `run`, ma con le mani ho premuto solo «Paga
+   contante».
 2. 🔴 **In produzione non è entrato niente**: la migrazione è solo sulla
    prova, e il codice aspetta il push di Alessio.
 3. ⚠️ **Il registratore vero non esiste**: `emettiScontrino` risponde
