@@ -733,25 +733,31 @@ spostati: dove vadano è parte della stessa decisione.
 
 ---
 
-## 🔴 Da fare, misurato e non costruito: i turni dei pasti (21/08)
+## ✅ Fatto: i turni dei pasti (21/08)
 
-**Cosa manca**: la cucina non sa con quali turni escono le pietanze — oggi
-tutta la comanda arriva come un blocco solo. Alessio li compone lui (nel suo
-esempio il primo turno ha due antipasti **e** una pasta): 🔴 **i turni non
-sono le categorie, e non si deducono mai dal piatto**.
+**Consegnato** in
+[`consegne/20260821_i_turni_dei_pasti.md`](consegne/20260821_i_turni_dei_pasti.md).
+Il turno è un dato della riga, la cucina stampa un foglio per turno, e
+«Avanti col prossimo turno» è un biglietto generico. La misura che l'ha
+preceduto resta in
+[`referti/20260821_i_turni_dei_pasti.md`](referti/20260821_i_turni_dei_pasti.md).
 
-**La misura è in**
-[`referti/20260821_i_turni_dei_pasti.md`](referti/20260821_i_turni_dei_pasti.md),
-e dice tre cose:
+**Le tre domande hanno avuto risposta da Alessio**: il biglietto esce dalla
+stampante; è generico e senza limitazioni (non conta i turni, non si
+spegne, si può premere due volte); un piatto aggiunto a un turno già
+stampato fa un foglio suo, **a patto che il foglio dica chiaramente a che
+turno appartiene**.
 
-- il turno **non** può appoggiarsi all'invio (`sent_at`): un invio contiene
-  tutti i turni, e un turno può stare in due invii — il difetto si vede nei
-  due versi;
-- il conto e il preconto **non cambiano di un centesimo**;
-- 🔴 **il biglietto «avanti col prossimo turno» non ha un posto ovvio**,
-  perché la cucina non ha uno schermo: le tre strade e il loro costo sono
-  nel referto.
+⚠️ **Resta aperto, e non è una dimenticanza**: il **Bar** raggruppa ancora
+per invio. Un turno è una cosa della cucina — le bevande escono quando
+escono — e Alessio ha nominato solo la cucina. La regola sta in un posto
+solo (`src/lib/calcoli/turni.js`), quindi portarla lì costa poco.
 
-⚠️ **Tre domande aspettano Alessio** (fine del referto): dove esce il
-biglietto, se si conserva, e cosa fare quando un piatto dello stesso turno
-viene aggiunto dopo.
+🔴 **E la coda di stampa di ARCHITETTURA §4.2 NON esiste ancora**, misurato
+sulle migrazioni: nessuna tabella di coda, con nessun nome. `chiamate_turno`
+ne ha **la forma** (riga in attesa, `stampata_il`, niente attesa sincrona) e
+la Cucina tratta i biglietti come gli altri fogli, ma la coda vera — una
+tabella sola per tutti i documenti, con stato, tentativi ed errore, letta
+dall'agente sul mini-PC — è ancora tutta da costruire. ⚠️ **La parte che
+non è codice viene prima**: un registratore o una stampante che non sanno
+dire quando *non* hanno stampato lasciano scoperto il caso che conta.

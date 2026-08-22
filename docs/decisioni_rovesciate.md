@@ -1111,3 +1111,53 @@ n. 18 aveva provato a togliere, e che adesso si riaccetta — perché
 l'alternativa misurata è una pianta che esce dallo schermo. **I gesti del
 conto invece non chiedono quello scorrimento**: stanno dentro la pianta, e
 la loro colonna comincia a 479 punti da dove la pianta comincia.
+
+---
+
+## 26 · 21/08/2026 — «un foglio della cucina è un INVIO»
+
+⚠️ **Nota sul numero**: la voce qui sopra è intestata **18** ed è la
+**seconda** con quel numero (la prima è del 19/08). Non l'ho rinumerata —
+sarebbe un cambiamento a una riga già consegnata — ma va sistemata, perché
+questo elenco serve a rispondere *«questa decisione l'abbiamo già rovesciata
+prima?»*, e due voci con lo stesso numero rompono proprio quel conteggio.
+
+**Cosa era stato deciso, e quando.** Il 09/08, costruendo la postazione
+Cucina, ed era scritto per esteso nel codice:
+
+> *«Un "ticket" è un INVIO: tutte le righe partite insieme dalla Sala per lo
+> stesso tavolo. È l'unità che esce dalla stampante.»*
+
+La chiave era `order_id + sent_at`.
+
+**La ragione di allora.** Buona, e in quel momento vera: **fino al 21/08 non
+esisteva nessun'altra unità**. Una comanda si segnava e si mandava; ciò che
+partiva insieme era ciò che andava cucinato insieme. L'invio *era* il turno,
+solo che nessuno l'aveva chiamato così.
+
+**Cosa si decide adesso.** Il foglio è un **turno**, non un invio: la chiave
+è `order_id + turno`. Deciso da Alessio il 21/08, e nasce dal suo modo di
+far mangiare un tavolo — due antipasti e una pasta insieme, poi i secondi,
+poi il dolce.
+
+**Perché la ragione di allora non vale più.** Perché l'unità si è sdoppiata,
+e **misurando si vede che sbagliava nei due versi**:
+
+- `sendDraftItems` scrive **un solo istante** su tutte le righe che partono
+  insieme, e `handleSend` gli passa **tutte** le righe non ancora inviate.
+  Una comanda segnata tutta e mandata una volta — il gesto normale — usciva
+  come **un foglio solo**, coi tre turni mescolati: la cucina avrebbe fatto
+  partire il dolce insieme all'antipasto.
+- E al contrario: un piatto **dello stesso turno** aggiunto dieci minuti
+  dopo faceva un **secondo foglio**, indistinguibile da un turno nuovo.
+
+⚠️ **Quello che NON si rovescia**: il foglio resta l'unità che esce dalla
+stampante, e `prepared_at` continua a significare «uscito dalla stampante» e
+non «piatto pronto». Cambia **cosa raggruppa**, non che cosa sia.
+
+⚠️ **E un caso resta scoperto per scelta di Alessio**: un piatto aggiunto a
+un turno **già stampato** fa comunque un foglio suo, con dentro **solo lui**
+— rimettere anche le righe vecchie farebbe ricucinare roba già fatta. La
+condizione che lui ha posto per accettarlo è che *il foglio dica chiaramente
+a che turno appartiene*: per questo il turno è nell'intestazione **sempre**,
+anche quando è il primo, e compare la parola **AGGIUNTA**.
