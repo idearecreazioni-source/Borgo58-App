@@ -1139,8 +1139,24 @@ export default function RicettaDetail() {
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Fasi di preparazione</h2>
 
+        {/* 🔴 LO SPAZIO FRA LE FASI, e questa l'ha trovata la MISURA, non
+            la rilettura (22/08). Allargato il gap dentro la riga, il
+            «Rimuovi» più vicino alla freccia «↓» non era più il suo: era
+            quello della fase **sopra**, a **4,59 mm** — perché `space-y-2`
+            fra due schede vale 1,08 mm veri, meno del gap che avevo appena
+            sistemato dentro la scheda.
+            ⚠️ E il danno di quel tocco è peggiore di quello che sembrava:
+            chi manca la freccia mentre sposta la fase 2 non cancella la
+            fase 2, **ne cancella un'altra** — quindi guarda l'elenco, vede
+            un numero di righe diverso da quello che si aspetta, e non ha
+            nessun modo di capire cosa è appena successo.
+            ⚠️ *Allontanare due pulsanti dentro una riga non basta: il
+            vicino di un pulsante può stare nella riga accanto.* */}
         {steps.length > 0 && (
-          <ol className="space-y-2 mb-4">
+          <ol
+            className="flex flex-col mb-4"
+            style={{ gap: "calc(var(--pxcm) * 0.25)" }}
+          >
             {steps.map((s, idx) => (
               <li
                 key={s.id}
@@ -1179,7 +1195,21 @@ export default function RicettaDetail() {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-1 text-xs">
+                  {/* 🔴 «↓» e «Rimuovi» stavano a `gap-1` = **0,54 mm**
+                      (22/08): si sposta una fase premendo la freccia in
+                      basso, e mezzo millimetro più sotto c'è il pulsante
+                      che **la cancella**. È il caso peggiore della
+                      famiglia, perché il gesto giusto («↓», premuto più
+                      volte per spostare una fase di tre posti) porta il
+                      dito proprio addosso a quello sbagliato.
+                      ⚠️ Le due frecce fra loro restano vicine, ed è
+                      giusto: sono lo stesso gesto in due versi, e il danno
+                      di premere «↑» al posto di «↓» si disfa premendo
+                      l'altra. */}
+                  <div
+                    className="flex flex-col items-end text-xs"
+                    style={{ gap: "calc(var(--pxcm) * 0.5)" }}
+                  >
                     <div className="flex gap-1">
                       <button
                         disabled={idx === 0}

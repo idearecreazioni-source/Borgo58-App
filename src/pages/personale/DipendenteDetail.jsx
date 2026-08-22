@@ -32,8 +32,6 @@ const monthLabel = (iso) =>
 export default function DipendenteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [employee, setEmployee] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [leaves, setLeaves] = useState([]);
@@ -193,17 +191,16 @@ export default function DipendenteDetail() {
     }
   };
 
+  // ⚠️ Lo stato del «sto eliminando» vive dentro `<ConfermaDistruttiva>`
+  // (22/08), che è lo stesso componente che questa schermata usa già per i
+  // documenti e le ferie: qui restava l'ultima copia fatta a mano.
   const handleDelete = async () => {
-    setDeleting(true);
     setError("");
     try {
       await deleteEmployee(id);
       navigate("/personale");
     } catch (e) {
       setError(e.message);
-      setConfirmDelete(false);
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -296,28 +293,23 @@ export default function DipendenteDetail() {
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
-          {confirmDelete ? (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-b58-terracotta-dark">Eliminare tutto (documenti, ferie, buste paga)?</span>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-lg bg-b58-terracotta text-b58-parchment px-3 py-1.5 disabled:opacity-60"
-              >
-                {deleting ? "Elimino…" : "Sì, elimina"}
-              </button>
-              <button onClick={() => setConfirmDelete(false)} className="text-b58-charcoal-soft hover:text-b58-charcoal px-2 py-1.5">
-                Annulla
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-            >
-              Elimina dipendente
-            </button>
-          )}
+          {/* 🔴 L'ULTIMA CONFERMA RIFATTA A MANO, e stava proprio qui
+              (22/08). Questa schermata usa `<ConfermaDistruttiva>` per i
+              documenti e per le ferie, e per il gesto più grosso di tutti
+              — che porta via **documenti, ferie e buste paga** — teneva
+              una copia con `gap-2`, cioè **1,08 mm** fra «Sì, elimina» e
+              «Annulla» invece dei 5 mm veri.
+              ⚠️ Il commento del componente dice *«la forma è quella che
+              "Elimina dipendente" usa dal 09/08»*: la forma era stata
+              estratta di qui, e l'originale non era mai stato convertito.
+              *Un pezzo di codice che dà il nome a un componente e poi non
+              lo usa non somiglia a un difetto: somiglia all'originale.* */}
+          <ConfermaDistruttiva
+            etichetta="Elimina dipendente"
+            domanda="Eliminare tutto (documenti, ferie, buste paga)?"
+            className="print:hidden"
+            onConferma={handleDelete}
+          />
           <button
             onClick={saveHeader}
             disabled={savingHeader}

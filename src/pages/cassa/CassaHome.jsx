@@ -120,8 +120,21 @@ export default function CassaHome() {
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Cassa, Banca e Prima Nota</h1>
+          {/* 🔴 DICEVA «PRIMA NOTA MANUALE», ed era diventato falso il
+              15/08 (corretto il 22/08). Da quella data gli incassi in
+              contante dei conti chiusi entrano nel saldo **da soli** —
+              letti, non copiati (`20260815000004`): la prima nota non è
+              più tutta a mano, e la scomposizione qui sotto lo mostra già
+              con «+ … di sala (N conti)».
+              ⚠️ La seconda metà della frase invece era vera e resta: il
+              POS non c'è. *Una frase può diventare falsa a metà, ed è il
+              caso peggiore da rileggere — la parte vera la fa sembrare
+              ancora giusta tutta.*
+              ⚠️ Tolto anche «(§3.2)»: è il rimando a un documento che chi
+              guarda questa schermata non ha davanti. */}
           <p className="text-b58-charcoal-soft mt-1">
-            Prima nota manuale — la riconciliazione POS automatica arriverà con la scelta del sistema di cassa (§3.2).
+            Gli incassi in contante dei conti chiusi entrano da soli; il resto si registra a mano. La
+            riconciliazione del POS arriverà con la scelta del sistema di cassa.
           </p>
         </div>
         {entities && (

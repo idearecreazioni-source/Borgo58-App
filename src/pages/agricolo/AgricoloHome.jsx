@@ -238,7 +238,15 @@ export default function AgricoloHome() {
                       <button onClick={() => { setHarvestFor(harvestFor === c.id ? null : c.id); setHarvest({ actual_harvest_date: "", harvested_quantity: "", unit: c.unit ?? "kg" }); }} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta">
                         {harvestFor === c.id ? "Annulla" : "Raccolto"}
                       </button>
-                      <button onClick={() => deleteCrop(c.id).then(reload)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark ml-3">
+                      {/* 🔴 Stava a `ml-3`, cioè **1,62 mm** dal pulsante
+                          accanto (22/08). Quello registra il raccolto,
+                          questo **cancella la coltura** — e la cancella
+                          senza chiedere niente. */}
+                      <button
+                        onClick={() => deleteCrop(c.id).then(reload)}
+                        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                        style={{ marginLeft: "calc(var(--pxcm) * 0.5)" }}
+                      >
                         Rimuovi
                       </button>
                     </td>

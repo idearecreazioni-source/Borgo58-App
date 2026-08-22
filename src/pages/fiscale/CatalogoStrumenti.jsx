@@ -248,7 +248,19 @@ export default function CatalogoStrumenti() {
                     {t.deadline && <>scadenza {formatDate(t.deadline)}</>}
                   </p>
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
+                {/* 🔴 «Segna in uso» e «Rimuovi» stavano a `gap-1`, cioè
+                    **0,54 mm veri** (22/08) — la stessa distanza delle due
+                    mance, che era la peggiore di tutto il censimento. Uno
+                    dei due cambia un'etichetta, l'altro **cancella lo
+                    strumento dal catalogo**.
+                    ⚠️ Il gap in centimetri veri e non `gap-4`: a 74 punti
+                    per centimetro le taglie di Tailwind valgono la metà di
+                    quello che sembrano, ed è tutta la lezione di questi
+                    giorni. Stessa forma di `<ConfermaDistruttiva>`. */}
+                <div
+                  className="flex flex-col items-end shrink-0"
+                  style={{ gap: "calc(var(--pxcm) * 0.5)" }}
+                >
                   <button
                     onClick={() => toggleInUse(t)}
                     className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta"

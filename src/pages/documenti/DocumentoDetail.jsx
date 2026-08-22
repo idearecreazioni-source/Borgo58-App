@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { deleteDocument, getDocument, getDocumentUrl, updateDocument } from "../../lib/api/documents";
 import { leggiContenutoDocumento } from "../../lib/api/assistente";
 import { formatDate } from "../../lib/constants";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 export default function DocumentoDetail() {
   const { id } = useParams();
@@ -12,8 +13,6 @@ export default function DocumentoDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [leggendo, setLeggendo] = useState(false);
   const [esitoLettura, setEsitoLettura] = useState(null);
 
@@ -82,17 +81,17 @@ export default function DocumentoDetail() {
     }
   };
 
+  // ⚠️ Niente `setDeleting`/`setConfirmDelete`: quello stato vive dentro
+  // `<ConfermaDistruttiva>`, che gira il bottone in «Elimino…» e si
+  // rimette a posto da sé anche quando l'azione fallisce. Qui resta solo
+  // ciò che è di questa schermata: cancellare, e dove andare dopo.
   const handleDelete = async () => {
-    setDeleting(true);
     setError("");
     try {
       await deleteDocument(doc);
       navigate("/documenti");
     } catch (e) {
       setError(e.message);
-      setConfirmDelete(false);
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -211,19 +210,23 @@ export default function DocumentoDetail() {
         )}
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          {confirmDelete ? (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-b58-terracotta-dark">Eliminare documento e file?</span>
-              <button onClick={handleDelete} disabled={deleting} className="rounded-lg bg-b58-terracotta text-b58-parchment px-3 py-1.5 disabled:opacity-60">
-                {deleting ? "Elimino…" : "Sì, elimina"}
-              </button>
-              <button onClick={() => setConfirmDelete(false)} className="text-b58-charcoal-soft hover:text-b58-charcoal px-2 py-1.5">Annulla</button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmDelete(true)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">
-              Elimina documento
-            </button>
-          )}
+          {/* 🔴 ERA UNA CONFERMA RIFATTA A MANO (22/08). Faceva le stesse
+              tre cose di `<ConfermaDistruttiva>` — il bottone che si gira
+              in riga di conferma, «Sì, elimina», «Annulla» — ma con un
+              `gap-2`, cioè **1,08 mm veri** fra il gesto irreversibile e
+              il suo contrario. Il componente è stato portato a **5 mm**
+              stamattina, e questa copia non l'ha saputo.
+              ⚠️ È il doppione nella sua forma classica: due posti che
+              dicono *esattamente* la stessa cosa, quindi non si sorveglia
+              — si toglie. E c'era da vederlo dentro il commento del
+              componente stesso, che dichiara *«la forma è quella che
+              "Elimina dipendente" usa dal 09/08»*: la forma era stata
+              estratta di qui, e i due originali erano rimasti indietro. */}
+          <ConfermaDistruttiva
+            etichetta="Elimina documento"
+            domanda="Eliminare documento e file?"
+            onConferma={handleDelete}
+          />
           <button onClick={handleSave} disabled={saving} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
