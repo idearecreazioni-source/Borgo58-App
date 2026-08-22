@@ -38,8 +38,8 @@ export default function RaccoltaPropria() {
   }, []);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
     if (!form.species.trim()) return;
@@ -76,24 +76,24 @@ export default function RaccoltaPropria() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
+    <div className="testo-sala max-w-3xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/haccp" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← HACCP
         </Link>
-        <button onClick={() => setShowForm((v) => !v)} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
+        <button onClick={() => setShowForm((v) => !v)} className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
           {showForm ? "Annulla" : "+ Nuova raccolta"}
         </button>
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Raccolta propria</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Erbe spontanee e prodotti autoraccolti (§3.17): zona grigia normativa in Italia, nessun documento
         fiscale coinvolto — pura tracciabilità HACCP. <strong>Da validare con un consulente alimentare/tecnico
         HACCP</strong> prima di un uso in produzione.
       </p>
 
-      {error && <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
       {showForm && (
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-6">
@@ -120,7 +120,7 @@ export default function RaccoltaPropria() {
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={inputClass} />
           </div>
           <div className="flex justify-end">
-            <button type="button" disabled={saving || !form.species.trim()} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={saving || !form.species.trim()} onClick={handleAdd} className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60">
               {saving ? "Registro…" : "+ Registra raccolta"}
             </button>
           </div>
@@ -128,7 +128,7 @@ export default function RaccoltaPropria() {
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">Nessuna raccolta registrata ancora.</p>
@@ -140,19 +140,19 @@ export default function RaccoltaPropria() {
               <div>
                 <div className="text-b58-charcoal font-medium">
                   {it.species}
-                  <span className="text-xs text-b58-charcoal-soft font-normal ml-1.5">· lotto {it.internal_lot}</span>
+                  <span className="testo-sala text-b58-charcoal-soft font-normal ml-1.5">· lotto {it.internal_lot}</span>
                 </div>
-                <div className="text-xs text-b58-charcoal-soft mt-0.5">
+                <div className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {formatDate(it.harvest_date)}
                   {it.harvest_location && <> · {it.harvest_location}</>}
                   {it.forager_name && <> · raccolto da {it.forager_name}</>}
                   {it.ingredient && <> · → {it.ingredient.name}</>}
                 </div>
                 {it.identification_method && (
-                  <div className="text-xs text-b58-charcoal-soft mt-1">Identificazione: {it.identification_method}</div>
+                  <div className="testo-sala text-b58-charcoal-soft mt-1">Identificazione: {it.identification_method}</div>
                 )}
                 {it.contamination_risk_note && (
-                  <div className="text-xs text-b58-terracotta-dark mt-1">Rischio: {it.contamination_risk_note}</div>
+                  <div className="testo-sala text-b58-terracotta-dark mt-1">Rischio: {it.contamination_risk_note}</div>
                 )}
               </div>
               {/* ⚠️ Era l’unico registro HACCP cancellabile a un tocco e

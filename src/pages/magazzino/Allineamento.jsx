@@ -73,29 +73,29 @@ export default function Allineamento() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/magazzino" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-3xl mx-auto pb-16">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Allineamento magazzino</h1>
       {/* 🔴 LA PAROLA, e va detta una volta qui perché è il senso della
           schermata: quel numero è una previsione, non una giacenza. Detta
           dove sta il dubbio, non in cima a ogni riga. */}
-      <p className="text-sm text-b58-charcoal-soft mb-6">
+      <p className="testo-sala text-b58-charcoal-soft mb-6">
         Il gestionale calcola quanto <em>dovrebbe</em> esserci, seguendo le ricette al grammo.
         Quando apri la dispensa e il conto non torna, scrivi qui quanto ce n&apos;è davvero.
       </p>
 
       {errore && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {errore}
         </p>
       )}
       {esito && (
-        <p className="text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{esito}</p>
+        <p className="testo-sala text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{esito}</p>
       )}
 
       {nonLetto(righe) ? (
@@ -105,13 +105,13 @@ export default function Allineamento() {
           onRiprova={carica}
         />
       ) : elenco.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft">
+        <p className="testo-sala text-b58-charcoal-soft">
           Non c&apos;è niente in dispensa da allineare: nessun prodotto ha una scorta o una soglia.
         </p>
       ) : (
         <>
           {inEsaurimento > 0 && (
-            <p className="text-xs text-b58-charcoal-soft mb-2">
+            <p className="testo-sala text-b58-charcoal-soft mb-2">
               In cima {inEsaurimento === 1 ? "c'è il prodotto" : `ci sono i ${inEsaurimento} prodotti`} in
               esaurimento: è lì che il numero serve per decidere cosa ordinare.
             </p>
@@ -132,13 +132,13 @@ export default function Allineamento() {
                   }}
                   className="tocco-riga w-full flex items-center justify-between gap-3 text-left"
                 >
-                  <span className="text-sm text-b58-charcoal">
+                  <span className="testo-sala text-b58-charcoal">
                     {r.nome}
                     {r.sotto_soglia && (
-                      <span className="ml-2 text-[11px] text-b58-terracotta-dark">in esaurimento</span>
+                      <span className="ml-2 testo-sala text-b58-terracotta-dark">in esaurimento</span>
                     )}
                   </span>
-                  <span className="text-sm text-b58-charcoal-soft whitespace-nowrap">
+                  <span className="testo-sala text-b58-charcoal-soft whitespace-nowrap">
                     dovrebbe essercene {formatQta(r.atteso)} {r.unita}
                   </span>
                 </button>
@@ -146,7 +146,7 @@ export default function Allineamento() {
                 {aperta === r.ingredient_id && (
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     <div className="w-40">
-                      <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+                      <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
                         Quanto ce n&apos;è ({r.unita})
                       </label>
                       <input
@@ -163,13 +163,13 @@ export default function Allineamento() {
                       type="button"
                       disabled={salvando || quanto === ""}
                       onClick={() => conferma(r)}
-                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment text-sm px-4 disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment testo-sala px-4 disabled:opacity-60"
                     >
                       {salvando ? "…" : "È questo"}
                     </button>
                     {/* ⚠️ La differenza NON si chiede: la calcola il gestionale.
                         Davanti allo scaffale non si fanno conti. */}
-                    <p className="text-xs text-b58-charcoal-soft basis-full">
+                    <p className="testo-sala text-b58-charcoal-soft basis-full">
                       Scrivi quanto ce n&apos;è, non quanto togliere: la differenza la faccio io.
                       {r.giorni_da_allora != null && (
                         <> Ultimo allineamento {r.giorni_da_allora} giorni fa.</>
@@ -187,7 +187,7 @@ export default function Allineamento() {
       <button
         type="button"
         onClick={() => setMostraTrend((v) => !v)}
-        className="text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta mt-8"
+        className="tocco-bottone testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta mt-8"
       >
         {mostraTrend ? "Nascondi come sta andando" : "Come sta andando"}
       </button>
@@ -196,11 +196,11 @@ export default function Allineamento() {
         <div className="mt-4 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
           <div className="flex flex-wrap gap-3 mb-4">
             <div>
-              <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Dal</label>
+              <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Dal</label>
               <input type="date" value={dal} onChange={(e) => setDal(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Al</label>
+              <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Al</label>
               <input type="date" value={al} onChange={(e) => setAl(e.target.value)} className={inputClass} />
             </div>
           </div>
@@ -214,21 +214,21 @@ export default function Allineamento() {
                     stimato Alessio decide i prezzi del menu, il reale è quello
                     che sta vivendo. Fusi in uno «aggiornato», i prezzi si
                     farebbero su un numero che si muove da sé. */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 testo-sala">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">
                       Dalle ricette
                     </div>
                     <div className="text-b58-charcoal">{formatEUR(costi.stimato)}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">
                       Quello che è successo
                     </div>
-                    <div className="text-lg text-b58-charcoal font-medium">{formatEUR(costi.reale)}</div>
+                    <div className="testo-sala-grande text-b58-charcoal font-medium">{formatEUR(costi.reale)}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">Differenza</div>
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Differenza</div>
                     <div
                       className={
                         Number(costi.scostamento) > 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"
@@ -239,7 +239,7 @@ export default function Allineamento() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">In percentuale</div>
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">In percentuale</div>
                     {/* ⚠️ Vuoto, non zero: senza piatti venduti quella
                         percentuale non esiste, e uno zero si legge «in linea». */}
                     <div className="text-b58-charcoal">
@@ -250,7 +250,7 @@ export default function Allineamento() {
                 {/* ⚠️ L'avvertenza viaggia coi numeri e arriva dal database:
                     un limite scritto nel testo di una schermata non protegge
                     la seconda che mostra lo stesso numero. */}
-                <p className="text-[11px] text-b58-charcoal-soft mt-3 leading-relaxed">
+                <p className="testo-sala text-b58-charcoal-soft mt-3 leading-relaxed">
                   {costi.avvertenza}
                 </p>
               </>
@@ -261,9 +261,9 @@ export default function Allineamento() {
           {nonLetto(dettaglio) ? (
             <DatoNonLetto cosa="il dettaglio per prodotto" className="mt-4" />
           ) : dettaglio.length > 0 ? (
-            <table className="w-full text-sm mt-5">
+            <table className="w-full testo-sala mt-5">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
                   <th className="py-1.5 font-medium">Prodotto</th>
                   <th className="py-1.5 font-medium text-right">Differenza</th>
                   <th className="py-1.5 font-medium text-right">Vale</th>
@@ -290,7 +290,7 @@ export default function Allineamento() {
               </tbody>
             </table>
           ) : (
-            <p className="text-xs text-b58-charcoal-soft mt-4">
+            <p className="testo-sala text-b58-charcoal-soft mt-4">
               In questo periodo non hai corretto nessuna giacenza.
             </p>
           )}

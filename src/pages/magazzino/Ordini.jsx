@@ -216,8 +216,8 @@ export default function Ordini() {
   const box = "bg-white rounded-xl border border-b58-charcoal/10 p-4 mb-4";
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Link to="/magazzino/lista-spesa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-4xl mx-auto">
+      <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Lista della spesa
       </Link>
       <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Ordini ai fornitori</h1>
@@ -226,32 +226,32 @@ export default function Ordini() {
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       {nota && (
-        <p className="text-sm text-b58-charcoal bg-b58-cream-dark rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-charcoal bg-b58-cream-dark rounded-lg px-3 py-2 mb-4">
           {nota}
         </p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* Una riga senza fornitore non finisce in nessun ordine. Non è
               un errore da nascondere: è una scelta che deve fare lui. */}
           {orfane.length > 0 && (
             <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-4">
-              <p className="text-sm font-semibold text-b58-charcoal">
+              <p className="testo-sala font-semibold text-b58-charcoal">
                 {orfane.length} {orfane.length === 1 ? "riga" : "righe"} senza fornitore
               </p>
-              <p className="text-xs text-b58-charcoal-soft mt-1">
+              <p className="testo-sala text-b58-charcoal-soft mt-1">
                 Non entrano in nessun ordine finché non dici a chi chiederle:{" "}
                 {orfane.map((r) => r.nome).join(", ")}. Il fornitore si sceglie{" "}
-                <Link to="/magazzino/lista-spesa" className="underline">
+                <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center underline">
                   sulla riga, dalla lista della spesa
                 </Link>
                 .
@@ -260,7 +260,7 @@ export default function Ordini() {
           )}
 
           {gruppi.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60 mb-6">
+            <p className="testo-sala text-b58-charcoal-soft/60 mb-6">
               Niente da ordinare: nessuna riga della lista è assegnata a un fornitore.
             </p>
           ) : (
@@ -270,15 +270,15 @@ export default function Ordini() {
                 <div key={g.supplier_id} className={box}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <h2 className="text-sm font-semibold text-b58-charcoal">{g.nome}</h2>
-                      <p className="text-xs text-b58-charcoal-soft">
+                      <h2 className="testo-sala font-semibold text-b58-charcoal">{g.nome}</h2>
+                      <p className="testo-sala text-b58-charcoal-soft">
                         {g.righe.length} {g.righe.length === 1 ? "articolo" : "articoli"} da chiedere
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => apriBozza(g.supplier_id)}
-                      className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+                      className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
                     >
                       {bozza ? "Chiudi" : "Prepara l'ordine"}
                     </button>
@@ -288,7 +288,7 @@ export default function Ordini() {
                     <div className="mt-4 pt-4 border-t border-b58-charcoal/10">
                       <ul className="space-y-2 mb-4">
                         {(bozza.righe ?? []).map((r) => (
-                          <li key={r.riga_lista_id} className="text-sm text-b58-charcoal">
+                          <li key={r.riga_lista_id} className="testo-sala text-b58-charcoal">
                             <span className="font-medium">{r.descrizione}</span>
                             {r.quantita != null && (
                               <span className="text-b58-charcoal-soft">
@@ -300,19 +300,19 @@ export default function Ordini() {
                                 confezione è sbagliato si vede adesso, non
                                 alla consegna. */}
                             {r.quantita_base != null && r.unita_fattura && (
-                              <span className="text-xs text-b58-charcoal-soft">
+                              <span className="testo-sala text-b58-charcoal-soft">
                                 {" "}
                                 (ti servono {Number(r.quantita_base)} {r.unita_base})
                               </span>
                             )}
                             {r.prezzo_atteso != null && (
-                              <span className="text-xs text-b58-charcoal-soft">
+                              <span className="testo-sala text-b58-charcoal-soft">
                                 {" "}
                                 · l'ultima volta {formatEUR(Number(r.prezzo_atteso))}/{r.unita_base}
                               </span>
                             )}
                             {!r.dicitura_sua && (
-                              <span className="text-[11px] text-amber-800 bg-amber-100 rounded-full px-2 py-0.5 ml-1.5">
+                              <span className="testo-sala text-amber-800 bg-amber-100 rounded-full px-2 py-0.5 ml-1.5">
                                 non so come lo chiama lui
                               </span>
                             )}
@@ -320,7 +320,7 @@ export default function Ordini() {
                               <button
                                 type="button"
                                 onClick={() => mostraConfronto(r.ingredient_id)}
-                                className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark ml-2"
+                                className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark ml-2"
                               >
                                 chi altro lo vende?
                               </button>
@@ -328,7 +328,7 @@ export default function Ordini() {
                             {confronti[r.ingredient_id] && (
                               <ul className="mt-1 ml-4 space-y-0.5">
                                 {confronti[r.ingredient_id].map((v) => (
-                                  <li key={v.articolo_id} className="text-xs text-b58-charcoal-soft">
+                                  <li key={v.articolo_id} className="testo-sala text-b58-charcoal-soft">
                                     {v.fornitore ?? "—"} · {v.descrizione} ·{" "}
                                     {v.prezzo != null ? `${formatEUR(Number(v.prezzo))}` : "mai comprato"}
                                     {v.ultima_volta && <> · {formatDate(v.ultima_volta)}</>}
@@ -340,18 +340,18 @@ export default function Ordini() {
                         ))}
                       </ul>
 
-                      <label className="block text-xs font-medium text-b58-charcoal-soft mb-1">
+                      <label className="block testo-sala font-medium text-b58-charcoal-soft mb-1">
                         Il messaggio — rileggilo e correggilo prima di mandarlo
                       </label>
                       <textarea
                         rows={8}
                         value={bozza.testoModificato}
                         onChange={(e) => cambiaTesto(g.supplier_id, e.target.value)}
-                        className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+                        className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
                       />
 
                       <div className="flex items-center justify-between gap-3 flex-wrap mt-3">
-                        <p className="text-xs text-b58-charcoal-soft">
+                        <p className="testo-sala text-b58-charcoal-soft">
                           {/* Dove sta per scrivere, scritto per intero prima
                               che prema: è la protezione che vale più di
                               qualunque normalizzazione del numero. */}
@@ -369,7 +369,7 @@ export default function Ordini() {
                           {strade(bozza).length === 0 && (
                             <>
                               Questo fornitore non ha né numero né mail:{" "}
-                              <Link to="/magazzino/fornitori" className="underline">
+                              <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center underline">
                                 scrivili in anagrafica
                               </Link>
                               , e lì puoi anche dire come preferisce essere contattato.
@@ -382,7 +382,7 @@ export default function Ordini() {
                           <button
                             type="button"
                             onClick={() => copiaTesto(g.supplier_id)}
-                            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+                            className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
                           >
                             {copiato === g.supplier_id ? "Copiato" : "Copia il testo"}
                           </button>
@@ -392,7 +392,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, via)}
-                              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               {via === "whatsapp" ? "Registra e apri WhatsApp" : "Registra e apri la posta"}
                             </button>
@@ -402,14 +402,14 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, "altro")}
-                              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               Registra l&apos;ordine
                             </button>
                           )}
                         </div>
                       </div>
-                      <p className="text-[11px] text-b58-charcoal-soft mt-2">
+                      <p className="testo-sala text-b58-charcoal-soft mt-2">
                         Il gestionale non manda niente da solo: apre WhatsApp col messaggio
                         pronto. Resta segnato come inviato — se poi non lo mandi, annullalo qui
                         sotto e le righe tornano in lista.
@@ -421,7 +421,7 @@ export default function Ordini() {
                               href={linkBrowser(bozza)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="underline"
+                              className="tocco-bottone inline-flex items-center underline"
                             >
                               aprilo dal browser
                             </a>
@@ -443,17 +443,17 @@ export default function Ordini() {
             })
           )}
 
-          <h2 className="font-display text-lg text-b58-charcoal mt-8 mb-3">Ordini fatti</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mt-8 mb-3">Ordini fatti</h2>
           {ordini.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">Nessun ordine ancora.</p>
+            <p className="testo-sala text-b58-charcoal-soft/60">Nessun ordine ancora.</p>
           ) : (
             <ul className="space-y-2">
               {ordini.map((o) => (
                 <li key={o.id} className={box}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <span className="text-sm font-medium text-b58-charcoal">{o.fornitore}</span>
-                      <span className="text-xs text-b58-charcoal-soft ml-2">
+                      <span className="testo-sala font-medium text-b58-charcoal">{o.fornitore}</span>
+                      <span className="testo-sala text-b58-charcoal-soft ml-2">
                         {formatDate(o.inviato_il)} · {o.righe}{" "}
                         {o.righe === 1 ? "articolo" : "articoli"} ·{" "}
                         {o.stato === "inviato" && "in attesa"}
@@ -462,26 +462,32 @@ export default function Ordini() {
                       </span>
                     </div>
                     {o.stato === "inviato" && (
-                      <div className="flex gap-3">
+                      <div className="gesti-pericolosi">
                         <button
                           type="button"
                           onClick={() => handleArrivato(o.id)}
-                          className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                          className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                         >
                           È arrivato
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAnnulla(o.id)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                         >
-                          Annulla
+                          {/* ⚠️ «ANNULLA L'ORDINE», non «Annulla» (22/08).
+                              Qui il gesto **annulla davvero l'ordine** e le
+                              righe tornano da comprare — mentre in mezza
+                              app «Annulla» vuol dire «lascia perdere,
+                              chiudi il modulo». E sta accanto a «È
+                              arrivato», che è il suo contrario esatto. */}
+                          Annulla l&apos;ordine
                         </button>
                       </div>
                     )}
                   </div>
                   {o.testo && (
-                    <pre className="text-xs text-b58-charcoal-soft mt-2 whitespace-pre-wrap font-sans">
+                    <pre className="testo-sala text-b58-charcoal-soft mt-2 whitespace-pre-wrap font-sans">
                       {o.testo}
                     </pre>
                   )}

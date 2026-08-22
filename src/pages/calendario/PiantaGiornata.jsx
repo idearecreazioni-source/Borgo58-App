@@ -85,12 +85,12 @@ const moduloScritto = (v) =>
   Object.keys(NUOVA_VUOTA).some((k) => String(v?.[k] ?? "") !== String(NUOVA_VUOTA[k]));
 
 const BOTTONE =
-  "rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2";
+  "tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4";
 const PRINCIPALE =
-  "rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-semibold px-4 py-2";
+  "tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-semibold px-4";
 const CAMPO =
-  "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-const ETICHETTA = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+  "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+const ETICHETTA = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
 // ⚠️ FUORI dal componente, e non è una questione di ordine. Definita
 // dentro, sarebbe un componente NUOVO a ogni render: React butterebbe via
@@ -198,27 +198,27 @@ function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, 
             min="0"
             value={correzione.coperti}
             onChange={(e) => setCorrezione((c) => ({ ...c, coperti: e.target.value }))}
-            className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+            className="w-20 rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 testo-sala"
           />
           <input
             type="text"
             placeholder="perché (es. uno contro il muro)"
             value={correzione.ragione}
             onChange={(e) => setCorrezione((c) => ({ ...c, ragione: e.target.value }))}
-            className="flex-1 min-w-[10rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 text-sm"
+            className="flex-1 min-w-[10rem] rounded-lg ring-1 ring-b58-charcoal/20 px-2 py-1 testo-sala"
           />
           <button
             type="button"
             disabled={salvando || correzione.coperti === ""}
             onClick={() => salva(gruppo)}
-            className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm px-3 py-1"
+            className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala px-3"
           >
             Salva
           </button>
           <button
             type="button"
             onClick={() => setCorrezione(null)}
-            className="text-sm text-b58-charcoal-soft underline"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft underline"
           >
             Lascia stare
           </button>
@@ -243,7 +243,7 @@ function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, 
               type="button"
               disabled={salvando}
               onClick={() => azzeraCorrezione(gruppo)}
-              className="text-[12px] text-b58-charcoal-soft underline"
+              className="tocco-bottone text-[12px] text-b58-charcoal-soft underline"
             >
               Torna al calcolato ({gruppo.coperti_calcolati})
             </button>
@@ -871,7 +871,7 @@ export default function PiantaGiornata() {
                 <button
                   type="button"
                   onClick={azzera}
-                  className="text-sm text-b58-charcoal-soft underline shrink-0"
+                  className="tocco-bottone testo-sala text-b58-charcoal-soft underline shrink-0"
                 >
                   Chiudi
                 </button>
@@ -895,14 +895,14 @@ export default function PiantaGiornata() {
                   {prenotazioniDelToccato.map((p) => (
                     <li key={p.id} className="px-3 py-2">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <span className="text-sm text-b58-charcoal-soft w-12">
+                        <span className="testo-sala text-b58-charcoal-soft w-12">
                           {p.reservation_time?.slice(0, 5)}
                         </span>
-                        <span className="text-sm text-b58-charcoal flex-1 min-w-[6rem]">
+                        <span className="testo-sala text-b58-charcoal flex-1 min-w-[6rem]">
                           {p.customer_name}
                           <span className="text-b58-charcoal-soft"> · {p.party_size}</span>
                         </span>
-                        <span className="text-[11px] text-b58-charcoal-soft">
+                        <span className="testo-sala text-b58-charcoal-soft">
                           {statoArrivo(p.id)}
                         </span>
                         <button type="button" onClick={() => apriPrenotazione(p)} className={BOTTONE}>
@@ -915,7 +915,7 @@ export default function PiantaGiornata() {
                           chi guarda questo riquadro sta decidendo se
                           telefonare a chi non è arrivato. */}
                       {(p.customer_phone || p.notes) && (
-                        <p className="text-sm text-b58-charcoal-soft mt-0.5">
+                        <p className="testo-sala text-b58-charcoal-soft mt-0.5">
                           {p.customer_phone && (
                             <a
                               href={`tel:${p.customer_phone}`}
@@ -932,7 +932,7 @@ export default function PiantaGiornata() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-b58-charcoal-soft mb-2">Nessuno, per ora.</p>
+                <p className="testo-sala text-b58-charcoal-soft mb-2">Nessuno, per ora.</p>
               )}
 
               <button
@@ -1003,7 +1003,7 @@ export default function PiantaGiornata() {
                   niente: è il secondo giro, e la sola cosa che serve è
                   sapere a che ora se ne vanno gli altri. */}
               {giaPromessi.length > 0 && (
-                <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-3">
+                <p className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-3">
                   Su questi tavoli c'è già:{" "}
                   {giaPromessi
                     .map(
@@ -1037,7 +1037,7 @@ export default function PiantaGiornata() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
       {/* ⚠️ QUI C'ERA IL PARAGRAFO CHE SPIEGAVA COSA FA IL TOCCO, tolto da
@@ -1049,9 +1049,9 @@ export default function PiantaGiornata() {
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-4">La sala</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
-      {avviso && <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4">{avviso}</p>}
+      {avviso && <p className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4">{avviso}</p>}
 
       {/* Il giorno */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -1059,7 +1059,7 @@ export default function PiantaGiornata() {
           type="date"
           value={data}
           onChange={(e) => setData(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal"
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
         />
         <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
@@ -1067,7 +1067,7 @@ export default function PiantaGiornata() {
         {/* ⚠️ La data NON si ripete: c'era due volte, nel selettore e qui
             accanto (rilievo di Alessio, 19/08). Restano i conteggi, e al suo
             posto è salito l'interruttore «al completo». */}
-        <span className="text-sm text-b58-charcoal-soft">
+        <span className="testo-sala text-b58-charcoal-soft">
           {prenotazioni.length > 0 && (
             <>
               <strong className="text-b58-charcoal">{prenotazioni.length}</strong> prenotazion
@@ -1082,7 +1082,7 @@ export default function PiantaGiornata() {
             pubblica, non qui: una casella spenta nella schermata non è un
             freno. E resta una cosa diversa da «siamo chiusi», che si mette da
             Sala e orari — sono due fatti diversi e due tabelle diverse. */}
-        <label className="flex items-center gap-2 text-sm text-b58-charcoal-soft">
+        <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
           <input
             type="checkbox"
             checked={pieno}
@@ -1095,7 +1095,7 @@ export default function PiantaGiornata() {
       </div>
 
       {caricamento ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : !letta ? (
         /* 🔴 LA SALA NON SI DISEGNA SE NON È STATA LETTA. Prima qui si
            disegnava lo stesso, e con nessun tavolo dentro: una sala vuota che
@@ -1106,7 +1106,7 @@ export default function PiantaGiornata() {
            era tornato tutto. */
         <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-8 text-center">
           <p className="text-b58-charcoal font-medium mb-1">Non sono riuscito a leggere la sala.</p>
-          <p className="text-sm text-b58-charcoal-soft mb-4">
+          <p className="testo-sala text-b58-charcoal-soft mb-4">
             Non vuol dire che è vuota: vuol dire che non lo so. Di solito è la connessione.
           </p>
           <button
@@ -1133,8 +1133,8 @@ export default function PiantaGiornata() {
           {posto && (
             <div className="rounded-xl bg-b58-cream ring-1 ring-b58-charcoal/10 p-3 mb-3">
               <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                <span className="text-sm">
-                  <strong className="text-lg">{posto.restanti}</strong> posti liberi
+                <span className="testo-sala">
+                  <strong className="testo-sala-grande">{posto.restanti}</strong> posti liberi
                 </span>
                 {/* ⚠️ Qui c'era la scomposizione («31 in questa disposizione ·
                     6 prenotati»), tolta da Alessio il 18/08. Il numero grande
@@ -1148,13 +1148,13 @@ export default function PiantaGiornata() {
                     decisa lui; per chi verrà dopo è un numero che sembra dire
                     «la sala tiene 25» e non lo dice. */}
                 {posto.in_attesa > 0 && (
-                  <span className="text-[13px] text-b58-charcoal-soft">
+                  <span className="testo-sala text-b58-charcoal-soft">
                     {posto.in_attesa} da confermare
                   </span>
                 )}
               </div>
               {posto.oltre_soglia && (
-                <p className="text-[13px] mt-1.5 font-medium text-b58-terracotta">
+                <p className="testo-sala mt-1.5 font-medium text-b58-terracotta">
                   Sei oltre i {posto.soglia} coperti che ti sei dato per la serata. Puoi accettare
                   lo stesso: è un avviso, non un divieto.
                 </p>
@@ -1179,7 +1179,7 @@ export default function PiantaGiornata() {
 
           {/* La pianta */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
+            <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
               La sala del {formatDate(data)}
             </p>
             {isTitolare && scostamenti > 0 && (
@@ -1196,7 +1196,7 @@ export default function PiantaGiornata() {
                     return;
                   esegui(() => promuoviDisposizione(data));
                 }}
-                className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-4 py-2"
               >
                 Questa diventa la sala di sempre
               </button>
@@ -1209,7 +1209,7 @@ export default function PiantaGiornata() {
               proprio perché compare di rado. */}
           {senzaTavolo.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-3 mb-3">
-              <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-terracotta-dark mb-1.5">
+              <p className="testo-sala uppercase tracking-wide font-semibold text-b58-terracotta-dark mb-1.5">
                 {senzaTavolo.length === 1 ? "Aspetta un tavolo" : "Aspettano un tavolo"}
               </p>
               <ul className="space-y-2">
@@ -1220,7 +1220,7 @@ export default function PiantaGiornata() {
                         — la cosa che si tocca — stava dove cade l'occhio e non
                         dove cade il dito. */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-b58-charcoal">
+                      <p className="testo-sala text-b58-charcoal">
                         <span className="text-b58-charcoal-soft">
                           {p.reservation_time?.slice(0, 5)}
                         </span>{" "}
@@ -1233,7 +1233,7 @@ export default function PiantaGiornata() {
                             accettata. Chiedono due gesti diversi: un tavolo
                             l'una, una decisione l'altra. */}
                         {p.status === "richiesta_in_attesa" && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                          <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
                             da confermare
                           </span>
                         )}
@@ -1245,7 +1245,7 @@ export default function PiantaGiornata() {
                       {p.customer_phone && (
                         <a
                           href={`tel:${p.customer_phone}`}
-                          className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft underline"
+                          className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft underline"
                         >
                           {p.customer_phone}
                         </a>
@@ -1276,7 +1276,7 @@ export default function PiantaGiornata() {
                       <button
                         type="button"
                         onClick={() => iniziaAssegnazione(p)}
-                        className={`${BOTTONE} shrink-0`}
+                        className={`tocco-bottone ${BOTTONE} shrink-0`}
                       >
                         Dai un tavolo
                       </button>
@@ -1285,7 +1285,7 @@ export default function PiantaGiornata() {
                 ))}
               </ul>
               {modo === "assegna" && senzaTavolo.some((x) => x.id === inCorso?.id) && (
-                <p className="text-[11px] text-b58-charcoal-soft mt-2">
+                <p className="testo-sala text-b58-charcoal-soft mt-2">
                   Tocca sulla pianta i tavoli dove li fai sedere, poi Conferma.
                 </p>
               )}
@@ -1342,7 +1342,7 @@ export default function PiantaGiornata() {
 
           {isTitolare && sagomeGirevoli.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[11px] text-b58-charcoal-soft">Gira per questo giorno:</span>
+              <span className="testo-sala text-b58-charcoal-soft">Gira per questo giorno:</span>
               {sagomeGirevoli.map((s) => (
                 <button
                   key={s.id}
@@ -1352,7 +1352,7 @@ export default function PiantaGiornata() {
                       salvaSagoma({ data, sagomaId: s.id, x: s.x, y: s.y, ruotato: !s.ruotato })
                     )
                   }
-                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-1.5"
+                  className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3"
                 >
                   ⟳ {s.label} {s.ruotato ? "(in piedi)" : "(di traverso)"}
                 </button>
@@ -1369,7 +1369,7 @@ export default function PiantaGiornata() {
               riepilogo del giro D2** — è di lì che va ripescata il giorno che
               entrerà in sala qualcuno che non conosce i colori a memoria. */}
 
-          <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 text-[11px] text-b58-charcoal-soft">
+          <div className="flex flex-wrap items-center gap-3 mt-2 mb-6 testo-sala text-b58-charcoal-soft">
             <span>
               {scostamenti > 0
                 ? `${scostamenti} ${scostamenti === 1 ? "tavolo spostato" : "tavoli spostati"} solo per questo giorno`
@@ -1411,10 +1411,10 @@ export default function PiantaGiornata() {
                 {inCorso.customer_name} · {inCorso.party_size} persone ·{" "}
                 {inCorso.reservation_time?.slice(0, 5)}
               </p>
-              <p className="text-sm text-b58-charcoal-soft mb-3">
+              <p className="testo-sala text-b58-charcoal-soft mb-3">
                 Tocca sulla pianta i tavoli dove li fai sedere.
               </p>
-              <p className="text-sm text-b58-charcoal mb-3">
+              <p className="testo-sala text-b58-charcoal mb-3">
                 {scelti.length === 0 ? (
                   <em className="text-b58-charcoal-soft">Nessun tavolo scelto.</em>
                 ) : (
@@ -1446,7 +1446,7 @@ export default function PiantaGiornata() {
               <p className="text-b58-charcoal font-medium mb-1">
                 {aperta.customer_name}
                 {aperta.status === "richiesta_in_attesa" && (
-                  <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                  <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
                     da confermare
                   </span>
                 )}
@@ -1470,7 +1470,7 @@ export default function PiantaGiornata() {
                   prenotazione successiva, quindi la segue se si sposta e
                   sparisce se viene annullata. */}
               {turnoDi(aperta.id)?.liberare_entro && (
-                <p className="rounded-lg bg-b58-gold/20 ring-1 ring-b58-gold px-3 py-2 text-sm mb-4">
+                <p className="rounded-lg bg-b58-gold/20 ring-1 ring-b58-gold px-3 py-2 testo-sala mb-4">
                   <strong>Da liberare entro le {turnoDi(aperta.id).liberare_entro.slice(0, 5)}</strong> —
                   su questo tavolo c'è un altro turno dopo.
                 </p>
@@ -1528,7 +1528,7 @@ export default function PiantaGiornata() {
                       azzera();
                     });
                   }}
-                  className="rounded-lg border border-b58-terracotta/40 text-b58-terracotta-dark hover:bg-b58-terracotta/10 transition-colors text-sm font-medium px-4 py-2"
+                  className="rounded-lg border border-b58-terracotta/40 text-b58-terracotta-dark hover:bg-b58-terracotta/10 transition-colors testo-sala font-medium px-4 py-2"
                 >
                   Ha disdetto
                 </button>
@@ -1540,12 +1540,12 @@ export default function PiantaGiornata() {
           )}
 
           {/* Le prenotazioni del giorno */}
-          <p className="text-[11px] uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-2">
+          <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-2">
             Prenotazioni del giorno
           </p>
           {prenotazioni.length === 0 ? (
             <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-8 text-center">
-              <p className="text-b58-charcoal-soft text-sm">
+              <p className="text-b58-charcoal-soft testo-sala">
                 Nessuna prenotazione per questo giorno. Tocca un tavolo libero sulla pianta per
                 prenderne una.
               </p>
@@ -1596,7 +1596,7 @@ export default function PiantaGiornata() {
                       }}
                       className="w-full text-left flex flex-wrap items-baseline gap-x-3 gap-y-1"
                     >
-                      <span className="text-sm text-b58-charcoal-soft w-12 shrink-0">
+                      <span className="testo-sala text-b58-charcoal-soft w-12 shrink-0">
                         {p.reservation_time?.slice(0, 5)}
                       </span>
                       <span className="text-b58-charcoal font-medium flex-1 min-w-[8rem]">
@@ -1606,24 +1606,24 @@ export default function PiantaGiornata() {
                           · {p.party_size} persone
                         </span>
                       </span>
-                      <span className="text-sm">
+                      <span className="testo-sala">
                         {suoi.length > 0 ? (
                           <span className="text-b58-olive-dark font-medium">
                             {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
                           </span>
                         ) : (
-                          <span className="rounded-full bg-b58-terracotta text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                          <span className="rounded-full bg-b58-terracotta text-b58-parchment testo-sala font-medium px-2.5 py-1">
                             senza tavolo
                           </span>
                         )}
                       </span>
                       {statoArrivo(p.id) && (
-                        <span className="text-[11px] text-b58-charcoal-soft">
+                        <span className="testo-sala text-b58-charcoal-soft">
                           {statoArrivo(p.id)}
                         </span>
                       )}
                       {p.status === "richiesta_in_attesa" && (
-                        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+                        <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
                           da confermare
                         </span>
                       )}
@@ -1636,7 +1636,7 @@ export default function PiantaGiornata() {
                         sta decidendo se telefonare a chi non e' arrivato.
                         (Richiesta di Alessio, 19/08: in tutti e due i posti.) */}
                     {(p.customer_phone || p.notes) && (
-                      <p className="text-sm text-b58-charcoal-soft mt-1">
+                      <p className="testo-sala text-b58-charcoal-soft mt-1">
                         {p.customer_phone && (
                           <a
                             href={`tel:${p.customer_phone}`}
@@ -1663,7 +1663,7 @@ export default function PiantaGiornata() {
                           <button
                             type="button"
                             onClick={() => esegui(() => togliAssegnazione(p.id))}
-                            className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark underline"
+                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline"
                           >
                             togli il tavolo
                           </button>

@@ -33,7 +33,7 @@ export default function NonConformita() {
   const resolved = useMemo(() => items.filter((i) => i.resolved), [items]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.description.trim()) return;
@@ -76,24 +76,24 @@ export default function NonConformita() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/haccp" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-3xl mx-auto pb-16">
+      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← HACCP
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Non conformità</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Aperte</h2>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Aperte</h2>
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
@@ -124,7 +124,7 @@ export default function NonConformita() {
               type="button"
               disabled={adding || !form.description.trim()}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
             >
               {adding ? "Segnalo…" : "+ Segnala"}
             </button>
@@ -132,18 +132,18 @@ export default function NonConformita() {
         </div>
 
         {open.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuna non conformità aperta.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60">Nessuna non conformità aperta.</p>
         ) : (
           <ul className="space-y-2">
             {open.map((item) => (
               <li key={item.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
-                    <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 mr-1.5">
+                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 mr-1.5">
                       {labelFor(NC_CATEGORIES, item.category)}
                     </span>
-                    <span className="text-sm text-b58-charcoal">{item.description}</span>
-                    <div className="text-xs text-b58-charcoal-soft mt-0.5">{formatDate(item.detected_at)}</div>
+                    <span className="testo-sala text-b58-charcoal">{item.description}</span>
+                    <div className="testo-sala text-b58-charcoal-soft mt-0.5">{formatDate(item.detected_at)}</div>
                   </div>
                   {isTitolare && (
                     <button
@@ -152,7 +152,7 @@ export default function NonConformita() {
                         setResolvingId((id) => (id === item.id ? null : item.id));
                         setCorrectiveAction("");
                       }}
-                      className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                      className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
                     >
                       {resolvingId === item.id ? "Annulla" : "Risolvi"}
                     </button>
@@ -175,7 +175,7 @@ export default function NonConformita() {
                           è peggio di una ancora aperta. Dal 16/08 il divieto
                           è anche nel database: qui si dà solo l'errore
                           prima. */}
-                      <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
+                      <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
                         Obbligatorio: finisce nel manuale che si mostra a un controllo.
                       </p>
                     </div>
@@ -183,7 +183,7 @@ export default function NonConformita() {
                       type="button"
                       disabled={resolving || !correctiveAction.trim()}
                       onClick={() => handleResolve(item.id)}
-                      className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                     >
                       {resolving ? "Confermo…" : "Conferma risoluzione"}
                     </button>
@@ -197,12 +197,12 @@ export default function NonConformita() {
 
       {resolved.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Risolte</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Risolte</h2>
           <ul className="space-y-1.5">
             {resolved.map((item) => (
               <li
                 key={item.id}
-                className="text-sm text-b58-charcoal-soft flex items-start justify-between gap-3"
+                className="testo-sala text-b58-charcoal-soft flex items-start justify-between gap-3"
               >
                 <span>
                   <span className="text-b58-charcoal">{item.description}</span>

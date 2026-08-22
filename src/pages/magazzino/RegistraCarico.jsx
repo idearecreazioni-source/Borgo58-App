@@ -80,8 +80,8 @@ export default function RegistraCarico() {
   const selectedIngredient = ingredients.find((i) => i.ingredient_id === form.ingredient_id);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,18 +107,18 @@ export default function RegistraCarico() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Link to="/magazzino" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-xl mx-auto">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Registra carico</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -212,7 +212,7 @@ export default function RegistraCarico() {
         )}
 
         {rigaChePrende && (
-          <div className="rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm text-b58-charcoal">
+          <div className="rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 testo-sala text-b58-charcoal">
             Questo carico va sulla riga della lista della spesa
             {rigaChePrende.quantita_richiesta != null && (
               <>
@@ -231,7 +231,7 @@ export default function RegistraCarico() {
               <select
                 value={rigaScelta || rigaPredefinita?.id || ""}
                 onChange={(e) => setRigaScelta(e.target.value)}
-                className="mt-2 w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm"
+                className="mt-2 w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala"
               >
                 {righe.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -248,7 +248,7 @@ export default function RegistraCarico() {
         <button
           type="submit"
           disabled={saving || !form.ingredient_id || !form.quantity}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 text-sm"
+          className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5  testo-sala"
         >
           {saving ? "Registro…" : "Registra carico"}
         </button>

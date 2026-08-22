@@ -46,7 +46,7 @@ export default function RicevimentoMerci() {
   }, [isTitolare]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.product_description.trim()) return;
@@ -97,12 +97,12 @@ export default function RicevimentoMerci() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/haccp" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-3xl mx-auto pb-16">
+      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← HACCP
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
@@ -111,7 +111,7 @@ export default function RicevimentoMerci() {
           <button
             type="button"
             onClick={handleExport}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Esporta CSV
           </button>
@@ -119,12 +119,12 @@ export default function RicevimentoMerci() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
       {avviso && (
-        <p className="text-sm text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
+        <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
       <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-6">
@@ -155,7 +155,7 @@ export default function RicevimentoMerci() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-4 mb-2">
-          <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+          <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
             <input
               type="checkbox"
               checked={form.packaging_ok}
@@ -163,7 +163,7 @@ export default function RicevimentoMerci() {
             />
             Imballaggio integro
           </label>
-          <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+          <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
             <input
               type="checkbox"
               checked={form.conformity}
@@ -201,7 +201,7 @@ export default function RicevimentoMerci() {
             type="button"
             disabled={saving || !form.product_description.trim()}
             onClick={handleAdd}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60 shrink-0"
+            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
           >
             {saving ? "Registro…" : "+ Registra"}
           </button>
@@ -209,16 +209,16 @@ export default function RicevimentoMerci() {
       </div>
 
       {logs.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft/60">Nessun ricevimento registrato ancora.</p>
+        <p className="testo-sala text-b58-charcoal-soft/60">Nessun ricevimento registrato ancora.</p>
       ) : (
         <ul className="space-y-2">
           {logs.map((l) => (
             <li key={l.id} className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <span className="text-sm text-b58-charcoal font-medium">{l.product_description}</span>
+                  <span className="testo-sala text-b58-charcoal font-medium">{l.product_description}</span>
                   {l.supplier?.name && (
-                    <span className="text-xs text-b58-charcoal-soft ml-1.5">· {l.supplier.name}</span>
+                    <span className="testo-sala text-b58-charcoal-soft ml-1.5">· {l.supplier.name}</span>
                   )}
                   {/* ⚠️ Stesso difetto del manuale, in un secondo posto:
                       questa pastiglia compariva solo su «merce non
@@ -227,14 +227,14 @@ export default function RicevimentoMerci() {
                       l'esito lo dice `esitoRicevimento()`, e dice anche
                       il perché. */}
                   {!esitoRicevimento(l).conforme && (
-                    <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                       {esitoRicevimento(l).etichetta}
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-b58-charcoal-soft">{formatDate(l.received_at)}</span>
+                <span className="testo-sala text-b58-charcoal-soft">{formatDate(l.received_at)}</span>
               </div>
-              {l.note && <p className="text-xs text-b58-charcoal-soft mt-1">{l.note}</p>}
+              {l.note && <p className="testo-sala text-b58-charcoal-soft mt-1">{l.note}</p>}
             </li>
           ))}
         </ul>

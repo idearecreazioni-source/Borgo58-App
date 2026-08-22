@@ -92,10 +92,10 @@ export default function MagazzinoHome() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="testo-sala max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Magazzino</h1>
@@ -142,44 +142,44 @@ export default function MagazzinoHome() {
           {isTitolare && (
             <Link
               to="/magazzino/fornitori"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+              className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
             >
               Fornitori
             </Link>
           )}
           <Link
             to="/magazzino/tracciabilita"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Tracciabilità
           </Link>
           <Link
             to="/magazzino/scadenze"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Scadenze
           </Link>
           <Link
             to="/magazzino/produzioni"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Produzioni
           </Link>
           <Link
             to="/magazzino/allineamento"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Allineamento
           </Link>
           <Link
             to="/magazzino/lista-spesa"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Lista della spesa
           </Link>
           <Link
             to="/magazzino/carico"
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
           >
             + Registra carico
           </Link>
@@ -187,7 +187,7 @@ export default function MagazzinoHome() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -208,17 +208,17 @@ export default function MagazzinoHome() {
 
       {statoLettura(nonScaricate) === "pieno" && (
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-6">
-          <h2 className="text-sm font-semibold text-b58-charcoal">
+          <h2 className="testo-sala font-semibold text-b58-charcoal">
             Cosa non è sceso dal magazzino ({nonScaricate.length})
           </h2>
-          <p className="text-xs text-b58-charcoal-soft mt-1">
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
             Righe di conti chiusi che la giacenza non ha potuto seguire. Non
             sono state indovinate: la giacenza qui sotto è più alta del vero di
             questo tanto.
           </p>
           <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto">
             {nonScaricate.map((r) => (
-              <li key={r.id} className="text-xs text-b58-charcoal">
+              <li key={r.id} className="testo-sala text-b58-charcoal">
                 <span className="text-b58-charcoal-soft">
                   {formatDate(r.quando)} · {r.tavolo || "—"} ·{" "}
                 </span>
@@ -237,7 +237,7 @@ export default function MagazzinoHome() {
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : levels.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
@@ -246,7 +246,7 @@ export default function MagazzinoHome() {
         </div>
       ) : (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Ingrediente</th>
@@ -270,7 +270,7 @@ export default function MagazzinoHome() {
                       <td className="px-4 py-3 text-b58-charcoal font-medium">
                         {l.ingredient_name}
                         {l.below_threshold && (
-                          <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto soglia
                           </span>
                         )}
@@ -296,7 +296,7 @@ export default function MagazzinoHome() {
                         <button
                           onClick={() => toggleRow(l.ingredient_id)}
                           disabled={l.current_quantity <= 0}
-                          className="text-b58-charcoal-soft hover:text-b58-terracotta-dark text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           {openRow === l.ingredient_id ? "Annulla" : "Scarico"}
                         </button>
@@ -347,7 +347,7 @@ export default function MagazzinoHome() {
                               type="button"
                               disabled={saving || !consumptionForm.quantity}
                               onClick={() => handleConsumption(l.ingredient_id)}
-                              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                             >
                               {saving ? "Salvo…" : "Conferma"}
                             </button>
@@ -364,7 +364,7 @@ export default function MagazzinoHome() {
       )}
 
       {!isTitolare && (
-        <p className="text-xs text-b58-charcoal-soft/70 mt-4">
+        <p className="testo-sala text-b58-charcoal-soft/70 mt-4">
           Giacenze e scadenze, senza valore economico.
         </p>
       )}

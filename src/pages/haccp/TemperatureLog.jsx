@@ -37,7 +37,7 @@ export default function TemperatureLog() {
   }, []);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddEquipment = async () => {
     if (!equipmentForm.name.trim()) return;
@@ -110,12 +110,12 @@ export default function TemperatureLog() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-16">
-      <Link to="/haccp" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-4xl mx-auto pb-16">
+      <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← HACCP
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
@@ -124,7 +124,7 @@ export default function TemperatureLog() {
           <button
             type="button"
             onClick={handleExport}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
           >
             Esporta CSV
           </button>
@@ -132,22 +132,22 @@ export default function TemperatureLog() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
       {avviso && (
-        <p className="text-sm text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
+        <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-4">{avviso}</p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg text-b58-charcoal">Attrezzature</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal">Attrezzature</h2>
           {isTitolare && (
             <button
               type="button"
               onClick={() => setShowEquipmentForm((v) => !v)}
-              className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+              className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
             >
               {showEquipmentForm ? "Annulla" : "+ Nuova attrezzatura"}
             </button>
@@ -195,7 +195,7 @@ export default function TemperatureLog() {
                 type="button"
                 disabled={addingEquipment || !equipmentForm.name.trim()}
                 onClick={handleAddEquipment}
-                className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
               >
                 {addingEquipment ? "Aggiungo…" : "+ Aggiungi"}
               </button>
@@ -204,11 +204,11 @@ export default function TemperatureLog() {
         )}
 
         {equipment.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">
+          <p className="testo-sala text-b58-charcoal-soft/60">
             Nessuna attrezzatura ancora.{isTitolare ? " Aggiungine una per iniziare a registrare le temperature." : ""}
           </p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala">
             <tbody>
               {equipment.map((eq) => (
                 <Fragment key={eq.id}>
@@ -216,7 +216,7 @@ export default function TemperatureLog() {
                     <td className="py-2 text-b58-charcoal font-medium">
                       {eq.name}
                       {eq.target_min_c != null && (
-                        <span className="text-xs text-b58-charcoal-soft ml-1.5">
+                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">
                           ({eq.target_min_c}° / {eq.target_max_c}°)
                         </span>
                       )}
@@ -224,7 +224,7 @@ export default function TemperatureLog() {
                     <td className="py-2 text-right">
                       <button
                         onClick={() => toggleRow(eq.id)}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark text-xs"
+                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
                       >
                         {openRow === eq.id ? "Annulla" : "+ Registra temperatura"}
                       </button>
@@ -264,7 +264,7 @@ export default function TemperatureLog() {
                             type="button"
                             disabled={saving || !readingForm.recordedTempC}
                             onClick={() => handleAddReading(eq.id)}
-                            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                           >
                             {saving ? "Salvo…" : "Conferma"}
                           </button>
@@ -280,11 +280,11 @@ export default function TemperatureLog() {
       </div>
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Storico rilevazioni</h2>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Storico rilevazioni</h2>
         {logs.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuna rilevazione ancora.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60">Nessuna rilevazione ancora.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="py-2 font-medium">Attrezzatura</th>
@@ -301,11 +301,11 @@ export default function TemperatureLog() {
                   <td className="py-2 text-b58-charcoal-soft">{formatDate(l.recorded_at)}</td>
                   <td className="py-2">
                     {l.target_min_c == null ? (
-                      <span className="text-xs text-b58-charcoal-soft/60">nessun range</span>
+                      <span className="testo-sala text-b58-charcoal-soft/60">nessun range</span>
                     ) : l.is_compliant ? (
-                      <span className="text-xs text-b58-olive-dark">Conforme</span>
+                      <span className="testo-sala text-b58-olive-dark">Conforme</span>
                     ) : (
-                      <span className="text-xs text-b58-terracotta-dark font-medium">Fuori range</span>
+                      <span className="testo-sala text-b58-terracotta-dark font-medium">Fuori range</span>
                     )}
                   </td>
                 </tr>
