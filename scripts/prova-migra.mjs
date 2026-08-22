@@ -36,6 +36,7 @@ import {
   REF_PRODUZIONE,
   strumento,
   titolo,
+  versioniDoppie,
 } from "./comune.mjs";
 
 const CARTELLA = "supabase/migrations";
@@ -75,6 +76,21 @@ function interrogaProva(sql) {
 
 const chieste = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const tutte = migrazioniSulDisco();
+
+// Prima di qualunque altra cosa: due file con lo stesso numero di versione
+// si nascondono a vicenda nel registro. Vedi versioniDoppie() in comune.mjs.
+const doppie = versioniDoppie(tutte);
+if (doppie.length > 0) {
+  fermati(
+    "FERMO: due migrazioni hanno lo stesso numero di versione.",
+    ...doppie,
+    "",
+    "Il registro applied_migrations ha per chiave la versione: applicata la",
+    "prima, la seconda risulterebbe gia' applicata e non girerebbe mai —",
+    "in silenzio. Rinomina la piu' recente con un numero libero, e cambia",
+    "anche la versione nel suo insert into applied_migrations in fondo."
+  );
+}
 
 let daApplicare;
 if (chieste.length > 0) {

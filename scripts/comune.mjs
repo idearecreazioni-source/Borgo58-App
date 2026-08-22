@@ -79,6 +79,44 @@ export function migrazioniSenzaRiepilogo(versioniApplicate) {
     .sort();
 }
 
+/**
+ * 🔴 DUE MIGRAZIONI CON LO STESSO NUMERO DI VERSIONE — la rete nata dal
+ * difetto del 22/08/2026, e la forma del difetto vale piu' del caso.
+ *
+ * `applied_migrations` ha per chiave la VERSIONE, non il nome del file.
+ * Il 21/08 sono nati due file con lo stesso prefisso
+ * (`20260821000001_una_percentuale…` e `20260821000001_i_turni_dei_pasti`):
+ * applicato il primo, il secondo risultava **gia' applicato** e `npm run
+ * migra` rispondeva «non manca niente». La migrazione dei turni non e' mai
+ * girata in produzione, e nessuno strumento lo diceva — la schermata delle
+ * Comande e' andata online chiedendo una colonna che nel database vero non
+ * c'era.
+ *
+ * ⚠️ E il suo `insert into applied_migrations … on conflict do nothing`
+ * **non ha fatto niente**: la riga c'era gia', col nome dell'altra. Il
+ * registro non ha mentito su una cosa che non sapeva — ha detto una cosa
+ * falsa con l'aria di essere vera, che e' la famiglia di §8.
+ *
+ * ⚠️ Per questo il controllo si fa PRIMA di guardare cosa manca: e' una
+ * proprieta' della cartella, non uno stato del database, e vale anche sul
+ * progetto di prova (dove lo stesso difetto aveva lasciato il registro a
+ * 166 con 167 file applicati).
+ *
+ * @param {{file: string, versione: string}[]} elenco le migrazioni sul disco
+ * @returns {string[]} le righe da mostrare, vuoto se e' tutto a posto
+ */
+export function versioniDoppie(elenco) {
+  const per = new Map();
+  for (const m of elenco) {
+    if (!per.has(m.versione)) per.set(m.versione, []);
+    per.get(m.versione).push(m.file);
+  }
+  return [...per.entries()]
+    .filter(([, file]) => file.length > 1)
+    .sort()
+    .map(([versione, file]) => `  ${versione}: ${file.join("  +  ")}`);
+}
+
 export function leggiConfigurazione(file = ".env.db") {
   if (!existsSync(file)) {
     fermati(

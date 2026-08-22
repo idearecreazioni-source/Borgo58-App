@@ -239,5 +239,5 @@ begin
 end $verifica$;
 
 insert into applied_migrations (version, name)
-values ('20260821000001', 'i_turni_dei_pasti')
+values ('20260821000005', 'i_turni_dei_pasti')
 on conflict (version) do nothing;

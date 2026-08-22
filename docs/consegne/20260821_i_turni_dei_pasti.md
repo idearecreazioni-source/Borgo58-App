@@ -5,7 +5,7 @@
 commit `39dd62b`).
 **Commit del codice**: `84527bb` · **working tree pulito** al momento di
 scrivere questo riepilogo, che è l'ultimo commit della consegna.
-**Migrazione**: `20260821000001_i_turni_dei_pasti.sql` — **applicata al solo
+**Migrazione**: `20260821000005_i_turni_dei_pasti.sql` — **applicata al solo
 progetto di prova**, **non in produzione**: aspetta il push di Alessio
 (`npm run migra` si rifiuta finché non è su GitHub).
 
@@ -274,7 +274,7 @@ loro sei piatti.
 
 | file | cosa |
 |---|---|
-| `supabase/migrations/20260821000001_i_turni_dei_pasti.sql` | la colonna, il vincolo, `chiamate_turno` con la sua RLS e il rifiuto sui conti non aperti |
+| `supabase/migrations/20260821000005_i_turni_dei_pasti.sql` | la colonna, il vincolo, `chiamate_turno` con la sua RLS e il rifiuto sui conti non aperti |
 | `src/lib/calcoli/turni.js` | **la regola, pura**: etichetta, righe per turno, fogli della cucina |
 | `src/lib/api/orders.js` | il turno viaggia con la riga; le tre funzioni dei biglietti |
 | `src/pages/comande/Sala.jsx` | «Prossimo turno», le righe di stacco, «Avanti prossimo turno» |
