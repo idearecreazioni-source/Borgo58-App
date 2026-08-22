@@ -1,3 +1,5 @@
+import { MATERIE_PRIME, PREPARAZIONI, FINGER, PIATTI, PIATTI_IN_CARTA, SELEZIONI, BOZZE } from "./scenario/carta.mjs";
+
 // DUE MESI DI VITA DEL RISTORANTE — la parte grossa di `npm run prova:scenario`.
 //
 // Lo stato di partenza dà poche righe perché le verifiche non girino a
@@ -57,7 +59,7 @@
 export async function costruisciDueMesi(ctx) {
   const {
     MARCA, ente, segna, supabase, orders, oggi,
-    dispensa, DISPENSA, dispensaId, createRecipe, addRecipeIngredient, updateRecipe,
+    dispensa, dispensaId, createRecipe, addRecipeIngredient, updateRecipe,
     createMenu, addMenuItem, setActiveMenu, createIngredient, updateIngredientPrice,
     registerStockDelivery, createReservation, createCashMovement, listAllCausali,
     registraConteggioCassa, versaInBanca, recordStockConsumption, allineaGiacenza,
@@ -74,77 +76,189 @@ export async function costruisciDueMesi(ctx) {
   // food cost del 10% — cioè un numero che non somiglia a niente e non
   // fa vedere nessun problema.
   // -------------------------------------------------------------------
-  const CARE = [
-    ["Tonno rosso", "pesce", "kg", 32.0, 6, 3],
-    ["Maialino nero dei Nebrodi", "carne_rossa", "kg", 18.5, 8, 4],
-    ["Astice", "crostacei_molluschi", "kg", 45.0, 3, 2],
-    ["Pistacchio di Bronte", "secco_dispensa", "kg", 28.0, 2, 1],
-  ];
-  for (const [nome, categoria, unita, prezzo, giacenza, soglia] of CARE) {
+  // -------------------------------------------------------------------
+  // 1. LA DISPENSA VERA — un centinaio di prodotti, non quattordici
+  //
+  // 🔴 REPERTO DI ALESSIO (22/08): con quattordici prodotti non si prova
+  // niente di quello che conta — la ricerca, i filtri, l'ordinamento, una
+  // lista della spesa lunga, il magazzino dove devi trovare una cosa fra
+  // cento.
+  //
+  // ⚠️ La scala e' MISURATA, non scelta: sul tablet vero una riga di
+  // elenco e' alta 70,3 px e sotto l'intestazione ci sono 797 px, quindi
+  // **ne entrano 11**. Con 15 prodotti la pagina e' 1,3 schermate e la
+  // ricerca non serve mai; con cento diventa 7,1 schermate. La spiegazione
+  // per intero sta in `scripts/scenario/carta.mjs`.
+  //
+  // ⚠️ **Si saltano quelli che ci sono gia'**: otto li ha creati lo stato
+  // di partenza, con lo stesso nome. Ricrearli farebbe due prodotti dove
+  // ce n'e' uno.
+  // -------------------------------------------------------------------
+  const { data: giaCiSono } = await supabase.from("ingredients").select("id, name");
+  const perNome = new Map((giaCiSono ?? []).map((r) => [r.name, r.id]));
+  for (const nome of Object.keys(dispensa)) perNome.set(nome, dispensa[nome]);
+
+  let nuoviIngredienti = 0;
+  for (const [nome, categoria, unita, prezzo, soglia, giacenza, conservazione] of MATERIE_PRIME) {
+    if (perNome.has(nome)) { dispensa[nome] = perNome.get(nome); continue; }
     const ing = await createIngredient({
       entity_id: ente,
-      name: `${MARCA}${nome}`,
+      name: nome,
       category: categoria,
       unit: unita,
       current_price: prezzo,
       stock_minimum_threshold: soglia,
+      // ⚠️ Lo scarto non e' uguale per tutti: pesce e crostacei ne fanno
+      // molto, la dispensa quasi niente. Uno scarto unico darebbe un food
+      // cost sbagliato sempre nella stessa direzione.
+      waste_percentage_default:
+        categoria === "pesce" || categoria === "crostacei_molluschi" ? 35
+        : categoria === "verdura" || categoria === "frutta" ? 12
+        : 3,
+      alimentare: categoria !== "altro",
     });
-    dispensa[nome] = ing.id;
-    await registerStockDelivery({
-      ingredientId: ing.id,
-      quantity: giacenza,
-      unitPrice: prezzo,
-      expiryDate: giorni(oggi, 12),
-      supplierId: fornitori?.[0] ?? null,
-    });
+    const id = ing?.id ?? ing;
+    dispensa[nome] = id;
+    perNome.set(nome, id);
+    nuoviIngredienti++;
+    // ⚠️ NON tutti hanno giacenza: alcuni restano a zero apposta, cosi' il
+    // magazzino ha sia i prodotti che ci sono sia quelli finiti — e la
+    // lista della spesa ha qualcosa dentro e qualcosa fuori.
+    if (giacenza > 0) {
+      await registerStockDelivery({
+        ingredientId: id,
+        quantity: giacenza,
+        unitPrice: prezzo,
+        unitCost: prezzo,
+        expiryDate: giorni(oggi, conservazione === "dispensa" || conservazione === "temperatura_ambiente" ? 120 : 9),
+        supplierId: fornitori?.[0] ?? null,
+      });
+    }
   }
-  segna("materie prime care (è da queste che nasce un food cost vero)", CARE.length);
+  segna("materie prime in dispensa (e' da queste che nasce un food cost vero)", nuoviIngredienti);
 
   // -------------------------------------------------------------------
-  // 2. I piatti che DISTINGUONO
+  // 2. LE PREPARAZIONI — la profondita' che mancava
   //
-  // ⚠️ `portions_yield: 1` e non 4, ed è la correzione di un difetto
-  // misurato: nello scenario vecchio le quantità erano già **per
-  // porzione** ma il rendimento diceva 4, quindi ogni food cost usciva
-  // diviso per quattro — **1-2% su piatti da 9-18 €**. Un numero così non
-  // è «impreciso»: è un numero che non può mostrare nessun problema,
-  // perché resta assurdo sia che il calcolo funzioni sia che no.
+  // ⚠️ Alessio **scompone sempre**: un ragu passa da un soffritto e da una
+  // salsa. Senza preparazioni il costo di un piatto e' una somma piatta di
+  // materie prime, cioe' il caso in cui il calcolo a cascata non viene mai
+  // esercitato — e quello e' il calcolo che regge il food cost vero.
   // -------------------------------------------------------------------
-  const PIATTI = [
-    // nome, categoria, prezzo, [[ingrediente, quantità per porzione]]
-    ["Caponata di melanzane", "antipasto", 9, [["Melanzana lunga", 0.26], ["Pomodoro ciliegino", 0.09], ["Olio extravergine", 0.045]]],
-    ["Alici marinate al limone", "antipasto", 11, [["Alici fresche", 0.19], ["Olio extravergine", 0.03]]],
-    ["Crudo di gambero rosso", "antipasto", 22, [["Gambero rosso", 0.24], ["Olio extravergine", 0.012]]],
-    ["Busiate al pomodoro", "primo", 13, [["Farina di grano duro", 0.13], ["Pomodoro ciliegino", 0.22], ["Basilico", 0.3]]],
-    ["Ravioli di ricotta", "primo", 15, [["Farina di grano duro", 0.11], ["Ricotta di pecora", 0.16]]],
-    ["Spaghetti all'astice", "primo", 30, [["Astice", 0.28], ["Pomodoro ciliegino", 0.1], ["Farina di grano duro", 0.12]]],
-    ["Tonno in crosta di pistacchio", "secondo", 24, [["Tonno rosso", 0.21], ["Pistacchio di Bronte", 0.03]]],
-    ["Maialino nero dei Nebrodi", "secondo", 21, [["Maialino nero dei Nebrodi", 0.27], ["Olio extravergine", 0.02]]],
-    ["Melanzane alla parmigiana", "secondo", 14, [["Melanzana lunga", 0.38], ["Pomodoro ciliegino", 0.14], ["Ricotta di pecora", 0.05]]],
-    ["Alici fritte", "secondo", 16, [["Alici fresche", 0.31], ["Farina di grano duro", 0.05], ["Olio extravergine", 0.09]]],
-    ["Cassatina di ricotta", "dolce", 8, [["Ricotta di pecora", 0.12]]],
-    ["Cannolo di Bronte", "dolce", 9, [["Ricotta di pecora", 0.09], ["Pistacchio di Bronte", 0.02]]],
-  ];
+  const unitaDiTutto = new Map(MATERIE_PRIME.map((r) => [r[0], r[2]]));
+  for (const [nome, , unitaResa] of PREPARAZIONI) unitaDiTutto.set(nome, unitaResa);
 
-  const carta = await createMenu({ name: `${MARCA}Carta dei due mesi`, structure: "4-4-4-2" });
-  const inCarta = [];
-  for (const [nome, categoria, prezzo, componenti] of PIATTI) {
+  const bozze = new Set(BOZZE);
+  const idRicetta = {};
+  for (const [nome, resa, unitaResa] of PREPARAZIONI) {
     const r = await createRecipe({
-      name: `${MARCA}${nome}`,
+      name: nome,
+      category: "primo",
+      recipe_type: "preparazione",
+      portions_yield: 1,
+      yield_quantity: resa,
+      yield_unit: unitaResa,
+    });
+    idRicetta[nome] = r.id;
+  }
+  // ⚠️ I componenti si aggiungono DOPO aver creato tutte le preparazioni:
+  // una preparazione ne usa un'altra, e la seconda potrebbe non esistere
+  // ancora quando serve alla prima.
+  for (const [nome, , , componenti] of PREPARAZIONI) {
+    for (const [c, quantita] of componenti) {
+      await addRecipeIngredient(idRicetta[nome], {
+        ingredient_id: dispensa[c] ?? null,
+        component_recipe_id: dispensa[c] ? null : idRicetta[c],
+        quantity: quantita,
+        unit: unitaDiTutto.get(c) ?? "kg",
+      });
+    }
+    if (!bozze.has(nome)) await updateRecipe(idRicetta[nome], { pronta_per_carta: true });
+  }
+  segna("preparazioni (soffritti, salse, basi: il costo scende a cascata)", PREPARAZIONI.length);
+
+  // -------------------------------------------------------------------
+  // 3. LA CARTA — venti finger e tredici piatti, come la sua
+  //
+  // ⚠️ E il Ricettario e' PIU' GRANDE della carta, come in una cucina
+  // vera: nello scenario vecchio tutte e 35 le ricette erano «pronte per
+  // carta», che non somiglia a nessun ricettario. Qui ci sono le bozze, i
+  // fuori carta e i piatti che aspettano la stagione.
+  // -------------------------------------------------------------------
+  const carta = await createMenu({ name: "Carta dei due mesi", structure: "4-4-4-2" });
+  const inCarta = [];
+  const inCartaOra = new Set(PIATTI_IN_CARTA);
+
+  for (const [lista, tipo] of [[FINGER, "finger"], [PIATTI, "piatto_finito"]]) {
+    for (const [nome, categoria, prezzo, componenti] of lista) {
+      const r = await createRecipe({
+        name: nome,
+        category: categoria,
+        recipe_type: tipo,
+        portions_yield: 1,
+        // ⚠️ Un finger si vende al pezzo, non a porzione (strada aperta il
+        // 20/08): senza questo, il prezzo di venti bocconcini non si sa
+        // scomporre.
+        //
+        // ⚠️ E vuole la RESA, perche' il database la pretende su tutto cio'
+        // che non e' un piatto finito (`componente_richiede_resa`): le
+        // quantita' del catalogo sono gia' per un pezzo, quindi la resa e'
+        // un pezzo. Il vincolo ha ragione — un finger produce pezzi, e
+        // senza saperlo non se ne puo' calcolare il costo.
+        ...(tipo === "finger"
+          ? { prezzo_al_pezzo: prezzo, yield_quantity: 1, yield_unit: "pz" }
+          : {}),
+      });
+      idRicetta[nome] = r.id;
+      for (const [c, quantita] of componenti) {
+        await addRecipeIngredient(r.id, {
+          ingredient_id: dispensa[c] ?? null,
+          component_recipe_id: dispensa[c] ? null : idRicetta[c],
+          quantity: quantita,
+          unit: unitaDiTutto.get(c) ?? "kg",
+        });
+      }
+      if (bozze.has(nome)) continue;
+      await updateRecipe(r.id, { pronta_per_carta: true });
+      if (!inCartaOra.has(nome)) continue;
+      const voce = await addMenuItem(carta.id, { recipe_id: r.id, category: categoria, selling_price: prezzo });
+      inCarta.push({ recipe_id: r.id, prezzo, nome, categoria, menu_item_id: voce?.id });
+    }
+  }
+  // -------------------------------------------------------------------
+  // 3-bis. LE SELEZIONI — quello che si vende davvero
+  //
+  // 🔴 SCOPERTO DAL RIFIUTO DEL DATABASE, non leggendo: mettendo i finger
+  // in carta ha risposto *«In un menu ci vanno solo i piatti: e' un
+  // bocconcino»*. Ha ragione — e' la decisione del 20/08. In carta va la
+  // **selezione**, che e' un piatto finito fatto di bocconcini; i finger
+  // restano nel ricettario, pronti, e nessuno li vende da soli.
+  //
+  // ⚠️ Senza questo lo scenario avrebbe collaudato un modello che il
+  // gestionale non ammette.
+  // -------------------------------------------------------------------
+  for (const [nome, categoria, prezzo, bocconcini] of SELEZIONI) {
+    const r = await createRecipe({
+      name: nome,
       category: categoria,
       recipe_type: "piatto_finito",
       portions_yield: 1,
     });
-    for (const [ingrediente, quantita] of componenti) {
-      const unita = unitaDi(ingrediente, DISPENSA, CARE);
-      await addRecipeIngredient(r.id, { ingredient_id: dispensa[ingrediente], quantity: quantita, unit: unita });
+    for (const b of bocconcini) {
+      await addRecipeIngredient(r.id, {
+        component_recipe_id: idRicetta[b],
+        quantity: 1,
+        unit: "pz",
+      });
     }
     await updateRecipe(r.id, { pronta_per_carta: true });
     const voce = await addMenuItem(carta.id, { recipe_id: r.id, category: categoria, selling_price: prezzo });
     inCarta.push({ recipe_id: r.id, prezzo, nome, categoria, menu_item_id: voce?.id });
   }
+  segna("selezioni di bocconcini, che sono la forma in cui i finger si vendono", SELEZIONI.length);
+
   await setActiveMenu(carta.id);
-  segna("piatti in carta, col food cost che va dal poco al molto", PIATTI.length);
+  segna("ricette nel ricettario, di cui in carta: " + inCarta.length, FINGER.length + PIATTI.length + SELEZIONI.length);
 
   // -------------------------------------------------------------------
   // 3. LE SERATE — due mesi che devono essere DIVERSI fra loro
@@ -649,14 +763,6 @@ function seminato(seme) {
     s = (s * 1664525 + 1013904223) >>> 0;
     return s / 4294967296;
   };
-}
-
-function unitaDi(nome, DISPENSA, CARE) {
-  const d = DISPENSA?.find(([n]) => n === nome);
-  if (d) return d[2];
-  const c = CARE.find(([n]) => n === nome);
-  if (c) return c[2];
-  throw new Error(`Non so in che unità si misura «${nome}»`);
 }
 
 // Somma giorni a una data ISO restando sul calendario locale.

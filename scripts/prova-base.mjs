@@ -17,7 +17,20 @@
 // Corollario dichiarato: questo comando è anche una prova. Se domani
 // fallisce, la prima ipotesi non è che sia rotto lui.
 //
-// ⚠️ MARCATO E BUTTABILE. Tutto quello che crea si chiama `BASE-…`,
+// ⚠️ MARCATO E BUTTABILE — 🔴 MA NON PIU' NEI NOMI CHE SI MISURANO
+// (22/08). Il prefisso `BASE-` mangiava **5 dei 16 caratteri** che stanno
+// su una riga nella colonna del nome, e faceva andare a capo 13 nomi su 15
+// invece di 8: il 21/08 un disegno e' stato scartato per un vincolo
+// gonfiato cosi'. **Ingredienti, ricette e menu adesso hanno il loro nome
+// vero**, e la pulizia li riconosce dagli elenchi di
+// `scripts/scenario/carta.mjs` — un posto solo, che costruisce e ripulisce.
+//
+// ⚠️ **Dove il prefisso resta, ed e' dichiarato**: conti, movimenti,
+// prenotazioni, clienti, dipendenti, attrezzature. Li' nessuna misura di
+// questo mandato e' stata falsata, e il marchio serve a pulire. Toglierlo
+// anche di la' e' una coda, non una dimenticanza.
+//
+// Il testo di prima, che vale ancora per quelle tabelle:
 // accanto ai `TEST-AUTO …` delle prove automatiche: si riconosce a colpo
 // d'occhio, si cancella senza pensarci (`-- --rifai`), e
 // `npm run prova:ricostruisci` lo rimette da sé. Niente qui dentro è
@@ -27,6 +40,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "vite";
+import { NOMI_INGREDIENTI, NOMI_RICETTE_TUTTE } from "./scenario/carta.mjs";
 import {
   REF_PRODUZIONE,
   fermati,
@@ -38,6 +52,56 @@ import {
 } from "./comune.mjs";
 
 const MARCA = "BASE-";
+
+// 🔴 GLI ELENCHI AL POSTO DEL PREFISSO (22/08).
+//
+// Ingredienti, ricette e menu non portano piu' un marchio nel nome —
+// falsava le misure sulle colonne — quindi la pulizia non puo' piu'
+// cercarli con `like 'BASE-%'`: li **nomina**, leggendo le stesse liste da
+// cui sono stati costruiti.
+//
+// ⚠️ Costruzione e pulizia guardano lo stesso file, quindi non possono
+// divergere. Se divergessero, la pulizia lascerebbe righe dietro di se'
+// **senza dirlo** — la famiglia della risposta piu' corta che ha l'aria di
+// essere intera.
+//
+// ⚠️ E i nomi delle 8 ricette dello stato di partenza NON stanno nel
+// catalogo: sono di questo file. Si aggiungono qui, non li'.
+// 🔴 E QUESTE TRE PORTANO ANCORA IL PREFISSO, perche' nascono fuori dal
+// blocco dello scenario (sono lo stato di partenza minimo, quello che
+// esiste anche senza `--scenario`). Vanno nominate lo stesso: da quando la
+// pulizia guarda gli elenchi invece del prefisso, cio' che non e' nominato
+// **resta**, e si accumulerebbe a ogni `--rifai` senza che nessuno lo dica.
+const RESIDUI_COL_PREFISSO = [MARCA + "Piatto di prova", MARCA + "Pomodoro di prova"];
+
+const RICETTE_STATO_BASE = [
+  "Alici marinate della casa", "Caponata di melanzane",
+  "Busiate al pomodoro e basilico", "Ravioli di ricotta",
+  "Crudo di gambero", "Alici fritte",
+  "Melanzane alla parmigiana", "Cassatina di ricotta",
+];
+const MENU_DELLO_SCENARIO = ["Carta di collaudo", "Carta dei due mesi"];
+
+// 🔴 E IL VECCHIO PREFISSO SI CONTINUA A TOGLIERE, anche se non si scrive
+// piu'. Misurato: dopo il primo giro col nuovo catalogo erano rimasti in
+// dispensa **122 prodotti invece di 109**, tredici dei quali col vecchio
+// `BASE-` — orfani per sempre, perche' nessun elenco li nomina.
+//
+// ⚠️ La forma generale, che vale oltre questo caso: *quando si cambia il
+// modo di riconoscere una cosa, il modo vecchio va tenuto in vita dalla
+// parte che PULISCE, non da quella che scrive.* Altrimenti il passaggio
+// lascia dietro di se' esattamente le righe che doveva togliere — e non lo
+// dice.
+
+/** Un elenco di nomi come lista SQL, con gli apici raddoppiati. */
+const listaSql = (nomi) =>
+  nomi.map((n) => "'" + String(n).replace(/'/g, "''") + "'").join(", ");
+
+const INGREDIENTI_SQL = listaSql([...NOMI_INGREDIENTI, ...RESIDUI_COL_PREFISSO]);
+// ⚠️ `NOMI_RICETTE_TUTTE` e non `NOMI_RICETTE`: la seconda non comprende
+// le SELEZIONI, e quattro ricette sarebbero rimaste dietro a ogni pulizia.
+const RICETTE_SQL = listaSql([...NOMI_RICETTE_TUTTE, ...RICETTE_STATO_BASE, ...RESIDUI_COL_PREFISSO]);
+const MENU_SQL = listaSql(MENU_DELLO_SCENARIO);
 const rifai = process.argv.includes("--rifai");
 // Lo scenario del collaudo: molto piu' dello stato di partenza, stessa marca.
 const scenario = process.argv.includes("--scenario");
@@ -191,29 +255,29 @@ begin
   delete from orders where note like '${MARCA}%';
   get diagnostics n = row_count; tolte := tolte + n;
 
-  delete from menu_items where menu_id in (select id from menus where name like '${MARCA}%');
+  delete from menu_items where menu_id in (select id from menus where (name in (${MENU_SQL}) or name like '${MARCA}%'));
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from menus where name like '${MARCA}%';
-  get diagnostics n = row_count; tolte := tolte + n;
-
-  delete from recipe_status_history where recipe_id in (select id from recipes where name like '${MARCA}%');
-  get diagnostics n = row_count; tolte := tolte + n;
-  delete from recipe_ingredients where recipe_id in (select id from recipes where name like '${MARCA}%');
-  get diagnostics n = row_count; tolte := tolte + n;
-  delete from recipes where name like '${MARCA}%';
+  delete from menus where (name in (${MENU_SQL}) or name like '${MARCA}%');
   get diagnostics n = row_count; tolte := tolte + n;
 
-  delete from stock_consumptions where ingredient_id in (select id from ingredients where name like '${MARCA}%');
+  delete from recipe_status_history where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'));
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from stock_lots where ingredient_id in (select id from ingredients where name like '${MARCA}%');
+  delete from recipe_ingredients where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'));
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from price_history where ingredient_id in (select id from ingredients where name like '${MARCA}%');
+  delete from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%');
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from articoli_fornitore where ingredient_id in (select id from ingredients where name like '${MARCA}%');
+
+  delete from stock_consumptions where ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from shopping_list_items where ingredient_id in (select id from ingredients where name like '${MARCA}%');
+  delete from stock_lots where ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
   get diagnostics n = row_count; tolte := tolte + n;
-  delete from ingredients where name like '${MARCA}%';
+  delete from price_history where ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from articoli_fornitore where ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from shopping_list_items where ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%');
   get diagnostics n = row_count; tolte := tolte + n;
 
   delete from cash_movements
@@ -632,11 +696,16 @@ if (scenario) {
   // qui sotto, dimenticando l'ingrediente dello stato di partenza e i
   // consumi dei conti chiusi. Un numero che descrive il database va
   // chiesto al database.
+  //
+  // ⚠️ I NOMI SONO QUELLI DEL CATALOGO, e non e' una coincidenza da tenere
+  // a mano: se qui ci fosse «Gambero rosso» e nel catalogo «Gambero rosso
+  // di Mazara», il collaudo avrebbe **due prodotti dove ce n'e' uno**, con
+  // due giacenze e due prezzi che non si sommano mai.
   const DISPENSA = [
     ["Pomodoro ciliegino", "verdura", "kg", 4.8, 18, 8, "Ortofrutta PROVA S.r.l."],
     ["Melanzana lunga", "verdura", "kg", 1.95, 10, 4, "Ortofrutta PROVA S.r.l."],
     ["Basilico", "spezie_aromi", "mazzo", 1.15, 6, 10, "Ortofrutta PROVA S.r.l."],
-    ["Gambero rosso", "crostacei_molluschi", "kg", 24.0, 4, 6, "Ittica di Collaudo S.n.c."],
+    ["Gambero rosso di Mazara", "crostacei_molluschi", "kg", 24.0, 4, 6, "Ittica di Collaudo S.n.c."],
     ["Alici fresche", "pesce", "kg", 4.2, 6, 3, "Ittica di Collaudo S.n.c."],
     ["Ricotta di pecora", "latticini", "kg", 7.4, 5, 2, null],
     ["Farina di grano duro", "farine_cereali", "kg", 1.35, 25, 10, null],
@@ -646,7 +715,7 @@ if (scenario) {
   for (const [nome, categoria, unita, prezzo, giacenza, soglia, fornitore] of DISPENSA) {
     const creato = await createIngredient({
       entity_id: ente,
-      name: `${MARCA}${nome}`,
+      name: nome,
       category: categoria,
       unit: unita,
       current_price: prezzo,
@@ -669,22 +738,29 @@ if (scenario) {
   // Il menu: otto piatti, quattro categorie. Le quantità non sono tonde
   // apposta — un food cost che viene 30,00% esatto non fa vedere niente.
   const CARTA = [
-    ["Alici marinate al limone", "antipasto", 9, [["Alici fresche", 0.12], ["Olio extravergine", 0.02]]],
+    // ⚠️ «della casa» perche' nel catalogo esiste gia' «Alici marinate al
+    // limone»: due ricette con lo stesso nome sarebbero una sola dopo la
+    // pulizia, e nessuno saprebbe quale delle due e' sparita.
+    ["Alici marinate della casa", "antipasto", 9, [["Alici fresche", 0.12], ["Olio extravergine", 0.02]]],
     ["Caponata di melanzane", "antipasto", 8, [["Melanzana lunga", 0.22], ["Olio extravergine", 0.03]]],
     ["Busiate al pomodoro e basilico", "primo", 12, [["Farina di grano duro", 0.11], ["Pomodoro ciliegino", 0.18], ["Basilico", 0.15]]],
     ["Ravioli di ricotta", "primo", 14, [["Farina di grano duro", 0.09], ["Ricotta di pecora", 0.13]]],
-    ["Crudo di gambero rosso", "antipasto", 18, [["Gambero rosso", 0.09], ["Olio extravergine", 0.015]]],
+    ["Crudo di gambero", "antipasto", 18, [["Gambero rosso di Mazara", 0.09], ["Olio extravergine", 0.015]]],
     ["Alici fritte", "secondo", 15, [["Alici fresche", 0.24], ["Farina di grano duro", 0.04]]],
     ["Melanzane alla parmigiana", "secondo", 13, [["Melanzana lunga", 0.35], ["Pomodoro ciliegino", 0.12]]],
     ["Cassatina di ricotta", "dolce", 7, [["Ricotta di pecora", 0.09]]],
   ];
-  const menuCollaudo = await createMenu({ name: `${MARCA}Carta di collaudo`, structure: "4-4-4-2" });
+  const menuCollaudo = await createMenu({ name: "Carta di collaudo", structure: "4-4-4-2" });
   for (const [nome, categoria, prezzo, componenti] of CARTA) {
     const r = await createRecipe({
-      name: `${MARCA}${nome}`,
+      name: nome,
       category: categoria,
       recipe_type: "piatto_finito",
-      portions_yield: 4,
+      // ⚠️ UNA porzione, non quattro: le quantita' qui sotto sono gia' per
+      // porzione, e con 4 ogni food cost usciva diviso per quattro — l'1-2%
+      // su piatti da 9-18 €, cioe' un numero che non puo' mostrare nessun
+      // problema. Era gia' corretto nei due mesi, e non qui.
+      portions_yield: 1,
     });
     for (const [ingrediente, quantita] of componenti) {
       await addRecipeIngredient(r.id, {
@@ -757,7 +833,7 @@ if (scenario) {
       const { data: ric } = await supabase
         .from("recipes")
         .select("id")
-        .eq("name", `${MARCA}${CARTA[indice][0]}`)
+        .eq("name", CARTA[indice][0])
         .single();
       const r = await orders.addDraftItem(c, {
         recipeId: ric.id,
@@ -862,11 +938,14 @@ if (scenario) {
     segna("documento collegato a una fattura");
   }
 
-  await addBelowThresholdItems();
-  const { count: inLista } = await supabase
-    .from("shopping_list_items")
-    .select("id", { count: "exact", head: true });
-  segna("righe in lista della spesa, nate dalle soglie", inLista ?? 0);
+  // 🔴 QUI NON SI RIEMPIE PIU' LA LISTA, e l'ordine e' il difetto che si
+  // sta correggendo: girava **prima** che lo scenario dei due mesi creasse
+  // i cento ingredienti, quindi trovava solo gli otto dello stato di
+  // partenza. Misurato: **20 sotto scorta minima e 3 righe in lista** —
+  // una lista corta che sembrava completa.
+  //
+  // Si riempie in fondo, quando la dispensa c'e' tutta e i conti chiusi
+  // hanno gia' scaricato.
 
   // Il numero vero degli ingredienti sotto scorta minima, chiesto al
   // database dopo che i conti chiusi hanno scaricato: è quello che si
@@ -1070,7 +1149,7 @@ if (scenario) {
   const { registraConteggioCassa, versaInBanca } = await carica("/src/lib/api/cash.js");
   await costruisciDueMesi({
     MARCA, ente, segna, supabase, orders, oggi,
-    dispensa, DISPENSA,
+    dispensa,
     createRecipe, addRecipeIngredient, updateRecipe,
     createMenu, addMenuItem, setActiveMenu,
     createIngredient, updateIngredientPrice,
@@ -1083,6 +1162,17 @@ if (scenario) {
     fornitori: Object.values(fornitori),
     copertoPrezzo: impostazioni?.coperto_price ?? null,
   });
+
+  // --- La lista della spesa, ADESSO che la dispensa c'e' tutta ---
+  //
+  // ⚠️ Dopo i due mesi e non prima: le soglie hanno senso solo su una
+  // dispensa completa, e i conti chiusi hanno gia' scaricato quello che
+  // hanno consumato.
+  await addBelowThresholdItems();
+  const { count: inLista } = await supabase
+    .from("shopping_list_items")
+    .select("id", { count: "exact", head: true });
+  segna("righe in lista della spesa, nate dalle soglie", inLista ?? 0);
 
   // --- La Proiezione: una previsione aperta, dell'anno in corso ---
   //
@@ -1161,7 +1251,11 @@ if (scenario) {
 titolo("Fatto");
 for (const r of creato) console.log(`   ${r}`);
 console.log("");
-console.log("   Tutto e' marcato «BASE-» e si rifa' con:  npm run prova:base -- --rifai");
+console.log("   Conti, movimenti e clienti sono marcati «BASE-».");
+console.log("   Ingredienti, ricette e menu hanno il loro nome vero: la pulizia");
+console.log("   li riconosce dagli elenchi di scripts/scenario/carta.mjs.");
+console.log("");
+console.log("   Si rifa' tutto con:                        npm run prova:scenario");
 console.log("   Cosa manca ancora al progetto di prova:   npm run prova:stato");
 console.log("");
 

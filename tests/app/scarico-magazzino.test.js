@@ -94,10 +94,26 @@ describe("il magazzino scende chiudendo un conto", () => {
       // e senza, il FEFO partirebbe da una giacenza che non è quella scritta
       // in questa prova.
       await titolare.from("stock_lots").delete().eq("ingredient_id", ingrediente);
+      // ⚠️ E IL PREZZO SI RIMETTE ANCHE QUI. Metterlo solo alla creazione
+      // non basta: l'ingrediente esiste gia' da giorni, quindi quel ramo
+      // non viene mai percorso e il prezzo resta quello di prima — cioe'
+      // zero. E' la trappola del 12/08 («seminare senza aggiornare non fa
+      // nulla sulla riga che c'e' gia'»), vista da questa parte.
+      await titolare.from("ingredients").update({ current_price: 8.4 }).eq("id", ingrediente);
     } else {
       const i = await titolare
         .from("ingredients")
-        .insert({ entity_id: ente, name: NOME, category: "verdura", unit: "kg", waste_percentage_default: 0 })
+        // 🔴 UN PREZZO VERO, e non e' un dettaglio (22/08, reperto di
+        // Alessio dal collaudo). Questo ingrediente **resta nella dispensa**
+        // dopo la prova — e' voluto, cancellarlo cambierebbe il suo
+        // identificativo a ogni giro — ma senza prezzo restava a
+        // **0,00 €/kg** in mezzo ai cento prodotti veri: un ingrediente che
+        // costa zero fa un food cost sbagliato **senza dire niente**.
+        //
+        // ⚠️ Il costo dello scarico si prende dai LOTTI, non da qui: questo
+        // valore non cambia cosa misura la prova, cambia solo che non
+        // lascia un numero falso nel collaudo.
+        .insert({ entity_id: ente, name: NOME, category: "verdura", unit: "kg", current_price: 8.4, waste_percentage_default: 0 })
         .select()
         .single();
       expect(i.error).toBeNull();
