@@ -11,8 +11,17 @@ export default function Sidebar({ onNavigate }) {
   // compaiono affatto (§3.5), non sono solo bloccate.
   const visibleModules = MODULES.filter((m) => isTitolare || m.staffVisible);
 
+  // 🔴 ANCHE QUESTE SONO RIGHE DA TOCCARE (22/08). Misuravano 5,07 mm di
+  // altezza e 1,89 di testo: sul computer è un menu, ma **sugli schermi
+  // stretti questo elenco È il menu che si apre col pulsante in alto**, e
+  // lì si preme col dito.
+  //
+  // ⚠️ Nessuno dei due giri di misure poteva vederle, ed è un limite del
+  // metodo più che una dimenticanza: il censimento guardava dentro
+  // `<main>`, cioè **la schermata**. La barra e la testata stanno fuori —
+  // in nessuna schermata e in tutte.
   const linkClasses = ({ isActive }) =>
-    `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+    `tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala transition-colors ${
       isActive
         ? "bg-b58-terracotta text-b58-parchment"
         : "text-b58-charcoal-soft hover:bg-b58-cream-dark"
@@ -50,7 +59,7 @@ export default function Sidebar({ onNavigate }) {
       <div className="px-3 py-4 border-t border-b58-charcoal/10">
         <button
           onClick={logout}
-          className="w-full text-left flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          className="tocco-bottone w-full text-left flex items-center gap-3 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
         >
           Esci
         </button>

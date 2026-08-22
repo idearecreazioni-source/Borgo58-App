@@ -52,10 +52,21 @@ export default function Layout() {
         {/* Topbar mobile */}
         <header className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
           <Logo size="sm" />
+          {/* 🔴 IL BERSAGLIO CHE NESSUN CENSIMENTO POTEVA VEDERE (22/08,
+              trovato da una sessione parallela). Misurava **5,14 × 5,14
+              mm** — `p-2` più un'icona da 22 punti — contro un criterio di
+              8,50, ed è su **tutte** le schermate.
+              ⚠️ Il setaccio del giro delle misure guardava una schermata
+              per volta: questo sta nel LAYOUT, cioè in nessuna di quelle
+              che apriva e in tutte quelle che mostrava. *Un difetto che
+              sta dappertutto non compare in nessun elenco per schermata.*
+              ⚠️ E compare **solo sugli schermi stretti** (`lg:hidden`) —
+              cioè esattamente sul tablet e sul telefono, dove si tocca col
+              dito. Sul computer non c'è. */}
           <button
             aria-label="Apri menu"
             onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-lg text-b58-charcoal hover:bg-b58-cream-dark"
+            className="tocco-bottone inline-flex items-center justify-center rounded-lg text-b58-charcoal hover:bg-b58-cream-dark"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M4 6h16M4 12h16M4 18h16" />
