@@ -46,7 +46,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
         <div className="p-4 overflow-y-auto space-y-3">
           {/* Questo blocco e' l'unica cosa che finisce sulla carta: vedi
               .stampa-ticket in index.css. */}
-          <div className="print:text-xs stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
+          <div className="print:text-sm stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
             <div className="text-center font-bold tracking-wide border border-b58-gold-dark/40 bg-b58-gold/15 rounded py-1 mb-2">
               DOCUMENTO NON FISCALE
             </div>
@@ -73,7 +73,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               </div>
             )}
 
-            <div className="print:text-sm flex justify-between border-t border-dashed border-b58-charcoal/40 mt-1.5 pt-1.5 font-bold testo-sala">
+            <div className="print:text-base flex justify-between border-t border-dashed border-b58-charcoal/40 mt-1.5 pt-1.5 font-bold testo-sala">
               <span>TOTALE</span>
               <span>{formatEUR(total)}</span>
             </div>
@@ -81,13 +81,13 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
             {/* Divisione informativa (§3.2.2): sul preconto si vede subito
                 quanto viene a testa. L'arrotondamento si fa alla chiusura. */}
             {coperti >= 2 && total > 0 && (
-              <div className="print:text-[10.5px] flex justify-between testo-sala pt-0.5">
+              <div className="print:text-[13px] flex justify-between testo-sala pt-0.5">
                 <span>A testa ({coperti})</span>
                 <span>{formatEUR(total / coperti)}</span>
               </div>
             )}
 
-            <div className="print:text-[10px] text-center testo-sala mt-2 leading-snug">
+            <div className="print:text-[12px] text-center testo-sala mt-2 leading-snug">
               Documento non fiscale, privo di valore ai fini IVA.<br />
               Il conto resta aperto.
             </div>

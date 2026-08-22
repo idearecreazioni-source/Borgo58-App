@@ -210,7 +210,7 @@ export default function DipendenteDetail() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
+    <div className="documento-stampato max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
         <Link to="/personale" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Personale
@@ -289,7 +289,7 @@ export default function DipendenteDetail() {
             onChange={(e) => setField("prior_year_income", e.target.value)}
             className={inputClass}
           />
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1 print:hidden">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
@@ -359,7 +359,7 @@ export default function DipendenteDetail() {
               + Aggiungi documento
             </button>
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">Con una scadenza, viene creato un promemoria in Agenda.</p>
+          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2 print:hidden">Con una scadenza, viene creato un promemoria in Agenda.</p>
         </div>
       </div>
 
@@ -403,7 +403,7 @@ export default function DipendenteDetail() {
       {/* Buste paga */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-1">Buste paga</h2>
-        <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+        <p className="text-[11px] text-b58-charcoal-soft/70 mb-4 print:hidden">
           Archivio: le buste paga le calcola il Consulente del Lavoro, qui si conservano importi e riferimento.
         </p>
         {payslips.length > 0 && (

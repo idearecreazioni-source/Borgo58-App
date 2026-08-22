@@ -158,3 +158,38 @@ body {
     color: #000;
   }
 }
+
+/* 🔴 UNA SCHEDA CHE SI STAMPA È UN DOCUMENTO, NON UN MODULO (22/08/2026).
+   Misurato sulla carta: il dossier del dipendente usciva con le caselle di
+   testo disegnate e i menu a tendina con la loro freccina — la fotografia di
+   una schermata, non un foglio da consegnare. E quel foglio va al
+   consulente del lavoro.
+
+   ⚠️ La cura è in CSS e non nel JSX, ed è la ragione per cui sta qui: la
+   strada alternativa era scrivere accanto a ogni campo una copia testuale
+   `hidden print:block`, cioè **due posti che dicono la stessa cosa e
+   possono divergere** — il doppione che questo progetto toglie invece di
+   sorvegliare. Così il valore resta uno solo: cambia come si VEDE, non
+   cosa c'è scritto.
+
+   ⚠️ Le etichette restano: su un modulo sono ridondanti perché il campo si
+   spiega da sé, su un foglio stampato sono l'unica cosa che dice cosa
+   significa quel valore.
+
+   ⚠️ Limite dichiarato: su una `textarea` il browser stampa solo le righe
+   che entrano nella sua altezza. Qui non ce ne sono, ma chi aggiunge questa
+   classe a una schermata che ne ha deve guardare quel campo. */
+@media print {
+  .documento-stampato input,
+  .documento-stampato select,
+  .documento-stampato textarea {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    color: #000;
+    box-shadow: none;
+  }
+}

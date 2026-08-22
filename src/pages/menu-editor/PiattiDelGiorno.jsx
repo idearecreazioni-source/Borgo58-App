@@ -257,11 +257,34 @@ export default function PiattiDelGiorno() {
               NON SA quali allergeni contengano. Stampare un elenco per le
               une e non per le altre rifarebbe qui lo stesso difetto appena
               chiuso sul menu principale. */}
-          <p className="text-[10px] text-b58-charcoal-soft/60 text-center mt-6">
+          {/* 🔴 ERA `text-[10px]`, cioè **2,65 mm sulla carta** (22/08): la
+              riga più piccola dell'inserto era quella che dice al cliente
+              di chiedere degli allergeni — una riga di legge su un foglio
+              che si mette in mano a chi mangia. Portata a 3,17 mm, la
+              stessa taglia del corpo del preconto. */}
+          <p className="text-xs text-b58-charcoal-soft/70 text-center mt-6">
             In caso di allergie o intolleranze, chiedi al personale: teniamo l&apos;elenco
             completo degli allergeni per ogni piatto.
           </p>
         </div>
+      )}
+
+      {/* 🔴 IL FOGLIO BIANCO (22/08). Il pulsante «Stampa inserto» compare
+          solo con un giorno scelto e almeno un piatto — quindi da lì un
+          foglio vuoto non esce. Ma `Ctrl+P` non chiede il permesso a
+          nessuno, e su questa pagina stampava **una pagina
+          completamente bianca**: misurato, 246 caratteri a schermo e 0
+          sulla carta, perché tutti i comandi sono `print:hidden`.
+          ⚠️ Un foglio bianco non è un errore che si riconosce: sembra la
+          stampante rotta, o la carta finita. Adesso la carta dice cosa
+          manca — ed è la stessa regola dei registri che dichiarano di
+          essere incompleti invece di uscire vuoti.
+          ⚠️ `hidden print:block`: a schermo non compare niente, perché lì
+          la pagina si spiega da sé e una riga in più sarebbe ingombro. */}
+      {(!selected || items.length === 0) && (
+        <p className="hidden print:block text-center text-sm">
+          Nessun piatto del giorno da stampare: scegli una data e aggiungi almeno un piatto.
+        </p>
       )}
     </div>
   );

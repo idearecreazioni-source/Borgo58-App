@@ -229,18 +229,18 @@ export default function DeduzioniFiscali() {
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Riepilogo {year}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
-            <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Speso</div>
+            <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">Speso</div>
             <div className="text-lg text-b58-charcoal">{formatEUR(totali.speso)}</div>
           </div>
           <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
-            <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Deducibile (stima)</div>
+            <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">Deducibile (stima)</div>
             <div className="text-lg text-b58-charcoal">{formatEUR(totali.deducibile)}</div>
           </div>
           {totali.daClassificare > 0 && (
             <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-gold-dark/40">
-              <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Da classificare</div>
+              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">Da classificare</div>
               <div className="text-lg text-b58-gold-dark">{totali.daClassificare}</div>
-              <div className="text-[11px] text-b58-charcoal-soft/70 mt-0.5">non contate nel deducibile</div>
+              <div className="text-xs text-b58-charcoal-soft/70 mt-0.5">non contate nel deducibile</div>
             </div>
           )}
         </div>
@@ -423,7 +423,7 @@ export default function DeduzioniFiscali() {
                       <span className="text-xs text-b58-charcoal-soft"> · {e.regola ?? "non classificata"}</span>
                       {/* Il motivo arriva dal database insieme alla quota:
                           un numero senza la sua ragione è una scatola nera. */}
-                      <div className="text-[11px] text-b58-charcoal-soft/70">{e.motivo}</div>
+                      <div className="text-xs text-b58-charcoal-soft/70">{e.motivo}</div>
                     </td>
                     <td className="py-2 text-b58-charcoal-soft text-xs">
                       {labelFor(FISCAL_PAYMENT_METHODS, e.payment_method)}
@@ -451,7 +451,7 @@ export default function DeduzioniFiscali() {
                 ))}
               </tbody>
             </table>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
+            <p className="text-xs text-b58-charcoal-soft/70 mt-3">
               La colonna «Deducibile» la calcola il database, non questa pagina. Un trattino vuol dire{" "}
               <strong>non classificata</strong>: non è zero, è che nessuno ha ancora detto se si deduce — e
               infatti non è contata da nessuna parte.
