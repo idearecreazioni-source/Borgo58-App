@@ -38,7 +38,7 @@
 //
 // Non tocca MAI il database vero: il controllo è la prima cosa che fa.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { createServer } from "vite";
 import { NOMI_INGREDIENTI, NOMI_RICETTE_TUTTE } from "./scenario/carta.mjs";
 import {
@@ -361,6 +361,166 @@ begin
   delete from customers where name like '${MARCA}%';
   get diagnostics n = row_count; tolte := tolte + n;
 
+  -- -------------------------------------------------------------------
+  -- 🔴 LE TABELLE CHE LA PULIZIA NON NOMINAVA (23/08/2026)
+  --
+  -- Misurato prima di scrivere: dopo cinque giri di «--rifai» il progetto
+  -- di prova aveva **15 preventivi invece di 3** — cinque copie identiche
+  -- dello stesso battesimo, dello stesso preventivo aziendale, dello
+  -- stesso rifiuto. Il comando diceva «rifallo» e invece **accumulava**,
+  -- che e' peggio di una pulizia che non c'e': quella si vede.
+  --
+  -- ⚠️ E' la seconda volta: il 22/08 era successo coi **conti** (220
+  -- invece di 55), e la cura era stata mettere la marca sui conti. Qui la
+  -- cura e' diversa e piu' larga — la pulizia si e' presa **due guardiani
+  -- generici** (piu' sotto, in togliBase()), perche' un elenco
+  -- scritto a mano dimentica sempre la riga aggiunta ieri.
+  -- -------------------------------------------------------------------
+
+  -- I preventivi, con le loro righe e i fogli stampati. PRIMA delle
+  -- prenotazioni: un preventivo accettato ne tiene una per mano.
+  delete from preventivo_fogli
+   where preventivo_id in (select id from preventivi where cliente_nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from preventivo_righe
+   where preventivo_id in (select id from preventivi where cliente_nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from giornate_sold_out
+   where preventivo_id in (select id from preventivi where cliente_nome like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from preventivi where cliente_nome like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- Quello che pende dai conti dello scenario.
+  delete from chiamate_turno where order_id in (select id from orders where note like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from segnalazioni_fiscali where order_id in (select id from orders where note like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from discounts_gifts
+   where note like '${MARCA}%' or causale_note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- Quello che pende dalle ricette e dagli ingredienti dello scenario.
+  delete from storico_costi_ricetta
+   where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from recipe_steps
+   where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from recipe_videos
+   where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from produzioni
+   where recipe_id in (select id from recipes where (name in (${RICETTE_SQL}) or name like '${MARCA}%'))
+      or note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from rettifiche_giacenza
+   where note like '${MARCA}%'
+      or ingredient_id in (select id from ingredients where (name in (${INGREDIENTI_SQL}) or name like '${MARCA}%'));
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from intercompany_cessions where notes like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from foraged_items where note like '${MARCA}%' or species like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from crops where name like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- Gli ordini ai fornitori.
+  delete from ordini_fornitore_righe
+   where ordine_id in (select id from ordini_fornitore where note like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from ordini_fornitore where note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- I soldi che nessun elenco nominava.
+  delete from restituzioni_prestito
+   where prestito_id in (select id from prestiti_privati where nota like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from prestiti_privati where nota like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from anticipazioni_socio where nota like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from tag_anticipazioni where etichetta like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from deductible_expenses where note like '${MARCA}%' or description like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from fiscal_tools where name like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from scadenze_previste where nota like '${MARCA}%' or descrizione like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from periodi_anomali where nota like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- ⚠️ QUESTE SI TOLGONO TUTTE, e va detto perche': non hanno **nessuna
+  -- colonna** dove scrivere una marca. Sono appunti di una giornata
+  -- (dov'erano i tavoli, quanti coperti aveva quel gruppo, quanto c'era
+  -- nel cassetto), e rimettere lo scenario vuol dire «il progetto di prova
+  -- torni presentabile». Se Alessio conta il cassetto durante il collaudo
+  -- e poi rilancia il comando, quel conteggio se ne va: e' il patto di
+  -- «--rifai», non una dimenticanza.
+  delete from conteggi_cassa;
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from correzioni_coperti;
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from disposizioni_giornaliere;
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from domande_archivio;
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- La posta e i suoi allegati, il menu del giorno, la carta delle
+  -- bevande, le chiusure per data: tutte marcate dove si puo'.
+  delete from posta_azioni
+   where posta_id in (select id from posta_ricevuta where oggetto like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from posta_allegati
+   where posta_id in (select id from posta_ricevuta where oggetto like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from posta_ricevuta where oggetto like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from daily_menu_items
+   where daily_menu_id in (select id from daily_menus where note like '${MARCA}%' or title like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from daily_menus where note like '${MARCA}%' or title like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from bar_items where note like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from service_closures where motivo like '${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from reservation_deposits
+   where reservation_id in (select id from reservations where customer_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+  delete from email_inviate
+   where reservation_id in (select id from reservations where customer_name like '${MARCA}%');
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- I tre buchi trovati dal guardiano nuovo, la prima volta che ha parlato
+  -- (23/08/2026, secondo giro di prova): tre tabelle crescevano a ogni
+  -- «--rifai», e nessuna era nell'elenco.
+  --
+  -- 1. GLI IMPEGNI NATI DA SOLI. Un documento con una scadenza si porta
+  --    dietro un promemoria in Agenda: i documenti si cancellavano, i
+  --    promemoria no. Contati: **36 righe «Scadenza documento: BASE-…»**,
+  --    cioe' la stessa scadenza ripetuta diciotto volte in un'Agenda che
+  --    ne ha venti vere. Il titolo porta la marca, quindi il criterio c'e'.
+  delete from tasks where title like '%${MARCA}%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- 2. I MOVIMENTI NATI DA UN CONTEGGIO DEL CASSETTO. La differenza fra il
+  --    contato e il teorico genera un movimento vero (e' la decisione del
+  --    15/08: se restasse dichiarata e basta, il saldo continuerebbe a dire
+  --    un numero che il cassetto ha gia' smentito). Quel movimento non ha
+  --    marca, ma ha un padre: e i conteggi qui sopra se ne vanno tutti.
+  delete from cash_movements where note like 'Differenza rilevata contando il cassetto%';
+  get diagnostics n = row_count; tolte := tolte + n;
+
+  -- 3. GLI ALLARMI. Sono la traccia di quello che e' andato storto mentre
+  --    lo scenario si costruiva — e lo scenario li rifa' ogni volta. Si
+  --    tolgono TUTTI, come i conteggi: non c'e' nessuna colonna dove
+  --    scrivere una marca, e un elenco di guasti vecchi di cinque giri
+  --    rende illeggibile quello di stasera.
+  delete from allarmi;
+  get diagnostics n = row_count; tolte := tolte + n;
+
   -- Le lapidi lasciate dalle versioni precedenti di questo comando, quando
   -- la pulizia passava ancora dall'app e i trigger erano accesi.
   delete from deleted_records where record::text like '%${MARCA}%';
@@ -402,6 +562,28 @@ begin
   get diagnostics n = row_count; tolte := tolte + n;
   delete from ingredients where name like 'TEST-AUTO%';
   get diagnostics n = row_count; tolte := tolte + n;
+
+  -- 🔴 E IL REGISTRO DELLE CANCELLAZIONI, che era il piu' sporco di tutti
+  -- (23/08/2026). Contate: **2.924 lapidi**, di cui 1.225 riconoscibili
+  -- come «TEST-AUTO», 94 come «__PROVA__» e **1.605 che non si possono
+  -- attribuire a nessuno** — righe di comanda e movimenti di cassa
+  -- cancellati dalle prove automatiche, la cui copia non contiene nessun
+  -- nome.
+  --
+  -- ⚠️ Quel registro e' una SCHERMATA: il titolare lo apre per vedere cosa
+  -- e' stato cancellato. Con duemilanovecento righe finte dentro, non
+  -- risponde piu' a nessuna domanda — e durante il collaudo, se Alessio
+  -- cancella qualcosa e va a controllare che sia rimasto scritto, non lo
+  -- trova.
+  --
+  -- ⚠️ Si tolgono TUTTE, e il prezzo e' dichiarato: una cancellazione che
+  -- Alessio fa durante il collaudo sparisce al «--rifai» successivo. E' lo
+  -- stesso patto dei conteggi del cassetto — rimettere lo scenario vuol
+  -- dire «il progetto di prova torni presentabile». Sul database vero
+  -- quel registro resta di sola lettura per tutti, e nessuno lo tocca.
+  delete from deleted_records;
+  get diagnostics n = row_count; tolte := tolte + n;
+
   raise notice 'avanzi tolti: %', tolte;
 end $avanzi$;
 reset session_replication_role;
@@ -413,6 +595,177 @@ function pulisci(url, sql, etichetta, chiave) {
   console.log(`   ${etichetta}: ${quante}`);
 }
 
+// ---------------------------------------------------------------------
+// 🔴 I DUE GUARDIANI DELLA PULIZIA (23/08/2026)
+//
+// Un elenco scritto a mano dimentica sempre la riga aggiunta ieri: e'
+// successo ai conti il 22/08 (220 invece di 55) e ai preventivi il 23/08
+// (15 invece di 3). Allungare l'elenco non chiude il buco — lo sposta alla
+// prossima tabella. Quindi la pulizia si e' presa due controlli che **non
+// contengono nessun elenco** e non possono invecchiare:
+//
+//   A. NESSUN ORFANO. Le chiavi esterne di questo database dicono che una
+//      riga non puo' puntare a una cosa che non c'e'. La pulizia pero'
+//      gira con `session_replication_role = replica`, che spegne i trigger
+//      **e con loro le chiavi esterne**: cancellando una ricetta, le sue
+//      righe di storico restavano li' a puntare al vuoto, e nessuno lo
+//      diceva. Misurato prima di scrivere questo: **2.233 righe orfane**,
+//      di cui 2.010 di `storico_costi_ricetta` e 144 di
+//      `rettifiche_giacenza` — quest'ultima con un vincolo `restrict`, che
+//      esiste apposta per gridare quando qualcuno se ne dimentica.
+//      ⚠️ Il verso e' quello che conta: la regola che avrebbe segnalato la
+//      dimenticanza e' proprio quella che la pulizia doveva spegnere per
+//      poter lavorare. Allora la si rimette **dopo**, come controllo.
+//
+//   B. NIENTE CRESCE FRA UN GIRO E L'ALTRO. Dopo la pulizia il database
+//      deve tornare com'era dopo la pulizia precedente. Se una tabella ha
+//      piu' righe di allora, qualcosa si sta accumulando — e lo dice senza
+//      sapere quale tabella sia, cioe' funziona anche per quelle che
+//      nasceranno domani.
+// ---------------------------------------------------------------------
+
+// A. Gli orfani: prima si spazzano, poi si controlla che non ce ne siano.
+// Il giro si ripete finche' non ne toglie piu' nessuno (cancellare un
+// figlio orfano puo' lasciare orfano un nipote).
+const SQL_ORFANI = `
+set session_replication_role = replica;
+do $orfani$
+declare
+  r      record;
+  n      bigint;
+  tolte  bigint := 0;
+  giro   int := 0;
+  ancora boolean := true;
+begin
+  while ancora and giro < 6 loop
+    ancora := false;
+    giro := giro + 1;
+    for r in
+      select src.relname as tabella, att.attname as colonna,
+             tgt.relname as verso,   tatt.attname as chiave
+        from pg_constraint con
+        join pg_class src on src.oid = con.conrelid
+        join pg_class tgt on tgt.oid = con.confrelid
+        join pg_namespace ns  on ns.oid  = src.relnamespace
+        join pg_namespace tns on tns.oid = tgt.relnamespace
+        join pg_attribute att  on att.attrelid  = con.conrelid  and att.attnum  = con.conkey[1]
+        join pg_attribute tatt on tatt.attrelid = con.confrelid and tatt.attnum = con.confkey[1]
+       where con.contype = 'f'
+         and ns.nspname = 'public' and tns.nspname = 'public'
+         and array_length(con.conkey, 1) = 1
+    loop
+      execute format(
+        'delete from public.%I s where s.%I is not null and not exists (select 1 from public.%I t where t.%I = s.%I)',
+        r.tabella, r.colonna, r.verso, r.chiave, r.colonna);
+      get diagnostics n = row_count;
+      if n > 0 then tolte := tolte + n; ancora := true; end if;
+    end loop;
+  end loop;
+  raise notice 'orfani tolti: %', tolte;
+end $orfani$;
+reset session_replication_role;
+`;
+
+const SQL_CONTROLLO_ORFANI = `
+do $controllo$
+declare
+  r      record;
+  n      bigint;
+  rimasti bigint := 0;
+  dove   text := '';
+begin
+  for r in
+    select src.relname as tabella, att.attname as colonna,
+           tgt.relname as verso,   tatt.attname as chiave
+      from pg_constraint con
+      join pg_class src on src.oid = con.conrelid
+      join pg_class tgt on tgt.oid = con.confrelid
+      join pg_namespace ns  on ns.oid  = src.relnamespace
+      join pg_namespace tns on tns.oid = tgt.relnamespace
+      join pg_attribute att  on att.attrelid  = con.conrelid  and att.attnum  = con.conkey[1]
+      join pg_attribute tatt on tatt.attrelid = con.confrelid and tatt.attnum = con.confkey[1]
+     where con.contype = 'f'
+       and ns.nspname = 'public' and tns.nspname = 'public'
+       and array_length(con.conkey, 1) = 1
+  loop
+    execute format(
+      'select count(*) from public.%I s where s.%I is not null and not exists (select 1 from public.%I t where t.%I = s.%I)',
+      r.tabella, r.colonna, r.verso, r.chiave, r.colonna) into n;
+    if n > 0 then
+      rimasti := rimasti + n;
+      dove := dove || format(E'\\n   - %s righe in %s.%s → %s', n, r.tabella, r.colonna, r.verso);
+    end if;
+  end loop;
+  if rimasti > 0 then
+    raise exception 'La pulizia ha lasciato % righe che puntano al vuoto:%', rimasti, dove;
+  end if;
+  raise notice 'orfani rimasti: 0';
+end $controllo$;
+`;
+
+// B. Il censimento, per accorgersi da soli di accumulare.
+// ⚠️ Il file e' git-ignored (`*.local`) apposta: e' la fotografia del
+// computer su cui gira, non un dato del progetto. Un conteggio committato
+// diventerebbe un fossile — la trappola del 18/08.
+const CENSIMENTO = "conteggi-scenario.local";
+
+const SQL_CENSIMENTO = `
+select c.relname || ' ' || (
+         xpath('/row/c/text()',
+               query_to_xml(format('select count(*) as c from public.%I', c.relname),
+                            false, true, ''))
+       )[1]::text::bigint
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind = 'r'
+ order by 1;
+`;
+
+function censimento(url) {
+  const uscita = interroga(url, SQL_CENSIMENTO);
+  const conta = {};
+  for (const riga of uscita.split(/\r?\n/)) {
+    const m = riga.trim().match(/^([a-z0-9_]+) (\d+)$/);
+    if (m) conta[m[1]] = Number(m[2]);
+  }
+  return conta;
+}
+
+function confrontaColGiroPrecedente(url) {
+  const adesso = censimento(url);
+  if (!Object.keys(adesso).length) {
+    console.log("   ⚠ censimento vuoto: non riesco a contare le tabelle.");
+    return;
+  }
+  let prima = null;
+  if (existsSync(CENSIMENTO)) {
+    try {
+      prima = JSON.parse(readFileSync(CENSIMENTO, "utf8"));
+    } catch {
+      prima = null;
+    }
+  }
+  writeFileSync(CENSIMENTO, JSON.stringify(adesso, null, 1));
+  if (!prima) {
+    console.log("   niente da confrontare: e' il primo giro su questo computer.");
+    return;
+  }
+  const cresciute = Object.keys(adesso)
+    .filter((t) => (adesso[t] ?? 0) > (prima[t] ?? 0))
+    .map((t) => `${t}: ${prima[t] ?? 0} → ${adesso[t]}`);
+  if (!cresciute.length) {
+    console.log("   nessuna tabella e' cresciuta dal giro precedente.");
+    return;
+  }
+  // ⚠️ Non si ferma il comando: si grida. Una tabella puo' crescere per una
+  // ragione buona (una migrazione nuova, una riga scritta da Alessio fra i
+  // due giri), e un comando che si rifiuta di partire per questo verrebbe
+  // aggirato. Ma il numero si vede, e la volta che e' un accumulo si vede
+  // subito quale tabella lo sta facendo.
+  console.log("   🔴 DOPO LA PULIZIA QUESTE TABELLE HANNO PIU' RIGHE DI PRIMA:");
+  for (const r of cresciute) console.log(`      ${r}`);
+  console.log("      (se non le ha scritte Alessio fra i due giri, la pulizia le sta dimenticando)");
+}
+
 function togliBase() {
   const config = leggiConfigurazione();
   const url = soloProva(
@@ -420,6 +773,12 @@ function togliBase() {
   );
   pulisci(url, SQL_PULIZIA, "righe dello scenario tolte", "righe tolte");
   pulisci(url, SQL_AVANZI_PROVE, "avanzi delle prove automatiche tolti", "avanzi tolti");
+  pulisci(url, SQL_ORFANI, "righe rimaste a puntare al vuoto, tolte", "orfani tolti");
+  // ⚠️ E poi si CONTROLLA, che e' un'altra cosa dal ripulire: un divieto
+  // che non si puo' ricontrollare dopo non e' un divieto.
+  interroga(url, SQL_CONTROLLO_ORFANI);
+  console.log("   controllo: nessuna riga punta piu' al vuoto");
+  confrontaColGiroPrecedente(url);
 }
 
 // «C'è già?» si chiede con gli occhi dell'app, non del proprietario del
@@ -441,6 +800,43 @@ if (giaCiSono > 0 && !rifai) {
     "Per rifarlo da capo:  npm run prova:base -- --rifai"
   );
 }
+// ---------------------------------------------------------------------
+// 🔴 UNO ALLA VOLTA — il lucchetto (23/08/2026)
+//
+// Successo stanotte: due costruzioni dello scenario lanciate insieme sullo
+// stesso database. La seconda si e' fermata con «Questi tavoli hanno gia'
+// un conto aperto: T1» — un messaggio giusto, che pero' fa cercare un
+// difetto nel gestionale invece che nel modo in cui e' stato lanciato il
+// comando. E la pulizia della seconda ha portato via meta' del lavoro
+// della prima, lasciando il database in uno stato che non e' ne' quello di
+// prima ne' quello di dopo.
+//
+// ⚠️ E' la stessa regola che le prove automatiche hanno gia'
+// (`--no-file-parallelism`): il database e' uno solo. Li' era scritta in
+// `package.json`; qui non c'era, e la disciplina non basta — infatti non e'
+// bastata.
+const LUCCHETTO = "scenario-in-corso.local";
+const MINUTI_DI_PAZIENZA = 30;
+if (existsSync(LUCCHETTO)) {
+  const eta = (Date.now() - Number(readFileSync(LUCCHETTO, "utf8").split("\n")[0] || 0)) / 60000;
+  if (eta < MINUTI_DI_PAZIENZA) {
+    fermati(
+      `C'e' gia' una costruzione dello scenario in corso (da ${Math.round(eta)} minuti).`,
+      "Il database di prova e' uno solo: due comandi insieme si pestano i piedi.",
+      `Se sei sicuro che non giri piu' niente, cancella il file ${LUCCHETTO}.`
+    );
+  }
+  console.log(`   (trovato un lucchetto vecchio di ${Math.round(eta)} minuti: lo ignoro)`);
+}
+writeFileSync(LUCCHETTO, `${Date.now()}\n${new Date().toISOString()}\n`);
+process.on("exit", () => {
+  try {
+    unlinkSync(LUCCHETTO);
+  } catch {
+    // Se il lucchetto resta, la prossima esecuzione lo trova vecchio e va avanti.
+  }
+});
+
 if (rifai) {
   titolo("Tolgo lo stato di partenza precedente");
   togliBase();

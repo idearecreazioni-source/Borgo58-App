@@ -299,7 +299,7 @@ export async function costruisciDueMesi(ctx) {
     for (let n = 0; n < serata.conti; n++) {
       const tavolo = tavoli[iTavolo++ % tavoli.length];
       const coperti = serata.ricco ? 2 + Math.floor(rnd() * 6) : 2 + Math.floor(rnd() * 3);
-      const id = await orders.apriConto([tavolo.id], { serata: serata.data });
+      const id = await orders.apriConto([tavolo.id], { serata: serata.data, note: `${MARCA}serata` });
       await orders.setOrderCoperti(id, coperti);
 
       const quanti = Math.max(2, Math.round(coperti * (serata.ricco ? 1.4 : 1.0)));
@@ -346,12 +346,22 @@ export async function costruisciDueMesi(ctx) {
   for (const c of conti) {
     const apertura = `${c.data}T19:${String(10 + Math.floor(rnd() * 45)).padStart(2, "0")}:00`;
     const chiusura = `${c.data}T21:${String(10 + Math.floor(rnd() * 45)).padStart(2, "0")}:00`;
-    // 🔴 LA MARCA VA MESSA QUI, e non è un dettaglio: la pulizia dello
-    // scenario riconosce i conti da `note like 'BASE-%'`. Senza, ogni
-    // esecuzione ne AGGIUNGE 52 senza togliere i precedenti — misurato:
-    // dopo pochi giri il database di prova ne aveva 220. Un comando che
-    // dice «rifallo» e invece accumula è peggio di uno che non pulisce,
-    // perché sembra che pulisca.
+    // 🔴 LA MARCA NON SI SCRIVE PIU' QUI: si scrive all'APERTURA del conto
+    // (23/08/2026), e la riga qui sotto la ripete soltanto.
+    //
+    // La ragione di ieri vale ancora — senza marca la pulizia non riconosce
+    // i conti e ogni esecuzione ne aggiunge senza togliere i precedenti,
+    // misurato: 220 invece di 55. Ma metterla **dopo** lasciava aperto un
+    // caso che stanotte si è presentato davvero: una costruzione
+    // interrotta a metà (o due lanciate insieme) lascia conti **senza
+    // marca**, che nessuna pulizia può più riconoscere. Sono rimasti lì 32
+    // conti e un tavolo aperto su T1, e il comando successivo si è fermato
+    // dicendo «questo tavolo ha già un conto aperto» — un messaggio giusto
+    // che fa cercare il difetto nel posto sbagliato.
+    //
+    // ⚠️ È la stessa forma dei tredici ingredienti col vecchio prefisso
+    // (22/08): *ciò che nasce senza il segno con cui verrà cercato è già
+    // orfano nel momento in cui nasce.*
     const u1 = await supabase.from("orders")
       .update({ opened_at: apertura, closed_at: chiusura, magazzino_scaricato_il: chiusura, note: `${MARCA}serata` })
       .eq("id", c.id);
@@ -377,7 +387,7 @@ export async function costruisciDueMesi(ctx) {
 
   // (a) Un conto ANNULLATO — il cliente se n'è andato prima di ordinare.
   {
-    const id = await orders.apriConto([tavoli[0].id], { serata: giornoDentro(mesePieno, 9) });
+    const id = await orders.apriConto([tavoli[0].id], { serata: giornoDentro(mesePieno, 9), note: `${MARCA}conto annullato` });
     await orders.setOrderCoperti(id, 2);
     await orders.cancelOrder(id, "il tavolo se n'è andato prima di ordinare");
     await supabase.from("orders")
@@ -390,7 +400,7 @@ export async function costruisciDueMesi(ctx) {
   // ⚠️ È il caso che fa divergere la serata di servizio dalla data di
   // chiusura, cioè proprio quello su cui la regola delle 5 esiste.
   {
-    const id = await orders.apriConto([tavoli[1].id], { serata: giornoDentro(mesePieno, 14) });
+    const id = await orders.apriConto([tavoli[1].id], { serata: giornoDentro(mesePieno, 14), note: `${MARCA}chiuso due giorni dopo` });
     await orders.setOrderCoperti(id, 4);
     const r = [];
     for (const p of economici.slice(0, 3)) {
@@ -410,7 +420,7 @@ export async function costruisciDueMesi(ctx) {
   // «anomalie di scarico»: quella schermata deve avere qualcosa dentro,
   // altrimenti si collauda una lista vuota.
   {
-    const id = await orders.apriConto([tavoli[2].id], { serata: giornoDentro(mesePieno, 21) });
+    const id = await orders.apriConto([tavoli[2].id], { serata: giornoDentro(mesePieno, 21), note: `${MARCA}voce libera` });
     await orders.setOrderCoperti(id, 3);
     await orders.updateOrderNote(id, `${MARCA}tavolo vicino alla finestra, cliente abituale`);
     const r = [];
@@ -429,7 +439,7 @@ export async function costruisciDueMesi(ctx) {
   {
     const tre = tavoli.slice(4, 7).map((t) => t.id);
     if (tre.length === 3) {
-      const id = await orders.apriConto(tre, { serata: giornoDentro(mesePieno, 24) });
+      const id = await orders.apriConto(tre, { serata: giornoDentro(mesePieno, 24), note: `${MARCA}tavolone da otto` });
       await orders.setOrderCoperti(id, 8);
       const r = [];
       for (const p of [...cari.slice(0, 3), ...economici.slice(0, 4)]) {

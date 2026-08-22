@@ -9,9 +9,10 @@
 // un documento — e' la funzione `soloProva()` qui sotto, che ferma il
 // programma se nella stringa di collegamento compare il progetto vero.
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { tmpdir } from "node:os";
 
 /** Il progetto di produzione. Se compare dove non deve, si interrompe tutto. */
 export const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
@@ -207,15 +208,47 @@ export function esegui(programma, argomenti, opzioni = {}) {
   return { ok: r.status === 0, uscita: "", errore };
 }
 
-/** Interroga un database e restituisce il risultato come testo grezzo. */
+/**
+ * Interroga un database e restituisce il risultato come testo grezzo.
+ *
+ * 🔴 LA SQL PASSA DA UN FILE, NON DALLA RIGA DI COMANDO (23/08/2026), e non
+ * e' un dettaglio di forma: `psql -c "…"` fa passare il testo dalla riga di
+ * comando, dove su Windows gli accenti e tutto cio' che non e' ASCII
+ * arrivano storti — `invalid byte sequence for encoding "UTF8": 0xab`, cioe'
+ * una virgoletta «. Misurato stanotte: basta un `--` di commento con dentro
+ * una freccia o un punto esclamativo dentro un triangolo e l'interrogazione
+ * non parte.
+ *
+ * ⚠️ Era gia' scritto negli appunti dal 18/08 («la SQL con gli accenti si
+ * applica da file, mai come argomento») ed era rimasta **una regola da
+ * ricordare** invece di una proprieta' dello strumento: chi scriveva una
+ * query nuova doveva sapersela. Adesso lo strumento la rispetta da solo, e
+ * il posto dove la regola era gia' onorata — le migrazioni, che si applicano
+ * con `-f` — smette di essere un'eccezione fortunata.
+ */
 export function interroga(url, sql) {
   const psql = strumento("psql");
-  const r = esegui(psql, ["-v", "ON_ERROR_STOP=1", "-A", "-t", "-d", url, "-c", sql], {
-    silenzioso: true,
-  });
-  if (!r.ok) fermati("Il database non ha risposto:", r.uscita.trim());
-  return r.uscita.trim();
+  const file = path.join(
+    tmpdir(),
+    `borgo58-interroga-${process.pid}-${sqlProgressivo++}.sql`
+  );
+  writeFileSync(file, sql, "utf8");
+  try {
+    const r = esegui(psql, ["-v", "ON_ERROR_STOP=1", "-A", "-t", "-d", url, "-f", file], {
+      silenzioso: true,
+    });
+    if (!r.ok) fermati("Il database non ha risposto:", r.uscita.trim());
+    return r.uscita.trim();
+  } finally {
+    try {
+      unlinkSync(file);
+    } catch {
+      // Se il file resta, resta: non e' una ragione per far fallire una lettura.
+    }
+  }
 }
+
+let sqlProgressivo = 0;
 
 export function fermati(...righe) {
   console.error("");
