@@ -179,7 +179,18 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
   return (
     <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-sm w-full overflow-hidden">
+      {/* 🔴 LA FINESTRA PRENDE QUASI TUTTO LO SCHERMO (22/08, da un rilievo
+          di Alessio in scala reale). Era `max-w-sm` — 384 punti, meno di
+          metà di un tablet da 8 pollici — e con le scritte portate a 3,20 mm
+          le etichette non ci stavano più: «Omaggio» tagliato, «Pagano in due
+          modi» su quattro righe.
+          ⚠️ Ingrandire le scritte dentro un contenitore che non cresce è la
+          stessa forma del difetto della pianta di stamattina: **una misura
+          fissa dentro qualcosa che deve adattarsi**.
+          ⚠️ E la larghezza non è una questione di gusto: *è il momento in
+          cui si incassa*. Non c'è niente di più importante da vedere in quel
+          momento, e non c'è ragione perché stia in un quarto di schermo. */}
+      <div className="bg-white rounded-xl max-w-3xl w-full overflow-hidden">
         <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
           <span className="font-display testo-sala-grande">Chiusura conto — {order.table_label}</span>
           <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
@@ -254,7 +265,12 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2">
+              {/* ⚠️ DUE RIGHE DA DUE, non quattro stretti (22/08). Anche
+                  con la finestra larga, «Pagano in due modi» a 3,20 mm non
+                  sta in un quarto di riga. *Un'etichetta tagliata su un
+                  pulsante che tocca i soldi è peggio di un pulsante in più
+                  in verticale.* */}
+              <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={apriMisto} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Pagano in due modi
                 </button>
@@ -271,9 +287,31 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               <button type="button" onClick={() => setMode("annulla")} className="tocco-bottone w-full testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
                 Annulla tavolo
               </button>
-              <p className="testo-sala text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
-                Nessun incasso viene registrato in cassa: l'integrazione con il registratore telematico (§3.2) arriverà con l'hardware.
-              </p>
+              {/* 🔴 QUI C'ERA: «Nessun incasso viene registrato in cassa:
+                  l'integrazione con il registratore telematico (§3.2)
+                  arriverà con l'hardware.»
+
+                  Non è stata tolta perché era una didascalia: **è stata
+                  tolta perché non è più vera**. Dal 15/08 il saldo di cassa
+                  legge gli incassi in contante DAI CONTI CHIUSI
+                  (`saldo_tesoreria`: `contante_atteso` = prima nota + sala +
+                  mance), e la schermata Cassa li mostra scomposti — «+ X di
+                  sala (N conti)». Quei soldi nel cassetto teorico **ci
+                  sono**.
+
+                  ⚠️ Quello che resta vero è un'altra cosa e molto più
+                  stretta: non nasce un MOVIMENTO di prima nota. Ma chi legge
+                  «nessun incasso viene registrato in cassa» capisce che quei
+                  soldi non compaiono da nessuna parte — ed è il contrario di
+                  come stanno le cose. *Una frase che era giusta quando è
+                  stata scritta e che nessuno ha riletto quando il gestionale
+                  è cambiato sotto.*
+
+                  ⚠️ E non è sostituita da una versione «scritta come
+                  avviso»: al momento di incassare non c'è niente da
+                  avvertire. Dove il limite esiste davvero — la composizione
+                  del cassetto teorico — è già scritto, sotto il saldo in
+                  Cassa. */}
             </>
           )}
 
