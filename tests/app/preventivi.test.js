@@ -303,3 +303,43 @@ describe("il preventivo esiste, e tiene separati il prezzo e il costo", () => {
     await staff.auth.signOut({ scope: "local" });
   });
 });
+
+// =====================================================================
+// 🔴 LA SERA DELL'EVENTO — blocco 5 (22/08/2026)
+// =====================================================================
+//
+// ⚠️ PERCHE' ANCHE QUI, se la migrazione prova già tutto. Perché la
+// migrazione gira **come proprietaria del database**, dove i permessi non
+// esistono (§8, il buco strutturale del 16/08). Queste due funzioni sono
+// `security definer` e servono allo scarico, non alle schermate: se un
+// domani qualcuno le concedesse a `authenticated`, dal browser si
+// leggerebbero **le porzioni concordate di un evento** — cioè un pezzo di
+// una trattativa — e nessuna verifica dentro una migrazione se ne
+// accorgerebbe.
+describe("la sera dell'evento: le porzioni concordate non escono dal database", () => {
+  let titolare;
+  let staff;
+
+  beforeAll(async () => {
+    const cred = credenziali();
+    titolare = await clientAutenticato(cred.titolare);
+    staff = await clientAutenticato(cred.staff);
+  });
+  it("nessuno dei due ruoli può chiedere le porzioni di un evento", async () => {
+    for (const [nome, client] of [["titolare", titolare], ["staff", staff]]) {
+      const { error } = await client.rpc("porzioni_evento_del_conto", {
+        p_order_id: "00000000-0000-0000-0000-000000000000",
+      });
+      expect({ nome, negato: Boolean(error) }).toEqual({ nome, negato: true });
+    }
+  });
+
+  it("e nemmeno il fabbisogno di un conto", async () => {
+    // ⚠️ Era già così prima del 22/08 e deve restarlo: da oggi quella
+    // funzione porta dentro anche le porzioni dell'evento.
+    const { error } = await titolare.rpc("fabbisogno_conto", {
+      p_order_id: "00000000-0000-0000-0000-000000000000",
+    });
+    expect(error).not.toBeNull();
+  });
+});
