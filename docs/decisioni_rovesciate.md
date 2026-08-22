@@ -1207,3 +1207,43 @@ la calibrazione, che **dichiara il prezzo invece di imporlo**.
 ⚠️ **E i sette controlli del 21/08 restano tutti**, perché rispondono a una
 domanda che continua a valere (*il riquadro entra nella pagina?*). Accanto è
 nato quello che mancava: *il disegno entra nel riquadro?*
+
+---
+
+## 28 · 22/08/2026 — «una cosa, un posto solo» (per il solo «Invia»)
+
+**Cosa era stato deciso, e quando.** Il 21/08, guardando la schermata in
+scala reale: gli stessi quattro gesti — Invia, Preconto, Chiudi conto,
+Annulla tavolo — esistevano nella colonna dentro la pianta **e** in un
+riquadro sotto. Alessio li ha voluti in un posto solo.
+
+**La ragione di allora.** Giusta, e resta vera: *due pulsanti che fanno la
+stessa cosa a mezzo metro di distanza sono due cose da imparare, non una
+comodità.*
+
+**Cosa si decide adesso.** «Invia» torna a esistere **anche sotto il
+totale**, in fondo alla comanda. Chiesto da Alessio il 22/08.
+
+**Perché la ragione di allora non vale più — ⚠️ e in buona parte vale
+ancora.** Resta intera per i gesti ripetuti a caso, e infatti **Preconto,
+Chiudi conto e Annulla tavolo non tornano** in fondo alla pagina: il
+rovesciamento riguarda **un gesto solo**. Cade per «Invia» perché quello non
+è lo stesso pulsante messo due volte — è **il punto in cui finiscono due
+percorsi diversi**: chi guarda la sala lo cerca nella colonna, chi ha appena
+finito di segnare i piatti è già in fondo alla lista, col dito lì.
+
+⚠️ **E il prezzo della decisione vecchia è stato tolto, non accettato**: i
+due pulsanti sono **lo stesso pezzo di codice** (`bottoneInvia`), quindi
+contano le stesse righe, si spengono insieme e dicono la stessa parola.
+Misurato: entrambi 8,50 mm di altezza, entrambi spenti quando non c'è niente
+da inviare. *Due copie divergono al primo ritocco; una funzione sola no.*
+
+⚠️ **Quello che NON è stato rovesciato, ed è la cosa più importante di
+questa giornata**: il **pallino unico**. Era stato deciso, la ragione era
+*«a distinguere i due casi basta il colore del tavolo»* — e **la misura ha
+detto che il colore non basta**: un conto aperto senza ordini e un conto con
+piatti segnati e mai inviati hanno **lo stesso identico colore**, perché il
+colore cambia solo quando qualcosa è partito per la cucina. Il pallino unico
+avrebbe cancellato l'informazione invece di semplificarla. Non è registrato
+qui perché **non è avvenuto**: un elenco dei rovesciamenti che contiene
+anche quelli non fatti smette di rispondere alla domanda per cui esiste.

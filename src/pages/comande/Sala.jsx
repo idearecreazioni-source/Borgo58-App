@@ -782,6 +782,28 @@ export default function Sala() {
   // Il contenuto del pannello dei gesti. Cambia con quello che si sta
   // toccando, e per questo non ha un titolo: il titolo sarebbe sempre lo
   // stesso mentre il contenuto cambia.
+  // 🔴 «INVIA» ESISTE IN DUE POSTI, ED È VOLUTO (22/08, chiesto da
+  // Alessio). Due giorni fa i pulsanti doppi sono stati tolti, e questo
+  // **non è lo stesso caso**: là erano quattro gesti ripetuti a caso in
+  // fondo alla pagina, qui è **lo stesso gesto dove finiscono i due
+  // percorsi** — chi guarda la sala lo trova nella colonna, chi finisce
+  // di segnare i piatti è già in fondo alla lista, col dito lì.
+  //
+  // ⚠️ E PER QUESTO È UNA FUNZIONE SOLA, non due pulsanti gemelli:
+  // devono spegnersi insieme, contare le stesse righe e dire la stessa
+  // parola. Due copie divergono al primo ritocco — è la regola che questo
+  // progetto applica ai numeri, e vale per i gesti.
+  const bottoneInvia = (classi = "") => (
+    <button
+      type="button"
+      disabled={busy || draftItems.length === 0}
+      onClick={handleSend}
+      className={`tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment font-semibold px-2 ${classi}`}
+    >
+      Invia{draftItems.length > 0 ? ` (${draftItems.length})` : ""}
+    </button>
+  );
+
   const pannelloGesti = order ? (
     <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5">
       <p className="testo-sala font-semibold text-b58-charcoal-soft leading-none">
@@ -798,14 +820,7 @@ export default function Sala() {
           la colonna è larga 368 punti sul suo tablet e alta mille, quindi
           l'altezza c'è — mentre affiancati «Lascia aperto» non ci starebbe
           con le scritte ingrandite. */}
-      <button
-        type="button"
-        disabled={busy || draftItems.length === 0}
-        onClick={handleSend}
-        className="tocco-bottone w-full rounded-lg bg-b58-olive disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
-      >
-        Invia{draftItems.length > 0 ? ` (${draftItems.length})` : ""}
-      </button>
+      {bottoneInvia("testo-sala")}
       <button
         type="button"
         disabled={sentItems.length === 0}
@@ -929,7 +944,15 @@ export default function Sala() {
     // Alessio: *«preferisco farli comparire di fianco a sinistra, non
     // sotto»* — ed è dove questa colonna sta già, nello spazio di cucina e
     // servizi.
-    <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5 justify-center">
+    // 🔴 I DUE PANNELLI PARTONO DALLO STESSO PUNTO (22/08, da un rilievo
+    // di Alessio in scala reale). Questo aveva `justify-center` e l'altro
+    // no: misurato, «Apri il tavolo» cominciava a **442 punti** su 980 di
+    // colonna, mentre «Invia» del tavolo aperto sta in cima.
+    // ⚠️ Non è una questione di gusto: **in servizio il dito impara una
+    // posizione**, e trovarne un'altra a seconda dello stato costa un
+    // secondo ogni volta e un tocco sbagliato ogni tanto. I gesti dei due
+    // stati adesso cominciano allo stesso posto.
+    <div className="h-full overflow-auto p-1.5 flex flex-col gap-1.5">
       <p className="testo-sala font-semibold text-b58-charcoal leading-tight">
         {sagome
           .filter((s) => selezione.includes(s.id))
@@ -1648,7 +1671,16 @@ export default function Sala() {
             {gruppiComanda.map(({ turno, items }) => (
               <div key={turno}>
                 {gruppiComanda.length > 1 && (
-                  <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 border-b border-b58-charcoal/15 pb-0.5 mb-1 mt-3 first:mt-0">
+                  // 🔴 UNA RIGA DI STACCO, NON UN'ETICHETTA (22/08, chiesto
+                  // da Alessio in scala reale). Era una scritta grigia in
+                  // mezzo alle righe: si leggeva solo cercandola.
+                  //
+                  // ⚠️ E LA RAGIONE DECIDE LA FORMA: quella divisione è la
+                  // stessa che finisce **sul biglietto stampato**. Quindi si
+                  // separa come separerebbe la carta — una banda piena, a
+                  // tutta larghezza, che si legge da lontano — invece di un
+                  // titoletto che si legge da vicino.
+                  <p className="testo-sala-grande uppercase tracking-wide font-bold text-b58-parchment bg-b58-charcoal-soft rounded px-2 py-1 mt-3 mb-1.5 first:mt-0">
                     {etichettaTurno(turno)}
                   </p>
                 )}
@@ -1742,6 +1774,13 @@ export default function Sala() {
               <span>{formatEUR(total)}</span>
             </div>
           </div>
+
+          {/* ⚠️ SOTTO IL TOTALE, dove finisce chi ha appena segnato i
+              piatti. È lo stesso pezzo del pulsante nella colonna dei
+              gesti — stessa parola, stesso conteggio, si spengono
+              insieme — e qui è più grande, perché è il gesto che chiude
+              una lista lunga. */}
+          <div className="mt-2">{bottoneInvia("testo-sala-grande py-1")}</div>
         </>
       )}
 

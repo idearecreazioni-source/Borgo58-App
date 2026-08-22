@@ -151,7 +151,23 @@ export default function Cucina() {
               nuova o roba già cucinata. */}
           <div className="text-center font-bold text-base border-b border-dashed border-b58-charcoal/30 pb-1.5 mb-1.5">
             CUCINA — {g.tavolo}
-            <div className="text-base">
+            {/* 🔴 IL TURNO È LA RIGA PIÙ GRANDE DEL FOGLIO (22/08). Era
+                della stessa taglia del nome del tavolo, cioè si leggeva
+                solo cercandola — e **questo è il posto dove conta di
+                più**: a schermo chi ha segnato i piatti sa già che turno
+                sta guardando, sulla carta no.
+                ⚠️ Niente banda nera piena come a schermo: una termica la
+                stampa male e consuma. Le righe sopra e sotto fanno lo
+                stesso lavoro con l'inchiostro che una stampante di
+                reparto sa fare. */}
+            {/* ⚠️ QUI LE TAGLIE SONO IN PIXEL E NON IN CENTIMETRI VERI, ed è
+                voluto: questo foglio è disegnato per la CARTA da 72 mm, dove
+                `--pxcm` non vuol dire niente. Misurato: 24px diventano ~6,3
+                mm sulla stampa (più grandi del nome del tavolo, che è quello
+                che serve) e 3,2 mm sullo schermo della cucina alla
+                calibrazione 74 — sopra la soglia dei 3 mm. Con le classi
+                scalate il biglietto stampato verrebbe fuori misura. */}
+            <div className="text-2xl font-bold border-y-2 border-b58-charcoal py-1 my-1">
               {etichettaTurno(g.turno)}
               {g.aggiunta && " · AGGIUNTA"}
             </div>

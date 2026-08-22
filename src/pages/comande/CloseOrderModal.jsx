@@ -70,7 +70,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const run = async (fn) => {
     setBusy(true);
@@ -181,18 +181,18 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
     <div className="fixed inset-0 bg-b58-charcoal/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-sm w-full overflow-hidden">
         <div className="bg-b58-charcoal text-b58-parchment px-4 py-3 flex items-center justify-between">
-          <span className="font-display text-base">Chiusura conto — {order.table_label}</span>
-          <button type="button" onClick={onClose} className="text-b58-parchment/80 hover:text-b58-parchment text-lg leading-none">
+          <span className="font-display testo-sala-grande">Chiusura conto — {order.table_label}</span>
+          <button type="button" onClick={onClose} className="tocco-bottone text-b58-parchment/80 hover:text-b58-parchment testo-sala-grande leading-none">
             ×
           </button>
         </div>
 
         <div className="p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           {error && (
-            <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
+            <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          <div className="font-mono text-xs bg-b58-cream-dark/40 border border-dashed border-b58-charcoal/20 rounded-lg p-3">
+          <div className="font-mono testo-sala bg-b58-cream-dark/40 border border-dashed border-b58-charcoal/20 rounded-lg p-3">
             {grouped.length === 0 ? (
               <p className="text-b58-charcoal-soft">Nessuna riga sul conto.</p>
             ) : (
@@ -220,7 +220,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               da un piatto dimenticato. Non è un errore — è una scelta che
               deve passare sotto i suoi occhi prima di incassare. */}
           {nonInviate.length > 0 && (
-            <div className="text-xs bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
+            <div className="testo-sala bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 rounded-lg px-3 py-2">
               <p className="text-b58-charcoal font-medium">
                 {nonInviate.length === 1
                   ? "1 riga non è mai stata mandata in cucina"
@@ -248,30 +248,30 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                     type="button"
                     disabled={busy}
                     onClick={() => handlePaid(pm.value)}
-                    className="flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-3 py-2"
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
                   >
                     Paga {pm.label.toLowerCase()}
                   </button>
                 ))}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={apriMisto} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
+                <button type="button" onClick={apriMisto} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Pagano in due modi
                 </button>
-                <button type="button" onClick={apriRomana} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
+                <button type="button" onClick={apriRomana} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Alla romana
                 </button>
-                <button type="button" onClick={() => setMode("sconto")} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
+                <button type="button" onClick={() => setMode("sconto")} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Sconto
                 </button>
-                <button type="button" onClick={() => setMode("omaggio")} className="flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-3 py-2">
+                <button type="button" onClick={() => setMode("omaggio")} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Omaggio
                 </button>
               </div>
-              <button type="button" onClick={() => setMode("annulla")} className="w-full text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark py-1">
+              <button type="button" onClick={() => setMode("annulla")} className="tocco-bottone w-full testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
                 Annulla tavolo
               </button>
-              <p className="text-[11px] text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
+              <p className="testo-sala text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
                 Nessun incasso viene registrato in cassa: l'integrazione con il registratore telematico (§3.2) arriverà con l'hardware.
               </p>
             </>
@@ -279,16 +279,16 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
           {mode === "misto" && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-b58-charcoal">
+              <h3 className="testo-sala font-medium text-b58-charcoal">
                 Pagano in due modi — {formatEUR(total)} in tutto
               </h3>
-              <p className="text-xs text-b58-charcoal-soft">
+              <p className="testo-sala text-b58-charcoal-soft">
                 Scrivi quanto passi sul POS: il resto è contante. Batti sul POS{" "}
                 <strong>solo quella cifra</strong>, non il totale.
               </p>
               <div className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="block text-[11px] text-b58-charcoal-soft mb-1">Con la carta</label>
+                  <label className="block testo-sala text-b58-charcoal-soft mb-1">Con la carta</label>
                   <input
                     type="number"
                     step="0.01"
@@ -299,8 +299,8 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[11px] text-b58-charcoal-soft mb-1">In contanti</div>
-                  <div className="text-lg font-medium text-b58-charcoal py-1.5">
+                  <div className="testo-sala text-b58-charcoal-soft mb-1">In contanti</div>
+                  <div className="testo-sala-grande font-medium text-b58-charcoal py-1.5">
                     {formatEUR(quotaContante)}
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               {/* ⚠️ Il rifiuto vero è nel database: le quote devono fare
                   l'incassato al centesimo. Qui si evita solo di premere. */}
               {!mistoValido && (
-                <p className="text-xs text-b58-terracotta-dark">
+                <p className="testo-sala text-b58-terracotta-dark">
                   Le due parti devono essere tutt'e due maggiori di zero. Se paga tutto in un
                   modo solo, torna indietro e usa «Paga contante» o «Paga carta».
                 </p>
@@ -318,14 +318,14 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !mistoValido}
                   onClick={handleMisto}
-                  className="flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-3 py-2"
+                  className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
                 >
                   {busy ? "Chiudo…" : "Chiudi il conto"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode(null)}
-                  className="rounded-lg border border-b58-charcoal/15 text-b58-charcoal text-sm px-4 py-2"
+                  className="tocco-bottone rounded-lg border border-b58-charcoal/15 text-b58-charcoal testo-sala px-4"
                 >
                   Indietro
                 </button>
@@ -335,19 +335,19 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
           {mode === "romana" && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-b58-charcoal">
+              <h3 className="testo-sala font-medium text-b58-charcoal">
                 Alla romana — {formatEUR(total)} da dividere
               </h3>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-b58-charcoal-soft w-20">Persone</span>
+                <span className="testo-sala text-b58-charcoal-soft w-20">Persone</span>
                 <button type="button" onClick={() => cambiaPersone(persone - 1)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 text-b58-charcoal">−</button>
-                <b className="w-8 text-center">{persone}</b>
+                <b className="tocco-bottone w-8 text-center">{persone}</b>
                 <button type="button" onClick={() => cambiaPersone(persone + 1)} className="tocco-bottone rounded-lg border border-b58-charcoal/15 text-b58-charcoal">+</button>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-b58-charcoal-soft w-20">A testa</span>
+                <span className="testo-sala text-b58-charcoal-soft w-20">A testa</span>
                 <input
                   type="number"
                   step="0.50"
@@ -359,20 +359,20 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 <button
                   type="button"
                   onClick={() => setATesta(String(Math.floor(esattoATesta)))}
-                  className="text-xs rounded-full px-3 py-1.5 border border-b58-charcoal/15 text-b58-charcoal-soft"
+                  className="tocco-bottone testo-sala rounded-full px-3  border border-b58-charcoal/15 text-b58-charcoal-soft"
                 >
                   Tondo {Math.floor(esattoATesta)}
                 </button>
                 <button
                   type="button"
                   onClick={() => setATesta(String(Math.round(esattoATesta * 100) / 100))}
-                  className="text-xs rounded-full px-3 py-1.5 border border-b58-charcoal/15 text-b58-charcoal-soft"
+                  className="tocco-bottone testo-sala rounded-full px-3  border border-b58-charcoal/15 text-b58-charcoal-soft"
                 >
                   Esatto {formatEUR(esattoATesta)}
                 </button>
               </div>
 
-              <div className="font-mono text-xs bg-b58-cream-dark/40 border border-dashed border-b58-charcoal/20 rounded-lg p-3">
+              <div className="font-mono testo-sala bg-b58-cream-dark/40 border border-dashed border-b58-charcoal/20 rounded-lg p-3">
                 <div className="flex justify-between py-0.5">
                   <span>{persone} × {formatEUR(Number(aTesta) || 0)}</span>
                   <span>{formatEUR(totaleRomana)}</span>
@@ -412,7 +412,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                     ))}
                   </select>
                   {!form.causaleId && (
-                    <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
+                    <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
                       Serve per chiudere: {formatEUR(cortesia)} regalati senza un perché, fra un
                       anno, sono un numero che nessuno sa spiegare.
                     </p>
@@ -427,13 +427,13 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                     type="button"
                     disabled={busy || totaleRomana <= 0 || totaleRomana > total || (cortesia > 0 && !form.causaleId)}
                     onClick={() => handleRomana(pm.value)}
-                    className="flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment text-sm font-medium px-3 py-2"
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-3"
                   >
                     Chiudi a {formatEUR(totaleRomana)} — {pm.label.toLowerCase()}
                   </button>
                 ))}
               </div>
-              <button type="button" onClick={() => setMode(null)} className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+              <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
                 Indietro
               </button>
             </div>
@@ -441,7 +441,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
           {(mode === "sconto" || mode === "omaggio") && (
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-b58-charcoal">
+              <h3 className="testo-sala font-medium text-b58-charcoal">
                 {labelFor(DISCOUNT_GIFT_TYPES, mode)} — {formatEUR(total)} a listino
               </h3>
               {mode === "sconto" && (
@@ -485,11 +485,11 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.causaleId || (mode === "sconto" && !form.collectedAmount)}
                   onClick={handleDiscountGift}
-                  className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                  className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
                 >
                   Conferma
                 </button>
-                <button type="button" onClick={() => setMode(null)} className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
                   Indietro
                 </button>
               </div>
@@ -509,11 +509,11 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.cancelReason.trim()}
                   onClick={handleCancel}
-                  className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+                  className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
                 >
                   Conferma annullamento
                 </button>
-                <button type="button" onClick={() => setMode(null)} className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
+                <button type="button" onClick={() => setMode(null)} className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2">
                   Indietro
                 </button>
               </div>
