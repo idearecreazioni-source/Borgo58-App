@@ -2,7 +2,9 @@
 
 **Nato da**: il rilievo *«la pianta si taglia ancora, e i numeri dicono che
 non dovrebbe»*, con l'ordine di andare a guardare invece di dedurre.
-**Nessuna migrazione.**
+**Nessuna migrazione.** · **Commit del codice**: `49b1893` (il riepilogo
+è dentro quel commit; questa riga è il commit successivo che ne dichiara
+l'hash).
 
 ---
 
