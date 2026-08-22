@@ -61,28 +61,44 @@ export default function Scadenze() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="font-medium">{p.ingrediente}</div>
-          <div className="text-sm text-stone-600">
+          <div className="testo-sala text-stone-600">
             {formatQta(p.quantita)} {p.unita} · {quandoScade(p.giorni_mancanti, p.scadenza)}
             {p.lotto_fornitore ? ` · lotto ${p.lotto_fornitore}` : ""}
           </div>
-          {p.perche_muta && <div className="text-sm text-stone-500 italic">{p.perche_muta}</div>}
+          {p.perche_muta && <div className="testo-sala text-stone-500 italic">{p.perche_muta}</div>}
         </div>
-        <div className="flex gap-2">
+        {/* 🔴 LE DUE PAROLE ERANO INDISTINGUIBILI CON LA CODA DELL'OCCHIO
+            (22/08). «finita» e «buttata» sono corte, si somigliano, e fanno
+            cose opposte: una toglie dalla giacenza e basta, l'altra **scrive
+            nel registro HACCP** che un'ispezione guarda. Stavano a 8 punti
+            l'una dall'altra — 1,08 mm veri.
+
+            ⚠️ ALLONTANARLE NON BASTAVA: adesso ognuna **dice la sua
+            conseguenza** sotto il verbo, che è dove sta il dubbio (regola
+            del 18/08: la spiegazione va dentro il gesto, non sopra la
+            schermata). E la distanza è 5 mm **veri**, non 8 punti: in pixel
+            si accorcerebbe da sola sul tablet.
+
+            ⚠️ Il gesto resta senza conferma, per decisione di Alessio del
+            13/08 — proprio per questo le parole devono bastare da sole. */}
+        <div className="flex" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
           <button
             type="button"
-            className="tocco-bottone rounded border border-stone-300 px-4"
+            className="tocco-bottone rounded border border-stone-300 px-4 leading-tight"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "finita")}
           >
-            finita
+            <span className="block testo-sala font-semibold">Finita</span>
+            <span className="block testo-sala text-stone-500">usata, esce e basta</span>
           </button>
           <button
             type="button"
-            className="tocco-bottone rounded border border-red-300 px-4 text-red-700"
+            className="tocco-bottone rounded border-2 border-red-400 bg-red-50 px-4 text-red-800 leading-tight"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "buttata")}
           >
-            buttata
+            <span className="block testo-sala font-semibold">Buttata</span>
+            <span className="block testo-sala">va nel registro HACCP</span>
           </button>
         </div>
       </div>
@@ -90,19 +106,21 @@ export default function Scadenze() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <Link to="/magazzino" className="text-sm text-stone-600">
+    <div className="testo-sala mx-auto max-w-3xl p-4">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
       <h1 className="mb-1 mt-2 text-2xl font-semibold">Scadenze</h1>
-      <p className="mb-6 text-sm text-stone-600">
+      <p className="mb-6 testo-sala text-stone-600">
         Le partite che stanno per scadere e non sono state rimpiazzate da una più recente. Ogni
         mattina alle 10:00 le stesse cose arrivano su Telegram.
       </p>
-      <p className="mb-6 text-sm text-stone-500">
-        <strong>finita</strong> = usata, esce dalla giacenza. <strong>buttata</strong> = esce dalla
-        giacenza <em>e</em> finisce nel registro HACCP come prodotto eliminato. Non si chiede
-        conferma e non si torna indietro.
+      {/* ⚠️ Qui c'era la spiegazione di cosa fanno i due pulsanti: adesso
+          la dicono loro, sotto il verbo. Resta la parte che è un AVVISO e
+          non una spiegazione — che il gesto non chiede conferma e non si
+          disfa: quella non sta scritta da nessun'altra parte. */}
+      <p className="mb-6 testo-sala text-stone-500">
+        Non si chiede conferma e non si torna indietro.
       </p>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
@@ -122,14 +140,14 @@ export default function Scadenze() {
             <p className="text-stone-600">Nessun'altra partita con una data di scadenza.</p>
           ) : (
             <>
-              <p className="mb-2 text-sm text-stone-500">
+              <p className="mb-2 testo-sala text-stone-500">
                 Ci sono, ma non vengono segnalate — sotto ognuna c&apos;è scritto perché.
               </p>
               <ul>{mute.map(riga)}</ul>
             </>
           )}
 
-          <p className="mt-8 text-sm text-stone-500">
+          <p className="mt-8 testo-sala text-stone-500">
             I prodotti entrati senza data di scadenza (i vegetali sfusi, per esempio) non compaiono
             qui: senza una data non c&apos;è niente da sorvegliare.
           </p>

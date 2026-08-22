@@ -98,6 +98,25 @@ body {
   line-height: 1.25;
 }
 
+/* 🔴 UNA FILA DI GESTI DOVE UNO CANCELLA (22/08/2026).
+   Misurato su otto schermate: i pulsanti d'azione di una riga stavano a
+   `gap-2`/`gap-3` — 8 o 12 punti, cioè **1,08–1,62 mm veri** — e fra loro
+   c'era sempre almeno un «Rimuovi», «Cancella» o «buttata» accanto a un
+   gesto che invece NON si disfa («Segna pagata», «Correggi»).
+
+   ⚠️ Sta qui e non in ogni schermata perché è **una regola, non uno
+   stile**: il giorno che si decide che 5 mm sono pochi, si cambia in un
+   posto solo. E si misura in centimetri VERI — in pixel si accorcerebbe
+   da sola proprio sul tablet, che è dove il dito è grosso.
+
+   ⚠️ Il nome dice A COSA SERVE, non come si vede: chi scrive una riga
+   nuova con dentro una cancellazione deve poterla trovare cercando
+   «pericolosi», non «gap». */
+.gesti-pericolosi {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--pxcm) * 0.5);
+}
 .testo-sala-grande {
   font-size: calc(var(--pxcm) * 0.4);
   line-height: 1.25;

@@ -173,8 +173,8 @@ export default function FattureFornitoriHome() {
   }, [tutteDaPagare]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-[11px] text-b58-charcoal-soft mb-1";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
 
   const filtroAttivo = Boolean(filtri.supplierId || filtri.dal || filtri.al);
 
@@ -391,7 +391,7 @@ export default function FattureFornitoriHome() {
   // mostrare solo il primo è il difetto che il n. 8 chiude.
   const RigaNote = ({ inv }) =>
     Number(inv.note_scalate ?? 0) > 0 ? (
-      <div className="mt-2 text-xs bg-b58-gold/10 rounded px-2 py-1.5">
+      <div className="mt-2 testo-sala bg-b58-gold/10 rounded px-2 py-1.5">
         <span className="text-b58-charcoal-soft">Fattura {formatEUR(inv.amount)}</span>
         {(inv.utilizzi ?? []).map((u) => (
           <span key={u.id} className="text-b58-charcoal-soft">
@@ -425,16 +425,16 @@ export default function FattureFornitoriHome() {
     return (
       <div className="mt-2 pt-2 border-t border-b58-charcoal/10">
         {(inv.documenti ?? []).length > 0 ? (
-          <p className="text-xs text-b58-charcoal-soft">
+          <p className="testo-sala text-b58-charcoal-soft">
             Documenti collegati: {inv.documenti.map((d) => d.title).join(" · ")}
           </p>
         ) : (
-          <p className="text-xs text-b58-charcoal-soft/60">Nessun documento collegato.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60">Nessun documento collegato.</p>
         )}
         {docPerId === inv.id && (
           <div className="mt-2">
             {liberi.length === 0 ? (
-              <p className="text-[11px] text-b58-charcoal-soft/70">
+              <p className="testo-sala text-b58-charcoal-soft/70">
                 Nessun documento libero di questa società nell&apos;Archivio: il DDT va prima
                 archiviato lì.
               </p>
@@ -453,7 +453,7 @@ export default function FattureFornitoriHome() {
                 ))}
               </select>
             )}
-            <p className="text-[11px] text-b58-charcoal-soft/70 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
               Un DDT o un contratto è solo un collegamento: nessun conto ci passa dentro. Quello che
               cambia i soldi è la nota di credito, che si registra col pulsante accanto.
             </p>
@@ -464,11 +464,11 @@ export default function FattureFornitoriHome() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-16">
+    <div className="testo-sala max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Fatture Fornitori</h1>
@@ -480,17 +480,17 @@ export default function FattureFornitoriHome() {
           {totaliPerSocieta.length === 0 ? (
             <>
               <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(0)}</div>
-              <div className="text-xs text-b58-charcoal-soft">niente da pagare</div>
+              <div className="testo-sala text-b58-charcoal-soft">niente da pagare</div>
             </>
           ) : (
             totaliPerSocieta.map((r) => (
               <div key={r.nome} className="mb-1 last:mb-0">
                 <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(r.totale)}</div>
-                <div className="text-xs text-b58-charcoal-soft">
+                <div className="testo-sala text-b58-charcoal-soft">
                   da pagare — {r.nome} ({r.quante})
                 </div>
                 {r.scalato > 0 && (
-                  <div className="text-[11px] text-b58-charcoal-soft/70">
+                  <div className="testo-sala text-b58-charcoal-soft/70">
                     già al netto di {formatEUR(r.scalato)} di note di credito
                   </div>
                 )}
@@ -506,8 +506,8 @@ export default function FattureFornitoriHome() {
           sono soldi suoi. */}
       {crediti.length > 0 && (
         <div className="rounded-xl bg-b58-sage/15 ring-1 ring-b58-sage/40 p-4 mb-4">
-          <p className="text-sm text-b58-charcoal font-medium mb-1">Crediti da usare</p>
-          <ul className="text-sm text-b58-charcoal-soft space-y-0.5">
+          <p className="testo-sala text-b58-charcoal font-medium mb-1">Crediti da usare</p>
+          <ul className="testo-sala text-b58-charcoal-soft space-y-0.5">
             {crediti.map((c) => (
               <li key={`${c.societa}-${c.supplier_id}`}>
                 <strong className="text-b58-charcoal">{formatEUR(c.residuo)}</strong> con {c.fornitore}
@@ -516,7 +516,7 @@ export default function FattureFornitoriHome() {
               </li>
             ))}
           </ul>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
             Sono note di credito arrivate dopo il pagamento: te le propongo quando registri il
             pagamento della prossima fattura di quel fornitore.
           </p>
@@ -524,18 +524,18 @@ export default function FattureFornitoriHome() {
       )}
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       {avviso && (
-        <p className="text-sm text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-3">
+        <p className="testo-sala text-b58-charcoal bg-b58-gold/15 rounded-lg px-3 py-2 mb-4 flex items-start justify-between gap-3">
           <span>{avviso}</span>
           <button
             type="button"
             onClick={() => setAvviso("")}
-            className="text-xs text-b58-charcoal-soft hover:text-b58-charcoal shrink-0"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal shrink-0"
           >
             ho capito
           </button>
@@ -546,7 +546,7 @@ export default function FattureFornitoriHome() {
         <button
           type="button"
           onClick={() => setNuovaAperta(true)}
-          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-4 py-2 mb-4"
+          className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-4  mb-4"
         >
           + Registra una fattura a mano
         </button>
@@ -555,11 +555,11 @@ export default function FattureFornitoriHome() {
       {entities && nuovaAperta && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h2 className="font-display text-lg text-b58-charcoal">Nuova fattura</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal">Nuova fattura</h2>
           <button
             type="button"
             onClick={() => setNuovaAperta(false)}
-            className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal"
           >
             Chiudi
           </button>
@@ -602,7 +602,7 @@ export default function FattureFornitoriHome() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
             <div>
-              <label className="block text-[11px] text-b58-charcoal-soft mb-1">Data fattura</label>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1">Data fattura</label>
               <input
                 type="date"
                 value={form.invoice_date}
@@ -611,7 +611,7 @@ export default function FattureFornitoriHome() {
               />
             </div>
             <div>
-              <label className="block text-[11px] text-b58-charcoal-soft mb-1">Scadenza (opz.)</label>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1">Scadenza (opz.)</label>
               <input
                 type="date"
                 value={form.due_date}
@@ -632,7 +632,7 @@ export default function FattureFornitoriHome() {
               className={`${inputClass} self-end`}
             />
           </div>
-          <p className="text-xs text-b58-charcoal-soft/70 mb-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
             Con una scadenza, viene creato automaticamente un promemoria in Agenda.
           </p>
           <div className="flex justify-end">
@@ -640,7 +640,7 @@ export default function FattureFornitoriHome() {
               type="button"
               disabled={saving || !form.supplier_id || !form.invoice_date || !form.amount}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra fattura"}
             </button>
@@ -690,7 +690,7 @@ export default function FattureFornitoriHome() {
           <button
             type="button"
             onClick={() => cambiaFiltro({ supplierId: "", dal: "", al: "" })}
-            className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark pb-2"
+            className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark pb-2"
           >
             Togli i filtri
           </button>
@@ -698,17 +698,17 @@ export default function FattureFornitoriHome() {
       </div>
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Da pagare</h2>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Da pagare</h2>
         {/* ⚠️ Con un filtro attivo l'elenco è parziale e i totali no: senza
             dirlo, un elenco corto accanto a un totale grande sembra un
             errore di somma. */}
-        <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+        <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
           {filtroAttivo
             ? `${daPagare.length} di ${tutteDaPagare.length} da pagare — i totali in alto restano quelli interi.`
             : `Tutte e ${tutteDaPagare.length}.`}
         </p>
         {daPagare.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuna fattura da pagare.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60">Nessuna fattura da pagare.</p>
         ) : (
           <ul className="space-y-2">
             {daPagare.map((inv) => {
@@ -717,11 +717,11 @@ export default function FattureFornitoriHome() {
                 <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
-                      <span className="text-sm text-b58-charcoal font-medium">{inv.supplier.name}</span>
+                      <span className="testo-sala text-b58-charcoal font-medium">{inv.supplier.name}</span>
                       {inv.invoice_number && (
-                        <span className="text-xs text-b58-charcoal-soft ml-1.5">#{inv.invoice_number}</span>
+                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">#{inv.invoice_number}</span>
                       )}
-                      <div className="text-xs text-b58-charcoal-soft">
+                      <div className="testo-sala text-b58-charcoal-soft">
                         {/* Di chi è questa fattura: senza, i due totali qui
                             sopra non si possono ricontrollare riga per riga. */}
                         {inv.entity?.name && <>{inv.entity.name} · </>}
@@ -741,9 +741,9 @@ export default function FattureFornitoriHome() {
                           </span>
                         )}
                       </div>
-                      {inv.note && <p className="text-xs text-b58-charcoal-soft mt-1">{inv.note}</p>}
+                      {inv.note && <p className="testo-sala text-b58-charcoal-soft mt-1">{inv.note}</p>}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="gesti-pericolosi">
                       {/* Correggibili finché la fattura non è pagata: dopo,
                           l'importo è uscito dalla cassa. */}
                       <div>
@@ -754,7 +754,7 @@ export default function FattureFornitoriHome() {
                             (e.target.value.trim() || null) !== inv.invoice_number &&
                             correggi(inv.id, { invoice_number: e.target.value.trim() || null })
                           }
-                          className="w-28 rounded border border-b58-charcoal/15 px-2 py-1 text-xs"
+                          className="w-28 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala"
                         />
                       </div>
                       <div>
@@ -769,20 +769,20 @@ export default function FattureFornitoriHome() {
                             Number(e.target.value) > 0 &&
                             correggi(inv.id, { amount: Number(e.target.value) })
                           }
-                          className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right font-medium"
+                          className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala text-right font-medium"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={() => setNotaPerId((id) => (id === inv.id ? null : inv.id))}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-charcoal"
+                        className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal"
                       >
                         {notaPerId === inv.id ? "Chiudi" : "Nota di credito"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setDocPerId((id) => (id === inv.id ? null : inv.id))}
-                        className="text-xs text-b58-charcoal-soft hover:text-b58-charcoal"
+                        className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal"
                       >
                         Documenti
                       </button>
@@ -791,9 +791,15 @@ export default function FattureFornitoriHome() {
                         onClick={() =>
                           payingId === inv.id ? setPayingId(null) : apriPagamento(inv)
                         }
-                        className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                        className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                       >
-                        {payingId === inv.id ? "Annulla" : "Segna pagata"}
+                        {/* ⚠️ «LASCIA PERDERE», NON «ANNULLA» (22/08). Qui
+                            «Annulla» stava a 1,62 mm da «Rimuovi», che
+                            **cancella la fattura**: due parole vicine che
+                            in italiano possono voler dire la stessa cosa —
+                            e una delle due la cancella davvero. Questa
+                            chiude soltanto il modulo del pagamento. */}
+                        {payingId === inv.id ? "Lascia perdere" : "Segna pagata"}
                       </button>
                       {/* ⚠️ SPENTO CON LA RAGIONE, non premibile per essere
                           rifiutato (difetto n. 3 del collaudo, 17/08). La
@@ -804,7 +810,7 @@ export default function FattureFornitoriHome() {
                           meglio spento con la ragione accanto. */}
                       {Number(inv.note_scalate ?? 0) > 0 ? (
                         <span
-                          className="text-xs text-b58-charcoal-soft/60"
+                          className="testo-sala text-b58-charcoal-soft/60"
                           title="Togli prima la nota di credito"
                         >
                           Rimuovi — non si può: c&apos;è una nota di credito
@@ -821,7 +827,7 @@ export default function FattureFornitoriHome() {
 
                   {/* Il rifiuto accanto al gesto: vedi `erroreRiga`. */}
                   {erroreRiga?.id === inv.id && (
-                    <p className="mt-2 text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
+                    <p className="mt-2 testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5">
                       {erroreRiga.messaggio}
                     </p>
                   )}
@@ -881,7 +887,7 @@ export default function FattureFornitoriHome() {
                           type="button"
                           disabled={paying || !dataUscita}
                           onClick={() => handlePay(inv.id)}
-                          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                          className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                         >
                           {paying ? "Confermo…" : "Conferma pagamento"}
                         </button>
@@ -895,11 +901,11 @@ export default function FattureFornitoriHome() {
                           guarda prima di confermare. */}
                       {creditiFattura.length > 0 && (
                         <div className="mt-3 bg-b58-sage/15 rounded-lg p-3">
-                          <p className="text-xs text-b58-charcoal mb-1.5">
+                          <p className="testo-sala text-b58-charcoal mb-1.5">
                             Hai un credito con {inv.supplier.name}: lo usi su questa fattura?
                           </p>
                           {creditiFattura.map((c) => (
-                            <label key={c.nota_id} className="flex items-center gap-2 text-xs py-0.5">
+                            <label key={c.nota_id} className="flex items-center gap-2 testo-sala py-0.5">
                               <input
                                 type="checkbox"
                                 checked={noteScelte.includes(c.nota_id)}
@@ -916,7 +922,7 @@ export default function FattureFornitoriHome() {
                       )}
 
                       {anteprima && (
-                        <p className="text-xs text-b58-charcoal mt-2">
+                        <p className="testo-sala text-b58-charcoal mt-2">
                           Usciranno <strong>{formatEUR(anteprima.netto)}</strong>
                           {Number(anteprima.gia_scalato) > 0 && (
                             <> · nota già scalata {formatEUR(anteprima.gia_scalato)}</>
@@ -943,14 +949,14 @@ export default function FattureFornitoriHome() {
                           serve a distinguere il caso voluto dal giorno
                           digitato male. */}
                       {dataUscita > oggiLocale() && (
-                        <p className="text-[11px] text-b58-charcoal-soft mt-2">
+                        <p className="testo-sala text-b58-charcoal-soft mt-2">
                           I soldi escono il {formatDate(dataUscita)}: fino a quel giorno l&apos;uscita
                           resta in prima nota e <strong>non abbassa il saldo</strong> — la trovi fra le
                           uscite attese in «Ce la faccio?».
                         </p>
                       )}
                       {dataUscita && dataUscita < inv.invoice_date && (
-                        <p className="text-[11px] text-b58-gold-dark mt-2">
+                        <p className="testo-sala text-b58-gold-dark mt-2">
                           Escono <strong>prima</strong> della data della fattura
                           ({formatDate(inv.invoice_date)}): è un acconto? Se invece hai sbagliato il
                           giorno, correggilo — in prima nota resterebbe così.
@@ -967,10 +973,10 @@ export default function FattureFornitoriHome() {
 
       {pagate.righe.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">Pagate di recente</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Pagate di recente</h2>
           {/* Il taglio si dichiara: un elenco tagliato in silenzio sembra
               completo, ed è la stessa forma dello zero al posto del buco. */}
-          <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
             {pagate.quante > pagate.righe.length
               ? `Le ultime ${pagate.righe.length} di ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : " pagate in tutto"}.`
               : `Tutte e ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : ""}.`}
@@ -978,14 +984,14 @@ export default function FattureFornitoriHome() {
           <ul className="space-y-2">
             {pagate.righe.map((inv) => (
               <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
-                <div className="text-sm text-b58-charcoal-soft flex items-center justify-between gap-2 flex-wrap">
+                <div className="testo-sala text-b58-charcoal-soft flex items-center justify-between gap-2 flex-wrap">
                   <span>
                     <span className="text-b58-charcoal">{inv.supplier.name}</span>
                     {inv.invoice_number && ` #${inv.invoice_number}`}
                     {inv.paid_at && ` — ${formatDate(inv.paid_at)}`}
                     {inv.payment_method && ` · ${labelFor(PAYMENT_METHODS, inv.payment_method)}`}
                   </span>
-                  <span className="flex items-center gap-3 shrink-0">
+                  <span className="gesti-pericolosi shrink-0">
                     <span className="text-b58-charcoal">{formatEUR(inv.da_pagare)}</span>
                     {/* ⚠️ La nota di credito arrivata DOPO il pagamento è
                         il caso che si dimentica, quindi il gesto sta anche
@@ -993,7 +999,7 @@ export default function FattureFornitoriHome() {
                     <button
                       type="button"
                       onClick={() => setNotaPerId((id) => (id === inv.id ? null : inv.id))}
-                      className="text-xs text-b58-charcoal-soft hover:text-b58-charcoal"
+                      className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal"
                     >
                       {notaPerId === inv.id ? "Chiudi" : "Nota di credito"}
                     </button>
@@ -1017,7 +1023,7 @@ export default function FattureFornitoriHome() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-b58-charcoal-soft/70 mt-3">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
             Una fattura pagata non si può rimuovere: in prima nota c&apos;è l&apos;uscita che
             la registra. Annullando il pagamento l&apos;uscita sparisce, la fattura torna
             fra quelle da pagare e il promemoria si riapre — e i crediti che avevi usato su di lei

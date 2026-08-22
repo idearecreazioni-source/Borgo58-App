@@ -49,7 +49,7 @@ export default function Previsioni() {
   }, [entityId]);
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const apriFoglio = async (file) => {
     setError("");
@@ -114,8 +114,8 @@ export default function Previsioni() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-16">
-      <Link to="/fiscale" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-4xl mx-auto pb-16">
+      <Link to="/fiscale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Proiezione fiscale
       </Link>
       <div className="flex items-center justify-between gap-3 flex-wrap mt-1 mb-2">
@@ -128,7 +128,7 @@ export default function Previsioni() {
             l'unica strada. */}
         <Link
           to="/fiscale/previsioni/nuova"
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
         >
           + Scrivi una previsione
         </Link>
@@ -136,35 +136,35 @@ export default function Previsioni() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
           </select>
         )}
       </div>
-      <p className="text-sm text-b58-charcoal-soft mb-6">
+      <p className="testo-sala text-b58-charcoal-soft mb-6">
         Una previsione chiusa non si ritocca mai più: se cambia qualcosa se ne fa una nuova, e le due
         restano confrontabili. È l&apos;unico modo perché fra un anno si possa dire com&apos;era andata
         davvero rispetto a quello che si pensava.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* --- Costruirla a mano: la strada normale --- */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">Costruiscine una</h2>
-          <p className="text-xs text-b58-charcoal-soft">
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Costruiscine una</h2>
+          <p className="testo-sala text-b58-charcoal-soft">
             Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi,
             e mese per mese quanta gente ti aspetti.
           </p>
         </div>
         <Link
           to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
-          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 shrink-0"
+          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  shrink-0"
         >
           + Nuova previsione
         </Link>
@@ -172,8 +172,8 @@ export default function Previsioni() {
 
       {/* --- Caricare il foglio: la scorciatoia --- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Oppure parti dal tuo foglio Excel</h2>
-        <p className="text-xs text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Oppure parti dal tuo foglio Excel</h2>
+        <p className="testo-sala text-b58-charcoal-soft mb-4">
           Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
           scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
           database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
@@ -181,7 +181,7 @@ export default function Previsioni() {
         </p>
 
         {!decompressioneDisponibile() ? (
-          <p className="text-sm text-b58-terracotta-dark">
+          <p className="testo-sala text-b58-terracotta-dark">
             Questo browser non sa aprire i file Excel. Apri il gestionale con Chrome aggiornato.
           </p>
         ) : (
@@ -190,27 +190,27 @@ export default function Previsioni() {
             type="file"
             accept=".xlsx"
             onChange={(e) => apriFoglio(e.target.files?.[0])}
-            className="block text-sm text-b58-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-b58-terracotta file:px-4 file:py-2 file:text-sm file:text-b58-parchment"
+            className="block testo-sala text-b58-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-b58-terracotta file:px-4 file:py-2 file:testo-sala file:text-b58-parchment"
           />
         )}
 
         {letto && (
           <div className="mt-5 border-t border-b58-charcoal/10 pt-4">
-            <p className="text-sm text-b58-charcoal mb-3">
+            <p className="testo-sala text-b58-charcoal mb-3">
               Foglio <strong>{letto.nomeFoglio}</strong>
               {letto.versione && <> — {letto.versione}</>}
             </p>
 
             {letto.problemi.length > 0 ? (
-              <div className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+              <div className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
                 <p className="font-medium mb-1">Non ho riconosciuto questo foglio, e non tiro a indovinare:</p>
-                <ul className="list-disc pl-5 space-y-0.5 text-xs">
+                <ul className="list-disc pl-5 space-y-0.5 testo-sala">
                   {letto.problemi.map((p) => <li key={p}>{p}</li>)}
                 </ul>
               </div>
             ) : (
               <>
-                <table className="w-full text-sm mb-4">
+                <table className="w-full testo-sala mb-4">
                   <tbody>
                     {rigaPerRiga(letto).map(([voce, unita, a, b]) => (
                       <tr key={voce} className="border-b border-b58-charcoal/5">
@@ -218,29 +218,29 @@ export default function Previsioni() {
                         <td className="py-1 text-right text-b58-charcoal tabular-nums">
                           {a ?? "—"}{b != null && <> · {b}</>}
                         </td>
-                        <td className="py-1 pl-2 text-xs text-b58-charcoal-soft/70 w-24">{unita}</td>
+                        <td className="py-1 pl-2 testo-sala text-b58-charcoal-soft/70 w-24">{unita}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
                 {letto.avvisi.length > 0 && (
-                  <ul className="text-xs text-b58-charcoal-soft mb-3 list-disc pl-5">
+                  <ul className="testo-sala text-b58-charcoal-soft mb-3 list-disc pl-5">
                     {letto.avvisi.map((a) => <li key={a}>{a}</li>)}
                   </ul>
                 )}
 
                 <div className="flex flex-wrap gap-2 items-end">
                   <div>
-                    <label className="block text-xs text-b58-charcoal-soft mb-1">Come la chiami</label>
+                    <label className="block testo-sala text-b58-charcoal-soft mb-1">Come la chiami</label>
                     <input value={nome} onChange={(e) => setNome(e.target.value)} className={`${inputClass} min-w-[220px]`} />
                   </div>
                   <div>
-                    <label className="block text-xs text-b58-charcoal-soft mb-1">Anno</label>
+                    <label className="block testo-sala text-b58-charcoal-soft mb-1">Anno</label>
                     <input type="number" value={anno} onChange={(e) => setAnno(e.target.value)} className={`${inputClass} w-24`} />
                   </div>
                   <div>
-                    <label className="block text-xs text-b58-charcoal-soft mb-1">Cos&apos;è</label>
+                    <label className="block testo-sala text-b58-charcoal-soft mb-1">Cos&apos;è</label>
                     <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={inputClass}>
                       <option value="partenza">La previsione di partenza</option>
                       <option value="riproiezione">Una riproiezione</option>
@@ -250,12 +250,12 @@ export default function Previsioni() {
                     type="button"
                     onClick={conferma}
                     disabled={salvando}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                   >
                     {salvando ? "Salvo…" : "Crea la previsione"}
                   </button>
                 </div>
-                <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+                <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
                   Dopo averla creata potrai controllare che i totali tornino col tuo foglio, e solo allora chiuderla.
                 </p>
               </>
@@ -266,9 +266,9 @@ export default function Previsioni() {
 
       {/* --- Le previsioni esistenti --- */}
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : scenari.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft">Nessuna previsione ancora.</p>
+        <p className="testo-sala text-b58-charcoal-soft">Nessuna previsione ancora.</p>
       ) : (
         <ul className="space-y-2">
           {scenari.map((s) => (
@@ -277,10 +277,10 @@ export default function Previsioni() {
               className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <Link to={`/fiscale/previsioni/${s.id}`} className="text-b58-charcoal hover:text-b58-terracotta">
+                <Link to={`/fiscale/previsioni/${s.id}`} className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta">
                   <span className="font-medium">{s.nome}</span>
                 </Link>
-                <p className="text-xs text-b58-charcoal-soft mt-0.5">
+                <p className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {s.anno} · {s.tipo === "partenza" ? "previsione di partenza" : "riproiezione"} ·{" "}
                   {s.congelato_il ? (
                     <span className="text-b58-olive-dark">
@@ -291,18 +291,18 @@ export default function Previsioni() {
                   )}
                 </p>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="gesti-pericolosi shrink-0">
                 {!s.congelato_il && (
                   <Link
                     to={`/fiscale/previsioni/${s.id}/modifica`}
-                    className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                    className="tocco-bottone inline-flex items-center testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                   >
                     Correggi
                   </Link>
                 )}
                 <button
                   onClick={() => elimina(s)}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 >
                   Cancella
                 </button>

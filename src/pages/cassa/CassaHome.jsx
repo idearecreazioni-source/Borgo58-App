@@ -116,7 +116,7 @@ export default function CassaHome() {
     });
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="testo-sala max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Cassa, Banca e Prima Nota</h1>
@@ -128,7 +128,7 @@ export default function CassaHome() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -137,22 +137,22 @@ export default function CassaHome() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* KPI */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className={`rounded-xl p-5 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Contante in cassa</div>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Contante in cassa</div>
               <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {tesoreria ? formatEUR(tesoreria.contante_atteso) : "—"}
               </div>
               {balance && tesoreria && (
-                <div className="text-[11px] text-b58-charcoal-soft mt-1">
+                <div className="testo-sala text-b58-charcoal-soft mt-1">
                   fondo {formatEUR(balance.owner_float)} + incassi {formatEUR(balance.declared_takings)} − uscite{" "}
                   {formatEUR(balance.total_out)}
                   {Number(tesoreria.conti_contanti) > 0 && (
@@ -173,7 +173,7 @@ export default function CassaHome() {
               {/* La parte che non è sua, come DATO e non solo come frase:
                   è il numero per cui `di_cui_non_tuo` è stato creato. */}
               {tesoreria && Number(tesoreria.di_cui_non_tuo) > 0 && (
-                <div className="text-[11px] text-b58-gold-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-gold-dark mt-1 font-medium">
                   di cui {formatEUR(tesoreria.di_cui_non_tuo)} non sono tuoi: sono mance del personale
                 </div>
               )}
@@ -181,13 +181,13 @@ export default function CassaHome() {
                   posti diversi, e il totale non serve a niente finché
                   nessuno ha detto a cosa dovrebbe rispondere. */}
               {balance && (
-                <div className="text-[11px] text-b58-charcoal-soft mt-2 border-t border-b58-charcoal/10 pt-2">
+                <div className="testo-sala text-b58-charcoal-soft mt-2 border-t border-b58-charcoal/10 pt-2">
                   Banca: <span className="font-medium text-b58-charcoal">{formatEUR(balance.saldo_banca)}</span>
                   {" — "}entrate {formatEUR(balance.entrate_banca)} · uscite {formatEUR(balance.uscite_banca)}
                 </div>
               )}
               {negativeBalance && (
-                <div className="text-[11px] text-b58-terracotta-dark mt-1 font-medium">
+                <div className="testo-sala text-b58-terracotta-dark mt-1 font-medium">
                   Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.
                 </div>
               )}
@@ -208,7 +208,7 @@ export default function CassaHome() {
                 />
               )}
               {!nonLetto(future) && future?.quante > 0 && (
-                <div className="text-[11px] text-b58-charcoal-soft mt-2">
+                <div className="testo-sala text-b58-charcoal-soft mt-2">
                   {future.quante === 1 ? "Un'uscita già registrata" : `${future.quante} uscite già registrate`}{" "}
                   per {formatEUR(future.totale)} <strong>non è ancora nel saldo</strong>: la prima
                   esce il {formatDate(future.prima_scadenza)}. In «Ce la faccio?» compare se
@@ -220,7 +220,7 @@ export default function CassaHome() {
                 </div>
               )}
               {!nonLetto(future) && future?.entrate_oggi > 0 && (
-                <div className="text-[11px] text-b58-charcoal-soft mt-1">
+                <div className="testo-sala text-b58-charcoal-soft mt-1">
                   Oggi {future.entrate_oggi === 1 ? "è entrata nel saldo un'uscita" : `sono entrate nel saldo ${future.entrate_oggi} uscite`}{" "}
                   per {formatEUR(future.totale_oggi)}: erano state registrate prima, e oggi è il
                   giorno in cui i soldi escono.
@@ -238,34 +238,34 @@ export default function CassaHome() {
                   niente da togliere quando arriverà il registratore
                   telematico), e l'avvertenza è diventata quella vera: qui
                   manca la CARTA, che non è ancora in banca. */}
-              <div className="text-[11px] text-b58-charcoal-soft/80 mt-2 leading-relaxed">
+              <div className="testo-sala text-b58-charcoal-soft/80 mt-2 leading-relaxed">
                 {tesoreria?.avvertenza}
               </div>
             </div>
 
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Questo mese</div>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Questo mese</div>
               {/* ⚠️ I due numeri erano NUDI (piccolezza del collaudo, 17/08):
                   «+0,00» e «−152,94» uno sotto l'altro, senza dire di cosa.
                   Un numero senza la sua parola si legge due volte e si
                   capisce alla seconda — e in prima nota il verso è proprio
                   quello che si vuole sapere a colpo d'occhio. */}
-              <div className="text-lg text-b58-olive-dark font-medium">
+              <div className="testo-sala-grande text-b58-olive-dark font-medium">
                 +{formatEUR(monthIn)}{" "}
-                <span className="text-xs text-b58-charcoal-soft font-normal">entrati</span>
+                <span className="testo-sala text-b58-charcoal-soft font-normal">entrati</span>
               </div>
-              <div className="text-lg text-b58-terracotta-dark font-medium">
+              <div className="testo-sala-grande text-b58-terracotta-dark font-medium">
                 −{formatEUR(monthOut)}{" "}
-                <span className="text-xs text-b58-charcoal-soft font-normal">usciti</span>
+                <span className="testo-sala text-b58-charcoal-soft font-normal">usciti</span>
               </div>
             </div>
 
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Sconti/omaggi del mese</div>
-              <div className="text-sm text-b58-charcoal">
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Sconti/omaggi del mese</div>
+              <div className="testo-sala text-b58-charcoal">
                 Sconti: {discountsThisMonth ? formatEUR(discountsThisMonth.total_forgone) : formatEUR(0)}
               </div>
-              <div className="text-sm text-b58-charcoal">
+              <div className="testo-sala text-b58-charcoal">
                 {/* ⚠️ «base TD27» era gergo: TD27 è il codice della fattura
                     per autoconsumo, e in una schermata che si guarda ogni
                     giorno non dice niente. Il fatto che conta è che il valore
@@ -288,20 +288,20 @@ export default function CassaHome() {
               scadenze non parte quando non c'è niente da dire. */}
           {quadratura.length > 0 && (
             <div className="rounded-xl bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-5 mb-6">
-              <h2 className="font-display text-lg text-b58-terracotta-dark mb-1">
+              <h2 className="font-display testo-sala-grande text-b58-terracotta-dark mb-1">
                 Non torna ({quadratura.length})
               </h2>
-              <p className="text-xs text-b58-charcoal-soft mb-3">
+              <p className="testo-sala text-b58-charcoal-soft mb-3">
                 Differenze fra le fatture fornitore e la prima nota. Non sono errori certi: sono
                 le cose che meritano un&apos;occhiata.
               </p>
               <ul className="space-y-2">
                 {quadratura.map((r, i) => (
-                  <li key={`${r.genere}-${i}`} className="text-sm">
+                  <li key={`${r.genere}-${i}`} className="testo-sala">
                     <span className="text-b58-charcoal font-medium">{formatEUR(r.importo)}</span>
                     {r.quando && <span className="text-b58-charcoal-soft"> · {formatDate(r.quando)}</span>}
                     <span className="text-b58-charcoal"> — {r.descrizione}</span>
-                    <div className="text-[11px] text-b58-charcoal-soft">{r.perche}</div>
+                    <div className="testo-sala text-b58-charcoal-soft">{r.perche}</div>
                   </li>
                 ))}
               </ul>
@@ -310,25 +310,25 @@ export default function CassaHome() {
 
           {/* Navigazione sezioni */}
           <div className="flex flex-wrap gap-2 mb-6">
-            <Link to="/comande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/comande" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Comande
             </Link>
-            <Link to="/cassa/prima-nota" className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
+            <Link to="/cassa/prima-nota" className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
               Prima nota
             </Link>
-            <Link to="/cassa/previsione" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/cassa/previsione" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Ce la faccio?
             </Link>
-            <Link to="/cassa/scontrinato" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/cassa/scontrinato" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Incassato e scontrinato
             </Link>
-            <Link to="/cassa/personale" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/cassa/personale" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Ho messo di tasca mia
             </Link>
-            <Link to="/cassa/sconti-omaggi" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/cassa/sconti-omaggi" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Sconti e omaggi
             </Link>
-            <Link to="/cassa/causali" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/cassa/causali" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Causali
             </Link>
           </div>
@@ -336,17 +336,17 @@ export default function CassaHome() {
           {/* Movimenti recenti */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-lg text-b58-charcoal">Movimenti recenti</h2>
-              <Link to="/cassa/prima-nota" className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta">
+              <h2 className="font-display testo-sala-grande text-b58-charcoal">Movimenti recenti</h2>
+              <Link to="/cassa/prima-nota" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
                 Vedi tutti →
               </Link>
             </div>
             {recent.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">Nessun movimento ancora.</p>
+              <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento ancora.</p>
             ) : (
               <ul className="space-y-1.5">
                 {recent.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
+                  <li key={m.id} className="flex items-center justify-between gap-3 testo-sala">
                     <span className="text-b58-charcoal-soft">
                       {formatDate(m.movement_date)} · {m.causale?.label ?? labelFor(CASH_DIRECTIONS, m.direction)}
                     </span>
@@ -412,9 +412,9 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
     contato !== "" && teorico != null ? Number(contato) - teorico : null;
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
-    "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // 🔴 CHIUDERE LA GIORNATA NON SI COMPLETA IN SILENZIO se restano conti
   // incassati senza documento fiscale: il database rifiuta, e qui si mostra
@@ -474,8 +474,8 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
 
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-      <h2 className="font-display text-lg text-b58-charcoal mb-1">Il cassetto</h2>
-      <p className="text-[11px] text-b58-charcoal-soft/80 mb-4">
+      <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Il cassetto</h2>
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
         Contare il cassetto non corregge di nascosto: se quello che trovi è diverso da quello che
         risulta, <strong>la differenza resta scritta</strong>. Le differenze che tornano tutti i mesi
         sono un&apos;informazione, non un fastidio.
@@ -508,7 +508,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               type="button"
               disabled={inCorso !== "" || contato === ""}
               onClick={() => conta(false)}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3  disabled:opacity-60 shrink-0"
             >
               {inCorso === "conteggio" ? "…" : "Conta"}
             </button>
@@ -522,7 +522,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               <div className="flex flex-wrap gap-2 mt-2">
                 <Link
                   to="/cassa/scontrinato"
-                  className="text-[12px] underline text-b58-charcoal hover:text-b58-terracotta"
+                  className="tocco-bottone inline-flex items-center text-[12px] underline text-b58-charcoal hover:text-b58-terracotta"
                 >
                   Vai a sistemarli
                 </Link>
@@ -530,7 +530,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
                   type="button"
                   disabled={inCorso !== ""}
                   onClick={() => conta(true)}
-                  className="text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+                  className="tocco-bottone text-[12px] underline text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
                 >
                   Chiudi lo stesso, ne prendo atto
                 </button>
@@ -538,7 +538,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
             </div>
           )}
           {differenza != null && differenza !== 0 && (
-            <p className="text-[11px] text-b58-gold-dark mt-1.5">
+            <p className="testo-sala text-b58-gold-dark mt-1.5">
               {differenza < 0 ? "Mancano" : "Ci sono"} {formatEUR(Math.abs(differenza))}{" "}
               {differenza < 0 ? "rispetto al teorico" : "in più del teorico"}.
             </p>
@@ -560,21 +560,21 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               type="button"
               disabled={inCorso !== "" || versamento === ""}
               onClick={versa}
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-3 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3  disabled:opacity-60 shrink-0"
             >
               {inCorso === "versamento" ? "…" : "Versa"}
             </button>
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1.5">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-1.5">
             Non è un&apos;uscita: il cassetto cala e la banca sale dello stesso importo.
           </p>
         </div>
       </div>
 
-      {esito && <p className="text-xs text-b58-olive-dark mt-3">{esito}</p>}
+      {esito && <p className="testo-sala text-b58-olive-dark mt-3">{esito}</p>}
 
       {tesoreria?.ultimo_conteggio_il && (
-        <p className="text-[11px] text-b58-charcoal-soft/70 mt-3 border-t border-b58-charcoal/10 pt-2">
+        <p className="testo-sala text-b58-charcoal-soft/70 mt-3 border-t border-b58-charcoal/10 pt-2">
           Ultimo conteggio: {formatDate(tesoreria.ultimo_conteggio_il)}
           {Number(tesoreria.ultima_differenza) !== 0 && (
             <>

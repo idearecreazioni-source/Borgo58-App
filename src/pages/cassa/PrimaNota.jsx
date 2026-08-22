@@ -130,8 +130,8 @@ export default function PrimaNota() {
   const isForager = form.tipo_documento === "documento_raccoglitore_occasionale";
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setDirection = (direction) =>
     setForm((f) => ({ ...f, direction, causale_id: "", is_owner_injection: false }));
@@ -215,14 +215,14 @@ export default function PrimaNota() {
   }, [movements]);
 
   return (
-    <div className="max-w-5xl mx-auto pb-16">
+    <div className="testo-sala max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa
         </Link>
         <div className="flex items-center gap-3">
           {balance && (
-            <span className="text-sm text-b58-charcoal-soft">
+            <span className="testo-sala text-b58-charcoal-soft">
               Contante in cassa:{" "}
               <span className={`font-medium ${Number(balance.balance) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.balance)}
@@ -237,7 +237,7 @@ export default function PrimaNota() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -249,18 +249,18 @@ export default function PrimaNota() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-6">Prima nota di cassa</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Nuovo movimento */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Nuovo movimento</h2>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Nuovo movimento</h2>
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
           <div className="flex gap-2 mb-3">
             <button
               type="button"
               onClick={() => setDirection("uscita")}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "uscita"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -271,7 +271,7 @@ export default function PrimaNota() {
             <button
               type="button"
               onClick={() => setDirection("entrata")}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "entrata"
                   ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -288,7 +288,7 @@ export default function PrimaNota() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, mezzo: "cassa" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.mezzo === "cassa"
                   ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -299,7 +299,7 @@ export default function PrimaNota() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, mezzo: "banca" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.mezzo === "banca"
                   ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -358,7 +358,7 @@ export default function PrimaNota() {
           </div>
 
           {showSimplifiedInvoiceHint && (
-            <p className="text-xs text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
+            <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
               Scontrino sotto i {SIMPLIFIED_INVOICE_THRESHOLD}€: hai chiesto la fattura semplificata
               (dando P.IVA/codice fiscale) per poter recuperare l'IVA? Con il solo scontrino l'IVA non è detraibile.
             </p>
@@ -366,7 +366,7 @@ export default function PrimaNota() {
 
           {isForager && (
             <div className="mb-3">
-              <p className="text-xs text-b58-charcoal-soft/80 bg-b58-cream-dark/50 rounded-lg px-3 py-2 mb-2">
+              <p className="testo-sala text-b58-charcoal-soft/80 bg-b58-cream-dark/50 rounded-lg px-3 py-2 mb-2">
                 Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non legnosi):
                 conserva codice fiscale del raccoglitore e riferimento F24 codice tributo 1853 come prova
                 del forfait pagato. Dal 2026 è obbligatoria anche la regione di raccolta.
@@ -406,7 +406,7 @@ export default function PrimaNota() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-4">
               {form.direction === "entrata" && (
-                <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+                <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
                     type="checkbox"
                     checked={form.is_owner_injection}
@@ -426,7 +426,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>
@@ -450,7 +450,7 @@ export default function PrimaNota() {
               <button
                 type="button"
                 onClick={() => { setFrom(""); setTo(""); }}
-                className="rounded-lg border border-b58-charcoal/15 px-3 py-2 text-sm text-b58-charcoal-soft hover:bg-b58-cream-dark"
+                className="tocco-bottone rounded-lg border border-b58-charcoal/15 px-3  testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark"
               >
                 Azzera
               </button>
@@ -460,24 +460,24 @@ export default function PrimaNota() {
             type="button"
             onClick={handleExport}
             disabled={movements.length === 0}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2 disabled:opacity-40"
+            className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4  disabled:opacity-40"
           >
             Esporta CSV
           </button>
         </div>
 
         {loading ? (
-          <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+          <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
         ) : movements.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessun movimento nel periodo.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento nel periodo.</p>
         ) : (
           <>
-            <div className="text-sm text-b58-charcoal-soft mb-3">
+            <div className="testo-sala text-b58-charcoal-soft mb-3">
               Totali periodo: <span className="text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</span>{" "}
               <span className="text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full testo-sala">
                 <thead>
                   <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                     <th className="py-2 font-medium">Data</th>
@@ -501,7 +501,7 @@ export default function PrimaNota() {
                       <td className="py-2 text-b58-charcoal-soft">{formatDate(m.movement_date)}</td>
                       <td className="py-2 whitespace-nowrap">
                         <span
-                          className={`text-[11px] rounded-full px-2 py-0.5 ${
+                          className={`testo-sala rounded-full px-2 py-0.5 ${
                             m.mezzo === "banca"
                               ? "bg-b58-charcoal/10 text-b58-charcoal"
                               : "bg-b58-gold/20 text-b58-gold-dark"
@@ -513,12 +513,12 @@ export default function PrimaNota() {
                       <td className="py-2 text-b58-charcoal">
                         {m.causale?.label ?? "—"}
                         {m.is_owner_injection && (
-                          <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                             versamento titolare
                           </span>
                         )}
                         {m.business_purpose && (
-                          <div className="text-xs text-b58-charcoal-soft">{m.business_purpose}</div>
+                          <div className="testo-sala text-b58-charcoal-soft">{m.business_purpose}</div>
                         )}
                         {/* ⚠️ La nota non si vedeva da nessuna parte, e le
                             causali di sistema si chiamano «Uscita» e «Altra
@@ -526,9 +526,9 @@ export default function PrimaNota() {
                             stessa parola sopra. La descrizione la scrive
                             lui nella nota — mostrarla è tutto ciò che
                             serviva perché una riga si riconosca. */}
-                        {m.note && <div className="text-xs text-b58-charcoal-soft">{m.note}</div>}
+                        {m.note && <div className="testo-sala text-b58-charcoal-soft">{m.note}</div>}
                       </td>
-                      <td className="py-2 text-b58-charcoal-soft text-xs">
+                      <td className="py-2 text-b58-charcoal-soft testo-sala">
                         {labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento)}
                         {m.document_reference ? ` · ${m.document_reference}` : ""}
                         {m.harvest_region && <div>Regione: {m.harvest_region}</div>}

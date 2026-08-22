@@ -85,19 +85,19 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={onPrev} className="text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
-        <h3 className="font-display text-base text-b58-charcoal">
+        <button onClick={onPrev} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
+        <h3 className="font-display testo-sala-grande text-b58-charcoal">
           {MONTH_NAMES[month - 1]} {year}
         </h3>
-        <button onClick={onNext} className="text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
+        <button onClick={onNext} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <div className="grid grid-cols-7 gap-1 text-center">
           {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((d) => (
-            <div key={d} className="text-[11px] text-b58-charcoal-soft/60 font-medium pb-1">{d}</div>
+            <div key={d} className="testo-sala text-b58-charcoal-soft/60 font-medium pb-1">{d}</div>
           ))}
           {cells.map((day, idx) => {
             if (!day) return <div key={idx} />;
@@ -109,7 +109,7 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
               <button
                 key={idx}
                 onClick={() => onSelectDay(isSelected ? null : dateISO)}
-                className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm relative ${
+                className={`tocco-bottone aspect-square rounded-lg flex flex-col items-center justify-center testo-sala relative ${
                   isSelected
                     ? "bg-b58-terracotta text-b58-parchment"
                     : isToday
@@ -141,7 +141,7 @@ function RiservatoBadge() {
   return (
     <span
       title="Riservato: lo staff non vede questo task"
-      className="shrink-0 inline-flex items-center rounded-full bg-b58-charcoal/10 text-b58-charcoal-soft text-[10px] font-medium px-2 py-0.5"
+      className="shrink-0 inline-flex items-center rounded-full bg-b58-charcoal/10 text-b58-charcoal-soft testo-sala font-medium px-2 py-0.5"
     >
       Riservato
     </span>
@@ -157,19 +157,19 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         <input type="checkbox" checked={false} onChange={onFatto} className="shrink-0" title="Fatto" />
-        <button type="button" onClick={onStella} className="shrink-0 text-base leading-none" title="Per me conta">
+        <button type="button" onClick={onStella} className="tocco-bottone shrink-0 testo-sala-grande leading-none" title="Per me conta">
           <span className={t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>★</span>
         </button>
-        <button onClick={onApri} className="flex-1 text-left min-w-0">
-          <span className="text-sm text-b58-charcoal">{t.title}</span>
-          <span className="text-xs text-b58-charcoal-soft ml-2">
+        <button onClick={onApri} className="tocco-bottone flex-1 text-left min-w-0">
+          <span className="testo-sala text-b58-charcoal">{t.title}</span>
+          <span className="testo-sala text-b58-charcoal-soft ml-2">
             · {labelFor(TASK_CATEGORIES, t.category)}
           </span>
           {/* ⚠️ L'anzianità è ciò che impedisce a «quando capita» di
               diventare un cimitero: senza, una voce ferma da tre mesi
               sembra scritta ieri. */}
           {senzaData && t.giorni_in_lista > 13 && (
-            <span className="text-xs text-b58-charcoal-soft/70 ml-2">
+            <span className="testo-sala text-b58-charcoal-soft/70 ml-2">
               in lista da {Math.round(t.giorni_in_lista / 30) >= 1
                 ? `${Math.round(t.giorni_in_lista / 30)} mes${Math.round(t.giorni_in_lista / 30) === 1 ? "e" : "i"}`
                 : `${t.giorni_in_lista} giorni`}
@@ -180,19 +180,19 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
         {t.origine_modulo && (
           <Link
             to={t.origine_modulo === "posta" ? "/documenti/posta" : "/documenti"}
-            className="shrink-0 text-[10px] text-b58-charcoal-soft hover:text-b58-terracotta underline"
+            className="tocco-bottone inline-flex items-center shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
           >
             da {t.origine_modulo === "posta" ? "Posta" : "Archivio documenti"}
           </Link>
         )}
         {t.visibile_staff === false && <RiservatoBadge />}
         {t.due_date && (
-          <span className="text-xs text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
+          <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
         )}
         <button
           type="button"
           onClick={() => setRimanda((r) => !r)}
-          className="shrink-0 text-xs text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
         >
           {senzaData ? "dagli una data" : "rimanda"}
         </button>
@@ -206,7 +206,7 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
               onSposta(e.target.value);
               setRimanda(false);
             }}
-            className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-xs text-b58-charcoal"
+            className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
           />
         </div>
       )}
@@ -336,7 +336,7 @@ export default function AgendaList() {
   const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="testo-sala max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">
           Agenda
@@ -344,7 +344,7 @@ export default function AgendaList() {
               entra mai: un numero fermo su venti smette di essere
               un'informazione e si impara a ignorarlo. */}
           {daFareAdesso > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-b58-terracotta text-b58-parchment text-xs font-medium px-2 py-0.5 align-middle">
+            <span className="ml-2 inline-flex items-center rounded-full bg-b58-terracotta text-b58-parchment testo-sala font-medium px-2 py-0.5 align-middle">
               {daFareAdesso}
             </span>
           )}
@@ -356,14 +356,14 @@ export default function AgendaList() {
           {isTitolare && (
             <Link
               to="/agenda/adempimenti"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+              className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
             >
               Scadenze da stampare
             </Link>
           )}
           <Link
             to="/agenda/nuovo"
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
           >
             + Nuovo task
           </Link>
@@ -371,7 +371,7 @@ export default function AgendaList() {
       </div>
 
       {notice && (
-        <p className="text-sm text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
 
       <div className="flex gap-2 mb-4">
@@ -382,7 +382,7 @@ export default function AgendaList() {
           <button
             key={v.value}
             onClick={() => setView(v.value)}
-            className={`text-sm rounded-full px-3 py-1.5 border transition-colors ${
+            className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
                 ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -393,11 +393,11 @@ export default function AgendaList() {
         ))}
       </div>
 
-      {error && <p className="text-sm text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {view === "lista" ? (
         loading ? (
-          <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+          <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
         ) : corsie.length === 0 ? (
           <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
             <p className="text-b58-charcoal-soft">Niente da fare. Davvero.</p>
@@ -434,29 +434,29 @@ export default function AgendaList() {
                     onClick={() =>
                       c.key === "piu_avanti" && setApri((a) => ({ ...a, [c.key]: !a[c.key] }))
                     }
-                    className="flex items-center gap-2 mb-2"
+                    className="tocco-bottone flex items-center gap-2 mb-2"
                   >
                     <h2
-                      className={`font-display text-lg ${
+                      className={`font-display testo-sala-grande ${
                         c.key === "in_ritardo" ? "text-b58-terracotta-dark" : "text-b58-charcoal"
                       }`}
                     >
                       {c.titolo}
                     </h2>
-                    <span className="text-xs text-b58-charcoal-soft">({righe.length})</span>
+                    <span className="testo-sala text-b58-charcoal-soft">({righe.length})</span>
                     {c.key === "piu_avanti" && (
-                      <span className="text-xs text-b58-charcoal-soft">{chiusa ? "▸" : "▾"}</span>
+                      <span className="testo-sala text-b58-charcoal-soft">{chiusa ? "▸" : "▾"}</span>
                     )}
                   </button>
 
                   {righe.length === 0 ? (
-                    <p className="text-sm text-b58-charcoal-soft/60">Niente qui.</p>
+                    <p className="testo-sala text-b58-charcoal-soft/60">Niente qui.</p>
                   ) : chiusa ? null : (
                     <div className="space-y-3">
                       {gruppi.map(([titolo, elenco]) => (
                         <div key={titolo ?? "unico"}>
                           {titolo && (
-                            <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1">
+                            <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1">
                               {titolo}
                             </p>
                           )}
@@ -491,7 +491,7 @@ export default function AgendaList() {
           <button
             type="button"
             onClick={() => setMostraFatti((m) => !m)}
-            className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
           >
             {mostraFatti ? "▾" : "▸"} Fatti di recente ({fatti.length})
           </button>
@@ -499,19 +499,19 @@ export default function AgendaList() {
             <div className="mt-2 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
               {fatti.map((f) => (
                 <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-sm text-b58-charcoal-soft line-through flex-1 min-w-0">
+                  <span className="testo-sala text-b58-charcoal-soft line-through flex-1 min-w-0">
                     {f.title}
                   </span>
                   {f.ricorrenza && (
-                    <span className="text-[10px] text-b58-charcoal-soft/70 shrink-0">si ripete</span>
+                    <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">si ripete</span>
                   )}
-                  <span className="text-xs text-b58-charcoal-soft/70 shrink-0">
+                  <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">
                     {formatDate(f.fatto_il)}
                   </span>
                   <button
                     type="button"
                     onClick={() => riapri(f)}
-                    className="shrink-0 text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                    className="tocco-bottone shrink-0 testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                   >
                     rimetti da fare
                   </button>
@@ -536,16 +536,16 @@ export default function AgendaList() {
           />
           {selectedDay && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mt-4">
-              <h3 className="text-sm font-medium text-b58-charcoal mb-2">{formatDate(selectedDay)}</h3>
+              <h3 className="testo-sala font-medium text-b58-charcoal mb-2">{formatDate(selectedDay)}</h3>
               {dayTasks.length === 0 ? (
-                <p className="text-sm text-b58-charcoal-soft">Nessun task in questo giorno.</p>
+                <p className="testo-sala text-b58-charcoal-soft">Nessun task in questo giorno.</p>
               ) : (
                 <div className="space-y-2">
                   {dayTasks.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => navigate(`/agenda/${t.id}`)}
-                      className="w-full text-left flex items-center gap-2 text-sm"
+                      className="tocco-bottone w-full text-left flex items-center gap-2 testo-sala"
                     >
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}

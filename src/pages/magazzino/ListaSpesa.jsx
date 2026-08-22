@@ -149,7 +149,7 @@ export default function ListaSpesa() {
   }, [daComprare]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddThreshold = async () => {
     setAddingThreshold(true);
@@ -322,12 +322,12 @@ export default function ListaSpesa() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/magazzino" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+    <div className="testo-sala max-w-3xl mx-auto pb-16">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
@@ -337,14 +337,14 @@ export default function ListaSpesa() {
             type="button"
             onClick={handleAddThreshold}
             disabled={addingThreshold}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2 disabled:opacity-60"
+            className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4  disabled:opacity-60"
           >
             {addingThreshold ? "Aggiungo…" : "Ricontrolla le scorte"}
           </button>
           {isTitolare && (
             <Link
               to="/magazzino/ordini"
-              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
             >
               Ordina ai fornitori
             </Link>
@@ -362,21 +362,21 @@ export default function ListaSpesa() {
       )}
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       {/* Da comprare, raggruppati per fornitore */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Da comprare</h2>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Da comprare</h2>
 
         {daComprare.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60 mb-4">Nessun articolo in lista.</p>
+          <p className="testo-sala text-b58-charcoal-soft/60 mb-4">Nessun articolo in lista.</p>
         ) : (
           Object.entries(groupedDaComprare).map(([supplierName, groupItems]) => (
             <div key={supplierName} className="mb-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+              <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
                 {supplierName}
               </p>
               <ul className="space-y-2">
@@ -384,7 +384,7 @@ export default function ListaSpesa() {
                   <li key={item.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div>
-                        <span className="text-sm text-b58-charcoal font-medium">
+                        <span className="testo-sala text-b58-charcoal font-medium">
                           {item.ingredient?.name ?? item.custom_name}
                         </span>
                         {/* La quantità si corregge qui: quella proposta è
@@ -398,25 +398,25 @@ export default function ListaSpesa() {
                             step="0.01"
                             defaultValue={item.quantity_needed ?? ""}
                             onBlur={(e) => handleQuantita(item, e.target.value)}
-                            className="w-20 ml-1.5 rounded border border-b58-charcoal/15 px-1.5 py-0.5 text-sm text-b58-charcoal"
+                            className="w-20 ml-1.5 rounded border border-b58-charcoal/15 px-1.5 py-0.5 testo-sala text-b58-charcoal"
                           />
                         ) : (
                           item.quantity_needed != null && (
-                            <span className="text-sm text-b58-charcoal-soft ml-1.5">
+                            <span className="testo-sala text-b58-charcoal-soft ml-1.5">
                               {formatQta(item.quantity_needed)} {item.unit}
                             </span>
                           )
                         )}
                         {isTitolare && (
-                          <span className="text-sm text-b58-charcoal-soft ml-1">{item.unit}</span>
+                          <span className="testo-sala text-b58-charcoal-soft ml-1">{item.unit}</span>
                         )}
                         {item.source === "soglia_minima" && (
-                          <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto soglia
                           </span>
                         )}
                         {item.status === "ordinata" && (
-                          <span className="text-[11px] text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="testo-sala text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5 ml-1.5">
                             ordinata
                           </span>
                         )}
@@ -424,13 +424,13 @@ export default function ListaSpesa() {
                             sparisce da sola — la lista è sua — ma smette
                             di far comprare due volte la stessa cosa. */}
                         {item.numeri?.rientrata && (
-                          <span className="text-[11px] text-emerald-800 bg-emerald-100 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="testo-sala text-emerald-800 bg-emerald-100 rounded-full px-2 py-0.5 ml-1.5">
                             ora ce n'è abbastanza
                           </span>
                         )}
                         {/* I numeri veri, letti adesso dal magazzino. */}
                         {item.numeri?.soglia != null && (
-                          <div className="text-xs text-b58-charcoal-soft mt-0.5">
+                          <div className="testo-sala text-b58-charcoal-soft mt-0.5">
                             in cella {Number(item.numeri.giacenza ?? 0)} {item.unit} · scorta minima{" "}
                             {Number(item.numeri.soglia)} {item.unit}
                             {Number(item.numeri.mancante) > 0 && (
@@ -447,7 +447,7 @@ export default function ListaSpesa() {
                             sparisce quando la merce è arrivata a metà lascia
                             senza scorte, ed è la normalità coi fornitori. */}
                         {arrivati(item) > 0 && (
-                          <div className="text-xs text-b58-charcoal mt-0.5">
+                          <div className="testo-sala text-b58-charcoal mt-0.5">
                             arrivati {formatQta(arrivati(item))}
                             {item.quantity_needed != null && <> di {formatQta(item.quantity_needed)}</>}{" "}
                             {item.unit}
@@ -455,7 +455,7 @@ export default function ListaSpesa() {
                               <button
                                 type="button"
                                 onClick={() => handleArrivata(item.id)}
-                                className="ml-2 text-b58-terracotta hover:text-b58-terracotta-dark"
+                                className="tocco-bottone ml-2 text-b58-terracotta hover:text-b58-terracotta-dark"
                               >
                                 mi bastano, chiudi la riga
                               </button>
@@ -463,10 +463,10 @@ export default function ListaSpesa() {
                           </div>
                         )}
                         {item.note && (
-                          <div className="text-xs text-b58-charcoal-soft mt-0.5">{item.note}</div>
+                          <div className="testo-sala text-b58-charcoal-soft mt-0.5">{item.note}</div>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="gesti-pericolosi">
                         {/* Il fornitore si cambia QUI. Una riga lo eredita
                             dalla scheda del prodotto quando nasce, ma
                             senza poterlo correggere sulla riga si
@@ -476,7 +476,7 @@ export default function ListaSpesa() {
                           <select
                             value={item.supplier?.id ?? ""}
                             onChange={(e) => handleFornitore(item.id, e.target.value)}
-                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 text-xs text-b58-charcoal"
+                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal"
                           >
                             <option value="">chi lo vende?</option>
                             {suppliers.map((s) => (
@@ -490,7 +490,7 @@ export default function ListaSpesa() {
                           <button
                             type="button"
                             onClick={() => openClose(item.id, item.quantity_needed)}
-                            className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                            className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                           >
                             Segna acquistato
                           </button>
@@ -498,7 +498,7 @@ export default function ListaSpesa() {
                         <button
                           type="button"
                           onClick={() => handleRemove(item.id)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                         >
                           Rimuovi
                         </button>
@@ -522,7 +522,7 @@ export default function ListaSpesa() {
                               key={e.value}
                               type="button"
                               onClick={() => setCloseForm((f) => ({ ...f, esito: e.value }))}
-                              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                              className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                                 closeForm.esito === e.value
                                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -534,7 +534,7 @@ export default function ListaSpesa() {
                         </div>
 
                         {closeForm.esito === "non_presa" ? (
-                          <p className="text-xs text-b58-charcoal-soft mb-2">
+                          <p className="testo-sala text-b58-charcoal-soft mb-2">
                             La riga sparisce. Niente costo e <strong>niente merce in
                             magazzino</strong>: se invece te l&apos;hanno regalata, scegli
                             «Avuta gratis».
@@ -642,7 +642,7 @@ export default function ListaSpesa() {
                         )}
 
                         {!nonLetto(rincaro) && rincaro?.da_segnalare && (
-                          <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
+                          <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-2">
                             ⚠️ Prima lo pagavi {formatEUR(rincaro.prezzo_precedente)}, adesso{" "}
                             {formatEUR(prezzoUnitario)} ({rincaro.variazione > 0 ? "+" : ""}
                             {rincaro.variazione}%)
@@ -653,7 +653,7 @@ export default function ListaSpesa() {
                         )}
 
                         {/* Cosa succede confermando, detto prima di confermare. */}
-                        <p className="text-xs text-b58-charcoal-soft mt-2">
+                        <p className="testo-sala text-b58-charcoal-soft mt-2">
                           {closeForm.esito === "comprata" &&
                             "Esce un'uscita di prima nota dalla " +
                               (closeForm.payment_method === "contante" ? "cassa" : "banca") +
@@ -670,14 +670,14 @@ export default function ListaSpesa() {
                               (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
                             onClick={() => handleClose(item.id)}
-                            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
                           >
                             {closing ? "Chiudo…" : "Conferma"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setClosingItemId(null)}
-                            className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                           >
                             Annulla
                           </button>
@@ -697,7 +697,7 @@ export default function ListaSpesa() {
             <button
               type="button"
               onClick={() => setAddForm({ ...emptyAddForm, mode: "ingredient" })}
-              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+              className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                 addForm.mode === "ingredient"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -708,7 +708,7 @@ export default function ListaSpesa() {
             <button
               type="button"
               onClick={() => setAddForm({ ...emptyAddForm, mode: "custom" })}
-              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+              className={`tocco-bottone rounded-full testo-sala px-3  border transition-colors ${
                 addForm.mode === "custom"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -784,7 +784,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60 shrink-0"
+              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -795,10 +795,10 @@ export default function ListaSpesa() {
       {/* Storico acquisti */}
       {acquistati.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Acquistati di recente</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Acquistati di recente</h2>
           <ul className="space-y-1.5">
             {acquistati.map((item) => (
-              <li key={item.id} className="text-sm text-b58-charcoal-soft flex items-center justify-between gap-2">
+              <li key={item.id} className="testo-sala text-b58-charcoal-soft flex items-center justify-between gap-2">
                 <span>
                   <span className="text-b58-charcoal">{item.ingredient?.name ?? item.custom_name}</span>
                   {item.purchased_at && ` — ${formatDate(item.purchased_at)}`}

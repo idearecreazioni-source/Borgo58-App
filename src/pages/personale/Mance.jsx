@@ -92,7 +92,7 @@ export default function Mance() {
   }, [tipsYear]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleCollect = async () => {
     if (!collectForm.amount || Number(collectForm.amount) <= 0) return;
@@ -210,13 +210,13 @@ export default function Mance() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-16">
+    <div className="testo-sala max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/personale" className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Personale
         </Link>
         {entities && (
-          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal">
+          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal">
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
           </select>
@@ -224,26 +224,26 @@ export default function Mance() {
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Mance</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Raccolta quotidiana → monte accumulato → distribuzione mensile. Le verifiche del regime (5%, soglia
         75.000€, tetto 30%) sono un aiuto: il sistema segnala, la decisione e la gestione fiscale restano tue e
         del Consulente del Lavoro (§6).
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* Monte */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Monte mance da distribuire</div>
+            <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Monte mance da distribuire</div>
             <div className="text-2xl text-b58-charcoal font-medium">{balance ? formatEUR(balance.balance) : "—"}</div>
             {balance && (
-              <div className="text-[11px] text-b58-charcoal-soft mt-1">
+              <div className="testo-sala text-b58-charcoal-soft mt-1">
                 raccolte {formatEUR(balance.collected)} − distribuite {formatEUR(balance.distributed)}
               </div>
             )}
@@ -251,7 +251,7 @@ export default function Mance() {
 
           {/* Raccolta */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-4">Raccolta</h2>
+            <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Raccolta</h2>
             <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 flex flex-wrap gap-2 items-end mb-4">
               <input type="number" step="0.01" min="0" value={collectForm.amount} onChange={(e) => setCollectForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Importo €" className={inputClass + " w-32"} />
               <input type="date" value={collectForm.collected_date} onChange={(e) => setCollectForm((f) => ({ ...f, collected_date: e.target.value }))} className={inputClass + " w-40"} />
@@ -263,12 +263,22 @@ export default function Mance() {
                 {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
               </select>
               <input value={collectForm.note} onChange={(e) => setCollectForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={inputClass + " flex-1 min-w-[120px]"} />
-              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60">
                 + Registra raccolta
               </button>
             </div>
+            {/* 🔴 5 mm FRA UNA RIGA E L'ALTRA (22/08). Ogni riga porta un
+                «Rimuovi», e con `space-y-1` due pulsanti che cancellano
+                stavano a **0,54 mm** — misurato: la distanza più corta di
+                tutto il gestionale. Un dito storto qui non sbaglia gesto:
+                **sbaglia riga**, e cancella la raccolta di un altro
+                giorno. ⚠️ E qui i soldi sono **di altri**. */}
+            {/* ⚠️ E 5 mm anche FRA IL MODULO E LA LISTA: «+ Registra
+                raccolta» stava a 3,92 mm dal primo «Rimuovi». Chi ha
+                appena premuto «Registra» ha il dito lì, e sotto c'è una
+                cancellazione. */}
             {collected.length > 0 && (
-              <ul className="space-y-1 text-sm max-h-40 overflow-y-auto">
+              <ul className="testo-sala max-h-40 overflow-y-auto" style={{ display: "grid", gap: "calc(var(--pxcm) * 0.5)", marginTop: "calc(var(--pxcm) * 0.5)" }}>
                 {collected.slice(0, 20).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-b58-charcoal-soft">
                     <span>{formatDate(c.collected_date)} · {formatEUR(c.amount)}{c.note ? ` · ${c.note}` : ""}</span>
@@ -289,8 +299,8 @@ export default function Mance() {
               di cassa le comprende e dichiara che non sono sue. */}
           {daDistribuire && Number(daDistribuire.totale) > 0 && (
             <div className="rounded-xl bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">Da distribuire</h2>
-              <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-b58-charcoal mb-2">
+              <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Da distribuire</h2>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 testo-sala text-b58-charcoal mb-2">
                 <span>
                   Nel cassetto:{" "}
                   <strong>{formatEUR(daDistribuire.in_contanti)}</strong>
@@ -300,7 +310,7 @@ export default function Mance() {
                   <strong>{formatEUR(daDistribuire.su_carta)}</strong>
                 </span>
               </div>
-              <p className="text-[11px] text-b58-charcoal-soft leading-relaxed">
+              <p className="testo-sala text-b58-charcoal-soft leading-relaxed">
                 {daDistribuire.avvertenza}
               </p>
             </div>
@@ -308,26 +318,26 @@ export default function Mance() {
 
           {/* Distribuzione */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-4">Distribuzione mensile</h2>
+            <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Distribuzione mensile</h2>
             {employees.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">Aggiungi dei dipendenti attivi per distribuire le mance.</p>
+              <p className="testo-sala text-b58-charcoal-soft/60">Aggiungi dei dipendenti attivi per distribuire le mance.</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-2 items-end mb-4">
                   <div>
-                    <label className="block text-xs text-b58-charcoal-soft mb-1">Mese</label>
+                    <label className="block testo-sala text-b58-charcoal-soft mb-1">Mese</label>
                     <input type="month" value={distMonth} onChange={(e) => setDistMonth(e.target.value)} className={inputClass + " w-44"} />
                   </div>
                   <div>
                     {/* Con che soldi paghi: il gestionale non lo indovina,
                         perché un'ipotesi qui sposterebbe il saldo del
                         cassetto senza che nessuno l'abbia deciso. */}
-                    <label className="block text-xs text-b58-charcoal-soft mb-1">Paghi con</label>
+                    <label className="block testo-sala text-b58-charcoal-soft mb-1">Paghi con</label>
                     <select value={distMezzo} onChange={(e) => setDistMezzo(e.target.value)} className={inputClass + " w-36"}>
                       {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
                     </select>
                   </div>
-                  <button type="button" onClick={distributeEqually} className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal text-sm px-4 py-2">
+                  <button type="button" onClick={distributeEqually} className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala px-4">
                     Dividi equamente il monte
                   </button>
                 </div>
@@ -343,7 +353,7 @@ export default function Mance() {
                     return (
                       <div key={emp.id} className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-b58-charcoal">{emp.last_name} {emp.first_name}</span>
+                          <span className="testo-sala text-b58-charcoal">{emp.last_name} {emp.first_name}</span>
                           <input
                             type="number"
                             step="0.01"
@@ -354,14 +364,14 @@ export default function Mance() {
                             className={inputClass + " w-28"}
                           />
                         </div>
-                        {check && <div className={`text-[11px] mt-1 ${checkColor}`}>{check.msg}</div>}
+                        {check && <div className={`testo-sala mt-1 ${checkColor}`}>{check.msg}</div>}
                       </div>
                     );
                   })}
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-b58-charcoal-soft">
+                  <span className="testo-sala text-b58-charcoal-soft">
                     Totale da distribuire: <span className="text-b58-charcoal font-medium">{formatEUR(allocationTotal)}</span>
                     {oltreIlMonte && (
                       <span className="text-b58-terracotta-dark">
@@ -378,7 +388,7 @@ export default function Mance() {
                     type="button"
                     disabled={busy || allocationTotal <= 0 || oltreIlMonte}
                     onClick={handleRegisterDistribution}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
                   >
                     Registra distribuzione
                   </button>
@@ -390,10 +400,10 @@ export default function Mance() {
           {/* Storico distribuzioni */}
           {distributions.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-4">Distribuzioni effettuate</h2>
-              <ul className="space-y-1.5">
+              <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Distribuzioni effettuate</h2>
+              <ul style={{ display: "grid", gap: "calc(var(--pxcm) * 0.5)" }}>
                 {distributions.map((d) => (
-                  <li key={d.id} className="flex items-center justify-between gap-2 text-sm text-b58-charcoal-soft">
+                  <li key={d.id} className="flex items-center justify-between gap-2 testo-sala text-b58-charcoal-soft">
                     <span className="capitalize">{monthLabel(d.period_month)} · {formatEUR(d.total_amount)} · {d.lines?.length ?? 0} dipendenti</span>
                     <ConfermaDistruttiva
                       etichetta="Rimuovi"
