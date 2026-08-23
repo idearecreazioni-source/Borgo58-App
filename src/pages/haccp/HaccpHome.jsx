@@ -1,28 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../../components/Icon";
-import { listNonConformities, listTemperatureLogs } from "../../lib/api/haccp";
+import { riepilogoHaccpOggi } from "../../lib/api/haccp";
 
-const isToday = (dateStr) => new Date(dateStr).toDateString() === new Date().toDateString();
+// 🔴 «OGGI» QUI VOLEVA DIRE UNA COSA DIVERSA DA «OGGI» NEL REGISTRO
+// (24/08/2026). Fino a stanotte questa schermata contava le letture fuori
+// range con `new Date().toDateString()` — il GIORNO DI CALENDARIO — mentre
+// il registro delle temperature, riscritto poche ore fa, decide «oggi»
+// con la SERATA DI SERVIZIO.
+//
+// ⚠️ Alle 03:00 la serata in corso è ancora il giorno prima: il badge
+// diceva «0 fuori range oggi» mentre il registro sotto ne mostrava tre.
+// Nessuna delle due parti era rotta — il difetto viveva **nello spazio
+// fra le due**, che è il posto dove nessuna verifica guarda se non ce la
+// si manda apposta. Ed è la famiglia del manuale HACCP che stampava
+// «conforme» dove il database apriva una non conformità.
+//
+// ⚠️ E LA LETTURA ERA INTERA: per contare le letture di oggi si portavano
+// a casa TUTTE le rilevazioni (732 sul progetto di prova) e si filtrava
+// nel browser. Quella tabella cresce ogni giorno, e una lettura senza
+// limite torna al massimo di mille righe senza dirlo — il badge avrebbe
+// cominciato a contare su un pezzo, sempre verso il basso.
+// *Un controllo chiede al database la risposta, non i dati su cui
+// calcolarla.*
 
 export default function HaccpHome() {
-  const [openNc, setOpenNc] = useState(0);
-  const [nonCompliantToday, setNonCompliantToday] = useState(0);
+  const [oggi, setOggi] = useState(null);
   const [errore, setErrore] = useState("");
 
   useEffect(() => {
     // Un errore qui non va ingoiato: "0 fuori range" per un problema di
     // rete è indistinguibile da una giornata a posto — e questo è un
     // modulo di sicurezza alimentare.
-    listNonConformities()
-      .then((rows) => setOpenNc(rows.filter((r) => !r.resolved).length))
-      .catch((e) => setErrore(e.message));
-    listTemperatureLogs()
-      .then((rows) =>
-        setNonCompliantToday(rows.filter((r) => isToday(r.recorded_at) && !r.is_compliant).length)
-      )
+    riepilogoHaccpOggi()
+      .then(setOggi)
       .catch((e) => setErrore(e.message));
   }, []);
+
+  const openNc = Number(oggi?.non_conformita_aperte ?? 0);
+  const nonCompliantToday = Number(oggi?.fuori_range_oggi ?? 0);
+  const daLeggere = Number(oggi?.attrezzature_da_leggere ?? 0);
+  const pulizieDovute = Number(oggi?.pulizie_dovute ?? 0);
 
   const cards = [
     {
@@ -30,7 +48,16 @@ export default function HaccpHome() {
       icon: "leaf",
       title: "Registro temperature",
       desc: "Attrezzature a temperatura controllata e rilevazioni.",
-      alert: nonCompliantToday > 0 ? `${nonCompliantToday} fuori range oggi` : null,
+      // ⚠️ SI DICE ANCHE QUELLO CHE MANCA. Un badge che conta solo i
+      // problemi TROVATI tace su quelli non ancora cercati: sei
+      // frigoriferi mai letti oggi non danno nessun fuori range, e la
+      // schermata sembrava a posto.
+      alert:
+        nonCompliantToday > 0
+          ? `${nonCompliantToday} fuori range oggi`
+          : daLeggere > 0
+            ? `${daLeggere} da leggere oggi`
+            : null,
     },
     {
       to: "/haccp/ricevimento",
@@ -52,6 +79,7 @@ export default function HaccpHome() {
       icon: "leaf",
       title: "Pulizia e disinfestazione",
       desc: "Attività di sanificazione e controllo infestanti.",
+      alert: pulizieDovute > 0 ? `${pulizieDovute} da fare oggi` : null,
     },
     {
       to: "/haccp/non-conformita",

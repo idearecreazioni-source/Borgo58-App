@@ -350,3 +350,17 @@ export async function nonConformitaMesiConDati() {
   if (error) throw error;
   return data ?? [];
 }
+
+// I numeri della schermata iniziale HACCP, contati sulla SERATA di
+// servizio come li conta il registro sotto.
+//
+// 🔴 Prima la schermata leggeva TUTTE le rilevazioni (732 sul progetto di
+// prova, e crescono ogni giorno) e le filtrava nel browser col giorno di
+// CALENDARIO — mentre il registro sotto usa la serata. Alle 03:00 i due
+// metri danno risposte diverse, e il badge diceva «zero fuori range»
+// mentre il registro ne mostrava tre.
+export async function riepilogoHaccpOggi() {
+  const { data, error } = await supabase.rpc("haccp_riepilogo_oggi");
+  if (error) throw error;
+  return data?.[0] ?? null;
+}

@@ -1562,3 +1562,103 @@ che insegna a non guardare.**
 migrazione è che il lavoro di cui si lamenta abbia girato **dopo**. Se un
 giorno fosse davvero fermo, quella pulizia non lo zittirebbe — e la
 verifica prova proprio quel verso.
+
+## 38 · 24/08/2026 — «ci si confronta con la previsione chiusa più recente»
+
+**Cosa era stato deciso e quando.** Il 15/08, costruendo «Come sta
+andando», la schermata apriva scegliendo da sé una previsione, e la
+regola era scritta nel codice: *«si parte dalla previsione chiusa più
+recente: è la rotta contro cui ha senso confrontarsi»*, con un ripiego
+sulla prima della lista se nessuna era chiusa.
+
+**La ragione di allora.** Una previsione **chiusa** è l'unica su cui
+nessuno ha più messo le mani dopo aver visto com'era andata: confrontarsi
+con una ancora aperta è confrontarsi con qualcosa che si può ritoccare.
+
+**Cosa si decide adesso.** Prima viene **l'anno**: si sceglie fra le
+previsioni dell'anno che si sta guardando, e solo lì dentro vince quella
+chiusa. Se per quell'anno non ce n'è nessuna, **non si ripiega su un
+altro anno**: si resta senza previsione.
+
+**La ragione di allora vale ancora, e infatti è conservata** — fra quelle
+dell'anno giusto la chiusa vince ancora. Quello che mancava è che
+«recente» e «dello stesso anno» non sono la stessa cosa, e l'elenco è
+ordinato per anno decrescente: con un piano del 2027 in casa, la
+schermata apriva confrontando i numeri veri del **2026** con quello.
+
+🔴 **Il prezzo di quel «recente» misurato**: risultato d'anno di
+**25.898.463 €** e imposte per 7,2 milioni, su un locale da 34 coperti. E
+**la metà alta della tabella restava sana** — coperti reali, incassato,
+scontrino medio — quindi il numero assurdo sembrava un difetto di
+calcolo, non un piano di un altro anno. Con due previsioni di anni
+consecutivi scritte con cura la differenza sarebbe stata piccola e
+credibile, cioè invisibile.
+
+⚠️ **Si può ancora scegliere a mano un altro anno, e allora la schermata
+lo DICHIARA.** Non si vieta: guardare il 2026 col piano del 2027 può
+avere senso una volta. Quello che non deve poter succedere è farlo senza
+saperlo.
+
+## 39 · 24/08/2026 — «lo scadenziario è un elenco, le pulizie sono un elenco»
+
+**Cosa era stato deciso e quando.** Dal 02/08 le tre schermate HACCP —
+temperature, non conformità, pulizie — mostravano tutte un elenco
+**cronologico** di ciò che era stato registrato: le pulizie in ordine
+alfabetico con «Ultima: …» sotto ogni voce, le rilevazioni in ordine di
+data, le non conformità risolte una sotto l'altra dall'apertura.
+
+**La ragione di allora.** Un registro si legge in ordine, e per un
+gestionale appena nato l'elenco intero **era** la schermata: con dieci
+righe non c'è niente da riassumere.
+
+**Cosa si decide adesso** (Alessio, mandato del 24/08): in evidenza va
+**oggi**, e il resto scende in un archivio mese per mese, scaricabile e
+stampabile.
+
+**Perché la ragione di allora non vale più.** Perché le righe non sono
+più dieci: sul progetto di prova ci sono **732 rilevazioni, 199 spunte di
+pulizia, 13 non conformità** dopo due mesi di vita finta, e crescono ogni
+giorno. Un elenco cronologico dopo poche settimane non risponde più alla
+domanda che si fa davvero aprendo quelle schermate — *«oggi l'ho fatto?»*
+— e per rispondere bisogna contare a mente.
+
+⚠️ **E l'elenco intero era già bugiardo prima che diventasse illeggibile**:
+il registro temperature ne mostrava **cinquanta** senza dirlo, con 732
+sotto. *Una risposta più corta che ha l'aria di essere intera* — la
+famiglia del §8, in un documento esibibile.
+
+⚠️ **Le risolte non si nascondono, si archiviano**: una non conformità
+chiusa è **la prova che il sistema ha funzionato**, e davanti a un
+controllo vale quanto una aperta. L'archivio conserva per intero cosa è
+successo *e* cosa è stato fatto.
+
+## 40 · 24/08/2026 — «il costo del personale si scrive in due caselle libere»
+
+**Cosa era stato deciso e quando.** Dal 15/08, nella previsione, ogni
+riga di personale aveva **due campi indipendenti**: netto all'ora e netto
+al giorno. Nessuno dei due comandava sull'altro.
+
+**La ragione di allora.** Chi ragiona a paga oraria scrive l'ora, chi
+ragiona a giornata scrive la giornata: due caselle libere lasciano
+scrivere quella che si sa, senza obbligare a un conto a mente.
+
+**Cosa si decide adesso** (Alessio, mandato del 24/08): le ore lavorate
+al giorno diventano **un campo solo per tutta la previsione**, e i due
+netti si calcolano a vicenda — comanda l'**ultimo campo toccato**.
+
+**Perché la ragione di allora non vale più.** Perché la libertà comprava
+anche la contraddizione: 7 €/ora e 30 €/giorno passavano senza che niente
+lo dicesse, cioè una giornata da quattro ore e un quarto dentro una
+previsione che altrove ne conta otto. **La ragione di allora è comunque
+salva**: si continua a scrivere quello che si sa, ed è l'altro campo a
+seguire.
+
+⚠️ **`ore_giorno` esisteva nel database dal 15/08**, col suo valore
+predefinito: veniva salvata, e non la mostrava nessuna schermata e non la
+leggeva nessun calcolo. È la forma «tutto acceso, e muto» già vista sulla
+soglia di magazzino del 13/08.
+
+⚠️ **Le righe che si contraddicono si DICONO, non si riscrivono di
+nascosto**: una previsione scritta prima che le ore esistessero può
+averne, e correggerla da soli cambierebbe il costo del personale di un
+piano che qualcuno aveva deciso.
