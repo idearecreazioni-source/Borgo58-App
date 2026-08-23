@@ -21,6 +21,7 @@ import {
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { annoDiverso, scegliScenario } from "../../lib/calcoli/scenarioDaConfrontare";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const MESI = [
@@ -62,17 +63,30 @@ export default function AndamentoMensile() {
         setEntities(ent);
         const s = await listaScenari(ent.srls.id);
         setScenari(s);
-        // Si parte dalla previsione chiusa più recente: è la rotta contro
-        // cui ha senso confrontarsi.
-        const congelata = s.find((x) => x.congelato_il) ?? s[0];
-        if (congelata) setScenarioId(congelata.id);
+        // 🔴 SI PARTE DA UNA PREVISIONE DELL'ANNO CHE SI STA GUARDANDO
+        // (24/08/2026). Prima si prendeva «la chiusa più recente, oppure
+        // la prima della lista»: e la lista è ordinata per anno
+        // decrescente, quindi con un piano del 2027 in casa la schermata
+        // apriva confrontando i numeri veri del 2026 con quello — un
+        // risultato d'anno di 25,9 milioni di euro, e **nessuna riga che
+        // dicesse che il piano era di un altro anno**.
+        // ⚠️ Senza previsioni dell'anno giusto non si ripiega su un altro:
+        // si resta senza. La regola sta in un posto solo, con le sue prove.
+        const scelto = scegliScenario(s, anno);
+        if (scelto) setScenarioId(scelto);
       } catch (e) {
         setError(e.message);
       }
     })();
+    // Gira una volta sola, all'apertura: l'anno di partenza è quello di
+    // oggi. Cambiandolo a mano la scelta NON si sposta da sé — cambiare in
+    // silenzio quello che l'utente ha scelto è il difetto del 12/08. Se
+    // resta di un altro anno, la riga qui sotto lo dice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const entityId = entities?.srls?.id;
+  const annoAltrove = annoDiverso(scenari, scenarioId, anno);
 
   const carica = useCallback(async () => {
     if (!entityId) return;
@@ -211,12 +225,28 @@ export default function AndamentoMensile() {
             <option value="">— nessuna previsione —</option>
             {scenari.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.nome} {s.congelato_il ? "(chiusa)" : "(aperta)"}
+                {/* ⚠️ L'ANNO SI VEDE. Senza, due previsioni di due anni
+                    diversi con nomi simili sono indistinguibili nel menu,
+                    e sceglierne una per l'altra non dà nessun segnale. */}
+                {s.nome} · {s.anno} {s.congelato_il ? "(chiusa)" : "(aperta)"}
               </option>
             ))}
           </select>
         </div>
       </div>
+
+      {/* 🔴 IL PIANO E' DI UN ALTRO ANNO, E SI DICE. Non si impedisce —
+          guardare il 2026 col piano del 2027 può avere senso una volta —
+          ma non deve poter succedere senza saperlo: i numeri del fondo
+          tabella diventano quelli di un altro anno, e la metà alta resta
+          perfettamente sana. È il modo peggiore di sbagliare. */}
+      {annoAltrove != null && (
+        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+          <strong>Attenzione:</strong> stai guardando il {anno} confrontato con una previsione del{" "}
+          {annoAltrove}. I numeri del piano, la stima a dicembre e le imposte qui sotto sono quelli
+          del {annoAltrove}, non del {anno}.
+        </p>
+      )}
 
       {stato?.parziale && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
