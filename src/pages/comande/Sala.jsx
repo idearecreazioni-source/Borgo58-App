@@ -40,6 +40,7 @@ import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import ClientePagante from "../../components/ClientePagante";
+import RiquadroDelTavolo from "../../components/RiquadroDelTavolo";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
 import {
@@ -112,6 +113,8 @@ export default function Sala() {
   const [order, setOrder] = useState(null);
 
   const [error, setError] = useState("");
+  // Il pannello di chi paga: si apre dal riquadro accanto al tavolo.
+  const [clienteAperto, setClienteAperto] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loadingOrder, setLoadingOrder] = useState(false);
 
@@ -470,54 +473,36 @@ export default function Sala() {
   //
   // ⚠️ La prenotazione resta scritta sopra quando c'è: chi arriva dice «ho
   // prenotato a nome tale», e quel nome serve **prima** di sapere chi paga.
+  // 🔴 IL RIQUADRO NON SCORRE PIU' (23/08, correzione chiesta da Alessio).
+  //
+  // ⚠️ MISURATO: dentro la pianta quel riquadro e' 53,8 × 25,1 mm sul mini
+  // tablet — 161 punti d'altezza — e col cliente pagante da scrivere il
+  // contenuto ne chiedeva 222. Scorreva, cioe' non si vedeva tutto insieme.
+  //
+  // La sua regola: *pagante, orario e coperti visibili subito, il resto si
+  // apre al tocco*. Qui resta cio' che si LEGGE mentre si serve; tutto cio'
+  // che si SCRIVE sta nel pannello che si apre — perche' espandere dentro un
+  // riquadro da 25 mm rimetterebbe lo scorrimento da cui si scappa.
   const bancoBar =
     order || (selezione.length > 0 && nomiDelTavolo.length > 0) ? (
-      <div className="h-full overflow-auto p-1.5">
-        {nomiDelTavolo.map((p) => (
-          <div key={p.id} className="mb-1.5 last:mb-0">
-            <p className="testo-sala text-b58-charcoal-soft leading-none">
-              {p.ora?.slice(0, 5)}
-              {p.persone ? ` · ${p.persone}` : ""}
-            </p>
-            <p className="testo-sala-grande font-semibold text-b58-charcoal leading-tight">{p.nome}</p>
-          </div>
-        ))}
-        {/* Col conto aperto la prenotazione arriva dal conto, non dalla
-            selezione: la riga «19:30 · 4 · Nome» è quella che il cameriere
-            legge quando il cliente dice «ho prenotato a nome tale», e
-            serve anche dopo aver aperto il tavolo. */}
-        {order?.prenotazione && nomiDelTavolo.length === 0 && (
-          <div className="mb-1.5">
-            <p className="testo-sala text-b58-charcoal-soft leading-none">
-              {order.prenotazione.reservation_time?.slice(0, 5)}
-              {order.prenotazione.party_size ? ` · ${order.prenotazione.party_size}` : ""}
-            </p>
-            <p className="testo-sala-grande font-semibold text-b58-charcoal leading-tight">
-              {order.prenotazione.customer_name}
-            </p>
-          </div>
-        )}
-        {order && (
-          <div
-            className={
-              nomiDelTavolo.length > 0 || order.prenotazione
-                ? "mt-1.5 border-t border-b58-charcoal/10 pt-1.5"
-                : ""
-            }
-          >
-            {/* ⚠️ `reloadOrder` è dichiarato più sotto: si passa una
-                funzione che lo chiama, non il riferimento — letto adesso
-                sarebbe una variabile non ancora inizializzata, e la
-                schermata si spegnerebbe con la sala aperta. */}
-            <ClientePagante
-              order={order}
-              onFatto={() => reloadOrder()}
-              onErrore={setError}
-              compatto
-            />
-          </div>
-        )}
-      </div>
+      <RiquadroDelTavolo
+        prenotazioni={
+          nomiDelTavolo.length > 0
+            ? nomiDelTavolo
+            : order?.prenotazione
+              ? [
+                  {
+                    id: order.prenotazione.id,
+                    ora: order.prenotazione.reservation_time,
+                    persone: order.prenotazione.party_size,
+                    nome: order.prenotazione.customer_name,
+                  },
+                ]
+              : []
+        }
+        order={order}
+        onApri={() => setClienteAperto(true)}
+      />
     ) : null;
 
   // 🔴 I GESTI DEL TAVOLO, DENTRO LA PIANTA (21/08, disegno di Alessio).
@@ -1873,6 +1858,47 @@ export default function Sala() {
             >
               Fatto — torna alla comanda
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* CHI PAGA QUESTO TAVOLO — si apre dal riquadro accanto al tavolo.
+          ⚠️ Un pannello che prende spazio, non un'espansione dentro il
+          riquadro: li' ci sono 25 mm d'altezza, e due campi da scrivere non
+          ci stanno senza far scorrere — che e' proprio quello che questa
+          correzione toglie. */}
+      {clienteAperto && order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-b58-charcoal/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-b58-cream p-4 shadow-xl">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="font-display testo-sala-grande text-b58-charcoal">
+                Chi paga — {order.table_label}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setClienteAperto(false)}
+                className="tocco-bottone rounded border border-b58-charcoal/15 px-3 testo-sala text-b58-charcoal-soft"
+              >
+                Chiudi
+              </button>
+            </div>
+            {/* ⚠️ Chi ha prenotato resta scritto qui: serve mentre si decide
+                chi paga, ed e' l'unico posto in cui le due cose si vedono
+                una accanto all'altra. */}
+            {order.prenotazione && (
+              <p className="mb-3 testo-sala text-b58-charcoal-soft">
+                Ha prenotato <strong>{order.prenotazione.customer_name}</strong>
+                {order.prenotazione.party_size ? ` · ${order.prenotazione.party_size} persone` : ""}
+                {order.prenotazione.reservation_time
+                  ? ` · per le ${order.prenotazione.reservation_time.slice(0, 5)}`
+                  : ""}
+              </p>
+            )}
+            <ClientePagante
+              order={order}
+              onFatto={() => reloadOrder()}
+              onErrore={setError}
+            />
           </div>
         </div>
       )}

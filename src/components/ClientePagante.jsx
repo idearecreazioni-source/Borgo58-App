@@ -93,7 +93,7 @@ export default function ClientePagante({ order, onFatto, onErrore, compatto = fa
           type="button"
           disabled={busy}
           onClick={() => scrivi({})}
-          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 mt-0.5"
+          className="tocco-bottone rounded border border-stone-300 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 mt-2"
         >
           Non è lui
         </button>

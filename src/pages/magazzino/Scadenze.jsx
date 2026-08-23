@@ -80,11 +80,23 @@ export default function Scadenze() {
             si accorcerebbe da sola sul tablet.
 
             ⚠️ Il gesto resta senza conferma, per decisione di Alessio del
-            13/08 — proprio per questo le parole devono bastare da sole. */}
+            13/08 — proprio per questo le parole devono bastare da sole.
+
+            🔴 E DAL 23/08 SI VEDONO PREMIBILI, chiesto da lui: *«io stesso
+            avevo creduto che non funzionassero, quindi il difetto c'è anche
+            se rispondono»*. ⚠️ E rispondevano davvero — misurato: abilitati,
+            38,3 e 43,1 mm di larghezza, tocco attivo. Il difetto non era nel
+            comportamento ma nell'aspetto: due rettangoli col bordo grigio
+            chiaro, in una schermata fatta di rettangoli col bordo grigio
+            chiaro. *Un gesto che non sembra un gesto non viene fatto, e
+            questo e' l'unico posto da cui una partita in scadenza si
+            chiude.* Adesso «Finita» e' un pulsante bianco con bordo e
+            ombra, «Buttata» e' rosso pieno — e tutti e due si abbassano
+            sotto il dito. */}
         <div className="flex" style={{ gap: "calc(var(--pxcm) * 0.5)" }}>
           <button
             type="button"
-            className="tocco-bottone rounded border border-stone-300 px-4 leading-tight"
+            className="tocco-bottone rounded-lg border border-stone-400 bg-white px-4 leading-tight shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "finita")}
           >
@@ -93,12 +105,12 @@ export default function Scadenze() {
           </button>
           <button
             type="button"
-            className="tocco-bottone rounded border-2 border-red-400 bg-red-50 px-4 text-red-800 leading-tight"
+            className="tocco-bottone rounded-lg border border-red-700 bg-red-600 px-4 leading-tight text-white shadow-sm active:translate-y-px active:shadow-none disabled:opacity-50"
             disabled={inCorso === p.lotto_id}
             onClick={() => chiudi(p, "buttata")}
           >
             <span className="block testo-sala font-semibold">Buttata</span>
-            <span className="block testo-sala">va nel registro HACCP</span>
+            <span className="block testo-sala text-red-100">va nel registro HACCP</span>
           </button>
         </div>
       </div>
