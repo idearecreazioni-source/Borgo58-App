@@ -693,6 +693,27 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           <label className={etichetta}>Temp. °C</label>
           <input type="number" step="0.1" value={par?.temperatura ?? ""}
             onChange={(e) => cambia("temperatura", e.target.value)} className={campo} />
+          {/* 🔴 LA TEMPERATURA ATTESA STA QUI, DOVE C'È IL DUBBIO
+              (23/08/2026). È una norma scritta sulla scheda del prodotto —
+              non un numero da copiare: quello che si scrive sopra si legge
+              col termometro, ed è ciò che il registro HACCP attesta.
+              Metterla nel campo sarebbe far firmare ad Alessio una
+              misurazione che non ha fatto. */}
+          {(() => {
+            const attese = [
+              ...new Set(
+                (par?.righe ?? [])
+                  .map((r) => perId[r.ingrediente_id]?.temperatura_attesa)
+                  .filter(Boolean)
+              ),
+            ];
+            if (attese.length === 0) return null;
+            return (
+              <p className="text-[11px] text-b58-charcoal-soft mt-1">
+                dovrebbe essere {attese.join(" · ")}
+              </p>
+            );
+          })()}
         </div>
         <div className="flex items-end">
           <label className="flex items-center gap-1.5 text-xs text-b58-charcoal-soft pb-1.5">

@@ -41,7 +41,7 @@ const emptyForm = {
   shelf_life_days: "",
   waste_percentage_default: "0",
   stock_minimum_threshold: "",
-  haccp_receiving_temp: "",
+  temperatura_attesa: "",
   haccp_notes: "",
   // Acceso di partenza: il silenzio si compra prodotto per prodotto, non
   // con una percentuale. Un fornitore che alza del 3% ogni mese non
@@ -99,7 +99,7 @@ export default function IngredienteForm() {
             shelf_life_days: ing.shelf_life_days ?? "",
             waste_percentage_default: ing.waste_percentage_default ?? "0",
             stock_minimum_threshold: ing.stock_minimum_threshold ?? "",
-            haccp_receiving_temp: ing.haccp_receiving_temp ?? "",
+            temperatura_attesa: ing.temperatura_attesa ?? "",
             haccp_notes: ing.haccp_notes ?? "",
             avvisa_rincari: ing.avvisa_rincari !== false,
             alimentare: ing.alimentare !== false,
@@ -219,7 +219,7 @@ export default function IngredienteForm() {
           Number(form.stock_minimum_threshold) > 0
             ? Number(form.stock_minimum_threshold)
             : null,
-        haccp_receiving_temp: form.haccp_receiving_temp || null,
+        temperatura_attesa: form.temperatura_attesa || null,
         haccp_notes: form.haccp_notes || null,
         avvisa_rincari: form.avvisa_rincari,
         alimentare: form.alimentare,
@@ -621,15 +621,30 @@ export default function IngredienteForm() {
           </div>
 
           <div>
-            <label className={labelClass}>Temperatura ricevimento (HACCP){segnoMacchina("temperatura")}</label>
+            {/* 🔴 IL NOME È LA CURA (23/08/2026, reperto di Alessio): «come
+                fa a sapere a che temperatura sono gli ingredienti che
+                arrivano? Dovrebbe sapere a che temperatura DOVREBBERO
+                essere». Questo campo è una NORMA, non una misurazione — e
+                chiamandolo «Temperatura ricevimento (HACCP)» sembrava il
+                dato del registro. Il registro attesta misurazioni: un
+                numero indovinato da una macchina lì dentro lo renderebbe
+                falso, e a un'ispezione risponde chi l'ha firmato. */}
+            <label className={labelClass}>
+              Temperatura attesa alla consegna{segnoMacchina("temperatura")}
+            </label>
             <input
-              value={form.haccp_receiving_temp}
+              value={form.temperatura_attesa}
               onChange={(e) =>
-                setForm((f) => ({ ...f, haccp_receiving_temp: e.target.value }))
+                setForm((f) => ({ ...f, temperatura_attesa: e.target.value }))
               }
               placeholder="Es. ≤ 4°C"
               className={inputClass}
             />
+            <p className="mt-1 text-xs text-b58-charcoal-soft">
+              A che temperatura <em>dovrebbe</em> arrivare. Quella vera si
+              misura col termometro alla consegna e si scrive nel registro
+              HACCP: questa non ci finisce mai.
+            </p>
           </div>
         </div>
 

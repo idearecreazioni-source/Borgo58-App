@@ -56,7 +56,11 @@ export async function createIngredient(payload) {
     p_storage_type: payload.storage_type ?? null,
     p_shelf_life_days: payload.shelf_life_days ?? null,
     p_waste_percentage_default: payload.waste_percentage_default ?? 0,
-    p_haccp_receiving_temp: payload.haccp_receiving_temp ?? null,
+    // ⚠️ Il PARAMETRO della funzione resta col nome vecchio: rinominarlo
+    // romperebbe le chiamate per nome del corridoio. A cambiare e la
+    // COLONNA, che dal 23/08/2026 si chiama temperatura_attesa perche
+    // quel campo non e mai stato una misurazione.
+    p_haccp_receiving_temp: payload.temperatura_attesa ?? null,
     p_haccp_notes: payload.haccp_notes ?? null,
     // Scorta minima: vuota vuol dire «non entrare mai in lista da solo».
     // Zero non è ammesso — sarebbe una soglia che non scatta mai, cioè un
