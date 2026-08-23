@@ -81,6 +81,24 @@ const GRUPPI = [
           "count(*) filter (where tipo not like 'rincaro%') from allarmi",
       },
       { che: "tracce di cancellazione (non ripulibili)", sql: "select count(*) from deleted_records" },
+      // 🔴 QUANTE DI QUELLE TRACCE NON SONO GESTI VERI (23/08/2026). Il
+      // numero sopra da solo non dice niente: cresce coi dati veri e con le
+      // prove insieme. Misurato quel giorno: 43 tracce, di cui 24 nate e
+      // morte nello stesso istante — e il controllo ne vedeva 2, perche'
+      // cercava una parola sola mentre le prove ne usano cinque.
+      // ⚠️ Le due colonne restano SEPARATE apposta: la prima e' certa (la
+      // riga porta un marcatore), la seconda e' un indizio — anche un gesto
+      // vero puo' durare un istante.
+      {
+        che: "di cui: marcate come prova / nate e morte in un istante",
+        sql:
+          "select count(*) filter (where record::text ilike '%verifica%' " +
+          "or record::text ilike '%__PROVA%' or record::text ilike '%TEST-AUTO%' " +
+          "or record::text ilike '%PROVA BANCA%' or record::text ilike '%PROVA PAGA%') " +
+          "|| ' / ' || count(*) filter (where (record->>'created_at') is not null " +
+          "and deleted_at - (record->>'created_at')::timestamptz < interval '1 minute') " +
+          "from deleted_records",
+      },
       // ⚠️ Niente caratteri fuori dall'alfabeto inglese DENTRO la SQL: qui la
       // domanda passa dalla riga di comando, e li' si rompe con «invalid byte
       // sequence» (trappola del 18/08). Nel testo italiano fuori dalla SQL
@@ -142,6 +160,11 @@ console.log("  DUE COSE CHE NON TORNANO COME PRIMA");
 console.log("    · i documenti sono una tabella TRACCIATA: cancellarli lascia una traccia");
 console.log("      per ognuno nel registro delle cancellazioni, e quel registro non lo");
 console.log("      puo' ripulire nessuno dall'app. Il numero qui sopra SALIRA', non scendera'.");
+console.log("    · e di quelle tracce una buona parte NON sono gesti veri: sono le");
+console.log("      righe che le prove e i collaudi hanno creato e cancellato. La riga");
+console.log("      «di cui» qui sopra le conta — la prima colonna e' certa, la seconda");
+console.log("      e' un indizio (anche un gesto vero puo' durare un istante). Toglierle");
+console.log("      si puo' solo con una migrazione: dall'app quel registro non si tocca.");
 console.log("    · gli avvisi VERI (scadenze, lavori fermi) non sono dati di prova: sono la");
 console.log("      storia di cio' che ha funzionato, e toglierli la cancella.");
 console.log("");

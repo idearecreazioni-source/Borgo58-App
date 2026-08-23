@@ -146,10 +146,22 @@ describe("i registri che si esibiscono non accettano righe che mentono", () => {
   // di prova sono ben oltre. Guardava una parte del registro credendo di
   // guardarlo tutto — la famiglia dell'avvertenza sui `.limit()` (§8), con
   // l'aggravante che quel limite non si vede leggendo il codice.
+  // ⚠️ E DAL 23/08 SI GUARDANO LE SOLE VERIFICHE DELLE MIGRAZIONI, non tutto quello che il
+  // controllo restituisce. Quel giorno il criterio è stato allargato —
+  // cercava una parola sola e su 24 righe sospette ne vedeva 2 — e ora
+  // comprende anche quelle **nate e morte nello stesso istante**, che sono
+  // un **indizio e non una prova**: anche un gesto vero può durare un
+  // istante (si scrive un movimento, ci si accorge della causale sbagliata,
+  // lo si cancella).
+  // 🔴 Pretendere zero anche su quelle renderebbe questa prova rossa per
+  // gesti legittimi — cioè un guardiano che grida sempre, e quelli si
+  // imparano a spegnere.
   it("il registro delle cancellazioni non conserva le righe delle verifiche", async () => {
     const { data, error } = await titolare.rpc("lapidi_di_prova");
     expect(error).toBeNull();
-    const finte = (data ?? []).map((r) => `${r.tabella}: ${r.firma}`);
+    const finte = (data ?? [])
+      .filter((r) => r.perche === "verifica di una migrazione")
+      .map((r) => `${r.tabella}: ${r.firma}`);
     expect(finte, "lapidi lasciate da una verifica").toEqual([]);
   });
 });
