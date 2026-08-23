@@ -83,6 +83,16 @@ const OPERAZIONI = new Set([
   // movimenti e — se buttata — il registro HACCP. Tre scritture, una
   // sola decisione di Alessio.
   "chiudi_partita",
+  // Il prodotto fermo (23/08/2026): le risposte che NON chiudono il
+  // ciclo. Passano da qui anche quando toccano una tabella sola, perché è
+  // la forma che rende l'elenco delle scritture controllabile.
+  //
+  // 🔴 `dichiara_trasformazione` è quella da non fraintendere: NON scala
+  // il magazzino: lo scaricherà la registrazione della preparazione, e
+  // scalare anche qui vorrebbe dire scalare due volte.
+  "rimanda_partita",
+  "abbatti_partita",
+  "dichiara_trasformazione",
   // HACCP (13/08/2026): una lettura fuori range o una merce non conforme
   // aprono da sé la non conformità. Due tabelle, una decisione.
   "registra_temperatura",

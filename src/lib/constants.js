@@ -176,6 +176,10 @@ export const CONSUMPTION_REASONS = [
   // cercare un problema in cucina che non esiste (16/08/2026).
   { value: "vitto_personale", label: "Vitto del personale" },
   { value: "rettifica", label: "Rettifica (correzione da conteggio fisico)" },
+  // La merce torna da chi l'ha venduta (23/08/2026, blocco 3 del mandato).
+  // ⚠️ Esce dal magazzino come uno spreco e NON è uno spreco: contarla lì
+  // farebbe cercare un problema in cucina che non esiste.
+  { value: "reso_fornitore", label: "Reso al fornitore" },
 ];
 
 // Dove sono finite le mance: quelle in contanti restano nel cassetto,

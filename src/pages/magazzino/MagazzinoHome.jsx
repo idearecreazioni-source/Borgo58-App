@@ -163,6 +163,16 @@ export default function MagazzinoHome() {
           >
             Scadenze
           </Link>
+          {/* ⚠️ Accanto alle Scadenze, e sono due domande diverse: lì si
+              guarda la data, qui da quanto una partita non viene toccata.
+              Un barattolo aperto un mese fa, con scadenza fra un anno, lo
+              vede solo questo. */}
+          <Link
+            to="/magazzino/fermi"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+          >
+            Fermi da troppo
+          </Link>
           <Link
             to="/magazzino/produzioni"
             className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
