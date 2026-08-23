@@ -18,8 +18,17 @@ export const INGREDIENT_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+// ⚠️ IL GRAMMO C'È DAL 23/08/2026, per i prodotti da pizzico (zafferano,
+// cannella, spezie). La ragione è misurata: in kg il fabbisogno di una
+// porzione di cannella vale 0,00003708, che nel campo `numeric(12,4)`
+// diventa **zero** — ed è il difetto che ha fermato 148 conti su 346.
+//
+// ⚠️ E NON c'è il milligrammo, per una scelta che non si può correggere
+// dopo: un valore di enum non si toglie, e in mg tutti i prezzi si
+// vedrebbero «0,00 €» (misurato su nove spezie su nove).
 export const UNITS = [
   { value: "kg", label: "kg" },
+  { value: "g", label: "g" },
   { value: "l", label: "l" },
   { value: "pz", label: "pz" },
   { value: "mazzo", label: "mazzo" },
