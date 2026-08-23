@@ -166,10 +166,17 @@ describe("si dichiara quanto c'è, e la differenza la calcola il gestionale", ()
     expect(Number(r.valore)).toBe(-20);
     const dopo = await foodCostReale(oggi, oggi);
 
+    // ⚠️ `toBeCloseTo` e non `toBe`, e non e' una tolleranza inventata: la
+    // sottrazione avviene in JavaScript, dove 19,999999999999986 e 20 sono
+    // due numeri diversi. Il database il conto lo fa giusto — a sbagliare
+    // era la prova, che confrontava due decimali in virgola mobile con
+    // l'uguaglianza esatta. Trovato il 23/08 girando la suite intera: era
+    // gia' rossa prima del blocco 1, e una rossa che nessuno guarda copre
+    // le rosse vere.
     expect(
       Number(dopo.scostamento) - Number(prima.scostamento),
       "la correzione non è entrata nel food cost reale"
-    ).toBe(20);
+    ).toBeCloseTo(20, 6);
     // ⚠️ E lo stimato NON si muove: è il numero con cui Alessio decide i
     // prezzi del menu, e se si muovesse da sé li deciderebbe su una cosa viva.
     expect(Number(dopo.stimato), "lo stimato si è mosso per una correzione in dispensa").toBe(
