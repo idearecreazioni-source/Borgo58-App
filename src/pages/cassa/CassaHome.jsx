@@ -2,21 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getCashBalance,
+  getQuadraturaFiscale,
   getUsciteFuture,
   getSaldoTesoreria,
   listCashMovements,
-  listDiscountsGiftsMonthly,
+  listDiscountsGifts,
   listQuadraturaPagamenti,
   registraConteggioCassa,
   versaInBanca,
 } from "../../lib/api/cash";
+import { CAUSALE_ALTRO, omaggiAListino, percentualeOmaggi } from "../../lib/calcoli/omaggi";
 import { getEntities } from "../../lib/api/entities";
-import { formatDate, formatEUR, labelFor, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import CampoGiornata from "../../components/CampoGiornata";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
-import { CASH_DIRECTIONS } from "../../lib/constants";
 
 // Primo del mese in ora locale: la versione precedente passava per
 // toISOString() e restituiva l'ULTIMO giorno del mese prima (mezzanotte
@@ -33,8 +34,13 @@ export default function CassaHome() {
   const [tesoreria, setTesoreria] = useState(null);
   const [quadratura, setQuadratura] = useState([]);
   const [monthMovements, setMonthMovements] = useState([]);
-  const [recent, setRecent] = useState([]);
-  const [monthlyDG, setMonthlyDG] = useState([]);
+  // Gli sconti e gli omaggi del mese, riga per riga: servono con la loro
+  // CAUSALE, che l'aggregato mensile non porta.
+  const [dgMese, setDgMese] = useState(null);
+  // Quanto è entrato davvero questo mese, dai conti chiusi: è il
+  // denominatore della percentuale degli omaggi, e si chiede alla stessa
+  // funzione che risponde in «Incassato e scontrinato» — un solo calcolo.
+  const [fiscale, setFiscale] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -56,8 +62,8 @@ export default function CassaHome() {
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
       listCashMovements({ entityId, from: monthStart }),
-      listCashMovements({ entityId }),
-      listDiscountsGiftsMonthly(entityId),
+      leggi(listDiscountsGifts({ entityId, from: monthStart })),
+      leggi(getQuadraturaFiscale(entityId, monthStart, oggiLocale())),
       listQuadraturaPagamenti(),
     ])
       // ⚠️ L'ordine qui dentro deve seguire l'ordine delle promesse sopra,
@@ -66,13 +72,13 @@ export default function CassaHome() {
       // numero della schermata si sarebbe spostato di uno. Nessun errore,
       // solo cifre sbagliate — la stessa forma del campo dimenticato del
       // 16/08. Se si aggiunge una riga sopra, si aggiunge anche qui.
-      .then(([bal, fut, tes, monthMov, allMov, dg, quad]) => {
+      .then(([bal, fut, tes, monthMov, dg, fisc, quad]) => {
         setBalance(bal);
         setFuture(fut);
         setTesoreria(tes);
         setMonthMovements(monthMov);
-        setRecent(allMov.slice(0, 8));
-        setMonthlyDG(dg);
+        setDgMese(dg);
+        setFiscale(fisc);
         setQuadratura(quad);
       })
       .catch((e) => setError(e.message))
@@ -88,10 +94,30 @@ export default function CassaHome() {
     [monthMovements]
   );
 
-  // Omaggi del mese corrente = base TD27 (§6).
-  const currentMonthKey = currentMonthStart();
-  const giftsThisMonth = monthlyDG.find((r) => r.month === currentMonthKey && r.type === "omaggio");
-  const discountsThisMonth = monthlyDG.find((r) => r.month === currentMonthKey && r.type === "sconto");
+  // 🔴 IN EVIDENZA CI VANNO SOLO GLI OMAGGI «ALTRO» (decisione di Alessio,
+  // 23/08). Gli sconti non spariscono da nessuna parte — restano distinti
+  // in tutto il gestionale e nella loro schermata: cambia soltanto cosa si
+  // guarda a colpo d'occhio da qui.
+  const omaggiAltro = useMemo(
+    () => (nonLetto(dgMese) ? null : omaggiAListino(dgMese, CAUSALE_ALTRO)),
+    [dgMese]
+  );
+  const omaggiTotali = useMemo(
+    () => (nonLetto(dgMese) ? null : omaggiAListino(dgMese)),
+    [dgMese]
+  );
+  // ⚠️ La percentuale si calcola solo se si è letto TUTTO ciò che le
+  // serve. Con una lettura fallita, «0%» direbbe «non abbiamo regalato
+  // niente» — e sarebbe una risposta più corta con l'aria di essere
+  // intera (§8).
+  const percentuale =
+    nonLetto(dgMese) || nonLetto(fiscale)
+      ? null
+      : percentualeOmaggi({
+          omaggiAltro,
+          omaggiTotali,
+          incassato: fiscale?.incassato ?? 0,
+        });
 
   // Il saldo che conta e' quello della tesoreria: comprende il contante
   // incassato in sala, che la prima nota non registra per scelta.
@@ -105,13 +131,11 @@ export default function CassaHome() {
       getCashBalance(entityId),
       leggi(getUsciteFuture(entityId)),
       getSaldoTesoreria(entityId),
-      listCashMovements({ entityId }),
       listCashMovements({ entityId, from: currentMonthStart() }),
-    ]).then(([bal, fut, tes, allMov, monthMov]) => {
+    ]).then(([bal, fut, tes, monthMov]) => {
       setBalance(bal);
       setFuture(fut);
       setTesoreria(tes);
-      setRecent(allMov.slice(0, 8));
       setMonthMovements(monthMov);
     });
 
@@ -124,8 +148,13 @@ export default function CassaHome() {
               15/08 (corretto il 22/08). Da quella data gli incassi in
               contante dei conti chiusi entrano nel saldo **da soli** —
               letti, non copiati (`20260815000004`): la prima nota non è
-              più tutta a mano, e la scomposizione qui sotto lo mostra già
-              con «+ … di sala (N conti)».
+              più tutta a mano.
+              ⚠️ E QUESTA RIGA DICEVA «la scomposizione qui sotto lo mostra
+              già con "+ … di sala (N conti)"» — vera fino al 23/08, falsa
+              nel momento in cui la scomposizione è stata tolta. È
+              esattamente la famiglia delle frasi diventate false: giuste
+              quando scritte, mai rilette quando la schermata è cambiata
+              sotto. Chi toglie un pezzo di schermata cerca chi lo nomina.
               ⚠️ La seconda metà della frase invece era vera e resta: il
               POS non c'è. *Una frase può diventare falsa a metà, ed è il
               caso peggiore da rileggere — la parte vera la fa sembrare
@@ -157,122 +186,82 @@ export default function CassaHome() {
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
-          {/* KPI */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className={`rounded-xl p-5 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
-              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Contante in cassa</div>
+          {/* ---------------------------------------------------------------
+              QUATTRO RIQUADRI, non tre (decisione di Alessio, 23/08/2026).
+              Le quattro cose che vuole vedere aprendo la schermata:
+              quanto contante dovrebbe esserci, quanto c'è in banca, come
+              va il mese, e quanto si è regalato.
+
+              ⚠️ SU DUE COLONNE FINO AL COMPUTER: quattro riquadri in fila
+              su un mini tablet da 8 pollici in verticale darebbero colonne
+              da meno di due centimetri, e un numero che va a capo in mezzo
+              non è più un numero a colpo d'occhio.
+
+              🔴 IL PARAGRAFO LUNGO SOTTO IL SALDO È STATO TOLTO — voluto da
+              lui, ed è un rovesciamento con un prezzo che va detto. Diceva
+              cosa comprende il contante atteso, quanto è mancia e quando è
+              stato contato il cassetto l'ultima volta. Non era sbagliato:
+              era rivolto a chi non sapeva, e quelle regole le ha scritte
+              lui. Restano le due righe che NON sono spiegazioni ma
+              avvisi — «di cui non sono tuoi» e le uscite non ancora nel
+              saldo — perché tolte quelle il numero grande avrebbe l'aria
+              di essere completo senza esserlo, che è il difetto che questo
+              progetto insegue.
+              --------------------------------------------------------------- */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className={`rounded-xl p-4 ring-1 ${negativeBalance ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"}`}>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">In cassa</div>
               <div className={`text-2xl font-medium ${negativeBalance ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {tesoreria ? formatEUR(tesoreria.contante_atteso) : "—"}
               </div>
-              {balance && tesoreria && (
-                <div className="testo-sala text-b58-charcoal-soft mt-1">
-                  fondo {formatEUR(balance.owner_float)} + incassi {formatEUR(balance.declared_takings)} − uscite{" "}
-                  {formatEUR(balance.total_out)}
-                  {Number(tesoreria.conti_contanti) > 0 && (
-                    <> + {formatEUR(tesoreria.incassi_contanti_sala)} di sala ({tesoreria.conti_contanti} conti)</>
-                  )}
-                  {/* ⚠️ Questa voce mancava, e senza di essa la
-                      scomposizione smetteva di sommare al numero grande
-                      dalla prima mancia in contanti (validazione del
-                      16/08). L'avvertenza dal database lo diceva a parole,
-                      ma un numero e la sua spiegazione che non tornano
-                      sono la famiglia di difetti che questo progetto
-                      combatte apposta. */}
-                  {Number(tesoreria.mance_in_cassa) > 0 && (
-                    <> + {formatEUR(tesoreria.mance_in_cassa)} di mance</>
-                  )}
-                  {/* 🔴 I PRESTITI, per la stessa ragione delle mance
-                      (22/08): stanno nel cassetto ma NON sono incassi, e
-                      se non comparissero qui la scomposizione smetterebbe
-                      di sommare al numero grande — il difetto che il 16/08
-                      costò le mance in contanti.
-                      ⚠️ E soprattutto: chiamarli «incassi» era la
-                      confusione da togliere. Qui hanno un nome loro. */}
-                  {Number(balance.prestiti_in_cassa) > 0 && (
-                    <> + {formatEUR(balance.prestiti_in_cassa)} di prestiti da restituire</>
-                  )}
-                </div>
-              )}
-              {/* La parte che non è sua, come DATO e non solo come frase:
-                  è il numero per cui `di_cui_non_tuo` è stato creato. */}
+              {/* La parte che non è sua: è un avviso, non una spiegazione —
+                  quei soldi stanno nel cassetto e sono di altri. */}
               {tesoreria && Number(tesoreria.di_cui_non_tuo) > 0 && (
                 <div className="testo-sala text-b58-gold-dark mt-1 font-medium">
-                  di cui {formatEUR(tesoreria.di_cui_non_tuo)} non sono tuoi: sono mance del personale
-                </div>
-              )}
-              {/* Il conto corrente sta accanto e NON si somma: sono due
-                  posti diversi, e il totale non serve a niente finché
-                  nessuno ha detto a cosa dovrebbe rispondere. */}
-              {balance && (
-                <div className="testo-sala text-b58-charcoal-soft mt-2 border-t border-b58-charcoal/10 pt-2">
-                  Banca: <span className="font-medium text-b58-charcoal">{formatEUR(balance.saldo_banca)}</span>
-                  {" — "}entrate {formatEUR(balance.entrate_banca)} · uscite {formatEUR(balance.uscite_banca)}
+                  di cui {formatEUR(tesoreria.di_cui_non_tuo)} sono mance del personale, non tuoi
                 </div>
               )}
               {negativeBalance && (
                 <div className="testo-sala text-b58-terracotta-dark mt-1 font-medium">
-                  Saldo negativo: un'uscita senza provenienza. Verifica versamenti/incassi mancanti.
+                  Saldo negativo: un&apos;uscita senza provenienza.
                 </div>
               )}
-              {/* ⚠️ IL SALDO CAMBIA DA SOLO ALLA MEZZANOTTE, e va spiegato
-                  nei due versi (condizione posta da Alessio il 17/08). Dal
-                  17/08 i saldi contano solo ciò che è già avvenuto: un
-                  assegno a 30 giorni sta in prima nota e non abbassa il
-                  saldo finché non arriva il giorno. Senza queste due righe,
-                  la prima volta che il saldo scende senza che nessuno abbia
-                  fatto niente sembra un errore del gestionale. */}
-              {/* 🔴 «Non lo so» invece del silenzio: senza queste uscite il saldo
-                  qui sopra SEMBRA PULITO, ed è la forma peggiore — un numero
-                  che ha l'aria di essere completo senza esserlo. */}
+              {/* 🔴 «Non lo so» invece del silenzio: senza queste uscite il
+                  saldo SEMBRA PULITO, ed è la forma peggiore — un numero che
+                  ha l'aria di essere completo senza esserlo. */}
               {nonLetto(future) && (
-                <DatoNonLetto
-                  cosa="le uscite già registrate e non ancora nel saldo"
-                  className="mt-2"
-                />
+                <DatoNonLetto cosa="le uscite già registrate e non ancora nel saldo" className="mt-2" />
               )}
               {!nonLetto(future) && future?.quante > 0 && (
                 <div className="testo-sala text-b58-charcoal-soft mt-2">
                   {future.quante === 1 ? "Un'uscita già registrata" : `${future.quante} uscite già registrate`}{" "}
                   per {formatEUR(future.totale)} <strong>non è ancora nel saldo</strong>: la prima
-                  esce il {formatDate(future.prima_scadenza)}. In «Ce la faccio?» compare se
-                  l&apos;orizzonte arriva fin lì.
-                  {/* ⚠️ Prima questa riga diceva «La trovi in "Ce la faccio?"», e non era
-                      vero: la previsione guarda 30 giorni di partenza, e un assegno al 31°
-                      non c'era. Misurato il 17/08 — era l'orizzonte, non le uscite non
-                      lette. Una schermata non deve promettere quello che un'altra farà. */}
+                  esce il {formatDate(future.prima_scadenza)}.
                 </div>
               )}
-              {!nonLetto(future) && future?.entrate_oggi > 0 && (
-                <div className="testo-sala text-b58-charcoal-soft mt-1">
-                  Oggi {future.entrate_oggi === 1 ? "è entrata nel saldo un'uscita" : `sono entrate nel saldo ${future.entrate_oggi} uscite`}{" "}
-                  per {formatEUR(future.totale_oggi)}: erano state registrate prima, e oggi è il
-                  giorno in cui i soldi escono.
-                </div>
-              )}
-              {/* ⚠️ QUESTA RIGA DICEVA IL CONTRARIO FINO AL 15/08, ed è la
-                  parte che vale la pena raccontare. Dal 04/08 chiudere un
-                  conto non scrive in prima nota — scelta giusta e ancora
-                  valida — ma la conseguenza era che il saldo escludeva in
-                  silenzio ogni incasso di sala, e serviva un avviso sotto
-                  per dirlo. Un numero che si deve spiegare con una nota
-                  sotto non è una risposta.
-                  Ora gli incassi in contante dei conti chiusi si LEGGONO
-                  dalla sala (nessuna riga finta in prima nota, quindi
-                  niente da togliere quando arriverà il registratore
-                  telematico), e l'avvertenza è diventata quella vera: qui
-                  manca la CARTA, che non è ancora in banca. */}
-              <div className="testo-sala text-b58-charcoal-soft/80 mt-2 leading-relaxed">
-                {tesoreria?.avvertenza}
-              </div>
             </div>
 
-            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
+            {/* Il conto corrente sta accanto e NON si somma al contante:
+                sono due posti diversi, e il totale non serve a niente
+                finché nessuno ha detto a cosa dovrebbe rispondere. */}
+            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">In banca</div>
+              <div className="text-2xl font-medium text-b58-charcoal">
+                {balance ? formatEUR(balance.saldo_banca) : "—"}
+              </div>
+              {balance && (
+                <div className="testo-sala text-b58-charcoal-soft mt-1">
+                  entrate {formatEUR(balance.entrate_banca)} · uscite {formatEUR(balance.uscite_banca)}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
               <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Questo mese</div>
               {/* ⚠️ I due numeri erano NUDI (piccolezza del collaudo, 17/08):
                   «+0,00» e «−152,94» uno sotto l'altro, senza dire di cosa.
-                  Un numero senza la sua parola si legge due volte e si
-                  capisce alla seconda — e in prima nota il verso è proprio
-                  quello che si vuole sapere a colpo d'occhio. */}
+                  In prima nota il verso è proprio quello che si vuole sapere
+                  a colpo d'occhio. */}
               <div className="testo-sala-grande text-b58-olive-dark font-medium">
                 +{formatEUR(monthIn)}{" "}
                 <span className="testo-sala text-b58-charcoal-soft font-normal">entrati</span>
@@ -283,18 +272,37 @@ export default function CassaHome() {
               </div>
             </div>
 
-            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Sconti/omaggi del mese</div>
-              <div className="testo-sala text-b58-charcoal">
-                Sconti: {discountsThisMonth ? formatEUR(discountsThisMonth.total_forgone) : formatEUR(0)}
+            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
+                Omaggi «{CAUSALE_ALTRO}»
               </div>
-              <div className="testo-sala text-b58-charcoal">
-                {/* ⚠️ «base TD27» era gergo: TD27 è il codice della fattura
-                    per autoconsumo, e in una schermata che si guarda ogni
-                    giorno non dice niente. Il fatto che conta è che il valore
-                    degli omaggi serve a Laura, e quello si può dire. */}
-                Omaggi: {giftsThisMonth ? formatEUR(giftsThisMonth.total_full) : formatEUR(0)}
-              </div>
+              {nonLetto(dgMese) ? (
+                <DatoNonLetto cosa="gli omaggi di questo mese" />
+              ) : (
+                <>
+                  <div className="text-2xl font-medium text-b58-charcoal">{formatEUR(omaggiAltro)}</div>
+                  {/* ⚠️ La percentuale dice QUANTA della roba servita è stata
+                      regalata: omaggi «Altro» sul venduto a listino (incassato
+                      + tutti gli omaggi). Senza niente di servito non è zero
+                      per cento — è «non lo so», e si tace. */}
+                  {percentuale === null ? (
+                    <div className="testo-sala text-b58-charcoal-soft mt-1">
+                      Questo mese non è ancora stato servito niente.
+                    </div>
+                  ) : (
+                    <div className="testo-sala text-b58-charcoal-soft mt-1">
+                      <span className="font-medium text-b58-charcoal">
+                        {percentuale.toLocaleString("it-IT", { maximumFractionDigits: 1 })}%
+                      </span>{" "}
+                      di quello che è uscito dalla cucina
+                    </div>
+                  )}
+                </>
+              )}
+              {/* ⚠️ Niente collegamento qui dentro: «Sconti e omaggi» c'è
+                  già fra i pulsanti sotto, e due porte per lo stesso posto
+                  sulla stessa schermata sono ingombro — *se un comando si
+                  ripete, quasi sempre ne basta uno*. */}
             </div>
           </div>
 
@@ -360,32 +368,6 @@ export default function CassaHome() {
             <Link to="/cassa/causali" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Causali
             </Link>
-          </div>
-
-          {/* Movimenti recenti */}
-          <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display testo-sala-grande text-b58-charcoal">Movimenti recenti</h2>
-              <Link to="/cassa/prima-nota" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
-                Vedi tutti →
-              </Link>
-            </div>
-            {recent.length === 0 ? (
-              <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento ancora.</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {recent.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-3 testo-sala">
-                    <span className="text-b58-charcoal-soft">
-                      {formatDate(m.movement_date)} · {m.causale?.label ?? labelFor(CASH_DIRECTIONS, m.direction)}
-                    </span>
-                    <span className={m.direction === "entrata" ? "text-b58-olive-dark" : "text-b58-terracotta-dark"}>
-                      {m.direction === "entrata" ? "+" : "−"}{formatEUR(m.amount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </>
       )}
