@@ -182,7 +182,12 @@ describe("il magazzino scende chiudendo un conto", () => {
 
     const r = await titolare
       .from("recipes")
-      .insert({ name: NOME, category: "primo", recipe_type: "piatto_finito", portions_yield: 1 })
+      // ⚠️ VENTI PORZIONI, non una (23/08/2026): serve la divisione per far
+      // scendere il pizzico sotto la soglia della colonna — vedi la riga
+      // del pizzico qui sotto. L'ingrediente principale è compensato
+      // (15 kg su 20 porzioni = 0,75 a porzione, identico a prima), così
+      // tutto il resto della prova misura le stesse cose di ieri.
+      .insert({ name: NOME, category: "primo", recipe_type: "piatto_finito", portions_yield: 20 })
       .select()
       .single();
     expect(r.error).toBeNull();
@@ -190,10 +195,22 @@ describe("il magazzino scende chiudendo un conto", () => {
     const ri = await titolare
       .from("recipe_ingredients")
       .insert([
-        { recipe_id: ricetta, ingredient_id: ingrediente, quantity: 0.75, unit: "kg" },
-        // 0,00002 kg = venti milligrammi: sotto il decimo di grammo che la
-        // colonna del magazzino sa tenere.
-        { recipe_id: ricetta, ingredient_id: pizzico, quantity: 0.00002, unit: "kg" },
+        { recipe_id: ricetta, ingredient_id: ingrediente, quantity: 15, unit: "kg" },
+        // 🔴 IL PIZZICO SI COSTRUISCE DIVIDENDO, non scrivendolo piccolo
+        // (23/08/2026, blocco 2 del mandato dell'unità).
+        //
+        // Prima qui c'era `quantity: 0.00002` — venti milligrammi scritti
+        // dritti nella riga. Da oggi il database **li rifiuta**: sotto
+        // 0,0001 il numero non entra nel campo e diventerebbe zero, quindi
+        // un trigger lo respinge invece di scriverlo.
+        //
+        // ⚠️ E il caso da sorvegliare non è sparito: è quello VERO della
+        // cannella, dove il fabbisogno per porzione va sotto soglia perché
+        // si **divide per le porzioni**. La riga è legale (0,0002 kg su
+        // una preparazione che rende 20 porzioni), il fabbisogno di una
+        // porzione no: 0,00001 kg. È esattamente ciò che ha fermato 148
+        // conti su 346, e resta costruibile.
+        { recipe_id: ricetta, ingredient_id: pizzico, quantity: 0.0002, unit: "kg" },
       ]);
     expect(ri.error).toBeNull();
   });

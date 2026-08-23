@@ -346,14 +346,30 @@ export default function Scontrinato() {
                 Se uno di questi è stato segnato per sbaglio, togli il segno: il conto
                 torna fra quelli da sistemare.
               </p>
+              {/* 🔴 L'IMPORTO E IL NOME (23/08/2026, blocco 5). Prima qui
+                  c'erano data, tavolo e tipo di documento, e basta:
+                  misurati **15 gruppi di righe indistinguibili fra loro**.
+                  Con l'importo diventano una riga sola ciascuno — e quel
+                  numero il gestionale ce l'aveva già.
+
+                  ⚠️ Il nome viene dalla PRENOTAZIONE: è il primo posto in
+                  cui il legame conto→prenotazione del 18/08 si vede. Ce
+                  l'hanno 176 conti su 329, e vuoto è normale — chi entra
+                  senza prenotare non ha un nome, e inventarlo sarebbe
+                  peggio che non mostrarlo. */}
               <ul className="space-y-1.5">
                 {fiscalizzati.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                  <li
+                    key={c.order_id}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
                     <span className="text-b58-charcoal-soft">
-                      {formatDate(c.closed_at)} · {c.table_label} ·{" "}
-                      {c.documento_fiscale === "fattura"
-                        ? `fattura${c.documento_numero ? ` n. ${c.documento_numero}` : ""}`
-                        : c.documento_fiscale === "fattura_da_emettere"
+                      <strong className="text-b58-charcoal">{formatEUR(c.incasso)}</strong> ·{" "}
+                      {formatDate(c.serata)} · {c.tavolo}
+                      {c.cliente ? ` · ${c.cliente}` : ""} ·{" "}
+                      {c.documento === "fattura"
+                        ? `fattura${c.numero ? ` n. ${c.numero}` : ""}`
+                        : c.documento === "fattura_da_emettere"
                         ? "fattura da fare"
                         : "scontrino"}
                     </span>
@@ -361,7 +377,7 @@ export default function Scontrinato() {
                       etichetta="Non era così"
                       domanda="Tolgo il segno? Il conto torna fra quelli da sistemare."
                       etichettaConferma="Sì, togli"
-                      onConferma={() => togliSegno(c.id)}
+                      onConferma={() => togliSegno(c.order_id)}
                     />
                   </li>
                 ))}

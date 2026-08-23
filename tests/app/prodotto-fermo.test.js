@@ -34,22 +34,44 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
     // dell'APP: con un client proprio parlerebbe da anonima (18/08).
     await supabase.auth.signInWithPassword(credenziali().titolare);
 
-    const { data: vecchi } = await titolare
-      .from("ingredients").select("id").like("name", `${NOME}%`);
-    for (const v of vecchi ?? []) {
-      await titolare.from("stock_consumptions").delete().eq("ingredient_id", v.id);
-      await titolare.from("stock_lots").delete().eq("ingredient_id", v.id);
-      await titolare.from("price_history").delete().eq("ingredient_id", v.id);
-      await titolare.from("ingredients").delete().eq("id", v.id);
-    }
+    // 🔴 L'INGREDIENTE DI PROVA SI RIUSA, NON SI RICREA — e la ragione è
+    // misurata, non stilistica: `stock_consumptions` ha **solo una policy
+    // di lettura** (scelta del 16/08: aprirla in cancellazione avrebbe
+    // aperto una porta che non c'era), quindi dal client i suoi movimenti
+    // NON si possono togliere, e la cancellazione dell'ingrediente viene
+    // respinta dalla chiave esterna.
+    //
+    // ⚠️ Trovato CONTANDO I RESIDUI, non leggendo: cinque «TEST-AUTO
+    // prodotto fermo» erano rimasti sul progetto di prova, uno per ogni
+    // esecuzione. La prima versione cancellava senza **controllare che la
+    // cancellazione fosse riuscita** — e PostgREST non si lamenta quando
+    // la RLS filtra via le righe: ne toglie zero e risponde di sì.
+    //
+    // È lo stesso patto di `allineamento-magazzino.test.js`: l'ingrediente
+    // resta, i suoi lotti e il suo storico si azzerano a ogni giro.
+    await pulisci();
 
-    // ⚠️ Il perimetro è fatto di roba che la prova ha creato — mai un
-    // prodotto vero (lezione del 16/08).
-    const { data: i } = await titolare.from("ingredients").insert({
-      entity_id: ente, name: NOME, category: "secco_dispensa", unit: "kg",
-      current_price: 5, shelf_life_days: 10, tenuto_in_magazzino: true,
-    }).select("id").single();
-    ing = i.id;
+    const gia = await titolare
+      .from("ingredients").select("id").eq("name", NOME).limit(1).maybeSingle();
+
+    if (gia.data) {
+      ing = gia.data.id;
+      await titolare
+        .from("ingredients")
+        .update({ shelf_life_days: 10, tenuto_in_magazzino: true, active: true })
+        .eq("id", ing);
+    } else {
+      const { data: i, error } = await titolare
+        .from("ingredients")
+        .insert({
+          entity_id: ente, name: NOME, category: "secco_dispensa", unit: "kg",
+          current_price: 5, shelf_life_days: 10, tenuto_in_magazzino: true,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      ing = i.id;
+    }
 
     // Ricevuta 40 giorni fa, mai toccata: ferma da 40, dura 10.
     const quaranta = new Date();
@@ -62,16 +84,27 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
   });
 
   afterAll(async () => {
-    if (ing) {
-      await titolare.from("trasformazioni_dichiarate").delete().eq("lotto_id", lotto);
-      await titolare.from("stock_consumptions").delete().eq("ingredient_id", ing);
-      await titolare.from("stock_lots").delete().eq("ingredient_id", ing);
-      await titolare.from("price_history").delete().eq("ingredient_id", ing);
-      await titolare.from("ingredients").delete().eq("id", ing);
-    }
+    await pulisci();
     await supabase.auth.signOut({ scope: "local" });
     await titolare.auth.signOut({ scope: "local" });
   });
+
+  // Azzera lotti, trasformazioni e storico prezzi del prodotto di prova.
+  // ⚠️ NON tocca gli scarichi né l'ingrediente: quelli non si cancellano
+  // dal client, e provarci lasciava un residuo a ogni giro.
+  async function pulisci() {
+    const { data } = await titolare
+      .from("ingredients").select("id").like("name", `${NOME}%`);
+    for (const i of data ?? []) {
+      const { data: lotti } = await titolare
+        .from("stock_lots").select("id").eq("ingredient_id", i.id);
+      for (const l of lotti ?? []) {
+        await titolare.from("trasformazioni_dichiarate").delete().eq("lotto_id", l.id);
+      }
+      await titolare.from("stock_lots").delete().eq("ingredient_id", i.id);
+      await titolare.from("price_history").delete().eq("ingredient_id", i.id);
+    }
+  }
 
   it("una partita ferma oltre la sua durata compare, e dice da quanto", async () => {
     const p = await partitaMia();
@@ -156,17 +189,55 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
   });
 
   it("🔴 «reso al fornitore» chiude il ciclo, ma NON è uno spreco", async () => {
-    await titolare.from("trasformazioni_dichiarate").delete().eq("lotto_id", lotto);
-    await chiudiPartita({ lottoId: lotto, come: "reso_fornitore", note: "prova reso" });
+    // 🔴 IL RESO SI FA SU UN PRODOTTO SUO, e la ragione è la ripetibilità:
+    // chiudere una partita scrive uno **scarico**, e uno scarico è un
+    // movimento — quindi al giro dopo `partite_ferme()` vedrebbe il
+    // prodotto «toccato oggi» e non lo direbbe più fermo. Gli scarichi non
+    // si cancellano dal client (policy di sola lettura), quindi il residuo
+    // resterebbe per sempre.
+    //
+    // ⚠️ Misurato, non previsto: rigirando la prova una seconda volta le
+    // prime tre diventavano rosse. *Una prova che passa solo la prima
+    // volta è una prova che domani si dà la colpa da sola.*
+    const { data: r } = await titolare
+      .from("ingredients").select("id").eq("name", `${NOME} reso`).limit(1).maybeSingle();
+    let ingReso = r?.id;
+    if (!ingReso) {
+      const { data: nuovo, error } = await titolare
+        .from("ingredients")
+        .insert({
+          entity_id: ente, name: `${NOME} reso`, category: "secco_dispensa",
+          unit: "kg", current_price: 5, tenuto_in_magazzino: true,
+        })
+        .select("id").single();
+      if (error) throw error;
+      ingReso = nuovo.id;
+    }
+
+    const { data: lr } = await titolare
+      .from("stock_lots")
+      .insert({ ingredient_id: ingReso, quantity_received: 3, quantity_remaining: 3, unit_cost: 5 })
+      .select("id").single();
+
+    const prima = (
+      await titolare.from("stock_consumptions").select("id").eq("ingredient_id", ingReso)
+    ).data?.length ?? 0;
+
+    await chiudiPartita({ lottoId: lr.id, come: "reso_fornitore", note: "prova reso" });
 
     const { data: l } = await titolare
-      .from("stock_lots").select("chiusura, quantity_remaining").eq("id", lotto).single();
+      .from("stock_lots").select("chiusura, quantity_remaining").eq("id", lr.id).single();
     expect(l.chiusura).toBe("reso_fornitore");
     expect(Number(l.quantity_remaining)).toBe(0);
 
     const { data: mov } = await titolare
-      .from("stock_consumptions").select("reason").eq("ingredient_id", ing);
-    expect(mov.map((m) => m.reason)).toEqual(["reso_fornitore"]);
+      .from("stock_consumptions").select("reason").eq("ingredient_id", ingReso);
+    expect(mov.length, "il reso non ha lasciato il suo movimento").toBe(prima + 1);
+    expect(
+      mov.filter((m) => m.reason === "spreco"),
+      "il reso è stato contato fra gli sprechi"
+    ).toHaveLength(0);
+    expect(mov.filter((m) => m.reason === "reso_fornitore").length).toBe(prima + 1);
 
     // ⚠️ E non apre una non conformità: un reso non è un problema
     // d'igiene, e riempire di righe normali un registro che l'ispettore
@@ -174,5 +245,29 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
     const { data: nc } = await titolare
       .from("haccp_non_conformities").select("id").ilike("description", `%${NOME}%`);
     expect(nc ?? []).toHaveLength(0);
+  });
+
+  it("🔴 la prova si ripulisce davvero, e lo controlla", async () => {
+    // ⚠️ È il difetto che questa prova aveva addosso: puliva senza
+    // guardare l'esito, e ne restava un prodotto per ogni esecuzione.
+    // *Una pulizia che non si controlla è una pulizia che non è avvenuta.*
+    await pulisci();
+
+    const { data: lotti } = await titolare
+      .from("stock_lots").select("id").eq("ingredient_id", ing);
+    expect(lotti ?? [], "la prova ha lasciato dei lotti").toHaveLength(0);
+
+    const { data: prodotti } = await titolare
+      .from("ingredients").select("id").like("name", `${NOME}%`);
+    // ⚠️ DUE prodotti e non uno, ed è voluto: il principale — che non viene
+    // mai scaricato, così resta «fermo» a ogni giro — e quello del reso,
+    // che uno scarico ce l'ha per forza, perché chiudere una partita ne
+    // scrive uno. Se diventassero TRE vuol dire che la pulizia ha smesso
+    // di funzionare e ne nasce uno per esecuzione: è esattamente il
+    // difetto che questa prova aveva addosso.
+    expect(
+      prodotti ?? [],
+      "i prodotti di prova devono restare DUE: se se ne accumulano, la pulizia non funziona"
+    ).toHaveLength(2);
   });
 });

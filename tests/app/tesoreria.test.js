@@ -444,7 +444,12 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
     expect(Number(data[0].da_fiscalizzare)).toBe(60);
     expect(Number(data[0].quanti_da_fare)).toBe(1);
     // La differenza non è un numero muto: dice che resta in elenco.
-    expect(data[0].avvertenza).toContain("non spariscono da soli");
+    //
+    // ⚠️ Si guarda la PROMESSA, non la sua forma grammaticale: dal
+    // 23/08/2026 la frase ha il singolare quando il conto è uno («non
+    // sparisce da solo»), perché «1 conti» in una schermata di soldi fa
+    // dubitare anche del numero accanto. Qui il conto è uno.
+    expect(data[0].avvertenza).toMatch(/non spariscono da soli|non sparisce da solo/);
   });
 
   it("segnandolo dopo, il conto esce dall'elenco", async () => {

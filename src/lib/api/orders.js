@@ -432,17 +432,25 @@ export async function setDocumentoFiscale(orderId, { tipo, numero, emessoIl }) {
  * esiste per far tornare.
  */
 export async function listContiFiscalizzati({ entityId, dal, al } = {}) {
-  let query = supabase
-    .from("orders")
-    .select("id, table_label, closed_at, documento_fiscale, documento_numero, documento_emesso_il")
-    .not("documento_fiscale", "is", null)
-    .in("status", ["chiuso", "omaggiato"])
-    .order("closed_at", { ascending: false })
-    .limit(50);
-  if (entityId) query = query.eq("entity_id", entityId);
-  if (dal) query = query.gte("closed_at", `${dal}T00:00:00`);
-  if (al) query = query.lte("closed_at", `${al}T23:59:59`);
-  const { data, error } = await query;
+  // 🔴 PASSA DAL DATABASE, non da un `select` più largo (23/08/2026,
+  // blocco 5). L'importo di un conto non è una colonna: è
+  // `totale_conto()`, che dal 15/08 è **l'unico posto dove si calcola il
+  // totale di un conto**. Ricostruirlo qui sarebbe il quarto posto che
+  // dice quanto vale un conto.
+  //
+  // ⚠️ E il filtro passa dalla SERATA, non da `closed_at`: prima tagliava
+  // a mezzanotte di calendario, quindi un conto chiuso all'una finiva nel
+  // giorno dopo — mentre i totali in cima alla stessa schermata lo
+  // contavano nella sera prima.
+  //
+  // ⚠️ Il `.limit(50)` è sparito con la query: la funzione restituisce
+  // l'elenco intero del periodo, come le altre liste di questa schermata.
+  // Un elenco di conti che si ferma a 50 sembra completo senza esserlo.
+  const { data, error } = await supabase.rpc("conti_fiscalizzati", {
+    p_entity_id: entityId ?? null,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
   if (error) throw error;
   return data ?? [];
 }
