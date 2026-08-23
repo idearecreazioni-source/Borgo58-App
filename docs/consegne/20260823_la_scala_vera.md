@@ -44,13 +44,13 @@ della settimana: il sabato pieno, il martedì vuoto.
 | | prima | adesso |
 |---|---|---|
 | serate | 20 | **52** |
-| conti | 52 | **343** |
+| conti | 52 | **346** |
 | coperti | 211 | **1.264** |
 | righe di comanda | 288 | **4.561** |
-| di cui bevande | 1 | **1.031** |
+| di cui bevande | 1 | **1.844** |
 | prenotazioni | 48 | **262** |
-| partite di magazzino | 103 | **475** |
-| fatture dei fornitori | 5 | **32** |
+| partite di magazzino | 103 | **497** |
+| fatture dei fornitori | 5 | **33** |
 
 ⚠️ **Il mese fiacco è al 15% in meno, non al 30%**: deve restare dentro i
 150-200 conti al mese di un'osteria da 34 coperti **e** restare diverso da
@@ -140,7 +140,7 @@ primo mese. Adesso:
 | prestiti e «di tasca mia» | 0 | **3 prestiti** (2 con restituzione) e **9 note**, 6 già rimborsate |
 | deduzioni e strumenti fiscali | 0 | **7 spese**, **5 strumenti**, **5 uscite già note** |
 | menu del giorno, chiusure, caparre | 0 | **3 carte**, **3 chiusure**, **3 caparre** |
-| ricevimento merci (HACCP) | 1 riga | **un controllo per consegna**, con le non conformi |
+| ricevimento merci (HACCP) | 1 riga | **73 controlli**, uno per consegna, 3 non conformi |
 
 ⚠️ **Sulle fasi di preparazione una precisazione onesta**: sono vere **per
 famiglia di lavorazione** (una salsa e un fondo passano davvero dalla stessa
@@ -248,6 +248,20 @@ Ingredienti **110**, Manuale HACCP **115**, Clienti **64**, Fatture **34**.
 ⚠️ **Cosa il giro NON ha guardato**: la **leggibilità**. Ho contato righe e
 caratteri, non ho misurato testo e bersagli — quello è il censimento del
 22/08, che resta valido e dice che 66 schermate su 67 sono sotto le soglie.
+
+---
+
+### E il conto finale delle tabelle vuote
+
+**Da 40 su 103 a 17.** Le diciassette che restano, e il perché di ognuna:
+
+| perché | quali |
+|---|---|
+| **si svuotano per costruzione** a ogni «rifallo» | `deleted_records`, `correzioni_coperti`, `disposizioni_giornaliere`, `domande_archivio` |
+| **sono gesti dal vivo**, e il collaudo esiste per farli | `chiamate_turno`, `segnalazioni_fiscali`, `preventivo_fogli`, `email_inviate`, `giornate_sold_out` |
+| **aspettano una decisione o un dato che non c'è** | `impostazioni_tesoreria` (i parametri del POS: la banca non è scelta), `periodi_anomali` (dal secondo anno), `scenario_risultati` (nessuna previsione congelata) |
+| **restano un buco vero, dichiarato** | `articoli_fornitore` — le diciture con cui ogni fornitore chiama i prodotti. Si riempiono solo caricando una fattura vera, ed è la strada che alimenta **la sorveglianza dei rincari**: finché è vuota, quel controllo non ha niente da guardare |
+| minori | `posta_allegati`, `recipe_videos`, `employee_documents` |
 
 ---
 

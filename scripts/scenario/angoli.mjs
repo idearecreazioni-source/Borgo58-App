@@ -18,6 +18,15 @@
 
 import { giorniIndietro, giorniAvanti, ridata } from "./retro.mjs";
 
+// 🔴 QUI DENTRO NESSUN GUASTO E' MUTO, e il motivo e' successo stanotte: le
+// restituzioni dei prestiti fallivano in silenzio, il riepilogo dichiarava
+// «2 con una restituzione gia' fatta» e la tabella era **vuota**. Una bugia
+// scritta da me, non dal gestionale — e con un elenco lungo di righe nessuno
+// va a ricontarle.
+//
+// ⚠️ Un blocco che non riesce **non ferma** lo scenario (gli altri settori
+// devono comunque nascere), ma **lo dice**, riga per riga.
+
 // ---------------------------------------------------------------------
 // 1 · LE PRODUZIONI
 //
@@ -125,10 +134,10 @@ export async function costruisciOrdini(ctx) {
     // Uno su tre e' gia' arrivato, uno e' stato annullato: senza, l'elenco
     // mostrerebbe un solo stato e i tre pulsanti non si potrebbero provare.
     if (i % 3 === 0) {
-      await segnaOrdineRicevuto(idOrdine).catch(() => {});
+      await segnaOrdineRicevuto(idOrdine).catch((e) => console.log(`      ⚠ ordine non segnato arrivato: ${e.message}`));
       arrivati += 1;
     } else if (i === 4) {
-      await annullaOrdine(idOrdine).catch(() => {});
+      await annullaOrdine(idOrdine).catch((e) => console.log(`      ⚠ ordine non annullato: ${e.message}`));
       annullati += 1;
     }
     void rnd;
@@ -291,7 +300,13 @@ export async function costruisciSoldiDelTitolare(ctx) {
         restituitoIl: giorniIndietro(oggi, Math.max(2, giorniFa - 30)),
         causaleId: causale,
         nota: `${MARCA}prima restituzione`,
-      }).catch(() => {});
+      }).catch((e) => {
+        // ⚠️ SI DICE, e non e' pignoleria: la prima versione ingoiava il
+        // guasto in silenzio, il riepilogo dichiarava «2 con una
+        // restituzione gia' fatta» e la tabella era **vuota**. Una bugia
+        // scritta da me, non dal gestionale.
+        console.log(`      ⚠ restituzione non registrata: ${e.message}`);
+      });
       restituzioni += 1;
     }
   }
@@ -326,7 +341,8 @@ export async function costruisciSoldiDelTitolare(ctx) {
     // registro esiste solo se ci sono tutte e due le cose. Con tutte
     // pareggiate direbbe sempre zero.
     if (i % 3 !== 0) {
-      await pareggiaAnticipazione(a.id, giorniIndietro(oggi, Math.max(1, giorniFa - 12))).catch(() => {});
+      await pareggiaAnticipazione(a.id, giorniIndietro(oggi, Math.max(1, giorniFa - 12)))
+        .catch((e) => console.log(`      ⚠ nota non rimborsata: ${e.message}`));
       pareggiate += 1;
     }
   }
@@ -463,7 +479,7 @@ export async function costruisciSalaECarta(ctx) {
           category: p.category,
           price: Math.round((9 + rnd() * 14) * 2) / 2,
           position: k,
-        }).catch(() => {});
+        }).catch((e) => console.log(`      ⚠ piatto del giorno non aggiunto: ${e.message}`));
         voci += 1;
       }
     }
@@ -479,7 +495,8 @@ export async function costruisciSalaECarta(ctx) {
     .limit(3);
   let caparre = 0;
   for (const p of future ?? []) {
-    await setReservationDeposit(p.id, 50 + p.party_size * 5).catch(() => {});
+    await setReservationDeposit(p.id, 50 + p.party_size * 5)
+      .catch((e) => console.log(`      ⚠ caparra non registrata: ${e.message}`));
     caparre += 1;
   }
   segna("caparre incassate su prenotazioni grosse", caparre);
@@ -546,7 +563,12 @@ export async function costruisciRicevimenti(ctx) {
       productDescription: `${MARCA}${descrizione}`,
       temperatureC: storta && fresco ? Math.round((7 + rnd() * 3) * 10) / 10 : temperatura,
       packagingOk: !storta,
-      conformity: storta ? "non_conforme" : "conforme",
+      // ⚠️ E' un BOOLEANO, non un testo: la prima volta ci avevo scritto
+      // «conforme» e il database ha risposto «invalid input syntax for type
+      // boolean». Terzo vocabolario sbagliato in una notte, e sempre per lo
+      // stesso motivo: *il tipo di una colonna si chiede al database, non si
+      // deduce dal nome.*
+      conformity: !storta,
       note: storta ? `${MARCA}imballo bagnato, temperatura sopra soglia` : null,
       azione: storta ? "Merce respinta e ordinata di nuovo per il giorno dopo" : null,
     }).catch((e) => {
@@ -577,9 +599,13 @@ export async function costruisciRicevimenti(ctx) {
 // ---------------------------------------------------------------------
 export async function costruisciCessione(ctx) {
   const { segna, supabase, createCession, oggi, MARCA, dispensaPerNome } = ctx;
-  const { data: enti } = await supabase.from("entities").select("id, type, name");
-  const agricola = (enti ?? []).find((e) => e.type !== "srls");
-  const ristorante = (enti ?? []).find((e) => e.type === "srls");
+  // ⚠️ La colonna si chiama `entity_type`, non `type`: cercandola col nome
+  // sbagliato la query non falliva — restituiva due righe senza quel campo,
+  // e la cessione veniva saltata dicendo «manca una delle due societa'».
+  // Un errore che si traveste da dato mancante.
+  const { data: enti } = await supabase.from("entities").select("id, entity_type, name");
+  const agricola = (enti ?? []).find((e) => e.entity_type === "azienda_agricola");
+  const ristorante = (enti ?? []).find((e) => e.entity_type === "srls");
   if (!agricola || !ristorante) {
     segna("cessione intercompany: manca una delle due societa'", 0);
     return;
