@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gestionale-prova",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:prova"],
+      "port": 5173
+    }
+  ]
+}

@@ -1,4 +1,8 @@
 import { MATERIE_PRIME, PREPARAZIONI, FINGER, PIATTI, PIATTI_IN_CARTA, SELEZIONI, BOZZE } from "./scenario/carta.mjs";
+import {
+  BEVANDE, serateDelMeseVero, copertiDelTavolo, componiConto,
+  chiPrenota, oraDellaPrenotazione, fornitoreDellaCategoria,
+} from "./scenario/servizio.mjs";
 
 // DUE MESI DI VITA DEL RISTORANTE — la parte grossa di `npm run prova:scenario`.
 //
@@ -13,28 +17,32 @@ import { MATERIE_PRIME, PREPARAZIONI, FINGER, PIATTI, PIATTI_IN_CARTA, SELEZIONI
 // nomi.
 //
 // ---------------------------------------------------------------------
-// 🔴 PERCHÉ QUESTI NUMERI E NON ALTRI — misurati prima di scrivere
+// 🔴 LA SCALA È QUELLA VERA — e fino al 23/08 non lo era
 // ---------------------------------------------------------------------
 //
-// **~60 conti su ~20 serate.** Tre misure, non un'impressione:
+// **Decisione di Alessio, 23/08/2026**: *«lo scenario deve rispecchiare
+// veramente due mesi di attività senza eccezioni. I dati devono essere
+// completi e mai, MAI carenti in nessuno degli aspetti che riguardano ogni
+// singolo settore dell'app e dell'attività.»*
 //
-// 1. **Costo**: un conto completo (apri + coperti + righe + invio +
-//    chiusura) costa **1,58 secondi** misurati col cronometro. 60 conti
-//    sono ~95 secondi; 150 sarebbero 4 minuti. Questo comando si rilancia
-//    ogni volta che il collaudo rompe qualcosa, e un comando da quattro
-//    minuti si smette di rilanciare.
-// 2. **Rumore**: con 30 conti al mese un conto storto pesa il **3%** sulla
-//    media. Con 5 conti peserebbe il 20% (e nasconderebbe tutto il resto);
-//    con 200 sparirebbe nel mucchio — *un difetto che si diluisce non lo
-//    trova nessuno*, ed è l'avvertenza del mandato.
-// 3. **Leggibilità**: 60 righe Alessio le scorre e le ricontrolla a mano.
-//    È la proprietà che rende un collaudo diverso da una prova automatica.
+// 🔴 **LA RIGA CHE STAVA QUI ERA UN LIMITE DICHIARATO, ED È DIVENTATA UN
+// DIFETTO DA TOGLIERE.** Diceva: *«un'osteria da 34 coperti fa 150-200
+// conti al mese; questi due mesi ne hanno ~30 ciascuno, cioè un quinto —
+// non è un difetto del calcolo, è la taglia dello scenario»*. Era onesta e
+// non basta: **dichiarare una carenza non la rende innocua**, perché ogni
+// numero che ne discende resta inutilizzabile per giudicare il gestionale.
 //
-// ⚠️ **E IL RAPPORTO COL VERO VA DICHIARATO**: un'osteria da 34 coperti fa
-// 150-200 conti al mese. Questi due mesi ne hanno ~30 ciascuno, cioè **un
-// quinto**. I totali in euro sono quindi bassi rispetto al piano della
-// Proiezione, e lo scostamento risulterà negativo: **non è un difetto del
-// calcolo, è la taglia dello scenario.**
+// Adesso i conti sono **tutti quelli di due mesi veri**: ~145 nel mese
+// fiacco e ~185 in quello pieno, su tutte le serate che il locale apre
+// davvero (lunedì riposo, cena da martedì a sabato, pranzo la domenica).
+//
+// ⚠️ **E il ragionamento vecchio su costo/rumore/leggibilità non era
+// sbagliato: era incompleto.** Il costo esiste (il comando ci mette
+// parecchio) e la risposta non è rimpicciolire i dati — è **non
+// rigenerarli ogni volta**: si genera una volta e si RIPRISTINA da copia.
+// La leggibilità a mano si perde davvero, ed è il prezzo dichiarato: 300
+// conti non si scorrono uno per uno. In cambio si guardano i totali, che
+// è come li guarderà davvero chi ha un ristorante.
 //
 // ⚠️ **I MESI SONO QUELLI CHE LA PREVISIONE CHIUDE.** `prova-base.mjs`
 // chiude i due mesi precedenti a quello corrente; se i conti cadessero
@@ -64,6 +72,7 @@ export async function costruisciDueMesi(ctx) {
     registerStockDelivery, createReservation, createCashMovement, listAllCausali,
     registraConteggioCassa, versaInBanca, recordStockConsumption, allineaGiacenza,
     createSupplierInvoice, markInvoicePaid, fornitori,
+    createBarItem, assegnaPrenotazione,
   } = ctx;
 
   const rnd = seminato(20260822); // ⚠️ deterministico: due esecuzioni danno lo stesso scenario
@@ -98,6 +107,10 @@ export async function costruisciDueMesi(ctx) {
   const perNome = new Map((giaCiSono ?? []).map((r) => [r.name, r.id]));
   for (const nome of Object.keys(dispensa)) perNome.set(nome, dispensa[nome]);
 
+  // Il giorno prima della prima serata dei due mesi: e' quando la dispensa
+  // di partenza e' entrata in cella.
+  const primoGiornoDelPeriodo = `${mesePrecedente(oggi, 2)}-01`;
+  const lottiDiPartenza = [];
   let nuoviIngredienti = 0;
   for (const [nome, categoria, unita, prezzo, soglia, giacenza, conservazione] of MATERIE_PRIME) {
     if (perNome.has(nome)) { dispensa[nome] = perNome.get(nome); continue; }
@@ -125,17 +138,30 @@ export async function costruisciDueMesi(ctx) {
     // magazzino ha sia i prodotti che ci sono sia quelli finiti — e la
     // lista della spesa ha qualcosa dentro e qualcosa fuori.
     if (giacenza > 0) {
-      await registerStockDelivery({
+      // 🔴 LA DISPENSA DI PARTENZA ARRIVA IL GIORNO PRIMA DEL PRIMO
+      // SERVIZIO, non oggi (misurato dopo il primo giro a scala piena: 103
+      // partite portavano la data di oggi). Con la data di oggi, i conti di
+      // **giugno** consumavano merce arrivata ad **agosto** — un paradosso
+      // che non da' nessun errore e che rende falso tutto quello che si
+      // legge su una partita: quando e' entrata, quanto e' rimasta in cella,
+      // se e' scaduta prima di finire.
+      const lotto = await registerStockDelivery({
         ingredientId: id,
         quantity: giacenza,
-        unitPrice: prezzo,
         unitCost: prezzo,
-        expiryDate: giorni(oggi, conservazione === "dispensa" || conservazione === "temperatura_ambiente" ? 120 : 9),
+        expiryDate: giorni(primoGiornoDelPeriodo, conservazione === "dispensa" || conservazione === "temperatura_ambiente" ? 120 : 9),
         supplierId: fornitori?.[0] ?? null,
       });
+      if (typeof lotto === "string") lottiDiPartenza.push(lotto);
     }
   }
-  segna("materie prime in dispensa (e' da queste che nasce un food cost vero)", nuoviIngredienti);
+  if (lottiDiPartenza.length) {
+    const r = await supabase.from("stock_lots")
+      .update({ received_at: `${primoGiornoDelPeriodo}T06:30:00` })
+      .in("id", lottiDiPartenza);
+    if (r.error) throw new Error(`Non riesco a ridatare la dispensa di partenza: ${r.error.message}`);
+  }
+  segna("materie prime in dispensa, entrate il primo giorno dei due mesi", nuoviIngredienti);
 
   // -------------------------------------------------------------------
   // 2. LE PREPARAZIONI — la profondita' che mancava
@@ -258,6 +284,29 @@ export async function costruisciDueMesi(ctx) {
   segna("selezioni di bocconcini, che sono la forma in cui i finger si vendono", SELEZIONI.length);
 
   await setActiveMenu(carta.id);
+
+  // -------------------------------------------------------------------
+  // 2-bis. LA CARTA DELLE BEVANDE — che non c'era affatto
+  //
+  // 🔴 Misurato sullo scenario di ieri: in due mesi di servizio c'erano
+  // **287 righe di cucina e UNA di bar**. Cioe' il locale non vendeva da
+  // bere, e con esso restavano vuote la schermata «Bevande e vini», la
+  // colonna del bar nelle Comande e la meta' beverage della Proiezione.
+  //
+  // ⚠️ Una bevanda NON e' una ricetta: vive in `bar_items`, e in comanda ci
+  // finisce come testo col formato accanto al nome («Grillo · calice»),
+  // perche' al bar la differenza fra un calice e una bottiglia conta.
+  // -------------------------------------------------------------------
+  const bevande = [];
+  for (const [section, category, name, producer, serving, prezzo] of BEVANDE) {
+    const b = await createBarItem({
+      section, category, name, producer, serving,
+      selling_price: prezzo,
+      note: `${MARCA}carta bevande`,
+    });
+    bevande.push({ ...b, section, category, name, serving, selling_price: prezzo });
+  }
+  segna("vini e bevande in carta (calici, bottiglie, birre, caffetteria, amari)", bevande.length);
   segna("ricette nel ricettario, di cui in carta: " + inCarta.length, FINGER.length + PIATTI.length + SELEZIONI.length);
 
   // -------------------------------------------------------------------
@@ -280,9 +329,19 @@ export async function costruisciDueMesi(ctx) {
     .from("dining_tables").select("id,label").eq("tipo", "tavolo").eq("active", true).order("label");
   if (!tavoli?.length) throw new Error("Nessun tavolo in sala: lo scenario dei due mesi non può girare.");
 
+  // 🔴 TUTTE LE SERATE, NON VENTI (23/08/2026, decisione di Alessio).
+  // Il calendario segue gli orari veri — lunedì riposo, cena da martedì a
+  // sabato, pranzo la domenica — e i conti per serata cambiano col giorno
+  // della settimana. La spiegazione e i numeri stanno in
+  // `scripts/scenario/servizio.mjs`.
+  //
+  // ⚠️ Il mese fiacco è al 15% in meno di serata, non al 30%: deve restare
+  // dentro i 150-200 conti al mese che fa un'osteria da 34 coperti, e
+  // insieme essere **diverso** da quello pieno — se i due mesi si
+  // somigliassero, il confronto della Proiezione non mostrerebbe niente.
   const serate = [
-    ...serateDelMese(meseFiacco, 8, rnd).map((d) => ({ data: d, conti: 2, ricco: false })),
-    ...serateDelMese(mesePieno, 12, rnd).map((d) => ({ data: d, conti: 3, ricco: true })),
+    ...serateDelMeseVero(meseFiacco, 0.85, rnd).map((s) => ({ ...s, ricco: false })),
+    ...serateDelMeseVero(mesePieno, 1.0, rnd).map((s) => ({ ...s, ricco: true })),
   ];
 
   // I piatti divisi per fascia di prezzo: le serate ricche vendono i
@@ -293,38 +352,190 @@ export async function costruisciDueMesi(ctx) {
   // (dichiarati qui perché servono anche alle situazioni storte, sotto)
   const cari = inCarta.filter((p) => p.prezzo > 14);
 
-  const conti = [];
-  let iTavolo = 0;
+  // -------------------------------------------------------------------
+  // 🔴 IL TAVOLO CHE MANGIA DAVVERO (23/08/2026)
+  //
+  // Prima di qui, ogni cliente ordinava **esattamente un piatto** (misurato:
+  // 0,94 · 1,00 · 0,92 · 1,00 piatti a testa) e in due mesi c'era **una sola
+  // bevanda**. Da lì venivano tutti i numeri assurdi insieme — scontrino a
+  // 15,71 € per coperto, food cost al 6%, turni mai usati.
+  //
+  // Adesso il tavolo si compone persona per persona, con le bevande, e i
+  // turni li mette insieme chi serve. Il come sta in
+  // `scripts/scenario/servizio.mjs`; qui c'è solo il gesto.
+  // -------------------------------------------------------------------
+  // --- A. IL PROGRAMMA DELLE SERATE, composto PRIMA di scrivere ------
+  //
+  // 🔴 Si compone tutto in memoria e poi si esegue, e non è un vezzo: senza
+  // sapere in anticipo **quanti piatti si venderanno**, non si può sapere
+  // quanta merce serve — e un magazzino caricato a occhio finisce a zero a
+  // metà del secondo mese, riempiendo il gestionale di «non ce n'era
+  // abbastanza». Quella non è una prova: è un guasto costruito.
+  const programma = [];
+  let iTavoloProgramma = 0;
   for (const serata of serate) {
     for (let n = 0; n < serata.conti; n++) {
-      const tavolo = tavoli[iTavolo++ % tavoli.length];
-      const coperti = serata.ricco ? 2 + Math.floor(rnd() * 6) : 2 + Math.floor(rnd() * 3);
+      const coperti = copertiDelTavolo(rnd);
+      // Il venerdì e il sabato si ordina di più anche nel mese fiacco: la
+      // serata piena non è una proprietà del mese, è del giorno.
+      const ricco = serata.ricco || serata.settimana >= 5;
+      const { righe } = componiConto({ coperti, ricco, inCarta, bevande, rnd });
+      // ⚠️ Il tavolo si sceglie QUI e non al momento di aprire il conto:
+      // serve a sapere, prima, su quale tavolo cadra' ogni cena — e quindi
+      // a poterci mettere sopra una prenotazione che il gestionale
+      // riconoscera' da solo quando il conto si apre (il legame del giro
+      // D1, 18/08).
+      programma.push({ serata, coperti, righe, tavolo: tavoli[iTavoloProgramma++ % tavoli.length] });
+    }
+  }
+
+  // --- B. QUANTA MERCE SERVE, chiesta al DATABASE -------------------
+  //
+  // ⚠️ L'esplosione di una ricetta nei suoi ingredienti la sa fare il
+  // database (`fabbisogno_preparazione`), e rifarla qui in JavaScript
+  // sarebbe una seconda regola per la stessa cosa — il doppione che questo
+  // progetto toglie ogni volta che lo trova. Quindi si chiede a lui.
+  const porzioniVendute = new Map();
+  for (const c of programma) {
+    for (const r of c.righe) {
+      if (r.genere !== "piatto") continue;
+      porzioniVendute.set(r.nome, (porzioniVendute.get(r.nome) ?? 0) + 1);
+    }
+  }
+  const fabbisogno = await fabbisognoDeiDueMesi(ctx, porzioniVendute);
+  const spesaPerFornitore = await riforniscilMagazzino(ctx, { fabbisogno, serate, rnd });
+  await fattureDeiFornitori(ctx, spesaPerFornitore, rnd);
+
+  // --- B-bis. CHI AVEVA PRENOTATO ------------------------------------
+  //
+  // 🔴 Le prenotazioni si scrivono PRIMA dei conti, ed e' l'unico ordine che
+  // fa funzionare la catena vera: aprendo il conto, il gestionale cerca da
+  // solo la prenotazione confermata di quella serata su quel tavolo e ci si
+  // aggancia (il legame del giro D1, 18/08); chiudendolo, quella
+  // prenotazione diventa **«servita»** da sola (21/08).
+  //
+  // ⚠️ Costruendole dopo — com'era — nessuna delle due cose sarebbe mai
+  // avvenuta: nello scenario di ieri c'erano **48 prenotazioni, 2 conti
+  // agganciati e zero «servite»**. Due funzioni costruite e mai esercitate.
+  //
+  // ⚠️ E NON prenotano tutti: circa la meta' dei tavoli arriva senza
+  // prenotare, che e' come va in un'osteria di paese. Se prenotassero
+  // tutti, la sala non avrebbe mai un tavolo che si siede e basta.
+  let conPrenotazione = 0;
+  for (const c of programma) {
+    if (rnd() > 0.52) continue;
+    const chi = chiPrenota(rnd);
+    const p = await createReservation({
+      reservation_date: c.serata.data,
+      reservation_time: oraDellaPrenotazione(c.serata.servizio, rnd),
+      party_size: c.coperti,
+      customer_name: `${MARCA}${chi.nome}`,
+      customer_phone: chi.telefono,
+      status: "confermata",
+      type: "prenotazione",
+      source: rnd() < 0.45 ? "form_pubblico" : "interno",
+      notes: rnd() < 0.08 ? NOTE_PRENOTAZIONE[Math.floor(rnd() * NOTE_PRENOTAZIONE.length)] : null,
+    });
+    // Il tavolo: senza, il conto non saprebbe a quale prenotazione
+    // agganciarsi — la regola guarda le confermate **su quel tavolo**.
+    await assegnaPrenotazione(p.id, [c.tavolo.id]).catch(() => {});
+    conPrenotazione += 1;
+  }
+  segna("prenotazioni che diventano una cena vera (il conto le riconosce da solo)", conPrenotazione);
+
+  // --- C. E ADESSO SI SERVE -----------------------------------------
+  const conti = [];
+  let iTavolo = 0;
+  let progressivoScontrino = 0;
+  let stornate = 0;
+  let scontrinati = 0;
+  let mistiPagati = 0;
+  {
+    for (const { serata, coperti, righe, tavolo } of programma) {
+      iTavolo += 1;
       const id = await orders.apriConto([tavolo.id], { serata: serata.data, note: `${MARCA}serata` });
       await orders.setOrderCoperti(id, coperti);
 
-      const quanti = Math.max(2, Math.round(coperti * (serata.ricco ? 1.4 : 1.0)));
-      const scelta = [];
-      for (let k = 0; k < quanti; k++) {
-        const sacco = serata.ricco && rnd() < 0.55 ? cari : economici;
-        scelta.push(sacco[Math.floor(rnd() * sacco.length)]);
-      }
-      const righe = [];
-      for (const p of scelta) {
-        const r = await orders.addDraftItem(id, {
-          recipeId: p.recipe_id, destination: "cucina", quantity: 1,
-          unitPrice: p.prezzo, turno: 1,
+      const perTurno = new Map();
+      const prezzoDellaRiga = new Map();
+      let totale = coperti * (copertoPrezzo(ctx) ?? 0);
+      for (const r of righe) {
+        const riga = await orders.addDraftItem(id, {
+          recipeId: r.genere === "piatto" ? r.recipe_id : null,
+          freeTextName: r.genere === "bevanda" ? r.nome : null,
+          destination: r.genere === "bevanda" ? "bar" : "cucina",
+          quantity: 1,
+          unitPrice: r.prezzo,
+          note: r.nota ?? null,
+          turno: r.turno ?? 1,
         });
-        righe.push(r.id);
+        totale += Number(r.prezzo);
+        prezzoDellaRiga.set(riga.id, Number(r.prezzo));
+        const t = r.turno ?? 1;
+        if (!perTurno.has(t)) perTurno.set(t, []);
+        perTurno.get(t).push(riga.id);
       }
-      await orders.sendDraftItems(id, righe);
-      // ⚠️ Contante e carta mescolati: la tesoreria tiene separati il
-      // cassetto e la banca, e con un mezzo solo quella distinzione non si
-      // potrebbe guardare.
-      await orders.closeOrderPaid(id, rnd() < 0.45 ? "contante" : "carta", copertoPrezzo(ctx));
-      conti.push({ id, data: serata.data });
+
+      // ⚠️ Si manda **un turno per volta**, come in sala: è il gesto che fa
+      // uscire un ticket per giro. Mandando tutto insieme, la cucina
+      // riceverebbe un foglio solo e i turni non si vedrebbero mai — cioè
+      // la funzione del 21/08 resterebbe senza un dato addosso.
+      const turni = [...perTurno.entries()].sort((a, b) => a[0] - b[0]);
+      for (const [, ids] of turni) await orders.sendDraftItems(id, ids);
+
+      // Uno storno ogni tanto: un piatto già partito per la cucina che il
+      // cliente rimanda indietro. Nello scenario di ieri non ce n'era
+      // **nessuno** in 288 righe, e la registrazione con motivo obbligatorio
+      // non aveva niente su cui essere guardata.
+      if (rnd() < 0.03 && turni.length) {
+        const ids = turni[0][1];
+        const vittima = ids[Math.floor(rnd() * ids.length)];
+        const motivo = MOTIVI_STORNO[Math.floor(rnd() * MOTIVI_STORNO.length)];
+        await orders.voidSentItem(vittima, motivo);
+        totale -= prezzoDellaRiga.get(vittima) ?? 0;
+        stornate += 1;
+      }
+
+      // ⚠️ Contante, carta e — una volta su dodici — **misto**: due mezzi
+      // sullo stesso conto (Blocco 9 del mandato di correzione). Le quote
+      // devono fare l'incassato al centesimo, e a rifiutare è il database:
+      // se questo conto passa, quella regola è viva.
+      if (rnd() < 0.08 && totale > 20) {
+        const contanti = Math.round(totale * 0.4 * 100) / 100;
+        await orders.closeOrderPaid(id, null, copertoPrezzo(ctx), [
+          { mezzo: "contante", importo: contanti },
+          { mezzo: "carta", importo: Math.round((totale - contanti) * 100) / 100 },
+        ]);
+        mistiPagati += 1;
+      } else {
+        await orders.closeOrderPaid(id, rnd() < 0.42 ? "contante" : "carta", copertoPrezzo(ctx));
+      }
+
+      // 🔴 LO SCONTRINO ESCE, e prima non usciva mai: **tutti e 62 i conti
+      // dello scenario di ieri risultavano da fiscalizzare**, cioè quella
+      // schermata mostrava l'elenco di tutto invece dell'eccezione. Qui
+      // quasi tutti sono scontrinati; **cinque su cento no** (la stampante
+      // che non ha risposto) e **due su cento** aspettano una fattura.
+      const dado = rnd();
+      if (dado < 0.93) {
+        progressivoScontrino += 1;
+        await orders.setDocumentoFiscale(id, {
+          tipo: "scontrino",
+          numero: `${serata.data.slice(0, 4)}-${String(progressivoScontrino).padStart(4, "0")}`,
+          emessoIl: serata.data,
+        });
+        scontrinati += 1;
+      } else if (dado < 0.95) {
+        await orders.setDocumentoFiscale(id, { tipo: "fattura_da_emettere", numero: null, emessoIl: serata.data });
+      }
+
+      conti.push({ id, data: serata.data, coperti });
     }
   }
   segna(`conti chiusi su ${serate.length} serate (due mesi: uno fiacco, uno pieno)`, conti.length);
+  segna("scontrini emessi (gli altri: stampante muta o fattura da fare)", scontrinati);
+  segna("conti pagati con due mezzi insieme (contante + carta)", mistiPagati);
+  segna("righe stornate dopo essere andate in cucina, col motivo", stornate);
 
   // -------------------------------------------------------------------
   // 4. LE DATE — l'unico punto in cui questo scenario scrive in tabella
@@ -370,6 +581,16 @@ export async function costruisciDueMesi(ctx) {
       .update({ sent_at: apertura, prepared_at: apertura, created_at: apertura })
       .eq("order_id", c.id);
     await supabase.from("stock_consumptions").update({ created_at: chiusura }).eq("order_id", c.id);
+    // ⚠️ E LE QUOTE DI PAGAMENTO (23/08). Restavano a oggi: un conto di
+    // giugno con l'incasso datato agosto fa quadrare la tesoreria di un
+    // mese sbagliato, e nessuno collegherebbe quella differenza a questa
+    // riga. È lo stesso motivo per cui si spostano gli scarichi.
+    await supabase.from("order_payments").update({ created_at: chiusura }).eq("order_id", c.id);
+    // Lo storno è avvenuto durante la cena, non oggi.
+    await supabase.from("order_items")
+      .update({ voided_at: apertura })
+      .eq("order_id", c.id)
+      .not("voided_at", "is", null);
     ridatati += 1;
   }
   segna("conti spostati nei due mesi (date, righe e scarichi insieme)", ridatati);
@@ -465,48 +686,98 @@ export async function costruisciDueMesi(ctx) {
   // capitano davvero. Qui ce n'è una che non si è presentata, una
   // annullata dal cliente e una spostata di data.
   // -------------------------------------------------------------------
-  const NOMI = ["Bianchi", "Ferrara", "La Rosa", "Gulisano", "Interlandi", "Nicosia", "Pappalardo", "Zappalà"];
+  // ⚠️ Le prenotazioni ANDATE A BUON FINE sono gia' state scritte piu'
+  // sopra, prima dei conti: sono quelle che il gestionale aggancia da solo.
+  // Qui restano le tre cose che un elenco di sole prenotazioni riuscite non
+  // farebbe mai vedere.
   let prenotazioni = 0;
-  const stati = { confermata: 0, annullata: 0, non_presentata: 0 };
+  const stati = { non_presentata: 0, annullata: 0, rifiutata: 0 };
+
+  // 1. CHI NON SI E' PRESENTATO. Confermata, serata passata, nessun conto.
+  //
+  // 🔴 E NON HA UNO STATO SUO — misurato scrivendolo: il database rifiuta
+  // `no_show`, perche' gli stati sono solo `richiesta_in_attesa`,
+  // `confermata`, `servita`, `rifiutata`, `annullata`. Chi si presenta
+  // diventa «servita» da se' quando il conto si chiude; chi non si presenta
+  // **resta confermata per sempre**.
+  // ⚠️ Quindi il gestionale non lo sa distinguere da «mi sono dimenticato di
+  // chiudere il conto», e per una prenotazione di tre settimane fa i due
+  // casi si vedono identici. E' una domanda per Alessio, non una cosa da
+  // decidere qui — e adesso, con quaranta no-show veri dentro, si vede.
   for (const [i, serata] of serate.entries()) {
-    // due prenotazioni per serata, con esiti diversi
-    for (let k = 0; k < 2; k++) {
-      const n = (i * 2 + k) % NOMI.length;
-      const ora = k === 0 ? "20:00" : "21:30";
-      // ⚠️ Gli esiti NON sono a caso: uno ogni sette non si presenta e uno
-      // ogni undici viene annullato. Con una distribuzione casuale, due
-      // esecuzioni darebbero scenari diversi e «rifallo» non riprodurrebbe
-      // il caso che si stava guardando.
-      //
-      // 🔴 E IL «NON SI È PRESENTATO» NON HA UNO STATO SUO — misurato
-      // scrivendolo: il database rifiuta `no_show`, perché gli stati sono
-      // solo `richiesta_in_attesa`, `confermata`, `servita`, `rifiutata`,
-      // `annullata`. Nel gestionale una prenotazione che non si presenta
-      // **resta «confermata» per sempre**: chi si presenta diventa
-      // «servita» da sé quando il conto si chiude (trigger del 21/08), chi
-      // non si presenta no.
-      // ⚠️ Quindi qui il no-show si costruisce come è fatto nella realtà —
-      // confermata, di una serata passata, senza nessun conto — e la nota
-      // lo dice a parole. **Ma il gestionale non sa distinguerlo da «mi
-      // sono dimenticato di chiudere il conto»**, ed è una domanda per
-      // Alessio, non una cosa da decidere qui.
-      const esito = (i * 2 + k) % 7 === 3 ? "non_presentata" : (i * 2 + k) % 11 === 5 ? "annullata" : "confermata";
-      const stato = esito === "non_presentata" ? "confermata" : esito;
+    if (i % 6 !== 2) continue;
+    const chi = chiPrenota(rnd);
+    await createReservation({
+      reservation_date: serata.data,
+      reservation_time: oraDellaPrenotazione(serata.servizio, rnd),
+      party_size: 2 + Math.floor(rnd() * 4),
+      customer_name: `${MARCA}${chi.nome}`,
+      customer_phone: chi.telefono,
+      status: "confermata",
+      source: rnd() < 0.5 ? "form_pubblico" : "interno",
+      notes: "non si e' presentata (nessun conto quella sera)",
+    });
+    stati.non_presentata += 1;
+    prenotazioni += 1;
+  }
+
+  // 2. CHI HA ANNULLATO, e chi si e' visto rifiutare la richiesta.
+  for (const [i, serata] of serate.entries()) {
+    if (i % 9 !== 4) continue;
+    const chi = chiPrenota(rnd);
+    const rifiutata = i % 18 === 4;
+    await createReservation({
+      reservation_date: serata.data,
+      reservation_time: oraDellaPrenotazione(serata.servizio, rnd),
+      party_size: 2 + Math.floor(rnd() * 6),
+      customer_name: `${MARCA}${chi.nome}`,
+      customer_phone: chi.telefono,
+      status: rifiutata ? "rifiutata" : "annullata",
+      source: rifiutata ? "form_pubblico" : "interno",
+      notes: rifiutata ? "eravamo al completo" : "annullata dal cliente il giorno prima",
+    });
+    stati[rifiutata ? "rifiutata" : "annullata"] += 1;
+    prenotazioni += 1;
+  }
+  segna(
+    `prenotazioni andate storte (${stati.non_presentata} non presentate, ${stati.annullata} annullate, ${stati.rifiutata} rifiutate)`,
+    prenotazioni
+  );
+
+  // 3. E IL FUTURO — che nello scenario di ieri **non esisteva affatto**.
+  //
+  // 🔴 Misurato: l'ultima prenotazione era di ieri. Cioe' aprendo il
+  // Calendario o la sala di stasera si vedeva **il vuoto**, e le due cose
+  // che un ristoratore guarda per prime — «chi viene stasera» e «com'e' il
+  // fine settimana» — non si potevano collaudare.
+  //
+  // ⚠️ Fra queste ci sono le RICHIESTE IN ATTESA arrivate dal sito: sono
+  // quelle che compaiono nel riquadro in cima al Calendario, ed erano zero.
+  let future = 0;
+  let inAttesa = 0;
+  for (let g = 0; g <= 16; g++) {
+    const data = giorni(oggi, g);
+    const settimana = new Date(`${data}T12:00:00`).getDay();
+    if (settimana === 1) continue; // lunedi' di riposo
+    const quante = settimana >= 5 || settimana === 0 ? 4 + Math.floor(rnd() * 4) : 1 + Math.floor(rnd() * 3);
+    for (let k = 0; k < quante; k++) {
+      const chi = chiPrenota(rnd);
+      const attesa = rnd() < 0.22;
       await createReservation({
-        reservation_date: serata.data,
-        reservation_time: ora,
-        party_size: 2 + ((i + k) % 5),
-        customer_name: `${MARCA}${NOMI[n]}`,
-        customer_phone: `+3903512345${String(10 + n).padStart(2, "0")}`,
-        status: stato,
-        source: k === 0 ? "form_pubblico" : "interno",
-        notes: esito === "non_presentata" ? "non si è presentata (nessun conto quella sera)" : null,
+        reservation_date: data,
+        reservation_time: oraDellaPrenotazione(settimana === 0 ? "pranzo" : "cena", rnd),
+        party_size: 2 + Math.floor(rnd() * 6),
+        customer_name: `${MARCA}${chi.nome}`,
+        customer_phone: chi.telefono,
+        status: attesa ? "richiesta_in_attesa" : "confermata",
+        source: attesa ? "form_pubblico" : rnd() < 0.5 ? "form_pubblico" : "interno",
+        notes: rnd() < 0.1 ? NOTE_PRENOTAZIONE[Math.floor(rnd() * NOTE_PRENOTAZIONE.length)] : null,
       });
-      stati[esito] += 1;
-      prenotazioni += 1;
+      if (attesa) inAttesa += 1;
+      future += 1;
     }
   }
-  segna(`prenotazioni sui due mesi (${stati.confermata} confermate, ${stati.non_presentata} non presentate, ${stati.annullata} annullate)`, prenotazioni);
+  segna(`prenotazioni dei prossimi giorni, di cui ${inAttesa} richieste ancora da confermare`, future);
 
   // Una prenotazione SPOSTATA: nata per un giorno, cambiata in un altro.
   {
@@ -514,7 +785,7 @@ export async function costruisciDueMesi(ctx) {
       reservation_date: giornoDentro(mesePieno, 18),
       reservation_time: "20:30",
       party_size: 6,
-      customer_name: `${MARCA}Sciacca (spostata)`,
+      customer_name: `${MARCA}Sciacca`,
       customer_phone: "+390351234599",
       status: "confermata",
       source: "interno",
@@ -741,33 +1012,20 @@ function mesePrecedente(isoDate, quanti) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// Le serate di servizio di un mese: martedì-sabato, saltando il lunedì di
-// riposo. ⚠️ Prende le PRIME `quante` disponibili invece che a caso, così
-// due esecuzioni danno lo stesso calendario.
-function serateDelMese(meseIso, quante, rnd) {
-  const [a, m] = meseIso.split("-").map(Number);
-  const giorniNelMese = new Date(a, m, 0).getDate();
-  const candidate = [];
-  for (let g = 1; g <= giorniNelMese; g++) {
-    const d = new Date(a, m - 1, g);
-    const gs = d.getDay(); // 0 domenica, 1 lunedì
-    if (gs === 1) continue; // lunedì di riposo
-    candidate.push(`${a}-${String(m).padStart(2, "0")}-${String(g).padStart(2, "0")}`);
-  }
-  // distribuite sul mese, non tutte nella prima settimana
-  const passo = Math.max(1, Math.floor(candidate.length / quante));
-  const scelte = [];
-  for (let i = 0; i < candidate.length && scelte.length < quante; i += passo) scelte.push(candidate[i]);
-  void rnd;
-  return scelte;
-}
-
+// ⚠️ QUI C'ERA `serateDelMese`, che prendeva le PRIME N serate del mese
+// saltando il lunedì. È stata TOLTA il 23/08 insieme alla scala vecchia:
+// sceglieva venti serate su cinquanta, cioè costruiva un mese in cui il
+// locale apriva a giorni alterni. Il calendario vero — con i giorni della
+// settimana che pesano diverso — sta in `scripts/scenario/servizio.mjs`.
+//
+// Non è stata lasciata «per sicurezza»: una funzione che nessuno chiama è
+// una strada che qualcuno riprenderà fra sei mesi credendo sia quella buona.
 // --- attrezzi ------------------------------------------------------------
 
 // ⚠️ Deterministico di proposito: due esecuzioni dello stesso comando
 // devono produrre lo stesso scenario, altrimenti «rifallo e riprova» non
 // riproduce il caso che si stava guardando.
-function seminato(seme) {
+export function seminato(seme) {
   let s = seme >>> 0;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -780,4 +1038,287 @@ export function giorni(isoDate, quanti) {
   const [a, m, g] = isoDate.split("-").map(Number);
   const d = new Date(a, m - 1, g + quanti);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// ⚠️ I motivi di uno storno sono quelli veri di una sala: un piatto che
+// torna indietro ha sempre una ragione, e il gestionale la pretende. Con un
+// motivo unico, l'elenco degli storni non direbbe niente a chi lo legge.
+const MOTIVI_STORNO = [
+  "Il cliente ha cambiato idea",
+  "Sbagliato tavolo",
+  "Piatto arrivato freddo, rifatto",
+  "Doppio invio per errore",
+  "Allergia dichiarata dopo l'ordine",
+];
+
+// ---------------------------------------------------------------------
+// QUANTA MERCE SERVE PER DUE MESI — e la risposta la dà il database
+//
+// 🔴 PERCHÉ NON SI CALCOLA QUI. L'esplosione di una ricetta nei suoi
+// ingredienti — con le preparazioni dentro le preparazioni e lo scarto di
+// ognuno — è una regola che vive in `fabbisogno_preparazione`. Riscriverla
+// in JavaScript per sapere quanta merce comprare sarebbe **una seconda
+// regola per la stessa cosa**, e il giorno che una delle due cambia
+// nessuno se ne accorge: il magazzino comincerebbe a scendere di un numero
+// e a rifornirsi di un altro.
+//
+// ⚠️ Quella funzione non è concessa a nessun client (solo a `postgres`), e
+// va bene così: qui si passa da `psql`, come le migrazioni.
+// ---------------------------------------------------------------------
+async function fabbisognoDeiDueMesi(ctx, porzioniVendute) {
+  const { interrogaProva } = ctx;
+  if (!interrogaProva || porzioniVendute.size === 0) return new Map();
+  const valori = [...porzioniVendute.entries()]
+    .map(([nome, n]) => `('${String(nome).replace(/'/g, "''")}', ${n})`)
+    .join(", ");
+  const sql = `
+    with vendite(nome, porzioni) as (values ${valori})
+    select i.name || ' = ' || round(sum(f.quantita)::numeric, 4)
+      from vendite v
+      join recipes r on r.name = v.nome
+      cross join lateral fabbisogno_preparazione(r.id, v.porzioni) f
+      join ingredients i on i.id = f.ingredient_id
+     group by i.name
+     order by i.name;
+  `;
+  const fuori = new Map();
+  for (const riga of interrogaProva(sql).split(/\r?\n/)) {
+    const m = riga.trim().match(/^(.+) = ([0-9.]+)$/);
+    if (m) fuori.set(m[1], Number(m[2]));
+  }
+  return fuori;
+}
+
+// ---------------------------------------------------------------------
+// I RIFORNIMENTI — la merce arriva tutte le settimane, non tutta il primo
+// giorno
+//
+// 🔴 Misurato sullo scenario di ieri: **tutte le 103 partite di magazzino
+// erano arrivate lo stesso giorno**. Con due mesi di servizio veri quella
+// merce finisce a metà del primo mese, e da lì in poi ogni conto lascia una
+// riga «non ce n'era abbastanza» — cioè il gestionale racconta un guasto
+// che non è suo.
+//
+// ⚠️ E un magazzino tutto della stessa data non fa vedere niente di quello
+// che serve: FEFO prende dalla partita che scade prima, lo scadenziario
+// avvisa sulle partite vecchie, la tracciabilità risale al lotto. Con una
+// data sola quei tre non hanno niente da distinguere.
+//
+// Come sono dimensionati: **quello che i due mesi consumeranno davvero**
+// (chiesto al database qui sopra), meno quello che c'è già, più un residuo
+// del 20% — perché a fine agosto la cella non è vuota.
+// ---------------------------------------------------------------------
+async function riforniscilMagazzino(ctx, { fabbisogno, serate, rnd }) {
+  const { supabase, registerStockDelivery, segna, fornitori, fornitoriPerNome, dispensa } = ctx;
+  if (!fabbisogno.size) {
+    segna("rifornimenti: nessuno (non ho potuto chiedere il fabbisogno al database)", 0);
+    return;
+  }
+  const { data: giacenze } = await supabase.from("v_stock_levels").select("ingredient_id, ingredient_name, current_quantity");
+  const inCella = new Map((giacenze ?? []).map((r) => [r.ingredient_name, Number(r.current_quantity) || 0]));
+  const prezzi = new Map(MATERIE_PRIME.map((r) => [r[0], r[3]]));
+  const conservazioni = new Map(MATERIE_PRIME.map((r) => [r[0], r[6]]));
+  const categorie = new Map(MATERIE_PRIME.map((r) => [r[0], r[1]]));
+  // ⚠️ Chi porta cosa: il pesce lo porta il pescivendolo, non un camion
+  // solo per tutto. E' quello che fa tornare le fatture coi carichi.
+  const idFornitore = (categoria) =>
+    (fornitoriPerNome && fornitoriPerNome.get(fornitoreDellaCategoria(categoria))) ?? fornitori?.[0] ?? null;
+  // Quanto si e' comprato da ciascuno, giorno per giorno: da qui nascono le
+  // fatture, che cosi' **tornano con la merce** invece di essere numeri
+  // scollegati.
+  const spesa = new Map();
+
+  // Le date di consegna: due volte a settimana, il martedì e il venerdì,
+  // dentro il periodo delle serate.
+  const giorniConsegna = [...new Set(serate.map((s) => s.data))]
+    .sort()
+    .filter((d) => [2, 5].includes(new Date(`${d}T12:00:00`).getDay()));
+  if (!giorniConsegna.length) return;
+
+  let partite = 0;
+  let consegne = 0;
+  // ⚠️ `register_stock_delivery` scrive `received_at = now()` e non accetta
+  // una data — com'è giusto: la merce arriva quando arriva. Quindi le
+  // partite nascono oggi e si spostano indietro dopo, esattamente come i
+  // conti. Senza, il magazzino avrebbe due mesi di consumi e **tutte le
+  // partite arrivate oggi**, che è il difetto che questo blocco toglie.
+  const daRidatare = [];
+  const perGiorno = new Map(giorniConsegna.map((g) => [g, []]));
+  for (const [nome, serve] of fabbisogno) {
+    const id = dispensa[nome];
+    if (!id) continue;
+    const daComprare = serve * 1.2 - (inCella.get(nome) ?? 0);
+    if (daComprare <= 0.1) continue;
+    // ⚠️ Il fresco arriva spesso e poco, la dispensa di rado e tanto: è la
+    // differenza fra una cella e uno scaffale, e si vede nello
+    // scadenziario.
+    const cons = conservazioni.get(nome) ?? "dispensa";
+    const fresco = cons.startsWith("frigo") || cons === "freezer";
+    const quante = fresco ? Math.min(giorniConsegna.length, 12) : Math.min(giorniConsegna.length, 4);
+    const passo = giorniConsegna.length / quante;
+    // 🔴 IL PASSO SI CALCOLA IN VIRGOLA, NON INTERO (misurato dopo il primo
+    // giro a scala piena): con `Math.floor(26 / 12) = 2` — e peggio ancora
+    // con un passo di 1 — le consegne si fermavano **al dodicesimo giorno
+    // utile**, cioe' al 14 luglio. Meta' del secondo mese restava senza
+    // rifornimenti, e il magazzino ci arrivava vuoto. Nessun errore: solo
+    // una seconda meta' di luglio che sembrava un locale che non compra
+    // piu' niente.
+    for (let k = 0; k < quante; k++) {
+      const i = Math.min(giorniConsegna.length - 1, Math.round(k * passo));
+      perGiorno.get(giorniConsegna[i]).push({ nome, id, cons, fresco, categoria: categorie.get(nome) ?? "altro", quantita: daComprare / quante });
+    }
+  }
+
+  for (const [giorno, righe] of perGiorno) {
+    if (!righe.length) continue;
+    consegne += 1;
+    for (const r of righe) {
+      const prezzo = prezzi.get(r.nome) ?? 1;
+      // ⚠️ Il prezzo oscilla di poco fra una consegna e l'altra: è come si
+      // comporta un fornitore vero, ed è anche l'unico modo perché la
+      // sorveglianza dei rincari abbia qualcosa da guardare. Senza,
+      // `price_history` avrebbe una riga sola per prodotto.
+      const variazione = 1 + (rnd() - 0.45) * 0.12;
+      const lotto = await registerStockDelivery({
+        ingredientId: r.id,
+        quantity: Math.round(r.quantita * 100) / 100,
+        unitCost: Math.round(prezzo * variazione * 100) / 100,
+        expiryDate: giorni(giorno, r.fresco ? 4 + Math.floor(rnd() * 6) : 150 + Math.floor(rnd() * 200)),
+        supplierId: idFornitore(r.categoria),
+        note: `${ctx.MARCA}consegna del ${giorno}`,
+      });
+      const costo = Math.round(r.quantita * prezzo * variazione * 100) / 100;
+      const chiave = `${fornitoreDellaCategoria(r.categoria)}|${giorno}`;
+      spesa.set(chiave, (spesa.get(chiave) ?? 0) + costo);
+      const idLotto = lotto?.lot_id ?? lotto?.id ?? lotto;
+      if (typeof idLotto === "string") daRidatare.push([idLotto, giorno]);
+      partite += 1;
+    }
+  }
+  // Le date vere delle consegne, in un aggiornamento per giorno.
+  const perData = new Map();
+  for (const [id, giorno] of daRidatare) {
+    if (!perData.has(giorno)) perData.set(giorno, []);
+    perData.get(giorno).push(id);
+  }
+  for (const [giorno, ids] of perData) {
+    const r = await supabase.from("stock_lots")
+      .update({ received_at: `${giorno}T07:20:00` })
+      .in("id", ids);
+    if (r.error) throw new Error(`Non riesco a ridatare una consegna: ${r.error.message}`);
+  }
+  segna(`partite di magazzino arrivate in ${consegne} consegne, due volte a settimana`, partite);
+  return spesa;
+}
+
+// ⚠️ Le note di una prenotazione sono quelle vere di un telefono che
+// squilla: un'allergia, un compleanno, un passeggino. Servono perche' la
+// riga della prenotazione cambia forma quando ce n'e' una — e nello
+// scenario di ieri ce n'era **una sola in due mesi**.
+const NOTE_PRENOTAZIONE = [
+  "Un ospite allergico ai crostacei",
+  "Compleanno: portare la torta a fine cena",
+  "Tavolo tranquillo se possibile",
+  "Arrivano con un passeggino",
+  "Un ospite celiaco",
+  "Anniversario di matrimonio",
+  "Vengono dopo il teatro, forse in ritardo",
+  "Chiedono di stare all'aperto",
+];
+
+// ---------------------------------------------------------------------
+// LE FATTURE DEI FORNITORI — due mesi, e ognuna corrisponde alla merce
+//
+// 🔴 Nello scenario del 22/08 le fatture erano **cinque**, inventate, e non
+// avevano niente a che vedere con la merce entrata. Quindi le due domande
+// vere di quella schermata — *«quanto devo ancora pagare?»* e *«questa
+// fattura corrisponde a quello che è arrivato?»* — non si potevano
+// nemmeno porre.
+//
+// Qui ogni fornitore fattura **quello che ha consegnato**, ogni quindici
+// giorni: gli importi vengono dai carichi, non da un numero scelto a mano.
+//
+// ⚠️ E gli stati sono quelli veri di uno scadenziario: la maggior parte
+// pagate, qualcuna aperta ma non ancora scaduta, **due scadute** e una con
+// una nota di credito sopra. Se fossero tutte pagate, quella schermata
+// direbbe la stessa cosa sia che funzioni sia che no.
+// ---------------------------------------------------------------------
+async function fattureDeiFornitori(ctx, spesa, rnd) {
+  const {
+    MARCA, ente, segna, createSupplierInvoice, markInvoicePaid,
+    fornitoriPerNome, registraNotaCredito, oggi,
+  } = ctx;
+  if (!spesa || spesa.size === 0) return;
+
+  // Le consegne si raggruppano per fornitore e per quindicina: è così che
+  // fattura un fornitore vero, non consegna per consegna.
+  const perFornitore = new Map();
+  for (const [chiave, importo] of spesa) {
+    const [nome, giorno] = chiave.split("|");
+    const quindicina = `${giorno.slice(0, 7)}-${Number(giorno.slice(8, 10)) <= 15 ? "1" : "2"}`;
+    const k = `${nome}|${quindicina}`;
+    if (!perFornitore.has(k)) perFornitore.set(k, { nome, quindicina, importo: 0, ultimoGiorno: giorno });
+    const riga = perFornitore.get(k);
+    riga.importo += importo;
+    if (giorno > riga.ultimoGiorno) riga.ultimoGiorno = giorno;
+  }
+
+  let emesse = 0;
+  let pagate = 0;
+  let scadute = 0;
+  let aperte = 0;
+  let progressivo = 0;
+  const ordinate = [...perFornitore.values()].sort((a, b) => a.ultimoGiorno.localeCompare(b.ultimoGiorno));
+  for (const riga of ordinate) {
+    const idFornitore = fornitoriPerNome?.get(riga.nome);
+    if (!idFornitore) continue;
+    progressivo += 1;
+    const dataFattura = riga.ultimoGiorno;
+    const scadenza = giorni(dataFattura, 30);
+    // ⚠️ L'IVA non si scompone: `supplier_invoices` tiene un importo solo,
+    // ed è la stessa cosa che Alessio legge sul totale del documento.
+    const importo = Math.round(riga.importo * 1.1 * 100) / 100;
+    const id = await createSupplierInvoice({
+      entityId: ente,
+      supplierId: idFornitore,
+      invoiceNumber: `${dataFattura.slice(0, 4)}/${String(progressivo).padStart(3, "0")}`,
+      invoiceDate: dataFattura,
+      dueDate: scadenza,
+      amount: importo,
+      note: `${MARCA}merce consegnata nella quindicina`,
+    });
+    emesse += 1;
+
+    // Chi paga e quando: le vecchie sono quasi tutte pagate, e due restano
+    // indietro apposta.
+    const scaduta = scadenza < oggi;
+    if (scaduta && progressivo % 7 !== 3) {
+      await markInvoicePaid(id, {
+        paymentMethod: rnd() < 0.75 ? "bonifico" : "contante",
+        dataUscita: giorni(scadenza, -1 - Math.floor(rnd() * 5)),
+      });
+      pagate += 1;
+    } else if (scaduta) {
+      scadute += 1;
+    } else {
+      aperte += 1;
+    }
+
+    // Una nota di credito ogni tanto: merce non conforme, resa al fornitore.
+    if (registraNotaCredito && progressivo % 11 === 5) {
+      await registraNotaCredito({
+        entityId: ente,
+        supplierId: idFornitore,
+        data: giorni(dataFattura, 3),
+        importo: Math.round(importo * 0.08 * 100) / 100,
+        fatturaId: id,
+        numero: `NC-${dataFattura.slice(0, 4)}/${progressivo}`,
+        note: `${MARCA}reso per merce non conforme`,
+      }).catch(() => {});
+    }
+  }
+  segna(
+    `fatture dei fornitori sui due mesi (${pagate} pagate, ${aperte} ancora aperte, ${scadute} SCADUTE)`,
+    emesse
+  );
 }

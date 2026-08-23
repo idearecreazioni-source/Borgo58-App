@@ -75,6 +75,39 @@ conto che ha perso lo scarico intero**.
 
 ---
 
+## 3-bis · 🔴 RIMISURATO A SCALA VERA: 149 conti su 346
+
+Poche ore dopo, lo scenario di collaudo è passato da 62 a 346 conti chiusi —
+due mesi di servizio veri. Il difetto è cresciuto con loro:
+
+| | scenario piccolo | scenario a scala vera |
+|---|---|---|
+| conti chiusi | 62 | **346** |
+| conti che perdono lo scarico | 19 (31%) | **149 (43%)** |
+
+⚠️ **E questa misura dice una cosa che quella piccola non poteva dire**: il
+food cost dello scenario **non è leggibile finché il difetto c'è**.
+
+| | |
+|---|---|
+| food cost calcolato su **tutti** i conti | **9,3%** |
+| food cost sui soli conti che hanno scaricato | **22,6%** e **23,6%** |
+
+Il primo numero è assurdo — nessun ristorante compra merce per il nove per
+cento di quello che incassa. Il secondo è quello vero, ed è normale.
+
+> **La metà buona del gestionale sta calcolando bene, e il totale è
+> sbagliato lo stesso.** È esattamente la forma che questo progetto chiama
+> *la risposta più corta che ha l'aria di essere intera*: nessun errore,
+> nessun avviso, un numero plausibile in meno.
+
+⚠️ **Conseguenza pratica per domani**: finché non si decide cosa fare, il
+food cost e il costo del venduto delle schermate del collaudo vanno letti
+sapendo che **quattro conti su dieci non hanno registrato la merce che è
+uscita dalla cella**.
+
+---
+
 ## 3 · Quanto è grosso, contato
 
 Chiesto al database, conto per conto, quanti ingredienti finiscono sotto la

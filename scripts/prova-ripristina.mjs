@@ -198,13 +198,36 @@ if (differenze.length > 0) {
 console.log("");
 console.log("   Nessuna differenza: la copia rimette in piedi tutto, riga per riga.");
 console.log("");
-console.log("Prova di ripristino superata.");
-console.log("");
-console.log("  ATTENZIONE: il progetto di prova adesso contiene i dati VERI,");
-console.log("  nomi e telefoni dei clienti compresi. Va rimesso a posto subito:");
-console.log("");
-console.log("    npm run prova:ricostruisci -- --azzera");
-console.log("");
-console.log("  Gli accessi non vanno rifatti: la copia porta gli stessi quattro");
-console.log("  indirizzi, quindi le prove automatiche continuano a entrare.");
-console.log("");
+
+// 🔴 L'AVVERTENZA DIPENDE DA COSA SI E' RIMESSO (23/08/2026), e prima non
+// dipendeva da niente: diceva sempre «il progetto di prova adesso contiene i
+// dati VERI». Da stanotte esiste anche la copia dello SCENARIO DI COLLAUDO,
+// che di vero non ha niente — e quella frase, letta dopo averla rimessa,
+// mandava a rifare da zero un database che stava benissimo.
+//
+// ⚠️ E' una frase diventata falsa nel senso preciso che questo progetto
+// insegue: era giusta quando e' stata scritta, e nessuno l'ha riletta quando
+// il mondo intorno e' cambiato. La cura non e' ricordarsene: e' che **la
+// copia dichiari da dove viene**, e che sia lei a decidere cosa dire.
+const origineDichiarata = existsSync(path.join(cartella, "00_origine.txt"))
+  ? readFileSync(path.join(cartella, "00_origine.txt"), "utf8").trim()
+  : null;
+
+if (origineDichiarata?.includes("scenario")) {
+  console.log("Lo scenario di collaudo e' tornato al suo posto.");
+  console.log("");
+  console.log("  Sono dati finti: nessun nome e nessun numero vero.");
+  console.log("  Non serve rifare niente — si puo' ricominciare a collaudare.");
+  console.log("");
+} else {
+  console.log("Prova di ripristino superata.");
+  console.log("");
+  console.log("  ATTENZIONE: il progetto di prova adesso contiene i dati VERI,");
+  console.log("  nomi e telefoni dei clienti compresi. Va rimesso a posto subito:");
+  console.log("");
+  console.log("    npm run prova:ricostruisci -- --azzera");
+  console.log("");
+  console.log("  Gli accessi non vanno rifatti: la copia porta gli stessi quattro");
+  console.log("  indirizzi, quindi le prove automatiche continuano a entrare.");
+  console.log("");
+}

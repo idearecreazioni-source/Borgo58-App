@@ -41,6 +41,7 @@
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { createServer } from "vite";
 import { NOMI_INGREDIENTI, NOMI_RICETTE_TUTTE } from "./scenario/carta.mjs";
+import { FORNITORI } from "./scenario/servizio.mjs";
 import {
   REF_PRODUZIONE,
   fermati,
@@ -169,6 +170,22 @@ const { createEmployee, createEmployeeLeave, createTipCollected } = await carica
 const { createDocument } = await carica("/src/lib/api/documents.js");
 const { chiudiMese, creaScenarioDaFoglio } = await carica("/src/lib/api/proiezione.js");
 const { addBelowThresholdItems } = await carica("/src/lib/api/shoppingList.js");
+const { createBarItem } = await carica("/src/lib/api/barItems.js");
+const { createPayslip, createTipDistribution } = await carica("/src/lib/api/personale.js");
+const { createTask } = await carica("/src/lib/api/tasks.js");
+const { registraProduzione } = await carica("/src/lib/api/produzioni.js");
+const { bozzaOrdine, registraOrdine, annullaOrdine, segnaOrdineRicevuto } = await carica("/src/lib/api/ordini.js");
+const { createDiscountGift, registraPrestito, registraRestituzione, createScadenzaPrevista } =
+  await carica("/src/lib/api/cash.js");
+const { createCrop, createCession } = await carica("/src/lib/api/agricolo.js");
+const { createForagedItem } = await carica("/src/lib/api/haccp.js");
+const { createTagAnticipazione, createAnticipazione, pareggiaAnticipazione } =
+  await carica("/src/lib/api/anticipazioni.js");
+const { createDeductibleExpense, createFiscalTool } = await carica("/src/lib/api/fiscal.js");
+const { createClosure } = await carica("/src/lib/api/sala.js");
+const { createDailyMenu, addDailyMenuItem } = await carica("/src/lib/api/dailyMenu.js");
+const { setReservationDeposit } = await carica("/src/lib/api/reservations.js");
+const { addRecipeStep } = await carica("/src/lib/api/recipeSteps.js");
 const { addCleaningLog, addGoodsReceiving, addPestControlLog, addTemperatureLog, createCleaningTask, createEquipment } =
   await carica("/src/lib/api/haccp.js");
 // ⚠️ Le date si prendono dalle funzioni dell'app, non da `toISOString()`.
@@ -766,11 +783,24 @@ function confrontaColGiroPrecedente(url) {
   console.log("      (se non le ha scritte Alessio fra i due giri, la pulizia le sta dimenticando)");
 }
 
+// La stringa di collegamento al progetto di prova, letta una volta sola.
+// `soloProva()` ferma tutto se per errore puntasse al database vero.
+let urlProvaMemorizzato = null;
+function urlDelProgettoDiProva() {
+  if (!urlProvaMemorizzato) {
+    urlProvaMemorizzato = soloProva(
+      obbligatorio(
+        leggiConfigurazione(),
+        "DB_URL_PROVA",
+        "E' la stringa 'Session pooler' del progetto Borgo58-Prova."
+      )
+    );
+  }
+  return urlProvaMemorizzato;
+}
+
 function togliBase() {
-  const config = leggiConfigurazione();
-  const url = soloProva(
-    obbligatorio(config, "DB_URL_PROVA", "E' la stringa 'Session pooler' del progetto Borgo58-Prova.")
-  );
+  const url = urlDelProgettoDiProva();
   pulisci(url, SQL_PULIZIA, "righe dello scenario tolte", "righe tolte");
   pulisci(url, SQL_AVANZI_PROVE, "avanzi delle prove automatiche tolti", "avanzi tolti");
   pulisci(url, SQL_ORFANI, "righe rimaste a puntare al vuoto, tolte", "orfani tolti");
@@ -1079,7 +1109,27 @@ if (scenario) {
     });
     fornitori[nome] = f.id;
   }
-  segna("fornitori con recapiti e canale d'ordine", 2);
+  // 🔴 E GLI ALTRI OTTO (23/08/2026). I due qui sopra restano perche' i
+  // loro nomi sono quelli stampati sui documenti finti (`npm run
+  // collaudo:documenti`): quando la fattura arriva dalla posta, il nome che
+  // si legge sul PDF deve esistere gia' in anagrafica.
+  //
+  // ⚠️ Ma due fornitori non sono un'osteria: il pesce e la verdura
+  // arrivavano dallo stesso camion, e l'anagrafica non aveva niente da
+  // mostrare — ne' un confronto di prezzi fra chi vende la stessa cosa, ne'
+  // ordini raggruppati, ne' fatture di ciascuno. Adesso sono **dieci**, e
+  // ognuno porta le sue categorie di merce.
+  for (const [nome, canale, telefono] of FORNITORI) {
+    const f = await createSupplier({
+      entityId: ente,
+      name: `${MARCA}${nome}`,
+      contactPhone: telefono,
+      contactEmail: `ordini@${nome.split(" ")[0].toLowerCase().replace(/[^a-z]/g, "")}.invalid`,
+      canaleOrdine: canale,
+    });
+    fornitori[nome] = f.id;
+  }
+  segna("fornitori con recapiti e canale d'ordine", 2 + FORNITORI.length);
 
   // ⚠️ Alcune soglie sono sopra la giacenza e altre sotto: serve che la
   // lista della spesa abbia qualcosa dentro e qualcosa fuori. Una lista
@@ -1364,106 +1414,18 @@ if (scenario) {
   // più delicato dell'app (la Proiezione) era fra quelli.
   // -------------------------------------------------------------------
 
-  // --- Personale: tre persone, e le mance con la loro forma ---
+  // 🔴 PERSONALE, HACCP E ARCHIVIO SONO USCITI DA QUI (23/08/2026).
   //
-  // ⚠️ Uno ha il reddito dell'anno prima e uno no, apposta: il tetto del
-  // 30% si può verificare solo su chi quel numero l'ha, e sull'altro la
-  // schermata deve dire che non lo sa — invece di calcolare su zero.
-  const persone = [];
-  for (const [nome, cognome, ruolo, reddito] of [
-    ["Mario", "Rossi", "cuoco", 18400],
-    ["Lucia", "Bianchi", "sala", 12900],
-    ["Salvo", "Verdi", "aiuto cucina", null],
-  ]) {
-    const p = await createEmployee({
-      entity_id: ente,
-      first_name: nome,
-      last_name: `${MARCA}${cognome}`,
-      role: ruolo,
-      hire_date: traGiorniLocale(-120),
-      prior_year_income: reddito,
-    });
-    persone.push(p);
-  }
-  segna("dipendenti (uno senza reddito dell'anno prima, apposta)", persone.length);
-
-  await createEmployeeLeave({
-    employee_id: persone[1].id,
-    leave_type: "ferie",
-    start_date: traGiorniLocale(12),
-    end_date: traGiorniLocale(19),
-    note: `${MARCA}ferie di prova`,
-  });
-  segna("periodo di ferie");
-
-  // ⚠️ Due raccolte con MEZZO diverso: è il difetto corretto il 16/08
-  // (il menu c'era e il valore non arrivava al database) e non era mai
-  // stato visto dal vivo. Con una sola in contanti non si vedrebbe.
-  for (const [importo, mezzo, giorni] of [
-    [42.5, "contanti", -2],
-    [68.0, "carta", -1],
-  ]) {
-    await createTipCollected({
-      entityId: ente,
-      amount: importo,
-      collectedDate: traGiorniLocale(giorni),
-      mezzo,
-      note: `${MARCA}mance di prova`,
-    });
-  }
-  // ⚠️ NON si distribuisce: distribuire è il gesto da collaudare — il
-  // tetto del 30%, il monte per forma di pagamento, i centesimi.
-  segna("raccolte di mance, una in contanti e una su carta", 2);
-
-  // --- HACCP: le sezioni che un ispettore guarda per prime ---
-  const frigo = [];
-  for (const [nome, tipo, min, max] of [
-    ["Cella frigo carni", "frigo_0_4", 0, 4],
-    ["Cella frigo verdure", "frigo_4_8", 4, 8],
-    ["Abbattitore", "freezer", -20, -18],
-  ]) {
-    frigo.push(await createEquipment({ name: `${MARCA}${nome}`, storageType: tipo, targetMinC: min, targetMaxC: max }));
-  }
-  segna("attrezzature con la loro finestra di temperatura", frigo.length);
-
-  // Le letture: due normali, una fuori range CON il rimedio (che chiude
-  // da sé la non conformità) e una fuori range SENZA rimedio.
+  // Stavano in questo file in **campioni**: tre dipendenti senza una busta
+  // paga, quattro letture di temperatura per due mesi, due attivita' di
+  // pulizia, due documenti. Bastavano a non far girare a vuoto le
+  // verifiche, e non bastavano a giudicare una schermata: un registro
+  // HACCP di quattro righe si guarda tutto insieme, quindi non fa vedere
+  // ne' il filtro per periodo, ne' la stampa del manuale, ne' una non
+  // conformita' vecchia che sprofonda sotto le altre.
   //
-  // ⚠️ Quella senza rimedio è la ragione per cui questo pezzo esiste:
-  // lascia una **non conformità APERTA**, e senza una aperta il rifiuto
-  // sul campo vuoto (Blocco 6) non è provabile. Nasce dalla strada vera,
-  // non scritta a mano.
-  await addTemperatureLog({ equipmentId: frigo[0].id, recordedTempC: 2.4, note: `${MARCA}lettura del mattino` });
-  await addTemperatureLog({ equipmentId: frigo[1].id, recordedTempC: 6.1, note: `${MARCA}lettura del mattino` });
-  await addTemperatureLog({
-    equipmentId: frigo[0].id,
-    recordedTempC: 7.8,
-    note: `${MARCA}porta rimasta aperta`,
-    correctiveAction: "Porta richiusa, merce controllata e trasferita nella cella 2",
-  });
-  await addTemperatureLog({
-    equipmentId: frigo[2].id,
-    recordedTempC: -12.5,
-    note: `${MARCA}abbattitore sopra soglia`,
-  });
-  segna("letture di temperatura (due fuori range: una chiusa, una APERTA)", 4);
-
-  for (const [nome, area, frequenza] of [
-    ["Sanificazione piani di lavoro", "cucina", "giornaliera"],
-    ["Pulizia celle frigorifere", "cucina", "settimanale"],
-  ]) {
-    const t = await createCleaningTask({ name: `${MARCA}${nome}`, area, frequency: frequenza });
-    await addCleaningLog({ taskId: t.id, note: `${MARCA}fatta` });
-  }
-  segna("attività di pulizia, con la loro registrazione", 2);
-
-  await addPestControlLog({
-    performedBy: `${MARCA}Disinfestazioni di Prova`,
-    type: "ispezione",
-    findings: "Nessuna traccia nelle trappole",
-    note: `${MARCA}visita trimestrale`,
-  });
-  segna("visita di disinfestazione");
+  // Adesso li costruisce `scripts/scenario/retro.mjs`, a due mesi pieni.
+  // Qui restano solo gli allergeni, che vivono sugli ingredienti.
 
   // --- Allergeni confermati su due ingredienti ---
   //
@@ -1481,56 +1443,6 @@ if (scenario) {
     });
   }
   segna("ingredienti con allergeni CONFERMATI (gli altri restano da verificare)", 2);
-
-  // --- Archivio: documenti col testo dentro ---
-  //
-  // ⚠️ Il testo va messo, non solo la scheda: «Chiedi all'archivio»
-  // risponde solo su ciò di cui conosce il contenuto, e senza testo la
-  // schermata è provabile solo mandando le mail. Il contenuto è lo stesso
-  // dei documenti finti (`npm run collaudo:documenti`), così una domanda
-  // sul canone trova la stessa risposta che troverà dal PDF vero.
-  const DOCUMENTI = [
-    {
-      title: `${MARCA}Contratto manutenzione frigoriferi`,
-      doc_type: "Contratto fornitura",
-      counterparties: "FrigoService PROVA S.r.l.",
-      amount: 1776,
-      expiry_date: traGiorniLocale(320),
-      testo:
-        "CONTRATTO DI MANUTENZIONE fra FrigoService PROVA S.r.l. e BORGO 58 S.r.l.s. " +
-        "Art. 1 Oggetto: manutenzione di 3 celle frigorifere e 1 abbattitore. " +
-        "Art. 2 Durata: 24 mesi dalla decorrenza del 01/04/2027, fino al 31/03/2029. " +
-        "Art. 3 Canone: 148,00 euro piu' IVA al mese, fatturato trimestralmente. " +
-        "Art. 4 Interventi ordinari: 2 visite programmate l'anno, comprese nel canone. " +
-        "Art. 5 Interventi straordinari: a carico del committente, 55,00 euro l'ora piu' ricambi, " +
-        "con uscita entro 24 ore dalla chiamata. " +
-        "Art. 6 Rinnovo: tacito per 12 mesi salvo disdetta 90 giorni prima della scadenza, a mezzo PEC. " +
-        "Art. 7 Foro competente: Enna.",
-    },
-    {
-      title: `${MARCA}Polizza assicurativa locale`,
-      doc_type: "Assicurazione",
-      counterparties: "Assicurazioni di Prova S.p.A.",
-      amount: 940,
-      expiry_date: traGiorniLocale(45),
-      testo:
-        "POLIZZA MULTIRISCHI ESERCIZI COMMERCIALI n. PR-00042. Contraente: BORGO 58 S.r.l.s. " +
-        "Premio annuo 940,00 euro, frazionabile in due rate semestrali. " +
-        "Garanzie: incendio fino a 300.000 euro, furto e rapina fino a 25.000 euro, " +
-        "responsabilita' civile verso terzi fino a 1.500.000 euro, danni da acqua condotta. " +
-        "Franchigia sul furto: 500,00 euro. Scoperto sui danni da acqua: 10 per cento. " +
-        "Disdetta: 60 giorni prima della scadenza annuale, altrimenti si rinnova.",
-    },
-  ];
-  for (const d of DOCUMENTI) {
-    const { testo, ...scheda } = d;
-    const id = await createDocument({ entity_id: ente, ...scheda });
-    // Il testo lo scrive normalmente la lettura automatica; qui si mette a
-    // mano perché sul progetto di prova la posta non arriva.
-    const r = await supabase.from("documents").update({ testo }).eq("id", id?.id ?? id);
-    if (r.error) throw new Error(`Non riesco a scrivere il testo del documento: ${r.error.message}`);
-  }
-  segna("documenti in archivio, col testo dentro (l'assistente ci può rispondere)", DOCUMENTI.length);
 
   // --- I DUE MESI DI VITA (22/08/2026) ---
   //
@@ -1554,11 +1466,99 @@ if (scenario) {
     registraConteggioCassa, versaInBanca,
     recordStockConsumption, allineaGiacenza,
     createSupplierInvoice, markInvoicePaid,
-    salvaPreventivo,
+    salvaPreventivo, createBarItem, assegnaPrenotazione, registraNotaCredito,
+    // Chi vende cosa: le consegne e le fatture lo chiedono per nome.
+    fornitoriPerNome: new Map(Object.entries(fornitori)),
+    // ⚠️ Una porta di sola lettura sul database di prova, per le domande
+    // che il client non può fare: `fabbisogno_preparazione` è concessa
+    // solo a `postgres`, e serve per sapere quanta merce consumeranno due
+    // mesi di servizio. Si passa da psql, come le migrazioni.
+    interrogaProva: (sql) => interroga(urlDelProgettoDiProva(), sql),
     fornitori: Object.values(fornitori),
     copertoPrezzo: impostazioni?.coperto_price ?? null,
   });
 
+  // -------------------------------------------------------------------
+  // IL RETRO DEL LOCALE, a due mesi pieni (23/08/2026)
+  //
+  // HACCP, personale, agenda, archivio e posta. Stavano qui dentro in
+  // campioni — quattro letture di temperatura, tre dipendenti senza una
+  // busta paga, due documenti — e adesso hanno la stessa taglia del
+  // servizio: due mesi interi, giorno per giorno.
+  //
+  // ⚠️ Il generatore casuale è SUO, con un seme diverso da quello del
+  // servizio: se condividessero lo stesso, aggiungere una lettura di
+  // temperatura cambierebbe i piatti venduti tre settimane prima — e uno
+  // scenario che si riproduce identico è metà del suo valore.
+  // -------------------------------------------------------------------
+  const retro = await import("./scenario/retro.mjs");
+  const { seminato } = await import("./prova-due-mesi.mjs");
+  const meseDi = (quanti) => {
+    const [aa, mm] = oggi.split("-").map(Number);
+    const d = new Date(aa, mm - 1 - quanti, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const mesiDelloScenario = [meseDi(2), meseDi(1)];
+  // Tutti i giorni dei due mesi, in fila: il registro HACCP si scrive
+  // giorno per giorno, comprese le domeniche e i lunedì di riposo (il
+  // frigo va controllato anche quando il locale è chiuso — ed è
+  // esattamente il genere di cosa che un ispettore guarda).
+  const giorniDelPeriodo = [];
+  for (const mese of mesiDelloScenario) {
+    const [aa, mm] = mese.split("-").map(Number);
+    const quanti = new Date(aa, mm, 0).getDate();
+    for (let g = 1; g <= quanti; g++) {
+      giorniDelPeriodo.push(`${mese}-${String(g).padStart(2, "0")}`);
+    }
+  }
+  const ctxRetro = {
+    MARCA, ente, segna, supabase, oggi,
+    rnd: seminato(20260824),
+    mesi: mesiDelloScenario,
+    giorniDelPeriodo,
+    createEquipment, addTemperatureLog, createCleaningTask, addCleaningLog, addPestControlLog,
+    createEmployee, createEmployeeLeave, createPayslip, createTipCollected, createTipDistribution,
+    createTask, createDocument,
+  };
+  await retro.costruisciHaccp(ctxRetro);
+  await retro.costruisciPersonale(ctxRetro);
+  await retro.costruisciAgenda(ctxRetro);
+  await retro.costruisciArchivioEPosta(ctxRetro);
+
+  // -------------------------------------------------------------------
+  // GLI ANGOLI CHE RESTAVANO VUOTI (23/08/2026)
+  //
+  // Quaranta tabelle su centotré erano vuote, e fra loro c'erano moduli
+  // interi: le Produzioni, gli ordini ai fornitori, gli sconti e gli
+  // omaggi, l'Agricolo, i prestiti, le deduzioni, il menu del giorno, le
+  // chiusure della sala, le caparre. Una tabella vuota non è un modulo
+  // con pochi dati: è un modulo che non si può giudicare.
+  // -------------------------------------------------------------------
+  const angoli = await import("./scenario/angoli.mjs");
+  const fasi = await import("./scenario/fasi.mjs");
+  const ctxAngoli = {
+    ...ctxRetro,
+    ente,
+    registraProduzione, bozzaOrdine, registraOrdine, annullaOrdine, segnaOrdineRicevuto,
+    createDiscountGift, listAllCausali,
+    createCrop, createForagedItem,
+    registraPrestito, registraRestituzione, createScadenzaPrevista,
+    createTagAnticipazione, createAnticipazione, pareggiaAnticipazione,
+    createDeductibleExpense, createFiscalTool,
+    createClosure, createDailyMenu, addDailyMenuItem, setReservationDeposit,
+    addGoodsReceiving, createCession,
+    addRecipeStep,
+    nomiDelloScenario: [...NOMI_RICETTE_TUTTE, ...RICETTE_STATO_BASE],
+  };
+  await fasi.costruisciFasi(ctxAngoli);
+  await angoli.costruisciProduzioni(ctxAngoli);
+  await angoli.costruisciScontiEOmaggi(ctxAngoli);
+  await angoli.costruisciAgricolo(ctxAngoli);
+  await angoli.costruisciSoldiDelTitolare(ctxAngoli);
+  await angoli.costruisciFiscale(ctxAngoli);
+  await angoli.costruisciSalaECarta(ctxAngoli);
+  await angoli.costruisciRicevimenti(ctxAngoli);
+  await angoli.costruisciCessione(ctxAngoli);
   // --- La lista della spesa, ADESSO che la dispensa c'e' tutta ---
   //
   // ⚠️ Dopo i due mesi e non prima: le soglie hanno senso solo su una
@@ -1569,6 +1569,12 @@ if (scenario) {
     .from("shopping_list_items")
     .select("id", { count: "exact", head: true });
   segna("righe in lista della spesa, nate dalle soglie", inLista ?? 0);
+
+  // ⚠️ Gli ordini vengono DOPO la lista della spesa, e non è un dettaglio
+  // di sequenza: una bozza d'ordine si costruisce dalle righe in lista.
+  // Prima della lista, `bozzaOrdine` non avrebbe niente da mettere dentro
+  // e il modulo resterebbe vuoto senza che nessuno capisca perché.
+  await angoli.costruisciOrdini(ctxAngoli);
 
   // --- La Proiezione: una previsione aperta, dell'anno in corso ---
   //
@@ -1582,9 +1588,20 @@ if (scenario) {
     mese: i + 1,
     serviziSettimana: 6,
     giorniLavorativi: 26,
-    giorniPeak: i >= 5 && i <= 8 ? 12 : 6,
-    copertiPeak: i >= 5 && i <= 8 ? 55 : 38,
-    copertiFeriali: i >= 5 && i <= 8 ? 34 : 22,
+    // 🔴 I NUMERI DEL PIANO SONO STATI RIPORTATI VICINO AL VERO
+    // (23/08/2026), e la ragione e' la stessa dei dati assurdi: prima il
+    // piano prevedeva 55 coperti nei giorni pieni e i due mesi ne facevano
+    // 19 — uno scostamento del meno sessanta per cento, cioe' un numero
+    // che non si legge. Adesso il piano dice ~560 coperti al mese e i due
+    // mesi ne fanno **513 e 744**: uno sotto e uno sopra, che e' l'unico
+    // modo perche' quella schermata mostri qualcosa da capire.
+    //
+    // ⚠️ Non e' il piano ad essere stato piegato ai dati: e' che **il
+    // piano dello scenario lo scrive questo comando**, non Alessio. Il suo
+    // vero foglio non e' qui dentro (resta sul suo computer, §CONTRATTO).
+    giorniPeak: i >= 5 && i <= 8 ? 10 : 8,
+    copertiPeak: i >= 5 && i <= 8 ? 34 : 30,
+    copertiFeriali: i >= 5 && i <= 8 ? 20 : 17,
     eventiPremium: i === 7 ? 2 : 0,
   }));
   const previsione = await creaScenarioDaFoglio({
@@ -1594,9 +1611,13 @@ if (scenario) {
     anno,
     origine: "scenario di collaudo",
     parametri: {
-      scontrinoFood: 26,
-      scontrinoBeverage: 9,
-      foodCostPercento: 0.29,
+      // Misurati sui due mesi costruiti: 48-53 euro a coperto, di cui il
+      // 65% cibo, il 17% bevande e il 9% coperto. Il piano sta appena
+      // sotto, cosi' lo scostamento e' leggibile invece di essere enorme.
+      scontrinoFood: 38,
+      scontrinoBeverage: 10,
+      // Il food cost vero dei conti che hanno scaricato: 22,6% e 23,6%.
+      foodCostPercento: 0.25,
       beverageCostPercento: 0.24,
       lavanderiaCoperto: 0.35,
       pagamentiElettroniciPercento: 0.7,
@@ -1651,6 +1672,24 @@ console.log("   Conti, movimenti e clienti sono marcati «BASE-».");
 console.log("   Ingredienti, ricette e menu hanno il loro nome vero: la pulizia");
 console.log("   li riconosce dagli elenchi di scripts/scenario/carta.mjs.");
 console.log("");
+// 🔴 LA COPIA SI PORTA VIA SUBITO (23/08/2026), e solo se siamo arrivati
+// fin qui: una costruzione caduta a meta' non deve lasciare una copia di
+// uno stato che non e' mai esistito.
+//
+// ⚠️ Costa una trentina di secondi in fondo a un comando che ne dura molti
+// di piu', e li ripaga al primo rilancio: da qui in avanti rimettere lo
+// scenario e' `npm run prova:rimetti`, che e' un ripristino e non una
+// ricostruzione. Senza questa riga la copia invecchierebbe rispetto allo
+// scenario, e una copia vecchia rimessa e' peggio di nessuna copia.
+if (scenario) {
+  const { copiaLoScenario } = await import("./prova-copia.mjs");
+  copiaLoScenario();
+  console.log("");
+  console.log("   Per rimettere questo stesso gestionale, in un minuto:");
+  console.log("   npm run prova:rimetti");
+  console.log("");
+}
+
 console.log("   Si rifa' tutto con:                        npm run prova:scenario");
 console.log("   Cosa manca ancora al progetto di prova:   npm run prova:stato");
 console.log("");
