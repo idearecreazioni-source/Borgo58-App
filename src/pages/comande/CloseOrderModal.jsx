@@ -5,8 +5,7 @@ import {
   closeOrderPaid,
   orderTotals,
 } from "../../lib/api/orders";
-import { listCausali, listPosDevices } from "../../lib/api/cash";
-import { listCustomers } from "../../lib/api/customers";
+import { listCausali } from "../../lib/api/cash";
 import {
   DISCOUNT_GIFT_TYPES,
   ORDER_PAYMENT_METHODS,
@@ -31,27 +30,17 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   const [persone, setPersone] = useState(2);
   const [aTesta, setATesta] = useState("");
   const [causali, setCausali] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [devices, setDevices] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     collectedAmount: "",
     causaleId: "",
-    customerId: "",
-    deviceId: "",
     note: "",
     cancelReason: "",
   });
 
   useEffect(() => {
-    Promise.all([listCausali("sconto_omaggio"), listCustomers(), listPosDevices()]).then(
-      ([c, cu, d]) => {
-        setCausali(c);
-        setCustomers(cu);
-        setDevices(d);
-      }
-    );
+    listCausali("sconto_omaggio").then(setCausali);
   }, []);
 
   // Stesso calcolo del preconto e del totale a schermo — coperto incluso
@@ -208,8 +197,6 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
         fullAmount: total,
         collectedAmount: form.collectedAmount,
         causaleId: form.causaleId || null,
-        customerId: form.customerId || null,
-        deviceId: form.deviceId || null,
         note: form.note || null,
       })
     );
@@ -540,22 +527,22 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 <option value="">Perché? — obbligatorio</option>
                 {causali.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
-              <select
-                value={form.deviceId}
-                onChange={(e) => setForm((f) => ({ ...f, deviceId: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="">Device (opz.)</option>
-                {devices.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-              <select
-                value={form.customerId}
-                onChange={(e) => setForm((f) => ({ ...f, customerId: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="">Cliente (opz.)</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name || c.phone}</option>)}
-              </select>
+              {/* 🔴 «DEVICE» E «CLIENTE» SONO STATI TOLTI (Alessio, 23/08).
+                  Erano due caselle facoltative in mezzo al gesto più
+                  delicato della sala — chiudere un conto senza incassare —
+                  e chiedevano al cameriere due cose che in quel momento non
+                  sa e non deve decidere.
+                  ⚠️ «Perché?» resta, e resta obbligatorio: un omaggio ha
+                  sempre una ragione, ed è da lì che si legge il budget
+                  degli omaggi.
+                  ⚠️ Le due colonne del database NON sono state toccate:
+                  `discounts_gifts.device_id` e `customer_id` esistono
+                  ancora e restano compilabili dal registro in Cassa. Qui
+                  arrivano vuote — che è quello che succedeva già ogni volta
+                  che nessuno le sceglieva.
+                  ⚠️ E il cliente da oggi ha un posto migliore: si attacca
+                  al TAVOLO quando si apre il conto, non all'omaggio quando
+                  lo si chiude. */}
               <div className="flex gap-2">
                 <button
                   type="button"
