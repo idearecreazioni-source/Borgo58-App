@@ -12,6 +12,8 @@
 //   file/           i documenti veri e propri (PDF, foto): NON sono
 //                   dentro il database, e un backup che li dimentica
 //                   sembra completo senza esserlo
+//   06_estensioni.sql le estensioni del motore: senza, alcuni vincoli non
+//                   si ricreano e il ripristino non lo dice
 //   05_conteggi.txt quante righe c'era in ogni tabella al momento della
 //                   copia — serve a dimostrare che un ripristino ha
 //                   davvero rimesso tutto
@@ -86,6 +88,37 @@ dump(
   "Elenco dei documenti caricati"
 );
 
+// 🔴 LE ESTENSIONI DEL MOTORE, che fino al 23/08 NON erano nella copia.
+//
+// La copia si prende con `--schema=public`, e le estensioni vivono altrove
+// (`extensions`, `pg_catalog`, `vault`): non ci finivano dentro. Sembrava un
+// dettaglio da rimontare a mano — la prova di ripristino del 23/08 ha
+// mostrato che non lo e'.
+//
+// ⚠️ IL CASO MISURATO: senza `btree_gist` il vincolo
+// `employee_leaves_niente_sovrapposizioni` **non si ricrea**, e il
+// ripristino non da' nessun errore sui dati. Si tornerebbe in piedi con un
+// database che accetta due periodi di ferie sovrapposti sullo stesso
+// dipendente — cioe' una regola sparita in silenzio. E' la famiglia del §8:
+// piu' corto, con l'aria di essere intero.
+titolo("Le estensioni del motore");
+const estensioni = interroga(
+  url,
+  `select 'create extension if not exists "' || e.extname || '" with schema ' ||
+          quote_ident(n.nspname) || ';'
+     from pg_extension e join pg_namespace n on n.oid = e.extnamespace
+    where e.extname <> 'plpgsql'
+    order by e.extname;`
+);
+writeFileSync(
+  path.join(cartella, "06_estensioni.sql"),
+  "-- Da eseguire PRIMA di 01_schema.sql su un progetto nuovo.\n" +
+    "-- Senza queste, alcuni vincoli non si ricreano e nessuno lo dice.\n" +
+    estensioni + "\n",
+  "utf8"
+);
+console.log(`   ${estensioni.split("\n").filter(Boolean).length} estensioni`);
+
 titolo("Conteggio delle righe, tabella per tabella");
 const conteggi = interroga(url, SQL_CONTEGGI);
 writeFileSync(path.join(cartella, "05_conteggi.txt"), conteggi + "\n", "utf8");
@@ -154,6 +187,36 @@ writeFileSync(
   ].join("\n"),
   "utf8"
 );
+
+// ---------------------------------------------------------------------
+// UN FILE SOLO — chiesto da Alessio il 23/08.
+// ---------------------------------------------------------------------
+// «Un passaggio a mano in meno e' un passaggio in meno che si dimentica»:
+// la cartella resta (serve a `npm run backup:verifica` e alla prova di
+// ripristino), ma accanto nasce lo zip, che e' quello che si porta via.
+//
+// ⚠️ Se lo zip non riesce, la copia NON e' persa: la cartella c'e' e il
+// comando lo dice. Un guasto qui non deve far sembrare fallito un backup
+// riuscito.
+titolo("Un file solo da portare via");
+const zip = path.join(radice, `Borgo58_backup_${path.basename(cartella)}.zip`);
+const fattoZip = esegui(
+  "powershell",
+  [
+    "-NoProfile",
+    "-Command",
+    `Compress-Archive -Path '${cartella.replace(/'/g, "''")}\\*' -DestinationPath '${zip.replace(/'/g, "''")}' -CompressionLevel Optimal -Force`,
+  ],
+  { silenzioso: true }
+);
+if (fattoZip.ok && existsSync(zip)) {
+  console.log(`   ${zip}`);
+  console.log(`   ${Math.round(statSync(zip).size / 1024)} KB — e' questo il file da copiare fuori`);
+} else {
+  console.log("   ATTENZIONE: non sono riuscito a fare lo zip.");
+  console.log(`   La copia pero' c'e' tutta, nella cartella: ${cartella}`);
+  if (fattoZip.uscita) console.log("   " + fattoZip.uscita.trim().split("\n")[0]);
+}
 
 console.log("");
 console.log("Copia completata.");
