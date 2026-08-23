@@ -287,3 +287,66 @@ export async function resolveNonConformity(id, { correctiveAction }) {
     .eq("id", id);
   if (error) throw error;
 }
+
+// ---------------------------------------------------------------------
+// Le pulizie come LISTA DI OGGI (24/08/2026)
+// ---------------------------------------------------------------------
+// ⚠️ La regola di quando una pulizia è dovuta e di quanti giorni è in
+// ritardo vive nel DATABASE (`pulizie_di_oggi`), non qui: la stessa
+// risposta serve alla schermata e al manuale esibibile, e due calcoli
+// per la stessa domanda finiscono per dire due cose diverse.
+export async function pulizieDiOggi() {
+  const { data, error } = await supabase.rpc("pulizie_di_oggi");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function pulizieDelMese(anno, mese) {
+  const { data, error } = await supabase.rpc("pulizie_del_mese", { p_anno: anno, p_mese: mese });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function pulizieMesiConDati() {
+  const { data, error } = await supabase.rpc("pulizie_mesi_con_dati");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ---------------------------------------------------------------------
+// Temperature e non conformità: oggi in evidenza, il resto in archivio
+// (24/08/2026)
+// ---------------------------------------------------------------------
+// ⚠️ L'archivio si chiede un MESE alla volta, e non è una comodità: la
+// tabella delle rilevazioni cresce di qualche riga al giorno per sempre,
+// e una lettura senza limite torna al massimo di mille righe senza dirlo.
+// Un perimetro mensile toglie il caso invece di sorvegliarlo.
+export async function temperatureDiOggi() {
+  const { data, error } = await supabase.rpc("temperature_di_oggi");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function temperatureDelMese(anno, mese) {
+  const { data, error } = await supabase.rpc("temperature_del_mese", { p_anno: anno, p_mese: mese });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function temperatureMesiConDati() {
+  const { data, error } = await supabase.rpc("temperature_mesi_con_dati");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function nonConformitaDelMese(anno, mese) {
+  const { data, error } = await supabase.rpc("non_conformita_del_mese", { p_anno: anno, p_mese: mese });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function nonConformitaMesiConDati() {
+  const { data, error } = await supabase.rpc("non_conformita_mesi_con_dati");
+  if (error) throw error;
+  return data ?? [];
+}

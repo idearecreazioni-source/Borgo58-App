@@ -1,9 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { addNonConformity, listNonConformities, riapriNonConformita, resolveNonConformity } from "../../lib/api/haccp";
+import {
+  addNonConformity,
+  listNonConformities,
+  nonConformitaDelMese,
+  nonConformitaMesiConDati,
+  riapriNonConformita,
+  resolveNonConformity,
+} from "../../lib/api/haccp";
 import { NC_CATEGORIES, formatDate, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import ArchivioMensile from "../../components/ArchivioMensile";
+import { NOMI_MESI } from "../../lib/nomiMesi";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
+
+// Le non conformità: le APERTE in evidenza, le risolte in archivio.
+//
+// 🔴 COM'ERA (fino al 24/08/2026). Sotto le aperte c'era «Risolte»: tutte
+// quelle chiuse dall'inizio, una sotto l'altra in ordine di data, per
+// sempre. Dopo qualche settimana quella parte diventa illeggibile — e
+// resta pure la più importante, perché è **la prova che il sistema ha
+// funzionato**: c'era un problema, ecco cosa è stato fatto.
+//
+// ⚠️ QUINDI NON SI NASCONDE, SI ARCHIVIA, e l'archivio conserva per
+// intero cosa è successo E cosa è stato fatto: davanti a un controllo,
+// una non conformità risolta senza il suo rimedio scritto è peggio di una
+// ancora aperta.
+//
+// ⚠️ E SI RAGGRUPPA ANCHE PER ATTREZZATURA (richiesta di Alessio): se lo
+// stesso frigorifero va fuori norma tre volte in un giorno non sono tre
+// disattenzioni, è un guasto da far vedere a un tecnico — e un elenco
+// cronologico non lo mostra. Il conteggio lo fa il database, sulla
+// giornata di servizio.
+//
+// ⚠️ IL FORMATO STAMPABILE È PROVVISORIO: quello che l'ASP vuole davvero
+// lo dirà la biologa che segue l'HACCP.
 
 const emptyForm = { category: "temperatura", description: "", note: "" };
 
@@ -20,17 +52,34 @@ export default function NonConformita() {
   const [correctiveAction, setCorrectiveAction] = useState("");
   const [resolving, setResolving] = useState(false);
 
-  const load = () => listNonConformities().then(setItems);
+  const [mesi, setMesi] = useState([]);
+
+  const load = useCallback(
+    () =>
+      Promise.all([listNonConformities(), leggi(nonConformitaMesiConDati())]).then(([nc, ms]) => {
+        setItems(nc);
+        setMesi(nonLetto(ms) ? [] : ms);
+      }),
+    []
+  );
 
   useEffect(() => {
     setLoading(true);
     load()
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [load]);
+
+  // Il contatore serve a far rileggere l'archivio dopo una riapertura:
+  // cambiando la funzione, il componente comune la richiama.
+  const [ricarica, setRicarica] = useState(0);
+  const caricaMese = useCallback(
+    (anno, mese) => nonConformitaDelMese(anno, mese),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ricarica]
+  );
 
   const open = useMemo(() => items.filter((i) => !i.resolved), [items]);
-  const resolved = useMemo(() => items.filter((i) => i.resolved), [items]);
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -195,41 +244,154 @@ export default function NonConformita() {
         )}
       </div>
 
-      {resolved.length > 0 && (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Risolte</h2>
-          <ul className="space-y-1.5">
-            {resolved.map((item) => (
-              <li
-                key={item.id}
-                className="testo-sala text-b58-charcoal-soft flex items-start justify-between gap-3"
-              >
-                <span>
-                  <span className="text-b58-charcoal">{item.description}</span>
-                  {item.corrective_action && ` — ${item.corrective_action}`}
-                  {" · "}
-                  {formatDate(item.resolved_at)}
-                </span>
-                {/* La via di ritorno di «Risolvi»: chiusa per sbaglio,
-                    restava chiusa per sempre. Con la conferma, perché
-                    riaprire una riga di un registro che si esibisce non è
-                    un gesto da fare per sbaglio due volte. */}
-                {/* Solo il titolare, come «Risolvi»: la scrittura su
-                    questa tabella è sua, e allo staff il pulsante darebbe
-                    un rifiuto invece di un gesto. */}
-                {isTitolare && (
-                <ConfermaDistruttiva
-                  etichetta="Riapri"
-                  domanda={`Rimetto «${item.description}» fra le non conformità aperte? Quello che avevi scritto come rimedio resta, e lo puoi correggere richiudendola.`}
-                  etichettaConferma="Sì, riapri"
-                  onConferma={() => handleRiapri(item.id)}
-                />
-                )}
+      {/* ---------------------------------------------------------------
+          L'ARCHIVIO: quello che è successo, e cosa è stato fatto
+          --------------------------------------------------------------- */}
+      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6">
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
+        <ArchivioMensile
+          mesi={mesi}
+          carica={caricaMese}
+          nomeFile="non_conformita"
+          vuoto="Ancora nessuna non conformità registrata."
+          etichettaMese={(m) => (Number(m.aperte) > 0 ? `${m.quante}, ${m.aperte} aperte` : `${m.quante}`)}
+          colonneCsv={[
+            { label: "Giornata", value: (r) => r.giorno },
+            { label: "Categoria", value: (r) => labelFor(NC_CATEGORIES, r.categoria) },
+            { label: "Attrezzatura", value: (r) => r.attrezzatura ?? "" },
+            { label: "Descrizione", value: (r) => r.descrizione },
+            { label: "Rilevata il", value: (r) => new Date(r.rilevata_il).toLocaleString("it-IT") },
+            { label: "Rimedio", value: (r) => r.rimedio ?? "" },
+            { label: "Stato", value: (r) => (r.risolta ? "Risolta" : "Aperta") },
+            { label: "Risolta il", value: (r) => (r.risolta_il ? new Date(r.risolta_il).toLocaleString("it-IT") : "") },
+            { label: "Nota", value: (r) => r.nota ?? "" },
+          ]}
+        >
+          {(righe, mese) => (
+            <ArchivioNC
+              righe={righe}
+              mese={mese}
+              isTitolare={isTitolare}
+              onRiapri={async (id) => {
+                await handleRiapri(id);
+                // ⚠️ Si ricarica quello che è cambiato SUL SERVER, non
+                // quello che si sta scrivendo altrove (trappola del 12/08).
+                setRicarica((n) => n + 1);
+              }}
+            />
+          )}
+        </ArchivioMensile>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// L'archivio di un mese: prima gli apparecchi che hanno dato problemi più
+// di una volta nella stessa giornata, poi il racconto per giornata.
+// ---------------------------------------------------------------------
+function ArchivioNC({ righe, mese, isTitolare, onRiapri }) {
+  // 🔴 IL RAGGRUPPAMENTO PER APPARECCHIO. Il conteggio arriva dal
+  // database — quante non conformità ha aperto quell'apparecchio in
+  // QUELLA giornata — e qui si tengono solo le giornate in cui è
+  // successo più di una volta: è il segnale che si sta cercando, e
+  // mostrare anche i casi singoli lo annegherebbe fra il resto.
+  const ripetuti = [];
+  const visti = new Set();
+  for (const r of righe) {
+    if (!r.equipment_id || Number(r.quante_stesso_apparecchio) < 2) continue;
+    const chiave = `${r.equipment_id}|${r.giorno}`;
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    ripetuti.push(r);
+  }
+
+  const giornate = [];
+  const per = new Map();
+  for (const r of righe) {
+    if (!per.has(r.giorno)) {
+      per.set(r.giorno, []);
+      giornate.push(r.giorno);
+    }
+    per.get(r.giorno).push(r);
+  }
+
+  return (
+    <div>
+      <p className="testo-sala text-b58-charcoal-soft mb-3">
+        {NOMI_MESI[mese.mese - 1]} {mese.anno} — {righe.length} in {giornate.length}{" "}
+        {giornate.length === 1 ? "giornata" : "giornate"}.
+        <span className="block text-b58-charcoal-soft/70">
+          La giornata è quella di servizio. Formato provvisorio, da rivedere con la biologa.
+        </span>
+      </p>
+
+      {ripetuti.length > 0 && (
+        <div className="rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/40 p-3 mb-4">
+          <p className="testo-sala text-b58-terracotta-dark font-medium mb-1">
+            Stesso apparecchio più volte in un giorno
+          </p>
+          <p className="testo-sala text-b58-charcoal-soft mb-2">
+            Non sono disattenzioni: è il segno di un guasto da far vedere a un tecnico.
+          </p>
+          <ul className="space-y-0.5">
+            {ripetuti.map((r) => (
+              <li key={`${r.equipment_id}-${r.giorno}`} className="testo-sala text-b58-charcoal">
+                <strong>{r.attrezzatura}</strong> — {r.quante_stesso_apparecchio} volte il{" "}
+                {formatDate(r.giorno)}
               </li>
             ))}
           </ul>
         </div>
       )}
+
+      <div className="space-y-3">
+        {giornate.map((g) => (
+          <div key={g} className="border-t border-b58-charcoal/10 pt-2">
+            <div className="testo-sala text-b58-charcoal font-medium">{formatDate(g)}</div>
+            <ul className="mt-1 space-y-1">
+              {per.get(g).map((r) => (
+                <li key={r.nc_id} className="testo-sala text-b58-charcoal-soft">
+                  <span className="text-b58-charcoal">{labelFor(NC_CATEGORIES, r.categoria)}</span>
+                  {r.attrezzatura ? ` · ${r.attrezzatura}` : ""} — {r.descrizione}
+                  {/* ⚠️ Il rimedio si stampa SEMPRE: è la prova che il
+                      sistema ha funzionato, ed è la metà che un controllo
+                      vuole vedere. Se manca, si dice che manca. */}
+                  <div>
+                    {r.risolta ? (
+                      <>
+                        Risolta il {formatDate(r.risolta_il)} —{" "}
+                        {r.rimedio ? (
+                          <span className="text-b58-charcoal">{r.rimedio}</span>
+                        ) : (
+                          <span className="text-b58-terracotta-dark">rimedio non scritto</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-b58-terracotta-dark font-medium">Ancora aperta</span>
+                    )}
+                    {r.nota ? ` · ${r.nota}` : ""}
+                    {/* La via di ritorno di «Risolvi»: chiusa per sbaglio,
+                        resterebbe chiusa per sempre. Con la conferma, perché
+                        riaprire una riga di un registro che si esibisce non è
+                        un gesto da fare per sbaglio due volte. */}
+                    {isTitolare && r.risolta && (
+                      <span className="ml-2 print:hidden">
+                        <ConfermaDistruttiva
+                          etichetta="Riapri"
+                          domanda={`Rimetto «${r.descrizione}» fra le non conformità aperte? Quello che avevi scritto come rimedio resta, e lo puoi correggere richiudendola.`}
+                          etichettaConferma="Sì, riapri"
+                          onConferma={() => onRiapri(r.nc_id)}
+                        />
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
