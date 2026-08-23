@@ -119,9 +119,29 @@ export default function Scadenze() {
           la dicono loro, sotto il verbo. Resta la parte che è un AVVISO e
           non una spiegazione — che il gesto non chiede conferma e non si
           disfa: quella non sta scritta da nessun'altra parte. */}
-      <p className="mb-6 testo-sala text-stone-500">
+      <p className="mb-2 testo-sala text-stone-500">
         Non si chiede conferma e non si torna indietro.
       </p>
+      {/* 🔴 LA PORTA CHE MANCAVA (23/08, blocco 7). Qui le risposte sono
+          due, e resta VOLUTO: la decisione di ieri sta scritta in cima a
+          `Fermi.jsx` — «sei pulsanti su ogni riga di un elenco sono un
+          elenco che non si legge più», e qui le righe da guardare sono
+          decine.
+          ⚠️ Ma chi arriva con in mano una partita che non è né finita né
+          buttata — l'ha abbattuta, l'ha trasformata, la rende al
+          fornitore — da questa schermata non aveva NESSUNA strada: «Fermi
+          da troppo» rimandava qui, e qui non rimandava niente. Una porta
+          che esiste in un verso solo è una porta mancante, ed è il
+          difetto che il 20/08 ha tenuto i Preventivi irraggiungibili.
+          ⚠️ È un BERSAGLIO e non una parola dentro la frase: misurato col
+          valore del tablet, un collegamento in linea è alto 3,91 mm
+          contro gli 8,50 che serve al dito. */}
+      <Link
+        to="/magazzino/fermi"
+        className="tocco-bottone mb-6 inline-flex items-center rounded border border-stone-300 px-4 testo-sala"
+      >
+        Altre risposte: abbattuto, trasformato, reso al fornitore…
+      </Link>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
       {loading && <p>Carico…</p>}
