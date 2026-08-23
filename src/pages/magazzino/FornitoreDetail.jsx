@@ -316,7 +316,23 @@ export default function FornitoreDetail() {
       {/* Storico automatico (§3.11): letto da price_history e stock_lots,
           mai inserito a mano qui. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Consegne recenti</h2>
+        <div className="flex items-baseline justify-between gap-4 flex-wrap mb-4">
+          <h2 className="font-display text-lg text-b58-charcoal">Consegne recenti</h2>
+          {/* ⚠️ LE FATTURE NON SI RIFANNO QUI (23/08, blocco 6): l'elenco
+              esiste già in Fatture Fornitori, coi suoi totali, le note di
+              credito e i pagamenti. Quello che mancava era **la porta** —
+              e una porta mancante è il difetto che il 20/08 ha tenuto i
+              Preventivi irraggiungibili per giorni.
+              ⚠️ «Consegne recenti» resta dov'è: risponde a un'altra
+              domanda — quanto e a che prezzo è arrivata la merce nel
+              tempo — e le fatture non la sostituiscono. */}
+          <Link
+            to={`/fatture-fornitori?fornitore=${supplier.id}`}
+            className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+          >
+            Le sue fatture →
+          </Link>
+        </div>
         {deliveries.length === 0 ? (
           <p className="text-sm text-b58-charcoal-soft/60">Nessuna consegna registrata ancora.</p>
         ) : (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   annullaPagamentoFattura,
   anteprimaPagamento,
@@ -51,7 +52,16 @@ export default function FattureFornitoriHome() {
   // Il credito ancora da usare, per fornitore: sono soldi di Alessio, e un
   // credito che nessuno ricorda è un credito perso.
   const [crediti, setCrediti] = useState([]);
-  const [filtri, setFiltri] = useState({ supplierId: "", dal: "", al: "" });
+  // ⚠️ IL FILTRO PUO' ARRIVARE DALL'INDIRIZZO (23/08, blocco 6): dalla
+  // scheda di un fornitore si arriva qui gia' filtrato su di lui. Si
+  // legge SOLO all'apertura — poi comanda chi tocca i filtri, altrimenti
+  // l'indirizzo tornerebbe a imporre la sua scelta a ogni ricarica.
+  const [parametri] = useSearchParams();
+  const [filtri, setFiltri] = useState({
+    supplierId: parametri.get("fornitore") ?? "",
+    dal: "",
+    al: "",
+  });
   const [entities, setEntities] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [documenti, setDocumenti] = useState([]);
