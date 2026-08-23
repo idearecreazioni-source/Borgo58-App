@@ -220,7 +220,7 @@ export default function MagazzinoHome() {
             {nonScaricate.map((r) => (
               <li key={r.id} className="testo-sala text-b58-charcoal">
                 <span className="text-b58-charcoal-soft">
-                  {formatDate(r.quando)} · {r.tavolo || "—"} ·{" "}
+                  {formatDate(r.serata ?? r.quando)} · {r.tavolo || "—"} ·{" "}
                 </span>
                 {r.tipo === "voce_libera" && "voce libera, nessuna ricetta: "}
                 {r.tipo === "ricetta_incompleta" && "ricetta incompleta: "}
@@ -229,6 +229,23 @@ export default function MagazzinoHome() {
                 <span className="font-medium">{r.descrizione}</span>
                 {r.quantita_mancante != null && (
                   <> — mancano {Number(r.quantita_mancante)} {r.unita}</>
+                )}
+                {/* 🔴 «SCESO A METÀ» NON DEVE ESSERE SILENZIOSO (23/08/2026).
+                    Dal 23/08 un ingrediente che non riesce non porta più via
+                    lo scarico di tutto il conto: scende il resto. È la cura
+                    di un difetto che fermava 148 conti su 346 — ma un
+                    magazzino che scende in parte senza dirlo è lo stesso
+                    difetto, solo più difficile da vedere. Il numero arriva
+                    dal database (`altri_scesi`), non da un conto rifatto
+                    qui. */}
+                {r.altri_scesi != null && (
+                  <span className="text-b58-charcoal-soft">
+                    {" "}
+                    —{" "}
+                    {r.altri_scesi > 0
+                      ? `il resto di questo conto è sceso (${r.altri_scesi} ingredienti)`
+                      : "di questo conto non è sceso niente"}
+                  </span>
                 )}
               </li>
             ))}

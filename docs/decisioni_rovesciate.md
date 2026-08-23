@@ -1393,3 +1393,38 @@ il comando successivo con un messaggio giusto e fuorviante.
 segno con cui verrà cercato è già orfano nel momento in cui nasce.* È la
 stessa cosa dei tredici ingredienti col vecchio prefisso (22/08), vista da un
 altro lato.
+
+---
+
+## 33 · 23/08/2026 — «lo scarico di un conto è tutto o niente»
+
+**Cosa era stato deciso, e quando.** Il 13/08, migrazione `20260813000013`,
+quella che ha fatto scendere il magazzino per la prima volta: se qualcosa va
+storto durante lo scarico si annulla **l'intero blocco**, e nel codice c'era
+scritto perché — *«il conto resta chiuso e non segnato come scaricato, così
+si potrà riprovare»*.
+
+**La ragione di allora.** Buona, ed è la stessa che questo progetto applica
+ovunque: una giacenza scesa a metà è una giacenza sbagliata **che ha l'aria
+di essere giusta**. Meglio non toccarla e rifare tutto dopo.
+
+**Cosa si decide adesso** (decisione di Alessio). Scende quello che si può, e
+ciò che non scende è dichiarato ingrediente per ingrediente, col conto, e con
+la frase che dice se il resto è sceso.
+
+**Perché la ragione di allora non vale più.** Perché poggiava su una seconda
+metà che **non esisteva**. Misurato: `scarica_magazzino_conto` la chiamano
+solo le chiusure del conto, e un conto chiuso non si richiude — nessuna
+schermata, nessun pulsante, nessun lavoro notturno può riprovare. Quindi
+«tutto o niente, e si riproverà» non era *niente adesso e tutto dopo*: era
+**niente e basta, per sempre**, su 148 conti chiusi su 346.
+
+⚠️ **E la condizione che rende accettabile il rovesciamento è la seconda metà
+della decisione**, non la prima: *un magazzino che scende in parte senza
+dirlo è lo stesso difetto di prima, solo più difficile da vedere.* Per questo
+l'elenco di ciò che non è sceso porta ora il conto, la serata, e distingue
+«di questo conto non è sceso niente» da «è sceso il resto».
+
+⚠️ **Il giorno che esistesse un modo di riprovare lo scarico di un conto
+chiuso, questa scelta va riguardata e non ereditata**: la ragione del 13/08
+tornerebbe intera.

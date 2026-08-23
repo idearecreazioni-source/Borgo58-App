@@ -574,9 +574,22 @@ export async function costruisciDueMesi(ctx) {
     // (22/08): *ciò che nasce senza il segno con cui verrà cercato è già
     // orfano nel momento in cui nasce.*
     const u1 = await supabase.from("orders")
-      .update({ opened_at: apertura, closed_at: chiusura, magazzino_scaricato_il: chiusura, note: `${MARCA}serata` })
+      .update({ opened_at: apertura, closed_at: chiusura, note: `${MARCA}serata` })
       .eq("id", c.id);
     if (u1.error) throw new Error(`Non riesco a ridatare il conto: ${u1.error.message}`);
+    // 🔴 IL SEGNO DELLO SCARICO SI SPOSTA, NON SI ACCENDE (23/08/2026).
+    // Fino a stamattina questa riga scriveva `magazzino_scaricato_il` su
+    // **tutti** i conti, compresi quelli dove lo scarico era fallito e la
+    // colonna era rimasta vuota apposta. Misurato: 346 conti su 346 col
+    // segno «scaricato», e 148 di loro non avevano tolto un grammo dalla
+    // cella. ⚠️ Lo scenario nascondeva il difetto che doveva far vedere —
+    // e l'unico modo di accorgersene era contare le righe di consumo,
+    // cioè non fidarsi del segno.
+    const u2 = await supabase.from("orders")
+      .update({ magazzino_scaricato_il: chiusura })
+      .eq("id", c.id)
+      .not("magazzino_scaricato_il", "is", null);
+    if (u2.error) throw new Error(`Non riesco a spostare lo scarico: ${u2.error.message}`);
     await supabase.from("order_items")
       .update({ sent_at: apertura, prepared_at: apertura, created_at: apertura })
       .eq("order_id", c.id);

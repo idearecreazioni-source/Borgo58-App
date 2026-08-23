@@ -31,7 +31,15 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
-0-ter. 🔴 **UN PIZZICO DI CANNELLA FERMA LO SCARICO DI TUTTO IL TAVOLO** —
+0-ter. ✅ **CHIUSO IL 23/08** — [scende quello che si puo'](consegne/20260823_scende_quello_che_si_puo.md),
+   migrazione `20260823000002`, solo sul progetto di prova. **Misurato dopo:
+   346 conti su 346 scaricano** (erano 198), **zero** anomalie di guasto
+   (erano 148), food cost sul cibo **22,9%**. Le due domande per Alessio
+   hanno avuto risposta nel mandato del 23/08: *scende quello che si puo'*
+   (rovesciamento n. 33) e *le spezie a pizzico escono dal magazzino*
+   (blocco 2). Il testo qui sotto resta come origine della decisione.
+
+0-ter-bis. 🔴 **UN PIZZICO DI CANNELLA FERMA LO SCARICO DI TUTTO IL TAVOLO** —
    misurato la notte del 23/08, **non corretto per decisione di Alessio**
    («è un difetto del gestionale, e serio: scrivilo in un referto e
    lascialo lì per domani»).

@@ -16,12 +16,19 @@ import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 // la giacenza scenda davvero, e che scenda dai lotti giusti.
 const TAVOLO = "TEST-AUTO-SCAR";
 const NOME = "TEST-AUTO scarico";
+// 🔴 L'ingrediente da PIZZICO (23/08/2026). Esiste perché il 23/08 un
+// ingrediente che valeva trentasette milligrammi fermava lo scarico di
+// **tutto** il conto: la colonna del magazzino ha quattro decimali, il
+// numero si scriveva 0,0000 e il vincolo lo respingeva. Un difetto che
+// bloccava 148 conti su 346 senza nessun errore a schermo.
+const PIZZICO = "TEST-AUTO pizzico";
 
 describe("il magazzino scende chiudendo un conto", () => {
   let staff;
   let titolare;
   let ente;
   let ingrediente;
+  let pizzico;
   let lottoVecchio;
   let lottoNuovo;
   let ricetta;
@@ -61,7 +68,10 @@ describe("il magazzino scende chiudendo un conto", () => {
     }
     // ⚠️ NON si cicla più su tutti quelli che esistono: l'ingrediente è uno
     // e resta, e i suoi lotti si tolgono quando la prova riparte.
-    const { data: ing } = await titolare.from("ingredients").select("id").eq("name", NOME).limit(1);
+    const { data: ing } = await titolare
+      .from("ingredients")
+      .select("id")
+      .in("name", [NOME, PIZZICO]);
     for (const i of ing ?? []) {
       await titolare.from("stock_lots").delete().eq("ingredient_id", i.id);
       await titolare.from("price_history").delete().eq("ingredient_id", i.id);
@@ -149,6 +159,27 @@ describe("il magazzino scende chiudendo un conto", () => {
     lottoVecchio = v.data.id;
     lottoNuovo = n.data.id;
 
+    // 🔴 L'INGREDIENTE DA PIZZICO, con un lotto suo. Si riusa come l'altro:
+    // `stock_consumptions` non si cancella da qui (una sola policy, di
+    // lettura), quindi crearne uno nuovo a ogni giro lascerebbe un residuo.
+    const giaP = await titolare.from("ingredients").select("id").eq("name", PIZZICO).limit(1).maybeSingle();
+    if (giaP.data) {
+      pizzico = giaP.data.id;
+      await titolare.from("stock_lots").delete().eq("ingredient_id", pizzico);
+    } else {
+      const ip = await titolare
+        .from("ingredients")
+        .insert({ entity_id: ente, name: PIZZICO, category: "spezie_aromi", unit: "kg", current_price: 40, waste_percentage_default: 0 })
+        .select()
+        .single();
+      expect(ip.error).toBeNull();
+      pizzico = ip.data.id;
+    }
+    const lp = await titolare
+      .from("stock_lots")
+      .insert({ ingredient_id: pizzico, quantity_received: 1, quantity_remaining: 1, unit_cost: 40 });
+    expect(lp.error).toBeNull();
+
     const r = await titolare
       .from("recipes")
       .insert({ name: NOME, category: "primo", recipe_type: "piatto_finito", portions_yield: 1 })
@@ -158,7 +189,12 @@ describe("il magazzino scende chiudendo un conto", () => {
     ricetta = r.data.id;
     const ri = await titolare
       .from("recipe_ingredients")
-      .insert({ recipe_id: ricetta, ingredient_id: ingrediente, quantity: 0.75, unit: "kg" });
+      .insert([
+        { recipe_id: ricetta, ingredient_id: ingrediente, quantity: 0.75, unit: "kg" },
+        // 0,00002 kg = venti milligrammi: sotto il decimo di grammo che la
+        // colonna del magazzino sa tenere.
+        { recipe_id: ricetta, ingredient_id: pizzico, quantity: 0.00002, unit: "kg" },
+      ]);
     expect(ri.error).toBeNull();
   });
 
@@ -212,6 +248,37 @@ describe("il magazzino scende chiudendo un conto", () => {
     expect(Number(m.data.quantity)).toBeCloseTo(0.75, 4);
     // 0,5 × 2,00 + 0,25 × 4,00 = 2,00 €
     expect(Number(m.data.costo)).toBeCloseTo(2.0, 2);
+  });
+
+  it("un pizzico che la colonna non sa scrivere non ferma lo scarico del conto", async () => {
+    // 🔴 IL DIFETTO CHE QUESTA PROVA SORVEGLIA (23/08/2026): prima di oggi
+    // l'ingrediente qui sopra sarebbe sceso — e invece **niente** scendeva,
+    // perché il rifiuto sui venti milligrammi del pizzico si portava via lo
+    // scarico dell'intero conto. Nessun errore in sala: solo un magazzino
+    // fermo. Rompendo la cura, questa prova diventa rossa in tre punti.
+    const a = await titolare
+      .from("anomalie_scarico")
+      .select("tipo")
+      .eq("order_id", conto)
+      .eq("tipo", "errore");
+    expect(a.error).toBeNull();
+    expect(a.data).toHaveLength(0);
+
+    // Niente riga di consumo per il pizzico: non è una scrittura persa, è
+    // una scrittura impossibile — il lotto non si muoveva comunque.
+    const c = await titolare
+      .from("stock_consumptions")
+      .select("id")
+      .eq("order_id", conto)
+      .eq("ingredient_id", pizzico);
+    expect(c.data ?? []).toHaveLength(0);
+
+    const l = await titolare
+      .from("stock_lots")
+      .select("quantity_remaining")
+      .eq("ingredient_id", pizzico)
+      .single();
+    expect(Number(l.data.quantity_remaining)).toBe(1);
   });
 
   it("la voce libera non viene indovinata: si dichiara e si conta", async () => {
