@@ -1,7 +1,8 @@
 # Lo scarto, le fonti, e la spunta che non arrivava
 
 **Blocco 4 del mandato del 23/08** — le altre cose delle schede. Migrazioni
-**`20260823000007`**, **`…08`** e **`…09`**, più la funzione online
+**`20260823000007`**, **`20260823000008`** e
+**`20260823000009`**, più la funzione online
 `schede-prodotto` (versione 2 → 3). Tutto **solo sul progetto di prova**.
 
 ---
