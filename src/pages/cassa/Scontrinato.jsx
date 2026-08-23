@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getQuadraturaFiscale, listContiDaFiscalizzare } from "../../lib/api/cash";
+import { getIncassiPerGiorno, getQuadraturaFiscale, listContiDaFiscalizzare } from "../../lib/api/cash";
 import { listContiFiscalizzati, setDocumentoFiscale } from "../../lib/api/orders";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
@@ -28,6 +28,7 @@ export default function Scontrinato() {
   const [inCorso, setInCorso] = useState("");
   const [numeroFattura, setNumeroFattura] = useState({});
   const [fiscalizzati, setFiscalizzati] = useState([]);
+  const [perGiorno, setPerGiorno] = useState([]);
 
   // 🔴 QUI SI CONTA A SERATE, NON A GIORNI DI CALENDARIO, e non è una
   // scelta di questa schermata: `quadratura_fiscale` e
@@ -61,10 +62,12 @@ export default function Scontrinato() {
       getQuadraturaFiscale(entityId, dal, al),
       listContiDaFiscalizzare(entityId, dal, al),
       listContiFiscalizzati({ entityId, dal, al }),
-    ]).then(([q, c, f]) => {
+      getIncassiPerGiorno(entityId, dal, al),
+    ]).then(([q, c, f, g]) => {
       setQuadratura(q);
       setConti(c);
       setFiscalizzati(f);
+      setPerGiorno(g);
     });
   };
 
@@ -197,6 +200,62 @@ export default function Scontrinato() {
           <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-6 leading-relaxed">
             {quadratura?.avvertenza}
           </p>
+
+          {/* ---- Giorno per giorno (23/08/2026, blocco 4) --------------
+              🔴 Fra il totale del periodo e il singolo conto non c'era
+              niente, e Alessio lo cercava: «quanto abbiamo fatto martedì?»
+              non aveva una risposta in nessuna schermata.
+
+              ⚠️ DUE COLONNE come i totali in cima, non una — e il caso che
+              lo dimostra è nei dati: il 02/06 fa 338,00 incassati contro
+              189,50 scontrinati. Con un numero solo quel giorno sarebbe
+              indistinguibile da uno in cui i due coincidono.
+
+              ⚠️ Si conta a SERATE: un conto chiuso all'una di notte
+              appartiene alla sera prima. */}
+          {perGiorno.length > 0 && (
+            <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+              <h2 className="font-display text-lg text-b58-charcoal mb-1">Serata per serata</h2>
+              <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+                La stessa cosa dei due numeri qui sopra, ma per serata di servizio.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] uppercase tracking-wide text-b58-charcoal-soft/70">
+                      <th className="py-1 pr-3">Serata</th>
+                      <th className="py-1 pr-3 text-right">Conti</th>
+                      <th className="py-1 pr-3 text-right">Incassato</th>
+                      <th className="py-1 pr-3 text-right">Scontrinato</th>
+                      <th className="py-1 text-right">Da fare</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perGiorno.map((g) => (
+                      <tr key={g.serata} className="border-t border-b58-charcoal/10">
+                        <td className="py-2 pr-3 whitespace-nowrap">{formatDate(g.serata)}</td>
+                        <td className="py-2 pr-3 text-right">{g.quanti}</td>
+                        <td className="py-2 pr-3 text-right">{formatEUR(g.incassato)}</td>
+                        <td className="py-2 pr-3 text-right">{formatEUR(g.scontrinato)}</td>
+                        {/* ⚠️ La differenza si evidenzia solo quando c'è:
+                            un numero colorato che c'è sempre smette di
+                            essere un segnale. */}
+                        <td className="py-2 text-right">
+                          {Number(g.da_fiscalizzare) > 0 ? (
+                            <strong className="text-b58-terracotta-dark">
+                              {formatEUR(g.da_fiscalizzare)}
+                            </strong>
+                          ) : (
+                            <span className="text-b58-charcoal-soft/50">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* ---- L'elenco --------------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">

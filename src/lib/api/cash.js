@@ -397,6 +397,24 @@ export async function getQuadraturaFiscale(entityId, dal, al) {
   return data?.[0] ?? null;
 }
 
+// Gli stessi due numeri, ma SERATA PER SERATA (23/08/2026, blocco 4 del
+// mandato). Fra il totale del periodo e il singolo conto non c'era niente,
+// e la domanda «quanto abbiamo fatto martedì?» non aveva una risposta.
+//
+// ⚠️ Due colonne e non una, per la stessa ragione dei totali in cima: sui
+// dati del progetto di prova il 02/06 fa 338,00 incassati contro 189,50
+// scontrinati, e con un numero solo quel giorno sarebbe indistinguibile da
+// uno in cui i due numeri coincidono.
+export async function getIncassiPerGiorno(entityId, dal, al) {
+  const { data, error } = await supabase.rpc("quadratura_fiscale_per_giorno", {
+    p_entity_id: entityId,
+    p_dal: dal ?? null,
+    p_al: al ?? null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listContiDaFiscalizzare(entityId, dal, al) {
   const { data, error } = await supabase.rpc("conti_da_fiscalizzare", {
     p_entity_id: entityId,
