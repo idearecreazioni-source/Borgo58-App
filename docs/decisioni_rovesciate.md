@@ -1526,3 +1526,39 @@ NON sono spiegazioni ma **avvisi** — «di cui non sono tuoi» e le uscite
 già registrate e non ancora nel saldo — **sono rimaste**, perché senza di
 quelle il numero grande avrebbe l'aria di essere completo senza esserlo,
 che è il difetto opposto e peggiore.
+
+---
+
+## 37 · 24/08/2026 — «l'allarme del 12/08 resta: racconta un guasto vero»
+
+**Cosa era stato deciso e quando.** Il 23/08, poche ore prima, preparando
+il blocco di pulizia dei residui di collaudo avevo deciso di **tenere**
+in produzione l'allarme del 12/08 («il lavoro lettura-posta non arriva in
+fondo da 170 minuti»), togliendo solo i tre di collaudo.
+
+**La ragione di allora.** Il §8 dice che gli avvisi veri non sono dati di
+prova ma **la storia di ciò che ha funzionato**, e quello raccontava un
+guasto realmente avvenuto — non una riga finta lasciata da una verifica.
+
+**Cosa si decide adesso** (Alessio, 24/08): si toglie, con
+`20260824000001`.
+
+**Perché la ragione di allora non vale più.** Perché guardava solo
+**com'era nato** quell'allarme, e non **cosa dice adesso**. La misura che
+ha deciso: `lettura_posta` ha girato con successo il **23/08 alle 22:00**,
+e tutti gli altri cinque lavori sono in orario — quell'avviso descrive un
+problema che non esiste **da undici giorni**. Parole sue: *«un allarme
+acceso dopo che la causa è passata è peggio di nessun allarme, perché
+abitua a ignorarli.»*
+
+⚠️ **La regola del §8 non è caduta: si è precisata.** *Un avviso vero
+resta finché è vero* — e «vero» non è una proprietà del momento in cui è
+nato, è una proprietà di adesso. È la stessa famiglia del freno
+anti-tempesta che zittiva i rincari (13/08) e dell'allarme falso della
+sentinella (18/08): **il danno di un avviso sbagliato non è l'avviso, è
+che insegna a non guardare.**
+
+⚠️ **E si toglie per PROPRIETÀ, non per data**: la condizione scritta nella
+migrazione è che il lavoro di cui si lamenta abbia girato **dopo**. Se un
+giorno fosse davvero fermo, quella pulizia non lo zittirebbe — e la
+verifica prova proprio quel verso.
