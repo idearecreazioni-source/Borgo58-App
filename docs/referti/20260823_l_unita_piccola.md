@@ -217,6 +217,76 @@ nel vocabolario.
 
 ---
 
+# 6-bis · 🔴 LA MISURA CHE MANCAVA, e la solleva Alessio
+
+> ⚠️ **Aggiunto dopo, e la correzione vale più del numero.** La prima
+> versione di questo referto diceva *«i grammi bastano per tutti i casi veri
+> e tengono il prezzo leggibile»* — ma **la prova era stata fatta in
+> milligrammi** (6,6667 mg), e sui grammi c'era solo un **calcolo**. Alessio
+> ha chiesto la prova col numero che ci ha morso davvero: la cannella, che
+> su una porzione vale **37 millesimi di grammo** e ha fermato 148 conti su
+> 346.
+>
+> *Un calcolo aritmetico presentato accanto a misure vere si legge come una
+> misura.* La differenza non è formale: il calcolo non incontra i quattro
+> decimali della catena, la prova sì.
+
+## La catena vera, rifatta in grammi
+
+Ricostruita **esattamente** com'è nel ricettario, letta dal database e non
+inventata: la *frolla per cannoli* rende 1 kg e vuole 2 g di cannella; un
+*mini cannolo* tocca 18 g di frolla e rende una porzione; la cannella ha il
+3% di scarto.
+
+| | |
+|---|---|
+| fabbisogno di **un** cannolo | **0,03708 g** — il numero vero |
+| come lo scrive il campo (4 decimali) | **0,0371 g** ✅ |
+| come lo avrebbe scritto in kg | **0,0000** ❌ — il difetto |
+| sceso davvero | **0,0371 g**, costo 0,0009 € |
+| anomalie di errore | **zero** |
+| giacenza dopo | 499,9629 g (era 500) |
+| costo teorico a porzione | 0,0009 € — ✅ coincide |
+
+→ **In grammi la cannella passa**, e non per un pelo.
+
+## Quanti decimali conserva la catena, e qual è il minimo scaricabile
+
+Provato **a scalini**, dividendo per dieci finché lo scarico smette di
+avvenire, su tutte e tre le strade:
+
+> **Il minimo è 0,0001 unità, identico in tutte e tre.**
+
+⚠️ Non è una proprietà dell'unità: è dei **campi**. `recipe_ingredients.quantity`,
+`stock_lots.quantity_remaining` e `stock_consumptions.quantity` sono tutti
+`numeric(12,4)`.
+
+⚠️ **E il limite morde già nella ricetta, non solo nello scarico**: sotto
+0,0001 il fabbisogno torna **0,0000** perché è la *riga di ricetta* a non
+poter tenere il numero. Non c'è modo di aggirarlo restando in quell'unità.
+
+## Le tre strade con quel numero davanti
+
+Cosa sa ancora scaricare il gestionale, e con quanto margine sui casi veri:
+
+| | **minimo scaricabile** | cannella 0,037 g | alloro 0,040 g | zafferano 0,0067 g |
+|---|---|---|---|---|
+| **kg** (oggi) | 0,0001 kg = **100 mg** | ❌ **respinto** | ❌ **respinto** | ❌ **respinto** |
+| **confezione** (bustina 0,1 g) | 0,0001 pz = **0,01 mg** | 0,37 pz ✅ | 0,40 pz ✅ | **0,0667 pz** ✅ margine 667× |
+| **grammi** | 0,0001 g = **0,1 mg** | **0,0371** ✅ margine **371×** | 0,0400 ✅ margine 400× | 0,0067 ✅ margine **67×** |
+| **milligrammi** | 0,0001 mg = **0,1 µg** | 37,08 ✅ margine 370.800× | 40,00 ✅ 400.000× | 6,67 ✅ 66.700× |
+
+⚠️ **Il margine è il numero da guardare, non il fatto che passi.** Il
+fabbisogno si divide per le porzioni: lo zafferano in grammi ha margine 67×,
+quindi una ricetta che rendesse **cento volte più porzioni** di quella
+di oggi tornerebbe al limite. In milligrammi quel caso è irraggiungibile.
+
+⚠️ E **la confezione ha un margine che dipende da quanto è grande**: con
+bustine da 0,1 g è il migliore dopo i milligrammi; con un barattolo da 1 kg
+torna esattamente il problema di oggi.
+
+---
+
 # 6 · E se si sceglie A, quale unità: grammi o milligrammi
 
 Misurato sul ricettario vero, il fabbisogno di **una porzione** dei prodotti
@@ -228,8 +298,10 @@ da pizzico, in tre unità (la colonna scrive quattro decimali):
 | Cannella (*Selezione dolce*) | **0,0000** ❌ | 0,0360 ✅ | 36,0000 ✅ |
 | Alloro, Pepe (*Arancinetta*) | **0,0000** ❌ | 0,0400 ✅ | 40,0000 ✅ |
 
-- **I grammi bastano** per tutti i casi veri, e ⚠️ **tengono il prezzo
-  leggibile**: zafferano 2,40 €/g, cannella 0,0245 €/g (si vedrebbe 0,02).
+- **I grammi bastano** per tutti i casi veri — ✅ **provato col numero vero
+  in §6-bis**, non calcolato — e ⚠️ **tengono il prezzo leggibile**:
+  zafferano 2,40 €/g, cannella 0,0245 €/g (si vedrebbe 0,02).
+  ⚠️ Ma il margine sullo zafferano è **67×**, il più stretto dei tre.
 - **I milligrammi** danno mille volte più margine sulla quantità e **perdono
   il prezzo**: tutti a 0,00 €.
 

@@ -92,6 +92,31 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    La domanda: un vino è una riga del **listino bevande**, non una voce
    sconosciuta scritta a mano. Vuoi che smetta di comparire lì?
 
+0-sei. 🔵 **GLI INCASSI GIORNO PER GIORNO, E LE RIGHE CHE NON SI DISTINGUONO**
+   — due cose viste da Alessio nel collaudo del 23/08, misurate e **non
+   costruite**. Referto: [gli incassi del giorno](referti/20260823_gli_incassi_del_giorno.md).
+
+   **L'elenco degli incassi giorno per giorno NON ESISTE da nessuna parte**:
+   la quadratura fiscale da' un totale del periodo, l'Andamento e' per mese,
+   la prima nota non contiene gli incassi di sala per scelta (04/08). Fra il
+   mese e il singolo conto non c'e' niente. ⚠️ **I dati ci sono gia' tutti** —
+   costruito l'elenco per prova: 25 serate a giugno, e il 02/06 mostra da
+   solo perche' serve (338,00 incassati contro 189,50 scontrinati).
+   **Dove**: in «Incassato e scontrinato», per tre ragioni misurate — e' la
+   scomposizione di un numero che quella schermata gia' mostra, conta gia' a
+   SERATE (verificato sul corpo vivo), e la Cassa e' dove stanno i soldi, non
+   quanto si e' venduto (decisione del 15/08 su chi comanda sui ricavi).
+
+   **Le righe «Gia' segnati»**: la schermata legge sei campi e ne mostra tre.
+   Il gestionale sa gia' **l'importo** (dalla stessa funzione del preconto,
+   su tutti i conti) e
+   **il cliente** (dal legame del 18/08, su 176 conti su 329). Contato:
+   con quello che si vede oggi restano **15 gruppi di righe indistinguibili**,
+   aggiungendo l'importo scendono a **1**. ⚠️ E quell'uno sono due conti
+   chiusi allo stesso minuto per lo stesso importo: li distingue solo il nome
+   del cliente. ⚠️ Sarebbe anche il **primo posto** dove il legame
+   conto-prenotazione diventa visibile — scritto dal 18/08 e mai mostrato.
+
 0-cinque. 🔵 **L'AVVISO SUL PRODOTTO FERMO, E LE ETICHETTE** — misurati il
    23/08 e **non costruiti**, come chiedeva il mandato.
    Referto: [il prodotto fermo e le etichette](referti/20260823_il_prodotto_fermo_e_le_etichette.md).
