@@ -26,7 +26,7 @@
 //   npm run prova:migra -- 20260815000002     una sola, anche se gia' applicata
 //                                             (e' cosi' che si prova l'idempotenza)
 
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
   esegui,
@@ -38,6 +38,13 @@ import {
   titolo,
   versioniDoppie,
 } from "./comune.mjs";
+import {
+  controllaMigrazione,
+  corpiVivi,
+  funzioniRidefinite,
+  PRIMA_CON_RETE,
+  raccontaSmarrite,
+} from "./guardie.mjs";
 
 const CARTELLA = "supabase/migrations";
 
@@ -117,8 +124,61 @@ if (chieste.length > 0) {
 
 titolo(`Progetto di prova — ${daApplicare.length} migrazion${daApplicare.length === 1 ? "e" : "i"}`);
 
+// ---------------------------------------------------------------------
+// La rete contro la funzione riscritta a memoria (23/08/2026).
+// Vedi scripts/guardie.mjs per il perche'. Qui c'e' solo il come.
+// ---------------------------------------------------------------------
+const vivi = await corpiVivi(url);
+const cache = new Map();
+const leggiVivo = (nome) => (cache.has(nome) ? cache.get(nome) : vivi.corpoVivo(nome));
+
+/**
+ * ⚠️ Il corpo vivo cambia MENTRE si applica. Applicando venti migrazioni
+ * in fila, la seconda che tocca la stessa funzione va confrontata con cio'
+ * che la prima ha appena scritto — non con lo stato di venti migrazioni
+ * fa. Invece di richiedere il corpo al database dopo ogni file, si prende
+ * per buono il testo appena applicato: le impronte sono le stesse.
+ */
+function aggiornaCorpiVivi(sql) {
+  for (const f of funzioniRidefinite(sql)) cache.set(f.nome, f.testo);
+}
+
 for (const m of daApplicare) {
   console.log(`\n→ ${m.file}`);
+
+  const sql = readFileSync(path.join(CARTELLA, m.file), "utf8");
+  // La soglia: vedi PRIMA_CON_RETE in guardie.mjs.
+  const perdite =
+    m.versione >= PRIMA_CON_RETE
+      ? controllaMigrazione(sql, leggiVivo, vivi.funzioniDelProgetto)
+      : [];
+  const nonDichiarate = perdite.filter((p) => p.rinuncia === null);
+  for (const p of perdite.filter((x) => x.rinuncia !== null)) {
+    console.log(`   rinuncia dichiarata su ${p.nome}: ${p.rinuncia}`);
+    for (const r of raccontaSmarrite(p)) console.log(`   ${r}`);
+  }
+  if (nonDichiarate.length > 0) {
+    const righe = [];
+    for (const p of nonDichiarate) {
+      righe.push(`  ${p.nome} perde:`);
+      righe.push(...raccontaSmarrite(p));
+    }
+    fermati(
+      `FERMO: ${m.file} riscrive una funzione perdendo per strada qualcosa.`,
+      ...righe,
+      "",
+      "Nel corpo VIVO del database quelle righe ci sono; in questa migrazione no.",
+      "E' successo quattro volte: si riscrive una funzione a memoria (o dal file",
+      "che l'aveva creata) e si annulla in silenzio cio' che era stato aggiunto",
+      "dopo — un portiere, il nome di un campo che una schermata legge.",
+      "",
+      "Il corpo vivo si prende cosi':   npm run funzione:viva -- <nome> --prova",
+      "",
+      "Se invece si toglie APPOSTA, si scrive nella migrazione la riga:",
+      "  -- rete-guardie: <nome_funzione> — perche' si toglie"
+    );
+  }
+
   const r = esegui(
     psql,
     ["-v", "ON_ERROR_STOP=1", "-d", url, "-f", path.join(CARTELLA, m.file)],
@@ -132,6 +192,7 @@ for (const m of daApplicare) {
     console.log(r.uscita);
     fermati(`La migrazione ${m.file} si è fermata. Sopra c'è il motivo.`);
   }
+  aggiornaCorpiVivi(sql);
 }
 
 const registrate = interrogaProva("select count(*) from applied_migrations");

@@ -51,6 +51,13 @@ import {
   titolo,
   versioniDoppie,
 } from "./comune.mjs";
+import {
+  controllaMigrazione,
+  corpiVivi,
+  funzioniRidefinite,
+  PRIMA_CON_RETE,
+  raccontaSmarrite,
+} from "./guardie.mjs";
 
 const CARTELLA = "supabase/migrations";
 
@@ -313,6 +320,52 @@ if (fuoriDaGitHub.length > 0) {
     "Serve il push di Alessio, poi si riprova.",
     "  git push"
   );
+}
+
+// --- 5. NIENTE CHE RISCRIVA UNA FUNZIONE PERDENDO PEZZI --------------
+// La rete del 23/08/2026: vedi scripts/guardie.mjs. Il controllo si fa
+// anche in sola lettura, perche' e' li' che si guarda prima di agire.
+{
+  const vivi = await corpiVivi(urlProduzione);
+  const cache = new Map();
+  const leggiVivo = (n) => (cache.has(n) ? cache.get(n) : vivi.corpoVivo(n));
+  const righe = [];
+  const dichiarate = [];
+  for (const m of mancanti.filter((x) => x.versione >= PRIMA_CON_RETE)) {
+    const sql = readFileSync(m.percorso, "utf8");
+    for (const p of controllaMigrazione(sql, leggiVivo, vivi.funzioniDelProgetto)) {
+      if (p.rinuncia === null) {
+        righe.push(`  ${m.file} → ${p.nome} perde:`);
+        righe.push(...raccontaSmarrite(p));
+      } else {
+        dichiarate.push(`  ${m.file} → ${p.nome}: rinuncia dichiarata — ${p.rinuncia}`);
+      }
+    }
+    // Il corpo vivo cambia mentre si applica: vedi prova-migra.mjs.
+    for (const f of funzioniRidefinite(sql)) cache.set(f.nome, f.testo);
+  }
+  if (dichiarate.length > 0) {
+    console.log("");
+    console.log("  rinunce dichiarate:");
+    for (const r of dichiarate) console.log(r);
+  }
+  if (righe.length > 0) {
+    fermati(
+      "FERMO: una migrazione riscrive una funzione perdendo per strada qualcosa",
+      "che nel corpo VIVO della produzione c'e'.",
+      "",
+      ...righe,
+      "",
+      "E' successo quattro volte: una funzione riscritta a memoria annulla in",
+      "silenzio cio' che era stato aggiunto dopo — un portiere, il nome di un",
+      "campo che una schermata legge.",
+      "",
+      "Il corpo vivo si prende cosi':   npm run funzione:viva -- <nome>",
+      "",
+      "Se si toglie APPOSTA, nella migrazione va la riga:",
+      "  -- rete-guardie: <nome_funzione> — perche' si toglie"
+    );
+  }
 }
 
 console.log("");
