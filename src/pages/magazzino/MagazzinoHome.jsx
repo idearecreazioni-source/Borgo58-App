@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  listProdottiTroppoPiccoli,
   listScarichiNonRiusciti,
   listStockLevels,
   recordStockConsumption,
@@ -30,6 +31,7 @@ export default function MagazzinoHome() {
   const [consumptionForm, setConsumptionForm] = useState(emptyConsumptionForm);
   const [saving, setSaving] = useState(false);
   const [nonScaricate, setNonScaricate] = useState([]);
+  const [troppoPiccoli, setTroppoPiccoli] = useState([]);
 
   // I due numeri del riepilogo, contati dalle righe che si vedono sotto.
   // `below_threshold` la calcola la vista: si legge la sua risposta invece di
@@ -58,9 +60,11 @@ export default function MagazzinoHome() {
   // guasti VERI — e il riquadro compare solo se la lista non è vuota, cioè
   // spariva esattamente come quando è sceso tutto.
   const caricaNonScaricate = () => leggi(listScarichiNonRiusciti()).then(setNonScaricate);
+  const caricaTroppoPiccoli = () => leggi(listProdottiTroppoPiccoli()).then(setTroppoPiccoli);
   useEffect(() => {
     if (!isTitolare) return;
     caricaNonScaricate();
+    caricaTroppoPiccoli();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTitolare]);
 
@@ -212,15 +216,29 @@ export default function MagazzinoHome() {
             Cosa non è sceso dal magazzino ({nonScaricate.length})
           </h2>
           <p className="testo-sala text-b58-charcoal-soft mt-1">
-            Righe di conti chiusi che la giacenza non ha potuto seguire. Non
-            sono state indovinate: la giacenza qui sotto è più alta del vero di
-            questo tanto.
+            Righe di conti chiusi e di produzioni che la giacenza non ha potuto
+            seguire. Non sono state indovinate: la giacenza qui sotto è più alta
+            del vero di questo tanto.
+          </p>
+          {/* 🔴 IL TAGLIO SI DICHIARA (23/08/2026). Le bevande sono uscite da
+              questo elenco — erano 1.840 righe tutte uguali che seppellivano
+              le tre che contano — ma un elenco che tace su ciò che esclude è
+              la stessa famiglia della risposta più corta che ha l'aria di
+              essere intera. La frase sta qui, dove sta il dubbio. */}
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            Le bevande non compaiono: il magazzino non le segue.
           </p>
           <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto">
             {nonScaricate.map((r) => (
               <li key={r.id} className="testo-sala text-b58-charcoal">
+                {/* 🔴 UNA RIGA PUÒ VENIRE DA DUE POSTI (23/08/2026): un
+                    conto chiuso o una produzione. Fino a stamattina la
+                    schermata le chiamava tutte «conto» e le produzioni
+                    comparivano col tavolo vuoto — invisibili, perché
+                    sepolte sotto 1.840 bevande. */}
                 <span className="text-b58-charcoal-soft">
-                  {formatDate(r.serata ?? r.quando)} · {r.tavolo || "—"} ·{" "}
+                  {formatDate(r.serata ?? r.quando)} ·{" "}
+                  {r.produzione ? `produzione ${r.produzione}` : r.tavolo || "conto senza tavolo"} ·{" "}
                 </span>
                 {r.tipo === "voce_libera" && "voce libera, nessuna ricetta: "}
                 {r.tipo === "ricetta_incompleta" && "ricetta incompleta: "}
@@ -243,10 +261,40 @@ export default function MagazzinoHome() {
                     {" "}
                     —{" "}
                     {r.altri_scesi > 0
-                      ? `il resto di questo conto è sceso (${r.altri_scesi} ingredienti)`
-                      : "di questo conto non è sceso niente"}
+                      ? `il resto è sceso (${r.altri_scesi} ingredienti)`
+                      : "non è sceso nient'altro"}
                   </span>
                 )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 🔴 QUELLO CHE IL MAGAZZINO NON RIESCE A SEGUIRE (23/08/2026).
+          Compare solo quando c'è qualcosa. Serve perché dal 23/08 un pizzico
+          non fa più fallire lo scarico — ed è la cura giusta — ma «non
+          fallisce» e «funziona» sono due cose diverse: senza questa riga, un
+          prodotto uscito dal conteggio sarebbe silenzioso. */}
+      {statoLettura(troppoPiccoli) === "pieno" && (
+        <div className="rounded-xl border border-b58-charcoal/15 bg-b58-parchment px-4 py-3 mb-6">
+          <h2 className="testo-sala font-semibold text-b58-charcoal">
+            Il magazzino non riesce a seguirli ({troppoPiccoli.length})
+          </h2>
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            In qualche piatto ne serve così poco che la giacenza non lo sa
+            contare: non scende, e non scenderà. Puoi toglierli dal magazzino
+            dalla loro scheda nel Ricettario.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {troppoPiccoli.map((p) => (
+              <li key={p.ingredient_id} className="testo-sala text-b58-charcoal">
+                <span className="font-medium">{p.nome}</span>
+                <span className="text-b58-charcoal-soft">
+                  {" "}
+                  — {p.impieghi_ciechi} di {p.in_piatti}{" "}
+                  {p.in_piatti === 1 ? "piatto" : "piatti"}
+                </span>
               </li>
             ))}
           </ul>
@@ -286,17 +334,35 @@ export default function MagazzinoHome() {
                     <tr className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="px-4 py-3 text-b58-charcoal font-medium">
                         {l.ingredient_name}
-                        {l.below_threshold && (
+                        {/* Un prodotto fuori magazzino non è mai «sotto
+                            soglia»: la sua giacenza non scende, quindi il
+                            confronto non vuol dire niente. */}
+                        {l.below_threshold && l.tenuto_in_magazzino !== false && (
                           <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto soglia
                           </span>
                         )}
                       </td>
+                      {/* 🔴 UN NUMERO FERMO NON SI MOSTRA COME GIACENZA
+                          (23/08/2026). Per i prodotti che il magazzino non
+                          segue — le spezie a pizzico — quel numero è quello
+                          dell'ultimo carico e non scenderà mai: mostrarlo
+                          sarebbe informazione di assenza spacciata per
+                          misura. Si dice invece che non lo si sta
+                          seguendo. */}
                       <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {formatQta(l.current_quantity)} {l.unit}
+                        {l.tenuto_in_magazzino === false
+                          ? "fuori magazzino"
+                          : `${formatQta(l.current_quantity)} ${l.unit}`}
                       </td>
+                      {/* Su un prodotto fuori magazzino la soglia non fa
+                          niente — non entra in lista della spesa — e
+                          mostrarla sarebbe una promessa che nessuno
+                          mantiene. */}
                       <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {l.stock_minimum_threshold != null ? `${formatQta(l.stock_minimum_threshold)} ${l.unit}` : "—"}
+                        {l.tenuto_in_magazzino === false || l.stock_minimum_threshold == null
+                          ? "—"
+                          : `${formatQta(l.stock_minimum_threshold)} ${l.unit}`}
                       </td>
                       <td
                         className={`px-4 py-3 ${

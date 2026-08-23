@@ -48,6 +48,7 @@ const emptyForm = {
   // supererebbe mai una soglia, e fa +42% in un anno.
   avvisa_rincari: true,
   alimentare: true,
+  tenuto_in_magazzino: true,
 };
 
 export default function IngredienteForm() {
@@ -102,6 +103,7 @@ export default function IngredienteForm() {
             haccp_notes: ing.haccp_notes ?? "",
             avvisa_rincari: ing.avvisa_rincari !== false,
             alimentare: ing.alimentare !== false,
+            tenuto_in_magazzino: ing.tenuto_in_magazzino !== false,
           });
           // I campi che ha messo la macchina e che nessuno ha ancora
           // guardato. ⚠️ Vuoto NON vuol dire «li ha scritti Alessio»: vuol
@@ -221,6 +223,7 @@ export default function IngredienteForm() {
         haccp_notes: form.haccp_notes || null,
         avvisa_rincari: form.avvisa_rincari,
         alimentare: form.alimentare,
+        tenuto_in_magazzino: form.tenuto_in_magazzino,
       };
 
       if (isEdit) {
@@ -592,6 +595,27 @@ export default function IngredienteForm() {
               <span className="text-xs text-b58-charcoal-soft">
                 (togli la spunta per detersivi, carta, imballaggi: restano sotto controllo prezzi
                 ma fuori dal Ricettario)
+              </span>
+            </label>
+            {/* 🔴 LE SPEZIE A PIZZICO (23/08/2026, decisione di Alessio).
+                Non è una preferenza di comodo: un prodotto che in un piatto
+                pesa meno di un decimo di grammo il magazzino non lo sa
+                scaricare — e prima del 23/08 quel pizzico faceva fallire lo
+                scarico dell'intero tavolo. Togliendo la spunta il gestionale
+                smette di fingere di seguirlo: si compra, il costo resta sulla
+                fattura, la giacenza non si racconta. */}
+            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+              <input
+                type="checkbox"
+                checked={form.tenuto_in_magazzino}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, tenuto_in_magazzino: e.target.checked }))
+                }
+              />
+              Il magazzino lo segue
+              <span className="text-xs text-b58-charcoal-soft">
+                (togli la spunta alle spezie a pizzico: si comprano, ma non si
+                scaricano e non entrano in lista della spesa)
               </span>
             </label>
           </div>

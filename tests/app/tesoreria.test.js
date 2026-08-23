@@ -122,8 +122,13 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
 
     const { data: dopo } = await titolare.rpc("saldo_tesoreria", { p_entity_id: ente });
     // Il patrimonio non cambia: cambia dove sta.
-    expect(Number(dopo[0].contante_atteso)).toBe(cassaPrima - 400);
-    expect(Number(dopo[0].saldo_banca)).toBe(bancaPrima + 400);
+    // ⚠️ `toBeCloseTo` e non `toBe` (23/08/2026): questo confronto passava
+    // finché i saldi erano numeri tondi, e con due mesi di movimenti veri è
+    // diventato rosso su 1893,49 contro 1893,4899999999998 — la virgola
+    // mobile di JavaScript, non un euro fuori posto. *Una prova che passa
+    // perché i numeri erano fortunati non stava misurando la regola.*
+    expect(Number(dopo[0].contante_atteso)).toBeCloseTo(cassaPrima - 400, 2);
+    expect(Number(dopo[0].saldo_banca)).toBeCloseTo(bancaPrima + 400, 2);
   });
 
   it("un versamento non risulta fra i costi", async () => {

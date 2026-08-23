@@ -202,7 +202,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 18 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 19 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -256,6 +256,14 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // riconosce. Il food cost e gli scostamenti in euro restano
       // titolare-only e si RIFIUTANO, non tornano vuoti.
       "da_allineare",
+      // ⚠️ COMPARSA IL 23/08 col blocco dei campi messi dalla macchina, e
+      // **non era stata dichiarata**: la rete l'ha trovata il giorno dopo,
+      // che è precisamente il lavoro per cui esiste. Resta senza portiere
+      // perché quello che dice — quali campi nessuno ha ancora guardato e
+      // su quanti prodotti, con tre nomi d'esempio — è roba che in cucina
+      // si vede comunque aprendo il Ricettario: nessun prezzo, nessun
+      // costo, nessun fornitore.
+      "campi_da_confermare",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

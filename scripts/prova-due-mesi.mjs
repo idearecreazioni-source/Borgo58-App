@@ -809,6 +809,46 @@ export async function costruisciDueMesi(ctx) {
     segna("una prenotazione spostata di data", 1);
   }
 
+  // 🔴 E LE PRENOTAZIONI SI RIDATANO ANCHE NEL «QUANDO SONO ARRIVATE»
+  // (23/08/2026, difetto trovato da una prova diventata rossa).
+  //
+  // `createReservation` scrive `created_at` = adesso, quindi lo scenario
+  // lasciava **262 prenotazioni nate nella stessa ora**. Il form pubblico
+  // ha dall'08/08 un freno anti-abuso — 40 richieste all'ora complessive —
+  // e quel freno scattava: per un'ora dopo ogni ricostruzione **il sito
+  // rifiutava ogni prenotazione vera**, con un messaggio giusto e una
+  // causa invisibile.
+  //
+  // ⚠️ Non è un difetto del gestionale: il freno funziona. È lo scenario
+  // che raccontava una cosa impossibile — nessuno riceve due mesi di
+  // prenotazioni in sessanta secondi — ed è la stessa famiglia delle quote
+  // di pagamento che restavano a oggi.
+  {
+    // La marca delle prenotazioni sta nel NOME del cliente, non nelle note.
+    const { data: daRidatare } = await supabase
+      .from("reservations")
+      .select("id, reservation_date")
+      .like("customer_name", `${MARCA}%`);
+    let spostate = 0;
+    for (const p of daRidatare ?? []) {
+      // Arrivata qualche giorno prima della cena, come succede davvero.
+      const nascita = new Date(`${p.reservation_date}T18:00:00`);
+      nascita.setDate(nascita.getDate() - (2 + Math.floor(rnd() * 8)));
+      // ⚠️ E MAI NEL FUTURO, né in questa stessa ora: le prenotazioni dei
+      // prossimi giorni cadrebbero lì, e sono proprio quelle che fanno
+      // scattare il freno. Una cena di dopodomani prenotata ieri è normale;
+      // prenotata «fra un'ora» no.
+      const limite = new Date(Date.now() - 26 * 60 * 60 * 1000);
+      if (nascita > limite) nascita.setTime(limite.getTime() - Math.floor(rnd() * 6) * 86400000);
+      const u = await supabase
+        .from("reservations")
+        .update({ created_at: nascita.toISOString() })
+        .eq("id", p.id);
+      if (!u.error) spostate += 1;
+    }
+    segna("prenotazioni spostate anche nel «quando sono arrivate»", spostate);
+  }
+
   // -------------------------------------------------------------------
   // 7. I CARICHI SCAGLIONATI — e il motivo per cui esistono
   //

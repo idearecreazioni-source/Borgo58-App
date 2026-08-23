@@ -214,8 +214,15 @@ describe("il magazzino scende chiudendo un conto", () => {
     const caffe = await staff
       .from("order_items")
       .insert({ order_id: conto, free_text_name: "TEST-AUTO caffè", destination: "bar", quantity: 1, unit_price: 1.5, sent_at: new Date().toISOString() });
+    // ⚠️ E una voce libera in CUCINA: senza, la prova non distinguerebbe
+    // «le bevande non si dichiarano» da «le voci libere non si dichiarano
+    // più», e passerebbe verde anche se il filtro tagliasse troppo.
+    const fuoriMenu = await staff
+      .from("order_items")
+      .insert({ order_id: conto, free_text_name: "TEST-AUTO fuori menu", destination: "cucina", quantity: 1, unit_price: 9, sent_at: new Date().toISOString() });
     expect(piatto.error).toBeNull();
     expect(caffe.error).toBeNull();
+    expect(fuoriMenu.error).toBeNull();
   });
 
   it("chiudendo il conto la giacenza scende, e scende dal lotto che scade prima", async () => {
@@ -281,15 +288,23 @@ describe("il magazzino scende chiudendo un conto", () => {
     expect(Number(l.data.quantity_remaining)).toBe(1);
   });
 
-  it("la voce libera non viene indovinata: si dichiara e si conta", async () => {
+  // 🔴 DAL 23/08/2026 LE DUE VOCI LIBERE NON SONO LA STESSA COSA, e questa
+  // prova è diventata rossa da sola quando il comportamento è cambiato —
+  // che è il lavoro per cui esiste. Una riga senza ricetta destinata al
+  // BAR è una bevanda: il magazzino non la segue e dichiararla riempiva
+  // l'elenco di 1.840 righe tutte uguali. Una riga senza ricetta in
+  // CUCINA è un piatto scritto a mano, ed è un buco vero.
+  it("la bevanda non si dichiara, il piatto scritto a mano sì", async () => {
     const a = await titolare
       .from("anomalie_scarico")
       .select("tipo, descrizione")
       .eq("order_id", conto);
     expect(a.error).toBeNull();
     const libere = a.data.filter((r) => r.tipo === "voce_libera");
-    expect(libere).toHaveLength(1);
-    expect(libere[0].descrizione).toContain("caffè");
+    // Il caffè va al bar: fuori.
+    expect(libere.some((r) => r.descrizione?.includes("caffè"))).toBe(false);
+    // Il piatto fuori menu va in cucina: dentro, col suo nome.
+    expect(libere.filter((r) => r.descrizione?.includes("fuori menu"))).toHaveLength(1);
   });
 
   it("lo staff non vede l'elenco di ciò che non è sceso: riceve un rifiuto, non un elenco vuoto", async () => {

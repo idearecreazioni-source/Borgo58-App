@@ -65,7 +65,16 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    2. **le spezie a pizzico le vuoi in magazzino?** Se sì, la strada è
       portare le quantità al milligrammo su tutta la catena.
 
-0-quater. 🔵 **UN BICCHIERE DI VINO NON È UNA VOCE LIBERA SCONOSCIUTA** —
+0-quater. ✅ **CHIUSO IL 23/08** — [le spezie e il vino](consegne/20260823_le_spezie_e_il_vino.md),
+   migrazioni `20260823000003`, `…04` e `…05`, solo sul progetto di prova.
+   Alessio ha deciso di sì: le bevande escono dall'elenco. **Misurato dopo:
+   da 1.843 righe a 3**, e sotto quelle mille righe era nascosto un difetto
+   di due settimane — le anomalie delle **produzioni** comparivano come se
+   fossero conti. Anche le **spezie a pizzico** sono uscite dal magazzino
+   (rovesciamento n. 34). Il testo qui sotto resta come origine della
+   decisione.
+
+0-quater-bis. 🔵 **UN BICCHIERE DI VINO NON È UNA VOCE LIBERA SCONOSCIUTA** —
    trovato costruendo lo scenario a scala vera, **domanda per Alessio**.
 
    Ogni bevanda entra in comanda come **testo** — è quello che fa la sala,

@@ -29,6 +29,13 @@ describe("ho messo di tasca mia: il debito, la spesa, e il rimborso", () => {
   let staff;
   let ente;
   let tagId;
+  // Lo stato di partenza NON è vuoto (23/08/2026): sul progetto di prova
+  // ci sono le anticipazioni vere dello scenario. Questa prova misurava un
+  // valore assoluto — 40 — e con due mesi di vita dentro è diventata rossa
+  // su 459,50. La regola che deve provare è «il saldo cresce di quello che
+  // hai anticipato», e quella si misura come DIFFERENZA.
+  let dovutoPrima = 0;
+  let notePrima = 0;
 
   async function pulisci() {
     await titolare
@@ -55,6 +62,10 @@ describe("ho messo di tasca mia: il debito, la spesa, e il rimborso", () => {
       .select()
       .single();
     tagId = data.id;
+
+    const { data: saldo } = await titolare.rpc("saldo_anticipazioni", { p_entity_id: ente });
+    dovutoPrima = Number(saldo?.[0]?.ti_deve ?? 0);
+    notePrima = Number(saldo?.[0]?.note_aperte ?? 0);
   });
 
   afterAll(async () => {
@@ -107,8 +118,8 @@ describe("ho messo di tasca mia: il debito, la spesa, e il rimborso", () => {
 
   it("la società ti deve quello che hai anticipato", async () => {
     const { data } = await titolare.rpc("saldo_anticipazioni", { p_entity_id: ente });
-    expect(Number(data[0].ti_deve)).toBe(40);
-    expect(Number(data[0].note_aperte)).toBe(1);
+    expect(Number(data[0].ti_deve)).toBeCloseTo(dovutoPrima + 40, 2);
+    expect(Number(data[0].note_aperte)).toBe(notePrima + 1);
     // ⚠️ E dichiara di restare fuori dalla previsione di cassa: una nota
     // aperta non ha una scadenza, il rimborso lo decide lui.
     expect(data[0].avvertenza).toContain("uscite previste");

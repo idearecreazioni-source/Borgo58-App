@@ -85,6 +85,21 @@ export async function recordStockConsumption({ ingredientId, quantity, reason = 
 // bastavano. Solo titolare (il database rifiuta gli altri, non risponde
 // con un elenco vuoto: una schermata vuota direbbe "è andato tutto
 // bene", che qui sarebbe falso).
+// I prodotti che il magazzino non riesce a seguire: in almeno un piatto la
+// loro quantità sta sotto il decimo di grammo che la colonna sa tenere,
+// quindi la giacenza non scende e non scenderà mai.
+//
+// 🔴 Esiste perché senza sarebbe silenzioso (23/08/2026). Dal blocco 1 un
+// pizzico non fa più fallire lo scarico — ed è la cura giusta — ma «non
+// fallisce» e «funziona» sono due cose diverse: senza questo elenco nessuno
+// saprebbe che quel prodotto è uscito dal conteggio, e la decisione di
+// toglierlo dal magazzino non la prenderebbe mai nessuno.
+export async function listProdottiTroppoPiccoli() {
+  const { data, error } = await supabase.rpc("prodotti_troppo_piccoli");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listScarichiNonRiusciti({ dal, al } = {}) {
   const { data, error } = await supabase.rpc("scarichi_non_riusciti", {
     p_dal: dal ?? null,

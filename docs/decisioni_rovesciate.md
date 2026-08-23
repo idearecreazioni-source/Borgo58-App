@@ -1428,3 +1428,34 @@ l'elenco di ciò che non è sceso porta ora il conto, la serata, e distingue
 ⚠️ **Il giorno che esistesse un modo di riprovare lo scarico di un conto
 chiuso, questa scelta va riguardata e non ereditata**: la ragione del 13/08
 tornerebbe intera.
+
+---
+
+## 34 · 23/08/2026 — «ogni riga che il magazzino non ha scaricato si dichiara»
+
+**Cosa era stato deciso, e quando.** Il 13/08, migrazione `20260813000013`:
+*«non si inventa mai uno scarico: voce libera, ricetta vuota, resa non
+indicata → non si toglie niente e lo si dichiara»*. Tutte le voci libere,
+senza distinzione.
+
+**La ragione di allora.** Un buco dichiarato è onesto e uno zero silenzioso
+no. È la stessa regola che regge lo scarto a zero e il «parziale: N conti».
+
+**Cosa si decide adesso** (decisione di Alessio). Le righe destinate al
+**bar** — le bevande — non si dichiarano più, e il fatto che siano escluse
+si scrive nella schermata.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e questo è il
+prezzo che accettiamo.** Una bevanda *è* una riga che il magazzino non ha
+scaricato, e non dichiararla è esattamente ciò che quella regola vietava.
+
+Ma con una sola bevanda in due mesi non si poteva vedere quello che si vede
+adesso: **1.840 righe identiche** che rendono illeggibile l'elenco, e *un
+guardiano che grida sempre si impara a spegnere* — al punto che sotto quelle
+righe erano nascoste tre anomalie vere e un difetto di due settimane (le
+produzioni chiamate «conti»).
+
+Il prezzo si paga in un posto solo — **una frase in schermata invece di
+mille righe** — e il caso che la regola proteggeva davvero, il piatto
+scritto a mano in cucina, **resta dichiarato**: il criterio è
+`destination`, che è un dato del gestionale, non il nome del prodotto.
