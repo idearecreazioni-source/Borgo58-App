@@ -209,6 +209,50 @@ console.log("   fatto");
 // ---------------------------------------------------------------------
 // 3. Le migrazioni, in ordine di data.
 // ---------------------------------------------------------------------
+// 🔴 PRIMA DELLE MIGRAZIONI: LE STATISTICHE DEL CATALOGO.
+//
+// ⚠️ NON E' MANUTENZIONE DI ROUTINE: e' la cura di una mina misurata il
+// 23/08/2026 in produzione, e questo comando e' l'unico posto da cui
+// quella mina puo' saltare di nuovo.
+//
+// **Cosa era successo.** `20260823000006` gira un ciclo che chiede la
+// definizione delle funzioni di `public` per riscriverle:
+//
+//     select p.proname, pg_get_functiondef(p.oid)
+//       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+//      where n.nspname = 'public'
+//        and pg_get_functiondef(p.oid) like '%haccp_receiving_temp%';
+//
+// Sul progetto di prova passava; **in produzione si e' fermata** con
+// *«array_agg is an aggregate function»*. Stessa riga, **due piani
+// diversi**: la' il motore calcolava la definizione di OGNI funzione del
+// catalogo prima di filtrare lo schema, e inciampava su un'aggregata di
+// `pg_catalog` — che una definizione non ce l'ha.
+//
+// 🔴 E si era fermata **a meta'**: colonna gia' rinominata, funzioni non
+// ancora riscritte. Per qualche minuto quattro funzioni del gestionale
+// vero nominavano una colonna che non esisteva piu'.
+//
+// **La cura che ha funzionato**: `analyze` sui due cataloghi. Il piano e'
+// tornato a filtrare prima lo schema, e la migrazione e' passata.
+//
+// ⚠️ IL FILE DELLA 006 NON SI TOCCA (regola di Alessio del 23/08: una
+// migrazione applicata racconta cosa e' successo quel giorno, e
+// correggerla e' una bugia per chi ricostruisce). Quindi la cura sta
+// qui, prima che la mina possa saltare.
+//
+// ⚠️ Se un giorno una ricostruzione si fermasse lo stesso su
+// «is an aggregate function», la risposta e' questa: non e' un dato
+// sbagliato, e' il piano — si rilancia dopo un `analyze`, oppure si
+// aggiunge `and p.prokind = 'f'` **in una migrazione nuova** che
+// riscriva quel giro.
+titolo("Rinfresco le statistiche del catalogo");
+sql(
+  "analyze pg_proc; analyze pg_namespace;",
+  "Il rinfresco delle statistiche del catalogo"
+);
+console.log("   fatto — vedi la nota qui sopra: serve alla 20260823000006");
+
 const migrazioni = readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql")).sort();
 titolo(`Applico ${migrazioni.length} migrazioni`);
 
