@@ -48,6 +48,11 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // verso qualunque RPC del database.
 const OPERAZIONI = new Set([
   // Comande / cassa (attiva dall'09/08/2026)
+  // IL CLIENTE PAGANTE DI UN TAVOLO (23/08/2026). Registrare un cliente
+  // nuovo E attaccarlo al conto sono DUE tabelle: a meta' resterebbe una
+  // scheda che non serve a niente, o un conto che dichiara un cliente
+  // inesistente.
+  "assegna_cliente_conto",
   "close_order_as_discount_gift",
   // Il magazzino scende da solo (13/08/2026): chiudere un conto pagato
   // non è più un update su una riga — tocca conto, lotti, movimenti e le

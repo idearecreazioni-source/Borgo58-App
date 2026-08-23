@@ -39,6 +39,7 @@ import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import ClientePagante from "../../components/ClientePagante";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
 import {
@@ -458,8 +459,19 @@ export default function Sala() {
     [sagome]
   );
   const nomiDelTavolo = prenotazioniDeiTavoli(selezione);
+  // 🔴 CON UN CONTO APERTO IL RIQUADRO PARLA DI CHI PAGA (23/08, blocco 5).
+  //
+  // ⚠️ E FINO A OGGI, CON IL CONTO APERTO, QUESTO RIQUADRO SPARIVA — misurato,
+  // non dedotto: aprendo il tavolo l'unico posto dove compariva ancora il nome
+  // era un paragrafo a **3136 punti dall'alto**, cioè sotto tutto il menu. È
+  // la stessa forma del difetto del 21/08 (i gesti a 1279 punti: «c'erano e
+  // non li trovava nessuno»), ed è il motivo per cui Alessio lo chiama
+  // illeggibile.
+  //
+  // ⚠️ La prenotazione resta scritta sopra quando c'è: chi arriva dice «ho
+  // prenotato a nome tale», e quel nome serve **prima** di sapere chi paga.
   const bancoBar =
-    selezione.length > 0 && nomiDelTavolo.length > 0 ? (
+    order || (selezione.length > 0 && nomiDelTavolo.length > 0) ? (
       <div className="h-full overflow-auto p-1.5">
         {nomiDelTavolo.map((p) => (
           <div key={p.id} className="mb-1.5 last:mb-0">
@@ -470,6 +482,41 @@ export default function Sala() {
             <p className="testo-sala-grande font-semibold text-b58-charcoal leading-tight">{p.nome}</p>
           </div>
         ))}
+        {/* Col conto aperto la prenotazione arriva dal conto, non dalla
+            selezione: la riga «19:30 · 4 · Nome» è quella che il cameriere
+            legge quando il cliente dice «ho prenotato a nome tale», e
+            serve anche dopo aver aperto il tavolo. */}
+        {order?.prenotazione && nomiDelTavolo.length === 0 && (
+          <div className="mb-1.5">
+            <p className="testo-sala text-b58-charcoal-soft leading-none">
+              {order.prenotazione.reservation_time?.slice(0, 5)}
+              {order.prenotazione.party_size ? ` · ${order.prenotazione.party_size}` : ""}
+            </p>
+            <p className="testo-sala-grande font-semibold text-b58-charcoal leading-tight">
+              {order.prenotazione.customer_name}
+            </p>
+          </div>
+        )}
+        {order && (
+          <div
+            className={
+              nomiDelTavolo.length > 0 || order.prenotazione
+                ? "mt-1.5 border-t border-b58-charcoal/10 pt-1.5"
+                : ""
+            }
+          >
+            {/* ⚠️ `reloadOrder` è dichiarato più sotto: si passa una
+                funzione che lo chiama, non il riferimento — letto adesso
+                sarebbe una variabile non ancora inizializzata, e la
+                schermata si spegnerebbe con la sala aperta. */}
+            <ClientePagante
+              order={order}
+              onFatto={() => reloadOrder()}
+              onErrore={setError}
+              compatto
+            />
+          </div>
+        )}
       </div>
     ) : null;
 

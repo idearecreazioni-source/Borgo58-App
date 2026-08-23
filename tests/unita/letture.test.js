@@ -172,6 +172,17 @@ describe("nessuna lettura resta muta", () => {
       // 🔴 E il discriminante è che **la lettura dell'elenco non ha nessun
       // catch**: se fallisce quella, si vede.
       "src/pages/ricettario/SchedeProdotti.jsx",
+      // ⚠️ AGGIUNTO IL 23/08 col cliente pagante del tavolo. Qui non manca
+      // un dato: mancano i **suggerimenti** mentre si scrive un nome. Se
+      // l'anagrafica non risponde, i due campi restano scrivibili e
+      // «Registra» funziona lo stesso — e la difesa vera contro i doppioni
+      // non e' questa lettura ma il database, che riconosce da se' un
+      // numero gia' visto.
+      // 🔴 Il discriminante e' il costo del rumore: una striscia rossa
+      // sopra la sala mentre un cameriere sta scrivendo un nome vale meno
+      // di quello che toglie. Se invece fallisse la SCRITTURA — assegnare
+      // il cliente — l'errore si vede, perche' li' un catch non c'e'.
+      "src/components/ClientePagante.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)

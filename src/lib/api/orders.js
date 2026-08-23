@@ -34,7 +34,7 @@ export async function listOpenOrders() {
 }
 
 const ORDER_SELECT =
-  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes)";
+  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes), cliente:customer_id(id, name, phone)";
 
 // I CONTI CHE NOMINANO QUESTE PRENOTAZIONI — è così che si sa chi è arrivato.
 //
@@ -100,6 +100,33 @@ export async function apriConto(tavoliIds, { deviceId, note, serata } = {}) {
     p_serata: serata || null,
   });
   return esito?.order_id ?? null;
+}
+
+// CHI PAGA QUESTO TAVOLO — 23/08/2026, blocco 5 del mandato del collaudo.
+//
+// 🔴 LA REGOLA È DI ALESSIO, e la parte che conta è il verso: **il tavolo
+// si associa al cliente PAGANTE, che sia quello della prenotazione o no**.
+// Se prenota Tizio e paga Caio, il tavolo va a Caio e la prenotazione
+// resta quello che era. Non è un riflesso: sono due domande diverse con
+// due risposte diverse, e il cliente della prenotazione è solo il valore
+// di partenza che il database mette aprendo il conto.
+//
+// ⚠️ Corridoio e non scrittura diretta: registrare un cliente nuovo E
+// attaccarlo al conto sono due tabelle, e a metà resterebbe una scheda
+// che non serve a niente o un conto che nomina un cliente inesistente.
+//
+// Tre gesti in una funzione sola:
+//   · `clienteId`            → aggancia una scheda che c'è già
+//   · `nome` e/o `telefono`  → la registra al momento, riusando la scheda
+//                              se quel numero è già in anagrafica
+//   · niente                 → stacca (la via d'uscita di chi ha sbagliato)
+export async function assegnaClienteConto(orderId, { clienteId, nome, telefono } = {}) {
+  return eseguiOperazione("assegna_cliente_conto", {
+    p_order_id: orderId,
+    p_customer_id: clienteId || null,
+    p_nome: nome || null,
+    p_telefono: telefono || null,
+  });
 }
 
 // Cambia l'insieme dei tavoli di un conto aperto: è lo «sposta» del
