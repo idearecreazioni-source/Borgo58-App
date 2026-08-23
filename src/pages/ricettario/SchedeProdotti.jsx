@@ -6,14 +6,17 @@ import {
   confermaTutti,
   listAllergeniStimati,
   listProdottiDaCompilare,
+  quantiNeCompila,
 } from "../../lib/api/schedeProdotto";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 
 const NOMI_CAMPI = {
   conservazione: "conservazione",
   durata: "durata",
-  temperatura: "temperatura di ricevimento",
+  temperatura: "temperatura attesa",
   stagionalita: "stagionalità",
+  // Lo scarto non e piu fra i campi che l'assistente compila (23/08):
+  // resta qui perche una riga vecchia potrebbe ancora nominarlo.
   scarto: "percentuale di scarto",
   allergeni: "allergeni",
 };
@@ -26,11 +29,23 @@ export default function SchedeProdotti() {
   const [lavorando, setLavorando] = useState(false);
   const [esito, setEsito] = useState(null);
   const [error, setError] = useState("");
+  // Quanti ne farebbe una premuta sola. Lo dice la funzione online, che e'
+  // dove il tetto vive davvero.
+  const [quanti, setQuanti] = useState(null);
 
   const carica = async () => {
     const [a, b] = await Promise.all([listProdottiDaCompilare(), listAllergeniStimati()]);
     setDaCompilare(a);
     setStimati(b);
+    // ⚠️ SILENZIO MOTIVATO, e la ragione è che qui non manca un dato: manca
+    // una precisazione su un numero che c'è già. Se il conteggio non
+    // risponde, il pulsante mostra il totale delle schede incomplete — cioè
+    // esattamente quello che mostrava fino a stamattina. Non si perde niente
+    // e non si racconta niente di falso: si perde la frase «ne restano N per
+    // il prossimo giro».
+    // ⚠️ E non è la lettura dell'elenco: quella sopra non ha nessun catch, e
+    // se fallisce si vede.
+    setQuanti(await quantiNeCompila().catch(() => null));
     // Le caselle degli allergeni si ricostruiscono da ciò che è appena
     // arrivato dal server, mai sopra una scelta in corso: il 12/08 una
     // ricarica ha cancellato in silenzio il lavoro di Alessio.
@@ -109,8 +124,9 @@ export default function SchedeProdotti() {
       <h1 className="mb-1 mt-2 text-2xl font-semibold">Schede dei prodotti</h1>
       <p className="mb-6 text-sm text-stone-600">
         Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui l&apos;assistente
-        completa il resto: conservazione, durata, temperatura di ricevimento, stagionalità e
-        percentuale di scarto — che serve al costo del piatto.
+        completa il resto: conservazione, durata, temperatura attesa alla consegna,
+        stagionalità e allergeni, dicendo da dove vengono. ⚠️ La percentuale di
+        scarto no: quella dipende da cosa ci si fa, e la scrivi tu.
       </p>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
@@ -139,11 +155,21 @@ export default function SchedeProdotti() {
                 disabled={lavorando}
                 onClick={compila}
               >
-                {lavorando ? "Sto compilando…" : `Compila con l'assistente (${daCompilare.length})`}
+                {lavorando
+                  ? "Sto compilando…"
+                  : `Compila con l'assistente (${quanti?.per_giro ?? daCompilare.length})`}
               </button>
+              {/* 🔴 IL PULSANTE DICEVA UNA COSA FALSA (23/08/2026, reperto
+                  di Alessio): «una chiamata sola per tutti» — e ne compilava
+                  25, perché oltre quel numero la risposta del modello si
+                  troncherebbe e non sarebbe più leggibile. Il tetto c'è per
+                  una ragione; a mancare era che nessuno lo sapesse prima di
+                  premere. */}
               <p className="mt-2 mb-8 text-sm text-stone-500">
-                Una chiamata sola per tutti. Riempie solo i campi vuoti: quello che hai già deciso
-                tu non viene toccato.
+                {quanti && quanti.rimasti > 0
+                  ? `Ne compila ${quanti.per_giro} per volta: dopo questo giro ne restano ${quanti.rimasti}, e si preme di nuovo. `
+                  : "Una chiamata sola per tutti. "}
+                Riempie solo i campi vuoti: quello che hai già deciso tu non viene toccato.
               </p>
             </>
           )}

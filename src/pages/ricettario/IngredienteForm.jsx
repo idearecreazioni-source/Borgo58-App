@@ -65,6 +65,7 @@ export default function IngredienteForm() {
 
   const [priceHistory, setPriceHistory] = useState([]);
   const [daConfermare, setDaConfermare] = useState([]);
+  const [fonti, setFonti] = useState({});
   const [varianti, setVarianti] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [priceNote, setPriceNote] = useState("");
@@ -110,6 +111,7 @@ export default function IngredienteForm() {
           // dire che nessuno li ha messi in dubbio — su un prodotto creato
           // a mano la lista è vuota da sempre.
           setDaConfermare(ing.campi_da_confermare ?? []);
+          setFonti(ing.fonti_campi ?? {});
           setPriceHistory(await listPriceHistory(id));
           // ⚠️ Vuoto si legge «questo prodotto non ha altre versioni», e
           // da lì nasce un doppione in anagrafica — che in magazzino è una
@@ -531,8 +533,22 @@ export default function IngredienteForm() {
               onChange={(e) => setForm((f) => ({ ...f, shelf_life_days: e.target.value }))}
               className={inputClass}
             />
+            {/* 🔴 DA DOVE VIENE (23/08/2026). Stabilire una durata di
+                conservazione è responsabilità di chi la firma, e deve
+                reggersi su linee guida — non essere improvvisata. Il numero
+                non cambia: cambia che porta con sé su cosa si regge, ed è lo
+                stesso principio degli allergeni da confermare. */}
+            {fonti.durata && (
+              <p className="mt-1 text-xs text-b58-charcoal-soft">secondo: {fonti.durata}</p>
+            )}
           </div>
           <div>
+            {/* 🔴 LO SCARTO NON LO PROPONE PIÙ NESSUNO (23/08/2026,
+                decisione di Alessio): il dato vero emerge dalla
+                preparazione — un chilo di alici che diventa un chilo di
+                sugo — e lo stesso ingrediente ha rese diverse a seconda di
+                dove finisce. Un numero inventato entra nel costo di ogni
+                piatto e nessuno lo verifica mai. */}
             <label className={labelClass}>% scarto standard{segnoMacchina("scarto")}</label>
             <input
               type="number"
@@ -696,6 +712,12 @@ export default function IngredienteForm() {
               </button>
             ))}
           </div>
+          {/* Da quale calendario viene, quando l'ha proposta la macchina. */}
+          {fonti.stagionalita && (
+            <p className="mt-1 text-xs text-b58-charcoal-soft">
+              secondo: {fonti.stagionalita}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

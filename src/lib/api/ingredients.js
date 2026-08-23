@@ -66,6 +66,13 @@ export async function createIngredient(payload) {
     // Zero non è ammesso — sarebbe una soglia che non scatta mai, cioè un
     // campo compilato che non fa niente.
     p_stock_minimum_threshold: payload.stock_minimum_threshold ?? null,
+    // 🔴 QUESTE DUE MANCAVANO (23/08/2026), e la casella «È un alimento»
+    // esiste sulla scheda dal 12/08: si vedeva, si toglieva, si salvava
+    // senza errore e non arrivava — ogni prodotto nuovo nasceva alimentare.
+    // È la trappola del 16/08 alla terza ricomparsa: un valore che si vede
+    // nella schermata non è un valore che arriva al database.
+    p_alimentare: payload.alimentare ?? true,
+    p_tenuto_in_magazzino: payload.tenuto_in_magazzino ?? true,
   });
 }
 

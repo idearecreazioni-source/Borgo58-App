@@ -16,6 +16,20 @@ export async function listProdottiDaCompilare() {
 
 // Una chiamata sola per tutti i prodotti: il costo di un giro sta quasi
 // tutto nelle istruzioni, non nei nomi.
+// 🔴 QUANTI NE FAREBBE, PRIMA DI PREMERE (23/08/2026). Il pulsante diceva
+// «una chiamata sola per tutti» e ne compilava 25: il tetto vive nella
+// funzione online, e la schermata non poteva saperlo. Ora glielo chiede —
+// e il numero resta in UN posto solo, invece di essere ricopiato qui dove
+// diverge al primo cambiamento.
+// ⚠️ Non costa: la funzione risponde senza chiamare il modello.
+export async function quantiNeCompila() {
+  return chiamaFunzione(
+    "schede-prodotto",
+    { quanti: true },
+    "contare i prodotti da compilare"
+  );
+}
+
 export async function compilaSchede(ids) {
   return chiamaFunzione(
     "schede-prodotto",

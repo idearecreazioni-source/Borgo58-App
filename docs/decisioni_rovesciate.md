@@ -1459,3 +1459,33 @@ Il prezzo si paga in un posto solo — **una frase in schermata invece di
 mille righe** — e il caso che la regola proteggeva davvero, il piatto
 scritto a mano in cucina, **resta dichiarato**: il criterio è
 `destination`, che è un dato del gestionale, non il nome del prodotto.
+
+---
+
+## 35 · 23/08/2026 — «l'assistente compila anche la percentuale di scarto»
+
+**Cosa era stato deciso, e quando.** Il 13/08, ed era una delle tre cose che
+Alessio aveva chiesto quel giorno, con la sua motivazione: *«con lo scarto a
+zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
+l'errore è enorme. Sono percentuali standard di cucina, il modello le sa»*.
+
+**La ragione di allora.** Vera a metà — ed è la metà che è caduta: le
+percentuali standard esistono, ma sono standard **di una lavorazione**, non
+di un ingrediente.
+
+**Cosa si decide adesso** (decisione di Alessio, 23/08): l'assistente non lo
+propone più. Il campo resta, diventa opzionale, e lo scrive lui quando lo sa.
+La sua ragione: *il dato vero emerge dalla **preparazione** — un chilo di
+alici che diventa un chilo di sugo — e lo stesso ingrediente ha rese diverse
+a seconda di dove finisce.*
+
+**Perché la ragione di allora non vale più.** Perché il problema che
+risolveva — «con lo scarto a zero un piatto sembra costare meno» — **non si
+risolve con un numero inventato: si sposta**. Un 35% plausibile e sbagliato
+entra nel costo di ogni piatto che usa quel prodotto, **sempre nella stessa
+direzione**, e nessuno lo mette mai in dubbio; uno zero almeno si vede.
+
+⚠️ **E la cura vera è già scritta altrove**: il Blocco 5 del mandato
+cumulativo (14/08) toglie il campo del tutto e mette la resa sulla **riga di
+ricetta**, in lordo → netto, misurata dalle produzioni. Questo rovesciamento
+è il passo che smette di riempirlo con una stima nel frattempo.

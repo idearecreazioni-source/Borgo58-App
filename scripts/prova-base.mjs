@@ -73,7 +73,23 @@ const MARCA = "BASE-";
 // esiste anche senza `--scenario`). Vanno nominate lo stesso: da quando la
 // pulizia guarda gli elenchi invece del prefisso, cio' che non e' nominato
 // **resta**, e si accumulerebbe a ogni `--rifai` senza che nessuno lo dica.
-const RESIDUI_COL_PREFISSO = [MARCA + "Piatto di prova", MARCA + "Pomodoro di prova"];
+// 🔴 IL PREFISSO NON SI VEDE PIU' NEI NOMI (23/08/2026, reperto di
+// Alessio: «"BASE-Pomodoro di prova" e' ancora col prefisso»). Era un nome
+// tecnico in mezzo ai prodotti veri, e in una schermata di collaudo un nome
+// tecnico si legge come un errore del gestionale.
+//
+// ⚠️ Ma la pulizia deve continuare a riconoscerli, e li riconosce **per
+// nome esatto** — quindi qui ci sono TUTTE E DUE le forme: quella nuova e
+// quella vecchia, che resta viva finche' esiste anche un solo database dove
+// il prefisso e' stato scritto. E' la stessa regola scritta piu' sotto:
+// *quando si cambia il modo di riconoscere una cosa, il modo vecchio va
+// tenuto in vita dalla parte che PULISCE, non da quella che scrive.*
+const RESIDUI_COL_PREFISSO = [
+  "Piatto di prova",
+  "Pomodoro di prova",
+  MARCA + "Piatto di prova",
+  MARCA + "Pomodoro di prova",
+];
 
 const RICETTE_STATO_BASE = [
   "Alici marinate della casa", "Caponata di melanzane",
@@ -898,7 +914,7 @@ segna("fornitore");
 // copia scritta a mano non avrebbe mai incontrato la differenza.
 const ingredienteNuovo = await createIngredient({
   entity_id: ente,
-  name: `${MARCA}Pomodoro di prova`,
+  name: "Pomodoro di prova",
   category: "verdura",
   unit: "kg",
   current_price: 2.5,
@@ -933,7 +949,7 @@ segna("lotto in magazzino");
 
 // --- La ricetta, con la sua riga ---
 const ricetta = await createRecipe({
-  name: `${MARCA}Piatto di prova`,
+  name: "Piatto di prova",
   category: "primo",
   recipe_type: "piatto_finito",
   portions_yield: 4,

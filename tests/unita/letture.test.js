@@ -162,6 +162,16 @@ describe("nessuna lettura resta muta", () => {
       // tutto questo blocco evita. Se uno scarto nasce, non resta invisibile:
       // si vede in Cassa fra i conti fiscalizzati in ritardo.
       "src/pages/comande/CloseOrderModal.jsx",
+      // ⚠️ AGGIUNTO IL 23/08 col pulsante che smette di mentire. Qui non
+      // manca un dato: manca una **precisazione su un numero che c'è già**.
+      // La schermata chiede alla funzione online quanti prodotti compilerà
+      // in un giro; se quella non risponde, il pulsante mostra il totale
+      // delle schede incomplete — cioè esattamente quello che mostrava
+      // prima. Si perde la frase «ne restano N per il prossimo giro», non
+      // un'informazione.
+      // 🔴 E il discriminante è che **la lettura dell'elenco non ha nessun
+      // catch**: se fallisce quella, si vede.
+      "src/pages/ricettario/SchedeProdotti.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)
