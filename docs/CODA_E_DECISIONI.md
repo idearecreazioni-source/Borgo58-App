@@ -92,6 +92,36 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    La domanda: un vino è una riga del **listino bevande**, non una voce
    sconosciuta scritta a mano. Vuoi che smetta di comparire lì?
 
+0-cinque. 🔵 **L'AVVISO SUL PRODOTTO FERMO, E LE ETICHETTE** — misurati il
+   23/08 e **non costruiti**, come chiedeva il mandato.
+   Referto: [il prodotto fermo e le etichette](referti/20260823_il_prodotto_fermo_e_le_etichette.md).
+
+   **Il prodotto fermo**: cottura e abbattimento **non esistono** (le tabelle
+   HACCP sono sette e nessuna li registra), e soprattutto lo scarico
+   **non ha nessun legame col lotto** — lo scarico e' per ingrediente. E' il
+   pezzo che decide se il lavoro e' **un giorno** (l'avviso guarda
+   l'ingrediente: i dati ci sono tutti) o **una settimana** (guarda il lotto:
+   serve il legame, e va messo prima che si accumulino altri due mesi di
+   scarichi senza).
+   ⚠️ **E oggi l'avviso sarebbe quasi muto per la ragione sbagliata**: solo
+   **4 prodotti su 127** hanno una durata dichiarata. Non si costruisce prima
+   che le durate siano compilate — e' la forma del difetto del 13/08, tutto
+   acceso e muto.
+   🔵 **Domanda aperta**: un prodotto aperto e usato a meta' conta come mosso
+   per sempre, o l'orologio riparte a ogni movimento?
+
+   **Le etichette**: delle sei voci che ci vanno sopra, due ci sono per
+   intero (nome, data di produzione), la scadenza c'e' ma il campo e'
+   facoltativo, il lotto e' un identificativo da 36 caratteri, «chi l'ha
+   preparata» dice sempre lo stesso nome (accesso condiviso), e la
+   **conservazione manca su 123 prodotti su 127**.
+   🔴 **E la scelta dell'apparecchio decide il disegno**: con una
+   etichettatrice **a USB** stampa solo il computer a cui e' attaccata —
+   quindi «chi prepara» dovrebbe andare al computer, cioe' esattamente il
+   passaggio che il gestionale toglie ovunque. **Da chiedere al fornitore
+   PRIMA di comprare**: *«si collega alla rete e accetta un lavoro di stampa
+   da un indirizzo IP senza driver su un computer? Con quale linguaggio?»*
+
 0-bis. 🔴 **IL CENSIMENTO DI QUELLO CHE STA FUORI DALLE SCHERMATE** — deciso
    da Alessio il 22/08/2026, **da fare appena la sessione parallela chiude**.
 
