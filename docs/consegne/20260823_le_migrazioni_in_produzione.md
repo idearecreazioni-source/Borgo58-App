@@ -173,6 +173,60 @@ il gesto funziona davvero là dentro resta da fare con una sua mano.
 
 ---
 
+## Il backup si controlla da sé, e la prova completa no
+
+Sua decisione, con la ragione che vale più della prova: *«un backup che
+diventa lento è un backup che smetto di fare, e quello è il rischio
+peggiore di tutti»*. Quindi `npm run backup` **controlla da sé la copia
+appena fatta** — conta le righe una per una e si ferma dicendo di non
+portarla fuori se non tornano — mentre la prova di ripristino completa
+resta un comando a parte, ricordato nel promemoria di
+`npm run collaudo:stato`.
+
+🔴 **E il collegamento era rotto al primo giro**, trovato perché il
+controllo ha gridato: la cartella si chiama «Backup Borgo 58» e passando
+da `npm run` il percorso **si spezzava sugli spazi** — il controllo
+riceveva «C:\Users\User\Desktop\Backup» e diceva che mancava lo schema.
+Un difetto del collegamento, non della copia; ma se il controllo fosse
+stato più indulgente sarebbe passato per buono.
+
+---
+
+## Gli utenti: la parte che contava di più
+
+🔴 **Il progetto Supabase temporaneo non l'ho fatto**, e la ragione è la
+condizione che aveva posto lui: *verificare prima se costa*. **Non posso
+verificarlo** — il token del CLI vive nel portachiavi di Windows, non in
+un file, e da lì non riesco a chiedere all'API che piano abbia
+l'organizzazione. *«Non lo so» non è «non costa»*, quindi mi sono
+fermato.
+
+**Ma la prova si è potuta fare lo stesso, senza spendere.** Il motivo per
+cui prima non si poteva è che nel database usa-e-getta `auth.users` era
+un moncone scritto da me. Ora `npm run backup` salva anche la **forma
+vera** di quelle tabelle (35 colonne e otto indici) e la prova di
+ripristino la usa.
+
+✅ **4 utenti su 4, tutti con la password, tutti col ruolo ritrovato** —
+compreso quello di Alessio. Zero errori in ogni passaggio.
+
+🔴 **E la prova al contrario ha bocciato il MIO controllo, non la copia.**
+Tolto un utente dal file, il ripristino restava **verde**: confrontava
+quanti utenti erano rientrati con quanti ce n'erano **nello stesso
+file**. *Un confronto di un file con sé stesso non si accorge di niente.*
+
+⚠️ E nessun altro controllo poteva prenderlo: `05_conteggi.txt` conta solo
+le tabelle del gestionale, e gli utenti stanno in `auth`. Adesso il
+backup **dichiara quanti utenti sta salvando** e il controllo del file lo
+confronta — tolto un utente si ferma: *«utenti: nel file 3, dichiarati 4
+— senza tutti gli utenti, dopo un ripristino qualcuno non entra più»*.
+
+⚠️ **Quello che resta fuori**: se il servizio di autenticazione di Supabase
+accetti quelle righe. Qui si prova che il file le contiene tutte e che
+rientrano in tabelle della forma giusta.
+
+---
+
 ## Cosa abbiamo rovesciato
 
 **Niente.** Nessuna decisione è stata cambiata.
@@ -202,4 +256,7 @@ il gesto funziona davvero là dentro resta da fare con una sua mano.
    la mina alle ricostruzioni future.
 4. **L'allarme di prova** in produzione: toglierlo con una migrazione, o
    lasciarlo con la sua etichetta.
+5. **Se e quando provare gli accessi su un progetto Supabase vero**: serve
+   sapere se un terzo progetto costa, e quello lo puoi vedere solo tu dal
+   pannello.
 
