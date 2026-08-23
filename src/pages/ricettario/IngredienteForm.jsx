@@ -10,6 +10,7 @@ import {
   variantiIngrediente,
 } from "../../lib/api/assistente";
 import {
+  confermaCampiProdotto,
   createIngredient,
   getIngredient,
   listPriceHistory,
@@ -62,6 +63,7 @@ export default function IngredienteForm() {
   const [error, setError] = useState("");
 
   const [priceHistory, setPriceHistory] = useState([]);
+  const [daConfermare, setDaConfermare] = useState([]);
   const [varianti, setVarianti] = useState([]);
   const [newPrice, setNewPrice] = useState("");
   const [priceNote, setPriceNote] = useState("");
@@ -101,6 +103,11 @@ export default function IngredienteForm() {
             avvisa_rincari: ing.avvisa_rincari !== false,
             alimentare: ing.alimentare !== false,
           });
+          // I campi che ha messo la macchina e che nessuno ha ancora
+          // guardato. ⚠️ Vuoto NON vuol dire «li ha scritti Alessio»: vuol
+          // dire che nessuno li ha messi in dubbio — su un prodotto creato
+          // a mano la lista è vuota da sempre.
+          setDaConfermare(ing.campi_da_confermare ?? []);
           setPriceHistory(await listPriceHistory(id));
           // ⚠️ Vuoto si legge «questo prodotto non ha altre versioni», e
           // da lì nasce un doppione in anagrafica — che in magazzino è una
@@ -253,6 +260,56 @@ export default function IngredienteForm() {
   if (loading) {
     return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
+
+  // ---------------------------------------------------------------
+  // IL SEGNO «MESSO DALLA MACCHINA» (23/08/2026)
+  //
+  // ⚠️ Sta DENTRO il campo, non in un riquadro in cima: una spiegazione
+  // sopra la schermata si legge il primo giorno e poi diventa arredamento,
+  // e qui il dubbio è su un numero preciso — «questo 18% l'ho detto io o
+  // l'ha indovinato la macchina?».
+  //
+  // ⚠️ E non blocca niente, per decisione di Alessio: è un segno. Il
+  // prodotto si usa, si vende, e il suo piatto va in carta lo stesso.
+  const segnoMacchina = (campo) => {
+    if (!daConfermare.includes(campo)) return null;
+    return (
+      <span className="inline-flex items-center gap-2 ml-2 align-middle">
+        <span className="rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[0.68rem] font-medium">
+          messo dalla macchina
+        </span>
+        <button
+          type="button"
+          className="text-[0.68rem] underline text-b58-charcoal-soft hover:text-b58-charcoal"
+          onClick={async () => {
+            // ⚠️ Si conferma SUBITO, senza aspettare il salvataggio del
+            // modulo: «va bene così» non cambia nessun valore, quindi non
+            // c'è niente da salvare — e legarlo al Salva vorrebbe dire che
+            // chi guarda un campo e poi esce non ha confermato niente.
+            // ⚠️ E SE LA CONFERMA NON RIESCE, SI DICE. Il primo tentativo
+            // inghiottiva il guasto in silenzio, e l'ha preso la prova
+            // automatica delle letture mute: il segnetto sarebbe rimasto lì
+            // senza nessuna spiegazione, e chi preme due volte senza vedere
+            // niente conclude che il pulsante non funziona.
+            //
+            // ⚠️ E la stessa prova, la volta dopo, ha segnalato questo
+            // commento: dentro c'era scritta la forma che vieta, e il
+            // setaccio guarda il testo — non il comportamento. È la lezione
+            // del 22/08 vista da vicino: *un censimento automatico dice dove
+            // guardare, non cosa è vero.*
+            try {
+              setError("");
+              setDaConfermare(await confermaCampiProdotto(id, [campo]));
+            } catch (e) {
+              setError(e.message);
+            }
+          }}
+        >
+          va bene così
+        </button>
+      </span>
+    );
+  };
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -448,7 +505,7 @@ export default function IngredienteForm() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Conservazione</label>
+            <label className={labelClass}>Conservazione{segnoMacchina("conservazione")}</label>
             <select
               value={form.storage_type}
               onChange={(e) => setForm((f) => ({ ...f, storage_type: e.target.value }))}
@@ -463,7 +520,7 @@ export default function IngredienteForm() {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Shelf life (giorni)</label>
+            <label className={labelClass}>Shelf life (giorni){segnoMacchina("durata")}</label>
             <input
               type="number"
               min="0"
@@ -473,7 +530,7 @@ export default function IngredienteForm() {
             />
           </div>
           <div>
-            <label className={labelClass}>% scarto standard</label>
+            <label className={labelClass}>% scarto standard{segnoMacchina("scarto")}</label>
             <input
               type="number"
               min="0"
@@ -540,7 +597,7 @@ export default function IngredienteForm() {
           </div>
 
           <div>
-            <label className={labelClass}>Temperatura ricevimento (HACCP)</label>
+            <label className={labelClass}>Temperatura ricevimento (HACCP){segnoMacchina("temperatura")}</label>
             <input
               value={form.haccp_receiving_temp}
               onChange={(e) =>
@@ -583,7 +640,7 @@ export default function IngredienteForm() {
         </div>
 
         <div>
-          <label className={labelClass}>Stagionalità</label>
+          <label className={labelClass}>Stagionalità{segnoMacchina("stagionalita")}</label>
           <div className="flex flex-wrap gap-2">
             {MONTHS.map((m) => (
               <button

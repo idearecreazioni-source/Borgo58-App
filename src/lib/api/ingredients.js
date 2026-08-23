@@ -119,3 +119,32 @@ export async function deactivateIngredient(id) {
     .eq("id", id);
   if (error) throw error;
 }
+
+// --- I campi messi dalla macchina (23/08/2026) ---
+//
+// L'assistente compila cinque campi di un prodotto nuovo — stagionalità,
+// conservazione, durata, temperatura di ricevimento, percentuale di scarto
+// — e da oggi il database si ricorda **quali**, finché nessuno li guarda.
+//
+// ⚠️ Cambiare un campo lo toglie da solo dalla lista (ci pensa un trigger).
+// Questa funzione serve al caso più frequente, che è l'opposto: la macchina
+// ha indovinato, e si vuole dire «va bene così» **senza** toccare il numero.
+// Senza, l'unico modo per togliere il segno sarebbe scrivere un valore
+// sbagliato e poi rimetterlo.
+export async function confermaCampiProdotto(id, campi) {
+  const { data, error } = await supabase.rpc("conferma_campi_prodotto", {
+    p_ingredient_id: id,
+    p_campi: campi,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Quanti prodotti hanno ancora un campo messo dalla macchina, per campo.
+// ⚠️ È la domanda che serve davvero: non «questo prodotto è da confermare?»
+// ma «quanti piatti stanno usando uno scarto che nessuno ha guardato?».
+export async function listCampiDaConfermare() {
+  const { data, error } = await supabase.rpc("campi_da_confermare");
+  if (error) throw error;
+  return data ?? [];
+}
