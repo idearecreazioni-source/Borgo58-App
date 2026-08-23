@@ -253,3 +253,63 @@ export async function denunciaSaltiCorridoio(installato, urlDelFile) {
     });
   });
 }
+
+/**
+ * 🔴 IL REGISTRO DELLE PROPRIE RIGHE — 23/08/2026, regola di Alessio nata
+ * da un danno vero.
+ *
+ * Uno script di prova ha cancellato «l'ultima riga di `discounts_gifts`»
+ * invece di quella che aveva creato lui, e se n'è andato uno **sconto
+ * vero** dello scenario. L'identificativo c'era: non era suo.
+ *
+ * La regola: *una pulizia cancella SOLO righe di cui conosce
+ * l'identificativo, perché le ha create lei e se l'è segnato. Mai «la più
+ * recente», mai «l'ultima inserita», mai un criterio che potrebbe pescare
+ * un dato vero.*
+ *
+ * ⚠️ QUESTO NON È UN CONTROLLO, È UNA STRADA: `tests/unita/pulizie.test.js`
+ * setaccia le forme grossolane, ma un setaccio sul testo non sa da dove
+ * viene un identificativo passato dentro una variabile. Qui invece la cosa
+ * giusta è **anche la più comoda**, ed è l'unico modo in cui una regola
+ * sopravvive a una giornata lunga.
+ *
+ *   const mie = righeMie(titolare);
+ *   const { data } = await titolare.from("customers").insert({...}).select("id").single();
+ *   mie.segna("customers", data.id);
+ *   ...
+ *   await mie.pulisci();     // cancella SOLO quelle, in ordine inverso
+ *
+ * ⚠️ L'ordine inverso non è un vezzo: le righe figlie sono nate dopo le
+ * madri, e cancellare una madre prima dei figli viene respinto dalle
+ * chiavi esterne.
+ *
+ * ⚠️ E se una cancellazione fallisce NON si tace: si solleva, dicendo
+ * quale riga è rimasta. Una pulizia che fallisce in silenzio lascia dati
+ * di prova in mezzo a quelli veri, ed è la cosa che il §5 punto 8 vieta.
+ */
+export function righeMie(client) {
+  const segnate = [];
+  return {
+    segna(tabella, id) {
+      if (!id) throw new Error(`righeMie: «${tabella}» segnata senza identificativo.`);
+      segnate.push({ tabella, id });
+      return id;
+    },
+    /** Quante righe questa prova sa di aver creato. */
+    quante: () => segnate.length,
+    async pulisci() {
+      const rimaste = [];
+      for (const { tabella, id } of [...segnate].reverse()) {
+        const { error } = await client.from(tabella).delete().eq("id", id);
+        if (error) rimaste.push(`${tabella}/${id}: ${error.message}`);
+      }
+      segnate.length = 0;
+      if (rimaste.length > 0) {
+        throw new Error(
+          "La pulizia non è riuscita a togliere tutto quello che aveva creato:\n  " +
+            rimaste.join("\n  ")
+        );
+      }
+    },
+  };
+}
