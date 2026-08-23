@@ -34,7 +34,7 @@ import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
 import Ordini from "./pages/magazzino/Ordini";
 import Produzioni from "./pages/magazzino/Produzioni";
-import Tracciabilita from "./pages/magazzino/Tracciabilita";
+import Tracciabilita from "./pages/haccp/Tracciabilita";
 import Scadenze from "./pages/magazzino/Scadenze";
 import Fermi from "./pages/magazzino/Fermi";
 import Allineamento from "./pages/magazzino/Allineamento";
@@ -195,7 +195,18 @@ function AppRoutes() {
         <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
         <Route path="/magazzino/ordini" element={<Ordini />} />
         <Route path="/magazzino/produzioni" element={<Produzioni />} />
-        <Route path="/magazzino/tracciabilita" element={<Tracciabilita />} />
+        {/* 🔴 LA TRACCIABILITÀ È PASSATA IN HACCP (23/08/2026, decisione di
+            Alessio del 15/08): è lì che serve, davanti a un'ispezione o a un
+            richiamo, e tenerla in due moduli era la stessa informazione in
+            due posti.
+            ⚠️ L'indirizzo vecchio RIMANDA a quello nuovo invece di sparire:
+            chi ha il collegamento salvato sul tablet non trova una pagina
+            morta. */}
+        <Route path="/haccp/tracciabilita" element={<Tracciabilita />} />
+        <Route
+          path="/magazzino/tracciabilita"
+          element={<Navigate to="/haccp/tracciabilita" replace />}
+        />
         <Route path="/magazzino/scadenze" element={<Scadenze />} />
         <Route path="/magazzino/fermi" element={<Fermi />} />
         <Route path="/magazzino/allineamento" element={<Allineamento />} />

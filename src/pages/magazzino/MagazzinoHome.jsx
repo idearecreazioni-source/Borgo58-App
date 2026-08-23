@@ -151,12 +151,13 @@ export default function MagazzinoHome() {
               Fornitori
             </Link>
           )}
-          <Link
-            to="/magazzino/tracciabilita"
-            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
-          >
-            Tracciabilità
-          </Link>
+          {/* 🔴 «Tracciabilità» NON è più qui (23/08/2026, decisione di
+              Alessio del 15/08): è passata in HACCP, che è il posto dove
+              serve — davanti a un'ispezione o a un richiamo merce. Tenerla
+              in due moduli era la stessa informazione in due posti, e prima
+              o poi due posti si contraddicono.
+              ⚠️ Il vecchio indirizzo rimanda al nuovo, quindi un
+              collegamento salvato sul tablet continua a funzionare. */}
           <Link
             to="/magazzino/scadenze"
             className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"

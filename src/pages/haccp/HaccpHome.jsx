@@ -38,6 +38,15 @@ export default function HaccpHome() {
       title: "Ricevimento merci",
       desc: "Controlli alla consegna: temperatura, imballaggio, conformità.",
     },
+    // ⚠️ Subito dopo il ricevimento, e non è un ordine a caso: i lotti
+    // NASCONO lì. Chi registra una consegna e poi vuole vedere cosa c'è in
+    // casa con quel numero di lotto trova le due cose vicine.
+    {
+      to: "/haccp/tracciabilita",
+      icon: "box",
+      title: "Tracciabilità lotti",
+      desc: "Ogni consegna registrata: fornitore, numero di lotto, scadenza.",
+    },
     {
       to: "/haccp/pulizia",
       icon: "leaf",

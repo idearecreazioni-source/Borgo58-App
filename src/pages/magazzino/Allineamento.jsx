@@ -140,6 +140,19 @@ export default function Allineamento() {
                   </span>
                   <span className="testo-sala text-b58-charcoal-soft whitespace-nowrap">
                     dovrebbe essercene {formatQta(r.atteso)} {r.unita}
+                    {/* 🔴 IL SEGNO CHE LA RIGA SI APRE (23/08/2026). Il campo
+                        per scrivere quanto ce n'è davvero **c'era già** — è
+                        dentro la riga — ma la pagina si apriva con **zero
+                        campi visibili**, e la promessa in cima («scrivi qui
+                        quanto ce n'è davvero») non aveva niente su cui
+                        posarsi. Un gesto che esiste e non si annuncia è un
+                        gesto che nessuno fa.
+                        ⚠️ Il segno non è inventato qui: è la stessa coppia
+                        ▸ / ▾ che l'Agenda e la Posta in arrivo usano già per
+                        le righe che si aprono. */}
+                    <span className="ml-2 text-b58-charcoal-soft/70">
+                      {aperta === r.ingredient_id ? "▾" : "▸"}
+                    </span>
                   </span>
                 </button>
 
