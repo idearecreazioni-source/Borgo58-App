@@ -192,6 +192,16 @@ export default function MagazzinoHome() {
           >
             Lista della spesa
           </Link>
+          {/* ⚠️ ACCANTO ALLA LISTA DELLA SPESA, come chiesto — e sono due
+              cose diverse: quella nasce dalle soglie del magazzino e
+              finisce in un ordine al fornitore, questa è la roba che si
+              compra di persona al supermercato e non tocca niente. */}
+          <Link
+            to="/magazzino/spesa-spicciola"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+          >
+            Spesa spicciola
+          </Link>
           <Link
             to="/magazzino/carico"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"

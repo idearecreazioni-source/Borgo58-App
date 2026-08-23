@@ -32,6 +32,7 @@ import TaskForm from "./pages/agenda/TaskForm";
 import MagazzinoHome from "./pages/magazzino/MagazzinoHome";
 import RegistraCarico from "./pages/magazzino/RegistraCarico";
 import ListaSpesa from "./pages/magazzino/ListaSpesa";
+import SpesaSpicciola from "./pages/magazzino/SpesaSpicciola";
 import Ordini from "./pages/magazzino/Ordini";
 import Produzioni from "./pages/magazzino/Produzioni";
 import Tracciabilita from "./pages/haccp/Tracciabilita";
@@ -193,6 +194,7 @@ function AppRoutes() {
         <Route path="/magazzino" element={<MagazzinoHome />} />
         <Route path="/magazzino/carico" element={<RegistraCarico />} />
         <Route path="/magazzino/lista-spesa" element={<ListaSpesa />} />
+        <Route path="/magazzino/spesa-spicciola" element={<SpesaSpicciola />} />
         <Route path="/magazzino/ordini" element={<Ordini />} />
         <Route path="/magazzino/produzioni" element={<Produzioni />} />
         {/* 🔴 LA TRACCIABILITÀ È PASSATA IN HACCP (23/08/2026, decisione di
