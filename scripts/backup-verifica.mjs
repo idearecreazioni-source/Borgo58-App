@@ -86,6 +86,25 @@ export function righePerTabella(sql) {
   return { per, troncato: dentro, aperti };
 }
 
+/**
+ * Quante righe ha un blocco `COPY` preciso, anche fuori da `public`.
+ * ⚠️ `righePerTabella` guarda solo le tabelle del gestionale: gli utenti
+ * stanno in `auth`, e senza questa non li conterebbe nessuno.
+ */
+export function righeDiCopy(sql, tabella) {
+  let dentro = false;
+  let quante = 0;
+  for (const riga of sql.split(/\r?\n/)) {
+    if (!dentro) {
+      if (riga.startsWith(`COPY ${tabella} (`) && riga.endsWith("FROM stdin;")) dentro = true;
+      continue;
+    }
+    if (riga === "\\.") break;
+    quante += 1;
+  }
+  return quante;
+}
+
 /** I conteggi dichiarati al momento della copia. */
 export function conteggiDichiarati(testo) {
   const per = new Map();
@@ -190,6 +209,36 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     );
   }
   console.log("  ogni tabella ha nel file esattamente le righe che dichiara");
+
+  // --- 3-bis. E GLI UTENTI, che stanno fuori da `public` --------------
+  // 🔴 Senza questo, un utente che non fosse entrato nella copia non lo
+  // direbbe nessuno: `05_conteggi.txt` guarda solo le tabelle del
+  // gestionale, e la prova di ripristino confrontava il file con se'
+  // stesso. Trovato rompendo, non rileggendo.
+  const fAccessi = path.join(cartella, "08_accessi_conteggi.txt");
+  const fUtenti = path.join(cartella, "03_accessi.sql");
+  if (existsSync(fAccessi) && existsSync(fUtenti)) {
+    const dichiarati = conteggiDichiarati(readFileSync(fAccessi, "utf8"));
+    const testo = readFileSync(fUtenti, "utf8");
+    const contati = new Map([
+      ["utenti", righeDiCopy(testo, "auth.users")],
+      ["identita", righeDiCopy(testo, "auth.identities")],
+    ]);
+    const fuoriAccessi = differenze(dichiarati, contati);
+    if (fuoriAccessi.length > 0) {
+      fermati(
+        "Gli ACCESSI nella copia non sono quelli che il database dichiarava.",
+        ...fuoriAccessi.map((d) => `  ${d.tabella}: nel file ${d.trovate}, dichiarati ${d.attese}`),
+        "",
+        "Senza tutti gli utenti, dopo un ripristino qualcuno non entra piu'."
+      );
+    }
+    console.log(
+      `  accessi: ${contati.get("utenti")} utenti e ${contati.get("identita")} identita', come dichiarato`
+    );
+  } else if (existsSync(fUtenti)) {
+    console.log("  ⚠️ questa copia non dichiara quanti utenti conteneva: non si puo' controllarli");
+  }
 
   // --- 4. E il database vero, adesso -----------------------------------
   if (adesso) {

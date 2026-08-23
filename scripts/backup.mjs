@@ -12,6 +12,10 @@
 //   file/           i documenti veri e propri (PDF, foto): NON sono
 //                   dentro il database, e un backup che li dimentica
 //                   sembra completo senza esserlo
+//   08_accessi_conteggi.txt quanti utenti c'erano: senza, nessuno si
+//                   accorgerebbe di un utente che non e' entrato nella copia
+//   07_accessi_forma.sql la forma delle tabelle degli accessi: senza, il
+//                   rientro degli utenti non si puo' nemmeno provare
 //   06_estensioni.sql le estensioni del motore: senza, alcuni vincoli non
 //                   si ricreano e il ripristino non lo dice
 //   05_conteggi.txt quante righe c'era in ogni tabella al momento della
@@ -101,6 +105,23 @@ dump(
 // database che accetta due periodi di ferie sovrapposti sullo stesso
 // dipendente — cioe' una regola sparita in silenzio. E' la famiglia del §8:
 // piu' corto, con l'aria di essere intero.
+// 🔴 LA FORMA DELLE TABELLE DEGLI ACCESSI (23/08/2026).
+//
+// `03_accessi.sql` contiene le RIGHE degli utenti, non le tabelle che le
+// reggono: quelle sono di Supabase e su un progetto nuovo ci sono gia'.
+// Il problema e' che senza la loro forma **non si puo' PROVARE** che gli
+// utenti rientrino — e *«se dopo un ripristino non riesco piu' a entrare
+// nell'app, il backup non mi serve a niente»* (Alessio, 23/08).
+//
+// ⚠️ Sono 35 colonne e otto indici: ricostruirle a mano vuol dire misurare
+// un moncone e chiamarlo prova. Costano pochi kilobyte, e rendono la prova
+// di ripristino capace di rispondere alla domanda che conta di piu'.
+dump(
+  "07_accessi_forma.sql",
+  ["--schema-only", "--no-privileges", "--table=auth.users", "--table=auth.identities"],
+  "La forma delle tabelle degli accessi"
+);
+
 titolo("Le estensioni del motore");
 const estensioni = interroga(
   url,
@@ -118,6 +139,27 @@ writeFileSync(
   "utf8"
 );
 console.log(`   ${estensioni.split("\n").filter(Boolean).length} estensioni`);
+
+// 🔴 E QUANTI UTENTI STA SALVANDO (23/08/2026, seconda versione).
+//
+// ⚠️ Nasce da una prova al contrario che ha bocciato il controllo, non
+// la copia: tolto un utente dal file, la prova di ripristino restava
+// VERDE — perche' confrontava quanti utenti erano rientrati con quanti
+// ce n'erano **nello stesso file**. Un confronto di un file con se'
+// stesso non puo' accorgersi di niente.
+//
+// ⚠️ E `05_conteggi.txt` non poteva coprirli: conta solo le tabelle di
+// `public`, e gli utenti stanno in `auth`. Quindi un file loro, che e'
+// anche il motivo per cui non finiscono dentro quell'altro: chi lo legge
+// si aspetta nomi di tabelle del gestionale.
+titolo("Quanti utenti entrano nella copia");
+const conteggiAccessi = interroga(
+  url,
+  "select 'utenti = ' || (select count(*) from auth.users) || chr(10) ||" +
+    " 'identita = ' || (select count(*) from auth.identities)"
+);
+writeFileSync(path.join(cartella, "08_accessi_conteggi.txt"), conteggiAccessi + "\n", "utf8");
+console.log(`   ${conteggiAccessi.split("\n").join(" · ")}`);
 
 titolo("Conteggio delle righe, tabella per tabella");
 const conteggi = interroga(url, SQL_CONTEGGI);

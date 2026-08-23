@@ -67,11 +67,15 @@ export const DATABASE_DI_PROVA = "ripristino_prova";
  * schema `auth`. Senza, si starebbe misurando l'assenza di Supabase invece
  * della qualita' della copia.
  *
- * ⚠️ `auth.users` qui e' un moncone: ha la chiave e poco altro. Basta a far
- * reggere le chiavi esterne di `user_roles`, **non** a rimettere su gli
- * utenti veri — e infatti il ripristino degli accessi qui non si prova.
- * Su un progetto vero quella tabella e' quella di Supabase, con tutte le
- * sue colonne.
+ * 🔴 E LE TABELLE DEGLI ACCESSI ARRIVANO DALLA COPIA, non da un moncone
+ * scritto qui (23/08, seconda versione). Prima `auth.users` aveva la
+ * chiave e poco altro: bastava a reggere le chiavi esterne, e il rientro
+ * degli utenti **non si poteva nemmeno provare**. Adesso `npm run backup`
+ * salva la loro forma vera (35 colonne e otto indici) in
+ * `07_accessi_forma.sql`, e questa prova la usa.
+ *
+ * ⚠️ Se quel file manca — una copia vecchia — si continua col moncone e lo
+ * si dice: meglio una prova dichiarata parziale che una che tace.
  */
 const PREREQUISITI = `
 do $$
@@ -85,11 +89,6 @@ begin
 end $$;
 create schema if not exists auth;
 create schema if not exists extensions;
-create table if not exists auth.users (
-  id uuid primary key,
-  email text,
-  created_at timestamptz default now()
-);
 create or replace function auth.uid() returns uuid language sql stable as $f$ select null::uuid $f$;
 create or replace function auth.role() returns text language sql stable as $f$ select null::text $f$;
 create or replace function auth.jwt() returns jsonb language sql stable as $f$ select '{}'::jsonb $f$;
@@ -117,6 +116,29 @@ export function leggiConteggi(testo) {
     if (m) per.set(m[1], Number(m[2]));
   }
   return per;
+}
+
+/**
+ * Quante righe contiene un blocco `COPY` di un file, per tabella.
+ *
+ * ⚠️ Serve per gli ACCESSI, che stanno nello schema `auth` e non in
+ * `public`: il conteggio del backup (`05_conteggi.txt`) guarda solo
+ * `public`, quindi gli utenti non ci sono. Senza questo, «4 utenti» era
+ * una riga informativa — e una riga informativa non ferma niente.
+ */
+export function righeDelBlocco(sql, tabella) {
+  const righe = sql.split(/\r?\n/);
+  let dentro = false;
+  let quante = 0;
+  for (const riga of righe) {
+    if (!dentro) {
+      if (riga.startsWith(`COPY ${tabella} (`) && riga.endsWith("FROM stdin;")) dentro = true;
+      continue;
+    }
+    if (riga === "\\.") break;
+    quante += 1;
+  }
+  return quante;
 }
 
 /** Cosa non torna fra quello che c'era e quello che e' tornato su. */
@@ -175,11 +197,23 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("  ruoli e schema auth: pronti");
 
   let problemi = 0;
+  // ⚠️ L'ORDINE E' QUELLO VERO: estensioni, forma degli accessi, forma del
+  // database, UTENTI, e solo alla fine i dati. `user_roles` punta agli
+  // utenti — se arrivassero dopo, le sue righe verrebbero respinte.
+  const conAccessi = existsSync(path.join(cartella, "07_accessi_forma.sql"));
+  if (!conAccessi) {
+    console.log("");
+    console.log("  ⚠️ Questa copia non porta la forma delle tabelle degli accessi:");
+    console.log("     il rientro degli utenti NON viene provato. Rifai il backup.");
+  }
   for (const [file, descrizione] of [
     ["06_estensioni.sql", "le estensioni del motore"],
+    ["07_accessi_forma.sql", "la forma delle tabelle degli accessi"],
     ["01_schema.sql", "la forma del database"],
+    ["03_accessi.sql", "gli utenti che entrano nell'app"],
     ["02_dati.sql", "il contenuto delle tabelle"],
   ]) {
+    if (!conAccessi && (file === "07_accessi_forma.sql" || file === "03_accessi.sql")) continue;
     const percorso = path.join(cartella, file);
     if (!existsSync(percorso)) {
       console.log(`\n— ${descrizione}: MANCA dalla copia (${file})`);
@@ -214,10 +248,50 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const attesi = leggiConteggi(readFileSync(path.join(cartella, "05_conteggi.txt"), "utf8"));
   const diverse = differenzeDiRipristino(attesi, dopo);
 
+  // 🔴 GLI UTENTI SONO LA DOMANDA CHE CONTA DI PIU': *«se dopo un
+  // ripristino non riesco piu' a entrare nell'app, il backup non mi serve
+  // a niente»*. E non basta contarli: si guarda che ognuno abbia ancora la
+  // sua password e che il gestionale gli ritrovi il ruolo — un accesso
+  // senza ruolo entra e non puo' fare niente.
+  // 🔴 GLI UTENTI SONO LA DOMANDA CHE CONTA DI PIU': *«se dopo un
+  // ripristino non riesco piu' a entrare nell'app, il backup non mi serve
+  // a niente»* (Alessio, 23/08). E non basta contarli: si guarda che
+  // ognuno abbia ancora la sua password e che il gestionale gli ritrovi il
+  // ruolo — un accesso senza ruolo entra e non puo' fare niente.
+  //
+  // ⚠️ E il numero atteso si legge DAL FILE, non si scrive qui: un numero
+  // scritto a mano invecchia al primo utente nuovo.
+  let utenti = "non provato (la copia non porta la forma degli accessi)";
+  const mancanti = [];
+  if (conAccessi) {
+    const testoAccessi = readFileSync(path.join(cartella, "03_accessi.sql"), "utf8");
+    const attesiUtenti = righeDelBlocco(testoAccessi, "auth.users");
+    const [tornati, conPassword, conRuolo] = interroga(
+      url,
+      "select (select count(*) from auth.users) || chr(9) ||" +
+        " (select count(*) from auth.users where encrypted_password is not null" +
+        "   and length(encrypted_password) > 20) || chr(9) ||" +
+        " (select count(*) from user_roles r join auth.users u on u.id = r.user_id)"
+    )
+      .trim()
+      .split("\t")
+      .map(Number);
+    utenti = `${tornati} utenti (${attesiUtenti} nella copia) · ${conPassword} con la password · ${conRuolo} col ruolo ritrovato`;
+    if (tornati !== attesiUtenti) {
+      mancanti.push(`gli utenti tornati sono ${tornati}, nella copia sono ${attesiUtenti}`);
+    }
+    if (conPassword !== tornati) {
+      mancanti.push(`${tornati - conPassword} utenti sono tornati SENZA password: non potrebbero entrare`);
+    }
+    if (tornati > 0 && conRuolo === 0) {
+      mancanti.push("nessun utente ritrova il proprio ruolo: entrerebbero senza poter fare niente");
+    }
+  }
   titolo("Com'e' andata");
   const somma = (m) => [...m.values()].reduce((a, b) => a + b, 0);
   console.log(`  tabelle: ${attesi.size} nella copia · ${dopo.size} rimesse su`);
   console.log(`  righe:   ${somma(attesi)} nella copia · ${somma(dopo)} rimesse su`);
+  console.log(`  accessi: ${utenti}`);
 
   // ⚠️ Il database usa-e-getta si butta SEMPRE, anche quando la prova
   // fallisce: lasciarlo li' costerebbe spazio al progetto di prova, e la
@@ -225,15 +299,16 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   interroga(madre, `drop database if exists ${DATABASE_DI_PROVA} with (force);`);
   console.log("  il database usa-e-getta e' stato buttato");
   console.log("");
-  console.log("  ⚠️ NON e' provato il ripristino degli ACCESSI (03_accessi.sql): qui");
-  console.log("     auth.users e' un moncone. Le righe che li nominano tornano su");
-  console.log("     lo stesso perche' i controlli sono spenti, come in un ripristino vero.");
+  console.log("  ⚠️ Quello che resta fuori: se il servizio di autenticazione di");
+  console.log("     Supabase accetti quelle righe. Qui si prova che il file le");
+  console.log("     contiene tutte e che rientrano nelle tabelle della forma giusta.");
 
-  if (diverse.length > 0 || problemi > 0) {
+  if (diverse.length > 0 || problemi > 0 || mancanti.length > 0) {
     fermati(
       "LA COPIA NON BASTEREBBE IN CASO DI GUASTO.",
       ...(diverse.length > 0 ? ["", `Righe che non tornano (${diverse.length}):`, ...diverse.slice(0, 20).map((d) => `  ${d}`)] : []),
       ...(problemi > 0 ? ["", `Errori durante il ripristino: ${problemi} (sopra c'e' quali).`] : []),
+      ...(mancanti.length > 0 ? ["", "Gli ACCESSI non tornano:", ...mancanti.map((m) => `  ${m}`)] : []),
       "",
       "Va sistemata: un backup che non si rimette su e' una speranza, non una copia."
     );
