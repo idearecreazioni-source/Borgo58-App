@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import {
@@ -8,6 +8,7 @@ import {
   ingressiScenario,
 } from "../../lib/api/proiezione";
 import { oggiLocale } from "../../lib/constants";
+import { allineaPaga, allineaTutte, righeDiscordi } from "../../lib/calcoli/pagaPrevisione";
 
 // Costruire una previsione a mano, campo per campo.
 //
@@ -29,6 +30,38 @@ const PARAMETRI_VUOTI = {
   oreGiorno: "8", pressionePersonale: "0",
   ammortamentiAnnui: "0", finanziamentoImporto: "0", finanziamentoTasso: "0", finanziamentoAnni: "0",
 };
+
+// 🔴 LE VOCI CHE UNA LISTA VUOTA FA DIMENTICARE (24/08/2026, richiesta di
+// Alessio dal collaudo). Una previsione a cui manca la TARI o
+// l'assicurazione non sbaglia rumorosamente: risulta **più leggera del
+// vero**, cioè ottimista, che è la direzione peggiore in cui possa
+// sbagliare un piano.
+//
+// ⚠️ NASCONO VUOTE, NON A ZERO, e non è una sfumatura: uno zero scritto
+// vuol dire «questa voce non la pago», il vuoto vuol dire «non l'ho ancora
+// deciso». Al salvataggio si tengono **solo le voci con un importo**: chi
+// non ha i diritti musicali non se li porta dietro per sempre.
+//
+// ⚠️ E si propongono solo su una previsione NUOVA. Riproporle correggendone
+// una già scritta rimetterebbe dentro voci che qualcuno aveva tolto — la
+// stessa forma della sanatoria che si riapplica e riporta indietro una
+// scelta dell'utente (il difetto del giro A del 18/08).
+const COSTI_FISSI_PROPOSTI = [
+  "Affitto",
+  "Utenze",
+  "Assicurazioni",
+  "TARI",
+  "Consulenze",
+  "Canoni e abbonamenti",
+  "Manutenzioni",
+  "Pulizia",
+  "Marketing",
+  "Telefono e internet",
+  "Contributi",
+  "Diritti musicali",
+  "HACCP",
+  "Varie",
+];
 
 const MESE_VUOTO = (m) => ({
   mese: m, serviziSettimana: "", giorniLavorativi: "", giorniPeak: "",
@@ -62,12 +95,25 @@ export default function PrevisioneForm() {
   const [par, setPar] = useState(PARAMETRI_VUOTI);
   const [personale, setPersonale] = useState([]);
   const [extra, setExtra] = useState([]);
-  const [fissi, setFissi] = useState([]);
+  const [fissi, setFissi] = useState(
+    modifica ? [] : COSTI_FISSI_PROPOSTI.map((voce) => ({ voce, euroMese: "" }))
+  );
   const [accessorie, setAccessorie] = useState([]);
   const [mesi, setMesi] = useState(Array.from({ length: 12 }, (_, i) => MESE_VUOTO(i + 1)));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(modifica);
   const [salvando, setSalvando] = useState(false);
+  // 🔴 IL LAVORO SCRITTO E NON SALVATO (24/08/2026). Alessio ha compilato
+  // questa schermata e se l'è ritrovata da rifare: la frase in cima
+  // prometteva che «finché non la chiudi puoi tornarci sopra quante volte
+  // vuoi», e quella promessa vale per una previsione GIA' SALVATA — non
+  // per quello che si sta scrivendo adesso.
+  // ⚠️ Misurato prima di correggere: il salvataggio e la rilettura
+  // funzionano, campo per campo, righe comprese. Non c'era niente da
+  // riparare nel salvataggio; c'era una frase che diceva il falso e
+  // un'uscita che non avvisava.
+  const [sporco, setSporco] = useState(false);
+  const primaVolta = useRef(true);
 
   const carica = useCallback(async () => {
     setEntities(await getEntities());
@@ -113,6 +159,39 @@ export default function PrevisioneForm() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [carica]);
+
+  // Il primo giro è il caricamento, non una modifica di chi scrive: si
+  // consuma e basta. Da lì in poi ogni tocco marca il lavoro da salvare.
+  useEffect(() => {
+    if (loading) return;
+    if (primaVolta.current) {
+      primaVolta.current = false;
+      return;
+    }
+    setSporco(true);
+  }, [loading, nome, anno, tipo, par, personale, extra, fissi, accessorie, mesi]);
+
+  // ⚠️ Copre ricaricare, chiudere e il tasto «indietro» del browser —
+  // che sono le tre strade da cui il lavoro se ne andava senza una parola.
+  // La navigazione dentro il gestionale la trattiene il collegamento qui
+  // sotto: in questo progetto il router non è quello che permette a React
+  // di bloccarla da sé.
+  useEffect(() => {
+    if (!sporco) return;
+    const trattieni = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", trattieni);
+    return () => window.removeEventListener("beforeunload", trattieni);
+  }, [sporco]);
+
+  const lasciare = (e) => {
+    if (!sporco) return;
+    if (!window.confirm("Quello che hai scritto qui non è ancora salvato: se esci adesso lo perdi. Vuoi uscire lo stesso?")) {
+      e.preventDefault();
+    }
+  };
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -184,7 +263,11 @@ export default function PrevisioneForm() {
         extra: extra
           .filter((e) => e.tipo.trim())
           .map((e) => ({ tipo: e.tipo, giornateAnno: num(e.giornateAnno), tariffaGiorno: num(e.tariffaGiorno), pressione: daPercento(e.pressione), daEventi: Boolean(e.daEventi) })),
-        costiFissi: fissi.filter((f) => f.voce.trim()).map((f) => ({ voce: f.voce, euroMese: num(f.euroMese) })),
+        // ⚠️ Solo le voci con un importo scritto: le proposte lasciate in
+        // bianco sono un promemoria, non un costo da zero euro.
+        costiFissi: fissi
+          .filter((f) => f.voce.trim() && String(f.euroMese ?? "").trim() !== "")
+          .map((f) => ({ voce: f.voce, euroMese: num(f.euroMese) })),
         accessorie: accessorie
           .filter((a) => a.linea.trim())
           .map((a) => ({ linea: a.linea, quantita: num(a.quantita), prezzoMedio: num(a.prezzoMedio), costoPercento: daPercento(a.costoPercento), base: a.base })),
@@ -196,6 +279,7 @@ export default function PrevisioneForm() {
       };
 
       const nuovo = modifica ? await aggiornaScenario(id, dati) : await creaScenarioDaFoglio(dati);
+      setSporco(false);
       navigate(`/fiscale/previsioni/${modifica ? id : nuovo}`);
     } catch (e) {
       setError(e.message);
@@ -210,19 +294,46 @@ export default function PrevisioneForm() {
   const riga = (lista, setLista, indice, chiave, valore) =>
     setLista(lista.map((r, i) => (i === indice ? { ...r, [chiave]: valore } : r)));
 
+  // ⚠️ Il personale non passa dal `riga` generico: i suoi due netti si
+  // tengono d'accordo dalle ore del giorno, e comanda l'ultimo toccato.
+  // La regola vive in un posto solo (`src/lib/calcoli/pagaPrevisione.js`)
+  // e ha le sue prove: qui c'è solo il collegamento.
+  const rigaPersonale = (indice, chiave, valore) =>
+    setPersonale(
+      personale.map((r, i) => {
+        if (i !== indice) return r;
+        const aggiornata = { ...r, [chiave]: valore };
+        return chiave === "nettoOrario" || chiave === "nettoGiorno"
+          ? allineaPaga(aggiornata, par.oreGiorno, chiave)
+          : aggiornata;
+      })
+    );
+
+  const cambiaOre = (valore) => {
+    setPar((prec) => ({ ...prec, oreGiorno: valore }));
+    setPersonale((righe) => allineaTutte(righe, valore));
+  };
+
+  // Le righe che si contraddicono: si DICONO, non si correggono di
+  // nascosto. Una previsione scritta prima che le ore esistessero può
+  // averne, e riscriverla da soli cambierebbe il costo del personale di un
+  // piano che qualcuno aveva deciso.
+  const discordi = righeDiscordi(personale, par.oreGiorno);
+
   if (loading) return <p className="text-sm text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale/previsioni" onClick={lasciare} className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Le previsioni
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">
         {modifica ? "Correggi la previsione" : "Costruisci una previsione"}
       </h1>
       <p className="text-sm text-b58-charcoal-soft mb-2">
-        Finché non la chiudi puoi tornarci sopra quante volte vuoi. Si blocca solo quando premi tu
-        «Chiudi questa previsione», dalla sua scheda.
+        {modifica
+          ? "Le correzioni entrano quando premi «Salva le correzioni», in fondo. Finché non chiudi la previsione puoi tornarci sopra quante volte vuoi."
+          : "Quello che scrivi qui entra nel gestionale quando premi «Crea la previsione», in fondo alla schermata: prima di allora non è ancora salvato. Dopo puoi tornarci sopra quante volte vuoi — si blocca solo quando premi tu «Chiudi questa previsione», dalla sua scheda."}
       </p>
       {/* Di quale società è questa previsione: si sceglie nell'elenco, e
           qui si vede — un piano scritto per la società sbagliata non si
@@ -285,8 +396,41 @@ export default function PrevisioneForm() {
           { chiave: "nettoOrario", etichetta: "Netto all'ora €" },
           { chiave: "nettoGiorno", etichetta: "Netto al giorno €" },
         ]}
-        onChange={(i, k, v) => riga(personale, setPersonale, i, k, v)}
-        extra={campo("pressionePersonale", "Tasse e contributi sopra il netto", "%")}
+        onChange={rigaPersonale}
+        extra={
+          <div className="grid grid-cols-2 gap-3">
+            {campo("pressionePersonale", "Tasse e contributi sopra il netto", "%")}
+            {/* 🔴 UNA SOLA PER TUTTA LA PREVISIONE, non una per riga
+                (richiesta di Alessio, 24/08). Prima «netto all'ora» e
+                «netto al giorno» erano due caselle scollegate: 7 €/ora e
+                30 €/giorno passavano senza che niente lo dicesse. */}
+            <div>
+              <label className={labelClass}>
+                Ore lavorate al giorno <span className="text-b58-charcoal-soft/60">ore</span>
+              </label>
+              <input
+                type="number"
+                step="0.25"
+                value={par.oreGiorno}
+                onChange={(e) => cambiaOre(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
+        }
+        sotto2={
+          <>
+            Scrivi il netto all&apos;ora <em>oppure</em> quello al giorno: l&apos;altro lo calcola il
+            gestionale con le ore qui sotto, e comanda sempre l&apos;ultimo che hai toccato.
+            {discordi.length > 0 && (
+              <span className="block mt-1 text-b58-terracotta-dark">
+                {discordi.length === 1 ? "Una riga non torna" : `${discordi.length} righe non tornano`} con le
+                ore del giorno: {discordi.map((i) => personale[i].ruolo || `riga ${i + 1}`).join(", ")}. Tocca
+                uno dei due netti e si riallinea.
+              </span>
+            )}
+          </>
+        }
       />
 
       {/* Extra */}
@@ -309,7 +453,11 @@ export default function PrevisioneForm() {
       {/* Costi fissi */}
       <ListaModificabile
         titolo="I costi fissi"
-        sotto="Affitto, utenze, assicurazioni: tutto ciò che paghi anche a sala vuota."
+        sotto={
+          modifica
+            ? "Tutto ciò che paghi anche a sala vuota."
+            : "Tutto ciò che paghi anche a sala vuota. Le voci qui sotto sono un promemoria: riempi quelle che hai, lascia in bianco quelle che non ti riguardano — le vuote non finiscono nella previsione. Puoi aggiungerne altre."
+        }
         righe={fissi}
         aggiungi={() => setFissi([...fissi, { voce: "", euroMese: "" }])}
         togli={(i) => setFissi(fissi.filter((_, k) => k !== i))}
@@ -391,23 +539,33 @@ export default function PrevisioneForm() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={salva}
-          disabled={salvando}
-          className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-5 py-2.5 disabled:opacity-60"
-        >
-          {salvando ? "Salvo…" : modifica ? "Salva le correzioni" : "Crea la previsione"}
-        </button>
-        <span className="text-xs text-b58-charcoal-soft">
-          Non la chiude: resta modificabile finché non lo decidi tu.
-        </span>
+      <div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={salva}
+            disabled={salvando}
+            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-5 py-2.5 disabled:opacity-60"
+          >
+            {salvando ? "Salvo…" : modifica ? "Salva le correzioni" : "Crea la previsione"}
+          </button>
+          <span className="text-xs text-b58-charcoal-soft">
+            {sporco ? "Non ancora salvata." : "Non la chiude: resta modificabile finché non lo decidi tu."}
+          </span>
+        </div>
+        {/* 🔴 IL RIFIUTO STA ANCHE QUI, sotto il gesto che l'ha causato.
+            Il messaggio in cima alla schermata è a dodici mesi di distanza
+            da questo pulsante: premendo con un campo obbligatorio vuoto non
+            succedeva niente di visibile, e l'istinto è premere di nuovo o
+            andarsene. È la stessa cura del 17/08 in Cassa. */}
+        {error && (
+          <p className="mt-3 text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
+        )}
       </div>
     </div>
   );
 }
 
-function ListaModificabile({ titolo, sotto, righe, colonne, aggiungi, togli, onChange, extra }) {
+function ListaModificabile({ titolo, sotto, sotto2, righe, colonne, aggiungi, togli, onChange, extra }) {
   const cella =
     "w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm text-b58-charcoal focus:outline-none focus:ring-1 focus:ring-b58-terracotta";
   return (
@@ -415,7 +573,8 @@ function ListaModificabile({ titolo, sotto, righe, colonne, aggiungi, togli, onC
       <h2 className="font-display text-lg text-b58-charcoal mb-1">{titolo}</h2>
       <p className="text-xs text-b58-charcoal-soft mb-4">{sotto}</p>
 
-      {extra && <div className="max-w-xs mb-4">{extra}</div>}
+      {extra && <div className="max-w-md mb-3">{extra}</div>}
+      {sotto2 && <p className="text-xs text-b58-charcoal-soft mb-4">{sotto2}</p>}
 
       {righe.length === 0 ? (
         <p className="text-xs text-b58-charcoal-soft/60 mb-3">Ancora niente.</p>

@@ -126,8 +126,14 @@ export default function Previsioni() {
             immaginavo dei campi da riempire»* — e poi nessun collegamento la
             raggiungeva. Il caricamento del foglio, che è la scorciatoia, era
             l'unica strada. */}
+        {/* ⚠️ LA SOCIETA' SCELTA VIAGGIA COL COLLEGAMENTO. Fino al 24/08
+            questo pulsante non la passava e quello nel riquadro sotto sì:
+            togliendo il riquadro (erano due porte per la stessa stanza)
+            senza portarsi dietro questo pezzo, si sarebbe guardato
+            l'elenco dell'agricola e scritto nella S.r.l.s. — e un piano
+            scritto per la società sbagliata non si nota da nessun numero. */}
         <Link
-          to="/fiscale/previsioni/nuova"
+          to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
           className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
         >
           + Scrivi una previsione
@@ -143,6 +149,14 @@ export default function Previsioni() {
           </select>
         )}
       </div>
+      {/* La riga che spiega cosa si compila: veniva dal riquadro
+          «Costruiscine una», tolto il 24/08 perché faceva la stessa cosa
+          del pulsante qui sopra. Il riquadro se n'è andato, la spiegazione
+          no — era l'unico posto dove si leggeva cosa c'è dentro. */}
+      <p className="testo-sala text-b58-charcoal-soft mb-2">
+        Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi, e
+        mese per mese quanta gente ti aspetti.
+      </p>
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         Una previsione chiusa non si ritocca mai più: se cambia qualcosa se ne fa una nuova, e le due
         restano confrontabili. È l&apos;unico modo perché fra un anno si possa dire com&apos;era andata
@@ -152,23 +166,6 @@ export default function Previsioni() {
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
-
-      {/* --- Costruirla a mano: la strada normale --- */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Costruiscine una</h2>
-          <p className="testo-sala text-b58-charcoal-soft">
-            Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi,
-            e mese per mese quanta gente ti aspetti.
-          </p>
-        </div>
-        <Link
-          to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
-          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  shrink-0"
-        >
-          + Nuova previsione
-        </Link>
-      </div>
 
       {/* --- Caricare il foglio: la scorciatoia --- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
