@@ -31,6 +31,50 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
+0-ter. 🔴 **UN PIZZICO DI CANNELLA FERMA LO SCARICO DI TUTTO IL TAVOLO** —
+   misurato la notte del 23/08, **non corretto per decisione di Alessio**
+   («è un difetto del gestionale, e serio: scrivilo in un referto e
+   lascialo lì per domani»).
+   Referto: [`referti/20260823_un_pizzico_di_cannella.md`](referti/20260823_un_pizzico_di_cannella.md).
+
+   **Quanto è grosso**: a scala vera, **149 conti chiusi su 346 — il 43% —
+   non fanno scendere il magazzino di un grammo**. Un ingrediente che vale
+   trentasette milligrammi (la cannella che tocca a 18 g di frolla) non è
+   rappresentabile in una colonna a quattro decimali, il vincolo
+   `quantity > 0` respinge la riga, e il rifiuto si porta via **tutto** lo
+   scarico del conto: il pesce, la carne, il costo della cena.
+
+   ⚠️ **E rende illeggibile il numero più importante del collaudo**: il food
+   cost calcolato su tutti i conti è **9,3%**, quello sui conti che hanno
+   scaricato è **22,6%**. Il primo è assurdo, il secondo è normale.
+
+   **La cura è scritta nel referto e non applicata.** Restano **due domande
+   per Alessio**, e sono decisioni di prodotto:
+   1. se il magazzino non scende per un tavolo, vuoi che **non scenda
+      niente** e resti da rifare, o che **scenda quello che si può** e ti
+      venga detto cosa manca? (oggi è la prima, ma *nessuna schermata offre
+      di riprovare* — misurato);
+   2. **le spezie a pizzico le vuoi in magazzino?** Se sì, la strada è
+      portare le quantità al milligrammo su tutta la catena.
+
+0-quater. 🔵 **UN BICCHIERE DI VINO NON È UNA VOCE LIBERA SCONOSCIUTA** —
+   trovato costruendo lo scenario a scala vera, **domanda per Alessio**.
+
+   Ogni bevanda entra in comanda come **testo** — è quello che fa la sala,
+   che scrive «Grillo · calice» — e una riga senza ricetta il
+   magazzino non la sa scaricare. Risultato misurato su due mesi veri:
+   **1.031 righe** in *Magazzino → «Cosa non è sceso dal magazzino»*, tutte
+   «voce libera», tutte bevande.
+
+   ⚠️ **Non è un difetto dello scenario: è come si comporta il gestionale**,
+   e con una sola bevanda in due mesi non si poteva vedere. Ma un elenco di
+   mille righe che dicono tutte la stessa cosa **è un guardiano che grida
+   sempre**, e quelli si imparano a spegnere — insieme alle righe che invece
+   contano (le ricette incomplete, le giacenze che non bastavano).
+
+   La domanda: un vino è una riga del **listino bevande**, non una voce
+   sconosciuta scritta a mano. Vuoi che smetta di comparire lì?
+
 0-bis. 🔴 **IL CENSIMENTO DI QUELLO CHE STA FUORI DALLE SCHERMATE** — deciso
    da Alessio il 22/08/2026, **da fare appena la sessione parallela chiude**.
 

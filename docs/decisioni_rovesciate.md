@@ -1334,3 +1334,62 @@ uscito — è lui che ha il foglio in mano — e toglierla vorrebbe dire che non
 se ne accorge nessuno. Al posto del pulsante c'è la riga che dice cosa fare:
 *un rifiuto senza gesto d'uscita è un vicolo cieco*, e qui il rifiuto non
 sarebbe nemmeno visibile.
+
+---
+
+## 31 · 23/08/2026 — «lo scenario è un quinto del vero, e va dichiarato»
+
+**Cosa era stato deciso, e quando.** Il 22/08, costruendo i due mesi finti:
+*«un'osteria da 34 coperti fa 150-200 conti al mese; questi due mesi ne hanno
+~30 ciascuno, cioè un quinto. I totali in euro sono quindi bassi rispetto al
+piano, e lo scostamento risulta negativo — non è un difetto del calcolo, è la
+taglia dello scenario»*.
+
+**La ragione di allora.** Misurata, non stimata: un conto completo costava
+**1,58 secondi** col cronometro, 150 conti sarebbero stati quattro minuti, e
+*un comando da quattro minuti si smette di rilanciare* — proprio quando
+serve, cioè quando il collaudo ha rotto qualcosa.
+
+**Cosa si decide adesso.** Decisione di Alessio: *«lo scenario deve
+rispecchiare veramente due mesi di attività senza eccezioni. I dati devono
+essere completi e mai, MAI carenti in nessuno degli aspetti che riguardano
+ogni singolo settore dell'app e dell'attività»*. I conti sono **343** su 52
+serate, e il comando dura **35 minuti**.
+
+**Perché la ragione di allora non vale più.** Perché **dichiarare una carenza
+non la rende innocua**. Una nota a piè di pagina non cambia il fatto che ogni
+numero che ne discende resta inutilizzabile per giudicare il gestionale: lo
+scontrino medio, il food cost, lo scostamento della Proiezione erano tutti
+sbagliati insieme, e nessuno di loro poteva mostrare un problema.
+
+⚠️ **Il costo era vero, ed è stato pagato da un'altra parte.** Non si
+rigenera più a ogni giro: si genera una volta e si **ripristina da copia** —
+4 minuti e 25 secondi invece di 35, misurati. *La ragione di allora non era
+sbagliata: era una cura al sintomo, e la cura vera costava un comando in
+più.*
+
+---
+
+## 32 · 23/08/2026 — «la marca dei conti si scrive nell'aggiornamento che li ridata»
+
+**Cosa era stato deciso, e quando.** Il 22/08, correggendo l'accumulo dei
+conti dello scenario (220 invece di 55): *«la marca ora si scrive dentro
+l'aggiornamento che già ridata i conti — zero chiamate in più»*.
+
+**La ragione di allora.** Buona: risparmiare una chiamata al database per
+ognuno dei conti, che a quella scala erano già cinquantadue.
+
+**Cosa si decide adesso.** La marca si scrive **all'apertura del conto**,
+cioè prima di qualunque altra cosa.
+
+**Perché la ragione di allora non vale più.** Perché il risparmio c'è ancora
+— non è una chiamata in più, è un campo in più sulla stessa — mentre il
+prezzo si è visto stanotte: una costruzione interrotta a metà (o due lanciate
+insieme) lascia **conti senza marca, che nessuna pulizia può più
+riconoscere**. Ne sono rimasti 32, con un tavolo aperto che ha fatto fallire
+il comando successivo con un messaggio giusto e fuorviante.
+
+⚠️ **La forma generale, che vale oltre i conti**: *ciò che nasce senza il
+segno con cui verrà cercato è già orfano nel momento in cui nasce.* È la
+stessa cosa dei tredici ingredienti col vecchio prefisso (22/08), vista da un
+altro lato.
