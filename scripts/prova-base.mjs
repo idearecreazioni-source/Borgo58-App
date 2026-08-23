@@ -1036,12 +1036,25 @@ segna("dispositivo di sala");
 // numero plausibile in un database di prova è comunque un numero che
 // nessuno ha deciso. Servono solo perché il motore fiscale abbia da
 // masticare qualcosa.
+//
+// 🔴 E SI SCRIVONO IN PUNTI PERCENTUALI, NON IN FRAZIONE (24/08/2026).
+// Fino a oggi qui c'era `iresRate: 0.24, irapRate: 0.039,
+// accontoPercento: 1, accontoPrimaRataPercento: 0.4` — quattro campi
+// nell'unità sbagliata. `calcola_imposte()` divide per 100, quindi
+// l'aliquota effettiva era lo 0,28% invece del 27,9%: **tutte le imposte
+// del gestionale di prova erano cento volte più basse del vero**, su ogni
+// schermata che le mostra, e non lo diceva nessun errore.
+// ⚠️ In `fiscal_settings` TUTTE le percentuali stanno in punti (lo
+// dichiarano i valori predefiniti delle colonne: 24.0, 3.9, 100, 40, 20,
+// 1.5); altrove nello stesso database stanno in frazione
+// (`food_cost_percento` vale 0.2500). È da lì che nasce la confusione, ed
+// è per questo che adesso il database respinge un'aliquota in frazione.
 await upsertFiscalSettings(ente, {
   annualRevenueEstimate: 250000,
-  iresRate: 0.24,
-  irapRate: 0.039,
-  accontoPercento: 1,
-  accontoPrimaRataPercento: 0.4,
+  iresRate: 24,
+  irapRate: 3.9,
+  accontoPercento: 100,
+  accontoPrimaRataPercento: 40,
   accontoSogliaMinima: 51.65,
   primaScadenzaMese: 6,
   primaScadenzaGiorno: 30,
@@ -1656,7 +1669,14 @@ if (scenario) {
       { voce: "Commercialista", euroMese: 250 },
       { voce: "Assicurazioni", euroMese: 78 },
     ],
-    accessorie: [{ linea: "Aperitivi", quantita: 1200, prezzoMedio: 7, costoPercento: 0.22, base: "per_giorno" }],
+    // ⚠️ «Quantità» qui è AL GIORNO, non all'anno: la formula la
+    // moltiplica per le giornate di apertura del mese. Fino al 24/08 qui
+    // c'era 1200 — milleduecento aperitivi al giorno in un locale da 34
+    // coperti: 2,6 milioni di euro l'anno, l'88% dei ricavi della
+    // previsione di collaudo, e un EBITDA al 73% dei ricavi che in un
+    // ristorante non esiste. Un dato finto dev'essere PLAUSIBILE, o il
+    // collaudo giudica le schermate su numeri che non somigliano al vero.
+    accessorie: [{ linea: "Aperitivi", quantita: 12, prezzoMedio: 7, costoPercento: 0.22, base: "per_giorno" }],
     mesi,
     controlli: [],
   });

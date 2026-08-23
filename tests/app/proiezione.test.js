@@ -167,6 +167,71 @@ describe("la rotta economica: riservata, congelata, con un solo motore fiscale",
     expect(r.avvertenza).toMatch(/IRAP/);
   });
 
+  // 🔴 LA PROVA QUI SOPRA NON DISCRIMINA L'UNITA', ed e' il motivo per cui
+  // il difetto del 24/08 le e' passato davanti per giorni: su un imponibile
+  // di 10.000, `ires = aliquota x 100` e' vero **qualunque sia l'aliquota**
+  // — anche 0,24 al posto di 24. E' una tautologia travestita da controllo.
+  //
+  // Il difetto: `fiscal_settings` teneva le aliquote in FRAZIONE mentre
+  // `calcola_imposte()` le legge in PUNTI, quindi tutte le imposte del
+  // gestionale erano cento volte piu' basse del vero, **senza nessun
+  // errore** e sempre nella stessa direzione. La radice resta: nello
+  // stesso database una percentuale si scrive in due modi (qui in punti,
+  // in `scenari_proiezione` in frazione).
+  //
+  // ⚠️ QUESTA PROVA NON SCRIVE MAI CON SUCCESSO, quindi non ha niente da
+  // ripulire: chiede al database di accettare un'aliquota in frazione su
+  // un'entita' che non ha parametri, e pretende un rifiuto.
+  it("un'aliquota scritta in frazione viene respinta dal database", async () => {
+    const enti = await titolare.from("entities").select("id").order("created_at");
+    expect(enti.error).toBeNull();
+    const senzaParametri = [];
+    for (const e of enti.data ?? []) {
+      const q = await titolare.from("fiscal_settings").select("entity_id").eq("entity_id", e.id).maybeSingle();
+      if (!q.data) senzaParametri.push(e.id);
+    }
+    // ⚠️ Se tutte le entita' hanno gia' i parametri, la prova NON si
+    // inventa una scrittura sulla riga vera: lo dichiara e passa oltre.
+    if (senzaParametri.length === 0) {
+      expect(senzaParametri.length).toBe(0);
+      return;
+    }
+
+    const esito = await titolare.from("fiscal_settings").insert({
+      entity_id: senzaParametri[0],
+      ires_rate: 0.24,
+      irap_rate: 0.039,
+    });
+    expect(esito.error, "il database ha accettato un'aliquota in frazione: il vincolo non morde").not.toBeNull();
+    expect(esito.error.message).toMatch(/aliquote_in_punti/);
+
+    // E la riga non e' nata: un rifiuto che lascia dietro di se' la riga
+    // rifiutata non e' un rifiuto.
+    // ⚠️ Si cancella PRIMA di misurare, e solo la riga di cui questa prova
+    // conosce l'identificativo (regola del 23/08): il giorno in cui il
+    // vincolo non morde, l'insert riesce — e una prova che scopre un buco
+    // non deve anche lasciarci dentro il proprio rifiuto.
+    await titolare.from("fiscal_settings").delete().eq("entity_id", senzaParametri[0]);
+    const dopo = await titolare.from("fiscal_settings").select("entity_id").eq("entity_id", senzaParametri[0]);
+    expect(dopo.data ?? []).toHaveLength(0);
+  });
+
+  // Il verso opposto, letto e non scritto: cio' che c'e' gia' e' in punti.
+  it("le aliquote gia' scritte sono in punti percentuali, non in frazione", async () => {
+    const { data, error } = await titolare
+      .from("fiscal_settings")
+      .select("entity_id, ires_rate, irap_rate, acconto_percento, acconto_prima_rata_percento");
+    expect(error).toBeNull();
+    // ⚠️ PROPRIETA', non quantita': su un database sano ma senza parametri
+    // fiscali questa prova deve restare verde, non diventare rossa.
+    for (const r of data ?? []) {
+      for (const campo of ["ires_rate", "irap_rate", "acconto_percento", "acconto_prima_rata_percento"]) {
+        const v = Number(r[campo]);
+        expect(v === 0 || v >= 1, `${campo} vale ${v}: e' una percentuale scritta in frazione`).toBe(true);
+      }
+    }
+  });
+
   it("lo staff non può calcolare imposte né chiudere un mese", async () => {
     const imposte = await staff.rpc("calcola_imposte", {
       p_entity_id: ente, p_imponibile: 10000, p_costo_lavoro_incrementale: 0,
