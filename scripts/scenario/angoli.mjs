@@ -385,20 +385,39 @@ export async function costruisciFiscale(ctx) {
   // `fiscal_tools` li tiene chiusi (deduzione, credito_imposta, bando,
   // incentivo — attivo, scaduto, abolito, da_verificare). Inventarne altri
   // avrebbe fatto fallire il blocco a meta', lasciando il catalogo vuoto.
+  //
+  // 🔴 DESCRIZIONE E APPLICABILITA' SONO DUE COSE DIVERSE (24/08/2026).
+  // Fino a oggi qui c'era `applicability: descrizione`: lo stesso identico
+  // testo nei due campi, su tutte e cinque le voci. In schermata ogni
+  // strumento ripeteva due volte la stessa frase, e sembrava un difetto
+  // della schermata — che invece stampa correttamente due campi diversi.
+  // ⚠️ E i testi che c'erano erano tutti CONDIZIONI («applicabile sui
+  // dipendenti a tempo indeterminato»), non descrizioni: mancava proprio
+  // la meta' che dice cos'e' lo strumento.
   const STRUMENTI = [
-    ["Credito d'imposta beni strumentali 4.0", "credito_imposta", "da valutare con Laura sull'attrezzatura da acquistare", "da_verificare", false],
-    ["Maxi-deduzione nuove assunzioni", "deduzione", "applicabile dal primo assunto a tempo indeterminato", "da_verificare", false],
-    ["Deduzione IRAP cuneo fiscale", "deduzione", "applicabile sui dipendenti a tempo indeterminato", "attivo", true],
-    ["Bando regionale ristorazione", "bando", "sportello chiuso a maggio, riaprira' in autunno", "scaduto", false],
-    ["Incentivo assunzione under 35", "incentivo", "utilizzabile su Giada, verificare i requisiti", "da_verificare", false],
+    ["Credito d'imposta beni strumentali 4.0", "credito_imposta",
+      "Credito d'imposta sull'acquisto di attrezzature nuove interconnesse",
+      "da valutare con Laura sull'attrezzatura da acquistare", "da_verificare", false],
+    ["Maxi-deduzione nuove assunzioni", "deduzione",
+      "Maggiorazione del costo del lavoro deducibile per le assunzioni stabili",
+      "applicabile dal primo assunto a tempo indeterminato", "da_verificare", false],
+    ["Deduzione IRAP cuneo fiscale", "deduzione",
+      "Deduzione dalla base IRAP del costo dei dipendenti stabili",
+      "applicabile sui dipendenti a tempo indeterminato", "attivo", true],
+    ["Bando regionale ristorazione", "bando",
+      "Contributo regionale a fondo perduto per l'avvio di attivita' di ristorazione",
+      "sportello chiuso a maggio, riaprira' in autunno", "scaduto", false],
+    ["Incentivo assunzione under 35", "incentivo",
+      "Sgravio contributivo per l'assunzione di lavoratori sotto i 35 anni",
+      "utilizzabile su Giada, verificare i requisiti", "da_verificare", false],
   ];
   let strumenti = 0;
-  for (const [nome, categoria, descrizione, stato, inUso] of STRUMENTI) {
+  for (const [nome, categoria, descrizione, applicabilita, stato, inUso] of STRUMENTI) {
     await createFiscalTool({
       name: `${MARCA}${nome}`,
       category: categoria,
       description: descrizione,
-      applicability: descrizione,
+      applicability: applicabilita,
       status: stato,
       normative_reference: "da confermare con la commercialista",
       in_use: inUso,

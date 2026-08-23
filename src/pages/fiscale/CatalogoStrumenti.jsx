@@ -239,7 +239,16 @@ export default function CatalogoStrumenti() {
                     )}
                   </div>
                   {t.description && <p className="text-sm text-b58-charcoal-soft mt-1">{t.description}</p>}
-                  {t.applicability && (
+                  {/* ⚠️ SE I DUE TESTI DICONO LA STESSA COSA, SE NE MOSTRA
+                      UNO SOLO (24/08/2026). Sono due campi distinti e la
+                      schermata li stampava tutti e due correttamente: a
+                      ripetersi erano i DATI, riempiti con la stessa
+                      stringa. La causa è corretta dove stava, ma il
+                      catalogo lo compila Alessio a mano — e il giorno che
+                      incolla la stessa frase nei due campi, ripeterla non
+                      aggiunge niente. *Se un pezzo di schermata si
+                      ripete, quasi sempre ne basta uno.* */}
+                  {t.applicability && t.applicability.trim() !== (t.description ?? "").trim() && (
                     <p className="text-xs text-b58-charcoal-soft/80 mt-1">Applicabilità: {t.applicability}</p>
                   )}
                   <p className="text-[11px] text-b58-charcoal-soft/70 mt-1">
