@@ -27,7 +27,8 @@
     "collaudo:stato": "node scripts/collaudo-stato.mjs",
     "deposito:orfani": "node scripts/deposito-orfani.mjs",
     "prova:copia": "node scripts/prova-copia.mjs",
-    "prova:rimetti": "node scripts/prova-copia.mjs --rimetti"
+    "prova:rimetti": "node scripts/prova-copia.mjs --rimetti",
+    "backup:verifica": "node scripts/backup-verifica.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
