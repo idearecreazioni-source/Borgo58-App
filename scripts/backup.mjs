@@ -218,6 +218,37 @@ if (fattoZip.ok && existsSync(zip)) {
   if (fattoZip.uscita) console.log("   " + fattoZip.uscita.trim().split("\n")[0]);
 }
 
+// ---------------------------------------------------------------------
+// E SI CONTROLLA DA SE' — chiesto da Alessio il 23/08.
+// ---------------------------------------------------------------------
+// ⚠️ Il controllo del FILE, non il ripristino: legge la copia appena
+// fatta e conta le righe una per una, confrontandole con quelle che il
+// database dichiarava. Costa un istante.
+//
+// 🔴 LA PROVA DI RIPRISTINO COMPLETA NON STA QUI, ed e' una sua
+// decisione con una ragione che vale piu' della prova: *«un backup che
+// diventa lento e' un backup che smetto di fare, e quello e' il rischio
+// peggiore di tutti»*. Resta `npm run backup:ripristina`, da lanciare
+// ogni tanto e prima dei momenti importanti.
+titolo("Controllo la copia appena fatta");
+// ⚠️ SI CHIAMA NODE DIRETTAMENTE, non `npm run`: la cartella delle copie
+// si chiama «Backup Borgo 58» e passando da npm il percorso **si spezza
+// sugli spazi** — il controllo riceveva «C:\\Users\\User\\Desktop\\Backup» e
+// diceva che nella copia mancava lo schema. Trovato perche' il controllo
+// ha gridato: un difetto del collegamento, non della copia.
+const controllo = esegui(process.execPath, ["scripts/backup-verifica.mjs", cartella], {
+  silenzioso: true,
+});
+for (const riga of controllo.uscita.split(/\r?\n/)) {
+  if (riga.trim()) console.log(`  ${riga.trim()}`);
+}
+if (!controllo.ok) {
+  fermati(
+    "LA COPIA APPENA FATTA NON PASSA IL CONTROLLO.",
+    "Sopra c'e' cosa non torna. NON portarla fuori: rifalla."
+  );
+}
+
 console.log("");
 console.log("Copia completata.");
 console.log("");

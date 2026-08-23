@@ -192,6 +192,11 @@ console.log("");
 console.log("  ── I BACKUP: su cosa puoi contare");
 console.log("  Il piano gratuito di Supabase NON fa nessun backup: l'unica copia");
 console.log("  esiste se qualcuno lancia `npm run backup`.");
+console.log("  Ogni copia si controlla da se' appena fatta. La PROVA DI RIPRISTINO");
+console.log("  completa invece NO, ed e' voluto: un backup lento e' un backup che");
+console.log("  si smette di fare, e quello e' il rischio peggiore di tutti.");
+console.log("  ⚠️ Lanciala tu ogni tanto, e SEMPRE prima di un momento importante:");
+console.log("     npm run backup:ripristina");
 if (roba === 0) {
   console.log("  Oggi non c'e' niente di vero da perdere (zero fatture, zero movimenti),");
   console.log("  quindi va bene cosi'.");
