@@ -87,6 +87,16 @@ begin
 end;
 $trg$;
 
+-- 🔴 ANCHE UNA FUNZIONE TRIGGER NASCE ESEGUIBILE DA CHIUNQUE ABBIA LA
+-- CHIAVE PUBBLICA (§8, lezione del 15/08). Fuori da un trigger non
+-- girerebbe comunque, quindi non esce nessun dato — ma l'elenco di chi
+-- puo' bussare da fuori NON DEVE CRESCERE IN SILENZIO, ed e' il controllo
+-- che il 13/08 e' stato reso automatico apposta.
+-- ⚠️ E l'ha trovata la prova, non una rilettura: `tests/app/permessi.test.js`
+-- e' diventata rossa da sola nominando la funzione nuova. E' esattamente
+-- il lavoro per cui era stata scritta.
+revoke all on function spesa_spicciola_preso_il() from public, anon, authenticated;
+
 drop trigger if exists trg_spesa_spicciola_preso_il on spesa_spicciola;
 create trigger trg_spesa_spicciola_preso_il
   before insert or update on spesa_spicciola
@@ -189,6 +199,14 @@ begin
     v_ok := false;
   end;
   if v_ok then raise exception 'E'' entrato un articolo senza nome.'; end if;
+
+  -- 4-bis. 🔴 E LA FUNZIONE DEL TRIGGER NON E' APERTA AL MONDO: l'elenco
+  --        di chi puo' bussare da fuori non deve crescere in silenzio.
+  if exists (
+    select 1 from funzioni_aperte_ad_anon() f where f.nome = 'spesa_spicciola_preso_il'
+  ) then
+    raise exception 'La funzione del trigger e'' rimasta eseguibile con la chiave pubblica.';
+  end if;
 
   -- 5. Le categorie si ricavano dai dati, e quella vuota non conta.
   select count(*) into v_n from categorie_spesa_spicciola() c
