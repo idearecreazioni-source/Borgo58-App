@@ -1489,3 +1489,40 @@ direzione**, e nessuno lo mette mai in dubbio; uno zero almeno si vede.
 cumulativo (14/08) toglie il campo del tutto e mette la resa sulla **riga di
 ricetta**, in lordo → netto, misurata dalle produzioni. Questo rovesciamento
 è il passo che smette di riempirlo con una stima nel frattempo.
+
+---
+
+## 36 · 23/08/2026 — «un numero si spiega da sé, sotto il saldo»
+
+**Cosa era stato deciso e quando.** Sotto il saldo di Cassa stava la
+scomposizione del contante atteso — «fondo + incassi − uscite + … di sala
++ … di mance» — e sotto ancora l'avvertenza del database, che diceva cosa
+comprende quel numero, quanto è mancia e quando è stato contato il
+cassetto l'ultima volta. In fondo alla schermata, «Movimenti recenti».
+
+**La ragione di allora.** Un numero che si deve spiegare con una nota
+sotto non è una risposta (15/08) — ma finché la nota c'è, la spiegazione
+deve **tornare col numero**: il 16/08 la validazione trovò che senza la
+voce delle mance la scomposizione smetteva di sommare al totale, e quella
+è la famiglia di difetti che questo progetto combatte apposta.
+
+**Cosa si decide adesso** (decisione di Alessio, 23/08, blocco 3 del
+mandato del collaudo): via il paragrafo e via «Movimenti recenti». I tre
+riquadri diventano quattro più piccoli, e in evidenza vanno le quattro
+cose che vuole vedere aprendo: contante, banca, il mese, gli omaggi.
+
+**Perché la ragione di allora non vale più — oppure vale e questo è il
+prezzo.** ⚠️ **Vale ancora, e il prezzo lo accettiamo.** Quelle righe erano
+rivolte a chi non sapeva, e chi guarda la Cassa oggi è chi ha scritto
+quelle regole — è lo stesso criterio con cui il 18/08 sono sparite sette
+spiegazioni dalla sala (nn. 7, 8, 11). **Il prezzo è dichiarato**: il
+giorno in cui la Cassa la guarderà una persona diversa da lui, la
+scomposizione va rimessa.
+
+⚠️ **E si toglie dicendo dove la regola resta scritta**, non cancellandola:
+l'ultimo conteggio del cassetto vive già dentro «Il cassetto», che resta;
+la scomposizione vive nel corpo di `saldo_tesoreria()`; e le due righe che
+NON sono spiegazioni ma **avvisi** — «di cui non sono tuoi» e le uscite
+già registrate e non ancora nel saldo — **sono rimaste**, perché senza di
+quelle il numero grande avrebbe l'aria di essere completo senza esserlo,
+che è il difetto opposto e peggiore.
