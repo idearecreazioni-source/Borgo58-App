@@ -167,5 +167,43 @@ console.log("      e' un indizio (anche un gesto vero puo' durare un istante). T
 console.log("      si puo' solo con una migrazione: dall'app quel registro non si tocca.");
 console.log("    · gli avvisi VERI (scadenze, lavori fermi) non sono dati di prova: sono la");
 console.log("      storia di cio' che ha funzionato, e toglierli la cancella.");
+// ---------------------------------------------------------------------
+// IL PROMEMORIA DEL PIANO A PAGAMENTO — 23/08/2026, chiesto da Alessio.
+// ---------------------------------------------------------------------
+// 🔴 «Il giorno che entra il primo conto vero, l'unica copia non puo'
+// dipendere da me che lancio un comando la sera dopo il servizio.»
+//
+// ⚠️ STA QUI, e non in un calendario o in un documento, perche' QUESTO e'
+// il comando che si guarda proprio nel momento giusto: prima di caricare
+// i primi dati veri si viene qui a vedere cosa c'e' ancora di prova. Un
+// promemoria in un'agenda si rimanda; uno che compare mentre si sta per
+// fare la cosa, no.
+//
+// ⚠️ E non e' una data: e' un FATTO che si misura. Finche' il gestionale
+// vero e' vuoto la riga e' un ricordo tranquillo; appena dentro ci sono
+// fatture, movimenti o conti che non sono di collaudo, diventa un avviso.
+const roba = Number(
+  interroga(
+    url,
+    "select (select count(*) from supplier_invoices) + (select count(*) from cash_movements);"
+  ).trim() || 0
+);
+console.log("");
+console.log("  ── I BACKUP: su cosa puoi contare");
+console.log("  Il piano gratuito di Supabase NON fa nessun backup: l'unica copia");
+console.log("  esiste se qualcuno lancia `npm run backup`.");
+if (roba === 0) {
+  console.log("  Oggi non c'e' niente di vero da perdere (zero fatture, zero movimenti),");
+  console.log("  quindi va bene cosi'.");
+  console.log("  ⚠️ IL GIORNO CHE CARICHI I PRIMI DATI VERI, attiva il piano a pagamento:");
+  console.log("     da li' in poi i backup diventano giornalieri e automatici, e non");
+  console.log("     dipendono piu' da te che ti ricordi la sera dopo il servizio.");
+} else {
+  console.log(`  🔴 IN PRODUZIONE CI SONO GIA' ${roba} FRA FATTURE E MOVIMENTI.`);
+  console.log("  Se non e' ancora attivo, ATTIVA ADESSO il piano a pagamento di Supabase:");
+  console.log("  da adesso c'e' roba vera da perdere, e l'unica copia dipende da un");
+  console.log("  comando lanciato a mano.");
+}
+
 console.log("");
 console.log("  Nessuna riga e' stata toccata: questo comando legge e basta.");
