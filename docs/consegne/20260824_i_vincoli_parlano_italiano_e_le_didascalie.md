@@ -1,9 +1,9 @@
 # I vincoli parlano italiano, le didascalie si aprono — 24/08/2026
 
-**Commit dichiarato:** `52374bdf` (`52374bd` in forma breve)
+**Commit dichiarato:** `3e5dc47`
 **Working tree:** pulito
-**Migrazioni:** 209 nel repository e sul progetto di prova, **207 in
-produzione** (le due nuove aspettano il push).
+**Migrazioni:** 210 nel repository e sul progetto di prova, **207 in
+produzione** (le tre nuove aspettano il push).
 
 Terza consegna della giornata. Segue
 [«le reti sui numeri assurdi»](20260824_le_reti_sui_numeri_assurdi.md).
@@ -80,6 +80,23 @@ portiere ci vuole.
 ⚠️ Il portiere è **«utente autenticato», non «titolare»**: la traduzione
 serve anche allo staff, che scrive temperature, pulizie e comande — cioè
 proprio dove i vincoli nuovi scattano.
+
+### Il quarto, dopo aver scritto questo riepilogo
+
+🔴 **La rete `migrazioni-senza-portieri` ha preso un caso in più**, e non
+l'avrei visto rileggendo: la `20260824000012` chiama `spiega_vincolo()`
+in un blocco di verifica **senza impostare i claims**. Quando è stata
+scritta era corretta — quella funzione non aveva ancora il portiere —
+e **l'ha resa fragile la migrazione che le sta accanto**, poche ore dopo.
+
+⚠️ Dove morde, misurato: girando le migrazioni in ordine da zero la 012
+passa; il caso vero è la **riapplicazione singola**, quella che si fa con
+`npm run prova:migra <nome>` ed è successa più volte stanotte.
+
+La verifica buona sta nella `…014`, e la dichiarazione che chiude il caso
+presso la rete sta **lì**, non nel file che l'ha causato: le migrazioni
+già applicate non si riscrivono. ⚠️ E non spegne la rete — tace solo su
+quella coppia, e togliendo la dichiarazione la prova torna rossa.
 
 **Il terzo, subito dopo, provando**: messo il portiere, **la traduzione è
 diventata muta**. Il giro per la spiegazione usava la chiave pubblica, che
@@ -275,3 +292,27 @@ il suo limite dichiarato in nessun punto della pagina.
 
 Registrato come **n. 41** in
 [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md).
+
+---
+
+## Poscritto: cosa è cambiato dopo aver scritto questo riepilogo
+
+⚠️ **La regola della rilettura chiede di dichiarare le affermazioni
+diventate false mentre si lavorava. Ne sono nate tre in questo stesso
+documento**, e la cosa più onesta è scriverle qui invece di correggere il
+testo sopra come se non fosse successo niente.
+
+1. **«Migrazioni: 209 … le due nuove aspettano il push»** → sono **210**,
+   e ne aspettano **tre**: la `…014` è nata dopo, chiudendo il caso preso
+   dalla rete dei portieri.
+2. **Il commit dichiarato** era `52374bd`; ora è `3e5dc47`.
+3. **«Due difetti trovati per strada»** nella sezione dei vincoli → sono
+   diventati **quattro**, contando quello preso dalla rete dei portieri.
+
+🔴 **E il conto vero della serata è questo**: dei quattro difetti chiusi
+nella parte dei vincoli, **nessuno l'ho trovato rileggendo il codice**.
+Uno l'ha preso la verifica di una migrazione, due le reti automatiche del
+progetto, uno l'ho visto provando a schermo. *Le reti hanno lavorato più
+di me.*
+
+**Prove finali: 366 pure e 358 sul database, tutte verdi.**
