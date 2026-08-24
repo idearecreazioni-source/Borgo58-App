@@ -122,6 +122,7 @@ body {
   line-height: 1.25;
 }
 
+
 /* Azione principale a fondo schermata (invia comanda, chiudi conto). */
 .tocco-azione {
   min-height: calc(var(--pxcm) * 1.2);
