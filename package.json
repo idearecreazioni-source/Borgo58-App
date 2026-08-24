@@ -30,7 +30,8 @@
     "prova:rimetti": "node scripts/prova-copia.mjs --rimetti",
     "backup:verifica": "node scripts/backup-verifica.mjs",
     "backup:ripristina": "node scripts/backup-ripristina.mjs",
-    "numeri": "node scripts/numeri-sospetti.mjs"
+    "numeri": "node scripts/numeri-sospetti.mjs",
+    "numeri:censimento": "node scripts/censimento-numeri.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
