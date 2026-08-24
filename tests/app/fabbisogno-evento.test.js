@@ -12,11 +12,11 @@ import { supabase } from "../../src/lib/supabase";
 // preparazione non dava un numero sbagliato, **si rompeva**.
 //
 // 🔴 LA CATENA È A QUATTRO LIVELLI, perché Alessio scompone sempre:
-//   ingrediente → preparazione → preparazione → bocconcino → piatto → menu
+//   ingrediente → preparazione → preparazione → finger → piatto → menu
 //
 // ⚠️ E I NUMERI SONO SCELTI PERCHÉ DISTINGUANO. Con 8 persone su un piatto da
 // 4 porzioni, cioè 2 dosi:
-//   · dal bocconcino: 2 × 6 pz × 1 kg = 12,000 kg
+//   · dal finger: 2 × 6 pz × 1 kg = 12,000 kg
 //   · dall'ingrediente diretto: 2 × 0,5 kg + 20% di scarto = 1,200 kg
 //   · totale giusto 13,200 kg → 26,40 €
 // Le risposte sbagliate danno numeri tutti diversi: 1,200 (catena persa),

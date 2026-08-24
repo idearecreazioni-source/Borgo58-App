@@ -111,7 +111,7 @@ describe("lo storico dei costi registra i cambiamenti veri", () => {
   it("comporre la selezione ha già scritto la sua storia, e il numero è quello giusto", async () => {
     const voci = await storicoCostoRicetta(selez);
     expect(voci.length, "la selezione non ha nessuna voce").toBeGreaterThan(0);
-    // 6 bocconcini × 1 kg × 2,00 = 12,00
+    // 6 finger × 1 kg × 2,00 = 12,00
     expect(Number(voci[0].food_cost_base)).toBeCloseTo(QUANTI * PREZZO, 4);
   });
 

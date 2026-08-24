@@ -9,6 +9,7 @@ import {
   listPreparations,
   listRecipeCostsFor,
   listRecipeStatusHistory,
+  prezzoBis,
   updateRecipe,
 } from "../../lib/api/recipes";
 import {
@@ -46,6 +47,7 @@ import {
   VIDEO_PLATFORMS,
   formatDate,
   formatEUR,
+  formatPercento,
   labelFor,
   recipeStatusLabel,
 } from "../../lib/constants";
@@ -104,6 +106,7 @@ export default function RicettaDetail() {
   const [menuDentro, setMenuDentro] = useState([]);
   const [salvandoMenu, setSalvandoMenu] = useState(null);
   const [erroreMenu, setErroreMenu] = useState("");
+  const [bis, setBis] = useState(null);
   const statoNavigazione = useLocation().state;
   const avviso = statoNavigazione?.avviso ?? "";
 
@@ -202,6 +205,16 @@ export default function RicettaDetail() {
       } catch (e) {
         // ⚠️ E non si tace: «non lo so» non è «non c'è nessun menu» (19/08).
         setErroreMenu(`Non sono riuscito a leggere i menu: ${e.message}`);
+      }
+      // Il prezzo del bis, solo per un finger. ⚠️ Stessa rete e per la
+      // stessa ragione: se non arriva, resta senza proposta — non deve
+      // portarsi via la scheda.
+      if (rec.recipe_type === "finger") {
+        try {
+          setBis(await prezzoBis(id));
+        } catch {
+          setBis(null);
+        }
       }
     }
   };
@@ -810,9 +823,43 @@ export default function RicettaDetail() {
                 onChange={(e) => handleHeaderChange("prezzo_al_pezzo", e.target.value)}
                 className={inputClass}
               />
-              <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
-                Quanto costa questo finger venduto da solo. Lascialo vuoto finché non l&apos;hai
-                deciso: vuoto non vuol dire gratis.
+              {/* 🔴 IL PREZZO SI PROPONE (24/08, richiesta di Alessio:
+                  *«hai già i food cost di ognuno, quindi proponimi il prezzo
+                  giusto invece di farmi perdere margine sui finger cari»*).
+                  ⚠️ Il numero NON è arrotondato: il taglio con cui si
+                  scrivono i prezzi in un menu è una decisione commerciale
+                  sua, e arrotondare al posto suo farebbe comparire un
+                  numero che nessuno ha deciso. Si dice da dove viene.
+                  ⚠️ E accanto c'è la domanda vera dietro la sua frase — non
+                  «quanto chiedo» ma «su questo sto perdendo margine?»: il
+                  food cost che il prezzo già scritto produce davvero. */}
+              {bis && (
+                <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
+                  {bis.proposto != null && (
+                    <>
+                      Con un food cost del {formatPercento(bis.obiettivo_percento, 0)} verrebbe{" "}
+                      <button
+                        type="button"
+                        onClick={() => handleHeaderChange("prezzo_al_pezzo", String(bis.proposto))}
+                        className="underline text-b58-terracotta hover:text-b58-terracotta-dark"
+                      >
+                        {formatEUR(bis.proposto)}
+                      </button>{" "}
+                      (costa {formatEUR(bis.food_cost)}).{" "}
+                    </>
+                  )}
+                  {bis.food_cost_scritto != null && (
+                    <>A {formatEUR(bis.scritto)} il food cost è il {formatPercento(bis.food_cost_scritto)}.</>
+                  )}
+                  {bis.avvertenza && (
+                    <span className="text-b58-terracotta-dark"> {bis.avvertenza}</span>
+                  )}
+                </p>
+              )}
+              <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
+                Quanto costa questo finger venduto da solo — è il prezzo del bis, quando un
+                cliente ne chiede uno in più. Lascialo vuoto finché non l&apos;hai deciso: vuoto
+                non vuol dire gratis.
               </p>
             </div>
           )}

@@ -34,7 +34,12 @@ export async function listOpenOrders() {
 }
 
 const ORDER_SELECT =
-  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes), cliente:customer_id(id, name, phone)";
+  // ⚠️ DELLA RICETTA ARRIVANO ANCHE TIPO E CATEGORIA (24/08/2026), e non
+  // sono un di più: servono a distinguere in sala **un bis** (una riga che
+  // punta a un finger) da un piatto, e a sapere su quale riga si può
+  // chiedere un bis (un piatto di categoria finger food). Senza, la sala
+  // dovrebbe fare una seconda lettura per ogni riga della comanda.
+  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name, recipe_type, category)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes), cliente:customer_id(id, name, phone)";
 
 // I CONTI CHE NOMINANO QUESTE PRENOTAZIONI — è così che si sa chi è arrivato.
 //

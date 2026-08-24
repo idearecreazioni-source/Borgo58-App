@@ -190,3 +190,25 @@ export async function listRecipeCostsFor(recipeIds) {
   if (error) throw error;
   return Object.fromEntries((data ?? []).map((r) => [r.recipe_id, Number(r.food_cost_base)]));
 }
+
+// IL PREZZO DI UN BIS (24/08/2026, blocco 2(e) del collaudo).
+//
+// ⚠️ IL CALCOLO STA NEL DATABASE e non qui: food cost, obiettivo e
+// avvertenza escono insieme dalla stessa funzione, così il numero e il suo
+// limite non possono separarsi — è la stessa regola di `calcola_imposte()`
+// (15/08). Rifarlo nella schermata vorrebbe dire una seconda formula per
+// lo stesso prezzo.
+export async function prezzoBis(fingerId) {
+  const { data, error } = await supabase.rpc("prezzo_bis", { p_finger_id: fingerId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// I finger di un piatto, col loro prezzo: quelli di cui si può chiedere il
+// bis. ⚠️ Li può leggere anche la sala — lì c'è solo il prezzo di VENDITA,
+// che il cameriere legge già sul menu, non il food cost.
+export async function fingerBissabili(piattoId) {
+  const { data, error } = await supabase.rpc("finger_bissabili", { p_piatto_id: piattoId });
+  if (error) throw error;
+  return data ?? [];
+}

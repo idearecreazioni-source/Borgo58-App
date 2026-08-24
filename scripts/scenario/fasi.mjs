@@ -73,7 +73,7 @@ const SEQUENZE = {
      "Almeno 24 ore a -20 gradi al cuore (bonifica anisakis)", "Se il ciclo si interrompe: non servire crudo, destinare a cottura"],
     ["finitura", "Porzionare e conservare in cella pesce, coperto", "tradizionale", 15, true, 1, false, null, null],
   ],
-  // I bocconcini: composizione a freddo e conservazione breve.
+  // I finger: composizione a freddo e conservazione breve.
   finger: [
     ["mise_en_place", "Preparare le basi e portarle a temperatura di lavorazione", "tradizionale", 15, true, null, false, null, null],
     ["impiattamento", "Comporre i pezzi uno per uno, uguali fra loro", "crudo", 25, true, null, false, null, null],

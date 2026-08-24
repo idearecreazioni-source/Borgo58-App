@@ -367,16 +367,16 @@ export const PIATTI_IN_CARTA = PIATTI.slice(0, 13).map((r) => r[0]);
 // LE SELEZIONI — come i finger arrivano davvero in carta
 //
 // 🔴 SCOPERTO COSTRUENDO, dal rifiuto del database: *«In un menu ci vanno
-// solo i piatti: "Cannolo salato di ricotta" e' un bocconcino. Se vuoi
+// solo i piatti: "Cannolo salato di ricotta" e' un finger. Se vuoi
 // venderlo da solo, creane una ricetta a se'.»*
 //
 // ⚠️ E il database ha ragione — e' la decisione del 20/08. Un finger e' un
-// **bocconcino**, non una portata: quello che si vende e' una **selezione**
-// (un piatto finito che ha i bocconcini come componenti). Mettere i venti
+// **finger**, non una portata: quello che si vende e' una **selezione**
+// (un piatto finito che ha i finger come componenti). Mettere i venti
 // finger direttamente in carta avrebbe costruito uno scenario che il
 // gestionale non ammette, cioe' un collaudo su un modello inventato.
 //
-// [nome, categoria, prezzo, [bocconcini che la compongono]]
+// [nome, categoria, prezzo, [finger che la compongono]]
 // ---------------------------------------------------------------------
 export const SELEZIONI = [
   ["Selezione di mare", "antipasto", 18, ["Tartare di gambero", "Bocconcino di tonno", "Sarda a beccafico", "Polpo e patate in bicchiere", "Involtino di spatola", "Cucchiaio di baccala"]],
@@ -385,19 +385,19 @@ export const SELEZIONI = [
   ["Selezione dolce", "dolce", 12, ["Bicchierino di gelo", "Mini cannolo dolce", "Cioccolatino di Modica", "Bigne al pistacchio"]],
 ];
 
-/** I bocconcini che entrano in una selezione: pronti, ma mai in carta da soli. */
+/** I finger che entrano in una selezione: pronti, ma mai in carta da soli. */
 export const FINGER_COMPOSTI = [...new Set(SELEZIONI.flatMap((s) => s[3]))];
 
 /**
  * Le ricette che restano BOZZE: non pronte per la carta.
  *
  * ⚠️ Una su cinque, presa in modo deterministico, e **mai** fra quelle che
- * finiscono in carta ne' fra i bocconcini di una selezione: il database
+ * finiscono in carta ne' fra i finger di una selezione: il database
  * rifiuta di mettere in un menu attivo un piatto non pronto, ed e' il
  * vincolo giusto — non un ostacolo da aggirare.
  *
  * ⚠️ Sta in fondo al file perche' deve conoscere anche le selezioni: messa
- * in cima, avrebbe potuto marcare come bozza un bocconcino che una
+ * in cima, avrebbe potuto marcare come bozza un finger che una
  * selezione in carta usa, e lo scenario sarebbe fallito a meta'.
  */
 export const BOZZE = [

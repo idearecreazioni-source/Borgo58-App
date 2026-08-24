@@ -223,7 +223,7 @@ export async function costruisciDueMesi(ctx) {
         recipe_type: tipo,
         portions_yield: 1,
         // ⚠️ Un finger si vende al pezzo, non a porzione (strada aperta il
-        // 20/08): senza questo, il prezzo di venti bocconcini non si sa
+        // 20/08): senza questo, il prezzo di venti finger non si sa
         // scomporre.
         //
         // ⚠️ E vuole la RESA, perche' il database la pretende su tutto cio'
@@ -256,21 +256,21 @@ export async function costruisciDueMesi(ctx) {
   //
   // 🔴 SCOPERTO DAL RIFIUTO DEL DATABASE, non leggendo: mettendo i finger
   // in carta ha risposto *«In un menu ci vanno solo i piatti: e' un
-  // bocconcino»*. Ha ragione — e' la decisione del 20/08. In carta va la
-  // **selezione**, che e' un piatto finito fatto di bocconcini; i finger
+  // finger»*. Ha ragione — e' la decisione del 20/08. In carta va la
+  // **selezione**, che e' un piatto finito fatto di finger; i finger
   // restano nel ricettario, pronti, e nessuno li vende da soli.
   //
   // ⚠️ Senza questo lo scenario avrebbe collaudato un modello che il
   // gestionale non ammette.
   // -------------------------------------------------------------------
-  for (const [nome, categoria, prezzo, bocconcini] of SELEZIONI) {
+  for (const [nome, categoria, prezzo, finger] of SELEZIONI) {
     const r = await createRecipe({
       name: nome,
       category: categoria,
       recipe_type: "piatto_finito",
       portions_yield: 1,
     });
-    for (const b of bocconcini) {
+    for (const b of finger) {
       await addRecipeIngredient(r.id, {
         component_recipe_id: idRicetta[b],
         quantity: 1,
@@ -281,7 +281,7 @@ export async function costruisciDueMesi(ctx) {
     const voce = await addMenuItem(carta.id, { recipe_id: r.id, category: categoria, selling_price: prezzo });
     inCarta.push({ recipe_id: r.id, prezzo, nome, categoria, menu_item_id: voce?.id });
   }
-  segna("selezioni di bocconcini, che sono la forma in cui i finger si vendono", SELEZIONI.length);
+  segna("selezioni di finger, che sono la forma in cui i finger si vendono", SELEZIONI.length);
 
   await setActiveMenu(carta.id);
 

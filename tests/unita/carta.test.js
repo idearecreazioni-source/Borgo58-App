@@ -19,10 +19,10 @@ describe("in un menu ci vanno solo i piatti pronti per la carta", () => {
     expect(puoAndareInCarta({ ...pronta, recipe_type: "preparazione" })).toBe(false);
   });
 
-  it("un bocconcino NON ci va, nemmeno segnato pronto", () => {
-    // ⚠️ Alessio, 20/08: «semmai un bocconcino dovesse diventare un piatto a
+  it("un finger NON ci va, nemmeno segnato pronto", () => {
+    // ⚠️ Alessio, 20/08: «semmai un finger dovesse diventare un piatto a
     // sé, creerò una ricetta nuova con un nome diverso». Quindi il prezzo a
-    // pezzo resta l'unico prezzo di un bocconcino.
+    // pezzo resta l'unico prezzo di un finger.
     expect(puoAndareInCarta({ ...pronta, recipe_type: "finger" })).toBe(false);
   });
 

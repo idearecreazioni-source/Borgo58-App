@@ -34,6 +34,7 @@ import {
 import { esitoDelTocco } from "../../lib/calcoli/selezione";
 import { etichettaTurno, righePerTurno } from "../../lib/calcoli/turni";
 import { listBarItems } from "../../lib/api/barItems";
+import { fingerBissabili } from "../../lib/api/recipes";
 import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
@@ -52,7 +53,25 @@ import {
 import PrecontoModal from "./PrecontoModal";
 import DatoNonLetto from "../../components/DatoNonLetto";
 
-const lineLabel = (item) => item.recipe?.name || item.free_text_name;
+// IL NOME DI UNA RIGA — e il bis si riconosce, non si scrive (24/08/2026).
+//
+// ⚠️ Una riga che punta a un FINGER è per forza un bis: un finger non si
+// vende da solo, e il database lo impedisce già in un menu
+// (`solo_piatti_in_menu`). Una colonna «è_un_bis» direbbe la stessa cosa
+// del tipo della ricetta, e per la regola del 16/08 la seconda sarebbe un
+// riflesso — si toglie, non si costruisce.
+//
+// ⚠️ E la parola «bis» sta QUI e non nel database: se finisse nel nome
+// salvato sulla riga, ci resterebbe attaccata per sempre — anche il giorno
+// che il gestionale volesse chiamarla in un altro modo, e su ogni ticket
+// già stampato.
+const lineLabel = (item) =>
+  item.recipe?.recipe_type === "finger"
+    ? `bis di ${item.recipe.name}`
+    : item.recipe?.name || item.free_text_name;
+
+// Su quali righe si può chiedere un bis: i piatti di finger food.
+const puoBissare = (item) => item.recipe?.category === "finger_food";
 const lineTotal = (item) => item.quantity * Number(item.unit_price);
 
 // Schermata SALA — tablet 8,7" in verticale, tenuto in mano fra i tavoli
@@ -117,6 +136,10 @@ export default function Sala() {
   // Il pannello di chi paga: si apre dal riquadro accanto al tavolo.
   const [clienteAperto, setClienteAperto] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Il bis: quale riga ha il pannello aperto, e i suoi finger.
+  const [bisAperto, setBisAperto] = useState(null);
+  const [bisElenco, setBisElenco] = useState(null);
+  const [bisErrore, setBisErrore] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
 
   const [showFreeForm, setShowFreeForm] = useState(false);
@@ -665,6 +688,50 @@ export default function Sala() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // IL BIS DI UN FINGER (24/08/2026).
+  //
+  // ⚠️ I finger si chiedono al momento del tocco e non all'apertura della
+  // schermata: sono pochi per piatto, e caricarli tutti in anticipo
+  // vorrebbe dire una lettura per ogni piatto di finger food della comanda
+  // — quasi sempre per niente, perché il bis è un'eccezione, non la norma.
+  const apriBis = async (item) => {
+    setBisAperto(item.id);
+    setBisElenco(null);
+    setBisErrore("");
+    try {
+      setBisElenco(await fingerBissabili(item.recipe_id));
+    } catch (e) {
+      // ⚠️ L'errore si conserva: un elenco vuoto senza spiegazione si legge
+      // «questo piatto non ha finger», che è una frase tranquilla e falsa.
+      setBisErrore(e.message);
+      setBisElenco([]);
+    }
+  };
+
+  const handleAddBis = (f) => {
+    if (f.prezzo == null) {
+      // ⚠️ Si rifiuta DOVE nasce il problema e si dice cosa fare prima: una
+      // riga a zero euro sarebbe un pezzo regalato che nessuno ha deciso di
+      // regalare, e in un conto non si vede finché non si somma.
+      setError(
+        `«${f.nome}» non ha ancora un prezzo a pezzo: scrivilo nel Ricettario, sulla sua scheda, e poi si può battere il bis.`
+      );
+      return;
+    }
+    setBisAperto(null);
+    return withBusy(() =>
+      addDraftItem(order.id, {
+        // ⚠️ La riga punta al FINGER, non al piatto: è così che il magazzino
+        // scarica il pezzo in più e che la cucina vede una riga da fare.
+        recipeId: f.finger_id,
+        destination: "cucina",
+        quantity: 1,
+        unitPrice: f.prezzo,
+        turno: turnoCorrente,
+      })
+    );
   };
 
   const handleAddMenuItem = (mi) =>
@@ -1850,6 +1917,82 @@ export default function Sala() {
                         ✕
                       </button>
                     </div>
+                    {/* IL BIS (24/08/2026, richiesta di Alessio). Compare
+                        solo sotto un piatto di finger food, e solo lì: in
+                        sala non si sceglie da tutto il ricettario, si
+                        sceglie fra i finger **di quel piatto**, che è
+                        quello che il cliente ha davanti.
+                        ⚠️ E il bis è una RIGA A SÉ: «finger food di mare»
+                        resta quello che è, e accanto compare «bis di X».
+                        Così la cucina vede una riga in più da fare, il
+                        magazzino scarica il finger extra, e il food cost
+                        del piatto in carta non si muove. */}
+                    {puoBissare(it) && (
+                      <div className="mt-1">
+                        {bisAperto === it.id ? (
+                          <div className="rounded-lg bg-b58-cream/60 p-1.5">
+                            {bisElenco === null ? (
+                              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">
+                                Cerco i finger di questo piatto…
+                              </p>
+                            ) : bisElenco.length === 0 ? (
+                              // ⚠️ «Non lo so» non è «non ce n'è»: se la
+                              // lettura è fallita si dice, con la via per
+                              // riprovare. Un elenco vuoto qui si legge
+                              // «questo piatto non ha finger», che è falso.
+                              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">
+                                {bisErrore
+                                  ? `Non sono riuscito a leggere i finger: ${bisErrore}`
+                                  : "Questo piatto non ha finger dentro."}
+                              </p>
+                            ) : (
+                              bisElenco.map((f) => (
+                                <button
+                                  key={f.finger_id}
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() => handleAddBis(f)}
+                                  className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50"
+                                >
+                                  <span className="flex-1 min-w-0 testo-sala text-b58-charcoal leading-tight">
+                                    bis di {f.nome}
+                                  </span>
+                                  {/* ⚠️ Senza prezzo NON si batte: una riga
+                                      a zero euro è un pezzo regalato che
+                                      nessuno ha deciso di regalare. Si dice
+                                      cosa manca e dove si scrive. */}
+                                  <span
+                                    className={`shrink-0 testo-sala ${
+                                      f.prezzo == null
+                                        ? "text-b58-terracotta-dark"
+                                        : "text-b58-charcoal-soft"
+                                    }`}
+                                  >
+                                    {f.prezzo == null ? "senza prezzo" : formatEUR(f.prezzo)}
+                                  </span>
+                                </button>
+                              ))
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setBisAperto(null)}
+                              className="tocco-bottone testo-sala text-b58-charcoal-soft px-2"
+                            >
+                              chiudi
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => apriBis(it)}
+                            className="tocco-bottone testo-sala text-b58-terracotta px-2 rounded-lg hover:bg-b58-cream-dark/60"
+                          >
+                            + bis di un finger
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Nota del SINGOLO piatto, distinta da quella del tavolo:
                         "senza glutine" riguarda un piatto, non tutti. */}
                     <CampoAutosalvato

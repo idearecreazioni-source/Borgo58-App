@@ -503,6 +503,25 @@ export const formatEUR = (value) =>
     useGrouping: "always",
   }).format(value ?? 0);
 
+// UNA PERCENTUALE COME LA SCRIVE UNA PERSONA (24/08/2026).
+//
+// 🔴 Nasce da un difetto VISTO a schermo, non dedotto: la scheda di un
+// finger diceva «il food cost è il 26.6%» — col punto inglese, in mezzo a
+// una frase in italiano dove tutti gli altri numeri hanno la virgola. È la
+// stessa famiglia dei «5.8785 kg» del 17/08.
+//
+// ⚠️ Il numero arriva già arrotondato dal database: qui si SCRIVE, non si
+// arrotonda una seconda volta. Due arrotondamenti in fila su uno stesso
+// numero sono il modo in cui due schermate cominciano a dire due cifre
+// diverse.
+export const formatPercento = (value, decimali = 1) =>
+  value == null
+    ? "—"
+    : `${new Intl.NumberFormat("it-IT", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimali,
+      }).format(value)}%`;
+
 // Una quantità come la scrive una persona.
 //
 // ⚠️ Nasce da una piccolezza del collaudo (17/08): in Magazzino si leggeva

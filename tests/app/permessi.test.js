@@ -202,7 +202,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 19 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 20 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -264,6 +264,15 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // si vede comunque aprendo il Ricettario: nessun prezzo, nessun
       // costo, nessun fornitore.
       "campi_da_confermare",
+      // ⚠️ AGGIUNTA IL 24/08 col bis di un finger, e aperta alla sala
+      // APPOSTA: il bis lo batte il cameriere al tavolo, e per batterlo
+      // deve vedere quali finger compongono quel piatto e quanto costano.
+      // ⚠️ Quello che passa di qui è un prezzo di VENDITA — lo stesso che
+      // il cliente legge sul menu — non un food cost. Il food cost del bis
+      // sta in `prezzo_bis`, che il portiere ce l'ha e NON è in questo
+      // elenco: chi non deve vedere riceve un rifiuto, e c'è una prova che
+      // lo controlla nella verifica della 20260824000026.
+      "finger_bissabili",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

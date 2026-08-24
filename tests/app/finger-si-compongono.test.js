@@ -16,13 +16,13 @@ import { supabase } from "../../src/lib/supabase";
 // utente vero, ed è l'unico modo di sapere che la cosa funziona anche
 // **dall'app**.
 //
-// ⚠️ E la selezione è da SEI bocconcini, non da due: è il numero di cui parla
+// ⚠️ E la selezione è da SEI finger, non da due: è il numero di cui parla
 // Alessio, e serve a distinguere le tre risposte possibili allo scarico di
 // magazzino — 2 pezzi per tipo (giusto), 1 (le porzioni ignorate), 6 (i
-// bocconcini contati come porzioni).
+// finger contati come porzioni).
 const MARCA = "TEST-AUTO finger";
 const QUANTI = 6;
-const GRAMMI = 0.010; // 10 g a bocconcino, a 20 €/kg → 0,20 € l'uno
+const GRAMMI = 0.010; // 10 g a finger, a 20 €/kg → 0,20 € l'uno
 
 describe("i finger si compongono, e un piatto finito no", () => {
   let titolare;
@@ -63,7 +63,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
       .from("recipes")
       .insert(
         Array.from({ length: QUANTI }, (_, i) => ({
-          name: `${MARCA} bocconcino ${i}`,
+          name: `${MARCA} finger ${i}`,
           category: "antipasto",
           portions_yield: 1,
           recipe_type: "finger",
@@ -104,7 +104,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
     await titolare.auth.signOut({ scope: "local" });
   });
 
-  it("una selezione da sei bocconcini costa la somma dei sei", async () => {
+  it("una selezione da sei finger costa la somma dei sei", async () => {
     const { data, error } = await titolare
       .from("v_recipe_costs")
       .select("food_cost_base")
@@ -125,7 +125,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
   // ⚠️ Il prezzo di questa scelta, dichiarato: quella regola è provata come
   // proprietaria del database, dove la RLS non esiste.
 
-  it("lo stesso bocconcino non entra due volte nella stessa selezione", async () => {
+  it("lo stesso finger non entra due volte nella stessa selezione", async () => {
     const { error } = await titolare
       .from("recipe_ingredients")
       .insert({ recipe_id: selezione, component_recipe_id: fingers[0], quantity: 1, unit: "pz" });
@@ -163,7 +163,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
   });
 
   it("il prezzo a pezzo sta sul finger, e vuoto resta vuoto", async () => {
-    // ⚠️ Il prezzo a pezzo serve ai clienti che si scelgono i bocconcini per
+    // ⚠️ Il prezzo a pezzo serve ai clienti che si scelgono i finger per
     // un evento. **Non è un secondo prezzo dello stesso oggetto** (decisione
     // di Alessio): quello della carta è di un piatto, questo di un finger.
     const { error: eOk } = await titolare
@@ -199,7 +199,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
 
   it("una riga di componente porta con sé il TIPO, o l'etichetta mente", async () => {
     // ⚠️ Senza `recipe_type` nell'incorporamento non ci sarebbe nessun
-    // errore: la scheda scriverebbe «preparazione» sotto ogni bocconcino.
+    // errore: la scheda scriverebbe «preparazione» sotto ogni finger.
     // È la famiglia di difetto vista tre volte in tre giorni — due parti
     // dello stesso programma che raccontano cose diverse dello stesso fatto.
     const righe = await listRecipeIngredients(selezione);
@@ -211,7 +211,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
     ).toBe(true);
   });
 
-  it("il costo di ogni bocconcino si legge in una volta sola", async () => {
+  it("il costo di ogni finger si legge in una volta sola", async () => {
     // Alimenta la cifra accanto a ogni spunta: senza, si compone al buio.
     const costi = await listRecipeCostsFor(fingers);
     expect(Object.keys(costi).length).toBe(QUANTI);
@@ -248,7 +248,7 @@ describe("i finger si compongono, e un piatto finito no", () => {
     // schermata può fare: codice che nessuno chiama (lezione del 18/08).
     const elenco = await listPreparations({});
     const nomi = elenco.map((r) => r.name);
-    expect(nomi, "i finger non compaiono fra i componenti proponibili").toContain(`${MARCA} bocconcino 0`);
+    expect(nomi, "i finger non compaiono fra i componenti proponibili").toContain(`${MARCA} finger 0`);
     expect(nomi, "un piatto finito è comparso fra i componenti proponibili").not.toContain(`${MARCA} altro piatto`);
   });
 });

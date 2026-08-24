@@ -13,7 +13,7 @@ import { clientAutenticato, credenziali } from "./aiuto";
 // non starebbe misurando il criterio giusto.
 const MARCA = "TEST-AUTO menu";
 
-describe("una preparazione e un bocconcino non entrano in un menu", () => {
+describe("una preparazione e un finger non entrano in un menu", () => {
   let titolare;
   let prep;
   let finger;
@@ -104,12 +104,12 @@ describe("una preparazione e un bocconcino non entrano in un menu", () => {
     expect(error.message).toContain("una preparazione");
   });
 
-  it("un bocconcino segnato PRONTO viene comunque respinto, e chiamato col suo nome", async () => {
+  it("un finger segnato PRONTO viene comunque respinto, e chiamato col suo nome", async () => {
     const { error } = await titolare
       .from("menu_items")
       .insert({ menu_id: menu, recipe_id: finger, category: "antipasto", selling_price: 3 });
-    expect(error, "un bocconcino è entrato in carta").not.toBeNull();
-    expect(error.message).toContain("un bocconcino");
+    expect(error, "un finger è entrato in carta").not.toBeNull();
+    expect(error.message).toContain("un finger");
   });
 
   it("un piatto pronto entra: il vincolo non ha chiuso la porta a tutti", async () => {
@@ -125,7 +125,7 @@ describe("una preparazione e un bocconcino non entrano in un menu", () => {
     const { error } = await titolare
       .from("daily_menu_items")
       .insert({ daily_menu_id: giorno, recipe_id: finger, category: "antipasto", price: 3 });
-    expect(error, "un bocconcino è entrato nei piatti del giorno").not.toBeNull();
+    expect(error, "un finger è entrato nei piatti del giorno").not.toBeNull();
   });
 
   it("una voce libera nei piatti del giorno resta ammessa", async () => {
