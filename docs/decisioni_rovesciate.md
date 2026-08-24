@@ -1745,3 +1745,44 @@ prima di una convenzione fra due tabelle.**
 zero righe in produzione e sulla prova. Fra un mese, con la banca scelta e
 il POS configurato, lo stesso rovesciamento avrebbe avuto dentro una
 decisione su un numero vero.
+
+---
+
+## 43 · 24/08/2026 — «il pareggio si dice in coperti»
+
+**Cosa era stato deciso, e quando.** Il 15/08/2026, col blocco della rotta
+economica: `riepilogo_calcolato` restituisce `bep_solo_sala` e
+`bep_con_accessorie`, **in coperti**, e la scheda della previsione li mostra
+come i due numeri del pareggio.
+
+**La ragione di allora.** Con una linea sola — la sala — il pareggio in
+coperti è il numero più concreto che esista: «servono 2915 coperti» si
+traduce in «servono otto coperti al giorno», che è una frase con cui si
+decide come apparecchiare una serata. Un pareggio in euro, lì, sarebbe
+stato lo stesso numero detto in un modo meno utile.
+
+**Cosa si decide adesso** (blocco 4 del collaudo, disegno chiuso da
+Alessio): il pareggio si calcola **sul totale, in euro di ricavo**. I
+coperti restano, sotto e più piccoli, come numero **condizionato** — quanti
+ne servirebbero *se le altre linee vanno come previsto* — e la frase che
+dichiara la condizione esce dal database **insieme** al numero, così non
+possono separarsi.
+
+**Perché la ragione di allora non vale più.** Perché le linee non sono più
+una. Parole sue: *«non più "servono 2915 coperti": con sei linee a
+scontrini diversi quel numero non vuol dire niente»*. Un euro di barattoli
+e un euro di coperti non lasciano lo stesso margine, e un pareggio espresso
+in coperti costringe a convertire in coperti anche ciò che coperto non è —
+cioè a sommare cose diverse fingendo che siano uguali.
+
+⚠️ **E il numero vecchio non è stato buttato**, che è la parte che vale:
+resta come informazione, con la sua condizione dichiarata. Il difetto non
+era il numero — era **spacciarlo per il pareggio** quando aveva smesso di
+esserlo. La stessa forma delle sette spiegazioni tolte il 18/08: non
+sbagliate, ma rivolte a un mondo che era cambiato.
+
+⚠️ **Il prezzo, dichiarato**: un pareggio in euro dipende dal **mix** delle
+linee, quindi cambia se cambia il peso di una di loro. È corretto — un mix
+diverso ha un pareggio diverso — ma è meno stabile del numero di prima, e
+chi lo guarda due mesi di fila potrebbe vederlo muoversi senza che siano
+cambiati i costi fissi.
