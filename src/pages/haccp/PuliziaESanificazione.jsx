@@ -15,6 +15,7 @@ import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import ArchivioMensile from "../../components/ArchivioMensile";
 import { NOMI_MESI } from "../../lib/nomiMesi";
+import GiornataDiServizio from "../../components/GiornataDiServizio";
 
 // Le pulizie: la lista di oggi, e sotto l'archivio per mese.
 //
@@ -476,10 +477,7 @@ function ArchivioMese({ righe, mese }) {
             non è chi sta davanti allo schermo, è chi viene a controllare —
             e deve sapere che il giorno è la SERATA di servizio, non il
             calendario, o una pulizia dell'una di notte sembrerà mancante. */}
-        <span className="block text-b58-charcoal-soft/70">
-          La giornata è quella di servizio: una pulizia fatta dopo mezzanotte resta nella serata che
-          si stava chiudendo. Formato provvisorio, da rivedere con la biologa.
-        </span>
+        <GiornataDiServizio cosa="una pulizia" />
       </p>
       <div className="space-y-3">
         {giornate.map(([giorno, elenco]) => (

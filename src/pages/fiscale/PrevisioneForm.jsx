@@ -373,10 +373,14 @@ export default function PrevisioneForm() {
 
       {/* Un coperto */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-5">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Quanto vale un coperto</h2>
-        <p className="text-xs text-b58-charcoal-soft mb-4">
-          Da qui escono i ricavi e il costo diretto di ogni persona che entra: è la base del pareggio.
-        </p>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          Quanto vale un coperto
+          <Didascalia>
+            Da qui escono i ricavi e il costo diretto di ogni persona che entra, ed è la
+            base su cui si calcola il pareggio: quanti coperti servono perché la serata
+            non ci rimetta.
+          </Didascalia>
+        </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {campo("scontrinoFood", "Scontrino cibo", "€")}
           {campo("scontrinoBeverage", "Scontrino bevande", "€")}

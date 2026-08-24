@@ -11,6 +11,7 @@ import { orderTotals } from "../../lib/calcoli/conto";
 import { formatEUR } from "../../lib/constants";
 import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
+import Didascalia from "../../components/Didascalia";
 
 // Schermata BAR — tablet 11" in orizzontale, su supporto fisso (§3.2.1).
 //
@@ -205,6 +206,10 @@ export default function Bar() {
         <div className="flex flex-col min-h-0">
           <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5">
             Conti aperti — preconto e chiusura
+            <Didascalia>
+              Il Bar è anche punto cassa: da qui si chiude il conto di qualunque tavolo,
+              non solo dei propri ordini.
+            </Didascalia>
           </p>
           <div className="overflow-y-auto flex-1 pr-1">
             {openOrders.length === 0 ? (
@@ -263,10 +268,9 @@ export default function Bar() {
               })
             )}
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2 mt-2 shrink-0">
-            Il Bar è anche punto cassa: può chiudere il conto di qualunque tavolo, non
-            solo dei propri ordini.
-          </p>
+          {/* ⚠️ Il riquadro che c'era qui diceva la stessa cosa del segno
+              accanto al titolo, e occupava una riga fissa in fondo a una
+              colonna che in servizio è tutta schermo. */}
         </div>
       </div>
 

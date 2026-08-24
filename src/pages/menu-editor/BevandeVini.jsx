@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/barItems";
 import { formatEUR } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import Didascalia from "../../components/Didascalia";
 
 // Carta di vini e bevande (§3.2.1). Vive nell'Editor Menu insieme al resto
 // dell'offerta, ma su una tabella propria: menu_items pretende una ricetta
@@ -115,7 +116,14 @@ export default function BevandeVini() {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between gap-4 mb-1">
-        <h1 className="font-display text-2xl text-b58-charcoal">Bevande e vini</h1>
+        <h1 className="font-display text-2xl text-b58-charcoal">
+          Bevande e vini
+          <Didascalia>
+            Una voce tolta dalla carta non viene cancellata: sparisce dal tablet ma resta
+            leggibile nei conti già chiusi che la contengono, e in primavera si rimette
+            con un tocco.
+          </Didascalia>
+        </h1>
         <Link
           to="/editor-menu"
           className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
@@ -293,11 +301,9 @@ export default function BevandeVini() {
         ))
       )}
 
-      <p className="text-xs text-b58-charcoal-soft/70 leading-relaxed bg-b58-cream-dark/40 rounded-lg px-3 py-2">
-        Una voce tolta dalla carta non viene cancellata: sparisce dal tablet ma resta
-        leggibile nei conti già chiusi che la contengono — e in primavera si rimette
-        con un click.
-      </p>
+      {/* ⚠️ Era un riquadro in fondo alla pagina: si legge una volta e poi
+          è arredamento. La stessa frase sta ora accanto al titolo, dove la
+          si cerca la prima volta che si toglie qualcosa dalla carta. */}
     </div>
   );
 }

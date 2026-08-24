@@ -12,6 +12,7 @@ import {
 import { listRecipes } from "../../lib/api/recipes";
 import { RECIPE_CATEGORIES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
+import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
@@ -119,11 +120,14 @@ export default function PiattiDelGiorno() {
           {selected && items.length > 0 && <PrintButton label="Stampa inserto / PDF" />}
         </div>
 
-        <h1 className="font-display text-2xl text-b58-charcoal mb-1">Piatti del giorno</h1>
-        <p className="text-xs text-b58-charcoal-soft/80 mb-6">
-          Inserto leggero e separato dal menu principale, legato a una data. Puoi usarlo anche per provare
-          piatti "pronti per la carta" prima di metterli in carta stabile.
-        </p>
+        <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+          Piatti del giorno
+          <Didascalia>
+            Un inserto separato dal menu principale e legato a una data. Serve anche per
+            provare in sala i piatti già pronti per la carta, prima di metterli in carta
+            stabile.
+          </Didascalia>
+        </h1>
 
         {error && <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 

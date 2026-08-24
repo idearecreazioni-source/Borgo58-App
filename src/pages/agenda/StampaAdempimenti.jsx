@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { listTasks } from "../../lib/api/tasks";
 import { TASK_STATUSES, formatDate, labelFor } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
+import Didascalia from "../../components/Didascalia";
 
 export default function StampaAdempimenti() {
   const [tasks, setTasks] = useState([]);
@@ -42,9 +43,12 @@ export default function StampaAdempimenti() {
           leggergli l'Agenda dal telefono. Non si stampa da sola e non
           manda niente — è un foglio, quando serve un foglio. */}
       <p className="text-sm text-b58-charcoal-soft mt-2 print:hidden">
-        Tutte le scadenze della categoria «Fisco e scadenze», in ordine di data,
-        in un foglio da stampare o salvare come PDF — da portare a Laura o da
-        tenere appeso. Si aggiorna da sé: mostra quello che c&apos;è in Agenda adesso.
+        Un foglio da stampare o salvare in PDF.
+        <Didascalia etichetta="Cosa c'è dentro">
+          Tutte le scadenze della categoria «Fisco e scadenze», in ordine di data — da
+          portare a Laura o da tenere appeso. Si aggiorna da sé: mostra quello che c&apos;è
+          in Agenda adesso, non una fotografia di ieri.
+        </Didascalia>
       </p>
 
       {error && (

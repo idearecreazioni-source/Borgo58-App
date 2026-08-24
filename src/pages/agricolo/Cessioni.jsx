@@ -109,7 +109,7 @@ export default function Cessioni() {
       <p className="text-xs text-b58-charcoal-soft/80 mb-4">
         L'azienda agricola cede il raccolto alla S.r.l.s. con fattura. Il prezzo di trasferimento diventa il
         costo dell'ingrediente a produzione interna. <strong>Da validare con Laura</strong>: il sistema non
-        emette il documento fiscale, ne registra i dati (§1, §6).
+        emette il documento fiscale, ne registra i dati.
       </p>
 
       {error && <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}

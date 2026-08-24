@@ -50,6 +50,7 @@ import {
   pannelloNellaPianta,
 } from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
+import DatoNonLetto from "../../components/DatoNonLetto";
 
 const lineLabel = (item) => item.recipe?.name || item.free_text_name;
 const lineTotal = (item) => item.quantity * Number(item.unit_price);
@@ -1461,22 +1462,19 @@ export default function Sala() {
            una frase sicura di sé, e falsa. In servizio è la peggiore che si
            possa leggere. Il rifiuto ha la sua via d'uscita, perché l'errore
            che l'ha prodotto è passeggero. */
-        <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-6 text-center mb-3">
-          <p className="text-b58-charcoal font-medium mb-1">Non riesco a leggere la sala.</p>
-          <p className="testo-sala text-b58-charcoal-soft mb-3">
-            Non vuol dire che è vuota: vuol dire che non lo so.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setError("");
-              loadBoard().catch((e) => setError(e.message));
-            }}
-            className="tocco-azione rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala-grande font-semibold px-6"
-          >
-            Riprova
-          </button>
-        </div>
+        /* ⚠️ Era la seconda copia a mano di <DatoNonLetto>: vedi la nota
+           gemella in PiantaGiornata. La frase adesso è una sola, e nomina la
+           connessione anche qui — che è la causa vera nove volte su dieci, e
+           in servizio è l'unica informazione che permette di fare qualcosa. */
+        <DatoNonLetto
+          cosa="la sala"
+          nonVuolDire="Non vuol dire che è vuota: vuol dire che non lo so. Di solito è la connessione."
+          onRiprova={() => {
+            setError("");
+            loadBoard().catch((e) => setError(e.message));
+          }}
+          className="mb-3"
+        />
       ) : sagome.length === 0 ? (
         <p className="testo-sala text-b58-charcoal-soft/60 py-4">Nessun tavolo configurato.</p>
       ) : (

@@ -92,7 +92,7 @@ export default function HaccpHome() {
       to: "/haccp/raccolta-propria",
       icon: "leaf",
       title: "Raccolta propria",
-      desc: "Erbe spontanee e prodotti autoraccolti (§3.17).",
+      desc: "Erbe spontanee e prodotti autoraccolti.",
     },
   ];
 

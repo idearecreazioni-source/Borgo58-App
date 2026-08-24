@@ -6,6 +6,7 @@ import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
+import Didascalia from "../../components/Didascalia";
 
 // Incassato e scontrinato — chiesto da Alessio il 15/08/2026.
 //
@@ -215,10 +216,14 @@ export default function Scontrinato() {
               appartiene alla sera prima. */}
           {perGiorno.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">Serata per serata</h2>
-              <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
-                La stessa cosa dei due numeri qui sopra, ma per serata di servizio.
-              </p>
+              <h2 className="font-display text-lg text-b58-charcoal mb-4">
+                Serata per serata
+                <Didascalia>
+                  Gli stessi due numeri di qui sopra, spezzati per serata di servizio: la
+                  serata, non il giorno di calendario — un conto chiuso all&apos;una di
+                  notte appartiene alla sera prima.
+                </Didascalia>
+              </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

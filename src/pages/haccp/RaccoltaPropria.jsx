@@ -88,7 +88,7 @@ export default function RaccoltaPropria() {
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Raccolta propria</h1>
       <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Erbe spontanee e prodotti autoraccolti (§3.17): zona grigia normativa in Italia, nessun documento
+        Erbe spontanee e prodotti autoraccolti: zona grigia normativa in Italia, nessun documento
         fiscale coinvolto — pura tracciabilità HACCP. <strong>Da validare con un consulente alimentare/tecnico
         HACCP</strong> prima di un uso in produzione.
       </p>

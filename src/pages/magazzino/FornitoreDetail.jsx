@@ -157,7 +157,7 @@ export default function FornitoreDetail() {
             <span className="text-sm text-b58-charcoal">Fornitore occasionale</span>
             <span className="block text-xs text-b58-charcoal-soft/70 mt-0.5">
               Niente condizioni di pagamento/giorni di consegna da compilare — solo il minimo per
-              la tracciabilità (§3.11). Salvando con la spunta attiva, quei due campi vengono
+              la tracciabilità. Salvando con la spunta attiva, quei due campi vengono
               azzerati.
             </span>
           </span>
@@ -374,9 +374,12 @@ export default function FornitoreDetail() {
           accumulata nel tempo): non esiste oggi alcun tracciamento di
           incidenti di consegna nell'app — dichiarato qui invece di essere
           inventato o lasciato silenzioso. */}
-      <p className="text-xs text-b58-charcoal-soft/60 px-1">
-        L'affidabilità del fornitore (ritardi, resi, problemi) non è ancora tracciata: richiede un
-        nuovo modo di registrare gli incidenti di consegna, non ancora costruito.
+      {/* ⚠️ RESTA, ed è un limite e non una spiegazione: chi apre la scheda
+          di un fornitore cerca anche «come si è comportato», e senza questa
+          riga concluderebbe che si è comportato bene. */}
+      <p className="text-xs text-b58-charcoal-soft px-1">
+        ⚠️ Ritardi, resi e problemi non sono ancora registrati da nessuna parte: qui
+        non c&apos;è niente su com&apos;è andata finora.
       </p>
     </div>
   );

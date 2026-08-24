@@ -11,10 +11,10 @@ import {
 import { NC_CATEGORIES, formatDate, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
-import Didascalia from "../../components/Didascalia";
 import ArchivioMensile from "../../components/ArchivioMensile";
 import { NOMI_MESI } from "../../lib/nomiMesi";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import GiornataDiServizio from "../../components/GiornataDiServizio";
 
 // Le non conformità: le APERTE in evidenza, le risolte in archivio.
 //
@@ -322,13 +322,13 @@ function ArchivioNC({ righe, mese, isTitolare, onRiapri }) {
       <p className="testo-sala text-b58-charcoal-soft mb-3">
         {NOMI_MESI[mese.mese - 1]} {mese.anno} — {righe.length} in {giornate.length}{" "}
         {giornate.length === 1 ? "giornata" : "giornate"}.
-        <Didascalia etichetta="Come sono contate">
-          La giornata è quella di servizio, non quella del calendario: una
-          registrazione fatta all&apos;una di notte appartiene alla sera prima.
-        </Didascalia>
-        <span className="block text-b58-charcoal-soft">
-          ⚠️ Formato provvisorio, da rivedere con la biologa.
-        </span>
+        {/* ⚠️ QUI HO SCRITTO DUE VOLTE LA STESSA COSA A DUE CENTIMETRI DI
+            DISTANZA, e me ne sono accorto solo unificando le note ripetute
+            un'ora dopo: c'era una didascalia «Come sono contate» che diceva
+            la serata, e sotto la riga che la dice di nuovo. La didascalia è
+            sparita e resta questa, perché questa **si stampa** — e il
+            destinatario del foglio è chi viene a controllare. */}
+        <GiornataDiServizio cosa="una registrazione" />
       </p>
 
       {ripetuti.length > 0 && (

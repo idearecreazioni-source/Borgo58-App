@@ -30,6 +30,7 @@ import {
   togliAssegnazione,
   updateReservation,
 } from "../../lib/api/reservations";
+import DatoNonLetto from "../../components/DatoNonLetto";
 
 // LA SALA — la schermata in cui si prepara una serata, e in cui si prende
 // una prenotazione al telefono.
@@ -1104,25 +1105,27 @@ export default function PiantaGiornata() {
            senza gesto d'uscita è un vicolo cieco), perché quell'errore è
            passeggero — a lui è capitato una volta sola, e riaprendo la pagina
            era tornato tutto. */
-        <div className="rounded-xl border border-dashed border-b58-terracotta/40 p-8 text-center">
-          <p className="text-b58-charcoal font-medium mb-1">Non sono riuscito a leggere la sala.</p>
-          <p className="testo-sala text-b58-charcoal-soft mb-4">
-            Non vuol dire che è vuota: vuol dire che non lo so. Di solito è la connessione.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setError("");
-              setCaricamento(true);
-              ricarica()
-                .catch((e) => setError(e.message))
-                .finally(() => setCaricamento(false));
-            }}
-            className={PRINCIPALE}
-          >
-            Riprova
-          </button>
-        </div>
+        /* 🔴 ERA UNA COPIA A MANO DI <DatoNonLetto>, e le due copie si erano
+           GIA' SEPARATE (24/08/2026, trovata cercando le note ripetute).
+           Questa diceva «Non sono riuscito a leggere la sala» e nominava la
+           connessione; quella in Comande diceva «Non riesco» e taceva. Stesso
+           fatto, due frasi: nate il 18/08, quando il componente comune non
+           c'era ancora — è arrivato il 20/08 e nessuno le ha portate dentro.
+           ⚠️ Il difetto non è l'estetica: è che cambiando la frase in un
+           posto solo le due continuano a dire cose diverse, e nessun errore
+           lo segnala. */
+        <DatoNonLetto
+          cosa="la sala"
+          nonVuolDire="Non vuol dire che è vuota: vuol dire che non lo so. Di solito è la connessione."
+          onRiprova={() => {
+            setError("");
+            setCaricamento(true);
+            ricarica()
+              .catch((e) => setError(e.message))
+              .finally(() => setCaricamento(false));
+          }}
+          className="p-8"
+        />
       ) : (
         <>
 

@@ -9,6 +9,7 @@ import {
   quantiNeCompila,
 } from "../../lib/api/schedeProdotto";
 import { ALLERGENS, labelFor } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const NOMI_CAMPI = {
   conservazione: "conservazione",
@@ -121,12 +122,20 @@ export default function SchedeProdotti() {
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center text-sm text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Schede dei prodotti</h1>
+      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+        Schede dei prodotti
+        <Didascalia>
+          Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui
+          l&apos;assistente completa il resto — conservazione, durata, temperatura attesa
+          alla consegna, stagionalità e allergeni — dicendo sempre da dove viene ogni
+          risposta.
+        </Didascalia>
+      </h1>
+      {/* ⚠️ RESTA: è il limite di quello che si sta per confermare in blocco.
+          Nascosto dietro il segno, qualcuno confermerebbe una scheda credendo
+          che ci sia dentro anche lo scarto. */}
       <p className="mb-6 text-sm text-stone-600">
-        Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui l&apos;assistente
-        completa il resto: conservazione, durata, temperatura attesa alla consegna,
-        stagionalità e allergeni, dicendo da dove vengono. ⚠️ La percentuale di
-        scarto no: quella dipende da cosa ci si fa, e la scrivi tu.
+        ⚠️ La percentuale di scarto no: dipende da cosa ci si fa, e la scrivi tu.
       </p>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}

@@ -216,7 +216,7 @@ export default function DeduzioniFiscali() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Deduzioni fiscali {year}</h1>
       <p className="text-xs text-b58-charcoal-soft/80 mb-6">
         Stima interna della quota deducibile, sempre da validare con Laura. Ogni importo mostra da quale
-        regola deriva; il sistema non presenta nessun numero come certo (§6). Le regole si governano da{" "}
+        regola deriva; il sistema non presenta nessun numero come certo. Le regole si governano da{" "}
         <Link to="/fiscale/deducibilita" className="underline print:hidden">Deducibilità dei costi</Link>.
       </p>
 

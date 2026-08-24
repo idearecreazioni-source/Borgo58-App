@@ -130,7 +130,7 @@ export default function SimulatoreFiscale() {
       <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
         Stima trasparente basata sugli importi che inserisci tu — non un dato certo estratto dalla contabilità.
         Serve a farsi un'idea degli ordini di grandezza. I numeri veri li determina Laura sulla contabilità
-        reale (§6).
+        reale.
       </p>
 
       {error && (

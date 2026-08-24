@@ -90,7 +90,7 @@ export default function ProiezioneFiscaleHome() {
 
       <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
         Tutto in questo modulo è una <strong>stima interna</strong> che assiste le decisioni, mai un dato
-        fiscale definitivo: la validazione resta sempre alla commercialista (§6).
+        fiscale definitivo: la validazione resta sempre alla commercialista.
       </p>
 
       {error && <p className="text-sm text-b58-terracotta-dark mb-4">{error}</p>}

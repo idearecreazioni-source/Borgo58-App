@@ -15,6 +15,7 @@ import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import ArchivioMensile from "../../components/ArchivioMensile";
 import { NOMI_MESI } from "../../lib/nomiMesi";
+import GiornataDiServizio from "../../components/GiornataDiServizio";
 
 // Il registro temperature: cosa è stato registrato OGGI, e sotto
 // l'archivio mese per mese.
@@ -484,10 +485,7 @@ function ArchivioTemperature({ righe, mese }) {
         {/* Stampato, non nascosto: il destinatario di questo foglio è chi
             viene a controllare, e deve sapere che la giornata è quella di
             servizio — o una lettura dell'una di notte sembrerà mancante. */}
-        <span className="block text-b58-charcoal-soft/70">
-          La giornata è quella di servizio: una lettura fatta dopo mezzanotte resta nella serata che si
-          stava chiudendo. Formato provvisorio, da rivedere con la biologa.
-        </span>
+        <GiornataDiServizio cosa="una lettura" />
       </p>
       <div className="space-y-3">
         {giornate.map((g) => (

@@ -313,7 +313,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 Annulla tavolo
               </button>
               {/* 🔴 QUI C'ERA: «Nessun incasso viene registrato in cassa:
-                  l'integrazione con il registratore telematico (§3.2)
+                  l'integrazione con il registratore telematico
                   arriverà con l'hardware.»
 
                   Non è stata tolta perché era una didascalia: **è stata
