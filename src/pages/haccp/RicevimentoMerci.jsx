@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { addGoodsReceiving, listGoodsReceiving } from "../../lib/api/haccp";
+import {
+  addGoodsReceiving,
+  ricevimentiDelMese,
+  ricevimentiDiOggi,
+  ricevimentiMesiConDati,
+} from "../../lib/api/haccp";
+import ArchivioMensile from "../../components/ArchivioMensile";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { esitoRicevimento } from "../../lib/calcoli/haccp";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
@@ -27,13 +34,34 @@ export default function RicevimentoMerci() {
   const [avviso, setAvviso] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [mesi, setMesi] = useState([]);
 
+  // Il contatore fa rileggere l'archivio dopo una registrazione nuova:
+  // cambiando la funzione, il componente comune la richiama.
+  const [ricarica, setRicarica] = useState(0);
+  const caricaMese = useCallback(
+    (anno, mese) => ricevimentiDelMese(anno, mese),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ricarica]
+  );
+
+  // 🔴 SI CHIEDE LA SERATA, NON TUTTO (24/08/2026, punto (f) della pila).
+  // Prima si leggeva l'intero registro e si mostrava in ordine di data: dopo
+  // qualche settimana di consegne quell'elenco diventa illeggibile, e resta
+  // la parte più importante — **è la prova che la merce è stata
+  // controllata**. Non si nasconde, si archivia.
+  //
+  // ⚠️ E la giornata è la SERATA DI SERVIZIO: una consegna registrata
+  // all'una di notte appartiene alla sera prima. Il conto lo fa il
+  // database, che è l'unico posto dove quella regola vive.
   const load = () =>
     Promise.all([
-      listGoodsReceiving(),
+      ricevimentiDiOggi(),
+      leggi(ricevimentiMesiConDati()),
       isTitolare ? getEntities().then((e) => listSuppliers(e.srls.id)) : listSuppliersDisplay(),
-    ]).then(([lg, sup]) => {
-      setLogs(lg);
+    ]).then(([oggi, ms, sup]) => {
+      setLogs(oggi);
+      setMesi(nonLetto(ms) ? [] : ms);
       setSuppliers(sup);
     });
 
@@ -71,6 +99,11 @@ export default function RicevimentoMerci() {
       );
       setForm(emptyForm);
       await load();
+      // ⚠️ E si rinfresca anche l'archivio: la consegna appena registrata
+      //    e' del mese corrente, e senza questo il mese aperto continuerebbe
+      //    a mostrare l'elenco di prima — un registro che tace su una riga
+      //    appena scritta.
+      setRicarica((n) => n + 1);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -208,8 +241,11 @@ export default function RicevimentoMerci() {
         </div>
       </div>
 
+      <h2 className="font-display testo-sala-grande text-b58-charcoal mb-2">Arrivato oggi</h2>
       {logs.length === 0 ? (
-        <p className="testo-sala text-b58-charcoal-soft/60">Nessun ricevimento registrato ancora.</p>
+        <p className="testo-sala text-b58-charcoal-soft/60 mb-6">
+          Stasera non è ancora arrivato niente.
+        </p>
       ) : (
         <ul className="space-y-2">
           {logs.map((l) => (
@@ -239,6 +275,60 @@ export default function RicevimentoMerci() {
           ))}
         </ul>
       )}
+
+      {/* ---------------------------------------------------------------
+          L'ARCHIVIO: la prova che la merce è stata guardata
+          --------------------------------------------------------------- */}
+      {/* ⚠️ Si scarica e si stampa, come gli altri tre registri HACCP: il
+          destinatario di quel foglio non è chi sta davanti allo schermo, è
+          chi viene a controllare. */}
+      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-6 mt-6">
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Archivio</h2>
+        <ArchivioMensile
+          mesi={mesi}
+          carica={caricaMese}
+          nomeFile="ricevimento_merci"
+          vuoto="Ancora nessuna consegna registrata."
+          colonneCsv={[
+            { label: "Giornata", value: (r) => r.giorno },
+            { label: "Fornitore", value: (r) => r.fornitore ?? "" },
+            { label: "Prodotti", value: (r) => r.prodotti },
+            { label: "Ricevuto il", value: (r) => new Date(r.quando).toLocaleString("it-IT") },
+            { label: "Temperatura", value: (r) => (r.temperatura == null ? "" : `${r.temperatura} °C`) },
+            { label: "Imballaggio", value: (r) => (r.imballo_ok ? "integro" : "danneggiato") },
+            { label: "Merce", value: (r) => (r.conforme ? "conforme" : "non conforme") },
+            { label: "Nota", value: (r) => r.nota ?? "" },
+          ]}
+        >
+          {(righe) => (
+            <ul className="space-y-2">
+              {righe.map((r) => (
+                <li key={r.id} className="rounded-lg bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <span className="testo-sala text-b58-charcoal font-medium">{r.prodotti}</span>
+                      {r.fornitore && (
+                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">· {r.fornitore}</span>
+                      )}
+                      {/* ⚠️ L'esito si calcola dallo stesso posto della
+                          lista di oggi: due regole per «è conforme?»
+                          finirebbero per dire due cose diverse sullo
+                          stesso registro. */}
+                      {!esitoRicevimento({ conformity: r.conforme, packaging_ok: r.imballo_ok }).conforme && (
+                        <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                          {esitoRicevimento({ conformity: r.conforme, packaging_ok: r.imballo_ok }).etichetta}
+                        </span>
+                      )}
+                    </div>
+                    <span className="testo-sala text-b58-charcoal-soft">{formatDate(r.quando)}</span>
+                  </div>
+                  {r.nota && <p className="testo-sala text-b58-charcoal-soft mt-1">{r.nota}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </ArchivioMensile>
+      </div>
     </div>
   );
 }

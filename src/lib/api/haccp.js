@@ -364,3 +364,32 @@ export async function riepilogoHaccpOggi() {
   if (error) throw error;
   return data?.[0] ?? null;
 }
+
+// ---------------------------------------------------------------------
+// Ricevimento merci: oggi in evidenza, il resto in archivio
+// ---------------------------------------------------------------------
+// ⚠️ L'ultima delle quattro schermate HACCP a lasciare l'elenco
+// cronologico infinito. Stessa forma delle altre tre, e stessa ragione:
+// dopo qualche settimana quell'elenco diventa illeggibile e resta la parte
+// più importante — è la prova che la merce è stata controllata.
+
+export async function ricevimentiDiOggi() {
+  const { data, error } = await supabase.rpc("ricevimenti_di_oggi");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function ricevimentiDelMese(anno, mese) {
+  const { data, error } = await supabase.rpc("ricevimenti_del_mese", {
+    p_anno: anno,
+    p_mese: mese,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function ricevimentiMesiConDati() {
+  const { data, error } = await supabase.rpc("ricevimenti_mesi_con_dati");
+  if (error) throw error;
+  return data ?? [];
+}
