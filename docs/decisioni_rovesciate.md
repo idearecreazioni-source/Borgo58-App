@@ -1700,3 +1700,48 @@ ancora la chiave pubblica, e **la traduzione è diventata muta** — a
 schermo tornava la frase generica. *Il portiere rendeva inutile la
 funzione proprio nel momento in cui serviva.* Chiuso passando il token di
 chi ha appena ricevuto il rifiuto.
+
+---
+
+## 42 · 24/08/2026 — «la commissione del POS si conserva in punti»
+
+**Cosa era stato deciso e quando.** Il 15/08, con la migrazione della
+tesoreria (`20260815000004`):
+`impostazioni_tesoreria.commissione_pos_percento` in **punti**,
+`numeric(5,2)` con vincolo `0..10`, e il calcolo che divide per cento.
+
+**La ragione di allora.** La schermata chiede «Commissione %» e chi la
+compila scrive quello che gli dice la banca: 1,5. Dentro quella tabella
+era tutto coerente — un numero, una schermata, un calcolo.
+
+**Cosa si decide adesso.** La colonna passa a **frazione** (0,015), con
+vincolo `0..1` e il suo commento in italiano; la schermata converte come
+fa già la Proiezione, e la conversione vive in un posto solo
+(`src/lib/calcoli/percentuali.js`).
+
+**Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, presa da
+sola**: quella tabella era coerente con sé stessa, e lo era anche
+l'altra. Quello che è cambiato è che il 15/08 nessuno aveva guardato
+**l'altra tabella**, dove la stessa identica cosa — quanto trattiene la
+banca — è conservata in un'unità diversa.
+
+🔴 **E qui sta la lezione, che vale oltre questo caso: la coerenza locale
+non basta quando il fatto del mondo è uno solo.** Ogni metà era giusta,
+nessun utente poteva sbagliare, nessun errore sarebbe mai comparso. A
+sbagliare sarebbe stato chi legge la commissione da un posto e la scrive
+nell'altro — e il risultato sarebbe rimasto **plausibile**: l'1,5%
+diventa 0,015% o 150%. La seconda si nota subito, la prima sparisce
+nell'arrotondamento, ed è quella che fa danno.
+
+⚠️ **Il prezzo si paga, ed è dichiarato**: i punti sono la convenzione
+maggioritaria del database (13 colonne contro 9), quindi questa scelta
+allarga di uno il gruppo minoritario. È stata presa lo stesso perché
+l'alternativa — portare la Proiezione in punti — avrebbe reso un solo
+campo **un'eccezione dentro una schermata dove tutti gli altri si
+comportano allo stesso modo. Un'eccezione dentro una schermata si dimentica
+prima di una convenzione fra due tabelle.**
+
+⚠️ E si è potuto scegliere liberamente **solo perché la colonna è vuota**:
+zero righe in produzione e sulla prova. Fra un mese, con la banca scelta e
+il POS configurato, lo stesso rovesciamento avrebbe avuto dentro una
+decisione su un numero vero.
