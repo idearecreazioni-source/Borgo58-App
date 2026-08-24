@@ -209,6 +209,12 @@ const OPERAZIONI = new Set([
   // giusto e dentro niente**, cioe' nessun errore e un food cost di zero
   // euro che ha l'aria di essere un numero.
   "duplica_ricetta",
+  // Un ingrediente si puo' togliere (24/08/2026, punto (a) del collaudo).
+  // ⚠️ Tocca UNA tabella sola e passa comunque di qui, come
+  // `elimina_nota_credito`: il controllo sta nella funzione — tredici
+  // tabelle da guardare prima di cancellare — e la forma e' quella che
+  // rende l'elenco delle cancellazioni controllabile.
+  "elimina_ingrediente",
   // Blocco 1 del mandato del registratore (20/08/2026). Segnalare che uno
   // scontrino non e' uscito tocca due tabelle: il conto torna senza
   // documento E resta scritto chi l'ha detto. A meta' sarebbe o un conto

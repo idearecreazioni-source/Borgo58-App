@@ -10,15 +10,23 @@ export default function IngredientiList() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  // ⚠️ Senza un modo di VEDERE quelli messi da parte non si potrebbero più
+  // rimettere — e un gesto che non si può disfare non è «mettere da
+  // parte», è cancellare con un altro nome.
+  const [conMessiDaParte, setConMessiDaParte] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
-    listIngredients({ search: search || undefined, category: category || undefined })
+    listIngredients({
+      search: search || undefined,
+      category: category || undefined,
+      includiNonAttivi: conMessiDaParte,
+    })
       .then(setIngredients)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, category]);
+  }, [search, category, conMessiDaParte]);
 
   const sorted = useMemo(() => {
     const list = [...ingredients];
@@ -79,6 +87,18 @@ export default function IngredientiList() {
           <option value="price">Ordina: prezzo</option>
           <option value="updated">Ordina: aggiornati di recente</option>
         </select>
+
+        {/* ⚠️ Una casella, non un terzo menu: è uno stato acceso o spento,
+            e i due menu accanto sono scelte fra molte. */}
+        <label className="tocco-bottone inline-flex items-center gap-2 text-sm text-b58-charcoal-soft">
+          <input
+            type="checkbox"
+            checked={conMessiDaParte}
+            onChange={(e) => setConMessiDaParte(e.target.checked)}
+            className="w-4 h-4 accent-b58-terracotta"
+          />
+          Mostra anche quelli messi da parte
+        </label>
       </div>
 
       {error && (
@@ -119,6 +139,14 @@ export default function IngredientiList() {
                 >
                   <td className="px-4 py-3 text-b58-charcoal font-medium">
                     {ing.name}
+                    {/* ⚠️ Si vede QUALE e' messo da parte: senza il segno,
+                        accendendo la casella l'elenco si allunga e non si
+                        capisce quali righe sono comparse. */}
+                    {ing.active === false && (
+                      <span className="ml-2 text-xs font-normal text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5">
+                        messo da parte
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-b58-charcoal-soft">
                     {labelFor(INGREDIENT_CATEGORIES, ing.category)}

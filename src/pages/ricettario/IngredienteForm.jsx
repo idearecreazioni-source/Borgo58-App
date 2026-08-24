@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { listSuppliers, createSupplier } from "../../lib/api/suppliers";
 import {
@@ -12,10 +14,13 @@ import {
 import {
   confermaCampiProdotto,
   createIngredient,
+  eliminaIngrediente,
   getIngredient,
   listPriceHistory,
+  mettiDaParteIngrediente,
   updateIngredientFields,
   updateIngredientPrice,
+  usiDellIngrediente,
 } from "../../lib/api/ingredients";
 import {
   ALLERGENS,
@@ -54,6 +59,51 @@ const emptyForm = {
 export default function IngredienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
+
+  // Dove è usato questo ingrediente: si chiede PRIMA di offrire i gesti.
+  // ⚠️ Finché non si sa, non si offre di cancellare — «non lo so» e «non è
+  // usato» sono due cose diverse (regola del 19/08).
+  const [usi, setUsi] = useState(null);
+  const [attivo, setAttivo] = useState(true);
+  const [togliendo, setTogliendo] = useState(false);
+
+  const guardaGliUsi = useCallback(() => {
+    if (!id) return;
+    setUsi(null);
+    leggi(usiDellIngrediente(id)).then(setUsi);
+  }, [id]);
+
+  useEffect(() => {
+    guardaGliUsi();
+  }, [guardaGliUsi]);
+
+  const cambiaPresenza = async (prossimo) => {
+    setTogliendo(true);
+    setError("");
+    try {
+      await mettiDaParteIngrediente(id, prossimo);
+      setAttivo(prossimo);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setTogliendo(false);
+    }
+  };
+
+  const eliminaDavvero = async () => {
+    setTogliendo(true);
+    setError("");
+    try {
+      await eliminaIngrediente(id);
+      navigate("/ricettario/ingredienti");
+    } catch (e) {
+      // ⚠️ Il messaggio arriva dal database e nomina i posti in italiano:
+      // non si sostituisce con uno generico (regola del 09/08).
+      setError(e.message);
+      setTogliendo(false);
+      guardaGliUsi();
+    }
+  };
   const navigate = useNavigate();
 
   const [entities, setEntities] = useState(null);
@@ -87,6 +137,8 @@ export default function IngredienteForm() {
         if (isEdit) {
           const ing = await getIngredient(id);
           if (cancelled) return;
+          // Se e' gia' messo da parte, il pulsante deve dire «rimettilo».
+          setAttivo(ing.active !== false);
           setForm({
             name: ing.name,
             category: ing.category,
@@ -730,6 +782,80 @@ export default function IngredienteForm() {
           </button>
         </div>
       </form>
+
+      {/* 🔴 TOGLIERE UN INGREDIENTE (24/08/2026, punto (a) del collaudo).
+          Prima qui c'era solo «Salva modifiche»: nessun modo di eliminarlo
+          e nessuno di metterlo da parte, mentre nella scheda del fornitore
+          «Disattiva» esisteva gia'.
+
+          ⚠️ E IL GESTIONALE DICE IN QUALE CASO SEI, invece di lasciartelo
+          scoprire premendo: se l'ingrediente e' gia' stato usato, il
+          pulsante «Elimina» non c'e' — c'e' la ragione, e la via
+          d'uscita. Un pulsante che a volte funziona e a volte no, senza
+          spiegare, e' peggio di un pulsante che non c'e'. */}
+      {isEdit && (
+        <div className="mt-8 rounded-xl border border-b58-charcoal/15 p-5">
+          <h2 className="font-display text-lg text-b58-charcoal mb-1">
+            Toglierlo dagli elenchi
+            <Didascalia>
+              Metterlo da parte lo fa sparire da dove lo cerchi, ma resta
+              agganciato a tutto quello che l&apos;ha usato: ricette, carichi,
+              partite in magazzino, food cost gia&apos; calcolati. Cancellarlo
+              davvero si puo&apos; solo se non l&apos;ha mai usato nessuno.
+            </Didascalia>
+          </h2>
+
+          {usi === null ? (
+            <p className="text-sm text-b58-charcoal-soft">Guardo dove è usato…</p>
+          ) : nonLetto(usi) ? (
+            <DatoNonLetto
+              cosa="dove è usato questo ingrediente"
+              nonVuolDire="Non vuol dire che non è usato da nessuna parte: vuol dire che non lo so, e finché non lo so non ti offro di cancellarlo."
+              onRiprova={guardaGliUsi}
+            />
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={togliendo}
+                  onClick={() => cambiaPresenza(!attivo)}
+                  className="tocco-bottone rounded-lg border border-b58-charcoal/20 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-4 disabled:opacity-60"
+                >
+                  {attivo ? "Mettilo da parte" : "Rimettilo negli elenchi"}
+                </button>
+
+                {usi.length === 0 ? (
+                  /* ⚠️ Il pulsante si trasforma in conferma sul posto: non
+                     e' una finestra, e il secondo tocco cade lontano dal
+                     primo — cosi' non si conferma per inerzia. */
+                  <ConfermaDistruttiva
+                    etichetta="Elimina definitivamente"
+                    cosaSparisce={`l'ingrediente «${form.name || "senza nome"}»`}
+                    domanda="Non l'ha mai usato nessuno, quindi sparisce e basta."
+                    etichettaConferma="Sì, elimina"
+                    onConferma={eliminaDavvero}
+                    disabilitato={togliendo}
+                  />
+                ) : (
+                  <span className="text-sm text-b58-charcoal-soft">
+                    Non si può eliminare: compare in{" "}
+                    {usi.map((u) => `${u.dove} (${u.quante})`).join(", ")}.
+                  </span>
+                )}
+              </div>
+
+              {!attivo && (
+                <p className="mt-3 text-sm text-b58-charcoal">
+                  ⚠️ È messo da parte: non compare negli elenchi dove lo cerchi,
+                  ma tutto quello che l&apos;ha usato continua a nominarlo.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
 
       {/* Le versioni comprate davvero: marca, formato, fornitore, prezzo
           per unità. È la tabella disegnata da Alessio il 12/08/2026 —

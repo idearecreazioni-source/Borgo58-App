@@ -9,12 +9,17 @@ const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_enti
 // come preparazione — e due strade per la stessa cosa finiscono per dire
 // due numeri diversi. In magazzino invece si vedono, ed è giusto: quanto
 // ragù c'è in cella è una domanda vera.
-export async function listIngredients({ search, category, includiPreparazioni } = {}) {
+export async function listIngredients({ search, category, includiPreparazioni, includiNonAttivi } = {}) {
   let query = supabase
     .from("ingredients")
     .select(SELECT)
-    .eq("active", true)
     .order("name");
+
+  // ⚠️ Di norma si vedono solo quelli in elenco. Ma senza un modo di
+  // guardare quelli messi da parte non si potrebbero piu' RIMETTERE — e
+  // un gesto che non si puo' disfare non e' «mettere da parte», e'
+  // cancellare con un altro nome.
+  if (!includiNonAttivi) query = query.eq("active", true);
 
   if (!includiPreparazioni) query = query.is("preparazione_id", null);
 
@@ -158,4 +163,46 @@ export async function listCampiDaConfermare() {
   const { data, error } = await supabase.rpc("campi_da_confermare");
   if (error) throw error;
   return data ?? [];
+}
+
+// ---------------------------------------------------------------------
+// Togliere un ingrediente: due strade, e il gestionale dice quale
+// ---------------------------------------------------------------------
+// 🔴 Fino al 24/08/2026 nella scheda c'era solo «Salva modifiche»: nessun
+// modo di eliminare un ingrediente, nessuno di metterlo da parte — mentre
+// nella scheda del fornitore «Disattiva» esisteva già. Il concetto c'era,
+// agli ingredienti non era stato dato. E ⚠️ `ingredients.active` era in
+// tabella dal primo giorno: tutto acceso, e muto.
+
+/**
+ * Dove compare questo ingrediente, e quante volte.
+ * ⚠️ Serve PRIMA di offrire il pulsante: un «Elimina» che a volte funziona
+ * e a volte no, senza spiegare, è peggio di un pulsante che non c'è.
+ */
+export async function usiDellIngrediente(id) {
+  const { data, error } = await supabase.rpc("usi_dell_ingrediente", { p_id: id });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Lo toglie dagli elenchi senza staccarlo da niente. È la strada normale.
+ */
+export async function mettiDaParteIngrediente(id, attivo) {
+  const { data, error } = await supabase.rpc("metti_da_parte_ingrediente", {
+    p_id: id,
+    p_attivo: attivo,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Lo cancella davvero — e solo se non l'ha mai usato nessuno.
+ * ⚠️ Passa dal corridoio anche se tocca una tabella sola: il controllo sta
+ * nella funzione (tredici tabelle da guardare) e la forma è quella che
+ * rende l'elenco delle cancellazioni controllabile.
+ */
+export async function eliminaIngrediente(id) {
+  return eseguiOperazione("elimina_ingrediente", { p_id: id });
 }
