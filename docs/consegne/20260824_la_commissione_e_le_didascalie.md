@@ -20,7 +20,23 @@
 Tre risposte confermate da Alessio, più due lavori nuovi:
 
 1. **Applicare le migrazioni** (aveva pushato) — fatto prima di iniziare:
-   da 207 a **210**.
+   da 207 a **210**. Le tre applicate, **nominate per intero** come pretende
+   la regola del 16/08:
+   - `20260824000012_un_rifiuto_si_legge_in_italiano` — la traduzione dei
+     rifiuti dei vincoli in italiano, presa dal commento del vincolo;
+   - `20260824000013_la_spiegazione_e_per_chi_lavora` — il portiere su
+     quella traduzione: niente chiave pubblica, staff compreso;
+   - `20260824000014_la_verifica_che_ora_ha_bisogno_dei_claims` — la
+     verifica della 012 rifatta coi claims, perché la 013 l'aveva resa
+     fragile.
+
+   🔴 **E LE AVEVO SCRITTE «da 207 a 210», SENZA I NUMERI.** Il blocco che
+   protegge la produzione mi si è messo davanti al primo comando di questo
+   turno: *«queste migrazioni sono già in produzione e nessun riepilogo le
+   nomina»*. Aveva ragione, ed è la **seconda volta** che ci cado nello
+   stesso modo — la prima era ieri notte, con sei versioni scritte in
+   forma abbreviata. ⚠️ *Non è una svista: è un'abitudine di scrittura, e
+   l'unica cosa che la corregge è una rete che si mette di mezzo.*
 2. **Provare il segno delle didascalie col mouse e con la tastiera**, di
    persona: *«non deve restare una cosa scritta e mai esercitata»*.
 3. **L'ordine dei lavori**: prima le didascalie sulle schermate, poi le
