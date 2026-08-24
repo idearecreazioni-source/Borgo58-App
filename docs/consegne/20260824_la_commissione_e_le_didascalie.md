@@ -52,7 +52,7 @@ Tre risposte confermate da Alessio, più due lavori nuovi:
 
 ---
 
-## 2 · La commissione POS — migrazioni `20260824000015` e `…016`
+## 2 · La commissione POS — migrazioni `20260824000015` e `20260824000016`
 
 ### Il caso, misurato
 
