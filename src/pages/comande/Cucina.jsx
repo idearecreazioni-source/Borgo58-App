@@ -7,6 +7,8 @@ import {
   setItemsPrepared,
 } from "../../lib/api/orders";
 import { bigliettiCucina, etichettaTurno } from "../../lib/calcoli/turni";
+import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
+import { ALLERGENS, labelFor } from "../../lib/constants";
 
 // CUCINA — postazione di stampa, non schermata di lavoro (§3.2.1).
 //
@@ -175,8 +177,38 @@ export default function Cucina() {
               {items.map((i) => (
                 <div key={i.id} className="py-0.5">
                   <div className="print:text-base testo-sala-grande leading-tight">
-                    <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
+                    {/* 🔴 IL NOME ARRIVA DAL POSTO UNICO (24/08): qui c'era
+                        la quarta copia di `lineLabel`, l'unica che non
+                        sapeva riconoscere un bis. Il bocconcino in più si
+                        stampava col suo nome nudo, in mezzo agli altri
+                        piatti — cioè indistinguibile da una portata. */}
+                    <b>{i.quantity}×</b> {nomeRiga(i)}
                   </div>
+                  {/* 🔴 LA SOSTITUZIONE, E IN GRASSETTO CON UN BORDO: è il
+                      punto dove un errore fa male davvero. Non è una nota
+                      fra le altre — una nota si può leggere di sfuggita, una
+                      sostituzione di allergene no.
+                      ⚠️ Sta PRIMA della nota libera: se una riga ha tutte e
+                      due, quella che riguarda la salute si legge per prima. */}
+                  {/* ⚠️ PIÙ GRANDE DEL NOME DEL PIATTO, e non è enfasi: sulla
+                      carta il nome sta a `text-base`, questa riga a
+                      `text-lg`. È l'unica riga del biglietto che, se non
+                      viene letta, manda in ospedale qualcuno — e la regola
+                      di Alessio è che 3,20 mm sono il minimo accettabile,
+                      non l'obiettivo. A schermo sta a 6 mm.
+                      ⚠️ La frase sotto resta più piccola: dice COME si fa,
+                      e si legge dopo aver visto CHE si fa. */}
+                  {allergeniTolti(i).length > 0 && (
+                    <div className="print:text-lg testo-sala-lontano font-bold border-2 border-b58-charcoal rounded px-1.5 py-0.5 my-0.5 ml-5">
+                      SENZA{" "}
+                      {allergeniTolti(i)
+                        .map((a) => labelFor(ALLERGENS, a).toUpperCase())
+                        .join(" · ")}
+                      <div className="print:text-sm testo-sala-grande font-normal">
+                        {frasiSostituzioni(i).join(" · ")}
+                      </div>
+                    </div>
+                  )}
                   {i.note && <div className="print:text-sm testo-sala italic pl-5">↳ {i.note}</div>}
                 </div>
               ))}

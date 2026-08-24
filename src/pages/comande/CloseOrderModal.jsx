@@ -7,16 +7,27 @@ import {
 } from "../../lib/api/orders";
 import { listCausali } from "../../lib/api/cash";
 import {
+  ALLERGENS,
   DISCOUNT_GIFT_TYPES,
   ORDER_PAYMENT_METHODS,
   formatEUR,
   labelFor,
 } from "../../lib/constants";
+import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 import { fiscalizzaConto } from "../../lib/fiscalizzazione";
 import { serataCorrente } from "../../lib/giornataOperativa";
 
-const lineLabel = (item) => item.recipe?.name || item.free_text_name;
-const lineTotal = (item) => item.quantity * Number(item.unit_price);
+// 🔴 IL NOME E IL TOTALE DI UNA RIGA ARRIVANO DA `righeComanda.js` (24/08):
+// erano quattro copie sparse, e solo quella della Sala sapeva riconoscere un
+// bis. Qui il nome porta anche il «senza», perché una sostituzione fa
+// cambiare il prezzo e chi chiude il conto deve vedere da dove viene.
+const nomeSulConto = (item) => {
+  const tolti = allergeniTolti(item);
+  if (tolti.length === 0) return nomeRiga(item);
+  return `${nomeRiga(item)} (senza ${tolti
+    .map((a) => labelFor(ALLERGENS, a).toLowerCase())
+    .join(", ")})`;
+};
 
 // Modale "chiudi conto" (§3.2), ripreso dal prototipo UX di Cowork: riepilogo
 // raggruppato per piatto, poi pagato/sconto/omaggio/annullato.
@@ -52,10 +63,10 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   // leggibile di una lista piatta quando ci sono più giri di comanda.
   const grouped = Object.values(
     items.reduce((acc, it) => {
-      const key = lineLabel(it);
+      const key = nomeSulConto(it);
       if (!acc[key]) acc[key] = { name: key, quantity: 0, total: 0 };
       acc[key].quantity += it.quantity;
-      acc[key].total += lineTotal(it);
+      acc[key].total += totaleRiga(it);
       return acc;
     }, {})
   );
@@ -269,7 +280,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
               </p>
               <ul className="mt-1 text-b58-charcoal-soft">
                 {nonInviate.map((i) => (
-                  <li key={i.id}>· {i.quantity}× {i.recipe?.name ?? i.free_text_name}</li>
+                  <li key={i.id}>· {i.quantity}× {nomeSulConto(i)}</li>
                 ))}
               </ul>
             </div>

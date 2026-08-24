@@ -1786,3 +1786,84 @@ linee, quindi cambia se cambia il peso di una di loro. È corretto — un mix
 diverso ha un pareggio diverso — ma è meno stabile del numero di prima, e
 chi lo guarda due mesi di fila potrebbe vederlo muoversi senza che siano
 cambiati i costi fissi.
+
+---
+
+## 44 · 24/08/2026 — «il bis è una voce come le altre, non un pannellino sotto la riga»
+
+**Cosa era stato deciso, e quando.** Il 24/08/2026 stesso, poche ore prima,
+col blocco del bis: il «+ bis di un finger» compare **sotto la riga del
+piatto di finger food**, e solo lì — «in sala non si sceglie da tutto il
+ricettario, si sceglie fra i finger *di quel piatto*, che è quello che il
+cliente ha davanti».
+
+**La ragione di allora.** È ancora giusta, ed è la parte che sopravvive: il
+bis si sceglie fra i bocconcini **di quella selezione**, non da un elenco
+generale. Legare il gesto alla riga era il modo più diretto di dirlo.
+
+**Cosa si decide adesso** (richiesta di Alessio): il bis è una **voce a sé**,
+accanto alla carta dei vini, e si chiede in qualunque momento e in qualunque
+turno — anche a piatto già servito. Due passi: prima quale selezione, poi
+quale bocconcino.
+
+**Perché la ragione di allora non vale più.** Perché il pannellino viveva
+**solo finché la riga era ancora in bozza**: appena la comanda partiva per la
+cucina, la riga passava fra le «inviate» e il pulsante spariva. Parole sue:
+*«il caso normale è che il cliente lo chieda DOPO aver già mangiato la
+selezione, magari al turno successivo — e adesso non c'è modo di chiedere
+alla cucina dei finger specifici da soli»*. Il gesto c'era **in tutti i
+momenti tranne quello per cui serve**.
+
+⚠️ **La ragione di allora è conservata dentro la forma nuova**, e non è un
+dettaglio: il primo passo chiede *quale selezione*, ed elenca solo quelle
+ordinate a quel tavolo. Non si è passati a «scegli un finger dal
+ricettario» — si è tolto il vincolo del momento, non quello del contesto.
+
+⚠️ **E vale la regola del 18/08 sui comandi ripetuti**: *se un pulsante si
+ripete per ogni riga, quasi sempre ne basta uno*. Il «+ bis» compariva su
+ogni piatto di finger food della comanda; adesso è uno.
+
+---
+
+## 45 · 24/08/2026 — «il riquadro del tavolo esce dai confini del bancone, e il nome si legge a 6 mm»
+
+**Cosa era stato deciso, e quando.** Il 23/08 e poi ancora il 24/08 mattina,
+sul riquadro accanto al tavolo aperto: *«quel riquadro vive dentro la pianta,
+nello spazio del bancone, e la sua taglia la decide la stanza. Non si può
+allargare senza disegnare un bancone che non esiste»*. E di conseguenza:
+*«ingrandire il nome non si può — un nome di 16 lettere chiede 331 punti a
+6,2 mm e la riga ne ha 205»*.
+
+**La ragione di allora.** Il pannello sta lì **perché** quel pezzo di pianta
+è vuoto: disegnarlo più grande del bancone vorrebbe dire coprire pavimento su
+cui un tavolo può essere trascinato. E la misura dei 205 punti era vera:
+misurata sul tablet, con la pianta larga 409 punti.
+
+**Cosa si decide adesso** (terza segnalazione di Alessio: *«è ANCORA
+illeggibile… questo è un testo che devo leggere da lontano, in piedi, durante
+il servizio»*): il riquadro **cresce nello spazio vuoto della pianta** fin
+dove può, fermandosi prima del primo tavolo che incontra; il nome passa da 4 a
+**6 mm**, l'ora e i coperti da 3,2 a 4.
+
+**Perché la ragione di allora non vale più.** Per due fatti misurati, non
+dedotti:
+1. **La misura dei 205 punti era una frase diventata falsa.** La pianta oggi
+   è larga 689 punti e la riga del riquadro **344**: un nome di 16 lettere a
+   6 mm ne chiede 320. Il vincolo che teneva il nome piccolo era scaduto, e
+   restava scritto nel codice a impedire la correzione.
+2. **Il vincolo sul bancone non era «non si può crescere», era «non si può
+   coprire un tavolo».** Quel divieto resta intero: il pannello si ferma
+   prima del vicino e si ritira se qualcuno gli mette un tavolo sotto. Non
+   si è tolta la regola, si è tolto il numero.
+
+⚠️ **E la misura ha corretto il VERSO della richiesta.** Alessio aveva detto
+«alla sua destra c'è una fascia larghissima e completamente vuota». Misurato
+sul tablet in verticale, **alla sua destra ci sono zero punti** — il pannello
+arriva già al bordo. Lo spazio c'è, ma **sotto**: 77 punti. Sulla pianta in
+piedi gli assi si scambiano, ed è la stessa cosa successa il 18/08 con la
+Chef Table, letta allo specchio.
+
+⚠️ **La regola generale che ne esce, e vale oltre questo riquadro** (parole
+sue): **3,20 mm è il MINIMO ACCETTABILE, non l'obiettivo.** Un testo
+importante che sta appena sopra la soglia resta illeggibile a colpo d'occhio,
+e finora lo si è trattato come «a norma».

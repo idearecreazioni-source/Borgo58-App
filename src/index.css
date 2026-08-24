@@ -122,6 +122,32 @@ body {
   line-height: 1.25;
 }
 
+/* 🔴 QUELLO CHE SI LEGGE IN PIEDI, DA LONTANO — 6 mm (24/08/2026).
+   Alessio, per la terza volta sullo stesso riquadro: *«è ANCORA
+   illeggibile… questo è un testo che devo leggere da lontano, in piedi,
+   durante il servizio»*. E la regola che ne è uscita vale oltre quel
+   riquadro: **3,20 mm è il minimo accettabile, non l'obiettivo** — un
+   testo importante appena sopra la soglia resta illeggibile a colpo
+   d'occhio, e finora l'abbiamo trattato come «a norma».
+
+   ⚠️ 6 mm E NON 6,2, ed è una misura fatta nel browser vero alla
+   calibrazione del tablet (--pxcm 64), non una stima: un nome di 16
+   lettere — il novantesimo percentile dei nomi veri, misurato sui 263
+   nomi del database — chiede **320 punti a 6 mm** e 331 a 6,2, e la riga
+   del riquadro ne ha **344**. Sei millimetri ci stanno con 24 punti di
+   margine; 6,2 ne lasciano 13, che su un nome di 17 lettere non bastano.
+
+   ⚠️ E IL VECCHIO NUMERO ERA UNA FRASE DIVENTATA FALSA: il commento di
+   `RiquadroDelTavolo` diceva «un nome a 6,2 mm chiede 331 punti e la riga
+   ne ha 205, quindi si tronca». Era vero quando la pianta era larga 409
+   punti. Oggi la pianta ne è larga 689 e la riga 344: il vincolo che
+   giustificava i 4 mm non esiste più, ed è rimasto scritto un anno-luce
+   dopo la sua scadenza. */
+.testo-sala-lontano {
+  font-size: calc(var(--pxcm) * 0.6);
+  line-height: 1.15;
+}
+
 
 /* Azione principale a fondo schermata (invia comanda, chiudi conto). */
 .tocco-azione {

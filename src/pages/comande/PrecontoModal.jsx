@@ -1,7 +1,21 @@
 import { orderTotals } from "../../lib/api/orders";
-import { formatEUR } from "../../lib/constants";
+import { ALLERGENS, formatEUR, labelFor } from "../../lib/constants";
+import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 
-const lineLabel = (item) => item.recipe?.name || item.free_text_name;
+// 🔴 IL NOME DELLA RIGA SUL PRECONTO — dal 24/08 arriva da `righeComanda.js`,
+// dove sta anche quello della Sala, della Cucina e della chiusura conto:
+// erano quattro copie, e una sola sapeva riconoscere un bis.
+//
+// ⚠️ E QUI IL NOME PORTA ANCHE IL «SENZA», perché il preconto è il foglio
+// che finisce in mano a chi paga: un supplemento per una sostituzione non
+// deve comparire senza dire da dove viene.
+const nomeSulConto = (item) => {
+  const tolti = allergeniTolti(item);
+  if (tolti.length === 0) return nomeRiga(item);
+  return `${nomeRiga(item)} (senza ${tolti
+    .map((a) => labelFor(ALLERGENS, a).toLowerCase())
+    .join(", ")})`;
+};
 
 // Preconto (§3.2, §3.2.1): l'anteprima che si porta al cliente prima di
 // battere lo scontrino.
@@ -19,12 +33,17 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
 
   // Righe raggruppate per piatto: piu' leggibile quando il tavolo ha fatto
   // piu' giri di comanda, ed e' come lo legge il cliente.
+  // ⚠️ LA CHIAVE COMPRENDE IL «SENZA», ed è la parte che conta: due righe
+  // dello stesso piatto, una normale e una senza lattosio, NON si sommano —
+  // costano diverso e sono due piatti diversi per chi li mangia. Con la
+  // chiave sul solo nome, il supplemento sarebbe comparso nel totale senza
+  // nessuna riga che lo spiega.
   const grouped = Object.values(
     items.reduce((acc, it) => {
-      const key = lineLabel(it);
+      const key = nomeSulConto(it);
       if (!acc[key]) acc[key] = { name: key, quantity: 0, total: 0 };
       acc[key].quantity += it.quantity;
-      acc[key].total += it.quantity * Number(it.unit_price);
+      acc[key].total += totaleRiga(it);
       return acc;
     }, {})
   );

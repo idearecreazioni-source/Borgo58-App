@@ -212,3 +212,106 @@ export async function fingerBissabili(piattoId) {
   if (error) throw error;
   return data ?? [];
 }
+
+// GLI ALLERGENI DI UN PIATTO, allergene per allergene (24/08/2026, blocco 1
+// del mandato del collaudo).
+//
+// ⚠️ TRE STATI, non due: `eliminabile`, `non_eliminabile` e `non_deciso` —
+// e il terzo è l'assenza di una dichiarazione, non un valore predefinito.
+// Su una materia di salute, «esaminato e non si può» e «mai guardato» non
+// sono la stessa cosa, e la scheda del piatto lo dice.
+export async function allergeniDelPiatto(recipeId) {
+  const { data, error } = await supabase.rpc("allergeni_del_piatto", {
+    p_recipe_id: recipeId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// La dichiarazione: questo allergene si può togliere, sì o no.
+// ⚠️ Non si passa `eliminabile: false` come valore di comodo per «non lo so»:
+// per non decidere si CANCELLA la riga (vedi `dimenticaScelta`).
+export async function salvaScelta(recipeId, allergene, { eliminabile, nota } = {}) {
+  const { data, error } = await supabase
+    .from("scelte_allergene")
+    .upsert(
+      { recipe_id: recipeId, allergene, eliminabile, nota: nota || null },
+      { onConflict: "recipe_id,allergene" }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function dimenticaScelta(recipeId, allergene) {
+  const { error } = await supabase
+    .from("scelte_allergene")
+    .delete()
+    .eq("recipe_id", recipeId)
+    .eq("allergene", allergene);
+  if (error) throw error;
+}
+
+// Come si toglie: quale ingrediente esce, quale entra, quanto costa in più.
+// ⚠️ `sostitutoId` vuoto vuol dire «si toglie e basta» — è un caso vero
+// («senza noci»), non un campo dimenticato.
+export async function salvaSostituzione(
+  recipeId,
+  allergene,
+  { ingredienteId, sostitutoId, costoAggiuntivo, nota } = {}
+) {
+  const { data, error } = await supabase
+    .from("sostituzioni_allergene")
+    .upsert(
+      {
+        recipe_id: recipeId,
+        allergene,
+        ingrediente_id: ingredienteId,
+        sostituto_id: sostitutoId || null,
+        costo_aggiuntivo: Number(costoAggiuntivo ?? 0),
+        nota: nota || null,
+      },
+      { onConflict: "recipe_id,allergene,ingrediente_id" }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function togliSostituzione(id) {
+  const { error } = await supabase.from("sostituzioni_allergene").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// GLI ALLERGENI DI PIÙ RICETTE IN UNA LETTURA SOLA (24/08/2026, blocco 3(g)
+// del mandato del collaudo).
+//
+// ⚠️ Serve alla scheda di un piatto di finger food, dove Alessio ha chiesto
+// di vedere **l'elenco dei finger, ognuno coi suoi allergeni**: *«così vedo
+// subito DOVE sta l'allergene e quindi quale finger togliere o
+// sostituire»*. Un elenco piatto degli allergeni del piatto intero non
+// risponde a quella domanda.
+//
+// ⚠️ Chiede solo gli identificativi che le servono, mai la vista intera: una
+// lettura senza confini torna con al massimo mille righe e nessun errore.
+export async function listRecipeAllergensFor(recipeIds) {
+  if (recipeIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from("v_recipe_allergens")
+    .select("recipe_id, allergens, allergeni_da_verificare, ingredienti_da_verificare, tracce")
+    .in("recipe_id", recipeIds);
+  if (error) throw error;
+  return Object.fromEntries(
+    (data ?? []).map((r) => [
+      r.recipe_id,
+      {
+        allergens: r.allergens ?? [],
+        daVerificare: r.allergeni_da_verificare === true,
+        ingredienti: r.ingredienti_da_verificare ?? [],
+        tracce: r.tracce ?? [],
+      },
+    ])
+  );
+}

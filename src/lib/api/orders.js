@@ -9,6 +9,13 @@ export async function listMenuForOrder() {
   return data;
 }
 
+// LE DUE STRINGHE DELLA `select` VIVONO QUI, una accanto all'altra: quando
+// una riga di comanda acquista un pezzo nuovo che entra nel conto, i posti
+// da cambiare sono due e si vedono insieme. Divergendo, a restare indietro
+// sarebbe l'elenco dei tavoli aperti — che e' la prima cosa che si guarda.
+const OPEN_ORDERS_SELECT =
+  "*, items:order_items(id, quantity, unit_price, voided_at, sent_at, sostituzioni:order_item_sostituzioni(allergene, costo_aggiuntivo, descrizione)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time)";
+
 export async function listOpenOrders() {
   const { data, error } = await supabase
     .from("orders")
@@ -25,7 +32,12 @@ export async function listOpenOrders() {
       // nessuno può vedere è indistinguibile da un dato non scritto.
       // L'incorporamento funziona perché è una vera chiave esterna
       // (orders.reservation_id → reservations.id).
-      "*, items:order_items(id, quantity, unit_price, voided_at, sent_at), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time)"
+      // ⚠️ `sostituzioni` non e' un di piu' nemmeno qui: dal 24/08/2026 una
+      // riga puo' portare un supplemento (senza lattosio, +1,00), e senza
+      // questo pezzo di select il totale dei tavoli aperti risulterebbe piu'
+      // basso del vero SENZA NESSUN ERRORE — la stessa forma di `sent_at`
+      // qui sopra.
+      OPEN_ORDERS_SELECT
     )
     .eq("status", "aperto")
     .order("opened_at", { ascending: true });
@@ -39,7 +51,10 @@ const ORDER_SELECT =
   // punta a un finger) da un piatto, e a sapere su quale riga si può
   // chiedere un bis (un piatto di categoria finger food). Senza, la sala
   // dovrebbe fare una seconda lettura per ogni riga della comanda.
-  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name, recipe_type, category)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes), cliente:customer_id(id, name, phone)";
+  // ⚠️ E LE SOSTITUZIONI DI ALLERGENE (24/08/2026): sono la frase che la
+  // cucina deve leggere sulla riga del piatto e il supplemento che va sul
+  // conto. Fuori da qui, il conto sarebbe piu' basso del vero in silenzio.
+  "*, device:device_id(name), items:order_items(*, recipe:recipe_id(name, recipe_type, category), sostituzioni:order_item_sostituzioni(id, allergene, costo_aggiuntivo, descrizione)), tavoli:order_tables(dining_table_id, etichetta_al_momento), prenotazione:reservation_id(id, customer_name, party_size, reservation_time, notes), cliente:customer_id(id, name, phone)";
 
 // I CONTI CHE NOMINANO QUESTE PRENOTAZIONI — è così che si sa chi è arrivato.
 //
@@ -331,7 +346,15 @@ export async function setItemPrepared(itemId, prepared) {
 export async function listRepartoTickets(destination) {
   const { data, error } = await supabase
     .from("order_items")
-    .select("*, recipe:recipe_id(name), order:order_id!inner(table_label, status, note)")
+    // ⚠️ `recipe_type` serve a riconoscere un BIS sul biglietto di carta:
+    // fino al 24/08 la cucina leggeva il nudo nome del bocconcino, e la
+    // parola «bis» esisteva solo sul tablet di chi lo batteva.
+    // ⚠️ `sostituzioni` è la richiesta di Alessio scritta per esteso: *«la
+    // sostituzione arriva IN CUCINA sulla riga di quel piatto, ben visibile.
+    // È il punto dove un errore fa male davvero»*.
+    .select(
+      "*, recipe:recipe_id(name, recipe_type, category), sostituzioni:order_item_sostituzioni(allergene, descrizione), order:order_id!inner(table_label, status, note)"
+    )
     .eq("destination", destination)
     .eq("order.status", "aperto")
     .not("sent_at", "is", null)
@@ -562,4 +585,44 @@ export async function segnaChiamataStampata(id, stampata) {
     .update({ stampata_il: stampata ? new Date().toISOString() : null })
     .eq("id", id);
   if (error) throw error;
+}
+
+// GLI ALLERGENI DI UNA RIGA DI COMANDA (24/08/2026, blocco 1 del mandato
+// del collaudo).
+//
+// ⚠️ ARRIVANO **TUTTI**, anche quelli che non si possono togliere, ed è la
+// richiesta di Alessio: *«quelli non eliminabili si vedono ma sono SPENTI —
+// il cameriere sa che deve avvisare il cliente invece di promettere
+// qualcosa che non possiamo fare»*. Nasconderli lascerebbe credere che il
+// piatto quell'allergene non ce l'abbia.
+//
+// ⚠️ Si chiedono al TOCCO e non all'apertura della schermata: sono una
+// lettura per riga, e quasi sempre per niente — chiedere un piatto senza un
+// allergene è la norma, non l'eccezione.
+export async function allergeniDellaRiga(orderItemId) {
+  const { data, error } = await supabase.rpc("allergeni_della_riga", {
+    p_order_item_id: orderItemId,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Togliere un allergene da una riga: scrive UNA sostituzione per ogni
+// ingrediente che quell'allergene lo porta, tutte insieme o nessuna.
+//
+// ⚠️ IL SUPPLEMENTO NON SI PASSA: lo legge il database dal Ricettario. Se lo
+// mandasse il tablet, un prezzo sbagliato finirebbe sul conto di un cliente
+// senza che nessun vincolo se ne accorga.
+export async function applicaSostituzione(orderItemId, allergene) {
+  return eseguiOperazione("applica_sostituzione_riga", {
+    p_order_item_id: orderItemId,
+    p_allergene: allergene,
+  });
+}
+
+export async function togliSostituzioneRiga(orderItemId, allergene) {
+  return eseguiOperazione("togli_sostituzione_riga", {
+    p_order_item_id: orderItemId,
+    p_allergene: allergene,
+  });
 }

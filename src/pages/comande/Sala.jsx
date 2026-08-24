@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   addDraftItem,
+  allergeniDellaRiga,
+  applicaSostituzione,
   apriConto,
   cancelOrder,
   getOrder,
@@ -15,6 +17,7 @@ import {
   sendDraftItems,
   setOrderCoperti,
   spostaConto,
+  togliSostituzioneRiga,
   updateCopertoPrice,
   updateDraftItemQuantity,
   updateItemNote,
@@ -35,7 +38,7 @@ import { esitoDelTocco } from "../../lib/calcoli/selezione";
 import { etichettaTurno, righePerTurno } from "../../lib/calcoli/turni";
 import { listBarItems } from "../../lib/api/barItems";
 import { fingerBissabili } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, formatDate, formatEUR } from "../../lib/constants";
+import { ALLERGENS, RECIPE_CATEGORIES, formatDate, formatEUR, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import CalibrazioneTocco from "./CalibrazioneTocco";
 import CloseOrderModal from "./CloseOrderModal";
@@ -48,31 +51,25 @@ import {
   ZONE_DEL_BANCO,
   ZONE_DEL_PANNELLO,
   ZONE_FONDALE,
+  pannelloAllargato,
   pannelloNellaPianta,
 } from "../../lib/calcoli/sala";
 import PrecontoModal from "./PrecontoModal";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import {
+  allergeniTolti,
+  frasiSostituzioni,
+  nomeRiga as lineLabel,
+  puoBissare,
+  totaleRiga as lineTotal,
+} from "../../lib/calcoli/righeComanda";
 
-// IL NOME DI UNA RIGA — e il bis si riconosce, non si scrive (24/08/2026).
-//
-// ⚠️ Una riga che punta a un FINGER è per forza un bis: un finger non si
-// vende da solo, e il database lo impedisce già in un menu
-// (`solo_piatti_in_menu`). Una colonna «è_un_bis» direbbe la stessa cosa
-// del tipo della ricetta, e per la regola del 16/08 la seconda sarebbe un
-// riflesso — si toglie, non si costruisce.
-//
-// ⚠️ E la parola «bis» sta QUI e non nel database: se finisse nel nome
-// salvato sulla riga, ci resterebbe attaccata per sempre — anche il giorno
-// che il gestionale volesse chiamarla in un altro modo, e su ogni ticket
-// già stampato.
-const lineLabel = (item) =>
-  item.recipe?.recipe_type === "finger"
-    ? `bis di ${item.recipe.name}`
-    : item.recipe?.name || item.free_text_name;
-
-// Su quali righe si può chiedere un bis: i piatti di finger food.
-const puoBissare = (item) => item.recipe?.category === "finger_food";
-const lineTotal = (item) => item.quantity * Number(item.unit_price);
+// 🔴 IL NOME E IL TOTALE DI UNA RIGA STANNO IN `lib/calcoli/righeComanda.js`
+// DAL 24/08/2026, e non e' una pulizia: la stessa funzione esisteva in
+// QUATTRO copie — Sala, Bar, Preconto, Chiusura conto — e solo questa sapeva
+// riconoscere un bis. Il bis si vedeva «bis di X» sul tablet di chi lo
+// batteva e diventava il nudo nome del bocconcino sul biglietto della
+// cucina, che e' esattamente il posto dove Alessio voleva vederlo.
 
 // Schermata SALA — tablet 8,7" in verticale, tenuto in mano fra i tavoli
 // (§3.2.1, disegno validato con Alessio sul simulatore a grandezza reale).
@@ -136,10 +133,24 @@ export default function Sala() {
   // Il pannello di chi paga: si apre dal riquadro accanto al tavolo.
   const [clienteAperto, setClienteAperto] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Il bis: quale riga ha il pannello aperto, e i suoi finger.
-  const [bisAperto, setBisAperto] = useState(null);
+  // 🔴 IL BIS E' UNA VOCE COME LE ALTRE (24/08/2026, rovesciamento chiesto da
+  // Alessio). Prima si poteva chiedere solo dal pannellino sotto la riga del
+  // piatto **mentre la si stava componendo**: una volta mandata in cucina il
+  // pulsante spariva, e il caso normale — *«il cliente lo chiede DOPO aver
+  // gia' mangiato la selezione, magari al turno successivo»* — non aveva
+  // nessuna strada. Ora e' una schermata sua, accanto alla carta dei vini, e
+  // la riga nasce nel turno in corso.
+  const [showBis, setShowBis] = useState(false);
+  const [bisPiatto, setBisPiatto] = useState(null); // quale selezione si sta bissando
   const [bisElenco, setBisElenco] = useState(null);
   const [bisErrore, setBisErrore] = useState("");
+
+  // GLI ALLERGENI DI UNA RIGA (24/08/2026, blocco 1 del mandato).
+  // Si chiedono al tocco: sono una lettura per riga, e quasi sempre per
+  // niente — un piatto senza richieste e' la norma.
+  const [allergeniAperto, setAllergeniAperto] = useState(null);
+  const [allergeniElenco, setAllergeniElenco] = useState(null);
+  const [allergeniErrore, setAllergeniErrore] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
 
   const [showFreeForm, setShowFreeForm] = useState(false);
@@ -490,7 +501,7 @@ export default function Sala() {
   // ⚠️ Tavolo libero → **niente**, non un riquadro vuoto: un pannello che
   // dice «nessuno» occupa lo stesso spazio di uno che dice qualcosa.
   const riquadroBanco = useMemo(
-    () => pannelloNellaPianta(ZONE_FONDALE, sagome, ZONE_DEL_BANCO),
+    () => pannelloAllargato(ZONE_FONDALE, sagome, ZONE_DEL_BANCO),
     [sagome]
   );
   const nomiDelTavolo = prenotazioniDeiTavoli(selezione);
@@ -696,12 +707,12 @@ export default function Sala() {
   // schermata: sono pochi per piatto, e caricarli tutti in anticipo
   // vorrebbe dire una lettura per ogni piatto di finger food della comanda
   // — quasi sempre per niente, perché il bis è un'eccezione, non la norma.
-  const apriBis = async (item) => {
-    setBisAperto(item.id);
+  const apriBis = async (piatto) => {
+    setBisPiatto(piatto);
     setBisElenco(null);
     setBisErrore("");
     try {
-      setBisElenco(await fingerBissabili(item.recipe_id));
+      setBisElenco(await fingerBissabili(piatto.recipe_id));
     } catch (e) {
       // ⚠️ L'errore si conserva: un elenco vuoto senza spiegazione si legge
       // «questo piatto non ha finger», che è una frase tranquilla e falsa.
@@ -720,7 +731,6 @@ export default function Sala() {
       );
       return;
     }
-    setBisAperto(null);
     return withBusy(() =>
       addDraftItem(order.id, {
         // ⚠️ La riga punta al FINGER, non al piatto: è così che il magazzino
@@ -729,8 +739,163 @@ export default function Sala() {
         destination: "cucina",
         quantity: 1,
         unitPrice: f.prezzo,
+        // ⚠️ SEMPRE NEL TURNO IN CORSO, anche se la selezione da cui nasce era
+        // del primo: il bis è una richiesta di adesso, e la cucina la deve
+        // vedere arrivare col giro che sta facendo.
         turno: turnoCorrente,
       })
+    );
+  };
+
+  // GLI ALLERGENI DI UNA RIGA — si aprono col tocco su «senza…».
+  const apriAllergeni = async (item) => {
+    if (allergeniAperto === item.id) {
+      setAllergeniAperto(null);
+      return;
+    }
+    setAllergeniAperto(item.id);
+    setAllergeniElenco(null);
+    setAllergeniErrore("");
+    try {
+      setAllergeniElenco(await allergeniDellaRiga(item.id));
+    } catch (e) {
+      // ⚠️ «Non lo so» non è «non ce ne sono»: un elenco vuoto qui si
+      // leggerebbe «questo piatto non ha allergeni», che davanti a un
+      // cliente allergico è la frase più pericolosa del gestionale.
+      setAllergeniErrore(e.message);
+      setAllergeniElenco([]);
+    }
+  };
+
+  const toggleAllergene = (item, riga) =>
+    withBusy(async () => {
+      if (riga.applicata) {
+        await togliSostituzioneRiga(item.id, riga.allergene);
+      } else {
+        await applicaSostituzione(item.id, riga.allergene);
+      }
+      // ⚠️ Si ricarica solo l'elenco di QUESTA riga, non tutta la schermata:
+      // ricaricare tutto butterebbe via le note che qualcuno sta scrivendo
+      // su un'altra riga (trappola del 12/08).
+      setAllergeniElenco(await allergeniDellaRiga(item.id));
+    });
+
+  // COSA SI VEDE SOTTO UNA RIGA: cosa è già stato tolto, e il tocco per
+  // togliere altro. È lo stesso pezzo per le righe già inviate e per quelle
+  // ancora da mandare — un cliente dice «sono intollerante» quando gli pare,
+  // e il gestionale non ha ragione di comportarsi in due modi.
+  const rigaAllergeni = (it) => {
+    if (!it.recipe_id) return null; // una voce libera non ha ingredienti
+    const tolti = allergeniTolti(it);
+    const frasi = frasiSostituzioni(it);
+    const aperto = allergeniAperto === it.id;
+
+    return (
+      <div className="mt-1">
+        {/* CIÒ CHE È GIÀ STATO TOLTO si vede SEMPRE, aperto o chiuso: è
+            l'informazione che riguarda il cliente seduto lì. */}
+        {tolti.length > 0 && (
+          <p className="testo-sala font-semibold text-b58-olive-dark leading-tight">
+            senza {tolti.map((a) => labelFor(ALLERGENS, a).toLowerCase()).join(", ")}
+            {frasi.length > 0 && (
+              <span className="block font-normal text-b58-charcoal-soft">↳ {frasi.join(" · ")}</span>
+            )}
+          </p>
+        )}
+
+        {aperto ? (
+          <div className="rounded-lg bg-b58-cream/60 p-1.5 mt-1">
+            {allergeniElenco === null ? (
+              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">Cerco gli allergeni…</p>
+            ) : allergeniElenco.length === 0 ? (
+              // ⚠️ «Non lo so» non è «non ce ne sono». Davanti a un cliente
+              // allergico è la distinzione che conta di più in tutto il
+              // gestionale, quindi l'errore si dice per intero.
+              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">
+                {allergeniErrore
+                  ? `Non sono riuscito a leggere gli allergeni: ${allergeniErrore} — riprova, e finché non si legge non promettere niente.`
+                  : "Questo piatto non porta allergeni fra i suoi ingredienti."}
+              </p>
+            ) : (
+              allergeniElenco.map((a) => (
+                <button
+                  key={a.allergene}
+                  type="button"
+                  // 🔴 SPENTO, NON NASCOSTO, ed è la richiesta di Alessio:
+                  //    *«il cameriere sa che deve avvisare il cliente invece
+                  //    di promettere qualcosa che non possiamo fare»*.
+                  //    Nascondere quelli non togliibili farebbe credere che
+                  //    il piatto quell'allergene non ce l'abbia.
+                  disabled={busy || !a.eliminabile}
+                  onClick={() => toggleAllergene(it, a)}
+                  className={`tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left ${
+                    a.eliminabile
+                      ? "hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark"
+                      : "opacity-60 cursor-not-allowed"
+                  }`}
+                >
+                  <span
+                    className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center testo-sala ${
+                      a.applicata
+                        ? "bg-b58-olive border-b58-olive text-b58-parchment"
+                        : "border-b58-charcoal/25 text-transparent"
+                    }`}
+                  >
+                    ✓
+                  </span>
+                  <span className="flex-1 min-w-0 testo-sala text-b58-charcoal leading-tight">
+                    {a.eliminabile ? "senza " : ""}
+                    {labelFor(ALLERGENS, a.allergene).toLowerCase()}
+                    {a.descrizione && (
+                      <span className="block testo-sala text-b58-charcoal-soft">{a.descrizione}</span>
+                    )}
+                  </span>
+                  {/* 🔴 I DUE «NO» SI COMPORTANO UGUALE MA NON SI DICONO
+                      UGUALE (24/08, difetto visto aprendo la schermata). Su
+                      un allergene che nessuno ha ancora esaminato, «non si
+                      può togliere» è un'affermazione che il gestionale non
+                      può fare: è la regola del 19/08 — *assenza di
+                      informazione e informazione di assenza sono due cose
+                      diverse* — nel posto dove costa di più, davanti a un
+                      cliente che chiede.
+                      ⚠️ Il pulsante resta spento in tutti e due i casi: fra
+                      i due si sbaglia sempre dalla parte di non promettere.
+                      Cambia la frase, che è l'unica cosa che il cameriere
+                      può riferire. */}
+                  <span
+                    className={`shrink-0 testo-sala ${
+                      a.eliminabile ? "text-b58-charcoal-soft" : "text-b58-terracotta-dark"
+                    }`}
+                  >
+                    {a.stato === "non_deciso"
+                      ? "nessuno l'ha guardato: chiedi in cucina"
+                      : a.stato === "non_eliminabile"
+                        ? "non si può togliere"
+                        : Number(a.costo_aggiuntivo) > 0
+                          ? `+${formatEUR(a.costo_aggiuntivo)}`
+                          : "senza supplemento"}
+                  </span>
+                </button>
+              ))
+            )}
+            <button
+              type="button"
+              onClick={() => setAllergeniAperto(null)}
+              className="tocco-bottone testo-sala text-b58-charcoal-soft px-2"
+            >
+              chiudi
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => apriAllergeni(it)}
+            className="tocco-bottone testo-sala text-b58-terracotta px-2 rounded-lg hover:bg-b58-cream-dark/60"
+          >
+            allergeni
+          </button>
+        )}
+      </div>
     );
   };
 
@@ -829,6 +994,19 @@ export default function Sala() {
   // a comparire, altrimenti il «2° turno» che si sta scrivendo sembrerebbe
   // il primo.
   const gruppiComanda = righePerTurno([...sentItems, ...draftItems]);
+
+  // LE SELEZIONI DI FINGER ORDINATE A QUESTO TAVOLO, senza doppioni: sono
+  // quelle di cui si può chiedere un bis.
+  // ⚠️ Si guardano TUTTE le righe vive, inviate comprese. Il bis del caso
+  // vero arriva dopo che la selezione è stata mangiata — guardare le sole
+  // bozze vorrebbe dire che il gesto sparisce proprio quando serve.
+  const selezioniPerBis = [
+    ...new Map(
+      [...sentItems, ...draftItems]
+        .filter((i) => puoBissare(i) && i.recipe_id)
+        .map((i) => [i.recipe_id, i])
+    ).values(),
+  ];
 
   // 🔴 I TURNI CHE ESISTONO SI LEGGONO DALLA COMANDA, non da un contatore
   // (24/08). Un turno c'è perché dentro ci sono delle righe: ricaricando
@@ -1825,9 +2003,33 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(true)}
-              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold testo-sala-grande"
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-2 rounded-lg bg-b58-gold/10 ring-1 ring-b58-gold-dark/25 text-b58-gold-dark font-semibold testo-sala-grande"
             >
               <span>🍷 Carta dei vini</span>
+              <span className="testo-sala-grande">›</span>
+            </button>
+          )}
+
+          {/* 🔴 IL BIS DI UN FINGER, VOCE A SÉ (24/08/2026, rovesciamento
+              chiesto da Alessio). Compare solo se a questo tavolo è stata
+              ordinata almeno una selezione di finger — in sala non si
+              sceglie da tutto il ricettario, si sceglie fra i finger di
+              quello che il cliente ha davanti.
+              ⚠️ E GUARDA TUTTE LE RIGHE DEL CONTO, non solo quelle ancora in
+              bozza: il caso normale è che il bis lo chieda dopo aver
+              mangiato, magari al turno dopo. Prima quel gesto non esisteva. */}
+          {selezioniPerBis.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowBis(true);
+                setBisPiatto(null);
+                setBisElenco(null);
+                setBisErrore("");
+              }}
+              className="tocco-riga w-full flex items-center justify-between px-3 mb-4 rounded-lg bg-b58-olive/10 ring-1 ring-b58-olive/30 text-b58-olive-dark font-semibold testo-sala-grande"
+            >
+              <span>🍢 Bis di un finger</span>
               <span className="testo-sala-grande">›</span>
             </button>
           )}
@@ -1868,24 +2070,33 @@ export default function Sala() {
                 )}
 
                 {items.filter((i) => i.sent_at).map((it) => (
-                  <div key={it.id} className="flex items-center gap-2 py-1.5 border-b border-b58-charcoal/5 last:border-0 opacity-70">
-                    <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
-                      {it.quantity}× {lineLabel(it)}
-                      <span className="testo-sala text-b58-charcoal-soft"> · inviata</span>
-                      {it.note && <span className="block testo-sala italic text-b58-charcoal-soft">↳ {it.note}</span>}
-                    </span>
-                    <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleVoid(it.id)}
-                      // 🔴 4,0 mm, ed e' il gesto che STORNA un piatto gia'
-                      // andato in cucina (22/08). Un bersaglio piccolo su
-                      // una cosa che si disfa e' fastidio; su una che non
-                      // si disfa e' un'altra cosa.
-                      className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2"
-                    >
-                      annulla
-                    </button>
+                  <div key={it.id} className="py-1.5 border-b border-b58-charcoal/5 last:border-0">
+                    <div className="flex items-center gap-2 opacity-70">
+                      <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
+                        {it.quantity}× {lineLabel(it)}
+                        <span className="testo-sala text-b58-charcoal-soft"> · inviata</span>
+                        {it.note && <span className="block testo-sala italic text-b58-charcoal-soft">↳ {it.note}</span>}
+                      </span>
+                      <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(lineTotal(it))}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleVoid(it.id)}
+                        // 🔴 4,0 mm, ed e' il gesto che STORNA un piatto gia'
+                        // andato in cucina (22/08). Un bersaglio piccolo su
+                        // una cosa che si disfa e' fastidio; su una che non
+                        // si disfa e' un'altra cosa.
+                        className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark px-2"
+                      >
+                        annulla
+                      </button>
+                    </div>
+                    {/* ⚠️ GLI ALLERGENI ANCHE QUI, e a piena opacità: il caso
+                        vero è il cliente che lo dice DOPO — e allora il
+                        gestionale registra la sostituzione, la manda sul
+                        conto e la scarica dal magazzino. Avvisare la cucina
+                        a voce resta di chi è in sala: un biglietto già
+                        stampato nessun programma lo riscrive. */}
+                    {rigaAllergeni(it)}
                   </div>
                 ))}
 
@@ -1917,81 +2128,14 @@ export default function Sala() {
                         ✕
                       </button>
                     </div>
-                    {/* IL BIS (24/08/2026, richiesta di Alessio). Compare
-                        solo sotto un piatto di finger food, e solo lì: in
-                        sala non si sceglie da tutto il ricettario, si
-                        sceglie fra i finger **di quel piatto**, che è
-                        quello che il cliente ha davanti.
-                        ⚠️ E il bis è una RIGA A SÉ: «finger food di mare»
-                        resta quello che è, e accanto compare «bis di X».
-                        Così la cucina vede una riga in più da fare, il
-                        magazzino scarica il finger extra, e il food cost
-                        del piatto in carta non si muove. */}
-                    {puoBissare(it) && (
-                      <div className="mt-1">
-                        {bisAperto === it.id ? (
-                          <div className="rounded-lg bg-b58-cream/60 p-1.5">
-                            {bisElenco === null ? (
-                              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">
-                                Cerco i finger di questo piatto…
-                              </p>
-                            ) : bisElenco.length === 0 ? (
-                              // ⚠️ «Non lo so» non è «non ce n'è»: se la
-                              // lettura è fallita si dice, con la via per
-                              // riprovare. Un elenco vuoto qui si legge
-                              // «questo piatto non ha finger», che è falso.
-                              <p className="testo-sala text-b58-charcoal-soft px-2 py-1">
-                                {bisErrore
-                                  ? `Non sono riuscito a leggere i finger: ${bisErrore}`
-                                  : "Questo piatto non ha finger dentro."}
-                              </p>
-                            ) : (
-                              bisElenco.map((f) => (
-                                <button
-                                  key={f.finger_id}
-                                  type="button"
-                                  disabled={busy}
-                                  onClick={() => handleAddBis(f)}
-                                  className="tocco-riga w-full flex items-center gap-2 px-2 rounded-lg text-left hover:bg-b58-cream-dark/70 active:bg-b58-cream-dark disabled:opacity-50"
-                                >
-                                  <span className="flex-1 min-w-0 testo-sala text-b58-charcoal leading-tight">
-                                    bis di {f.nome}
-                                  </span>
-                                  {/* ⚠️ Senza prezzo NON si batte: una riga
-                                      a zero euro è un pezzo regalato che
-                                      nessuno ha deciso di regalare. Si dice
-                                      cosa manca e dove si scrive. */}
-                                  <span
-                                    className={`shrink-0 testo-sala ${
-                                      f.prezzo == null
-                                        ? "text-b58-terracotta-dark"
-                                        : "text-b58-charcoal-soft"
-                                    }`}
-                                  >
-                                    {f.prezzo == null ? "senza prezzo" : formatEUR(f.prezzo)}
-                                  </span>
-                                </button>
-                              ))
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => setBisAperto(null)}
-                              className="tocco-bottone testo-sala text-b58-charcoal-soft px-2"
-                            >
-                              chiudi
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => apriBis(it)}
-                            className="tocco-bottone testo-sala text-b58-terracotta px-2 rounded-lg hover:bg-b58-cream-dark/60"
-                          >
-                            + bis di un finger
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    {/* 🔴 GLI ALLERGENI DEL PIATTO (24/08/2026, blocco 1).
+                        Al posto del pannellino del bis, che da oggi è una
+                        voce a sé in cima (blocco 2): un pulsante che si
+                        ripete su ogni riga quasi sempre ne vuole uno solo,
+                        e quello del bis compariva **solo** finché la riga
+                        non era andata in cucina — cioè mai nel caso vero,
+                        che è il cliente che lo chiede dopo aver mangiato. */}
+                    {rigaAllergeni(it)}
 
                     {/* Nota del SINGOLO piatto, distinta da quella del tavolo:
                         "senza glutine" riguarda un piatto, non tutti. */}
@@ -2074,6 +2218,97 @@ export default function Sala() {
             <button
               type="button"
               onClick={() => setShowWines(false)}
+              className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande font-semibold"
+            >
+              Fatto — torna alla comanda
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* IL BIS DI UN FINGER — schermata sua, come la carta dei vini.
+          🔴 Prima era un pannellino sotto la riga del piatto, e viveva solo
+          finché quella riga non era andata in cucina: il caso normale —
+          *«il cliente lo chiede DOPO aver già mangiato la selezione, magari
+          al turno successivo»* — non aveva nessuna strada. Rovesciamento
+          chiesto da Alessio il 24/08.
+          ⚠️ Due passi e non uno: prima QUALE selezione (a un tavolo possono
+          essercene due, di mare e di terra, e i finger sono diversi), poi
+          quale bocconcino. Con un elenco solo non si saprebbe di chi è. */}
+      {showBis && order && (
+        <div className="fixed inset-0 z-50 bg-b58-cream flex flex-col">
+          <button
+            type="button"
+            onClick={() => (bisPiatto ? setBisPiatto(null) : setShowBis(false))}
+            className="tocco-riga shrink-0 flex items-center gap-2 px-4 bg-b58-olive text-b58-parchment font-semibold testo-sala-grande uppercase tracking-wide"
+          >
+            <span className="testo-sala-grande">‹</span>{" "}
+            {bisPiatto ? "Cambia selezione" : `Torna al menu — ${order.table_label}`}
+          </button>
+          <div className="flex-1 overflow-y-auto p-3 max-w-md mx-auto w-full">
+            {!bisPiatto ? (
+              <>
+                <p className={sectionLabel}>Di quale selezione?</p>
+                {selezioniPerBis.map((p) => (
+                  <button
+                    key={p.recipe_id}
+                    type="button"
+                    onClick={() => apriBis(p)}
+                    className="tocco-riga w-full flex items-center justify-between px-3 mb-1.5 rounded-lg bg-white ring-1 ring-b58-charcoal/10 testo-sala-grande text-b58-charcoal text-left"
+                  >
+                    <span className="flex-1 min-w-0 leading-tight">{p.recipe?.name}</span>
+                    <span className="testo-sala-grande text-b58-charcoal-soft">›</span>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <p className={sectionLabel}>{bisPiatto.recipe?.name}</p>
+                {bisElenco === null ? (
+                  <p className="testo-sala-grande text-b58-charcoal-soft px-2 py-2">
+                    Cerco i finger di questa selezione…
+                  </p>
+                ) : bisElenco.length === 0 ? (
+                  // ⚠️ «Non lo so» non è «non ce n'è»: se la lettura è
+                  // fallita si dice. Un elenco vuoto qui si leggerebbe
+                  // «questa selezione non ha finger», che è falso.
+                  <p className="testo-sala-grande text-b58-charcoal-soft px-2 py-2">
+                    {bisErrore
+                      ? `Non sono riuscito a leggere i finger: ${bisErrore} — riprova.`
+                      : "Questa selezione non ha finger dentro."}
+                  </p>
+                ) : (
+                  bisElenco.map((f) => (
+                    <button
+                      key={f.finger_id}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => handleAddBis(f)}
+                      className="tocco-riga w-full flex items-center gap-2 px-3 mb-1.5 rounded-lg bg-white ring-1 ring-b58-charcoal/10 text-left disabled:opacity-50"
+                    >
+                      <span className="flex-1 min-w-0 testo-sala-grande text-b58-charcoal leading-tight">
+                        bis di {f.nome}
+                      </span>
+                      {/* ⚠️ Senza prezzo NON si batte: una riga a zero euro
+                          è un pezzo regalato che nessuno ha deciso di
+                          regalare. Si dice cosa manca e dove si scrive. */}
+                      <span
+                        className={`shrink-0 testo-sala-grande ${
+                          f.prezzo == null ? "text-b58-terracotta-dark" : "text-b58-charcoal-soft"
+                        }`}
+                      >
+                        {f.prezzo == null ? "senza prezzo" : formatEUR(f.prezzo)}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </>
+            )}
+          </div>
+          <div className="shrink-0 p-3 border-t border-b58-charcoal/10 bg-b58-parchment">
+            <button
+              type="button"
+              onClick={() => setShowBis(false)}
               className="tocco-azione w-full rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande font-semibold"
             >
               Fatto — torna alla comanda

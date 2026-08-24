@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { credenziali } from "./aiuto";
+import { credenziali, sagomeDiProva } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import { apriConto } from "../../src/lib/api/orders";
 import { creaPrenotazioneSuTavoli } from "../../src/lib/api/reservations";
@@ -32,6 +32,7 @@ const GIORNO = (() => {
 })();
 let titolare;
 let tavolo;
+let sala;
 const nati = { ordini: [], prenotazioni: [] };
 
 // ⚠️ Si prenota dalla PORTA VERA — l'operazione del corridoio che usa la
@@ -80,22 +81,29 @@ beforeAll(async () => {
   const { error } = await supabase.auth.signInWithPassword(credenziali().titolare);
   if (error) throw new Error(`Non riesco a entrare come titolare: ${error.message}`);
   titolare = supabase;
-  const { data, error: eT } = await titolare
-    .from("dining_tables")
-    .select("id")
-    .eq("tipo", "tavolo")
-    .eq("active", true)
-    .order("position")
-    .limit(1);
-  if (eT) throw new Error(eT.message);
-  if (!data?.length) throw new Error("Non c'è nessun tavolo su cui provare il legame.");
-  tavolo = data[0].id;
+  // 🔴 LA PROVA SI FA UN TAVOLO SUO (24/08/2026). Prima prendeva **il primo
+  // tavolo vero della sala** — T1 — e ci apriva sopra dei conti. Il giorno
+  // in cui sul progetto di prova è comparso un conto di collaudo aperto su
+  // T1, tutte e quattro le prove sono diventate rosse con
+  // *«Questi tavoli hanno già un conto aperto: T1»*: un rosso che non
+  // parlava del legame conto-prenotazione, cioè della cosa che provano.
+  //
+  // ⚠️ È la regola del 16/08 applicata alle sagome: **il perimetro di una
+  // prova dev'essere fatto di roba che la prova ha creato**. Prendere in
+  // prestito un tavolo vero vuol dire dipendere da come qualcuno ha
+  // apparecchiato la sala — e una prova che fallisce per come è stato
+  // apparecchiato è una prova che si impara a ignorare.
+  sala = await sagomeDiProva(titolare, 1);
+  tavolo = sala.ids[0];
   await chiudiEPulisci();
 });
 
 afterAll(async () => {
   if (!titolare) return;
   await chiudiEPulisci();
+  // ⚠️ La sagoma se ne va con la prova che l'ha creata: nella pianta di
+  //    Alessio non deve restare un tavolo che non esiste.
+  await sala?.pulisci();
   await titolare.auth.signOut({ scope: "local" });
 });
 

@@ -20,6 +20,7 @@ import {
   ingrandimentoCm,
   sagomaDisegnata,
   TOLLERANZA_CONTATTO_CM,
+  pannelloAllargato,
   pannelloNellaPianta,
   riquadroDelPannello,
   sagomeFuoriGriglia,
@@ -875,5 +876,67 @@ describe("le sagome che non si vedono per intero", () => {
     // Prima che la pagina sia disegnata non si sa niente, e «non lo so» non
     // è «è tagliata» (regola del 19/08).
     expect(sagomeTagliateDallaVista([sagoma("T1", 0, 9999)], null)).toEqual([]);
+  });
+});
+
+// =====================================================================
+// IL PANNELLO CRESCE NELLO SPAZIO CHE C'È DAVVERO — 24/08/2026
+// =====================================================================
+//
+// 🔴 Terza segnalazione di Alessio sullo stesso riquadro: *«è ancora
+// illeggibile… accanto c'è una fascia larghissima e completamente vuota»*.
+// Misurato nel browser vero sul tablet in verticale: alla sua destra ci
+// sono **zero punti** (arriva già al bordo della pianta), e lo spazio c'è
+// **sotto** — 77 punti prima di T7·T8·T9, cioè 160 punti d'altezza che
+// diventano 238.
+//
+// ⚠️ E QUEI 77 NON DIVENTANO UN NUMERO NEL CODICE: valgono per la
+// disposizione di stasera. Il pannello cresce fin dove può e si ferma
+// prima del vicino — se domani un tavolo va lì sotto, si ritira.
+describe("il pannello del bancone si allarga nel vuoto", () => {
+  const ZONE_CON_BANCO = [
+    { nome: "Servizi", x: 0, y: 0, larghezza: 530, profondita: 515, servizio: true },
+    { nome: "Cucina", x: 530, y: 0, larghezza: 870, profondita: 515, servizio: true },
+    { nome: "Sala alta", x: 1400, y: 0, larghezza: 670, profondita: 515 },
+    { nome: "Sala bassa", x: 0, y: 515, larghezza: 1830, profondita: 515 },
+    { nome: "Bancone", x: 1830, y: 515, larghezza: 240, profondita: 515, servizio: true },
+  ];
+  const BANCO = ["Bancone"];
+  const sagoma = (x, y, l = 90, p = 90) => ({ id: `s${x}-${y}`, x, y, larghezza_cm: l, profondita_cm: p });
+
+  it("con la fascia sgombra cresce fino al bordo della sala", () => {
+    // Nessuna sagoma nella fascia del bancone: il pannello arriva a x = 0.
+    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(200, 100)], BANCO);
+    expect(r).toEqual({ x: 0, y: 515, larghezza: 2070, profondita: 515 });
+  });
+
+  it("e si FERMA prima del vicino, lasciando il varco", () => {
+    // Una sagoma che finisce a x = 1500 nella stessa fascia: il pannello
+    // parte da 1510 (10 cm di varco), non da 1500 e non da 0.
+    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(1410, 600)], BANCO);
+    expect(r.x).toBe(1510);
+    expect(r.larghezza).toBe(2070 - 1510);
+  });
+
+  it("una sagoma FUORI dalla fascia non lo ferma — è la differenza che conta", () => {
+    // ⚠️ Stessa x della prova sopra, ma in un'altra fascia di profondità: se
+    // la regola guardasse solo la x, questa lo fermerebbe lo stesso — e il
+    // pannello resterebbe piccolo per un tavolo che non gli sta davanti.
+    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(1410, 100)], BANCO);
+    expect(r.x).toBe(0);
+  });
+
+  it("non si restringe MAI sotto la sagoma del bancone", () => {
+    // Una sagoma appiccicata al bancone: il pannello resta quello che era,
+    // non diventa più stretto del rettangolo da cui parte.
+    const r = pannelloAllargato(ZONE_CON_BANCO, [sagoma(1700, 600, 130)], BANCO);
+    expect(r.x).toBe(1830);
+    expect(r.larghezza).toBe(240);
+  });
+
+  it("e se un tavolo finisce SOPRA il bancone il pannello sparisce, come prima", () => {
+    // ⚠️ La regola vecchia non è stata indebolita: allargare non vuol dire
+    // coprire. Un tavolo dentro il bancone toglie il pannello dalla pianta.
+    expect(pannelloAllargato(ZONE_CON_BANCO, [sagoma(1900, 600)], BANCO)).toBeNull();
   });
 });

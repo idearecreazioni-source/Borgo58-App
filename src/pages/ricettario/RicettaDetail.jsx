@@ -7,6 +7,7 @@ import {
   getRecipeCost,
   listPreparationUsage,
   listPreparations,
+  listRecipeAllergensFor,
   listRecipeCostsFor,
   listRecipeStatusHistory,
   prezzoBis,
@@ -33,6 +34,8 @@ import { addMenuItem, listMenus, menuDellaRicetta, removeMenuItem } from "../../
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import PrintButton from "../../components/PrintButton";
+import AllergeniDelPiatto from "../../components/AllergeniDelPiatto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
   ALLERGENS,
   COOKING_TECHNIQUES,
@@ -40,6 +43,7 @@ import {
   RECIPE_STATI,
   RECIPE_TYPES,
   eComponente,
+  eFingerFood,
   statoRicetta,
   SEASONS,
   STEP_PHASES,
@@ -126,6 +130,11 @@ export default function RicettaDetail() {
 
   const [savingHeader, setSavingHeader] = useState(false);
   const [ingredientMode, setIngredientMode] = useState("ingredient");
+  // ⚠️ SU UNA SELEZIONE IL MODO È DECISO, non scelto: dentro ci vanno solo
+  // finger, quindi il pannello lavora sempre in modalità «componente» e la
+  // ricerca guarda solo loro. Il valore scelto a mano resta per gli altri
+  // piatti — non si tocca uno stato che su questa scheda non si vede.
+  const modoRighe = eFingerFood(recipe?.category) ? "preparation" : ingredientMode;
   const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [addingIngredient, setAddingIngredient] = useState(false);
@@ -257,6 +266,75 @@ export default function RicettaDetail() {
       ),
     [recipeIngredients]
   );
+  // I filtri del pannello con cui si compone una selezione (blocco 3(a)).
+  const [cercaFinger, setCercaFinger] = useState("");
+  const [categoriaFinger, setCategoriaFinger] = useState("");
+  const [senzaAllergeneFinger, setSenzaAllergeneFinger] = useState("");
+
+  // I finger che compongono QUESTA selezione, in ordine di nome: l'elenco
+  // su cui si legge dove sta ogni allergene (blocco 3(g)).
+  const fingerDelPiatto = useMemo(
+    () =>
+      [...fingerDentro.values()]
+        .map((ri) => ri.component)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [fingerDentro]
+  );
+
+  // 🔴 GLI ALLERGENI DI TUTTI I FINGER, in una lettura sola. Servono a due
+  // cose che devono dire lo stesso: il filtro «senza …» del pannello con cui
+  // si compone la selezione, e l'elenco «dove stanno, finger per finger».
+  // Due letture separate divergerebbero appena qualcuno cambia un
+  // ingrediente, e a restare indietro sarebbe quella che nessuno guarda.
+  const [allergeniFinger, setAllergeniFinger] = useState(null);
+  useEffect(() => {
+    const ids = fingers.map((f) => f.id);
+    if (ids.length === 0) {
+      setAllergeniFinger(null);
+      return;
+    }
+    let annullato = false;
+    // ⚠️ `leggi()` E NON UN `.catch(() => ({}))`: una mappa vuota si
+    // leggerebbe «nessun finger ha allergeni», che è la frase più
+    // pericolosa che questa schermata possa scrivere. Con NON_LETTO il
+    // filtro «senza …» si spegne e l'elenco dice che non li ha letti,
+    // invece di nascondere righe per un guasto di rete (regola del 20/08).
+    leggi(listRecipeAllergensFor(ids)).then((m) => !annullato && setAllergeniFinger(m));
+    return () => {
+      annullato = true;
+    };
+  }, [fingers]);
+
+  // I finger che passano i filtri.
+  const fingerFiltrati = useMemo(() => {
+    let elenco = fingers;
+    if (cercaFinger.trim()) {
+      const q = cercaFinger.trim().toLowerCase();
+      elenco = elenco.filter((f) => f.name.toLowerCase().includes(q));
+    }
+    if (categoriaFinger) elenco = elenco.filter((f) => f.category === categoriaFinger);
+    if (senzaAllergeneFinger && allergeniFinger && !nonLetto(allergeniFinger)) {
+      elenco = elenco.filter((f) => {
+        const a = allergeniFinger[f.id];
+        // 🔴 CHI NON SI SA NON È «SENZA» — stessa regola dell'elenco delle
+        // ricette (19/08). Un finger i cui allergeni nessuno ha confermato
+        // non può comparire fra i «senza glutine»: sarebbe dire a un celiaco
+        // che è sicuro quando nessuno l'ha guardato.
+        if (!a || a.daVerificare) return false;
+        return !(a.allergens ?? []).includes(senzaAllergeneFinger);
+      });
+    }
+    return elenco;
+  }, [fingers, cercaFinger, categoriaFinger, senzaAllergeneFinger, allergeniFinger]);
+
+  // Quanti restano fuori PERCHÉ NON SI SA, invece che perché ce l'hanno: è
+  // la ragione per andare a compilare quelle schede, e senza il numero
+  // nessuno la trova.
+  const fingerSenzaAllergeniNoti = useMemo(() => {
+    if (!senzaAllergeneFinger || !allergeniFinger || nonLetto(allergeniFinger)) return 0;
+    return fingers.filter((f) => !allergeniFinger[f.id] || allergeniFinger[f.id].daVerificare)
+      .length;
+  }, [fingers, senzaAllergeneFinger, allergeniFinger]);
 
   const totalPrepMin = useMemo(
     () => steps.reduce((sum, s) => sum + (s.duration_min || 0), 0),
@@ -273,11 +351,19 @@ export default function RicettaDetail() {
     return allIngredients.filter((i) => i.name.toLowerCase().includes(q));
   }, [allIngredients, ingredientSearch]);
 
+  // 🔴 SU UNA SELEZIONE SI CERCA SOLO FRA I FINGER (24/08, richiesta di
+  // Alessio): *«in un piatto di finger food ci vanno SOLO finger, quindi
+  // deve cercare solo quelli»*. Prima la tendina proponeva tutte le
+  // preparazioni del ricettario — quarantuno, su una schermata dove ne
+  // servono venti di un tipo solo.
   const filteredPreparations = useMemo(() => {
-    if (!ingredientSearch) return preparations;
+    const base = eFingerFood(recipe?.category)
+      ? preparations.filter((p) => p.recipe_type === "finger")
+      : preparations;
+    if (!ingredientSearch) return base;
     const q = ingredientSearch.toLowerCase();
-    return preparations.filter((p) => p.name.toLowerCase().includes(q));
-  }, [preparations, ingredientSearch]);
+    return base.filter((p) => p.name.toLowerCase().includes(q));
+  }, [preparations, ingredientSearch, recipe?.category]);
 
   if (notFound) return <Navigate to="/ricettario/ricette" replace />;
   if (loading || !recipe) {
@@ -293,6 +379,18 @@ export default function RicettaDetail() {
   // Il prezzo a pezzo invece è solo dei finger: su un piatto sarebbe un
   // secondo prezzo accanto a quello della carta, e il database lo rifiuta.
   const isFinger = recipe.recipe_type === "finger";
+
+  // 🔴 UN PIATTO DI FINGER FOOD NON È UNA RICETTA NORMALE (24/08/2026,
+  // blocco 3 del mandato del collaudo): *«la sua scheda deve smettere di
+  // comportarsi come tale»*. Non ha ingredienti ma FINGER, non ha fasi (le
+  // fasi stanno dentro i singoli bocconcini), non ha una stagionalità sua e
+  // i minuti che compariva sotto erano la somma dei tempi delle fasi — cioè
+  // zero, presentato come un dato.
+  //
+  // ⚠️ La domanda è sulla CATEGORIA e non su «contiene finger»: un piatto
+  // di finger food è tale perché Alessio l'ha messo lì, non perché dentro
+  // ci sia finito un bocconcino.
+  const isFingerFood = eFingerFood(recipe.category);
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 
@@ -472,17 +570,27 @@ export default function RicettaDetail() {
   };
 
   const handleAddIngredient = async () => {
-    const componentMode = ingredientMode === "preparation";
-    if (componentMode && (!ingredientForm.component_recipe_id || !ingredientForm.quantity)) return;
-    if (!componentMode && (!ingredientForm.ingredient_id || !ingredientForm.quantity)) return;
+    const componentMode = modoRighe === "preparation";
+    // ⚠️ SU UNA SELEZIONE LA QUANTITÀ È UNA E NON SI CHIEDE: è sempre un
+    // pezzo per tipo, e il valore lo mette la stessa regola che lo mette
+    // spuntando il finger nel pannello sopra — non due regole diverse per
+    // due strade che aggiungono la stessa cosa.
+    const suSelezione = eFingerFood(recipe?.category);
+    const quanti = suSelezione ? 1 : Number(ingredientForm.quantity);
+    const unita = suSelezione
+      ? (preparations.find((p) => p.id === ingredientForm.component_recipe_id)?.yield_unit ?? "pz")
+      : ingredientForm.unit;
+    if (componentMode && !ingredientForm.component_recipe_id) return;
+    if (!componentMode && !ingredientForm.ingredient_id) return;
+    if (!suSelezione && !ingredientForm.quantity) return;
     setAddingIngredient(true);
     setError("");
     try {
       await addRecipeIngredient(id, {
         ingredient_id: componentMode ? null : ingredientForm.ingredient_id,
         component_recipe_id: componentMode ? ingredientForm.component_recipe_id : null,
-        quantity: Number(ingredientForm.quantity),
-        unit: ingredientForm.unit,
+        quantity: quanti,
+        unit: unita,
         waste_percentage: ingredientForm.waste_percentage
           ? Number(ingredientForm.waste_percentage)
           : null,
@@ -930,7 +1038,21 @@ export default function RicettaDetail() {
 
           {/* ⚠️ La ragione dello stato spento si legge SENZA passarci sopra
               col dito: su un tablet non esiste il puntatore fermo, quindi
-              un `title` da solo è un'informazione che nessuno vedrà mai. */}
+              un `title` da solo è un'informazione che nessuno vedrà mai.
+
+              🔴 E DAL 24/08 SI VEDE CHE È UNA PROTEZIONE, non un guasto —
+              rilievo di Alessio dopo averla incontrata: *«la PROTEZIONE È
+              GIUSTA e non va toccata. Il difetto è che non l'ho capita al
+              primo sguardo: ho pensato che i pulsanti fossero rotti»*.
+              Quattro pastiglie spente e una riga grigia sotto si leggono
+              «non funziona»; un lucchetto con dentro il gesto che sblocca
+              si legge «è chiuso a chiave, ed ecco la chiave».
+
+              ⚠️ E LA CHIAVE È LÌ DENTRO, non altrove: il piatto si toglie
+              dal menu in servizio da questo stesso riquadro, col nome del
+              menu scritto sopra. Prima la frase diceva «toglila dal menu in
+              servizio» e lasciava cercare quale — il pannello dei menu è
+              trecento punti più in basso e non nomina il blocco. */}
           {(() => {
             const attuale = statoRicetta(
               recipe.pronta_per_carta,
@@ -940,9 +1062,32 @@ export default function RicettaDetail() {
             const bloccati = RECIPE_STATI.map((s) => motivoStato(s.value, recipe, menuAttivo))
               .filter((i) => i.impedito && i.stato !== attuale)
               .map((i) => i.impedito);
-            return bloccati.length > 0 ? (
-              <p className="testo-sala text-b58-charcoal-soft/80 mt-1.5">{bloccati[0]}</p>
-            ) : null;
+            if (bloccati.length === 0) return null;
+
+            // Il menu in servizio che contiene questo piatto: è quello da
+            // cui va tolto. ⚠️ Può non esserci (il blocco è un altro, es.
+            // «prima segnala pronta»), e allora si mostra solo la ragione.
+            const menuChePubblica = menuDentro.find((m) => m.is_active && m.voce);
+
+            return (
+              <div className="mt-2 rounded-lg bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 px-3 py-2">
+                <p className="testo-sala text-b58-charcoal">
+                  <strong>🔒 Bloccato apposta.</strong> {bloccati[0]}
+                </p>
+                {menuChePubblica && isTitolare && (
+                  <button
+                    type="button"
+                    disabled={salvandoMenu === menuChePubblica.id}
+                    onClick={() => cambiaMenu(menuChePubblica)}
+                    className="tocco-riga mt-1.5 rounded-lg bg-b58-charcoal text-b58-parchment testo-sala px-3 disabled:opacity-60"
+                  >
+                    {salvandoMenu === menuChePubblica.id
+                      ? "Tolgo…"
+                      : `Togli da «${menuChePubblica.name}» e sblocca`}
+                  </button>
+                )}
+              </div>
+            );
           })()}
 
           {recipe.ritirata_il && (
@@ -1026,29 +1171,38 @@ export default function RicettaDetail() {
           />
         </div>
 
-        <div className="mb-4">
-          <label className={labelClass}>Stagionalità</label>
-          <div className="flex flex-wrap gap-2">
-            {SEASONS.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => toggleSeasonality(s.value)}
-                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
-                  recipe.seasonality.includes(s.value)
-                    ? "bg-b58-olive text-b58-parchment border-b58-olive"
-                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
+        {/* ⚠️ NIENTE STAGIONALITÀ SU UN PIATTO DI FINGER FOOD (24/08,
+            richiesta di Alessio): la stagione è dei bocconcini, e la
+            selezione cambia quando cambiano loro. Un campo che si compila
+            in due posti finisce per dire due cose. */}
+        {!isFingerFood && (
+          <div className="mb-4">
+            <label className={labelClass}>Stagionalità</label>
+            <div className="flex flex-wrap gap-2">
+              {SEASONS.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => toggleSeasonality(s.value)}
+                  className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                    recipe.seasonality.includes(s.value)
+                      ? "bg-b58-olive text-b58-parchment border-b58-olive"
+                      : "border-b58-charcoal/15 text-b58-charcoal-soft"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-2">
-            {steps.length > 0 && (
+            {/* ⚠️ E NIENTE MINUTI: sono la somma dei tempi delle fasi, e una
+                selezione di finger le fasi non le ha — il numero sarebbe
+                sempre zero, presentato come un dato. */}
+            {!isFingerFood && steps.length > 0 && (
               <span className="text-xs text-b58-charcoal-soft">
                 ⏱ {totalPrepMin} min totali · {totalActiveMin} min attivi
               </span>
@@ -1064,9 +1218,15 @@ export default function RicettaDetail() {
         </div>
       </div>
 
-      {/* Ingredienti */}
+      {/* Ingredienti — o FINGER, su una selezione.
+          ⚠️ La parola cambia perché la cosa è diversa (24/08, richiesta di
+          Alessio): *«la parola "INGREDIENTI" in questa scheda è sbagliata:
+          si chiamano FINGER»*. Dentro una selezione non c'è farina, ci sono
+          bocconcini finiti. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Ingredienti</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          {isFingerFood ? "Finger" : "Ingredienti"}
+        </h2>
 
         {/* I BOCCONCINI — un tocco mette, un tocco toglie.
             ⚠️ Si apre da sé se questa ricetta è già una selezione, e resta
@@ -1091,7 +1251,77 @@ export default function RicettaDetail() {
 
             {(componiAperto ?? fingerDentro.size > 0) && (
               <div className="mt-2 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
-                {fingers.map((f) => {
+                {/* 🔴 I FILTRI (24/08, richiesta di Alessio): *«se un piatto
+                    prevede solo finger di carne, vedere anche quelli di
+                    pesce confonde e basta»*.
+                    ⚠️ «Carne» e «pesce» NON sono un dato di questo
+                    gestionale — una ricetta non porta da nessuna parte di
+                    che cosa è fatta. Quello che c'è e che separa davvero
+                    l'elenco è la CATEGORIA (i finger salati stanno in
+                    «antipasto», i dolci in «dolce») e l'allergene. Chi
+                    cerca «di carne» digita la parola: il campo di ricerca
+                    guarda il nome.
+                    ⚠️ E il filtro «senza …» si SPEGNE se gli allergeni non
+                    si sono potuti leggere: nasconderebbe righe per un
+                    guasto di rete, e chi guarda leggerebbe «questi non ce
+                    l'hanno» — che è la bugia che questo modulo non deve
+                    dire. */}
+                <div className="p-2 flex flex-wrap gap-2 bg-b58-cream/40">
+                  <input
+                    value={cercaFinger}
+                    onChange={(e) => setCercaFinger(e.target.value)}
+                    placeholder="Cerca un finger…"
+                    className="flex-1 min-w-[10rem] rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm"
+                  />
+                  <select
+                    value={categoriaFinger}
+                    onChange={(e) => setCategoriaFinger(e.target.value)}
+                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm"
+                  >
+                    <option value="">Tutte le categorie</option>
+                    {RECIPE_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={senzaAllergeneFinger}
+                    onChange={(e) => setSenzaAllergeneFinger(e.target.value)}
+                    disabled={!allergeniFinger || nonLetto(allergeniFinger)}
+                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm disabled:opacity-50"
+                  >
+                    <option value="">Qualunque allergene</option>
+                    {ALLERGENS.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        senza {a.label.toLowerCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ⚠️ QUANTI NE NASCONDE SI DICHIARA: un filtro che ne toglie
+                    quindici senza dirlo fa credere che ce ne siano tre — ed
+                    è il numero che dice se conviene togliere il filtro. */}
+                {fingerFiltrati.length < fingers.length && (
+                  <p className="px-3 py-1.5 text-xs text-b58-charcoal-soft bg-b58-cream/40">
+                    {fingers.length - fingerFiltrati.length} finger non compaiono per via dei
+                    filtri.
+                    {senzaAllergeneFinger && fingerSenzaAllergeniNoti > 0 && (
+                      <>
+                        {" "}
+                        Di questi, {fingerSenzaAllergeniNoti} sono esclusi perché i loro
+                        allergeni non sono ancora confermati: non si sa se ce l&apos;hanno.
+                      </>
+                    )}
+                  </p>
+                )}
+
+                {fingerFiltrati.length === 0 && (
+                  <p className="px-3 py-2 text-sm text-b58-charcoal-soft/70">
+                    Nessun finger corrisponde ai filtri.
+                  </p>
+                )}
+
+                {fingerFiltrati.map((f) => {
                   const dentro = fingerDentro.has(f.id);
                   return (
                     <button
@@ -1130,10 +1360,16 @@ export default function RicettaDetail() {
         {recipeIngredients.length > 0 && (
           <table className="w-full text-sm mb-4">
             <thead>
+              {/* ⚠️ SU UNA SELEZIONE NIENTE QUANTITÀ E NIENTE SCARTO (24/08,
+                  richiesta di Alessio): *«è sempre un pezzo per tipo, quel
+                  doppio elenco non serve a niente»*. Una casella con dentro
+                  sempre «1» non è un dato: è una cosa che si può sbagliare
+                  senza guadagnarci niente. E lo scarto di un bocconcino
+                  finito non esiste — sta dentro la sua ricetta. */}
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">Ingrediente</th>
-                <th className="py-2 font-medium">Quantità</th>
-                <th className="py-2 font-medium">% scarto</th>
+                <th className="py-2 font-medium">{isFingerFood ? "Finger" : "Ingrediente"}</th>
+                {!isFingerFood && <th className="py-2 font-medium">Quantità</th>}
+                {!isFingerFood && <th className="py-2 font-medium">% scarto</th>}
                 <th className="py-2 font-medium text-right">Costo</th>
                 <th className="py-2"></th>
               </tr>
@@ -1164,8 +1400,11 @@ export default function RicettaDetail() {
                       </Link>
                       {/* ⚠️ Il componente si chiama col SUO nome: dal 19/08
                           può essere un finger, e un'etichetta fissa
-                          «preparazione» direbbe una cosa falsa. */}
-                      {isComponent && (
+                          «preparazione» direbbe una cosa falsa.
+                          ⚠️ E su una SELEZIONE sparisce (24/08): la colonna
+                          si chiama gia' «Finger», e ripeterlo su ogni riga
+                          e' una parola che non distingue niente. */}
+                      {isComponent && !isFingerFood && (
                         <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                           {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
                         </span>
@@ -1177,17 +1416,23 @@ export default function RicettaDetail() {
                         <div className="text-xs text-b58-charcoal-soft">{ri.prep_note}</div>
                       )}
                     </td>
-                    <td className="py-2">
-                      <CampoAutosalvato
-                        type="number"
-                        step="0.01"
-                        value={ri.quantity}
-                        onSave={(v) => handleQuantityChange(ri, v)}
-                        className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm"
-                      />
-                      <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
-                    </td>
-                    <td className="py-2 text-b58-charcoal-soft">{isComponent ? "—" : `${waste}%`}</td>
+                    {!isFingerFood && (
+                      <td className="py-2">
+                        <CampoAutosalvato
+                          type="number"
+                          step="0.01"
+                          value={ri.quantity}
+                          onSave={(v) => handleQuantityChange(ri, v)}
+                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm"
+                        />
+                        <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
+                      </td>
+                    )}
+                    {!isFingerFood && (
+                      <td className="py-2 text-b58-charcoal-soft">
+                        {isComponent ? "—" : `${waste}%`}
+                      </td>
+                    )}
                     <td className="py-2 text-right text-b58-charcoal">
                       {ri.is_optional ? (
                         <span className="text-b58-charcoal-soft/60">escluso</span>
@@ -1211,7 +1456,10 @@ export default function RicettaDetail() {
         )}
 
         <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3">
-          {preparations.length > 0 && (
+          {/* ⚠️ SU UNA SELEZIONE NON SI SCEGLIE FRA INGREDIENTI E PREPARAZIONI
+              (24/08): dentro ci vanno solo finger, quindi la scelta non c'è
+              — e la ricerca qui sotto guarda solo loro. */}
+          {!isFingerFood && preparations.length > 0 && (
             <div className="flex gap-2 mb-2">
               <button
                 type="button"
@@ -1252,10 +1500,16 @@ export default function RicettaDetail() {
               <input
                 value={ingredientSearch}
                 onChange={(e) => setIngredientSearch(e.target.value)}
-                placeholder={ingredientMode === "preparation" ? "Cerca preparazione…" : "Cerca ingrediente…"}
+                placeholder={
+                  isFingerFood
+                    ? "Cerca un finger…"
+                    : modoRighe === "preparation"
+                      ? "Cerca preparazione…"
+                      : "Cerca ingrediente…"
+                }
                 className={inputClass}
               />
-              {ingredientMode === "preparation" ? (
+              {modoRighe === "preparation" ? (
                 <select
                   value={ingredientForm.component_recipe_id}
                   onChange={(e) => {
@@ -1271,7 +1525,7 @@ export default function RicettaDetail() {
                   <option value="">Seleziona…</option>
                   {filteredPreparations.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.recipe_type === "finger" ? `${p.name} · finger` : p.name}
+                      {isFingerFood || p.recipe_type !== "finger" ? p.name : `${p.name} · finger`}
                     </option>
                   ))}
                 </select>
@@ -1295,26 +1549,35 @@ export default function RicettaDetail() {
                 </select>
               )}
             </div>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={ingredientForm.quantity}
-              onChange={(e) => setIngredientForm((f) => ({ ...f, quantity: e.target.value }))}
-              placeholder="Quantità"
-              className={inputClass}
-            />
-            <select
-              value={ingredientForm.unit}
-              onChange={(e) => setIngredientForm((f) => ({ ...f, unit: e.target.value }))}
-              className={inputClass}
-            >
-              <option value="">Unità</option>
-              {UNITS.map((u) => (
-                <option key={u.value} value={u.value}>{u.label}</option>
-              ))}
-            </select>
-            {ingredientMode === "preparation" ? (
+            {/* ⚠️ SU UNA SELEZIONE QUANTITÀ E UNITÀ NON SI CHIEDONO: è
+                sempre un pezzo per tipo (24/08). Due caselle da riempire
+                sempre allo stesso modo sono due modi di sbagliare senza
+                guadagnarci niente — e il valore lo mette la stessa regola
+                che lo mette spuntando il finger qui sopra. */}
+            {!isFingerFood && (
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={ingredientForm.quantity}
+                onChange={(e) => setIngredientForm((f) => ({ ...f, quantity: e.target.value }))}
+                placeholder="Quantità"
+                className={inputClass}
+              />
+            )}
+            {!isFingerFood && (
+              <select
+                value={ingredientForm.unit}
+                onChange={(e) => setIngredientForm((f) => ({ ...f, unit: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="">Unità</option>
+                {UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
+            )}
+            {modoRighe === "preparation" ? (
               <div />
             ) : (
               <input
@@ -1342,8 +1605,8 @@ export default function RicettaDetail() {
               type="button"
               disabled={
                 addingIngredient ||
-                !ingredientForm.quantity ||
-                (ingredientMode === "preparation"
+                (!isFingerFood && !ingredientForm.quantity) ||
+                (modoRighe === "preparation"
                   ? !ingredientForm.component_recipe_id
                   : !ingredientForm.ingredient_id)
               }
@@ -1384,7 +1647,13 @@ export default function RicettaDetail() {
         </div>
       )}
 
-      {/* Fasi di preparazione */}
+      {/* ⚠️ NIENTE FASI E NIENTE VIDEO SU UN PIATTO DI FINGER FOOD
+          (24/08, richiesta di Alessio): *«le fasi stanno dentro i singoli
+          finger, qui non hanno senso»*. Un riquadro che su questa scheda
+          resta sempre vuoto non è neutro: fa scorrere due schermate per
+          arrivare a quello che serve, e prima o poi qualcuno ci scrive
+          dentro una fase che nessuno andrà a cercare lì. */}
+      {!isFingerFood && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Fasi di preparazione</h2>
 
@@ -1586,8 +1855,10 @@ export default function RicettaDetail() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Video ricetta */}
+      {!isFingerFood && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
         <p className="text-xs text-b58-charcoal-soft mb-4">
@@ -1650,66 +1921,70 @@ export default function RicettaDetail() {
           </button>
         </div>
       </div>
+      )}
 
-      {/* HACCP e Allergeni */}
+      {/* ALLERGENI — e cosa si può togliere.
+          🔴 IL BLOCCO È RIFATTO IL 24/08 (blocchi 1 e 3(g) del mandato).
+          Prima era un elenco piatto di pastiglie, cioè un dato che si
+          guardava e basta. Adesso è il posto dove si DECIDE, allergene per
+          allergene, se si può togliere, con cosa e a che prezzo — ed è
+          quello che in sala diventa un pulsante premibile o spento.
+          ⚠️ Su un piatto di finger food «Punti Critici di Controllo» è
+          sparito insieme alle fasi: i CCP stanno dentro i singoli
+          bocconcini, e un riquadro che dice sempre «nessun CCP definito» è
+          arredamento. Sugli altri piatti resta dov'era. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">HACCP e Allergeni</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          {isFingerFood ? "Allergeni" : "HACCP e Allergeni"}
+        </h2>
 
-        <div className="mb-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
-            Allergeni (auto-calcolati dagli ingredienti)
-          </p>
+        <div className={isFingerFood ? "" : "mb-4"}>
           {allergens.daVerificare && (
-            <p className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
               <strong>Non verificato.</strong> Allergeni solo stimati (o mai guardati) su:{" "}
               {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
               l&apos;elenco allergeni sul menu.
             </p>
           )}
-          {allergens.allergens.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">
-              {allergens.daVerificare ? "Nessuno risulta, ma nessuno l'ha guardato." : "Nessuno."}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {allergens.allergens.map((a) => (
-                <span
-                  key={a}
-                  className="text-xs bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1"
-                >
-                  {labelFor(ALLERGENS, a)}
-                </span>
-              ))}
-            </div>
-          )}
+
+          <AllergeniDelPiatto
+            recipeId={id}
+            eFinger={isFingerFood}
+            finger={fingerDelPiatto}
+            ingredienti={allIngredients}
+            allergeniFinger={allergeniFinger}
+          />
+
           {allergens.tracce.length > 0 && (
-            <p className="mt-2 text-sm text-b58-charcoal-soft">
+            <p className="mt-3 text-sm text-b58-charcoal-soft">
               <strong>Può contenere tracce di:</strong>{" "}
               {allergens.tracce.map((a) => labelFor(ALLERGENS, a)).join(", ")}
             </p>
           )}
         </div>
 
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
-            Punti Critici di Controllo
-          </p>
-          {ccpSteps.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">
-              Nessun CCP definito nelle fasi.
+        {!isFingerFood && (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+              Punti Critici di Controllo
             </p>
-          ) : (
-            <ul className="space-y-1.5">
-              {ccpSteps.map((s) => (
-                <li key={s.id} className="text-sm text-b58-charcoal-soft">
-                  <span className="text-b58-charcoal">{s.description}</span>
-                  {s.haccp_limit && <> — limite: {s.haccp_limit}</>}
-                  {s.haccp_action && <>, azione: {s.haccp_action}</>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            {ccpSteps.length === 0 ? (
+              <p className="text-sm text-b58-charcoal-soft/60">
+                Nessun CCP definito nelle fasi.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {ccpSteps.map((s) => (
+                  <li key={s.id} className="text-sm text-b58-charcoal-soft">
+                    <span className="text-b58-charcoal">{s.description}</span>
+                    {s.haccp_limit && <> — limite: {s.haccp_limit}</>}
+                    {s.haccp_action && <>, azione: {s.haccp_action}</>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

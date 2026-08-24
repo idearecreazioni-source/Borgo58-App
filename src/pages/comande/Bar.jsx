@@ -7,6 +7,7 @@ import {
   listRepartoTickets,
   setItemsPrepared,
 } from "../../lib/api/orders";
+import { nomeRiga } from "../../lib/calcoli/righeComanda";
 import { orderTotals } from "../../lib/calcoli/conto";
 import { formatEUR } from "../../lib/constants";
 import CloseOrderModal from "./CloseOrderModal";
@@ -121,7 +122,7 @@ export default function Bar() {
       </div>
       {g.items.map((i) => (
         <div key={i.id} className="testo-sala text-b58-charcoal py-0.5">
-          <b>{i.quantity}×</b> {i.recipe?.name || i.free_text_name}
+          <b>{i.quantity}×</b> {nomeRiga(i)}
           {i.note && <div className="testo-sala italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
         </div>
       ))}

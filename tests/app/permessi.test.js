@@ -202,7 +202,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 20 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 21 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -273,6 +273,13 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // elenco: chi non deve vedere riceve un rifiuto, e c'è una prova che
       // lo controlla nella verifica della 20260824000026.
       "finger_bissabili",
+      // ⚠️ COMPARSA IL 24/08 con la 20260824000032 e **non dichiarata**: la
+      // rete l'ha trovata lo stesso giorno. Resta senza portiere perche' il
+      // portiere ce l'ha per interposta persona — conta le righe di
+      // `confronto_col_foglio`, che pretende il titolare e RIFIUTA gli
+      // altri. Stessa forma di `incasso_conto`, che passa da
+      // `totale_conto`.
+      "confronti_storti",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

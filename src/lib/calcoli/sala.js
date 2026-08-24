@@ -594,6 +594,67 @@ export function pannelloNellaPianta(zone = [], sagome = [], quali = ZONE_DEL_PAN
 }
 
 // =====================================================================
+// IL PANNELLO SI ALLARGA NELLO SPAZIO CHE C'È DAVVERO (24/08/2026)
+// =====================================================================
+//
+// 🔴 TERZA VOLTA CHE ALESSIO SEGNALA LO STESSO RIQUADRO come illeggibile, e
+// stavolta con la diagnosi: *«il riquadro prende la taglia dalla sagoma del
+// Bancone, e accanto c'è una fascia larghissima e completamente VUOTA. Il
+// testo può uscire dal riquadro e usare quello spazio: non c'è nessun motivo
+// per cui debba stare dentro i confini di una sagoma della pianta.»*
+//
+// ⚠️ **LA MISURA HA CORRETTO IL VERSO, non la sostanza.** Misurato nel
+// browser vero, sul tablet in verticale (768 punti, calibrazione 64):
+//   · il riquadro è **344 × 160 punti** (53,8 × 25,1 mm);
+//   · **alla sua destra ci sono ZERO punti**: il pannello arriva già al
+//     bordo della pianta;
+//   · lo spazio vuoto c'è, ma **SOTTO**: 77 punti (12,1 mm) prima di
+//     incontrare T7·T8·T9, cioè un'altezza possibile di 238 invece di 160.
+// Sulla pianta in piedi gli assi si scambiano, ed è la stessa trappola del
+// 18/08 con la Chef Table: *una richiesta che sembra impossibile va riletta
+// sullo schermo di chi l'ha fatta* — e qui, allo specchio, il verso giusto
+// si vede solo misurando quello schermo.
+//
+// ⚠️ E NON È UN NUMERO, È UNA REGOLA: quei 77 punti valgono per la
+// disposizione di stasera. Domani Alessio sposta T7 e diventano altri. Il
+// pannello quindi **cresce fin dove può e si ferma prima del vicino**, come
+// fa una sagoma quando si ingrandisce — se qualcuno gli mette un tavolo
+// sotto, si ritira da solo invece di coprirlo.
+//
+// ⚠️ IL VARCO CHE RESTA È LO STESSO che divide due sagome disegnate: senza,
+// il pannello finirebbe appiccicato al tavolo sotto e i due si leggerebbero
+// come una cosa sola.
+
+/** Quanto un pannello può crescere verso i mobili senza toccarne nessuno. */
+export function pannelloAllargato(zone = [], sagome = [], quali = ZONE_DEL_BANCO, varcoCm = 10) {
+  const r = pannelloNellaPianta(zone, sagome, quali);
+  if (!r) return null;
+
+  // Il bancone sta contro il bordo della sala: cresce verso l'interno, cioè
+  // verso le x più piccole. ⚠️ Il verso si ricava dal fondale, non si scrive
+  // a mano: se un giorno il pannello stesse dall'altra parte, questa regola
+  // direbbe una cosa falsa e nessun errore lo mostrerebbe.
+  const controIlBordoDestro = Math.abs(r.x + r.larghezza - SALA_LARGHEZZA_CM) < 1;
+  if (!controIlBordoDestro) return r;
+
+  // Le sagome che stanno nella stessa fascia di profondità del pannello:
+  // sono quelle che gli verrebbero incontro crescendo.
+  const davanti = sagome
+    .map((s) => ({ s, mis: misureSagoma(s) }))
+    .filter(
+      ({ s, mis }) =>
+        s.y < r.y + r.profondita &&
+        s.y + mis.profondita > r.y &&
+        s.x + mis.larghezza <= r.x
+    )
+    .map(({ s, mis }) => s.x + mis.larghezza);
+
+  const limite = davanti.length > 0 ? Math.max(...davanti) + varcoCm : 0;
+  const nuovoX = Math.max(0, Math.min(r.x, limite));
+  return { ...r, x: nuovoX, larghezza: r.x + r.larghezza - nuovoX };
+}
+
+// =====================================================================
 // DOVE I MOBILI POSSONO STARE — LA L CAPOVOLTA (19/08/2026)
 // =====================================================================
 //

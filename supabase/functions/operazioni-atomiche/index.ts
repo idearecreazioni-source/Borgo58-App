@@ -240,6 +240,14 @@ const OPERAZIONI = new Set([
   // correzione spiega, oppure una correzione registrata che non ha tolto
   // niente. Nessuna delle due sembrerebbe sbagliata guardando la schermata.
   "allinea_giacenza",
+  // Gli allergeni al tavolo (24/08/2026). Togliere un allergene da una riga
+  // scrive UNA riga per ogni ingrediente che quell'allergene lo porta: a
+  // meta' resterebbe un piatto che dichiara «senza lattosio» con dentro
+  // ancora la panna. Passa da qui anche se la tabella e' una sola, perche'
+  // e' la forma che rende l'elenco delle scritture controllabile — e perche'
+  // il supplemento lo deve leggere il database dal Ricettario, mai il tablet.
+  "applica_sostituzione_riga",
+  "togli_sostituzione_riga",
 ]);
 
 const CORS = {
