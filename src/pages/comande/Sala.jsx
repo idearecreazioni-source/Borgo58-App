@@ -153,6 +153,14 @@ export default function Sala() {
   // ⚠️ E RIPARTE DA UNO A OGNI CONTO: è una proprietà della comanda che si
   // sta scrivendo, non dello schermo.
   const [turnoCorrente, setTurnoCorrente] = useState(1);
+  // 🔴 QUANTI TURNI SONO STATI APERTI, che non e' «quanti ne hanno dentro
+  // qualcosa» (24/08). Trovato provando: aprendo il 3° turno e tornando al
+  // 1° per correggere, il 2° e il 3° **sparivano** — erano ancora vuoti,
+  // quindi nessuna riga li nominava e il conto li dimenticava.
+  // ⚠️ Un turno aperto e ancora vuoto esiste lo stesso: e' li' che chi
+  // serve sta per scrivere. Sparire sotto le dita e' peggio che non
+  // esserci mai stato.
+  const [turniAperti, setTurniAperti] = useState(1);
   const menuRef = useRef(null);
 
   const [panel, setPanel] = useState(null); // null | "coperto" | "calibrazione"
@@ -629,8 +637,11 @@ export default function Sala() {
   })();
 
   useEffect(() => {
-    // Il turno riparte da uno su ogni tavolo che si apre.
+    // Il turno riparte da uno su ogni tavolo che si apre — e con lui i
+    // turni aperti, che sono una proprieta' della comanda che si sta
+    // scrivendo, non dello schermo.
     setTurnoCorrente(1);
+    setTurniAperti(1);
   }, [order?.id]);
 
   useEffect(() => {
@@ -751,6 +762,23 @@ export default function Sala() {
   // a comparire, altrimenti il «2° turno» che si sta scrivendo sembrerebbe
   // il primo.
   const gruppiComanda = righePerTurno([...sentItems, ...draftItems]);
+
+  // 🔴 I TURNI CHE ESISTONO SI LEGGONO DALLA COMANDA, non da un contatore
+  // (24/08). Un turno c'è perché dentro ci sono delle righe: ricaricando
+  // la schermata un contatore ripartirebbe da uno mentre i piatti restano
+  // dove sono, e i tasti direbbero una cosa diversa dalla lista sotto.
+  //
+  // ⚠️ Più quello in corso, che può essere ancora vuoto: si preme «+ turno»
+  // prima di segnare, e il tasto deve restare acceso e visibile.
+  const turniDisponibili = (() => {
+    const massimo = Math.max(
+      turnoCorrente,
+      turniAperti,
+      ...gruppiComanda.map((g) => g.turno),
+      1
+    );
+    return Array.from({ length: massimo }, (_, i) => i + 1);
+  })();
   const { coperti, copertoTotal, total } = orderTotals(order, copertoPrice);
 
   // Menu raggruppato per portata, nell'ordine in cui si mangia — non in
@@ -1074,25 +1102,47 @@ export default function Sala() {
   // di rado. Il menu è la cosa che si guarda più spesso, e stava in fondo.
   const pannelloMenu = !order ? null : (
     <>
-      {/* 🔴 «PROSSIMO TURNO» (21/08, disegno di Alessio): si segnano i piatti,
-          si preme, e da lì in poi quello che si segna va nel turno dopo. Sta
-          accanto al menu perché è lì che si compone la comanda.
-          ⚠️ IL TURNO IN CORSO SI VEDE SEMPRE: senza, dopo due tocchi non si
-          sa più in quale turno stanno finendo i piatti — ed è la cosa che
-          chi serve deve sapere mentre il cliente parla.
-          ⚠️ E NON C'È UN «TORNA INDIETRO»: un turno sbagliato si corregge
-          togliendo la riga e rimettendola, che è il gesto che già esiste.
-          Aggiungerne uno nuovo non è stato chiesto. */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="testo-sala font-semibold text-b58-charcoal">
-          {etichettaTurno(turnoCorrente)}
-        </span>
+      {/* 🔴 UN TASTO PER OGNI TURNO, NON UN «PROSSIMO» (24/08/2026,
+          richiesta di Alessio dal collaudo): *«se un cliente cambia idea su
+          quello che ha preso al primo turno, oggi non posso tornarci»*.
+
+          ⚠️ E' LA CORREZIONE DI UNA DECISIONE MIA, non un'aggiunta: il
+          21/08 avevo scritto qui sotto «non c'è un torna indietro, un turno
+          sbagliato si corregge togliendo la riga e rimettendola». Quella
+          frase descriveva un gesto che in sala non esiste — chi serve non
+          cancella tre piatti per spostarne uno, e soprattutto **non è
+          quello che il cliente ha chiesto**: ha cambiato idea, non
+          sbagliato.
+
+          ⚠️ E i turni si vedono TUTTI, non solo quello in corso: adesso il
+          tasto acceso dice dove si sta scrivendo, e gli altri sono lì da
+          toccare. Il «+» in fondo apre il turno successivo — che è quello
+          che «Prossimo turno» faceva, con un nome che dice cosa succede. */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        {turniDisponibili.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTurnoCorrente(t)}
+            className={`tocco-bottone rounded-full px-3 testo-sala font-medium border ${
+              turnoCorrente === t
+                ? "bg-b58-charcoal text-b58-parchment border-b58-charcoal"
+                : "border-b58-charcoal/15 text-b58-charcoal-soft"
+            }`}
+          >
+            {etichettaTurno(t)}
+          </button>
+        ))}
         <button
           type="button"
-          onClick={() => setTurnoCorrente((t) => t + 1)}
-          className="tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-3"
+          onClick={() => {
+            const prossimo = turniDisponibili.length + 1;
+            setTurniAperti(prossimo);
+            setTurnoCorrente(prossimo);
+          }}
+          className="tocco-bottone rounded-full border border-b58-charcoal/15 bg-white text-b58-charcoal testo-sala px-3"
         >
-          Prossimo turno
+          + turno
         </button>
       </div>
       {/* MENU ------------------------------------------------------ */}
