@@ -338,3 +338,32 @@ imposte e magazzino**, come da priorità. Restano fuori, e sono i gruppi:
 non ce n'erano: nessuna decisione precedente viene contraddetta. La
 correzione della `…006` da parte della `…007` non è un rovesciamento — è
 la stessa decisione, scritta giusta.
+
+---
+
+## Le migrazioni di questa consegna, per intero
+
+🔴 **Aggiunto dopo, perché la rete mi ha fermato una seconda volta nella
+stessa giornata.** Nel testo qui sopra le ho nominate in forma abbreviata
+(`…008`, `…010`) perché si legge meglio — ma il controllo cerca il numero
+**completo**, e a ragione: `…008` non identifica niente per chi apre il
+repository fra un anno.
+
+⚠️ **Non è la stessa svista di prima**: la prima volta era una migrazione
+non nominata affatto, questa è un'abitudine di scrittura sbagliata. La
+correzione non è aggiungere un paragrafo — è che **da qui in avanti nei
+riepiloghi il numero si scrive intero**, sempre, anche quando nel discorso
+si continua a chiamarla «la 008».
+
+| versione | cosa fa |
+|---|---|
+| `20260824000006` | `partite_in_giacenza()` — la partita che arriva dalle Scadenze |
+| `20260824000007` | stessa forma di `partite_ferme()`, nomi di colonna compresi |
+| `20260824000008` | i limiti certi del denaro e delle imposte (dodici vincoli) |
+| `20260824000009` | la verifica che non discriminava, rifatta col valore giusto |
+| `20260824000010` | i limiti certi del magazzino (undici vincoli) |
+| `20260824000011` | `numeri_sospetti()` — i limiti che avvisano invece di rifiutare |
+
+Nessuna di queste tocca dati esistenti: aggiungono funzioni e vincoli. La
+sola sanatoria della giornata è quella delle aliquote
+(`20260824000002`), che in produzione ha toccato **zero righe**.
