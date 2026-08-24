@@ -4,12 +4,13 @@
 
 | | |
 |---|---|
-| **HEAD dichiarato** | `dffa003` |
+| **HEAD dichiarato** | `0038ce6` |
 | **Working tree** | pulito |
 | **Migrazioni nel repository** | 219 |
 | **Migrazioni in produzione** | **212** — le sette nuove aspettano il push |
 | **Migrazioni sul progetto di prova** | 219 |
 | **Vincoli `check` con la frase in italiano** | 35 su 205 |
+| **Prove** | **384 pure · 362 sul database**, tutte verdi |
 | **Contratto architetturale** | **non toccato** |
 
 ---
@@ -59,10 +60,15 @@ qualunque misura vera risulta «più calda del previsto».
 
 Due elenchi, e il secondo è quello che mancava:
 
-| | |
-|---|---|
-| colonne numeriche | 221 · **76 senza nessun vincolo** |
-| colonne di testo **che contengono numeri** | **59** |
+| | all'inizio | adesso |
+|---|---|---|
+| colonne numeriche senza nessun vincolo | **76** | **60** |
+| colonne di testo che contengono numeri | 59 | 58 |
+
+⚠️ **I due numeri sono diversi perche' il lavoro li ha cambiati**, ed e'
+la terza domanda della rilettura: 16 colonne sono uscite dall'elenco
+perche' hanno preso il loro vincolo stanotte. Chi rilancia il comando
+oggi legge 60, non 76.
 
 ⚠️ **È un setaccio, non un elenco di lavori.** Delle 76 la maggioranza
 sono legittime: progressivi, posizioni, e i **risultati fotografati** di
@@ -325,6 +331,15 @@ accettiamo**, e il nome che esce sta per intero nel pannello.
 
 ### Affermazioni diventate false mentre lavoravo
 
+- 🔴 **Il censimento diceva «76 colonne senza vincolo»**: era vero quando
+  l'ho scritto, e adesso sono **60** — le 16 che hanno preso il loro
+  vincolo stanotte. Corretto sopra dichiarando tutt'e due i numeri, che e'
+  la sola forma che resta vera.
+- 🔴 **Nel file del conto bancario avevo scritto che `set_aggiornato_il`
+  «va scritta, non evitata»**: quella funzione esiste dal 12 agosto. La
+  frase e' rimasta li' — la 019 non si riscrive — e la correzione sta
+  nella 023, che la nomina.
+
 - Nel commento della migrazione dei conti avevo scritto che
   `haccp_goods_receiving` è tracciata: **non lo è**, l'ho scoperto dopo,
   provando. Corretto prima del commit.
@@ -341,8 +356,12 @@ accettiamo**, e il nome che esce sta per intero nel pannello.
 - ⚠️ E la prima esecuzione era rossa su 42 file: **avevo lanciato due
   giri insieme**, e le prove sul database non vanno in parallelo — il
   database e' uno solo (§8). Rilanciate da sole: verdi.
-- **Lint a zero**, build pulita, gancio pre-commit passato su tutti e 18
+- **Lint a zero**, build pulita, gancio pre-commit passato su tutti e **19**
   i commit della notte.
+- ⚠️ **I 35 vincoli con la frase in italiano su 205** non sono un difetto
+  degli altri 170: la regola della traduzione e' di ieri, e vale **da qui
+  in avanti**. I 170 vecchi producono ancora un rifiuto in inglese, e
+  tradurli tutti e' un lavoro a se' — non fatto, dichiarato.
 
 ---
 
