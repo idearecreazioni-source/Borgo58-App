@@ -148,8 +148,12 @@ export default function Scadenze() {
           ⚠️ È un BERSAGLIO e non una parola dentro la frase: misurato col
           valore del tablet, un collegamento in linea è alto 3,91 mm
           contro gli 8,50 che serve al dito. */}
+      {/* 🔴 PORTA ALL'ELENCO COMPLETO, non ai soli fermi (24/08/2026).
+          Misurato: 203 lotti in casa, zero fermi — questo pulsante
+          portava a una pagina che rispondeva «Niente fermo», cioè
+          prometteva sei risposte e non ne dava nessuna. */}
       <Link
-        to="/magazzino/fermi"
+        to="/magazzino/fermi?tutte=1"
         className="tocco-bottone mb-6 inline-flex items-center rounded border border-stone-300 px-4 testo-sala"
       >
         Altre risposte: abbattuto, trasformato, reso al fornitore…

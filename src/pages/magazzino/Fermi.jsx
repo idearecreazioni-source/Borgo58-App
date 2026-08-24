@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   abbattiPartita,
   chiudiPartita,
   dichiaraTrasformazione,
   listPartiteFerme,
+  listPartiteInGiacenza,
   rimandaPartita,
 } from "../../lib/api/scadenze";
 import { listRecipes } from "../../lib/api/recipes";
@@ -29,6 +30,25 @@ import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 const GIORNI_RINVIO = [3, 7, 14, 30];
 
 export default function Fermi() {
+  // 🔴 CHI ARRIVA DALLE SCADENZE CON UNA PARTITA IN MANO (24/08/2026).
+  // Dalla schermata delle scadenze un pulsante dice «Altre risposte:
+  // abbattuto, trasformato, reso al fornitore…» e portava qui — dove le
+  // sei risposte stanno sulla RIGA di una partita ferma. Misurato: 203
+  // lotti in casa, 65 in scadenza, **zero fermi**. Chi aveva in mano il
+  // calamaro scaduto premeva quel pulsante e leggeva «Niente fermo».
+  // *Un collegamento che porta in un vicolo cieco è peggio di un
+  // collegamento che manca: promette una strada.*
+  //
+  // ⚠️ Nessun terzo pulsante in Scadenze (decisione di Alessio, 24/08):
+  // là le risposte restano due. Cambia questa schermata, che quando la si
+  // apre da lì mostra **tutte** le partite ancora in casa.
+  //
+  // ⚠️ E LA RADICE RESTA SCOPERTA, dichiarata: questa schermata è vuota
+  // perché **2 prodotti su 129 hanno una durata**, e senza durata il
+  // fermo non si misura. Quella si cura con la shelf life, a parte.
+  const [ricerca] = useSearchParams();
+  const tutte = ricerca.get("tutte") === "1";
+  const [cerca, setCerca] = useState("");
   const [partite, setPartite] = useState(null);
   const [ricette, setRicette] = useState([]);
   const [aperta, setAperta] = useState(null);
@@ -49,7 +69,10 @@ export default function Fermi() {
       // «trasformato» resta possibile scrivendo a mano in cosa è finito.
       // Ma non si ingoia il guasto — un menu vuoto si legge «non ci sono
       // preparazioni», che è falso, ed è il difetto del 20/08.
-      const [p, r] = await Promise.all([listPartiteFerme(), leggi(listRecipes({}))]);
+      const [p, r] = await Promise.all([
+        tutte ? listPartiteInGiacenza(cerca || null) : listPartiteFerme(),
+        leggi(listRecipes({})),
+      ]);
       setPartite(p);
       // Solo ciò che può contenere qualcosa: un piatto finito non è una
       // preparazione in cui la merce «vive».
@@ -66,7 +89,11 @@ export default function Fermi() {
 
   useEffect(() => {
     carica();
-  }, []);
+    // ⚠️ La ricerca si chiede al DATABASE a ogni cambiamento, non si
+    // filtra nel browser: 203 partite oggi, e quel numero cresce. Una
+    // lettura senza limite torna al massimo di mille righe senza dirlo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tutte, cerca]);
 
   const apri = (p) => {
     setAperta(aperta === p.lotto_id ? null : p.lotto_id);
@@ -316,10 +343,13 @@ export default function Fermi() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Fermi da troppo</h1>
+      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+        {tutte ? "Tutto quello che hai in casa" : "Fermi da troppo"}
+      </h1>
       <p className="mb-2 testo-sala text-stone-600">
-        Partite che non vengono toccate da più della loro durata. È un&apos;altra domanda rispetto
-        alle scadenze: lì si guarda la data, qui i movimenti.
+        {tutte
+          ? "Ogni partita ancora in giacenza, con le sei risposte per ognuna. In cima quelle ferme da più della loro durata."
+          : "Partite che non vengono toccate da più della loro durata. È un'altra domanda rispetto alle scadenze: lì si guarda la data, qui i movimenti."}
       </p>
       {/* ⚠️ Il rimando è un BERSAGLIO, non una parola sottolineata dentro
           la frase: misurato col valore del tablet (64) un link inline è
@@ -331,6 +361,21 @@ export default function Fermi() {
       >
         Vai alle scadenze
       </Link>
+
+      {/* ⚠️ SENZA RICERCA L'ELENCO COMPLETO NON SI USA: duecento righe da
+          scorrere per trovare il calamaro sono un collegamento che
+          «funziona» e resta inutilizzabile. Nell'elenco dei fermi invece
+          non c'è: là le righe sono poche e sono tutte da guardare. */}
+      {tutte && (
+        <div className="mb-4">
+          <input
+            value={cerca}
+            onChange={(e) => setCerca(e.target.value)}
+            placeholder="Cerca un prodotto…"
+            className="tocco-bottone w-full rounded border border-stone-300 px-3 testo-sala"
+          />
+        </div>
+      )}
 
       {fatto && <p className="mb-4 rounded bg-stone-100 p-3">{fatto}</p>}
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
@@ -347,8 +392,11 @@ export default function Fermi() {
 
       {partite !== null && partite.length === 0 && (
         <p className="text-stone-600">
-          Niente fermo. ⚠️ Compaiono qui solo i prodotti a cui hai dato una durata: senza, il
-          gestionale non ha niente con cui misurare il fermo.
+          {tutte
+            ? cerca
+              ? `Nessun prodotto in casa con «${cerca}» nel nome.`
+              : "Non c'è niente in giacenza."
+            : "Niente fermo. ⚠️ Compaiono qui solo i prodotti a cui hai dato una durata: senza, il gestionale non ha niente con cui misurare il fermo."}
         </p>
       )}
 
@@ -380,7 +428,11 @@ export default function Fermi() {
                     : ""}
                 </span>
                 <span className="block testo-sala text-stone-600">
-                  ferma da {p.ferma_da} giorni · dura {p.durata_giorni}
+                  {/* ⚠️ Senza una durata dichiarata NON si scrive «dura 0»,
+                      che si leggerebbe «scaduta subito»: si dice che non
+                      si può giudicare. */}
+                  ferma da {p.ferma_da} giorni ·{" "}
+                  {p.durata_giorni == null ? "durata non dichiarata" : `dura ${p.durata_giorni}`}
                   {p.scadenza ? ` · scade il ${formatDate(p.scadenza)}` : ""}
                 </span>
               </button>

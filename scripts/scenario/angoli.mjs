@@ -156,16 +156,40 @@ export async function costruisciOrdini(ctx) {
 export async function costruisciScontiEOmaggi(ctx) {
   const { segna, supabase, ente, createDiscountGift, listAllCausali, rnd, oggi, MARCA, mesi } = ctx;
   const causali = await listAllCausali().catch(() => []);
-  const perSconti = (causali ?? []).filter((c) => /cortesia|ricorrente|disservizio|altro/i.test(c.label));
+
+  // 🔴 IL FILTRO ERA TROPPO LARGO, e pescava «Altro incasso» (24/08/2026).
+  // La parola «altro» compare in due causali di Alessio: «Altro», che e'
+  // una delle quattro dello sconto/omaggio, e «Altro incasso», che e' una
+  // causale di **entrata**. Fra i dati di collaudo c'era infatti uno
+  // sconto con causale «Altro incasso»: un dato che non puo' esistere, e
+  // che nessuno avrebbe letto come finto.
+  // ⚠️ Le quattro sono decise da Alessio (14/08) e si nominano per intero.
+  const NOMI_SCONTO = ["cortesia", "cliente ricorrente", "recupero disservizio", "altro"];
+  const perSconti = (causali ?? []).filter((c) =>
+    NOMI_SCONTO.includes(c.label.trim().toLowerCase())
+  );
   if (!perSconti.length) {
     segna("sconti e omaggi: nessuna causale disponibile", 0);
     return;
   }
+
+  // 🔴 UN OMAGGIO «ALTRO» PER MESE, GARANTITO (24/08/2026, richiesta di
+  // Alessio). Pescando a caso fra quattro causali su dieci estrazioni,
+  // «Altro» puo' non uscire mai — ed e' quello che era successo: **nessun
+  // omaggio dei dati di collaudo aveva quella causale**.
+  // ⚠️ E non e' una causale come le altre: e' quella che alimenta il
+  // riquadro degli omaggi in Cassa, la percentuale «quanta della roba
+  // servita e' stata regalata». Senza, quel riquadro mostra sempre zero e
+  // **il suo collaudo non prova niente** — un numero che vale zero perche'
+  // non c'e' niente da contare e' indistinguibile da un numero che vale
+  // zero perche' il calcolo e' rotto.
+  const altro = perSconti.find((c) => c.label.trim().toLowerCase() === "altro");
   let quanti = 0;
   for (const mese of mesi) {
     for (let k = 0; k < 5; k++) {
-      const causale = perSconti[Math.floor(rnd() * perSconti.length)];
-      const omaggio = rnd() < 0.45;
+      const garantito = k === 0 && altro;
+      const causale = garantito ? altro : perSconti[Math.floor(rnd() * perSconti.length)];
+      const omaggio = garantito ? true : rnd() < 0.45;
       const pieno = Math.round((25 + rnd() * 90) * 100) / 100;
       await createDiscountGift({
         entity_id: ente,

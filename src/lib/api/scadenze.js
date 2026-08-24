@@ -89,3 +89,20 @@ export async function dichiaraTrasformazione({
     p_note: note || null,
   });
 }
+
+// Tutte le partite ancora in casa, nella stessa forma delle ferme.
+//
+// 🔴 Serve a chi arriva dalle Scadenze con una partita in mano: là le
+// risposte sono due, qui sono sei, e prima quel collegamento portava a
+// una schermata che rispondeva «Niente fermo». Un collegamento che porta
+// in un vicolo cieco è peggio di un collegamento che manca: promette una
+// strada.
+//
+// ⚠️ Il filtro per nome si fa nel DATABASE, non nel browser: 203 partite
+// oggi, e quel numero cresce. Una lettura senza limite torna al massimo
+// di mille righe senza dirlo.
+export async function listPartiteInGiacenza(cerca = null) {
+  const { data, error } = await supabase.rpc("partite_in_giacenza", { p_cerca: cerca });
+  if (error) throw error;
+  return data ?? [];
+}
