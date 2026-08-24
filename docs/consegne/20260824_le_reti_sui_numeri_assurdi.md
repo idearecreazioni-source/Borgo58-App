@@ -9,6 +9,34 @@ Segue la consegna [«le correzioni del collaudo»](20260824_le_correzioni_del_co
 
 ---
 
+## L'ARRETRATO CHE LA RETE HA PRESO
+
+🔴 **Il comando delle migrazioni si è rifiutato di applicare le sei nuove**,
+e aveva ragione: **`20260824000004`** era già in produzione e **nessun
+riepilogo la nominava per intero**. La regola vale dal 16/08 e sta in un
+controllo (`migrazioni-senza-riepilogo`), non in un proposito.
+
+Quella migrazione è **«oggi in evidenza, il resto in archivio»** — le
+temperature e le non conformità HACCP: aggiunge
+`haccp_non_conformities.equipment_id` con la sua sanatoria (zero righe
+toccate in produzione, dove non c'era nessuna non conformità), riscrive
+`registra_temperatura` dal corpo vivo, e crea `temperature_di_oggi()`,
+`temperature_del_mese()`, `temperature_mesi_con_dati()`,
+`non_conformita_del_mese()`, `non_conformita_mesi_con_dati()`. È
+raccontata per esteso nel [riepilogo delle correzioni del
+collaudo](20260824_le_correzioni_del_collaudo.md), blocco 5 — dove però
+la versione era scritta solo in forma abbreviata.
+
+⚠️ **Il riepilogo di ieri non l'ho riscritto**: un documento già
+consegnato racconta cosa è stato detto quel giorno. L'arretrato si chiude
+qui, nominando la versione per intero.
+
+⚠️ **E la rete ha fatto esattamente il suo lavoro**: il debito non ha
+potuto accumularsi, perché non si applica niente finché la volta
+precedente non è documentata.
+
+---
+
 ## PRIMA: le cinque migrazioni applicate in produzione
 
 Alessio ha pushato e autorizzato. Applicate col comando, coi numeri veri
