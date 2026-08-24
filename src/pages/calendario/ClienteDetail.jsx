@@ -480,12 +480,25 @@ export default function ClienteDetail() {
             </>
           )}
 
-          {/* §3.14 chiede anche la spesa media: non è calcolabile finché non
-              esistono le comande (§3.2) — dichiarato, non stimato. */}
-          <p className="text-xs text-b58-charcoal-soft/60 mt-4 pt-4 border-t border-b58-charcoal/10">
-            La spesa media per cliente non è ancora calcolabile: la cassa registra la prima nota,
-            non le vendite per cliente. Servono le comande (§3.2), previste dopo l'acquisto
-            dell'hardware in autunno 2026.
+          {/* 🔴 QUESTA FRASE ERA DIVENTATA FALSA, e in due punti (24/08/2026,
+              trovata dal censimento delle didascalie). Diceva che la spesa
+              media non si può calcolare perché «servono le comande, previste
+              dopo l'acquisto dell'hardware in autunno 2026»: le comande
+              esistono dall'8-9 agosto, e quell'autunno è passato.
+
+              ⚠️ E LA RAGIONE VERA È UN'ALTRA, misurata invece che dedotta:
+              la colonna che lega il conto al cliente c'è. Quello che manca è
+              che venga riempita — sul progetto di prova un conto su 349 sa
+              chi era il cliente. Non è un pezzo che manca al gestionale: è un
+              gesto che in sala non si fa, e finché non si fa il numero
+              sarebbe una media su un caso.
+
+              ⚠️ Resta VISIBILE perché è un limite di ciò che si sta
+              guardando, non una spiegazione: chi legge questa scheda deve
+              sapere che «quanto spende» non c'è, o lo cercherà altrove. */}
+          <p className="text-xs text-b58-charcoal-soft mt-4 pt-4 border-t border-b58-charcoal/10">
+            ⚠️ Quanto spende in media non c&apos;è: il conto in sala quasi mai registra chi
+            era il cliente, e su un caso solo non si fa una media.
           </p>
         </div>
       )}

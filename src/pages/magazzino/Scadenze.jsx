@@ -194,9 +194,12 @@ export default function Scadenze() {
             </>
           )}
 
+          {/* ⚠️ RESTA, perché è un limite dell'elenco e non una spiegazione:
+              chi non lo legge crede che questa pagina sappia di TUTTO quello
+              che c'è in cella. Accorciato al fatto. */}
           <p className="mt-8 testo-sala text-stone-500">
-            I prodotti entrati senza data di scadenza (i vegetali sfusi, per esempio) non compaiono
-            qui: senza una data non c&apos;è niente da sorvegliare.
+            ⚠️ Chi è entrato senza una data di scadenza — i vegetali sfusi, per esempio —
+            qui non compare.
           </p>
         </>
       )}

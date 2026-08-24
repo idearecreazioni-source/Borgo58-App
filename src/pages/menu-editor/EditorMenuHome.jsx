@@ -4,6 +4,7 @@ import { listMenus, listMenuItemsFull } from "../../lib/api/menus";
 import { listAllergensForRecipes } from "../../lib/api/dailyMenu";
 import { ALLERGENS, formatEUR, labelFor } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
+import Didascalia from "../../components/Didascalia";
 
 // Intestazioni al plurale per il menu stampato.
 const CATEGORY_ORDER = [
@@ -125,8 +126,14 @@ export default function EditorMenuHome() {
       <div className="print:hidden">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
           <div>
-            <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Editor Menu Cartaceo</h1>
-            <p className="text-b58-charcoal-soft mt-1">Genera il menu stampabile dai piatti in carta.</p>
+            <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+              Editor Menu Cartaceo
+              <Didascalia>
+                Genera il foglio da stampare prendendo i piatti che sono in carta nel
+                menu attivo. Qui si sceglie cosa lasciare fuori da questa stampa, non
+                cosa togliere dalla carta.
+              </Didascalia>
+            </h1>
           </div>
           <div className="flex gap-2">
             <Link to="/editor-menu/bevande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">

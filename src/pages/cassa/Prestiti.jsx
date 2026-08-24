@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Didascalia from "../../components/Didascalia";
 import {
   getSpazioDiManovra,
   listAllCausali,
@@ -157,9 +158,18 @@ export default function Prestiti() {
       >
         ← Cassa
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Prestiti da privati</h1>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">
+        Prestiti da privati
+        <Didascalia>
+          Soldi che qualcuno ha messo nel locale e che vanno restituiti. Stanno in
+          cassa come tutti gli altri, ma non sono incassi: restituirli non è un
+          costo, e prenderli non è un ricavo.
+        </Didascalia>
+      </h1>
+      {/* ⚠️ La riga sopra è passata dietro il segno; questa resta perché è il
+          limite del numero grande qui sotto, non una spiegazione. */}
       <p className="text-b58-charcoal-soft mb-6">
-        Soldi che stanno in cassa e vanno restituiti: non sono incassi, e non entrano nei ricavi.
+        ⚠️ Non entrano nei ricavi.
       </p>
 
       {errore && (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Didascalia from "../../components/Didascalia";
 import { Link } from "react-router-dom";
 import { getFiscalSettings, upsertFiscalSettings } from "../../lib/api/fiscal";
 import { getEntities } from "../../lib/api/entities";
@@ -253,7 +254,15 @@ export default function SimulatoreFiscale() {
 
       {/* Simulatore IVA */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">IVA di periodo (stima)</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          IVA di periodo (stima)
+          <Didascalia>
+            Il conto è imponibile per aliquota, da una parte e dall'altra: quello
+            che incassi meno quello che paghi. La ristorazione però ha aliquote
+            diverse — 10% sul cibo, 22% su alcolici e altro — e regole di
+            detraibilità e pro-rata che qui non sono modellate.
+          </Didascalia>
+        </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div>
             <label className={labelClass}>Imponibile vendite €</label>
@@ -284,16 +293,21 @@ export default function SimulatoreFiscale() {
             <span>{formatEUR(Math.abs(iva.saldo))}</span>
           </div>
         </div>
-        <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
-          Semplificazione: una sola aliquota media per lato. La ristorazione ha aliquote diverse (10% sul cibo,
-          22% su alcolici e altro) e regole di detraibilità/pro-rata che qui non sono modellate. Per l'IVA reale
-          serve la contabilità completa.
+        <p className="text-[11px] text-b58-charcoal-soft mt-3">
+          ⚠️ Una sola aliquota media per lato: per l'IVA vera serve la contabilità completa.
         </p>
       </div>
 
       {/* Simulatore IRES/IRAP */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">IRES / IRAP (stima)</h2>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          IRES / IRAP (stima)
+          <Didascalia>
+            Il conto lo fa il database, ed è lo stesso che usa la Proiezione:
+            non esistono due stime diverse della stessa imposta. Cambiando un
+            parametro qui cambia anche là, perché il motore è uno solo.
+          </Didascalia>
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 max-w-xl">
           <div>
             <label className={labelClass}>Utile imponibile stimato €</label>
@@ -332,10 +346,8 @@ export default function SimulatoreFiscale() {
           </div>
         </div>
         )}
-        <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
-          Questo conto lo fa il database, ed è lo stesso che usa la Proiezione: non ci sono due stime
-          diverse della stessa imposta. L&apos;imponibile IRES parte comunque dall&apos;utile civilistico
-          con variazioni fiscali che qui non sono modellate.
+        <p className="text-[11px] text-b58-charcoal-soft mt-3">
+          ⚠️ L&apos;imponibile parte dall&apos;utile civilistico: le variazioni fiscali qui non ci sono.
         </p>
       </div>
     </div>

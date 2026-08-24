@@ -16,6 +16,7 @@ import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
@@ -252,10 +253,13 @@ export default function SezionePersonale() {
                   Prima serve almeno un <strong>motivo</strong>.
                 </p>
                 <p className="text-[11px] text-b58-charcoal-soft/80 mb-3">
-                  I motivi li scegli tu, come le causali di cassa: «fornitore urgente», «spesa
-                  veloce», «anticipo per lavori». Servono perché i totali per motivo sono la
-                  diagnosi — se «fornitore urgente» domina la classifica, il problema non sono le
-                  anticipazioni, è la cassa tenuta troppo scarica.
+                  Li scegli tu, come le causali di cassa.
+                  <Didascalia etichetta="A cosa servono">
+                    «Fornitore urgente», «spesa veloce», «anticipo per lavori». Servono
+                    perché i totali per motivo sono la diagnosi: se una voce domina la
+                    classifica, il problema di solito non sono le anticipazioni — è quello
+                    che le rende necessarie.
+                  </Didascalia>
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -458,11 +462,13 @@ export default function SezionePersonale() {
           {/* ---- I totali per motivo — la diagnosi -------------------- */}
           {perTag.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">Per motivo, nel {annoCorrente}</h2>
-              <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
-                È qui che si capisce. Se una voce domina la classifica, il problema di solito non sono
-                le anticipazioni — è quello che le rende necessarie.
-              </p>
+              <h2 className="font-display text-lg text-b58-charcoal mb-4">
+                Per motivo, nel {annoCorrente}
+                <Didascalia>
+                  È qui che si capisce. Se una voce domina la classifica, il problema di
+                  solito non sono le anticipazioni — è quello che le rende necessarie.
+                </Didascalia>
+              </h2>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">

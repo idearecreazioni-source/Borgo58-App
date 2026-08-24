@@ -20,6 +20,7 @@ import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import Didascalia from "../../components/Didascalia";
 import FormNotaCredito from "../../components/FormNotaCredito";
 
 const emptyForm = {
@@ -463,9 +464,9 @@ export default function FattureFornitoriHome() {
                 ))}
               </select>
             )}
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
-              Un DDT o un contratto è solo un collegamento: nessun conto ci passa dentro. Quello che
-              cambia i soldi è la nota di credito, che si registra col pulsante accanto.
+            <p className="testo-sala text-b58-charcoal-soft mt-1">
+              ⚠️ Un collegamento non cambia nessun conto: quello che cambia i soldi è la
+              nota di credito, col pulsante accanto.
             </p>
           </div>
         )}
@@ -481,10 +482,14 @@ export default function FattureFornitoriHome() {
     <div className="testo-sala max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Fatture Fornitori</h1>
-          <p className="text-b58-charcoal-soft mt-1">
-            Inserimento manuale — sincronizzazione automatica da attivare in futuro (§3.1).
-          </p>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Fatture Fornitori
+            <Didascalia>
+              Le fatture si inseriscono a mano: il collegamento automatico con Fatture in
+              Cloud non è ancora acceso. Registrare un pagamento scrive l&apos;uscita in
+              prima nota, quindi il costo non finisce contato due volte.
+            </Didascalia>
+          </h1>
         </div>
         <div className="text-right">
           {totaliPerSocieta.length === 0 ? (
@@ -527,8 +532,12 @@ export default function FattureFornitoriHome() {
             ))}
           </ul>
           <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
-            Sono note di credito arrivate dopo il pagamento: te le propongo quando registri il
-            pagamento della prossima fattura di quel fornitore.
+            Te li propongo al prossimo pagamento di quel fornitore.
+            <Didascalia etichetta="Da dove vengono">
+              Sono note di credito arrivate dopo che la fattura era già pagata: quello
+              storno non si poteva scalare da lì, quindi resta a credito e si usa sulla
+              fattura successiva dello stesso fornitore.
+            </Didascalia>
           </p>
         </div>
       )}

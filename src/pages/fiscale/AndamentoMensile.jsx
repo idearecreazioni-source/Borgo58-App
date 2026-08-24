@@ -543,11 +543,13 @@ export default function AndamentoMensile() {
           {/* --- Lo scostamento --- */}
           {scostamento.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">Da dove viene lo scostamento</h2>
-              <p className="text-xs text-b58-charcoal-soft mb-3">
-                «Sotto di tanto» non serve: coperti, scontrino, food cost e fissi si correggono in quattro
-                modi diversi.
-              </p>
+              <h2 className="font-display text-lg text-b58-charcoal mb-3">
+                Da dove viene lo scostamento
+                <Didascalia>
+                  «Sotto di tanto» non basta a decidere cosa fare: coperti, scontrino
+                  medio, food cost e costi fissi si correggono in quattro modi diversi.
+                </Didascalia>
+              </h2>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs uppercase tracking-wide text-b58-charcoal-soft">

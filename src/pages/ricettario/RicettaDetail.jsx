@@ -1341,9 +1341,9 @@ export default function RicettaDetail() {
       {/* Video ricetta */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
-        <p className="text-xs text-b58-charcoal-soft/70 mb-4">
-          Link a video Instagram/TikTok — nessun upload, nessuna estrazione automatica di
-          ingredienti/passaggi per ora.
+        <p className="text-xs text-b58-charcoal-soft mb-4">
+          ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
+          non si ricavano da soli.
         </p>
 
         {videos.length > 0 && (

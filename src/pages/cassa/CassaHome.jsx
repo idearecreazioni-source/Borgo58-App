@@ -336,8 +336,8 @@ export default function CassaHome() {
                 Non torna ({quadratura.length})
               </h2>
               <p className="testo-sala text-b58-charcoal-soft mb-3">
-                Differenze fra le fatture fornitore e la prima nota. Non sono errori certi: sono
-                le cose che meritano un&apos;occhiata.
+                ⚠️ Non sono errori certi: sono le differenze fra fatture e prima nota che
+                meritano un&apos;occhiata.
               </p>
               <ul className="space-y-2">
                 {quadratura.map((r, i) => (

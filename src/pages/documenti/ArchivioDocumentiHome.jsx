@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createDocument, getDocumentUrl, listDocuments, uploadDocumentFile } from "../../lib/api/documents";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { contaPostaInAttesa } from "../../lib/api/posta";
 import { formatDate, formatEUR } from "../../lib/constants";
@@ -120,8 +121,14 @@ export default function ArchivioDocumentiHome() {
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Archivio Documenti</h1>
-          <p className="text-b58-charcoal-soft mt-1">Contratti, licenze, assicurazioni, atti — con scadenze in Agenda.</p>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Archivio Documenti
+            <Didascalia>
+              Contratti, licenze, assicurazioni, atti. Quelli con una scadenza generano
+              da soli un promemoria in Agenda. I file sono conservati in modo privato su
+              server europei, solo per te.
+            </Didascalia>
+          </h1>
         </div>
         <div className="flex gap-2">
           <button
@@ -153,11 +160,15 @@ export default function ArchivioDocumentiHome() {
         </div>
       </div>
 
-      <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
-        I documenti che arrivano dalla posta vengono letti da soli. Quelli caricati a mano si
-        compilano a mano, ma aprendoli puoi chiedere di leggerne il contenuto: serve perché
-        «Chiedi all'archivio» risponde solo sui documenti di cui conosce il testo. I file sono
-        conservati in modo privato su server UE, solo per te.
+      {/* ⚠️ RESTA VISIBILE, e accorciato al solo limite: dice che «Chiedi
+          all'archivio» NON risponde sui documenti di cui non conosce il
+          testo. Nasconderlo dietro un segno renderebbe un «non risulta»
+          che vuol dire «non ho guardato lì» indistinguibile da un «non
+          c'è» — che è il difetto contro cui quella schermata è nata. Il
+          resto della spiegazione è passato nel segno accanto al titolo. */}
+      <p className="text-[11px] text-b58-charcoal-soft mb-4">
+        ⚠️ Quelli caricati a mano vanno aperti e letti una volta: «Chiedi all&apos;archivio»
+        risponde solo sui documenti di cui conosce il testo.
       </p>
 
       {error && (

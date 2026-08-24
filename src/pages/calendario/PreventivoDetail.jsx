@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Didascalia from "../../components/Didascalia";
 import { Link, useParams } from "react-router-dom";
 import {
   accettaPreventivo,
@@ -642,10 +643,13 @@ function VistaCosto({
 
       {/* Gli extra */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">In più</h2>
-        <p className="text-xs text-b58-charcoal-soft mb-4">
-          Personale aggiuntivo, servizi, vini. Il prezzo lo scrivi tu e si somma così com'è.
-        </p>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          In più
+          <Didascalia>
+            Personale aggiuntivo, servizi, vini. Il prezzo lo scrivi tu e si somma così
+            com&apos;è: qui il gestionale non calcola niente per conto suo.
+          </Didascalia>
+        </h2>
         {righeExtra.map((r) => (
           <div key={r.id} className="flex items-center gap-3 py-2 border-b border-b58-charcoal/5 last:border-0">
             <span className="flex-1 text-sm text-b58-charcoal">{r.descrizione}</span>
@@ -691,10 +695,14 @@ function VistaCosto({
       {/* Il fabbisogno */}
       {fabbisogno.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">Cosa serve comprare</h2>
-          <p className="text-xs text-b58-charcoal-soft mb-4">
-            Lo stesso conto che il magazzino usa per scaricare, scarto compreso.
-          </p>
+          <h2 className="font-display text-lg text-b58-charcoal mb-4">
+            Cosa serve comprare
+            <Didascalia>
+              Lo stesso conto che il magazzino usa per scaricare quando il piatto viene
+              servito, scarto compreso: se la ricetta dice 200 g puliti, qui compaiono i
+              grammi che devi comprare per averli.
+            </Didascalia>
+          </h2>
           <table className="w-full text-sm">
             <tbody>
               {fabbisogno.map((f) => (
