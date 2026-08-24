@@ -4,8 +4,9 @@
 
 | | |
 |---|---|
-| **HEAD dichiarato** | `a6166a8` |
-| **Working tree** | pulito al momento della scrittura (questo riepilogo è il commit successivo) |
+| **HEAD del codice** | `a6166a8` |
+| **Sopra di lui, sola documentazione** | `09e7666` (prima stesura di questo riepilogo) · `b94de19` (CLAUDE.md) · e questo aggiornamento, che è l'ultimo commit della consegna |
+| **Working tree** | pulito |
 | **Migrazioni nuove** | `20260824000034` → `20260824000039` (sei) |
 | **Migrazioni applicate in PRODUZIONE in questa sessione** | **una sola**: `20260824000031` |
 | **Prove** | 416 pure (12 nuove) · 380 sui dati veri (8 nuove) — tutte verdi |
@@ -252,6 +253,43 @@ caratteri, sovrapposizioni. **Nessuna immagine è stata guardata.** Quindi:
 - **il pannello che si ritira** quando gli si trascina un tavolo sotto: provato
   solo dalle prove pure, **non trascinando un tavolo davvero**;
 - **la schermata Bar** con una riga sostituita.
+
+## Dove il mandato dice una cosa e il gestionale ne fa una un po' diversa
+
+Il mandato dice: *«quelli dichiarati eliminabili sono PREMIBILI: il cameriere
+li tocca e **sceglie l'alternativa**»*. Nel gestionale il cameriere **tocca e
+basta**: non c'è nessuna scelta, perché nel Ricettario si dichiara **una**
+sostituzione per ogni terna piatto × allergene × ingrediente.
+
+⚠️ **Non è una dimenticanza, è una semplificazione — e va detta.** Ammettere
+più alternative per lo stesso ingrediente vorrebbe dire un secondo elenco da
+cui scegliere in sala, con davanti un cliente che aspetta, e un prezzo diverso
+per ognuna. Non l'ho costruito perché non so se serve: **se a Alessio serve
+davvero poter scegliere fra due alternative allo stesso ingrediente, è una
+decisione sua e si aggiunge**. Il modello lo regge senza rifare niente — basta
+togliere l'unicità su (ricetta, allergene, ingrediente) e far scegliere la
+riga invece dell'allergene.
+
+## Cosa deve inserire Alessio perché il blocco funzioni sui dati veri
+
+Il meccanismo è pronto e **vuoto per costruzione**: nessuna dichiarazione,
+nessuna sostituzione, nessun ingrediente sostitutivo. Servono, in
+quest'ordine:
+
+1. **Gli ingredienti sostitutivi**, come prodotti loro in *Ricettario →
+   Ingredienti* (nome, categoria, unità, prezzo): «Burro senza lattosio»,
+   «Ricotta senza lattosio», «Farina senza glutine», «Pasta senza glutine»…
+   Sono prodotti diversi da quelli normali e costano diverso: è tutto il
+   punto della cosa.
+2. **Per ogni piatto**, sulla sua scheda, nel riquadro «Allergeni»: aprire
+   l'allergene, e per **ogni** ingrediente che lo porta scegliere il
+   sostituto (o lasciarlo vuoto se si toglie e basta) e il supplemento.
+3. **Solo allora** premere «Si può togliere». Prima il database rifiuta e
+   dice quale ingrediente manca.
+
+⚠️ **Gli allergeni degli ingredienti vanno confermati**, altrimenti tutto
+resta «da guardare»: sul progetto di prova, **2 ingredienti su 132** hanno un
+allergene dichiarato, e i finger risultano quasi tutti «non si sa».
 
 ## Cosa è stato dato per fatto senza misurarlo
 
