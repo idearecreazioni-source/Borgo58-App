@@ -271,3 +271,31 @@ export async function imposteEFiscalizzato(entityId, anno, imponibile, costoLavo
   if (error) throw error;
   return data?.[0] ?? null;
 }
+
+// DOVE STA IL PAREGGIO (24/08/2026, blocco 4 del collaudo).
+//
+// ⚠️ IN EURO DI RICAVO, non in coperti — decisione di Alessio: *«con sei
+// linee a scontrini diversi quel numero non vuol dire niente»*. Un euro di
+// barattoli e un euro di coperti non lasciano lo stesso margine, e sommarli
+// in coperti è sommare cose diverse.
+//
+// ⚠️ E LA FRASE VIENE VIA COL NUMERO: quanti coperti di sala servirebbero è
+// un numero **condizionato** — vale solo se le altre linee vanno come
+// previsto — e la funzione restituisce l'avvertenza insieme al dato, così
+// non possono separarsi. È la stessa forma di `calcola_imposte()`, che dal
+// 15/08 restituisce il numero e il suo limite.
+export async function pareggioPrevisione(id) {
+  const { data, error } = await supabase.rpc("pareggio_previsione", { p_scenario_id: id });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// Le linee di una previsione, con la forma con cui si contano.
+// ⚠️ La forma la RISOLVE il database: se la calcolasse la schermata, il
+// giorno che la deduzione cambia ci sarebbero due risposte alla stessa
+// domanda.
+export async function lineeDellaPrevisione(id) {
+  const { data, error } = await supabase.rpc("linee_della_previsione", { p_scenario_id: id });
+  if (error) throw error;
+  return data ?? [];
+}

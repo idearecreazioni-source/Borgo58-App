@@ -81,6 +81,31 @@ function norm(s) {
     .trim();
 }
 
+// LE LINEE DEL FOGLIO, e come si riconoscono (24/08/2026).
+//
+// ⚠️ IL FOGLIO NON È NEL REPOSITORY e non deve entrarci: qui vivono solo le
+// PAROLE con cui cercare, mai i numeri. Le etichette sono quelle misurate
+// nel foglio vero il 24/08 leggendolo col lettore dell'app — quattro righe,
+// di cui una sola di eventi.
+//
+// ⚠️ E la ricerca è per pezzo di parola, non per uguaglianza: nel foglio la
+// riga si chiama «Barattoli trasformati (pz/giorno)», col conteggio dentro
+// il nome. Pretendere il nome esatto vorrebbe dire rompere l'importazione
+// ogni volta che Alessio aggiusta una didascalia del suo foglio.
+export const LINEE_DEL_FOGLIO = [
+  { codice: "lunch", forma: "a_coperto", etichetta: "Lunch", cerca: ["lunch", "pranzo"] },
+  { codice: "chef_table", forma: "a_coperto", etichetta: "Chef table", cerca: ["chef table", "chef-table"] },
+  { codice: "lounge", forma: "a_coperto", etichetta: "Lounge apericena", cerca: ["lounge", "apericena"] },
+  { codice: "eventi", forma: "a_forfait", etichetta: "Eventi", cerca: ["eventi"] },
+  { codice: "barattoli", forma: "a_pezzo", etichetta: "Barattoli trasformati", cerca: ["barattol"] },
+];
+
+export function riconosciLinea(nome) {
+  const n = norm(nome);
+  if (!n) return null;
+  return LINEE_DEL_FOGLIO.find((l) => l.cerca.some((c) => n.includes(c))) ?? null;
+}
+
 // Legge il foglio già aperto (celle per indirizzo) e restituisce lo
 // scenario, oppure l'elenco di ciò che non ha riconosciuto.
 export function leggiScenarioDaFoglio(celle) {
@@ -194,14 +219,37 @@ export function leggiScenarioDaFoglio(celle) {
       problemi.push(`La linea accessoria della riga ${r} è a metà (servono nome, quantità, prezzo e costo %).`);
       continue;
     }
-    // Gli eventi si contano al mese (stanno nella struttura mensile), le
-    // altre linee vanno a giornata di apertura.
+    // 🔴 LA LINEA SI RICONOSCE DAL NOME, ed è la regola che il mandato del
+    // 24/08 dice di rifare: prima c'era una domanda sola — «c'è la parola
+    // eventi?» — e tutto il resto diventava «a giornata». Con cinque linee
+    // strutturate quella regola non basta più, perché *a giornata* copriva
+    // sia i coperti (lounge, chef table) sia i pezzi (barattoli).
+    //
+    // ⚠️ E SE UNA RIGA NON SI RICONOSCE, L'IMPORTAZIONE SI FERMA e dice
+    // quale: è la stessa scelta delle etichette attese del 15/08. Il verso
+    // sbagliato sarebbe indovinare — una riga nuova nel foglio entrerebbe
+    // come «a coperto» e produrrebbe un numero **plausibile e falso**, che
+    // è precisamente la forma di errore che questo lettore esiste per
+    // impedire.
+    const riconosciuta = riconosciLinea(linea);
+    if (!riconosciuta) {
+      problemi.push(
+        `La linea della riga ${r} («${linea}») non la riconosco. Le linee sono: ` +
+          LINEE_DEL_FOGLIO.map((l) => l.etichetta).join(", ") +
+          ". Se ne hai aggiunta una nuova va prima insegnata al gestionale."
+      );
+      continue;
+    }
     accessorie.push({
       linea: String(linea),
+      codice: riconosciuta.codice,
+      forma: riconosciuta.forma,
       quantita: q,
       prezzoMedio: prezzo,
       costoPercento: costo,
-      base: norm(linea).includes("eventi") ? "per_evento" : "per_giorno",
+      // La base vecchia si scrive ancora: finché esistono previsioni
+      // congelate che la usano, le due letture devono restare d'accordo.
+      base: riconosciuta.forma === "a_forfait" ? "per_evento" : "per_giorno",
     });
   }
 

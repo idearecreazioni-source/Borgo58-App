@@ -86,6 +86,43 @@ export const SUPPLIER_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
+// LE LINEE DELLA PREVISIONE (24/08/2026, disegno chiuso da Alessio in
+// docs/mandati/20260824_le_linee_della_previsione.md).
+//
+// ⚠️ LA SALA NON È QUI, ed è voluto: vive nelle colonne dello scenario —
+// scontrino, coperti dei mesi — perché è la linea attorno a cui tutto il
+// resto è costruito. Queste cinque sono quelle che si aggiungono.
+export const LINEE_PREVISIONE = [
+  { value: "lunch", label: "Lunch" },
+  { value: "chef_table", label: "Chef table" },
+  { value: "lounge", label: "Lounge apericena" },
+  { value: "eventi", label: "Eventi" },
+  { value: "barattoli", label: "Barattoli trasformati" },
+];
+
+// COME SI CONTA UNA LINEA.
+//
+// 🔴 Alessio, sui barattoli: *«non è un coperto: non forzarlo in quella
+// forma»*. La distinzione non è un dettaglio di calcolo — è il modo in cui
+// quella linea si vende, e serve al pareggio (che in coperti conta solo
+// ciò che è a coperto) e domani al confronto col reale.
+export const FORME_LINEA = [
+  { value: "a_coperto", label: "a coperto (persone × scontrino)" },
+  { value: "a_forfait", label: "a forfait (quanti × incasso medio)" },
+  { value: "a_pezzo", label: "a pezzo (quanti pezzi × prezzo)" },
+];
+
+// La forma con cui una linea si conta di solito: si PROPONE scegliendo la
+// linea, e resta correggibile. ⚠️ Un evento a coperto o un lunch a forfait
+// sono possibili — è il suo locale, non una regola nostra.
+export const FORMA_TIPICA = {
+  lunch: "a_coperto",
+  chef_table: "a_coperto",
+  lounge: "a_coperto",
+  eventi: "a_forfait",
+  barattoli: "a_pezzo",
+};
+
 export const RECIPE_CATEGORIES = [
   { value: "antipasto", label: "Antipasto" },
   { value: "primo", label: "Primo" },

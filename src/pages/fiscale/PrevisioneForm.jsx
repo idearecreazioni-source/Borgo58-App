@@ -8,7 +8,13 @@ import {
   getScenario,
   ingressiScenario,
 } from "../../lib/api/proiezione";
-import { oggiLocale } from "../../lib/constants";
+import {
+  FORMA_TIPICA,
+  FORME_LINEA,
+  LINEE_PREVISIONE,
+  labelFor,
+  oggiLocale,
+} from "../../lib/constants";
 import { allineaPaga, allineaTutte, righeDiscordi } from "../../lib/calcoli/pagaPrevisione";
 import Didascalia from "../../components/Didascalia";
 
@@ -150,7 +156,7 @@ export default function PrevisioneForm() {
     setPersonale(g.personale.map((p) => ({ ruolo: p.ruolo, nettoOrario: aTesto(p.netto_orario), nettoGiorno: aTesto(p.netto_giorno) })));
     setExtra(g.extra.map((e) => ({ tipo: e.tipo, giornateAnno: aTesto(e.giornate_anno), tariffaGiorno: aTesto(e.tariffa_giorno), pressione: aPercento(e.pressione), daEventi: e.da_eventi })));
     setFissi(g.costiFissi.map((f) => ({ voce: f.voce, euroMese: aTesto(f.euro_mese) })));
-    setAccessorie(g.accessorie.map((a) => ({ linea: a.linea, quantita: aTesto(a.quantita), prezzoMedio: aTesto(a.prezzo_medio), costoPercento: aPercento(a.costo_percento), base: a.base })));
+    setAccessorie(g.accessorie.map((a) => ({ codice: a.codice ?? "", forma: a.forma ?? "", linea: a.linea, quantita: aTesto(a.quantita), prezzoMedio: aTesto(a.prezzo_medio), costoPercento: aPercento(a.costo_percento), base: a.base })));
     setMesi(g.mesi.map((m) => ({
       mese: m.mese, serviziSettimana: aTesto(m.servizi_settimana), giorniLavorativi: aTesto(m.giorni_lavorativi),
       giorniPeak: aTesto(m.giorni_peak), copertiPeak: aTesto(m.coperti_peak),
@@ -272,9 +278,21 @@ export default function PrevisioneForm() {
         costiFissi: fissi
           .filter((f) => f.voce.trim() && String(f.euroMese ?? "").trim() !== "")
           .map((f) => ({ voce: f.voce, euroMese: num(f.euroMese) })),
+        // ⚠️ Vale la riga che ha una LINEA SCELTA, non una col nome
+        // scritto: dal 24/08 il nome lo propone il gestionale quando si
+        // sceglie la linea, e filtrare sul nome lascerebbe passare una riga
+        // senza codice — cioè senza forma, cioè senza sapere come contarla.
         accessorie: accessorie
-          .filter((a) => a.linea.trim())
-          .map((a) => ({ linea: a.linea, quantita: num(a.quantita), prezzoMedio: num(a.prezzoMedio), costoPercento: daPercento(a.costoPercento), base: a.base })),
+          .filter((a) => (a.codice ?? "").trim())
+          .map((a) => ({
+            codice: a.codice,
+            forma: a.forma,
+            linea: (a.linea ?? "").trim() || labelFor(LINEE_PREVISIONE, a.codice),
+            quantita: num(a.quantita),
+            prezzoMedio: num(a.prezzoMedio),
+            costoPercento: daPercento(a.costoPercento),
+            base: a.base,
+          })),
         mesi: mesi.map((m) => ({
           mese: m.mese, serviziSettimana: num(m.serviziSettimana), giorniLavorativi: num(m.giorniLavorativi),
           giorniPeak: num(m.giorniPeak), copertiPeak: num(m.copertiPeak),
@@ -476,22 +494,51 @@ export default function PrevisioneForm() {
         onChange={(i, k, v) => riga(fissi, setFissi, i, k, v)}
       />
 
-      {/* Linee accessorie */}
+      {/* LE LINEE OLTRE ALLA SALA (24/08/2026, disegno chiuso da Alessio).
+          🔴 Prima erano righe di testo libero con due sole «basi»: a
+          giornata o a evento. Il foglio vero ne conteneva quattro, e tre di
+          quelle non erano né l'una né l'altra cosa — un barattolo non è un
+          coperto, e chiamarlo «a giornata» diceva come si conta ma non cosa
+          si vende.
+          ⚠️ La linea si SCEGLIE da un elenco e la forma si PROPONE:
+          scegliendo «barattoli» viene proposto «a pezzo», ma resta
+          correggibile — un evento a coperto è il suo locale, non una regola
+          nostra.
+          ⚠️ E la SALA non è qui: vive nei parametri e nei dodici mesi, ed è
+          la linea attorno a cui tutto il resto è costruito. */}
       <ListaModificabile
-        titolo="Le linee accessorie"
-        sotto="Lounge, chef table, barattoli, eventi. «A evento» usa il numero di eventi del mese; «a giornata» le giornate di apertura."
+        titolo="Le linee oltre alla sala"
+        sotto="Lunch, chef table, lounge apericena, eventi, barattoli. Una linea può restare a zero: chef table e barattoli non partono da subito, e zero previsto con zero fatto è un conto che torna — non una previsione mancata."
         righe={accessorie}
-        aggiungi={() => setAccessorie([...accessorie, { linea: "", quantita: "", prezzoMedio: "", costoPercento: "", base: "per_giorno" }])}
+        aggiungi={() => setAccessorie([...accessorie, { codice: "", linea: "", quantita: "", prezzoMedio: "", costoPercento: "", forma: "", base: "per_giorno" }])}
         togli={(i) => setAccessorie(accessorie.filter((_, k) => k !== i))}
         colonne={[
-          { chiave: "linea", etichetta: "Linea", tipo: "text", largo: true },
-          { chiave: "quantita", etichetta: "Quantità" },
+          { chiave: "codice", etichetta: "Linea", tipo: "select", largo: true,
+            opzioni: LINEE_PREVISIONE.map((l) => [l.value, l.label]) },
+          { chiave: "quantita", etichetta: "Quanti" },
           { chiave: "prezzoMedio", etichetta: "Prezzo medio €" },
           { chiave: "costoPercento", etichetta: "Costo %" },
-          { chiave: "base", etichetta: "Come si conta", tipo: "select",
-            opzioni: [["per_giorno", "a giornata"], ["per_evento", "a evento"]] },
+          { chiave: "forma", etichetta: "Come si conta", tipo: "select",
+            opzioni: FORME_LINEA.map((f) => [f.value, f.label]) },
         ]}
-        onChange={(i, k, v) => riga(accessorie, setAccessorie, i, k, v)}
+        onChange={(i, k, v) => {
+          if (k === "codice") {
+            // ⚠️ Si PROPONE la forma tipica e il nome leggibile, non si
+            // impongono: chi sceglie «eventi» quasi sempre vuole il
+            // forfait, e chiederglielo due volte è un tocco in più su una
+            // schermata dove se ne fanno sessanta.
+            const nuove = [...accessorie];
+            nuove[i] = {
+              ...nuove[i],
+              codice: v,
+              forma: nuove[i].forma || FORMA_TIPICA[v] || "",
+              linea: nuove[i].linea || labelFor(LINEE_PREVISIONE, v),
+            };
+            setAccessorie(nuove);
+            return;
+          }
+          riga(accessorie, setAccessorie, i, k, v);
+        }}
       />
 
       {/* I dodici mesi */}

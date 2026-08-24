@@ -6,10 +6,11 @@ import {
   congelaScenario,
   getScenario,
   listaScenari,
+  pareggioPrevisione,
   proiezioneScenario,
   riepilogoScenario,
 } from "../../lib/api/proiezione";
-import { formatEUR } from "../../lib/constants";
+import { formatEUR, formatPercento } from "../../lib/constants";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import Didascalia from "../../components/Didascalia";
 
@@ -29,6 +30,7 @@ export default function PrevisioneDettaglio() {
   const [scenario, setScenario] = useState(null);
   const [mesi, setMesi] = useState([]);
   const [riepilogo, setRiepilogo] = useState(null);
+  const [pareggio, setPareggio] = useState(null);
   const [confronto, setConfronto] = useState([]);
   const [calendario, setCalendario] = useState([]);
   const [annoPrima, setAnnoPrima] = useState(null);
@@ -43,14 +45,16 @@ export default function PrevisioneDettaglio() {
   const carica = useCallback(async () => {
     const s = await getScenario(id);
     setScenario(s);
-    const [m, r, c] = await Promise.all([
+    const [m, r, c, p] = await Promise.all([
       proiezioneScenario(id),
       riepilogoScenario(id),
       confrontoColFoglio(id),
+      pareggioPrevisione(id),
     ]);
     setMesi(m);
     setRiepilogo(r);
     setConfronto(c);
+    setPareggio(p);
     if (r?.imposte != null) {
       // ⚠️ IL QUARTO PARAMETRO — il difetto n. 15. Sopra la tabella c'è
       // scritto «è la cassa di giugno che tradisce, quando il saldo
@@ -212,13 +216,40 @@ export default function PrevisioneDettaglio() {
               <p className="text-xs text-b58-charcoal-soft">EBITDA</p>
               <p className="text-b58-charcoal">{formatEUR(riepilogo.ebitda)}</p>
             </div>
-            <div>
-              <p className="text-xs text-b58-charcoal-soft">Pareggio (sola sala)</p>
-              <p className="text-b58-charcoal">{riepilogo.bep_solo_sala} coperti</p>
-            </div>
-            <div>
-              <p className="text-xs text-b58-charcoal-soft">Pareggio (con accessorie)</p>
-              <p className="text-b58-charcoal">{riepilogo.bep_con_accessorie} coperti</p>
+            {/* 🔴 IL PAREGGIO SI DICE IN EURO (24/08/2026, decisione di
+                Alessio): *«non più "servono 2915 coperti": con sei linee a
+                scontrini diversi quel numero non vuol dire niente»*. Un
+                euro di barattoli e un euro di coperti non lasciano lo
+                stesso margine, e sommarli in coperti è sommare cose
+                diverse.
+                ⚠️ Il numero in coperti resta, sotto e più piccolo, CON la
+                frase che lo dichiara condizionato — vale solo se le altre
+                linee vanno come previsto. La frase arriva dal database
+                insieme al numero, così i due non possono separarsi: è la
+                stessa forma di `calcola_imposte()`. */}
+            <div className="col-span-2">
+              <p className="text-xs text-b58-charcoal-soft">Pareggio</p>
+              {pareggio?.pareggio_euro == null ? (
+                <p className="text-b58-charcoal-soft">{pareggio?.frase ?? "—"}</p>
+              ) : (
+                <>
+                  <p className="text-b58-charcoal">
+                    {formatEUR(pareggio.pareggio_euro)} di ricavo
+                    {pareggio.margine_su_ricavi != null && (
+                      <span className="text-b58-charcoal-soft">
+                        {" "}
+                        · margine {formatPercento(pareggio.margine_su_ricavi)} dei ricavi
+                      </span>
+                    )}
+                  </p>
+                  {pareggio.coperti_sala_se_altre != null && (
+                    <p className="text-xs text-b58-charcoal-soft mt-0.5">
+                      Sono {pareggio.coperti_sala_se_altre} coperti di sala se le altre linee vanno
+                      come previsto.
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

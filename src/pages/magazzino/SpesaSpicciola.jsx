@@ -206,8 +206,20 @@ export default function SpesaSpicciola() {
                   con un tocco. Toccare per sbaglio davanti allo scaffale è
                   la cosa più probabile che possa succedere qui dentro. */}
               <ul>
+                {/* 🔴 DUE GESTI OPPOSTI A 2,1 mm L'UNO DALL'ALTRO — misurato
+                    il 24/08, non stimato: toccando il nome l'articolo torna
+                    in lista, toccando l'altro sparisce per sempre, e fra i
+                    due c'erano due millimetri. La soglia è **5 mm**, e qui
+                    conta più che altrove: questa schermata si guarda in
+                    piedi davanti a uno scaffale, con una mano occupata dal
+                    carrello. `.gesti-pericolosi` è la classe che tiene quel
+                    numero in un posto solo.
+                    🔴 E «Togli» ERA AMBIGUO, che è la metà peggiore: in un
+                    elenco di cose già prese si legge «togli dal carrello» —
+                    cioè esattamente il contrario di quello che fa. Il verbo
+                    ora dice cosa succede. */}
                 {presi.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-2 border-b border-stone-200 last:border-0">
+                  <li key={r.id} className="gesti-pericolosi justify-between border-b border-stone-200 last:border-0">
                     <button
                       type="button"
                       className="tocco-riga flex-1 px-1 text-left text-stone-500 line-through"
@@ -222,7 +234,7 @@ export default function SpesaSpicciola() {
                       disabled={inCorso}
                       onClick={() => fai(() => togliSpesaSpicciola(r.id))}
                     >
-                      Togli
+                      Cancella
                     </button>
                   </li>
                 ))}
