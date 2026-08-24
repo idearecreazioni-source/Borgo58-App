@@ -1662,3 +1662,41 @@ soglia di magazzino del 13/08.
 nascosto**: una previsione scritta prima che le ore esistessero può
 averne, e correggerla da soli cambierebbe il costo del personale di un
 piano che qualcuno aveva deciso.
+
+## 41 · 24/08/2026 — «la spiegazione di un vincolo la può leggere chiunque»
+
+**Cosa era stato deciso e quando.** Il 24/08, poche ore prima, creando
+`spiega_vincolo()` — la funzione che traduce in italiano il rifiuto di un
+vincolo. Nella migrazione sta scritto per esteso: *«NIENTE PORTIERE, ed è
+voluto: questa funzione restituisce il commento di un vincolo, cioè una
+regola del gestionale — non un dato»*, con il permesso concesso anche ad
+`anon`, la chiave pubblica.
+
+**La ragione di allora.** *«Chi ha appena ricevuto un rifiuto ha già visto
+il nome tecnico del vincolo nel messaggio: negargli la spiegazione non
+protegge niente.»*
+
+**Cosa si decide adesso.** Portiere «utente autenticato» — staff compreso,
+perché i vincoli scattano anche dove lavora lui — e niente `anon`.
+
+**Perché la ragione di allora non vale più.** Perché guardava **una**
+spiegazione, e il permesso riguarda **l'elenco**. Chi ha la chiave
+pubblica non ha ricevuto nessun rifiuto: può chiedere il commento di
+qualunque vincolo, e lì dentro ci sono ragioni di merito sul locale — «il
+costo aziendale sopra il 300% del netto», «per un'osteria da 34 coperti è
+fuori scala». *Un permesso non si giudica sul caso che si aveva in mente
+scrivendolo: si giudica su tutti quelli che apre.*
+
+🔴 **E non l'ho rivisto rileggendo: me l'hanno fatto rivedere le reti.**
+Le due prove sui permessi sono diventate rosse da sole — funzioni aperte
+ad anon da 10 a 11, funzioni senza portiere da 19 a 20. La scelta era
+**dichiarata** dentro la migrazione, e non bastava: *una dichiarazione in
+un file non è la stessa cosa di un numero aggiornato in una prova che
+qualcuno legge.* La rete costringe a rispondere, non a dichiarare.
+
+⚠️ **E il rovesciamento ha aperto subito un difetto suo**, trovato
+provando: col portiere in piedi, il giro che chiedeva la spiegazione usava
+ancora la chiave pubblica, e **la traduzione è diventata muta** — a
+schermo tornava la frase generica. *Il portiere rendeva inutile la
+funzione proprio nel momento in cui serviva.* Chiuso passando il token di
+chi ha appena ricevuto il rifiuto.

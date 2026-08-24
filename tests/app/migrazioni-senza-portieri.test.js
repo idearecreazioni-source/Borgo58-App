@@ -59,6 +59,44 @@ const CARTELLA = "supabase/migrations";
 // il controllo vale per tutte.
 const DA_QUESTA_IN_POI = "20260816000013";
 
+// =====================================================================
+// QUANDO UNA MIGRAZIONE DIVENTA COLPEVOLE DOPO ESSERE STATA SCRITTA
+// =====================================================================
+// 🔴 IL CASO CHE HA APERTO QUESTA STRADA (24/08/2026). La migrazione
+// `20260824000012` crea `spiega_vincolo()` **senza portiere** e la chiama
+// subito dopo per verificarla: quando è stata scritta era corretta. Poche
+// ore dopo, la `20260824000013` le ha messo il portiere — e da quel
+// momento quella chiamata è diventata fragile **senza che una sola riga
+// della 012 sia cambiata**.
+//
+// ⚠️ È la famiglia delle frasi diventate false, su un blocco di verifica
+// invece che su una schermata: era vera quando è stata scritta, l'ha resa
+// falsa qualcosa che è successo dopo. Con l'aggravante che a renderla
+// falsa è stata **la migrazione che le sta accanto**.
+//
+// ⚠️ E LE MIGRAZIONI GIÀ APPLICATE NON SI RISCRIVONO (regola di Alessio,
+// 23/08): quel file racconta cosa è successo quel giorno. Quindi la
+// dichiarazione va **nella migrazione che chiude il caso**, non in quella
+// che lo ha causato — ed è la stessa forma di `rete-guardie:`, che già
+// vive dentro le migrazioni.
+//
+// 🔴 E NON SPEGNE LA RETE: si tace **solo** sulla coppia file-funzione
+// dichiarata, e solo se qualcuno ha scritto perché. Ogni altro caso
+// continua a gridare — e la prova qui sotto lo verifica rompendolo.
+//
+//   -- rete-portieri: <file> chiama <funzione> — <perché va bene>
+const DICHIARAZIONE = /--\s*rete-portieri:\s*(\S+)\s+chiama\s+(\w+)/g;
+
+function casiDichiarati(cartella) {
+  const chiusi = new Set();
+  for (const f of readdirSync(cartella).filter((x) => x.endsWith(".sql"))) {
+    const sql = readFileSync(join(cartella, f), "utf8");
+    for (const m of sql.matchAll(DICHIARAZIONE)) chiusi.add(`${m[1]}|${m[2]}`);
+  }
+  return chiusi;
+}
+
+
 // Divide un file SQL in regioni. Quelle delimitate da `$tag$` precedute da
 // `as` sono CORPI DI FUNZIONE — non vengono eseguiti al momento della
 // migrazione, quindi non c'entrano. Quelle precedute da `do` e il testo
@@ -124,6 +162,7 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
     const guardiane = data.map((f) => f.nome);
 
     const colpevoli = [];
+    const chiusi = casiDichiarati(CARTELLA);
     for (const file of readdirSync(CARTELLA).filter((f) => f.endsWith(".sql")).sort()) {
       if (file.slice(0, 14) < DA_QUESTA_IN_POI) continue;
       const sql = readFileSync(join(CARTELLA, file), "utf8");
@@ -170,6 +209,11 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
           );
         for (const nome of guardiane) {
           const chiamata = new RegExp(`\\b${nome}\\s*\\(`);
+          // ⚠️ Il confronto è sul numero di versione, non sul nome intero
+          // del file: una dichiarazione non deve rompersi se un giorno
+          // qualcuno rinomina il file (cosa che il progetto non fa, ma
+          // costa niente reggerla).
+          if (chiusi.has(`${file.slice(0, 14)}|${nome}`)) continue;
           if (chiamata.test(testo)) {
             colpevoli.push(
               `${file}: chiama ${nome}() ${regione.primoLivello ? "al primo livello" : "in un blocco"} senza impostare i claims`
