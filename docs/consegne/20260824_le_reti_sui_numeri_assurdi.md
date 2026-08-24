@@ -63,7 +63,7 @@ produzione erano già in punti. Il vincolo
 ### 1 · LUNCH — non adesso, e c'è una dipendenza
 
 Nessun codice. Le tre risposte sulle linee sono scritte in
-[`docs/mandati/20260824_le_tre_linee_della_previsione.md`](../mandati/20260824_le_tre_linee_della_previsione.md),
+[`docs/mandati/20260824_le_linee_della_previsione.md`](../mandati/20260824_le_linee_della_previsione.md),
 perché non si perdano fra un riepilogo e l'altro.
 
 ⚠️ **Il dato esiste già a metà**: `service_hours` distingue pranzo e cena,
