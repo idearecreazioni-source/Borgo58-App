@@ -773,7 +773,25 @@ export default function PiantaSala({
               : sagoma.posti_fissi && misure.profondita >= 110
                 ? `${sagoma.posti_fissi} posti`
                 : null;
-          const serve = Math.max(largo(sagoma.label, 36), largo(posti, 26));
+          // 🔴 LE TAGLIE VERE SONO 44 E 34, non 36 e 26 (24/08/2026,
+          // rilievo di Alessio: «Chef Table sfora il riquadro che lo
+          // contiene»). Qui si stimava con le taglie di PRIMA del 21/08 —
+          // quel giorno il testo fu ingrandito per il tablet e questa
+          // stima resto' indietro. Misurato dal vivo: «Chef Table» e'
+          // largo **230 unita' di sala** su una sagoma di 200, e la stima
+          // ne dichiarava 198. Un numero che dice «ci sta» su una cosa
+          // che sfora.
+          const serve = Math.max(largo(sagoma.label, 44), largo(posti, 34));
+
+          // 🔴 E LA STIMA DA SOLA NON BASTAVA, perche' decideva soltanto se
+          // GIRARE la scritta: se il nome non ci stava nemmeno per il
+          // lungo, nessuno lo fermava e usciva dai bordi.
+          //
+          // ⚠️ `textLength` non e' una stima: e' il browser che stringe il
+          // testo fino alla misura data, quindi il nome sta dentro **per
+          // costruzione** invece che per un fattore indovinato. Si applica
+          // solo quando serve — comprimere un nome che ci sta gia' lo
+          // renderebbe brutto per niente.
           // Con la sala in piedi un'etichetta raddrizzata ha a
           // disposizione la PROFONDITÀ della sagoma, non la larghezza:
           // "Chef Table" su un bancone profondo 70 cm sborderebbe sui
@@ -790,7 +808,43 @@ export default function PiantaSala({
           );
           const bx = box.x - x;
           const by = box.y - y;
-          const raddrizza = verticale && serve <= box.profondita * 0.95;
+          // 🔴 LA SCRITTA SI GIRA QUANDO STA MEGLIO GIRATA, e la domanda e'
+          // sulla SAGOMA, non sulla sala (24/08/2026). Prima era
+          // `verticale && ...`: si guardava se era in piedi la STANZA, e
+          // una sagoma stretta e profonda dentro una sala orizzontale
+          // restava con la scritta per il largo. E' il caso della Chef
+          // Table — larga 200 e profonda 70, ma **disegnata girata** per
+          // decisione di Alessio (rovesciamento n. 15): sul disegno ha 93
+          // di larghezza e il nome ne chiede 177.
+          //
+          // ⚠️ Il caso normale non cambia: su un tavolo quadrato il nome
+          // ci sta per il largo, quindi la condizione non scatta e la
+          // scritta resta dritta come e' sempre stata.
+          // ⚠️ «STA MEGLIO GIRATA», non «ci sta girata»: la prima versione
+          // chiedeva che il nome entrasse per il verso lungo **a taglia
+          // piena**, e su «Chef Table» non entrava nemmeno li' (chiede 242
+          // su 188). Cosi' non girava, restava per il largo su 93, e
+          // sforava di piu'. Le due cure lavorano insieme — prima si sceglie
+          // il verso che da' piu' spazio, poi si rimpicciolisce quanto basta.
+          const staMeglioGirata =
+            box.profondita > box.larghezza && serve > box.larghezza * 0.94;
+          const raddrizza = (verticale && serve <= box.profondita * 0.95) || staMeglioGirata;
+
+          // 🔴 SI RIMPICCIOLISCE IL CARATTERE, NON SI SCHIACCIA IL TESTO.
+          // La prima cura usava `textLength`, che porta il testo alla
+          // misura data comprimendo le lettere: su «Chef Table» sarebbe
+          // stata una **compressione del 62%**, cioe' una striscia
+          // illeggibile. Una cura peggiore del difetto.
+          //
+          // ⚠️ E IL MINIMO E' 34 UNITA', non zero: sono i 3,2 mm sotto i
+          // quali il testo non si legge in piedi, col tablet a distanza di
+          // braccio (regola del 21/08). Se nemmeno a 34 ci sta, si tronca —
+          // meglio un nome tagliato che una riga che nessuno puo' leggere.
+          const spazioNome = (raddrizza ? box.profondita : box.larghezza) * 0.94;
+          const nomeChiede = largo(sagoma.label, 44);
+          const tagliaNome = nomeChiede > spazioNome
+            ? Math.max(34, Math.floor((44 * spazioNome) / nomeChiede))
+            : 44;
           const cx = bx + box.larghezza / 2;
           const cy = by + box.profondita / 2;
           const chiaro = selezionati.has(sagoma.id) || Boolean(info?.colore);
@@ -926,7 +980,9 @@ export default function PiantaSala({
                   // grande delle Comande. ⚠️ Sono unità di SALA, non punti: la
                   // scritta cresce e rimpicciolisce insieme al disegno, che è
                   // ciò che la tiene dentro la sagoma su ogni schermo.
-                  fontSize="44"
+                  // ⚠️ 44 quando ci sta, meno quando non ci sta, mai sotto
+                  // 34: vedi il calcolo di `tagliaNome` qui sopra.
+                  fontSize={tagliaNome}
                   fontWeight="600"
                   fill={chiaro ? "var(--color-b58-parchment)" : "var(--color-b58-charcoal)"}
                 >
