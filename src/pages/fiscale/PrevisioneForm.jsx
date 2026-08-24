@@ -15,6 +15,7 @@ import {
   labelFor,
   oggiLocale,
 } from "../../lib/constants";
+import { righeDaSalvare } from "../../lib/calcoli/lineePrevisione";
 import { allineaPaga, allineaTutte, righeDiscordi } from "../../lib/calcoli/pagaPrevisione";
 import Didascalia from "../../components/Didascalia";
 
@@ -278,21 +279,13 @@ export default function PrevisioneForm() {
         costiFissi: fissi
           .filter((f) => f.voce.trim() && String(f.euroMese ?? "").trim() !== "")
           .map((f) => ({ voce: f.voce, euroMese: num(f.euroMese) })),
-        // ⚠️ Vale la riga che ha una LINEA SCELTA, non una col nome
-        // scritto: dal 24/08 il nome lo propone il gestionale quando si
-        // sceglie la linea, e filtrare sul nome lascerebbe passare una riga
-        // senza codice — cioè senza forma, cioè senza sapere come contarla.
-        accessorie: accessorie
-          .filter((a) => (a.codice ?? "").trim())
-          .map((a) => ({
-            codice: a.codice,
-            forma: a.forma,
-            linea: (a.linea ?? "").trim() || labelFor(LINEE_PREVISIONE, a.codice),
-            quantita: num(a.quantita),
-            prezzoMedio: num(a.prezzoMedio),
-            costoPercento: daPercento(a.costoPercento),
-            base: a.base,
-          })),
+        // ⚠️ LA REGOLA STA IN UNA FUNZIONE PURA E PROVATA
+        // (src/lib/calcoli/lineePrevisione.js), non qui: è il tratto fra
+        // schermata e database, quello che né le prove sul database né la
+        // revisione del codice guardano — e dove il 24/08 una riga di
+        // ricavo è sparita in silenzio. La schermata usa QUELLA funzione,
+        // non una sua copia: due copie divergono alla prima modifica.
+        accessorie: righeDaSalvare(accessorie, { num, daPercento }),
         mesi: mesi.map((m) => ({
           mese: m.mese, serviziSettimana: num(m.serviziSettimana), giorniLavorativi: num(m.giorniLavorativi),
           giorniPeak: num(m.giorniPeak), copertiPeak: num(m.copertiPeak),
