@@ -8,6 +8,7 @@ import {
   togliSpesaSpicciola,
 } from "../../lib/api/spesaSpicciola";
 import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
+import { toccaSubito } from "../../lib/calcoli/tocco";
 
 // LA SPESA SPICCIOLA (23/08/2026, blocco 8 del mandato). Richiesta di
 // Alessio: la roba che compra di persona al supermercato.
@@ -29,6 +30,7 @@ export default function SpesaSpicciola() {
   const [categoria, setCategoria] = useState("");
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState(false);
+  const [copiato, setCopiato] = useState(false);
 
   const carica = async () => {
     try {
@@ -80,6 +82,41 @@ export default function SpesaSpicciola() {
     }
   };
 
+  // 🔴 IL TOCCO CAMBIA LA RIGA SUBITO, E NON ASPETTA IL DATABASE
+  // (25/08/2026, richiesta di Alessio dal collaudo: *«tocco l'articolo e
+  // la riga ci mette un attimo a cambiare stato… davanti allo scaffale,
+  // con una mano sola, quel ritardo mi fa toccare due volte e non capire
+  // più cosa ho fatto»*).
+  //
+  // ⚠️ IL RITARDO ERANO **DUE** GIRI DI RETE, non uno: `fai()` aspettava
+  // l'aggiornamento **e poi** rileggeva l'elenco intero — e nel frattempo
+  // `inCorso` spegneva tutti i pulsanti della schermata. Su una rete di
+  // telefono in un supermercato quel «attimo» è mezzo secondo buono.
+  //
+  // ⚠️ E SE IL SALVATAGGIO FALLISCE LA RIGA TORNA COM'ERA, dicendolo.
+  // Un'interfaccia che mostra l'effetto prima di averlo ottenuto **deve**
+  // saper tornare indietro: senza, mostrerebbe una cosa che non è
+  // successa — che è peggio del ritardo che sta togliendo.
+  //
+  // ⚠️ NON SI RICARICA L'ELENCO dopo il tocco, ed è la seconda metà della
+  // cura: rileggere tutto butterebbe via i tocchi che nel frattempo sono
+  // ancora in volo (trappola del 12/08 — *si ricarica ciò che è cambiato
+  // sul server, mai ciò che l'utente sta modificando*).
+  // ⚠️ LA REGOLA STA IN `src/lib/calcoli/tocco.js`, NON QUI: il ritorno
+  // indietro si prova solo potendo far fallire il salvataggio apposta, e
+  // dentro un componente `metti()` è una chiamata al database che nessuna
+  // prova può rompere. Da lì la riceve come parametro, e le prove pure la
+  // rompono davvero (`tests/unita/tocco.test.js`).
+  const tocca = (riga, nelCarrello) =>
+    toccaSubito({
+      righe,
+      id: riga.id,
+      cambio: { nel_carrello: nelCarrello },
+      mostra: setRighe,
+      avvisa: setError,
+      salva: () => metti(riga.id, nelCarrello),
+    });
+
   const aggiungi = () => {
     if (!articolo.trim()) return;
     return fai(async () => {
@@ -89,6 +126,44 @@ export default function SpesaSpicciola() {
       // aggiunge una dopo l'altra, e rimetterla ogni volta è il genere di
       // attrito che fa smettere di usare un elenco.
     });
+  };
+
+  // --- LA LISTA SU WHATSAPP (25/08/2026, richiesta di Alessio) ---------
+  //
+  // ⚠️ STESSA FORMA DEGLI ORDINI AI FORNITORI, e per la stessa ragione: il
+  // gestionale **prepara il testo e apre WhatsApp**, non manda niente da
+  // solo. Un messaggio che parte da sé è un messaggio che nessuno ha
+  // riletto.
+  //
+  // ⚠️ NESSUN DESTINATARIO, e qui è una differenza vera con gli ordini:
+  // un ordine ha il numero del fornitore, questa lista no — la si manda a
+  // chi passa dal supermercato, e cambia ogni volta. `whatsapp://send`
+  // senza `phone` apre WhatsApp e fa scegliere il contatto: è la scelta
+  // giusta, perché il gestionale non ha modo di sapere a chi.
+  const testoLista = useMemo(() => {
+    if (!perCategoria.length) return "";
+    const righe = ["Spesa:"];
+    for (const [nome, elenco] of perCategoria) {
+      if (perCategoria.length > 1) righe.push("", nome === SENZA ? "Varie" : nome);
+      for (const r of elenco) righe.push(`· ${r.articolo}${r.nota ? ` (${r.nota})` : ""}`);
+    }
+    return righe.join("\n");
+  }, [perCategoria]);
+
+  // ⚠️ SI COPIA SEMPRE PRIMA, POI SI PROVA AD APRIRE — lezione del 14/08
+  // sugli ordini: se il programma non è installato, `whatsapp://` non fa
+  // NIENTE. Nessun errore, nessuna finestra. La copia riesce sempre,
+  // l'apertura è un di più, e così il testo non si perde mai.
+  const mandaSuWhatsApp = async () => {
+    try {
+      await navigator.clipboard.writeText(testoLista);
+      setCopiato(true);
+      setTimeout(() => setCopiato(false), 3000);
+    } catch {
+      // Se gli appunti non sono disponibili si va avanti lo stesso: la
+      // copia era la rete di riserva, non il gesto.
+    }
+    window.location.href = `whatsapp://send?text=${encodeURIComponent(testoLista)}`;
   };
 
   const campo = "tocco-bottone w-full rounded border border-stone-300 px-3 testo-sala";
@@ -165,6 +240,25 @@ export default function SpesaSpicciola() {
 
       {righe !== null && (
         <>
+          {/* ⚠️ Compare solo quando c'è qualcosa da mandare: un pulsante
+              che manda una lista vuota è un pulsante che non fa niente. */}
+          {daPrendere.length > 0 && (
+            <div className="mb-6">
+              <button
+                type="button"
+                className="tocco-azione w-full rounded border border-stone-300 bg-white px-4 testo-sala-grande font-semibold"
+                onClick={mandaSuWhatsApp}
+              >
+                Manda la lista su WhatsApp
+              </button>
+              {copiato && (
+                <p className="mt-2 testo-sala text-stone-600">
+                  La lista è copiata negli appunti. Se WhatsApp non si apre da solo, aprilo e incolla.
+                </p>
+              )}
+            </div>
+          )}
+
           {daPrendere.length === 0 ? (
             <p className="mb-8 text-stone-600">Non manca niente.</p>
           ) : (
@@ -180,13 +274,23 @@ export default function SpesaSpicciola() {
                           08/08: al supermercato si tiene il telefono in una
                           mano e il carrello nell'altra, e centrare una
                           casella piccola con un dito solo non funziona. */}
+                      {/* ⚠️ PIÙ GRANDE DELLA SOGLIA, NON APPENA SOPRA
+                          (25/08): `.tocco-azione` è 1,2 cm contro gli
+                          1,05 di `.tocco-riga`, e il nome sta a 4 mm
+                          invece di 3,2. La regola di Alessio del 24/08 —
+                          *3,20 mm è il minimo accettabile, non
+                          l'obiettivo* — vale qui più che altrove: questa
+                          schermata si legge in piedi, in movimento, con
+                          una mano occupata dal carrello.
+                          ⚠️ E NIENTE `disabled`: un pulsante che si
+                          spegne mentre si cammina fra gli scaffali è
+                          esattamente il ritardo che si sta togliendo. */}
                       <button
                         type="button"
-                        className="tocco-riga flex w-full items-center justify-between gap-3 px-1 text-left"
-                        disabled={inCorso}
-                        onClick={() => fai(() => metti(r.id, true))}
+                        className="tocco-azione flex w-full items-center justify-between gap-3 px-1 text-left"
+                        onClick={() => tocca(r, true)}
                       >
-                        <span>
+                        <span className="testo-sala-grande">
                           {r.articolo}
                           {r.nota && <span className="testo-sala text-stone-500"> · {r.nota}</span>}
                         </span>
@@ -222,15 +326,18 @@ export default function SpesaSpicciola() {
                   <li key={r.id} className="gesti-pericolosi justify-between border-b border-stone-200 last:border-0">
                     <button
                       type="button"
-                      className="tocco-riga flex-1 px-1 text-left text-stone-500 line-through"
-                      disabled={inCorso}
-                      onClick={() => fai(() => metti(r.id, false))}
+                      className="tocco-azione flex-1 px-1 text-left testo-sala-grande text-stone-500 line-through"
+                      onClick={() => tocca(r, false)}
                     >
                       {r.articolo}
                     </button>
+                    {/* «Cancella» resta col suo ritardo, ed è voluto: è
+                        l'unico gesto qui dentro che non si disfa, quindi
+                        vedere l'effetto solo quando è davvero avvenuto è
+                        una garanzia, non un difetto. */}
                     <button
                       type="button"
-                      className="tocco-bottone shrink-0 rounded border border-stone-300 px-3 testo-sala text-stone-600"
+                      className="tocco-azione shrink-0 rounded border border-stone-300 px-3 testo-sala text-stone-600"
                       disabled={inCorso}
                       onClick={() => fai(() => togliSpesaSpicciola(r.id))}
                     >

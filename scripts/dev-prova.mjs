@@ -21,6 +21,7 @@
 // L'altra metà del lavoro è in `src/components/SegnaleDatabase.jsx`: il
 // database collegato si vede nella pagina, in tutte e due le direzioni.
 
+import { networkInterfaces } from "node:os";
 import { leggiConfigurazione, obbligatorio, esegui, fermati, titolo, REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
 
 const config = leggiConfigurazione(".env.test");
@@ -52,6 +53,42 @@ const riferimento = url.match(/https?:\/\/([a-z0-9-]+)\.supabase\./i)?.[1] ?? "?
 titolo("Gestionale collegato al progetto di PROVA");
 console.log(`   database:  ${riferimento}${riferimento === REF_PROVA ? "  (Borgo58-Prova)" : "  ⚠ non e' il progetto di prova dichiarato"}`);
 console.log("   indirizzo: http://localhost:5173");
+
+// --- Gli indirizzi da scrivere sul telefono ---------------------------
+//
+// 🔴 NASCE IL 25/08/2026 DA UNA COSA CHE NON SI SAPEVA FARE. Il collaudo
+// vero si fa sul progetto di prova, che gira qui sul computer; ma lo
+// schermo dove i difetti di ingombro si vedono davvero e' il telefono, e
+// dal telefono Alessio vedeva solo il gestionale VERO — che e' quasi
+// vuoto. Il server ascoltava gia' su tutta la rete (`host: true` in
+// vite.config.js): quello che mancava era **sapere l'indirizzo**.
+//
+// ⚠️ L'indirizzo si CALCOLA a ogni avvio, non si scrive qui: cambia ogni
+// volta che l'hotspot del telefono si riaccende. Un numero scritto a mano
+// in un messaggio e' una frase che diventa falsa.
+const daFuori = Object.entries(networkInterfaces())
+  .flatMap(([nome, righe]) =>
+    (righe ?? [])
+      .filter((r) => r.family === "IPv4" && !r.internal)
+      // 169.254.x.x e' l'indirizzo che Windows si da' da solo quando una
+      // scheda non ha una rete: non ci arriva nessuno.
+      .filter((r) => !r.address.startsWith("169.254."))
+      .map((r) => ({ nome, indirizzo: r.address }))
+  );
+
+if (daFuori.length) {
+  console.log("");
+  console.log("   Dal telefono o dal tablet, sulla stessa rete:");
+  for (const r of daFuori) {
+    console.log(`     http://${r.indirizzo}:5173     (${r.nome})`);
+  }
+  console.log("");
+  console.log("   Se non si apre: il telefono e' su un'altra rete, oppure");
+  console.log("   l'hotspot e' stato riacceso e l'indirizzo e' cambiato.");
+} else {
+  console.log("");
+  console.log("   Nessuna rete: da fuori questo computer non e' raggiungibile.");
+}
 console.log("");
 console.log("   In alto in ogni schermata c'e' la fascia rossa «DATABASE DI PROVA».");
 console.log("   Se NON la vedi, sei sul locale vero: chiudi e ricontrolla.");

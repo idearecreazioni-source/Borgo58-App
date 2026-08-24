@@ -11,6 +11,7 @@ import {
 } from "../../lib/api/tasks";
 import { TASK_CATEGORIES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import { toccaSubito, togliSubito } from "../../lib/calcoli/tocco";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -291,16 +292,29 @@ export default function AgendaList() {
   // I tre gesti dalla lista, senza aprire la scheda: fatto, rimanda,
   // promuovi a data. Aprire una scheda per spuntare una casella è il
   // motivo per cui le liste non si tengono aggiornate.
+  // 🔴 LA RIGA SPARISCE SUBITO, NON DOPO DUE GIRI DI RETE (25/08/2026).
+  // Era la stessa forma misurata sulla spesa spicciola — l'aggiornamento
+  // e poi la rilettura dell'elenco intero, ~390 ms di media da computer —
+  // e qui pesa uguale: spuntare gli impegni è un gesto che si fa in fila,
+  // uno dopo l'altro. ⚠️ E la casella era `checked={false}` fissa, quindi
+  // per quei due giri il tocco non lasciava **nessun** segno.
+  //
+  // ⚠️ IL RICARICO RESTA, ma dopo e in silenzio: «fatto» può generare
+  // l'impegno successivo di una ricorrenza, e quello lo sa solo il
+  // database. La riga sparisce subito; l'impegno nuovo compare quando
+  // arriva, insieme alla frase che lo annuncia.
   const fatto = async (task) => {
-    setError("");
     setNotice("");
-    try {
-      const nuovo = await completaTask(task.id);
-      await ricarica();
-      if (nuovo) setNotice("Fatto. Ne è già nato uno nuovo alla prossima scadenza.");
-    } catch (e) {
-      setError(e.message);
-    }
+    const { ok, esito } = await togliSubito({
+      righe: corsie,
+      id: task.id,
+      mostra: setCorsie,
+      avvisa: setError,
+      salva: () => completaTask(task.id),
+    });
+    if (!ok) return; // `togliSubito` l'ha già rimessa al suo posto e l'ha detto
+    if (esito) setNotice("Fatto. Ne è già nato uno nuovo alla prossima scadenza.");
+    await ricarica();
   };
 
   const sposta = async (task, data) => {
@@ -314,17 +328,20 @@ export default function AgendaList() {
     }
   };
 
-  const stella = async (task) => {
-    setError("");
-    try {
-      await stellaTask(task.id, !task.preferito);
-      setCorsie((cs) =>
-        cs.map((c) => (c.id === task.id ? { ...c, preferito: !task.preferito } : c))
-      );
-    } catch (e) {
-      setError(e.message);
-    }
-  };
+  // ⚠️ LA STELLA CAMBIAVA **DOPO** LA RETE (25/08): non ricaricava l'elenco
+  // — quello era già stato evitato — ma aspettava lo stesso la risposta
+  // prima di accendersi, cioè ~200 ms in cui il tocco non lasciava segno.
+  // E se il salvataggio falliva non tornava indietro **perché non era mai
+  // andata avanti**: adesso va avanti subito e sa tornare.
+  const stella = (task) =>
+    toccaSubito({
+      righe: corsie,
+      id: task.id,
+      cambio: { preferito: !task.preferito },
+      mostra: setCorsie,
+      avvisa: setError,
+      salva: () => stellaTask(task.id, !task.preferito),
+    });
 
   // ⚠️ Il badge conta SOLO ritardo e oggi. «Quando capita» non ci entra
   // mai: un numero fermo su venti smette di essere un'informazione e si
