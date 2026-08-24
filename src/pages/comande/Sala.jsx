@@ -773,19 +773,40 @@ export default function Sala() {
   // metodo e priva di dati veri come contenuto* — ed è il motivo per cui i
   // nomi adesso vanno a capo invece di stringere la pianta: **un nome lungo
   // costa altezza, e di altezza ce n'è.**
+  const raggruppaPerCategoria = (voci) => {
+    const categorie = [...new Set(voci.map((v) => v.category))];
+    return categorie.map((nome) => ({ nome, voci: voci.filter((v) => v.category === nome) }));
+  };
+
+  // I vini stanno in una schermata separata (§3.2.1); le altre bevande
+  // vivono qui accanto ai piatti. ⚠️ Il raggruppamento si calcola PRIMA
+  // dei filtri, che da oggi lo usano.
+  const vini = raggruppaPerCategoria(barItems.filter((b) => b.section === "vini"));
+  const bevande = raggruppaPerCategoria(barItems.filter((b) => b.section === "bevande"));
+
+  // 🔴 «BEVERAGE» E' UNA CATEGORIA COME LE ALTRE (24/08/2026, richiesta di
+  // Alessio dal collaudo). Fino a qui i filtri in cima valevano **solo per
+  // il cibo**: scegliendo «Primo» restavano visibili anche acqua, amari,
+  // analcoliche, birre e caffetteria, perche' le bevande erano un blocco a
+  // se' sotto la lista. ⚠️ Un filtro che lascia visibile meta' della roba
+  // non e' un filtro — e' un ordinamento.
+  //
+  // ⚠️ E' UN MODO DI GUARDARE, NON UNA RICLASSIFICAZIONE (condizione sua):
+  // nessun prodotto cambia categoria, niente si tocca nel database. Food
+  // cost e beverage cost restano due cose separate nella Proiezione, e
+  // continuano a leggere da dove leggevano prima.
+  const CHIAVE_BEVERAGE = "__beverage";
+  // Le bevande si vedono con «Tutte» e con «Beverage», non con «Primo».
+  const mostraBevande =
+    categoriaScelta === null || categoriaScelta === CHIAVE_BEVERAGE;
   const categorieDelMenu = [
     ...menuByCategory.map((c) => ({ chiave: c.value, nome: c.label })),
+    ...(bevande.length > 0 ? [{ chiave: CHIAVE_BEVERAGE, nome: "Beverage" }] : []),
   ];
 
   // I vini stanno in una schermata separata (§3.2.1: incolonnati nel menu
   // lo allungavano troppo), le altre bevande restano nell'elenco
   // principale accanto ai piatti.
-  const raggruppaPerCategoria = (voci) => {
-    const categorie = [...new Set(voci.map((v) => v.category))];
-    return categorie.map((nome) => ({ nome, voci: voci.filter((v) => v.category === nome) }));
-  };
-  const vini = raggruppaPerCategoria(barItems.filter((b) => b.section === "vini"));
-  const bevande = raggruppaPerCategoria(barItems.filter((b) => b.section === "bevande"));
 
   // Riga di un vino o di una bevanda: stesso target di tocco dei piatti.
   const RigaBar = ({ v }) => (
@@ -1081,7 +1102,7 @@ export default function Sala() {
           portata e restano i suoi tre o quattro piatti.
           ⚠️ «Tutte» resta, ed è il valore di partenza: chi non conosce
           ancora la carta non deve dover scegliere per vedere. */}
-      {menuByCategory.length > 1 && (
+      {categorieDelMenu.length > 1 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
           <button
             type="button"
@@ -1115,7 +1136,11 @@ export default function Sala() {
       ) : (
         <div className="mb-3">
           {menuByCategory
-            .filter((cat) => categoriaScelta === null || cat.value === categoriaScelta)
+            .filter(
+              (cat) =>
+                categoriaScelta !== CHIAVE_BEVERAGE &&
+                (categoriaScelta === null || cat.value === categoriaScelta)
+            )
             .map((cat) => (
             <div key={cat.value} className="mb-2">
               {/* Con una categoria scelta il suo nome è già nel filtro
@@ -1164,7 +1189,11 @@ export default function Sala() {
       )}
 
       {/* BEVANDE --------------------------------------------------- */}
-      {bevande.length > 0 && (
+      {/* ⚠️ I SOTTOGRUPPI RESTANO (condizione di Alessio): dentro
+          «Beverage» si continuano a vedere Acqua, Birre, Caffetteria…
+          Appiattirli darebbe un elenco lungo e indistinto, che e'
+          esattamente il difetto da cui i filtri sono nati. */}
+      {bevande.length > 0 && mostraBevande && (
         <div className="mb-3">
           {bevande.map((cat) => (
             <div key={cat.nome} className="mb-2">
