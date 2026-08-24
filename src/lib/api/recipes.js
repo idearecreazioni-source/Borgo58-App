@@ -2,16 +2,44 @@ import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 
 // statusFilter: "in_carta" | "pronta" | "in_sviluppo" | undefined (tutte)
-export async function listRecipes({ search, category, statusFilter } = {}) {
+export async function listRecipes({ search, category, statusFilter, tipo } = {}) {
   let query = supabase.from("recipes").select("*").order("name");
   if (search) query = query.ilike("name", `%${search}%`);
   if (category) query = query.eq("category", category);
+  if (tipo) query = query.eq("recipe_type", tipo);
+  // ⚠️ I QUATTRO STATI (24/08): «ritirata» non è un quinto caso appiccicato
+  // — entra anche nei filtri degli altri tre, perché un piatto ritirato NON
+  // è «in sviluppo» solo perché non è pronto. Senza queste esclusioni una
+  // ricetta ritirata ricomparirebbe fra quelle da lavorare, e l'elenco «in
+  // sviluppo» direbbe che c'è del lavoro dove non ce n'è.
   if (statusFilter === "in_carta") query = query.eq("in_carta", true);
-  if (statusFilter === "pronta") query = query.eq("pronta_per_carta", true).eq("in_carta", false);
-  if (statusFilter === "in_sviluppo") query = query.eq("pronta_per_carta", false);
+  if (statusFilter === "pronta")
+    query = query.eq("pronta_per_carta", true).eq("in_carta", false).is("ritirata_il", null);
+  if (statusFilter === "in_sviluppo")
+    query = query.eq("pronta_per_carta", false).is("ritirata_il", null);
+  if (statusFilter === "ritirata") query = query.not("ritirata_il", "is", null);
   const { data, error } = await query;
   if (error) throw error;
   return data;
+}
+
+// GLI ALLERGENI DI TUTTE LE RICETTE, per filtrare l'elenco (24/08/2026).
+//
+// 🔴 SI LEGGONO INSIEME, non una ricetta per volta: l'elenco ne mostra
+// decine e una lettura per riga sarebbe decine di richieste per aprire una
+// schermata.
+//
+// ⚠️ E VIENE VIA ANCHE `allergeni_da_verificare`, che è la metà che conta:
+// una ricetta i cui allergeni nessuno ha confermato **non si può dichiarare
+// «senza glutine»**. È la lezione del 13/08 — un elenco allergeni vuoto si
+// legge «non contiene allergeni», e su un'allergia quella lettura è un
+// problema di salute prima che di software.
+export async function listAllRecipeAllergens() {
+  const { data, error } = await supabase
+    .from("v_recipe_allergens")
+    .select("recipe_id, allergens, allergeni_da_verificare");
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getRecipe(id) {
@@ -147,8 +175,8 @@ export async function duplicaRicetta(recipeId, nome) {
 
 // Quanto costa OGNI ricetta di un elenco, in una lettura sola (20/08/2026).
 //
-// ⚠️ Serve al pannello dei bocconcini, dove accanto a ogni spunta si vede
-// quanto costa quel bocconcino: senza, si compone una selezione al buio e il
+// ⚠️ Serve al pannello dei finger, dove accanto a ogni spunta si vede
+// quanto costa quel finger: senza, si compone un piatto al buio e il
 // totale si scopre solo alla fine.
 // ⚠️ Chiede solo gli identificativi che le servono, mai la vista intera: una
 // lettura senza confini torna con al massimo mille righe e nessun errore

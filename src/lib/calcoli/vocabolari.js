@@ -143,6 +143,29 @@ export const SPECCHIATI = [
   },
 ];
 
+// Gli elenchi di etichette che NON rispecchiano nessuna colonna, e la
+// ragione di ciascuno (24/08/2026).
+//
+// 🔴 NASCE DA UNA RETE CHE HA FATTO IL SUO LAVORO: aggiungendo
+// `RECIPE_STATI` la prova è diventata rossa da sola, com'era scritto che
+// facesse. Ma il verdetto giusto qui non è «agganciala a una colonna» —
+// quell'elenco una colonna non ce l'ha, e non deve averla.
+//
+// ⚠️ E LA DIFFERENZA CONTA, perché è la stessa distinzione del 17/08 fra
+// un doppione e una rete: un elenco che rispecchia una colonna PUÒ
+// divergere da lei, e allora va sorvegliato; un elenco DERIVATO da altre
+// colonne non può divergere da niente, perché non c'è nessun secondo posto
+// che dice la stessa cosa. Sorvegliarlo darebbe un allarme permanente su
+// un caso legittimo — e un guardiano che grida sempre si impara a
+// spegnere.
+export const SPECCHI_ESENTI = [
+  {
+    costante: "RECIPE_STATI",
+    perche:
+      "non è un vocabolario del database: i quattro stati di una ricetta si DERIVANO da tre cose diverse — `pronta_per_carta` (booleano), `in_carta` (un riflesso scritto da un trigger) e `ritirata_il` (una data). Non esiste nessuna colonna «stato» con cui possano divergere, e crearne una distruggerebbe il riflesso, cioè l'unica ragione per cui oggi «in carta» non può mentire (16/08)",
+  },
+];
+
 // Le funzioni che ridicono un elenco chiuso SENZA che debba combaciare con
 // un vocabolario: sono due, e sono due cose diverse fra loro.
 //
@@ -255,8 +278,14 @@ export function guardieSospette(guardie, vocabolari, esenti = GUARDIE_ESENTI) {
  * modulo esporta, non un elenco scritto a mano — aggiungere un menu a
  * tendina nuovo e non dichiararlo diventa rosso.
  */
-export function specchiNonDichiarati(moduloCostanti, specchiati) {
-  const dichiarati = new Set(specchiati.map((s) => s.costante));
+export function specchiNonDichiarati(moduloCostanti, specchiati, esenti = SPECCHI_ESENTI) {
+  const dichiarati = new Set([
+    ...specchiati.map((s) => s.costante),
+    // ⚠️ Gli esenti sono DICHIARATI, non invisibili: stanno in un elenco
+    // con la loro ragione accanto, come le guardie. Un'eccezione senza la
+    // sua ragione scritta si allarga da sola.
+    ...esenti.map((e) => e.costante),
+  ]);
   return Object.entries(moduloCostanti)
     .filter(
       ([, v]) =>

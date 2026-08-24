@@ -26,8 +26,9 @@ import {
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
 import { storicoCostoRicetta } from "../../lib/api/storicoCosti";
+import { percorsoEntrando, ritornoIndietro } from "../../lib/calcoli/percorso";
 import { useAuth } from "../../context/AuthContext";
-import { listMenus } from "../../lib/api/menus";
+import { addMenuItem, listMenus, menuDellaRicetta, removeMenuItem } from "../../lib/api/menus";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import PrintButton from "../../components/PrintButton";
@@ -35,8 +36,10 @@ import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
+  RECIPE_STATI,
   RECIPE_TYPES,
   eComponente,
+  statoRicetta,
   SEASONS,
   STEP_PHASES,
   UNITS,
@@ -98,7 +101,23 @@ export default function RicettaDetail() {
   const [copiando, setCopiando] = useState(false);
   const [storico, setStorico] = useState([]);
   const [mostraStorico, setMostraStorico] = useState(false);
-  const avviso = useLocation().state?.avviso ?? "";
+  const [menuDentro, setMenuDentro] = useState([]);
+  const [salvandoMenu, setSalvandoMenu] = useState(null);
+  const [erroreMenu, setErroreMenu] = useState("");
+  const statoNavigazione = useLocation().state;
+  const avviso = statoNavigazione?.avviso ?? "";
+
+  // IL PERCORSO INVERSO (24/08/2026). ⚠️ La regola sta in un posto solo
+  // (`src/lib/calcoli/percorso.js`) perché i punti da cui si scende in
+  // un'altra ricetta sono tre — i componenti, le ricette che la usano e il
+  // menu — e tre copie della stessa catena divergono alla prima modifica.
+  const percorso = statoNavigazione?.percorso ?? [];
+  const indietro = ritornoIndietro(percorso, {
+    elenco: "/ricettario/ricette",
+    etichettaElenco: "Ricette",
+  });
+  // Il passo da lasciare a chi da qui scende di un livello.
+  const passoDaQui = (nome) => ({ percorso: percorsoEntrando(percorso, { id, nome }) });
   const [preparationUsage, setPreparationUsage] = useState([]);
   const [rowCosts, setRowCosts] = useState({});
 
@@ -119,7 +138,7 @@ export default function RicettaDetail() {
   // costo di prima — che è peggio del vecchio ricalcolo nel browser,
   // perché sbaglia in silenzio invece di essere solo una copia.
   //
-  // ⚠️ E i costi dei bocconcini si rileggono INSIEME (20/08/2026): il
+  // ⚠️ E i costi dei finger si rileggono INSIEME (20/08/2026): il
   // pannello per comporre li mostra accanto a ogni spunta, e leggerli una
   // volta sola all'apertura della pagina farebbe convivere sullo stesso
   // schermo un totale di adesso e dei costi di prima. Sono numeri piccoli e
@@ -161,13 +180,37 @@ export default function RicettaDetail() {
     setStatusHistory(hist);
     setPreparationUsage(prepUsage);
     await ricaricaRighe(elencoComponenti);
+
+    // 🔴 IN FONDO, E CON LA SUA RETE — difetto trovato aprendo la schermata
+    // il 24/08, non rileggendo il codice (lint e build erano puliti).
+    // Scritta qui sopra, prima di `setRecipe`, e con una colonna sbagliata
+    // dentro, questa lettura mandava la richiesta in errore e si portava
+    // via **tutta la scheda della ricetta**: nessun ingrediente, nessun
+    // passo, nessun costo, «Caricamento…» per sempre.
+    //
+    // ⚠️ È la lezione del 18/08 in un posto nuovo: se una lettura che serve
+    // a un pannello può far sparire la schermata intera, il difetto è nel
+    // modo in cui è legata, non nella lettura. Qui il caso peggiore è un
+    // pannello dei menu vuoto, che è quello che deve essere.
+    //
+    // ⚠️ Solo per il titolare: `menu_items` porta i prezzi di vendita, e il
+    // pannello non compare allo staff. Chiederli comunque produrrebbe un
+    // rifiuto a ogni apertura della scheda di una ricetta.
+    if (isTitolare) {
+      try {
+        setMenuDentro(await menuDellaRicetta(id));
+      } catch (e) {
+        // ⚠️ E non si tace: «non lo so» non è «non c'è nessun menu» (19/08).
+        setErroreMenu(`Non sono riuscito a leggere i menu: ${e.message}`);
+      }
+    }
   };
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     // ⚠️ L'elenco dei componenti si legge PRIMA e si passa avanti: da lì si
-    // ricavano quali sono i bocconcini, e senza, la prima lettura dei costi
+    // ricavano quali sono i finger, e senza, la prima lettura dei costi
     // partirebbe con l'elenco ancora vuoto e il pannello si aprirebbe senza
     // nessun prezzo accanto alle spunte.
     listPreparations({ excludeId: id })
@@ -304,19 +347,115 @@ export default function RicettaDetail() {
     }
   };
 
-  // ⚠️ «In carta» non si preme più: dal 16/08/2026 è un RIFLESSO del menu
+  // ⚠️ «In carta» non si preme: dal 16/08/2026 è un RIFLESSO del menu
   // (decisione di Alessio). Vale vero quando il piatto sta nel menu
   // attivo, lo scrive un trigger del database, e qui si legge soltanto.
-  // Il pulsante c'era e adesso non c'è: due posti che dicono la stessa
-  // cosa e possono contraddirsi sono un difetto, non una comodità.
+  // Due posti che dicono la stessa cosa e possono contraddirsi sono un
+  // difetto, non una comodità.
   //
-  // E per la stessa ragione qui non si spegne più «in carta» quando si
-  // toglie «pronta per carta»: quella coerenza la teneva la schermata, e
-  // ora la tiene il database — che RIFIUTA, dicendo in quale menu sta il
-  // piatto. Spegnerla di nascosto sarebbe stato toglierlo dalla carta
-  // senza toglierlo dal menu.
-  const togglePronta = () => {
-    setRecipe((r) => ({ ...r, pronta_per_carta: !r.pronta_per_carta }));
+  // E per la stessa ragione qui non si spegne «in carta» quando si toglie
+  // «pronta per la carta»: quella coerenza la teneva la schermata, e ora la
+  // tiene il database — che RIFIUTA, dicendo in quale menu sta il piatto.
+  // Spegnerla di nascosto sarebbe stato toglierlo dalla carta senza
+  // toglierlo dal menu.
+  //
+  // ⚠️ IL CAMBIO DI STATO NON PASSA PIÙ DAL «Salva modifiche» (24/08): la
+  // striscia scrive subito. Prima si spuntava «pronta» e poi bisognava
+  // ricordarsi di salvare — e chi usciva dalla schermata perdeva il gesto
+  // senza nessun avviso, che è la stessa famiglia del campo che salva solo
+  // `onBlur`.
+
+  // I QUATTRO STATI, un gesto per ciascuno (24/08/2026).
+  //
+  // ⚠️ TRE DEI QUATTRO SI SCRIVONO QUI e uno no: «in carta» è un riflesso
+  // del menu (16/08), quindi toccarlo non lo accende — porta dove si
+  // accende. Fargli fare finta di essere un interruttore vorrebbe dire che
+  // premendolo non succede niente, oppure che la schermata scrive una
+  // colonna che solo un trigger deve scrivere.
+  const vaiAllostato = async (stato) => {
+    setError("");
+    try {
+      if (stato === "in_sviluppo") {
+        await salvaStato({ pronta_per_carta: false, ritirata_il: null });
+      } else if (stato === "pronta") {
+        await salvaStato({ pronta_per_carta: true, ritirata_il: null });
+      } else if (stato === "ritirata") {
+        await salvaStato({ ritirata_il: new Date().toISOString() });
+      } else if (stato === "in_carta") {
+        // Non si scrive: si porta dove si decide. Il pannello dei menu è
+        // qui sotto, e mettere il piatto in quello in servizio accende il
+        // riflesso da sé.
+        document.getElementById("nei-menu")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } catch (e) {
+      // ⚠️ Il messaggio arriva dal DATABASE e si mostra com'è: è lì che
+      // vive la regola («toglila prima dal menu X»), e riscriverlo qui
+      // vorrebbe dire tenerne allineate due versioni.
+      setError(e.message);
+    }
+  };
+
+  const salvaStato = async (campi) => {
+    const aggiornata = await updateRecipe(id, campi);
+    setRecipe((r) => ({ ...r, ...aggiornata }));
+    setStatusHistory(await listRecipeStatusHistory(id));
+  };
+
+  // Perché uno stato non si può raggiungere da qui — la ragione, non il
+  // divieto. ⚠️ Ogni frase dice anche COSA FARE PRIMA: un rifiuto senza
+  // via d'uscita è un vicolo cieco (difetto n. 8 del mandato di correzione).
+  const motivoStato = (stato, r, menuInServizio) => {
+    if (stato === "in_carta") {
+      if (r.ritirata_il)
+        return { stato, impedito: "È ritirata: rimettila in giro, poi potrà tornare in carta." };
+      if (!r.pronta_per_carta)
+        return {
+          stato,
+          impedito: "Per andare in carta dev'essere prima segnata «pronta per la carta».",
+        };
+      if (!menuInServizio)
+        return {
+          stato,
+          impedito: "Non c'è nessun menu in servizio: per andare in carta serve prima un menu acceso.",
+        };
+      return { stato, aiuto: "Mettila nel menu in servizio, qui sotto." };
+    }
+    if (stato === "ritirata" && r.in_carta) {
+      return { stato, impedito: "È in carta: toglila prima dal menu in servizio, poi si ritira." };
+    }
+    if ((stato === "in_sviluppo" || stato === "pronta") && r.in_carta) {
+      return { stato, impedito: "È in carta: toglila prima dal menu in servizio." };
+    }
+    return { stato };
+  };
+
+  const cambiaMenu = async (m) => {
+    setErroreMenu("");
+    setSalvandoMenu(m.id);
+    try {
+      if (m.voce) {
+        await removeMenuItem(m.voce.id);
+      } else {
+        // ⚠️ Il prezzo nasce VUOTO e non a zero: 0,00 non è «gratis», è
+        // «non prezzato» — è la lezione delle piccolezze del 16/08. Ma
+        // `selling_price` è obbligatorio nel database, quindi si parte dal
+        // food cost, che è il numero da cui si parte davvero per decidere
+        // un prezzo, e si corregge dall'Editor Menu.
+        await addMenuItem(m.id, {
+          recipe_id: id,
+          category: recipe.category,
+          selling_price: cost?.food_cost_portion ?? 0,
+        });
+      }
+      setMenuDentro(await menuDellaRicetta(id));
+      // ⚠️ Il riflesso «in carta» lo ricalcola un trigger: la ricetta si
+      // rilegge dal database invece di indovinare come è cambiata.
+      setRecipe(await getRecipe(id));
+    } catch (e) {
+      setErroreMenu(e.message);
+    } finally {
+      setSalvandoMenu(null);
+    }
   };
 
   const handleAddIngredient = async () => {
@@ -443,7 +582,7 @@ export default function RicettaDetail() {
   // correzione: il giorno che uno dei due cambia, cominciano a dire due
   // cifre diverse e nessuno sa quale credere.
   //
-  // ⚠️ La quantità non si chiede: un bocconcino per tipo. Se una volta ne
+  // ⚠️ La quantità non si chiede: un finger per tipo. Se una volta ne
   // servissero due dello stesso, il numero si corregge nella riga qui sotto
   // — dove si correggono tutte le altre quantità, non in un secondo posto.
   const toggleFinger = async (finger) => {
@@ -507,8 +646,17 @@ export default function RicettaDetail() {
   return (
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
-          ← Ricette
+        {/* ⚠️ IL RITORNO NOMINA IL PASSO PRECEDENTE, e non è un vezzo: a tre
+            livelli di annidamento una freccia muta è una scommessa su dove
+            si finisce. Senza percorso resta «← Ricette», cioè il
+            comportamento di prima — un indirizzo copiato e incollato arriva
+            senza percorso, e lì l'elenco è la risposta giusta. */}
+        <Link
+          to={indietro.a}
+          state={{ percorso: indietro.percorso }}
+          className="tocco-riga inline-flex items-center px-2 -mx-2 rounded-lg testo-sala text-b58-charcoal-soft hover:text-b58-terracotta hover:bg-b58-cream-dark/40 transition-colors"
+        >
+          ← {indietro.etichetta}
         </Link>
         <div className="flex items-center gap-3">
           <button
@@ -643,9 +791,9 @@ export default function RicettaDetail() {
           )}
 
           {/* 🔴 IL PREZZO A PEZZO — solo sui finger (19/08/2026, blocco 2 del
-              mandato). Serve per i clienti che si scelgono i bocconcini uno
+              mandato). Serve per i clienti che si scelgono i finger uno
               per uno per un evento: la selezione ha il suo prezzo in carta,
-              il singolo bocconcino ha il suo.
+              il singolo finger ha il suo.
               ⚠️ Sta a schermo e non solo nel database perché un dato scritto
               che nessuno può vedere è indistinguibile da un dato non scritto
               (lezione del 18/08 sul legame conto-prenotazione).
@@ -663,7 +811,7 @@ export default function RicettaDetail() {
                 className={inputClass}
               />
               <p className="text-[11px] text-b58-charcoal-soft/80 mt-1">
-                Quanto costa questo bocconcino venduto da solo. Lascialo vuoto finché non l&apos;hai
+                Quanto costa questo finger venduto da solo. Lascialo vuoto finché non l&apos;hai
                 deciso: vuoto non vuol dire gratis.
               </p>
             </div>
@@ -676,97 +824,149 @@ export default function RicettaDetail() {
           </span>
         </div>
 
+        {/* LA STRISCIA DEGLI STATI — riscritta il 24/08/2026 su richiesta di
+            Alessio: *«oggi è confusa e ci sono due file che dicono cose
+            simili. Voglio UNA striscia sola con quattro stati»*.
+            🔴 Le due file erano: una pastiglia premibile «Pronta per
+            carta», una pastiglia non premibile «In carta / Non in carta»,
+            e accanto un'etichetta di testo che ripeteva la stessa cosa in
+            terza forma. Tre modi di dire lo stesso fatto, di cui uno solo
+            era un gesto.
+            ⚠️ ORA IL PERCORSO SI VEDE: quattro passi in fila nell'ordine in
+            cui un piatto li attraversa. Il passo su cui sta il piatto è
+            acceso; gli altri sono premibili quando ci si può andare, e
+            spenti CON LA RAGIONE quando no — un pulsante premibile solo per
+            essere rifiutato insegna a diffidare dei pulsanti (17/08).
+            ⚠️ E «In carta» NON è un interruttore: è il riflesso del menu
+            (16/08). Toccarlo non lo accende — porta dove si accende, cioè
+            fra i menu qui sotto. Se facesse finta di essere un interruttore
+            mentirebbe sulla natura del dato. */}
         <div className="mb-4">
           <label className={labelClass}>Stato</label>
           <div className="flex flex-wrap items-center gap-2">
-            {/* ⚠️ SPENTO CON LA RAGIONE quando il piatto è in carta (difetto
-                del collaudo, 17/08). Prima era premibile: si spegneva a
-                schermo e il salvataggio veniva respinto dal database, che ha
-                ragione — ma un pulsante che si può premere solo per essere
-                rifiutato insegna a diffidare dei pulsanti. La stessa lezione
-                del «Rimuovi» sulle fatture con una nota di credito. */}
-            <button
-              type="button"
-              onClick={togglePronta}
-              disabled={recipe.in_carta}
-              title={
-                recipe.in_carta
-                  ? "È in carta nel menu attivo: prima togli il piatto dal menu, poi si può smettere di considerarlo pronto."
-                  : undefined
-              }
-              className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
-                recipe.pronta_per_carta
-                  ? "bg-b58-gold text-b58-parchment border-b58-gold"
-                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
-              } ${recipe.in_carta ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              {recipe.pronta_per_carta ? "✓ " : ""}Pronta per carta
-            </button>
-            {recipe.in_carta && (
-              <span className="text-[11px] text-b58-charcoal-soft/80">
-                non si toglie: è in carta nel menu attivo
-              </span>
-            )}
-            {/* Non è un pulsante: è quello che il menu dice di questo
-                piatto. Si accende mettendolo in un menu attivo, dall'Editor
-                Menu. */}
-            <span
-              title="Si accende da sé quando il piatto è nel menu attivo. Si cambia dall'Editor Menu, non da qui."
-              className={`rounded-full text-xs px-3 py-1.5 border ${
-                recipe.in_carta
-                  ? "bg-b58-olive text-b58-parchment border-b58-olive"
-                  : "border-b58-charcoal/15 text-b58-charcoal-soft"
-              }`}
-            >
-              {recipe.in_carta ? "✓ In carta" : "Non in carta"}
-            </span>
-            <span className="text-xs text-b58-charcoal-soft ml-1">
-              {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta).label}
-            </span>
-            {/* ⚠️ La strada per rimediare, che mancava (difetto n. 3 del
-                collaudo, speculare al n. 1): l'app diceva «Pronta (non in
-                carta)» — nominando esattamente ciò che manca — e non
-                offriva il modo di farlo. «In carta» è un riflesso del menu
-                dal 16/08, quindi il gesto non è qui: è mettere il piatto
-                in un menu attivo. Quello che si può fare da questa
-                schermata è portarci.
-                ⚠️ E se il menu attivo non c'è, si dice quello invece di
-                offrire un collegamento che non porta da nessuna parte —
-                un vicolo cieco travestito da pulsante. */}
-            {recipe.pronta_per_carta && !recipe.in_carta && (
-              menuAttivo ? (
-                <Link
-                  to={`/ricettario/menu/${menuAttivo.id}?aggiungi=${recipe.id}`}
-                  className="text-xs text-b58-terracotta underline hover:text-b58-terracotta-dark"
+            {RECIPE_STATI.map((s) => {
+              const attuale = statoRicetta(
+                recipe.pronta_per_carta,
+                recipe.in_carta,
+                recipe.ritirata_il
+              );
+              const acceso = s.value === attuale;
+              const info = motivoStato(s.value, recipe, menuAttivo);
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => vaiAllostato(s.value)}
+                  disabled={acceso || !!info.impedito}
+                  title={info.impedito || info.aiuto}
+                  className={`tocco-riga rounded-full testo-sala px-3 border transition-colors ${
+                    acceso
+                      ? `${s.colorClass} text-b58-parchment border-transparent font-medium`
+                      : "border-b58-charcoal/15 text-b58-charcoal-soft hover:border-b58-charcoal/40"
+                  } ${info.impedito && !acceso ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  mettila in «{menuAttivo.name}»
-                </Link>
-              ) : (
-                <span className="text-xs text-b58-charcoal-soft/80">
-                  nessun menu attivo: per metterla in carta serve prima un menu in servizio
-                </span>
-              )
-            )}
+                  {acceso ? "✓ " : ""}
+                  {s.label}
+                </button>
+              );
+            })}
             {statusHistory.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta ml-auto"
+                className="tocco-riga testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta ml-auto px-2"
               >
                 {showHistory ? "Nascondi storico" : "Mostra storico"}
               </button>
             )}
           </div>
+
+          {/* ⚠️ La ragione dello stato spento si legge SENZA passarci sopra
+              col dito: su un tablet non esiste il puntatore fermo, quindi
+              un `title` da solo è un'informazione che nessuno vedrà mai. */}
+          {(() => {
+            const attuale = statoRicetta(
+              recipe.pronta_per_carta,
+              recipe.in_carta,
+              recipe.ritirata_il
+            );
+            const bloccati = RECIPE_STATI.map((s) => motivoStato(s.value, recipe, menuAttivo))
+              .filter((i) => i.impedito && i.stato !== attuale)
+              .map((i) => i.impedito);
+            return bloccati.length > 0 ? (
+              <p className="testo-sala text-b58-charcoal-soft/80 mt-1.5">{bloccati[0]}</p>
+            ) : null;
+          })()}
+
+          {recipe.ritirata_il && (
+            <p className="testo-sala text-b58-charcoal-soft mt-1.5">
+              Ritirata il {formatDate(recipe.ritirata_il)}. Resta qui con la sua storia: non è
+              stata cancellata.
+            </p>
+          )}
+
           {showHistory && (
-            <ul className="mt-2 space-y-1 text-xs text-b58-charcoal-soft">
+            <ul className="mt-2 space-y-1 testo-sala text-b58-charcoal-soft">
               {statusHistory.map((h) => (
                 <li key={h.id}>
-                  {formatDate(h.changed_at)} — {recipeStatusLabel(h.pronta_per_carta, h.in_carta).label}
+                  {formatDate(h.changed_at)} —{" "}
+                  {recipeStatusLabel(h.pronta_per_carta, h.in_carta, null).label}
                 </li>
               ))}
             </ul>
           )}
         </div>
+
+        {/* IN QUALI MENU VA QUESTA RICETTA (24/08, richiesta di Alessio).
+            ⚠️ Prima c'era una strada sola — «mettila nel menu attivo» — e
+            per ogni altro menu bisognava passare dall'Editor Menu e cercare
+            lì il piatto. Qui si vede dove sta e si mette dove serve.
+            ⚠️ Non è un secondo registro: legge e scrive `menu_items`, la
+            stessa tabella dell'Editor Menu. */}
+        {isTitolare && recipe.recipe_type === "piatto_finito" && (
+          <div className="mb-4" id="nei-menu">
+            <label className={labelClass}>Nei menu</label>
+            {/* ⚠️ «NON LO SO» NON È «NON C'È NIENTE» (19/08): se la lettura
+                è fallita, un elenco vuoto direbbe con calma che non esiste
+                nessun menu — una frase tranquilla e falsa. Il caso si
+                distingue prima di disegnare. */}
+            {erroreMenu ? null : menuDentro.length === 0 ? (
+              <p className="testo-sala text-b58-charcoal-soft/70">
+                Non c&rsquo;è ancora nessun menu.{" "}
+                <Link to="/ricettario/menu/nuovo" className="underline text-b58-terracotta">
+                  Creane uno
+                </Link>
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {menuDentro.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => cambiaMenu(m)}
+                    disabled={salvandoMenu === m.id}
+                    className={`tocco-riga rounded-lg testo-sala px-3 border transition-colors ${
+                      m.voce
+                        ? "bg-b58-cream-dark border-b58-charcoal/20 text-b58-charcoal"
+                        : "border-b58-charcoal/15 text-b58-charcoal-soft hover:border-b58-charcoal/40"
+                    }`}
+                  >
+                    {m.voce ? "✓ " : "+ "}
+                    {m.name}
+                    {/* ⚠️ Il menu in servizio si distingue: metterci dentro
+                        un piatto lo porta davanti ai clienti, gli altri no. */}
+                    {m.is_active && (
+                      <span className="text-b58-olive"> · in servizio</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {erroreMenu && (
+              <p className="testo-sala text-b58-terracotta-dark mt-1.5">{erroreMenu}</p>
+            )}
+          </div>
+        )}
 
         <div className="mb-4">
           <label className={labelClass}>Descrizione per il menu</label>
@@ -832,7 +1032,7 @@ export default function RicettaDetail() {
               className="w-full flex items-center justify-between rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm"
             >
               <span className="text-b58-charcoal">
-                Bocconcini
+                Finger
                 {fingerDentro.size > 0 && (
                   <span className="text-b58-charcoal-soft"> · {fingerDentro.size} dentro</span>
                 )}
@@ -910,16 +1110,17 @@ export default function RicettaDetail() {
                             ? `/ricettario/ricette/${ri.component.id}`
                             : `/ricettario/ingredienti/${ri.ingredient.id}`
                         }
+                        state={isComponent ? passoDaQui(recipe?.name) : undefined}
                         className="hover:text-b58-terracotta"
                       >
                         {isComponent ? ri.component.name : ri.ingredient.name}
                       </Link>
                       {/* ⚠️ Il componente si chiama col SUO nome: dal 19/08
-                          può essere un bocconcino, e un'etichetta fissa
+                          può essere un finger, e un'etichetta fissa
                           «preparazione» direbbe una cosa falsa. */}
                       {isComponent && (
                         <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                          {ri.component.recipe_type === "finger" ? "bocconcino" : "preparazione"}
+                          {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
                         </span>
                       )}
                       {ri.is_optional && (
@@ -992,10 +1193,10 @@ export default function RicettaDetail() {
                 }`}
               >
                 {/* ⚠️ Il cartellino dice quello che la tendina contiene
-                    davvero: da qui si scelgono anche i bocconcini, e la
+                    davvero: da qui si scelgono anche i finger, e la
                     parola «Preparazione» da sola sarebbe piu' stretta del
-                    vero. Si allarga solo quando i bocconcini esistono. */}
-                {fingers.length > 0 ? "Preparazione o bocconcino" : "Preparazione"}
+                    vero. Si allarga solo quando i finger esistono. */}
+                {fingers.length > 0 ? "Preparazione o finger" : "Preparazione"}
               </button>
             </div>
           )}
@@ -1023,7 +1224,7 @@ export default function RicettaDetail() {
                   <option value="">Seleziona…</option>
                   {filteredPreparations.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.recipe_type === "finger" ? `${p.name} · bocconcino` : p.name}
+                      {p.recipe_type === "finger" ? `${p.name} · finger` : p.name}
                     </option>
                   ))}
                 </select>
@@ -1122,6 +1323,7 @@ export default function RicettaDetail() {
                 <li key={u.used_in_recipe_id} className="text-sm text-b58-charcoal-soft">
                   <Link
                     to={`/ricettario/ricette/${u.used_in_recipe_id}`}
+                    state={passoDaQui(recipe?.name)}
                     className="text-b58-charcoal hover:text-b58-terracotta"
                   >
                     {u.used_in_recipe_name}

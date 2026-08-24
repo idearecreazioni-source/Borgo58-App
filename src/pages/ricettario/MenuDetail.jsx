@@ -461,7 +461,18 @@ export default function MenuDetail() {
                   {sectionItems.map((item) => (
                     <tr key={item.id} className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="py-2 text-b58-charcoal">
-                        <Link to={`/ricettario/ricette/${item.recipe_id}`} className="hover:text-b58-terracotta">
+                        {/* ⚠️ Il passo porta la PROPRIA destinazione: entrando
+                            in un piatto da qui, il ritorno deve riportare al
+                            menu, non all'elenco delle ricette. */}
+                        <Link
+                          to={`/ricettario/ricette/${item.recipe_id}`}
+                          state={{
+                            percorso: [
+                              { id, nome: menu?.name ?? "", a: `/ricettario/menu/${id}` },
+                            ],
+                          }}
+                          className="hover:text-b58-terracotta"
+                        >
                           {item.recipe.name}
                         </Link>
                         {isOutOfSeason(item.recipe.seasonality) && (

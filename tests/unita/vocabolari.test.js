@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   guardieSospette,
   problemiVocabolari,
+  SPECCHI_ESENTI,
   specchiNonDichiarati,
 } from "../../src/lib/calcoli/vocabolari";
 
@@ -188,5 +189,38 @@ describe("il lato JavaScript si costruisce da solo", () => {
     // Solo SECONDO: la soglia, la funzione, l'array di numeri e l'elenco
     // vuoto non sono menu a tendina.
     expect(nonDichiarati).toEqual(["SECONDO"]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Gli elenchi esenti — 24/08/2026
+// ---------------------------------------------------------------------
+describe("un elenco che non rispecchia nessuna colonna si dichiara", () => {
+  it("un elenco esente non viene più segnalato", () => {
+    const modulo = { FINTO_DERIVATO: [{ value: "a" }, { value: "b" }] };
+    const esenti = [{ costante: "FINTO_DERIVATO", perche: "è derivato da tre colonne diverse" }];
+    expect(specchiNonDichiarati(modulo, [], esenti)).toEqual([]);
+  });
+
+  it("MA UN ELENCO NUOVO CONTINUA A ESSERE SEGNALATO — la rete non si è spenta", () => {
+    // ⚠️ È la controprova che discrimina: senza di lei, un'esenzione
+    // scritta male (o un elenco vuoto di esenti passato per sbaglio)
+    // spegnerebbe la rete e la prova sopra passerebbe lo stesso.
+    const modulo = {
+      FINTO_DERIVATO: [{ value: "a" }],
+      FINTO_NUOVO: [{ value: "x" }],
+    };
+    const esenti = [{ costante: "FINTO_DERIVATO", perche: "derivato" }];
+    expect(specchiNonDichiarati(modulo, [], esenti)).toEqual(["FINTO_NUOVO"]);
+  });
+
+  it("ogni esente porta la sua ragione scritta", () => {
+    // ⚠️ Un'eccezione senza ragione si allarga da sola: chi la legge fra
+    // sei mesi non sa se vale ancora. La prova pretende che ci sia, e che
+    // non sia una frase di comodo.
+    for (const e of SPECCHI_ESENTI) {
+      expect(e.perche, `${e.costante} è esente ma non dice perché`).toBeTruthy();
+      expect(e.perche.length).toBeGreaterThan(40);
+    }
   });
 });

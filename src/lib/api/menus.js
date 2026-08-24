@@ -100,3 +100,36 @@ export async function listIngredientiDelMenu(menuId) {
   if (error) throw error;
   return data ?? [];
 }
+
+// IN QUALI MENU STA QUESTA RICETTA (24/08/2026, blocco 2(c)).
+//
+// Alessio: *«aggiungi anche la possibilità di scegliere IN QUALE MENU va
+// una ricetta»*. Fino a oggi la scheda della ricetta offriva un solo
+// collegamento — «mettila nel menu attivo» — e per ogni altro menu
+// bisognava passare dall'Editor Menu e cercarla lì.
+//
+// ⚠️ SI LEGGE, NON SI DUPLICA: la verità su chi sta in che menu resta
+// `menu_items`, la stessa tabella da cui la legge l'Editor Menu. Questa
+// funzione è una domanda posta da un'angolatura diversa — «dove sta questo
+// piatto» invece di «cosa c'è in questo menu» — non un secondo registro.
+// È anche la struttura su cui l'Editor Menu, quando verrà rifatto, potrà
+// pescare i piatti da qui invece di farli riscrivere.
+export async function menuDellaRicetta(recipeId) {
+  const [{ data: menus, error: e1 }, { data: items, error: e2 }] = await Promise.all([
+    // ⚠️ Le colonne si chiedono al database, non a memoria: la prima
+    // versione di questa riga chiedeva `service_type`, che in `menus` non
+    // esiste — PostgREST rispondeva **400** e la scheda della ricetta
+    // restava a «Caricamento…» per sempre. Trovato aprendola, non
+    // rileggendo: lint e build erano puliti.
+    supabase.from("menus").select("id, name, is_active").order("name"),
+    supabase.from("menu_items").select("id, menu_id, selling_price").eq("recipe_id", recipeId),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+
+  const dentro = Object.fromEntries((items ?? []).map((i) => [i.menu_id, i]));
+  return (menus ?? []).map((m) => ({
+    ...m,
+    voce: dentro[m.id] ?? null, // null = questo piatto non è in questo menu
+  }));
+}

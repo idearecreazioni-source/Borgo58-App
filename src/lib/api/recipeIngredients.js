@@ -2,7 +2,7 @@ import { supabase } from "../supabase";
 
 // ⚠️ `recipe_type` sul componente serve a chiamarlo col suo nome: dal
 // 19/08 dentro una ricetta possono entrare le preparazioni **e i finger**, e
-// l'etichetta fissa «preparazione» direbbe una cosa falsa su un bocconcino.
+// l'etichetta fissa «preparazione» direbbe una cosa falsa su un finger.
 // È la famiglia di difetto vista tre volte in tre giorni — due parti dello
 // stesso programma che raccontano cose diverse dello stesso fatto.
 const SELECT =

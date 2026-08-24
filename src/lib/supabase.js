@@ -42,7 +42,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 //     ⚠️ Come per le letture annidate, la cosa utile non è «non può
 //     succedere» ma **da cosa dipende**. Oggi non morde perché le letture
 //     che quelle funzioni fanno sono **piccole per costruzione**: una
-//     selezione non ha mille bocconcini, una mail non ha mille allegati,
+//     un piatto non ha mille finger, una mail non ha mille allegati,
 //     una copia legge le righe di UNA ricetta. La risposta cambia il giorno
 //     in cui una funzione online legge **una tabella che cresce nel tempo**
 //     — l'archivio documenti intero, lo storico dei prezzi, un registro —

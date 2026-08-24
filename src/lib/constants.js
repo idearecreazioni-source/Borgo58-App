@@ -91,22 +91,40 @@ export const RECIPE_CATEGORIES = [
   { value: "primo", label: "Primo" },
   { value: "secondo", label: "Secondo" },
   { value: "dolce", label: "Dolce" },
+  // 🔴 IL FINGER FOOD È UNA CATEGORIA, non più un'etichetta accanto al
+  // nome (24/08/2026, decisione di Alessio). ⚠️ La differenza non è di
+  // forma: un piatto di questa categoria ha un **formato diverso** — al
+  // posto di ingredienti e preparazioni ha una lista di finger, il costo
+  // è la somma dei finger che contiene, e gli allergeni si sommano da
+  // quelli. Un'etichetta non poteva reggere niente di tutto questo.
+  { value: "finger_food", label: "Finger food" },
 ];
+
+// È un piatto composto di finger? — la domanda in un posto solo.
+// ⚠️ Si guarda la CATEGORIA e non «contiene finger»: un piatto di finger
+// food appena creato non ne contiene ancora nessuno, e deve comunque
+// aprirsi col formato giusto. Dedurlo dal contenuto vorrebbe dire che il
+// formato cambia sotto le mani mentre lo si compone.
+export const eFingerFood = (category) => category === "finger_food";
 
 export const RECIPE_TYPES = [
   { value: "piatto_finito", label: "Piatto finito" },
   { value: "preparazione", label: "Preparazione (semilavorato)" },
   // 🔴 IL FINGER (19/08/2026, blocco 1 del mandato dei finger food). È un
-  // bocconcino finito che entra in una selezione — non una preparazione, e
-  // la differenza non è di parole: una preparazione si PRODUCE a dosi, e
-  // finisce in Produzioni e sotto la sorveglianza delle rese. Un finger no:
-  // si compone e basta.
+  // pezzo finito che entra in un piatto di finger food — non una
+  // preparazione, e la differenza non è di parole: una preparazione si
+  // PRODUCE a dosi, e finisce in Produzioni e sotto la sorveglianza delle
+  // rese. Un finger no: si compone e basta.
+  //
+  // ⚠️ SI CHIAMAVA «BOCCONCINO» fino al 24/08, e la parola è stata tolta
+  // ovunque su richiesta di Alessio: due nomi per la stessa cosa fanno
+  // cercare due cose. Il valore nel database era già `finger`.
   //
   // ⚠️ E come una preparazione, un finger DEVE avere una resa (1 pezzo): il
   // calcolo del costo e dello scarico divide per la resa del componente, e
   // senza resa il risultato è NULL — cioè costo e merce che spariscono
   // senza nessun errore. Il vincolo è nel database (`componente_richiede_resa`).
-  { value: "finger", label: "Finger (bocconcino di una selezione)" },
+  { value: "finger", label: "Finger (un pezzo di un piatto di finger food)" },
 ];
 
 // PUÒ STARE DENTRO UN'ALTRA RICETTA? — la domanda in un posto solo.
@@ -122,12 +140,41 @@ export const RECIPE_TYPES = [
 // senza. Il permesso vero lo dà comunque il database.
 export const eComponente = (recipeType) => recipeType !== "piatto_finito";
 
-// Sostituisce il vecchio status unico: due flag indipendenti, non un enum
-// (§4 del brief, revisione 02/08/2026). Etichetta derivata, non salvata.
-export const recipeStatusLabel = (prontaPerCarta, inCarta) => {
-  if (inCarta) return { label: "In carta", colorClass: "bg-b58-olive" };
-  if (prontaPerCarta) return { label: "Pronta (non in carta)", colorClass: "bg-b58-gold" };
-  return { label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" };
+// I QUATTRO STATI DI UNA RICETTA (24/08/2026, riscritti su richiesta di
+// Alessio: *«una striscia sola con quattro stati»*).
+//
+// ⚠️ NON SONO UNA COLONNA, e non devono diventarlo: «in sviluppo» e
+// «pronta» sono `pronta_per_carta`, «in carta» è un **RIFLESSO** che dice
+// se la ricetta sta in un menu attivo (16/08), «ritirata» è una data.
+// Fondere le tre cose in un enum sarebbe più bello a vedersi e
+// distruggerebbe il riflesso, cioè l'unica ragione per cui «in carta» non
+// può mentire. L'etichetta si deriva, non si salva.
+//
+// ⚠️ L'ORDINE È QUELLO DEL PERCORSO DI UN PIATTO, e la striscia lo mostra:
+// in sviluppo → pronta → in carta → ritirata. Le prime tre si attraversano
+// in avanti, l'ultima è un'uscita di lato.
+export const RECIPE_STATI = [
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "pronta", label: "Pronta per la carta", colorClass: "bg-b58-gold" },
+  { value: "in_carta", label: "In carta", colorClass: "bg-b58-olive" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+];
+
+// ⚠️ «Ritirata» VINCE su tutto il resto, e non è una scelta di comodo: il
+// database impedisce che una ricetta ritirata sia anche in carta (le due
+// porte chiuse dalla 20260824000025), quindi qui i due casi non si possono
+// presentare insieme. Se un giorno si presentassero, sarebbe un difetto —
+// e mostrare «ritirata» è il verso prudente: fa cercare il problema.
+export const statoRicetta = (prontaPerCarta, inCarta, ritirataIl) => {
+  if (ritirataIl) return "ritirata";
+  if (inCarta) return "in_carta";
+  if (prontaPerCarta) return "pronta";
+  return "in_sviluppo";
+};
+
+export const recipeStatusLabel = (prontaPerCarta, inCarta, ritirataIl) => {
+  const stato = statoRicetta(prontaPerCarta, inCarta, ritirataIl);
+  return RECIPE_STATI.find((s) => s.value === stato);
 };
 
 export const VIDEO_PLATFORMS = [

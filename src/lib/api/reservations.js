@@ -219,7 +219,7 @@ export async function setReservationDeposit(reservationId, amount) {
 // 🔴 IL CALCOLO NON SI FA PIÙ QUI (20/08/2026, blocco 0 del mandato dei
 // preventivi). La versione precedente sommava nel browser i soli ingredienti
 // DIRETTI delle ricette del menu: una riga che contiene una preparazione o un
-// bocconcino non ha nessun ingrediente, e la funzione ne leggeva il prezzo.
+// finger non ha nessun ingrediente, e la funzione ne leggeva il prezzo.
 // Non dava un numero sbagliato — **si rompeva**, e si sarebbe rotta su quasi
 // ogni menu vero, perché Alessio scompone sempre. Ignorava anche lo scarto e
 // la resa dei componenti.
