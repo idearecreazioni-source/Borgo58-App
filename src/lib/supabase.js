@@ -116,14 +116,19 @@ function bersaglio(url) {
 // cercando di spiegarlo**.
 const spiegazioni = new Map();
 
-async function spiegazioneDelVincolo(nome) {
+async function spiegazioneDelVincolo(nome, autorizzazione) {
   if (spiegazioni.has(nome)) return spiegazioni.get(nome);
   try {
     const r = await fetch(`${supabaseUrl}/rest/v1/rpc/spiega_vincolo`, {
       method: "POST",
       headers: {
         apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`,
+        // 🔴 IL TOKEN DI CHI HA APPENA RICEVUTO IL RIFIUTO, non la chiave
+        // pubblica. Trovato provando, non rileggendo: con la chiave
+        // pubblica la spiegazione tornava vuota e a schermo restava la
+        // frase generica — cioe' il portiere messo a questa funzione la
+        // rendeva muta proprio nel momento in cui serviva.
+        Authorization: autorizzazione || `Bearer ${supabaseAnonKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ p_nome: nome }),
@@ -145,7 +150,7 @@ async function spiegazioneDelVincolo(nome) {
 // `{ errore: { codice, messaggio } }`. Guardando solo `message`, metà
 // dei rifiuti sarebbe rimasta in inglese — e sarebbe la metà che riguarda
 // le scritture che toccano più tabelle, cioè quelle importanti.
-async function conFraseItaliana(risposta) {
+async function conFraseItaliana(risposta, autorizzazione) {
   let corpo;
   try {
     corpo = await risposta.clone().json();
@@ -155,7 +160,7 @@ async function conFraseItaliana(risposta) {
   const nome = vincoloNelCorpo(corpo);
   if (!nome) return risposta;
 
-  const frase = await spiegazioneDelVincolo(nome);
+  const frase = await spiegazioneDelVincolo(nome, autorizzazione);
   const tradotto = conFraseTradotta(corpo, nome, fraseDelRifiuto(frase, nome));
   const nuovoCorpo = JSON.stringify({
     ...tradotto,
@@ -200,7 +205,7 @@ async function fetchCheDenuncia(input, init) {
   // punto e non altrove.
   if (!elenco) {
     const risposta = await fetch(richiesta);
-    return risposta.ok ? risposta : conFraseItaliana(risposta);
+    return risposta.ok ? risposta : conFraseItaliana(risposta, richiesta.headers.get("Authorization"));
   }
 
   const intestazioni = new Headers(richiesta.headers);
@@ -221,7 +226,7 @@ async function fetchCheDenuncia(input, init) {
     const totali = Number(m[3]);
     if (ricevute < totali) segnalaLetturaTagliata(bersaglio(url), ricevute, totali);
   }
-  return risposta.ok ? risposta : conFraseItaliana(risposta);
+  return risposta.ok ? risposta : conFraseItaliana(risposta, richiesta.headers.get("Authorization"));
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
