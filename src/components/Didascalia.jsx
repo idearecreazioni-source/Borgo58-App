@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { dopoIlGesto } from "../lib/calcoli/didascalia";
 
 // La spiegazione che si apre da un segno, accanto al titolo.
 //
@@ -55,6 +56,18 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
     };
   }, [aperta]);
 
+  // Traduce l'evento del browser in un gesto e chiede alla regola cosa
+  // fare. ⚠️ LA REGOLA NON STA QUI: sta in `calcoli/didascalia.js`, dove
+  // esistono le prove — in questo progetto le prove non hanno un ambiente
+  // DOM, quindi un componente non si può provare e una decisione sì,
+  // purché stia fuori. Questo segno si è rotto due volte in due giorni,
+  // sempre perché i tre modi di arrivarci producono sequenze diverse.
+  const reagisci = (gesto, e) => {
+    const daTastiera = gesto === "fuoco" && e.target.matches(":focus-visible");
+    const puntatore = e.pointerType ?? e.nativeEvent?.pointerType;
+    setAperta((v) => dopoIlGesto(gesto, { puntatore, daTastiera }, v));
+  };
+
   return (
     <span ref={contenitore} className="relative inline-flex align-middle print:hidden">
       <button
@@ -62,18 +75,32 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         aria-label={etichetta}
         aria-expanded={aperta}
         aria-controls={id}
-        onClick={() => setAperta((v) => !v)}
+        // 🔴 COL MOUSE IL CLIC NON FA TOGGLE, E SENZA QUESTA RIGA IL SEGNO
+        // ERA INUTILIZZABILE COL MOUSE (24/08/2026). La sequenza vera di un
+        // mouse è: il cursore ENTRA — e il passaggio apre — e solo dopo
+        // arriva il clic, che faceva toggle e **richiudeva**. Quindi
+        // cliccando col mouse la didascalia si chiudeva sempre, e chi
+        // clicca lo fa proprio perché la vuole aperta.
+        //
+        // ⚠️ NON L'AVEVA VISTO NESSUNA RILETTURA, e nemmeno la prova con
+        // gli eventi finti: `pointerenter` sintetico non arriva a React
+        // (che lo simula da `pointerover`), quindi il clic partiva su una
+        // didascalia chiusa e il toggle sembrava giusto. **L'ha trovato un
+        // clic vero con un mouse vero**, che è quello che Alessio ha
+        // chiesto di fare: «non deve restare una cosa scritta e mai
+        // esercitata».
+        //
+        // ⚠️ E col mouse non si perde niente: la didascalia si chiude
+        // spostando il cursore, che è il gesto naturale. Il toggle resta
+        // per il dito e per la tastiera, dove non esiste un «uscire».
+        onClick={(e) => reagisci("clic", e)}
         // ⚠️ `pointerType === "mouse"` e non `onMouseEnter`: sui browser
         // dei tablet il tocco emette ANCHE gli eventi del mouse, quindi
         // un dito aprirebbe col passaggio e richiuderebbe col clic —
         // cioè non si aprirebbe mai. Trovato ragionando sul tablet, che
         // è lo schermo su cui questo gestionale vive.
-        onPointerEnter={(e) => {
-          if (e.pointerType === "mouse") setAperta(true);
-        }}
-        onPointerLeave={(e) => {
-          if (e.pointerType === "mouse") setAperta(false);
-        }}
+        onPointerEnter={(e) => reagisci("entra", e)}
+        onPointerLeave={(e) => reagisci("esce", e)}
         // 🔴 IL FOCUS APRE SOLO SE ARRIVA DALLA TASTIERA, e senza questa
         // riga il segno non funzionava col mouse ne col dito. Misurato, non
         // dedotto: premendo, il pulsante prende il focus PRIMA del clic —
@@ -88,10 +115,8 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         // quando il focus arriva da Tab, falso quando arriva da un tocco o
         // da un clic. Chiederlo a lui invece di indovinarlo dal tipo di
         // puntatore e anche l accessibilita fatta come si deve.
-        onFocus={(e) => {
-          if (e.target.matches(":focus-visible")) setAperta(true);
-        }}
-        onBlur={() => setAperta(false)}
+        onFocus={(e) => reagisci("fuoco", e)}
+        onBlur={(e) => reagisci("fuocoVia", e)}
         // ⚠️ `tocco-bottone` porta gia' con se' 0,85 cm veri in altezza E
         // in larghezza: la misura sta nel foglio di stile, in un posto
         // solo, e ricopiarla qui vorrebbe dire due numeri che un giorno
