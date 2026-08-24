@@ -74,7 +74,23 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") setAperta(false);
         }}
-        onFocus={() => setAperta(true)}
+        // 🔴 IL FOCUS APRE SOLO SE ARRIVA DALLA TASTIERA, e senza questa
+        // riga il segno non funzionava col mouse ne col dito. Misurato, non
+        // dedotto: premendo, il pulsante prende il focus PRIMA del clic —
+        // `onFocus` apriva, e subito dopo `onClick` faceva toggle e
+        // richiudeva. La didascalia lampeggiava e spariva.
+        //
+        // ⚠️ E il mio primo test NON lo vedeva: `b.click()` programmatico
+        // non da il focus, quindi esercitava una sequenza che nella realta
+        // non esiste. La sequenza vera e focus-poi-clic.
+        //
+        // `:focus-visible` e la distinzione che il browser fa gia": e vero
+        // quando il focus arriva da Tab, falso quando arriva da un tocco o
+        // da un clic. Chiederlo a lui invece di indovinarlo dal tipo di
+        // puntatore e anche l accessibilita fatta come si deve.
+        onFocus={(e) => {
+          if (e.target.matches(":focus-visible")) setAperta(true);
+        }}
         onBlur={() => setAperta(false)}
         // ⚠️ `tocco-bottone` porta gia' con se' 0,85 cm veri in altezza E
         // in larghezza: la misura sta nel foglio di stile, in un posto
