@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
+import { inFrazione, inPunti } from "../../lib/calcoli/percentuali";
 import {
   aggiornaScenario,
   creaScenarioDaFoglio,
@@ -71,10 +72,12 @@ const MESE_VUOTO = (m) => ({
 
 const num = (v) => (v === "" || v == null ? 0 : Number(v));
 // Nel gestionale le percentuali si scrivono come le dice Alessio (25),
-// nel database vivono come frazione (0,25): la conversione sta qui, in un
-// posto solo, e non in mezzo ai calcoli.
-const daPercento = (v) => num(v) / 100;
-const aPercento = (v) => (v == null ? "" : String(Math.round(Number(v) * 10000) / 100));
+// nel database vivono come frazione (0,25). ⚠️ La conversione non sta piu'
+// qui: sta in `calcoli/percentuali.js`, perche' dal 24/08 la usa anche la
+// tesoreria — due copie della stessa regola sono la forma in cui il debito
+// del «percento» si riproduce.
+const daPercento = (v) => inFrazione(num(v));
+const aPercento = inPunti;
 // `String(null)` dà la parola «null», che in un campo numerico diventa NaN
 // alla prossima scrittura: un valore mai impostato deve tornare vuoto.
 const aTesto = (v) => (v == null ? "" : String(v));

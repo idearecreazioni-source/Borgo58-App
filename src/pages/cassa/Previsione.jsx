@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { inFrazione, inPunti } from "../../lib/calcoli/percentuali";
 import { Link } from "react-router-dom";
 import {
   aggiornaScadenzaPrevista,
@@ -99,7 +100,11 @@ export default function Previsione() {
       if (ancheImpostazioni) {
         setImpostazioni({
           giorniAccredito: imp?.giorni_accredito_pos ?? "",
-          commissione: imp?.commissione_pos_percento ?? "",
+          // ⚠️ Il database la conserva come frazione (0,015), la schermata
+          // la mostra come la dice la banca (1,5). Dal 24/08 la conversione
+          // è la stessa della Proiezione: era l'unico fatto del gestionale
+          // conservato in due unità diverse in due tabelle.
+          commissione: inPunti(imp?.commissione_pos_percento),
         });
       }
     });
@@ -122,7 +127,10 @@ export default function Previsione() {
 
   const salvaPos = async () => {
     try {
-      await salvaImpostazioniTesoreria(entityId, impostazioni);
+      await salvaImpostazioniTesoreria(entityId, {
+        ...impostazioni,
+        commissione: inFrazione(impostazioni.commissione),
+      });
       // E qui: le ha appena salvate lui, quindi il database ha ragione.
       await ricarica({ ancheImpostazioni: true });
     } catch (e) {
@@ -528,7 +536,7 @@ export default function Previsione() {
                     type="number"
                     step="0.01"
                     min="0"
-                    max="10"
+                    max="100"
                     value={impostazioni.commissione}
                     onChange={(e) => setImpostazioni((i) => ({ ...i, commissione: e.target.value }))}
                     placeholder="non lo so"
