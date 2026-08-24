@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { conFraseTradotta, fraseDelRifiuto, vincoloNelCorpo } from "./calcoli/vincoli";
 import { segnalaLetturaTagliata } from "./lettureTagliate";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -88,6 +89,88 @@ function bersaglio(url) {
   return nudo.startsWith("rpc/") ? nudo.slice(4) : nudo;
 }
 
+// =====================================================================
+// UN RIFIUTO SI LEGGE IN ITALIANO
+// =====================================================================
+// 🔴 Le reti sui numeri assurdi (24/08/2026) fermano il dato — che è il
+// punto — ma la frase che arriva a chi sta lavorando è quella di Postgres:
+// «violates check constraint "scenario_frazioni_sono_frazioni"». Misurato
+// dal browser chiamando l'operazione vera, non dedotto.
+//
+// ⚠️ UNA REGOLA SOLA, deciso da Alessio: la traduzione sta **qui**, nel
+// punto unico da cui passa ogni richiesta del gestionale — letture,
+// scritture dirette e funzioni online insieme — e non in ogni schermata
+// che mostra un errore. *«Due regole per lo stesso limite significa che un
+// giorno una cambia e l'altra no, ed è esattamente così che nascono le
+// frasi diventate false.»*
+//
+// ⚠️ LA SPIEGAZIONE SI CHIEDE AL DATABASE, e non è una copia in più: sono
+// i `comment on constraint` che ogni vincolo di questo progetto ha già,
+// scritti accanto alla regola che spiegano. Copiarli qui vorrebbe dire
+// tenerli allineati a mano — cioè il difetto che si sta chiudendo.
+//
+// ⚠️ E SI CHIEDE SOLO QUANDO SERVE. Il caso è raro (un rifiuto), quindi
+// una richiesta in più non pesa; e non può essere ricorsiva, perché
+// leggere una spiegazione non viola nessun vincolo. Se quella richiesta
+// fallisce, si tiene il messaggio originale: **mai peggiorare un errore
+// cercando di spiegarlo**.
+const spiegazioni = new Map();
+
+async function spiegazioneDelVincolo(nome) {
+  if (spiegazioni.has(nome)) return spiegazioni.get(nome);
+  try {
+    const r = await fetch(`${supabaseUrl}/rest/v1/rpc/spiega_vincolo`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_nome: nome }),
+    });
+    const testo = r.ok ? await r.json() : null;
+    const frase = typeof testo === "string" && testo.trim() ? testo : null;
+    spiegazioni.set(nome, frase);
+    return frase;
+  } catch {
+    return null;
+  }
+}
+
+// Riscrive il corpo di una risposta di rifiuto mettendoci la frase
+// italiana, **dovunque il messaggio si trovi**.
+//
+// 🔴 E LE FORME SONO DUE, misurate il 24/08 e non dedotte: PostgREST
+// risponde `{ code, message, … }`, il corridoio risponde
+// `{ errore: { codice, messaggio } }`. Guardando solo `message`, metà
+// dei rifiuti sarebbe rimasta in inglese — e sarebbe la metà che riguarda
+// le scritture che toccano più tabelle, cioè quelle importanti.
+async function conFraseItaliana(risposta) {
+  let corpo;
+  try {
+    corpo = await risposta.clone().json();
+  } catch {
+    return risposta;
+  }
+  const nome = vincoloNelCorpo(corpo);
+  if (!nome) return risposta;
+
+  const frase = await spiegazioneDelVincolo(nome);
+  const tradotto = conFraseTradotta(corpo, nome, fraseDelRifiuto(frase, nome));
+  const nuovoCorpo = JSON.stringify({
+    ...tradotto,
+    // 🔴 L'originale non si butta: chi deve indagare deve ancora poterlo
+    // leggere, e una traduzione che cancella la fonte è una traduzione di
+    // cui non ci si può fidare.
+    vincolo: nome,
+  });
+  return new Response(nuovoCorpo, {
+    status: risposta.status,
+    statusText: risposta.statusText,
+    headers: risposta.headers,
+  });
+}
+
 async function fetchCheDenuncia(input, init) {
   const richiesta = new Request(input, init);
   const url = richiesta.url;
@@ -111,7 +194,14 @@ async function fetchCheDenuncia(input, init) {
     !parametri.has("offset") &&
     !(richiesta.headers.get("Accept") || "").includes(OGGETTO_SOLO);
 
-  if (!elenco) return fetch(richiesta);
+  // ⚠️ Tutto quello che non è una lettura di elenco — cioè ogni
+  // scrittura, ogni RPC e ogni chiamata alle funzioni online — passa
+  // comunque da qui, ed è per questo che la traduzione vive in questo
+  // punto e non altrove.
+  if (!elenco) {
+    const risposta = await fetch(richiesta);
+    return risposta.ok ? risposta : conFraseItaliana(risposta);
+  }
 
   const intestazioni = new Headers(richiesta.headers);
   const preferenze = intestazioni.get("Prefer");
@@ -131,7 +221,7 @@ async function fetchCheDenuncia(input, init) {
     const totali = Number(m[3]);
     if (ricevute < totali) segnalaLetturaTagliata(bersaglio(url), ricevute, totali);
   }
-  return risposta;
+  return risposta.ok ? risposta : conFraseItaliana(risposta);
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
