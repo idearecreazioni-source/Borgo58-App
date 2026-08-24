@@ -15,6 +15,7 @@ import CampoGiornata from "../../components/CampoGiornata";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import { getEntities } from "../../lib/api/entities";
 import { DISCOUNT_GIFT_TYPES, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 
@@ -181,23 +182,26 @@ export default function ScontiOmaggi() {
         )}
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-2">Sconti e omaggi</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-2">
-        Sconto e omaggio sono operazioni distinte (§6): uno sconto è una vendita a prezzo ridotto (passa
-        comunque dal registratore telematico), un omaggio è un conto che il cliente non paga affatto e resta
-        solo qui nel gestionale. Se e quando gli omaggi sistematici generano un obbligo di autofattura TD27
-        dipende da volume e frequenza — <strong>da verificare con Laura</strong>, non è automatico.
-        {/* Confermato da Alessio il 14/08: un omaggio non e' un movimento
-            di soldi, quindi non scrive niente in prima nota. Cio' che
-            costa davvero e' il cibo uscito, ed e' scritto qui accanto —
-            non in cassa, dove non e' mai passato un euro. */}
-        {" "}
-        <strong>Un omaggio non tocca la prima nota</strong>: nessun euro entra e nessuno esce. Quello
-        che ti è costato davvero sono gli ingredienti, ed è la colonna qui sotto.
-      </p>
-      <p className="text-xs text-b58-charcoal-soft/70 mb-6">
-        Le righe segnate con un pallino colorato provengono da un device diverso dal tuo — utile per un
-        controllo interno leggero, invisibile allo staff.
+      {/* ⚠️ QUI C'ERANO TRE COSE IN UN PARAGRAFO SOLO, e leggendole di
+          seguito si perdeva quella che conta. Adesso stanno separate per
+          natura: la differenza fra i due gesti è una SPIEGAZIONE e sta dietro
+          il segno, insieme a cosa vuol dire il pallino accanto a una riga;
+          il TD27 da verificare con Laura è un LIMITE, e resta a schermo. */}
+      <h1 className="font-display text-2xl text-b58-charcoal mb-2">
+        Sconti e omaggi
+        <Didascalia>
+          Sono due gesti distinti. Uno sconto è una vendita a prezzo ridotto e passa
+          comunque dal registratore telematico; un omaggio è un conto che il cliente
+          non paga affatto e resta solo qui nel gestionale. Un omaggio non tocca la
+          prima nota — nessun euro entra e nessuno esce: quello che ti è costato
+          davvero sono gli ingredienti, ed è la colonna qui sotto.
+          {" "}Un pallino accanto a una riga vuol dire che la registrazione arriva da un
+          dispositivo diverso dal tuo: lo vedi solo tu.
+        </Didascalia>
+      </h1>
+      <p className="text-xs text-b58-charcoal-soft mb-6">
+        ⚠️ Se gli omaggi sistematici facciano scattare l&apos;autofattura TD27 dipende da
+        volume e frequenza: <strong>da verificare con Laura</strong>, non è automatico.
       </p>
 
       {error && (

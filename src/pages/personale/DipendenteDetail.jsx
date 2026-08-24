@@ -403,8 +403,12 @@ export default function DipendenteDetail() {
       {/* Buste paga */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
         <h2 className="font-display text-lg text-b58-charcoal mb-1">Buste paga</h2>
-        <p className="text-[11px] text-b58-charcoal-soft/70 mb-4 print:hidden">
-          Archivio: le buste paga le calcola il Consulente del Lavoro, qui si conservano importi e riferimento.
+        {/* ⚠️ RESTA: è il vincolo portante del mandato del 15/08 — l'app
+            legge e mostra, non ricalcola mai le paghe. Due verità sullo
+            stesso numero sono il difetto chiuso sulle imposte. */}
+        <p className="text-[11px] text-b58-charcoal-soft mb-4 print:hidden">
+          ⚠️ Solo archivio: le paghe le calcola il Consulente del Lavoro, qui si
+          conservano importi e riferimento.
         </p>
         {payslips.length > 0 && (
           <table className="w-full text-sm mb-4">

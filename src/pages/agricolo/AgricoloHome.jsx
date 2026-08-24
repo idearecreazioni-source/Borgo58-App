@@ -4,6 +4,7 @@ import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agr
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
 import { CROP_STATUSES, UNITS, formatDate, oggiLocale } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const STATUS_BADGE = {
   pianificato: "bg-b58-charcoal-soft/50",
@@ -123,8 +124,14 @@ export default function AgricoloHome() {
     <div className="max-w-4xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Agricolo / Orto</h1>
-          <p className="text-b58-charcoal-soft mt-1">Colture, semine e raccolti dell'azienda agricola.</p>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Agricolo / Orto
+            <Didascalia>
+              Colture, semine e raccolti. È una società a sé, separata dal ristorante:
+              quello che l&apos;orto produce e la cucina usa passa da una cessione, non
+              da un travaso.
+            </Didascalia>
+          </h1>
         </div>
         <div className="flex gap-2">
           <Link to="/agricolo/cessioni" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">

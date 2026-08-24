@@ -24,6 +24,7 @@ import {
   oggiLocale,
 } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import Didascalia from "../../components/Didascalia";
 
 const today = oggiLocale;
 const thisMonth = meseLocale;
@@ -223,11 +224,17 @@ export default function Mance() {
         )}
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Mance</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Raccolta quotidiana → monte accumulato → distribuzione mensile. Le verifiche del regime (5%, soglia
-        75.000€, tetto 30%) sono un aiuto: il sistema segnala, la decisione e la gestione fiscale restano tue e
-        del Consulente del Lavoro (§6).
+      <h1 className="font-display text-2xl text-b58-charcoal mb-1">
+        Mance
+        <Didascalia>
+          Raccolta quotidiana, monte accumulato, distribuzione mensile. Le mance non
+          sono un ricavo: sono un debito verso chi lavora finché non vengono
+          distribuite, e per questo hanno un loro conto separato.
+        </Didascalia>
+      </h1>
+      <p className="testo-sala text-b58-charcoal-soft mb-6">
+        ⚠️ Le verifiche sul regime agevolato sono un aiuto, non un verdetto: la decisione
+        fiscale resta tua e del Consulente del Lavoro.
       </p>
 
       {error && (

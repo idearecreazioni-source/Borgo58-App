@@ -16,6 +16,7 @@ import DatoNonLetto from "../../components/DatoNonLetto";
 import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import Didascalia from "../../components/Didascalia";
 
 const emptyForm = {
   type: "prenotazione",
@@ -473,10 +474,21 @@ export default function ReservationForm() {
               {loadingNeeds ? "Calcolo…" : "Calcola per " + form.party_size + " ospiti"}
             </button>
           </div>
+          {/* 🔴 ERA DIVENTATA FALSA (24/08/2026, trovata dal censimento delle
+              didascalie): diceva «quel controllo arriverà con il modulo
+              Magazzino», e il Magazzino c'è dal 13 agosto — scarica da solo
+              alla chiusura del conto. ⚠️ Ma il limite VERO resta, ed è un
+              altro: questo conto è un fabbisogno, e nessuno lo confronta con
+              quello che c'è davvero in cella. Cambiata la ragione, non
+              cancellata la riga. */}
           <p className="text-xs text-b58-charcoal-soft mb-4">
-            Quantità scalate sul numero di ospiti, assumendo che ognuno consumi ogni piatto
-            del menu scelto. È il fabbisogno teorico, non una verifica di disponibilità reale
-            a magazzino (quel controllo arriverà con il modulo Magazzino).
+            ⚠️ È il fabbisogno teorico: quanto servirebbe se ognuno mangiasse ogni piatto.
+            Non è un controllo di quello che c&apos;è in cella.
+            <Didascalia etichetta="Come è calcolato">
+              Le quantità delle ricette del menu scelto, scalate sul numero di ospiti e
+              con lo scarto compreso — lo stesso conto che il magazzino usa per scaricare
+              quando il piatto viene servito.
+            </Didascalia>
           </p>
           {needs && (
             needs.length === 0 ? (

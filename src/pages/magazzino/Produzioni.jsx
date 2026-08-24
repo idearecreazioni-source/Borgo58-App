@@ -8,6 +8,7 @@ import {
 } from "../../lib/api/produzioni";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate, formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // Blocco 2: registrare i semilavorati fatti in cucina.
 //
@@ -102,11 +103,14 @@ export default function Produzioni() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
-      <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Produzioni</h1>
-      <p className="text-b58-charcoal-soft mt-1 mb-6">
-        Quello che si fa in cucina: soffritti, ragù, basi. Esce dagli ingredienti ed entra in
-        cella con un suo costo.
-      </p>
+      <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2 mb-6">
+        Produzioni
+        <Didascalia>
+          Quello che si fa in cucina: soffritti, ragù, basi. Registrarne una scarica gli
+          ingredienti dal magazzino e mette in cella una partita nuova col costo di oggi —
+          i rincari di domani non toccano il ragù già fatto.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">

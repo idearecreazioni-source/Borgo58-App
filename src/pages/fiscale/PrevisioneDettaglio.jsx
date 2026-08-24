@@ -11,6 +11,7 @@ import {
 } from "../../lib/api/proiezione";
 import { formatEUR } from "../../lib/constants";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import Didascalia from "../../components/Didascalia";
 
 const MESI = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
 
@@ -248,11 +249,13 @@ export default function PrevisioneDettaglio() {
       {/* --- Il calendario degli esborsi --- */}
       {calendario.length > 0 && (
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">Quando escono i soldi</h2>
-          <p className="text-xs text-b58-charcoal-soft mb-3">
-            Non basta sapere quanto: è la cassa di giugno che tradisce, quando il saldo dell&apos;anno prima
-            e il primo acconto cadono insieme.
-          </p>
+          <h2 className="font-display text-lg text-b58-charcoal mb-3">
+            Quando escono i soldi
+            <Didascalia>
+              Non basta sapere quanto: è la cassa di giugno che tradisce, quando il
+              saldo dell&apos;anno prima e il primo acconto cadono insieme.
+            </Didascalia>
+          </h2>
           {/* ⚠️ Il limite viaggia col numero: senza le imposte dell'anno
               prima, giugno sembra più leggero di quello che sarà. */}
           <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
