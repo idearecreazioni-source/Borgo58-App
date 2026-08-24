@@ -11,6 +11,7 @@ import {
 import { listRecipes } from "../../lib/api/recipes";
 import { formatDate, formatQta, oggiLocale } from "../../lib/constants";
 import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
+import Didascalia from "../../components/Didascalia";
 
 // IL PRODOTTO FERMO (23/08/2026, blocco 3 del mandato). Disegno di Alessio.
 //
@@ -343,14 +344,17 @@ export default function Fermi() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+      {/* ⚠️ La differenza fra questa schermata e le Scadenze è una
+          spiegazione — utile la prima volta, ingombro dalla seconda — e
+          si apre dal segno. */}
+      <h1 className="mb-3 mt-2 text-2xl font-semibold">
         {tutte ? "Tutto quello che hai in casa" : "Fermi da troppo"}
+        <Didascalia>
+          {tutte
+            ? "Ogni partita ancora in giacenza, con le sei risposte per ognuna. In cima quelle ferme da più della loro durata."
+            : "Partite che non vengono toccate da più della loro durata. È un'altra domanda rispetto alle scadenze: lì si guarda la data, qui i movimenti."}
+        </Didascalia>
       </h1>
-      <p className="mb-2 testo-sala text-stone-600">
-        {tutte
-          ? "Ogni partita ancora in giacenza, con le sei risposte per ognuna. In cima quelle ferme da più della loro durata."
-          : "Partite che non vengono toccate da più della loro durata. È un'altra domanda rispetto alle scadenze: lì si guarda la data, qui i movimenti."}
-      </p>
       {/* ⚠️ Il rimando è un BERSAGLIO, non una parola sottolineata dentro
           la frase: misurato col valore del tablet (64) un link inline è
           alto 3,91 mm, contro gli 8,50 che serve al dito. Era l'unico

@@ -7,6 +7,7 @@ import {
   updateFiscalTool,
 } from "../../lib/api/fiscal";
 import { FISCAL_TOOL_CATEGORIES, FISCAL_TOOL_STATUSES, formatDate, labelFor } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const STATUS_BADGE = {
   attivo: "bg-b58-olive",
@@ -105,12 +106,21 @@ export default function CatalogoStrumenti() {
         </button>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Catalogo strumenti fiscali</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
-        Deduzioni, crediti d'imposta, bandi e incentivi rilevanti per Borgo 58. Popolato a mano per ora; in
-        futuro il modulo Ricerca ricorrente lo aggiornerà da solo (§3.7). Con una scadenza, viene creato un
-        promemoria in Agenda.
-      </p>
+      {/* ⚠️ La prima frase ripeteva il titolo — «deduzioni, crediti
+          d'imposta, bandi e incentivi» è «strumenti fiscali» detto in
+          quattro parole invece che in due — e il rimando «(§3.7)» è a un
+          documento che chi guarda questa schermata non ha davanti.
+          ⚠️ Resta a scomparsa la parte che dice davvero qualcosa: che
+          l'elenco lo compila lui, e che una scadenza scritta qui produce
+          un promemoria altrove. La seconda soprattutto: è un EFFETTO, e
+          gli effetti si scoprono male. */}
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Catalogo strumenti fiscali
+        <Didascalia>
+          Lo compili tu: in futuro il modulo Ricerca ricorrente lo aggiornerà da solo. Se dai una
+          scadenza a uno strumento, il gestionale crea da sé un promemoria in Agenda.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>

@@ -4,6 +4,7 @@ import { getEntities } from "../../lib/api/entities";
 import { creaScenarioDaFoglio, listaScenari, cancellaScenario } from "../../lib/api/proiezione";
 import { decompressioneDisponibile, leggiFoglioExcel } from "../../lib/foglioExcel";
 import { leggiScenarioDaFoglio, rigaPerRiga } from "../../lib/foglioProiezione";
+import Didascalia from "../../components/Didascalia";
 import { oggiLocale } from "../../lib/constants";
 
 // Le previsioni: si carica il foglio, si guarda cosa è stato letto, si
@@ -149,18 +150,20 @@ export default function Previsioni() {
           </select>
         )}
       </div>
-      {/* La riga che spiega cosa si compila: veniva dal riquadro
-          «Costruiscine una», tolto il 24/08 perché faceva la stessa cosa
-          del pulsante qui sopra. Il riquadro se n'è andato, la spiegazione
-          no — era l'unico posto dove si leggeva cosa c'è dentro. */}
-      <p className="testo-sala text-b58-charcoal-soft mb-2">
-        Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi, e
-        mese per mese quanta gente ti aspetti.
-      </p>
+      {/* 🔴 «Una previsione chiusa non si ritocca mai più» RESTA VISIBILE
+          (24/08): non è una didascalia, è un AVVERTIMENTO — dice cosa
+          succede se premi, non cosa significa una parola. Nasconderlo
+          sarebbe l'errore che il mandato chiede di non fare.
+          ⚠️ La riga su cosa si compila invece si apre dal segno: è una
+          spiegazione, e chi ha già scritto una previsione la conosce. */}
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         Una previsione chiusa non si ritocca mai più: se cambia qualcosa se ne fa una nuova, e le due
-        restano confrontabili. È l&apos;unico modo perché fra un anno si possa dire com&apos;era andata
-        davvero rispetto a quello che si pensava.
+        restano confrontabili.
+        <Didascalia>
+          Campo per campo, dentro il gestionale: quanto vale un coperto, chi lavora, i costi fissi, e
+          mese per mese quanta gente ti aspetti. Confrontarle è l&apos;unico modo perché fra un anno
+          si possa dire com&apos;era andata davvero rispetto a quello che si pensava.
+        </Didascalia>
       </p>
 
       {error && (

@@ -22,6 +22,8 @@ import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { annoDiverso, scegliScenario } from "../../lib/calcoli/scenarioDaConfrontare";
+import { senzaRipetizioni } from "../../lib/calcoli/avvertenze";
+import Didascalia from "../../components/Didascalia";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 const MESI = [
@@ -87,6 +89,20 @@ export default function AndamentoMensile() {
 
   const entityId = entities?.srls?.id;
   const annoAltrove = annoDiverso(scenari, scenarioId, anno);
+
+  // 🔴 LA STESSA NOTA COMPARIVA DUE VOLTE (misurato a schermo il 24/08).
+  // Non per una svista: le due avvertenze arrivano dal database e
+  // **contengono entrambe** la frase sull'IRAP, perché
+  // `calcola_imposte()` restituisce il numero e la frase che ne dichiara
+  // il limite — scelta del 15/08, ed è giusta. Il difetto nasce quando le
+  // due schermate che mostrano quel numero sono la stessa.
+  // ⚠️ La prima resta INTERA: togliere la frase a tutte e due lascerebbe
+  // il numero senza il suo limite dichiarato in nessun punto.
+  const [avvisoImposte, avvisoFineAnno, avvisoBudget] = senzaRipetizioni([
+    dueImposte?.avvertenza,
+    fineAnno?.avvertenza,
+    budget?.avvertenza,
+  ]);
 
   const carica = useCallback(async () => {
     if (!entityId) return;
@@ -385,14 +401,14 @@ export default function AndamentoMensile() {
           {/* --- Il piano sovrapposto ai numeri veri --- */}
           {anno_.length > 0 && (
             <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6 overflow-x-auto">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">
+              <h2 className="font-display text-lg text-b58-charcoal mb-4">
                 In che direzione stiamo andando — {anno}
+                <Didascalia>
+                  Dall&apos;inizio dell&apos;anno a oggi, voce per voce, e dove si arriva a dicembre se
+                  da domani tieni la rotta. I mesi che restano valgono quello che avevi previsto tu:
+                  un mese buono non viene moltiplicato per dodici.
+                </Didascalia>
               </h2>
-              <p className="text-xs text-b58-charcoal-soft mb-4">
-                Dall&apos;inizio dell&apos;anno a oggi, voce per voce, e dove si arriva a dicembre se da
-                domani tieni la rotta. <strong>I mesi che restano valgono quello che avevi previsto tu</strong>:
-                un mese buono non viene moltiplicato per dodici.
-              </p>
               <table className="w-full text-sm min-w-[680px]">
                 <thead>
                   <tr className="text-xs uppercase tracking-wide text-b58-charcoal-soft">
@@ -415,7 +431,12 @@ export default function AndamentoMensile() {
                       <tr key={r.indicatore} className="border-t border-b58-charcoal/5 align-top">
                         <td className="py-1.5 text-b58-charcoal">
                           {r.indicatore}
-                          <span className="block text-[11px] text-b58-charcoal-soft/70">{r.spiegazione}</span>
+                          {/* La spiegazione non sparisce: si apre dal segno.
+                              Sei righe con sei spiegazioni sotto sono sei
+                              righe che nessuno rilegge dopo il primo
+                              giorno, e intanto raddoppiano l'altezza della
+                              tabella su un tablet da 8 pollici. */}
+                          {r.spiegazione && <Didascalia>{r.spiegazione}</Didascalia>}
                         </td>
                         <td className="py-1.5 text-right tabular-nums text-b58-charcoal-soft">{q(r.previsto_a_oggi)}</td>
                         <td className="py-1.5 text-right tabular-nums text-b58-charcoal">
@@ -498,9 +519,11 @@ export default function AndamentoMensile() {
                           </p>
                         </div>
                       </div>
-                      <p className="text-[11px] text-b58-charcoal-soft mt-2 leading-relaxed">
-                        {dueImposte.avvertenza}
-                      </p>
+                      {avvisoImposte && (
+                        <p className="text-[11px] text-b58-charcoal-soft mt-2 leading-relaxed">
+                          {avvisoImposte}
+                        </p>
+                      )}
                       <Link
                         to="/cassa/scontrinato"
                         className="text-[11px] text-b58-terracotta-dark underline mt-1 inline-block"
@@ -510,7 +533,7 @@ export default function AndamentoMensile() {
                     </div>
                   )}
                   <p className={`text-[11px] rounded px-2 py-1.5 mt-3 ${fineAnno.voci_misurate > 0 ? "text-b58-charcoal-soft bg-b58-cream-dark" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
-                    {fineAnno.voci_misurate} voci misurate su {fineAnno.voci_totali}. {fineAnno.avvertenza}
+                    {fineAnno.voci_misurate} voci misurate su {fineAnno.voci_totali}. {avvisoFineAnno}
                   </p>
                 </div>
               )}
@@ -597,9 +620,11 @@ export default function AndamentoMensile() {
                   </p>
                 </div>
               </div>
-              <p className={`text-[11px] rounded px-2 py-1.5 mt-3 ${budget.misurato ? "text-b58-olive-dark bg-b58-olive/10" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
-                {budget.avvertenza}
-              </p>
+              {avvisoBudget && (
+                <p className={`text-[11px] rounded px-2 py-1.5 mt-3 ${budget.misurato ? "text-b58-olive-dark bg-b58-olive/10" : "text-b58-terracotta-dark bg-b58-terracotta/10"}`}>
+                  {avvisoBudget}
+                </p>
+              )}
 
               {omaggi.length > 0 && (
                 <table className="w-full text-sm mt-4">

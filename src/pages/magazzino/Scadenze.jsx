@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { chiudiPartita, listPartiteInScadenza } from "../../lib/api/scadenze";
-import { formatDate, formatQta} from "../../lib/constants";
+import { formatDate, formatQta } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // Lo scadenziario, la stessa cosa che alle 10:00 arriva su Telegram.
 //
@@ -122,10 +123,20 @@ export default function Scadenze() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Scadenze</h1>
-      <p className="mb-6 testo-sala text-stone-600">
-        Le partite che stanno per scadere e non sono state rimpiazzate da una più recente. Ogni
-        mattina alle 10:00 le stesse cose arrivano su Telegram.
+      {/* ⚠️ La regola di quali partite compaiono è una spiegazione, e
+          si apre dal segno. **Il messaggio delle 10:00 no**: quello è un
+          effetto — qualcosa che succede senza che nessuno lo chieda — e
+          gli effetti restano visibili. */}
+      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+        Scadenze
+        <Didascalia>
+          Compaiono le partite che stanno per scadere e che non sono state rimpiazzate da una più
+          recente: se ne è arrivata un&apos;altra dello stesso prodotto, quella vecchia non si
+          segnala.
+        </Didascalia>
+      </h1>
+      <p className="mb-4 testo-sala text-stone-600">
+        Ogni mattina alle 10:00 le stesse cose arrivano su Telegram.
       </p>
       {/* ⚠️ Qui c'era la spiegazione di cosa fanno i due pulsanti: adesso
           la dicono loro, sotto il verbo. Resta la parte che è un AVVISO e

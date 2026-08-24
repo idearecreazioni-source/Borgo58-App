@@ -17,6 +17,7 @@ import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import CampoGiornata from "../../components/CampoGiornata";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Primo del mese in ora locale: la versione precedente passava per
@@ -143,7 +144,13 @@ export default function CassaHome() {
     <div className="testo-sala max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Cassa, Banca e Prima Nota</h1>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Cassa, Banca e Prima Nota
+            <Didascalia>
+              Gli incassi in contante dei conti chiusi entrano da soli; il resto si registra a mano.
+              La riconciliazione del POS arriverà con la scelta del sistema di cassa.
+            </Didascalia>
+          </h1>
           {/* 🔴 DICEVA «PRIMA NOTA MANUALE», ed era diventato falso il
               15/08 (corretto il 22/08). Da quella data gli incassi in
               contante dei conti chiusi entrano nel saldo **da soli** —
@@ -161,10 +168,16 @@ export default function CassaHome() {
               ancora giusta tutta.*
               ⚠️ Tolto anche «(§3.2)»: è il rimando a un documento che chi
               guarda questa schermata non ha davanti. */}
-          <p className="text-b58-charcoal-soft mt-1">
-            Gli incassi in contante dei conti chiusi entrano da soli; il resto si registra a mano. La
-            riconciliazione del POS arriverà con la scelta del sistema di cassa.
-          </p>
+          {/* ⚠️ QUESTA ERA UNA DIDASCALIA e si apre dal segno accanto al
+              titolo (24/08): spiega come funziona il modulo, non cosa
+              succede se premi qualcosa.
+              🔴 RESTANO VISIBILI, e non è una svista, le righe che sono
+              AVVERTIMENTI: «di cui … sono mance del personale, non tuoi»,
+              «N uscite già registrate non sono ancora nel saldo»,
+              «contare il cassetto non corregge di nascosto», «non è
+              un'uscita: il cassetto cala e la banca sale». Quelle dicono
+              cosa sta succedendo ai soldi, e nasconderle sarebbe l'errore
+              che il mandato chiede di non fare. */}
         </div>
         {entities && (
           <select

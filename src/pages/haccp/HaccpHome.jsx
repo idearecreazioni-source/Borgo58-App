@@ -100,8 +100,15 @@ export default function HaccpHome() {
     <div className="testo-sala max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
         <div>
+          {/* 🔴 Sotto il titolo c'era «Piano di autocontrollo»: e la stessa cosa
+              detta due volte — HACCP *e* il piano di autocontrollo.
+              CANCELLATA, non nascosta: un segno che apre un sinonimo
+              promette una spiegazione e non ne da una.
+              🔴 LE DESCRIZIONI DELLE SEI CARD RESTANO, ed e una decisione:
+              non sono didascalie sotto un titolo, sono l'unico modo di
+              distinguere due destinazioni prima di premerle. Nasconderle
+              vorrebbe dire aprire sei pannelli per scegliere dove andare. */}
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">HACCP</h1>
-          <p className="text-b58-charcoal-soft mt-1">Piano di autocontrollo.</p>
         </div>
         <Link
           to="/haccp/manuale"

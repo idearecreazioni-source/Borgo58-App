@@ -9,6 +9,7 @@ import {
 } from "../../lib/api/proiezione";
 import { oggiLocale } from "../../lib/constants";
 import { allineaPaga, allineaTutte, righeDiscordi } from "../../lib/calcoli/pagaPrevisione";
+import Didascalia from "../../components/Didascalia";
 
 // Costruire una previsione a mano, campo per campo.
 //
@@ -488,11 +489,13 @@ export default function PrevisioneForm() {
 
       {/* I dodici mesi */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-5 overflow-x-auto">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">I dodici mesi</h2>
-        <p className="text-xs text-b58-charcoal-soft mb-4">
-          Quanti giorni apri, quanti sono di punta, e quanta gente ti aspetti nei due casi. È qui che
-          vive la stagionalità: agosto non somiglia a gennaio, e il gestionale non lo indovina.
-        </p>
+        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          I dodici mesi
+          <Didascalia>
+            Quanti giorni apri, quanti sono di punta, e quanta gente ti aspetti nei due casi. È qui
+            che vive la stagionalità: agosto non somiglia a gennaio, e il gestionale non lo indovina.
+          </Didascalia>
+        </h2>
         <table className="w-full text-xs min-w-[760px]">
           <thead>
             <tr className="text-b58-charcoal-soft">
