@@ -31,6 +31,55 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
+0-zero. 🔴 **TRE MIGRAZIONI NON REGGONO UNA RICOSTRUZIONE DA ZERO, e la cura
+   dell'«array_agg» scritta il 23/08 NON FUNZIONA** — misurato il 25/08 con
+   `npm run ricostruzione:verifica`, il comando nato in quel giro.
+
+   ✅ **La buona notizia, che è anche la risposta al mandato**: applicando
+   tutte le migrazioni **in ordine di numero** su un database vuoto, lo
+   schema che ne esce è **identico** a quello del progetto di prova — 2701
+   elementi di forma da una parte e 2701 dall'altra, e nessuno che stia da
+   una parte sola. I quattro casi in cui una migrazione è stata applicata
+   fuori ordine **non hanno lasciato danni allo schema**.
+
+   🔴 **Ma tre migrazioni si fermano**, e tutte e tre nel blocco di
+   *verifica* — cioè dopo aver fatto il loro lavoro, il che è il motivo per
+   cui lo schema torna lo stesso. Tutte e tre per la stessa ragione: la
+   verifica **presume dei dati che su un database ricostruito non ci sono**.
+   - `20260822000003` — cerca una ricetta qualsiasi, non ne trova nessuna, e
+     scrive una riga d'ordine senza piatto: il vincolo la respinge.
+   - `20260823000024` — la sua guardia dice «sono sparite le ricette: la
+     pulizia è andata troppo in là», e ha ragione: non ce n'era nessuna.
+   - `20260824000033` — «nessuna previsione libera». Era **già noto** e già
+     scritto: va saltata anche in produzione.
+
+   ⚠️ **Non si riscrivono quei tre file** (regola del 23/08). E una
+   migrazione nuova non può sanarli, perché arriverebbe *dopo* il punto in
+   cui la ricostruzione si ferma. La cura vive nello strumento, oppure —
+   il giorno che serva davvero — si saltano dichiarandolo.
+
+   🔴 **E LA CURA SCRITTA IL 23/08 PER «array_agg is an aggregate function»
+   È FALSA**, misurato sul database ricostruito con 247 funzioni:
+   | cosa | esito |
+   |---|---|
+   | così com'è | si ferma |
+   | dopo `analyze` | **si ferma lo stesso** |
+   | dopo `vacuum analyze` | **si ferma lo stesso** |
+   | con `enable_seqscan = off` | passa |
+   | con `and p.prokind = 'f'` nella query | passa |
+
+   La nota di allora («si rilancia dopo un `analyze`») descriveva *quello che
+   era bastato quel giorno*, non una cura — e col catalogo pieno non basta
+   più. ⚠️ **Riguarda 33 file**, non uno. `scripts/prova-ricostruisci.mjs`
+   fa ancora l'`analyze` una volta sola all'inizio: **su una ricostruzione
+   completa si fermerebbe allo stesso punto.** Da correggere quando si tocca
+   quel comando.
+
+   ⚠️ **E `pg_cron` non si può creare** fuori dal database `postgres`: su
+   una ricostruzione fuori da Supabase quella riga va neutralizzata, e i
+   lavori pianificati **non risultano programmati**. Non è un difetto del
+   repository, è un limite del posto — ma chi ricarica deve saperlo prima.
+
 0-ter. ✅ **CHIUSO IL 23/08** — [scende quello che si puo'](consegne/20260823_scende_quello_che_si_puo.md),
    migrazione `20260823000002`, solo sul progetto di prova. **Misurato dopo:
    346 conti su 346 scaricano** (erano 198), **zero** anomalie di guasto

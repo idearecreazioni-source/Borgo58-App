@@ -268,3 +268,36 @@ export function timbroLocale() {
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
 }
+
+/**
+ * Confronta due elenchi di «elementi di forma» di un database — colonne,
+ * vincoli, indici, funzioni, trigger, policy — ignorando SOLO le parentesi.
+ *
+ * 🔴 PERCHE' LE PARENTESI SI IGNORANO (25/08/2026, misurato). La prova di
+ * ricarica confronta lo schema ricostruito da zero con quello vero, e tre
+ * `check` identici uscivano diversi da `pg_get_constraintdef`:
+ *
+ *     ((A AND B) AND (C AND D))     dal database ricostruito
+ *     (A AND B AND (C AND D))       dal progetto di prova
+ *
+ * Non e' una regola diversa: e' come il motore ha memorizzato l'albero
+ * dell'espressione, e `AND` e' associativo. Confrontarle alla lettera
+ * darebbe tre differenze false — e tre differenze false in un controllo
+ * che deve dire «zero» sono il modo in cui quel controllo viene spento.
+ *
+ * ⚠️ E SI TOLGONO SOLO LE PARENTESI: operatori, numeri, nomi di colonna e
+ * di funzione restano. Un vincolo che cambiasse `>=` in `>`, o 12 in 13,
+ * o `prima_scadenza_mese` in un'altra colonna, resterebbe una differenza.
+ * E' la ragione per cui questa funzione ha una prova al contrario.
+ *
+ * @param {string} testo l'uscita di psql, una riga per elemento
+ * @returns {Set<string>} gli elementi, normalizzati
+ */
+export function formaDelDatabase(testo) {
+  return new Set(
+    String(testo)
+      .split(/\r?\n/)
+      .map((l) => l.replace(/[()]/g, "").replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+  );
+}
