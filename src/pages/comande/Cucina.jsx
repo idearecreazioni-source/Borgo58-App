@@ -156,7 +156,11 @@ export default function Cucina() {
   // che esce (e domani uscirà dalla termica con questa stessa impaginazione).
   const Foglio = ({ g, giaStampato }) => (
     <div
-      className={`${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-white border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
+      // ⚠️ `ticket-cucina` c'e' SEMPRE, non solo mentre si stampa: e' la
+      // classe da cui il blocco @media print riconosce che questo foglio
+      // va alla termica della cucina e vuole 6,8 mm invece di 3,2 (il
+      // preconto, che condivide `stampa-ticket`, non la porta).
+      className={`ticket-cucina ${stampaKey === g.chiave ? "stampa-ticket " : ""}bg-white border border-dashed border-b58-charcoal/25 rounded-lg p-3 font-mono border-t-4 ${
         g.tipo === "chiamata" ? "border-t-b58-gold-dark" : "border-t-b58-terracotta"
       } ${giaStampato ? "opacity-60" : ""}`}
     >

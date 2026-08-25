@@ -188,6 +188,36 @@ body {
   .testo-sala-lontano {
     font-size: 22.7px;
   }
+
+  /* 🔴 IL BIGLIETTO DELLA CUCINA VUOLE PIU' CORPO (25/08/2026, decisione
+     di Alessio): *«in cucina il biglietto si legge in piedi, sotto una
+     lampada, magari appeso a una barra e con le mani occupate: i
+     millimetri in piu' valgono piu' della carta risparmiata»*.
+
+     Le misure sono quelle che il ticket aveva quando lo si stampava dal
+     tablet calibrato — 5,4 / 6,8 / 10,2 mm sulla carta — rese fisse:
+     adesso escono uguali da qualunque dispositivo.
+
+     ⚠️ IL PRECONTO NON LE PRENDE, ed e' voluto: quello lo legge il
+     CLIENTE SEDUTO, a distanza di lettura, e a 6,8 mm su 72 mm di
+     larghezza i nomi dei piatti andrebbero a capo di continuo,
+     allungando lo scontrino. Resta a 3,2 mm.
+
+     🔴 NON E' DEFINITIVA, E VA DETTO A CHI LA RILEGGE: e' stata scelta
+     **senza aver mai stampato niente**. In questo progetto nessuno ha
+     ancora visto un ticket uscire da una termica: quando Alessio avra'
+     la stampante in laboratorio guardera' su carta vera, e questo numero
+     puo' cambiare. Finche' quella prova non c'e', 6,8 mm e' una
+     decisione presa a ragion veduta, non una misura. */
+  .ticket-cucina .testo-sala {
+    font-size: 20.5px;
+  }
+  .ticket-cucina .testo-sala-grande {
+    font-size: 25.7px;
+  }
+  .ticket-cucina .testo-sala-lontano {
+    font-size: 38.4px;
+  }
 }
 
 
