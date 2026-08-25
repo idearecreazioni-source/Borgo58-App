@@ -2098,3 +2098,37 @@ scrivere `origine_allergeni = 'stimati'` quando il campo è vuoto. I due
 non si pestano i piedi — col trigger il campo non è mai vuoto se ci sono
 righe — ma è una convivenza da tenere presente, non una separazione
 netta.
+
+## 53 · Il blocco del menu sugli allergeni dedotti — 25/08/2026
+
+**Deciso il 25/08**, poche ore prima: un prodotto con un allergene
+**dedotto** resta «da verificare», e i piatti che lo usano non stampano
+l'elenco allergeni sul menu.
+
+**La ragione di allora:** un elenco che sembra controllato e non lo è è
+peggio di nessun elenco, e sotto ci sono le allergie di qualcuno.
+
+**Cosa si decide adesso** (Alessio): gli allergeni dedotti **valgono come
+confermati**. L'origine — etichetta, fonte nominata, dedotto, messo da
+Alessio — serve a **informare il cameriere** quando un cliente chiede,
+**non a bloccare niente**.
+
+**Perché la ragione di allora non vale più.** 🔴 **Non era sbagliata la
+prudenza: era sbagliato il posto in cui era stata messa.** Quella regola
+non l'aveva decisa Alessio — l'avevo introdotta io lo stesso giorno,
+senza mandato, dentro un blocco che parlava d'altro. La prudenza vera sta
+nel dire al cameriere *da dove viene* quell'allergene, e quella parte
+resta intera con le quattro letture al tavolo; farne un blocco alla
+stampa del menu era una decisione di prodotto presa da chi non doveva
+prenderla.
+
+⚠️ **È il caso che ha fatto nascere `DECISIONI.md`**, e la regola n. 4 di
+quel file lo dice con le parole di Alessio: *fermati e chiedi anche se la
+tua strada è più prudente — il blocco del menu era prudente ed era
+sbagliato lo stesso.*
+
+⚠️ **Resta bloccante l'origine VUOTA**, e non è un residuo dimenticato:
+«dedotto» vuol dire che qualcuno ha guardato, «vuoto» che non ha guardato
+nessuno. Ma dentro quel caso c'è un difetto dichiarato — l'origine vuota
+mescola «mai guardato» con «lo ha scritto Alessio a mano» — ed è fra le
+domande aperte.
