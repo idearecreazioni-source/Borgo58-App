@@ -649,9 +649,11 @@ export default function IngredienteForm() {
                 onChange={(e) => setForm((f) => ({ ...f, avvisa_rincari: e.target.checked }))}
               />
               Avvisami se il prezzo sale
-              <span className="testo-sala text-b58-charcoal-soft">
-                (qualunque aumento, anche piccolo — togli la spunta su ciò che varia sempre)
-              </span>
+              <Didascalia>
+                Qualunque aumento, anche piccolo. Togli la spunta su ciò che varia
+                sempre per stagione o per mercato: un avviso a ogni consegna si
+                smette di leggere.
+              </Didascalia>
             </label>
             <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
@@ -660,10 +662,10 @@ export default function IngredienteForm() {
                 onChange={(e) => setForm((f) => ({ ...f, alimentare: e.target.checked }))}
               />
               È un alimento
-              <span className="testo-sala text-b58-charcoal-soft">
-                (togli la spunta per detersivi, carta, imballaggi: restano sotto controllo prezzi
-                ma fuori dal Ricettario)
-              </span>
+              <Didascalia>
+                Togli la spunta per detersivi, carta, imballaggi: restano sotto
+                controllo prezzi ma fuori dal Ricettario.
+              </Didascalia>
             </label>
             {/* 🔴 LE SPEZIE A PIZZICO (23/08/2026, decisione di Alessio).
                 Non è una preferenza di comodo: un prodotto che in un piatto
@@ -681,10 +683,10 @@ export default function IngredienteForm() {
                 }
               />
               Il magazzino lo segue
-              <span className="testo-sala text-b58-charcoal-soft">
-                (togli la spunta alle spezie a pizzico: si comprano, ma non si
-                scaricano e non entrano in lista della spesa)
-              </span>
+              <Didascalia>
+                Togli la spunta alle spezie a pizzico: si comprano, ma non si
+                scaricano e non entrano in lista della spesa.
+              </Didascalia>
             </label>
           </div>
 

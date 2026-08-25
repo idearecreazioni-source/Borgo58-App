@@ -174,15 +174,31 @@ export default function EditorMenuHome() {
             <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
               <input type="checkbox" checked={showDescriptions} onChange={(e) => setShowDescriptions(e.target.checked)} /> Mostra descrizioni
             </label>
-            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
-              <input type="checkbox" checked={showAllergens} onChange={(e) => setShowAllergens(e.target.checked)} />{" "}
-              Mostra allergeni{" "}
-              {/* ⚠️ SCRITTO ACCANTO, non sottinteso (decisione di Alessio,
-                  17/08): sul menu definitivo NON vanno elenchi sotto i
-                  piatti. Questa casella serve a stampare una copia per la
-                  sala. Senza dirlo, fra sei mesi qualcuno la accende
-                  credendo che sia il modo previsto di stampare la carta. */}
-              <span className="text-b58-charcoal-soft/60">— copia per uso interno, non la carta</span>
+            {/* ⚠️ SCRITTO, non sottinteso (decisione di Alessio, 17/08):
+                sul menu definitivo NON vanno elenchi sotto i piatti. Questa
+                casella serve a stampare una copia per la sala. Senza dirlo,
+                fra sei mesi qualcuno la accende credendo che sia il modo
+                previsto di stampare la carta.
+                🔴 MA SOTTO, NON PIU' ACCANTO (25/08). Misurato a 390 punti:
+                affiancata, la frase ne prendeva 207 e schiacciava «Mostra
+                allergeni» su DUE righe larghe 48 — l'accessorio rendeva
+                illeggibile la cosa che spiega. Sotto resta visibile (che è
+                quello che la decisione del 17/08 pretende) e non ruba
+                larghezza a niente. E' la forma che l'app usa gia' in sei
+                punti: nome sopra, nota `block` sotto. */}
+            <label className="flex items-start gap-2 text-xs text-b58-charcoal-soft">
+              <input
+                type="checkbox"
+                checked={showAllergens}
+                onChange={(e) => setShowAllergens(e.target.checked)}
+                className="mt-0.5 shrink-0"
+              />
+              <span>
+                <span className="block">Mostra allergeni</span>
+                <span className="block text-b58-charcoal-soft/60 mt-0.5">
+                  copia per uso interno, non la carta
+                </span>
+              </span>
             </label>
           </div>
         </div>
