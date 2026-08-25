@@ -148,6 +148,45 @@ body {
   line-height: 1.15;
 }
 
+/* I TITOLI DENTRO UNA SCHERMATA — 4,8 mm (25/08/2026).
+   ⚠️ Nasce misurando il Ricettario sul telefono: `text-lg` (18 punti) alla
+   calibrazione di un mini tablet vale **2,81 mm**, cioe' sotto il minimo, e
+   convertirlo in `.testo-sala-grande` lo avrebbe RIMPICCIOLITO sul computer
+   (da 18 a 15,1 punti). Serviva il gradino che mancava: 0,48 cm fa 18,1
+   punti su un monitor — identico a prima — e 30,7 sul tablet.
+   ⚠️ Non e' un quarto stile: e' lo stesso passo degli altri tre, e il nome
+   dice a cosa serve (un titolo dentro una schermata), non come si vede. */
+.testo-sala-titolo {
+  font-size: calc(var(--pxcm) * 0.48);
+  line-height: 1.2;
+}
+
+/* 🔴 LA CARTA NON HA I MILLIMETRI DI UNO SCHERMO (25/08/2026).
+   Le tre misure qui sopra sono in centimetri VERI dello schermo, e sono
+   giuste per questo: un testo cresce dove il punto e' piccolo. Ma in
+   STAMPA `--pxcm` continua a valere quello del dispositivo da cui si
+   preme «Esporta PDF», quindi lo stesso foglio uscirebbe con caratteri
+   diversi a seconda che lo si stampi dal computer (37,8 → 12,1 punti) o
+   dal telefono calibrato (64 → 20,5). Un documento esibibile non deve
+   cambiare taglia col dispositivo.
+
+   ⚠️ I numeri non sono inventati: sono esattamente quello che le tre
+   classi producono su un monitor a 96 dpi, cioe' lo stato in cui questi
+   fogli sono sempre stati stampati finora. La regola non cambia niente
+   per chi stampa dal computer — toglie il caso che nessuno ha mai
+   guardato. */
+@media print {
+  .testo-sala {
+    font-size: 12.1px;
+  }
+  .testo-sala-grande {
+    font-size: 15.1px;
+  }
+  .testo-sala-lontano {
+    font-size: 22.7px;
+  }
+}
+
 
 /* Azione principale a fondo schermata (invia comanda, chiudi conto). */
 .tocco-azione {

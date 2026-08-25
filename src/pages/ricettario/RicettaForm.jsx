@@ -22,8 +22,8 @@ export default function RicettaForm() {
   const isPreparazione = eComponente(form.recipe_type);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,13 +54,13 @@ export default function RicettaForm() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Ricette
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Nuova ricetta</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -68,13 +68,16 @@ export default function RicettaForm() {
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
         <div>
           <label className={labelClass}>Tipo</label>
-          <div className="flex gap-2">
+          {/* ⚠️ `flex-wrap` e `min-w-0`: i tre tipi in fila sforavano di 62
+              punti a 390 di larghezza — «Finger (un pezzo di un piatto)» non
+              si accorcia, quindi o va a capo o spinge fuori la pagina. */}
+          <div className="flex flex-wrap gap-2 [&>*]:min-w-0">
             {RECIPE_TYPES.map((t) => (
               <button
                 type="button"
                 key={t.value}
                 onClick={() => setForm((f) => ({ ...f, recipe_type: t.value }))}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.recipe_type === t.value
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -85,7 +88,7 @@ export default function RicettaForm() {
             ))}
           </div>
           {isPreparazione && (
-            <p className="text-xs text-b58-charcoal-soft/70 mt-1.5">
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-1.5">
               Un semilavorato riutilizzabile in altre ricette (es. crema pasticcera).
             </p>
           )}
@@ -161,7 +164,7 @@ export default function RicettaForm() {
           )}
         </div>
         {isPreparazione && (
-          <p className="text-xs text-b58-charcoal-soft/70 -mt-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 -mt-2">
             Quanto produce la ricetta base — es. "1 kg" di crema. È la base per calcolare il
             costo quando la userai come componente in un'altra ricetta.
           </p>
@@ -177,14 +180,14 @@ export default function RicettaForm() {
           />
         </div>
 
-        <p className="text-xs text-b58-charcoal-soft/70">
+        <p className="testo-sala text-b58-charcoal-soft/70">
           Ingredienti, fasi, allergeni e HACCP si aggiungono nella scheda dopo la creazione.
         </p>
 
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 text-sm"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
         >
           {saving ? "Creo…" : "Crea ricetta"}
         </button>

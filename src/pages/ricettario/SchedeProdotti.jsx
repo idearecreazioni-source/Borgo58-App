@@ -118,8 +118,12 @@ export default function SchedeProdotti() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
-      <Link to="/ricettario" className="tocco-bottone inline-flex items-center text-sm text-stone-600">
+    // ⚠️ La misura in centimetri veri sta sul CONTENITORE: i testi senza una
+    // classe loro prendevano i 16 punti predefiniti del browser, che alla
+    // calibrazione di un mini tablet fanno 2,50 mm. Ereditando dal padre si
+    // sistemano tutti insieme, e chi ha già una classe sua continua a vincere.
+    <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+      <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
       <h1 className="mb-1 mt-2 text-2xl font-semibold">
@@ -134,7 +138,7 @@ export default function SchedeProdotti() {
       {/* ⚠️ RESTA: è il limite di quello che si sta per confermare in blocco.
           Nascosto dietro il segno, qualcuno confermerebbe una scheda credendo
           che ci sia dentro anche lo scarto. */}
-      <p className="mb-6 text-sm text-stone-600">
+      <p className="mb-6 testo-sala-grande text-stone-600">
         ⚠️ La percentuale di scarto no: dipende da cosa ci si fa, e la scrivi tu.
       </p>
 
@@ -152,7 +156,7 @@ export default function SchedeProdotti() {
                 {daCompilare.map((p) => (
                   <li key={p.id} className="border-b border-stone-200 py-2 last:border-0">
                     <span className="font-medium">{p.nome}</span>{" "}
-                    <span className="text-sm text-stone-600">
+                    <span className="testo-sala-grande text-stone-600">
                       — manca: {(p.mancano ?? []).map((m) => NOMI_CAMPI[m] ?? m).join(", ")}
                     </span>
                   </li>
@@ -174,7 +178,7 @@ export default function SchedeProdotti() {
                   troncherebbe e non sarebbe più leggibile. Il tetto c'è per
                   una ragione; a mancare era che nessuno lo sapesse prima di
                   premere. */}
-              <p className="mt-2 mb-8 text-sm text-stone-500">
+              <p className="mt-2 mb-8 testo-sala-grande text-stone-500">
                 {quanti && quanti.rimasti > 0
                   ? `Ne compila ${quanti.per_giro} per volta: dopo questo giro ne restano ${quanti.rimasti}, e si preme di nuovo. `
                   : "Una chiamata sola per tutti. "}
@@ -189,7 +193,7 @@ export default function SchedeProdotti() {
                 Compilati {esito.compilati} prodotti
                 {esito.rimasti > 0 ? ` — ne restano ${esito.rimasti} per il prossimo giro` : ""}.
               </p>
-              <ul className="mt-2 text-sm text-stone-700">
+              <ul className="mt-2 testo-sala-grande text-stone-700">
                 {(esito.prodotti ?? []).map((p) => (
                   <li key={p.id}>
                     {p.nome}: {(p.scritti ?? []).length} campi
@@ -205,14 +209,14 @@ export default function SchedeProdotti() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-sm text-stone-500">
+              <p className="mt-2 testo-sala-grande text-stone-500">
                 Costo di questo giro: {esito.token_domanda} + {esito.token_risposta} token.
               </p>
             </div>
           )}
 
           <h2 className="mb-2 font-semibold">Allergeni da confermare ({stimati.length})</h2>
-          <p className="mb-4 text-sm text-stone-600">
+          <p className="mb-4 testo-sala-grande text-stone-600">
             Questi allergeni sono <strong>stimati dal nome del prodotto</strong>: finché non li
             confermi <strong>non vengono usati per la stampa del menu</strong>. Sui prodotti crudi
             il modello ci prende quasi sempre; sui prodotti lavorati l&apos;allergene sta
@@ -231,7 +235,7 @@ export default function SchedeProdotti() {
               >
                 Confermo tutti ({stimati.length})
               </button>
-              <p className="mb-4 text-sm text-stone-500">
+              <p className="mb-4 testo-sala-grande text-stone-500">
                 Conferma in blocco quello che vedi spuntato qui sotto, così com&apos;è. Le
                 &laquo;possibili tracce&raquo; non ci sono e non le indovina nessuno: arriveranno
                 dalla foto dell&apos;etichetta al ricevimento merci.
@@ -242,7 +246,7 @@ export default function SchedeProdotti() {
                   <div className="font-medium">{i.name}</div>
                   <div className="my-2 flex flex-wrap gap-3">
                     {ALLERGENS.map((a) => (
-                      <label key={a.value} className="text-sm">
+                      <label key={a.value} className="testo-sala-grande">
                         <input
                           type="checkbox"
                           className="mr-1"

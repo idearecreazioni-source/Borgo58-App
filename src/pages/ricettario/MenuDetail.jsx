@@ -235,11 +235,11 @@ export default function MenuDetail() {
 
   if (notFound) return <Navigate to="/ricettario/menu" replace />;
   if (loading || !menu) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
   }
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleActivate = async () => {
     setActivating(true);
@@ -335,12 +335,12 @@ export default function MenuDetail() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/ricettario/menu" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/ricettario/menu" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Menu
       </Link>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -348,17 +348,17 @@ export default function MenuDetail() {
       <div className="flex items-start justify-between gap-4 flex-wrap mt-3 mb-6">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal">{menu.name}</h1>
-          <p className="text-sm text-b58-charcoal-soft">Struttura {menu.structure}</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Struttura {menu.structure}</p>
         </div>
         {menu.is_active ? (
-          <span className="text-xs font-medium uppercase tracking-wide bg-b58-olive text-b58-parchment rounded-full px-3 py-1.5">
+          <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-parchment rounded-full px-3 py-1.5">
             Menu attivo
           </span>
         ) : (
           <button
             onClick={handleActivate}
             disabled={activating}
-            className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment text-sm px-4 py-2"
+            className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande px-4 py-2"
           >
             {activating ? "Attivo…" : "Rendi attivo"}
           </button>
@@ -368,29 +368,29 @@ export default function MenuDetail() {
       {/* Riepilogo */}
       {summary && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Riepilogo</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Riepilogo</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Food cost medio</p>
+              <p className="testo-sala text-b58-charcoal-soft uppercase tracking-wide">Food cost medio</p>
               <p className={`text-xl font-medium ${LEVEL_CLASS[foodCostLevel(summary.weightedFoodCost)]}`}>
                 {summary.weightedFoodCost != null ? `${summary.weightedFoodCost.toFixed(1)}%` : "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Margine medio/coperto</p>
+              <p className="testo-sala text-b58-charcoal-soft uppercase tracking-wide">Margine medio/coperto</p>
               <p className="text-xl font-medium text-b58-charcoal">
                 {summary.weightedMargin != null ? formatEUR(summary.weightedMargin) : "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Miglior margine</p>
-              <p className="text-sm text-b58-charcoal">
+              <p className="testo-sala text-b58-charcoal-soft uppercase tracking-wide">Miglior margine</p>
+              <p className="testo-sala-grande text-b58-charcoal">
                 {summary.best ? `${summary.best.recipe.name} (${formatEUR(summary.best.economics.gross_margin)})` : "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft uppercase tracking-wide">Peggior margine</p>
-              <p className="text-sm text-b58-charcoal">
+              <p className="testo-sala text-b58-charcoal-soft uppercase tracking-wide">Peggior margine</p>
+              <p className="testo-sala-grande text-b58-charcoal">
                 {summary.worst ? `${summary.worst.recipe.name} (${formatEUR(summary.worst.economics.gross_margin)})` : "—"}
               </p>
             </div>
@@ -399,13 +399,13 @@ export default function MenuDetail() {
               riga, fra un anno «food cost medio» verrebbe letto come se
               fosse pesato sulle vendite — che è l'unico dei tre numeri
               che serve a decidere i prezzi, e oggi non si può calcolare. */}
-          <p className="text-[11px] text-b58-charcoal-soft/80 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4">
+          <p className="testo-sala text-b58-charcoal-soft/80 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4">
             Media su tutti i piatti del menu, <strong>non pesata su quanto si vende</strong>:
             un piatto che esce due volte a sera conta come uno che esce venti. Il food cost
             pesato sulle vendite si potrà calcolare quando ci saranno gli scontrini veri.
           </p>
           {summary.overThreshold.length > 0 && (
-            <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
+            <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">
               ⚠ {summary.overThreshold.length} piatt{summary.overThreshold.length === 1 ? "o" : "i"} sopra il 25% di food cost:{" "}
               {summary.overThreshold.map((i) => i.recipe.name).join(", ")}
             </p>
@@ -432,21 +432,21 @@ export default function MenuDetail() {
         return (
           <div key={category} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-lg text-b58-charcoal">
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal">
                 {label}{" "}
-                <span className="text-sm text-b58-charcoal-soft font-sans">
+                <span className="testo-sala-grande text-b58-charcoal-soft font-sans">
                   ({sectionItems.length}/{target})
                 </span>
               </h2>
               {catAvg && (
-                <span className={`text-sm font-medium ${LEVEL_CLASS[foodCostLevel(catAvg.avgPct)]}`}>
+                <span className={`testo-sala-grande font-medium ${LEVEL_CLASS[foodCostLevel(catAvg.avgPct)]}`}>
                   media {catAvg.avgPct.toFixed(1)}%
                 </span>
               )}
             </div>
 
             {sectionItems.length > 0 && (
-              <table className="w-full text-sm mb-3">
+              <table className="w-full testo-sala-grande mb-3">
                 <thead>
                   <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                     <th className="py-2 font-medium">Piatto</th>
@@ -476,7 +476,7 @@ export default function MenuDetail() {
                           {item.recipe.name}
                         </Link>
                         {isOutOfSeason(item.recipe.seasonality) && (
-                          <span className="text-[11px] text-b58-charcoal-soft ml-1.5">
+                          <span className="testo-sala text-b58-charcoal-soft ml-1.5">
                             (stagione: {item.recipe.seasonality.join(", ")})
                           </span>
                         )}
@@ -490,7 +490,7 @@ export default function MenuDetail() {
                           step="0.5"
                           value={item.selling_price}
                           onSave={(v) => handlePriceChange(item.id, v)}
-                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right"
+                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                         />
                       </td>
                       <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`}>
@@ -502,7 +502,7 @@ export default function MenuDetail() {
                       <td className="py-2 text-right">
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="text-b58-charcoal-soft hover:text-b58-terracotta-dark text-xs"
+                          className="text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
                         >
                           Rimuovi
                         </button>
@@ -550,7 +550,7 @@ export default function MenuDetail() {
                 <button
                   onClick={() => handleAddItem(category)}
                   disabled={!form.recipe_id}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                  className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   + Aggiungi
                 </button>
@@ -562,7 +562,7 @@ export default function MenuDetail() {
 
       {/* Simulatore what-if */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Simulatore what-if</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Simulatore what-if</h2>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {[
@@ -573,7 +573,7 @@ export default function MenuDetail() {
             <button
               key={m.value}
               onClick={() => setSimMode(m.value)}
-              className={`text-xs rounded-full px-3 py-1.5 border transition-colors ${
+              className={`testo-sala rounded-full px-3 py-1.5 border transition-colors ${
                 simMode === m.value
                   ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -607,17 +607,17 @@ export default function MenuDetail() {
                   onChange={(e) => setSimPct(e.target.value)}
                   className={`${inputClass} w-20`}
                 />
-                <span className="text-sm text-b58-charcoal-soft">% variazione</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft">% variazione</span>
               </div>
             </div>
 
             {priceSimResults && (
               priceSimResults.length === 0 ? (
-                <p className="text-sm text-b58-charcoal-soft">
+                <p className="testo-sala-grande text-b58-charcoal-soft">
                   Questo ingrediente non è usato in nessuna ricetta del menu.
                 </p>
               ) : (
-                <table className="w-full text-sm">
+                <table className="w-full testo-sala-grande">
                   <thead>
                     <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                       <th className="py-2 font-medium">Piatto</th>
@@ -635,7 +635,7 @@ export default function MenuDetail() {
                               non è in questo piatto, è dentro qualcosa che
                               il piatto usa. */}
                           {r.via_preparazione && (
-                            <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                            <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                               attraverso una preparazione
                             </span>
                           )}
@@ -710,7 +710,7 @@ export default function MenuDetail() {
             </div>
 
             {simSwapItemId && simSwapRecipeId && swapCandidate?.cost && (
-              <div className="text-sm bg-white rounded-lg border border-b58-charcoal/10 p-3">
+              <div className="testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 p-3">
                 {(() => {
                   const current = items.find((i) => i.id === simSwapItemId);
                   return (
@@ -756,15 +756,15 @@ export default function MenuDetail() {
                   onChange={(e) => setSimTargetPct(e.target.value)}
                   className={`${inputClass} w-20`}
                 />
-                <span className="text-sm text-b58-charcoal-soft">% food cost target</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft">% food cost target</span>
               </div>
             </div>
 
             {targetPriceResult && (
-              <div className="text-sm bg-white rounded-lg border border-b58-charcoal/10 p-3 flex items-center justify-between flex-wrap gap-2">
+              <div className="testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 p-3 flex items-center justify-between flex-wrap gap-2">
                 <p className="text-b58-charcoal">
                   Prezzo di vendita necessario:{" "}
-                  <span className="font-medium text-lg">{formatEUR(targetPriceResult.targetPrice)}</span>
+                  <span className="font-medium testo-sala-titolo">{formatEUR(targetPriceResult.targetPrice)}</span>
                   <span className="text-b58-charcoal-soft">
                     {" "}(attuale {formatEUR(targetPriceResult.item.selling_price)})
                   </span>
@@ -772,7 +772,7 @@ export default function MenuDetail() {
                 <button
                   onClick={applyTargetPrice}
                   disabled={applyingPrice}
-                  className="rounded-lg bg-b58-charcoal text-b58-parchment text-sm px-3 py-1.5 disabled:opacity-60"
+                  className="rounded-lg bg-b58-charcoal text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
                 >
                   {applyingPrice ? "Applico…" : "Applica questo prezzo"}
                 </button>

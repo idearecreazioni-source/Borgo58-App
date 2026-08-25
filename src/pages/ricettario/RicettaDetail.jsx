@@ -367,12 +367,12 @@ export default function RicettaDetail() {
 
   if (notFound) return <Navigate to="/ricettario/ricette" replace />;
   if (loading || !recipe) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-4xl mx-auto">Caricamento…</p>;
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // Preparazioni e finger: stessa forma (una resa, non delle porzioni).
   const isPreparazione = eComponente(recipe.recipe_type);
@@ -783,7 +783,7 @@ export default function RicettaDetail() {
           <button
             onClick={handleCopia}
             disabled={copiando}
-            className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+            className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
           >
             {copiando ? "Copio…" : "Fai una copia"}
           </button>
@@ -792,13 +792,13 @@ export default function RicettaDetail() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
 
       {avviso && (
-        <p className="print:hidden text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
+        <p className="print:hidden testo-sala-grande text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
           {avviso}
         </p>
       )}
@@ -814,9 +814,9 @@ export default function RicettaDetail() {
           <div className="text-right">
             <div className="text-2xl text-b58-charcoal font-medium">
               {cost ? formatEUR(cost.food_cost_portion) : "—"}
-              <span className="text-sm text-b58-charcoal-soft"> / porzione</span>
+              <span className="testo-sala-grande text-b58-charcoal-soft"> / porzione</span>
             </div>
-            <div className="text-xs text-b58-charcoal-soft">
+            <div className="testo-sala text-b58-charcoal-soft">
               {cost ? formatEUR(cost.food_cost_base) : "—"} totale ricetta base
             </div>
             {/* ⚠️ Il registro compare solo se ha qualcosa da dire: una
@@ -826,7 +826,7 @@ export default function RicettaDetail() {
               <button
                 type="button"
                 onClick={() => setMostraStorico((v) => !v)}
-                className="print:hidden text-xs text-b58-charcoal-soft underline hover:text-b58-terracotta mt-1"
+                className="tocco-bottone print:hidden testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta mt-1"
               >
                 {mostraStorico ? "Nascondi com'è cambiato" : "Com'è cambiato"}
               </button>
@@ -837,10 +837,10 @@ export default function RicettaDetail() {
         {mostraStorico && storico.length > 0 && (
           <div className="print:hidden mb-4 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
             {storico.map((v, i) => (
-              <div key={i} className="px-3 py-2 flex items-baseline justify-between gap-3 text-sm">
+              <div key={i} className="px-3 py-2 flex items-baseline justify-between gap-3 testo-sala-grande">
                 <div>
                   <div className="text-b58-charcoal">{v.dettaglio}</div>
-                  <div className="text-xs text-b58-charcoal-soft">{formatDate(v.rilevato_il)}</div>
+                  <div className="testo-sala text-b58-charcoal-soft">{formatDate(v.rilevato_il)}</div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-b58-charcoal">{formatEUR(v.food_cost_base)}</div>
@@ -848,7 +848,7 @@ export default function RicettaDetail() {
                       comprato vale zero, e uno zero silenzioso fa sembrare
                       il piatto più economico di quanto sia. */}
                   {v.parziale && (
-                    <div className="text-xs text-b58-terracotta-dark">
+                    <div className="testo-sala text-b58-terracotta-dark">
                       parziale: {v.righe_senza_prezzo}{" "}
                       {v.righe_senza_prezzo === 1 ? "ingrediente" : "ingredienti"} senza prezzo
                     </div>
@@ -974,7 +974,7 @@ export default function RicettaDetail() {
         </div>
 
         <div className="mb-4">
-          <span className="text-xs bg-b58-cream-dark text-b58-charcoal-soft rounded-full px-2.5 py-1">
+          <span className="testo-sala bg-b58-cream-dark text-b58-charcoal-soft rounded-full px-2.5 py-1">
             {labelFor(RECIPE_TYPES, recipe.recipe_type)}
           </span>
         </div>
@@ -1184,7 +1184,7 @@ export default function RicettaDetail() {
                   key={s.value}
                   type="button"
                   onClick={() => toggleSeasonality(s.value)}
-                  className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                  className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                     recipe.seasonality.includes(s.value)
                       ? "bg-b58-olive text-b58-parchment border-b58-olive"
                       : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -1203,7 +1203,7 @@ export default function RicettaDetail() {
                 selezione di finger le fasi non le ha — il numero sarebbe
                 sempre zero, presentato come un dato. */}
             {!isFingerFood && steps.length > 0 && (
-              <span className="text-xs text-b58-charcoal-soft">
+              <span className="testo-sala text-b58-charcoal-soft">
                 ⏱ {totalPrepMin} min totali · {totalActiveMin} min attivi
               </span>
             )}
@@ -1211,7 +1211,7 @@ export default function RicettaDetail() {
           <button
             onClick={saveHeader}
             disabled={savingHeader}
-            className="print:hidden rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="print:hidden rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {savingHeader ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -1224,7 +1224,7 @@ export default function RicettaDetail() {
           si chiamano FINGER»*. Dentro una selezione non c'è farina, ci sono
           bocconcini finiti. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
           {isFingerFood ? "Finger" : "Ingredienti"}
         </h2>
 
@@ -1236,7 +1236,7 @@ export default function RicettaDetail() {
           <div className="print:hidden mb-4">
             <button
               onClick={() => setComponiAperto(!(componiAperto ?? fingerDentro.size > 0))}
-              className="w-full flex items-center justify-between rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 text-sm"
+              className="w-full flex items-center justify-between rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2 testo-sala-grande"
             >
               <span className="text-b58-charcoal">
                 Finger
@@ -1244,7 +1244,7 @@ export default function RicettaDetail() {
                   <span className="text-b58-charcoal-soft"> · {fingerDentro.size} dentro</span>
                 )}
               </span>
-              <span className="text-b58-charcoal-soft text-xs">
+              <span className="text-b58-charcoal-soft testo-sala">
                 {(componiAperto ?? fingerDentro.size > 0) ? "chiudi" : "apri"}
               </span>
             </button>
@@ -1271,12 +1271,12 @@ export default function RicettaDetail() {
                     value={cercaFinger}
                     onChange={(e) => setCercaFinger(e.target.value)}
                     placeholder="Cerca un finger…"
-                    className="flex-1 min-w-[10rem] rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm"
+                    className="flex-1 min-w-[10rem] rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
                   />
                   <select
                     value={categoriaFinger}
                     onChange={(e) => setCategoriaFinger(e.target.value)}
-                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm"
+                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
                   >
                     <option value="">Tutte le categorie</option>
                     {RECIPE_CATEGORIES.map((c) => (
@@ -1287,7 +1287,7 @@ export default function RicettaDetail() {
                     value={senzaAllergeneFinger}
                     onChange={(e) => setSenzaAllergeneFinger(e.target.value)}
                     disabled={!allergeniFinger || nonLetto(allergeniFinger)}
-                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm disabled:opacity-50"
+                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande disabled:opacity-50"
                   >
                     <option value="">Qualunque allergene</option>
                     {ALLERGENS.map((a) => (
@@ -1302,7 +1302,7 @@ export default function RicettaDetail() {
                     quindici senza dirlo fa credere che ce ne siano tre — ed
                     è il numero che dice se conviene togliere il filtro. */}
                 {fingerFiltrati.length < fingers.length && (
-                  <p className="px-3 py-1.5 text-xs text-b58-charcoal-soft bg-b58-cream/40">
+                  <p className="px-3 py-1.5 testo-sala text-b58-charcoal-soft bg-b58-cream/40">
                     {fingers.length - fingerFiltrati.length} finger non compaiono per via dei
                     filtri.
                     {senzaAllergeneFinger && fingerSenzaAllergeniNoti > 0 && (
@@ -1316,7 +1316,7 @@ export default function RicettaDetail() {
                 )}
 
                 {fingerFiltrati.length === 0 && (
-                  <p className="px-3 py-2 text-sm text-b58-charcoal-soft/70">
+                  <p className="px-3 py-2 testo-sala-grande text-b58-charcoal-soft/70">
                     Nessun finger corrisponde ai filtri.
                   </p>
                 )}
@@ -1331,7 +1331,7 @@ export default function RicettaDetail() {
                       className="tocco-riga w-full flex items-center gap-3 px-3 text-left disabled:opacity-60"
                     >
                       <span
-                        className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center text-xs ${
+                        className={`shrink-0 w-5 h-5 rounded border flex items-center justify-center testo-sala ${
                           dentro
                             ? "bg-b58-olive border-b58-olive text-b58-parchment"
                             : "border-b58-charcoal/25 text-transparent"
@@ -1339,14 +1339,14 @@ export default function RicettaDetail() {
                       >
                         ✓
                       </span>
-                      <span className="flex-1 text-sm text-b58-charcoal">{f.name}</span>
-                      <span className="text-sm text-b58-charcoal-soft">
+                      <span className="flex-1 testo-sala-grande text-b58-charcoal">{f.name}</span>
+                      <span className="testo-sala-grande text-b58-charcoal-soft">
                         {formatEUR(costiFinger[f.id])}
                       </span>
                     </button>
                   );
                 })}
-                <div className="px-3 py-2 flex items-center justify-between text-sm">
+                <div className="px-3 py-2 flex items-center justify-between testo-sala-grande">
                   <span className="text-b58-charcoal-soft">Costo della selezione</span>
                   <span className="text-b58-charcoal font-medium">
                     {cost ? formatEUR(cost.food_cost_base) : "—"}
@@ -1358,7 +1358,7 @@ export default function RicettaDetail() {
         )}
 
         {recipeIngredients.length > 0 && (
-          <table className="w-full text-sm mb-4">
+          <table className="w-full testo-sala-grande mb-4">
             <thead>
               {/* ⚠️ SU UNA SELEZIONE NIENTE QUANTITÀ E NIENTE SCARTO (24/08,
                   richiesta di Alessio): *«è sempre un pezzo per tipo, quel
@@ -1405,15 +1405,15 @@ export default function RicettaDetail() {
                           si chiama gia' «Finger», e ripeterlo su ogni riga
                           e' una parola che non distingue niente. */}
                       {isComponent && !isFingerFood && (
-                        <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                        <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                           {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
                         </span>
                       )}
                       {ri.is_optional && (
-                        <span className="text-xs text-b58-charcoal-soft ml-1.5">(opzionale)</span>
+                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
                       )}
                       {ri.prep_note && (
-                        <div className="text-xs text-b58-charcoal-soft">{ri.prep_note}</div>
+                        <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
                       )}
                     </td>
                     {!isFingerFood && (
@@ -1423,7 +1423,7 @@ export default function RicettaDetail() {
                           step="0.01"
                           value={ri.quantity}
                           onSave={(v) => handleQuantityChange(ri, v)}
-                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm"
+                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
                         />
                         <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
                       </td>
@@ -1443,7 +1443,7 @@ export default function RicettaDetail() {
                     <td className="py-2 text-right">
                       <button
                         onClick={() => handleRemoveIngredient(ri.id)}
-                        className="text-b58-charcoal-soft hover:text-b58-terracotta-dark text-xs"
+                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
                       >
                         Rimuovi
                       </button>
@@ -1467,7 +1467,7 @@ export default function RicettaDetail() {
                   setIngredientMode("ingredient");
                   setIngredientForm((f) => ({ ...f, component_recipe_id: "" }));
                 }}
-                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   ingredientMode === "ingredient"
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -1481,7 +1481,7 @@ export default function RicettaDetail() {
                   setIngredientMode("preparation");
                   setIngredientForm((f) => ({ ...f, ingredient_id: "" }));
                 }}
-                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   ingredientMode === "preparation"
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -1593,7 +1593,7 @@ export default function RicettaDetail() {
             )}
           </div>
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input
                 type="checkbox"
                 checked={ingredientForm.is_optional}
@@ -1611,7 +1611,7 @@ export default function RicettaDetail() {
                   : !ingredientForm.ingredient_id)
               }
               onClick={handleAddIngredient}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -1622,19 +1622,19 @@ export default function RicettaDetail() {
       {/* Dove è usata questa preparazione */}
       {isPreparazione && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Dove è usata questa preparazione</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Dove è usata questa preparazione</h2>
           {preparationUsage.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">
+            <p className="testo-sala-grande text-b58-charcoal-soft/60">
               Non ancora usata come componente in altre ricette.
             </p>
           ) : (
             <ul className="space-y-1.5">
               {preparationUsage.map((u) => (
-                <li key={u.used_in_recipe_id} className="text-sm text-b58-charcoal-soft">
+                <li key={u.used_in_recipe_id} className="testo-sala-grande text-b58-charcoal-soft">
                   <Link
                     to={`/ricettario/ricette/${u.used_in_recipe_id}`}
                     state={passoDaQui(recipe?.name)}
-                    className="text-b58-charcoal hover:text-b58-terracotta"
+                    className="tocco-bottone inline-flex items-center text-b58-charcoal hover:text-b58-terracotta"
                   >
                     {u.used_in_recipe_name}
                   </Link>
@@ -1655,7 +1655,7 @@ export default function RicettaDetail() {
           dentro una fase che nessuno andrà a cercare lì. */}
       {!isFingerFood && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Fasi di preparazione</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Fasi di preparazione</h2>
 
         {/* 🔴 LO SPAZIO FRA LE FASI, e questa l'ha trovata la MISURA, non
             la rilettura (22/08). Allargato il gap dentro la riga, il
@@ -1685,29 +1685,29 @@ export default function RicettaDetail() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-medium text-b58-charcoal-soft">
+                      <span className="testo-sala font-medium text-b58-charcoal-soft">
                         {idx + 1}. {labelFor(STEP_PHASES, s.phase)}
                       </span>
                       {s.technique && (
-                        <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5">
+                        <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5">
                           {labelFor(COOKING_TECHNIQUES, s.technique)}
                         </span>
                       )}
                       {s.is_haccp_ccp && (
-                        <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
+                        <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
                           CCP HACCP
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-b58-charcoal">{s.description}</p>
-                    <p className="text-xs text-b58-charcoal-soft mt-1">
+                    <p className="testo-sala-grande text-b58-charcoal">{s.description}</p>
+                    <p className="testo-sala text-b58-charcoal-soft mt-1">
                       {s.duration_min ? `${s.duration_min} min` : ""}
                       {s.temperature_c ? ` · ${s.temperature_c}` : ""}
                       {s.equipment ? ` · ${s.equipment}` : ""}
                       {!s.is_active_time ? " · cottura passiva/riposo" : ""}
                     </p>
                     {s.is_haccp_ccp && (s.haccp_limit || s.haccp_action) && (
-                      <p className="text-xs text-b58-terracotta-dark mt-1">
+                      <p className="testo-sala text-b58-terracotta-dark mt-1">
                         {s.haccp_limit && <>Limite: {s.haccp_limit}. </>}
                         {s.haccp_action && <>Azione correttiva: {s.haccp_action}.</>}
                       </p>
@@ -1725,7 +1725,7 @@ export default function RicettaDetail() {
                       di premere «↑» al posto di «↓» si disfa premendo
                       l'altra. */}
                   <div
-                    className="flex flex-col items-end text-xs"
+                    className="flex flex-col items-end testo-sala"
                     style={{ gap: "calc(var(--pxcm) * 0.5)" }}
                   >
                     <div className="flex gap-1">
@@ -1807,7 +1807,7 @@ export default function RicettaDetail() {
               placeholder='Attrezzatura, es. "Roner"'
               className={inputClass}
             />
-            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input
                 type="checkbox"
                 checked={stepForm.is_active_time}
@@ -1817,7 +1817,7 @@ export default function RicettaDetail() {
             </label>
           </div>
 
-          <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+          <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
             <input
               type="checkbox"
               checked={stepForm.is_haccp_ccp}
@@ -1848,7 +1848,7 @@ export default function RicettaDetail() {
               type="button"
               disabled={addingStep || !stepForm.description.trim()}
               onClick={handleAddStep}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
@@ -1860,8 +1860,8 @@ export default function RicettaDetail() {
       {/* Video ricetta */}
       {!isFingerFood && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
-        <p className="text-xs text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Video ricetta</h2>
+        <p className="testo-sala text-b58-charcoal-soft mb-4">
           ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
           non si ricavano da soli.
         </p>
@@ -1878,18 +1878,18 @@ export default function RicettaDetail() {
                     href={v.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                    className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
                   >
                     {v.url}
                   </a>
-                  <div className="text-xs text-b58-charcoal-soft">
+                  <div className="testo-sala text-b58-charcoal-soft">
                     {labelFor(VIDEO_PLATFORMS, v.platform)}
                     {v.note ? ` · ${v.note}` : ""}
                   </div>
                 </div>
                 <button
                   onClick={() => handleRemoveVideo(v.id)}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
+                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
                 >
                   Rimuovi
                 </button>
@@ -1915,7 +1915,7 @@ export default function RicettaDetail() {
             type="button"
             disabled={addingVideo || !videoUrl.trim()}
             onClick={handleAddVideo}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
           </button>
@@ -1934,13 +1934,13 @@ export default function RicettaDetail() {
           bocconcini, e un riquadro che dice sempre «nessun CCP definito» è
           arredamento. Sugli altri piatti resta dov'era. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
           {isFingerFood ? "Allergeni" : "HACCP e Allergeni"}
         </h2>
 
         <div className={isFingerFood ? "" : "mb-4"}>
           {allergens.daVerificare && (
-            <p className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p className="mb-3 rounded bg-red-50 px-3 py-2 testo-sala-grande text-red-800">
               <strong>Non verificato.</strong> Allergeni solo stimati (o mai guardati) su:{" "}
               {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
               l&apos;elenco allergeni sul menu.
@@ -1956,7 +1956,7 @@ export default function RicettaDetail() {
           />
 
           {allergens.tracce.length > 0 && (
-            <p className="mt-3 text-sm text-b58-charcoal-soft">
+            <p className="mt-3 testo-sala-grande text-b58-charcoal-soft">
               <strong>Può contenere tracce di:</strong>{" "}
               {allergens.tracce.map((a) => labelFor(ALLERGENS, a)).join(", ")}
             </p>
@@ -1965,17 +1965,17 @@ export default function RicettaDetail() {
 
         {!isFingerFood && (
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+            <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
               Punti Critici di Controllo
             </p>
             {ccpSteps.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">
+              <p className="testo-sala-grande text-b58-charcoal-soft/60">
                 Nessun CCP definito nelle fasi.
               </p>
             ) : (
               <ul className="space-y-1.5">
                 {ccpSteps.map((s) => (
-                  <li key={s.id} className="text-sm text-b58-charcoal-soft">
+                  <li key={s.id} className="testo-sala-grande text-b58-charcoal-soft">
                     <span className="text-b58-charcoal">{s.description}</span>
                     {s.haccp_limit && <> — limite: {s.haccp_limit}</>}
                     {s.haccp_action && <>, azione: {s.haccp_action}</>}

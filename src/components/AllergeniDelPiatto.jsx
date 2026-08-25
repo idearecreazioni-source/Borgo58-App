@@ -119,15 +119,15 @@ export default function AllergeniDelPiatto({
           messaggio cadeva a 93 punti (14,5 mm) dal pulsante che l'aveva
           causato, e con la pagina scorsa non si vedeva affatto. */}
       {errore && !aperto && (
-        <p className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p className="mb-3 rounded bg-red-50 px-3 py-2 testo-sala-grande text-red-800">
           {errore}
         </p>
       )}
 
       {righe === null ? (
-        <p className="text-sm text-b58-charcoal-soft/60">Leggo gli allergeni…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft/60">Leggo gli allergeni…</p>
       ) : righe.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft/60">
+        <p className="testo-sala-grande text-b58-charcoal-soft/60">
           Nessun allergene risulta dagli ingredienti di questo piatto.
         </p>
       ) : (
@@ -142,20 +142,20 @@ export default function AllergeniDelPiatto({
                 onClick={() => apri(r.allergene)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-b58-cream-dark/40"
               >
-                <span className="flex-1 text-sm text-b58-charcoal font-medium">
+                <span className="flex-1 testo-sala-grande text-b58-charcoal font-medium">
                   {etichetta(r.allergene)}
                 </span>
                 {Number(r.costo_aggiuntivo) > 0 && (
-                  <span className="text-xs text-b58-charcoal-soft">
+                  <span className="testo-sala text-b58-charcoal-soft">
                     +{formatEUR(r.costo_aggiuntivo)}
                   </span>
                 )}
                 <span
-                  className={`text-xs rounded-full px-2.5 py-1 ring-1 ${coloreStato[r.stato]}`}
+                  className={`testo-sala rounded-full px-2.5 py-1 ring-1 ${coloreStato[r.stato]}`}
                 >
                   {paroleStato[r.stato]}
                 </span>
-                <span className="text-b58-charcoal-soft text-xs">
+                <span className="text-b58-charcoal-soft testo-sala">
                   {aperto === r.allergene ? "chiudi" : "apri"}
                 </span>
               </button>
@@ -164,7 +164,7 @@ export default function AllergeniDelPiatto({
                   pannello chiuso: è il motivo per cui il database rifiuterà
                   la dichiarazione, e vederlo dopo è una sorpresa. */}
               {r.scoperti.length > 0 && r.stato !== "non_eliminabile" && (
-                <p className="px-3 pb-2 text-xs text-b58-terracotta-dark">
+                <p className="px-3 pb-2 testo-sala text-b58-terracotta-dark">
                   Per poterlo togliere manca ancora la sostituzione di:{" "}
                   {r.scoperti.join(", ")}.
                 </p>
@@ -197,17 +197,17 @@ export default function AllergeniDelPiatto({
       {/* L'ELENCO DEI FINGER, ognuno coi suoi allergeni. */}
       {eFinger && finger.length > 0 && (
         <div className="mt-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+          <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
             Dove stanno, finger per finger
           </p>
           {allergeniFinger === null ? (
-            <p className="text-sm text-b58-charcoal-soft/60">Leggo i finger…</p>
+            <p className="testo-sala-grande text-b58-charcoal-soft/60">Leggo i finger…</p>
           ) : nonLetto(allergeniFinger) ? (
             // ⚠️ «Non lo so» non è «non ne hanno»: se la lettura è fallita
             // si dichiara, con la via per riprovare. Un elenco di
             // bocconcini tutti senza allergeni è una schermata tranquilla e
             // falsa, e qui la falsità riguarda la salute di qualcuno.
-            <p className="text-sm text-b58-terracotta-dark">
+            <p className="testo-sala-grande text-b58-terracotta-dark">
               Non sono riuscito a leggere gli allergeni dei finger.{" "}
               <button
                 type="button"
@@ -225,7 +225,7 @@ export default function AllergeniDelPiatto({
                 return (
                   <li
                     key={f.id}
-                    className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm"
+                    className="flex flex-wrap items-baseline gap-x-2 gap-y-1 testo-sala-grande"
                   >
                     <Link
                       to={`/ricettario/ricette/${f.id}`}
@@ -242,14 +242,14 @@ export default function AllergeniDelPiatto({
                       a.allergens.map((x) => (
                         <span
                           key={x}
-                          className="text-xs bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2 py-0.5"
+                          className="testo-sala bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2 py-0.5"
                         >
                           {etichetta(x)}
                         </span>
                       ))
                     )}
                     {a?.daVerificare && (
-                      <span className="text-xs text-b58-terracotta-dark">da verificare</span>
+                      <span className="testo-sala text-b58-terracotta-dark">da verificare</span>
                     )}
                   </li>
                 );
@@ -280,7 +280,7 @@ function PannelloAllergene({
   const [costo, setCosto] = useState("");
 
   const inputClass =
-    "rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm text-b58-charcoal";
+    "rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal";
 
   const apriModifica = (p) => {
     setModifica(p);
@@ -298,7 +298,7 @@ function PannelloAllergene({
           lui che nomina gli ingredienti ancora scoperti e dice cosa fare
           prima. */}
       {errore && (
-        <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-800">{errore}</p>
+        <p className="rounded bg-red-50 px-3 py-2 testo-sala-grande text-red-800">{errore}</p>
       )}
 
       {/* LA DICHIARAZIONE */}
@@ -307,7 +307,7 @@ function PannelloAllergene({
           type="button"
           disabled={busy}
           onClick={() => onSalvaScelta(true, nota)}
-          className={`rounded-full text-xs px-3 py-1.5 border transition-colors disabled:opacity-50 ${
+          className={`rounded-full testo-sala px-3 py-1.5 border transition-colors disabled:opacity-50 ${
             riga.stato === "eliminabile"
               ? "bg-b58-olive text-b58-parchment border-b58-olive"
               : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -319,7 +319,7 @@ function PannelloAllergene({
           type="button"
           disabled={busy}
           onClick={() => onSalvaScelta(false, nota)}
-          className={`rounded-full text-xs px-3 py-1.5 border transition-colors disabled:opacity-50 ${
+          className={`rounded-full testo-sala px-3 py-1.5 border transition-colors disabled:opacity-50 ${
             riga.stato === "non_eliminabile"
               ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
               : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -335,7 +335,7 @@ function PannelloAllergene({
             type="button"
             disabled={busy}
             onClick={onDimentica}
-            className="text-xs text-b58-charcoal-soft underline disabled:opacity-50"
+            className="testo-sala text-b58-charcoal-soft underline disabled:opacity-50"
           >
             torna a «da guardare»
           </button>
@@ -356,11 +356,11 @@ function PannelloAllergene({
 
       {/* GLI INGREDIENTI CHE PORTANO QUESTO ALLERGENE */}
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5">
+        <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5">
           Da dove arriva
         </p>
         {portatori.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">
+          <p className="testo-sala-grande text-b58-charcoal-soft/60">
             Nessun ingrediente di questo piatto porta questo allergene.
           </p>
         ) : (
@@ -371,7 +371,7 @@ function PannelloAllergene({
               //    abbinamento per nome li scambierebbe senza nessun errore.
               const s = (riga.sostituzioni ?? []).find((x) => x.ingrediente_id === p.id);
               return (
-                <li key={p.id} className="text-sm">
+                <li key={p.id} className="testo-sala-grande">
                   <div className="flex flex-wrap items-baseline gap-2">
                     <span className="text-b58-charcoal">{p.nome}</span>
                     {p.coperto ? (
@@ -386,7 +386,7 @@ function PannelloAllergene({
                     <button
                       type="button"
                       onClick={() => apriModifica(p)}
-                      className="text-xs text-b58-terracotta underline"
+                      className="testo-sala text-b58-terracotta underline"
                     >
                       {p.coperto ? "cambia" : "sostituisci"}
                     </button>
@@ -395,7 +395,7 @@ function PannelloAllergene({
                         type="button"
                         disabled={busy}
                         onClick={() => onTogliSostituzione(s.id)}
-                        className="text-xs text-b58-charcoal-soft underline disabled:opacity-50"
+                        className="testo-sala text-b58-charcoal-soft underline disabled:opacity-50"
                       >
                         togli
                       </button>
@@ -430,18 +430,18 @@ function PannelloAllergene({
                           });
                           setModifica(null);
                         }}
-                        className="rounded bg-b58-terracotta text-b58-parchment text-xs px-3 py-1.5 disabled:opacity-50"
+                        className="rounded bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-50"
                       >
                         Salva
                       </button>
                       <button
                         type="button"
                         onClick={() => setModifica(null)}
-                        className="text-xs text-b58-charcoal-soft underline"
+                        className="testo-sala text-b58-charcoal-soft underline"
                       >
                         annulla
                       </button>
-                      <p className="w-full text-xs text-b58-charcoal-soft">
+                      <p className="w-full testo-sala text-b58-charcoal-soft">
                         Lascia vuoto il prodotto se l&apos;ingrediente si toglie e basta (es. «senza
                         noci»).
                       </p>
@@ -468,7 +468,7 @@ function SceltaSostituto({ valore, onCambia, ingredienti }) {
     <select
       value={valore}
       onChange={(e) => onCambia(e.target.value)}
-      className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm text-b58-charcoal max-w-[16rem]"
+      className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal max-w-[16rem]"
     >
       <option value="">(si toglie e basta)</option>
       {(ingredienti ?? []).map((i) => (

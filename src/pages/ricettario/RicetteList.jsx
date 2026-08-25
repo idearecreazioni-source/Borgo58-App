@@ -6,12 +6,10 @@ import {
   RECIPE_CATEGORIES,
   RECIPE_STATI,
   SEASONS,
-  eComponente,
-  labelFor,
-  formatEUR,
   recipeStatusLabel,
 } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import { campiRicetta } from "../../lib/calcoli/ricette";
 
 // LE TRE PORTE (24/08/2026, blocco 2(b) del mandato del collaudo).
 //
@@ -241,77 +239,96 @@ export default function RicetteList() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full testo-sala">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">
-                  {/* ⚠️ L'intestazione segue la porta: un finger e una
-                      preparazione hanno una RESA, un piatto ha delle
-                      porzioni, e una colonna che si chiama sempre allo
-                      stesso modo racconterebbe una cosa falsa in due
-                      elenchi su tre. */}
-                  {eComponente(porta.value) ? "Resa" : "Porzioni"}
-                </th>
-                {isTitolare && (
-                  <th className="px-4 py-3 font-medium text-right">Food cost / porzione</th>
-                )}
-                <th className="px-4 py-3 font-medium">Stato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrate.map((r) => {
-                const cost = costs[r.id];
-                const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta, r.ritirata_il);
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => navigate(`/ricettario/ricette/${r.id}`)}
-                    className="tocco-riga border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
-                  >
-                    <td className="px-4 py-3 text-b58-charcoal font-medium">
-                      {r.name}
-                      {/* ⚠️ Dentro una porta sola il cartellino del tipo non
-                          serve più: dice quello che dice già l'intestazione
-                          della pagina.
-                          🔴 E L'AVVERTENZA SUGLI ALLERGENI È STATA TOLTA DA
-                          QUI dopo averla vista: sul progetto di prova
-                          compariva su quasi tutte le righe, e un'avvertenza
-                          che sta dappertutto non distingue più niente — è
-                          arredamento, che è il criterio con cui Alessio ha
-                          tolto sette spiegazioni in due giorni.
-                          ⚠️ L'informazione non si perde: sta dove nasce il
-                          dubbio — nel conteggio sopra, quando si filtra per
-                          allergene, e nella scheda della ricetta. */}
-                    </td>
-                    <td className="px-4 py-3 text-b58-charcoal-soft">
-                      {labelFor(RECIPE_CATEGORIES, r.category)}
-                    </td>
-                    <td className="px-4 py-3 text-b58-charcoal-soft">
-                      {eComponente(r.recipe_type)
-                        ? `${r.yield_quantity ?? "—"} ${r.yield_unit ?? ""}`
-                        : r.portions_yield}
-                    </td>
-                    {isTitolare && (
-                      <td className="px-4 py-3 text-right text-b58-charcoal">
-                        {cost ? formatEUR(cost.food_cost_portion) : "—"}
+        <>
+          {/* SUL TELEFONO: un blocchetto per ricetta, coi dati a capo.
+              La tabella occupava 651 punti su 390 e sbordava di 277: il
+              Ricettario si guarda in cucina, col telefono appoggiato. */}
+          <div className="md:hidden space-y-3">
+            {filtrate.map((r) => {
+              const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta, r.ritirata_il);
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => navigate(`/ricettario/ricette/${r.id}`)}
+                  className="w-full text-left rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4"
+                >
+                  {/* ⚠️ `flex-wrap`: un nome lungo più il cartellino dello
+                      stato sforavano di 13 punti a 390 di larghezza. Il
+                      cartellino va a capo invece di spingere fuori la riga. */}
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-1">
+                    <span className="text-b58-charcoal font-medium testo-sala-grande">{r.name}</span>
+                    <span
+                      className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                  {campiRicetta(r, { porta: porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
+                    <p key={c.chiave} className="testo-sala-grande">
+                      <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
+                      {c.valore ? (
+                        <span className={c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal"}>
+                          {c.valore}
+                        </span>
+                      ) : (
+                        <span className="text-b58-charcoal-soft/70 italic">{c.vuoto ?? "—"}</span>
+                      )}
+                    </p>
+                  ))}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* SUL COMPUTER: la tabella resta — li funziona. */}
+          <div className="hidden md:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
+            <table className="w-full testo-sala">
+              <thead>
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  <th className="px-4 py-3 font-medium">Nome</th>
+                  {campiRicetta(filtrate[0], { porta: porta.value, isTitolare }).map((c) => (
+                    <th key={c.chiave} className="px-4 py-3 font-medium">
+                      {c.etichetta}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 font-medium">Stato</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrate.map((r) => {
+                  const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta, r.ritirata_il);
+                  return (
+                    <tr
+                      key={r.id}
+                      onClick={() => navigate(`/ricettario/ricette/${r.id}`)}
+                      className="tocco-riga border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
+                    >
+                      <td className="px-4 py-3 text-b58-charcoal font-medium">{r.name}</td>
+                      {campiRicetta(r, { porta: porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
+                        <td
+                          key={c.chiave}
+                          className={`px-4 py-3 ${c.forte ? "text-b58-charcoal" : "text-b58-charcoal-soft"}`}
+                        >
+                          {c.valore || (
+                            <span className="text-b58-charcoal-soft/70 italic">{c.vuoto ?? "—"}</span>
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
+                        >
+                          {statusInfo.label}
+                        </span>
                       </td>
-                    )}
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full ${statusInfo.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
-                      >
-                        {statusInfo.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

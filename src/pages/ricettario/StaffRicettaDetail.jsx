@@ -65,51 +65,51 @@ export default function StaffRicettaDetail() {
 
   if (notFound) return <Navigate to="/ricettario/ricette" replace />;
   if (loading || !recipe) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Ricette
         </Link>
         <PrintButton />
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-3 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">{recipe.name}</h1>
-        <p className="text-sm text-b58-charcoal-soft mt-1">
+        <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
           {labelFor(RECIPE_CATEGORIES, recipe.category)}
           {recipe.subcategory ? ` · ${recipe.subcategory}` : ""} · {recipe.portions_yield} porzioni
         </p>
         {recipe.seasonality?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {recipe.seasonality.map((s) => (
-              <span key={s} className="text-xs bg-b58-olive/10 text-b58-olive-dark rounded-full px-2.5 py-1">
+              <span key={s} className="testo-sala bg-b58-olive/10 text-b58-olive-dark rounded-full px-2.5 py-1">
                 {labelFor(SEASONS, s)}
               </span>
             ))}
           </div>
         )}
         {steps.length > 0 && (
-          <p className="text-xs text-b58-charcoal-soft mt-3">⏱ {totalPrepMin} min totali</p>
+          <p className="testo-sala text-b58-charcoal-soft mt-3">⏱ {totalPrepMin} min totali</p>
         )}
       </div>
 
       {/* Ingredienti (senza prezzi) */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Ingredienti</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ingredienti</h2>
         {ingredients.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft">Nessun ingrediente.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Nessun ingrediente.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="py-2 font-medium">Ingrediente</th>
@@ -122,15 +122,15 @@ export default function StaffRicettaDetail() {
                   <td className="py-2 text-b58-charcoal">
                     {ri.ingredient_name}
                     {ri.is_preparation && (
-                      <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                      <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                         preparazione
                       </span>
                     )}
                     {ri.is_optional && (
-                      <span className="text-xs text-b58-charcoal-soft ml-1.5">(opzionale)</span>
+                      <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
                     )}
                     {ri.prep_note && (
-                      <div className="text-xs text-b58-charcoal-soft">{ri.prep_note}</div>
+                      <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
                     )}
                   </td>
                   <td className="py-2 text-b58-charcoal-soft">
@@ -145,9 +145,9 @@ export default function StaffRicettaDetail() {
 
       {/* Fasi */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Fasi di preparazione</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Fasi di preparazione</h2>
         {steps.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft">Nessuna fase.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Nessuna fase.</p>
         ) : (
           <ol className="space-y-2">
             {steps.map((s, idx) => (
@@ -158,28 +158,28 @@ export default function StaffRicettaDetail() {
                 }`}
               >
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="text-xs font-medium text-b58-charcoal-soft">
+                  <span className="testo-sala font-medium text-b58-charcoal-soft">
                     {idx + 1}. {labelFor(STEP_PHASES, s.phase)}
                   </span>
                   {s.technique && (
-                    <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5">
+                    <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5">
                       {labelFor(COOKING_TECHNIQUES, s.technique)}
                     </span>
                   )}
                   {s.is_haccp_ccp && (
-                    <span className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
+                    <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 font-medium">
                       CCP HACCP
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-b58-charcoal">{s.description}</p>
-                <p className="text-xs text-b58-charcoal-soft mt-1">
+                <p className="testo-sala-grande text-b58-charcoal">{s.description}</p>
+                <p className="testo-sala text-b58-charcoal-soft mt-1">
                   {s.duration_min ? `${s.duration_min} min` : ""}
                   {s.temperature_c ? ` · ${s.temperature_c}` : ""}
                   {s.equipment ? ` · ${s.equipment}` : ""}
                 </p>
                 {s.is_haccp_ccp && (s.haccp_limit || s.haccp_action) && (
-                  <p className="text-xs text-b58-terracotta-dark mt-1">
+                  <p className="testo-sala text-b58-terracotta-dark mt-1">
                     {s.haccp_limit && <>Limite: {s.haccp_limit}. </>}
                     {s.haccp_action && <>Azione: {s.haccp_action}.</>}
                   </p>
@@ -193,7 +193,7 @@ export default function StaffRicettaDetail() {
       {/* Video ricetta */}
       {videos.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Video ricetta</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Video ricetta</h2>
           <ul className="space-y-2">
             {videos.map((v) => (
               <li key={v.id} className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
@@ -201,11 +201,11 @@ export default function StaffRicettaDetail() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                  className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
                 >
                   {v.url}
                 </a>
-                <div className="text-xs text-b58-charcoal-soft">
+                <div className="testo-sala text-b58-charcoal-soft">
                   {labelFor(VIDEO_PLATFORMS, v.platform)}
                   {v.note ? ` · ${v.note}` : ""}
                 </div>
@@ -217,31 +217,31 @@ export default function StaffRicettaDetail() {
 
       {/* HACCP e Allergeni */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">HACCP e Allergeni</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">HACCP e Allergeni</h2>
         <div className="mb-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">Allergeni</p>
+          <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">Allergeni</p>
           {allergens.daVerificare && (
-            <p className="mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p className="mb-2 rounded bg-red-50 px-3 py-2 testo-sala-grande text-red-800">
               <strong>Elenco non verificato.</strong> Questi ingredienti non sono ancora stati
               controllati: {allergens.ingredienti.join(", ")}. Se un cliente chiede di un&apos;allergia,
               guarda l&apos;etichetta del prodotto — non fidarti di questo elenco.
             </p>
           )}
           {allergens.allergens.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">
+            <p className="testo-sala-grande text-b58-charcoal-soft/60">
               {allergens.daVerificare ? "Nessuno risulta, ma nessuno l'ha guardato." : "Nessuno."}
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {allergens.allergens.map((a) => (
-                <span key={a} className="text-xs bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1">
+                <span key={a} className="testo-sala bg-b58-terracotta/10 text-b58-terracotta-dark rounded-full px-2.5 py-1">
                   {labelFor(ALLERGENS, a)}
                 </span>
               ))}
             </div>
           )}
           {allergens.tracce.length > 0 && (
-            <p className="mt-2 text-sm text-b58-charcoal-soft">
+            <p className="mt-2 testo-sala-grande text-b58-charcoal-soft">
               <strong>Può contenere tracce di:</strong>{" "}
               {allergens.tracce.map((a) => labelFor(ALLERGENS, a)).join(", ")} — non è un
               ingrediente, è il rischio che lo stabilimento del produttore lavori anche quello.
@@ -249,15 +249,15 @@ export default function StaffRicettaDetail() {
           )}
         </div>
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+          <p className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
             Punti Critici di Controllo
           </p>
           {ccpSteps.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">Nessun CCP definito.</p>
+            <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessun CCP definito.</p>
           ) : (
             <ul className="space-y-1.5">
               {ccpSteps.map((s) => (
-                <li key={s.id} className="text-sm text-b58-charcoal-soft">
+                <li key={s.id} className="testo-sala-grande text-b58-charcoal-soft">
                   <span className="text-b58-charcoal">{s.description}</span>
                   {s.haccp_limit && <> — limite: {s.haccp_limit}</>}
                   {s.haccp_action && <>, azione: {s.haccp_action}</>}

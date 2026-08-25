@@ -315,7 +315,7 @@ export default function IngredienteForm() {
   };
 
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   // ---------------------------------------------------------------
@@ -369,14 +369,14 @@ export default function IngredienteForm() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/ricettario/ingredienti"
-        className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
       >
         ← Ingredienti
       </Link>
@@ -385,7 +385,7 @@ export default function IngredienteForm() {
       </h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -448,7 +448,7 @@ export default function IngredienteForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "fornitore_esterno" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "fornitore_esterno"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -459,7 +459,7 @@ export default function IngredienteForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "produzione_interna" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "produzione_interna"
                   ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -488,7 +488,7 @@ export default function IngredienteForm() {
                 <button
                   type="button"
                   onClick={() => setShowNewSupplier(true)}
-                  className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark mt-2"
+                  className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark mt-2"
                 >
                   + Nuovo fornitore
                 </button>
@@ -521,14 +521,14 @@ export default function IngredienteForm() {
                       type="button"
                       disabled={creatingSupplier}
                       onClick={handleCreateSupplier}
-                      className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-1.5 disabled:opacity-60"
+                      className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
                     >
                       {creatingSupplier ? "Salvo…" : "Salva fornitore"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowNewSupplier(false)}
-                      className="text-sm text-b58-charcoal-soft px-3 py-1.5"
+                      className="testo-sala-grande text-b58-charcoal-soft px-3 py-1.5"
                     >
                       Annulla
                     </button>
@@ -537,7 +537,7 @@ export default function IngredienteForm() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2">
+            <p className="testo-sala-grande text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2">
               Prodotto dall'azienda agricola (non ancora operativa). Il prezzo qui
               sotto rappresenta il valore della cessione intercompany.
             </p>
@@ -591,7 +591,7 @@ export default function IngredienteForm() {
                 non cambia: cambia che porta con sé su cosa si regge, ed è lo
                 stesso principio degli allergeni da confermare. */}
             {fonti.durata && (
-              <p className="mt-1 text-xs text-b58-charcoal-soft">secondo: {fonti.durata}</p>
+              <p className="mt-1 testo-sala text-b58-charcoal-soft">secondo: {fonti.durata}</p>
             )}
           </div>
           <div>
@@ -631,7 +631,7 @@ export default function IngredienteForm() {
               className={inputClass}
               placeholder="vuota = mai in lista da solo"
             />
-            <p className="text-xs text-b58-charcoal-soft mt-1">
+            <p className="testo-sala text-b58-charcoal-soft mt-1">
               Sotto questa quantità il prodotto entra da solo nella lista della
               spesa. Lasciala vuota se preferisci deciderlo tu ogni volta.
             </p>
@@ -642,25 +642,25 @@ export default function IngredienteForm() {
               mercato, dove un avviso a ogni consegna si smette di
               leggere. */}
           <div className="sm:col-span-2 space-y-2">
-            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.avvisa_rincari}
                 onChange={(e) => setForm((f) => ({ ...f, avvisa_rincari: e.target.checked }))}
               />
               Avvisami se il prezzo sale
-              <span className="text-xs text-b58-charcoal-soft">
+              <span className="testo-sala text-b58-charcoal-soft">
                 (qualunque aumento, anche piccolo — togli la spunta su ciò che varia sempre)
               </span>
             </label>
-            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.alimentare}
                 onChange={(e) => setForm((f) => ({ ...f, alimentare: e.target.checked }))}
               />
               È un alimento
-              <span className="text-xs text-b58-charcoal-soft">
+              <span className="testo-sala text-b58-charcoal-soft">
                 (togli la spunta per detersivi, carta, imballaggi: restano sotto controllo prezzi
                 ma fuori dal Ricettario)
               </span>
@@ -672,7 +672,7 @@ export default function IngredienteForm() {
                 scarico dell'intero tavolo. Togliendo la spunta il gestionale
                 smette di fingere di seguirlo: si compra, il costo resta sulla
                 fattura, la giacenza non si racconta. */}
-            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.tenuto_in_magazzino}
@@ -681,7 +681,7 @@ export default function IngredienteForm() {
                 }
               />
               Il magazzino lo segue
-              <span className="text-xs text-b58-charcoal-soft">
+              <span className="testo-sala text-b58-charcoal-soft">
                 (togli la spunta alle spezie a pizzico: si comprano, ma non si
                 scaricano e non entrano in lista della spesa)
               </span>
@@ -708,7 +708,7 @@ export default function IngredienteForm() {
               placeholder="Es. ≤ 4°C"
               className={inputClass}
             />
-            <p className="mt-1 text-xs text-b58-charcoal-soft">
+            <p className="mt-1 testo-sala text-b58-charcoal-soft">
               A che temperatura <em>dovrebbe</em> arrivare. Quella vera si
               misura col termometro alla consegna e si scrive nel registro
               HACCP: questa non ci finisce mai.
@@ -734,7 +734,7 @@ export default function IngredienteForm() {
                 type="button"
                 key={a.value}
                 onClick={() => toggleArrayValue("allergens", a.value)}
-                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.allergens.includes(a.value)
                     ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -754,7 +754,7 @@ export default function IngredienteForm() {
                 type="button"
                 key={m.value}
                 onClick={() => toggleArrayValue("seasonality", m.value)}
-                className={`rounded-full text-xs px-3 py-1.5 border transition-colors ${
+                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.seasonality.includes(m.value)
                     ? "bg-b58-olive text-b58-parchment border-b58-olive"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -766,7 +766,7 @@ export default function IngredienteForm() {
           </div>
           {/* Da quale calendario viene, quando l'ha proposta la macchina. */}
           {fonti.stagionalita && (
-            <p className="mt-1 text-xs text-b58-charcoal-soft">
+            <p className="mt-1 testo-sala text-b58-charcoal-soft">
               secondo: {fonti.stagionalita}
             </p>
           )}
@@ -776,7 +776,7 @@ export default function IngredienteForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 text-sm"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea ingrediente"}
           </button>
@@ -795,7 +795,7 @@ export default function IngredienteForm() {
           spiegare, e' peggio di un pulsante che non c'e'. */}
       {isEdit && (
         <div className="mt-8 rounded-xl border border-b58-charcoal/15 p-5">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
             Toglierlo dagli elenchi
             <Didascalia>
               Metterlo da parte lo fa sparire da dove lo cerchi, ma resta
@@ -806,7 +806,7 @@ export default function IngredienteForm() {
           </h2>
 
           {usi === null ? (
-            <p className="text-sm text-b58-charcoal-soft">Guardo dove è usato…</p>
+            <p className="testo-sala-grande text-b58-charcoal-soft">Guardo dove è usato…</p>
           ) : nonLetto(usi) ? (
             <DatoNonLetto
               cosa="dove è usato questo ingrediente"
@@ -820,7 +820,7 @@ export default function IngredienteForm() {
                   type="button"
                   disabled={togliendo}
                   onClick={() => cambiaPresenza(!attivo)}
-                  className="tocco-bottone rounded-lg border border-b58-charcoal/20 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-4 disabled:opacity-60"
+                  className="tocco-bottone rounded-lg border border-b58-charcoal/20 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande px-4 disabled:opacity-60"
                 >
                   {attivo ? "Mettilo da parte" : "Rimettilo negli elenchi"}
                 </button>
@@ -838,7 +838,7 @@ export default function IngredienteForm() {
                     disabilitato={togliendo}
                   />
                 ) : (
-                  <span className="text-sm text-b58-charcoal-soft">
+                  <span className="testo-sala-grande text-b58-charcoal-soft">
                     Non si può eliminare: compare in{" "}
                     {usi.map((u) => `${u.dove} (${u.quante})`).join(", ")}.
                   </span>
@@ -846,7 +846,7 @@ export default function IngredienteForm() {
               </div>
 
               {!attivo && (
-                <p className="mt-3 text-sm text-b58-charcoal">
+                <p className="mt-3 testo-sala-grande text-b58-charcoal">
                   ⚠️ È messo da parte: non compare negli elenchi dove lo cerchi,
                   ma tutto quello che l&apos;ha usato continua a nominarlo.
                 </p>
@@ -875,17 +875,17 @@ export default function IngredienteForm() {
 
       {isEdit && !nonLetto(varianti) && varianti.length > 0 && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
             Versioni che compri
           </h2>
-          <p className="text-xs text-b58-charcoal-soft mb-3">
+          <p className="testo-sala text-b58-charcoal-soft mb-3">
             Dalla più conveniente. Il prezzo è sempre per {form.unit}, così formati diversi si
             possono confrontare.
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full testo-sala-grande">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-b58-charcoal-soft">
+                <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
                   <th className="pb-2">Versione</th>
                   <th className="pb-2">Chi la vende</th>
                   <th className="pb-2 text-right">€/{form.unit}</th>
@@ -899,7 +899,7 @@ export default function IngredienteForm() {
                     <td className="py-1.5 text-b58-charcoal">
                       {v.descrizione}
                       {v.stesso_di && (
-                        <span className="text-[11px] text-b58-charcoal-soft"> · stesso prodotto</span>
+                        <span className="testo-sala text-b58-charcoal-soft"> · stesso prodotto</span>
                       )}
                     </td>
                     <td className="py-1.5">
@@ -910,7 +910,7 @@ export default function IngredienteForm() {
                       <select
                         value={v.fornitore_id ?? ""}
                         onChange={(e) => assegnaFornitore(v.articolo_id, e.target.value)}
-                        className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                        className="testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
                       >
                         <option value="">chi la vende?</option>
                         {suppliers.map((s) => (
@@ -923,10 +923,10 @@ export default function IngredienteForm() {
                     <td className="py-1.5 text-right text-b58-charcoal">
                       {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
                       {i === 0 && v.prezzo && (
-                        <span className="text-[11px] text-b58-olive"> ↓</span>
+                        <span className="testo-sala text-b58-olive"> ↓</span>
                       )}
                     </td>
-                    <td className="py-1.5 text-right text-b58-charcoal-soft text-xs">
+                    <td className="py-1.5 text-right text-b58-charcoal-soft testo-sala">
                       {v.ultima_volta ? formatDate(v.ultima_volta) : "—"}
                     </td>
                     <td className="py-1.5 text-right">
@@ -940,7 +940,7 @@ export default function IngredienteForm() {
                         <select
                           value={v.stesso_di ?? ""}
                           onChange={(e) => collega(v.articolo_id, e.target.value || null)}
-                          className="text-xs rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                          className="testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
                         >
                           <option value="">— versione a sé —</option>
                           {varianti
@@ -958,7 +958,7 @@ export default function IngredienteForm() {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
             Se due righe sono lo stesso identico prodotto con nomi diversi, collegale: da lì in poi
             un aumento fra un fornitore e l{"'"}altro diventa un avviso invece di una cosa da
             notare a occhio.
@@ -972,7 +972,7 @@ export default function IngredienteForm() {
       {isEdit && (
         <Link
           to="/magazzino/allineamento"
-          className="inline-block mt-6 text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta"
+          className="inline-block mt-6 testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta"
         >
           Quanto ce n&apos;è davvero? Allinea la dispensa →
         </Link>
@@ -981,14 +981,14 @@ export default function IngredienteForm() {
       {isEdit && (
         <div className="mt-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg text-b58-charcoal">Prezzo e storico</h2>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal">Prezzo e storico</h2>
             <div className="text-right">
               <div className="text-xl text-b58-charcoal font-medium">
                 {formatEUR(form.current_price)}
-                <span className="text-sm text-b58-charcoal-soft">/{form.unit}</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft">/{form.unit}</span>
               </div>
               {priceAlert !== null && (
-                <span className="text-xs text-orange-700 bg-orange-100 rounded-full px-2 py-0.5">
+                <span className="testo-sala text-orange-700 bg-orange-100 rounded-full px-2 py-0.5">
                   {priceAlert > 0 ? "+" : ""}
                   {priceAlert.toFixed(1)}% vs media 3 mesi
                 </span>
@@ -1021,16 +1021,16 @@ export default function IngredienteForm() {
               type="button"
               disabled={updatingPrice || !newPrice}
               onClick={handleUpdatePrice}
-              className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment text-sm px-4 py-2"
+              className="rounded-lg bg-b58-charcoal hover:bg-b58-charcoal-soft disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande px-4 py-2"
             >
               {updatingPrice ? "Aggiorno…" : "Aggiorna prezzo"}
             </button>
           </div>
 
           {priceHistory.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft">Nessuno storico ancora.</p>
+            <p className="testo-sala-grande text-b58-charcoal-soft">Nessuno storico ancora.</p>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full testo-sala-grande">
               <thead>
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                   <th className="py-2 font-medium">Data</th>
