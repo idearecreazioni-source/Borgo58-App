@@ -59,7 +59,14 @@ body {
      l'assenza di una classe: correggerlo caso per caso vorrebbe dire
      trovarli tutti, e il prossimo che scrive una riga senza classe
      ricomincerebbe. Chi ha una classe sua continua a vincere.
-     ⚠️ Su un computer sono 15,1 punti contro i 16 di prima: -6%. */
+     ⚠️ Su un computer sono 15,1 punti contro i 16 di prima: -6%.
+
+     ✅ E IN STAMPA NON SI MUOVE, che è la domanda giusta da farsi ogni
+     volta che si mette una misura in centimetri veri: il blocco
+     `@media print` in fondo a questo file la rifissa in punti, quindi
+     sulla carta vale lo stesso da qualunque dispositivo sia partita la
+     stampa. Dimostrato misurando ogni documento stampabile a due
+     larghezze di finestra: nessuna taglia cambia. */
   font-size: calc(var(--pxcm) * 0.4);
 }
 
@@ -236,6 +243,49 @@ body {
      la stampante in laboratorio guardera' su carta vera, e questo numero
      puo' cambiare. Finche' quella prova non c'e', 6,8 mm e' una
      decisione presa a ragion veduta, non una misura. */
+  /* 🔴 IL TITOLO DI UN DOCUMENTO NON CAMBIA COLLA FINESTRA (25/08/2026).
+     Trovato misurando la proprietà «la taglia di ogni testo stampato è la
+     stessa da qualunque dispositivo»: su manuale HACCP, tracciabilità e
+     scadenze da stampare il titolo usciva di due taglie diverse a seconda
+     della larghezza della finestra da cui si premeva stampa.
+
+     ⚠️ E LA CAUSA NON ERA LA MISURA IN CENTIMETRI VERI, che in stampa è
+     già fissata qui sotto: era un **breakpoint responsive**
+     (`md:text-3xl`), che guarda la larghezza della finestra e non sa
+     niente della carta. Sullo schermo è giusto che il titolo cresca;
+     sul foglio no.
+
+     ⚠️ Si fissa alla taglia GRANDE, quella del computer: è da lì che
+     questi documenti si stampano, ed è la misura con cui sono sempre
+     usciti finora. */
+  .titolo-documento {
+    font-size: 30px;
+  }
+
+  /* 🔴 IL PRECONTO A 3,44 mm (25/08/2026, decisione di Alessio). 3,20 mm
+     è il MINIMO del progetto, non l'obiettivo, e il preconto è l'unico
+     documento che finisce in mano a chi non lavora qui: si legge seduti,
+     in sala, con la luce bassa. Il ritocco non allunga lo scontrino —
+     misurato: a 3,44 i nomi dei piatti stanno ancora su una riga dentro i
+     72 mm della termica, cosa che a 5,4 non succederebbe.
+
+     ⚠️ E QUESTA REGOLA SOSTITUISCE UNA CHE NON HA MAI FUNZIONATO: sul
+     preconto stavano DUE `print:text-[13px]`, tutt'e due scavalcate da
+     `.testo-sala` che nel foglio viene dopo. Il valore era già giusto —
+     13 punti sulla carta fanno esattamente 3,44 mm — ma non ha mai
+     stampato. Tolte: due regole che dicono la stessa cosa e una sola
+     funziona sono un debito, non una ridondanza.
+
+     🔴 NON È DEFINITIVA: come per il ticket, nessuno ha ancora visto un
+     foglio uscire da una termica. Si riguarda sulla carta vera. */
+  .ticket-preconto,
+  .ticket-preconto .testo-sala {
+    font-size: 13px;
+  }
+  .ticket-preconto .testo-sala-grande {
+    font-size: 16.3px;
+  }
+
   .ticket-cucina .testo-sala {
     font-size: 20.5px;
   }

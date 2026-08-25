@@ -29,7 +29,7 @@ export default function Tracciabilita() {
       </div>
 
       <div className="mb-6">
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Tracciabilità lotti</h1>
+        <h1 className="titolo-documento font-display text-2xl md:text-3xl text-b58-charcoal">Tracciabilità lotti</h1>
         <p className="text-b58-charcoal-soft mt-1">
           Ogni consegna registrata, con fornitore, numero di lotto e scadenza.
         </p>

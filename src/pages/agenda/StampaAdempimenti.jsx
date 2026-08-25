@@ -35,7 +35,7 @@ export default function StampaAdempimenti() {
         <PrintButton />
       </div>
 
-      <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+      <h1 className="titolo-documento font-display text-2xl md:text-3xl text-b58-charcoal">
         Scadenze fiscali e societarie — Borgo 58 S.r.l.s.
       </h1>
       <p className="text-b58-charcoal-soft mt-1">Generato il {formatDate(new Date().toISOString())}.</p>

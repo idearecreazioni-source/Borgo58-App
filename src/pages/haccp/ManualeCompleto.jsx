@@ -86,7 +86,7 @@ export default function ManualeCompleto() {
         <PrintButton label="Esporta manuale in PDF" />
       </div>
 
-      <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+      <h1 className="titolo-documento font-display text-2xl md:text-3xl text-b58-charcoal">
         Piano di Autocontrollo — Borgo 58
       </h1>
       {/* Il periodo è parte del DOCUMENTO, non un dettaglio a schermo:

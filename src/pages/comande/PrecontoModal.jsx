@@ -92,7 +92,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
               di partenza: la ragione per cui Alessio aveva chiesto di
               ingrandire — *è il foglio che legge chi sta pagando* — è
               soddisfatta lo stesso. */}
-          <div className="print:text-[13px] stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
+          <div className="ticket-preconto stampa-ticket font-mono testo-sala bg-b58-cream-dark/30 border border-dashed border-b58-charcoal/25 rounded-lg p-3">
             <div className="text-center font-bold tracking-wide border border-b58-gold-dark/40 bg-b58-gold/15 rounded py-1 mb-2">
               DOCUMENTO NON FISCALE
             </div>
@@ -127,7 +127,7 @@ export default function PrecontoModal({ order, copertoPrice, onClose }) {
             {/* Divisione informativa (§3.2.2): sul preconto si vede subito
                 quanto viene a testa. L'arrotondamento si fa alla chiusura. */}
             {coperti >= 2 && total > 0 && (
-              <div className="print:text-[13px] flex justify-between testo-sala pt-0.5">
+              <div className="flex justify-between testo-sala pt-0.5">
                 <span>A testa ({coperti})</span>
                 <span>{formatEUR(total / coperti)}</span>
               </div>
