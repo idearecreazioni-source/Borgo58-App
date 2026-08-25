@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { listDashboardTasks, updateTask } from "../lib/api/tasks";
 import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservations";
 import { contaPostaInAttesa } from "../lib/api/posta";
+import { quanteAspettano } from "../lib/api/voce";
+import { daQuantoAspetta } from "../lib/calcoli/voce";
+import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
 import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
@@ -35,6 +38,7 @@ export default function Dashboard() {
   const [richieste, setRichieste] = useState([]);
   const [posta, setPosta] = useState(0);
   const [avvisi, setAvvisi] = useState([]);
+  const [dettate, setDettate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -78,6 +82,13 @@ export default function Dashboard() {
             .then(setPosta)
             .catch((e) => setError(e.message)),
       caricaAvvisi(),
+      // ⚠️ Lettura indipendente come le altre: se fallisce, il resto
+      //    della mattina arriva lo stesso. E il guasto NON si ingoia:
+      //     marca il risultato come «non letto», e sotto la
+      //    schermata lo dice invece di far sparire il riquadro — che si
+      //    leggerebbe «non hai niente in sospeso», cioè una frase
+      //    tranquilla e falsa.
+      isStaff ? Promise.resolve() : leggi(quanteAspettano()).then(setDettate),
     ]).finally(() => setLoading(false));
 
   useEffect(() => {
@@ -127,6 +138,42 @@ export default function Dashboard() {
         <div className="space-y-6">
           {!isStaff && daGuardare > 0 && (
             <RichiesteDeiClienti richieste={richieste} posta={posta} />
+          )}
+
+          {/* 🔴 QUELLO CHE HA DETTATO E NON HA ANCORA GUARDATO.
+              Niente scade da solo: una cosa detta in cella resta lì finché
+              non la guarda, e questo riquadro è il «glielo si ricorda il
+              giorno dopo» del mandato — fatto mostrando, non cancellando.
+              ⚠️ Compare solo se c'è qualcosa, come i due riquadri accanto:
+              uno che dice «niente» tutte le mattine diventa arredamento. */}
+          {!isStaff && nonLetto(dettate) && (
+            <p className="testo-sala text-b58-terracotta-dark">
+              Non sono riuscito a leggere le cose che hai dettato.{" "}
+              <button type="button" onClick={load} className="underline">
+                Riprova
+              </button>
+            </p>
+          )}
+
+          {!isStaff && !nonLetto(dettate) && dettate?.quante > 0 && (
+            <Link
+              to="/detta"
+              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-gold bg-b58-gold/10 px-4 py-3"
+            >
+              <span className="testo-sala text-b58-charcoal">
+                <span className="font-medium">
+                  {dettate.quante === 1
+                    ? "Una cosa che hai detto"
+                    : `${dettate.quante} cose che hai detto`}
+                </span>{" "}
+                {dettate.quante === 1 ? "aspetta che tu la guardi" : "aspettano che tu le guardi"}
+                {dettate.laPiuVecchia > 0 &&
+                  ` — la più vecchia ${daQuantoAspetta(dettate.laPiuVecchia)}`}
+              </span>
+              <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
+                →
+              </span>
+            </Link>
           )}
 
           {!isStaff && avvisi.length > 0 && (

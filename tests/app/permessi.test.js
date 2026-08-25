@@ -158,18 +158,27 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // pubblica sarebbe stata una porta aperta: revocata nella stessa
   // migrazione (`20260816000017`). Anche lei è una funzione di trigger:
   // la esegue il motore per conto di `recipes`, senza bisogno di permessi.
-  it("solo 10 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SALITO DA 10 A 12 il 26/08/2026 CON I COMANDI VOCALI, e le due
+  // nuove sono aperte ad `anon` PER FORZA: una Scorciatoia dell iPhone non
+  // ha e non puo avere un accesso al gestionale. Il portiere non manca —
+  // e la CHIAVE, che il gestionale confronta per impronta e che si revoca
+  // in un tocco; e il freno anti-abuso che il Contratto §4 pretende su
+  // tutto cio che e esposto ad `anon` vive dentro `voce_apri_sessione`
+  // (60 dettature all ora, poi si ferma e lo dice).
+  it("solo 12 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
       "is_titolare",
       "normalize_phone",
       "public_reservation_options",
+      "registra_dettatura_da_chiave",
       "set_aggiornato_il",
       "set_task_visibility",
       "set_updated_at",
       "submit_public_reservation",
       "task_origin_visible_to_staff",
+      "voce_apri_sessione",
     ];
 
     const r = await titolare.rpc("funzioni_aperte_ad_anon");
@@ -202,7 +211,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 22 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 23 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -293,6 +302,15 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // chiama solo un trigger, che gira come proprietario e non ha
       // bisogno del permesso di nessun utente.
       "allergeni_con_origine",
+      // ⚠️ AGGIUNTA IL 26/08 coi comandi vocali, ed e dichiarata invece che
+      // corretta: risponde a UNA domanda sola — «questo tipo di azione si
+      // salva da se?» — leggendo il catalogo `tipi_azione_vocale`, che ha
+      // gia la lettura aperta a tutto lo staff. Non espone nessun dato, e
+      // non decide niente per conto proprio: chi la interroga sono
+      // `scrivi_dettatura` e le prove.
+      // ⚠️ Il portiere ce l ha dove conta: `registra_dettatura` pretende il
+      // titolare, e senza passare da li nessuno arriva a eseguire niente.
+      "azione_si_esegue_da_se",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

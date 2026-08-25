@@ -259,6 +259,20 @@ const OPERAZIONI = new Set([
   // ⚠️ Trovato da `tests/app/scritture-dal-corridoio.test.js`, non
   // rileggendo: la funzione era chiamata dritta dal browser.
   "applica_lettura_etichetta",
+  // I comandi vocali (26/08/2026). Confermare una cosa dettata la fa
+  // succedere DAVVERO — allinea una giacenza, scrive una temperatura nel
+  // registro HACCP, scarica del magazzino — e insieme aggiorna la riga
+  // che la teneva in attesa. A meta' resterebbe o un gesto avvenuto che
+  // continua a comparire fra le cose da confermare (e che qualcuno
+  // confermerebbe una seconda volta), o una riga che si dichiara fatta
+  // senza che niente sia successo.
+  //
+  // ⚠️ `annulla_azione_dettata` tocca UNA tabella sola e passa comunque di
+  // qui, come `elimina_nota_credito`: sono le due facce dello stesso gesto
+  // — Alessio guarda una cosa e dice si' o no — e separarle renderebbe
+  // meta' di quel gesto invisibile nell'elenco delle scritture.
+  "esegui_azione_dettata",
+  "annulla_azione_dettata",
 ]);
 
 const CORS = {

@@ -9,6 +9,7 @@ import RicettarioHome from "./pages/ricettario/RicettarioHome";
 import IngredientiList from "./pages/ricettario/IngredientiList";
 import SchedeProdotti from "./pages/ricettario/SchedeProdotti";
 import Fotografa from "./pages/assistente/Fotografa";
+import Detta from "./pages/assistente/Detta";
 import IngredienteForm from "./pages/ricettario/IngredienteForm";
 import RicetteList from "./pages/ricettario/RicetteList";
 import RicettaForm from "./pages/ricettario/RicettaForm";
@@ -155,6 +156,9 @@ function AppRoutes() {
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
+        {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
+            sopra: per ora l'assistente lo usa solo Alessio. */}
+        <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/nuovo" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/:id" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/menu" element={<RequireTitolare><MenuList /></RequireTitolare>} />

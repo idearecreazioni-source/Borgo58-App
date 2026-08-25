@@ -200,6 +200,12 @@ export const GUARDIE_ESENTI = [
     perche:
       "elenca cosa PUÒ STARE DENTRO un'altra ricetta (preparazione, finger), che è di proposito un sottoinsieme dei tipi di ricetta: un piatto finito è un tipo legittimo e non può essere un componente. Sono due domande diverse — «che ricetta è» e «può entrare in un'altra» — e il discriminante del 17/08 dice che allora non si fondono. ⚠️ E il verso conta: la funzione elenca ciò che è ammesso, quindi un tipo nuovo domani sarebbe rifiutato finché nessuno lo nomina lì (19/08/2026, blocco 1 dei finger food)",
   },
+  {
+    funzione: "voce_risolvi_dati",
+    parametro: "p_tipo",
+    perche:
+      "non valida niente e non rifiuta niente: elenca i TRE tipi di azione vocale che nominano un prodotto (giacenza, merce_buttata, lista_spesa), per tradurre il numero del catalogo nell'identificativo vero. Gli altri otto tipi passano di lì e ne escono intatti. ⚠️ E il vocabolario dei tipi non è nemmeno un vincolo `check`: vive in `tipi_azione_vocale`, una tabella, perché aggiungere un'azione deve essere una riga e non una migrazione — quindi non esiste nessun insieme del database con cui questa guardia potrebbe combaciare (26/08/2026, i comandi vocali)",
+  },
 ];
 
 // ---------------------------------------------------------------------

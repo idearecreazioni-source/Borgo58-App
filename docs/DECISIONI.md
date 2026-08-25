@@ -97,6 +97,14 @@ con la dicitura generale sul menu. Non inventare un campo per quelle.
 * 25/08 — Le AVVERTENZE DEL PRODUTTORE dichiarate in etichetta («può contenere
 tracce di senape») NON vanno fra gli allergeni ma vanno lasciate come NOTA sul
 prodotto. La voce del 24/08 riguardava le tracce non dichiarate.
+* 25/08 — Quando Alessio tocca a mano gli allergeni di un prodotto, il
+gestionale scrive DA SÉ che li ha verificati lui: è la verità ed è la fonte più
+affidabile. Chiude la contraddizione fra ciò che legge la sala e ciò che fa il
+menu.
+* 25/08 — Il caso «nessuno l'ha mai guardato» sarà coperto dal sorvegliante
+notturno, che integra il dato se può o lo porta all'attenzione di Alessio il
+giorno dopo. ⚠️ FINCHÉ IL SORVEGLIANTE NON ESISTE quel caso però esiste: serve
+un comportamento provvisorio DICHIARATO, non un silenzio.
 * 24/08 — ALLERGENI AL TAVOLO: per ogni allergene di una ricetta si dichiara se è
 ELIMINABILE, CON COSA si sostituisce e QUANTO COSTA IN PIÙ. In comanda gli
 eliminabili sono premibili, i non eliminabili si vedono spenti. La sostituzione
@@ -164,6 +172,39 @@ SPEGNERLO. Non si tiene premuto mentre si parla. Serve un segno bene visibile
 che sta ascoltando. SUPERA la decisione precedente del push-to-talk.
 * 25/08 — La dettatura dell'Agenda NON si apre come mandato a sé: è lo stesso
 pezzo di voce dell'assistente.
+* 25/08 — Si preme per ACCENDERE e si ripreme per SPEGNERE, mai tenere premuto.
+Serve un segno visibile che sta ascoltando.
+* 25/08 — Si detta una FILZA in una volta sola, non un prodotto alla volta.
+* 25/08 — Il riscontro arriva ALLA FINE: elenco di ciò che ha fatto se era
+sicuro, azioni da confermare se non lo era.
+* 25/08 — MAGLIA LARGA: se capisce cosa fare lo fa; se non capisce lascia una
+nota in Dashboard con quello che ha detto, senza inventare.
+* 25/08 — Criterio salva-da-sé / passa-dall'occhio: MISURA contro CREAZIONE.
+Salva da sé ciò che è una misura già presa da Alessio e che, se sbagliata, si
+corregge rifacendo il gesto (giacenza, temperatura, promemoria, pulizia, lista
+della spesa, merce buttata). Passa dai suoi occhi ciò che CREA una cosa nuova o
+tocca i soldi (ricetta, prodotto nuovo, carico merce, movimento di cassa),
+perché lì l'errore non si vede rifacendo il gesto: si vede fra tre mesi in un
+food cost storto.
+* 25/08 — Le temperature si scrivono solo se dice anche QUALE frigo. Mai
+indovinare: quel registro va all'ASP.
+* 25/08 — Niente scade da solo: quello che non conferma resta in attesa e
+glielo si ricorda il giorno dopo.
+* 25/08 — Il punto che riceve l'audio va protetto con una CHIAVE dal primo
+giorno.
+* 26/08 — Quando non trova il prodotto nominato mette QUELLA RIGA da parte e la
+chiede alla fine: le altre della stessa filza si salvano lo stesso. La domanda
+dev'essere UNA SOLA, come per la foto.
+
+## Sorvegliante notturno
+
+* 25/08 — Lavorerà solo DOPO l'inaugurazione: non è urgente, e prima viene ciò
+che va collaudato.
+* 25/08 — Può SIA correggere da sé SIA segnalare.
+* 25/08 — DUE FASI: all'inizio un controllo approfondito, anche con più agenti,
+per verificare che tutto torni — «buttiamo sangue da quasi un mese e non vorrei
+scoprire dopo un anno che non lavora come dovrebbe». Dopo un rodaggio accurato,
+un controllo più soft.
 
 ## Prodotti, ingredienti e prezzi
 
