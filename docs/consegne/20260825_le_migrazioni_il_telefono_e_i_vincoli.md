@@ -509,7 +509,10 @@ Registrato anche in [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md)
 
 # SECONDA PARTE — dopo il push e le conferme di Alessio
 
-**Le quattro migrazioni in attesa sono state applicate**: la produzione è
+**Le quattro migrazioni in attesa sono state applicate** — `20260824000033`,
+`20260825000001`, `20260825000002`, `20260825000003`, nominate qui per
+intero perché la rete dei riepiloghi cerca il numero completo e una
+forma abbreviata per lei non esiste: la produzione è
 passata da 234 a **238**, allineata col repository e col progetto di
 prova. Numeri veri letti dopo, non dedotti: 156 vincoli muti congelati,
 i vincoli con la frase italiana da 42 a **56**, **zero** colonne
