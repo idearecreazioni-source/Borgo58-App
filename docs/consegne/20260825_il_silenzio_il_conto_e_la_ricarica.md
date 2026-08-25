@@ -2,8 +2,14 @@
 
 **Consegna del 25/08/2026** · tre blocchi del mandato del validatore, tutti e tre aperti e chiusi.
 
-- **HEAD dichiarato:** `10eaab11cfac1ec25cf3acb05cc93224850f4769`
-- **Working tree al momento della scrittura:** pulito (questo riepilogo è l'ultimo commit).
+- **I commit della consegna, in ordine:**
+  - `2358dbe` — la preparazione che ha le partite in cella e il magazzino non segue
+  - `e758ac0` — un movimento di banca ha il suo conto, e i conti si registrano da una schermata
+  - `10eaab1` — la prova di ricarica: le migrazioni in ordine di numero arrivano in fondo
+  - `0af9d05` — appunti: il conteggio delle migrazioni e il comando della prova di ricarica
+  - *questo riepilogo, che è l'ultimo.*
+- **Working tree al momento della scrittura:** pulito.
+- ⚠️ **Uno scarto dichiarato**: la prima versione di questo riepilogo era stata scritta prima del commit degli appunti, e dichiarava `10eaab1` come HEAD. Corretto elencando tutti i commit invece di un hash solo — *un riepilogo che dichiara un hash superato è la stessa forma della frase diventata falsa che questa consegna insegue in tre posti.*
 - **Migrazioni nuove:** `20260825000007`, `20260825000008`, `20260825000009`, `20260825000010`.
 - **In produzione: nessuna delle quattro.** Applicate solo al progetto di prova, che passa da 241 a **245** registrate. Il repository ne ha **245**.
 - **Comando nuovo:** `npm run ricostruzione:verifica`.
