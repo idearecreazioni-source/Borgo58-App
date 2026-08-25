@@ -1867,3 +1867,45 @@ Chef Table, letta allo specchio.
 sue): **3,20 mm è il MINIMO ACCETTABILE, non l'obiettivo.** Un testo
 importante che sta appena sopra la soglia resta illeggibile a colpo d'occhio,
 e finora lo si è trattato come «a norma».
+
+---
+
+## 46 · 25/08/2026 — «la rete delle scale si prova rompendo una previsione vera»
+
+**Cosa era stato deciso, e quando.** Il 24/08, dentro la migrazione
+`20260824000033`: la rete che sorveglia le scale delle linee di ricavo si
+prova **rompendola su una previsione libera esistente**, e se non ce n'è
+nessuna la migrazione si ferma — *«una rete mai vista scattare non si sa
+se scatta»*.
+
+**La ragione di allora.** Rompere qualcosa di vero dimostra che la rete
+scatta sui **dati veri**, non su un caso costruito ad arte per farla
+scattare. È la stessa diffidenza che questo progetto ha verso le prove
+pure, che «non sanno di star parlando la lingua sbagliata».
+
+**Cosa si decide adesso.** La verifica **si costruisce la propria
+previsione**, la rompe, controlla che la rete scatti, controlla che
+taccia con la scala giusta, e la cancella per identificativo spegnendo
+`trg_log_delete`. Sta nella `20260825000001`, che poi registra la
+`…033` — quella non si riscrive.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e questo
+è il prezzo che accettiamo.** Una prova su roba propria non dimostra che
+la rete scatta sui dati di Alessio: dimostra che scatta. Ma
+l'alternativa non era «provarla sui dati veri» — era **non provarla
+affatto**, e con lei fermare tutta la coda delle migrazioni: in
+produzione una previsione libera **non esiste** (ce n'è una sola, ed è
+congelata), e la `…033` si è fermata lì.
+
+⚠️ **E la fermata ha lasciato il lavoro a metà**, che è la parte da
+ricordare: colonna, vincolo e funzioni erano già in produzione, la riga
+in `applied_migrations` no. Il messaggio dello strumento — *«una
+migrazione che fallisce non lascia niente a metà»* — non è vero quando
+il blocco che fallisce sta **dopo** le DDL. Era già scritto il 23/08 in
+CLAUDE.md §8: è **ricomparso**.
+
+⚠️ **Il debito che resta, dichiarato perché nessuna rete lo copre**: su
+una **ricostruzione da zero** la `…033` gira prima della migrazione che
+la registra, e si ferma di nuovo — a quel punto non esiste nessuna
+previsione, nemmeno congelata. Va saltata come la `…030`:
+`npm run migra -- --salta 20260824000030 --salta 20260824000033`.
