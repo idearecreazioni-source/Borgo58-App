@@ -212,6 +212,27 @@ export async function setOrderCoperti(orderId, coperti) {
   if (error) throw error;
 }
 
+// Di che linea sono i coperti di questo conto: chi CENA (`sala`) o chi fa
+// APERICENA nell'area lunch (`lunch`).
+//
+// ⚠️ SERVE PER CONFRONTARE LA REALTA' CON LA PREVISIONE. La Proiezione ha
+//    sei linee e oggi nessun modulo misura quelle diverse dalla sala —
+//    eppure il pareggio con la sola sala chiede piu' coperti di quanti il
+//    piano ne preveda. Senza questo dato quel confronto non esiste.
+//
+// ⚠️ VUOTO NON E' «SALA»: si puo' togliere la scelta, e allora quel conto
+//    torna fra i «non dichiarati». Il conteggio li mostra come riga a se',
+//    mai sommati alla sala — un conto classificato per sbaglio e'
+//    peggio di uno non classificato, perche' nessuno lo va piu' a
+//    guardare.
+export async function setOrderLinea(orderId, linea) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ linea: linea === "sala" || linea === "lunch" ? linea : null })
+    .eq("id", orderId);
+  if (error) throw error;
+}
+
 // Nota generale del tavolo (allergie, "tutti insieme", "bimbo piccolo"):
 // vale per l'intero conto, non per una riga. Nella versione precedente il
 // campo esisteva a schermo ma il testo non veniva mai salvato da nessuna

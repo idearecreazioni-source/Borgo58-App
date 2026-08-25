@@ -16,6 +16,7 @@ import {
   chiamaProssimoTurno,
   sendDraftItems,
   setOrderCoperti,
+  setOrderLinea,
   spostaConto,
   togliSostituzioneRiga,
   updateCopertoPrice,
@@ -939,6 +940,7 @@ export default function Sala() {
   };
 
   const handleCoperti = (n) => withBusy(() => setOrderCoperti(order.id, n));
+  const handleLinea = (l) => withBusy(() => setOrderLinea(order.id, l));
 
   // Le note (del piatto e del tavolo) si salvano da sole mentre si scrive,
   // quindi qui non c'e' niente da ricordarsi di salvare prima dell'invio.
@@ -2005,6 +2007,42 @@ export default function Sala() {
             <span className="testo-sala text-b58-charcoal-soft/70 ml-1">
               {copertoPrice != null ? `${formatEUR(copertoPrice)} a persona` : "prezzo non disponibile"}
             </span>
+          </div>
+
+          {/* LINEA ----------------------------------------------------- */}
+          {/* ⚠️ STA ACCANTO AI COPERTI, e non è una scelta di disposizione:
+              è la stessa informazione — quante persone e di che tipo. Chi
+              corregge i coperti sta già guardando qui.
+
+              ⚠️ E VUOTO RESTA UNA POSSIBILITÀ, non un errore da riempire:
+              premendo di nuovo la stessa voce la scelta si toglie. Un conto
+              classificato per sbaglio è peggio di uno non classificato,
+              perché nessuno lo va più a guardare. */}
+          <p className={sectionLabel}>Chi è a tavola</p>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {[
+              { valore: "sala", testo: "Cena" },
+              { valore: "lunch", testo: "Apericena" },
+            ].map((l) => (
+              <button
+                key={l.valore}
+                type="button"
+                disabled={busy}
+                onClick={() => handleLinea(order.linea === l.valore ? null : l.valore)}
+                className={`tocco-bottone inline-flex items-center rounded-lg px-4 testo-sala ring-1 disabled:opacity-40 ${
+                  order.linea === l.valore
+                    ? "bg-b58-terracotta text-b58-parchment ring-b58-terracotta"
+                    : "bg-white text-b58-charcoal ring-b58-charcoal/15"
+                }`}
+              >
+                {l.testo}
+              </button>
+            ))}
+            {!order.linea && (
+              <span className="testo-sala text-b58-charcoal-soft/70 ml-1">
+                non detto
+              </span>
+            )}
           </div>
 
           {/* CARTA DEI VINI ------------------------------------------- */}
