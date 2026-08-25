@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -22,6 +22,16 @@ import {
   updateIngredientPrice,
   usiDellIngrediente,
 } from "../../lib/api/ingredients";
+import ScattaFoto from "../../components/ScattaFoto";
+import {
+  applicaLetturaEtichetta,
+  marcaCampiDallAssistente,
+} from "../../lib/api/assistenteFoto";
+import {
+  allergeniDaScrivere,
+  campiProposti,
+  campiRimastiDellAssistente,
+} from "../../lib/calcoli/schedaLetta";
 import {
   ALLERGENS,
   INGREDIENT_CATEGORIES,
@@ -66,6 +76,14 @@ export default function IngredienteForm() {
   const [usi, setUsi] = useState(null);
   const [attivo, setAttivo] = useState(true);
   const [togliendo, setTogliendo] = useState(false);
+
+  // Quello che l'assistente ha letto sull'etichetta, in attesa che Alessio
+  // guardi la scheda e salvi.
+  // ⚠️ SI TIENE FINCHE' NON SI SALVA, e non un istante di piu': serve a
+  //    scrivere le origini degli allergeni e la marcatura dei campi DOPO
+  //    che il prodotto esiste. Poi se ne va con la schermata, insieme alla
+  //    foto, che non e' mai stata salvata da nessuna parte.
+  const [letturaEtichetta, setLetturaEtichetta] = useState(null);
 
   const guardaGliUsi = useCallback(() => {
     if (!id) return;
@@ -124,6 +142,36 @@ export default function IngredienteForm() {
   const [showNewSupplier, setShowNewSupplier] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ name: "", category: "" });
   const [creatingSupplier, setCreatingSupplier] = useState(false);
+
+  // ------------------------------------------------------------------
+  // La scheda che arriva da una foto scattata altrove (dalla Dashboard,
+  // dove il contesto non era noto e l'assistente ha riconosciuto
+  // un'etichetta).
+  // ------------------------------------------------------------------
+  // ⚠️ VIAGGIA NELLA NAVIGAZIONE, non in un deposito: e' lo stesso motivo
+  //    per cui la foto non viene mai salvata. Se si ricarica la pagina si
+  //    perde, e va rifatta la foto — un prezzo piccolo, pagato una volta,
+  //    contro un dato che resterebbe in giro per sempre.
+  const posizione = useLocation();
+  const schedaDaFoto = posizione.state?.daFoto ?? null;
+
+  useEffect(() => {
+    if (!schedaDaFoto || isEdit) return;
+    setForm((f) => {
+      const { valori } = campiProposti(schedaDaFoto, f);
+      const allergeniLetti = (schedaDaFoto.allergeni ?? []).map((a) => a?.codice).filter(Boolean);
+      return {
+        ...f,
+        ...valori,
+        allergens: Array.from(new Set([...(f.allergens ?? []), ...allergeniLetti])),
+      };
+    });
+    setLetturaEtichetta((precedente) => {
+      if (precedente) return precedente;
+      const { valori, proposti } = campiProposti(schedaDaFoto, emptyForm);
+      return { scheda: schedaDaFoto, valoriProposti: valori, proposti };
+    });
+  }, [schedaDaFoto, isEdit]);
 
   useEffect(() => {
     let cancelled = false;
@@ -280,16 +328,44 @@ export default function IngredienteForm() {
         tenuto_in_magazzino: form.tenuto_in_magazzino,
       };
 
+      let idProdotto = id;
       if (isEdit) {
         await updateIngredientFields(id, payload);
-        navigate(`/ricettario/ingredienti/${id}`);
       } else {
         const created = await createIngredient({
           ...payload,
           current_price: Number(form.current_price) || 0,
         });
-        navigate(`/ricettario/ingredienti/${created.id}`);
+        idProdotto = created.id;
       }
+
+      // ------------------------------------------------------------------
+      // Quello che viene da una foto d'etichetta si registra DOPO, quando
+      // il prodotto esiste.
+      // ------------------------------------------------------------------
+      // ⚠️ SE QUESTA PARTE FALLISCE, IL PRODOTTO RESTA SALVATO. E' una
+      //    scrittura di conseguenza, come lo scarico di magazzino alla
+      //    chiusura di un conto: perdere le origini degli allergeni e' un
+      //    danno molto piu' piccolo che perdere la scheda che Alessio ha
+      //    appena compilato. Il guaio si dichiara invece di sparire.
+      if (letturaEtichetta) {
+        try {
+          const daScrivere = allergeniDaScrivere(letturaEtichetta.scheda, form.allergens);
+          if (daScrivere.length > 0) {
+            await applicaLetturaEtichetta(idProdotto, { allergeni: daScrivere });
+          }
+          const rimasti = campiRimastiDellAssistente(letturaEtichetta.valoriProposti, form);
+          await marcaCampiDallAssistente(idProdotto, rimasti);
+        } catch (errore) {
+          setError(
+            `Il prodotto è salvato, ma non sono riuscito a registrare da dove vengono gli allergeni: ${errore.message}. Puoi correggerli a mano dalla scheda.`
+          );
+          setSaving(false);
+          return;
+        }
+      }
+
+      navigate(`/ricettario/ingredienti/${idProdotto}`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -389,6 +465,79 @@ export default function IngredienteForm() {
           {error}
         </p>
       )}
+
+      {/* ⚠️ IL CONTESTO E' GIA' NOTO: si sta guardando un prodotto, quindi
+          non si chiede dove mettere quello che viene letto — sarebbe una
+          domanda con una risposta sola. Ma se la foto non e' un'etichetta,
+          l'assistente lo dice e non si tocca niente. */}
+      <div className="mb-4">
+        <ScattaFoto
+          genere="etichetta"
+          etichettaPulsante="Fotografa l'etichetta"
+          onLetto={(esito) => {
+            if (!esito || esito.esito !== "letta" || !esito.scheda) {
+              setLetturaEtichetta(null);
+              return;
+            }
+            const { valori, proposti } = campiProposti(esito.scheda, form);
+            const allergeniLetti = (esito.scheda.allergeni ?? [])
+              .map((a) => a?.codice)
+              .filter(Boolean);
+            setForm((f) => ({
+              ...f,
+              ...valori,
+              // Gli allergeni si uniscono a quelli che c'erano: toglierne
+              // uno che Alessio aveva gia' messo sarebbe la cosa
+              // pericolosa, e lui li vede tutti prima di salvare.
+              allergens: Array.from(new Set([...(f.allergens ?? []), ...allergeniLetti])),
+            }));
+            setLetturaEtichetta({ scheda: esito.scheda, valoriProposti: valori, proposti });
+          }}
+        />
+
+        {letturaEtichetta && (
+          <div className="testo-sala mt-2 rounded-md bg-emerald-50 p-3 text-emerald-900">
+            <p className="font-semibold">
+              Ho letto l&apos;etichetta e riempito la scheda qui sotto. Controllala e salva.
+            </p>
+            {letturaEtichetta.scheda.dopo_apertura && (
+              <p className="mt-1">
+                Dopo l&apos;apertura: {letturaEtichetta.scheda.dopo_apertura}
+              </p>
+            )}
+            {/* ⚠️ L'ORIGINE DI OGNI ALLERGENE SI VEDE PRIMA DI SALVARE, non
+                dopo: è il momento in cui Alessio può correggere. Un
+                allergene «dedotto» è una cosa diversa da uno letto, e in
+                sala si comporterà diversamente. */}
+            {(letturaEtichetta.scheda.allergeni ?? []).length > 0 && (
+              <ul className="mt-2 space-y-0.5">
+                {letturaEtichetta.scheda.allergeni.map((a) => (
+                  <li key={a.codice}>
+                    <span className="font-semibold">
+                      {ALLERGENS.find((x) => x.value === a.codice)?.label ?? a.codice}
+                    </span>
+                    {a.origine === "etichetta"
+                      ? " — scritto sull'etichetta"
+                      : a.origine === "fonte"
+                        ? ` — ricavato da: ${a.fonte ?? "(fonte non indicata)"}`
+                        : " — dedotto dal tipo di prodotto, nessuno l'ha letto sull'etichetta"}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {letturaEtichetta.scheda.ingredienti_letti ? (
+              <p className="mt-2 text-emerald-800">
+                Ingredienti letti: {letturaEtichetta.scheda.ingredienti_letti}
+              </p>
+            ) : (
+              <p className="mt-2 text-emerald-800">
+                L&apos;elenco ingredienti non si leggeva: gli allergeni qui sopra sono dedotti dal
+                tipo di prodotto.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -736,7 +885,7 @@ export default function IngredienteForm() {
                 type="button"
                 key={a.value}
                 onClick={() => toggleArrayValue("allergens", a.value)}
-                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
+                className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.allergens.includes(a.value)
                     ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -756,7 +905,7 @@ export default function IngredienteForm() {
                 type="button"
                 key={m.value}
                 onClick={() => toggleArrayValue("seasonality", m.value)}
-                className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
+                className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
                   form.seasonality.includes(m.value)
                     ? "bg-b58-olive text-b58-parchment border-b58-olive"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"

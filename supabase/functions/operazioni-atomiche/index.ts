@@ -248,6 +248,17 @@ const OPERAZIONI = new Set([
   // il supplemento lo deve leggere il database dal Ricettario, mai il tablet.
   "applica_sostituzione_riga",
   "togli_sostituzione_riga",
+  // L'etichetta letta da una foto (25/08/2026): scrive gli allergeni sul
+  // prodotto E l'origine di ciascuno in una seconda tabella.
+  //
+  // 🔴 A META' SAREBBE IL CASO PEGGIORE DI TUTTI: un prodotto con gli
+  // allergeni cambiati e nessuna origine registrata si legge, in sala,
+  // come un elenco messo da Alessio — cioè come una garanzia. Fra le due
+  // metà, quella che non deve mai restare sola è la prima.
+  //
+  // ⚠️ Trovato da `tests/app/scritture-dal-corridoio.test.js`, non
+  // rileggendo: la funzione era chiamata dritta dal browser.
+  "applica_lettura_etichetta",
 ]);
 
 const CORS = {

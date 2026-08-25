@@ -98,7 +98,14 @@ console.log("   Per tornare al locale vero: chiudi questa finestra e usa `npm ru
 // Vite espone al browser le variabili `VITE_*` dell'ambiente, e queste
 // vincono su `.env.local` — verificato compilando e cercando l'indirizzo
 // dentro il pacchetto prodotto, non dato per buono dalla documentazione.
-const r = esegui("npx", ["vite"], {
+// ⚠️ Quello che si scrive dopo `--` arriva a Vite. Serve per la porta: il
+//    gestionale vero gira sulla 5173 e non si ferma mai dopo una verifica
+//    (è condiviso con Alessio), quindi il collaudo deve poter aprire una
+//    porta sua invece di rubargli quella.
+//    Es. `npm run dev:prova -- --port 5199`.
+const extra = process.argv.slice(2).filter((a) => a !== "--");
+
+const r = esegui("npx", ["vite", ...extra], {
   shell: true,
   env: { VITE_SUPABASE_URL: url, VITE_SUPABASE_ANON_KEY: chiave },
 });

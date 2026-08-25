@@ -202,7 +202,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 21 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 22 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -280,6 +280,19 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // altri. Stessa forma di `incasso_conto`, che passa da
       // `totale_conto`.
       "confronti_storti",
+      // ⚠️ AGGIUNTA IL 25/08 con l'assistente che legge le etichette, e
+      // aperta alla sala APPOSTA: è la funzione che risponde al cameriere
+      // quando un cliente chiede di un'allergia, e dice se quell'allergene
+      // è scritto sull'etichetta o soltanto dedotto. Chiuderla al solo
+      // titolare vorrebbe dire costruirla per chi non è al tavolo nel
+      // momento in cui serve.
+      // ⚠️ Non espone niente di economico: quali allergeni ha un prodotto
+      // la sala li vede già dal Ricettario, e qui si aggiunge solo da dove
+      // vengono. L'aiuto interno che le sta sotto — `origine_dell_insieme`
+      // — è stato invece CHIUSO il 25/08 (migrazione 20260825000017): lo
+      // chiama solo un trigger, che gira come proprietario e non ha
+      // bisogno del permesso di nessun utente.
+      "allergeni_con_origine",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

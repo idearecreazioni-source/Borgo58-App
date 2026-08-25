@@ -8,6 +8,7 @@ import ModulePlaceholder from "./pages/ModulePlaceholder";
 import RicettarioHome from "./pages/ricettario/RicettarioHome";
 import IngredientiList from "./pages/ricettario/IngredientiList";
 import SchedeProdotti from "./pages/ricettario/SchedeProdotti";
+import Fotografa from "./pages/assistente/Fotografa";
 import IngredienteForm from "./pages/ricettario/IngredienteForm";
 import RicetteList from "./pages/ricettario/RicetteList";
 import RicettaForm from "./pages/ricettario/RicettaForm";
@@ -151,6 +152,9 @@ function AppRoutes() {
         <Route path="/ricettario/ricette/:id" element={<RecipeDetailByRole />} />
         <Route path="/ricettario/ingredienti" element={<RequireTitolare><IngredientiList /></RequireTitolare>} />
         <Route path="/ricettario/schede" element={<RequireTitolare><SchedeProdotti /></RequireTitolare>} />
+        {/* Solo il titolare: il personale non c'e' ancora, e restringere
+            adesso non costa niente mentre allargare dopo e' una riga. */}
+        <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/nuovo" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/:id" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/menu" element={<RequireTitolare><MenuList /></RequireTitolare>} />

@@ -32,7 +32,9 @@
     "backup:ripristina": "node scripts/backup-ripristina.mjs",
     "numeri": "node scripts/numeri-sospetti.mjs",
     "numeri:censimento": "node scripts/censimento-numeri.mjs",
-    "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs"
+    "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs",
+    "dev:collaudo": "node scripts/dev-prova.mjs -- --port 5199",
+    "quesiti": "node scripts/quesiti-stampabili.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

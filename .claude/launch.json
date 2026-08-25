@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:prova"],
       "port": 5173
+    },
+    {
+      "name": "collaudo-prova",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:collaudo"],
+      "port": 5199
     }
   ]
 }

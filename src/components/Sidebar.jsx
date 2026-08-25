@@ -39,6 +39,16 @@ export default function Sidebar({ onNavigate }) {
           Dashboard
         </NavLink>
 
+        {/* ⚠️ Fuori dai moduli e in alto, perché è un gesto che parte da
+            qualunque punto: si fotografa quello che si ha in mano, e il
+            posto dove finirà lo dice l'assistente. Solo il titolare. */}
+        {isTitolare && (
+          <NavLink to="/fotografa" onClick={onNavigate} className={linkClasses}>
+            <Icon name="box" className="w-4 h-4" />
+            Fotografa
+          </NavLink>
+        )}
+
         <div className="pt-4 pb-1 px-3 testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/60">
           Moduli
         </div>
