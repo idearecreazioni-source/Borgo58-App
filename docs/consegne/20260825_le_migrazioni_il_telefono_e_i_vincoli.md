@@ -503,3 +503,197 @@ scelta è stata rovesciata — adesso la prova **si costruisce la propria**.
   se scatta.
 
 Registrato anche in [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md).
+
+---
+---
+
+# SECONDA PARTE — dopo il push e le conferme di Alessio
+
+**Le quattro migrazioni in attesa sono state applicate**: la produzione è
+passata da 234 a **238**, allineata col repository e col progetto di
+prova. Numeri veri letti dopo, non dedotti: 156 vincoli muti congelati,
+i vincoli con la frase italiana da 42 a **56**, **zero** colonne
+«aggiornato il» senza trigger, **zero** lapidi lasciate dalle verifiche.
+
+🔴 **E LA RETE DEI RIEPILOGHI HA PRESO IN FALLO QUESTO STESSO
+DOCUMENTO**, al primo tentativo di applicare: quattro versioni degli
+allergeni — `20260824000035`, `…036`, `…037`, `…038` — erano nominate
+solo da una freccia (`…034` → `…039`) e per lei non esistevano. È il
+caso che la soglia del 15/08 dichiara. Corretto nominandole per intero.
+
+---
+
+## Punto 1 — il food cost col sostituto: la diagnosi era SBAGLIATA
+
+Alessio ha scelto «comanda il magazzino» e ha chiesto la spiegazione
+prima di qualunque modifica. La spiegazione **rovescia quello che questo
+stesso documento diceva poche ore prima**.
+
+### Il conto vero, riga per riga
+
+**T6 del 31 luglio** — una Busiate, due «Selezione da strada», cinque
+voci libere.
+
+| | dalla ricetta | dal magazzino | scarto |
+|---|---|---|---|
+| Busiate al pesto | 0,8020 | 0,6700 | 0,1320 |
+| Selezione da strada | 2,1547 | 1,3268 | **0,8279** |
+| Selezione da strada | 2,1547 | 1,3268 | **0,8279** |
+| voci libere (×5) | — | — | non valorizzate |
+| **totale** | **5,11** | **3,32** | **1,79** |
+
+Dentro «Selezione da strada», gli ingredienti che il magazzino **non
+scarica affatto**: aceto di vino bianco, panna fresca, cipolla di
+Giarratana, capperi di Salina, pistacchio di Bronte, oliva nocellara,
+sedano verde, ricotta salata. E tre che scarica **in parte**: melanzana
+(0,0516 kg contro 0,0170), zucchero (0,0158 → 0,0098), olio evo
+(0,0077 → 0,0055).
+
+### Perché — e la misura ha corretto la diagnosi DUE volte
+
+1. Prima ipotesi: «le otto sotto-preparazioni del piatto hanno lotti».
+   **Falso**: misurate una per una, nessuna delle otto ha lotti.
+2. Scendendo di un livello: **tre preparazioni di secondo livello** ne
+   hanno — Caponata (1,446 kg), Crema di pistacchio (0,955), Crema di
+   ricotta salata (0,939). Sono esattamente quelle che spiegano gli
+   ingredienti mancanti.
+
+🔴 **E QUI STA IL PUNTO: NON SONO DUE DECISIONI CHE CONVIVONO. È UN
+DIFETTO.** La decisione del 14/08 dice che una preparazione **che ha
+lotti** non si esplode — *si consuma*. `fabbisogno_conto` fa la prima
+metà (smette di esplodere) e **non fa la seconda**: la riga della
+preparazione non ha `ingredient_id`, e la `select` finale la scarta.
+Risultato: di quel piatto **non esce niente**, né le melanzane né la
+caponata.
+
+**Misurato, non dedotto:**
+- **13.624 scarichi** registrati, di cui **1** su una preparazione — e
+  quell'uno è uno scarico **a mano**, non da un conto;
+- **346 conti** hanno scaricato magazzino: **nessuno** ha mai toccato
+  una preparazione;
+- **14 preparazioni** hanno **15,2 kg** in giacenza che non scendono mai.
+
+⚠️ **Quindi la risposta alla domanda di Alessio è: nessuna delle due
+decisioni va rivista.** La decisione del 14/08 è giusta e resta; quello
+che manca è la sua seconda metà, che non è mai stata costruita. Con
+«comanda il magazzino» il food cost erediterebbe **anche questo buco** —
+ed è il motivo per cui la correzione va fatta **prima**, non dopo.
+
+⚠️ **E un secondo fatto emerso**: `fabbisogno_conto` guarda la giacenza
+**di adesso** (`quantity_remaining > 0`), non quella del giorno del
+conto. Sullo stesso conto passato dà risposte diverse a distanza di
+tempo.
+
+**Non corretto in questa consegna**: è un difetto del magazzino, non del
+food cost, e cambia i numeri di una tabella vera.
+
+---
+
+## Punto 2 — le voci di una previsione chiusa
+
+Fatto. Il dettaglio ora elenca le voci di costo fisso dalla più cara,
+col totale **ricalcolato dalle righe** e non letto dal riepilogo — se i
+due divergessero, chi guarda lo vedrebbe.
+
+- Non è servito «aprire» niente: la policy è già `for all using
+  (is_titolare())` e in Postgres **non esistono trigger sulla lettura**.
+  Il sigillo riguardava sempre e solo le scritture.
+- Verificato in produzione: **15 voci** su previsioni congelate.
+- Guardato a schermo sul progetto di prova: 4 voci, ordinate, col
+  totale.
+
+🔴 **E LA PROVA DEL SIGILLO STA IN UNA MIGRAZIONE** (`20260825000004`),
+non in una prova automatica, per una ragione **misurata**: cancellare la
+previsione di prova lascia una **lapide** che dal client nessuno può
+ripulire, e una prova automatica ne lascerebbe una a ogni giro. Provato:
+il registro del progetto di prova è passato da 1683 a **1684**, e quella
+riga è stata tolta per identificativo. È la decisione già scritta in
+CLAUDE.md dal 15/08.
+
+⚠️ **Due cose trovate applicando**: il congelamento **fotografa** i
+risultati in `scenario_risultati`, che ha il suo sigillo (i nomi dei
+trigger sono stati chiesti al catalogo, non ricordati); e la prima
+versione della prova automatica si fermava sul congelamento, facendo
+fallire **di rimbalzo** la prova successiva su una previsione rimasta
+aperta — che si leggeva «il sigillo non tiene».
+
+---
+
+## Punto 4 — i gesti lenti delle schermate del servizio
+
+Misurato prima e dopo, come per la spesa spicciola:
+
+| dove | gesto | prima | dopo |
+|---|---|---|---|
+| Bar | «✓ Evaso» su un ticket | **322 ms** | **53 ms** |
+| Cucina | «segna non stampato» | **322 ms** | **28 ms** |
+
+(322 è la media di tre giri, 242-460, **dal computer**.)
+
+- **`toccaTutteSubito` nasce qui**: al banco non si segna pronta una
+  riga, si segna pronto un **ticket**. Un ciclo manderebbe una richiesta
+  per riga; questo ne manda **una**, e se fallisce tornano indietro tutte
+  **ognuna al suo valore di partenza** — dentro un ticket le righe
+  possono essere in stati diversi.
+- ⚠️ **Sospeso il ricarico periodico mentre il salvataggio è in volo**:
+  il giro dei dieci secondi può cadere fra il tocco e la risposta e
+  riportare indietro il ticket per un istante. In servizio un lampeggio
+  si legge «non ha preso» — cioè esattamente il doppio tocco che si sta
+  togliendo. Il lucchetto è sul **ricarico**, non sui pulsanti.
+
+**HACCP guardato e lasciato com'è, con la ragione**: lì i gesti sono
+**creazioni** su registri esibibili (una pulizia fatta, una non
+conformità chiusa con la sua azione correttiva), non spunte ripetute —
+vedere l'effetto solo quando è avvenuto è una garanzia. Le due caselle
+del ricevimento merci sono campi di un modulo: già istantanee.
+
+---
+
+## Le due regole nuove in §8
+
+(a) **Una migrazione che fallisce dopo le DDL lascia il lavoro a metà**,
+mentre lo strumento dice il contrario — col danno vero: fidarsi di quel
+messaggio porta a **riapplicare cose già applicate**.
+⚠️ **E il confine è più stretto di come sembra, misurato apposta**:
+dentro un blocco `do` anche le DDL vengono annullate (rotto un trigger a
+metà pulizia, i cinque trigger erano tutti accesi dopo). Il guaio è
+delle istruzioni **fuori** dai blocchi.
+
+(b) **Un difetto di ingombro è quasi sempre una famiglia**: trovatone
+uno, si cerca subito nelle altre schermate — e il computer non lo
+mostra.
+
+---
+
+## Cosa NON è stato verificato con gli occhi, in questa seconda parte
+
+- **La sezione delle voci su una previsione CONGELATA**: guardata a
+  schermo su una previsione **libera** (sul progetto di prova non ce ne
+  sono di chiuse). Che funzioni anche sulla chiusa è provato dalla
+  migrazione e dalla policy, non da un occhio.
+- **Il gesto «Stampa» della Cucina non è stato premuto**: apre un
+  dialogo di stampa bloccante. Misurato il gesto inverso, che passa
+  dalla stessa funzione.
+- **Nessuna immagine**: qui lo screenshot non funziona, tutto è misurato
+  dal DOM.
+
+## Affermazioni di questo stesso documento diventate false
+
+- La prima parte diceva che la divergenza del food cost nasce da «due
+  decisioni entrambe volute». **Falso**: è un difetto — il magazzino non
+  scarica le preparazioni con lotti.
+- Diceva anche «14 preparazioni con lotti, trattate diversamente». Il
+  numero è giusto, ma **non sono quelle del piatto misurato**: quelle
+  stanno un livello più in basso.
+- Le sei migrazioni degli allergeni erano nominate con una freccia, e
+  per la rete dei riepiloghi **non esistevano**.
+
+---
+
+## Cosa abbiamo rovesciato — seconda parte
+
+*(sezione fissa, anche quando è vuota)*
+
+Niente di deciso in precedenza. La decisione del 14/08 sulle
+preparazioni con lotti **non è rovesciata**: si è scoperto che era
+applicata a metà.
