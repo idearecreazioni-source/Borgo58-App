@@ -1601,7 +1601,12 @@ export default function Sala() {
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2 mb-3">
+      {/* ⚠️ Va a capo anche il contenitore, non solo la fila di pulsanti:
+          misurato, il testo a sinistra lasciava alla barra 358 punti dei
+          417 che chiede, e i quattro pulsanti finivano su TRE righe alte
+          154 punti. In una schermata di servizio lo spazio verticale è la
+          cosa che costa. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal leading-none">Sala</h1>
           <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
@@ -1615,7 +1620,14 @@ export default function Sala() {
             {order ? `${order.table_label} aperto` : "Nessun tavolo aperto"}
           </p>
         </div>
-        <div className="flex gap-1.5">
+        {/* 🔴 `flex-wrap`, aggiunto il 25/08 misurando alla larghezza vera
+            di un telefono: senza, questi quattro pulsanti stanno su una
+            riga larga 436 punti su uno schermo che ne ha 390, e la
+            schermata **del servizio** scorre di lato di 143. Stesso
+            difetto della pagina HACCP e del Magazzino lo stesso giorno:
+            elementi affiancati che non ci stanno, invisibili da un
+            monitor. */}
+        <div className="flex flex-wrap justify-end gap-1.5">
           <Link
             to="/comande/bar"
             className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"

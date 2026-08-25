@@ -141,7 +141,13 @@ export default function MagazzinoHome() {
             )}
           </p>
         </div>
-        <div className="flex gap-2">
+        {/* 🔴 `flex-wrap`, aggiunto il 25/08 misurando dal telefono: senza,
+            questi pulsanti stanno tutti su UNA riga larga 1027 punti su uno
+            schermo che ne ha 390, e la pagina scorre di lato di 653. È lo
+            stesso difetto della schermata HACCP dello stesso giorno —
+            elementi affiancati che non ci stanno — e si vede solo alla
+            larghezza vera di un telefono. */}
+        <div className="flex flex-wrap gap-2">
           {/* Anagrafica Fornitori (§3.11): dati economici, titolare-only. */}
           {isTitolare && (
             <Link
