@@ -270,10 +270,29 @@ export default function MagazzinoHome() {
                 {r.tipo === "voce_libera" && "voce libera, nessuna ricetta: "}
                 {r.tipo === "ricetta_incompleta" && "ricetta incompleta: "}
                 {r.tipo === "giacenza_insufficiente" && "non ce n'era abbastanza: "}
+                {/* 🔴 IL SILENZIO CHE NON ERA UNA SCELTA (25/08/2026). I
+                    prodotti che il magazzino non segue escono dallo scarico
+                    senza una parola, ed è voluto — è la riga qui sopra sulle
+                    bevande. Ma una preparazione che HA delle partite in cella
+                    il magazzino la segue di fatto: là dentro entra merce che
+                    non esce più, e la giacenza sale senza scendere mai. */}
+                {r.tipo === "preparazione_non_seguita" &&
+                  "in cella ce n'è, ma la sua scheda dice di non seguirla: "}
                 {r.tipo === "errore" && "guasto durante lo scarico: "}
                 <span className="font-medium">{r.descrizione}</span>
                 {r.quantita_mancante != null && (
-                  <> — mancano {Number(r.quantita_mancante)} {r.unita}</>
+                  /* ⚠️ IL VERBO CAMBIA COL MOTIVO (25/08/2026, trovato
+                     guardando la schermata). «Mancano 0,9 kg» su una
+                     preparazione che il magazzino non segue è falso: in
+                     cella quei 0,9 kg ci sono ancora — è la giacenza che
+                     non è scesa. Detto col verbo sbagliato, quella riga si
+                     legge come un ammanco e si va a cercare merce sparita. */
+                  <>
+                    {" "}—{" "}
+                    {r.tipo === "preparazione_non_seguita"
+                      ? `non sono scesi ${Number(r.quantita_mancante)} ${r.unita}`
+                      : `mancano ${Number(r.quantita_mancante)} ${r.unita}`}
+                  </>
                 )}
                 {/* 🔴 «SCESO A METÀ» NON DEVE ESSERE SILENZIOSO (23/08/2026).
                     Dal 23/08 un ingrediente che non riesce non porta più via
