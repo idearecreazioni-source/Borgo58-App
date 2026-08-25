@@ -135,7 +135,19 @@ async function spiegazioneDelVincolo(nome, autorizzazione) {
     });
     const testo = r.ok ? await r.json() : null;
     const frase = typeof testo === "string" && testo.trim() ? testo : null;
-    spiegazioni.set(nome, frase);
+    // 🔴 SI RICORDA SOLO CIO' CHE SI E' TROVATO, MAI L'ASSENZA (25/08/2026,
+    // trovato provando e non rileggendo). Ricordando anche il «non ce
+    // l'ha», il giorno che quel vincolo riceve la sua frase — cioe' oggi,
+    // per quattordici di loro — chi ha gia' ricevuto quel rifiuto continua
+    // a leggere il messaggio generico finche' non ricarica la pagina.
+    // ⚠️ Misurato: `menu_items_prezzo_non_negativo` dava ancora «c'e' una
+    // regola che lo impedisce» **dopo** che la frase esisteva, e la stessa
+    // prova dopo un ricarico dava la frase giusta.
+    // ⚠️ Il costo e' una richiesta in piu' solo per i vincoli che la frase
+    // non ce l'hanno, e solo quando scattano: e' il caso raro dentro il
+    // caso raro. Ricordare un'assenza per sempre e' la forma piu' pura di
+    // frase diventata falsa.
+    if (frase) spiegazioni.set(nome, frase);
     return frase;
   } catch {
     return null;
