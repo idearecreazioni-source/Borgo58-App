@@ -89,9 +89,26 @@ if (daFuori.length) {
   console.log("");
   console.log("   Nessuna rete: da fuori questo computer non e' raggiungibile.");
 }
+// 🔴 QUESTA FRASE ERA DIVENTATA FALSA, ed e' stata falsa per quattro
+//    giorni. Diceva: «in alto in ogni schermata c'e' la fascia rossa
+//    DATABASE DI PROVA — se NON la vedi, sei sul locale vero: chiudi e
+//    ricontrolla». Ma il 21/08 Alessio ha deciso che la striscia diventa
+//    un **pallino in basso a destra** (rubava spazio verticale sul
+//    tablet, che e' proprio la cosa che li' si sta misurando).
+//    Misurato: il messaggio e' del 16/08 (`833a087`), il pallino del
+//    21/08 (`7b4314d`).
+//
+// ⚠️ E NON ERA UN DETTAGLIO DI PAROLE: quell'istruzione mandava a cercare
+//    una fascia che non esiste piu', e — non trovandola — diceva da se'
+//    «sei sul locale vero, chiudi e ricontrolla». Cioe' un **falso
+//    allarme garantito, ogni volta**. Un avviso che grida sempre si
+//    impara a spegnere, e questo avvisa della cosa piu' pericolosa che ci
+//    sia: scrivere dati finti nel gestionale vero.
 console.log("");
-console.log("   In alto in ogni schermata c'e' la fascia rossa «DATABASE DI PROVA».");
-console.log("   Se NON la vedi, sei sul locale vero: chiudi e ricontrolla.");
+console.log("   In basso a destra, in ogni schermata, c'e' un pallino:");
+console.log("   ARANCIONE = database di prova, quello che scrivi non e' vero.");
+console.log("   SCURO     = locale vero. Se lo vedi scuro, chiudi e ricontrolla.");
+console.log("   Passandoci sopra col dito o col mouse dice quale progetto e'.");
 console.log("");
 console.log("   Per tornare al locale vero: chiudi questa finestra e usa `npm run dev`.");
 
