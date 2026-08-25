@@ -161,7 +161,15 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
           fuori dallo schermo di 363 punti. Quello che non entra va a capo
           invece di trascinarsi dietro la pagina. */}
       <div className="flex flex-wrap items-center gap-3">
-        <input type="checkbox" checked={false} onChange={onFatto} className="shrink-0" title="Fatto" />
+        {/* 🔴 IL GESTO PIÙ FREQUENTE ERA IL BERSAGLIO PIÙ PICCOLO (25/08):
+            la casella nuda misurava **2,03 mm**, meno di un quarto della
+            soglia, ed è quella che chiude un impegno. Dentro un'etichetta
+            toccabile il quadratino resta piccolo e il bersaglio diventa
+            0,85 cm veri — è la forma che il resto dell'app usa già
+            dappertutto: le caselle nude erano tutte e sole qui. */}
+        <label className="tocco-bottone inline-flex items-center shrink-0" title="Fatto">
+          <input type="checkbox" checked={false} onChange={onFatto} />
+        </label>
         <button type="button" onClick={onStella} className="tocco-bottone shrink-0 testo-sala-grande leading-none" title="Per me conta">
           <span className={t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>★</span>
         </button>
