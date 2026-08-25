@@ -31,7 +31,57 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
-0-zero. 🔴 **TRE MIGRAZIONI NON REGGONO UNA RICOSTRUZIONE DA ZERO, e la cura
+0-zero-bis. 🔴 **DEBITO DICHIARATO — L'AGGIRAMENTO DEL PIANO NELLA PROVA
+   DI RICARICA** (25/08/2026, deciso da Alessio: si dichiara, non si cura
+   adesso).
+
+   `npm run ricostruzione:verifica` applica **33 file** con
+   `set enable_seqscan = off`. **Non è una cura: è un aggiramento.** Senza,
+   quei file si fermano con *«array_agg is an aggregate function»* — col
+   piano sbagliato il motore calcola `pg_get_functiondef()` di **ogni**
+   funzione del catalogo, aggregate di `pg_catalog` comprese, prima di
+   filtrare lo schema.
+
+   🔴 **E LA CURA SCRITTA IL 23/08 ERA DIVENTATA FALSA.** Quella nota dice
+   *«si rilancia dopo un `analyze`»*. Misurato il 25/08 sul database
+   ricostruito, con **247** funzioni in `public`:
+
+   | cosa | esito |
+   |---|---|
+   | così com'è | si ferma |
+   | dopo `analyze pg_proc; analyze pg_namespace` | **si ferma lo stesso** |
+   | dopo `vacuum analyze` | **si ferma lo stesso** |
+   | con `set enable_seqscan = off` | passa |
+   | con `and p.prokind = 'f'` nella query | passa |
+
+   La nota di allora descriveva **quello che era bastato quel giorno**, non
+   una cura — e col catalogo pieno non basta più. *È scritto qui perché non
+   ricapiti a chi legge fra tre mesi: una nota che dice il contrario del
+   vero costa più di una nota che manca.*
+
+   ⚠️ **La cura vera è `and p.prokind = 'f'`** dentro quelle query. Ma
+   stanno in migrazioni **già applicate**, che non si riscrivono, e una
+   migrazione nuova non può sanarle perché arriverebbe dopo il punto in cui
+   la ricostruzione si ferma. Finché resta così, chi ricostruisce deve
+   saperlo prima.
+
+   ⚠️ **E `scripts/prova-ricostruisci.mjs` fa ancora l'`analyze` una volta
+   sola all'inizio**: su una ricostruzione completa si fermerebbe allo
+   stesso punto. Da correggere quando si tocca quel comando.
+
+0-zero. ✅ **CHIUSO IL 25/08 SERA** — le tre migrazioni che non reggevano
+   una ricostruzione da zero sono state rimesse a posto dalla
+   `20260825000012`, che **rifà i loro tre controlli con roba creata da
+   lei** e poi registra le tre versioni. I file non sono stati toccati.
+   Cosa presumeva ognuna: la `20260822000003` una **ricetta** qualsiasi; la
+   `20260823000024` che restassero **ricette, tavoli e impegni** dopo una
+   pulizia che su un database vuoto non aveva niente da pulire; la
+   `20260824000033` una **previsione non congelata con una linea**.
+   ⚠️ Il caso (B) ora **distingue** «non c'è niente da controllare» da «il
+   controllo è fallito», che era il punto. Il testo qui sotto resta come
+   origine della decisione.
+
+0-zero-storico. 🔴 **TRE MIGRAZIONI NON REGGONO UNA RICOSTRUZIONE DA ZERO, e la cura
    dell'«array_agg» scritta il 23/08 NON FUNZIONA** — misurato il 25/08 con
    `npm run ricostruzione:verifica`, il comando nato in quel giro.
 

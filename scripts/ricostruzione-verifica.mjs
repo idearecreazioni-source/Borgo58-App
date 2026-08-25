@@ -444,17 +444,40 @@ for (const file of migrazioni) {
 console.log(`  ${migrazioni.length}/${migrazioni.length}  camminate tutte`);
 console.log("");
 
+// 🔴 LA DOMANDA CHE CONTA DAVVERO NON E' «QUANTE SI SONO FERMATE», e ci
+// e' voluto un giro per capirlo: e' **se il registro finale e' completo**.
+// Una migrazione che si ferma nel blocco di verifica ha gia' fatto le sue
+// DDL, ma non arriva a registrarsi — e un registro piu' corto dei file
+// applicati e' la famiglia della risposta con l'aria di essere intera:
+// il giorno dopo `npm run migra` direbbe che manca qualcosa che c'e' gia'.
+const registrate = Number(
+  interroga(url, "select count(*) from applied_migrations;").trim()
+);
+console.log(`  file applicati: ${migrazioni.length}  ·  registrati: ${registrate}`);
+if (registrate === migrazioni.length) {
+  console.log("  ✅ IL REGISTRO E' COMPLETO: ogni file ha la sua riga.");
+} else {
+  console.log(`  🔴 IL REGISTRO E' PIU' CORTO DI ${migrazioni.length - registrate} RIGHE.`);
+}
+console.log("");
+
 if (fermate.length) {
-  console.log(`  🔴 ${fermate.length} MIGRAZIONI SI SONO FERMATE:`);
+  console.log(`  ⚠️ ${fermate.length} migrazioni si sono fermate nel loro blocco di VERIFICA`);
+  console.log("     (le DDL erano gia' passate — e' il motivo per cui lo schema torna):");
   console.log("");
   for (const f of fermate) {
     console.log(`     ${String(f.numero).padStart(3, " ")}ª  ${f.file}`);
     console.log(`          ${f.motivo}`);
   }
   console.log("");
-  console.log("  ⚠️ NON si riscrivono quei file: una migrazione gia' applicata");
-  console.log("     racconta cosa e' successo quel giorno. Il seguito e' scritto");
-  console.log("     in docs/CODA_E_DECISIONI.md.");
+  console.log("");
+  console.log("  ⚠️ NON E' UN FALLIMENTO DELLA RICOSTRUZIONE, ed e' la parte che");
+  console.log("     va letta bene: quei file NON si riscrivono — una migrazione");
+  console.log("     applicata racconta cosa e' successo quel giorno. I loro tre");
+  console.log("     controlli vengono RIFATTI con roba propria dalla");
+  console.log("     20260825000012, che poi registra le tre versioni: e' per");
+  console.log("     questo che il registro qui sopra risulta completo.");
+  console.log("     Il seguito e' in docs/CODA_E_DECISIONI.md, voce 0-zero.");
 } else {
   console.log("  ✅ Tutte e 245 arrivano in fondo in ordine di numero.");
 }
