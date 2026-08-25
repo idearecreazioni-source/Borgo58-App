@@ -36,10 +36,20 @@ attesa. Repository allineato con GitHub (`c5df7cd`).
     produzione**: non esiste nessuna previsione libera (misurato: 1
     previsione in tutto, congelata). La migrazione lo dichiara con un
     `notice` invece di fingere di aver provato.
-- **Le sei degli allergeni** — `20260824000034` → `…039`. Verificato
-  prima di applicarle che **nessuna** nomini `scala`,
-  `scale_che_non_tornano`, `scenario_linee_accessorie` o
-  `calcola_proiezione`: sono indipendenti dalla `…033`.
+- **Le sei degli allergeni**, nominate per intero — `20260824000034`,
+  `20260824000035`, `20260824000036`, `20260824000037`,
+  `20260824000038`, `20260824000039`. Verificato prima di applicarle che
+  **nessuna** nomini `scala`, `scale_che_non_tornano`,
+  `scenario_linee_accessorie` o `calcola_proiezione`: sono indipendenti
+  dalla `…033`.
+  - 🔴 **E LA RETE DEI RIEPILOGHI MI HA PRESO IN FALLO SU QUESTA STESSA
+    RIGA.** Prima diceva «`20260824000034` → `…039`», e alla successiva
+    applicazione lo strumento si è fermato: quattro versioni — la `…035`,
+    la `…036`, la `…037`, la `…038` — **esistevano solo come freccia**.
+    È precisamente il caso che la regola del 15/08 dichiara («i riepiloghi
+    fra il 10 e il 15/08 nominano le migrazioni in forma abbreviata») e
+    che la soglia esiste per non far tornare. *Una scorciatoia di scrittura
+    diventa un buco di documentazione al primo che va a cercare.*
 
 ### Fermata a metà — e cosa ha lasciato dietro
 

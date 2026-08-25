@@ -5,6 +5,7 @@ import {
   confrontoColFoglio,
   congelaScenario,
   getScenario,
+  ingressiScenario,
   listaScenari,
   pareggioPrevisione,
   proiezioneScenario,
@@ -32,6 +33,7 @@ export default function PrevisioneDettaglio() {
   const [riepilogo, setRiepilogo] = useState(null);
   const [pareggio, setPareggio] = useState(null);
   const [confronto, setConfronto] = useState([]);
+  const [costiFissi, setCostiFissi] = useState([]);
   const [calendario, setCalendario] = useState([]);
   const [annoPrima, setAnnoPrima] = useState(null);
   // ⚠️ «Non c'è una previsione dell'anno prima» e «non sono riuscito a
@@ -45,16 +47,18 @@ export default function PrevisioneDettaglio() {
   const carica = useCallback(async () => {
     const s = await getScenario(id);
     setScenario(s);
-    const [m, r, c, p] = await Promise.all([
+    const [m, r, c, p, ing] = await Promise.all([
       proiezioneScenario(id),
       riepilogoScenario(id),
       confrontoColFoglio(id),
       pareggioPrevisione(id),
+      ingressiScenario(id),
     ]);
     setMesi(m);
     setRiepilogo(r);
     setConfronto(c);
     setPareggio(p);
+    setCostiFissi(ing.costiFissi ?? []);
     if (r?.imposte != null) {
       // ⚠️ IL QUARTO PARAMETRO — il difetto n. 15. Sopra la tabella c'è
       // scritto «è la cassa di giugno che tradisce, quando il saldo
@@ -310,6 +314,67 @@ export default function PrevisioneDettaglio() {
                   <td className="py-1.5 text-right text-b58-charcoal tabular-nums">{formatEUR(c.importo)}</td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* --- Le voci di costo fisso ---
+          🔴 NASCE DA UN DATO CHE ESISTEVA E NON SI POTEVA GUARDARE
+          (25/08/2026, richiesta di Alessio: *«un dato che esiste e non si
+          può guardare è un dato che non c'è»*). Su una previsione
+          **congelata** le quindici voci di costo fisso non comparivano da
+          nessuna parte: qui c'era solo il totale, e il modulo di modifica
+          si rifiuta di aprirsi. Per sapere di cosa è fatto quel totale
+          bisognava chiederlo al database.
+          ⚠️ E LA PROTEZIONE RIGUARDA LA MODIFICA, NON LA LETTURA: la
+          previsione resta impossibile da ritoccare — lo impediscono i
+          trigger, non questa schermata — ma quello che dichiara si deve
+          poter leggere. Un sigillo che rende anche illeggibile non
+          protegge di più: nasconde. */}
+      {costiFissi.length > 0 && (
+        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+          <h2 className="font-display text-lg text-b58-charcoal mb-3">
+            Di cosa sono fatti i costi fissi
+          </h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-b58-charcoal-soft">
+                <th className="pb-2 font-normal">Voce</th>
+                <th className="pb-2 font-normal text-right">al mese</th>
+                <th className="pb-2 font-normal text-right">all&apos;anno</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Dalla più cara: è l'ordine in cui si cerca una voce che
+                  non torna col proprio foglio. */}
+              {[...costiFissi]
+                .sort((a, b) => Number(b.euro_mese ?? 0) - Number(a.euro_mese ?? 0))
+                .map((f) => (
+                  <tr key={f.id} className="border-t border-b58-charcoal/5">
+                    <td className="py-2 text-b58-charcoal">{f.voce}</td>
+                    <td className="py-2 text-right text-b58-charcoal">{formatEUR(f.euro_mese)}</td>
+                    <td className="py-2 text-right text-b58-charcoal-soft">
+                      {formatEUR(Number(f.euro_mese ?? 0) * 12)}
+                    </td>
+                  </tr>
+                ))}
+              {/* ⚠️ Il totale si RICALCOLA dalle righe qui sopra e non si
+                  legge dal riepilogo: se un giorno i due numeri
+                  divergessero, chi guarda lo vedrebbe. Un totale preso da
+                  un'altra parte nasconde proprio la differenza che questa
+                  tabella serve a trovare. */}
+              <tr className="border-t-2 border-b58-charcoal/15 font-semibold">
+                <td className="py-2 text-b58-charcoal">
+                  Totale ({costiFissi.length} voci)
+                </td>
+                <td className="py-2 text-right text-b58-charcoal">
+                  {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0))}
+                </td>
+                <td className="py-2 text-right text-b58-charcoal">
+                  {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0) * 12)}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
