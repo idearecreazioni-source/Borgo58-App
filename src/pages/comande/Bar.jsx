@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   getOrder,
@@ -8,6 +8,7 @@ import {
   setItemsPrepared,
 } from "../../lib/api/orders";
 import { nomeRiga } from "../../lib/calcoli/righeComanda";
+import { toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { orderTotals } from "../../lib/calcoli/conto";
 import { formatEUR } from "../../lib/constants";
 import CloseOrderModal from "./CloseOrderModal";
@@ -33,11 +34,26 @@ export default function Bar() {
   const [order, setOrder] = useState(null);
   const [mode, setMode] = useState(null); // "precon" | "close"
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+
+  // ⚠️ Quanti salvataggi sono in volo adesso. Finché è > 0 il ricarico
+  // periodico NON applica quello che legge: il database non ha ancora
+  // ricevuto il tocco, quindi risponderebbe con lo stato di prima e il
+  // ticket lampeggerebbe. Non è un lucchetto sull'interfaccia — i
+  // pulsanti restano vivi — è un lucchetto sul RICARICO.
+  const inVolo = useRef(0);
+  const conSalvataggioInVolo = async (azione) => {
+    inVolo.current += 1;
+    try {
+      return await azione();
+    } finally {
+      inVolo.current -= 1;
+    }
+  };
 
   const load = () =>
     Promise.all([listRepartoTickets("bar"), listOpenOrders()])
       .then(([t, o]) => {
+        if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
         setTickets(t);
         setOpenOrders(o);
         setError("");
@@ -80,17 +96,35 @@ export default function Bar() {
   const daPreparare = gruppi.filter((g) => g.items.some((i) => !i.prepared_at));
   const evasi = gruppi.filter((g) => g.items.every((i) => i.prepared_at));
 
-  const toggleGruppo = async (g, pronto) => {
-    setBusy(true);
-    try {
-      await setItemsPrepared(g.items.map((i) => i.id), pronto);
-      await load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // 🔴 IL TICKET CAMBIA SUBITO, NON DOPO DUE GIRI DI RETE (25/08/2026,
+  // richiesta di Alessio: *«sono le schermate del servizio: lì mezzo
+  // secondo di ritardo si paga con un doppio tocco e una comanda
+  // sbagliata»*).
+  //
+  // ⚠️ MISURATO PRIMA DI CORREGGERE, non stimato: **322 ms in media**
+  // (242-460 su tre giri) fra il tocco e il cambio — l'aggiornamento più
+  // la rilettura di tutte le righe — e nel frattempo `busy` spegneva ogni
+  // pulsante del banco. Quella misura è fatta **dal computer**: dal
+  // tablet, sulla rete del locale, è peggio.
+  //
+  // ⚠️ E SI SOSPENDE IL RICARICO PERIODICO mentre il salvataggio è in
+  // volo. Senza, il giro dei dieci secondi può cadere **fra** il tocco e
+  // la risposta e riportare indietro il ticket per un istante: chi guarda
+  // vede un lampeggio, e in servizio un lampeggio si legge «non ha preso».
+  const toggleGruppo = (g, pronto) =>
+    conSalvataggioInVolo(() =>
+      toccaTutteSubito({
+        righe: tickets,
+        ids: g.items.map((i) => i.id),
+        // ⚠️ Il valore è solo per lo schermo: quello vero lo scrive il
+        // database. Serve a distinguere «pronta» da «non pronta», e la
+        // schermata guarda solo se c'è.
+        cambio: { prepared_at: pronto ? new Date().toISOString() : null },
+        mostra: setTickets,
+        avvisa: setError,
+        salva: () => setItemsPrepared(g.items.map((i) => i.id), pronto),
+      })
+    );
 
   const apriConto = async (orderId, azione) => {
     setError("");
@@ -126,11 +160,15 @@ export default function Bar() {
           {i.note && <div className="testo-sala italic text-b58-charcoal-soft pl-4">↳ {i.note}</div>}
         </div>
       ))}
+      {/* ⚠️ NIENTE `disabled`: un pulsante che si spegne per trecento
+          millisecondi, al banco, si legge «non ha preso» — e la mano
+          tocca una seconda volta, che qui vuol dire riaprire un ticket
+          appena evaso. È lo stesso motivo per cui è sparito dalla spesa
+          spicciola. */}
       <button
         type="button"
-        disabled={busy}
         onClick={() => toggleGruppo(g, !evaso)}
-        className={`tocco-azione w-full mt-2 rounded-lg testo-sala font-semibold disabled:opacity-50 ${
+        className={`tocco-azione w-full mt-2 rounded-lg testo-sala font-semibold ${
           evaso
             ? "border border-b58-charcoal/15 text-b58-charcoal-soft"
             : "bg-b58-olive hover:bg-b58-olive-dark text-b58-parchment"

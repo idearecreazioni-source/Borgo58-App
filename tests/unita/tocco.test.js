@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toccaSubito, togliSubito } from "../../src/lib/calcoli/tocco.js";
+import { toccaSubito, toccaTutteSubito, togliSubito } from "../../src/lib/calcoli/tocco.js";
 
 // IL TOCCO CHE NON ASPETTA IL DATABASE — prove del 25/08/2026.
 //
@@ -180,5 +180,55 @@ describe("togliSubito: riuscito-ma-vuoto non è fallito", () => {
     expect(r.esito).toBe(null);
     expect(s.righe).toEqual([]);            // resta tolta
     expect(s.avviso).toBe("");
+  });
+});
+
+describe("toccaTutteSubito", () => {
+  const TICKET = [
+    { id: "a", articolo: "Spritz", prepared_at: null },
+    { id: "b", articolo: "Negroni", prepared_at: "2026-08-25T10:00:00Z" },
+    { id: "c", articolo: "Caffè", prepared_at: null },
+  ];
+
+  it("cambia tutte le righe del ticket con UN solo salvataggio", async () => {
+    const s = schermata(TICKET);
+    let chiamate = 0;
+    const fine = toccaTutteSubito({
+      righe: s.righe, ids: ["a", "b"], cambio: { prepared_at: "adesso" },
+      mostra: s.mostra, avvisa: s.avvisa,
+      salva: () => { chiamate += 1; return new Promise((ok) => setTimeout(ok, 20)); },
+    });
+    // Cambiate subito, e solo quelle del ticket.
+    expect(s.righe.map((r) => r.prepared_at)).toEqual(["adesso", "adesso", null]);
+    await fine;
+    expect(chiamate, "un ticket = una richiesta, non una per riga").toBe(1);
+  });
+
+  it("se fallisce tornano indietro TUTTE, ognuna al suo valore di partenza", async () => {
+    // ⚠️ IL PUNTO: dentro un ticket le righe possono essere in stati
+    // diversi. Rimetterle tutte allo stesso valore inventerebbe uno stato
+    // che non c'era mai stato.
+    const s = schermata(TICKET);
+    const ok = await toccaTutteSubito({
+      righe: s.righe, ids: ["a", "b"], cambio: { prepared_at: "adesso" },
+      mostra: s.mostra, avvisa: s.avvisa,
+      salva: () => Promise.reject(new Error("rete assente")),
+    });
+    expect(ok).toBe(false);
+    expect(s.righe.map((r) => r.prepared_at)).toEqual([null, "2026-08-25T10:00:00Z", null]);
+    expect(s.avviso).toContain("Spritz");
+  });
+
+  it("un ticket che non c'e' piu' non si finge cambiato", async () => {
+    const s = schermata(TICKET);
+    let chiamato = false;
+    const ok = await toccaTutteSubito({
+      righe: s.righe, ids: ["zzz"], cambio: { prepared_at: "adesso" },
+      mostra: s.mostra, avvisa: s.avvisa,
+      salva: () => { chiamato = true; return Promise.resolve(); },
+    });
+    expect(ok).toBe(false);
+    expect(chiamato).toBe(false);
+    expect(s.righe).toEqual(TICKET);
   });
 });

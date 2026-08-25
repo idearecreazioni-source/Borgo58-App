@@ -64,6 +64,51 @@ export async function toccaSubito({ righe, id, cambio, mostra, salva, avvisa }) 
 }
 
 /**
+ * Come `toccaSubito`, ma su PIÙ righe insieme e con UN solo salvataggio.
+ *
+ * ⚠️ NASCE DALLE COMANDE (25/08/2026): al banco e in cucina non si segna
+ * pronta una riga, si segna pronto **un ticket** — cioè tutte le righe
+ * partite dalla sala nello stesso momento. Chiamare `toccaSubito` in un
+ * ciclo manderebbe una richiesta per riga, ed è il contrario di quello
+ * che serve: un solo salvataggio, e se fallisce **tornano indietro
+ * tutte**, perché un ticket mezzo pronto non è uno stato che esiste.
+ *
+ * @returns {Promise<boolean>} vero se il salvataggio è riuscito
+ */
+export async function toccaTutteSubito({ righe, ids, cambio, mostra, salva, avvisa }) {
+  const elenco = righe ?? [];
+  const quali = new Set(ids ?? []);
+  const toccate = elenco.filter((r) => quali.has(r.id));
+  if (!toccate.length) return false;
+
+  // Si conserva il valore di PARTENZA riga per riga, non uno solo per
+  // tutte: dentro un ticket le righe possono essere in stati diversi (una
+  // già pronta e una no), e rimetterle tutte allo stesso valore
+  // inventerebbe uno stato che non c'era.
+  const comEra = new Map(
+    toccate.map((r) => {
+      const c = {};
+      for (const k of Object.keys(cambio)) c[k] = r[k];
+      return [r.id, c];
+    })
+  );
+
+  mostra(elenco.map((r) => (quali.has(r.id) ? { ...r, ...cambio } : r)));
+  avvisa("");
+
+  try {
+    await salva();
+    return true;
+  } catch (e) {
+    mostra((ora) =>
+      (ora ?? []).map((r) => (comEra.has(r.id) ? { ...r, ...comEra.get(r.id) } : r))
+    );
+    avvisa(messaggio(toccate[0], e));
+    return false;
+  }
+}
+
+/**
  * Toglie una riga dall'elenco SUBITO e la rimette se il salvataggio
  * fallisce. È l'altra forma dello stesso gesto: «fatto», «archiviato»,
  * «tolto» — dove l'effetto non è cambiare una colonna ma sparire.

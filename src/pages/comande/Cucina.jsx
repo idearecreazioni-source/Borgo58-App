@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   listChiamateTurno,
@@ -7,6 +7,7 @@ import {
   setItemsPrepared,
 } from "../../lib/api/orders";
 import { bigliettiCucina, etichettaTurno } from "../../lib/calcoli/turni";
+import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 
@@ -43,8 +44,22 @@ export default function Cucina() {
   const [chiamate, setChiamate] = useState([]);
   const [error, setError] = useState("");
   const [letto, setLetto] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [stampaKey, setStampaKey] = useState(null);
+
+  // ⚠️ Quanti salvataggi sono in volo. Finché è più di zero il ricarico
+  // periodico NON applica ciò che legge: il database non ha ancora
+  // ricevuto il tocco, quindi risponderebbe con lo stato di prima e il
+  // foglio lampeggerebbe — e in cucina un lampeggio si legge «non ha
+  // preso». Non è un lucchetto sull'interfaccia, è sul RICARICO.
+  const inVolo = useRef(0);
+  const conSalvataggioInVolo = async (azione) => {
+    inVolo.current += 1;
+    try {
+      return await azione();
+    } finally {
+      inVolo.current -= 1;
+    }
+  };
 
   // ⚠️ Le due letture si chiedono INSIEME e o si applicano tutte e due o
   // nessuna: se le chiamate fallissero e le righe no, la cucina vedrebbe una
@@ -53,6 +68,7 @@ export default function Cucina() {
   const load = () =>
     Promise.all([listRepartoTickets("cucina"), listChiamateTurno()])
       .then(([r, c]) => {
+        if (inVolo.current > 0) return; // c'è un tocco in volo: non lo si copre
         setRighe(r);
         setChiamate(c);
         setLetto(true);
@@ -92,31 +108,46 @@ export default function Cucina() {
     setTimeout(async () => {
       window.print();
       setStampaKey(null);
-      if (!giaStampato) {
-        setBusy(true);
-        try {
-          await segna(g, true);
-          await load();
-        } catch (e) {
-          setError(e.message);
-        } finally {
-          setBusy(false);
-        }
-      }
+      // ⚠️ Anche qui il foglio passa fra gli stampati SUBITO. Il dialogo
+      // di stampa nasconde il ritardo solo finché resta aperto: appena si
+      // chiude, chi guarda vede ancora il foglio nella colonna di
+      // sinistra e non sa se la stampa è stata registrata.
+      if (!giaStampato) await segnaSubito(g, true);
     }, 100);
   };
 
-  const nonStampato = async (g) => {
-    setBusy(true);
-    try {
-      await segna(g, false);
-      await load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // 🔴 IL FOGLIO CAMBIA SUBITO (25/08/2026). Misurato prima di
+  // correggere: **322 ms in media** (242-460) fra il tocco e il cambio —
+  // l'aggiornamento più la rilettura di tutta la coda — e nel frattempo
+  // ogni pulsante era spento.
+  //
+  // ⚠️ QUI I FOGLI SONO DI DUE SPECIE e stanno in due elenchi diversi: le
+  // comande (righe d'ordine, `prepared_at`) e le chiamate di turno
+  // (`stampata_il`). L'ottimismo va applicato all'elenco giusto — su
+  // quello sbagliato non cambierebbe niente e il tocco resterebbe muto
+  // come prima.
+  const segnaSubito = (g, stampato) =>
+    conSalvataggioInVolo(() =>
+      g.tipo === "chiamata"
+        ? toccaSubito({
+            righe: chiamate,
+            id: g.id,
+            cambio: { stampata_il: stampato ? new Date().toISOString() : null },
+            mostra: setChiamate,
+            avvisa: setError,
+            salva: () => segna(g, stampato),
+          })
+        : toccaTutteSubito({
+            righe,
+            ids: g.items.map((i) => i.id),
+            cambio: { prepared_at: stampato ? new Date().toISOString() : null },
+            mostra: setRighe,
+            avvisa: setError,
+            salva: () => segna(g, stampato),
+          })
+    );
+
+  const nonStampato = (g) => segnaSubito(g, false);
 
   const ora = (iso) =>
     new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
@@ -278,9 +309,8 @@ export default function Cucina() {
               <Foglio g={g} giaStampato={false} />
               <button
                 type="button"
-                disabled={busy}
                 onClick={() => stampa(g, false)}
-                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande font-semibold disabled:opacity-50 print:hidden"
+                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande font-semibold print:hidden"
               >
                 🖨 Stampa
               </button>
@@ -298,17 +328,15 @@ export default function Cucina() {
               <div className="flex gap-2 mt-1.5 print:hidden">
                 <button
                   type="button"
-                  disabled={busy}
-                  onClick={() => stampa(g, true)}
-                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium disabled:opacity-50"
+                    onClick={() => stampa(g, true)}
+                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala font-medium"
                 >
                   Ristampa
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
-                  onClick={() => nonStampato(g)}
-                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal-soft testo-sala disabled:opacity-50"
+                    onClick={() => nonStampato(g)}
+                  className="tocco-azione flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal-soft testo-sala"
                 >
                   ↺ Segna non stampato
                 </button>
