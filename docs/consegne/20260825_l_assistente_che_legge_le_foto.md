@@ -1,6 +1,6 @@
 # L'assistente che legge le foto — 25/08/2026, sera
 
-**HEAD dichiarato: `e2bbcaef1251596bbe5d83011f5fa7bebabaf3dc`**
+**HEAD dichiarato: `e19050a`**
 **Working tree: pulito** (restano solo file `_*.local.*` esclusi da
 `.gitignore`, di sessioni precedenti).
 
@@ -11,6 +11,8 @@ Commit di questa consegna, in ordine:
 | `557ba10` | L'assistente legge le etichette, e ogni allergene dice da dove viene |
 | `7203785` | Due domande per Tiziana, e i quesiti diventano fogli da portare |
 | `e2bbcae` | Appunti: l'assistente che legge le foto, e i due difetti trovati guardando |
+| `e557564` | Riepilogo (questo documento, poi corretto) |
+| `e19050a` | Il messaggio di dev:prova mandava a cercare una fascia che non esiste piu` |
 
 Più questo riepilogo, che è l'ultimo commit e dichiara l'hash sotto di sé.
 
@@ -696,3 +698,68 @@ da `deleted_records`, verificato dal catalogo: nessuna lapide.
 - **Il ridimensionamento su una foto vera da telefono**: le prove usano
   immagini costruite. Il calcolo delle misure è provato al contrario, il
   ridimensionamento vero no.
+
+---
+
+## CODA — una frase diventata falsa, trovata rilanciando il server di prova
+
+🔴 **Il messaggio di `npm run dev:prova` mandava a cercare una fascia che
+non esiste più da quattro giorni.** Diceva:
+
+> In alto in ogni schermata c'è la fascia rossa «DATABASE DI PROVA».
+> Se NON la vedi, sei sul locale vero: chiudi e ricontrolla.
+
+Ma il 21/08 quella striscia è diventata un **pallino in basso a destra**
+(decisione di Alessio: in cima rubava spazio verticale sul tablet, che è
+proprio la cosa che lì si sta misurando).
+
+**Misurato, non dedotto**: il messaggio è del 16/08 (`833a087`), il
+pallino del 21/08 (`7b4314d`).
+
+⚠️ **E non era un dettaglio di parole.** Quell'istruzione mandava a
+cercare una fascia che non c'è più e — non trovandola — **diceva da sé**
+«sei sul locale vero, chiudi e ricontrolla»: un **falso allarme
+garantito, ogni volta**. Un avviso che grida sempre si impara a spegnere,
+e questo avvisa della cosa più pericolosa che ci sia: scrivere dati finti
+nel gestionale vero.
+
+**Come è saltata fuori**: aprendo il gestionale e cercando la fascia
+*come diceva il messaggio*, non rileggendo il codice. Il pallino c'era —
+terracotta, in basso a destra, `aria-label` «DATABASE DI PROVA», titolo
+«progetto bnwqgpuyzmzujxfbtyvs».
+
+### E il server che girava era di stamattina
+
+⚠️ Sulla porta 5173 c'era **già** un `dev:prova`, avviato alle **10:39**
+— cioè **prima di ogni riga di questa consegna** (il primo commit è delle
+20:56). È stato fermato e riavviato: adesso serve il codice di stasera, e
+l'ho constatato chiedendo i moduli a Vite invece di fidarmi
+dell'aggiornamento automatico.
+
+| controllo | esito |
+|---|---|
+| `ScattaFoto.jsx` contiene la correzione di stasera | ✅ |
+| il bersaglio è `tocco-azione` (12 mm) | ✅ |
+| `App.jsx` ha la rotta `/fotografa` | ✅ |
+| i quattro file nuovi rispondono | ✅ 200 |
+| a quale database punta | **`bnwqgpuyzmzujxfbtyvs`** (prova) |
+
+⚠️ **Il database l'ho verificato dal modulo servito e dalla chiave di
+sessione nel browser**, non dal file di configurazione: è la differenza
+fra «dovrebbe puntare alla prova» e «sta parlando con la prova».
+
+### L'indirizzo per il telefono
+
+**`http://192.168.1.94:5173`** (Wi-Fi, unica rete attiva).
+
+🔴 **Se sia cambiato rispetto a prima non lo posso sapere, e la ragione è
+misurata**: il computer ha ottenuto questo indirizzo alle **16:10 di
+oggi**, cioè **dopo** che il server vecchio era partito (10:39). Quale
+indirizzo stampasse quello se n'è andato col processo. Un rinnovo DHCP di
+solito riassegna lo stesso numero, ma non è garantito.
+
+⚠️ **E c'è una conseguenza pratica**: quel lease **scade alle 04:10 di
+stanotte**. Se al rinnovo il router assegna un numero diverso,
+l'indirizzo qui sopra smette di funzionare — ed è precisamente il caso
+che il messaggio dello script nomina. Si rilancia `npm run dev:prova` e
+si legge il numero nuovo.
