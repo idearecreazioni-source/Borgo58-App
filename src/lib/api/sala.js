@@ -60,6 +60,18 @@ export async function getPiantaDelGiorno(data) {
 // conseguenza di uno spostamento. È la stessa forma del difetto del
 // 12/08, quando ricaricare una schermata buttava via ciò che l'utente
 // stava scrivendo altrove.
+// 🔴 «AGGIORNATO IL» NON SI SCRIVE PIÙ DA QUI (25/08/2026), e la ragione
+// vale per ogni colonna dello stesso genere: fino a oggi ci si metteva
+// `new Date().toISOString()`, cioè **l'orologio del tablet** — non quello
+// del database. Questo progetto lo sa già dal 20/08 (*un istante si
+// chiede al database; i due orologi non sono lo stesso orologio*), e lì
+// bastarono pochi millisecondi di scarto a far sbagliare un confronto.
+//
+// ⚠️ E il difetto peggiore non era l'ora, era **da chi dipendeva**: la
+// data la scriveva chi si ricordava di scriverla, quindi una scrittura
+// nuova — o una funzione SQL, che di qui non passa affatto — la lasciava
+// indietro **senza nessun errore**. Adesso la scrive un trigger
+// (`20260825000003`), che vale da qualunque porta si entri.
 export async function salvaSagoma({ data, sagomaId, x, y, ruotato }) {
   const { error } = await supabase.from("disposizioni_giornaliere").upsert(
     {
@@ -68,7 +80,6 @@ export async function salvaSagoma({ data, sagomaId, x, y, ruotato }) {
       x: Math.round(x),
       y: Math.round(y),
       ruotato: Boolean(ruotato),
-      aggiornato_il: new Date().toISOString(),
     },
     { onConflict: "data,dining_table_id" }
   );
@@ -159,7 +170,6 @@ export async function salvaCorrezioneCoperti({ data, tavoli, coperti, ragione })
       tavoli,
       coperti,
       ragione: ragione?.trim() || null,
-      aggiornato_il: new Date().toISOString(),
     },
     { onConflict: "data,tavoli" }
   );
@@ -195,7 +205,7 @@ export async function listFormatiTavolo() {
 export async function updateFormatoTavolo(id, payload) {
   const { error } = await supabase
     .from("formati_tavolo")
-    .update({ ...payload, aggiornato_il: new Date().toISOString() })
+    .update(payload)
     .eq("id", id);
   if (error) throw error;
 }
@@ -245,7 +255,7 @@ export async function listServiceHours() {
 export async function updateServiceHour(id, payload) {
   const { error } = await supabase
     .from("service_hours")
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq("id", id);
   if (error) throw error;
 }
@@ -301,7 +311,7 @@ export async function getRegolePrenotazione() {
 export async function updateRegolePrenotazione(payload) {
   const { error } = await supabase
     .from("service_settings")
-    .update({ ...payload, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq("id", 1);
   if (error) throw error;
 }

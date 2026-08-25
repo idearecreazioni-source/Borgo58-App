@@ -207,7 +207,6 @@ export async function salvaImpostazioniTesoreria(entityId, campi) {
           : Number(campi.giorniAccredito),
       commissione_pos_percento:
         campi.commissione === "" || campi.commissione == null ? null : Number(campi.commissione),
-      aggiornato_il: new Date().toISOString(),
     })
     .select()
     .single();
