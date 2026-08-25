@@ -135,9 +135,24 @@ export default function HaccpHome() {
           <Link
             key={c.to}
             to={c.to}
-            className="tocco-bottone inline-flex items-center rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
+            /* 🔴 ERA `inline-flex items-center` (25/08/2026, segnalato da
+               Alessio: *«le scritte sono attaccate e fuori riga»*). Quella
+               riga metteva icona, contatore, titolo e descrizione **in
+               fila orizzontale**, e da lì venivano tutti e tre i sintomi
+               in una volta: «Tracciabilità lotti» toccava la sua
+               descrizione perché le erano affiancate, il contatore si
+               infilava fra icona e titolo perché era il secondo della
+               fila, e la pagina sbordava di 54 punti (444 su 390) perché
+               tre blocchi affiancati in un telefono non ci stanno.
+               ⚠️ Misurato nel browser alla calibrazione del dispositivo,
+               non dedotto dal codice: erano le tre descrizioni a uscire
+               dal bordo destro, fino a 444. */
+            className="tocco-bottone flex flex-col rounded-xl bg-b58-parchment p-6 ring-1 ring-b58-charcoal/10 hover:ring-b58-terracotta/50 hover:shadow-sm transition-all"
           >
-            <div className="flex items-start justify-between">
+            {/* `w-full` perché il contatore vada al bordo destro della
+                scheda: senza, `justify-between` non ha spazio da dividere
+                e i due si accostano. */}
+            <div className="flex w-full items-start justify-between">
               <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
                 <Icon name={c.icon} className="w-5 h-5" />
               </div>
@@ -148,7 +163,11 @@ export default function HaccpHome() {
               )}
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">{c.title}</h3>
-            <p className="testo-sala text-b58-charcoal-soft mt-1">{c.desc}</p>
+            {/* ⚠️ `mt-2` e non `mt-1`: quattro punti di stacco sono 0,63 mm
+                veri alla calibrazione del tablet, e a quella distanza il
+                titolo e la sua descrizione **si leggono attaccati** anche
+                quando sono su righe diverse. Otto punti fanno 1,25 mm. */}
+            <p className="testo-sala text-b58-charcoal-soft mt-2">{c.desc}</p>
           </Link>
         ))}
       </div>

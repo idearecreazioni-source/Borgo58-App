@@ -1,6 +1,6 @@
 # Quesiti per i consulenti — raccoglitore unico
 
-**Aggiornato il 15/08/2026.**
+**Aggiornato il 25/08/2026** (i cinque quesiti nuovi per Tiziana, T3-T7).
 
 A cosa serve: le domande aperte per i consulenti erano sparse in una
 dozzina di posti — un avviso in una schermata, un rilievo in un referto,
@@ -766,6 +766,151 @@ in cucina? Che tracciabilità devo tenere, e ci sono specie da escludere?»
 obbligatori della registrazione. Se pone un divieto, la schermata lo dice
 invece di lasciare intendere che basti registrare. Si incrocia con `A1`,
 che risponde sul lato quantitativo.
+
+**Dove vive**: `src/pages/haccp/RaccoltaPropria.jsx`.
+
+**Stato**: aperto.
+
+## T3 · Le durate delle preparazioni, per tipo di conservazione
+
+**Contesto.** Il gestionale calcola da sé le scadenze: dalla data di
+produzione o di ricevimento più la durata del prodotto. Quella durata
+oggi è quasi sempre vuota — sul progetto di prova, misurato il
+25/08/2026, **3 prodotti su 132** ne hanno una — e senza di lei lo
+scadenziario non ha niente da contare. È il motivo per cui l'avviso sui
+prodotti fermi è costruito e quasi muto: non è rotto, è che non sa
+quanto durano le cose.
+
+**Domanda.** «Mi serve una tabella delle durate per tipo di
+conservazione: quanti giorni dura una preparazione in frigo, dopo
+l'abbattimento, sottovuoto e congelata? Vale per famiglie di prodotto
+(carne cotta, pesce crudo, salse, verdure lavorate) o va decisa
+preparazione per preparazione?»
+
+**Cosa cambia nell'app.** Le durate diventano il valore proposto sulla
+scheda del prodotto e sulla produzione: il gestionale calcola la
+scadenza e la mette nello scadenziario, che oggi resta vuoto. ⚠️ Finché
+non arrivano, **nessuna durata viene inventata dal sistema**: una data
+di scadenza sbagliata su un registro esibibile è peggio di una data
+assente, perché nessuno la mette in dubbio.
+
+**Dove vive**: `ingredients.shelf_life_days` e `storage_type`,
+`src/pages/magazzino/Scadenze.jsx`, `src/pages/magazzino/Produzioni.jsx`.
+
+**Stato**: aperto.
+
+---
+
+## T4 · Che forma devono avere i registri stampati per l'ASP
+
+**Contesto.** Temperature, pulizie e non conformità si stampano mese per
+mese, ed è il fascicolo che si mette in mano a chi viene a controllare.
+
+⚠️ **Le tre schermate sono già costruite, ma con un formato di stampa
+PROVVISORIO deciso da noi**, non da chi conosce cosa chiede l'ASP: va
+rifatto sulla risposta, non ritoccato.
+
+**Domanda.** «Che forma devono avere i registri che stampo per l'ASP —
+temperature, pulizie, non conformità? Servono firme, e di chi? Che
+intestazione (ragione sociale, sede, numero di registrazione)? Le azioni
+correttive vanno dichiarate sullo stesso foglio del problema o su un
+modulo a parte? C'è una periodicità obbligatoria di stampa e
+conservazione?»
+
+**Cosa cambia nell'app.** Il formato di stampa delle tre schermate.
+Se servono firme, serve lo spazio per apporle e la riga di chi ha
+eseguito — che oggi dirà «staff» finché l'accesso resta uno solo e
+condiviso (vedi la nota in CLAUDE.md §10: se per Tiziana questo è un
+problema, la scadenza degli accessi personali si sposta da «prima di
+assumere» a **prima dell'apertura**).
+
+**Dove vive**: `src/pages/haccp/TemperatureLog.jsx`,
+`PuliziaESanificazione.jsx`, `NonConformita.jsx`,
+`src/pages/haccp/ManualeCompleto.jsx`.
+
+**Stato**: aperto.
+
+---
+
+## T5 · L'elenco vero delle attività di pulizia
+
+**Contesto.** La schermata della pulizia funziona, ma le attività che ci
+sono dentro **le ha inventate Alessio per provarla**. Un piano di
+pulizia è parte del manuale HACCP e non si scrive a intuito.
+
+**Domanda.** «Mi dai l'elenco vero delle attività di pulizia e
+sanificazione, con la frequenza di ognuna (giornaliera, settimanale,
+mensile) e la zona a cui si riferisce? E vanno distinte pulizia e
+sanificazione, o bastano una voce e un prodotto?»
+
+**Cosa cambia nell'app.** Le attività inventate si sostituiscono con
+quelle vere, e la frequenza governa il conteggio «da fare oggi» che sta
+sulla schermata principale di HACCP. ⚠️ Finché l'elenco è inventato,
+quel numero **è un numero inventato che ha l'aria di essere vero**.
+
+**Dove vive**: `src/pages/haccp/PuliziaESanificazione.jsx`.
+
+**Stato**: aperto.
+
+---
+
+## T6 · Contaminazione crociata nella MIA cucina
+
+**Contesto.** Il gestionale sa dire quali allergeni contiene un piatto
+leggendoli dagli ingredienti, e da agosto sa anche dichiarare quali si
+possono togliere sostituendo un ingrediente. Ma tutto questo parla di
+**ricette**, non di **cucina**: se friggo pesce e patate nello stesso
+olio, chi è allergico al pesce non può mangiare quelle patate — e
+nessuna ricetta lo dice.
+
+⚠️ La domanda riguarda la **nostra** cucina, non gli stabilimenti dei
+produttori: le tracce dichiarate sulle etichette dei fornitori sono
+un'altra cosa e il gestionale le tiene già separate
+(`ingredients.allergeni_tracce`).
+
+**Domanda.** «Come si gestisce e si dichiara la contaminazione crociata
+in cucina — olio di frittura condiviso, taglieri, superfici, attrezzi?
+Serve una procedura scritta nel manuale? E che dicitura va sul menu per
+le tracce che non posso escludere?»
+
+**Cosa cambia nell'app.** Se la risposta impone una dicitura, quella
+frase entra nella stampa del menu **accanto** all'elenco degli
+allergeni. Se impone una procedura, diventa una voce del piano di
+pulizia (T5) e forse un vincolo sulle sostituzioni: oggi il gestionale
+rifiuta di dichiarare «senza lattosio» se un ingrediente scoperto
+resta, ma **non sa niente dell'olio di frittura** — e quella promessa,
+fatta al tavolo a un allergico, è la più delicata che il gestionale
+faccia.
+
+**Dove vive**: `src/pages/ricettario/`, la stampa del menu, e le
+sostituzioni allergene (migrazioni `20260824000034`–`…039`).
+
+**Stato**: aperto.
+
+---
+
+## T7 · Come si dimostra di aver riconosciuto la specie raccolta
+
+**Contesto.** La schermata «Raccolta propria» registra chi ha raccolto,
+dove, quando e come ha riconosciuto la pianta. Quel «come» oggi è un
+campo di testo libero deciso da noi.
+
+⚠️ Si aggancia a `T2` ma è una domanda diversa: **T2 chiede se le erbe
+spontanee si possono usare, questa chiede come si dimostra di aver
+riconosciuto la specie giusta.** Una risposta positiva alla prima non
+scioglie la seconda.
+
+**Domanda.** «Cosa devo registrare per dimostrare di aver riconosciuto
+la specie raccolta? Basta il nome e il metodo di riconoscimento, o
+servono una fotografia, un attestato di formazione, il riferimento a una
+guida? E chi può fare il riconoscimento — solo io, o chiunque abbia
+seguito un corso?»
+
+**Cosa cambia nell'app.** Se serve una fotografia, la registrazione la
+chiede (la fotocamera è già la strada prevista per il ricevimento
+merci). Se serve un riconoscitore qualificato, diventa un campo con un
+elenco di chi può, e non un testo libero. Se basta quello che c'è, la
+schermata smette di dichiararsi «da validare».
 
 **Dove vive**: `src/pages/haccp/RaccoltaPropria.jsx`.
 
