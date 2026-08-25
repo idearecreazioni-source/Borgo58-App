@@ -2065,3 +2065,36 @@ delle regole nel CSS.
 **nessuno ha mai visto un foglio uscire da una stampante**. I 6,8 mm
 sono una decisione presa a ragion veduta, non una misura, e si
 riguardano quando ci sarà la termica in laboratorio.
+
+## 48 · Gli allergeni tornano ad avere un secondo posto — 25/08/2026
+
+**Deciso il 23/08**, dentro `applica_scheda_prodotto`: *«Gli allergeni
+restano fuori dalla lista dei campi da confermare, e non è una
+dimenticanza: ce l'hanno già una loro (`origine_allergeni`), con tre
+stati invece di due. Metterli anche qui vorrebbe dire due posti che
+dicono la stessa cosa e possono contraddirsi.»*
+
+**La ragione di allora:** evitare un doppione — due colonne che
+raccontano lo stesso fatto e possono divergere.
+
+**Cosa si decide adesso:** nasce `allergeni_prodotto`, che dice da dove
+viene **ciascun** allergene. È un secondo posto che parla di allergeni
+accanto a `origine_allergeni`.
+
+**Perché la ragione di allora non vale più — anzi: vale ancora, e per
+questo la forma è diversa.** Col discriminante del 17/08 («direbbero
+*esattamente* la stessa cosa?») la risposta è **no, ma solo in parte**:
+`origine_allergeni` parla dell'**insieme** e decide se si stampa sul
+menu, `allergeni_prodotto` del **singolo** e serve al cameriere col
+cliente davanti. Non si possono fondere. Invece di costruire un guardiano
+che sorvegli la contraddizione, **si è tolta la possibilità che nasca**:
+`origine_allergeni` diventa un **riflesso** scritto da un trigger a
+partire dalle righe. È il quarto riflesso del progetto, dopo il mezzo di
+pagamento di un conto, il conto aperto di un tavolo e «in carta» di una
+ricetta.
+
+⚠️ **Il prezzo, dichiarato:** `applica_scheda_prodotto` continua a
+scrivere `origine_allergeni = 'stimati'` quando il campo è vuoto. I due
+non si pestano i piedi — col trigger il campo non è mai vuoto se ci sono
+righe — ma è una convivenza da tenere presente, non una separazione
+netta.
