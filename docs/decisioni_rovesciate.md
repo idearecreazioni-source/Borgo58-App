@@ -1909,3 +1909,82 @@ una **ricostruzione da zero** la `…033` gira prima della migrazione che
 la registra, e si ferma di nuovo — a quel punto non esiste nessuna
 previsione, nemmeno congelata. Va saltata come la `…030`:
 `npm run migra -- --salta 20260824000030 --salta 20260824000033`.
+
+---
+
+## 47 · 25/08/2026 — «il costo di un conto lo dicono le ricette»
+
+**Cosa era stato deciso, e quando.** Dal 13/08/2026 il costo degli
+ingredienti di un conto — quello che finisce nel registro sconti e
+omaggi — veniva da `v_recipe_costs.food_cost_portion`: la somma dei
+prezzi **correnti** degli ingredienti di ogni piatto.
+
+**La ragione di allora.** Era l'unico numero che esistesse. Il magazzino
+non scendeva affatto fino al 13/08, e quando ha cominciato a scendere
+nessuno ha ricollegato le due cose: il costo di un piatto lo sapeva la
+ricetta, e la ricetta rispondeva sempre.
+
+**Cosa si decide adesso.** Decisione di Alessio: **comanda il
+magazzino**. `costo_ingredienti_conto` somma i costi fotografati sui
+**lotti** da cui la merce è uscita — quello che è stato pagato davvero —
+e resta **vuota** finché il magazzino non è sceso. Perché il numero
+esista quando serve, in `close_order_as_discount_gift` la merce ora esce
+**prima** e il costo si conta **dopo**: nell'ordine vecchio, leggendo dal
+magazzino, sarebbe venuto **zero**.
+
+**Perché la ragione di allora non vale più.** Perché ora i due numeri
+esistono tutti e due, e rispondono a **due domande diverse**: la ricetta
+dice *quanto costa fare questo piatto*, ed è su quello che si decide un
+prezzo di menu; il magazzino dice *quanto è costato quel piatto quella
+sera*, ed è su quello che si misura un omaggio. ⚠️ **`v_recipe_costs`
+non è stata toccata**: non si è sostituito un numero, si è cambiato chi
+risponde alla seconda domanda. Misurato sul conto T6 del 31 luglio:
+**5,11 dalla ricetta contro 3,45 dal magazzino**.
+
+⚠️ **E cambia di significato una colonna già scritta**, dichiarato:
+`righe_valorizzate` contava le righe la cui ricetta aveva tutti i prezzi
+noti; adesso conta quelle da cui è **uscito qualcosa dalla cella**. Le
+due domande si somigliano e non coincidono — un ingrediente che il
+magazzino non segue ha un prezzo e non produce scarico. Il passato non
+si riscrive: le 11 righe già in `discounts_gifts` hanno tutte
+`costo_ingredienti` **vuoto** (misurato), quindi non nasce nessuna
+popolazione mista.
+
+---
+
+## 48 · 25/08/2026 — «una preparazione con lotti non si esplode» (metà regola)
+
+**Cosa era stato deciso, e quando.** Il 14/08/2026, col blocco delle
+Produzioni: una preparazione **che ha lotti** non viene più esplosa fino
+alla materia prima — *si consuma*, col costo di quel giorno.
+
+**La ragione di allora.** Giusta e invariata: senza quell'interruttore,
+servire un piatto scaricherebbe **due volte** le stesse verdure — una
+come ragù prodotto, una come cipolla e sedano crudi.
+
+**Cosa si decide adesso.** La regola **non cambia**: si costruisce la
+sua seconda metà, che non era mai stata scritta. `fabbisogno_conto`
+smetteva di esplodere e poi **scartava la riga**, perché la select finale
+teneva solo ciò che aveva un `ingredient_id`: quella parte del piatto non
+usciva da nessuna parte. Ora esce il semilavorato, come già faceva
+`fabbisogno_preparazione` dal suo primo giorno.
+
+E si aggiunge l'**ancoraggio a quando**: la condizione guardava
+`quantity_remaining > 0`, cioè la giacenza di **adesso**, quindi lo
+stesso conto chiuso rispondeva diversamente a settimane di distanza. Ora
+guarda se esisteva un lotto **entro l'istante del conto**.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera —
+non è la decisione a essere rovesciata, è la sua attuazione.** Quello che
+si rovescia è l'affermazione scritta nel riepilogo del 24/08, dove avevo
+spiegato il comportamento come *«due decisioni entrambe volute»*: era
+**metà lavoro descritto come una scelta**. La misura: **13.624 scarichi
+registrati e uno solo su una preparazione**, quell'uno fatto a mano;
+**346 conti** e nessuno che ne abbia mai toccata una.
+
+⚠️ **Il prezzo che si accetta**: una preparazione prodotta e poi
+**esaurita** non torna più a esplodersi nella materia prima — si consuma
+e lascia l'anomalia «giacenza insufficiente». È più vero (scaricare
+verdure crude vorrebbe dire che il cuoco ha rifatto il soffritto al
+momento), e oggi non tocca nessun dato: i lotti di preparazione esauriti
+sono **zero**.
