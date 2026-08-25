@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>Quesiti — ASP DI ENNA</title>
+<style>
+  /* ⚠️ Tutte le misure in PUNTI: sul foglio 96 punti fanno un pollice,
+     quindi la taglia non dipende da dove si e' premuto stampa. */
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a;
+         max-width: 700px; margin: 0 auto; padding: 24px; font-size: 12.5px; line-height: 1.5; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 26px 0 6px; page-break-after: avoid; }
+  .intro { font-size: 12px; color: #444; border-bottom: 1px solid #bbb; padding-bottom: 12px; }
+  .quesito { page-break-inside: avoid; margin-bottom: 6px; }
+  p { margin: 5px 0; }
+  ul { margin: 5px 0 5px 18px; padding: 0; }
+  code { font-family: Consolas, monospace; font-size: 11.5px; background: #f2f2f2; padding: 0 3px; }
+  /* Lo spazio per scrivere la risposta a mano: righe vere, non un vuoto. */
+  .risposta { margin: 8px 0 20px; }
+  .risposta .etichetta { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #666; }
+  .riga { border-bottom: 1px solid #999; height: 22px; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    .nonstampare { display: none; }
+  }
+</style></head>
+<body>
+<h1>ASP DI ENNA</h1>
+<p class="intro">Domande di Borgo 58 — Osteria Contemporanea, Piazza Armerina (EN).
+Sotto ogni domanda c'e' lo spazio per scrivere la risposta.
+Il documento completo, con tutte le domande per tutti i consulenti, resta nel gestionale.</p>
+
+<div class="quesito">
+  <h2>A1 · Piccoli quantitativi di prodotti primari in Sicilia</h2>
+  <p><strong>Contesto.</strong> L'orto e la raccolta propria producono piccole quantità</p>
+<p>destinate al locale. Il regolamento europeo lascia la fornitura diretta</p>
+<p>di piccoli quantitativi alla disciplina nazionale e regionale, e non</p>
+<p>sappiamo cosa preveda la Sicilia.</p>
+<p><strong>Domanda.</strong> «La Regione Siciliana ha proprie linee guida sulla fornitura</p>
+<p>diretta di piccoli quantitativi di prodotti primari, secondo il</p>
+<p>regolamento CE 852/2004 articolo 1 comma 2 lettera c? Ci sono soglie</p>
+<p>quantitative da rispettare?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se esistono soglie, diventano un avviso nel</p>
+<p>modulo Agricolo — «stai per superare il quantitativo» — invece di una</p>
+<p>cosa da ricordare. Se non esistono, si scrive che non esistono: oggi la</p>
+<p>schermata della raccolta propria dichiara una zona grigia normativa senza</p>
+<p>poterla sciogliere.</p>
+<p><strong>Dove vive</strong>: modulo Agricolo, <code>src/pages/haccp/RaccoltaPropria.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+<p class="nonstampare" style="margin-top:28px;color:#666;font-size:11px">
+Per stamparlo: Ctrl+P, poi «Salva come PDF» oppure la stampante.</p>
+</body></html>

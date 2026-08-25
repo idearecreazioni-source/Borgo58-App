@@ -1,6 +1,6 @@
 # Quesiti per i consulenti — raccoglitore unico
 
-**Aggiornato il 25/08/2026** (i cinque quesiti nuovi per Tiziana, T3-T7).
+**Aggiornato il 25/08/2026** (i cinque quesiti per Tiziana T3-T7, piu' T8 e T9 nati con l'assistente che legge le etichette).
 
 A cosa serve: le domande aperte per i consulenti erano sparse in una
 dozzina di posti — un avviso in una schermata, un rilievo in un referto,
@@ -924,3 +924,67 @@ quelli decisi da Alessio lo stesso giorno. Quando una risposta arriva:
 si scrive sotto la sua domanda, si cambia lo stato, e si va a chiudere il
 punto del codice indicato in «Dove vive». Una risposta che resta solo
 qui non ha ancora servito a niente.*
+
+---
+
+## T8 · Un allergene «dedotto» può stare sul menu?
+
+**Contesto.** Dal 25/08/2026 il gestionale sa fotografare l'etichetta di
+un prodotto e ricavarne gli allergeni. Di ciascuno registra **da dove
+viene**, e sono quattro casi distinti:
+
+- **letto sull'etichetta** — c'è scritto nero su bianco sulla confezione;
+- **ricavato da una fonte** consultata, che il gestionale obbliga a
+  nominare;
+- **dedotto** dal tipo di prodotto (la farina di grano contiene glutine
+  anche se sull'etichetta non c'è scritto);
+- **messo da Alessio**, che l'ha guardato con i suoi occhi.
+
+Oggi il gestionale è **prudente per scelta nostra, non per una regola
+che qualcuno ci ha dato**: se anche un solo allergene di un prodotto è
+«dedotto» o «da una fonte», l'elenco di quel prodotto **non viene
+stampato sul menu** e resta marcato da verificare. In sala, invece,
+tutti e quattro i casi si vedono, con frasi diverse: su un «dedotto» il
+cameriere legge di mostrare gli ingredienti invece di garantire.
+
+⚠️ Non esiste un elenco ufficiale che dica quali prodotti contengono
+quali allergeni: l'Allegato II del Regolamento UE 1169/2011 elenca i
+quattordici allergeni **da dichiarare**, non chi li contiene. È il
+motivo per cui la distinzione esiste.
+
+**Domanda.** «Quando dichiaro gli allergeni di un piatto, posso reggermi
+su un allergene che ho ricavato dal tipo di ingrediente senza averlo
+letto sull'etichetta di quel prodotto? O devo aver letto ogni etichetta
+di ogni fornitore? E la distinzione che il gestionale registra —
+etichetta, fonte, deduzione, verifica mia — regge come prova davanti a
+un controllo, oppure conta soltanto che il dato finale sia giusto?»
+
+**Cosa cambia nell'app.** Se conta solo il dato finale, la prudenza di
+oggi si può allentare e più piatti diventano stampabili. Se invece serve
+l'etichetta letta, la regola attuale resta e va detto in modo più netto
+quali prodotti mancano — diventerebbe un elenco di lavoro («queste
+quindici etichette vanno fotografate»), non un avviso.
+
+⚠️ **La domanda vale doppio per i prodotti lavorati**, dove l'allergene
+sta nell'etichetta e non nel nome: il sedano in un ragù pronto, la soia
+in un gelato.
+
+---
+
+## T9 · Le tracce da contaminazione dichiarate dal fornitore
+
+**Contesto.** Alcune etichette portano «può contenere tracce di…». Il
+gestionale ha un campo suo per quelle e — per scelta esplicita — **non
+le indovina mai**: le tracce si scrivono solo se sono lette
+sull'etichetta. Oggi però la fotografia dell'etichetta **non le
+raccoglie**, e la ragione è che non sappiamo cosa farne.
+
+**Domanda.** «Le tracce dichiarate dal mio fornitore devo riportarle al
+cliente, e in che forma? Vale la dicitura generale sul menu, oppure
+vanno dette piatto per piatto? E se un fornitore le dichiara e un altro
+no per lo stesso ingrediente, cosa scrivo?»
+
+**Cosa cambia nell'app.** Se vanno riportate per piatto, la lettura
+dell'etichetta comincia a raccoglierle e compaiono nella scheda ricetta
+separate dagli allergeni veri. Se basta la dicitura generale, restano
+dove sono — un dato dell'ingrediente, che nessuno stampa.

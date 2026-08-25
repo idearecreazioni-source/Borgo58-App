@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>Quesiti — BANCHE — Intesa, MPS, Credem</title>
+<style>
+  /* ⚠️ Tutte le misure in PUNTI: sul foglio 96 punti fanno un pollice,
+     quindi la taglia non dipende da dove si e' premuto stampa. */
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a;
+         max-width: 700px; margin: 0 auto; padding: 24px; font-size: 12.5px; line-height: 1.5; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 26px 0 6px; page-break-after: avoid; }
+  .intro { font-size: 12px; color: #444; border-bottom: 1px solid #bbb; padding-bottom: 12px; }
+  .quesito { page-break-inside: avoid; margin-bottom: 6px; }
+  p { margin: 5px 0; }
+  ul { margin: 5px 0 5px 18px; padding: 0; }
+  code { font-family: Consolas, monospace; font-size: 11.5px; background: #f2f2f2; padding: 0 3px; }
+  /* Lo spazio per scrivere la risposta a mano: righe vere, non un vuoto. */
+  .risposta { margin: 8px 0 20px; }
+  .risposta .etichetta { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #666; }
+  .riga { border-bottom: 1px solid #999; height: 22px; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    .nonstampare { display: none; }
+  }
+</style></head>
+<body>
+<h1>BANCHE — Intesa, MPS, Credem</h1>
+<p class="intro">Domande di Borgo 58 — Osteria Contemporanea, Piazza Armerina (EN).
+Sotto ogni domanda c'e' lo spazio per scrivere la risposta.
+Il documento completo, con tutte le domande per tutti i consulenti, resta nel gestionale.</p>
+
+<div class="quesito">
+  <h2>B1 · Che formati esporta l'home banking, e c'è un'API</h2>
+  <p><strong>Contesto.</strong> Il Blocco 6 del mandato prevede l'import dell'estratto</p>
+<p>conto con riconciliazione movimento per movimento. Che sia un gesto</p>
+<p>settimanale di Alessio o una cosa che avviene da sola dipende</p>
+<p>interamente dalla risposta della banca.</p>
+<p><strong>Domanda.</strong> «Che formati esporta l'home banking aziendale — CSV, CAMT.053,</p>
+<p>MT940? Ed esistono API o integrazioni per collegare il conto a un</p>
+<p>gestionale, date direttamente al titolare?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Con l'export, il caricamento manuale funziona</p>
+<p>ovunque e si costruisce una volta sola. Con l'API, **la prima nota si</p>
+<p>riempie da sola**. Le banche nate online la danno, quelle tradizionali</p>
+<p>quasi mai — espongono i dati solo a intermediari autorizzati, che è una</p>
+<p>strada cara con contratti e canone.</p>
+<p>⚠️ Il collegamento in tempo reale non esiste comunque: un incasso</p>
+<p>elettronico arriva uno o due giorni dopo anche con l'API. Il guadagno</p>
+<p>vero è togliere il passaggio a mano, non vedere prima.</p>
+<p><strong>Dove vive</strong>: <code>CLAUDE.md</code> §10 (in capo ad Alessio),</p>
+<p><code>docs/mandati/20260815_personale_e_tesoreria.md</code> §7.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>B2 · Il POS e come arrivano gli accrediti</h2>
+  <p><strong>Contesto.</strong> L'incasso elettronico di stasera non è in banca stasera:</p>
+<p>arriva dopo uno o due giorni, <strong>al netto delle commissioni</strong>. Il mandato</p>
+<p>chiede una voce «POS in transito» <strong>dal primo giorno</strong>, perché senza</p>
+<p>quella il saldo banca teorico non tornerà mai.</p>
+<p><strong>Domanda.</strong> «Quanto costa il POS, e come arrivano gli accrediti: lordi o al</p>
+<p>netto delle commissioni, in quanti giorni, raggruppati o singoli?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Determina come si modella il transito e la</p>
+<p>riconciliazione. Se gli accrediti arrivano raggruppati, un movimento in</p>
+<p>banca corrisponde a <strong>più serate</strong> e la riconciliazione uno-a-uno non</p>
+<p>funziona: è una differenza di struttura, non un dettaglio.</p>
+<p><strong>Dove vive</strong>: <code>docs/mandati/20260815_personale_e_tesoreria.md</code> §7b.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+<p class="nonstampare" style="margin-top:28px;color:#666;font-size:11px">
+Per stamparlo: Ctrl+P, poi «Salva come PDF» oppure la stampante.</p>
+</body></html>

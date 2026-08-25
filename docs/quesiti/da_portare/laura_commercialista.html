@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>Quesiti — LAURA — commercialista</title>
+<style>
+  /* ⚠️ Tutte le misure in PUNTI: sul foglio 96 punti fanno un pollice,
+     quindi la taglia non dipende da dove si e' premuto stampa. */
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a;
+         max-width: 700px; margin: 0 auto; padding: 24px; font-size: 12.5px; line-height: 1.5; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 26px 0 6px; page-break-after: avoid; }
+  .intro { font-size: 12px; color: #444; border-bottom: 1px solid #bbb; padding-bottom: 12px; }
+  .quesito { page-break-inside: avoid; margin-bottom: 6px; }
+  p { margin: 5px 0; }
+  ul { margin: 5px 0 5px 18px; padding: 0; }
+  code { font-family: Consolas, monospace; font-size: 11.5px; background: #f2f2f2; padding: 0 3px; }
+  /* Lo spazio per scrivere la risposta a mano: righe vere, non un vuoto. */
+  .risposta { margin: 8px 0 20px; }
+  .risposta .etichetta { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #666; }
+  .riga { border-bottom: 1px solid #999; height: 22px; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    .nonstampare { display: none; }
+  }
+</style></head>
+<body>
+<h1>LAURA — commercialista</h1>
+<p class="intro">Domande di Borgo 58 — Osteria Contemporanea, Piazza Armerina (EN).
+Sotto ogni domanda c'e' lo spazio per scrivere la risposta.
+Il documento completo, con tutte le domande per tutti i consulenti, resta nel gestionale.</p>
+
+<div class="quesito">
+  <h2>L6 · Autofattura agricola per gli acquisti da piccoli produttori</h2>
+  <p><strong>Contesto.</strong> Il progetto compra ortaggi da produttori locali e prevede</p>
+<p>un'azienda agricola propria. Oggi il gestionale non sa come si documenta</p>
+<p>un acquisto da un produttore in regime di esonero.</p>
+<p><strong>Domanda.</strong> «Se il produttore ha partita IVA in regime di esonero — l'articolo 34</p>
+<p>comma 6 del DPR 633/72 — l'autofattura è la strada giusta? La posso fare</p>
+<p>cumulativa a fine mese appoggiandomi ai DDT, o serve documento per</p>
+<p>documento? Quale percentuale di compensazione si applica agli ortaggi? E</p>
+<p>come si gestisce dentro Fatture in Cloud?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Decide se serve un tipo di documento nuovo nel</p>
+<p>carico da fattura, se il raggruppamento è mensile o per consegna, e con</p>
+<p>quale aliquota di compensazione si valorizza la riga. Tocca anche la</p>
+<p>cessione intercompany dell'orto (vedi <code>L5</code>).</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L7 · Acquisto da chi NON ha partita IVA</h2>
+  <p><strong>Contesto.</strong> Gemello del precedente: il vicino che porta due cassette di</p>
+<p>pomodori non è un'azienda agricola. Oggi quell'acquisto non ha nessuna</p>
+<p>forma nel gestionale.</p>
+<p><strong>Domanda.</strong> «Se il produttore non ha partita IVA, la ricevuta di cessione</p>
+<p>occasionale — articolo 67 comma 1 lettera i del TUIR — è la forma</p>
+<p>corretta? E quel costo per la società è deducibile, oppure va ripreso a</p>
+<p>tassazione?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Determina il valore dell'attributo di</p>
+<p>deducibilità (vedi <code>L9</code>) su un'intera classe di acquisti, e se serve un</p>
+<p>modello di ricevuta stampabile dal gestionale.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L8 · Il confine dell'occasionalità</h2>
+  <p><strong>Contesto.</strong> Comprare due volte l'anno dallo stesso vicino è</p>
+<p>occasionale; comprare ogni settimana non lo è più. Il gestionale può</p>
+<p>sorvegliare la soglia solo se sa quale sorvegliare.</p>
+<p><strong>Domanda.</strong> «Qual è il tetto annuo per singolo venditore che non devo</p>
+<p>superare, e a partire da quale frequenza di acquisti scatta</p>
+<p>l'abitualità?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Fa nascere un avviso vero — «questo venditore</p>
+<p>si sta avvicinando alla soglia» — invece di un controllo che nessuno può</p>
+<p>fare a mente. Senza la risposta l'avviso non si costruisce: una soglia</p>
+<p>inventata da noi è peggio di nessuna soglia.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L9 · Quali costi ricorrenti di un ristorante sono indeducibili</h2>
+  <p><strong>Contesto.</strong> Il mandato «personale e tesoreria» (§9) chiede un attributo</p>
+<p>di deducibilità <strong>su ogni voce di costo</strong>, perché la Proiezione lavora su</p>
+<p>due basi: l'utile gestionale e l'imponibile. La struttura si costruisce</p>
+<p>comunque; l'elenco dei casi no.</p>
+<p><strong>Domanda.</strong> «Nella vita normale di un ristorante, quali costi ricorrenti</p>
+<p>sono indeducibili o deducibili solo in parte? Multe e sanzioni,</p>
+<p>rappresentanza, spese senza documento: mi fai l'elenco dei casi che</p>
+<p>incontrerò davvero?»</p>
+<p><strong>Cosa cambia nell'app.</strong> È il quesito che riempie l'attributo di</p>
+<p>deducibilità. Senza, ogni costo nasce «deducibile» per difetto — cioè con</p>
+<p>una risposta data dal programma al posto del commercialista, e la</p>
+<p>Proiezione stima l'imposta più bassa del vero **sempre nella stessa</p>
+<p>direzione**.</p>
+<p><strong>Dove vive</strong>: <code>docs/mandati/20260815_personale_e_tesoreria.md</code> §9.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L10 · Anticipazioni del socio</h2>
+  <p><strong>Contesto.</strong> Alessio paga di tasca propria spese della società e poi si</p>
+<p>rimborsa dalla cassa. Succede già oggi, e il Blocco 7 del mandato lo</p>
+<p>mette a registro.</p>
+<p><strong>Domanda.</strong> «Quando pago io una spesa della società e poi mi rimborso</p>
+<p>dalla cassa, come vuoi che te lo comunichi? E sotto quale importo resta</p>
+<p>un fatto interno che non ti devo segnalare?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Fissa la soglia oltre la quale una nota entra</p>
+<p><strong>da sola</strong> nel pacchetto mensile per il commercialista, e la forma della</p>
+<p>comunicazione. Il mandato prevede già tre eccezioni automatiche —</p>
+<p>pagamento da conto personale, importo oltre soglia, nota ancora aperta a</p>
+<p>fine mese — ma la soglia è un parametro suo, non un numero nel codice.</p>
+<p><strong>Dove vive</strong>: <code>docs/mandati/20260815_personale_e_tesoreria.md</code> §8.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L11 · Un acquisto rimasto senza documento</h2>
+  <p><strong>Contesto.</strong> Capita: si paga e la ricevuta non arriva, o si perde. Il</p>
+<p>mandato prevede che una voce senza documento nasca marcata</p>
+<p><strong>indeducibile</strong>, ma non dice se quella marcatura è definitiva.</p>
+<p><strong>Domanda.</strong> «Un acquisto rimasto senza documento si può sanare a</p>
+<p>posteriori, e come? E qual è il trattamento corretto quando pago</p>
+<p>personalmente una spesa della società?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Decide se la marcatura «senza documento» è uno</p>
+<p>stato <strong>reversibile</strong> — con una porta per allegare il documento dopo — o</p>
+<p>un fatto definitivo. Sono due modelli di dati diversi, e cambiarlo dopo</p>
+<p>significa rifare le righe già registrate.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L17 · Su quale costo si calcola il food cost — imponibile o pagato</h2>
+  <p><strong>Contesto.</strong> Il costo di un ingrediente entra nel gestionale da due strade</p>
+<p>diverse, e dal 19/08/2026 tutte e due scrivono il prezzo di listino:</p>
+<ul>
+<li><strong>da un documento</strong> (il carico da fattura): il costo unitario è quello che</li>
+</ul>
+<p>il documento dichiara, cioè di norma l'<strong>imponibile</strong>;</p>
+<ul>
+<li><strong>da una spesa senza documento</strong> (la lista della spesa, il mercato):</li>
+</ul>
+<p>l'importo <strong>pagato</strong>, che non ha nessuna IVA da scorporare.</p>
+<p>Decisione di Alessio del 19/08: le due basi convivono, perché **tutti e due</p>
+<p>sono il costo vero per il locale**.</p>
+<p>⚠️ <strong>Il caso che resta aperto è il terzo</strong>: un acquisto con <strong>scontrino</strong>.</p>
+<p>Lì l'IVA c'è scritta, ma se non è recuperabile il costo vero per il locale è</p>
+<p>l'importo <strong>pieno</strong> — mentre il gestionale, seguendo il documento,</p>
+<p>userebbe l'imponibile e sottostimerebbe il food cost.</p>
+<p><strong>Domanda.</strong> «Per un ristorante, su quali acquisti l'IVA è effettivamente</p>
+<p>recuperabile? Quando non lo è, il costo da usare per calcolare il food cost</p>
+<p>e i margini è l'importo pieno pagato?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Decide se il costo unitario che entra in</p>
+<p><code>price_history</code> debba essere l'imponibile o il lordo **a seconda del tipo di</p>
+<p>documento**. Oggi non c'è nessuna regola che distingua i due casi.</p>
+<p>⚠️ **Quanto è grande il problema oggi, misurato in produzione il 19/08 e non</p>
+<p>stimato**: zero fatture fornitori registrate, zero movimenti di prima nota,</p>
+<p>zero movimenti con scontrino. Le 26 righe di storico prezzi vengono tutte</p>
+<p>dalle fatture di collaudo. **È una possibilità teorica, non un problema</p>
+<p>vivo** — ed è il momento giusto per deciderlo, perché ogni riga scritta</p>
+<p>prima della risposta è una riga da rivedere dopo.</p>
+<p><strong>Stato</strong>: aperto. ⚠️ Fino alla risposta <strong>non si tocca niente</strong>: il</p>
+<p>gestionale scrive quello che il documento dichiara, e quello che si paga</p>
+<p>quando un documento non c'è.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L12 · In che forma vuoi i documenti che non passano dallo SdI</h2>
+  <p><strong>Contesto.</strong> Corrispettivi, ricevute, autofatture, prospetti del</p>
+<p>personale: una parte di ciò che il gestionale produce non transita per lo</p>
+<p>Sistema di Interscambio, e oggi non c'è nessun formato concordato.</p>
+<p><strong>Domanda.</strong> «I documenti che non passano dallo SdI, in che forma e con</p>
+<p>quale cadenza li vuoi? Un PDF con le scansioni, un Excel, o li carico su</p>
+<p>un tuo portale?»</p>
+<p><strong>Cosa cambia nell'app.</strong> È la specifica del <strong>pacchetto mensile</strong> che il</p>
+<p>gestionale deve saper produrre. Finché non c'è, il pacchetto si progetta</p>
+<p>a indovinare — e un formato sbagliato si scopre al primo invio, dopo</p>
+<p>averlo costruito.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L1 · Autofattura TD27 sugli omaggi sistematici — e su quale base</h2>
+  <p><strong>Contesto.</strong> Un omaggio non è un movimento di soldi e resta solo nel</p>
+<p>gestionale, ma se gli omaggi diventano sistematici possono generare un</p>
+<p>obbligo di autofattura. Il gestionale registra <strong>due</strong> numeri diversi per</p>
+<p>lo stesso omaggio: il valore a listino e il costo degli ingredienti,</p>
+<p>congelato al momento della chiusura.</p>
+<p><strong>Domanda.</strong> «Da quale volume e con quale frequenza gli omaggi che facciamo</p>
+<p>generano un obbligo di autofattura TD27? E la base da usare qual è: il</p>
+<p>prezzo che il cliente avrebbe pagato, o quanto quel piatto ci è costato</p>
+<p>davvero?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Il riepilogo mensile degli omaggi oggi mostra</p>
+<p>tutti e due i numeri proprio perché la scelta non è nostra. La risposta</p>
+<p>dice <strong>quale dei due</strong> va nel riepilogo per il commercialista, e se serve</p>
+<p>un avviso quando la frequenza si avvicina alla soglia.</p>
+<p>⚠️ Il costo si può calcolare <strong>solo il giorno stesso</strong>, coi prezzi di</p>
+<p>quel giorno: per questo viene già registrato adesso, senza aspettare la</p>
+<p>risposta. Fra sei mesi non si ricostruisce.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/cassa/ScontiOmaggi.jsx</code> (cita questo quesito per</p>
+<p>nome), <code>docs/referti/20260813_moduli_soldi_e_obblighi.md</code> §5.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L2 · Su quale base si calcola l'IRAP</h2>
+  <p><strong>Contesto.</strong> Il gestionale calcola oggi IRES e IRAP **sullo stesso</p>
+<p>numero**, l'utile stimato. Per l'IRES è corretto; per l'IRAP no — ha una</p>
+<p>base sua, e per un locale con dipendenti è tipicamente più alta</p>
+<p>dell'utile.</p>
+<p><strong>Domanda.</strong> «Su quale base devo calcolare l'IRAP? Oggi la calcolo</p>
+<p>sull'utile come l'IRES, e so che è una semplificazione: quali voci non si</p>
+<p>scalano, a partire dal costo del lavoro?»</p>
+<p><strong>Cosa cambia nell'app.</strong> È l'unico rilievo ancora aperto del referto del</p>
+<p>13/08. Nessuna formula viene inventata: finché non c'è risposta,</p>
+<p><code>calcola_imposte()</code> restituisce il numero <strong>insieme alla frase</strong> che ne</p>
+<p>dichiara il limite, e la frase viaggia con il numero in ogni schermata</p>
+<p>che lo mostra.</p>
+<p>⚠️ Il punto da dire ad alta voce: la stima non è approssimata a caso, è</p>
+<p><strong>storta sempre nella stessa direzione</strong> — ottimista.</p>
+<p><strong>Dove vive</strong>: <code>docs/referti/20260813_moduli_soldi_e_obblighi.md</code> §2,</p>
+<p>funzione <code>calcola_imposte()</code>, tutto il modulo Proiezione fiscale.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L3 · Conferma dei parametri fiscali</h2>
+  <p><strong>Contesto.</strong> Aliquote, percentuale della maxi-deduzione, misura degli</p>
+<p>acconti e giorni di scadenza vivono in un unico posto nel database e li</p>
+<p>governa Alessio. Nessuno li ha ancora confermati.</p>
+<p><strong>Domanda.</strong> «Mi confermi le aliquote, la misura degli acconti e le date di</p>
+<p>scadenza che devo impostare? E la maxi-deduzione: nel nostro caso si</p>
+<p>applica, e in che misura?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Il Simulatore ha un campo **«Confermati da</p>
+<p>Laura il»**: finché è vuoto, ogni schermata del modulo scrive che è una</p>
+<p>semplificazione. Riempirlo è ciò che fa sparire l'avvertenza — e la fa</p>
+<p>sparire ovunque insieme, perché la frase esce dal motore di calcolo e non</p>
+<p>dal testo di una pagina.</p>
+<p>⚠️ <strong>La maxi-deduzione nasce spenta</strong>, ed è voluto: un'agevolazione</p>
+<p>applicata da sola abbassa le imposte stimate sempre nella stessa</p>
+<p>direzione.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/fiscale/SimulatoreFiscale.jsx</code>, colonna</p>
+<p><code>fiscal_settings.parametri_confermati_da_laura</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L4 · Le quote deducibili del catalogo deduzioni</h2>
+  <p><strong>Contesto.</strong> Il modulo Deduzioni fiscali stima quanto di una spesa è</p>
+<p>deducibile e mostra da quale regola deriva ogni importo. Le regole non</p>
+<p>sono state validate.</p>
+<p><strong>Domanda.</strong> «Le percentuali di deducibilità che ho impostato — carburante,</p>
+<p>telefonia, rappresentanza, ammortamenti — sono quelle giuste per la</p>
+<p>nostra attività?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Toglie il «da validare» dalla schermata e rende</p>
+<p>utilizzabili gli importi che alimentano la Proiezione. Si incrocia con</p>
+<p><code>L9</code>: quello dice <strong>quali</strong> costi, questo <strong>quanto</strong>.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/fiscale/DeduzioniFiscali.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L5 · Cessione intercompany orto → S.r.l.s.</h2>
+  <p><strong>Contesto.</strong> Vincolo portante del progetto: due entità fiscali distinte,</p>
+<p>collegate da una cessione fatturata. Il prezzo di trasferimento diventa il</p>
+<p>costo dell'ingrediente a produzione interna, quindi entra nel food cost.</p>
+<p><strong>Domanda.</strong> «Come si documenta la cessione dall'azienda agricola alla</p>
+<p>S.r.l.s., e come si determina il prezzo di trasferimento? Ci sono vincoli</p>
+<p>sul margine?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Il gestionale registra i dati della cessione ma</p>
+<p><strong>non emette il documento fiscale</strong>, ed è una scelta. La risposta dice se</p>
+<p>quella divisione regge e su quale numero si valorizza l'ingrediente che</p>
+<p>arriva dall'orto — cioè un pezzo del food cost.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/agricolo/Cessioni.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L13 · Trattamento fiscale dei pasti al personale</h2>
+  <p><strong>Contesto.</strong> La brigata mangia ogni giorno. È food cost che non genera</p>
+<p>ricavo, e il mandato prevede una causale di scarico dedicata perché non</p>
+<p>gonfi il food cost dei piatti venduti.</p>
+<p><strong>Domanda.</strong> «I pasti che do al personale come si trattano fiscalmente? Si</p>
+<p>incrociano con la questione degli omaggi sistematici?»</p>
+<p><strong>Cosa cambia nell'app.</strong> La causale «vitto personale» **si costruisce</p>
+<p>comunque**: serve al food cost, e quella parte non aspetta nessuno. La</p>
+<p>risposta riempie la casella fiscale e decide se quel consumo va anche nel</p>
+<p>riepilogo per il commercialista.</p>
+<p><strong>Dove vive</strong>: <code>docs/mandati/20260815_personale_e_tesoreria.md</code> §6, coda</p>
+<p>già dichiarata in <code>CLAUDE.md</code> §10.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L14 · GDPR — cosa posso tenere nel gestionale, e per quanto</h2>
+  <p><strong>Contesto.</strong> Il gestionale conserva dati di clienti (nome, telefono,</p>
+<p>email, note libere che possono contenere allergie, cioè dati sulla</p>
+<p>salute) e di personale (buste paga, documenti, ferie, malattia). Per i</p>
+<p>clienti c'è già una cancellazione automatica dopo un numero di mesi</p>
+<p>deciso da Alessio; per il personale non c'è nessuna cancellazione, ed è</p>
+<p>voluto.</p>
+<p><strong>Domanda.</strong> «Quali dati del personale e dei clienti posso conservare nel</p>
+<p>gestionale, e per quanto tempo? E ha senso archiviare copia delle buste</p>
+<p>paga, o mi basta il prospetto dei costi?»</p>
+<p><strong>Cosa cambia nell'app.</strong> La seconda metà della domanda cambia un pezzo</p>
+<p>del Blocco 1 del mandato: se il costo arriva dal prospetto, i cedolini</p>
+<p>nel gestionale potrebbero non servire più — e sono dati personali tenuti</p>
+<p>senza motivo. La prima metà chiude il termine di conservazione, che oggi</p>
+<p>è un numero scelto da Alessio senza validazione.</p>
+<p><strong>Dove vive</strong>: <code>docs/DATI_PERSONALI.md</code>,</p>
+<p><code>docs/mandati/20260815_personale_e_tesoreria.md</code> §2.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L15 · Il testo dell'informativa privacy</h2>
+  <p><strong>Contesto.</strong> L'informativa pubblica collegata al form di prenotazione è</p>
+<p><strong>online con testo segnaposto</strong>, marcato «DA SOSTITUIRE» in tre punti:</p>
+<p>dati del titolare del trattamento, conservazione delle prenotazioni</p>
+<p>confermate, indirizzo per esercitare i diritti.</p>
+<p><strong>Domanda.</strong> «Mi verifichi il testo dell'informativa privacy che è già</p>
+<p>pubblicata sul sito? In particolare: per quanto tengo i dati delle</p>
+<p>prenotazioni <strong>confermate</strong>, visto che quelle rifiutate si cancellano da</p>
+<p>sole.»</p>
+<p><strong>Cosa cambia nell'app.</strong> È l'unica cosa di questo elenco che è **già</p>
+<p>visibile a un cliente vero**. Il testo attuale dichiara di essere</p>
+<p>provvisorio, ma resta un'informativa incompleta su una pagina pubblica.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/public/InformativaPrivacy.jsx</code>, collegata dalla</p>
+<p>casella di consenso di <code>/prenota</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L16 · Le date degli adempimenti societari</h2>
+  <p><strong>Contesto.</strong> Sette adempimenti societari con importi e codici F24 sono</p>
+<p>in Agenda dal 02/08/2026, con date che guardano al 2027. La S.r.l.s. però</p>
+<p>esiste dal 03/08/2026, e due voci nacquero già dichiarate incerte.</p>
+<p><strong>Domanda.</strong> «Ora che la società esiste da agosto 2026, le date che ho in</p>
+<p>agenda sono giuste? Mi confermi la data esatta di chiusura dell'esercizio</p>
+<p>e quindi il termine per l'approvazione del bilancio? E sul titolare</p>
+<p>effettivo: qual è lo stato dell'obbligo oggi?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Sposta date reali di adempimenti reali. La voce</p>
+<p>del titolare effettivo è in Agenda <strong>senza scadenza apposta</strong>, perché</p>
+<p>trattarla come un adempimento a data certa sarebbe stato falso: la</p>
+<p>risposta decide se diventa una scadenza vera.</p>
+<p><strong>Dove vive</strong>: <code>supabase/migrations/20260802000001_agenda.sql</code>, tabella</p>
+<p><code>tasks</code>, categoria «Fisco e scadenze».</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+<p class="nonstampare" style="margin-top:28px;color:#666;font-size:11px">
+Per stamparlo: Ctrl+P, poi «Salva come PDF» oppure la stampante.</p>
+</body></html>

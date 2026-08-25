@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<title>Quesiti — TIZIANA — biologa, piano HACCP</title>
+<style>
+  /* ⚠️ Tutte le misure in PUNTI: sul foglio 96 punti fanno un pollice,
+     quindi la taglia non dipende da dove si e' premuto stampa. */
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a;
+         max-width: 700px; margin: 0 auto; padding: 24px; font-size: 12.5px; line-height: 1.5; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 26px 0 6px; page-break-after: avoid; }
+  .intro { font-size: 12px; color: #444; border-bottom: 1px solid #bbb; padding-bottom: 12px; }
+  .quesito { page-break-inside: avoid; margin-bottom: 6px; }
+  p { margin: 5px 0; }
+  ul { margin: 5px 0 5px 18px; padding: 0; }
+  code { font-family: Consolas, monospace; font-size: 11.5px; background: #f2f2f2; padding: 0 3px; }
+  /* Lo spazio per scrivere la risposta a mano: righe vere, non un vuoto. */
+  .risposta { margin: 8px 0 20px; }
+  .risposta .etichetta { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #666; }
+  .riga { border-bottom: 1px solid #999; height: 22px; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    .nonstampare { display: none; }
+  }
+</style></head>
+<body>
+<h1>TIZIANA — biologa, piano HACCP</h1>
+<p class="intro">Domande di Borgo 58 — Osteria Contemporanea, Piazza Armerina (EN).
+Sotto ogni domanda c'e' lo spazio per scrivere la risposta.
+Il documento completo, con tutte le domande per tutti i consulenti, resta nel gestionale.</p>
+
+<div class="quesito">
+  <h2>T1 · Validazione del piano HACCP</h2>
+  <p><strong>Contesto.</strong> Il gestionale registra temperature, pulizie, ricevimento</p>
+<p>merci, non conformità e produce il manuale esibibile a un'ispezione. È</p>
+<p>stato verificato che <strong>faccia quello che dice di fare</strong>; non che quello</p>
+<p>che dice sia il piano giusto.</p>
+<p><strong>Domanda.</strong> «Quali registrazioni servono davvero per il nostro locale, con</p>
+<p>che frequenza, e con quali soglie? Il piano che ho impostato regge a</p>
+<p>un'ispezione?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Le frequenze e le soglie sono già dati</p>
+<p>modificabili, non numeri nel codice: la risposta si applica senza toccare</p>
+<p>il programma. Quello che potrebbe cambiare è <strong>quali registri servono</strong> —</p>
+<p>e un registro che manca non si recupera a posteriori.</p>
+<p><strong>Dove vive</strong>: modulo HACCP,</p>
+<p><code>docs/referti/20260813_moduli_soldi_e_obblighi.md</code> («Cosa NON copre»).</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T2 · Erbe spontanee e raccolta propria</h2>
+  <p><strong>Contesto.</strong> La schermata «Raccolta propria» traccia erbe spontanee e</p>
+<p>prodotti autoraccolti a soli fini HACCP, senza nessun documento fiscale,</p>
+<p>e dichiara in testa di essere **da validare prima di un uso in</p>
+<p>produzione**.</p>
+<p><strong>Domanda.</strong> «Le erbe spontanee e i prodotti che raccolgo io li posso usare</p>
+<p>in cucina? Che tracciabilità devo tenere, e ci sono specie da escludere?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se la risposta pone condizioni, diventano campi</p>
+<p>obbligatori della registrazione. Se pone un divieto, la schermata lo dice</p>
+<p>invece di lasciare intendere che basti registrare. Si incrocia con <code>A1</code>,</p>
+<p>che risponde sul lato quantitativo.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/haccp/RaccoltaPropria.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T3 · Le durate delle preparazioni, per tipo di conservazione</h2>
+  <p><strong>Contesto.</strong> Il gestionale calcola da sé le scadenze: dalla data di</p>
+<p>produzione o di ricevimento più la durata del prodotto. Quella durata</p>
+<p>oggi è quasi sempre vuota — sul progetto di prova, misurato il</p>
+<p>25/08/2026, <strong>3 prodotti su 132</strong> ne hanno una — e senza di lei lo</p>
+<p>scadenziario non ha niente da contare. È il motivo per cui l'avviso sui</p>
+<p>prodotti fermi è costruito e quasi muto: non è rotto, è che non sa</p>
+<p>quanto durano le cose.</p>
+<p><strong>Domanda.</strong> «Mi serve una tabella delle durate per tipo di</p>
+<p>conservazione: quanti giorni dura una preparazione in frigo, dopo</p>
+<p>l'abbattimento, sottovuoto e congelata? Vale per famiglie di prodotto</p>
+<p>(carne cotta, pesce crudo, salse, verdure lavorate) o va decisa</p>
+<p>preparazione per preparazione?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Le durate diventano il valore proposto sulla</p>
+<p>scheda del prodotto e sulla produzione: il gestionale calcola la</p>
+<p>scadenza e la mette nello scadenziario, che oggi resta vuoto. ⚠️ Finché</p>
+<p>non arrivano, <strong>nessuna durata viene inventata dal sistema</strong>: una data</p>
+<p>di scadenza sbagliata su un registro esibibile è peggio di una data</p>
+<p>assente, perché nessuno la mette in dubbio.</p>
+<p><strong>Dove vive</strong>: <code>ingredients.shelf_life_days</code> e <code>storage_type</code>,</p>
+<p><code>src/pages/magazzino/Scadenze.jsx</code>, <code>src/pages/magazzino/Produzioni.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T4 · Che forma devono avere i registri stampati per l'ASP</h2>
+  <p><strong>Contesto.</strong> Temperature, pulizie e non conformità si stampano mese per</p>
+<p>mese, ed è il fascicolo che si mette in mano a chi viene a controllare.</p>
+<p>⚠️ **Le tre schermate sono già costruite, ma con un formato di stampa</p>
+<p>PROVVISORIO deciso da noi**, non da chi conosce cosa chiede l'ASP: va</p>
+<p>rifatto sulla risposta, non ritoccato.</p>
+<p><strong>Domanda.</strong> «Che forma devono avere i registri che stampo per l'ASP —</p>
+<p>temperature, pulizie, non conformità? Servono firme, e di chi? Che</p>
+<p>intestazione (ragione sociale, sede, numero di registrazione)? Le azioni</p>
+<p>correttive vanno dichiarate sullo stesso foglio del problema o su un</p>
+<p>modulo a parte? C'è una periodicità obbligatoria di stampa e</p>
+<p>conservazione?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Il formato di stampa delle tre schermate.</p>
+<p>Se servono firme, serve lo spazio per apporle e la riga di chi ha</p>
+<p>eseguito — che oggi dirà «staff» finché l'accesso resta uno solo e</p>
+<p>condiviso (vedi la nota in CLAUDE.md §10: se per Tiziana questo è un</p>
+<p>problema, la scadenza degli accessi personali si sposta da «prima di</p>
+<p>assumere» a <strong>prima dell'apertura</strong>).</p>
+<p><strong>Dove vive</strong>: <code>src/pages/haccp/TemperatureLog.jsx</code>,</p>
+<p><code>PuliziaESanificazione.jsx</code>, <code>NonConformita.jsx</code>,</p>
+<p><code>src/pages/haccp/ManualeCompleto.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T5 · L'elenco vero delle attività di pulizia</h2>
+  <p><strong>Contesto.</strong> La schermata della pulizia funziona, ma le attività che ci</p>
+<p>sono dentro <strong>le ha inventate Alessio per provarla</strong>. Un piano di</p>
+<p>pulizia è parte del manuale HACCP e non si scrive a intuito.</p>
+<p><strong>Domanda.</strong> «Mi dai l'elenco vero delle attività di pulizia e</p>
+<p>sanificazione, con la frequenza di ognuna (giornaliera, settimanale,</p>
+<p>mensile) e la zona a cui si riferisce? E vanno distinte pulizia e</p>
+<p>sanificazione, o bastano una voce e un prodotto?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Le attività inventate si sostituiscono con</p>
+<p>quelle vere, e la frequenza governa il conteggio «da fare oggi» che sta</p>
+<p>sulla schermata principale di HACCP. ⚠️ Finché l'elenco è inventato,</p>
+<p>quel numero <strong>è un numero inventato che ha l'aria di essere vero</strong>.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/haccp/PuliziaESanificazione.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T6 · Contaminazione crociata nella MIA cucina</h2>
+  <p><strong>Contesto.</strong> Il gestionale sa dire quali allergeni contiene un piatto</p>
+<p>leggendoli dagli ingredienti, e da agosto sa anche dichiarare quali si</p>
+<p>possono togliere sostituendo un ingrediente. Ma tutto questo parla di</p>
+<p><strong>ricette</strong>, non di <strong>cucina</strong>: se friggo pesce e patate nello stesso</p>
+<p>olio, chi è allergico al pesce non può mangiare quelle patate — e</p>
+<p>nessuna ricetta lo dice.</p>
+<p>⚠️ La domanda riguarda la <strong>nostra</strong> cucina, non gli stabilimenti dei</p>
+<p>produttori: le tracce dichiarate sulle etichette dei fornitori sono</p>
+<p>un'altra cosa e il gestionale le tiene già separate</p>
+<p>(<code>ingredients.allergeni_tracce</code>).</p>
+<p><strong>Domanda.</strong> «Come si gestisce e si dichiara la contaminazione crociata</p>
+<p>in cucina — olio di frittura condiviso, taglieri, superfici, attrezzi?</p>
+<p>Serve una procedura scritta nel manuale? E che dicitura va sul menu per</p>
+<p>le tracce che non posso escludere?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se la risposta impone una dicitura, quella</p>
+<p>frase entra nella stampa del menu <strong>accanto</strong> all'elenco degli</p>
+<p>allergeni. Se impone una procedura, diventa una voce del piano di</p>
+<p>pulizia (T5) e forse un vincolo sulle sostituzioni: oggi il gestionale</p>
+<p>rifiuta di dichiarare «senza lattosio» se un ingrediente scoperto</p>
+<p>resta, ma <strong>non sa niente dell'olio di frittura</strong> — e quella promessa,</p>
+<p>fatta al tavolo a un allergico, è la più delicata che il gestionale</p>
+<p>faccia.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/ricettario/</code>, la stampa del menu, e le</p>
+<p>sostituzioni allergene (migrazioni <code>20260824000034</code>–<code>…039</code>).</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T7 · Come si dimostra di aver riconosciuto la specie raccolta</h2>
+  <p><strong>Contesto.</strong> La schermata «Raccolta propria» registra chi ha raccolto,</p>
+<p>dove, quando e come ha riconosciuto la pianta. Quel «come» oggi è un</p>
+<p>campo di testo libero deciso da noi.</p>
+<p>⚠️ Si aggancia a <code>T2</code> ma è una domanda diversa: **T2 chiede se le erbe</p>
+<p>spontanee si possono usare, questa chiede come si dimostra di aver</p>
+<p>riconosciuto la specie giusta.** Una risposta positiva alla prima non</p>
+<p>scioglie la seconda.</p>
+<p><strong>Domanda.</strong> «Cosa devo registrare per dimostrare di aver riconosciuto</p>
+<p>la specie raccolta? Basta il nome e il metodo di riconoscimento, o</p>
+<p>servono una fotografia, un attestato di formazione, il riferimento a una</p>
+<p>guida? E chi può fare il riconoscimento — solo io, o chiunque abbia</p>
+<p>seguito un corso?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se serve una fotografia, la registrazione la</p>
+<p>chiede (la fotocamera è già la strada prevista per il ricevimento</p>
+<p>merci). Se serve un riconoscitore qualificato, diventa un campo con un</p>
+<p>elenco di chi può, e non un testo libero. Se basta quello che c'è, la</p>
+<p>schermata smette di dichiararsi «da validare».</p>
+<p><strong>Dove vive</strong>: <code>src/pages/haccp/RaccoltaPropria.jsx</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+<p>*Raccoglitore creato il 15/08/2026 riunendo i quesiti già sparsi nel</p>
+<p>repository — schermate, referti, mandati, migrazioni — e aggiungendo</p>
+<p>quelli decisi da Alessio lo stesso giorno. Quando una risposta arriva:</p>
+<p>si scrive sotto la sua domanda, si cambia lo stato, e si va a chiudere il</p>
+<p>punto del codice indicato in «Dove vive». Una risposta che resta solo</p>
+<p>qui non ha ancora servito a niente.*</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T8 · Un allergene «dedotto» può stare sul menu?</h2>
+  <p><strong>Contesto.</strong> Dal 25/08/2026 il gestionale sa fotografare l'etichetta di</p>
+<p>un prodotto e ricavarne gli allergeni. Di ciascuno registra **da dove</p>
+<p>viene**, e sono quattro casi distinti:</p>
+<ul>
+<li><strong>letto sull'etichetta</strong> — c'è scritto nero su bianco sulla confezione;</li>
+<li><strong>ricavato da una fonte</strong> consultata, che il gestionale obbliga a</li>
+</ul>
+<p>nominare;</p>
+<ul>
+<li><strong>dedotto</strong> dal tipo di prodotto (la farina di grano contiene glutine</li>
+</ul>
+<p>anche se sull'etichetta non c'è scritto);</p>
+<ul>
+<li><strong>messo da Alessio</strong>, che l'ha guardato con i suoi occhi.</li>
+</ul>
+<p>Oggi il gestionale è **prudente per scelta nostra, non per una regola</p>
+<p>che qualcuno ci ha dato**: se anche un solo allergene di un prodotto è</p>
+<p>«dedotto» o «da una fonte», l'elenco di quel prodotto **non viene</p>
+<p>stampato sul menu** e resta marcato da verificare. In sala, invece,</p>
+<p>tutti e quattro i casi si vedono, con frasi diverse: su un «dedotto» il</p>
+<p>cameriere legge di mostrare gli ingredienti invece di garantire.</p>
+<p>⚠️ Non esiste un elenco ufficiale che dica quali prodotti contengono</p>
+<p>quali allergeni: l'Allegato II del Regolamento UE 1169/2011 elenca i</p>
+<p>quattordici allergeni <strong>da dichiarare</strong>, non chi li contiene. È il</p>
+<p>motivo per cui la distinzione esiste.</p>
+<p><strong>Domanda.</strong> «Quando dichiaro gli allergeni di un piatto, posso reggermi</p>
+<p>su un allergene che ho ricavato dal tipo di ingrediente senza averlo</p>
+<p>letto sull'etichetta di quel prodotto? O devo aver letto ogni etichetta</p>
+<p>di ogni fornitore? E la distinzione che il gestionale registra —</p>
+<p>etichetta, fonte, deduzione, verifica mia — regge come prova davanti a</p>
+<p>un controllo, oppure conta soltanto che il dato finale sia giusto?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se conta solo il dato finale, la prudenza di</p>
+<p>oggi si può allentare e più piatti diventano stampabili. Se invece serve</p>
+<p>l'etichetta letta, la regola attuale resta e va detto in modo più netto</p>
+<p>quali prodotti mancano — diventerebbe un elenco di lavoro («queste</p>
+<p>quindici etichette vanno fotografate»), non un avviso.</p>
+<p>⚠️ <strong>La domanda vale doppio per i prodotti lavorati</strong>, dove l'allergene</p>
+<p>sta nell'etichetta e non nel nome: il sedano in un ragù pronto, la soia</p>
+<p>in un gelato.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T9 · Le tracce da contaminazione dichiarate dal fornitore</h2>
+  <p><strong>Contesto.</strong> Alcune etichette portano «può contenere tracce di…». Il</p>
+<p>gestionale ha un campo suo per quelle e — per scelta esplicita — **non</p>
+<p>le indovina mai**: le tracce si scrivono solo se sono lette</p>
+<p>sull'etichetta. Oggi però la fotografia dell'etichetta **non le</p>
+<p>raccoglie**, e la ragione è che non sappiamo cosa farne.</p>
+<p><strong>Domanda.</strong> «Le tracce dichiarate dal mio fornitore devo riportarle al</p>
+<p>cliente, e in che forma? Vale la dicitura generale sul menu, oppure</p>
+<p>vanno dette piatto per piatto? E se un fornitore le dichiara e un altro</p>
+<p>no per lo stesso ingrediente, cosa scrivo?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se vanno riportate per piatto, la lettura</p>
+<p>dell'etichetta comincia a raccoglierle e compaiono nella scheda ricetta</p>
+<p>separate dagli allergeni veri. Se basta la dicitura generale, restano</p>
+<p>dove sono — un dato dell'ingrediente, che nessuno stampa.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+<p class="nonstampare" style="margin-top:28px;color:#666;font-size:11px">
+Per stamparlo: Ctrl+P, poi «Salva come PDF» oppure la stampante.</p>
+</body></html>
