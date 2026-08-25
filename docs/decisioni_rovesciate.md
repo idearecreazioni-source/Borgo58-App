@@ -1988,3 +1988,43 @@ e lascia l'anomalia «giacenza insufficiente». È più vero (scaricare
 verdure crude vorrebbe dire che il cuoco ha rifatto il soffritto al
 momento), e oggi non tocca nessun dato: i lotti di preparazione esauriti
 sono **zero**.
+
+---
+
+## 49 · 25/08/2026 — «la spiegazione di una spunta sta accanto al suo nome»
+
+**Cosa era stato deciso, e quando.** Nel giro delle didascalie le note
+accanto ai campi erano state **lasciate** dichiarando che «stanno dentro
+il gesto» — cioè che una spiegazione vicina al punto in cui si decide
+serve, mentre una spiegazione in cima alla schermata è arredamento.
+
+**La ragione di allora.** È il criterio di Alessio del 18/08: *una
+spiegazione a schermo la si legge una volta e poi diventa arredamento*,
+quindi va **dove sta il dubbio**. Accanto a una spunta il dubbio c'è
+davvero: «tolgo la spunta o no?».
+
+**Cosa si decide adesso.** La ragione resta, **cambia il posto**. Una
+spiegazione **accanto** a una spunta va dietro il pallino
+(`<Didascalia>`), oppure **sotto** il nome come blocco a sé quando c'è
+una ragione dichiarata perché resti visibile. *Affiancata non va mai.*
+
+**Perché la ragione di allora non vale più.** Perché non teneva conto
+della **larghezza**. Misurato a 390 punti sulle tre spunte della scheda
+ingrediente: la spiegazione prendeva **174** punti e al nome ne restavano
+**107**, mandando «Avvisami se il prezzo sale» su **quattro righe**
+strettissime. ⚠️ **L'accessorio rendeva illeggibile proprio la cosa che
+spiega** — cioè l'opposto di «stare dentro il gesto». Le tre spunte
+occupavano **537** punti di altezza; ora **182**.
+
+⚠️ **E non è un rovesciamento su tutta la linea**: delle sette
+spiegazioni accanto a una spunta trovate in tutta l'app, **sei erano già
+sane** — la nota stava **sotto** il nome, come blocco. La forma buona
+esisteva già; mancava di essere applicata dove era stata scritta
+affiancata.
+
+⚠️ **Il caso di Editor Menu non rovescia la decisione del 17/08**, che
+pretende «copia per uso interno, non la carta» **scritta e non
+sottintesa**: quella frase resta visibile, si sposta soltanto sotto il
+nome. Il nome passa da **48 a 194** punti di larghezza. Le due decisioni
+non erano in conflitto: lo sembravano finché «visibile» e «affiancata»
+venivano confuse.
