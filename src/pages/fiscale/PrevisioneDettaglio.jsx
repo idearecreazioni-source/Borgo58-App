@@ -6,12 +6,13 @@ import {
   congelaScenario,
   getScenario,
   ingressiScenario,
+  lineeDellaPrevisione,
   listaScenari,
   pareggioPrevisione,
   proiezioneScenario,
   riepilogoScenario,
 } from "../../lib/api/proiezione";
-import { formatEUR, formatPercento } from "../../lib/constants";
+import { formatEUR, formatPercento, FORME_LINEA } from "../../lib/constants";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import Didascalia from "../../components/Didascalia";
 
@@ -34,6 +35,7 @@ export default function PrevisioneDettaglio() {
   const [pareggio, setPareggio] = useState(null);
   const [confronto, setConfronto] = useState([]);
   const [costiFissi, setCostiFissi] = useState([]);
+  const [linee, setLinee] = useState([]);
   const [calendario, setCalendario] = useState([]);
   const [annoPrima, setAnnoPrima] = useState(null);
   // ⚠️ «Non c'è una previsione dell'anno prima» e «non sono riuscito a
@@ -47,18 +49,20 @@ export default function PrevisioneDettaglio() {
   const carica = useCallback(async () => {
     const s = await getScenario(id);
     setScenario(s);
-    const [m, r, c, p, ing] = await Promise.all([
+    const [m, r, c, p, ing, lin] = await Promise.all([
       proiezioneScenario(id),
       riepilogoScenario(id),
       confrontoColFoglio(id),
       pareggioPrevisione(id),
       ingressiScenario(id),
+      lineeDellaPrevisione(id),
     ]);
     setMesi(m);
     setRiepilogo(r);
     setConfronto(c);
     setPareggio(p);
     setCostiFissi(ing.costiFissi ?? []);
+    setLinee(lin);
     if (r?.imposte != null) {
       // ⚠️ IL QUARTO PARAMETRO — il difetto n. 15. Sopra la tabella c'è
       // scritto «è la cassa di giugno che tradisce, quando il saldo
@@ -380,6 +384,74 @@ export default function PrevisioneDettaglio() {
                     {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0) * 12)}
                   </td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 LE LINEE ACCESSORIE, CHE PRIMA NON SI VEDEVANO DA NESSUNA PARTE
+          (25/08/2026). I loro ricavi erano dentro i totali, dentro il
+          pareggio e dentro le imposte, e la schermata non diceva **quali
+          fossero**: su una previsione vera valevano 143.464 € su 418.214.
+          Non era il disegno vecchio a non riconoscerle — `lineeDellaPrevisione`
+          esisteva già nel database e nessuna schermata la chiamava.
+          Un numero grande senza il suo perché è la stessa famiglia della
+          sala disegnata vuota del 18/08: plausibile, e muto. */}
+      {linee.length > 0 && (
+        <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
+            Di cosa sono fatti i ricavi accessori
+          </h2>
+          <p className="testo-sala text-b58-charcoal-soft mb-3">
+            Sono le linee oltre alla sala. I loro ricavi stanno già dentro i totali qui sotto,
+            nel pareggio e nella stima delle imposte.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <thead>
+                <tr className="text-left testo-sala text-b58-charcoal-soft">
+                  <th className="pb-2 font-normal">Linea</th>
+                  <th className="pb-2 font-normal">come si conta</th>
+                  <th className="pb-2 font-normal text-right">quanti</th>
+                  <th className="pb-2 font-normal text-right">a quanto</th>
+                  <th className="pb-2 font-normal text-right">costa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {linee.map((l) => (
+                  <tr key={l.id} className="border-t border-b58-charcoal/5">
+                    <td className="py-2 text-b58-charcoal">
+                      {l.linea}
+                      {/* ⚠️ «A zero» È un'informazione, non un buco: chef table e
+                          barattoli non partono da subito, e zero previsto con zero
+                          reale è un allineamento perfetto. Lo dice già il database
+                          (`a_zero`), qui si mostra. */}
+                      {l.a_zero && (
+                        <span className="block testo-sala text-b58-charcoal-soft">
+                          non parte quest&apos;anno
+                        </span>
+                      )}
+                    </td>
+                    {/* ⚠️ LA FORMA LA RISOLVE IL DATABASE, anche quando la
+                        previsione è del disegno vecchio e il campo è vuoto:
+                        `forma_della_linea` la deduce dalla base. Le previsioni
+                        già chiuse hanno quei campi a null e non si toccano —
+                        questa colonna non si rompe, deduce. */}
+                    <td className="py-2 text-b58-charcoal-soft">
+                      {FORME_LINEA.find((f) => f.value === l.forma)?.label ?? l.forma ?? "—"}
+                    </td>
+                    <td className="py-2 text-right text-b58-charcoal">
+                      <Numero v={l.quantita} decimali={0} />
+                    </td>
+                    <td className="py-2 text-right text-b58-charcoal">{formatEUR(l.prezzo_medio)}</td>
+                    <td className="py-2 text-right text-b58-charcoal-soft">
+                      {l.costo_percento == null
+                        ? "—"
+                        : formatPercento(Number(l.costo_percento) * 100)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
