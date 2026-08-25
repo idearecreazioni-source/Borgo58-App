@@ -908,3 +908,39 @@ tabella sola per tutti i documenti, con stato, tentativi ed errore, letta
 dall'agente sul mini-PC — è ancora tutta da costruire. ⚠️ **La parte che
 non è codice viene prima**: un registratore o una stampante che non sanno
 dire quando *non* hanno stampato lasciano scoperto il caso che conta.
+---
+
+## I bersagli fra 5 e 8 mm nei moduli — lasciati apposta (25/08/2026)
+
+**Decisione di Alessio**, presa dopo il giro sul Ricettario del telefono:
+*«lasciali per ora. Nessuno di loro cancella niente, e ridisegnare i
+moduli è un lavoro a sé.»*
+
+**Cosa resta sotto la soglia degli 8,50 mm**, misurato a 390×844 con la
+calibrazione di un mini tablet (`--pxcm 64`) e con l'**area toccabile
+vera** — cioè l'etichetta che contiene una casella, non il quadratino:
+
+| dove | quanti | il peggiore |
+|---|---|---|
+| nuovo ingrediente (pulsanti allergene, campi) | 40 | **5,00 mm** («+ Nuovo fornitore») |
+| scheda ricetta (link ai finger, campi) | 28 | **5,00 mm** |
+| schede prodotti (caselle dentro etichette) | 17 | **5,00 mm** |
+| elenco ingredienti (campi e tendine) | 5 | 6,25 mm |
+| nuova ricetta (campi) | 6 | 7,81 mm |
+| menu | 2 | 7,50 mm |
+
+⚠️ **Perché si può rimandare, ed è il criterio della decisione**: fra
+questi **non c'è nessun gesto che cancella**. I gesti pericolosi della
+scheda ricetta — il «Rimuovi» di una riga ingrediente, a **4 mm** — sono
+stati portati a 8,5 nello stesso giro, insieme ai link dei finger e a
+«Com'è cambiato». Quello che resta sono **campi di modulo e caselle di
+scelta**: sbagliare mira lì costa un tocco in più, non un dato perso.
+
+⚠️ **Perché è un lavoro a sé**: alzare 40 bersagli a 8,5 mm su «nuovo
+ingrediente» vuol dire ridisegnare la griglia dei 14 allergeni e
+l'altezza dei campi — cioè rifare il modulo, non ritoccarlo.
+
+⚠️ **E il numero non è confrontabile con le misure di ieri**: il
+misuratore di ieri guardava il **quadratino** di una casella invece
+dell'etichetta toccabile che la contiene, e dava 2,03 mm dove il
+bersaglio vero è 5,00. Le caselle da 2,03 mm erano **falsi allarmi**.
