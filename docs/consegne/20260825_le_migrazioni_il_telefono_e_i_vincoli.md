@@ -1,7 +1,7 @@
 # Le migrazioni, il telefono e i vincoli che parlano italiano
 **25/08/2026 — consegna del mandato del collaudo, sei blocchi**
 
-Hash di HEAD dichiarato in fondo, dopo l'ultimo commit della consegna.
+Commit sotto questo riepilogo: **fe33ec012ac3106dc0b289747797fbdc906838f1**
 
 **Stato delle migrazioni a fine consegna**, misurato e non ricordato:
 
