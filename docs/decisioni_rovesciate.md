@@ -2028,3 +2028,40 @@ sottintesa**: quella frase resta visibile, si sposta soltanto sotto il
 nome. Il nome passa da **48 a 194** punti di larghezza. Le due decisioni
 non erano in conflitto: lo sembravano finché «visibile» e «affiancata»
 venivano confuse.
+
+---
+
+## 50 · 25/08/2026 — «la taglia di un documento stampato è quella dello schermo da cui lo stampi»
+
+**Cosa era stato deciso, e quando.** Dal 21/08 le misure del testo di
+questo progetto sono in **centimetri veri dello schermo**
+(`calc(var(--pxcm) * 0.32)` e sorelle), calibrati per dispositivo.
+
+**La ragione di allora.** Giusta e invariata **per lo schermo**: un
+`text-xs` fa 3,2 mm su un monitor e 1,6 sul tablet della sala, dove
+quasi tutto il testo delle Comande era illeggibile.
+
+**Cosa si decide adesso.** Che quella regola **finisce dove comincia la
+carta**. Un blocco `@media print` fissa le quattro misure in punti — e
+il **biglietto della cucina** ne ha di sue, più grandi (6,8 mm), perché
+lo legge un cuoco in piedi. Il preconto resta a 3,2: lo legge il cliente
+seduto, e su 72 mm di larghezza un corpo grande manderebbe i nomi dei
+piatti a capo di continuo.
+
+**Perché la ragione di allora non vale più.** Perché in stampa `--pxcm`
+continua a valere quello del **dispositivo da cui si preme «Esporta
+PDF»**, e lo stesso foglio usciva di due taglie diverse: misurato, il
+biglietto di cucina a **4,00 mm** dal computer e **6,77** dal tablet, il
+preconto a **3,20** e **5,42**. Nessun errore da nessuna parte — solo
+una misura di schermo usata su un foglio, e nessuno lo sapeva.
+
+⚠️ **E c'era una terza dichiarazione che non ha mai avuto effetto**: sul
+preconto stava scritto `print:text-[13px]` (3,44 mm), scavalcata da
+`.testo-sala` che nel foglio di stile viene dopo. **Non ha mai stampato a
+13 punti**, e non c'era modo di accorgersene senza confrontare l'ordine
+delle regole nel CSS.
+
+⚠️ **Il limite, dichiarato accanto alla regola**: in questo progetto
+**nessuno ha mai visto un foglio uscire da una stampante**. I 6,8 mm
+sono una decisione presa a ragion veduta, non una misura, e si
+riguardano quando ci sarà la termica in laboratorio.
