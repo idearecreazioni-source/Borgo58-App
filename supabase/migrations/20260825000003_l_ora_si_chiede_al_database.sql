@@ -42,6 +42,23 @@
 -- **da qualunque porta si entri** e una che vale solo dalle porte che
 -- qualcuno si è ricordato di attrezzare.
 -- =====================================================================
+--
+-- ---------------------------------------------------------------------
+-- Un allarme falso della rete dei portieri, guardato e chiuso qui
+-- ---------------------------------------------------------------------
+-- ⚠️ La `20260825000001` risulta «chiamare» `scale_che_non_tornano()` in
+-- un blocco senza claims. Guardato: **non la chiama**. Il nome compare
+-- due volte dentro delle stringhe — `to_regprocedure('public.…()')`, che
+-- chiede al catalogo se la funzione esiste, e il testo del messaggio che
+-- elenca cosa manca. Nessuno dei due esegue niente.
+-- ⚠️ Le chiamate vere di quella migrazione stanno tutte nel suo blocco di
+-- verifica, che i claims li imposta in cima — controllato riga per riga,
+-- non dedotto dal fatto che la migrazione è passata.
+-- ⚠️ E la dichiarazione sta QUI e non là, perché una migrazione già
+-- applicata non si riscrive (regola del 23/08).
+--
+-- rete-portieri: 20260825000001 chiama scale_che_non_tornano — il nome compare solo dentro `to_regprocedure('…')` e nel testo di un messaggio; le chiamate vere sono nel blocco di verifica, che imposta i claims in cima.
+-- =====================================================================
 
 -- ---------------------------------------------------------------------
 -- 1 · Il trigger sulle cinque

@@ -206,7 +206,19 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
           // guardiani.
             /\b(create|drop)\s+(or\s+replace\s+)?function\s+(if\s+exists\s+)?(\w+\.)?\w+\s*\([^)]*\)/gi,
             " "
-          );
+          )
+          // ⚠️ E C'È UN QUARTO MODO DI NOMINARE UNA FUNZIONE SENZA
+          // CHIAMARLA, trovato il 25/08 da un allarme falso: chiedere al
+          // catalogo se esiste, con `to_regprocedure('public.nome()')`. Il
+          // nome sta **dentro una stringa**, quindi non viene eseguito
+          // niente — ma il ritratto della chiamata è identico.
+          //
+          // ⚠️ Si depura SOLO questa forma e non tutte le stringhe: un
+          // nome dentro una stringa può benissimo essere una chiamata
+          // vera, se quella stringa finisce in un `execute`. Depurare
+          // ogni letterale aprirebbe una strada per aggirare il
+          // guardiano — che è peggio dell'allarme falso che chiude.
+          .replace(/\bto_regproc(edure)?\s*\(\s*'[^']*'\s*\)/gi, " ");
         for (const nome of guardiane) {
           const chiamata = new RegExp(`\\b${nome}\\s*\\(`);
           // ⚠️ Il confronto è sul numero di versione, non sul nome intero
