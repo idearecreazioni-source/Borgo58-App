@@ -476,7 +476,7 @@ export default function ListaSpesa() {
                           <select
                             value={item.supplier?.id ?? ""}
                             onChange={(e) => handleFornitore(item.id, e.target.value)}
-                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal"
+                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal w-full min-w-0"
                           >
                             <option value="">chi lo vende?</option>
                             {suppliers.map((s) => (

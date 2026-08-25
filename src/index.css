@@ -48,6 +48,19 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-b58-cream);
   color: var(--color-b58-charcoal);
+  /* 🔴 LA MISURA DI BASE E' IN CENTIMETRI VERI (25/08/2026). Un testo
+     senza una classe di dimensione prendeva i 16 punti predefiniti del
+     browser, che alla calibrazione di un mini tablet fanno **2,50 mm** —
+     sotto la soglia. Non erano molti (18 in cinque schermate, misurati),
+     ma erano ovunque e senza una classe da correggere: il nome di un
+     documento nell'archivio, l'ora di una prenotazione, il sottotitolo di
+     un modulo.
+     ⚠️ Si mette QUI e non schermata per schermata perche' il difetto e'
+     l'assenza di una classe: correggerlo caso per caso vorrebbe dire
+     trovarli tutti, e il prossimo che scrive una riga senza classe
+     ricomincerebbe. Chi ha una classe sua continua a vincere.
+     ⚠️ Su un computer sono 15,1 punti contro i 16 di prima: -6%. */
+  font-size: calc(var(--pxcm) * 0.4);
 }
 
 /* --------------------------------------------------------------------
@@ -186,6 +199,10 @@ body {
    per chi stampa dal computer — toglie il caso che nessuno ha mai
    guardato. */
 @media print {
+  /* Anche la base: sulla carta non deve dipendere dal dispositivo. */
+  body {
+    font-size: 15.1px;
+  }
   .testo-sala {
     font-size: 12.1px;
   }

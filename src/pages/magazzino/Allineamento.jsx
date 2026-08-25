@@ -138,7 +138,7 @@ export default function Allineamento() {
                       <span className="ml-2 testo-sala text-b58-terracotta-dark">in esaurimento</span>
                     )}
                   </span>
-                  <span className="testo-sala text-b58-charcoal-soft whitespace-nowrap">
+                  <span className="testo-sala text-b58-charcoal-soft">
                     dovrebbe essercene {formatQta(r.atteso)} {r.unita}
                     {/* 🔴 IL SEGNO CHE LA RIGA SI APRE (23/08/2026). Il campo
                         per scrivere quanto ce n'è davvero **c'era già** — è
