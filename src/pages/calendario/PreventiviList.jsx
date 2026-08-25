@@ -74,7 +74,7 @@ export default function PreventiviList() {
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario eventi
       </Link>
       <div className="flex items-center justify-between gap-4 mt-1 mb-6">
@@ -82,24 +82,24 @@ export default function PreventiviList() {
         <button
           onClick={nuovo}
           disabled={creando}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 text-b58-parchment text-sm px-4 py-2"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 text-b58-parchment testo-sala-grande px-4 py-2"
         >
           {creando ? "…" : "Nuovo preventivo"}
         </button>
       </div>
 
       {errore && (
-        <div className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           <p>{errore}</p>
-          <button onClick={carica} className="underline text-xs mt-1">
+          <button onClick={carica} className="underline testo-sala mt-1">
             Riprova
           </button>
         </div>
       )}
 
-      {preventivi === null && !errore && <p className="text-sm text-b58-charcoal-soft">Sto guardando…</p>}
+      {preventivi === null && !errore && <p className="testo-sala-grande text-b58-charcoal-soft">Sto guardando…</p>}
       {preventivi?.length === 0 && (
-        <p className="text-sm text-b58-charcoal-soft">Nessun preventivo, per ora.</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Nessun preventivo, per ora.</p>
       )}
 
       {preventivi?.length > 0 && (
@@ -116,17 +116,17 @@ export default function PreventiviList() {
                   {/* ⚠️ Una versione dice di esserlo: senza, due preventivi
                       quasi identici nell'elenco sono indistinguibili. */}
                   {p.versione_di && (
-                    <span className="text-[11px] text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                    <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
                       versione nuova
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-b58-charcoal-soft">
+                <div className="testo-sala text-b58-charcoal-soft">
                   {formatDate(p.data_evento)} · {p.persone}{" "}
                   {p.persone === 1 ? "persona" : "persone"}
                 </div>
               </div>
-              <span className="text-xs text-b58-charcoal-soft shrink-0">{STATI[p.stato] ?? p.stato}</span>
+              <span className="testo-sala text-b58-charcoal-soft shrink-0">{STATI[p.stato] ?? p.stato}</span>
             </Link>
           ))}
         </div>

@@ -68,7 +68,7 @@ export default function ChiediArchivio() {
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="mb-6">
-        <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-charcoal">
+        <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-charcoal">
           ← Archivio Documenti
         </Link>
         <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Chiedi all'archivio</h1>
@@ -92,7 +92,7 @@ export default function ChiediArchivio() {
           rows={2}
           maxLength={800}
           placeholder="Per esempio: quanto ho speso dal notaio?"
-          className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
+          className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
         />
         <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
@@ -101,7 +101,7 @@ export default function ChiediArchivio() {
                 key={e}
                 onClick={() => chiedi(e)}
                 disabled={attesa}
-                className="rounded-full border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal-soft text-[11px] px-2.5 py-1"
+                className="rounded-full border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal-soft testo-sala px-2.5 py-1"
               >
                 {e}
               </button>
@@ -110,7 +110,7 @@ export default function ChiediArchivio() {
           <button
             onClick={() => chiedi()}
             disabled={attesa || !domanda.trim()}
-            className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-40 transition-colors text-b58-parchment text-sm font-medium px-5"
+            className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-40 transition-colors text-b58-parchment testo-sala-grande font-medium px-5"
           >
             {attesa ? "Sto leggendo…" : "Chiedi"}
           </button>
@@ -118,11 +118,11 @@ export default function ChiediArchivio() {
       </div>
 
       {errore && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{errore}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{errore}</p>
       )}
 
       {attesa && (
-        <p className="text-sm text-b58-charcoal-soft mb-4">
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           Sto rileggendo i documenti dell'Archivio. Con documenti lunghi può volerci mezzo minuto.
         </p>
       )}
@@ -134,14 +134,14 @@ export default function ChiediArchivio() {
           </p>
 
           {esito.troncato && (
-            <p className="text-xs text-b58-terracotta-dark mt-3">
+            <p className="testo-sala text-b58-terracotta-dark mt-3">
               La risposta si è interrotta perché troppo lunga: prova a chiedere una cosa per volta.
             </p>
           )}
 
           {/* Su cosa è costruita la risposta. Non è un dettaglio tecnico:
               è la differenza fra "non risulta" e "non ho guardato lì". */}
-          <div className="mt-4 pt-4 border-t border-b58-charcoal/10 text-xs text-b58-charcoal-soft space-y-1">
+          <div className="mt-4 pt-4 border-t border-b58-charcoal/10 testo-sala text-b58-charcoal-soft space-y-1">
             <p>
               Documenti in archivio: <strong>{esito.documenti_guardati}</strong>
               {" · "}letti per intero: <strong>{esito.documenti_letti?.length ?? 0}</strong>
@@ -188,7 +188,7 @@ export default function ChiediArchivio() {
 
       <button
         onClick={() => setMostraStorico((v) => !v)}
-        className="text-sm text-b58-charcoal-soft hover:text-b58-charcoal underline"
+        className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-charcoal underline"
       >
         {mostraStorico
           ? "Nascondi le domande già fatte"
@@ -201,18 +201,18 @@ export default function ChiediArchivio() {
         <div className="mt-3 space-y-2">
           {nonLetto(storico) && <DatoNonLetto cosa="le domande già fatte" />}
           {!nonLetto(storico) && storico.length === 0 && (
-            <p className="text-sm text-b58-charcoal-soft">Nessuna domanda ancora.</p>
+            <p className="testo-sala-grande text-b58-charcoal-soft">Nessuna domanda ancora.</p>
           )}
           {storico.map((d) => (
             <details key={d.id} className="rounded-lg bg-white border border-b58-charcoal/10 p-3">
-              <summary className="text-sm text-b58-charcoal cursor-pointer">
+              <summary className="testo-sala-grande text-b58-charcoal cursor-pointer">
                 {d.domanda}
-                <span className="text-[11px] text-b58-charcoal-soft ml-2">{formatDate(d.creato_il)}</span>
+                <span className="testo-sala text-b58-charcoal-soft ml-2">{formatDate(d.creato_il)}</span>
               </summary>
-              <p className="whitespace-pre-wrap text-sm text-b58-charcoal-soft mt-2 leading-relaxed">
+              <p className="whitespace-pre-wrap testo-sala-grande text-b58-charcoal-soft mt-2 leading-relaxed">
                 {d.risposta}
               </p>
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+              <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
                 letti {d.documenti_letti} di {d.documenti_guardati} · {d.token_domanda} +{" "}
                 {d.token_risposta} token
               </p>

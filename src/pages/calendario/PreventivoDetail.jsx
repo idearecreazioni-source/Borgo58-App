@@ -235,24 +235,24 @@ export default function PreventivoDetail() {
   if (errore && !prev) {
     return (
       <div className="max-w-3xl mx-auto">
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{errore}</p>
-        <button onClick={carica} className="underline text-xs mt-2">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{errore}</p>
+        <button onClick={carica} className="underline testo-sala mt-2">
           Riprova
         </button>
       </div>
     );
   }
-  if (!prev) return <p className="text-sm text-b58-charcoal-soft">Sto guardando…</p>;
+  if (!prev) return <p className="testo-sala-grande text-b58-charcoal-soft">Sto guardando…</p>;
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
         <Link
           to="/calendario-eventi/preventivi"
-          className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+          className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
         >
           ← Preventivi
         </Link>
@@ -264,7 +264,7 @@ export default function PreventivoDetail() {
           <button
             type="button"
             onClick={() => setVista(VISTA_CLIENTE)}
-            className={`rounded-full text-xs px-3 py-1.5 ${
+            className={`rounded-full testo-sala px-3 py-1.5 ${
               vista === VISTA_CLIENTE ? "bg-b58-parchment text-b58-charcoal" : "text-b58-charcoal-soft"
             }`}
           >
@@ -273,7 +273,7 @@ export default function PreventivoDetail() {
           <button
             type="button"
             onClick={() => setVista(VISTA_COSTO)}
-            className={`rounded-full text-xs px-3 py-1.5 ${
+            className={`rounded-full testo-sala px-3 py-1.5 ${
               vista === VISTA_COSTO ? "bg-b58-terracotta text-b58-parchment" : "text-b58-charcoal-soft"
             }`}
           >
@@ -283,7 +283,7 @@ export default function PreventivoDetail() {
       </div>
 
       {errore && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {errore}
         </p>
       )}
@@ -298,7 +298,7 @@ export default function PreventivoDetail() {
         />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
           <div>
-            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Data</label>
+            <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Data</label>
             <input
               type="date"
               value={prev.data_evento ?? ""}
@@ -311,7 +311,7 @@ export default function PreventivoDetail() {
                 quando arrivano, e inventarla lo metterebbe a un orario che
                 nessuno ha detto. Fino al blocco 4 questo campo non esisteva
                 da nessuna parte — e il rifiuto sarebbe stato un vicolo cieco. */}
-            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Ora</label>
+            <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Ora</label>
             <input
               type="time"
               value={(prev.ora_evento ?? "").slice(0, 5)}
@@ -320,7 +320,7 @@ export default function PreventivoDetail() {
             />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Persone</label>
+            <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Persone</label>
             <input
               type="number"
               min="1"
@@ -334,7 +334,7 @@ export default function PreventivoDetail() {
             {/* 🔴 Senza questa data il foglio NON si produce: un preventivo
                 senza scadenza resta valido per sempre in mano a chi lo
                 riceve. Il rifiuto arriva dal database, non da qui. */}
-            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+            <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
               Valido fino al
             </label>
             <input
@@ -345,7 +345,7 @@ export default function PreventivoDetail() {
             />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Telefono</label>
+            <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Telefono</label>
             <input
               value={prev.cliente_telefono ?? ""}
               onChange={(e) => setPrev({ ...prev, cliente_telefono: e.target.value })}
@@ -357,7 +357,7 @@ export default function PreventivoDetail() {
       </div>
 
       {esito && (
-        <p className="print:hidden text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
+        <p className="print:hidden testo-sala-grande text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 my-4">
           {esito}
         </p>
       )}
@@ -373,7 +373,7 @@ export default function PreventivoDetail() {
               type="button"
               onClick={preparaFoglio}
               disabled={inCorso !== ""}
-              className="rounded-lg border border-b58-charcoal/20 text-sm px-4 py-2 text-b58-charcoal disabled:opacity-60"
+              className="rounded-lg border border-b58-charcoal/20 testo-sala-grande px-4 py-2 text-b58-charcoal disabled:opacity-60"
             >
               {inCorso === "foglio" ? "…" : "Prepara il foglio"}
             </button>
@@ -381,7 +381,7 @@ export default function PreventivoDetail() {
               type="button"
               onClick={apriWhatsApp}
               disabled={inCorso !== ""}
-              className="rounded-lg border border-b58-charcoal/20 text-sm px-4 py-2 text-b58-charcoal disabled:opacity-60"
+              className="rounded-lg border border-b58-charcoal/20 testo-sala-grande px-4 py-2 text-b58-charcoal disabled:opacity-60"
             >
               {inCorso === "whatsapp" ? "…" : "Apri su WhatsApp"}
             </button>
@@ -390,12 +390,12 @@ export default function PreventivoDetail() {
               onClick={mandaLaMail}
               disabled={inCorso !== "" || !prev.cliente_email}
               title={prev.cliente_email ? undefined : "Di questo cliente non hai l'email"}
-              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {inCorso === "mail" ? "…" : "Manda la mail"}
             </button>
           </div>
-          <p className="print:hidden text-xs text-b58-charcoal-soft mt-2">
+          <p className="print:hidden testo-sala text-b58-charcoal-soft mt-2">
             Il foglio si salva in PDF dalla finestra di stampa. La mail parte
             davvero; su WhatsApp il messaggio lo mandi tu.
           </p>
@@ -466,11 +466,11 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
   const totale = prezzo?.prezzo_a_persona ? Number(prezzo.prezzo_a_persona) * prev.persone : null;
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-      <h2 className="font-display text-lg text-b58-charcoal mb-4">Il menu concordato</h2>
+      <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Il menu concordato</h2>
       {righeCibo.length === 0 && righeExtra.length === 0 && (
-        <p className="text-sm text-b58-charcoal-soft">Ancora niente.</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Ancora niente.</p>
       )}
-      <ul className="space-y-1 text-sm">
+      <ul className="space-y-1 testo-sala-grande">
         {righeCibo.map((r) => (
           <li key={r.id} className="text-b58-charcoal">
             {r.recipe?.name ?? r.descrizione ?? "—"}
@@ -480,7 +480,7 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
       {righeExtra.length > 0 && (
         <>
           <h3 className="font-display text-b58-charcoal mt-5 mb-2">In più</h3>
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-1 testo-sala-grande">
             {righeExtra.map((r) => (
               <li key={r.id} className="flex justify-between text-b58-charcoal">
                 <span>
@@ -500,10 +500,10 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
         {prezzo?.prezzo_a_persona == null ? (
           // ⚠️ Non si scrive zero: «non c'è ancora un prezzo» e «costa zero»
           // sono due cose diverse.
-          <p className="text-sm text-b58-charcoal-soft">Il prezzo non è ancora stato deciso.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Il prezzo non è ancora stato deciso.</p>
         ) : (
           <div className="flex items-baseline justify-between">
-            <span className="text-b58-charcoal-soft text-sm">A persona</span>
+            <span className="text-b58-charcoal-soft testo-sala-grande">A persona</span>
             <span className="text-2xl text-b58-charcoal font-medium">
               {formatEUR(prezzo.prezzo_a_persona)}
             </span>
@@ -511,7 +511,7 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
         )}
         {totale != null && (
           <div className="flex items-baseline justify-between mt-1">
-            <span className="text-b58-charcoal-soft text-sm">
+            <span className="text-b58-charcoal-soft testo-sala-grande">
               Per {prev.persone} {prev.persone === 1 ? "persona" : "persone"}
             </span>
             <span className="text-b58-charcoal">{formatEUR(totale)}</span>
@@ -522,7 +522,7 @@ function VistaCliente({ prev, prezzo, righeCibo, righeExtra }) {
             un preventivo di tre mesi fa. ⚠️ La mail e WhatsApp la portavano
             già; qui — cioè sul foglio che si STAMPA — mancava. */}
         {prev.valido_fino_al && (
-          <p className="text-xs text-b58-charcoal-soft mt-4">
+          <p className="testo-sala text-b58-charcoal-soft mt-4">
             Questo preventivo è valido fino al {formatDate(prev.valido_fino_al)}.
           </p>
         )}
@@ -558,14 +558,14 @@ function VistaCosto({
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Quanto mi costa</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quanto mi costa</h2>
         {/* ⚠️ Il numero e il suo limite viaggiano insieme: la frase esce dal
             database, non è scritta qui. */}
         {prezzo?.avvertenza && (
-          <p className="text-xs text-b58-charcoal-soft mb-4">{prezzo.avvertenza}</p>
+          <p className="testo-sala text-b58-charcoal-soft mb-4">{prezzo.avvertenza}</p>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 testo-sala-grande">
           <Numero etichetta="Cibo" valore={prezzo?.costo_cibo} />
           <Numero etichetta="Cibo a persona" valore={prezzo?.costo_cibo_a_persona} />
           <Numero etichetta="Extra" valore={prezzo?.extra_totale} />
@@ -573,7 +573,7 @@ function VistaCosto({
         </div>
 
         <div className="mt-4">
-          <label className="block text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+          <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
             Prezzo a persona scritto da te
           </label>
           <input
@@ -584,9 +584,9 @@ function VistaCosto({
             onBlur={(e) =>
               salva({ prezzo_a_persona_scavalcato: e.target.value === "" ? null : Number(e.target.value) })
             }
-            className="w-40 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm"
+            className="w-40 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
           />
-          <span className="text-xs text-b58-charcoal-soft ml-2">
+          <span className="testo-sala text-b58-charcoal-soft ml-2">
             Lascialo vuoto per usare quello proposto.
           </span>
         </div>
@@ -594,10 +594,10 @@ function VistaCosto({
 
       {/* Le righe di cibo, con le porzioni dell'evento */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Il menu</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Il menu</h2>
         {righeCibo.map((r) => (
           <div key={r.id} className="flex items-center gap-3 py-2 border-b border-b58-charcoal/5 last:border-0">
-            <span className="flex-1 text-sm text-b58-charcoal">{r.recipe?.name ?? "—"}</span>
+            <span className="flex-1 testo-sala-grande text-b58-charcoal">{r.recipe?.name ?? "—"}</span>
             {/* ⚠️ Le porzioni valgono SOLO per questo evento: la ricetta in
                 carta resta intatta. È scritto qui, dove sta il dubbio. */}
             <input
@@ -606,20 +606,20 @@ function VistaCosto({
               min="0.05"
               defaultValue={Number(r.porzioni_per_persona)}
               onBlur={(e) => cambiaRiga(r.id, { porzioni_per_persona: Number(e.target.value) || 1 })}
-              className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 text-sm"
+              className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
             />
-            <span className="text-xs text-b58-charcoal-soft w-28">porzioni a testa</span>
-            <button onClick={() => togliRiga(r.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+            <span className="testo-sala text-b58-charcoal-soft w-28">porzioni a testa</span>
+            <button onClick={() => togliRiga(r.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
               Togli
             </button>
           </div>
         ))}
-        <p className="text-xs text-b58-charcoal-soft mt-2">
+        <p className="testo-sala text-b58-charcoal-soft mt-2">
           1 = come in carta. Cambiarlo qui non tocca la ricetta.
         </p>
 
         <div className="flex gap-2 mt-4">
-          <select value={nuovoPiatto} onChange={(e) => setNuovoPiatto(e.target.value)} className="flex-1 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm">
+          <select value={nuovoPiatto} onChange={(e) => setNuovoPiatto(e.target.value)} className="flex-1 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande">
             <option value="">Aggiungi un piatto…</option>
             {nonLetto(piatti) && (
               <option disabled>— non riesco a leggere il Ricettario —</option>
@@ -634,7 +634,7 @@ function VistaCosto({
               salva(null, [...prev.righe, { natura: "cibo", recipe_id: nuovoPiatto, porzioni_per_persona: 1 }]);
               setNuovoPiatto("");
             }}
-            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment text-sm px-4"
+            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
           >
             Aggiungi
           </button>
@@ -643,7 +643,7 @@ function VistaCosto({
 
       {/* Gli extra */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
           In più
           <Didascalia>
             Personale aggiuntivo, servizi, vini. Il prezzo lo scrivi tu e si somma così
@@ -652,10 +652,10 @@ function VistaCosto({
         </h2>
         {righeExtra.map((r) => (
           <div key={r.id} className="flex items-center gap-3 py-2 border-b border-b58-charcoal/5 last:border-0">
-            <span className="flex-1 text-sm text-b58-charcoal">{r.descrizione}</span>
-            <span className="text-sm text-b58-charcoal-soft">× {Number(r.quantita)}</span>
-            <span className="text-sm text-b58-charcoal">{formatEUR(r.prezzo)}</span>
-            <button onClick={() => togliRiga(r.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+            <span className="flex-1 testo-sala-grande text-b58-charcoal">{r.descrizione}</span>
+            <span className="testo-sala-grande text-b58-charcoal-soft">× {Number(r.quantita)}</span>
+            <span className="testo-sala-grande text-b58-charcoal">{formatEUR(r.prezzo)}</span>
+            <button onClick={() => togliRiga(r.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
               Togli
             </button>
           </div>
@@ -665,7 +665,7 @@ function VistaCosto({
             value={extraNome}
             onChange={(e) => setExtraNome(e.target.value)}
             placeholder="Cosa"
-            className="flex-1 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm"
+            className="flex-1 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
           />
           <input
             type="number"
@@ -673,7 +673,7 @@ function VistaCosto({
             value={extraPrezzo}
             onChange={(e) => setExtraPrezzo(e.target.value)}
             placeholder="€"
-            className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm"
+            className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande"
           />
           <button
             disabled={!extraNome.trim() || extraPrezzo === "" || salvando}
@@ -685,7 +685,7 @@ function VistaCosto({
               setExtraNome("");
               setExtraPrezzo("");
             }}
-            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment text-sm px-4"
+            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
           >
             Aggiungi
           </button>
@@ -695,7 +695,7 @@ function VistaCosto({
       {/* Il fabbisogno */}
       {fabbisogno.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
             Cosa serve comprare
             <Didascalia>
               Lo stesso conto che il magazzino usa per scaricare quando il piatto viene
@@ -703,19 +703,21 @@ function VistaCosto({
               grammi che devi comprare per averli.
             </Didascalia>
           </h2>
-          <table className="w-full text-sm">
-            <tbody>
-              {fabbisogno.map((f) => (
-                <tr key={f.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
-                  <td className="py-1.5 text-b58-charcoal">{f.nome}</td>
-                  <td className="py-1.5 text-right text-b58-charcoal-soft">
-                    {Number(f.quantita).toFixed(3)} {f.unita}
-                  </td>
-                  <td className="py-1.5 text-right text-b58-charcoal">{formatEUR(f.costo)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <tbody>
+                {fabbisogno.map((f) => (
+                  <tr key={f.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
+                    <td className="py-1.5 text-b58-charcoal">{f.nome}</td>
+                    <td className="py-1.5 text-right text-b58-charcoal-soft">
+                      {Number(f.quantita).toFixed(3)} {f.unita}
+                    </td>
+                    <td className="py-1.5 text-right text-b58-charcoal">{formatEUR(f.costo)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -728,7 +730,7 @@ function VistaCosto({
         {prev.stato === "accettato" ? (
           <Link
             to={`/calendario-eventi/${prev.reservation_id}`}
-            className="text-sm text-b58-charcoal underline hover:text-b58-terracotta"
+            className="testo-sala-grande text-b58-charcoal underline hover:text-b58-terracotta"
           >
             L&apos;evento è in calendario →
           </Link>
@@ -737,14 +739,14 @@ function VistaCosto({
             type="button"
             onClick={onAccetta}
             disabled={accettando}
-            className="rounded-lg bg-b58-olive hover:bg-b58-olive/90 text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-olive hover:bg-b58-olive/90 text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {accettando ? "…" : "Il cliente ha accettato"}
           </button>
         )}
         <button
           onClick={onVersione}
-          className="text-sm text-b58-charcoal-soft underline hover:text-b58-terracotta"
+          className="testo-sala-grande text-b58-charcoal-soft underline hover:text-b58-terracotta"
         >
           Fai una versione nuova
         </button>
@@ -756,10 +758,10 @@ function VistaCosto({
 function Numero({ etichetta, valore, forte }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">{etichetta}</div>
+      <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">{etichetta}</div>
       {/* ⚠️ Vuoto, non zero: «non c'è ancora un prezzo» e «costa zero» sono
           due cose diverse. */}
-      <div className={forte ? "text-lg text-b58-charcoal font-medium" : "text-b58-charcoal"}>
+      <div className={forte ? "testo-sala-titolo text-b58-charcoal font-medium" : "text-b58-charcoal"}>
         {valore == null ? "—" : formatEUR(valore)}
       </div>
     </div>

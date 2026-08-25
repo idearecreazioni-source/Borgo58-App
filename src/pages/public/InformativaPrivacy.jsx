@@ -61,12 +61,12 @@ export default function InformativaPrivacy() {
         <h1 className="text-2xl font-serif text-b58-charcoal text-center mb-2">
           Informativa privacy
         </h1>
-        <p className="text-center text-xs text-b58-charcoal-soft/80 mb-8">
+        <p className="text-center testo-sala text-b58-charcoal-soft/80 mb-8">
           Come trattiamo i dati di chi ci chiede un tavolo.
         </p>
 
         <div className="rounded-lg border border-b58-terracotta/40 bg-b58-terracotta/10 px-4 py-3 mb-8">
-          <p className="text-xs text-b58-charcoal">
+          <p className="testo-sala text-b58-charcoal">
             <strong>Testo provvisorio — DA SOSTITUIRE.</strong> Questa versione è in
             verifica dal consulente: descrive quello che il sistema fa davvero, ma
             non è ancora il testo definitivo.
@@ -77,7 +77,7 @@ export default function InformativaPrivacy() {
           {SEZIONI.map((s) => (
             <section key={s.titolo}>
               <h2 className="font-medium text-b58-charcoal mb-1">{s.titolo}</h2>
-              <p className="text-sm text-b58-charcoal-soft leading-relaxed">{s.corpo}</p>
+              <p className="testo-sala-grande text-b58-charcoal-soft leading-relaxed">{s.corpo}</p>
             </section>
           ))}
         </div>
@@ -85,7 +85,7 @@ export default function InformativaPrivacy() {
         <div className="mt-10 text-center">
           <a
             href="/prenota"
-            className="tocco-bottone inline-flex items-center text-sm text-b58-terracotta hover:text-b58-terracotta-dark underline"
+            className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark underline"
           >
             ← Torna alla richiesta di prenotazione
           </a>

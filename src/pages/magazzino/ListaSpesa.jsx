@@ -332,7 +332,7 @@ export default function ListaSpesa() {
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">Lista della spesa</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={handleAddThreshold}

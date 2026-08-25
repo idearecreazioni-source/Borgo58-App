@@ -133,8 +133,8 @@ export default function PublicReservationForm() {
   // la colonna torna a comandare. `appearance-none` toglie l'aspetto
   // nativo di Safari, che aggiunge margini suoi e riporta il disallineamento.
   const inputClass =
-    "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   if (done) {
     return (
@@ -145,7 +145,7 @@ export default function PublicReservationForm() {
           </div>
           <div className="bg-b58-parchment rounded-2xl shadow-sm ring-1 ring-b58-charcoal/10 p-8">
             <h1 className="font-display text-xl text-b58-charcoal mb-2">Richiesta inviata</h1>
-            <p className="text-sm text-b58-charcoal-soft">
+            <p className="testo-sala-grande text-b58-charcoal-soft">
               Grazie! Ti risponderemo entro {RESPONSE_HOURS} ore per confermare la
               disponibilità.
             </p>
@@ -167,8 +167,8 @@ export default function PublicReservationForm() {
           className="bg-b58-parchment rounded-2xl shadow-sm ring-1 ring-b58-charcoal/10 p-8 space-y-4"
         >
           <div>
-            <h1 className="font-display text-lg text-b58-charcoal mb-1">Richiedi un tavolo</h1>
-            <p className="text-sm text-b58-charcoal-soft">
+            <h1 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Richiedi un tavolo</h1>
+            <p className="testo-sala-grande text-b58-charcoal-soft">
               Compila il form: la tua richiesta verrà confermata entro {RESPONSE_HOURS} ore.
             </p>
           </div>
@@ -214,9 +214,9 @@ export default function PublicReservationForm() {
                 // prometteva un conteggio di posti che nessuno fa piu', e
                 // chi la leggeva poteva aspettarsi che il sito sapesse dire
                 // quanto spazio c'e'.
-                <p className="text-sm text-b58-charcoal-soft">Cerco gli orari disponibili…</p>
+                <p className="testo-sala-grande text-b58-charcoal-soft">Cerco gli orari disponibili…</p>
               ) : opzioni.chiuso ? (
-                <p className="text-sm text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
+                <p className="testo-sala-grande text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
                   {opzioni.motivo}
                 </p>
               ) : (
@@ -281,7 +281,7 @@ export default function PublicReservationForm() {
               />
             </div>
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 -mt-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 -mt-2">
             Almeno uno tra telefono ed email.
           </p>
 
@@ -295,7 +295,7 @@ export default function PublicReservationForm() {
             />
           </div>
 
-          <label className="flex items-start gap-2 text-xs text-b58-charcoal-soft">
+          <label className="flex items-start gap-2 testo-sala text-b58-charcoal-soft">
             <input
               type="checkbox"
               checked={form.consent}
@@ -321,7 +321,7 @@ export default function PublicReservationForm() {
             </span>
           </label>
 
-          {error && <p className="text-sm text-b58-terracotta-dark">{error}</p>}
+          {error && <p className="testo-sala-grande text-b58-terracotta-dark">{error}</p>}
 
           <button
             type="submit"

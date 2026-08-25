@@ -1358,101 +1358,103 @@ export default function RicettaDetail() {
         )}
 
         {recipeIngredients.length > 0 && (
-          <table className="w-full testo-sala-grande mb-4">
-            <thead>
-              {/* ⚠️ SU UNA SELEZIONE NIENTE QUANTITÀ E NIENTE SCARTO (24/08,
-                  richiesta di Alessio): *«è sempre un pezzo per tipo, quel
-                  doppio elenco non serve a niente»*. Una casella con dentro
-                  sempre «1» non è un dato: è una cosa che si può sbagliare
-                  senza guadagnarci niente. E lo scarto di un bocconcino
-                  finito non esiste — sta dentro la sua ricetta. */}
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">{isFingerFood ? "Finger" : "Ingrediente"}</th>
-                {!isFingerFood && <th className="py-2 font-medium">Quantità</th>}
-                {!isFingerFood && <th className="py-2 font-medium">% scarto</th>}
-                <th className="py-2 font-medium text-right">Costo</th>
-                <th className="py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {recipeIngredients.map((ri) => {
-                const isComponent = !!ri.component;
-                const waste = isComponent
-                  ? null
-                  : ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
-                // ⚠️ Il costo della riga arriva dal database, non si
-                // ricalcola qui: era la stessa moltiplicazione che
-                // `v_recipe_costs` faceva già, scritta una seconda volta.
-                const rowCost = rowCosts[ri.id];
-                return (
-                  <tr key={ri.id} className="border-b border-b58-charcoal/5 last:border-0">
-                    <td className="py-2 text-b58-charcoal">
-                      <Link
-                        to={
-                          isComponent
-                            ? `/ricettario/ricette/${ri.component.id}`
-                            : `/ricettario/ingredienti/${ri.ingredient.id}`
-                        }
-                        state={isComponent ? passoDaQui(recipe?.name) : undefined}
-                        className="hover:text-b58-terracotta"
-                      >
-                        {isComponent ? ri.component.name : ri.ingredient.name}
-                      </Link>
-                      {/* ⚠️ Il componente si chiama col SUO nome: dal 19/08
-                          può essere un finger, e un'etichetta fissa
-                          «preparazione» direbbe una cosa falsa.
-                          ⚠️ E su una SELEZIONE sparisce (24/08): la colonna
-                          si chiama gia' «Finger», e ripeterlo su ogni riga
-                          e' una parola che non distingue niente. */}
-                      {isComponent && !isFingerFood && (
-                        <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                          {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
-                        </span>
-                      )}
-                      {ri.is_optional && (
-                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
-                      )}
-                      {ri.prep_note && (
-                        <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
-                      )}
-                    </td>
-                    {!isFingerFood && (
-                      <td className="py-2">
-                        <CampoAutosalvato
-                          type="number"
-                          step="0.01"
-                          value={ri.quantity}
-                          onSave={(v) => handleQuantityChange(ri, v)}
-                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
-                        />
-                        <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande mb-4">
+              <thead>
+                {/* ⚠️ SU UNA SELEZIONE NIENTE QUANTITÀ E NIENTE SCARTO (24/08,
+                    richiesta di Alessio): *«è sempre un pezzo per tipo, quel
+                    doppio elenco non serve a niente»*. Una casella con dentro
+                    sempre «1» non è un dato: è una cosa che si può sbagliare
+                    senza guadagnarci niente. E lo scarto di un bocconcino
+                    finito non esiste — sta dentro la sua ricetta. */}
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  <th className="py-2 font-medium">{isFingerFood ? "Finger" : "Ingrediente"}</th>
+                  {!isFingerFood && <th className="py-2 font-medium">Quantità</th>}
+                  {!isFingerFood && <th className="py-2 font-medium">% scarto</th>}
+                  <th className="py-2 font-medium text-right">Costo</th>
+                  <th className="py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recipeIngredients.map((ri) => {
+                  const isComponent = !!ri.component;
+                  const waste = isComponent
+                    ? null
+                    : ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0;
+                  // ⚠️ Il costo della riga arriva dal database, non si
+                  // ricalcola qui: era la stessa moltiplicazione che
+                  // `v_recipe_costs` faceva già, scritta una seconda volta.
+                  const rowCost = rowCosts[ri.id];
+                  return (
+                    <tr key={ri.id} className="border-b border-b58-charcoal/5 last:border-0">
+                      <td className="py-2 text-b58-charcoal">
+                        <Link
+                          to={
+                            isComponent
+                              ? `/ricettario/ricette/${ri.component.id}`
+                              : `/ricettario/ingredienti/${ri.ingredient.id}`
+                          }
+                          state={isComponent ? passoDaQui(recipe?.name) : undefined}
+                          className="hover:text-b58-terracotta"
+                        >
+                          {isComponent ? ri.component.name : ri.ingredient.name}
+                        </Link>
+                        {/* ⚠️ Il componente si chiama col SUO nome: dal 19/08
+                            può essere un finger, e un'etichetta fissa
+                            «preparazione» direbbe una cosa falsa.
+                            ⚠️ E su una SELEZIONE sparisce (24/08): la colonna
+                            si chiama gia' «Finger», e ripeterlo su ogni riga
+                            e' una parola che non distingue niente. */}
+                        {isComponent && !isFingerFood && (
+                          <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                            {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
+                          </span>
+                        )}
+                        {ri.is_optional && (
+                          <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
+                        )}
+                        {ri.prep_note && (
+                          <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
+                        )}
                       </td>
-                    )}
-                    {!isFingerFood && (
-                      <td className="py-2 text-b58-charcoal-soft">
-                        {isComponent ? "—" : `${waste}%`}
-                      </td>
-                    )}
-                    <td className="py-2 text-right text-b58-charcoal">
-                      {ri.is_optional ? (
-                        <span className="text-b58-charcoal-soft/60">escluso</span>
-                      ) : (
-                        formatEUR(rowCost)
+                      {!isFingerFood && (
+                        <td className="py-2">
+                          <CampoAutosalvato
+                            type="number"
+                            step="0.01"
+                            value={ri.quantity}
+                            onSave={(v) => handleQuantityChange(ri, v)}
+                            className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
+                          />
+                          <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
+                        </td>
                       )}
-                    </td>
-                    <td className="py-2 text-right">
-                      <button
-                        onClick={() => handleRemoveIngredient(ri.id)}
-                        className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
-                      >
-                        Rimuovi
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {!isFingerFood && (
+                        <td className="py-2 text-b58-charcoal-soft">
+                          {isComponent ? "—" : `${waste}%`}
+                        </td>
+                      )}
+                      <td className="py-2 text-right text-b58-charcoal">
+                        {ri.is_optional ? (
+                          <span className="text-b58-charcoal-soft/60">escluso</span>
+                        ) : (
+                          formatEUR(rowCost)
+                        )}
+                      </td>
+                      <td className="py-2 text-right">
+                        <button
+                          onClick={() => handleRemoveIngredient(ri.id)}
+                          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
+                        >
+                          Rimuovi
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3">
@@ -1728,7 +1730,7 @@ export default function RicettaDetail() {
                     className="flex flex-col items-end testo-sala"
                     style={{ gap: "calc(var(--pxcm) * 0.5)" }}
                   >
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       <button
                         disabled={idx === 0}
                         onClick={() => handleMoveStep(idx, -1)}

@@ -39,7 +39,7 @@ export default function PersonaleHome() {
   }, [includeInactive]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.first_name.trim() || !form.last_name.trim() || !entities) return;
@@ -68,16 +68,16 @@ export default function PersonaleHome() {
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Personale & Buste Paga</h1>
           <p className="text-b58-charcoal-soft mt-1">Anagrafica, documenti, ferie, buste paga, mance.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             to="/personale/mance"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Mance
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo dipendente"}
           </button>
@@ -85,7 +85,7 @@ export default function PersonaleHome() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {showForm && (
@@ -121,7 +121,7 @@ export default function PersonaleHome() {
             type="button"
             disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
             onClick={handleAdd}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Creo…" : "Crea"}
           </button>
@@ -131,12 +131,12 @@ export default function PersonaleHome() {
       {/* Documenti in scadenza */}
       {expiring.length > 0 && (
         <div className="rounded-xl bg-b58-terracotta/5 ring-1 ring-b58-terracotta/30 p-5 mb-6">
-          <h2 className="font-display text-base text-b58-charcoal mb-3">Documenti in scadenza (60 giorni)</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">Documenti in scadenza (60 giorni)</h2>
           <ul className="space-y-1.5">
             {expiring.map((d) => {
               const days = daysTo(d.expiry_date);
               return (
-                <li key={d.id} className="text-sm flex items-center justify-between gap-2">
+                <li key={d.id} className="testo-sala-grande flex items-center justify-between gap-2">
                   <Link to={`/personale/${d.employee?.id}`} className="text-b58-charcoal hover:text-b58-terracotta">
                     {d.employee?.first_name} {d.employee?.last_name} — {labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}
                   </Link>
@@ -151,22 +151,22 @@ export default function PersonaleHome() {
       )}
 
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-lg text-b58-charcoal">Dipendenti</h2>
-        <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal">Dipendenti</h2>
+        <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
           <input type="checkbox" checked={includeInactive} onChange={(e) => setIncludeInactive(e.target.checked)} />
           Mostra anche cessati
         </label>
       </div>
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : employees.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">Nessun dipendente ancora.</p>
         </div>
       ) : (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Nome</th>

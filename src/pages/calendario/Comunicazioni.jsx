@@ -32,7 +32,7 @@ export default function Comunicazioni() {
     <div className="max-w-3xl mx-auto pb-16">
       <Link
         to="/calendario-eventi/clienti"
-        className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
       >
         ← Clienti
       </Link>
@@ -47,18 +47,18 @@ export default function Comunicazioni() {
       ) : (
         <>
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
               Puoi scrivere a {possono.length}
             </h2>
             {possono.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft">
+              <p className="testo-sala-grande text-b58-charcoal-soft">
                 Nessuno ti ha ancora detto che gli si può scrivere. Si segna sulla sua scheda, quando
                 te lo dice.
               </p>
             ) : (
               <ul className="mt-2 space-y-1">
                 {possono.map((r) => (
-                  <li key={r.customer_id} className="text-sm text-b58-charcoal">
+                  <li key={r.customer_id} className="testo-sala-grande text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
                       className="hover:text-b58-terracotta"
@@ -76,12 +76,12 @@ export default function Comunicazioni() {
               sopra si legge «sono tutti i miei clienti», e non lo è quasi mai. */}
           {no.length > 0 && (
             <div className="rounded-xl bg-b58-cream-dark/40 p-5 mb-6">
-              <h2 className="text-sm font-semibold text-b58-charcoal mb-2">
+              <h2 className="testo-sala-grande font-semibold text-b58-charcoal mb-2">
                 Restano fuori in {no.length}
               </h2>
               <ul className="space-y-1">
                 {no.map((r) => (
-                  <li key={r.customer_id} className="text-xs text-b58-charcoal">
+                  <li key={r.customer_id} className="testo-sala text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
                       className="hover:text-b58-terracotta"
@@ -99,13 +99,13 @@ export default function Comunicazioni() {
 
       {/* L'ELENCO DEI NUMERI PER WHATSAPP */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
           I numeri per una lista WhatsApp
         </h2>
         {/* 🔴 IL GESTIONALE NON MANDA LISTE, e lo dice qui invece di lasciarlo
             credere: WhatsApp normale non consente invii automatici a una
             lista. Quello che può fare è preparare i numeri — la parte noiosa. */}
-        <p className="text-xs text-b58-charcoal-soft mb-3">
+        <p className="testo-sala text-b58-charcoal-soft mb-3">
           La lista la crei tu dal telefono: qui ci sono i numeri già pronti da copiare.
         </p>
 
@@ -119,7 +119,7 @@ export default function Comunicazioni() {
                   Alessio salvato in rubrica, e WhatsApp non lo segnala —
                   risulta «mandato» e non è mai arrivato. Il gestionale non
                   può saperlo (non vede la rubrica), quindi lo dice. */}
-              <p className="text-sm text-b58-charcoal bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
+              <p className="testo-sala-grande text-b58-charcoal bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
                 {numeri.avvertenza}
               </p>
               {numeri.quanti > 0 && (
@@ -128,7 +128,7 @@ export default function Comunicazioni() {
                     readOnly
                     value={numeri.numeri}
                     rows={Math.min(8, numeri.quanti)}
-                    className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm font-mono"
+                    className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande font-mono"
                   />
                   <button
                     type="button"
@@ -144,11 +144,11 @@ export default function Comunicazioni() {
                         setCopiato("Non sono riuscito a copiarli: selezionali qui sopra.");
                       }
                     }}
-                    className="rounded-lg border border-b58-charcoal/20 text-sm px-4 py-2 mt-2 text-b58-charcoal"
+                    className="rounded-lg border border-b58-charcoal/20 testo-sala-grande px-4 py-2 mt-2 text-b58-charcoal"
                   >
                     Copia i numeri
                   </button>
-                  {copiato && <span className="text-xs text-b58-charcoal-soft ml-3">{copiato}</span>}
+                  {copiato && <span className="testo-sala text-b58-charcoal-soft ml-3">{copiato}</span>}
                 </>
               )}
             </>

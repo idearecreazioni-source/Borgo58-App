@@ -18,8 +18,8 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
   const [salvando, setSalvando] = useState(false);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-[11px] text-b58-charcoal-soft mb-1";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
 
   const pagata = fattura.status === "pagata";
   const daPagare = Number(fattura.da_pagare ?? fattura.amount);

@@ -288,7 +288,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
 
           {mode === null && (
             <>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {ORDER_PAYMENT_METHODS.map((pm) => (
                   <button
                     key={pm.value}
@@ -387,7 +387,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   modo solo, torna indietro e usa «Paga contante» o «Paga carta».
                 </p>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={busy || !mistoValido}
@@ -494,7 +494,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {ORDER_PAYMENT_METHODS.map((pm) => (
                   <button
                     key={pm.value}
@@ -554,7 +554,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   ⚠️ E il cliente da oggi ha un posto migliore: si attacca
                   al TAVOLO quando si apre il conto, non all'omaggio quando
                   lo si chiude. */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={busy || !form.causaleId || (mode === "sconto" && !form.collectedAmount)}
@@ -578,7 +578,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 placeholder="Motivo dell'annullamento (obbligatorio)"
                 className={inputClass}
               />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={busy || !form.cancelReason.trim()}

@@ -274,34 +274,36 @@ export default function Allineamento() {
           {nonLetto(dettaglio) ? (
             <DatoNonLetto cosa="il dettaglio per prodotto" className="mt-4" />
           ) : dettaglio.length > 0 ? (
-            <table className="w-full testo-sala mt-5">
-              <thead>
-                <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
-                  <th className="py-1.5 font-medium">Prodotto</th>
-                  <th className="py-1.5 font-medium text-right">Differenza</th>
-                  <th className="py-1.5 font-medium text-right">Vale</th>
-                  <th className="py-1.5 font-medium text-right">Volte</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dettaglio.map((d) => (
-                  <tr key={d.ingredient_id} className="border-t border-b58-charcoal/5">
-                    <td className="py-1.5 text-b58-charcoal">{d.nome}</td>
-                    <td className="py-1.5 text-right text-b58-charcoal-soft">
-                      {Number(d.differenza) > 0 ? "+" : ""}
-                      {formatQta(d.differenza)} {d.unita}
-                    </td>
-                    <td
-                      className={`py-1.5 text-right ${Number(d.valore) > 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}
-                    >
-                      {Number(d.valore) > 0 ? "+" : ""}
-                      {formatEUR(d.valore)}
-                    </td>
-                    <td className="py-1.5 text-right text-b58-charcoal-soft">{d.quante}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full testo-sala mt-5">
+                <thead>
+                  <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
+                    <th className="py-1.5 font-medium">Prodotto</th>
+                    <th className="py-1.5 font-medium text-right">Differenza</th>
+                    <th className="py-1.5 font-medium text-right">Vale</th>
+                    <th className="py-1.5 font-medium text-right">Volte</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {dettaglio.map((d) => (
+                    <tr key={d.ingredient_id} className="border-t border-b58-charcoal/5">
+                      <td className="py-1.5 text-b58-charcoal">{d.nome}</td>
+                      <td className="py-1.5 text-right text-b58-charcoal-soft">
+                        {Number(d.differenza) > 0 ? "+" : ""}
+                        {formatQta(d.differenza)} {d.unita}
+                      </td>
+                      <td
+                        className={`py-1.5 text-right ${Number(d.valore) > 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}
+                      >
+                        {Number(d.valore) > 0 ? "+" : ""}
+                        {formatEUR(d.valore)}
+                      </td>
+                      <td className="py-1.5 text-right text-b58-charcoal-soft">{d.quante}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <p className="testo-sala text-b58-charcoal-soft mt-4">
               In questo periodo non hai corretto nessuna giacenza.

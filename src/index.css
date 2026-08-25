@@ -115,6 +115,16 @@ body {
 .gesti-pericolosi {
   display: flex;
   align-items: center;
+  /* 🔴 E VA A CAPO (25/08/2026). La regola nasce il 22/08 per tenere 5 mm
+     fra un gesto che cancella e uno che non si disfa, e quella parte non
+     cambia. Ma era `flex` senza andare a capo, e su un telefono da 390
+     punti una fila di gesti **spinge la pagina fuori dallo schermo**:
+     misurato, la Lista della spesa scorreva di lato di 293 punti (165
+     file di gesti) e le Fatture Fornitori di 368 (62 file).
+     ⚠️ Il `gap` vale per tutti e due gli assi, quindi andando a capo i
+     5 mm restano anche fra una riga e l'altra: la distanza di sicurezza
+     non si perde, si gira. */
+  flex-wrap: wrap;
   gap: calc(var(--pxcm) * 0.5);
 }
 .testo-sala-grande {

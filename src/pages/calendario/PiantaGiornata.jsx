@@ -121,7 +121,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
   // Senza, la casella dell'ora resta piu' larga delle altre e sfora il
   // pannello — visto nella fotografia del 19/08, coi due angoli destri
   // squadrati perche' tagliati dal bordo.
-  const campo = `${stretto ? `${CAMPO} py-3 text-base` : CAMPO} min-w-0`;
+  const campo = `${stretto ? `${CAMPO} py-3 testo-sala-grande` : CAMPO} min-w-0`;
   const etichetta = stretto ? `${ETICHETTA} mb-0.5` : ETICHETTA;
   return (
     <div className={stretto ? "grid grid-cols-2 gap-x-2 gap-y-1 mb-2" : "grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3"}>

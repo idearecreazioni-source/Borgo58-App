@@ -14,7 +14,7 @@ export default function ModulePlaceholder() {
     <div className="max-w-3xl mx-auto">
       <Link
         to="/dashboard"
-        className="tocco-bottone inline-flex items-center gap-1.5 text-sm text-b58-charcoal-soft hover:text-b58-terracotta mb-6"
+        className="tocco-bottone inline-flex items-center gap-1.5 testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mb-6"
       >
         ← Torna alla dashboard
       </Link>
@@ -26,7 +26,7 @@ export default function ModulePlaceholder() {
           </div>
           <div>
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full ${phase.colorClass} text-b58-parchment text-[10px] font-medium px-2.5 py-1 mb-2`}
+              className={`inline-flex items-center gap-1.5 rounded-full ${phase.colorClass} text-b58-parchment testo-sala font-medium px-2.5 py-1 mb-2`}
             >
               {phase.label}
             </span>

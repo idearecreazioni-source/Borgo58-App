@@ -210,19 +210,21 @@ export default function Previsioni() {
               </div>
             ) : (
               <>
-                <table className="w-full testo-sala mb-4">
-                  <tbody>
-                    {rigaPerRiga(letto).map(([voce, unita, a, b]) => (
-                      <tr key={voce} className="border-b border-b58-charcoal/5">
-                        <td className="py-1 text-b58-charcoal-soft">{voce}</td>
-                        <td className="py-1 text-right text-b58-charcoal tabular-nums">
-                          {a ?? "—"}{b != null && <> · {b}</>}
-                        </td>
-                        <td className="py-1 pl-2 testo-sala text-b58-charcoal-soft/70 w-24">{unita}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full testo-sala mb-4">
+                    <tbody>
+                      {rigaPerRiga(letto).map(([voce, unita, a, b]) => (
+                        <tr key={voce} className="border-b border-b58-charcoal/5">
+                          <td className="py-1 text-b58-charcoal-soft">{voce}</td>
+                          <td className="py-1 text-right text-b58-charcoal tabular-nums">
+                            {a ?? "—"}{b != null && <> · {b}</>}
+                          </td>
+                          <td className="py-1 pl-2 testo-sala text-b58-charcoal-soft/70 w-24">{unita}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {letto.avvisi.length > 0 && (
                   <ul className="testo-sala text-b58-charcoal-soft mb-3 list-disc pl-5">
@@ -291,7 +293,7 @@ export default function Previsioni() {
                   )}
                 </p>
               </div>
-              <div className="gesti-pericolosi shrink-0">
+              <div className="gesti-pericolosi">
                 {!s.congelato_il && (
                   <Link
                     to={`/fiscale/previsioni/${s.id}/modifica`}

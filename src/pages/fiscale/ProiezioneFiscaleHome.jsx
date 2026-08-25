@@ -88,12 +88,12 @@ export default function ProiezioneFiscaleHome() {
         <p className="text-b58-charcoal-soft mt-1">Deduzioni, strumenti fiscali, stime.</p>
       </div>
 
-      <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
+      <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">
         Tutto in questo modulo è una <strong>stima interna</strong> che assiste le decisioni, mai un dato
         fiscale definitivo: la validazione resta sempre alla commercialista.
       </p>
 
-      {error && <p className="text-sm text-b58-terracotta-dark mb-4">{error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((c) => (
@@ -105,9 +105,9 @@ export default function ProiezioneFiscaleHome() {
             <div className="w-10 h-10 rounded-lg bg-b58-cream-dark flex items-center justify-center text-b58-terracotta mb-3">
               <Icon name={c.icon} className="w-5 h-5" />
             </div>
-            <h3 className="font-display text-base text-b58-charcoal">{c.title}</h3>
-            <p className="text-sm text-b58-charcoal-soft mt-1">{c.desc}</p>
-            {c.stat && <p className="text-xs text-b58-olive-dark mt-2 font-medium">{c.stat}</p>}
+            <h3 className="font-display testo-sala-grande text-b58-charcoal">{c.title}</h3>
+            <p className="testo-sala-grande text-b58-charcoal-soft mt-1">{c.desc}</p>
+            {c.stat && <p className="testo-sala text-b58-olive-dark mt-2 font-medium">{c.stat}</p>}
           </Link>
         ))}
       </div>

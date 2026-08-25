@@ -103,8 +103,8 @@ export default function ClienteDetail() {
   }, [showMerge, mergeSearch, id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleChange = (field, value) => setCustomer((c) => ({ ...c, [field]: value }));
 
@@ -162,17 +162,17 @@ export default function ClienteDetail() {
 
   if (notFound) return <Navigate to="/calendario-eventi/clienti" replace />;
   if (loading || !customer) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
   }
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/calendario-eventi/clienti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi/clienti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Clienti
       </Link>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -189,7 +189,7 @@ export default function ClienteDetail() {
             <div className="text-xl text-b58-charcoal font-medium">
               {customer.stats?.reservation_count ?? 0}
             </div>
-            <div className="text-xs text-b58-charcoal-soft">prenotazioni</div>
+            <div className="testo-sala text-b58-charcoal-soft">prenotazioni</div>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export default function ClienteDetail() {
                 regola — cioè due posti che possono contraddirsi. */}
             {customer.puo_ricevere_commerciali ? (
               <>
-                <p className="text-sm text-b58-charcoal">
+                <p className="testo-sala-grande text-b58-charcoal">
                   Gli si può scrivere anche fuori dalle sue prenotazioni — te l&apos;ha detto{" "}
                   {customer.consenso_come} il {formatDate(customer.consenso_commerciale_il)}.
                 </p>
@@ -254,14 +254,14 @@ export default function ClienteDetail() {
                       setSalvandoConsenso(false);
                     }
                   }}
-                  className="text-xs text-b58-charcoal-soft underline mt-1"
+                  className="testo-sala text-b58-charcoal-soft underline mt-1"
                 >
                   Ha chiesto di non ricevere più niente
                 </button>
               </>
             ) : (
               <>
-                <p className="text-sm text-b58-charcoal mb-2">
+                <p className="testo-sala-grande text-b58-charcoal mb-2">
                   {customer.consenso_revocato_il
                     ? `Si è cancellato il ${formatDate(customer.consenso_revocato_il)}: non riceve comunicazioni.`
                     : "Non gli è mai stato chiesto se gli si può scrivere fuori dalle sue prenotazioni."}
@@ -289,7 +289,7 @@ export default function ClienteDetail() {
                         setSalvandoConsenso(false);
                       }
                     }}
-                    className="rounded-lg bg-b58-olive text-b58-parchment text-sm px-3 py-2 disabled:opacity-60"
+                    className="rounded-lg bg-b58-olive text-b58-parchment testo-sala-grande px-3 py-2 disabled:opacity-60"
                   >
                     Ha detto di sì
                   </button>
@@ -306,12 +306,12 @@ export default function ClienteDetail() {
         )}
         {isTitolare && !nonLetto(storia) && storia.length > 0 && (
           <details className="mb-4">
-            <summary className="text-sm text-b58-charcoal-soft cursor-pointer">
+            <summary className="testo-sala-grande text-b58-charcoal-soft cursor-pointer">
               Cosa ci siamo detti ({storia.length})
             </summary>
             <ul className="mt-2 space-y-1">
               {storia.map((r, i) => (
-                <li key={i} className="text-xs text-b58-charcoal">
+                <li key={i} className="testo-sala text-b58-charcoal">
                   <span className="text-b58-charcoal-soft">
                     {formatDate(r.quando)} ·{" "}
                     {r.verso === "uscita" ? "→" : r.verso === "entrata" ? "←" : "·"}{" "}
@@ -324,20 +324,20 @@ export default function ClienteDetail() {
         )}
 
         {customer.stats?.first_reservation_date && (
-          <p className="text-xs text-b58-charcoal-soft mb-4">
+          <p className="testo-sala text-b58-charcoal-soft mb-4">
             Cliente dal {formatDate(customer.stats.first_reservation_date)} · ultima visita{" "}
             {formatDate(customer.stats.last_reservation_date)}
           </p>
         )}
 
         <div className="flex items-center justify-between">
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {isTitolare && (
               <>
                 <button
                   type="button"
                   onClick={() => setShowMerge((v) => !v)}
-                  className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 >
                   {showMerge ? "Annulla unione" : "Unisci con un'altra scheda"}
                 </button>
@@ -352,7 +352,7 @@ export default function ClienteDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -360,7 +360,7 @@ export default function ClienteDetail() {
 
         {showMerge && (
           <div className="mt-4 pt-4 border-t border-b58-charcoal/10">
-            <p className="text-xs text-b58-charcoal-soft/70 mb-2">
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
               Le prenotazioni della scheda scelta passano qui, e quella scheda viene eliminata. Operazione non reversibile.
             </p>
             <input
@@ -372,14 +372,14 @@ export default function ClienteDetail() {
             <ul className="space-y-1 max-h-48 overflow-y-auto">
               {mergeOptions.map((opt) => (
                 <li key={opt.id} className="flex items-center justify-between gap-2 bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
-                  <span className="text-sm text-b58-charcoal">
+                  <span className="testo-sala-grande text-b58-charcoal">
                     {opt.name || "—"} <span className="text-b58-charcoal-soft">· {opt.phone}</span>
                   </span>
                   <button
                     type="button"
                     disabled={merging}
                     onClick={() => handleMerge(opt.id)}
-                    className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark disabled:opacity-60"
+                    className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark disabled:opacity-60"
                   >
                     Unisci qui
                   </button>
@@ -391,21 +391,21 @@ export default function ClienteDetail() {
       </div>
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Storico prenotazioni</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Storico prenotazioni</h2>
         {reservations.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuna prenotazione ancora.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessuna prenotazione ancora.</p>
         ) : (
           <ul className="space-y-1.5">
             {reservations.map((r) => (
               <li key={r.id}>
                 <Link
                   to={`/calendario-eventi/${r.id}`}
-                  className="text-sm text-b58-charcoal hover:text-b58-terracotta flex items-center justify-between"
+                  className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta flex items-center justify-between"
                 >
                   <span>
                     {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)} · {r.party_size} coperti
                   </span>
-                  <span className="text-xs text-b58-charcoal-soft">{labelFor(RESERVATION_STATUSES, r.status)}</span>
+                  <span className="testo-sala text-b58-charcoal-soft">{labelFor(RESERVATION_STATUSES, r.status)}</span>
                 </Link>
               </li>
             ))}
@@ -419,31 +419,31 @@ export default function ClienteDetail() {
       {isTitolare && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
           <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-            <h2 className="font-display text-lg text-b58-charcoal">Sconti e omaggi ricevuti</h2>
-            <span className="text-[10px] uppercase tracking-wide text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal">Sconti e omaggi ricevuti</h2>
+            <span className="testo-sala uppercase tracking-wide text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5">
               Riservato
             </span>
           </div>
-          <p className="text-xs text-b58-charcoal-soft/70 mb-4">
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
             Sezione visibile solo a te: lo staff vede questa scheda senza i dati economici.
           </p>
 
           {discounts.length === 0 ? (
-            <p className="text-sm text-b58-charcoal-soft/60">
+            <p className="testo-sala-grande text-b58-charcoal-soft/60">
               Nessuno sconto o omaggio collegato a questo cliente.
             </p>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
-                  <div className="text-lg text-b58-charcoal">{formatEUR(giftsTotal)}</div>
-                  <div className="text-xs text-b58-charcoal-soft">
+                  <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(giftsTotal)}</div>
+                  <div className="testo-sala text-b58-charcoal-soft">
                     {gifts.length} {gifts.length === 1 ? "omaggio" : "omaggi"} · valore a listino
                   </div>
                 </div>
                 <div className="bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
-                  <div className="text-lg text-b58-charcoal">{formatEUR(scontiForgone)}</div>
-                  <div className="text-xs text-b58-charcoal-soft">
+                  <div className="testo-sala-titolo text-b58-charcoal">{formatEUR(scontiForgone)}</div>
+                  <div className="testo-sala text-b58-charcoal-soft">
                     {sconti.length} {sconti.length === 1 ? "sconto" : "sconti"} · mancato incasso
                   </div>
                 </div>
@@ -453,7 +453,7 @@ export default function ClienteDetail() {
                 {discounts.map((d) => (
                   <li
                     key={d.id}
-                    className="flex items-center justify-between gap-3 text-sm bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
+                    className="flex items-center justify-between gap-3 testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2"
                   >
                     <div className="min-w-0">
                       <span className="text-b58-charcoal font-medium">
@@ -463,7 +463,7 @@ export default function ClienteDetail() {
                       {d.causale?.label && (
                         <span className="text-b58-charcoal-soft"> · {d.causale.label}</span>
                       )}
-                      {d.note && <div className="text-xs text-b58-charcoal-soft">{d.note}</div>}
+                      {d.note && <div className="testo-sala text-b58-charcoal-soft">{d.note}</div>}
                     </div>
                     <span className="text-b58-charcoal shrink-0">
                       {formatEUR(d.full_amount)}
@@ -496,7 +496,7 @@ export default function ClienteDetail() {
               ⚠️ Resta VISIBILE perché è un limite di ciò che si sta
               guardando, non una spiegazione: chi legge questa scheda deve
               sapere che «quanto spende» non c'è, o lo cercherà altrove. */}
-          <p className="text-xs text-b58-charcoal-soft mt-4 pt-4 border-t border-b58-charcoal/10">
+          <p className="testo-sala text-b58-charcoal-soft mt-4 pt-4 border-t border-b58-charcoal/10">
             ⚠️ Quanto spende in media non c&apos;è: il conto in sala quasi mai registra chi
             era il cliente, e su un caso solo non si fa una media.
           </p>

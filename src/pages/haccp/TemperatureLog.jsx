@@ -257,23 +257,25 @@ export default function TemperatureLog() {
                 <p className="testo-sala text-b58-terracotta-dark font-medium mb-2">
                   Ancora da registrare oggi ({mancanti.length})
                 </p>
-                <table className="w-full testo-sala mb-5">
-                  <tbody>
-                    {mancanti.map((eq) => (
-                      <RigaAttrezzatura
-                        key={eq.equipment_id}
-                        eq={eq}
-                        aperta={openRow === eq.equipment_id}
-                        form={readingForm}
-                        setForm={setReadingForm}
-                        salvando={saving}
-                        inputClass={inputClass}
-                        onToggle={() => toggleRow(eq.equipment_id)}
-                        onConferma={() => handleAddReading(eq.equipment_id)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full testo-sala mb-5">
+                    <tbody>
+                      {mancanti.map((eq) => (
+                        <RigaAttrezzatura
+                          key={eq.equipment_id}
+                          eq={eq}
+                          aperta={openRow === eq.equipment_id}
+                          form={readingForm}
+                          setForm={setReadingForm}
+                          salvando={saving}
+                          inputClass={inputClass}
+                          onToggle={() => toggleRow(eq.equipment_id)}
+                          onConferma={() => handleAddReading(eq.equipment_id)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
 
@@ -286,23 +288,25 @@ export default function TemperatureLog() {
             {fatte.length > 0 && (
               <>
                 <p className="testo-sala text-b58-charcoal-soft mb-2">Già fatte oggi ({fatte.length})</p>
-                <table className="w-full testo-sala">
-                  <tbody>
-                    {fatte.map((eq) => (
-                      <RigaAttrezzatura
-                        key={eq.equipment_id}
-                        eq={eq}
-                        aperta={openRow === eq.equipment_id}
-                        form={readingForm}
-                        setForm={setReadingForm}
-                        salvando={saving}
-                        inputClass={inputClass}
-                        onToggle={() => toggleRow(eq.equipment_id)}
-                        onConferma={() => handleAddReading(eq.equipment_id)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full testo-sala">
+                    <tbody>
+                      {fatte.map((eq) => (
+                        <RigaAttrezzatura
+                          key={eq.equipment_id}
+                          eq={eq}
+                          aperta={openRow === eq.equipment_id}
+                          form={readingForm}
+                          setForm={setReadingForm}
+                          salvando={saving}
+                          inputClass={inputClass}
+                          onToggle={() => toggleRow(eq.equipment_id)}
+                          onConferma={() => handleAddReading(eq.equipment_id)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
           </>

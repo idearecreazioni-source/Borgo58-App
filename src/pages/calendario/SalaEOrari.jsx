@@ -30,8 +30,8 @@ import {
 // perché si ricalcola ogni giorno sulla disposizione di quel giorno.
 
 const inputClass =
-  "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+  "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 const sezioneClass = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6";
 
 export default function SalaEOrari() {
@@ -101,17 +101,17 @@ export default function SalaEOrari() {
 
   const orariDelGiorno = (weekday) => orari.filter((o) => o.weekday === weekday);
 
-  if (loading) return <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>;
+  if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>;
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Sala e orari</h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Interruttore generale */}
@@ -127,7 +127,7 @@ export default function SalaEOrari() {
             <span className="block text-b58-charcoal font-medium">
               Mostra i nostri orari sul sito
             </span>
-            <span className="block text-sm text-b58-charcoal-soft mt-1">
+            <span className="block testo-sala-grande text-b58-charcoal-soft mt-1">
               Acceso: il cliente sceglie un'ora fra quelle in cui siamo in servizio, e non
               può chiedere un giorno di chiusura. Spento: può chiedere qualunque data e ora,
               come prima. <strong>In tutti e due i casi confermi sempre tu.</strong>
@@ -135,11 +135,11 @@ export default function SalaEOrari() {
           </span>
         </label>
         {avviso && (
-          <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
+          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-3">
             {avviso}
           </p>
         )}
-        <p className="text-sm text-b58-charcoal-soft mt-3">
+        <p className="testo-sala-grande text-b58-charcoal-soft mt-3">
           Oggi la sala ha <strong>{sagomeAttive.length} posizioni</strong>, con{" "}
           <strong>{serviziAperti}</strong>{" "}
           {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quante
@@ -166,7 +166,7 @@ export default function SalaEOrari() {
             <span className="block text-b58-charcoal font-medium">
               Manda l&apos;email di conferma al cliente
             </span>
-            <span className="block text-sm text-b58-charcoal-soft mt-1">
+            <span className="block testo-sala-grande text-b58-charcoal-soft mt-1">
               Quando confermi una richiesta arrivata dal sito, il cliente riceve un&apos;email con
               giorno, ora e numero di persone. Spento: non riceve niente, come prima.{" "}
               <strong>Parte solo alla conferma</strong>, mai da sola.
@@ -177,15 +177,15 @@ export default function SalaEOrari() {
 
       {/* Orari */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Quando siamo aperti</h2>
-        <p className="text-sm text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quando siamo aperti</h2>
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           L'<em>ultimo ingresso</em> è l'ora oltre la quale non fai più entrare nessuno, non
           l'ora in cui chiudi.
         </p>
         <div className="space-y-4">
           {GIORNI.map((g) => (
             <div key={g.weekday}>
-              <h3 className="text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1">
+              <h3 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1">
                 {g.nome}
               </h3>
               <div className="space-y-1">
@@ -200,9 +200,9 @@ export default function SalaEOrari() {
                         }
                         className="h-4 w-4"
                       />
-                      <span className="text-sm text-b58-charcoal capitalize">{o.servizio}</span>
+                      <span className="testo-sala-grande text-b58-charcoal capitalize">{o.servizio}</span>
                     </label>
-                    <span className="text-xs text-b58-charcoal-soft">dalle</span>
+                    <span className="testo-sala text-b58-charcoal-soft">dalle</span>
                     <CampoAutosalvato
                       type="time"
                       value={o.apertura?.slice(0, 5) ?? ""}
@@ -210,7 +210,7 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
-                    <span className="text-xs text-b58-charcoal-soft">ultimo ingresso</span>
+                    <span className="testo-sala text-b58-charcoal-soft">ultimo ingresso</span>
                     <CampoAutosalvato
                       type="time"
                       value={o.ultimo_ingresso?.slice(0, 5) ?? ""}
@@ -230,7 +230,7 @@ export default function SalaEOrari() {
                         pianta. Il nome dice questo di proposito — uno che
                         somigliasse a una chiusura, fra tre mesi, verrebbe
                         usato per impedire qualcosa. */}
-                    <span className="text-xs text-b58-charcoal-soft">ultimi arrivi dalle</span>
+                    <span className="testo-sala text-b58-charcoal-soft">ultimi arrivi dalle</span>
                     <CampoAutosalvato
                       type="time"
                       value={o.ora_ultimi_arrivi?.slice(0, 5) ?? ""}
@@ -240,7 +240,7 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
-                    <span className="text-xs text-b58-charcoal-soft">primo giro fino alle</span>
+                    <span className="testo-sala text-b58-charcoal-soft">primo giro fino alle</span>
                     <CampoAutosalvato
                       type="time"
                       value={o.ora_primo_turno?.slice(0, 5) ?? ""}
@@ -260,8 +260,8 @@ export default function SalaEOrari() {
 
       {/* Quanti ne tiene un tavolo, per formato */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Quanti ne tiene un tavolo</h2>
-        <p className="text-sm text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quanti ne tiene un tavolo</h2>
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           Quanti coperti fa <strong>un tavolo da solo</strong>, per formato. Accostandone due il
           totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
           vede sulla{" "}
@@ -289,7 +289,7 @@ export default function SalaEOrari() {
             quindi si accostano fra loro e non ai quadrati. Se domani
             comprasse due 90x90 di un altro stile, sarebbero un formato
             nuovo — e giustamente non accostabili a questi. */}
-        <p className="text-xs text-b58-charcoal-soft/80 mt-3">
+        <p className="testo-sala text-b58-charcoal-soft/80 mt-3">
           Due tavoli si accostano <strong>solo se sono dello stesso formato</strong>: i due lunghi
           fra loro, i quadrati fra loro. Non è il gestionale che sceglie — è che sono mobili
           diversi.
@@ -298,8 +298,8 @@ export default function SalaEOrari() {
 
       {/* Come si chiamano i tavoli */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
-        <p className="text-sm text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           Solo il nome: dove stanno lo decidi trascinandoli dalla{" "}
           <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
             pianta
@@ -322,7 +322,7 @@ export default function SalaEOrari() {
               <button
                 type="button"
                 onClick={() => esegui(() => attivaSagoma(t.id, !t.active))}
-                className="text-[11px] text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
+                className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
               >
                 {t.active ? "spegni" : "riaccendi"}
               </button>
@@ -333,7 +333,7 @@ export default function SalaEOrari() {
 
       {/* Regole */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Regole di prenotazione</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Regole di prenotazione</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Fin quando è «primo giro»</label>
@@ -343,7 +343,7 @@ export default function SalaEOrari() {
               onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_primo_turno: v }))}
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
               liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
               colpo d'occhio: non impedisce niente.
@@ -362,7 +362,7 @@ export default function SalaEOrari() {
               onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_fine_serata: v }))}
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Un conto chiuso all'una di notte appartiene alla <strong>sera prima</strong>, non al
               giorno dopo. Fino a quest'ora la sala continua a mostrare la serata in corso.
             </p>
@@ -377,7 +377,7 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Con 15, il sito propone 20:00, 20:15, 20:30… Deve dividere l&apos;ora esatta,
               altrimenti la griglia si sposterebbe di ora in ora.
             </p>
@@ -390,7 +390,7 @@ export default function SalaEOrari() {
               onSave={(v) => esegui(() => updateRegolePrenotazione({ minuti_fra_turni: Number(v) }))}
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Quanto serve per sparecchiare e riapparecchiare. A zero, «da liberare entro le…»
               dice l'ora esatta della prenotazione dopo.
             </p>
@@ -410,7 +410,7 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Sopra questo numero di coperti confermati la sala te lo dice. <strong>Avvisa
               soltanto</strong>: accettare o no lo decidi tu.
             </p>
@@ -431,7 +431,7 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Passati questi minuti dall&apos;ora prenotata, se nessuno ha aperto la comanda su
               quel tavolo, in sala si vede <strong>sbarrato</strong>. Serve a decidere se
               riassegnarlo: <strong>avvisa soltanto</strong>. «È arrivato» non lo segna nessuno —
@@ -446,7 +446,7 @@ export default function SalaEOrari() {
               onSave={(v) => esegui(() => updateRegolePrenotazione({ preavviso_minuti: Number(v) }))}
               className={`${inputClass} w-full`}
             />
-            <p className="text-xs text-b58-charcoal-soft/80 mt-1">
+            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
               Sotto questa soglia gli orari non compaiono più: chi è in ritardo chiama.
             </p>
           </div>
@@ -464,8 +464,8 @@ export default function SalaEOrari() {
 
       {/* Chiusure */}
       <div className={sezioneClass}>
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Chiusure straordinarie</h2>
-        <p className="text-sm text-b58-charcoal-soft mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Chiusure straordinarie</h2>
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           Ferie, festivi, giorni singoli. In queste date il sito non propone nessun orario e
           scrive al cliente il motivo, se lo metti. <strong>Non è «siamo pieni»</strong>:
           quello si mette giorno per giorno dalla{" "}
@@ -508,7 +508,7 @@ export default function SalaEOrari() {
             type="button"
             onClick={aggiungiChiusura}
             disabled={!nuovaChiusura.dal}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             + Aggiungi
           </button>
@@ -517,7 +517,7 @@ export default function SalaEOrari() {
           {chiusure.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between gap-2 text-sm text-b58-charcoal bg-white rounded-lg px-3 py-2"
+              className="flex items-center justify-between gap-2 testo-sala-grande text-b58-charcoal bg-white rounded-lg px-3 py-2"
             >
               <span>
                 {c.dal === c.al ? c.dal : `${c.dal} → ${c.al}`}
@@ -525,7 +525,7 @@ export default function SalaEOrari() {
               </span>
               <button
                 onClick={() => esegui(() => deleteClosure(c.id))}
-                className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 title="Togli"
               >
                 ✕
@@ -533,7 +533,7 @@ export default function SalaEOrari() {
             </li>
           ))}
           {chiusure.length === 0 && (
-            <li className="text-xs text-b58-charcoal-soft/60">Nessuna chiusura in programma.</li>
+            <li className="testo-sala text-b58-charcoal-soft/60">Nessuna chiusura in programma.</li>
           )}
         </ul>
       </div>

@@ -4,8 +4,8 @@ export default function Logo({ size = "md" }) {
   const [imgOk, setImgOk] = useState(true);
 
   const dims = {
-    sm: { box: "w-9 h-9", text: "text-sm", title: "text-base", img: "h-8" },
-    md: { box: "w-12 h-12", text: "text-base", title: "text-xl", img: "h-10" },
+    sm: { box: "w-9 h-9", text: "testo-sala-grande", title: "testo-sala-grande", img: "h-8" },
+    md: { box: "w-12 h-12", text: "testo-sala-grande", title: "text-xl", img: "h-10" },
     lg: { box: "w-16 h-16", text: "text-xl", title: "text-3xl", img: "h-16" },
   }[size];
 
@@ -31,7 +31,7 @@ export default function Logo({ size = "md" }) {
       </div>
       <div className="leading-tight">
         <div className={`font-display ${dims.title} text-b58-charcoal`}>Borgo 58</div>
-        <div className="text-[11px] uppercase tracking-[0.18em] text-b58-charcoal-soft">
+        <div className="testo-sala uppercase tracking-[0.18em] text-b58-charcoal-soft">
           Osteria Contemporanea
         </div>
       </div>

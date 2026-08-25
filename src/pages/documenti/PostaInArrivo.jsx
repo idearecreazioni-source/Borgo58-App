@@ -29,8 +29,8 @@ import { formatDate } from "../../lib/constants";
 
 const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-4";
 const campo =
-  "w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-const etichetta = "block text-[11px] uppercase tracking-wide text-b58-charcoal-soft mb-1";
+  "w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+const etichetta = "block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1";
 
 const NOME_TIPO = {
   archivia_documento: "Archivio",
@@ -322,7 +322,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           decisione di Alessio, non del gestionale. */}
       {!r.ingrediente_id &&
         somiglianti(r).map((ing) => (
-          <p key={ing.id} className="text-sm text-b58-charcoal">
+          <p key={ing.id} className="testo-sala-grande text-b58-charcoal">
             Assomiglia a <strong>{ing.name}</strong> che hai già.{" "}
             <button
               type="button"
@@ -404,7 +404,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             className={campo}
           />
           {Number(r.fattore) > 0 && Number(r.costo_unitario) > 0 && (
-            <p className="text-[11px] text-b58-charcoal-soft mt-1">
+            <p className="testo-sala text-b58-charcoal-soft mt-1">
               Entrano {Number(r.quantita) * Number(r.fattore)} {unitaDi(r)} a{" "}
               {(Number(r.costo_unitario) / Number(r.fattore)).toFixed(2)} € l{"'"}uno.
             </p>
@@ -415,7 +415,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       <button
         type="button"
         onClick={() => setNumeriAperti(numeriAperti === i ? null : i)}
-        className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta underline"
+        className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
       >
         {numeriAperti === i ? "nascondi i numeri" : "correggi i numeri"}
       </button>
@@ -452,7 +452,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       {/* 1. La quadratura, prima di tutto il resto. */}
       {misurabile && (
         <p
-          className={`text-sm rounded-lg px-3 py-2 mb-3 ${
+          className={`testo-sala-grande rounded-lg px-3 py-2 mb-3 ${
             quadra
               ? "bg-b58-olive/10 text-b58-charcoal"
               : "bg-b58-terracotta/10 text-b58-terracotta-dark"
@@ -476,7 +476,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
 
       {/* 2. Il documento, a un tocco. */}
       {(allegati ?? []).length > 0 && (
-        <p className="text-sm mb-3">
+        <p className="testo-sala-grande mb-3">
           <button
             type="button"
             onClick={() => apriAllegato(allegati[0])}
@@ -498,8 +498,8 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           schermata è già stata bocciata una volta per troppa roba. */}
       {dentro.some(({ r }) => (listaPerIngrediente[r.ingrediente_id] ?? []).length > 0) && (
         <div className="mb-3 rounded-lg bg-white border border-b58-charcoal/10 px-3 py-2">
-          <p className="text-sm text-b58-charcoal mb-1">Sulla lista della spesa:</p>
-          <ul className="text-sm text-b58-charcoal-soft space-y-1">
+          <p className="testo-sala-grande text-b58-charcoal mb-1">Sulla lista della spesa:</p>
+          <ul className="testo-sala-grande text-b58-charcoal-soft space-y-1">
             {dentro.map(({ r, i }) => {
               const aperte = listaPerIngrediente[r.ingrediente_id] ?? [];
               if (aperte.length === 0) return null;
@@ -517,7 +517,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                     <select
                       value={r.riga_lista ?? scelta.id}
                       onChange={(e) => patchRiga(i, { riga_lista: e.target.value })}
-                      className="ml-2 rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 text-xs"
+                      className="ml-2 rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 testo-sala"
                     >
                       {aperte.map((x) => (
                         <option key={x.id} value={x.id}>
@@ -540,14 +540,14 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           <button
             type="button"
             onClick={() => setNotiAperti((v) => !v)}
-            className="text-sm text-b58-charcoal hover:text-b58-terracotta text-left"
+            className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta text-left"
           >
             <strong>{noti.length}</strong>{" "}
             {noti.length === 1 ? "riga già conosciuta" : "righe già conosciute"} entrano in
             magazzino {notiAperti ? "▾" : "▸"}
           </button>
           {notiAperti && (
-            <ul className="text-sm text-b58-charcoal-soft ml-3 mt-1">
+            <ul className="testo-sala-grande text-b58-charcoal-soft ml-3 mt-1">
               {noti.map(({ r, i }) => (
                 <li key={i}>
                   · {Number(r.quantita) * (Number(r.fattore) || 1)} {unitaDi(r)}{" "}
@@ -555,7 +555,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                   <button
                     type="button"
                     onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
-                    className="ml-2 text-xs underline hover:text-b58-terracotta"
+                    className="ml-2 testo-sala underline hover:text-b58-terracotta"
                   >
                     cambia
                   </button>
@@ -572,10 +572,10 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
              lascia il segno nel Ricettario. */}
       {nuovi.length > 0 && (
         <div className="mb-2">
-          <p className="text-sm text-b58-charcoal mb-1">
+          <p className="testo-sala-grande text-b58-charcoal mb-1">
             {nuovi.length === 1 ? "Un prodotto nuovo, lo creo così:" : `${nuovi.length} prodotti nuovi, li creo così:`}
           </p>
-          <ul className="text-sm text-b58-charcoal-soft space-y-0.5">
+          <ul className="testo-sala-grande text-b58-charcoal-soft space-y-0.5">
             {nuovi.map(({ r, i }) => (
               <li key={i} className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 px-3 py-1.5">
                 <strong className="text-b58-charcoal">{r.nuovo_ingrediente.nome}</strong>
@@ -586,11 +586,11 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                 <button
                   type="button"
                   onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
-                  className="ml-2 text-xs underline hover:text-b58-terracotta"
+                  className="ml-2 testo-sala underline hover:text-b58-terracotta"
                 >
                   {apertaRiga === i ? "chiudi" : "cambia"}
                 </button>
-                <span className="block text-[11px] text-b58-charcoal-soft/70">
+                <span className="block testo-sala text-b58-charcoal-soft/70">
                   dalla riga «{r.descrizione}»
                 </span>
                 {apertaRiga === i && dettaglioRiga(r, i)}
@@ -603,7 +603,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       {/* 5. Quello che nessuno sa cosa sia: qui serve una decisione. */}
       {daDecidere.length > 0 && (
         <div className="mb-2">
-          <p className="text-sm text-b58-charcoal mb-1">
+          <p className="testo-sala-grande text-b58-charcoal mb-1">
             {daDecidere.length === 1
               ? "Una riga che non so cos'è:"
               : `${daDecidere.length} righe che non so cosa siano:`}
@@ -614,7 +614,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                 <button
                   type="button"
                   onClick={() => setApertaRiga(apertaRiga === i ? null : i)}
-                  className="w-full text-left px-3 py-2 text-sm text-b58-charcoal hover:bg-b58-cream-dark/40 rounded-lg"
+                  className="w-full text-left px-3 py-2 testo-sala-grande text-b58-charcoal hover:bg-b58-cream-dark/40 rounded-lg"
                 >
                   {r.quantita} {r.unita_fattura || ""} <strong>{r.descrizione}</strong>
                   {r.importo ? ` — ${euro(r.importo)} €` : ""}
@@ -628,7 +628,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
 
       {/* 6. Cosa resta fuori dal carico. */}
       {fuori.length > 0 && (
-        <p className="text-xs text-b58-charcoal-soft/70 mb-1">
+        <p className="testo-sala text-b58-charcoal-soft/70 mb-1">
           Fuori dal carico: {fuori.map(({ r }) => r.descrizione).join(", ")}
         </p>
       )}
@@ -641,7 +641,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       {Object.entries(rincari)
         .filter(([, v]) => v?.tipo === "rincaro" && v.da_segnalare)
         .map(([i, v]) => (
-          <p key={i} className="text-sm text-b58-terracotta-dark mb-1">
+          <p key={i} className="testo-sala-grande text-b58-terracotta-dark mb-1">
             ⚠️ <strong>{nomeRiga(righe[i])}</strong>: prima lo pagavi {v.prezzo_precedente}, ora{" "}
             {(Number(righe[i].costo_unitario) / (Number(righe[i].fattore) || 1)).toFixed(2)} (+
             {v.variazione}%)
@@ -656,7 +656,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           const diff = ((v.prezzo_nuovo - v.prezzo) / v.prezzo) * 100;
           if (Math.abs(diff) < 1) return null;
           return (
-            <p key={i} className="text-sm text-b58-charcoal-soft mb-1">
+            <p key={i} className="testo-sala-grande text-b58-charcoal-soft mb-1">
               <strong className="text-b58-charcoal">{nomeRiga(righe[i])}</strong>: è una versione
               nuova. Di solito compri «{v.descrizione}»
               {v.fornitore ? ` da ${v.fornitore}` : ""} a {Number(v.prezzo).toFixed(2)} €; questa
@@ -709,14 +709,14 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             ];
             if (attese.length === 0) return null;
             return (
-              <p className="text-[11px] text-b58-charcoal-soft mt-1">
+              <p className="testo-sala text-b58-charcoal-soft mt-1">
                 dovrebbe essere {attese.join(" · ")}
               </p>
             );
           })()}
         </div>
         <div className="flex items-end">
-          <label className="flex items-center gap-1.5 text-xs text-b58-charcoal-soft pb-1.5">
+          <label className="flex items-center gap-1.5 testo-sala text-b58-charcoal-soft pb-1.5">
             <input type="checkbox" checked={par?.registra_haccp === true}
               onChange={(e) => cambia("registra_haccp", e.target.checked)} />
             registra in HACCP
@@ -724,7 +724,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
         </div>
       </div>
       {par?.registra_haccp === true && (
-        <p className="text-[11px] text-b58-terracotta-dark mt-1">
+        <p className="testo-sala text-b58-terracotta-dark mt-1">
           Scriverà nel registro HACCP una consegna ricevuta <strong>adesso</strong>: accendila solo
           se la merce è appena arrivata.
         </p>
@@ -843,21 +843,21 @@ export default function PostaInArrivo() {
     }
   };
 
-  if (loading) return <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>;
+  if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>;
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
-      <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Archivio Documenti
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Posta in arrivo</h1>
-      <p className="text-sm text-b58-charcoal-soft mb-6">
+      <p className="testo-sala-grande text-b58-charcoal-soft mb-6">
         Quello che arriva alle caselle del locale. Il gestionale legge e{" "}
         <strong>propone cosa fare</strong>: decidi tu, una cosa alla volta.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -875,29 +875,29 @@ export default function PostaInArrivo() {
                 <span className="text-b58-charcoal font-medium">
                   {m.oggetto || "(senza oggetto)"}
                 </span>
-                <span className="text-sm text-b58-charcoal-soft">da {m.mittente || "?"}</span>
-                <span className="text-sm text-b58-charcoal-soft">{formatDate(m.ricevuta_il)}</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft">da {m.mittente || "?"}</span>
+                <span className="testo-sala-grande text-b58-charcoal-soft">{formatDate(m.ricevuta_il)}</span>
               </div>
 
               {m.proposta_sintesi && (
-                <p className="text-sm text-b58-charcoal mt-1 mb-3">{m.proposta_sintesi}</p>
+                <p className="testo-sala-grande text-b58-charcoal mt-1 mb-3">{m.proposta_sintesi}</p>
               )}
 
               {m.stato === "da_leggere" && (
-                <p className="text-sm text-b58-charcoal-soft mb-3">
+                <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
                   Non ancora letta — la lettura parte da sola entro un quarto d&apos;ora.
                 </p>
               )}
 
               {m.lettura_note && (
-                <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
                   Ho letto questa mail solo in parte: {m.lettura_note}. Apri l&apos;allegato e
                   controlla i dati a mano.
                 </p>
               )}
 
               {m.allegati?.length > 0 && (
-                <p className="text-sm text-b58-charcoal-soft mb-3">
+                <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
                   Allegati:{" "}
                   {m.allegati.map((a, i) => (
                     <span key={a.id}>
@@ -929,7 +929,7 @@ export default function PostaInArrivo() {
                   className="rounded-lg bg-white/60 ring-1 ring-b58-charcoal/10 p-3 mt-3"
                 >
                   <div className="flex items-start gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-parchment text-[11px] font-medium px-2.5 py-1 shrink-0 mt-0.5">
+                    <span className="inline-flex items-center rounded-full bg-b58-olive text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0 mt-0.5">
                       {NOME_TIPO[a.tipo] ?? a.tipo}
                     </span>
                     <span className="text-b58-charcoal">
@@ -940,7 +940,7 @@ export default function PostaInArrivo() {
                   {/* Le date di un documento, in chiaro: sono la cosa che
                       va guardata prima di confermare. */}
                   {valori[a.id]?.scadenze?.length > 0 && (
-                    <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
+                    <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
                       {valori[a.id].scadenze.map((s, i) => (
                         <li key={i}>
                           · <strong className="text-b58-charcoal">{formatDate(s.data)}</strong>{" "}
@@ -952,7 +952,7 @@ export default function PostaInArrivo() {
                   )}
 
                   {valori[a.id]?.passi?.length > 0 && (
-                    <ul className="text-sm text-b58-charcoal-soft ml-2 mb-2">
+                    <ul className="testo-sala-grande text-b58-charcoal-soft ml-2 mb-2">
                       {valori[a.id].passi.map((s, i) => (
                         <li key={i}>· {s}</li>
                       ))}
@@ -992,7 +992,7 @@ export default function PostaInArrivo() {
                       type="button"
                       disabled={inCorso === a.id}
                       onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                      className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 text-sm"
+                      className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
                     >
                       {inCorso === a.id ? "…" : "Conferma"}
                     </button>
@@ -1000,7 +1000,7 @@ export default function PostaInArrivo() {
                       type="button"
                       disabled={inCorso === a.id}
                       onClick={() => agisci(a.id, () => rifiutaAzione(a.id))}
-                      className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal text-sm px-3 py-1.5"
+                      className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
                     >
                       No
                     </button>
@@ -1010,7 +1010,7 @@ export default function PostaInArrivo() {
                       <button
                         type="button"
                         onClick={() => setAperta(aperta === a.id ? null : a.id)}
-                        className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
+                        className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
                       >
                         {aperta === a.id ? "chiudi" : "modifica"}
                       </button>
@@ -1020,7 +1020,7 @@ export default function PostaInArrivo() {
               ))}
 
               {daDecidere.length === 0 && m.stato === "proposta" && (
-                <p className="text-sm text-b58-charcoal-soft mt-2">
+                <p className="testo-sala-grande text-b58-charcoal-soft mt-2">
                   Nessuna azione proposta per questa mail.
                 </p>
               )}
@@ -1029,7 +1029,7 @@ export default function PostaInArrivo() {
                 type="button"
                 disabled={inCorso === m.id}
                 onClick={() => agisci(m.id, () => scartaPosta(m.id))}
-                className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta mt-3"
+                className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mt-3"
               >
                 Non serve niente di tutto questo — togli la mail
               </button>

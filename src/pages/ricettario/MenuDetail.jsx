@@ -446,71 +446,73 @@ export default function MenuDetail() {
             </div>
 
             {sectionItems.length > 0 && (
-              <table className="w-full testo-sala-grande mb-3">
-                <thead>
-                  <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                    <th className="py-2 font-medium">Piatto</th>
-                    <th className="py-2 font-medium text-right">Food cost</th>
-                    <th className="py-2 font-medium text-right">Prezzo</th>
-                    <th className="py-2 font-medium text-right">Food cost %</th>
-                    <th className="py-2 font-medium text-right">Margine</th>
-                    <th className="py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sectionItems.map((item) => (
-                    <tr key={item.id} className="border-b border-b58-charcoal/5 last:border-0">
-                      <td className="py-2 text-b58-charcoal">
-                        {/* ⚠️ Il passo porta la PROPRIA destinazione: entrando
-                            in un piatto da qui, il ritorno deve riportare al
-                            menu, non all'elenco delle ricette. */}
-                        <Link
-                          to={`/ricettario/ricette/${item.recipe_id}`}
-                          state={{
-                            percorso: [
-                              { id, nome: menu?.name ?? "", a: `/ricettario/menu/${id}` },
-                            ],
-                          }}
-                          className="hover:text-b58-terracotta"
-                        >
-                          {item.recipe.name}
-                        </Link>
-                        {isOutOfSeason(item.recipe.seasonality) && (
-                          <span className="testo-sala text-b58-charcoal-soft ml-1.5">
-                            (stagione: {item.recipe.seasonality.join(", ")})
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 text-right text-b58-charcoal-soft">
-                        {formatEUR(item.economics?.food_cost_portion)}
-                      </td>
-                      <td className="py-2 text-right">
-                        <CampoAutosalvato
-                          type="number"
-                          step="0.5"
-                          value={item.selling_price}
-                          onSave={(v) => handlePriceChange(item.id, v)}
-                          className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
-                        />
-                      </td>
-                      <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`}>
-                        {item.economics?.food_cost_pct != null ? `${Number(item.economics.food_cost_pct).toFixed(1)}%` : "—"}
-                      </td>
-                      <td className="py-2 text-right text-b58-charcoal">
-                        {formatEUR(item.economics?.gross_margin)}
-                      </td>
-                      <td className="py-2 text-right">
-                        <button
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
-                        >
-                          Rimuovi
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full testo-sala-grande mb-3">
+                  <thead>
+                    <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                      <th className="py-2 font-medium">Piatto</th>
+                      <th className="py-2 font-medium text-right">Food cost</th>
+                      <th className="py-2 font-medium text-right">Prezzo</th>
+                      <th className="py-2 font-medium text-right">Food cost %</th>
+                      <th className="py-2 font-medium text-right">Margine</th>
+                      <th className="py-2"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {sectionItems.map((item) => (
+                      <tr key={item.id} className="border-b border-b58-charcoal/5 last:border-0">
+                        <td className="py-2 text-b58-charcoal">
+                          {/* ⚠️ Il passo porta la PROPRIA destinazione: entrando
+                              in un piatto da qui, il ritorno deve riportare al
+                              menu, non all'elenco delle ricette. */}
+                          <Link
+                            to={`/ricettario/ricette/${item.recipe_id}`}
+                            state={{
+                              percorso: [
+                                { id, nome: menu?.name ?? "", a: `/ricettario/menu/${id}` },
+                              ],
+                            }}
+                            className="hover:text-b58-terracotta"
+                          >
+                            {item.recipe.name}
+                          </Link>
+                          {isOutOfSeason(item.recipe.seasonality) && (
+                            <span className="testo-sala text-b58-charcoal-soft ml-1.5">
+                              (stagione: {item.recipe.seasonality.join(", ")})
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 text-right text-b58-charcoal-soft">
+                          {formatEUR(item.economics?.food_cost_portion)}
+                        </td>
+                        <td className="py-2 text-right">
+                          <CampoAutosalvato
+                            type="number"
+                            step="0.5"
+                            value={item.selling_price}
+                            onSave={(v) => handlePriceChange(item.id, v)}
+                            className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
+                          />
+                        </td>
+                        <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`}>
+                          {item.economics?.food_cost_pct != null ? `${Number(item.economics.food_cost_pct).toFixed(1)}%` : "—"}
+                        </td>
+                        <td className="py-2 text-right text-b58-charcoal">
+                          {formatEUR(item.economics?.gross_margin)}
+                        </td>
+                        <td className="py-2 text-right">
+                          <button
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
+                          >
+                            Rimuovi
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             {candidates.length > 0 && (
@@ -617,42 +619,44 @@ export default function MenuDetail() {
                   Questo ingrediente non è usato in nessuna ricetta del menu.
                 </p>
               ) : (
-                <table className="w-full testo-sala-grande">
-                  <thead>
-                    <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                      <th className="py-2 font-medium">Piatto</th>
-                      <th className="py-2 font-medium text-right">Food cost attuale</th>
-                      <th className="py-2 font-medium text-right">Food cost simulato</th>
-                      <th className="py-2 font-medium text-right">Food cost % simulato</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {priceSimResults.map((r) => (
-                      <tr key={r.menu_item_id} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">
-                          {r.piatto}
-                          {/* Il caso che prima era invisibile: l'ingrediente
-                              non è in questo piatto, è dentro qualcosa che
-                              il piatto usa. */}
-                          {r.via_preparazione && (
-                            <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                              attraverso una preparazione
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 text-right text-b58-charcoal-soft">
-                          {formatEUR(r.food_cost_attuale)}
-                        </td>
-                        <td className="py-2 text-right text-b58-charcoal">
-                          {formatEUR(r.food_cost_simulato)}
-                        </td>
-                        <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(r.pct_simulata)]}`}>
-                          {r.pct_simulata != null ? `${Number(r.pct_simulata).toFixed(1)}%` : "—"}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full testo-sala-grande">
+                    <thead>
+                      <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                        <th className="py-2 font-medium">Piatto</th>
+                        <th className="py-2 font-medium text-right">Food cost attuale</th>
+                        <th className="py-2 font-medium text-right">Food cost simulato</th>
+                        <th className="py-2 font-medium text-right">Food cost % simulato</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {priceSimResults.map((r) => (
+                        <tr key={r.menu_item_id} className="border-b border-b58-charcoal/5 last:border-0">
+                          <td className="py-2 text-b58-charcoal">
+                            {r.piatto}
+                            {/* Il caso che prima era invisibile: l'ingrediente
+                                non è in questo piatto, è dentro qualcosa che
+                                il piatto usa. */}
+                            {r.via_preparazione && (
+                              <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                                attraverso una preparazione
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 text-right text-b58-charcoal-soft">
+                            {formatEUR(r.food_cost_attuale)}
+                          </td>
+                          <td className="py-2 text-right text-b58-charcoal">
+                            {formatEUR(r.food_cost_simulato)}
+                          </td>
+                          <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(r.pct_simulata)]}`}>
+                            {r.pct_simulata != null ? `${Number(r.pct_simulata).toFixed(1)}%` : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )
             )}
           </div>

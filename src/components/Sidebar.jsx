@@ -39,7 +39,7 @@ export default function Sidebar({ onNavigate }) {
           Dashboard
         </NavLink>
 
-        <div className="pt-4 pb-1 px-3 text-[11px] font-medium uppercase tracking-wide text-b58-charcoal-soft/60">
+        <div className="pt-4 pb-1 px-3 testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/60">
           Moduli
         </div>
 

@@ -28,8 +28,8 @@ export default function DocumentoDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setField = (field, value) => setDoc((d) => ({ ...d, [field]: value }));
 
@@ -97,17 +97,17 @@ export default function DocumentoDetail() {
 
   if (notFound) return <Navigate to="/documenti" replace />;
   if (loading || !doc) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
   }
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/documenti" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Archivio documenti
       </Link>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">{error}</p>
       )}
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-3">
@@ -146,14 +146,14 @@ export default function DocumentoDetail() {
         </div>
 
         {doc.storage_path ? (
-          <div className="mb-4 text-sm">
+          <div className="mb-4 testo-sala-grande">
             <span className="text-b58-charcoal-soft">File: </span>
             <button onClick={openFile} className="text-b58-terracotta hover:text-b58-terracotta-dark">
               {doc.file_name || "apri"}
             </button>
           </div>
         ) : (
-          <p className="text-xs text-b58-charcoal-soft/60 mb-4">Nessun file allegato (solo metadati).</p>
+          <p className="testo-sala text-b58-charcoal-soft/60 mb-4">Nessun file allegato (solo metadati).</p>
         )}
 
         {/* Il contenuto letto dentro il file. Senza, l'assistente conosce
@@ -161,7 +161,7 @@ export default function DocumentoDetail() {
         {doc.storage_path && (
           <div className="mb-4 rounded-lg bg-white border border-b58-charcoal/10 p-3">
             {doc.testo ? (
-              <p className="text-xs text-b58-charcoal-soft">
+              <p className="testo-sala text-b58-charcoal-soft">
                 Contenuto letto: <strong>{doc.testo.length}</strong> caratteri. «Chiedi
                 all'archivio» può rispondere su questo documento.
                 <button
@@ -174,26 +174,26 @@ export default function DocumentoDetail() {
               </p>
             ) : (
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p className="text-xs text-b58-charcoal-soft">
+                <p className="testo-sala text-b58-charcoal-soft">
                   Contenuto non ancora letto: l'assistente di questo documento conosce solo la
                   scheda qui sopra.
                 </p>
                 <button
                   onClick={() => leggiContenuto(false)}
                   disabled={leggendo}
-                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal text-xs font-medium px-3 py-1.5"
+                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal testo-sala font-medium px-3 py-1.5"
                 >
                   {leggendo ? "Leggo…" : "Leggi il contenuto"}
                 </button>
               </div>
             )}
             {leggendo && (
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+              <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
                 Un documento lungo può richiedere un minuto.
               </p>
             )}
             {esitoLettura && !leggendo && (
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+              <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
                 {esitoLettura.gia_letto
                   ? "Il contenuto c'era già."
                   : `${esitoLettura.caratteri} caratteri, ${esitoLettura.come}.`}
@@ -204,7 +204,7 @@ export default function DocumentoDetail() {
         )}
 
         {doc.task_id && doc.expiry_date && (
-          <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
             Promemoria di scadenza attivo in Agenda per il {formatDate(doc.expiry_date)}.
           </p>
         )}
@@ -227,7 +227,7 @@ export default function DocumentoDetail() {
             domanda="Eliminare documento e file?"
             onConferma={handleDelete}
           />
-          <button onClick={handleSave} disabled={saving} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2">
+          <button onClick={handleSave} disabled={saving} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
         </div>

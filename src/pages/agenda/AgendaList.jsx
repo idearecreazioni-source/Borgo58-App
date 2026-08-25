@@ -156,7 +156,11 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
 
   return (
     <div className="px-4 py-3">
-      <div className="flex items-center gap-3">
+      {/* ⚠️ `flex-wrap`: su un telefono da 390 punti la fila — casella,
+          stella, titolo, provenienza, data, «rimanda» — spingeva la pagina
+          fuori dallo schermo di 363 punti. Quello che non entra va a capo
+          invece di trascinarsi dietro la pagina. */}
+      <div className="flex flex-wrap items-center gap-3">
         <input type="checkbox" checked={false} onChange={onFatto} className="shrink-0" title="Fatto" />
         <button type="button" onClick={onStella} className="tocco-bottone shrink-0 testo-sala-grande leading-none" title="Per me conta">
           <span className={t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>★</span>
@@ -366,7 +370,7 @@ export default function AgendaList() {
             </span>
           )}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* Adempimenti societari: materia riservata al titolare (§3.5). La
               barriera è la RLS — per lo staff l'export uscirebbe comunque
               vuoto — qui si evita solo di mostrargli una porta inutile. */}
@@ -515,7 +519,7 @@ export default function AgendaList() {
           {mostraFatti && (
             <div className="mt-2 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
               {fatti.map((f) => (
-                <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
+                <div key={f.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
                   <span className="testo-sala text-b58-charcoal-soft line-through flex-1 min-w-0">
                     {f.title}
                   </span>

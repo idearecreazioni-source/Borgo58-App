@@ -42,7 +42,7 @@ function Masthead({ header, subheader }) {
       ) : (
         <>
           <h2 className="font-display text-4xl text-b58-charcoal">{header}</h2>
-          {subheader && <p className="text-xs tracking-[0.3em] uppercase text-b58-charcoal-soft mt-1">{subheader}</p>}
+          {subheader && <p className="testo-sala tracking-[0.3em] uppercase text-b58-charcoal-soft mt-1">{subheader}</p>}
         </>
       )}
     </div>
@@ -118,7 +118,7 @@ export default function EditorMenuHome() {
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -135,23 +135,23 @@ export default function EditorMenuHome() {
               </Didascalia>
             </h1>
           </div>
-          <div className="flex gap-2">
-            <Link to="/editor-menu/bevande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/editor-menu/bevande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
               Bevande e vini
             </Link>
-            <Link to="/editor-menu/giorno" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2">
+            <Link to="/editor-menu/giorno" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
               Piatti del giorno
             </Link>
             <PrintButton label="Stampa / PDF" />
           </div>
         </div>
 
-        {error && <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+        {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
-              <label className="block text-xs text-b58-charcoal-soft mb-1">Menu</label>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1">Menu</label>
               <select value={menuId} onChange={(e) => setMenuId(e.target.value)} className={inputClass}>
                 {menus.map((m) => (
                   <option key={m.id} value={m.id}>{m.name}{m.is_active ? " (attivo)" : ""}</option>
@@ -159,19 +159,19 @@ export default function EditorMenuHome() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-b58-charcoal-soft mb-1">Titolo (se manca il logo)</label>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo (se manca il logo)</label>
               <input value={header} onChange={(e) => setHeader(e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-b58-charcoal-soft mb-1">Sottotitolo</label>
+              <label className="block testo-sala text-b58-charcoal-soft mb-1">Sottotitolo</label>
               <input value={subheader} onChange={(e) => setSubheader(e.target.value)} className={inputClass} />
             </div>
           </div>
           <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input type="checkbox" checked={showPrices} onChange={(e) => setShowPrices(e.target.checked)} /> Mostra prezzi
             </label>
-            <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft">
+            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input type="checkbox" checked={showDescriptions} onChange={(e) => setShowDescriptions(e.target.checked)} /> Mostra descrizioni
             </label>
             {/* ⚠️ SCRITTO, non sottinteso (decisione di Alessio, 17/08):
@@ -186,7 +186,7 @@ export default function EditorMenuHome() {
                 quello che la decisione del 17/08 pretende) e non ruba
                 larghezza a niente. E' la forma che l'app usa gia' in sei
                 punti: nome sopra, nota `block` sotto. */}
-            <label className="flex items-start gap-2 text-xs text-b58-charcoal-soft">
+            <label className="flex items-start gap-2 testo-sala text-b58-charcoal-soft">
               <input
                 type="checkbox"
                 checked={showAllergens}
@@ -220,10 +220,10 @@ export default function EditorMenuHome() {
             if (nonVerificati.length === 0) return null;
             return (
               <div className="print:hidden rounded-xl bg-red-50 ring-1 ring-red-300 p-4 mb-6">
-                <p className="text-sm font-medium text-red-800">
+                <p className="testo-sala-grande font-medium text-red-800">
                   Attenzione: allergeni non confermati
                 </p>
-                <p className="text-sm text-red-800 mt-1">
+                <p className="testo-sala-grande text-red-800 mt-1">
                   Questi ingredienti hanno allergeni solo stimati, o mai guardati da nessuno:{" "}
                   <strong>{nonVerificati.join(", ")}</strong>. I piatti che li contengono{" "}
                   <strong>non stampano l&apos;elenco allergeni</strong> finché non li confermi in{" "}
@@ -259,11 +259,11 @@ export default function EditorMenuHome() {
                 dalla carta per davvero. Se le due si somigliassero, qualcuno
                 userebbe la prima credendo di fare la seconda — che è il
                 difetto di oggi visto dall'altro lato. */}
-            <p className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+            <p className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
               Cosa lascio fuori da questa stampa
             </p>
             <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-              <p className="text-xs text-b58-charcoal-soft">
+              <p className="testo-sala text-b58-charcoal-soft">
                 {quantiEsclusi === 0 ? (
                   <>Si stampano tutti e {items.length} i piatti.</>
                 ) : (
@@ -279,7 +279,7 @@ export default function EditorMenuHome() {
                 <button
                   type="button"
                   onClick={() => setExcluded({})}
-                  className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark"
+                  className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                 >
                   Rimettili tutti
                 </button>
@@ -287,7 +287,7 @@ export default function EditorMenuHome() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
               {items.map((i) => (
-                <div key={i.id} className="flex items-center gap-2 text-sm">
+                <div key={i.id} className="flex items-center gap-2 testo-sala-grande">
                   <span
                     className={
                       excluded[i.id]
@@ -296,14 +296,14 @@ export default function EditorMenuHome() {
                     }
                   >
                     {i.recipe?.name}{" "}
-                    <span className="text-xs text-b58-charcoal-soft/60">
+                    <span className="testo-sala text-b58-charcoal-soft/60">
                       ({labelFor(CATEGORY_ORDER, i.category)})
                     </span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setExcluded((x) => ({ ...x, [i.id]: !x[i.id] }))}
-                    className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                    className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
                   >
                     {excluded[i.id] ? "rimetti nella stampa" : "non stampare"}
                   </button>
@@ -315,9 +315,9 @@ export default function EditorMenuHome() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft print:hidden">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft print:hidden">Caricamento…</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft/60 print:hidden">
+        <p className="testo-sala-grande text-b58-charcoal-soft/60 print:hidden">
           Questo menu non ha piatti. Aggiungili dal Ricettario → Menu.
         </p>
       ) : (
@@ -348,7 +348,7 @@ export default function EditorMenuHome() {
                     return (
                       <li key={d.id} className="text-center break-inside-avoid">
                         <div className="flex items-baseline justify-center gap-2">
-                          <span className="font-display text-lg text-b58-charcoal">
+                          <span className="font-display testo-sala-titolo text-b58-charcoal">
                             {d.recipe?.name}
                             {/* ⚠️ UN SEGNO, NON UNA FRASE (rilievo del 17/08).
                                 «per gli allergeni chiedi al personale» ripetuto
@@ -368,16 +368,16 @@ export default function EditorMenuHome() {
                             )}
                           </span>
                           {showPrices && (
-                            <span className="text-b58-gold-dark text-base whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
+                            <span className="text-b58-gold-dark testo-sala-grande whitespace-nowrap">· {formatEUR(d.selling_price)}</span>
                           )}
                         </div>
                         {showDescriptions && d.recipe?.menu_description && (
-                          <p className="text-sm italic text-b58-charcoal-soft/85 mt-1 leading-snug" style={{ fontFamily: "var(--font-menu)" }}>
+                          <p className="testo-sala-grande italic text-b58-charcoal-soft/85 mt-1 leading-snug" style={{ fontFamily: "var(--font-menu)" }}>
                             {d.recipe.menu_description}
                           </p>
                         )}
                         {showAllergens && allergens.length > 0 && (
-                          <p className="text-[11px] text-b58-charcoal-soft/60 mt-1">
+                          <p className="testo-sala text-b58-charcoal-soft/60 mt-1">
                             {allergens.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
                           </p>
                         )}
@@ -396,7 +396,7 @@ export default function EditorMenuHome() {
                             davvero lette da un'etichetta: sono una riga a
                             sé perché «può contenere» non è «contiene». */}
                         {showAllergens && !scheda?.daVerificare && (scheda?.tracce ?? []).length > 0 && (
-                          <p className="text-[11px] text-b58-charcoal-soft/50 mt-0.5 italic">
+                          <p className="testo-sala text-b58-charcoal-soft/50 mt-0.5 italic">
                             può contenere tracce di{" "}
                             {scheda.tracce.map((a) => labelFor(ALLERGENS, a)).join(" · ")}
                           </p>
@@ -410,7 +410,7 @@ export default function EditorMenuHome() {
           })}
 
           {showAllergens && (
-            <p className="text-[10px] text-b58-charcoal-soft/60 text-center mt-10 max-w-md mx-auto">
+            <p className="testo-sala text-b58-charcoal-soft/60 text-center mt-10 max-w-md mx-auto">
               In caso di allergie o intolleranze, chiedi al personale: teniamo l&apos;elenco completo
               degli allergeni per ogni piatto.
               {conAsterisco > 0 && (

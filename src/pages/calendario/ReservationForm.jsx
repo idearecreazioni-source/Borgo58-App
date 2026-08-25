@@ -164,12 +164,12 @@ export default function ReservationForm() {
 
   if (notFound) return <Navigate to="/calendario-eventi" replace />;
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -224,7 +224,7 @@ export default function ReservationForm() {
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
@@ -232,14 +232,14 @@ export default function ReservationForm() {
       </h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       {isEdit && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4">
-          <span className="text-sm text-b58-charcoal">
+          <span className="testo-sala-grande text-b58-charcoal">
             Stato: <span className="font-medium">{labelFor(RESERVATION_STATUSES, status)}</span>
             {" · "}
             {/* Dove li fai sedere: si decide sulla pianta, non da qui — un
@@ -268,12 +268,12 @@ export default function ReservationForm() {
               {tavoli.length > 0 ? "apri la pianta" : "dai un tavolo dalla pianta"}
             </Link>
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {STATUS_ACTIONS[status].map((a) => (
               <button
                 key={a.to}
                 onClick={() => handleStatusChange(a.to)}
-                className={`${a.cls} text-b58-parchment text-xs font-medium rounded-full px-3 py-1.5`}
+                className={`${a.cls} text-b58-parchment testo-sala font-medium rounded-full px-3 py-1.5`}
               >
                 {a.label}
               </button>
@@ -285,13 +285,13 @@ export default function ReservationForm() {
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
         <div>
           <label className={labelClass}>Tipo</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {RESERVATION_TYPES.map((t) => (
               <button
                 type="button"
                 key={t.value}
                 onClick={() => setForm((f) => ({ ...f, type: t.value }))}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.type === t.value
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -350,7 +350,7 @@ export default function ReservationForm() {
         )}
 
         {!nonLetto(trattative) && trattative.length > 0 && (
-          <p className="text-sm text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2">
+          <p className="testo-sala-grande text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2">
             Per quella sera {trattative.length === 1 ? "c'è" : "ci sono"}{" "}
             {trattative.length === 1
               ? `una trattativa in corso per ${trattative[0].persone} persone`
@@ -456,7 +456,7 @@ export default function ReservationForm() {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 text-sm"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
         >
           {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea prenotazione"}
         </button>
@@ -465,11 +465,11 @@ export default function ReservationForm() {
       {isTitolare && isEdit && isEvent && form.event_menu_id && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg text-b58-charcoal">Fabbisogno ingredienti stimato</h2>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal">Fabbisogno ingredienti stimato</h2>
             <button
               onClick={loadNeeds}
               disabled={loadingNeeds}
-              className="rounded-lg bg-b58-charcoal text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-charcoal text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {loadingNeeds ? "Calcolo…" : "Calcola per " + form.party_size + " ospiti"}
             </button>
@@ -481,7 +481,7 @@ export default function ReservationForm() {
               altro: questo conto è un fabbisogno, e nessuno lo confronta con
               quello che c'è davvero in cella. Cambiata la ragione, non
               cancellata la riga. */}
-          <p className="text-xs text-b58-charcoal-soft mb-4">
+          <p className="testo-sala text-b58-charcoal-soft mb-4">
             ⚠️ È il fabbisogno teorico: quanto servirebbe se ognuno mangiasse ogni piatto.
             Non è un controllo di quello che c&apos;è in cella.
             <Didascalia etichetta="Come è calcolato">
@@ -492,32 +492,34 @@ export default function ReservationForm() {
           </p>
           {needs && (
             needs.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft">
+              <p className="testo-sala-grande text-b58-charcoal-soft">
                 Il menu selezionato non ha ancora ricette con ingredienti.
               </p>
             ) : (
               <>
-                <table className="w-full text-sm mb-3">
-                  <thead>
-                    <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                      <th className="py-2 font-medium">Ingrediente</th>
-                      <th className="py-2 font-medium text-right">Quantità necessaria</th>
-                      <th className="py-2 font-medium text-right">Costo stimato</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {needs.map((n) => (
-                      <tr key={n.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">{n.nome}</td>
-                        <td className="py-2 text-right text-b58-charcoal-soft">
-                          {Number(n.quantita).toFixed(2)} {n.unita}
-                        </td>
-                        <td className="py-2 text-right text-b58-charcoal">{formatEUR(n.costo)}</td>
+                <div className="overflow-x-auto">
+                  <table className="w-full testo-sala-grande mb-3">
+                    <thead>
+                      <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                        <th className="py-2 font-medium">Ingrediente</th>
+                        <th className="py-2 font-medium text-right">Quantità necessaria</th>
+                        <th className="py-2 font-medium text-right">Costo stimato</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="text-right text-sm text-b58-charcoal font-medium">
+                    </thead>
+                    <tbody>
+                      {needs.map((n) => (
+                        <tr key={n.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
+                          <td className="py-2 text-b58-charcoal">{n.nome}</td>
+                          <td className="py-2 text-right text-b58-charcoal-soft">
+                            {Number(n.quantita).toFixed(2)} {n.unita}
+                          </td>
+                          <td className="py-2 text-right text-b58-charcoal">{formatEUR(n.costo)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-right testo-sala-grande text-b58-charcoal font-medium">
                   Totale stimato: {formatEUR(totalEstimatedCost)}
                 </p>
               </>

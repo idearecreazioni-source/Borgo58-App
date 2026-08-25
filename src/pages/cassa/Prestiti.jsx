@@ -47,7 +47,7 @@ export default function Prestiti() {
 
   const inputClass =
     "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   useEffect(() => {
     getEntities()
@@ -154,7 +154,7 @@ export default function Prestiti() {
     <div className="testo-sala max-w-3xl mx-auto pb-16">
       <Link
         to="/cassa"
-        className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta"
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
       >
         ← Cassa
       </Link>
@@ -201,7 +201,7 @@ export default function Prestiti() {
               database con la frase che dice su cosa è calcolato, e non da
               un testo scritto qui — che una seconda schermata potrebbe
               mostrare senza. */}
-          <p className="text-xs text-b58-charcoal-soft/70 mt-3 leading-snug">{spazio.avvertenza}</p>
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-3 leading-snug">{spazio.avvertenza}</p>
         </div>
       )}
 
@@ -211,7 +211,7 @@ export default function Prestiti() {
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/10 mb-6">
           {aperti.map((p) => (
             <div key={p.id} className="px-4 py-3">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="text-b58-charcoal">{p.da_chi}</div>
                   <div className="testo-sala text-b58-charcoal-soft">
@@ -219,9 +219,9 @@ export default function Prestiti() {
                     {Number(p.restituito) > 0 && <> · restituiti {formatEUR(p.restituito)}</>}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="text-right">
-                    <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft">Resta</div>
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Resta</div>
                     <div className="text-b58-charcoal font-medium">{formatEUR(p.residuo)}</div>
                   </div>
                   <button
@@ -298,7 +298,7 @@ export default function Prestiti() {
 
       {/* Il modulo per registrarne uno nuovo */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-        <h2 className="font-display text-lg text-b58-charcoal mb-3">Registra un prestito ricevuto</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">Registra un prestito ricevuto</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Da chi</label>
@@ -369,7 +369,7 @@ export default function Prestiti() {
 
       {estinti.length > 0 && (
         <div className="mt-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-2">Restituiti per intero</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-2">Restituiti per intero</h2>
           <div className="rounded-xl bg-b58-parchment/60 ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/10">
             {estinti.map((p) => (
               <div key={p.id} className="px-4 py-2 testo-sala text-b58-charcoal-soft">

@@ -48,8 +48,8 @@ export default function FornitoreDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleChange = (field, value) => setSupplier((s) => ({ ...s, [field]: value }));
 
@@ -107,17 +107,17 @@ export default function FornitoreDetail() {
 
   if (notFound) return <Navigate to="/magazzino/fornitori" replace />;
   if (loading || !supplier) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-2xl mx-auto">Caricamento…</p>;
   }
 
   return (
     <div className="max-w-2xl mx-auto pb-16">
-      <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino/fornitori" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Fornitori
       </Link>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
           {error}
         </p>
       )}
@@ -132,13 +132,13 @@ export default function FornitoreDetail() {
           />
           {!supplier.active && (
             <span className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2.5 py-1">
+              <span className="testo-sala text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2.5 py-1">
                 Disattivato
               </span>
               <button
                 type="button"
                 onClick={handleReactivate}
-                className="text-xs text-b58-olive-dark hover:text-b58-charcoal"
+                className="testo-sala text-b58-olive-dark hover:text-b58-charcoal"
               >
                 Riaccendilo
               </button>
@@ -154,8 +154,8 @@ export default function FornitoreDetail() {
             className="mt-0.5 shrink-0"
           />
           <span>
-            <span className="text-sm text-b58-charcoal">Fornitore occasionale</span>
-            <span className="block text-xs text-b58-charcoal-soft/70 mt-0.5">
+            <span className="testo-sala-grande text-b58-charcoal">Fornitore occasionale</span>
+            <span className="block testo-sala text-b58-charcoal-soft/70 mt-0.5">
               Niente condizioni di pagamento/giorni di consegna da compilare — solo il minimo per
               la tracciabilità. Salvando con la spunta attiva, quei due campi vengono
               azzerati.
@@ -298,7 +298,7 @@ export default function FornitoreDetail() {
             <button
               type="button"
               onClick={handleDeactivate}
-              className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+              className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
             >
               Disattiva fornitore
             </button>
@@ -306,7 +306,7 @@ export default function FornitoreDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2 ml-auto"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2 ml-auto"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -317,7 +317,7 @@ export default function FornitoreDetail() {
           mai inserito a mano qui. */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <div className="flex items-baseline justify-between gap-4 flex-wrap mb-4">
-          <h2 className="font-display text-lg text-b58-charcoal">Consegne recenti</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal">Consegne recenti</h2>
           {/* ⚠️ LE FATTURE NON SI RIFANNO QUI (23/08, blocco 6): l'elenco
               esiste già in Fatture Fornitori, coi suoi totali, le note di
               credito e i pagamenti. Quello che mancava era **la porta** —
@@ -334,11 +334,11 @@ export default function FornitoreDetail() {
           </Link>
         </div>
         {deliveries.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuna consegna registrata ancora.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessuna consegna registrata ancora.</p>
         ) : (
           <ul className="space-y-1.5">
             {deliveries.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
+              <li key={d.id} className="flex items-center justify-between gap-3 testo-sala-grande">
                 <span className="text-b58-charcoal">
                   {d.ingredient?.name} <span className="text-b58-charcoal-soft">· {formatQta(d.quantity_received)} {d.ingredient?.unit}</span>
                 </span>
@@ -353,13 +353,13 @@ export default function FornitoreDetail() {
       </div>
 
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Storico prezzi</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Storico prezzi</h2>
         {prices.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessun prezzo registrato ancora.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessun prezzo registrato ancora.</p>
         ) : (
           <ul className="space-y-1.5">
             {prices.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
+              <li key={p.id} className="flex items-center justify-between gap-3 testo-sala-grande">
                 <span className="text-b58-charcoal">{p.ingredient?.name}</span>
                 <span className="text-b58-charcoal-soft shrink-0">
                   {formatEUR(p.price)}/{p.ingredient?.unit} · {formatDate(p.recorded_at)}
@@ -377,7 +377,7 @@ export default function FornitoreDetail() {
       {/* ⚠️ RESTA, ed è un limite e non una spiegazione: chi apre la scheda
           di un fornitore cerca anche «come si è comportato», e senza questa
           riga concluderebbe che si è comportato bene. */}
-      <p className="text-xs text-b58-charcoal-soft px-1">
+      <p className="testo-sala text-b58-charcoal-soft px-1">
         ⚠️ Ritardi, resi e problemi non sono ancora registrati da nessuna parte: qui
         non c&apos;è niente su com&apos;è andata finora.
       </p>

@@ -115,8 +115,8 @@ export default function PrevisioneDettaglio() {
     }
   };
 
-  if (loading) return <p className="text-sm text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
-  if (!scenario) return <p className="text-sm text-b58-charcoal-soft max-w-5xl mx-auto">Non trovata.</p>;
+  if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
+  if (!scenario) return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Non trovata.</p>;
 
   const differenze = confronto.filter((c) => Math.abs(Number(c.differenza)) > 0.01);
   const righe = [
@@ -137,26 +137,26 @@ export default function PrevisioneDettaglio() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale/previsioni" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Le previsioni
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-4">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal">{scenario.nome}</h1>
-          <p className="text-xs text-b58-charcoal-soft mt-0.5">
+          <p className="testo-sala text-b58-charcoal-soft mt-0.5">
             {scenario.anno} · {scenario.tipo === "partenza" ? "previsione di partenza" : "riproiezione"}
             {scenario.versione_foglio && <> · {scenario.versione_foglio}</>}
           </p>
         </div>
         {scenario.congelato_il ? (
-          <span className="text-xs text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-1.5">
+          <span className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-1.5">
             Chiusa il {new Date(scenario.congelato_il).toLocaleDateString("it-IT")} — non si cambia più
           </span>
         ) : (
           <button
             onClick={chiudi}
             disabled={congelando}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {congelando ? "Chiudo…" : "Chiudi questa previsione"}
           </button>
@@ -164,44 +164,46 @@ export default function PrevisioneDettaglio() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* --- Il confronto col foglio --- */}
       {confronto.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-1">Torna col tuo foglio?</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Torna col tuo foglio?</h2>
           {differenze.length === 0 ? (
-            <p className="text-sm text-b58-olive-dark">
+            <p className="testo-sala-grande text-b58-olive-dark">
               Sì: tutti e {confronto.length} i totali del foglio sono riprodotti esattamente, EBITDA e
               pareggio compresi.
             </p>
           ) : (
             <>
-              <p className="text-sm text-b58-terracotta-dark mb-2">
+              <p className="testo-sala-grande text-b58-terracotta-dark mb-2">
                 No: {differenze.length} {differenze.length === 1 ? "totale non torna" : "totali non tornano"}.
                 Finché non torna, questa previsione non descrive il tuo piano.
               </p>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wide text-b58-charcoal-soft">
-                    <th className="text-left font-medium py-1">Voce</th>
-                    <th className="text-right font-medium py-1">Dal foglio</th>
-                    <th className="text-right font-medium py-1">Qui</th>
-                    <th className="text-right font-medium py-1">Differenza</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {differenze.map((d) => (
-                    <tr key={d.voce} className="border-t border-b58-charcoal/5">
-                      <td className="py-1 text-b58-charcoal">{d.voce}</td>
-                      <td className="py-1 text-right tabular-nums"><Numero v={d.dal_foglio} decimali={2} /></td>
-                      <td className="py-1 text-right tabular-nums"><Numero v={d.calcolato} decimali={2} /></td>
-                      <td className="py-1 text-right tabular-nums"><Numero v={d.differenza} decimali={2} /></td>
+              <div className="overflow-x-auto">
+                <table className="w-full testo-sala-grande">
+                  <thead>
+                    <tr className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">
+                      <th className="text-left font-medium py-1">Voce</th>
+                      <th className="text-right font-medium py-1">Dal foglio</th>
+                      <th className="text-right font-medium py-1">Qui</th>
+                      <th className="text-right font-medium py-1">Differenza</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {differenze.map((d) => (
+                      <tr key={d.voce} className="border-t border-b58-charcoal/5">
+                        <td className="py-1 text-b58-charcoal">{d.voce}</td>
+                        <td className="py-1 text-right tabular-nums"><Numero v={d.dal_foglio} decimali={2} /></td>
+                        <td className="py-1 text-right tabular-nums"><Numero v={d.calcolato} decimali={2} /></td>
+                        <td className="py-1 text-right tabular-nums"><Numero v={d.differenza} decimali={2} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>
@@ -210,14 +212,14 @@ export default function PrevisioneDettaglio() {
       {/* --- Il riepilogo dell'anno --- */}
       {riepilogo && (
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-3">L&apos;anno</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">L&apos;anno</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 testo-sala-grande">
             <div>
-              <p className="text-xs text-b58-charcoal-soft">Ricavi totali</p>
+              <p className="testo-sala text-b58-charcoal-soft">Ricavi totali</p>
               <p className="text-b58-charcoal">{formatEUR(riepilogo.ricavi_totali)}</p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft">EBITDA</p>
+              <p className="testo-sala text-b58-charcoal-soft">EBITDA</p>
               <p className="text-b58-charcoal">{formatEUR(riepilogo.ebitda)}</p>
             </div>
             {/* 🔴 IL PAREGGIO SI DICE IN EURO (24/08/2026, decisione di
@@ -232,7 +234,7 @@ export default function PrevisioneDettaglio() {
                 insieme al numero, così i due non possono separarsi: è la
                 stessa forma di `calcola_imposte()`. */}
             <div className="col-span-2">
-              <p className="text-xs text-b58-charcoal-soft">Pareggio</p>
+              <p className="testo-sala text-b58-charcoal-soft">Pareggio</p>
               {pareggio?.pareggio_euro == null ? (
                 <p className="text-b58-charcoal-soft">{pareggio?.frase ?? "—"}</p>
               ) : (
@@ -247,7 +249,7 @@ export default function PrevisioneDettaglio() {
                     )}
                   </p>
                   {pareggio.coperti_sala_se_altre != null && (
-                    <p className="text-xs text-b58-charcoal-soft mt-0.5">
+                    <p className="testo-sala text-b58-charcoal-soft mt-0.5">
                       Sono {pareggio.coperti_sala_se_altre} coperti di sala se le altre linee vanno
                       come previsto.
                     </p>
@@ -257,25 +259,25 @@ export default function PrevisioneDettaglio() {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-b58-charcoal/10 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+          <div className="mt-4 pt-4 border-t border-b58-charcoal/10 grid grid-cols-2 sm:grid-cols-3 gap-4 testo-sala-grande">
             <div>
-              <p className="text-xs text-b58-charcoal-soft">Risultato prima delle imposte</p>
+              <p className="testo-sala text-b58-charcoal-soft">Risultato prima delle imposte</p>
               <p className="text-b58-charcoal">{formatEUR(riepilogo.ante_imposte)}</p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft">Imposte stimate</p>
+              <p className="testo-sala text-b58-charcoal-soft">Imposte stimate</p>
               <p className="text-b58-charcoal">
                 {riepilogo.imposte == null ? "—" : formatEUR(riepilogo.imposte)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-b58-charcoal-soft">Utile netto</p>
+              <p className="testo-sala text-b58-charcoal-soft">Utile netto</p>
               <p className="text-b58-charcoal">
                 {riepilogo.utile_netto == null ? "—" : formatEUR(riepilogo.utile_netto)}
               </p>
             </div>
           </div>
-          <p className="text-[11px] text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-3">
+          <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded px-2 py-1.5 mt-3">
             {riepilogo.avvertenza_imposte}
           </p>
         </div>
@@ -284,7 +286,7 @@ export default function PrevisioneDettaglio() {
       {/* --- Il calendario degli esborsi --- */}
       {calendario.length > 0 && (
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-3">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Quando escono i soldi
             <Didascalia>
               Non basta sapere quanto: è la cassa di giugno che tradisce, quando il
@@ -293,29 +295,31 @@ export default function PrevisioneDettaglio() {
           </h2>
           {/* ⚠️ Il limite viaggia col numero: senza le imposte dell'anno
               prima, giugno sembra più leggero di quello che sarà. */}
-          <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
+          <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-3">
             {annoPrima
               ? `Il saldo dell'anno prima è compreso, e viene dalla previsione «${annoPrima.nome}».`
               : precedentiNonLette
                 ? "Il saldo dell'anno prima NON è compreso, e non so dirti se una previsione dell'anno precedente esista: non sono riuscito a leggerla. Giugno potrebbe essere più pesante di così."
                 : "Il saldo dell'anno prima NON è compreso: non c'è nessuna previsione dell'anno precedente da cui prenderlo. Giugno sarà più pesante di così."}
           </p>
-          <table className="w-full text-sm">
-            <tbody>
-              {calendario.map((c) => (
-                <tr key={c.voce} className="border-t border-b58-charcoal/5">
-                  <td className="py-1.5 text-b58-charcoal-soft w-24">
-                    {new Date(c.scadenza).toLocaleDateString("it-IT")}
-                  </td>
-                  <td className="py-1.5 text-b58-charcoal">
-                    {c.voce}
-                    <span className="block text-[11px] text-b58-charcoal-soft/70">{c.nota}</span>
-                  </td>
-                  <td className="py-1.5 text-right text-b58-charcoal tabular-nums">{formatEUR(c.importo)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <tbody>
+                {calendario.map((c) => (
+                  <tr key={c.voce} className="border-t border-b58-charcoal/5">
+                    <td className="py-1.5 text-b58-charcoal-soft w-24">
+                      {new Date(c.scadenza).toLocaleDateString("it-IT")}
+                    </td>
+                    <td className="py-1.5 text-b58-charcoal">
+                      {c.voce}
+                      <span className="block testo-sala text-b58-charcoal-soft/70">{c.nota}</span>
+                    </td>
+                    <td className="py-1.5 text-right text-b58-charcoal tabular-nums">{formatEUR(c.importo)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -334,56 +338,58 @@ export default function PrevisioneDettaglio() {
           protegge di più: nasconde. */}
       {costiFissi.length > 0 && (
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-3">
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">
             Di cosa sono fatti i costi fissi
           </h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-b58-charcoal-soft">
-                <th className="pb-2 font-normal">Voce</th>
-                <th className="pb-2 font-normal text-right">al mese</th>
-                <th className="pb-2 font-normal text-right">all&apos;anno</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Dalla più cara: è l'ordine in cui si cerca una voce che
-                  non torna col proprio foglio. */}
-              {[...costiFissi]
-                .sort((a, b) => Number(b.euro_mese ?? 0) - Number(a.euro_mese ?? 0))
-                .map((f) => (
-                  <tr key={f.id} className="border-t border-b58-charcoal/5">
-                    <td className="py-2 text-b58-charcoal">{f.voce}</td>
-                    <td className="py-2 text-right text-b58-charcoal">{formatEUR(f.euro_mese)}</td>
-                    <td className="py-2 text-right text-b58-charcoal-soft">
-                      {formatEUR(Number(f.euro_mese ?? 0) * 12)}
-                    </td>
-                  </tr>
-                ))}
-              {/* ⚠️ Il totale si RICALCOLA dalle righe qui sopra e non si
-                  legge dal riepilogo: se un giorno i due numeri
-                  divergessero, chi guarda lo vedrebbe. Un totale preso da
-                  un'altra parte nasconde proprio la differenza che questa
-                  tabella serve a trovare. */}
-              <tr className="border-t-2 border-b58-charcoal/15 font-semibold">
-                <td className="py-2 text-b58-charcoal">
-                  Totale ({costiFissi.length} voci)
-                </td>
-                <td className="py-2 text-right text-b58-charcoal">
-                  {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0))}
-                </td>
-                <td className="py-2 text-right text-b58-charcoal">
-                  {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0) * 12)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <thead>
+                <tr className="text-left testo-sala text-b58-charcoal-soft">
+                  <th className="pb-2 font-normal">Voce</th>
+                  <th className="pb-2 font-normal text-right">al mese</th>
+                  <th className="pb-2 font-normal text-right">all&apos;anno</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Dalla più cara: è l'ordine in cui si cerca una voce che
+                    non torna col proprio foglio. */}
+                {[...costiFissi]
+                  .sort((a, b) => Number(b.euro_mese ?? 0) - Number(a.euro_mese ?? 0))
+                  .map((f) => (
+                    <tr key={f.id} className="border-t border-b58-charcoal/5">
+                      <td className="py-2 text-b58-charcoal">{f.voce}</td>
+                      <td className="py-2 text-right text-b58-charcoal">{formatEUR(f.euro_mese)}</td>
+                      <td className="py-2 text-right text-b58-charcoal-soft">
+                        {formatEUR(Number(f.euro_mese ?? 0) * 12)}
+                      </td>
+                    </tr>
+                  ))}
+                {/* ⚠️ Il totale si RICALCOLA dalle righe qui sopra e non si
+                    legge dal riepilogo: se un giorno i due numeri
+                    divergessero, chi guarda lo vedrebbe. Un totale preso da
+                    un'altra parte nasconde proprio la differenza che questa
+                    tabella serve a trovare. */}
+                <tr className="border-t-2 border-b58-charcoal/15 font-semibold">
+                  <td className="py-2 text-b58-charcoal">
+                    Totale ({costiFissi.length} voci)
+                  </td>
+                  <td className="py-2 text-right text-b58-charcoal">
+                    {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0))}
+                  </td>
+                  <td className="py-2 text-right text-b58-charcoal">
+                    {formatEUR(costiFissi.reduce((s, f) => s + Number(f.euro_mese ?? 0), 0) * 12)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* --- I dodici mesi --- */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 overflow-x-auto">
-        <h2 className="font-display text-lg text-b58-charcoal mb-3">I dodici mesi</h2>
-        <table className="w-full text-xs min-w-[720px]">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-3">I dodici mesi</h2>
+        <table className="w-full testo-sala min-w-[720px]">
           <thead>
             <tr className="text-b58-charcoal-soft">
               <th className="text-left font-medium py-1 pr-2 sticky left-0 bg-white">&nbsp;</th>

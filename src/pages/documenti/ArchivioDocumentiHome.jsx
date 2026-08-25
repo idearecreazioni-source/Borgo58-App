@@ -71,8 +71,8 @@ export default function ArchivioDocumentiHome() {
   }, [cercato]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
     if (!form.title.trim()) return;
@@ -130,30 +130,30 @@ export default function ArchivioDocumentiHome() {
             </Didascalia>
           </h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => navigate("/documenti/chiedi")}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Chiedi all'archivio
           </button>
           <button
             onClick={() => navigate("/documenti/posta")}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Posta in arrivo
             {nonLetto(postaInAttesa) && (
-              <span className="ml-2 text-[11px] text-b58-terracotta-dark">· non so quanta ce n&apos;è</span>
+              <span className="ml-2 testo-sala text-b58-terracotta-dark">· non so quanta ce n&apos;è</span>
             )}
             {!nonLetto(postaInAttesa) && postaInAttesa > 0 && (
-              <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2 py-0.5">
+              <span className="ml-2 inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2 py-0.5">
                 {postaInAttesa}
               </span>
             )}
           </button>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo documento"}
           </button>
@@ -166,13 +166,13 @@ export default function ArchivioDocumentiHome() {
           che vuol dire «non ho guardato lì» indistinguibile da un «non
           c'è» — che è il difetto contro cui quella schermata è nata. Il
           resto della spiegazione è passato nel segno accanto al titolo. */}
-      <p className="text-[11px] text-b58-charcoal-soft mb-4">
+      <p className="testo-sala text-b58-charcoal-soft mb-4">
         ⚠️ Quelli caricati a mano vanno aperti e letti una volta: «Chiedi all&apos;archivio»
         risponde solo sui documenti di cui conosce il testo.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {showForm && (
@@ -215,12 +215,12 @@ export default function ArchivioDocumentiHome() {
             <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (opz., es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={`${inputClass} mb-3`} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm text-b58-charcoal-soft" />
-              <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="testo-sala-grande text-b58-charcoal-soft" />
+              <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Carico…" : "+ Salva documento"}
               </button>
             </div>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">Il file è opzionale: puoi anche registrare solo i metadati. Con una scadenza, viene creato un promemoria in Agenda.</p>
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-2">Il file è opzionale: puoi anche registrare solo i metadati. Con una scadenza, viene creato un promemoria in Agenda.</p>
           </div>
         </div>
       )}
@@ -228,12 +228,12 @@ export default function ArchivioDocumentiHome() {
       {/* In scadenza */}
       {expiringSoon.length > 0 && (
         <div className="rounded-xl bg-b58-terracotta/5 ring-1 ring-b58-terracotta/30 p-5 mb-6">
-          <h2 className="font-display text-base text-b58-charcoal mb-3">In scadenza (60 giorni)</h2>
+          <h2 className="font-display testo-sala-grande text-b58-charcoal mb-3">In scadenza (60 giorni)</h2>
           <ul className="space-y-1.5">
             {expiringSoon.map((d) => {
               const days = daysTo(d.expiry_date);
               return (
-                <li key={d.id} className="text-sm flex items-center justify-between gap-2">
+                <li key={d.id} className="testo-sala-grande flex items-center justify-between gap-2">
                   <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-b58-charcoal hover:text-b58-terracotta text-left">
                     {d.title}
                   </button>
@@ -256,7 +256,7 @@ export default function ArchivioDocumentiHome() {
       />
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : documents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">{search ? "Nessun documento corrisponde." : "Nessun documento ancora."}</p>
@@ -267,7 +267,7 @@ export default function ArchivioDocumentiHome() {
             <li key={d.id} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 flex items-start justify-between gap-3">
               <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-left min-w-0">
                 <div className="text-b58-charcoal font-medium">{d.title}</div>
-                <div className="text-xs text-b58-charcoal-soft mt-0.5">
+                <div className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {d.doc_type && <>{d.doc_type} · </>}
                   {d.document_date && <>{formatDate(d.document_date)} · </>}
                   {d.counterparties && <>{d.counterparties} · </>}
@@ -277,7 +277,7 @@ export default function ArchivioDocumentiHome() {
               </button>
               <div className="flex items-center gap-3 shrink-0">
                 {d.storage_path && (
-                  <button onClick={() => openFile(d)} className="text-xs text-b58-terracotta hover:text-b58-terracotta-dark">
+                  <button onClick={() => openFile(d)} className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark">
                     Apri file
                   </button>
                 )}

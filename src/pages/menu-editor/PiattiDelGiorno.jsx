@@ -48,7 +48,7 @@ export default function PiattiDelGiorno() {
   const selected = useMemo(() => dailyMenus.find((d) => d.id === selectedId), [dailyMenus, selectedId]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleCreate = async () => {
     setBusy(true);
@@ -114,7 +114,7 @@ export default function PiattiDelGiorno() {
       {/* Controlli — non stampati */}
       <div className="print:hidden">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-          <Link to="/editor-menu" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+          <Link to="/editor-menu" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
             ← Editor menu
           </Link>
           {selected && items.length > 0 && <PrintButton label="Stampa inserto / PDF" />}
@@ -129,35 +129,35 @@ export default function PiattiDelGiorno() {
           </Didascalia>
         </h1>
 
-        {error && <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
+        {error && <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>}
 
         {/* Nuovo menu del giorno */}
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4 flex flex-wrap gap-2 items-end">
           <div>
-            <label className="block text-xs text-b58-charcoal-soft mb-1">Data</label>
+            <label className="block testo-sala text-b58-charcoal-soft mb-1">Data</label>
             <input type="date" value={newForm.service_date} onChange={(e) => setNewForm((f) => ({ ...f, service_date: e.target.value }))} className={inputClass + " w-40"} />
           </div>
           <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs text-b58-charcoal-soft mb-1">Titolo</label>
+            <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo</label>
             <input value={newForm.title} onChange={(e) => setNewForm((f) => ({ ...f, title: e.target.value }))} className={inputClass} />
           </div>
-          <button type="button" disabled={busy} onClick={handleCreate} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={handleCreate} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Crea
           </button>
         </div>
 
         {/* Elenco menu del giorno */}
         {loading ? (
-          <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
         ) : dailyMenus.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60 mb-4">Nessun menu del giorno ancora.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft/60 mb-4">Nessun menu del giorno ancora.</p>
         ) : (
           <div className="flex flex-wrap gap-2 mb-6">
             {dailyMenus.map((d) => (
               <button
                 key={d.id}
                 onClick={() => setSelectedId(d.id)}
-                className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                className={`rounded-lg border px-3 py-1.5 testo-sala-grande transition-colors ${
                   selectedId === d.id
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
@@ -173,8 +173,8 @@ export default function PiattiDelGiorno() {
         {selected && (
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-base text-b58-charcoal">{selected.title || "Piatti del giorno"} · {formatDate(selected.service_date)}</h2>
-              <button onClick={() => handleDeleteMenu(selected.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+              <h2 className="font-display testo-sala-grande text-b58-charcoal">{selected.title || "Piatti del giorno"} · {formatDate(selected.service_date)}</h2>
+              <button onClick={() => handleDeleteMenu(selected.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
                 Elimina questo giorno
               </button>
             </div>
@@ -182,13 +182,13 @@ export default function PiattiDelGiorno() {
             {items.length > 0 && (
               <ul className="space-y-1 mb-3">
                 {items.map((it) => (
-                  <li key={it.id} className="flex items-center justify-between gap-2 text-sm">
+                  <li key={it.id} className="flex items-center justify-between gap-2 testo-sala-grande">
                     <span className="text-b58-charcoal">
                       {itemName(it)}
-                      {it.category && <span className="text-xs text-b58-charcoal-soft"> · {labelFor(RECIPE_CATEGORIES, it.category)}</span>}
+                      {it.category && <span className="testo-sala text-b58-charcoal-soft"> · {labelFor(RECIPE_CATEGORIES, it.category)}</span>}
                       {it.price != null && <span className="text-b58-charcoal-soft"> · {formatEUR(it.price)}</span>}
                     </span>
-                    <button onClick={() => handleRemoveItem(it.id)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
+                    <button onClick={() => handleRemoveItem(it.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
                   </li>
                 ))}
               </ul>
@@ -196,8 +196,8 @@ export default function PiattiDelGiorno() {
 
             <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
               <div className="flex gap-2 mb-2">
-                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "recipe" }))} className={`rounded-full text-xs px-3 py-1.5 border ${itemForm.mode === "recipe" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Dal ricettario</button>
-                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "custom" }))} className={`rounded-full text-xs px-3 py-1.5 border ${itemForm.mode === "custom" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Piatto libero</button>
+                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "recipe" }))} className={`rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "recipe" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Dal ricettario</button>
+                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "custom" }))} className={`rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "custom" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Piatto libero</button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {itemForm.mode === "recipe" ? (
@@ -222,7 +222,7 @@ export default function PiattiDelGiorno() {
                 <input type="number" step="0.01" value={itemForm.price} onChange={(e) => setItemForm((f) => ({ ...f, price: e.target.value }))} placeholder="Prezzo €" className={inputClass} />
               </div>
               <div className="flex justify-end mt-2">
-                <button type="button" disabled={busy} onClick={handleAddItem} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+                <button type="button" disabled={busy} onClick={handleAddItem} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                   + Aggiungi piatto
                 </button>
               </div>
@@ -236,14 +236,14 @@ export default function PiattiDelGiorno() {
         <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-8 print:ring-0 print:p-0 max-w-md mx-auto">
           <div className="text-center mb-6">
             <h2 className="font-display text-2xl text-b58-charcoal">{selected.title || "Piatti del giorno"}</h2>
-            <p className="text-xs tracking-widest uppercase text-b58-charcoal-soft mt-1">{formatDate(selected.service_date)}</p>
+            <p className="testo-sala tracking-widest uppercase text-b58-charcoal-soft mt-1">{formatDate(selected.service_date)}</p>
           </div>
           <ul className="space-y-3">
             {items.map((it) => (
               <li key={it.id} className="flex items-baseline justify-between gap-3">
                 <span className="text-b58-charcoal">
                   {itemName(it)}
-                  {it.category && <span className="text-xs text-b58-charcoal-soft/70"> · {labelFor(RECIPE_CATEGORIES, it.category)}</span>}
+                  {it.category && <span className="testo-sala text-b58-charcoal-soft/70"> · {labelFor(RECIPE_CATEGORIES, it.category)}</span>}
                 </span>
                 {it.price != null && <span className="text-b58-charcoal-soft whitespace-nowrap">{formatEUR(it.price)}</span>}
               </li>
@@ -261,12 +261,12 @@ export default function PiattiDelGiorno() {
               NON SA quali allergeni contengano. Stampare un elenco per le
               une e non per le altre rifarebbe qui lo stesso difetto appena
               chiuso sul menu principale. */}
-          {/* 🔴 ERA `text-[10px]`, cioè **2,65 mm sulla carta** (22/08): la
+          {/* 🔴 ERA `testo-sala`, cioè **2,65 mm sulla carta** (22/08): la
               riga più piccola dell'inserto era quella che dice al cliente
               di chiedere degli allergeni — una riga di legge su un foglio
               che si mette in mano a chi mangia. Portata a 3,17 mm, la
               stessa taglia del corpo del preconto. */}
-          <p className="text-xs text-b58-charcoal-soft/70 text-center mt-6">
+          <p className="testo-sala text-b58-charcoal-soft/70 text-center mt-6">
             In caso di allergie o intolleranze, chiedi al personale: teniamo l&apos;elenco
             completo degli allergeni per ogni piatto.
           </p>
@@ -286,7 +286,7 @@ export default function PiattiDelGiorno() {
           ⚠️ `hidden print:block`: a schermo non compare niente, perché lì
           la pagina si spiega da sé e una riga in più sarebbe ingombro. */}
       {(!selected || items.length === 0) && (
-        <p className="hidden print:block text-center text-sm">
+        <p className="hidden print:block text-center testo-sala-grande">
           Nessun piatto del giorno da stampare: scegli una data e aggiungi almeno un piatto.
         </p>
       )}

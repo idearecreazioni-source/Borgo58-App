@@ -22,7 +22,7 @@ export default function Tracciabilita() {
   return (
     <div className="max-w-5xl mx-auto pb-16">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6 print:hidden">
-        <Link to="/haccp" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/haccp" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← HACCP
         </Link>
         <PrintButton />
@@ -36,18 +36,18 @@ export default function Tracciabilita() {
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4 print:hidden">
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : lots.length === 0 ? (
-        <p className="text-sm text-b58-charcoal-soft/60">Nessun lotto registrato ancora.</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessun lotto registrato ancora.</p>
       ) : (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Ingrediente</th>

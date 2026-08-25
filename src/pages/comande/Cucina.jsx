@@ -226,8 +226,8 @@ export default function Cucina() {
                       ⚠️ Sta PRIMA della nota libera: se una riga ha tutte e
                       due, quella che riguarda la salute si legge per prima. */}
                   {/* ⚠️ PIÙ GRANDE DEL NOME DEL PIATTO, e non è enfasi: sulla
-                      carta il nome sta a `text-base`, questa riga a
-                      `text-lg`. È l'unica riga del biglietto che, se non
+                      carta il nome sta a `testo-sala-grande`, questa riga a
+                      `testo-sala-titolo`. È l'unica riga del biglietto che, se non
                       viene letta, manda in ospedale qualcuno — e la regola
                       di Alessio è che 3,20 mm sono il minimo accettabile,
                       non l'obiettivo. A schermo sta a 6 mm.

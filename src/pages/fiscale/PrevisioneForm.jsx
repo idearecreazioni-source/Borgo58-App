@@ -205,10 +205,10 @@ export default function PrevisioneForm() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs text-b58-charcoal-soft mb-1";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
   const cellaClass =
-    "w-full rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 text-xs text-b58-charcoal text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-b58-terracotta";
+    "w-full rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal text-right tabular-nums focus:outline-none focus:ring-1 focus:ring-b58-terracotta";
 
   const campo = (chiave, etichetta, suffisso) => (
     <div>
@@ -335,17 +335,17 @@ export default function PrevisioneForm() {
   // piano che qualcuno aveva deciso.
   const discordi = righeDiscordi(personale, par.oreGiorno);
 
-  if (loading) return <p className="text-sm text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
+  if (loading) return <p className="testo-sala-grande text-b58-charcoal-soft max-w-5xl mx-auto">Caricamento…</p>;
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <Link to="/fiscale/previsioni" onClick={lasciare} className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/fiscale/previsioni" onClick={lasciare} className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Le previsioni
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">
         {modifica ? "Correggi la previsione" : "Costruisci una previsione"}
       </h1>
-      <p className="text-sm text-b58-charcoal-soft mb-2">
+      <p className="testo-sala-grande text-b58-charcoal-soft mb-2">
         {modifica
           ? "Le correzioni entrano quando premi «Salva le correzioni», in fondo. Finché non chiudi la previsione puoi tornarci sopra quante volte vuoi."
           : "Quello che scrivi qui entra nel gestionale quando premi «Crea la previsione», in fondo alla schermata: prima di allora non è ancora salvato. Dopo puoi tornarci sopra quante volte vuoi — si blocca solo quando premi tu «Chiudi questa previsione», dalla sua scheda."}
@@ -354,11 +354,11 @@ export default function PrevisioneForm() {
           qui si vede — un piano scritto per la società sbagliata non si
           nota da nessun numero. */}
       {nomeSocieta && (
-        <p className="text-xs text-b58-charcoal-soft/80 mb-6">Società: <strong>{nomeSocieta}</strong></p>
+        <p className="testo-sala text-b58-charcoal-soft/80 mb-6">Società: <strong>{nomeSocieta}</strong></p>
       )}
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Testata */}
@@ -384,7 +384,7 @@ export default function PrevisioneForm() {
 
       {/* Un coperto */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-5">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
           Quanto vale un coperto
           <Didascalia>
             Da qui escono i ricavi e il costo diretto di ogni persona che entra, ed è la
@@ -536,51 +536,53 @@ export default function PrevisioneForm() {
 
       {/* I dodici mesi */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-5 overflow-x-auto">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
           I dodici mesi
           <Didascalia>
             Quanti giorni apri, quanti sono di punta, e quanta gente ti aspetti nei due casi. È qui
             che vive la stagionalità: agosto non somiglia a gennaio, e il gestionale non lo indovina.
           </Didascalia>
         </h2>
-        <table className="w-full text-xs min-w-[760px]">
-          <thead>
-            <tr className="text-b58-charcoal-soft">
-              <th className="text-left font-medium py-1 pr-2">&nbsp;</th>
-              {MESI.map((m) => <th key={m} className="font-medium py-1 px-1">{m}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ["serviziSettimana", "Servizi a settimana"],
-              ["giorniLavorativi", "Giorni di apertura"],
-              ["giorniPeak", "…di cui di punta"],
-              ["copertiPeak", "Coperti nei giorni di punta"],
-              ["copertiFeriali", "Coperti negli altri giorni"],
-              ["eventiPremium", "Eventi nel mese"],
-            ].map(([chiave, etichetta]) => (
-              <tr key={chiave} className="border-t border-b58-charcoal/5">
-                <td className="py-1 pr-2 text-b58-charcoal-soft whitespace-nowrap">{etichetta}</td>
-                {mesi.map((m, i) => (
-                  <td key={m.mese} className="py-1 px-0.5">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={m[chiave]}
-                      onChange={(e) => riga(mesi, setMesi, i, chiave, e.target.value)}
-                      className={cellaClass}
-                    />
-                  </td>
-                ))}
+        <div className="overflow-x-auto">
+          <table className="w-full testo-sala min-w-[760px]">
+            <thead>
+              <tr className="text-b58-charcoal-soft">
+                <th className="text-left font-medium py-1 pr-2">&nbsp;</th>
+                {MESI.map((m) => <th key={m} className="font-medium py-1 px-1">{m}</th>)}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {[
+                ["serviziSettimana", "Servizi a settimana"],
+                ["giorniLavorativi", "Giorni di apertura"],
+                ["giorniPeak", "…di cui di punta"],
+                ["copertiPeak", "Coperti nei giorni di punta"],
+                ["copertiFeriali", "Coperti negli altri giorni"],
+                ["eventiPremium", "Eventi nel mese"],
+              ].map(([chiave, etichetta]) => (
+                <tr key={chiave} className="border-t border-b58-charcoal/5">
+                  <td className="py-1 pr-2 text-b58-charcoal-soft whitespace-nowrap">{etichetta}</td>
+                  {mesi.map((m, i) => (
+                    <td key={m.mese} className="py-1 px-0.5">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={m[chiave]}
+                        onChange={(e) => riga(mesi, setMesi, i, chiave, e.target.value)}
+                        className={cellaClass}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Sotto l'EBITDA */}
       <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Ammortamenti e finanziamento</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ammortamenti e finanziamento</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {campo("ammortamentiAnnui", "Ammortamenti all'anno", "€")}
           {campo("finanziamentoImporto", "Finanziamento", "€")}
@@ -594,11 +596,11 @@ export default function PrevisioneForm() {
           <button
             onClick={salva}
             disabled={salvando}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-5 py-2.5 disabled:opacity-60"
+            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-5 py-2.5 disabled:opacity-60"
           >
             {salvando ? "Salvo…" : modifica ? "Salva le correzioni" : "Crea la previsione"}
           </button>
-          <span className="text-xs text-b58-charcoal-soft">
+          <span className="testo-sala text-b58-charcoal-soft">
             {sporco ? "Non ancora salvata." : "Non la chiude: resta modificabile finché non lo decidi tu."}
           </span>
         </div>
@@ -608,7 +610,7 @@ export default function PrevisioneForm() {
             succedeva niente di visibile, e l'istinto è premere di nuovo o
             andarsene. È la stessa cura del 17/08 in Cassa. */}
         {error && (
-          <p className="mt-3 text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
+          <p className="mt-3 testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2">{error}</p>
         )}
       </div>
     </div>
@@ -617,22 +619,22 @@ export default function PrevisioneForm() {
 
 function ListaModificabile({ titolo, sotto, sotto2, righe, colonne, aggiungi, togli, onChange, extra }) {
   const cella =
-    "w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1 text-sm text-b58-charcoal focus:outline-none focus:ring-1 focus:ring-b58-terracotta";
+    "w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-1 focus:ring-b58-terracotta";
   return (
     <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-5">
-      <h2 className="font-display text-lg text-b58-charcoal mb-1">{titolo}</h2>
-      <p className="text-xs text-b58-charcoal-soft mb-4">{sotto}</p>
+      <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">{titolo}</h2>
+      <p className="testo-sala text-b58-charcoal-soft mb-4">{sotto}</p>
 
       {extra && <div className="max-w-md mb-3">{extra}</div>}
-      {sotto2 && <p className="text-xs text-b58-charcoal-soft mb-4">{sotto2}</p>}
+      {sotto2 && <p className="testo-sala text-b58-charcoal-soft mb-4">{sotto2}</p>}
 
       {righe.length === 0 ? (
-        <p className="text-xs text-b58-charcoal-soft/60 mb-3">Ancora niente.</p>
+        <p className="testo-sala text-b58-charcoal-soft/60 mb-3">Ancora niente.</p>
       ) : (
         <div className="overflow-x-auto mb-3">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
-              <tr className="text-xs text-b58-charcoal-soft">
+              <tr className="testo-sala text-b58-charcoal-soft">
                 {colonne.map((c) => (
                   <th key={c.chiave} className="text-left font-medium py-1 pr-2">{c.etichetta}</th>
                 ))}
@@ -669,7 +671,7 @@ function ListaModificabile({ titolo, sotto, sotto2, righe, colonne, aggiungi, to
                   <td className="py-1">
                     <button
                       onClick={() => togli(i)}
-                      className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                       title="Togli questa riga"
                     >
                       ✕
@@ -685,7 +687,7 @@ function ListaModificabile({ titolo, sotto, sotto2, righe, colonne, aggiungi, to
       <button
         type="button"
         onClick={aggiungi}
-        className="text-sm text-b58-terracotta hover:text-b58-terracotta-dark"
+        className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark"
       >
         + Aggiungi una riga
       </button>

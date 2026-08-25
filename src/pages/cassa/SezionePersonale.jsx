@@ -99,9 +99,9 @@ export default function SezionePersonale() {
   }, [entityId]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
-    "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const aggiungiTag = async () => {
     if (!nuovoTag.trim()) return;
@@ -169,15 +169,15 @@ export default function SezionePersonale() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa, Banca e Prima Nota
         </Link>
         {entities && (
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -186,28 +186,28 @@ export default function SezionePersonale() {
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Ho messo di tasca mia</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Quello che paghi <strong>tu</strong> per conto della società, e che la società ti deve. I tuoi
         soldi personali non entrano qui: questo è solo il registro dei prestiti che le fai.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* ---- Il saldo, sempre in vista ---------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+            <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
               La società ti deve
             </div>
             <div className="text-3xl font-medium text-b58-charcoal mb-1">
               {saldo ? formatEUR(saldo.ti_deve) : "—"}
             </div>
-            <div className="text-xs text-b58-charcoal-soft">
+            <div className="testo-sala text-b58-charcoal-soft">
               {saldo?.note_aperte ?? 0} note aperte
               {saldo?.piu_vecchia_il && <> · la più vecchia del {formatDate(saldo.piu_vecchia_il)}</>}
               {" · "}
@@ -216,7 +216,7 @@ export default function SezionePersonale() {
             {/* ⚠️ Il limite viaggia col numero: questo saldo non entra
                 nella previsione di cassa, perché una nota aperta non ha
                 una scadenza. */}
-            <p className="text-[11px] text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
+            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10">
               {saldo?.avvertenza}
             </p>
           </div>
@@ -224,19 +224,19 @@ export default function SezionePersonale() {
           {/* ---- Da dire alla commercialista -------------------------- */}
           {daComunicare.length > 0 && (
             <div className="rounded-xl bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">
                 Da dire alla commercialista ({daComunicare.length})
               </h2>
-              <p className="text-[11px] text-b58-charcoal-soft/80 mb-3">
+              <p className="testo-sala text-b58-charcoal-soft/80 mb-3">
                 Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta un
                 promemoria; quello che sopravvive al mese diventa formale.</strong>
               </p>
               <ul className="space-y-2">
                 {daComunicare.map((d) => (
-                  <li key={d.anticipazione_id} className="text-sm">
+                  <li key={d.anticipazione_id} className="testo-sala-grande">
                     <span className="text-b58-charcoal font-medium">{formatEUR(d.importo)}</span>
                     <span className="text-b58-charcoal-soft"> · {formatDate(d.pagata_il)} · {d.tag}</span>
-                    <div className="text-[11px] text-b58-charcoal-soft">{d.perche}</div>
+                    <div className="testo-sala text-b58-charcoal-soft">{d.perche}</div>
                   </li>
                 ))}
               </ul>
@@ -245,14 +245,14 @@ export default function SezionePersonale() {
 
           {/* ---- Nuova nota ------------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-4">Ho pagato io</h2>
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ho pagato io</h2>
 
             {tag.length === 0 ? (
               <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-                <p className="text-sm text-b58-charcoal mb-1">
+                <p className="testo-sala-grande text-b58-charcoal mb-1">
                   Prima serve almeno un <strong>motivo</strong>.
                 </p>
-                <p className="text-[11px] text-b58-charcoal-soft/80 mb-3">
+                <p className="testo-sala text-b58-charcoal-soft/80 mb-3">
                   Li scegli tu, come le causali di cassa.
                   <Didascalia etichetta="A cosa servono">
                     «Fornitore urgente», «spesa veloce», «anticipo per lavori». Servono
@@ -261,7 +261,7 @@ export default function SezionePersonale() {
                     che le rende necessarie.
                   </Didascalia>
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <input
                     value={nuovoTag}
                     onChange={(e) => setNuovoTag(e.target.value)}
@@ -272,7 +272,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Crea
                   </button>
@@ -327,7 +327,7 @@ export default function SezionePersonale() {
                 </div>
 
                 {form.fondi === "conto_personale" && (
-                  <p className="text-xs text-b58-charcoal-soft bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
+                  <p className="testo-sala text-b58-charcoal-soft bg-b58-gold/10 rounded-lg px-3 py-2 mb-3">
                     Pagando dal tuo conto, nei registri la spesa risulta pagata da un conto che non è
                     della società: questa nota <strong>entrerà da sola</strong> fra quelle da dire alla
                     commercialista.
@@ -373,7 +373,7 @@ export default function SezionePersonale() {
                 </div>
 
                 {!form.documento.trim() && (
-                  <p className="text-xs text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                  <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
                     Senza il riferimento al documento questa spesa <strong>non si scarica</strong>. Puoi
                     registrarla lo stesso — il debito verso di te resta — ma resterà indeducibile finché
                     non aggiungi il documento.
@@ -391,7 +391,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
                     onClick={registra}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
@@ -402,13 +402,13 @@ export default function SezionePersonale() {
                     value={nuovoTag}
                     onChange={(e) => setNuovoTag(e.target.value)}
                     placeholder="Aggiungi un motivo nuovo…"
-                    className={`${inputClass} text-xs`}
+                    className={`${inputClass} testo-sala`}
                   />
                   <button
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-2 disabled:opacity-60 shrink-0"
+                    className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Motivo
                   </button>
@@ -419,31 +419,31 @@ export default function SezionePersonale() {
 
           {/* ---- Le note aperte --------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">Ancora da rimborsare</h2>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Ancora da rimborsare</h2>
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
               Segnando il rimborso, i soldi <strong>escono davvero dalla cassa</strong>: il cassetto
               deve quadrare col conteggio fisico.
             </p>
             {aperte.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">Niente in sospeso.</p>
+              <p className="testo-sala-grande text-b58-charcoal-soft/60">Niente in sospeso.</p>
             ) : (
               <ul className="space-y-2">
                 {aperte.map((n) => (
-                  <li key={n.id} className="flex items-start justify-between gap-3 text-sm border-b border-b58-charcoal/5 last:border-0 pb-2 last:pb-0">
+                  <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 testo-sala-grande border-b border-b58-charcoal/5 last:border-0 pb-2 last:pb-0">
                     <span className="text-b58-charcoal">
                       <span className="font-medium">{formatEUR(n.importo)}</span>
                       <span className="text-b58-charcoal-soft"> · {formatDate(n.pagata_il)} · {n.tag?.etichetta}</span>
-                      <div className="text-[11px] text-b58-charcoal-soft">
+                      <div className="testo-sala text-b58-charcoal-soft">
                         {n.fondi === "conto_personale" ? "dal tuo conto" : "contanti tuoi"}
                         {n.supplier_invoice_id && " · collegata a una fattura (la spesa è contata lì)"}
                         {!n.documento_riferimento && " · senza documento"}
                         {n.nota && ` · ${n.nota}`}
                       </div>
                     </span>
-                    <span className="flex items-center gap-3 shrink-0">
+                    <span className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => pareggia(n.id)}
-                        className="rounded-lg bg-b58-terracotta text-b58-parchment text-xs px-3 py-1.5"
+                        className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5"
                       >
                         Mi sono rimborsato
                       </button>
@@ -462,49 +462,51 @@ export default function SezionePersonale() {
           {/* ---- I totali per motivo — la diagnosi -------------------- */}
           {perTag.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-4">
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
                 Per motivo, nel {annoCorrente}
                 <Didascalia>
                   È qui che si capisce. Se una voce domina la classifica, il problema di
                   solito non sono le anticipazioni — è quello che le rende necessarie.
                 </Didascalia>
               </h2>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                    <th className="py-2 font-medium">Motivo</th>
-                    <th className="py-2 pr-6 font-medium text-right">Quante</th>
-                    <th className="py-2 pr-6 font-medium text-right">Totale</th>
-                    <th className="py-2 font-medium text-right">Ancora aperte</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {perTag.map((r) => (
-                    <tr key={r.tag} className="border-b border-b58-charcoal/5 last:border-0">
-                      <td className="py-2 text-b58-charcoal">{r.tag}</td>
-                      <td className="py-2 pr-6 text-right text-b58-charcoal-soft">{r.quante}</td>
-                      <td className="py-2 pr-6 text-right text-b58-charcoal">{formatEUR(r.totale)}</td>
-                      <td className="py-2 text-right text-b58-charcoal-soft">
-                        {r.aperte > 0 ? formatEUR(r.da_pagare) : "—"}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full testo-sala-grande">
+                  <thead>
+                    <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                      <th className="py-2 font-medium">Motivo</th>
+                      <th className="py-2 pr-6 font-medium text-right">Quante</th>
+                      <th className="py-2 pr-6 font-medium text-right">Totale</th>
+                      <th className="py-2 font-medium text-right">Ancora aperte</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {perTag.map((r) => (
+                      <tr key={r.tag} className="border-b border-b58-charcoal/5 last:border-0">
+                        <td className="py-2 text-b58-charcoal">{r.tag}</td>
+                        <td className="py-2 pr-6 text-right text-b58-charcoal-soft">{r.quante}</td>
+                        <td className="py-2 pr-6 text-right text-b58-charcoal">{formatEUR(r.totale)}</td>
+                        <td className="py-2 text-right text-b58-charcoal-soft">
+                          {r.aperte > 0 ? formatEUR(r.da_pagare) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
           {/* ---- Le ultime chiuse ------------------------------------- */}
           {chiuse.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-4">Già rimborsate</h2>
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Già rimborsate</h2>
               <ul className="space-y-1.5">
                 {chiuse.map((n) => (
-                  <li key={n.id} className="flex items-center justify-between gap-3 text-sm">
+                  <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 testo-sala-grande">
                     <span className="text-b58-charcoal-soft">
                       {formatDate(n.pagata_il)} · {n.tag?.etichetta}
                     </span>
-                    <span className="flex items-center gap-3 shrink-0">
+                    <span className="flex flex-wrap items-center gap-3">
                       <span className="text-b58-charcoal-soft">
                         {formatEUR(n.importo)} · rimborsata il {formatDate(n.pareggiata_il)}
                       </span>
@@ -520,7 +522,7 @@ export default function SezionePersonale() {
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-b58-charcoal-soft/70 mt-3">
+              <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
                 Una nota già rimborsata non si può togliere: in cassa c'è l'uscita
                 che la registra. Annullando il rimborso l'uscita sparisce e la nota
                 torna aperta.

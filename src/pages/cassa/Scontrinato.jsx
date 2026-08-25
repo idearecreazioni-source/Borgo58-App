@@ -113,22 +113,22 @@ export default function Scontrinato() {
   };
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const differenza = quadratura ? Number(quadratura.da_fiscalizzare) : 0;
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa, Banca e Prima Nota
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {entities && (
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -143,7 +143,7 @@ export default function Scontrinato() {
           coincidono — cioè fra mezzanotte e le 05:00. Una spiegazione che
           c'è sempre si smette di leggere; questa sta dove sta il dubbio. */}
       {serata && oraFineSerata && serata !== oggiLocale() && (
-        <p className="text-xs text-b58-charcoal-soft mb-3">
+        <p className="testo-sala text-b58-charcoal-soft mb-3">
           Si sta guardando fino alla serata di{" "}
           <strong className="text-b58-charcoal">{formatDate(serata)}</strong>: fino alle{" "}
           {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
@@ -151,29 +151,29 @@ export default function Scontrinato() {
       )}
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Incassato e scontrinato</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Quanto è entrato e quanto ha un documento fiscale sono <strong>due numeri diversi</strong>. Qui
         si vede la differenza, e i conti che la compongono restano in elenco finché non li sistemi.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* ---- I due totali affiancati ------------------------------ */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Incassato</div>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Incassato</div>
               <div className="text-2xl font-medium text-b58-charcoal">
                 {quadratura ? formatEUR(quadratura.incassato) : "—"}
               </div>
             </div>
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5">
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Con documento</div>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Con documento</div>
               <div className="text-2xl font-medium text-b58-charcoal">
                 {quadratura ? formatEUR(quadratura.fiscalizzato) : "—"}
               </div>
@@ -183,12 +183,12 @@ export default function Scontrinato() {
                 differenza > 0 ? "bg-b58-gold/10 ring-b58-gold-dark/40" : "bg-b58-parchment ring-b58-charcoal/10"
               }`}
             >
-              <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">Senza documento</div>
+              <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Senza documento</div>
               <div className={`text-2xl font-medium ${differenza > 0 ? "text-b58-gold-dark" : "text-b58-charcoal"}`}>
                 {quadratura ? formatEUR(quadratura.da_fiscalizzare) : "—"}
               </div>
               {quadratura && Number(quadratura.quante_fatture) > 0 && (
-                <div className="text-[11px] text-b58-charcoal-soft mt-1">
+                <div className="testo-sala text-b58-charcoal-soft mt-1">
                   di cui {formatEUR(quadratura.fatture_da_emettere)} sono fatture che hai promesso
                 </div>
               )}
@@ -198,7 +198,7 @@ export default function Scontrinato() {
           {/* ⚠️ L'avvertenza arriva dal database insieme ai numeri, e qui
               dice la cosa che eviterebbe un falso allarme: senza
               registratore telematico è normale che risulti tutto da fare. */}
-          <p className="text-xs text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-6 leading-relaxed">
+          <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-6 leading-relaxed">
             {quadratura?.avvertenza}
           </p>
 
@@ -216,7 +216,7 @@ export default function Scontrinato() {
               appartiene alla sera prima. */}
           {perGiorno.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-4">
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
                 Serata per serata
                 <Didascalia>
                   Gli stessi due numeri di qui sopra, spezzati per serata di servizio: la
@@ -225,9 +225,9 @@ export default function Scontrinato() {
                 </Didascalia>
               </h2>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full testo-sala-grande">
                   <thead>
-                    <tr className="text-left text-[11px] uppercase tracking-wide text-b58-charcoal-soft/70">
+                    <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft/70">
                       <th className="py-1 pr-3">Serata</th>
                       <th className="py-1 pr-3 text-right">Conti</th>
                       <th className="py-1 pr-3 text-right">Incassato</th>
@@ -264,38 +264,38 @@ export default function Scontrinato() {
 
           {/* ---- L'elenco --------------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">Conti da sistemare</h2>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Conti da sistemare</h2>
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
               Se batti lo scontrino dopo, o prepari la fattura il giorno seguente, segnalo qui e il
               conto esce dall&apos;elenco. <strong>È il caso normale, non l&apos;eccezione.</strong>
             </p>
 
             {conti.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">
+              <p className="testo-sala-grande text-b58-charcoal-soft/60">
                 Nessun conto in sospeso nel periodo.
               </p>
             ) : (
               <ul className="space-y-3">
                 {conti.map((c) => (
                   <li key={c.order_id} className="border-b border-b58-charcoal/5 last:border-0 pb-3 last:pb-0">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <span className="text-sm text-b58-charcoal">
+                    <div className="flex flex-wrap items-start justify-between gap-3 flex-wrap">
+                      <span className="testo-sala-grande text-b58-charcoal">
                         <span className="font-medium">{formatEUR(c.incasso)}</span>
                         <span className="text-b58-charcoal-soft">
                           {" "}· {formatDate(c.chiuso_il)} · {c.tavolo}
                           {c.coperti > 0 && ` · ${c.coperti} coperti`} · {c.pagamento}
                         </span>
-                        <div className="text-[11px] text-b58-charcoal-soft">
+                        <div className="testo-sala text-b58-charcoal-soft">
                           {c.stato === "fattura_da_emettere"
                             ? "fattura promessa al cliente, ancora da fare"
                             : "nessuno ha detto cosa è stato emesso"}
                         </div>
                       </span>
-                      <span className="flex items-center gap-2 shrink-0">
+                      <span className="flex flex-wrap items-center gap-2">
                         <button
                           disabled={inCorso === c.order_id}
                           onClick={() => segna(c.order_id, "scontrino")}
-                          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-1.5 disabled:opacity-60"
+                          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Scontrino fatto
                         </button>
@@ -303,7 +303,7 @@ export default function Scontrinato() {
                           <button
                             disabled={inCorso === c.order_id}
                             onClick={() => segna(c.order_id, "fattura_da_emettere")}
-                            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-xs px-3 py-1.5 disabled:opacity-60"
+                            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
                           >
                             Vuole fattura
                           </button>
@@ -314,7 +314,7 @@ export default function Scontrinato() {
                             setNumeroFattura((n) => ({ ...n, [c.order_id]: e.target.value }))
                           }
                           placeholder="n. fattura"
-                          className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 text-xs text-b58-charcoal"
+                          className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala text-b58-charcoal"
                         />
                         {/* ⚠️ Senza numero non è una fattura: è una riga
                             che dice di esserlo, e sparisce dall'elenco
@@ -325,7 +325,7 @@ export default function Scontrinato() {
                         <button
                           disabled={inCorso === c.order_id || !(numeroFattura[c.order_id] ?? "").trim()}
                           onClick={() => segna(c.order_id, "fattura")}
-                          className="rounded-lg bg-b58-terracotta text-b58-parchment text-xs px-3 py-1.5 disabled:opacity-60"
+                          className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Fattura fatta
                         </button>
@@ -346,8 +346,8 @@ export default function Scontrinato() {
               far tornare. */}
           {fiscalizzati.length > 0 && (
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
-              <h2 className="font-display text-lg text-b58-charcoal mb-1">Già segnati</h2>
-              <p className="text-xs text-b58-charcoal-soft/80 mb-4">
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Già segnati</h2>
+              <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
                 Se uno di questi è stato segnato per sbaglio, togli il segno: il conto
                 torna fra quelli da sistemare.
               </p>
@@ -366,7 +366,7 @@ export default function Scontrinato() {
                 {fiscalizzati.map((c) => (
                   <li
                     key={c.order_id}
-                    className="flex items-center justify-between gap-3 text-sm"
+                    className="flex flex-wrap items-center justify-between gap-3 testo-sala-grande"
                   >
                     <span className="text-b58-charcoal-soft">
                       <strong className="text-b58-charcoal">{formatEUR(c.incasso)}</strong> ·{" "}

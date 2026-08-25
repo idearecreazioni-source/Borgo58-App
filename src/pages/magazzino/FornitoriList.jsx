@@ -60,11 +60,11 @@ export default function FornitoriList() {
   };
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/magazzino" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
 
@@ -73,14 +73,14 @@ export default function FornitoriList() {
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo fornitore"}
         </button>
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
@@ -123,8 +123,8 @@ export default function FornitoriList() {
               className="mt-0.5 shrink-0"
             />
             <span>
-              <span className="text-sm text-b58-charcoal">Fornitore occasionale</span>
-              <span className="block text-xs text-b58-charcoal-soft/70 mt-0.5">
+              <span className="testo-sala-grande text-b58-charcoal">Fornitore occasionale</span>
+              <span className="block testo-sala text-b58-charcoal-soft/70 mt-0.5">
                 Per acquisti non abituali (es. un supermercato in emergenza) — niente condizioni
                 di pagamento o giorni di consegna da compilare, solo il minimo per la tracciabilità.
               </span>
@@ -133,7 +133,7 @@ export default function FornitoriList() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Creo…" : "Crea scheda"}
           </button>
@@ -149,7 +149,7 @@ export default function FornitoriList() {
       />
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
@@ -158,7 +158,7 @@ export default function FornitoriList() {
         </div>
       ) : (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Nome</th>
@@ -177,7 +177,7 @@ export default function FornitoriList() {
                   <td className="px-4 py-3 text-b58-charcoal font-medium">
                     {s.name}
                     {!s.active && (
-                      <span className="text-[11px] text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5 ml-2">
+                      <span className="testo-sala text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5 ml-2">
                         disattivato
                       </span>
                     )}

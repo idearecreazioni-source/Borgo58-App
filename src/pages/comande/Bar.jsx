@@ -286,7 +286,7 @@ export default function Bar() {
                         cucina — fuori dal totale
                       </p>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => apriConto(o.id, "precon")}

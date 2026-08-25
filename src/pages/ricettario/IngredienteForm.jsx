@@ -516,7 +516,7 @@ export default function IngredienteForm() {
                       </option>
                     ))}
                   </select>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={creatingSupplier}
@@ -1032,26 +1032,28 @@ export default function IngredienteForm() {
           {priceHistory.length === 0 ? (
             <p className="testo-sala-grande text-b58-charcoal-soft">Nessuno storico ancora.</p>
           ) : (
-            <table className="w-full testo-sala-grande">
-              <thead>
-                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                  <th className="py-2 font-medium">Data</th>
-                  <th className="py-2 font-medium text-right">Prezzo</th>
-                  <th className="py-2 font-medium">Fonte</th>
-                  <th className="py-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                {priceHistory.map((h) => (
-                  <tr key={h.id} className="border-b border-b58-charcoal/5 last:border-0">
-                    <td className="py-2 text-b58-charcoal-soft">{formatDate(h.recorded_at)}</td>
-                    <td className="py-2 text-right text-b58-charcoal">{formatEUR(h.price)}</td>
-                    <td className="py-2 text-b58-charcoal-soft">{h.source}</td>
-                    <td className="py-2 text-b58-charcoal-soft">{h.note ?? "—"}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full testo-sala-grande">
+                <thead>
+                  <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                    <th className="py-2 font-medium">Data</th>
+                    <th className="py-2 font-medium text-right">Prezzo</th>
+                    <th className="py-2 font-medium">Fonte</th>
+                    <th className="py-2 font-medium">Nota</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {priceHistory.map((h) => (
+                    <tr key={h.id} className="border-b border-b58-charcoal/5 last:border-0">
+                      <td className="py-2 text-b58-charcoal-soft">{formatDate(h.recorded_at)}</td>
+                      <td className="py-2 text-right text-b58-charcoal">{formatEUR(h.price)}</td>
+                      <td className="py-2 text-b58-charcoal-soft">{h.source}</td>
+                      <td className="py-2 text-b58-charcoal-soft">{h.note ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

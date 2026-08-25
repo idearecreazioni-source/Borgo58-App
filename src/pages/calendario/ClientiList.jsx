@@ -51,22 +51,22 @@ export default function ClientiList() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Calendario Eventi
       </Link>
       <div className="flex items-center justify-between gap-4 flex-wrap mt-1 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">Clienti</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
         <Link
           to="/calendario-eventi/comunicazioni"
-          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal font-medium px-4 py-2 text-sm"
+          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal font-medium px-4 py-2 testo-sala-grande"
         >
           Scrivere a più clienti
         </Link>
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo cliente"}
         </button>
@@ -79,7 +79,7 @@ export default function ClientiList() {
           className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
         >
           <div className="sm:col-span-3">
-            <p className="text-xs text-b58-charcoal-soft/70">
+            <p className="testo-sala text-b58-charcoal-soft/70">
               Per i clienti che non arrivano da una prenotazione. Il numero di telefono è la chiave
               di identificazione: se torna con lo stesso numero, la scheda si riaggancia da sola.
             </p>
@@ -88,19 +88,19 @@ export default function ClientiList() {
             value={newCustomer.name}
             onChange={(e) => setNewCustomer((c) => ({ ...c, name: e.target.value }))}
             placeholder="Nome"
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <input
             required
             value={newCustomer.phone}
             onChange={(e) => setNewCustomer((c) => ({ ...c, phone: e.target.value }))}
             placeholder="Telefono"
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Creo…" : "Crea scheda"}
           </button>
@@ -112,13 +112,13 @@ export default function ClientiList() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Cerca per nome o telefono…"
-        className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
+        className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
       />
 
-      {error && <p className="text-sm text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : customers.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
@@ -129,7 +129,7 @@ export default function ClientiList() {
         </div>
       ) : (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full testo-sala-grande">
             <thead>
               <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                 <th className="px-4 py-3 font-medium">Nome</th>

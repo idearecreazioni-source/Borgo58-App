@@ -376,7 +376,7 @@ export default function Ordini() {
                             </>
                           )}
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           {/* La schermata chiedeva di copiare il testo senza
                               dare un modo per farlo. */}
                           <button

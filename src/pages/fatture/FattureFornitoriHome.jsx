@@ -1010,7 +1010,7 @@ export default function FattureFornitoriHome() {
                     {inv.paid_at && ` — ${formatDate(inv.paid_at)}`}
                     {inv.payment_method && ` · ${labelFor(PAYMENT_METHODS, inv.payment_method)}`}
                   </span>
-                  <span className="gesti-pericolosi shrink-0">
+                  <span className="gesti-pericolosi">
                     <span className="text-b58-charcoal">{formatEUR(inv.da_pagare)}</span>
                     {/* ⚠️ La nota di credito arrivata DOPO il pagamento è
                         il caso che si dimentica, quindi il gesto sta anche

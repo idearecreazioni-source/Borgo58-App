@@ -220,7 +220,7 @@ export default function PrimaNota() {
         <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {balance && (
             <span className="testo-sala text-b58-charcoal-soft">
               Contante in cassa:{" "}

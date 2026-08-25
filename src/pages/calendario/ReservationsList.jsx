@@ -61,17 +61,17 @@ export default function ReservationsList() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <h1 className="font-display text-2xl text-b58-charcoal">Calendario Eventi</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link
             to="/calendario-eventi/pianta"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             La sala
           </Link>
           {isTitolare && (
             <Link
               to="/calendario-eventi/sala-e-orari"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
             >
               Sala e orari
             </Link>
@@ -87,20 +87,20 @@ export default function ReservationsList() {
           {isTitolare && (
             <Link
               to="/calendario-eventi/preventivi"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
             >
               Preventivi
             </Link>
           )}
           <Link
             to="/calendario-eventi/clienti"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm font-medium px-4 py-2"
+            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Clienti
           </Link>
           <Link
             to="/calendario-eventi/nuova"
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 text-sm"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
           >
             + Nuova prenotazione
           </Link>
@@ -110,14 +110,14 @@ export default function ReservationsList() {
       {daConfermare.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
           <div className="flex items-center gap-2.5 mb-1">
-            <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment text-[11px] font-medium px-2.5 py-1">
+            <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
               {daConfermare.length}
             </span>
-            <h2 className="font-display text-lg text-b58-charcoal">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal">
               {daConfermare.length === 1 ? "richiesta da confermare" : "richieste da confermare"}
             </h2>
           </div>
-          <p className="text-sm text-b58-charcoal-soft mb-3">
+          <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
             Una richiesta non tiene nessun tavolo: il cliente resta in attesa finché non
             gliene dai uno tu dalla{" "}
             <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
@@ -131,7 +131,7 @@ export default function ReservationsList() {
                 <button
                   type="button"
                   onClick={() => navigate(`/calendario-eventi/${r.id}`)}
-                  className="w-full text-left py-3 px-2 -mx-2 rounded-lg flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm hover:bg-b58-cream-dark/40 transition-colors"
+                  className="w-full text-left py-3 px-2 -mx-2 rounded-lg flex flex-wrap items-baseline gap-x-3 gap-y-1 testo-sala-grande hover:bg-b58-cream-dark/40 transition-colors"
                 >
                   <span className="text-b58-charcoal font-medium">
                     {formatDate(r.reservation_date)}
@@ -154,19 +154,19 @@ export default function ReservationsList() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         />
         <button
           type="button"
           onClick={() => setDate(todayISO())}
-          className="rounded-lg border border-b58-charcoal/15 px-3 py-2 text-sm text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          className="rounded-lg border border-b58-charcoal/15 px-3 py-2 testo-sala-grande text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
         >
           Oggi
         </button>
         <button
           type="button"
           onClick={() => setDate("")}
-          className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
+          className={`rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
             date
               ? "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
               : "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
@@ -175,7 +175,7 @@ export default function ReservationsList() {
           Tutte le date
         </button>
         {date && (
-          <span className="text-sm text-b58-charcoal-soft">
+          <span className="testo-sala-grande text-b58-charcoal-soft">
             {reservations.length} prenotazion{reservations.length === 1 ? "e" : "i"} ·{" "}
             <span className="text-b58-charcoal font-medium">{totalCovers} coperti</span>
           </span>
@@ -188,12 +188,12 @@ export default function ReservationsList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca cliente (nome, telefono, email)…"
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti i tipi</option>
           {RESERVATION_TYPES.map((t) => (
@@ -203,7 +203,7 @@ export default function ReservationsList() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti gli stati</option>
           {RESERVATION_STATUSES.map((s) => (
@@ -212,10 +212,10 @@ export default function ReservationsList() {
         </select>
       </div>
 
-      {error && <p className="text-sm text-b58-terracotta-dark mb-4">Errore: {error}</p>}
+      {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : reservations.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
@@ -246,7 +246,7 @@ export default function ReservationsList() {
                     {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1 shrink-0`}
+                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
                   >
                     {labelFor(RESERVATION_STATUSES, r.status)}
                   </span>
@@ -254,7 +254,7 @@ export default function ReservationsList() {
                 {campiPrenotazione(r)
                   .filter((c) => c.chiave !== "data" && c.chiave !== "ora")
                   .map((c) => (
-                    <p key={c.chiave} className="text-sm">
+                    <p key={c.chiave} className="testo-sala-grande">
                       <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
                       {c.valore ? (
                         <span className={c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal"}>
@@ -272,7 +272,7 @@ export default function ReservationsList() {
           {/* SUL COMPUTER: la tabella resta — lì funziona, e si cura dove fa
               male (stessa distinzione delle due colonne rimandate). */}
           <div className="hidden md:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full testo-sala-grande">
               <thead>
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                   {campiPrenotazione(reservations[0]).map((c) => (
@@ -302,7 +302,7 @@ export default function ReservationsList() {
                     ))}
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment text-[11px] font-medium px-2.5 py-1`}
+                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
                       >
                         {labelFor(RESERVATION_STATUSES, r.status)}
                       </span>

@@ -518,7 +518,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>Ho contato €</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               type="number"
               step="0.01"
@@ -571,7 +571,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
 
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
           <label className={labelClass}>Verso in banca €</label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               type="number"
               step="0.01"

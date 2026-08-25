@@ -121,9 +121,9 @@ export default function Previsione() {
   }, [entityId, giorni]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
-    "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const salvaPos = async () => {
     try {
@@ -190,16 +190,16 @@ export default function Previsione() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa, Banca e Prima Nota
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {entities && (
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -208,7 +208,7 @@ export default function Previsione() {
           <select
             value={giorni}
             onChange={(e) => setGiorni(Number(e.target.value))}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {ORIZZONTI.map((o) => (
               <option key={o.giorni} value={o.giorni}>fra {o.label}</option>
@@ -218,18 +218,18 @@ export default function Previsione() {
       </div>
 
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Ce la faccio?</h1>
-      <p className="text-xs text-b58-charcoal-soft/80 mb-6">
+      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Sapere se guadagni è una domanda. Sapere se <strong>arrivi alla scadenza con i soldi sul
         conto</strong> è un&apos;altra, e non ha la stessa risposta: un costo di agosto può uscire a
         settembre.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         <>
           {/* ---- La risposta ------------------------------------------ */}
@@ -238,7 +238,7 @@ export default function Previsione() {
               negativo ? "bg-b58-terracotta/10 ring-b58-terracotta/40" : "bg-b58-parchment ring-b58-charcoal/10"
             }`}
           >
-            <div className="text-xs uppercase tracking-wide text-b58-charcoal-soft mb-1">
+            <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">
               Saldo previsto al {previsione ? formatDate(previsione.fino_al) : "—"}
             </div>
             <div
@@ -250,7 +250,7 @@ export default function Previsione() {
             </div>
 
             {previsione && (
-              <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-b58-charcoal-soft">
+              <div className="flex flex-wrap gap-x-5 gap-y-1 testo-sala text-b58-charcoal-soft">
                 <span>cassa {formatEUR(previsione.oggi_cassa)}</span>
                 <span>+ banca {formatEUR(previsione.oggi_banca)}</span>
                 <span>+ carta in arrivo {formatEUR(previsione.pos_in_arrivo)}</span>
@@ -261,7 +261,7 @@ export default function Previsione() {
             )}
 
             {negativo && (
-              <p className="text-sm text-b58-terracotta-dark mt-3 font-medium">
+              <p className="testo-sala-grande text-b58-terracotta-dark mt-3 font-medium">
                 Con quello che deve uscire, a quella data i soldi non bastano.
               </p>
             )}
@@ -269,25 +269,25 @@ export default function Previsione() {
             {/* ⚠️ L'avvertenza arriva dal database insieme al numero, e qui
                 dichiara il buco più grosso: mancano gli stipendi, che sono
                 la voce più pesante dell'anno. */}
-            <p className="text-[11px] text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 leading-relaxed">
+            <p className="testo-sala text-b58-charcoal-soft mt-3 bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 leading-relaxed">
               {previsione?.avvertenza}
             </p>
           </div>
 
           {/* ---- Cosa deve uscire ------------------------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">Cosa deve uscire</h2>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Cosa deve uscire</h2>
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
               Fatture e imposte non le scrivi tu: il gestionale le sa già. Una fattura{" "}
               <strong>sparisce da qui da sola</strong> quando la registri pagata.
             </p>
             {attesi.length === 0 ? (
-              <p className="text-sm text-b58-charcoal-soft/60">
+              <p className="testo-sala-grande text-b58-charcoal-soft/60">
                 Niente in scadenza entro quella data.
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full testo-sala-grande">
                   <thead>
                     <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                       <th className="py-2 font-medium">Quando</th>
@@ -301,7 +301,7 @@ export default function Previsione() {
                       <tr key={`${a.origine}-${a.riferimento ?? i}`} className="border-b border-b58-charcoal/5 last:border-0">
                         <td className="py-2 text-b58-charcoal-soft whitespace-nowrap">{formatDate(a.quando)}</td>
                         <td className="py-2 text-b58-charcoal">{a.descrizione}</td>
-                        <td className="py-2 text-xs text-b58-charcoal-soft">
+                        <td className="py-2 testo-sala text-b58-charcoal-soft">
                           {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : "scritta da te"}
                           {" · "}
                           {a.mezzo}
@@ -334,7 +334,7 @@ export default function Previsione() {
               />
             )}
             {!nonLetto(oltre) && oltre?.quante_oltre > 0 && (
-              <p className="text-xs text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
+              <p className="testo-sala text-b58-gold-dark bg-b58-gold/10 rounded-lg px-3 py-2 mt-4">
                 Oltre questa data{" "}
                 {oltre.quante_oltre === 1
                   ? "c'è un'uscita già registrata"
@@ -349,8 +349,8 @@ export default function Previsione() {
 
           {/* ---- Le scadenze che solo lui conosce --------------------- */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">Le tue scadenze fisse</h2>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Le tue scadenze fisse</h2>
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
               Affitto, rate, utenze: quello che il gestionale non può sapere da solo.{" "}
               <strong>Non scriverci le fatture dei fornitori</strong>: quelle le conta già, e finirebbero
               contate due volte.
@@ -361,12 +361,12 @@ export default function Previsione() {
                 {scadenze.map((s) => (
                   <li
                     key={s.id}
-                    className={`flex items-center justify-between gap-3 text-sm ${s.chiusa_il ? "opacity-55" : ""}`}
+                    className={`flex items-center justify-between gap-3 testo-sala-grande ${s.chiusa_il ? "opacity-55" : ""}`}
                   >
                     <span className="text-b58-charcoal">
                       {formatDate(s.scade_il)} · {s.descrizione}
                       {s.ogni_mesi > 0 && (
-                        <span className="text-[11px] text-b58-charcoal-soft">
+                        <span className="testo-sala text-b58-charcoal-soft">
                           {" "}· ogni {s.ogni_mesi === 1 ? "mese" : `${s.ogni_mesi} mesi`}
                         </span>
                       )}
@@ -374,12 +374,12 @@ export default function Previsione() {
                           di sparire: è l'unico posto da cui si può dire che
                           la si è chiusa per sbaglio. */}
                       {s.chiusa_il && (
-                        <span className="text-[11px] text-b58-charcoal-soft">
+                        <span className="testo-sala text-b58-charcoal-soft">
                           {" "}· tolta il {formatDate(s.chiusa_il)}, non entra nella previsione
                         </span>
                       )}
                     </span>
-                    <span className="flex items-center gap-3 shrink-0">
+                    <span className="flex flex-wrap items-center gap-3">
                       {/* Correggere l'importo senza rifare la scadenza: si
                           salva uscendo dal campo, come le altre note. */}
                       <input
@@ -391,19 +391,19 @@ export default function Previsione() {
                           Number(e.target.value) !== Number(s.importo) &&
                           correggi(s, "importo", e.target.value)
                         }
-                        className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 text-sm text-right"
+                        className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                       />
                       {s.chiusa_il ? (
                         <button
                           onClick={() => riapri(s.id)}
-                          className="text-xs text-b58-olive-dark hover:text-b58-charcoal"
+                          className="testo-sala text-b58-olive-dark hover:text-b58-charcoal"
                         >
                           rimettila in elenco
                         </button>
                       ) : (
                         <button
                           onClick={() => chiudi(s.id)}
-                          className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                         >
                           non serve più
                         </button>
@@ -475,7 +475,7 @@ export default function Previsione() {
                   type="button"
                   disabled={saving || !form.descrizione.trim() || !form.importo}
                   onClick={aggiungiScadenza}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+                  className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "+ Aggiungi"}
                 </button>
@@ -485,8 +485,8 @@ export default function Previsione() {
 
           {/* ---- Il POS ------------------------------------------------ */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-            <h2 className="font-display text-lg text-b58-charcoal mb-1">Gli incassi con carta</h2>
-            <p className="text-[11px] text-b58-charcoal-soft/70 mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Gli incassi con carta</h2>
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
               Quello che incassi col POS stasera <strong>non è in banca stasera</strong>: arriva dopo
               qualche giorno e al netto delle commissioni. Senza questa voce il saldo della banca non
               tornerebbe mai.
@@ -494,25 +494,25 @@ export default function Previsione() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
-                <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">In arrivo (lordo)</div>
-                <div className="text-lg text-b58-charcoal">{pos ? formatEUR(pos.lordo) : "—"}</div>
-                <div className="text-[11px] text-b58-charcoal-soft/70">{pos?.conti ?? 0} conti</div>
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">In arrivo (lordo)</div>
+                <div className="testo-sala-titolo text-b58-charcoal">{pos ? formatEUR(pos.lordo) : "—"}</div>
+                <div className="testo-sala text-b58-charcoal-soft/70">{pos?.conti ?? 0} conti</div>
               </div>
               <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
-                <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Commissioni</div>
-                <div className="text-lg text-b58-charcoal">
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Commissioni</div>
+                <div className="testo-sala-titolo text-b58-charcoal">
                   {pos?.commissioni != null ? formatEUR(pos.commissioni) : "—"}
                 </div>
               </div>
               <div className="rounded-lg bg-white px-3 py-2.5 ring-1 ring-b58-charcoal/10">
-                <div className="text-[11px] uppercase tracking-wide text-b58-charcoal-soft">Arriverà</div>
-                <div className="text-lg text-b58-charcoal">
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">Arriverà</div>
+                <div className="testo-sala-titolo text-b58-charcoal">
                   {pos?.netto_atteso != null ? formatEUR(pos.netto_atteso) : "—"}
                 </div>
               </div>
             </div>
 
-            <p className="text-[11px] text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4 leading-relaxed">
+            <p className="testo-sala text-b58-charcoal-soft bg-white/70 rounded-lg px-3 py-2 ring-1 ring-b58-charcoal/10 mb-4 leading-relaxed">
               {pos?.avvertenza}
             </p>
 
@@ -546,12 +546,12 @@ export default function Previsione() {
                 <button
                   type="button"
                   onClick={salvaPos}
-                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal text-sm px-4 py-2"
+                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande px-4 py-2"
                 >
                   Salva
                 </button>
               </div>
-              <p className="text-[11px] text-b58-charcoal-soft/70 mt-2">
+              <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
                 Lasciali vuoti finché non te lo dice la banca: <strong>vuoto vuol dire «non lo so»</strong>,
                 e il gestionale lo scrive invece di inventare un numero.
               </p>

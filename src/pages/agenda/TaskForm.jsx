@@ -89,12 +89,12 @@ export default function TaskForm() {
 
   if (notFound) return <Navigate to="/agenda" replace />;
   if (loading) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-xl mx-auto">Caricamento…</p>;
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,7 +144,7 @@ export default function TaskForm() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link to="/agenda" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <Link to="/agenda" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
@@ -152,13 +152,13 @@ export default function TaskForm() {
       </h1>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
           {error}
         </p>
       )}
 
       {origineModulo && (
-        <div className="text-xs text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
+        <div className="testo-sala text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
           <p>Generato automaticamente da: {origineModulo}</p>
           {isTitolare && (
             <p className="mt-1">
@@ -229,7 +229,7 @@ export default function TaskForm() {
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
-            <p className="text-xs text-b58-charcoal-soft mt-1">
+            <p className="testo-sala text-b58-charcoal-soft mt-1">
               Chiudendolo ne nasce subito un altro alla scadenza successiva.
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function TaskForm() {
             </select>
           </div>
           <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 text-sm text-b58-charcoal">
+            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.preferito}
@@ -284,8 +284,8 @@ export default function TaskForm() {
                 className="mt-0.5 shrink-0"
               />
               <span>
-                <span className="text-sm text-b58-charcoal">Visibile allo staff</span>
-                <span className="block text-xs text-b58-charcoal-soft/70 mt-0.5">
+                <span className="testo-sala-grande text-b58-charcoal">Visibile allo staff</span>
+                <span className="block testo-sala text-b58-charcoal-soft/70 mt-0.5">
                   L'Agenda è condivisa: di norma un task è visibile a tutti. Togli la
                   spunta per tenerlo solo per te.
                 </span>
@@ -296,7 +296,7 @@ export default function TaskForm() {
 
         <div className="border-t border-b58-charcoal/10 pt-4">
           <label className={labelClass}>Promemoria Telegram (opzionale)</label>
-          <p className="text-xs text-b58-charcoal-soft/70 mb-2">
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
             Scegli quando vuoi essere avvisato — indipendente dalla data di scadenza.
           </p>
           <div className="grid grid-cols-2 gap-4">
@@ -318,13 +318,13 @@ export default function TaskForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, remind_date: "", remind_time: "" }))}
-              className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
+              className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
             >
               Rimuovi promemoria
             </button>
           )}
           {reminderSentAt && (
-            <p className="text-xs text-b58-olive-dark mt-1.5">
+            <p className="testo-sala text-b58-olive-dark mt-1.5">
               ✓ Promemoria già inviato il {new Date(reminderSentAt).toLocaleString("it-IT")}
             </p>
           )}
@@ -334,7 +334,7 @@ export default function TaskForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 text-sm"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
@@ -343,7 +343,7 @@ export default function TaskForm() {
               type="button"
               onClick={handleDelete}
               disabled={saving}
-              className="text-sm text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+              className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-dark"
             >
               Elimina
             </button>

@@ -109,37 +109,39 @@ export default function StaffRicettaDetail() {
         {ingredients.length === 0 ? (
           <p className="testo-sala-grande text-b58-charcoal-soft">Nessun ingrediente.</p>
         ) : (
-          <table className="w-full testo-sala-grande">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">Ingrediente</th>
-                <th className="py-2 font-medium">Quantità</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ingredients.map((ri) => (
-                <tr key={ri.recipe_ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
-                  <td className="py-2 text-b58-charcoal">
-                    {ri.ingredient_name}
-                    {ri.is_preparation && (
-                      <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                        preparazione
-                      </span>
-                    )}
-                    {ri.is_optional && (
-                      <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
-                    )}
-                    {ri.prep_note && (
-                      <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
-                    )}
-                  </td>
-                  <td className="py-2 text-b58-charcoal-soft">
-                    {ri.quantity} {ri.unit}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <thead>
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  <th className="py-2 font-medium">Ingrediente</th>
+                  <th className="py-2 font-medium">Quantità</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ingredients.map((ri) => (
+                  <tr key={ri.recipe_ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
+                    <td className="py-2 text-b58-charcoal">
+                      {ri.ingredient_name}
+                      {ri.is_preparation && (
+                        <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
+                          preparazione
+                        </span>
+                      )}
+                      {ri.is_optional && (
+                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
+                      )}
+                      {ri.prep_note && (
+                        <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
+                      )}
+                    </td>
+                    <td className="py-2 text-b58-charcoal-soft">
+                      {ri.quantity} {ri.unit}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

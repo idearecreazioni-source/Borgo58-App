@@ -71,8 +71,8 @@ export default function DipendenteDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setField = (field, value) => setEmployee((e) => ({ ...e, [field]: value }));
 
@@ -206,20 +206,20 @@ export default function DipendenteDetail() {
 
   if (notFound) return <Navigate to="/personale" replace />;
   if (loading || !employee) {
-    return <p className="text-sm text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
+    return <p className="testo-sala-grande text-b58-charcoal-soft max-w-3xl mx-auto">Caricamento…</p>;
   }
 
   return (
     <div className="documento-stampato max-w-3xl mx-auto pb-16">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <Link to="/personale" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+        <Link to="/personale" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Personale
         </Link>
         <PrintButton label="Esporta dossier PDF" />
       </div>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4 print:hidden">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4 print:hidden">{error}</p>
       )}
 
       {/* Anagrafica */}
@@ -289,7 +289,7 @@ export default function DipendenteDetail() {
             onChange={(e) => setField("prior_year_income", e.target.value)}
             className={inputClass}
           />
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-1 print:hidden">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-1 print:hidden">Per il regime mance (soglia 75.000€, tetto 30% — §6).</p>
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
@@ -313,7 +313,7 @@ export default function DipendenteDetail() {
           <button
             onClick={saveHeader}
             disabled={savingHeader}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment text-sm font-medium px-4 py-2"
+            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {savingHeader ? "Salvo…" : "Salva anagrafica"}
           </button>
@@ -322,16 +322,16 @@ export default function DipendenteDetail() {
 
       {/* Documenti compliance */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Documenti e scadenze</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Documenti e scadenze</h2>
         {documents.length > 0 && (
           <ul className="space-y-2 mb-4">
             {documents.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 text-sm bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+              <li key={d.id} className="flex items-center justify-between gap-3 testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
                 <div>
                   <span className="text-b58-charcoal font-medium">{labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}</span>
                   {d.description && <span className="text-b58-charcoal-soft"> · {d.description}</span>}
                   {d.expiry_date && <span className="text-b58-charcoal-soft"> · scade {formatDate(d.expiry_date)}</span>}
-                  {d.document_reference && <div className="text-xs text-b58-charcoal-soft">Rif.: {d.document_reference}</div>}
+                  {d.document_reference && <div className="testo-sala text-b58-charcoal-soft">Rif.: {d.document_reference}</div>}
                 </div>
                 <ConfermaDistruttiva
                   etichetta="Rimuovi"
@@ -355,21 +355,21 @@ export default function DipendenteDetail() {
             <input value={docForm.document_reference} onChange={(e) => setDocForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass} />
           </div>
           <div className="flex justify-end mt-2">
-            <button type="button" disabled={busy} onClick={addDocument} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={addDocument} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
               + Aggiungi documento
             </button>
           </div>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-2 print:hidden">Con una scadenza, viene creato un promemoria in Agenda.</p>
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-2 print:hidden">Con una scadenza, viene creato un promemoria in Agenda.</p>
         </div>
       </div>
 
       {/* Ferie / permessi */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Ferie e permessi</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Ferie e permessi</h2>
         {leaves.length > 0 && (
           <ul className="space-y-1.5 mb-4">
             {leaves.map((l) => (
-              <li key={l.id} className="flex items-center justify-between gap-3 text-sm">
+              <li key={l.id} className="flex items-center justify-between gap-3 testo-sala-grande">
                 <span className="text-b58-charcoal-soft">
                   <span className="text-b58-charcoal">{labelFor(LEAVE_TYPES, l.leave_type)}</span> · {formatDate(l.start_date)} → {formatDate(l.end_date)}
                   {l.days ? ` · ${l.days} gg` : ""}
@@ -394,7 +394,7 @@ export default function DipendenteDetail() {
           <input type="date" value={leaveForm.start_date} onChange={(e) => setLeaveForm((f) => ({ ...f, start_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="date" value={leaveForm.end_date} onChange={(e) => setLeaveForm((f) => ({ ...f, end_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="number" step="0.5" value={leaveForm.days} onChange={(e) => setLeaveForm((f) => ({ ...f, days: e.target.value }))} placeholder="Giorni" className={inputClass + " w-24"} />
-          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Aggiungi
           </button>
         </div>
@@ -402,48 +402,50 @@ export default function DipendenteDetail() {
 
       {/* Buste paga */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-1">Buste paga</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Buste paga</h2>
         {/* ⚠️ RESTA: è il vincolo portante del mandato del 15/08 — l'app
             legge e mostra, non ricalcola mai le paghe. Due verità sullo
             stesso numero sono il difetto chiuso sulle imposte. */}
-        <p className="text-[11px] text-b58-charcoal-soft mb-4 print:hidden">
+        <p className="testo-sala text-b58-charcoal-soft mb-4 print:hidden">
           ⚠️ Solo archivio: le paghe le calcola il Consulente del Lavoro, qui si
           conservano importi e riferimento.
         </p>
         {payslips.length > 0 && (
-          <table className="w-full text-sm mb-4">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">Mese</th>
-                <th className="py-2 font-medium text-right">Lordo</th>
-                <th className="py-2 font-medium text-right">Netto</th>
-                <th className="py-2 print:hidden"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {payslips.map((p) => (
-                <tr key={p.id} className="border-b border-b58-charcoal/5 last:border-0">
-                  <td className="py-2 text-b58-charcoal capitalize">{monthLabel(p.period_month)}</td>
-                  <td className="py-2 text-right text-b58-charcoal-soft">{p.gross_amount != null ? formatEUR(p.gross_amount) : "—"}</td>
-                  <td className="py-2 text-right text-b58-charcoal">{p.net_amount != null ? formatEUR(p.net_amount) : "—"}</td>
-                  <td className="py-2 text-right print:hidden">
-                    <ConfermaDistruttiva
-                      etichetta="Rimuovi"
-                      cosaSparisce={`la busta paga di ${monthLabel(p.period_month)}`}
-                      onConferma={() => removePayslip(p.id)}
-                    />
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande mb-4">
+              <thead>
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  <th className="py-2 font-medium">Mese</th>
+                  <th className="py-2 font-medium text-right">Lordo</th>
+                  <th className="py-2 font-medium text-right">Netto</th>
+                  <th className="py-2 print:hidden"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {payslips.map((p) => (
+                  <tr key={p.id} className="border-b border-b58-charcoal/5 last:border-0">
+                    <td className="py-2 text-b58-charcoal capitalize">{monthLabel(p.period_month)}</td>
+                    <td className="py-2 text-right text-b58-charcoal-soft">{p.gross_amount != null ? formatEUR(p.gross_amount) : "—"}</td>
+                    <td className="py-2 text-right text-b58-charcoal">{p.net_amount != null ? formatEUR(p.net_amount) : "—"}</td>
+                    <td className="py-2 text-right print:hidden">
+                      <ConfermaDistruttiva
+                        etichetta="Rimuovi"
+                        cosaSparisce={`la busta paga di ${monthLabel(p.period_month)}`}
+                        onConferma={() => removePayslip(p.id)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden flex flex-wrap gap-2 items-end">
           <input type="month" value={payForm.period_month} onChange={(e) => setPayForm((f) => ({ ...f, period_month: e.target.value }))} className={inputClass + " w-44"} />
           <input type="number" step="0.01" value={payForm.gross_amount} onChange={(e) => setPayForm((f) => ({ ...f, gross_amount: e.target.value }))} placeholder="Lordo €" className={inputClass + " w-28"} />
           <input type="number" step="0.01" value={payForm.net_amount} onChange={(e) => setPayForm((f) => ({ ...f, net_amount: e.target.value }))} placeholder="Netto €" className={inputClass + " w-28"} />
           <input value={payForm.document_reference} onChange={(e) => setPayForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass + " flex-1 min-w-[120px]"} />
-          <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Aggiungi
           </button>
         </div>

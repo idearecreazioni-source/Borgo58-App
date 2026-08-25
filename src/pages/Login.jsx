@@ -33,12 +33,12 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="bg-b58-parchment rounded-2xl shadow-sm ring-1 ring-b58-charcoal/10 p-8"
         >
-          <h1 className="font-display text-lg text-b58-charcoal mb-1">Accedi</h1>
-          <p className="text-sm text-b58-charcoal-soft mb-6">
+          <h1 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Accedi</h1>
+          <p className="testo-sala-grande text-b58-charcoal-soft mb-6">
             Inserisci il PIN per entrare nel gestionale.
           </p>
 
-          <label className="block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
+          <label className="block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
             PIN
           </label>
           <input
@@ -51,9 +51,9 @@ export default function Login() {
               setError("");
             }}
             placeholder="••••••"
-            className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 text-lg tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 testo-sala-titolo tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
-          {error && <p className="text-sm text-b58-terracotta-dark mt-2">{error}</p>}
+          {error && <p className="testo-sala-grande text-b58-terracotta-dark mt-2">{error}</p>}
 
           <button
             type="submit"

@@ -101,8 +101,8 @@ export default function ScontiOmaggi() {
   const isOmaggio = form.type === "omaggio";
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 text-sm text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
-  const labelClass = "block text-xs font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
     if (!form.full_amount || Number(form.full_amount) < 0) return;
@@ -166,15 +166,15 @@ export default function ScontiOmaggi() {
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-        <Link to="/cassa" className="tocco-bottone inline-flex items-center text-sm text-b58-charcoal-soft hover:text-b58-terracotta">
+      <div className="flex flex-wrap items-start justify-between gap-4 flex-wrap mb-4">
+        <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Cassa
         </Link>
         {entities && (
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 text-sm text-b58-charcoal"
+            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -199,57 +199,59 @@ export default function ScontiOmaggi() {
           dispositivo diverso dal tuo: lo vedi solo tu.
         </Didascalia>
       </h1>
-      <p className="text-xs text-b58-charcoal-soft mb-6">
+      <p className="testo-sala text-b58-charcoal-soft mb-6">
         ⚠️ Se gli omaggi sistematici facciano scattare l&apos;autofattura TD27 dipende da
         volume e frequenza: <strong>da verificare con Laura</strong>, non è automatico.
       </p>
 
       {error && (
-        <p className="text-sm text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
+        <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
       {/* Riepilogo mensile (TD27) */}
       {months.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display text-lg text-b58-charcoal mb-4">Riepilogo mensile</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="py-2 font-medium">Mese</th>
-                <th className="py-2 font-medium text-right">Sconti (mancato incasso)</th>
-                <th className="py-2 font-medium text-right">Omaggi (valore a listino)</th>
-                <th className="py-2 font-medium text-right">Omaggi (costo ingredienti)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {months.map((m) => (
-                <tr key={m} className="border-b border-b58-charcoal/5 last:border-0">
-                  <td className="py-2 text-b58-charcoal capitalize">{monthLabel(m)}</td>
-                  <td className="py-2 text-right text-b58-charcoal-soft">
-                    {monthsMap[m].sconto ? formatEUR(monthsMap[m].sconto.total_forgone) : "—"}
-                  </td>
-                  <td className="py-2 text-right text-b58-charcoal font-medium">
-                    {monthsMap[m].omaggio ? formatEUR(monthsMap[m].omaggio.total_full) : "—"}
-                  </td>
-                  {/* Il costo si mostra SEMPRE accanto al numero di conti
-                      valorizzati solo in parte: una somma parziale letta
-                      come totale sarebbe più dannosa di nessun numero. */}
-                  <td className="py-2 text-right text-b58-charcoal">
-                    {monthsMap[m].omaggio?.total_costo != null
-                      ? formatEUR(monthsMap[m].omaggio.total_costo)
-                      : "—"}
-                    {monthsMap[m].omaggio?.conti_incompleti > 0 && (
-                      <span className="block text-[11px] text-b58-terracotta-dark">
-                        parziale: {monthsMap[m].omaggio.conti_incompleti} conti con righe non
-                        valorizzabili
-                      </span>
-                    )}
-                  </td>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Riepilogo mensile</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full testo-sala-grande">
+              <thead>
+                <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
+                  <th className="py-2 font-medium">Mese</th>
+                  <th className="py-2 font-medium text-right">Sconti (mancato incasso)</th>
+                  <th className="py-2 font-medium text-right">Omaggi (valore a listino)</th>
+                  <th className="py-2 font-medium text-right">Omaggi (costo ingredienti)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-[11px] text-b58-charcoal-soft/70 mt-3">
+              </thead>
+              <tbody>
+                {months.map((m) => (
+                  <tr key={m} className="border-b border-b58-charcoal/5 last:border-0">
+                    <td className="py-2 text-b58-charcoal capitalize">{monthLabel(m)}</td>
+                    <td className="py-2 text-right text-b58-charcoal-soft">
+                      {monthsMap[m].sconto ? formatEUR(monthsMap[m].sconto.total_forgone) : "—"}
+                    </td>
+                    <td className="py-2 text-right text-b58-charcoal font-medium">
+                      {monthsMap[m].omaggio ? formatEUR(monthsMap[m].omaggio.total_full) : "—"}
+                    </td>
+                    {/* Il costo si mostra SEMPRE accanto al numero di conti
+                        valorizzati solo in parte: una somma parziale letta
+                        come totale sarebbe più dannosa di nessun numero. */}
+                    <td className="py-2 text-right text-b58-charcoal">
+                      {monthsMap[m].omaggio?.total_costo != null
+                        ? formatEUR(monthsMap[m].omaggio.total_costo)
+                        : "—"}
+                      {monthsMap[m].omaggio?.conti_incompleti > 0 && (
+                        <span className="block testo-sala text-b58-terracotta-dark">
+                          parziale: {monthsMap[m].omaggio.conti_incompleti} conti con righe non
+                          valorizzabili
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
             Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
             <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
             al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
@@ -261,7 +263,7 @@ export default function ScontiOmaggi() {
 
       {/* Nuovo */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Nuovo sconto / omaggio</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Nuovo sconto / omaggio</h2>
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
           <div className="flex gap-2 mb-3">
             {DISCOUNT_GIFT_TYPES.map((t) => (
@@ -269,7 +271,7 @@ export default function ScontiOmaggi() {
                 key={t.value}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, type: t.value }))}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.type === t.value
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -359,13 +361,13 @@ export default function ScontiOmaggi() {
           </div>
 
           {isOmaggio && (
-            <p className="text-xs text-b58-charcoal-soft/70 mb-3">
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-3">
               Un omaggio non incassa nulla: l'incassato resta a 0.
             </p>
           )}
 
           <div className="mb-3">
-            <button type="button" onClick={() => setShowDeviceForm((v) => !v)} className="text-xs text-b58-charcoal-soft hover:text-b58-terracotta">
+            <button type="button" onClick={() => setShowDeviceForm((v) => !v)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
               {showDeviceForm ? "Annulla" : devices.length === 0 ? "+ Configura i tablet in uso" : "Gestisci tablet"}
             </button>
             {showDeviceForm && (
@@ -376,11 +378,11 @@ export default function ScontiOmaggi() {
                   placeholder='Nome, es. "Tablet Sala"'
                   className={inputClass + " flex-1 min-w-[140px]"}
                 />
-                <label className="flex items-center gap-2 text-xs text-b58-charcoal-soft whitespace-nowrap">
+                <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft whitespace-nowrap">
                   <input type="checkbox" checked={newDevice.isOwnerDevice} onChange={(e) => setNewDevice((d) => ({ ...d, isOwnerDevice: e.target.checked }))} />
                   È il tuo tablet
                 </label>
-                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-3 py-1.5 disabled:opacity-60">
+                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
                   {savingDevice ? "Salvo…" : "+ Aggiungi"}
                 </button>
               </div>
@@ -392,7 +394,7 @@ export default function ScontiOmaggi() {
               type="button"
               disabled={saving || !form.full_amount || !form.causale_id}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment text-sm px-4 py-2 disabled:opacity-60"
+              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>
@@ -402,15 +404,15 @@ export default function ScontiOmaggi() {
 
       {/* Elenco */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
-        <h2 className="font-display text-lg text-b58-charcoal mb-4">Registro</h2>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Registro</h2>
         {loading ? (
-          <p className="text-sm text-b58-charcoal-soft">Caricamento…</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-b58-charcoal-soft/60">Nessuno sconto o omaggio registrato.</p>
+          <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessuno sconto o omaggio registrato.</p>
         ) : (
           <ul className="space-y-2">
             {items.map((it) => (
-              <li key={it.id} className="flex items-center justify-between gap-3 text-sm bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
+              <li key={it.id} className="flex flex-wrap items-center justify-between gap-3 testo-sala-grande bg-white rounded-lg border border-b58-charcoal/10 px-3 py-2">
                 <div>
                   {it.device && it.device.is_owner_device === false && (
                     <span
@@ -425,9 +427,9 @@ export default function ScontiOmaggi() {
                     <span className="text-b58-charcoal-soft"> · {it.customer.name || it.customer.phone}</span>
                   )}
                   {it.device && <span className="text-b58-charcoal-soft"> · {it.device.name}</span>}
-                  {it.note && <div className="text-xs text-b58-charcoal-soft">{it.note}</div>}
+                  {it.note && <div className="testo-sala text-b58-charcoal-soft">{it.note}</div>}
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="text-b58-charcoal">
                     {formatEUR(it.full_amount)}
                     {it.type === "sconto" && (
