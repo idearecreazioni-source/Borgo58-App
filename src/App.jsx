@@ -58,6 +58,7 @@ import Previsione from "./pages/cassa/Previsione";
 import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
 import Scontrinato from "./pages/cassa/Scontrinato";
+import ContiCorrenti from "./pages/cassa/ContiCorrenti";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
 import Scontrini from "./pages/comande/Scontrini";
@@ -248,6 +249,7 @@ function AppRoutes() {
         <Route path="/cassa/prima-nota" element={<RequireTitolare><PrimaNota /></RequireTitolare>} />
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
+        <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto

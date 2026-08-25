@@ -381,6 +381,14 @@ export default function CassaHome() {
             <Link to="/cassa/causali" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Causali
             </Link>
+            {/* ⚠️ LA PORTA DEL RIFIUTO (25/08/2026): da oggi un movimento di
+                banca senza conto viene respinto, e il messaggio manda qui.
+                Senza questo collegamento sarebbe un vicolo cieco — e il
+                precedente è del 20/08, quando i Preventivi restarono
+                irraggiungibili per giorni con la rotta già scritta. */}
+            <Link to="/cassa/conti-correnti" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+              Conti correnti
+            </Link>
           </div>
         </>
       )}

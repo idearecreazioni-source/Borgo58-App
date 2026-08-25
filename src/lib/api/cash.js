@@ -471,3 +471,51 @@ export async function registraRestituzione({ prestitoId, importo, mezzo, restitu
     p_nota: nota ?? null,
   });
 }
+
+// ---------------------------------------------------------------------------
+// I CONTI CORRENTI (25/08/2026)
+// ---------------------------------------------------------------------------
+// 🔴 LA TABELLA C'ERA DAL 15/08 E NON LA LEGGEVA NESSUNO: misurato, in
+// tutto `src/` nessun file nominava `conti_bancari`. Dal 25/08 un
+// movimento di banca senza conto viene respinto, e un rifiuto che manda
+// in una schermata inesistente e' un vicolo cieco.
+//
+// ⚠️ Tabella sola, nessuna conseguenza altrove: scritture dirette con la
+// RLS come barriera (categoria A del Contratto). L'unica eccezione e'
+// scegliere il conto principale — la' due righe devono cambiare insieme.
+export async function listContiBancari({ soloAttivi = false } = {}) {
+  let q = supabase.from("conti_bancari").select("*").order("nome");
+  if (soloAttivi) q = q.eq("attivo", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createContoBancario({ entityId, nome, iban, note }) {
+  const { data, error } = await supabase
+    .from("conti_bancari")
+    .insert({
+      entity_id: entityId,
+      nome: nome.trim(),
+      iban: iban?.trim() || null,
+      note: note?.trim() || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setContoAttivo(id, attivo) {
+  const { error } = await supabase.from("conti_bancari").update({ attivo }).eq("id", id);
+  if (error) throw error;
+}
+
+// ⚠️ Passa da una funzione del database, non da due `update` in fila: se
+// la seconda scrittura non partisse si resterebbe SENZA conto principale,
+// e da quel momento ogni pagamento di fattura verrebbe respinto senza che
+// nessuno capisca il perche'.
+export async function setContoPredefinito(id) {
+  const { error } = await supabase.rpc("imposta_conto_predefinito", { p_conto_id: id });
+  if (error) throw error;
+}
