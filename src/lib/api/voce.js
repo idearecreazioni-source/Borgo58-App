@@ -11,6 +11,7 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { chiamaFunzione } from "../chiamaFunzione";
+import { nonAncoraAccesa } from "../calcoli/voce";
 
 /**
  * Manda quello che è stato detto e restituisce com'è finita.
@@ -42,10 +43,31 @@ export async function azioniInAttesa() {
   return data ?? [];
 }
 
-/** Quante cose aspettano — per il segno in Dashboard. */
+/**
+ * Quante cose aspettano — per il segno in Dashboard.
+ *
+ * 🔴 «LA VOCE NON C'È ANCORA» NON È «NON SONO RIUSCITO A LEGGERE», e qui
+ * la distinzione va fatta perché il codice arriva online **prima** della
+ * migrazione che crea questa funzione: fra il push di Alessio e
+ * l'applicazione passa del tempo, ed è giusto che passi.
+ *
+ * ⚠️ Senza questa riga, in quelle ore la schermata che lui apre ogni
+ * mattina mostrerebbe un avviso rosso — «non sono riuscito a leggere le
+ * cose che hai dettato» — per una funzionalità che semplicemente non è
+ * ancora accesa. Un allarme che grida su una cosa normale è un allarme
+ * che si impara a spegnere.
+ *
+ * ⚠️ E NON È IL SILENZIO CHE QUESTO PROGETTO VIETA: si tace su un caso
+ * **riconosciuto per nome** — PostgREST risponde `PGRST202`/`42883`
+ * quando la funzione non esiste — e su nient'altro. Qualunque altro
+ * guasto continua a risalire e la Dashboard lo dichiara.
+ */
 export async function quanteAspettano() {
   const { data, error } = await supabase.rpc("voce_da_guardare");
-  if (error) throw error;
+  if (error) {
+    if (nonAncoraAccesa(error)) return { quante: 0, laPiuVecchia: 0, nonAncoraAccesa: true };
+    throw error;
+  }
   const r = Array.isArray(data) ? data[0] : data;
   return { quante: r?.quante ?? 0, laPiuVecchia: r?.la_piu_vecchia ?? 0 };
 }

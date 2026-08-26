@@ -6,6 +6,7 @@ import {
   fraseDelMicrofono,
   perchéAspetta,
   riconoscitoreDisponibile,
+  nonAncoraAccesa,
   titoloDelRiscontro,
 } from "../../src/lib/calcoli/voce";
 
@@ -159,5 +160,25 @@ describe("il riconoscimento vocale si cerca senza rompersi", () => {
     expect(riconoscitoreDisponibile({ SpeechRecognition: class {} })).toBe(true);
     expect(riconoscitoreDisponibile({ webkitSpeechRecognition: class {} })).toBe(true);
     expect(riconoscitoreDisponibile({})).toBe(false);
+  });
+});
+
+describe("«la voce non c'è ancora» non è «non sono riuscito a leggere»", () => {
+  // 🔴 Il codice arriva online PRIMA della migrazione che crea le funzioni
+  //    della voce, e in quelle ore la Dashboard non deve gridare.
+  it("riconosce i due codici della funzione che non esiste", () => {
+    expect(nonAncoraAccesa({ code: "PGRST202" })).toBe(true);
+    expect(nonAncoraAccesa({ code: "42883" })).toBe(true);
+  });
+
+  // ⚠️ E NIENTE ALTRO: è la metà che rende questa regola accettabile.
+  //    Un permesso negato, una rete caduta, un rifiuto del database
+  //    continuano a risalire e la schermata li dichiara.
+  it("qualunque altro guasto continua a farsi sentire", () => {
+    expect(nonAncoraAccesa({ code: "42501" })).toBe(false); // permesso negato
+    expect(nonAncoraAccesa({ code: "P0001" })).toBe(false); // rifiuto nostro
+    expect(nonAncoraAccesa({ message: "Failed to fetch" })).toBe(false);
+    expect(nonAncoraAccesa(null)).toBe(false);
+    expect(nonAncoraAccesa({})).toBe(false);
   });
 });

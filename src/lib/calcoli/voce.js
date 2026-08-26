@@ -164,3 +164,27 @@ export function perchéAspetta(azione) {
   }
   return "Non ero sicuro: guardala tu.";
 }
+
+/**
+ * Questo rifiuto vuol dire «la voce non è ancora accesa»?
+ *
+ * 🔴 «NON C'È ANCORA» E «NON SONO RIUSCITO A LEGGERE» SONO DUE COSE
+ * DIVERSE, e vanno distinte perché il codice arriva online **prima** della
+ * migrazione che crea le funzioni della voce: fra il push e l'applicazione
+ * passano delle ore, ed è giusto che passino.
+ *
+ * ⚠️ Senza questa distinzione, in quelle ore la Dashboard — la schermata
+ * che Alessio apre ogni mattina — mostrerebbe un avviso rosso per una
+ * funzionalità che semplicemente non è ancora accesa. Un allarme che grida
+ * su una cosa normale è un allarme che si impara a spegnere.
+ *
+ * ⚠️ E NON È IL SILENZIO CHE QUESTO PROGETTO VIETA: si riconosce **un caso
+ * per nome** — PostgREST risponde `PGRST202` quando la funzione non è
+ * nello schema, Postgres `42883` quando non esiste — e nient'altro.
+ * Qualunque altro guasto continua a risalire e la schermata lo dichiara.
+ * Sta qui e non dentro la chiamata perché si possa provare al contrario.
+ */
+export function nonAncoraAccesa(errore) {
+  const codice = String(errore?.code ?? "");
+  return codice === "PGRST202" || codice === "42883";
+}

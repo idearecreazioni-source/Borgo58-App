@@ -49,6 +49,17 @@ export default function Sidebar({ onNavigate }) {
           </NavLink>
         )}
 
+        {/* ⚠️ Accanto a «Fotografa» e per la stessa ragione: è un gesto che
+            parte da qualunque punto — di solito in cella, con le mani
+            occupate — e dove finisce quello che si dice lo decide
+            l'assistente. Solo il titolare, come la foto. */}
+        {isTitolare && (
+          <NavLink to="/detta" onClick={onNavigate} className={linkClasses}>
+            <Icon name="box" className="w-4 h-4" />
+            Parla e basta
+          </NavLink>
+        )}
+
         <div className="pt-4 pb-1 px-3 testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/60">
           Moduli
         </div>
