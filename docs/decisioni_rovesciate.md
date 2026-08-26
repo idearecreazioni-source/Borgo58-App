@@ -2202,3 +2202,39 @@ e ora il telefono trascrive da sé»*.
 lascia mai il dispositivo**. Non c'è nessuna registrazione da conservare, e
 quindi non c'è niente da cancellare — la stessa forma della foto del 25/08,
 che non viene mai salvata perché non passa da nessun deposito.
+
+## 54 · 26/08/2026 — «il freno anti-abuso sta sulla porta d'ingresso»
+
+1. **Cosa era stato deciso, e quando.** 26/08/2026, con la nascita del modulo
+   voce: il limite di 60 dettature in un'ora vive dentro `voce_apri_sessione`,
+   cioe' nella funzione con cui una Scorciatoia apre la sessione.
+2. **La ragione di allora.** Una sola porta da sorvegliare, e la si attraversa
+   per prima: chi parla apre la sessione e poi scrive, in quest'ordine.
+3. **Cosa si decide adesso.** Il criterio esce da li' e vive in una funzione
+   sola (`voce_limite_dettature`), che **entrambe** le porte aperte ad `anon`
+   domandano — quella che apre la sessione e quella che scrive.
+4. **Perche' la ragione di allora non vale piu'.** Perche' le porte sono
+   **due**, e la seconda e' quella che agisce: `registra_dettatura_da_chiave`
+   si raggiunge da sola con la chiave anonima pubblica, senza passare
+   dall'altra. La ragione era vera per chi usa il gestionale come previsto —
+   ed e' precisamente chi non conta, quando si parla di un freno anti-abuso.
+
+## 55 · 26/08/2026 — «una verifica dimostra di essersi ripulita contando le lapidi»
+
+1. **Cosa era stato deciso, e quando.** 16/08/2026: il blocco di verifica di
+   una migrazione confronta il numero di righe di `deleted_records` prima e
+   dopo, e si ferma se e' cambiato.
+2. **La ragione di allora.** Un controllo che e' una **proprieta'** e non una
+   quantita': «le cancellazioni autentiche devono essere le stesse prima e
+   dopo, il perimetro non si allarga».
+3. **Cosa si decide adesso.** Si affianca un guardiano che confronta le
+   **righe di tutte le tabelle** (`foto_righe()` + `pretendi_nessun_residuo`),
+   e la prova di essersi ripuliti passa da li'.
+4. **Perche' la ragione di allora non vale piu' — e per cosa vale ancora.**
+   ⚠️ **Vale ancora intera** sulle 21 tabelle tracciate, dove dice una cosa in
+   piu': che la verifica non ha cancellato per sbaglio un dato vero. Il
+   controllo vecchio **non si toglie**. Quello che non vale piu' e' che sia
+   **sufficiente**: misurato il 26/08, le tabelle di `public` sono 119 e le
+   tracciate 21 — sulle altre **98** quel confronto risponde «zero» che ci sia
+   un residuo o che non ci sia, ed e' cosi' che una riga di prova e' rimasta
+   nel gestionale vero.
