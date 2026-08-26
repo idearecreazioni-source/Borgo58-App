@@ -195,8 +195,23 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
     expect(elenco.some((c) => c.label === "Rimborso al titolare")).toBe(false);
 
     // Ma esistono ancora, e si vedono dove servono.
+    //
+    // 🔴 QUI C'ERA UN NUMERO — `expect(tutte.length).toBe(5)` — ed è caduto
+    // il 26/08 quando è nata «Caparra ricevuta». Non era rotto il gestionale:
+    // era una QUANTITÀ scritta a mano, che invecchia al primo lavoro nuovo.
+    // Al suo posto c'è l'elenco per nome: se ne nasce una sesta senza che
+    // nessuno la dichiari qui, questa prova diventa rossa **dicendo quale**,
+    // che è l'informazione che il numero non dava.
+    const DI_SISTEMA = [
+      "Caparra ricevuta",
+      "Differenza di cassa in meno",
+      "Differenza di cassa in più",
+      "Rimborso al titolare",
+      "Versamento dalla cassa",
+      "Versamento in banca",
+    ];
     const { data: tutte } = await titolare.from("cash_causali").select("label").eq("di_sistema", true);
-    expect(tutte.length).toBe(5);
+    expect(tutte.map((c) => c.label).sort()).toEqual(DI_SISTEMA);
   });
 
   it("una causale di sistema non si puo' spegnere ne' contare fra i costi fissi", async () => {

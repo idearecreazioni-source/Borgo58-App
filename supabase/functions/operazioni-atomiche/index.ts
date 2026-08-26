@@ -174,6 +174,13 @@ const OPERAZIONI = new Set([
   // browser le chiama, ed è la forma che rende l'elenco controllabile.
   "annulla_prenotazione",
   "merge_customers",
+  // La caparra entra in cassa (26/08/2026). `registra_caparra` tocca DUE
+  // tabelle — la caparra e il movimento di cassa che ne nasce — ed e'
+  // tutto-o-niente per senso: a meta' resterebbe o un numero che il cassetto
+  // non conosce (com'era prima di oggi) o un incasso senza prenotazione.
+  // `togli_caparra` ne tocca due allo stesso modo, perche' storna.
+  "registra_caparra",
+  "togli_caparra",
   // ⚠️ `close_shopping_list_item` NON C'È PIÙ (19/08/2026): l'ha
   // sostituita `chiudi_riga_lista`, che è la stessa cosa più i tre esiti e
   // l'uscita in prima nota. La vecchia è stata **cancellata dal database**,

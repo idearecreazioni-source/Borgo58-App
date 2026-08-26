@@ -199,19 +199,29 @@ export async function getReservationDeposit(reservationId) {
   return data?.amount ?? null;
 }
 
+// 🔴 DAL 26/08/2026 UNA CAPARRA È ANCHE UN MOVIMENTO DI CASSA, e per questo
+// passa dal corridoio (Contratto B4). Prima scriveva **dritta dal browser** in
+// una tabella sola, e il denaro che il cliente aveva versato davvero non
+// arrivava mai nel cassetto: misurato sul progetto di prova, 3 caparre su 3
+// senza nessun movimento.
+//
+// ⚠️ Le due scritture sono tutto-o-niente per senso: a metà resterebbe o il
+// numero che il cassetto non conosce (il difetto di prima), o un incasso in
+// prima nota che non si sa da dove viene.
+//
+// ⚠️ `p_mezzo` accetta anche 'banca', ma il bonifico è SPENTO finché non
+// esiste un conto corrente — lo decide il database guardando `conti_bancari`,
+// non un interruttore da ricordarsi di girare. Il giorno che Alessio registra
+// il conto si accende da sé.
 export async function setReservationDeposit(reservationId, amount) {
   if (amount == null || amount === "") {
-    const { error } = await supabase
-      .from("reservation_deposits")
-      .delete()
-      .eq("reservation_id", reservationId);
-    if (error) throw error;
-    return;
+    return eseguiOperazione("togli_caparra", { p_reservation_id: reservationId });
   }
-  const { error } = await supabase
-    .from("reservation_deposits")
-    .upsert({ reservation_id: reservationId, amount: Number(amount) });
-  if (error) throw error;
+  return eseguiOperazione("registra_caparra", {
+    p_reservation_id: reservationId,
+    p_importo: Number(amount),
+    p_mezzo: "cassa",
+  });
 }
 
 // IL FABBISOGNO DI UN EVENTO — quanta materia prima serve, e quanto costa.
