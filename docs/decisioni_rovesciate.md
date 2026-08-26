@@ -114,8 +114,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 55 | 26/08/2026 | una verifica dimostra di essersi ripulita contando le lapidi |
 | 56 | 26/08/2026 | il conto del tavolo resta fuori dal registro delle cancellazioni |
 | 57 | 27/08/2026 | il riflesso del mezzo di pagamento guarda TUTTE le quote |
+| 58 | 27/08/2026 | una caparra piu' grande del conto fa rifiutare lo scalo |
 
-⚠️ **Righe: 58.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 59.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2330,3 +2331,22 @@ che non viene mai salvata perché non passa da nessun deposito.
    order_payment_method: "caparra"` — cioe' un conto che non si chiude col
    cliente davanti. ⚠️ Prezzo dichiarato: un conto coperto interamente dalla
    caparra resta senza mezzo di pagamento, ed e' vero.
+---
+
+## 58 · 27/08/2026 — «una caparra piu' grande del conto fa rifiutare lo scalo»
+
+1. **Cosa era stato deciso, e quando.** Ieri, 26/08/2026: se la caparra supera
+   il totale del conto, il gestionale **rifiuta** lo scalo dicendo quanto
+   avanzerebbe, e il conto si chiude lo stesso senza scalarla.
+2. **La ragione di allora.** Le tre strade possibili — restituire, usarne solo
+   un pezzo, tenerli come credito — decidevano tutte che fine fanno i soldi che
+   avanzano, e quella non era una decisione da prendere scrivendo codice. Il
+   rifiuto era scritto come **provvisorio** nel corpo della migrazione stessa.
+3. **Cosa si decide adesso.** La differenza si **restituisce in contanti**, ed
+   e' un'uscita di cassa con la causale «Caparra restituita». La stessa regola
+   vale sul conto **omaggiato**, dove la caparra torna intera.
+4. **Perche' la ragione di allora non vale piu'.** L'ha decisa Alessio. Non e'
+   cambiato il ragionamento — era giusto, e infatti il rifiuto e' durato meno
+   di un giorno: **e' arrivata la risposta che mancava**. ⚠️ Il prezzo che
+   resta: su uno **sconto** la cosa non e' decisa, e infatti il gestionale li'
+   non fa niente.

@@ -548,9 +548,24 @@ mai scalata da sé in silenzio. ✅ Costruito il 27/08: finché non ha scelto
 La caparra entra come **quota di pagamento** e non come sconto, quindi i ricavi
 del conto non cambiano. ⚠️ Con la caparra scalata il conto si chiude con **un
 mezzo di pagamento solo**: per dividerlo va scelto prima «Non scalarla».
-* 27/08 — *(aperta)* **Una caparra più grande del conto**: il gestionale rifiuta
-lo scalo dicendo quanto avanzerebbe, e il conto si chiude lo stesso senza
-scalarla. Che fine facciano i soldi che avanzano **non è deciso**.
+* 27/08 — **Una caparra più grande del conto: la differenza si RESTITUISCE in
+contanti**, ed è un'uscita di cassa con la causale «Caparra restituita»,
+distinguibile da un'uscita qualunque. ✅ Costruito.
+* 27/08 — **La stessa regola vale per la caparra su un conto OMAGGIATO**: un
+omaggio incassa zero, quindi la caparra torna al cliente per intero. Una regola
+sola per due casi rari. ✅ Costruito. ⚠️ **Su uno SCONTO no**: lì il cliente paga
+qualcosa, e quanto della caparra vada sul conto e quanto torni indietro non
+l'ha ancora deciso nessuno.
+* 27/08 — Sui conti con caparra scalata resta **un solo modo di pagamento**, ma
+la schermata deve **dire perché** invece di sembrare rotta. ✅ Fatto.
+
+## Rovesciamenti — come si tiene l'elenco
+
+* 27/08 — **L'indice dei rovesciamenti si GENERA, non si tiene a mano**
+(`npm run indice`), e una prova automatica diventa rossa se resta indietro.
+* 27/08 — **I numeri doppi e i buchi NON si rinumerano**: ogni riepilogo già
+scritto li cita, e rinumerare romperebbe le citazioni. Si distinguono con la
+**data**.
 * 26/08 — **La caparra tenuta per un cliente che non si presenta è una VOCE A
 SÉ**, ritrovabile separatamente dagli incassi del servizio, così a fine anno si
 sa quanto è entrato senza aver servito nessuno. ⏳ *Non ancora costruito.*
