@@ -8,9 +8,22 @@ import { clientAutenticato, credenziali, sagomeDiProva } from "./aiuto";
 // tavoli veri: tre sagome accostate sono una comanda sola, non tre. Le
 // prove usano sagome dedicate create all'inizio ed eliminate alla fine,
 // così non compaiono mai nella pianta della sala fra un giro di prove e
-// l'altro. Le comande di prova vengono cancellate del tutto (orders /
-// order_items non sono fra le tabelle sorvegliate da deleted_records: la
-// pulizia non lascia lapidi).
+// l'altro. Le comande di prova vengono cancellate del tutto.
+//
+// 🔴 QUI C'ERA UNA FRASE DIVENTATA FALSA, e lo era due volte. Diceva:
+// «orders / order_items non sono fra le tabelle sorvegliate da
+// deleted_records: la pulizia non lascia lapidi». `order_items` è
+// sorvegliata dall'08/08/2026 — misurato sul progetto di prova il
+// 26/08: 1035 lapidi — quindi la frase era già falsa quando è stata
+// scritta. E dal 26/08 lo è anche l'altra metà: `orders` è entrata nel
+// perimetro per decisione di Alessio.
+//
+// ⚠️ Conseguenza misurata, non dedotta: un giro completo di `npm run
+// test:app` lascia sul progetto di prova ~97 lapidi, di cui 36 di
+// `orders`. Sul gestionale vero non cambia niente (le prove non ci
+// girano), ma la regola di `LEGGIMI.md` — «mai creare-e-cancellare
+// righe nelle tabelle sorvegliate» — qui è violata, e va sanata
+// facendo ripulire alle prove le proprie lapidi per identificativo.
 //
 // Le funzioni si chiamano qui per RPC diretta e non attraverso il
 // corridoio: la regola B4 vincola l'APP, e ciò che si vuole provare qui è

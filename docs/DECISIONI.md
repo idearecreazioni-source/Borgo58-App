@@ -528,6 +528,44 @@ computer e PROVATO ricaricandolo, non solo generato.
 ricostruzione da zero SI LASCIANO COSÌ: il segnale è onesto e spiegato, e
 riscrivere un file già applicato costa una regola per guadagnare silenzio.
 
+## Registro delle cancellazioni — il perimetro
+
+⚠️ Il criterio di partenza è dell'08/08/2026 e **non è toccato**: nel registro
+sta «ogni riga cancellata dalle tabelle economicamente o legalmente
+rilevanti». Qui sotto c'è chi Alessio ha detto che ci sta e chi no. Lo stato
+vivo si chiede a `perimetro_da_decidere()` e `perimetro_da_sistemare()`, mai a
+questo elenco: **qui c'è la decisione, là c'è il fatto.**
+
+* 26/08 — **DENTRO: il conto del tavolo** (`orders`). Rovescia la scelta
+dell'08/08 di lasciarlo fuori: allora era una testata con un totale, oggi porta
+il riferimento allo scontrino emesso, il prezzo del coperto fotografato e il
+mezzo di pagamento. Le sue righe e i suoi pagamenti erano già dentro.
+* 26/08 — **DENTRO: gli scarichi di magazzino** (`stock_consumptions`) e **le
+rettifiche di giacenza** (`rettifiche_giacenza`). Portano il costo fotografato
+e il valore in euro: il food cost reale, che fra sei mesi non si ricostruisce.
+* 26/08 — **FUORI: il resto del magazzino, per ora** — `stock_lots`,
+`produzioni`, `trasformazioni_dichiarate`. ⚠️ «Per ora» è la sua parola: da
+riguardare. Il prezzo, il giorno che si riguarda, è che un lotto cancellato
+porta via il numero di lotto del fornitore, cioè ciò che serve in un richiamo.
+* 26/08 — **FUORI: gli ordini ai fornitori**, testata e righe. ⚠️ La ragione va
+detta giusta: `ordini_fornitore_righe` **un importo ce l'ha**, `prezzo_atteso`
+— misurato aprendo le colonne. È un prezzo *atteso*, cioè una previsione
+scritta quando l'ordine parte; quanto si è pagato lo dice la fattura, che è
+tracciata dall'08/08.
+* 26/08 — **FUORI: la spesa spicciola.** Aperte le colonne, non c'è nessun
+importo: è la lista di cosa prendere al supermercato.
+* 26/08 — **FUORI PER ORA: la posta** — `posta_ricevuta`, `posta_allegati`,
+`posta_azioni`. Da riguardare quando la posta sarà davvero collegata
+all'archivio.
+* 26/08 — **LE CAPARRE RESTANO IN SOSPESO**, in attesa della misura sul
+movimento di cassa. ⚠️ Vedi il referto: quella misura è stata fatta, e la
+risposta è che **una caparra non genera nessun movimento**. La decisione sul
+registro va presa dopo aver deciso cosa fare del buco, non prima.
+* 26/08 — **Le tabelle non ancora classificate si segnalano e basta.** Alessio
+le guarda una per una più avanti. ⚠️ Vuoto e «fuori» sono due stati diversi e
+il controllo li distingue: una decisa fuori sparisce dall'elenco, una vuota
+resta lì a chiedere.
+
 ## Quesiti per i consulenti
 
 * 24/08 — Ogni domanda per Laura, Gianna, Tiziana, l'ASP o le banche va in

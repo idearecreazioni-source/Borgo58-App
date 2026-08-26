@@ -31,6 +31,49 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
+0-caparra. 🔴 **UNA CAPARRA INCASSATA NON ARRIVA MAI IN CASSA — misurato il
+   26/08/2026, NON corretto** (il mandato chiedeva di misurare, non di
+   riparare).
+
+   **Il percorso, guardato dalla schermata al database e non dedotto dai
+   nomi.** Il campo «Caparra €» in *Calendario Eventi → scheda prenotazione*
+   (solo titolare, solo eventi) chiama `setReservationDeposit()`, che fa un
+   `upsert` diretto su `reservation_deposits`. Punto. Sulla tabella ci sono
+   **zero trigger**, e in tutto il database **zero funzioni la nominano** —
+   contro le 18 che nominano `cash_movements` e le 18 che nominano
+   `reservations`, quindi lo zero non è dello strumento.
+
+   **Quanto è grande, misurato sul gestionale di prova** (due mesi di vita
+   finta a scala vera): **3 caparre su 3 senza movimento — 245,00 € in
+   tutto**, e nessun movimento di cassa con quegli importi. Nel gestionale
+   vero le caparre sono **zero**: oggi non morde, e il giorno del primo
+   evento vero sì.
+
+   ⚠️ **E non è che il movimento sia scritto con la causale sbagliata: non
+   c'è nessuna causale per una caparra.** Le entrate disponibili sono
+   *Incasso giornaliero*, *Altro incasso*, e due di sistema. Il buco è
+   completo — non si scrive niente, e non c'è dove scriverlo.
+
+   🔴 **E CI SONO ALTRI DUE BUCHI NELLO STESSO PUNTO, trovati guardando chi
+   legge quel numero.**
+   - `getReservationDeposit` è chiamata **da un solo posto**: la scheda che
+     l'ha scritta. Nessun conto la scala, nessun saldo la vede, «Ce la
+     faccio?» non la conosce. Il cliente versa 80 € di caparra e alla serata
+     paga il conto pieno: **il gestionale non toglie niente**.
+   - `reservation_deposits.reservation_id` è `on delete cascade` su
+     `reservations`, e `pulisci_richieste_scadute()` cancella le prenotazioni
+     rifiutate o annullate dopo sei mesi. Una caparra su una richiesta
+     rifiutata **sparisce da sola**, senza lasciare traccia da nessuna parte.
+     Sul progetto di prova una delle tre è proprio su una
+     `richiesta_in_attesa`, da 85 €.
+
+   ⚠️ **La classificazione delle caparre nel registro delle cancellazioni
+   dipende da qui**, ed è per questo che è rimasta vuota: finché il denaro
+   non ha una strada, decidere se conservarne la lapide è rispondere alla
+   domanda sbagliata. ⚠️ E la tabella **non ha una colonna `id`** (è
+   `reservation_id`, `amount`, `created_at`): messa dentro così com'è, la
+   lapide nascerebbe senza il riferimento.
+
 0-zero-bis. 🔴 **DEBITO DICHIARATO — L'AGGIRAMENTO DEL PIANO NELLA PROVA
    DI RICARICA** (25/08/2026, deciso da Alessio: si dichiara, non si cura
    adesso).
