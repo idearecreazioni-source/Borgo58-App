@@ -5,6 +5,7 @@ import Didascalia from "../../components/Didascalia";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
+  chiHaMessoIlTetto,
   impostaTettoAi,
   listLettureFoto,
   sbloccaSpesaAi,
@@ -30,6 +31,7 @@ export default function Fotografa() {
   const [letture, setLetture] = useState(null);
   const [esito, setEsito] = useState(null);
   const [tetto, setTetto] = useState("");
+  const [chiTetto, setChiTetto] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState("");
 
@@ -39,6 +41,7 @@ export default function Fotografa() {
       if (s && s !== nonLetto) setTetto(s.tetto_euro == null ? "" : String(s.tetto_euro));
     });
     leggi(listLettureFoto(15)).then(setLetture);
+    leggi(chiHaMessoIlTetto()).then(setChiTetto);
   }, []);
 
   useEffect(ricarica, [ricarica]);
@@ -203,6 +206,23 @@ export default function Fotografa() {
                   letture non si fermano mai da sole. Un tetto a zero il
                   database lo rifiuta apposta — per spegnere l'assistente
                   basta non usarlo. */}
+              {/* 🔴 CHI L'HA TOCCATO, e quando. Il gestionale lo registrava
+                  dal 26/08 e non lo mostrava: per chi usa l'app, un dato
+                  scritto che nessuno può vedere è indistinguibile da un
+                  dato non scritto.
+                  ⚠️ La frase arriva dal database già composta — «l'hai
+                  messo tu» oppure «da un altro accesso», perché si entra
+                  per ruolo e non per persona (stessa forma del 18/08 sulla
+                  correzione dei coperti). E il tetto che non ha un autore
+                  LO DICE, invece di lasciare un vuoto che si legge come un
+                  guasto. */}
+              {chiTetto && chiTetto !== nonLetto && chiTetto.tetto_frase && (
+                <p className="testo-sala mt-1 text-b58-charcoal-soft">
+                  {chiTetto.tetto_frase}
+                  {chiTetto.sblocco_frase && <> · {chiTetto.sblocco_frase}</>}
+                </p>
+              )}
+
               <Didascalia>
                 Lascialo vuoto se non vuoi nessun limite. Quando la spesa arriva al tetto le foto
                 smettono di partire, ma le schede si compilano a mano come sempre.

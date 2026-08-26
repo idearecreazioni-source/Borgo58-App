@@ -61,8 +61,22 @@ describe("l'assistente che legge le foto", () => {
   it("senza tetto non blocca, e lo dichiara invece di tacere", async () => {
     // ⚠️ È lo stato in cui nasce la produzione: se questo caso rispondesse
     //    «blocca», l'assistente nascerebbe spento.
-    const prima = (await titolare.rpc("spesa_ai_del_mese")).data[0];
-    const tettoPrecedente = prima.tetto_euro;
+    // 🔴 SI SALVA LA RIGA INTERA, non il solo numero. Fino al 26/08 questa
+    //    prova rimetteva `tetto_euro` chiamando `imposta_tetto_ai`, e
+    //    andava bene finché la riga era fatta di quel numero e basta.
+    //    Quel giorno la riga ha acquistato `tetto_da` e `tetto_il` — chi
+    //    ha toccato il tetto e quando — e da quel momento «rimettere com'era»
+    //    è diventato falso in silenzio: la prova lasciava il tetto
+    //    attribuito a sé stessa, e a scoprirlo è stata la verifica di una
+    //    migrazione scritta tre ore dopo, non questa prova.
+    //    ⚠️ È la lezione del 14/08 (si salva la RIGA, non le colonne che
+    //    ci si ricorda) e insieme il limite dichiarato del guardiano dei
+    //    residui: quello conta le righe, e una riga MODIFICATA e lasciata
+    //    modificata non cambia nessun conteggio.
+    const { data: rigaPrima } = await titolare
+      .from("impostazioni_ai")
+      .select("*")
+      .maybeSingle();
 
     await titolare.rpc("imposta_tetto_ai", { p_euro: null });
     const { data } = await titolare.rpc("spesa_ai_del_mese");
@@ -70,7 +84,14 @@ describe("l'assistente che legge le foto", () => {
     expect(data[0].tetto_euro).toBeNull();
     expect(data[0].frase).toMatch(/nessun tetto/i);
 
-    await titolare.rpc("imposta_tetto_ai", { p_euro: tettoPrecedente });
+    const { error: erroreRimessa } = await titolare
+      .from("impostazioni_ai")
+      .update(rigaPrima)
+      .eq("id", rigaPrima.id);
+    expect(erroreRimessa).toBeNull();
+
+    const { data: rigaDopo } = await titolare.from("impostazioni_ai").select("*").maybeSingle();
+    expect(rigaDopo).toEqual(rigaPrima);
   });
 
   it("un tetto a zero è respinto dal database, non dalla schermata", async () => {

@@ -130,6 +130,16 @@ l'ha ancora guardato nessuno».
 
 ## Assistente — foto
 
+* 26/08 — La schermata del tetto di spesa **mostra chi l'ha toccato e quando**.
+⚠️ E il valore che c'era prima **non viene attribuito a nessuno**: l'ha scritto
+una migrazione, non una persona, e la riga lo dice in parole invece di lasciare
+un vuoto. *Un campo vuoto onesto vale più di un nome plausibile.*
+* 26/08 — **60 comandi vocali all'ora**, confermato: si lascia com'è e si
+riguarda dopo qualche giorno d'uso vero.
+* 26/08 — Le **14 ricette senza ingredienti nel gestionale vero sono normali e
+non si toccano**: là dentro ci sono anche zero prodotti e zero fornitori, e la
+separazione fra prodotto e ingrediente riscriverà quella parte. Riempirle
+adesso sarebbe lavoro doppio.
 * 25/08 — Si spezza in TRE mandati: motore unico + etichetta di prodotto; poi
 bolle del fornitore; poi fatture. L'assistente interpreta bene qualunque foto,
 ma il gestionale ha tre destinazioni con tre modi diversi di sbagliare.

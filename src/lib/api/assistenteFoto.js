@@ -194,3 +194,17 @@ export async function allergeniConOrigine(ingredientId) {
   if (error) throw error;
   return data ?? [];
 }
+
+/**
+ * Chi ha messo il tetto di spesa, e chi lo ha sbloccato — gia' in parole.
+ *
+ * ⚠️ La frase la compone il DATABASE e non la schermata: e' la stessa
+ *    regola per cui `spesa_ai_del_mese()` restituisce il numero insieme
+ *    alla frase che ne dichiara il limite. Una seconda schermata che
+ *    mostrasse lo stesso dato erediterebbe la frase invece di riscriverla.
+ */
+export async function chiHaMessoIlTetto() {
+  const { data, error } = await supabase.rpc("chi_ha_messo_il_tetto");
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] : data;
+}
