@@ -31,9 +31,30 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ## La coda dei lavori, nell'ordine deciso
 
-0-caparra. 🔴 **UNA CAPARRA INCASSATA NON ARRIVA MAI IN CASSA — misurato il
-   26/08/2026, NON corretto** (il mandato chiedeva di misurare, non di
-   riparare).
+0-caparra. 🟡 **UNA CAPARRA INCASSATA NON ARRIVAVA MAI IN CASSA — misurato e
+   CHIUSO A METÀ il 26/08/2026.**
+
+   ✅ **Chiuso la sera del 26/08** (migrazione `20260826000017`): la caparra
+   genera il suo movimento di prima nota, il legame regge nelle due
+   direzioni, togliere una caparra storna il movimento, e il denaro
+   **sopravvive alla pulizia della privacy** — provato per rottura, non
+   dedotto. Il bonifico è scritto e spento finché non c'è un conto corrente.
+
+   ⏳ **Restano aperti due pezzi**, che erano i Blocchi 3 e 4 del mandato:
+   - **la caparra si PROPONE alla chiusura del conto** e Alessio conferma —
+     con i due modi di sbagliare da chiudere: scalarla due volte, e chiudere
+     il conto senza accorgersi che c'era;
+   - **la caparra TRATTENUTA** quando il cliente non si presenta, come voce a
+     sé ritrovabile separatamente dagli incassi del servizio.
+
+   ⚠️ **E c'è un residuo misurato**: sul progetto di prova ci sono **3 caparre
+   con `movimento_id` vuoto**, scritte prima di questo lavoro. Nessuna
+   sanatoria le tocca — sul gestionale vero le caparre sono zero, quindi non
+   c'era niente da sanare. `registra_caparra` le **guarisce da sé** se
+   qualcuno ne corregge l'importo: trovando il movimento vuoto, lo crea.
+
+   *Il testo qui sotto è la misura del 26/08 pomeriggio e resta come origine
+   della decisione.*
 
    **Il percorso, guardato dalla schermata al database e non dedotto dai
    nomi.** Il campo «Caparra €» in *Calendario Eventi → scheda prenotazione*

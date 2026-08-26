@@ -528,6 +528,25 @@ computer e PROVATO ricaricandolo, non solo generato.
 ricostruzione da zero SI LASCIANO COSÌ: il segnale è onesto e spiegato, e
 riscrivere un file già applicato costa una regola per guadagnare silenzio.
 
+## Caparre
+
+* 26/08 — **La caparra entra in cassa NEL MOMENTO IN CUI LA RICEVI**, non alla
+serata. Il cliente ha versato denaro davvero. ✅ Costruito il 26/08: nasce un
+movimento di prima nota in contanti con la causale di sistema «Caparra
+ricevuta».
+* 26/08 — **Alla chiusura del conto la caparra si PROPONE e Alessio conferma**:
+mai scalata da sé in silenzio. ⏳ *Non ancora costruito.*
+* 26/08 — **La caparra tenuta per un cliente che non si presenta è una VOCE A
+SÉ**, ritrovabile separatamente dagli incassi del servizio, così a fine anno si
+sa quanto è entrato senza aver servito nessuno. ⏳ *Non ancora costruito.*
+* 26/08 — **La caparra per BONIFICO si prepara adesso e resta SPENTA** finché
+non esiste un conto corrente. ✅ Costruito: a tenerla spenta è il fatto che
+`conti_bancari` sia vuota — non un interruttore da ricordarsi di girare. Il
+giorno che Alessio registra il conto **si accende da sé**.
+* 26/08 — *(conseguenza, non decisione)* Togliere una caparra **storna anche il
+movimento di cassa** e dice di quanto scende il saldo, secondo la regola del
+16/08 sui documenti che hanno generato un effetto.
+
 ## Registro delle cancellazioni — il perimetro
 
 ⚠️ Il criterio di partenza è dell'08/08/2026 e **non è toccato**: nel registro
