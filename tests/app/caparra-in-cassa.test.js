@@ -7,6 +7,7 @@ import {
   righeMie,
 } from "./aiuto";
 import { setReservationDeposit } from "../../src/lib/api/reservations";
+import { caparraDelConto } from "../../src/lib/api/orders";
 // ⚠️ IL COLLEGAMENTO DELL'APP, non uno nostro. `eseguiOperazione` passa da
 // questo, e una prova che apre un client suo farebbe parlare l'app da
 // anonima: il corridoio risponde «Sessione non valida» e sembra un guasto del
@@ -150,5 +151,37 @@ describe("la caparra: quando la ricevi, entra in cassa", () => {
       body: { operazione: "registra_caparra", parametri: { p_reservation_id: prenotazione, p_importo: 50 } },
     });
     expect(error).toBeTruthy();
+  });
+
+  it.skipIf(!CORRIDOIO)("la proposta arriva fino al browser, e su un conto senza caparra tace", async () => {
+    // ⚠️ SI PROVA DAL CLIENT PERCHE' I PERMESSI SONO INVISIBILI DA DENTRO UNA
+    // MIGRAZIONE: `caparra_del_conto` è `security definer`, e una `revoke`
+    // dimenticata la renderebbe muta a schermo senza nessun errore rosso —
+    // cioe' un conto con caparra che si chiude come se non ne avesse.
+    const { data: ent } = await titolare.from("entities").select("id").eq("entity_type", "srls").single();
+
+    const { data: senza } = await titolare
+      .from("orders")
+      .insert({ entity_id: ent.id, table_label: "__PROVA__ senza caparra", coperti: 2 })
+      .select("id").single();
+    mie.segna("orders", senza.id);
+    expect(await caparraDelConto(senza.id)).toBeNull();
+
+    const esito = await setReservationDeposit(prenotazione, 30);
+    movimenti.push(esito.movimento_id);
+    const { data: con } = await titolare
+      .from("orders")
+      .insert({ entity_id: ent.id, table_label: "__PROVA__ con caparra", coperti: 4,
+                reservation_id: prenotazione, coperto_unit_price: 20 })
+      .select("id").single();
+    mie.segna("orders", con.id);
+
+    const proposta = await caparraDelConto(con.id);
+    expect(proposta).toBeTruthy();
+    expect(Number(proposta.importo)).toBe(30);
+    expect(proposta.si_puo_scalare).toBe(true);
+    // La frase e' quella che il cameriere legge: deve nominare i due numeri.
+    expect(proposta.frase).toMatch(/30,00/);
+    expect(proposta.frase).toMatch(/da incassare adesso/i);
   });
 });

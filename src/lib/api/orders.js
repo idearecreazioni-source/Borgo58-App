@@ -409,13 +409,39 @@ export { orderTotals } from "../calcoli/conto";
 // Passandolo, `paymentMethod` non serve. Le quote devono fare l'incassato
 // al centesimo, e a rifiutare è il database: una divisione che non torna
 // sarebbe cassa e banca che non tornano più.
-export async function closeOrderPaid(orderId, paymentMethod, copertoUnitPrice, pagamenti = null) {
+// ⚠️ `scalaCaparra` è FALSO se nessuno dice il contrario, ed è il punto della
+// decisione di Alessio del 26/08: la caparra si PROPONE e la conferma lui, mai
+// scalata da sé in silenzio. Sono soldi che il cliente ha già dato.
+export async function closeOrderPaid(
+  orderId,
+  paymentMethod,
+  copertoUnitPrice,
+  pagamenti = null,
+  scalaCaparra = false
+) {
   return eseguiOperazione("close_order_paid", {
     p_order_id: orderId,
     p_payment_method: pagamenti ? null : paymentMethod,
     p_coperto_unit_price: copertoUnitPrice ?? null,
     p_pagamenti: pagamenti,
+    p_scala_caparra: scalaCaparra,
   });
+}
+
+// LA CAPARRA DA PROPORRE ALLA CHIUSURA DI QUESTO CONTO.
+//
+// ⚠️ Restituisce `null` quando non c'è niente da proporre — la funzione del
+// database non restituisce nessuna riga, e il silenzio è la risposta giusta:
+// un riquadro vuoto su ogni conto senza caparra sarebbe ingombro che in
+// servizio si smette di leggere.
+//
+// ⚠️ E quando c'è ma NON si può scalare (già usata, o più grande del conto) la
+// riga torna lo stesso, con `si_puo_scalare` falso e la frase che dice perché.
+// Nasconderla sarebbe peggio: chi ha preso la caparra si aspetta di vederla.
+export async function caparraDelConto(orderId) {
+  const { data, error } = await supabase.rpc("caparra_del_conto", { p_order_id: orderId });
+  if (error) throw error;
+  return data?.[0] ?? null;
 }
 
 export async function cancelOrder(orderId, reason) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   cancelOrder,
   closeOrderAsDiscountGift,
+  caparraDelConto,
   closeOrderPaid,
   orderTotals,
 } from "../../lib/api/orders";
@@ -16,6 +17,7 @@ import {
 import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 import { fiscalizzaConto } from "../../lib/fiscalizzazione";
 import { serataCorrente } from "../../lib/giornataOperativa";
+import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // 🔴 IL NOME E IL TOTALE DI UNA RIGA ARRIVANO DA `righeComanda.js` (24/08):
 // erano quattro copie sparse, e solo quella della Sala sapeva riconoscere un
@@ -41,6 +43,10 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   const [persone, setPersone] = useState(2);
   const [aTesta, setATesta] = useState("");
   const [causali, setCausali] = useState([]);
+  // La caparra da proporre, e la scelta di Alessio. `null` = non ha ancora
+  // deciso, ed e' lo stato in cui i pulsanti di pagamento restano spenti.
+  const [caparra, setCaparra] = useState(null);
+  const [sceltaCaparra, setSceltaCaparra] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -53,6 +59,25 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   useEffect(() => {
     listCausali("sconto_omaggio").then(setCausali);
   }, []);
+
+  // ⚠️ SI CHIEDE AL DATABASE, non si deduce dalla prenotazione: la regola su
+  // «gia' usata» e sul confronto con il totale del conto vive li', e una
+  // copia qui direbbe prima o poi una cosa diversa.
+  // 🔴 SE NON SI RIESCE A LEGGERE, NON SI DICE «non c'e' caparra».
+  // Un catch che ingoia farebbe chiudere il conto a prezzo pieno su un
+  // cliente che ha gia' versato — e la schermata direbbe la cosa sbagliata
+  // con calma, senza nessun errore rosso. Regola del 20/08: si marca
+  // NON_LETTO e la schermata lo mostra, coi pulsanti spenti.
+  useEffect(() => {
+    let vivo = true;
+    leggi(caparraDelConto(order.id)).then((c) => { if (vivo) setCaparra(c); });
+    return () => { vivo = false; };
+  }, [order.id]);
+
+  const ricaricaCaparra = () => {
+    setCaparra(NON_LETTO);
+    leggi(caparraDelConto(order.id)).then(setCaparra);
+  };
 
   // Stesso calcolo del preconto e del totale a schermo — coperto incluso
   // (§3.2.1): il cliente non deve vedere due numeri diversi.
@@ -121,7 +146,17 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
     onDone();
   };
 
-  const handlePaid = (method) => run(() => closeOrderPaid(order.id, method, copertoUnitPrice));
+  // ⚠️ FINCHE' NON HA SCELTO, NON SI PAGA. E' il modo in cui la proposta
+  // diventa impossibile da saltare senza accorgersene: non un colore, ma i
+  // pulsanti spenti. Se la caparra non c'e' o non si puo' scalare, questo
+  // vale falso e la sala non si accorge di niente.
+  const aspettaCaparra =
+    nonLetto(caparra) || (Boolean(caparra?.si_puo_scalare) && sceltaCaparra === null);
+  const scalando =
+    !nonLetto(caparra) && Boolean(caparra?.si_puo_scalare) && sceltaCaparra === true;
+
+  const handlePaid = (method) =>
+    run(() => closeOrderPaid(order.id, method, copertoUnitPrice, null, scalando));
 
   // --- Pagano in due modi (Blocco 9, deciso da Alessio) ---------------
   //
@@ -286,14 +321,80 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
             </div>
           )}
 
+          {/* 🔴 LA CAPARRA NON SI SCALA DA SÉ, E NON SI PUÒ NEMMENO NON
+              VEDERE. Decisione di Alessio del 26/08: si propone e conferma
+              lui. Qui la proposta non è un avviso colorato che si salta
+              premendo il pulsante accanto — finché non ha scelto, **i
+              pulsanti di pagamento sono spenti**. Sono soldi che il cliente
+              ha già dato: dimenticarli glieli fa pagare due volte, e
+              scalarli senza dirlo toglie a lui la decisione. */}
+          {nonLetto(caparra) && (
+            <div className="testo-sala bg-b58-terracotta/15 ring-2 ring-b58-terracotta-dark/40 rounded-lg px-3 py-2">
+              <p className="text-b58-charcoal font-medium testo-sala-grande">
+                Non sono riuscito a controllare se questo cliente ha versato una caparra.
+              </p>
+              <p className="text-b58-charcoal-soft mt-0.5">
+                Non vuol dire che non ce ne sia una. Riprova prima di incassare:
+                chiudere adesso potrebbe fargli pagare due volte.
+              </p>
+              <button type="button" onClick={ricaricaCaparra} className="tocco-bottone mt-2 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
+                Riprova
+              </button>
+            </div>
+          )}
+
+          {caparra && !nonLetto(caparra) && (
+            <div className="testo-sala bg-b58-terracotta/15 ring-2 ring-b58-terracotta-dark/40 rounded-lg px-3 py-2">
+              <p className="text-b58-charcoal font-medium testo-sala-grande">{caparra.frase}</p>
+              {caparra.si_puo_scalare && sceltaCaparra === null && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSceltaCaparra(true)}
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-3"
+                  >
+                    Scala la caparra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSceltaCaparra(false)}
+                    className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/25 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3"
+                  >
+                    Non scalarla
+                  </button>
+                </div>
+              )}
+              {caparra.si_puo_scalare && sceltaCaparra !== null && (
+                <p className="text-b58-charcoal-soft mt-1">
+                  {sceltaCaparra
+                    ? `La caparra viene scalata: da incassare ${formatEUR(Number(caparra.incasso) - Number(caparra.importo))}.`
+                    : "La caparra NON viene scalata: il cliente paga il conto intero."}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setSceltaCaparra(null)}
+                    className="underline text-b58-terracotta-dark"
+                  >
+                    cambia
+                  </button>
+                </p>
+              )}
+            </div>
+          )}
+
           {mode === null && (
             <>
+              {scalando && (
+                <p className="testo-sala text-b58-charcoal-soft">
+                  Con la caparra scalata il conto si chiude con un mezzo di pagamento
+                  solo. Per dividerlo, scegli prima «Non scalarla».
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {ORDER_PAYMENT_METHODS.map((pm) => (
                   <button
                     key={pm.value}
                     type="button"
-                    disabled={busy}
+                    disabled={busy || aspettaCaparra}
                     onClick={() => handlePaid(pm.value)}
                     className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
                   >
@@ -307,10 +408,10 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   pulsante che tocca i soldi è peggio di un pulsante in più
                   in verticale.* */}
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={apriMisto} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
+                <button type="button" disabled={aspettaCaparra || scalando} onClick={apriMisto} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Pagano in due modi
                 </button>
-                <button type="button" onClick={apriRomana} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">
+                <button type="button" disabled={aspettaCaparra || scalando} onClick={apriRomana} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal testo-sala font-medium px-3">
                   Alla romana
                 </button>
                 <button type="button" onClick={() => setMode("sconto")} className="tocco-bottone flex-1 rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3">

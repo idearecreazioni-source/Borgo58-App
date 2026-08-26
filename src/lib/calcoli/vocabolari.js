@@ -201,6 +201,12 @@ export const GUARDIE_ESENTI = [
       "elenca cosa PUÒ STARE DENTRO un'altra ricetta (preparazione, finger), che è di proposito un sottoinsieme dei tipi di ricetta: un piatto finito è un tipo legittimo e non può essere un componente. Sono due domande diverse — «che ricetta è» e «può entrare in un'altra» — e il discriminante del 17/08 dice che allora non si fondono. ⚠️ E il verso conta: la funzione elenca ciò che è ammesso, quindi un tipo nuovo domani sarebbe rifiutato finché nessuno lo nomina lì (19/08/2026, blocco 1 dei finger food)",
   },
   {
+    funzione: "close_order_paid",
+    parametro: "p_payment_method",
+    perche:
+      "elenca come il cliente può pagare ADESSO, in sala (contante, carta), che dal 26/08/2026 è di proposito un sottoinsieme di ciò che `order_payments.mezzo` ammette: il terzo valore, «caparra», è una quota già saldata settimane prima e non un modo di pagare che un cameriere possa scegliere. Lo scrive solo il gestionale, quando Alessio conferma lo scalo. Sono due domande diverse — «come stai pagando» e «come è stata saldata questa quota» — e il discriminante del 17/08 dice che allora non si fondono. ⚠️ E il verso conta: se un giorno la guardia venisse allargata a «caparra», un cameriere potrebbe chiudere un conto dichiarando una caparra che non esiste",
+  },
+  {
     funzione: "voce_risolvi_dati",
     parametro: "p_tipo",
     perche:
