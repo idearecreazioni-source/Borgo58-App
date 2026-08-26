@@ -1,16 +1,30 @@
 # I comandi vocali, i bersagli fra 5 e 8 mm, le decisioni del 14-21 agosto
 
-**26/08/2026** · consegna di tre blocchi · HEAD dichiarato: **`90ee532`**
-(l'ultimo commit prima di questo riepilogo) · working tree **pulito** al
-momento della scrittura.
+**26/08/2026** · consegna di tre blocchi · HEAD dichiarato: **`ef759a3`**
+(l'ultimo commit di lavoro; sopra di lui sta solo questo riepilogo) ·
+working tree **pulito**.
 
-I tre commit della consegna, in ordine:
+🔴 **E QUESTA RIGA È STATA GIÀ UNA VOLTA FALSA**, il che la dice lunga sul
+perché la regola esiste: la prima stesura dichiarava `90ee532`, e poi sono
+arrivati due commit — questo riepilogo e la voce nel menu. Un hash
+dichiarato che non è quello pushato manda chi controlla a leggere un
+codice diverso da quello che sta guardando.
+
+⚠️ **E la correzione è arrivata DOPO il push, non prima** — anche questo
+va detto invece che lasciato intendere: il primo push è uscito con l'hash
+vecchio scritto qui dentro, e questo riepilogo lo corregge nel push
+successivo. Nessun codice è cambiato in mezzo: quello che era sbagliato
+era solo la riga che dice dove guardare.
+
+I commit della consegna, in ordine:
 
 | commit | cosa |
 |---|---|
 | `db83e7f` | La voce capisce una filza intera, e fa quello di cui è sicuro |
 | `57fea27` | I bersagli fra 5 e 8 mm: censiti tutti, e chiusi con quattro classi |
 | `90ee532` | Le decisioni del 14-21 agosto tornano a dire cosa vale adesso |
+| `ce88063` | questo riepilogo (prima stesura) |
+| `ef759a3` | «Parla e basta» nel menu, e la Dashboard non grida se la voce non c'è |
 
 ---
 
