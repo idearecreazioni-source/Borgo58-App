@@ -203,7 +203,7 @@ export default function StaffRicettaDetail() {
                   href={v.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                  className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
                 >
                   {v.url}
                 </a>

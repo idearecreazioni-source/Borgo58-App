@@ -72,7 +72,7 @@ export default function SimulatoreFiscale() {
   }, [entityId, estimatedProfit, costoLavoro, savedMsg]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSaveSettings = async () => {
@@ -118,7 +118,7 @@ export default function SimulatoreFiscale() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -179,7 +179,7 @@ export default function SimulatoreFiscale() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 pt-3 border-t border-b58-charcoal/10">
           <div>
             <label className={labelClass}>Maxi-deduzione del costo del lavoro</label>
-            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={Boolean(settings.maxideduzione_attiva)}
@@ -244,7 +244,7 @@ export default function SimulatoreFiscale() {
           <button
             onClick={handleSaveSettings}
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Salvo…" : "Salva parametri"}
           </button>

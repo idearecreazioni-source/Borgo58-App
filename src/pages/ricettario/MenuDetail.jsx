@@ -239,7 +239,7 @@ export default function MenuDetail() {
   }
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleActivate = async () => {
     setActivating(true);
@@ -472,7 +472,7 @@ export default function MenuDetail() {
                                 { id, nome: menu?.name ?? "", a: `/ricettario/menu/${id}` },
                               ],
                             }}
-                            className="hover:text-b58-terracotta"
+                            className="tocco-testo hover:text-b58-terracotta"
                           >
                             {item.recipe.name}
                           </Link>
@@ -491,7 +491,7 @@ export default function MenuDetail() {
                             step="0.5"
                             value={item.selling_price}
                             onSave={(v) => handlePriceChange(item.id, v)}
-                            className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
+                            className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                           />
                         </td>
                         <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`}>
@@ -552,7 +552,7 @@ export default function MenuDetail() {
                 <button
                   onClick={() => handleAddItem(category)}
                   disabled={!form.recipe_id}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   + Aggiungi
                 </button>

@@ -50,7 +50,7 @@ export default function Previsioni() {
   }, [entityId]);
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const apriFoglio = async (file) => {
     setError("");
@@ -143,7 +143,7 @@ export default function Previsioni() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -190,7 +190,7 @@ export default function Previsioni() {
             type="file"
             accept=".xlsx"
             onChange={(e) => apriFoglio(e.target.files?.[0])}
-            className="block testo-sala text-b58-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-b58-terracotta file:px-4 file:py-2 file:testo-sala file:text-b58-parchment"
+            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-b58-terracotta file:px-4 file:py-2 file:testo-sala file:text-b58-parchment"
           />
         )}
 

@@ -101,7 +101,7 @@ export default function ScontiOmaggi() {
   const isOmaggio = form.type === "omaggio";
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -174,7 +174,7 @@ export default function ScontiOmaggi() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -271,7 +271,7 @@ export default function ScontiOmaggi() {
                 key={t.value}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, type: t.value }))}
-                className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
+                className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.type === t.value
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -367,7 +367,7 @@ export default function ScontiOmaggi() {
           )}
 
           <div className="mb-3">
-            <button type="button" onClick={() => setShowDeviceForm((v) => !v)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
+            <button type="button" onClick={() => setShowDeviceForm((v) => !v)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
               {showDeviceForm ? "Annulla" : devices.length === 0 ? "+ Configura i tablet in uso" : "Gestisci tablet"}
             </button>
             {showDeviceForm && (
@@ -378,11 +378,11 @@ export default function ScontiOmaggi() {
                   placeholder='Nome, es. "Tablet Sala"'
                   className={inputClass + " flex-1 min-w-[140px]"}
                 />
-                <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft whitespace-nowrap">
+                <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft whitespace-nowrap">
                   <input type="checkbox" checked={newDevice.isOwnerDevice} onChange={(e) => setNewDevice((d) => ({ ...d, isOwnerDevice: e.target.checked }))} />
                   È il tuo tablet
                 </label>
-                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
+                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
                   {savingDevice ? "Salvo…" : "+ Aggiungi"}
                 </button>
               </div>
@@ -394,7 +394,7 @@ export default function ScontiOmaggi() {
               type="button"
               disabled={saving || !form.full_amount || !form.causale_id}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>

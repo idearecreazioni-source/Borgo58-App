@@ -73,7 +73,7 @@ export default function Deducibilita() {
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -114,7 +114,7 @@ export default function Deducibilita() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && (
@@ -125,7 +125,7 @@ export default function Deducibilita() {
           <select
             value={anno}
             onChange={(e) => setAnno(Number(e.target.value))}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {[annoCorrente + 1, annoCorrente, annoCorrente - 1].map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -193,7 +193,7 @@ export default function Deducibilita() {
           <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Da classificare</h2>
           <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
             Il modo più veloce di non rivederle più è dare una regola alla <strong>causale</strong> (in{" "}
-            <Link to="/cassa/causali" className="underline">Cassa → Causali</Link>) o al{" "}
+            <Link to="/cassa/causali" className="tocco-inline underline">Cassa → Causali</Link>) o al{" "}
             <strong>fornitore</strong>: da lì in poi le righe la ereditano da sole.
           </p>
           <div className="overflow-x-auto">
@@ -281,7 +281,7 @@ export default function Deducibilita() {
                       type="date"
                       value={r.verificata_il || ""}
                       onChange={(e) => cambiaRegola(r.id, { verificata_il: e.target.value || null })}
-                      className="rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                      className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
                     />
                     {!r.verificata_il && (
                       <div className="testo-sala text-b58-gold-dark mt-0.5">mai confermata</div>
@@ -290,7 +290,7 @@ export default function Deducibilita() {
                   <td className="py-2 text-right">
                     <button
                       onClick={() => cambiaRegola(r.id, { attiva: !r.attiva })}
-                      className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                      className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                     >
                       {r.attiva ? "Disattiva" : "Riattiva"}
                     </button>
@@ -344,7 +344,7 @@ export default function Deducibilita() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4 mb-3">
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft cursor-pointer">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.vieta_contante}
@@ -353,7 +353,7 @@ export default function Deducibilita() {
               />
               pagata in contanti non si deduce
             </label>
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft cursor-pointer">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.soggetta_a_plafond}
@@ -374,7 +374,7 @@ export default function Deducibilita() {
               type="button"
               disabled={saving || !form.etichetta.trim()}
               onClick={aggiungiRegola}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Salvo…" : "+ Aggiungi"}
             </button>

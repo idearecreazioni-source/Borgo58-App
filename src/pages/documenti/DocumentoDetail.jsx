@@ -28,7 +28,7 @@ export default function DocumentoDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setField = (field, value) => setDoc((d) => ({ ...d, [field]: value }));
@@ -181,7 +181,7 @@ export default function DocumentoDetail() {
                 <button
                   onClick={() => leggiContenuto(false)}
                   disabled={leggendo}
-                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal testo-sala font-medium px-3 py-1.5"
+                  className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal testo-sala font-medium px-3 py-1.5"
                 >
                   {leggendo ? "Leggo…" : "Leggi il contenuto"}
                 </button>
@@ -227,7 +227,7 @@ export default function DocumentoDetail() {
             domanda="Eliminare documento e file?"
             onConferma={handleDelete}
           />
-          <button onClick={handleSave} disabled={saving} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+          <button onClick={handleSave} disabled={saving} className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
         </div>

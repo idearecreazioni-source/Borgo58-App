@@ -71,7 +71,7 @@ export default function ArchivioDocumentiHome() {
   }, [cercato]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -133,13 +133,13 @@ export default function ArchivioDocumentiHome() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => navigate("/documenti/chiedi")}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Chiedi all'archivio
           </button>
           <button
             onClick={() => navigate("/documenti/posta")}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Posta in arrivo
             {nonLetto(postaInAttesa) && (
@@ -153,7 +153,7 @@ export default function ArchivioDocumentiHome() {
           </button>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo documento"}
           </button>
@@ -216,7 +216,7 @@ export default function ArchivioDocumentiHome() {
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={`${inputClass} mb-3`} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="testo-sala-grande text-b58-charcoal-soft" />
-              <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+              <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Carico…" : "+ Salva documento"}
               </button>
             </div>
@@ -277,7 +277,7 @@ export default function ArchivioDocumentiHome() {
               </button>
               <div className="flex items-center gap-3 shrink-0">
                 {d.storage_path && (
-                  <button onClick={() => openFile(d)} className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark">
+                  <button onClick={() => openFile(d)} className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark">
                     Apri file
                   </button>
                 )}

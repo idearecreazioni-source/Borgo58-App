@@ -219,7 +219,7 @@ function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
               onSposta(e.target.value);
               setRimanda(false);
             }}
-            className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+            className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
           />
         </div>
       )}

@@ -93,7 +93,7 @@ export default function TaskForm() {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -263,7 +263,7 @@ export default function TaskForm() {
             </select>
           </div>
           <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.preferito}
@@ -318,7 +318,7 @@ export default function TaskForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, remind_date: "", remind_time: "" }))}
-              className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
+              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
             >
               Rimuovi promemoria
             </button>
@@ -334,7 +334,7 @@ export default function TaskForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
@@ -343,7 +343,7 @@ export default function TaskForm() {
               type="button"
               onClick={handleDelete}
               disabled={saving}
-              className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-dark"
             >
               Elimina
             </button>

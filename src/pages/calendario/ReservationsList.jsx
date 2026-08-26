@@ -64,14 +64,14 @@ export default function ReservationsList() {
         <div className="flex flex-wrap gap-2">
           <Link
             to="/calendario-eventi/pianta"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             La sala
           </Link>
           {isTitolare && (
             <Link
               to="/calendario-eventi/sala-e-orari"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
             >
               Sala e orari
             </Link>
@@ -87,20 +87,20 @@ export default function ReservationsList() {
           {isTitolare && (
             <Link
               to="/calendario-eventi/preventivi"
-              className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
             >
               Preventivi
             </Link>
           )}
           <Link
             to="/calendario-eventi/clienti"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Clienti
           </Link>
           <Link
             to="/calendario-eventi/nuova"
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
           >
             + Nuova prenotazione
           </Link>
@@ -120,7 +120,7 @@ export default function ReservationsList() {
           <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
             Una richiesta non tiene nessun tavolo: il cliente resta in attesa finché non
             gliene dai uno tu dalla{" "}
-            <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+            <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
               pianta della sala
             </Link>
             .
@@ -154,19 +154,19 @@ export default function ReservationsList() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         />
         <button
           type="button"
           onClick={() => setDate(todayISO())}
-          className="rounded-lg border border-b58-charcoal/15 px-3 py-2 testo-sala-grande text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 px-3 py-2 testo-sala-grande text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
         >
           Oggi
         </button>
         <button
           type="button"
           onClick={() => setDate("")}
-          className={`rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
+          className={`tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
             date
               ? "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
               : "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
@@ -188,12 +188,12 @@ export default function ReservationsList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca cliente (nome, telefono, email)…"
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[220px]"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti i tipi</option>
           {RESERVATION_TYPES.map((t) => (
@@ -203,7 +203,7 @@ export default function ReservationsList() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutti gli stati</option>
           {RESERVATION_STATUSES.map((s) => (

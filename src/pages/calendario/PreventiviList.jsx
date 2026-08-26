@@ -82,7 +82,7 @@ export default function PreventiviList() {
         <button
           onClick={nuovo}
           disabled={creando}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 text-b58-parchment testo-sala-grande px-4 py-2"
+          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 text-b58-parchment testo-sala-grande px-4 py-2"
         >
           {creando ? "…" : "Nuovo preventivo"}
         </button>

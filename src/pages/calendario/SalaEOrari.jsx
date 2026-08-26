@@ -30,7 +30,7 @@ import {
 // perché si ricalcola ogni giorno sulla disposizione di quel giorno.
 
 const inputClass =
-  "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 const sezioneClass = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6";
 
@@ -144,7 +144,7 @@ export default function SalaEOrari() {
           <strong>{serviziAperti}</strong>{" "}
           {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quante
           persone entrano lo decidi tu guardando la sala:{" "}
-          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             apri la pianta
           </Link>
           .
@@ -191,7 +191,7 @@ export default function SalaEOrari() {
               <div className="space-y-1">
                 {orariDelGiorno(g.weekday).map((o) => (
                   <div key={o.id} className="flex flex-wrap items-center gap-3 bg-white rounded-lg px-3 py-2">
-                    <label className="flex items-center gap-2 min-w-[110px]">
+                    <label className="tocco-campo flex items-center gap-2 min-w-[110px]">
                       <input
                         type="checkbox"
                         checked={o.attivo}
@@ -265,7 +265,7 @@ export default function SalaEOrari() {
           Quanti coperti fa <strong>un tavolo da solo</strong>, per formato. Accostandone due il
           totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
           vede sulla{" "}
-          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             pianta
           </Link>
           , e lì si corregge a mano quando la sala dice altro.
@@ -301,7 +301,7 @@ export default function SalaEOrari() {
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
         <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
           Solo il nome: dove stanno lo decidi trascinandoli dalla{" "}
-          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             pianta
           </Link>
           . Un tavolo che non usi più si spegne, non si cancella: le prenotazioni vecchie
@@ -322,7 +322,7 @@ export default function SalaEOrari() {
               <button
                 type="button"
                 onClick={() => esegui(() => attivaSagoma(t.id, !t.active))}
-                className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
+                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark underline mt-1"
               >
                 {t.active ? "spegni" : "riaccendi"}
               </button>
@@ -469,7 +469,7 @@ export default function SalaEOrari() {
           Ferie, festivi, giorni singoli. In queste date il sito non propone nessun orario e
           scrive al cliente il motivo, se lo metti. <strong>Non è «siamo pieni»</strong>:
           quello si mette giorno per giorno dalla{" "}
-          <Link to="/calendario-eventi/pianta" className="underline text-b58-terracotta">
+          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             pianta
           </Link>
           , e nello storico resta una cosa diversa.
@@ -508,7 +508,7 @@ export default function SalaEOrari() {
             type="button"
             onClick={aggiungiChiusura}
             disabled={!nuovaChiusura.dal}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             + Aggiungi
           </button>
@@ -525,7 +525,7 @@ export default function SalaEOrari() {
               </span>
               <button
                 onClick={() => esegui(() => deleteClosure(c.id))}
-                className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 title="Togli"
               >
                 ✕

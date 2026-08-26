@@ -371,7 +371,7 @@ export default function RicettaDetail() {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   // Preparazioni e finger: stessa forma (una resa, non delle porzioni).
@@ -783,7 +783,7 @@ export default function RicettaDetail() {
           <button
             onClick={handleCopia}
             disabled={copiando}
-            className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
+            className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta disabled:opacity-60"
           >
             {copiando ? "Copio…" : "Fai una copia"}
           </button>
@@ -1125,7 +1125,7 @@ export default function RicettaDetail() {
             {erroreMenu ? null : menuDentro.length === 0 ? (
               <p className="testo-sala text-b58-charcoal-soft/70">
                 Non c&rsquo;è ancora nessun menu.{" "}
-                <Link to="/ricettario/menu/nuovo" className="underline text-b58-terracotta">
+                <Link to="/ricettario/menu/nuovo" className="tocco-inline underline text-b58-terracotta">
                   Creane uno
                 </Link>
               </p>
@@ -1276,7 +1276,7 @@ export default function RicettaDetail() {
                   <select
                     value={categoriaFinger}
                     onChange={(e) => setCategoriaFinger(e.target.value)}
-                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
+                    className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande"
                   >
                     <option value="">Tutte le categorie</option>
                     {RECIPE_CATEGORIES.map((c) => (
@@ -1287,7 +1287,7 @@ export default function RicettaDetail() {
                     value={senzaAllergeneFinger}
                     onChange={(e) => setSenzaAllergeneFinger(e.target.value)}
                     disabled={!allergeniFinger || nonLetto(allergeniFinger)}
-                    className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande disabled:opacity-50"
+                    className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande disabled:opacity-50"
                   >
                     <option value="">Qualunque allergene</option>
                     {ALLERGENS.map((a) => (
@@ -1395,7 +1395,7 @@ export default function RicettaDetail() {
                               : `/ricettario/ingredienti/${ri.ingredient.id}`
                           }
                           state={isComponent ? passoDaQui(recipe?.name) : undefined}
-                          className="hover:text-b58-terracotta"
+                          className="tocco-testo hover:text-b58-terracotta"
                         >
                           {isComponent ? ri.component.name : ri.ingredient.name}
                         </Link>
@@ -1424,7 +1424,7 @@ export default function RicettaDetail() {
                             step="0.01"
                             value={ri.quantity}
                             onSave={(v) => handleQuantityChange(ri, v)}
-                            className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
+                            className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande"
                           />
                           <span className="text-b58-charcoal-soft ml-1">{ri.unit}</span>
                         </td>
@@ -1595,7 +1595,7 @@ export default function RicettaDetail() {
             )}
           </div>
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input
                 type="checkbox"
                 checked={ingredientForm.is_optional}
@@ -1613,7 +1613,7 @@ export default function RicettaDetail() {
                   : !ingredientForm.ingredient_id)
               }
               onClick={handleAddIngredient}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -1809,7 +1809,7 @@ export default function RicettaDetail() {
               placeholder='Attrezzatura, es. "Roner"'
               className={inputClass}
             />
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input
                 type="checkbox"
                 checked={stepForm.is_active_time}
@@ -1819,7 +1819,7 @@ export default function RicettaDetail() {
             </label>
           </div>
 
-          <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+          <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
             <input
               type="checkbox"
               checked={stepForm.is_haccp_ccp}
@@ -1850,7 +1850,7 @@ export default function RicettaDetail() {
               type="button"
               disabled={addingStep || !stepForm.description.trim()}
               onClick={handleAddStep}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
@@ -1880,7 +1880,7 @@ export default function RicettaDetail() {
                     href={v.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
+                    className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark break-all"
                   >
                     {v.url}
                   </a>
@@ -1891,7 +1891,7 @@ export default function RicettaDetail() {
                 </div>
                 <button
                   onClick={() => handleRemoveVideo(v.id)}
-                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
+                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark shrink-0"
                 >
                   Rimuovi
                 </button>
@@ -1917,7 +1917,7 @@ export default function RicettaDetail() {
             type="button"
             disabled={addingVideo || !videoUrl.trim()}
             onClick={handleAddVideo}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
           </button>

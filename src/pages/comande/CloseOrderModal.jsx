@@ -72,7 +72,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   // 🔴 LO SCONTRINO PARTE DA SOLO (22/08/2026, decisione di Alessio):
   // *«viene considerato emesso fino a prova contraria, non viceversa. Il

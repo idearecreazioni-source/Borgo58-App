@@ -93,7 +93,7 @@ export default function Mance() {
   }, [tipsYear]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleCollect = async () => {
     if (!collectForm.amount || Number(collectForm.amount) <= 0) return;
@@ -217,7 +217,7 @@ export default function Mance() {
           ← Personale
         </Link>
         {entities && (
-          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal">
+          <select value={entityId} onChange={(e) => setEntityId(e.target.value)} className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal">
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
           </select>

@@ -80,7 +80,7 @@ export default function RegistraCarico() {
   const selectedIngredient = ingredients.find((i) => i.ingredient_id === form.ingredient_id);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -231,7 +231,7 @@ export default function RegistraCarico() {
               <select
                 value={rigaScelta || rigaPredefinita?.id || ""}
                 onChange={(e) => setRigaScelta(e.target.value)}
-                className="mt-2 w-full rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala"
+                className="mt-2 w-full tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala"
               >
                 {righe.map((r) => (
                   <option key={r.id} value={r.id}>

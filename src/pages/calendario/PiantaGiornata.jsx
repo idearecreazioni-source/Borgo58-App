@@ -90,7 +90,7 @@ const BOTTONE =
 const PRINCIPALE =
   "tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-semibold px-4";
 const CAMPO =
-  "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const ETICHETTA = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
 // ⚠️ FUORI dal componente, e non è una questione di ordine. Definita
@@ -1060,7 +1060,7 @@ export default function PiantaGiornata() {
           type="date"
           value={data}
           onChange={(e) => setData(e.target.value)}
-          className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
         />
         <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
@@ -1083,7 +1083,7 @@ export default function PiantaGiornata() {
             pubblica, non qui: una casella spenta nella schermata non è un
             freno. E resta una cosa diversa da «siamo chiusi», che si mette da
             Sala e orari — sono due fatti diversi e due tabelle diverse. */}
-        <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+        <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
           <input
             type="checkbox"
             checked={pieno}

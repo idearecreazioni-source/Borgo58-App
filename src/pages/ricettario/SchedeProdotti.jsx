@@ -245,8 +245,12 @@ export default function SchedeProdotti() {
                 <li key={i.id} className="border-b border-stone-200 py-3 last:border-0">
                   <div className="font-medium">{i.name}</div>
                   <div className="my-2 flex flex-wrap gap-3">
+                    {/* ⚠️ Il bersaglio è l ETICHETTA, non il quadratino: si tocca
+                        la parola. Misurata a 5,00 mm nel censimento del 26/08 —
+                        e sono le caselle su cui Alessio corregge gli allergeni,
+                        cioè il dato che finisce sul menu. */}
                     {ALLERGENS.map((a) => (
-                      <label key={a.value} className="testo-sala-grande">
+                      <label key={a.value} className="tocco-campo inline-flex items-center testo-sala-grande">
                         <input
                           type="checkbox"
                           className="mr-1"

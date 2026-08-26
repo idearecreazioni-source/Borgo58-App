@@ -48,7 +48,7 @@ export default function FornitoreDetail() {
   }, [id]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleChange = (field, value) => setSupplier((s) => ({ ...s, [field]: value }));
@@ -298,7 +298,7 @@ export default function FornitoreDetail() {
             <button
               type="button"
               onClick={handleDeactivate}
-              className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+              className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
             >
               Disattiva fornitore
             </button>
@@ -306,7 +306,7 @@ export default function FornitoreDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2 ml-auto"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2 ml-auto"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>

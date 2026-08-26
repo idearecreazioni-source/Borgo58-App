@@ -149,7 +149,7 @@ export default function Dashboard() {
           {!isStaff && nonLetto(dettate) && (
             <p className="testo-sala text-b58-terracotta-dark">
               Non sono riuscito a leggere le cose che hai dettato.{" "}
-              <button type="button" onClick={load} className="underline">
+              <button type="button" onClick={load} className="tocco-inline underline">
                 Riprova
               </button>
             </p>

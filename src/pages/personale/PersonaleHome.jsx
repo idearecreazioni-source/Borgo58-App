@@ -39,7 +39,7 @@ export default function PersonaleHome() {
   }, [includeInactive]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!form.first_name.trim() || !form.last_name.trim() || !entities) return;
@@ -71,13 +71,13 @@ export default function PersonaleHome() {
         <div className="flex flex-wrap gap-2">
           <Link
             to="/personale/mance"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             Mance
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo dipendente"}
           </button>
@@ -121,7 +121,7 @@ export default function PersonaleHome() {
             type="button"
             disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
             onClick={handleAdd}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Creo…" : "Crea"}
           </button>
@@ -152,7 +152,7 @@ export default function PersonaleHome() {
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display testo-sala-titolo text-b58-charcoal">Dipendenti</h2>
-        <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+        <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
           <input type="checkbox" checked={includeInactive} onChange={(e) => setIncludeInactive(e.target.checked)} />
           Mostra anche cessati
         </label>

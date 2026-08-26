@@ -6,7 +6,7 @@ export default function PrintButton({ label = "Esporta PDF" }) {
     <button
       type="button"
       onClick={() => window.print()}
-      className="print:hidden rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+      className="tocco-campo print:hidden rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
     >
       {label}
     </button>

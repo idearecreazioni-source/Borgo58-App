@@ -99,7 +99,7 @@ export default function DeduzioniFiscali() {
   }, [expenses]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -187,7 +187,7 @@ export default function DeduzioniFiscali() {
           <button
             onClick={handleExport}
             disabled={expenses.length === 0}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2 disabled:opacity-40"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2 disabled:opacity-40"
           >
             Esporta CSV
           </button>
@@ -195,7 +195,7 @@ export default function DeduzioniFiscali() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -204,7 +204,7 @@ export default function DeduzioniFiscali() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -217,7 +217,7 @@ export default function DeduzioniFiscali() {
       <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
         Stima interna della quota deducibile, sempre da validare con Laura. Ogni importo mostra da quale
         regola deriva; il sistema non presenta nessun numero come certo. Le regole si governano da{" "}
-        <Link to="/fiscale/deducibilita" className="underline print:hidden">Deducibilità dei costi</Link>.
+        <Link to="/fiscale/deducibilita" className="tocco-inline underline print:hidden">Deducibilità dei costi</Link>.
       </p>
 
       {error && (
@@ -336,7 +336,7 @@ export default function DeduzioniFiscali() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             {regolaScelta?.vieta_contante && (
-              <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+              <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                 <input
                   type="checkbox"
                   checked={form.exempt_from_cash_rule}
@@ -375,7 +375,7 @@ export default function DeduzioniFiscali() {
               type="button"
               disabled={saving || !form.description.trim() || !form.amount}
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>
@@ -418,7 +418,7 @@ export default function DeduzioniFiscali() {
                           ev.target.value.trim() !== e.description &&
                           correggi(e.id, { description: ev.target.value.trim() })
                         }
-                        className="w-full max-w-[16rem] rounded border border-transparent hover:border-b58-charcoal/15 focus:border-b58-terracotta px-1 py-0.5 bg-transparent print:border-0"
+                        className="w-full max-w-[16rem] tocco-campo rounded border border-transparent hover:border-b58-charcoal/15 focus:border-b58-terracotta px-1 py-0.5 bg-transparent print:border-0"
                       />
                       <span className="testo-sala text-b58-charcoal-soft"> · {e.regola ?? "non classificata"}</span>
                       {/* Il motivo arriva dal database insieme alla quota:

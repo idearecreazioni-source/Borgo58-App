@@ -118,7 +118,7 @@ export default function EditorMenuHome() {
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -136,10 +136,10 @@ export default function EditorMenuHome() {
             </h1>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to="/editor-menu/bevande" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
+            <Link to="/editor-menu/bevande" className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
               Bevande e vini
             </Link>
-            <Link to="/editor-menu/giorno" className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
+            <Link to="/editor-menu/giorno" className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
               Piatti del giorno
             </Link>
             <PrintButton label="Stampa / PDF" />
@@ -168,10 +168,10 @@ export default function EditorMenuHome() {
             </div>
           </div>
           <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input type="checkbox" checked={showPrices} onChange={(e) => setShowPrices(e.target.checked)} /> Mostra prezzi
             </label>
-            <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
               <input type="checkbox" checked={showDescriptions} onChange={(e) => setShowDescriptions(e.target.checked)} /> Mostra descrizioni
             </label>
             {/* ⚠️ SCRITTO, non sottinteso (decisione di Alessio, 17/08):
@@ -227,7 +227,7 @@ export default function EditorMenuHome() {
                   Questi ingredienti hanno allergeni solo stimati, o mai guardati da nessuno:{" "}
                   <strong>{nonVerificati.join(", ")}</strong>. I piatti che li contengono{" "}
                   <strong>non stampano l&apos;elenco allergeni</strong> finché non li confermi in{" "}
-                  <Link to="/ricettario/schede" className="underline">
+                  <Link to="/ricettario/schede" className="tocco-inline underline">
                     Ricettario → Schede dei prodotti
                   </Link>
                   .
@@ -279,7 +279,7 @@ export default function EditorMenuHome() {
                 <button
                   type="button"
                   onClick={() => setExcluded({})}
-                  className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                  className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
                 >
                   Rimettili tutti
                 </button>
@@ -287,7 +287,7 @@ export default function EditorMenuHome() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
               {items.map((i) => (
-                <div key={i.id} className="flex items-center gap-2 testo-sala-grande">
+                <div key={i.id} className="tocco-campo flex items-center gap-2 testo-sala-grande">
                   <span
                     className={
                       excluded[i.id]
@@ -303,7 +303,7 @@ export default function EditorMenuHome() {
                   <button
                     type="button"
                     onClick={() => setExcluded((x) => ({ ...x, [i.id]: !x[i.id] }))}
-                    className="testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
+                    className="tocco-testo testo-sala text-b58-terracotta hover:text-b58-terracotta-dark shrink-0"
                   >
                     {excluded[i.id] ? "rimetti nella stampa" : "non stampare"}
                   </button>

@@ -39,7 +39,7 @@ export default function Causali() {
   }, [causali]);
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAdd = async () => {
     if (!newLabel.trim()) return;
@@ -101,7 +101,7 @@ export default function Causali() {
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         Sotto c&apos;è anche <strong>la deducibilità abituale</strong>: le uscite registrate con quella causale
         la ereditano, e su una singola riga puoi sempre dire diversamente. Le regole si creano da{" "}
-        <Link to="/fiscale/deducibilita" className="underline">Proiezione fiscale → Deducibilità dei costi</Link>.
+        <Link to="/fiscale/deducibilita" className="tocco-inline underline">Proiezione fiscale → Deducibilità dei costi</Link>.
       </p>
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         Alcune causali le scrive <strong>il gestionale</strong>, non tu: quando conti il cassetto, versi in
@@ -130,7 +130,7 @@ export default function Causali() {
           type="button"
           disabled={saving || !newLabel.trim()}
           onClick={handleAdd}
-          className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>
@@ -162,7 +162,7 @@ export default function Causali() {
                       {!c.di_sistema && (
                         <button
                           onClick={() => handleRemove(c.id)}
-                          className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                           title="Disattiva"
                         >
                           ✕
@@ -171,7 +171,7 @@ export default function Causali() {
                     </div>
                     {k.value === "uscita" && !c.di_sistema && (
                       <>
-                        <label className="flex items-center gap-1.5 testo-sala text-b58-charcoal-soft mt-0.5 cursor-pointer">
+                        <label className="tocco-campo flex items-center gap-1.5 testo-sala text-b58-charcoal-soft mt-0.5 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={Boolean(c.conta_nei_fissi)}
@@ -183,7 +183,7 @@ export default function Causali() {
                         <select
                           value={c.regola_deducibilita_id || ""}
                           onChange={(e) => handleRegola(c.id, e.target.value)}
-                          className="w-full mt-1 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                          className="w-full mt-1 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
                         >
                           <option value="">deducibilità: da dire</option>
                           {regole.map((r) => (

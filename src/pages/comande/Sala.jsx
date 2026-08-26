@@ -1104,7 +1104,7 @@ export default function Sala() {
   );
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const sectionLabel =
     "testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-1.5";
 
@@ -1548,7 +1548,7 @@ export default function Sala() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal testo-sala-grande font-medium py-2"
+            className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 text-b58-charcoal testo-sala-grande font-medium py-2"
           >
             + Aggiungi alla comanda
           </button>
@@ -1632,13 +1632,13 @@ export default function Sala() {
         <div className="flex flex-wrap justify-end gap-1.5">
           <Link
             to="/comande/bar"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Bar
           </Link>
           <Link
             to="/comande/cucina"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Cucina
           </Link>
@@ -1649,7 +1649,7 @@ export default function Sala() {
               tavolo davanti. */}
           <Link
             to="/comande/scontrini"
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
           >
             Scontrini
           </Link>
@@ -1722,7 +1722,7 @@ export default function Sala() {
                   <button
                     type="button"
                     onClick={handleSavePrice}
-                    className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+                    className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
                   >
                     Salva
                   </button>

@@ -39,7 +39,7 @@ export default function Cessioni() {
   }, []);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const total = useMemo(
@@ -100,7 +100,7 @@ export default function Cessioni() {
         <Link to="/agricolo" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Agricolo / Orto
         </Link>
-        <button onClick={() => setShowForm((v) => !v)} className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+        <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
           {showForm ? "Annulla" : "+ Nuova cessione"}
         </button>
       </div>
@@ -159,7 +159,7 @@ export default function Cessioni() {
             </div>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="testo-sala-grande text-b58-charcoal">Imponibile: <span className="font-medium">{formatEUR(total)}</span></div>
-              <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+              <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                 {/* Senza ingrediente collegato la casella è spenta E vuota:
                     prima restava disegnata "spuntata" pur essendo inerte —
                     prometteva un aggiornamento che non sarebbe avvenuto
@@ -167,7 +167,7 @@ export default function Cessioni() {
                 <input type="checkbox" checked={Boolean(form.update_cost && form.ingredient_id)} onChange={(e) => setForm((f) => ({ ...f, update_cost: e.target.checked }))} disabled={!form.ingredient_id} />
                 Aggiorna il costo dell'ingrediente collegato a questo prezzo
               </label>
-              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Registro…" : "+ Registra cessione"}
               </button>
             </div>

@@ -45,7 +45,7 @@ export default function CatalogoStrumenti() {
   }, []);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleAdd = async () => {
@@ -100,7 +100,7 @@ export default function CatalogoStrumenti() {
         </Link>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
         >
           {showForm ? "Annulla" : "+ Nuovo strumento"}
         </button>
@@ -201,7 +201,7 @@ export default function CatalogoStrumenti() {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+              <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                 <input
                   type="checkbox"
                   checked={form.in_use}
@@ -213,7 +213,7 @@ export default function CatalogoStrumenti() {
                 type="button"
                 disabled={saving || !form.name.trim()}
                 onClick={handleAdd}
-                className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
               >
                 {saving ? "Salvo…" : "+ Aggiungi"}
               </button>
@@ -282,13 +282,13 @@ export default function CatalogoStrumenti() {
                 >
                   <button
                     onClick={() => toggleInUse(t)}
-                    className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
+                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
                   >
                     {t.in_use ? "Segna non in uso" : "Segna in uso"}
                   </button>
                   <button
                     onClick={() => handleDelete(t)}
-                    className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                    className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                   >
                     Rimuovi
                   </button>

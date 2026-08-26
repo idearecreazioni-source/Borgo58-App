@@ -222,7 +222,7 @@ export default function RicetteList() {
             ? "Una ricetta resta fuori"
             : `${esclusePerchePocoChiare} ricette restano fuori`}{" "}
           perché i loro allergeni non sono confermati: non si può dire che siano senza.{" "}
-          <Link to="/ricettario/schede" className="underline text-b58-terracotta">
+          <Link to="/ricettario/schede" className="tocco-inline underline text-b58-terracotta">
             Le schede dei prodotti
           </Link>
         </p>

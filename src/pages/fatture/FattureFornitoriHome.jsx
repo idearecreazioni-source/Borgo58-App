@@ -184,7 +184,7 @@ export default function FattureFornitoriHome() {
   }, [tutteDaPagare]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala text-b58-charcoal-soft mb-1";
 
   const filtroAttivo = Boolean(filtri.supplierId || filtri.dal || filtri.al);
@@ -773,7 +773,7 @@ export default function FattureFornitoriHome() {
                             (e.target.value.trim() || null) !== inv.invoice_number &&
                             correggi(inv.id, { invoice_number: e.target.value.trim() || null })
                           }
-                          className="w-28 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala"
+                          className="w-28 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala"
                         />
                       </div>
                       <div>
@@ -788,7 +788,7 @@ export default function FattureFornitoriHome() {
                             Number(e.target.value) > 0 &&
                             correggi(inv.id, { amount: Number(e.target.value) })
                           }
-                          className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala text-right font-medium"
+                          className="w-24 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala text-right font-medium"
                         />
                       </div>
                       <button
@@ -924,7 +924,7 @@ export default function FattureFornitoriHome() {
                             Hai un credito con {inv.supplier.name}: lo usi su questa fattura?
                           </p>
                           {creditiFattura.map((c) => (
-                            <label key={c.nota_id} className="flex items-center gap-2 testo-sala py-0.5">
+                            <label key={c.nota_id} className="tocco-campo flex items-center gap-2 testo-sala py-0.5">
                               <input
                                 type="checkbox"
                                 checked={noteScelte.includes(c.nota_id)}

@@ -121,7 +121,7 @@ export default function Previsione() {
   }, [entityId, giorni]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -199,7 +199,7 @@ export default function Previsione() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -208,7 +208,7 @@ export default function Previsione() {
           <select
             value={giorni}
             onChange={(e) => setGiorni(Number(e.target.value))}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             {ORIZZONTI.map((o) => (
               <option key={o.giorni} value={o.giorni}>fra {o.label}</option>
@@ -391,7 +391,7 @@ export default function Previsione() {
                           Number(e.target.value) !== Number(s.importo) &&
                           correggi(s, "importo", e.target.value)
                         }
-                        className="w-24 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
+                        className="w-24 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                       />
                       {s.chiusa_il ? (
                         <button
@@ -403,7 +403,7 @@ export default function Previsione() {
                       ) : (
                         <button
                           onClick={() => chiudi(s.id)}
-                          className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                         >
                           non serve più
                         </button>
@@ -475,7 +475,7 @@ export default function Previsione() {
                   type="button"
                   disabled={saving || !form.descrizione.trim() || !form.importo}
                   onClick={aggiungiScadenza}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "+ Aggiungi"}
                 </button>
@@ -546,7 +546,7 @@ export default function Previsione() {
                 <button
                   type="button"
                   onClick={salvaPos}
-                  className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande px-4 py-2"
+                  className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande px-4 py-2"
                 >
                   Salva
                 </button>

@@ -51,7 +51,7 @@ export default function Login() {
               setError("");
             }}
             placeholder="••••••"
-            className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 testo-sala-titolo tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-4 py-3 testo-sala-titolo tracking-[0.4em] text-center text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           {error && <p className="testo-sala-grande text-b58-terracotta-dark mt-2">{error}</p>}
 

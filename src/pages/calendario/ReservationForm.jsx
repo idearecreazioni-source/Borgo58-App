@@ -168,7 +168,7 @@ export default function ReservationForm() {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const handleSubmit = async (e) => {
@@ -263,7 +263,7 @@ export default function ReservationForm() {
                 tavolo» — e non offriva la strada per rimediare. */}
             <Link
               to={`/calendario-eventi/pianta?data=${form.reservation_date}&assegna=${id}`}
-              className="underline text-b58-terracotta"
+              className="tocco-inline underline text-b58-terracotta"
             >
               {tavoli.length > 0 ? "apri la pianta" : "dai un tavolo dalla pianta"}
             </Link>
@@ -291,7 +291,7 @@ export default function ReservationForm() {
                 type="button"
                 key={t.value}
                 onClick={() => setForm((f) => ({ ...f, type: t.value }))}
-                className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
+                className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                   form.type === t.value
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -456,7 +456,7 @@ export default function ReservationForm() {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
         >
           {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea prenotazione"}
         </button>

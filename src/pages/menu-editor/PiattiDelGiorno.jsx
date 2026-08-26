@@ -48,7 +48,7 @@ export default function PiattiDelGiorno() {
   const selected = useMemo(() => dailyMenus.find((d) => d.id === selectedId), [dailyMenus, selectedId]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleCreate = async () => {
     setBusy(true);
@@ -141,7 +141,7 @@ export default function PiattiDelGiorno() {
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo</label>
             <input value={newForm.title} onChange={(e) => setNewForm((f) => ({ ...f, title: e.target.value }))} className={inputClass} />
           </div>
-          <button type="button" disabled={busy} onClick={handleCreate} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={handleCreate} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Crea
           </button>
         </div>
@@ -157,7 +157,7 @@ export default function PiattiDelGiorno() {
               <button
                 key={d.id}
                 onClick={() => setSelectedId(d.id)}
-                className={`rounded-lg border px-3 py-1.5 testo-sala-grande transition-colors ${
+                className={`tocco-campo rounded-lg border px-3 py-1.5 testo-sala-grande transition-colors ${
                   selectedId === d.id
                     ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft hover:bg-b58-cream-dark"
@@ -174,7 +174,7 @@ export default function PiattiDelGiorno() {
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display testo-sala-grande text-b58-charcoal">{selected.title || "Piatti del giorno"} · {formatDate(selected.service_date)}</h2>
-              <button onClick={() => handleDeleteMenu(selected.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
+              <button onClick={() => handleDeleteMenu(selected.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">
                 Elimina questo giorno
               </button>
             </div>
@@ -188,7 +188,7 @@ export default function PiattiDelGiorno() {
                       {it.category && <span className="testo-sala text-b58-charcoal-soft"> · {labelFor(RECIPE_CATEGORIES, it.category)}</span>}
                       {it.price != null && <span className="text-b58-charcoal-soft"> · {formatEUR(it.price)}</span>}
                     </span>
-                    <button onClick={() => handleRemoveItem(it.id)} className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
+                    <button onClick={() => handleRemoveItem(it.id)} className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark">Rimuovi</button>
                   </li>
                 ))}
               </ul>
@@ -196,8 +196,8 @@ export default function PiattiDelGiorno() {
 
             <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
               <div className="flex gap-2 mb-2">
-                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "recipe" }))} className={`rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "recipe" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Dal ricettario</button>
-                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "custom" }))} className={`rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "custom" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Piatto libero</button>
+                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "recipe" }))} className={`tocco-campo rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "recipe" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Dal ricettario</button>
+                <button type="button" onClick={() => setItemForm((f) => ({ ...f, mode: "custom" }))} className={`tocco-campo rounded-full testo-sala px-3 py-1.5 border ${itemForm.mode === "custom" ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}>Piatto libero</button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {itemForm.mode === "recipe" ? (
@@ -222,7 +222,7 @@ export default function PiattiDelGiorno() {
                 <input type="number" step="0.01" value={itemForm.price} onChange={(e) => setItemForm((f) => ({ ...f, price: e.target.value }))} placeholder="Prezzo €" className={inputClass} />
               </div>
               <div className="flex justify-end mt-2">
-                <button type="button" disabled={busy} onClick={handleAddItem} className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+                <button type="button" disabled={busy} onClick={handleAddItem} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                   + Aggiungi piatto
                 </button>
               </div>

@@ -92,7 +92,7 @@ export default function ChiediArchivio() {
           rows={2}
           maxLength={800}
           placeholder="Per esempio: quanto ho speso dal notaio?"
-          className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
+          className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta resize-none"
         />
         <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
           <div className="flex gap-1.5 flex-wrap">
@@ -101,7 +101,7 @@ export default function ChiediArchivio() {
                 key={e}
                 onClick={() => chiedi(e)}
                 disabled={attesa}
-                className="rounded-full border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal-soft testo-sala px-2.5 py-1"
+                className="tocco-campo rounded-full border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-40 transition-colors text-b58-charcoal-soft testo-sala px-2.5 py-1"
               >
                 {e}
               </button>
@@ -188,7 +188,7 @@ export default function ChiediArchivio() {
 
       <button
         onClick={() => setMostraStorico((v) => !v)}
-        className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-charcoal underline"
+        className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-charcoal underline"
       >
         {mostraStorico
           ? "Nascondi le domande già fatte"
@@ -205,7 +205,7 @@ export default function ChiediArchivio() {
           )}
           {storico.map((d) => (
             <details key={d.id} className="rounded-lg bg-white border border-b58-charcoal/10 p-3">
-              <summary className="testo-sala-grande text-b58-charcoal cursor-pointer">
+              <summary className="tocco-testo testo-sala-grande text-b58-charcoal cursor-pointer">
                 {d.domanda}
                 <span className="testo-sala text-b58-charcoal-soft ml-2">{formatDate(d.creato_il)}</span>
               </summary>

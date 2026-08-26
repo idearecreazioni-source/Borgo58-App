@@ -60,7 +60,7 @@ export default function FornitoriList() {
   };
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -73,7 +73,7 @@ export default function FornitoriList() {
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo fornitore"}
         </button>
@@ -133,7 +133,7 @@ export default function FornitoriList() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Creo…" : "Crea scheda"}
           </button>

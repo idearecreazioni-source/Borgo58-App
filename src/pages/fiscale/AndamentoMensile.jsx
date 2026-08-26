@@ -152,7 +152,7 @@ export default function AndamentoMensile() {
   }, [carica]);
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   // ⚠️ DUE GESTI SEPARATI, non «cancella e rifai» in un colpo solo
   // (decisione di Alessio, 16/08): prima si cancella, poi si rifotografa.
@@ -284,7 +284,7 @@ export default function AndamentoMensile() {
           creava. Un avviso che non può mai comparire è peggio di nessun
           avviso: dice che il gestionale se ne occupa, e non è vero. */}
       <details className="mb-6 rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-4 py-3">
-        <summary className="testo-sala-grande text-b58-charcoal cursor-pointer">
+        <summary className="tocco-testo testo-sala-grande text-b58-charcoal cursor-pointer">
           Periodi da non confrontare ({periodi.length})
         </summary>
         <p className="testo-sala text-b58-charcoal-soft/80 mt-2 mb-3">
@@ -303,7 +303,7 @@ export default function AndamentoMensile() {
                 <button
                   type="button"
                   onClick={() => togliPeriodo(p.id)}
-                  className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                  className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 >
                   togli
                 </button>
@@ -344,7 +344,7 @@ export default function AndamentoMensile() {
             type="button"
             disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
             onClick={aggiungiPeriodo}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             + Segna
           </button>
@@ -363,7 +363,7 @@ export default function AndamentoMensile() {
                 <button
                   onClick={chiudi}
                   disabled={chiudendo}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {chiudendo ? "Chiudo…" : "Fotografa questo mese"}
                 </button>

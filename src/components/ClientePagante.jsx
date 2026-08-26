@@ -74,7 +74,7 @@ export default function ClientePagante({ order, onFatto, onErrore, compatto = fa
   };
 
   const campo =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-2 tocco-bottone testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 tocco-bottone testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   if (cliente) {
     return (

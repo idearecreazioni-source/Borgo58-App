@@ -97,6 +97,70 @@ body {
   min-width: calc(var(--pxcm) * 0.85);
 }
 
+/* 🔴 IL GESTO SCRITTO A PAROLE — «Rimuovi», «spegni», «non stampare»
+   (26/08/2026, censimento dei bersagli fra 5 e 8 mm).
+
+   ⚠️ IL CENSIMENTO, misurato a 390 punti su 73 schermate: **54 forme
+   distinte, 598 bersagli** sotto gli 8,50 mm. Non erano 598 difetti
+   diversi — erano poche forme ripetute molte volte, e la piu' diffusa e'
+   questa: un gesto scritto come testo nudo, alto **4,00 mm**, presente in
+   otto schermate e cinquantaquattro volte.
+
+   ⚠️ E IL PREZZO DI NON AVERE UNA CLASSE si vedeva nel censimento
+   stesso: la stessa riga era stata scritta a mano ogni volta, quindi le
+   varianti erano cinque — con e senza `underline`, con due colori diversi
+   — e correggerle una per una avrebbe voluto dire trovarle tutte, oggi e
+   la prossima volta.
+
+   ⚠️ NON CAMBIA LA DIMENSIONE DEL TESTO, e non deve: un «Rimuovi» in
+   fondo a una riga non e' il gesto principale di quella riga, e
+   ingrandirlo lo farebbe sembrare tale. Cresce il BERSAGLIO col padding —
+   si tocca la riga, non le lettere — che e' la stessa cura misurata sul
+   link «Agenda completa» in Dashboard il 22/08.
+
+   ⚠️ Il margine negativo compensa il padding, cosi' il gesto resta dov'e'
+   nella disposizione e nessuna schermata si allarga. */
+.tocco-testo {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(var(--pxcm) * 0.85);
+  padding-inline: 0.5rem;
+  margin-inline: -0.5rem;
+}
+
+/* 🔴 UN CAMPO IN CUI SI SCRIVE COL DITO (26/08/2026, stesso censimento).
+   La seconda famiglia per numero: campi e menu a tendina fra **5,59 e
+   8,23 mm** — le quantita' della lista della spesa, i prezzi delle
+   bevande, i sessanta numeri di una previsione nuova.
+
+   ⚠️ Un campo troppo basso non e' come un pulsante troppo basso: mancarlo
+   non fa niente di sbagliato, fa solo perdere un tocco. Ma sono i campi
+   che si riempiono **in serie** — cinquantacinque quantita' di fila — e
+   li' un tocco perso ogni tanto e' la differenza fra usarlo e non usarlo.
+
+   ⚠️ Anche qui il testo resta quello che era: cresce solo lo spazio in
+   cui il dito puo' cadere. */
+.tocco-campo {
+  min-height: calc(var(--pxcm) * 0.85);
+}
+
+/* 🔴 UN COLLEGAMENTO DENTRO UNA FRASE (26/08/2026, coda dello stesso
+   censimento). L'ultima famiglia rimasta, e la sola che NON si può curare
+   come le altre: «vai in Cassa → Causali» sta in mezzo a un periodo, e
+   dargli `inline-flex` lo staccherebbe dalla riga mandandolo a capo.
+
+   ⚠️ Quindi resta un elemento in linea e cresce SOLO il rettangolo che il
+   dito può prendere: il padding verticale allarga l'area cliccabile senza
+   spostare di un punto il testo attorno. Misurato: da 3,97 a 8,50 mm, e la
+   frase resta esattamente dov'era. */
+.tocco-inline {
+  /* ⚠️ IL NUMERO E CALCOLATO, non scelto: il testo piu piccolo di questa
+     famiglia sta a 3,97 mm, e per arrivare a 8,50 servono (8,50 − 3,97) / 2
+     = 2,27 mm per lato. La prima versione ne dava 1,15 e si fermava a 6,27:
+     misurato, non dedotto. */
+  padding-block: calc(var(--pxcm) * 0.25);
+}
+
 /* 🔴 IL TESTO DELLE SCHERMATE DI SERVIZIO SI MISURA IN MILLIMETRI VERI
    (21/08/2026, dal collaudo di Alessio in scala reale).
 

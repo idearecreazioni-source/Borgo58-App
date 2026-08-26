@@ -160,7 +160,7 @@ export default function PrevisioneDettaglio() {
           <button
             onClick={chiudi}
             disabled={congelando}
-            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {congelando ? "Chiudo…" : "Chiudi questa previsione"}
           </button>

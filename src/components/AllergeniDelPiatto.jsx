@@ -212,7 +212,7 @@ export default function AllergeniDelPiatto({
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="underline"
+                className="tocco-inline underline"
               >
                 Riprova
               </button>{" "}
@@ -280,7 +280,7 @@ function PannelloAllergene({
   const [costo, setCosto] = useState("");
 
   const inputClass =
-    "rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal";
+    "tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal";
 
   const apriModifica = (p) => {
     setModifica(p);
@@ -468,7 +468,7 @@ function SceltaSostituto({ valore, onCambia, ingredienti }) {
     <select
       value={valore}
       onChange={(e) => onCambia(e.target.value)}
-      className="rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal max-w-[16rem]"
+      className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala-grande text-b58-charcoal max-w-[16rem]"
     >
       <option value="">(si toglie e basta)</option>
       {(ingredienti ?? []).map((i) => (

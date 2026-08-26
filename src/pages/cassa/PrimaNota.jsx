@@ -130,7 +130,7 @@ export default function PrimaNota() {
   const isForager = form.tipo_documento === "documento_raccoglitore_occasionale";
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const setDirection = (direction) =>
@@ -237,7 +237,7 @@ export default function PrimaNota() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -406,7 +406,7 @@ export default function PrimaNota() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-4">
               {form.direction === "entrata" && (
-                <label className="flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+                <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
                     type="checkbox"
                     checked={form.is_owner_injection}

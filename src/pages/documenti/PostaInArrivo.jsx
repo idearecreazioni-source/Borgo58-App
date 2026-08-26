@@ -29,7 +29,7 @@ import { formatDate } from "../../lib/constants";
 
 const sezione = "rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-4";
 const campo =
-  "w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  "tocco-campo w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-2.5 py-1.5 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const etichetta = "block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1";
 
 const NOME_TIPO = {
@@ -415,7 +415,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
       <button
         type="button"
         onClick={() => setNumeriAperti(numeriAperti === i ? null : i)}
-        className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
+        className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
       >
         {numeriAperti === i ? "nascondi i numeri" : "correggi i numeri"}
       </button>
@@ -517,7 +517,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                     <select
                       value={r.riga_lista ?? scelta.id}
                       onChange={(e) => patchRiga(i, { riga_lista: e.target.value })}
-                      className="ml-2 rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 testo-sala"
+                      className="ml-2 tocco-campo rounded border border-b58-charcoal/15 bg-white px-1.5 py-0.5 testo-sala"
                     >
                       {aperte.map((x) => (
                         <option key={x.id} value={x.id}>
@@ -716,7 +716,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
           })()}
         </div>
         <div className="flex items-end">
-          <label className="flex items-center gap-1.5 testo-sala text-b58-charcoal-soft pb-1.5">
+          <label className="tocco-campo flex items-center gap-1.5 testo-sala text-b58-charcoal-soft pb-1.5">
             <input type="checkbox" checked={par?.registra_haccp === true}
               onChange={(e) => cambia("registra_haccp", e.target.checked)} />
             registra in HACCP
@@ -875,7 +875,11 @@ export default function PostaInArrivo() {
                 <span className="text-b58-charcoal font-medium">
                   {m.oggetto || "(senza oggetto)"}
                 </span>
-                <span className="testo-sala-grande text-b58-charcoal-soft">da {m.mittente || "?"}</span>
+                {/* ⚠️ `break-all` MISURATO, non decorativo: un indirizzo di posta lungo
+                    non ha spazi dove andare a capo, e alla densita di un mini
+                    tablet faceva sbordare la schermata di 107 punti su 390.
+                    Si vede solo li: da un monitor la riga ci sta. */}
+                <span className="testo-sala-grande text-b58-charcoal-soft break-all">da {m.mittente || "?"}</span>
                 <span className="testo-sala-grande text-b58-charcoal-soft">{formatDate(m.ricevuta_il)}</span>
               </div>
 
@@ -992,7 +996,7 @@ export default function PostaInArrivo() {
                       type="button"
                       disabled={inCorso === a.id}
                       onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                      className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
+                      className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
                     >
                       {inCorso === a.id ? "…" : "Conferma"}
                     </button>
@@ -1000,7 +1004,7 @@ export default function PostaInArrivo() {
                       type="button"
                       disabled={inCorso === a.id}
                       onClick={() => agisci(a.id, () => rifiutaAzione(a.id))}
-                      className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
+                      className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
                     >
                       No
                     </button>
@@ -1010,7 +1014,7 @@ export default function PostaInArrivo() {
                       <button
                         type="button"
                         onClick={() => setAperta(aperta === a.id ? null : a.id)}
-                        className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
+                        className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
                       >
                         {aperta === a.id ? "chiudi" : "modifica"}
                       </button>
@@ -1029,7 +1033,7 @@ export default function PostaInArrivo() {
                 type="button"
                 disabled={inCorso === m.id}
                 onClick={() => agisci(m.id, () => scartaPosta(m.id))}
-                className="testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mt-3"
+                className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta mt-3"
               >
                 Non serve niente di tutto questo — togli la mail
               </button>

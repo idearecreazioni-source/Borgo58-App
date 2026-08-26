@@ -99,7 +99,7 @@ export default function SezionePersonale() {
   }, [entityId]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass =
     "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
@@ -177,7 +177,7 @@ export default function SezionePersonale() {
           <select
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
           >
             <option value={entities.srls.id}>{entities.srls.name}</option>
             {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -272,7 +272,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Crea
                   </button>
@@ -391,7 +391,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
                     onClick={registra}
-                    className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
@@ -408,7 +408,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Motivo
                   </button>
@@ -443,7 +443,7 @@ export default function SezionePersonale() {
                     <span className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => pareggia(n.id)}
-                        className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5"
+                        className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5"
                       >
                         Mi sono rimborsato
                       </button>

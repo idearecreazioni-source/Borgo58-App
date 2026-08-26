@@ -61,7 +61,7 @@ export default function Comunicazioni() {
                   <li key={r.customer_id} className="testo-sala-grande text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
-                      className="hover:text-b58-terracotta"
+                      className="tocco-testo hover:text-b58-terracotta"
                     >
                       {r.nome}
                     </Link>{" "}
@@ -84,7 +84,7 @@ export default function Comunicazioni() {
                   <li key={r.customer_id} className="testo-sala text-b58-charcoal">
                     <Link
                       to={`/calendario-eventi/clienti/${r.customer_id}`}
-                      className="hover:text-b58-terracotta"
+                      className="tocco-testo hover:text-b58-terracotta"
                     >
                       {r.nome}
                     </Link>
@@ -128,7 +128,7 @@ export default function Comunicazioni() {
                     readOnly
                     value={numeri.numeri}
                     rows={Math.min(8, numeri.quanti)}
-                    className="w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande font-mono"
+                    className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande font-mono"
                   />
                   <button
                     type="button"

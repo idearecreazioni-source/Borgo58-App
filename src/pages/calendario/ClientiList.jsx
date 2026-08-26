@@ -59,14 +59,14 @@ export default function ClientiList() {
         <div className="flex flex-wrap gap-2">
         <Link
           to="/calendario-eventi/comunicazioni"
-          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal font-medium px-4 py-2 testo-sala-grande"
         >
           Scrivere a più clienti
         </Link>
         <button
           type="button"
           onClick={() => setShowNew((v) => !v)}
-          className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
         >
           {showNew ? "Annulla" : "+ Nuovo cliente"}
         </button>
@@ -88,19 +88,19 @@ export default function ClientiList() {
             value={newCustomer.name}
             onChange={(e) => setNewCustomer((c) => ({ ...c, name: e.target.value }))}
             placeholder="Nome"
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <input
             required
             value={newCustomer.phone}
             onChange={(e) => setNewCustomer((c) => ({ ...c, phone: e.target.value }))}
             placeholder="Telefono"
-            className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
           />
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-60 transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Creo…" : "Crea scheda"}
           </button>
@@ -112,7 +112,7 @@ export default function ClientiList() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Cerca per nome o telefono…"
-        className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
+        className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta w-full max-w-sm mb-4"
       />
 
       {error && <p className="testo-sala-grande text-b58-terracotta-dark mb-4">Errore: {error}</p>}

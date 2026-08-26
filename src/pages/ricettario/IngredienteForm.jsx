@@ -445,7 +445,7 @@ export default function IngredienteForm() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   return (
@@ -597,7 +597,7 @@ export default function IngredienteForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "fornitore_esterno" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
+              className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "fornitore_esterno"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -608,7 +608,7 @@ export default function IngredienteForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "produzione_interna" }))}
-              className={`flex-1 rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
+              className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "produzione_interna"
                   ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
@@ -637,12 +637,12 @@ export default function IngredienteForm() {
                 <button
                   type="button"
                   onClick={() => setShowNewSupplier(true)}
-                  className="testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark mt-2"
+                  className="tocco-testo testo-sala-grande text-b58-terracotta hover:text-b58-terracotta-dark mt-2"
                 >
                   + Nuovo fornitore
                 </button>
               ) : (
-                <div className="mt-3 rounded-lg border border-b58-charcoal/15 p-3 space-y-2 bg-white">
+                <div className="mt-3 tocco-campo rounded-lg border border-b58-charcoal/15 p-3 space-y-2 bg-white">
                   <input
                     value={newSupplier.name}
                     onChange={(e) =>
@@ -670,7 +670,7 @@ export default function IngredienteForm() {
                       type="button"
                       disabled={creatingSupplier}
                       onClick={handleCreateSupplier}
-                      className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
+                      className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60"
                     >
                       {creatingSupplier ? "Salvo…" : "Salva fornitore"}
                     </button>
@@ -791,7 +791,7 @@ export default function IngredienteForm() {
               mercato, dove un avviso a ogni consegna si smette di
               leggere. */}
           <div className="sm:col-span-2 space-y-2">
-            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.avvisa_rincari}
@@ -804,7 +804,7 @@ export default function IngredienteForm() {
                 smette di leggere.
               </Didascalia>
             </label>
-            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.alimentare}
@@ -823,7 +823,7 @@ export default function IngredienteForm() {
                 scarico dell'intero tavolo. Togliendo la spunta il gestionale
                 smette di fingere di seguirlo: si compra, il costo resta sulla
                 fattura, la giacenza non si racconta. */}
-            <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
               <input
                 type="checkbox"
                 checked={form.tenuto_in_magazzino}
@@ -927,7 +927,7 @@ export default function IngredienteForm() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea ingrediente"}
           </button>

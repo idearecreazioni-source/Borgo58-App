@@ -149,7 +149,7 @@ export default function ListaSpesa() {
   }, [daComprare]);
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const handleAddThreshold = async () => {
     setAddingThreshold(true);
@@ -398,7 +398,7 @@ export default function ListaSpesa() {
                             step="0.01"
                             defaultValue={item.quantity_needed ?? ""}
                             onBlur={(e) => handleQuantita(item, e.target.value)}
-                            className="w-20 ml-1.5 rounded border border-b58-charcoal/15 px-1.5 py-0.5 testo-sala text-b58-charcoal"
+                            className="w-20 ml-1.5 tocco-campo rounded border border-b58-charcoal/15 px-1.5 py-0.5 testo-sala text-b58-charcoal"
                           />
                         ) : (
                           item.quantity_needed != null && (
@@ -476,7 +476,7 @@ export default function ListaSpesa() {
                           <select
                             value={item.supplier?.id ?? ""}
                             onChange={(e) => handleFornitore(item.id, e.target.value)}
-                            className="rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal w-full min-w-0"
+                            className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-1.5 py-1 testo-sala text-b58-charcoal w-full min-w-0"
                           >
                             <option value="">chi lo vende?</option>
                             {suppliers.map((s) => (
@@ -670,7 +670,7 @@ export default function ListaSpesa() {
                               (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
                             onClick={() => handleClose(item.id)}
-                            className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
+                            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
                           >
                             {closing ? "Chiudo…" : "Conferma"}
                           </button>
@@ -784,7 +784,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>

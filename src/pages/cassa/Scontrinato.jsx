@@ -113,7 +113,7 @@ export default function Scontrinato() {
   };
 
   const inputClass =
-    "rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   const differenza = quadratura ? Number(quadratura.da_fiscalizzare) : 0;
 
@@ -128,7 +128,7 @@ export default function Scontrinato() {
             <select
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              className="rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
+              className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala-grande text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
@@ -295,7 +295,7 @@ export default function Scontrinato() {
                         <button
                           disabled={inCorso === c.order_id}
                           onClick={() => segna(c.order_id, "scontrino")}
-                          className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
+                          className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Scontrino fatto
                         </button>
@@ -303,7 +303,7 @@ export default function Scontrinato() {
                           <button
                             disabled={inCorso === c.order_id}
                             onClick={() => segna(c.order_id, "fattura_da_emettere")}
-                            className="rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
+                            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 py-1.5 disabled:opacity-60"
                           >
                             Vuole fattura
                           </button>
@@ -314,7 +314,7 @@ export default function Scontrinato() {
                             setNumeroFattura((n) => ({ ...n, [c.order_id]: e.target.value }))
                           }
                           placeholder="n. fattura"
-                          className="w-28 rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala text-b58-charcoal"
+                          className="w-28 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 testo-sala text-b58-charcoal"
                         />
                         {/* ⚠️ Senza numero non è una fattura: è una riga
                             che dice di esserlo, e sparisce dall'elenco
@@ -325,7 +325,7 @@ export default function Scontrinato() {
                         <button
                           disabled={inCorso === c.order_id || !(numeroFattura[c.order_id] ?? "").trim()}
                           onClick={() => segna(c.order_id, "fattura")}
-                          className="rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
+                          className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Fattura fatta
                         </button>

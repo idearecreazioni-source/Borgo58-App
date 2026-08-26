@@ -111,7 +111,7 @@ export default function BevandeVini() {
   ];
 
   const inputClass =
-    "w-full rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
   return (
     <div className="max-w-4xl">
@@ -213,14 +213,14 @@ export default function BevandeVini() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
+            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
           >
             {saving ? "Aggiungo…" : "+ Metti in carta"}
           </button>
         </div>
       </form>
 
-      <label className="flex items-center gap-2 testo-sala-grande text-b58-charcoal-soft mb-4">
+      <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal-soft mb-4">
         <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
         Mostra anche quelle fuori carta
       </label>
@@ -257,7 +257,7 @@ export default function BevandeVini() {
                                 onSave={(nome) =>
                                   updateBarItem(v.id, { name: nome }).then(load).catch((e) => setError(e.message))
                                 }
-                                className="w-full rounded border border-transparent hover:border-b58-charcoal/15 px-2 py-1 testo-sala-grande bg-transparent"
+                                className="w-full tocco-campo rounded border border-transparent hover:border-b58-charcoal/15 px-2 py-1 testo-sala-grande bg-transparent"
                               />
                               {v.producer && (
                                 <span className="testo-sala text-b58-charcoal-soft/70 px-2">{v.producer}</span>
@@ -274,7 +274,7 @@ export default function BevandeVini() {
                                     .then(load)
                                     .catch((e) => setError(e.message))
                                 }
-                                className="w-20 rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
+                                className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
                               />
                             </td>
                             <td className="py-2 w-20 text-right text-b58-charcoal-soft testo-sala">
@@ -286,7 +286,7 @@ export default function BevandeVini() {
                                 onClick={() =>
                                   setBarItemActive(v.id, !v.active).then(load).catch((e) => setError(e.message))
                                 }
-                                className="testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                               >
                                 {v.active ? "togli dalla carta" : "rimetti in carta"}
                               </button>

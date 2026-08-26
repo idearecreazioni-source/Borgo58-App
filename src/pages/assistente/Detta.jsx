@@ -400,7 +400,7 @@ export default function Detta() {
       {nonLetto(attesa) ? (
         <p className="testo-sala mt-6 text-b58-terracotta-dark">
           Non sono riuscito a leggere le cose che aspettano.{" "}
-          <button type="button" onClick={ricarica} className="underline">
+          <button type="button" onClick={ricarica} className="tocco-inline underline">
             Riprova
           </button>
         </p>
