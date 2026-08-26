@@ -183,7 +183,13 @@ Deno.serve(async (req) => {
   const conChiave = Boolean(chiaveVoce);
 
   // Con la chiave si entra da anonimi: il portiere è la chiave stessa, e
-  // il freno anti-abuso vive dentro `voce_apri_sessione` (Contratto §4).
+  // il freno anti-abuso vive nel database (Contratto §4), dentro
+  // `voce_limite_dettature`, che è l'unico posto dove la soglia è scritta.
+  // ⚠️ Fino al 26/08 questa riga diceva «vive dentro voce_apri_sessione»,
+  //    ed era vera e insufficiente: il freno stava sulla porta che apre la
+  //    sessione e non su quella che scrive, che è raggiungibile da sola.
+  //    Ora lo chiedono tutte e due — e questo passaggio non è più l'unica
+  //    strada che le protegge.
   const supabase = createClient(supabaseUrl, supabaseAnon, {
     global: authHeader && !conChiave ? { headers: { Authorization: authHeader } } : {},
   });
