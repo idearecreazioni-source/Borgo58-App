@@ -521,3 +521,146 @@ rifà da zero con un comando — ma va detto invece che sottinteso.
 5. **`azioni_della_dettatura` non restituisce il risultato** di un'azione
    eseguita. Nessuna schermata lo usa oggi, quindi non è stata aggiunta
    una colonna per una cosa che nessuno chiama.
+
+---
+
+# ADDENDUM — l'applicazione in produzione (26/08, pomeriggio)
+
+Alessio ha dato il via libera **dopo** aver letto la parte qui sopra. Questa
+sezione è scritta dopo l'applicazione e riporta i numeri veri.
+
+## Non erano cinque: erano dodici
+
+🔴 **La premessa del via libera non reggeva, e l'ho detto invece di
+allargarmi il permesso.** Il riepilogo qui sopra diceva «cinque migrazioni in
+attesa», ed era vero — cinque sono mie. Ma davanti a quelle ce n'erano
+**sette di ieri** mai applicate: l'assistente che legge le etichette, gli
+allergeni, le linee dei coperti.
+
+⚠️ **E le mie cinque non stavano in piedi da sole.** Misurato in produzione,
+non dedotto: `letture_foto`, `impostazioni_ai`, `costo_modello_ai` e
+`spesa_ai_del_mese` **non esistevano**. La mia prima migrazione *riscrive*
+`spesa_ai_del_mese` per farle contare anche la voce: senza le sette sotto,
+riscriveva una funzione inesistente leggendo tabelle inesistenti. **O dodici,
+o zero.**
+
+Alessio ha confermato la diagnosi e allargato il via libera: *«il mio via
+libera a cinque era sbagliato perché quel numero l'avevo letto in un
+riepilogo senza contarlo»*.
+
+## Quali toccano dati esistenti
+
+**Nessuna delle dodici.** Tutte aggiungono soltanto: tabelle nuove, colonne
+nuove, funzioni nuove.
+
+⚠️ **Verificato leggendo, non contando.** Un setaccio sui file segnalava
+`update` e `delete` in tre migrazioni (la `…013`, la `…014` e la `…0002`):
+aperte e lette, **tutte quelle righe stanno dentro corpi di funzione** — sono
+il codice che gira quando qualcuno usa il gestionale, non sanatorie che
+riscrivono righe già presenti. Le uniche scritture vere sono i **semi** di
+tabelle nuove: il listino dei modelli, la riga unica delle impostazioni, gli
+undici tipi di azione vocale.
+
+⚠️ **E due colonne nuove nascono su tabelle che potevano avere righe** —
+`orders.linea` dalla `…019`. In produzione i conti sono **zero**, quindi non
+c'era nessuna riga a cui rispondere al posto di Alessio; e la colonna nasce
+senza valore predefinito, che è la regola del 14/08.
+
+## Prima e dopo, misurato
+
+| | prima | dopo |
+|---|---|---|
+| migrazioni | 247 (ultima `20260825000012`) | **260** (ultima `20260826000006`) |
+| **conti bancari** | 0 | **0** ✅ |
+| **«Previsione di partenza» congelata il** | `2026-08-15 20:29:38.087382+00` | **identico** ✅ |
+| previsioni | 1 | 1 |
+| lapidi (`deleted_records`) | 0 | 0 |
+| ingredienti · ricette · menu | 0 · 14 · 1 | invariati |
+| conti · prenotazioni · movimenti di cassa | 0 · 0 · 0 | invariati |
+| documenti · impegni · sagome · fornitori | 0 · 8 · 13 · 0 | invariati |
+| partite di magazzino · scarichi · rettifiche | 0 · 0 · 0 | invariati |
+| ruoli | 4 | 4 |
+
+**Cose nuove, tutte a zero come devono:** dettature 0, azioni dettate 0,
+chiavi della Scorciatoia 0, letture foto 0, allergeni per prodotto 0.
+**Il catalogo delle azioni vocali: 11 — sette che si salvano da sé, quattro
+che passano dai suoi occhi.** Listino dei modelli: 2.
+
+**Tetto di spesa dell'assistente: 10,00 €**, messo il 26/08 su decisione di
+Alessio, passando dalla funzione del gestionale (`imposta_tetto_ai`) e non da
+una scrittura a mano — così vale il vincolo che rifiuta lo zero, ed è lo
+stesso identico gesto che farebbe la schermata.
+
+## 🔴 UN RESIDUO, TROVATO MISURANDO E NON FIDANDOSI
+
+Dopo l'applicazione, in `dettature` è rimasta **una riga** creata dalla
+verifica della `20260826000005`, con la sua azione. Il messaggio della
+migrazione diceva che si era ripulita.
+
+**La causa vale più del residuo.** La verifica si segnava l'identificativo di
+ciò che creava — come vuole la regola del 23/08 — ma **nella stessa
+variabile, tre volte**:
+
+```
+v_dett := (v_ris->>'dettatura_id')::uuid;   -- caso (A)
+…
+v_dett := (v_ris->>'dettatura_id')::uuid;   -- caso (C), la sovrascrive
+…
+delete from dettature where id = v_dett;    -- cancella (C)
+delete from dettature where id = v_dett;    -- cancella (C) di nuovo
+```
+
+⚠️ **La regola era rispettata alla lettera e tradita nella sostanza**:
+l'identificativo me l'ero segnato, in un posto che poi ho sovrascritto. *Una
+variabile riusata non è un promemoria: è l'ultimo valore che ci è passato
+dentro.*
+
+⚠️ **E IL GUARDIANO C'ERA, MA GUARDAVA ALTROVE.** Il controllo finale conta
+le **lapidi**, e `dettature` non è una tabella tracciata: zero lapidi prima,
+zero dopo, e una riga di prova in mezzo ai dati veri.
+
+**Chiuso dalla `20260826000006`**, con un perimetro che è una **proprietà** e
+non una fotografia — il testo fra quelli scritti nelle verifiche, provenienza
+`app`, nata prima dell'istante in cui la migrazione è stata scritta — e
+**provata sul progetto di prova costruendo il residuo apposta**, con accanto
+una dettatura vera: toglie il primo, lascia la seconda. In produzione:
+*«Dettature prima: 1, tolte: 1, rimaste: 0»*.
+
+**Verificato dopo, dal connettore in sola lettura: dettature 0, azioni 0,
+scarichi 0, rettifiche 0, partite 0, lapidi 0.**
+
+## Le due lezioni scritte in CLAUDE.md §8
+
+1. **Una variabile riusata non è un promemoria.** La forma giusta è un
+   **array** — `v_miei := v_miei || v_dett;` — che è quello che `righeMie()`
+   fa già per le prove dal client: la stessa regola mancava alle verifiche
+   delle migrazioni. E: *dopo ogni applicazione in produzione si contano le
+   righe delle tabelle toccate, non si legge il messaggio della migrazione*
+   — è la terza volta (14/08 i due tavoli rimasti spostati, 16/08 la giacenza
+   corta di due, oggi questa).
+2. **Un misuratore nuovo si prova prima su un caso di cui si conosce già la
+   risposta**, altrimenti misura e non si sa cosa. Regola di Alessio, nata
+   dalla terza volta in due giorni che uno strumento di misura ha mentito qui
+   dentro.
+
+## Il «598» era preso col metro sbagliato
+
+🔴 **Rilievo di Alessio, e ha ragione.** Il censimento dei bersagli è partito
+a densità **stimata** (37,8) ed è finito a densità **vera** del tablet, dove
+sono comparsi bersagli che a 37,8 risultavano sopra soglia. Quindi il 598
+iniziale e lo zero finale **non stanno sulla stessa scala**: il primo è un
+pavimento misurato male e non è mai stato rifatto col metro giusto, il
+secondo è una proprietà verificata a tre densità.
+
+Corretto ovunque fosse scritto come un fatto — nel commento della classe in
+`index.css` e in quattro punti di questo riepilogo. Il numero resta, con
+«almeno» e con la scala accanto.
+
+## Cosa resta aperto, aggiornato
+
+1. 🔴 **Nessuno ha ancora parlato al microfono**, e la Scorciatoia
+   dell'orologio non esiste. Le istruzioni sono dentro la schermata.
+2. **L'indice di `decisioni_rovesciate.md`**: 30 righe da ricostruire
+   rileggendo, più il numero 18 usato due volte.
+3. **Le schermate di dettaglio** (`/…/:id`) non sono entrate nel censimento
+   dei bersagli.
