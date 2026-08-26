@@ -188,3 +188,75 @@ export function nonAncoraAccesa(errore) {
   const codice = String(errore?.code ?? "");
   return codice === "PGRST202" || codice === "42883";
 }
+
+// =====================================================================
+// PERCHÉ IL MICROFONO NON C'È — 27/08/2026
+// =====================================================================
+// 🔴 IL DIFETTO, visto da Alessio con le sue mani sull'iPhone alle 00:29:
+//    la schermata diceva «Questo browser non sa trascrivere la voce. Su
+//    iPhone serve Safari» **mentre lui era su Safari**. Una diagnosi
+//    falsa, e un vicolo cieco: gli dice di fare una cosa che ha già fatto.
+//
+// 🔴 LA CAUSA È IL RAGIONAMENTO, NON LA FRASE. Il codice guardava se la
+//    capacità c'era e, non trovandola, **deduceva il browser**. Ma su iOS
+//    una pagina aperta dall'icona della schermata Home gira in una
+//    finestra che il riconoscimento vocale non ce l'ha — pur essendo lo
+//    stesso motore di Safari. Il browser era giusto; era il *modo in cui
+//    la pagina girava* a essere diverso.
+//
+// ⚠️ QUINDI NON SI GUARDA NESSUN NOME DI BROWSER. Si guardano due fatti:
+//    (1) la capacità c'è o no; (2) la pagina gira da icona o dentro un
+//    browser. Il nome non compare da nessuna parte in questa funzione, ed
+//    è voluto: dedurre il nome è precisamente ciò che ha prodotto il
+//    difetto.
+//
+// ⚠️ E «da icona» si riconosce SENZA nominare iOS: una pagina installata
+//    su Android ha il riconoscimento e non finisce mai qui. La coppia
+//    «installata E senza microfono» è già, da sola, il caso dell'iPhone.
+//
+// ⚠️ LA COSA CHE TOGLIE L'ANSIA VA DETTA IN TUTTI E DUE I CASI: la
+//    Scorciatoia dall'orologio **non passa dal browser**, quindi quella
+//    continua a funzionare. La fascia di prima lasciava credere il
+//    contrario, e chi legge «non sa trascrivere la voce» smette di
+//    provare anche l'altra strada.
+
+/**
+ * In che condizione si trova la dettatura, e cosa dire a chi guarda.
+ *
+ * Restituisce `{ caso, frase, cosaFare }`; `caso` è uno di:
+ *   · `c_e`       — il microfono c'è, non si dice niente;
+ *   · `da_icona`  — la pagina gira dall'icona salvata, e da lì il
+ *                   riconoscimento non c'è: si apre nel browser;
+ *   · `browser`   — questo browser non lo sa fare davvero.
+ */
+export function statoDettatura(finestra = typeof window !== "undefined" ? window : null) {
+  if (riconoscitoreDisponibile(finestra)) {
+    return { caso: "c_e", frase: null, cosaFare: null };
+  }
+
+  // Non è un controllo sul sistema operativo: è «questa pagina gira come
+  // un'app installata invece che dentro un browser».
+  const daIcona = Boolean(
+    finestra &&
+      (finestra.navigator?.standalone === true ||
+        finestra.matchMedia?.("(display-mode: standalone)")?.matches),
+  );
+
+  const laScorciatoia =
+    "La Scorciatoia dall'orologio non passa da qui e continua a funzionare, e tutto il resto del gestionale anche.";
+
+  if (daIcona) {
+    return {
+      caso: "da_icona",
+      frase:
+        "Il microfono non è disponibile perché il gestionale è aperto dall'icona salvata sulla schermata Home.",
+      cosaFare: `Apri borgo58.it nel browser — non dall'icona — e il pulsante funziona. ${laScorciatoia}`,
+    };
+  }
+
+  return {
+    caso: "browser",
+    frase: "Questo browser non sa trascrivere la voce.",
+    cosaFare: `Sul telefono apri il gestionale con Safari, sul computer con Google Chrome. ${laScorciatoia}`,
+  };
+}

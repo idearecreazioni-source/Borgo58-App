@@ -21,6 +21,7 @@ import {
   fraseDelMicrofono,
   perchéAspetta,
   riconoscitoreDisponibile,
+  statoDettatura,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
 
@@ -62,6 +63,10 @@ export default function Detta() {
   const recRef = useRef(null);
   const frasiRef = useRef([]);
   const disponibile = riconoscitoreDisponibile();
+  // ⚠️ PERCHE' manca, non solo SE manca: la fascia di prima accusava il
+  //    browser anche quando il browser era giusto e a mancare era il modo in
+  //    cui la pagina girava. Vedi statoDettatura() in calcoli/voce.js.
+  const perche = statoDettatura();
 
   const ricarica = useCallback(() => {
     leggi(azioniInAttesa()).then(setAttesa);
@@ -130,9 +135,7 @@ export default function Detta() {
     setErrore("");
     setRiscontro(null);
     if (!disponibile) {
-      setErrore(
-        "Questo browser non sa trascrivere la voce. Su iPhone serve Safari, sul computer Google Chrome.",
-      );
+      setErrore(`${perche.frase} ${perche.cosaFare}`);
       return;
     }
 
@@ -329,10 +332,10 @@ export default function Detta() {
         )}
 
         {!disponibile && (
-          <p className="testo-sala mt-3 text-b58-charcoal-soft">
-            Questo browser non sa trascrivere la voce. Su iPhone serve Safari, sul computer Google
-            Chrome. Tutto il resto del gestionale funziona lo stesso.
-          </p>
+          <div className="testo-sala mt-3 rounded-lg bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 px-3 py-2">
+            <p className="text-b58-charcoal font-medium">{perche.frase}</p>
+            <p className="text-b58-charcoal-soft mt-0.5">{perche.cosaFare}</p>
+          </div>
         )}
 
         {spesa && !nonLetto(spesa) && spesa.tetto_euro != null && (
