@@ -34,6 +34,32 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 
 ## L'elenco
 
+🔴 **QUESTO ELENCO SI È FERMATO AL 21/08, E LE SEZIONI SOTTO SONO 48**
+(misurato il 26/08 recuperando le decisioni del 14-21 agosto). Trenta
+rovesciamenti hanno il loro racconto per esteso e **non compaiono qui**.
+
+⚠️ **E non è un dettaglio di forma, è il difetto che questo file esiste
+per non avere.** L'elenco risponde a una domanda sola — *«questa
+decisione l'abbiamo già rovesciata prima?»* — e la risponde **contando**.
+Un indice che ne conta 18 su 48 dà a quella domanda una risposta
+tranquilla e sbagliata: dice «no, è la prima volta» su una cosa già
+rovesciata due volte. È esattamente la forma dell'elenco scritto a mano
+che invecchia in silenzio, e il file la denuncia da sé nella nota alla
+sezione 4 — *«un elenco che esiste per far contare i rovesciamenti non
+può avere un buco»*.
+
+⚠️ **E c'è un numero usato DUE VOLTE**: il **18** è sia «un predefinito
+sbagliato si corregge» (19/08) sia «menu e pianta stanno affiancati su due
+colonne» (21/08). Chi cita «il rovesciamento n. 18» oggi non dice quale
+dei due.
+
+⚠️ **NON è stato ricostruito qui**, e la ragione è la stessa per cui il
+recupero delle decisioni è stato fatto leggendo e non copiando: rifare
+trenta righe di indice a colpo d'occhio produrrebbe un indice
+*plausibile*, che è peggio di uno dichiaratamente monco. Va fatto
+rileggendo le trenta sezioni una per una. **In coda**, con questa nota che
+dice a chi legge di non fidarsi del conteggio finché non è fatto.
+
 | # | data | decisione rovesciata | dove è raccontato |
 |---|---|---|---|
 | 1 | 14/08/2026 | *Una richiesta in attesa occupa il posto* (10/08) | [la pianta viva](consegne/20260814_la_pianta_viva.md) |

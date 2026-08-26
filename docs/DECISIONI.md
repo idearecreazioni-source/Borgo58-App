@@ -52,25 +52,39 @@ un rovesciamento racconta *cosa è cambiato*, non *cosa vale adesso* — ma
 
 ## Copertura
 
-⚠️ **Denso dal 22/08/2026 in poi, più rado prima.** Se lavori su un
-modulo e non trovi voci qui ma sospetti che una decisione esista,
-**CHIEDI invece di dedurre**.
+⚠️ **Denso dal 14/08/2026 in poi.** Se lavori su un modulo e non trovi
+voci qui ma sospetti che una decisione esista, **CHIEDI invece di
+dedurre**.
 
-🔴 **Il buco è misurato, non stimato: fra il 14 e il 21 agosto ci sono
-DUE voci in otto giorni** — una il 14 e una il 21 — contro le 41 del solo
-25 agosto. Sono i giorni della sala, della pianta, dei colori dei tavoli
-e dei coperti.
+✅ **IL BUCO DEL 14-21 AGOSTO È STATO RECUPERATO il 26/08.** Fino ad
+allora quei giorni — la sala, la pianta, i colori dei tavoli, i coperti —
+avevano **due voci in otto giorni** contro le 41 del solo 25 agosto.
 
-⚠️ **Quelle decisioni non sono perse: stanno nei rovesciamenti.**
-[`decisioni_rovesciate.md`](decisioni_rovesciate.md) ha **24 voci proprio
-in quel periodo, di cui 22 nominano Alessio** (misurato il 25/08). Il
-recupero è **in coda** e va fatto in una sessione sua: un rovesciamento
-racconta cosa è cambiato, non cosa vale adesso, quindi ogni voce va letta
-e riscritta — e ventiquattro voci riformulate di fretta produrrebbero
-proprio l'elenco approssimativo che questo file esiste per evitare.
+Come è stato fatto, perché conta: le decisioni non erano perse, stavano
+in [`decisioni_rovesciate.md`](decisioni_rovesciate.md), che di quel
+periodo ha **24 sezioni**. Sono state lette **una per una** e riscritte
+qui come decisioni in vigore — perché un rovesciamento racconta *cosa è
+cambiato* e questo file dice *cosa vale adesso*, e sono due forme diverse
+che non si copiano l'una nell'altra.
 
-⚠️ **E il conteggio è un pavimento**: sono le voci che *nominano* Alessio.
-Una sua decisione raccontata senza il suo nome non è stata contata.
+⚠️ **E «nomina Alessio» non voleva dire «è una sua decisione»**: leggendole,
+**20 delle 24 lo erano**. Le altre quattro sono correzioni tecniche e
+restano dove stanno — il colore del conto aperto in Comande (n. 6), il
+preventivo senza allegato (n. 20), il file orfano nel deposito (n. 22); e
+della n. 4 è stata portata su la sola parte che ha misurato lui, cioè i
+5,3 mm provati con le mani.
+
+⚠️ **Il conteggio è un pavimento**: sono le voci che quel file racconta.
+Una sua decisione presa in quei giorni e mai rovesciata non compare lì, e
+quindi non è stata contata.
+
+🔴 **E CERCANDO SI È TROVATO UN DIFETTO IN `decisioni_rovesciate.md`**: le
+sezioni sono **48**, la tabella in cima ne elenca **18**. Trenta
+rovesciamenti hanno il loro racconto e non compaiono nell'indice — e
+quell'indice esiste proprio per rispondere a *«questa decisione l'abbiamo
+già rovesciata prima?»*. C'è anche **un numero usato due volte** (il 18,
+sia per i predefiniti di data del 19/08 sia per le due colonne del
+21/08). Vedi la nota in cima a quel file.
 
 ---
 
@@ -253,6 +267,11 @@ bassa temperatura.
 
 * 14/08 — Una preparazione con lotti NON si esplode in ingredienti: si CONSUMA
 come preparazione.
+* 19/08 — I mezzi di pagamento della lista della spesa tornano UNO SOLO,
+insieme a quelli delle fatture (assegno compreso). ⚠️ Recuperata il 26/08 dai
+rovesciamenti. ⚠️ E poi SUPERATA in parte dal mandato del 17/08 «la lista non
+scrive uscite»: la casella «come hai pagato» va tolta dalla lista, perché lì
+il mezzo è decorativo.
 * 23/08 — Quando una riga non può scendere, SCENDE QUELLO CHE SI PUÒ e viene
 detto cosa manca. Non si respinge tutto il conto.
 * 23/08 — Le spezie a pizzico si possono trascurare. MA per VANIGLIA e ZAFFERANO
@@ -280,6 +299,79 @@ totale in euro. SUPERA la decisione del 23/08 delle due sole linee fisse
 * 25/08 — Le linee accessorie vanno ELENCATE nel dettaglio della previsione: i
 loro incassi entrano nei totali e devono vedersi.
 * 25/08 — La «Previsione di partenza» congelata NON si tocca e non si riscrive.
+
+## Sala e pianta
+
+⚠️ **Queste voci sono state RECUPERATE il 26/08 da
+[`decisioni_rovesciate.md`](decisioni_rovesciate.md)**, dove stavano
+raccontate come rovesciamenti: un rovesciamento dice *cosa è cambiato*,
+qui si scrive *cosa vale adesso*. Le sezioni del 14-21 agosto sono **24**,
+e di quelle **20 erano decisioni di Alessio**: le altre quattro sono
+correzioni tecniche che restano dove stanno (nn. 6, 20, 22 — e la 4 è
+riportata qui per la sola parte che ha misurato lui). Il conteggio è un
+pavimento: sono le voci che quel file racconta, e una sua decisione presa
+altrove e mai rovesciata non è stata contata.
+
+* 14/08 — Una richiesta in attesa NON tiene occupato niente. Il tavolo lo dà
+Alessio dalla pianta. (Il calcolo dei posti liberi è stato **rimosso**, non
+spento: quella regola aveva senso solo finché quel conteggio esisteva.)
+* 18/08 — Sul tavolo si legge QUANTI NE TIENE: quadrato 90×90 = 4, lungo
+180×90 = 6. Accostandone due o più il numero si aggiorna con la regola *somma
+meno due per ogni giunzione*. ⚠️ Il numero sta sul **formato**, non sulla
+sagoma: la ragione è sua e non è la misura — *«i due da 180 sono di uno stile
+diverso»* — quindi si accosta solo dentro lo stesso formato.
+* 18/08 — Nella sagoma entra una seconda riga: **il numero dei coperti**, col
+punto che segna «corretto a mano». È su quella cifra che si decide se
+accettare una prenotazione.
+* 18/08 — 🔴 LA SOGLIA DI 1,05 cm È UNA CONVENZIONE PRESA DA FUORI, non una
+misura: provato con le mani, **a ~5,3 mm i quadrati si prendono bene**
+(*«è proprio tutto perfetto»*). Da lì la pianta si disegna al 75% e ci sta
+nello schermo del telefono.
+* 18/08 — Il tavolo in RITARDO si **sbarra** con un tratteggio che passa sopra
+il colore, invece di prendere un colore suo: così non cancella l'informazione
+che copre.
+* 18/08 — LE LEGENDE DEI COLORI SI TOLGONO del tutto. Rifiutata anche la via
+di mezzo di nasconderle dietro un tocco. ⚠️ Da allora la precedenza dei colori
+è scritta **solo nel codice**: il giorno che entrerà personale nuovo va
+rimessa.
+* 18/08 — «Chi ha corretto i coperti e quando» ESCE dalla schermata. Il
+gestionale continua a **registrarlo**; sparisce solo la parte visibile. Resta
+la ragione scritta a mano («uno contro il muro») e il numero calcolato accanto
+a quello corretto. ⚠️ Il giorno degli accessi personali va rimesso a schermo.
+* 18/08 — SUPERATA: *un tocco sulla sagoma apre sempre il riquadro del tavolo*.
+Vedi la voce qui sotto, che la rovescia poche ore dopo averla provata.
+* 18/08 — Su un tavolo **libero** il tocco porta DRITTO AI CAMPI della
+prenotazione, saltando il riquadro: *«l'ideale sarebbe che si arrivasse
+direttamente ai campi da compilare»*. Sul tavolo occupato il riquadro resta.
+Regge perché la condizione si vede prima di toccare: bianco = libero,
+colorato = c'è qualcuno.
+* 18/08 — La riga che spiega perché in Comande la sala è girata si toglie da
+TUTTE E DUE le schermate, anche dal computer dove resterebbe vera.
+* 18/08 — Il sold out diventa un **interruttore piccolo** sulla riga della
+data; la scomposizione dei posti sparisce e resta il numero grande; dei tavoli
+spostati resta **un comando solo**, «rimetti tutti a posto».
+* 18/08 — Sotto il numero dei posti la frase che ne dichiara il limite NON si
+stampa più.
+* 19/08 — LE SAGOME SI DISEGNANO PIÙ GRANDI DEL VERO — *«giusto 2 o 3 mm in
+più»* — per poterle afferrare col dito. Rifiutate le tre strade che
+conservavano la proporzione. ⚠️ L'ingrandimento vive solo nel disegno, il
+bersaglio segue la sagoma disegnata, e fra due sagome separate resta sempre
+una riga visibile.
+* 19/08 — La CHEF TABLE si disegna sotto i divani, in orizzontale, dove nella
+sala non è: in pianta accanto alla cucina gli dà fastidio, e la postazione è
+una sola e inconfondibile. Solo il disegno: posizione vera nel database.
+* 19/08 — Cucina e servizi sono VIETATI AI MOBILI: i tavoli vivono in una **L
+capovolta**. Vale nel trascinamento e nel magnete.
+* 21/08 — 🔴 QUELLO CHE SI VEDE DEVE ENTRARE IN LARGHEZZA. MAI SCORRIMENTO
+LATERALE. Deciso guardando la schermata in scala reale su un tablet da 8
+pollici: via le due colonne delle Comande, la pianta a tutta larghezza e il
+menu sotto.
+* 19/08 — In Comande LA SALA NON CAMBIA DA SOLA quando scatta la giornata
+nuova: alle 5 compare una riga che lo dice, col gesto per passare, e il
+passaggio lo fa lui. ⚠️ Recuperata il 26/08 dalle annotazioni di collaudo.
+* 21/08 — Il foglio della cucina è un **TURNO**, non un invio: la chiave è
+conto + turno. Nasce dal suo modo di far mangiare un tavolo — due antipasti e
+una pasta insieme, poi i secondi, poi il dolce.
 
 ## Comande e sala
 
@@ -313,6 +405,10 @@ persona disfa a mano un dato fiscale registrato.
 
 ## Cassa, tesoreria, prestiti
 
+* 19/08 — Gli otto valori predefiniti di data si TOLGONO tutti: *«togliamole
+per ora»*. Le colonne restano obbligatorie, quindi chi scrive senza data
+ottiene un errore invece di una data inventata. ⚠️ Recuperata il 26/08 dai
+rovesciamenti.
 * 22/08 — I PRESTITI DI PRIVATI non hanno scadenza: il gestionale non chiede
 quando restituire, dice solo quanto si può restituire adesso.
 * 23/08 — In Cassa quattro riquadri piccoli invece di tre grandi, con in evidenza
@@ -348,12 +444,18 @@ carta, ritirata. Via il «Non in carta».
 * 24/08 — FINGER FOOD: «bocconcino» diventa «finger» ovunque; categoria a sé;
 composizione FISSA con un pezzo per tipo; costo e allergeni si sommano dai
 finger.
+* 20/08 — Il PREZZO A PEZZO è l unico prezzo di un finger: *«semmai un
+bocconcino dovesse diventare un piatto a sé, creerò una ricetta nuova con un
+nome diverso»*. Quindi non serve nessuna regola su quale prezzo vince. ⚠️
+Recuperata il 26/08 dai rovesciamenti.
 * 24/08 — Il BIS di un finger è una RIGA A SÉ sul conto, non una modifica del
 piatto, ordinabile da solo in qualunque turno anche a piatto già servito, al
 prezzo per singolo finger.
 
 ## Schermate
 
+* 21/08 — Quello che si vede deve entrare in larghezza, MAI scorrimento
+laterale (voce per esteso in *Sala e pianta*).
 * 22/08 — TUTTE le schermate sono da dito, tranne il manuale HACCP completo e la
 stampa adempimenti che nascono per la carta. Il vincolo lo detta lo schermo più
 stretto, cioè il cellulare.
@@ -376,9 +478,22 @@ affrontano tutti insieme in un giro loro, non uno alla volta quando capita.
 
 ## Fatture e amministrazione
 
+* 16/08 — UN RIFIUTO SI SOLLEVA DOVE NASCE IL PROBLEMA, non dove scatta il
+vincolo: togliere «pronta per carta» a un piatto che è in un menu attivo viene
+respinto sul gesto, e il messaggio NOMINA il menu dove il piatto si trova.
+⚠️ Recuperata il 26/08 dalle annotazioni di collaudo.
 * 23/08 — Le fatture le emette Alessio e si generano SOLO DAL GESTIONALE, che poi
 le invia a Fatture in Cloud. La fattura nasce dal conto, quindi non c'è niente
 da riconciliare. La numerazione deve avere UNA SOLA sorgente.
+
+## Preventivi ed eventi
+
+* 20/08 — La capienza della sala TORNA a esistere, ma solo per i preventivi:
+ somma i coperti di quel giorno e li confronta con
+le persone attese, e se l evento accettato la satura la spunta «sala piena» si
+accende da sola. ⚠️ Recuperata il 26/08 dai rovesciamenti, e non contraddice la
+voce del 14/08 in *Sala e pianta*: là si toglieva il conteggio che decideva se
+un cliente poteva prenotare, qui si somma quello che la pianta dice oggi.
 
 ## Backup
 
