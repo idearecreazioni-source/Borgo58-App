@@ -2238,3 +2238,34 @@ che non viene mai salvata perché non passa da nessun deposito.
    tracciate 21 — sulle altre **98** quel confronto risponde «zero» che ci sia
    un residuo o che non ci sia, ed e' cosi' che una riga di prova e' rimasta
    nel gestionale vero.
+
+---
+
+## 56 · 26/08/2026 — «il conto del tavolo resta fuori dal registro delle cancellazioni»
+
+1. **Cosa era stato deciso, e quando.** 08/08/2026, costruendo il registro
+   delle cancellazioni: `orders` fu lasciata deliberatamente FUORI. Sta
+   scritto negli appunti del progetto — *«`orders` NON e' fra queste, e la
+   distinzione conta quando una verifica deve ripulirsi: cancellare un conto
+   non lascia una lapide»*.
+2. **La ragione di allora.** Un conto nasce e muore in sala, e le prove ne
+   creano e ne cancellano di continuo: tracciarlo avrebbe riempito di lapidi
+   finte un registro che **nessuno puo' ripulire dall'app**.
+3. **Cosa si decide adesso.** `orders` entra nel perimetro, per decisione di
+   Alessio del 26/08/2026. Con lei entrano `stock_consumptions` e
+   `rettifiche_giacenza`.
+4. **Perche' la ragione di allora non vale piu'.** L'08/08 il conto era una
+   testata con un totale. Da allora si e' preso addosso `documento_fiscale`,
+   `documento_numero` e `documento_emesso_il` — piu' `coperto_unit_price`
+   fotografato e `payment_method` — cioe' e' diventato **il documento che dice
+   se un incasso e' stato fiscalizzato**. E la comodita' delle prove non e' mai
+   stata un buon criterio per decidere cosa il gestionale conserva: il modo
+   giusto e' che le prove si ripuliscano, non che il registro sia piu' corto.
+   ⚠️ **E il prezzo era gia' pagato senza che nessuno lo sapesse**: le righe
+   del conto (`order_items`) sono nel perimetro dall'08/08, quindi cancellare
+   un conto di prova lasciava lapidi **da sempre** — misurate il 26/08 sul
+   progetto di prova: **1035**. Il commento di `comande.test.js` diceva il
+   contrario, ed era falso dal giorno in cui era stato scritto.
+   ⚠️ **Quello che resta da fare** e' la meta' non pagata: le prove che
+   cancellano un conto devono ripulire le proprie lapidi per identificativo.
+   Misurato: un giro di `npm run test:app` ne lascia **36** di `orders`.
