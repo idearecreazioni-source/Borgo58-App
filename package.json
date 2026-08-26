@@ -34,7 +34,8 @@
     "numeri:censimento": "node scripts/censimento-numeri.mjs",
     "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs",
     "dev:collaudo": "node scripts/dev-prova.mjs -- --port 5199",
-    "quesiti": "node scripts/quesiti-stampabili.mjs"
+    "quesiti": "node scripts/quesiti-stampabili.mjs",
+    "indice": "node scripts/indice-rovesciamenti.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

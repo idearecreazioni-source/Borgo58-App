@@ -78,13 +78,21 @@ della n. 4 è stata portata su la sola parte che ha misurato lui, cioè i
 Una sua decisione presa in quei giorni e mai rovesciata non compare lì, e
 quindi non è stata contata.
 
-🔴 **E CERCANDO SI È TROVATO UN DIFETTO IN `decisioni_rovesciate.md`**: le
-sezioni sono **48**, la tabella in cima ne elenca **18**. Trenta
-rovesciamenti hanno il loro racconto e non compaiono nell'indice — e
-quell'indice esiste proprio per rispondere a *«questa decisione l'abbiamo
-già rovesciata prima?»*. C'è anche **un numero usato due volte** (il 18,
-sia per i predefiniti di data del 19/08 sia per le due colonne del
-21/08). Vedi la nota in cima a quel file.
+✅ **E IL DIFETTO CHE ERA STATO TROVATO IN [`decisioni_rovesciate.md`](decisioni_rovesciate.md)
+È CHIUSO dal 27/08**: l'indice di quel file era scritto a mano e si era
+fermato al 21/08, quindi rispondeva «no, è la prima volta» su decisioni già
+rovesciate. Adesso **si genera** (`npm run indice`), e una prova automatica
+diventa rossa da sola se resta indietro.
+
+⚠️ **Qui non c'è più nessun conteggio, ed è voluto.** La nota che stava in
+questo punto diceva «48 sezioni, 18 nell'indice, un numero doppio»: erano
+numeri veri il 26/08 e falsi il giorno dopo. *Un numero scritto in un commento
+è una frase destinata a diventare falsa.* Quanti sono lo dice il file stesso,
+in cima alla sua tabella.
+
+⚠️ **I numeri usati due volte e i buchi NON si rinumerano** (decisione di
+Alessio, 27/08): ogni riepilogo già scritto li cita, e rinumerare romperebbe
+le citazioni. Si distinguono con la data.
 
 ---
 

@@ -34,55 +34,95 @@ visto. *L'assenza non è un'informazione; «niente da segnalare» sì.*
 
 ## L'elenco
 
-🔴 **QUESTO ELENCO SI È FERMATO AL 21/08, E LE SEZIONI SOTTO SONO 48**
-(misurato il 26/08 recuperando le decisioni del 14-21 agosto). Trenta
-rovesciamenti hanno il loro racconto per esteso e **non compaiono qui**.
+✅ **DAL 27/08/2026 QUESTO ELENCO SI GENERA**, e non si scrive più a mano.
+Lo produce `npm run indice` leggendo le sezioni di questo file, quindi non
+può più restare indietro senza che nessuno se ne accorga.
 
-⚠️ **E non è un dettaglio di forma, è il difetto che questo file esiste
-per non avere.** L'elenco risponde a una domanda sola — *«questa
-decisione l'abbiamo già rovesciata prima?»* — e la risponde **contando**.
-Un indice che ne conta 18 su 48 dà a quella domanda una risposta
-tranquilla e sbagliata: dice «no, è la prima volta» su una cosa già
-rovesciata due volte. È esattamente la forma dell'elenco scritto a mano
-che invecchia in silenzio, e il file la denuncia da sé nella nota alla
-sezione 4 — *«un elenco che esiste per far contare i rovesciamenti non
-può avere un buco»*.
+⚠️ **Perché è stato necessario, e perché la cura non era «aggiornarlo».**
+Fino al 27/08 la tabella era scritta a mano e si era fermata al 21/08:
+trentotto rovesciamenti avevano il loro racconto per esteso e non
+comparivano qui. E questo elenco risponde a una domanda sola — *«questa
+decisione l'abbiamo già rovesciata prima?»* — che si risponde **contando**:
+un indice monco dà a quella domanda una risposta tranquilla e sbagliata,
+dice «no, è la prima volta» su una cosa già rovesciata due volte.
 
-⚠️ **E c'è un numero usato DUE VOLTE**: il **18** è sia «un predefinito
-sbagliato si corregge» (19/08) sia «menu e pianta stanno affiancati su due
-colonne» (21/08). Chi cita «il rovesciamento n. 18» oggi non dice quale
-dei due.
+🔴 **E la nota che denunciava il buco era invecchiata insieme al buco**: diceva
+«48 sezioni, 18 nell'indice, un numero doppio», ed erano numeri veri il
+26/08. Il giorno dopo erano 57, 19 e tre. *Un numero scritto in un commento è
+una frase destinata a diventare falsa* — per questo qui sotto i conteggi non
+li scrive più nessuno: li dice il gestionale, e una prova automatica diventa
+rossa da sola il giorno che l'indice resta indietro.
 
-⚠️ **NON è stato ricostruito qui**, e la ragione è la stessa per cui il
-recupero delle decisioni è stato fatto leggendo e non copiando: rifare
-trenta righe di indice a colpo d'occhio produrrebbe un indice
-*plausibile*, che è peggio di uno dichiaratamente monco. Va fatto
-rileggendo le trenta sezioni una per una. **In coda**, con questa nota che
-dice a chi legge di non fidarsi del conteggio finché non è fatto.
+<!-- indice generato: non scrivere a mano -->
+| # | data | decisione rovesciata |
+|---|---|---|
+| 1 | 14/08/2026 | una richiesta in attesa occupa il posto |
+| 2 | 18/08/2026 | nel sistema non esiste una capacità per tavolo |
+| 3 | 18/08/2026 | dentro la sagoma ci sta il suo nome e basta |
+| 4 | 18/08/2026 | il tavolo più piccolo non scende mai sotto 1,05 cm reali |
+| 5 | 18/08/2026 | il ritardo prende tutto il tavolo al posto del colore della fascia |
+| 6 | 18/08/2026 | in Comande il tavolo con un conto aperto è dorato |
+| 7 | 18/08/2026 | le due legende dichiarano la precedenza dei colori |
+| 8 | 18/08/2026 | chi ha corretto i coperti, e quando, si vede a schermo |
+| 9 | 18/08/2026 | un tocco sulla sagoma vuol dire tre cose diverse |
+| 10 | 18/08/2026 | un tocco fa sempre la stessa cosa: apre il riquadro |
+| 11 | 18/08/2026 | la riga che spiega perché in Comande la sala è girata sta su ENTRAMBE le schermate |
+| 12 | 18/08/2026 | il riquadro del sold out, e l'elenco dei tavoli rimessi a posto uno per uno |
+| 13 | 18/08/2026 | il numero e la frase che ne dichiara il limite viaggiano insieme |
+| 14 | 19/08/2026 | il disegno dice il vero sullo spazio |
+| 15 | 19/08/2026 | ogni sagoma è disegnata dove sta davvero |
+| 16 | 19/08/2026 | un tavolo si può trascinare ovunque nella sala |
+| 17 | 19/08/2026 | la lista della spesa ha un vocabolario dei pagamenti tutto suo |
+| 18 | 19/08/2026 | un predefinito sbagliato si corregge |
+| 19 | 20/08/2026 | il caso dei due prezzi si scrive invece di risolverlo |
+| 20 | 20/08/2026 | il preventivo si manda col PDF allegato |
+| 21 | 20/08/2026 | nel gestionale non esiste più una capienza della sala |
+| 22 | 20/08/2026 | un file orfano nel deposito è invisibile e innocuo |
+| 23 | 21/08/2026 | La striscia del database non è più una striscia |
+| 24 | 21/08/2026 | Il segnale del database sparisce dalle pagine dei clienti |
+| 25 | 21/08/2026 | Il marrone non dice più «ci sono seduti adesso |
+| 18 | 21/08/2026 | menu e pianta stanno affiancati su due colonne |
+| 26 | 21/08/2026 | un foglio della cucina è un INVIO |
+| 27 | 22/08/2026 | la pianta non si rimpicciolisce sotto la larghezza che tiene i tavoli afferrabili |
+| 28 | 22/08/2026 | una cosa, un posto solo» (per il solo «Invia») |
+| 29 | 22/08/2026 | la cucina stampa un foglio per turno |
+| 30 | 22/08/2026 | la segnalazione dello scontrino la fa chiunque sia in sala |
+| 31 | 23/08/2026 | lo scenario è un quinto del vero, e va dichiarato |
+| 32 | 23/08/2026 | la marca dei conti si scrive nell'aggiornamento che li ridata |
+| 33 | 23/08/2026 | lo scarico di un conto è tutto o niente |
+| 34 | 23/08/2026 | ogni riga che il magazzino non ha scaricato si dichiara |
+| 35 | 23/08/2026 | l'assistente compila anche la percentuale di scarto |
+| 36 | 23/08/2026 | un numero si spiega da sé, sotto il saldo |
+| 37 | 24/08/2026 | l'allarme del 12/08 resta: racconta un guasto vero |
+| 38 | 24/08/2026 | ci si confronta con la previsione chiusa più recente |
+| 39 | 24/08/2026 | lo scadenziario è un elenco, le pulizie sono un elenco |
+| 40 | 24/08/2026 | il costo del personale si scrive in due caselle libere |
+| 41 | 24/08/2026 | la spiegazione di un vincolo la può leggere chiunque |
+| 42 | 24/08/2026 | la commissione del POS si conserva in punti |
+| 43 | 24/08/2026 | il pareggio si dice in coperti |
+| 44 | 24/08/2026 | il bis è una voce come le altre, non un pannellino sotto la riga |
+| 45 | 24/08/2026 | il riquadro del tavolo esce dai confini del bancone, e il nome si legge a 6 mm |
+| 46 | 25/08/2026 | la rete delle scale si prova rompendo una previsione vera |
+| 47 | 25/08/2026 | il costo di un conto lo dicono le ricette |
+| 48 | 25/08/2026 | una preparazione con lotti non si esplode» (metà regola) |
+| 49 | 25/08/2026 | la spiegazione di una spunta sta accanto al suo nome |
+| 50 | 25/08/2026 | la taglia di un documento stampato è quella dello schermo da cui lo stampi |
+| 48 | 25/08/2026 | Gli allergeni tornano ad avere un secondo posto |
+| 53 | 25/08/2026 | Il blocco del menu sugli allergeni dedotti |
+| 49 | 26/08/2026 | la Scorciatoia registra e manda l'AUDIO al gestionale |
+| 54 | 26/08/2026 | il freno anti-abuso sta sulla porta d'ingresso |
+| 55 | 26/08/2026 | una verifica dimostra di essersi ripulita contando le lapidi |
+| 56 | 26/08/2026 | il conto del tavolo resta fuori dal registro delle cancellazioni |
+| 57 | 27/08/2026 | il riflesso del mezzo di pagamento guarda TUTTE le quote |
 
-| # | data | decisione rovesciata | dove è raccontato |
-|---|---|---|---|
-| 1 | 14/08/2026 | *Una richiesta in attesa occupa il posto* (10/08) | [la pianta viva](consegne/20260814_la_pianta_viva.md) |
-| 2 | 18/08/2026 | *Nel sistema non esiste una capacità per tavolo* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
-| 3 | 18/08/2026 | *Dentro la sagoma ci sta il suo nome e basta* (14/08) | [giro B, i coperti dentro il tavolo](consegne/20260818_giro_b_i_coperti_dentro_il_tavolo.md) |
-| 4 | 18/08/2026 | *Il tavolo più piccolo non scende mai sotto 1,05 cm reali* (14/08) | [giro E, la sala entra nel telefono](consegne/20260818_giro_e_la_sala_entra_nel_telefono.md) |
-| 5 | 18/08/2026 | *Il ritardo prende tutto il tavolo al posto del colore della fascia* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
-| 6 | 18/08/2026 | *In Comande il tavolo con un conto aperto è dorato* (08/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
-| 7 | 18/08/2026 | *Le due legende dichiarano la precedenza dei colori* (18/08) | [giro D2, il ritardo e le prenotazioni in Comande](consegne/20260818_giro_d2_il_ritardo_e_le_prenotazioni.md) |
-| 8 | 18/08/2026 | *Chi ha corretto i coperti, e quando, si vede a schermo* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 9 | 18/08/2026 | *Un tocco sulla sagoma vuol dire tre cose diverse* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 10 | 18/08/2026 | *Un tocco fa sempre la stessa cosa: apre il riquadro* (18/08, rovescia il n. 9) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 11 | 18/08/2026 | *La riga «è lo stesso locale girato» sta su entrambe le schermate* (17/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 12 | 18/08/2026 | *Il riquadro del sold out, la scomposizione dei posti, un comando per ogni tavolo spostato* | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 13 | 18/08/2026 | *Il numero e la frase che ne dichiara il limite viaggiano insieme* (15/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 14 | 19/08/2026 | *Il disegno dice il vero sullo spazio* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 15 | 19/08/2026 | *Ogni sagoma è disegnata dove sta davvero* (18/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 16 | 19/08/2026 | *Un tavolo si può trascinare ovunque nella sala* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
-| 17 | 19/08/2026 | *La lista della spesa ha un vocabolario dei pagamenti tutto suo* (17/08) | [blocco 2 della lista](consegne/20260819_lista_blocco2_i_tre_esiti.md) |
-| 18 | 21/08/2026 | *Menu e pianta stanno affiancati su due colonne* (20/08) | [le Comande in larghezza](consegne/20260821_le_comande_in_larghezza.md) |
-| 49 | 26/08/2026 | *La Scorciatoia manda l AUDIO al gestionale* (25/08) | [i comandi vocali](consegne/20260826_i_comandi_vocali_i_bersagli_e_le_decisioni.md) |
+⚠️ **Righe: 58.** Generato da `npm run indice` leggendo le sezioni
+di questo file: non si scrive a mano, e non può più restare indietro.
 
-⚠️ *Fra il 18 e il 49 mancano trenta righe: vedi la nota qui sopra. La 49 e stata aggiunta il 26/08 perche una riga in piu e meglio di una in meno, non perche il buco sia chiuso.*
+⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
+(decisione di Alessio, 27/08/2026): ogni riepilogo già scritto cita quei
+numeri, e rinumerare romperebbe le citazioni. **Si distinguono con la data.**
+Lo stesso vale per i numeri che mancano: sono buchi, non errori da chiudere.
+<!-- fine indice generato -->
 
 ---
 
