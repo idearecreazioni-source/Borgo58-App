@@ -244,6 +244,12 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
         collectedAmount: form.collectedAmount,
         causaleId: form.causaleId || null,
         note: form.note || null,
+        // ⚠️ Solo sull'OMAGGIO: un omaggio incassa zero, ma la caparra il
+        // cliente l'ha versata davvero e gli torna intera in contanti
+        // (decisione di Alessio, 27/08). Su uno SCONTO no — lì il cliente
+        // paga qualcosa, e quanto della caparra vada sul conto e quanto
+        // torni indietro non l'ha ancora deciso nessuno.
+        scalaCaparra: isGift && scalando,
       })
     );
   };
@@ -385,8 +391,9 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
             <>
               {scalando && (
                 <p className="testo-sala text-b58-charcoal-soft">
-                  Con la caparra scalata il conto si chiude con un mezzo di pagamento
-                  solo. Per dividerlo, scegli prima «Non scalarla».
+                  Con la caparra scalata il conto si chiude con un mezzo di pagamento solo:
+                  una parte è già stata pagata, e il gestionale non divide fra più mezzi
+                  quello che resta. Per dividerlo, scegli prima «Non scalarla».
                 </p>
               )}
               <div className="flex flex-wrap gap-2">

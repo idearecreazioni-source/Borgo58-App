@@ -473,7 +473,7 @@ export async function cancelOrder(orderId, reason) {
 // rifiuta se non coincide.
 export async function closeOrderAsDiscountGift(
   orderId,
-  { isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note }
+  { isGift, fullAmount, collectedAmount, causaleId, causaleNote, customerId, deviceId, note, scalaCaparra = false }
 ) {
   return eseguiOperazione("close_order_as_discount_gift", {
     p_order_id: orderId,
@@ -485,6 +485,11 @@ export async function closeOrderAsDiscountGift(
     p_customer_id: customerId || null,
     p_device_id: deviceId || null,
     p_note: note || null,
+    // ⚠️ Su un conto OMAGGIATO la caparra torna INTERA al cliente in contanti
+    // (decisione di Alessio del 27/08): un omaggio incassa zero, ma quei soldi
+    // il cliente li ha versati davvero. Senza, la cassa del giorno avrebbe un
+    // avanzo che nessuno sa spiegare.
+    p_scala_caparra: scalaCaparra,
   });
 }
 

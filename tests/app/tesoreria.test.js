@@ -203,6 +203,7 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
     // nessuno la dichiari qui, questa prova diventa rossa **dicendo quale**,
     // che è l'informazione che il numero non dava.
     const DI_SISTEMA = [
+      "Caparra restituita",
       "Caparra ricevuta",
       "Differenza di cassa in meno",
       "Differenza di cassa in più",
