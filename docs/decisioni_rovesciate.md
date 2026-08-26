@@ -80,6 +80,9 @@ dice a chi legge di non fidarsi del conteggio finché non è fatto.
 | 16 | 19/08/2026 | *Un tavolo si può trascinare ovunque nella sala* (14/08) | [giro D3, la sala si tocca in un gesto](consegne/20260818_giro_d3_la_sala_si_tocca_in_un_gesto.md) |
 | 17 | 19/08/2026 | *La lista della spesa ha un vocabolario dei pagamenti tutto suo* (17/08) | [blocco 2 della lista](consegne/20260819_lista_blocco2_i_tre_esiti.md) |
 | 18 | 21/08/2026 | *Menu e pianta stanno affiancati su due colonne* (20/08) | [le Comande in larghezza](consegne/20260821_le_comande_in_larghezza.md) |
+| 49 | 26/08/2026 | *La Scorciatoia manda l AUDIO al gestionale* (25/08) | [i comandi vocali](consegne/20260826_i_comandi_vocali_i_bersagli_e_le_decisioni.md) |
+
+⚠️ *Fra il 18 e il 49 mancano trenta righe: vedi la nota qui sopra. La 49 e stata aggiunta il 26/08 perche una riga in piu e meglio di una in meno, non perche il buco sia chiuso.*
 
 ---
 
@@ -2158,3 +2161,44 @@ sbagliato lo stesso.*
 nessuno. Ma dentro quel caso c'è un difetto dichiarato — l'origine vuota
 mescola «mai guardato» con «lo ha scritto Alessio a mano» — ed è fra le
 domande aperte.
+
+---
+
+## 49 · 26/08/2026 — «la Scorciatoia registra e manda l'AUDIO al gestionale»
+
+**Cosa era stato deciso, e quando.** Il **25/08**, decidendo come si parla al
+gestionale senza tirare fuori il telefono: *«una Scorciatoia iOS registra e
+manda l'audio DIRETTAMENTE al gestionale, che deve solo saper ricevere. Non si
+passa dai Memo Vocali. L'innesco è l'Apple Watch.»*
+
+**La ragione di allora.** È il modo ovvio in cui si immagina la cosa: si parla,
+parte una registrazione, il gestionale la ascolta. E rispondeva a un bisogno
+preciso — niente Memo Vocali da riaprire a mano, e il gesto che parte dal
+polso.
+
+**Cosa si decide adesso.** La Scorciatoia **trascrive sul telefono** — l'azione
+«Detta testo» di iOS — e manda al gestionale **parole già scritte**. Il punto
+che riceve accetta testo.
+
+**Perché la ragione di allora non vale più.** ⚠️ **Non perché fosse
+sbagliata: perché quando è stata presa la Scorciatoia non esisteva ancora.**
+Costruendola sono emerse due cose che non si potevano sapere prima:
+
+1. **Il telefono trascrive da sé**, gratis e sul dispositivo. È un'azione
+   standard di Comandi rapidi, e funziona anche dall'orologio.
+2. 🔴 **Nessun pezzo di questo gestionale sa ascoltare un file audio**, e non
+   è una mancanza da colmare in un pomeriggio: l'assistente che il progetto
+   usa **non trascrive audio**. Servirebbe un secondo servizio, una seconda
+   chiave, un secondo conto da pagare — e megabyte da caricare da una cella
+   frigorifera con la rete che va e viene.
+
+⚠️ **E il resto della decisione vale intero**: niente Memo Vocali, innesco
+dall'Apple Watch, il gestionale deve solo saper ricevere. **Cambia il mezzo,
+non la sostanza** — ed è Alessio ad averlo detto, accettando la rettifica il
+26/08: *«è accettata: quando è stata presa la Scorciatoia non esisteva ancora,
+e ora il telefono trascrive da sé»*.
+
+⚠️ **E si guadagna una proprietà invece di una promessa**: l'audio **non
+lascia mai il dispositivo**. Non c'è nessuna registrazione da conservare, e
+quindi non c'è niente da cancellare — la stessa forma della foto del 25/08,
+che non viene mai salvata perché non passa da nessun deposito.

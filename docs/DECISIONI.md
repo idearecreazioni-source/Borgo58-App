@@ -175,10 +175,19 @@ DATI DIVERSI. L'assistente può sapere solo quale dovrebbe essere.
 
 ## Assistente — voce
 
-* 25/08 — Una Scorciatoia iOS registra e manda l'audio DIRETTAMENTE al
-gestionale, che deve solo saper ricevere. Non si passa dai Memo Vocali.
-L'innesco è l'Apple Watch. SUPERA la decisione del 24/08 sul microfono
-indossato col pulsante Bluetooth.
+* 25/08 — **SUPERATA DAI FATTI il 26/08** — *«Una Scorciatoia iOS registra e
+manda l'AUDIO direttamente al gestionale»*. ⚠️ **Non è stata cambiata idea:
+quando è stata presa, la Scorciatoia non esisteva ancora.** Costruendola si è
+visto che il telefono **trascrive da sé** (l'azione «Detta testo» di iOS), e
+che nessun pezzo di questo gestionale sa ascoltare un file audio — servirebbe
+un secondo servizio e un secondo conto da pagare. Vedi la voce qui sotto, che
+è quella in vigore.
+* 26/08 — LA SCORCIATOIA MANDA IL **TESTO**, non l'audio: trascrive sul
+telefono e spedisce parole già scritte. ⚠️ Il resto della decisione del 25/08
+vale intero e non è toccato: **non si passa dai Memo Vocali**, l'innesco è
+l'**Apple Watch**, e il gestionale deve solo saper ricevere. ⚠️ E ne discende
+una proprietà, non una promessa: **l'audio non lascia mai il dispositivo**, e
+non c'è nessuna registrazione da conservare né da cancellare.
 * 25/08 — Scartati: il pulsante Azione dell'iPhone (sta sul telefono, che andrebbe
 comunque preso in mano) e il Flic 2, non acquistato.
 * 24/08 — Il microfono si preme per ACCENDERE l'ascolto e si ripreme per
@@ -475,6 +484,12 @@ una spunta NO.
 carta vera. Il ticket di cucina resta a 6,8 mm.
 * 25/08 — I bersagli fra 5 e 8 mm nei moduli sono LASCIATI APPOSTA e si
 affrontano tutti insieme in un giro loro, non uno alla volta quando capita.
+⚠️ **Fatto il 26/08**: zero sotto soglia su 73 schermate, a tre densità.
+* 26/08 — UN MISURATORE NUOVO SI PROVA PRIMA SU UN CASO DI CUI SI CONOSCE GIÀ
+LA RISPOSTA, altrimenti misura e non si sa cosa. Nasce dalla terza volta in
+due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodotti
+da un metro rivelatosi storto NON si citano più come fatti: o si rimisurano, o
+si scrivono con la scala accanto. La regola per esteso sta in CLAUDE.md §8.
 
 ## Fatture e amministrazione
 

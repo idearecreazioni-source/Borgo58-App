@@ -98,8 +98,20 @@ salta per prima.*
    commento lo dichiara.
 4. **Il mio primo censimento diceva 3437 bersagli fuori norma.** Era falso:
    il misuratore convertiva in centimetri e confrontava con una soglia in
-   millimetri. I veri erano 598.
-5. **La prima diagnosi del collaudo vocale** — «non ho trovato questo
+   millimetri.
+5. 🔴 **E IL «598» CHE L HA SOSTITUITO E FALSO A SUA VOLTA — rilievo di
+   Alessio, 26/08.** Non nel conteggio: nella SCALA. Quel censimento gira a
+   densita **stimata** (37,8, il valore di un monitor), e solo dopo ho
+   misurato alla densita vera del tablet trovando bersagli che a 37,8
+   risultavano sopra soglia. **Il 598 e un pavimento preso col metro
+   sbagliato**, e non l ho mai rimisurato con quello giusto: il numero vero
+   era piu alto, e quanto non si sa.
+   ⚠️ **Lo zero finale invece vale**, perche e verificato a tutte e tre le
+   densita. Ma i due numeri **non stanno sulla stessa scala**, e questo
+   riepilogo li presentava come un prima-e-dopo. Corretto ovunque, perche
+   e esattamente il tipo di numero che fra tre mesi qualcuno rilegge
+   credendoci.
+6. **La prima diagnosi del collaudo vocale** — «non ho trovato questo
    prodotto in magazzino» su cinque prodotti riconosciuti benissimo — era
    una **frase falsa prodotta dal gestionale**, non da me, ma l'avrei
    riportata come vera se non avessi guardato i permessi.
@@ -294,19 +306,34 @@ riquadri accanto.
 
 ### Il censimento, prima della cura
 
-**73 schermate a 390 punti: 598 bersagli sotto gli 8,50 mm, in 54 forme
-distinte.** Di questi **178 sotto i 5 mm**, che è la fascia peggiore.
+**73 schermate a 390 punti: almeno 598 bersagli sotto gli 8,50 mm, in almeno
+54 forme distinte.** Di questi **178 sotto i 5 mm**, che è la fascia peggiore.
+
+🔴 **«ALMENO», E NON È UNA CAUTELA DI FORMA: QUEL NUMERO È PRESO COL METRO
+SBAGLIATO.** Il censimento gira a densità **stimata** — 37,8 punti per
+centimetro, il valore di un monitor — e più avanti, misurando alla densità
+vera di un mini tablet, sono comparsi bersagli che a 37,8 risultavano sopra
+soglia. **Non ho mai rifatto il censimento iniziale con la scala giusta.**
+Quindi il numero vero era più alto, e di quanto non si sa.
+
+⚠️ **Lo ZERO finale vale**, perché è verificato a **tutte e tre** le densità.
+Ma i due numeri **non stanno sulla stessa scala**: il 598 è un pavimento
+misurato male, lo zero è una proprietà misurata bene. Presentarli come un
+prima-e-dopo — che è quello che questo riepilogo faceva — fa credere a un
+conto che non torna. *Rilievo di Alessio, 26/08.*
 
 🔴 **IL MIO MISURATORE SBAGLIAVA, e la prima passata diceva 3437.**
 Convertiva in **centimetri** e confrontava con una soglia in
 **millimetri**: «Agenda completa →», che avevo misurato a mano a 10,5 mm,
 risultava 1,05 e finiva fra i colpevoli. E misurava il **quadratino** di
 una casella invece dell'etichetta che si tocca — la lezione del 25/08,
-ripetuta. Corretti tutti e due, i colpevoli veri erano 598.
+ripetuta. Corretti tutti e due, i colpevoli scesero a 598 — che però resta
+un pavimento preso alla densità sbagliata, vedi sopra.
 
 ### La cura è una classe, non 54 correzioni
 
-Le 598 occorrenze non erano 598 difetti: erano **poche forme ripetute**.
+Quelle occorrenze non erano altrettanti difetti: erano **poche forme
+ripetute**.
 La più diffusa — un gesto scritto a parole, alto 4,00 mm — compariva in
 otto schermate e cinquantaquattro volte, **con cinque varianti di
 scrittura** perché ogni volta era stata scritta a mano. Correggerle una
@@ -340,8 +367,8 @@ E **due sbordi**, visibili solo lì:
 
 | | prima | dopo |
 |---|---|---|
-| bersagli sotto 8,50 mm | 598 (54 forme) | **0** |
-| di cui sotto 5 mm | 178 | **0** |
+| bersagli sotto 8,50 mm | ≥ 598 (≥ 54 forme) ⚠️ a densità stimata | **0** a 37,8 · 59,5 · 64 |
+| di cui sotto 5 mm | ≥ 178 ⚠️ stessa scala | **0** |
 | sbordi | 2 | **0** |
 | bersagli guardati | — | **2526** |
 | schermate | 73 | 73 |
