@@ -535,7 +535,14 @@ serata. Il cliente ha versato denaro davvero. ✅ Costruito il 26/08: nasce un
 movimento di prima nota in contanti con la causale di sistema «Caparra
 ricevuta».
 * 26/08 — **Alla chiusura del conto la caparra si PROPONE e Alessio conferma**:
-mai scalata da sé in silenzio. ⏳ *Non ancora costruito.*
+mai scalata da sé in silenzio. ✅ Costruito il 27/08: finché non ha scelto
+«Scala la caparra» o «Non scalarla», i pulsanti di pagamento restano **spenti**.
+La caparra entra come **quota di pagamento** e non come sconto, quindi i ricavi
+del conto non cambiano. ⚠️ Con la caparra scalata il conto si chiude con **un
+mezzo di pagamento solo**: per dividerlo va scelto prima «Non scalarla».
+* 27/08 — *(aperta)* **Una caparra più grande del conto**: il gestionale rifiuta
+lo scalo dicendo quanto avanzerebbe, e il conto si chiude lo stesso senza
+scalarla. Che fine facciano i soldi che avanzano **non è deciso**.
 * 26/08 — **La caparra tenuta per un cliente che non si presenta è una VOCE A
 SÉ**, ritrovabile separatamente dagli incassi del servizio, così a fine anno si
 sa quanto è entrato senza aver servito nessuno. ⏳ *Non ancora costruito.*

@@ -2269,3 +2269,24 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ **Quello che resta da fare** e' la meta' non pagata: le prove che
    cancellano un conto devono ripulire le proprie lapidi per identificativo.
    Misurato: un giro di `npm run test:app` ne lascia **36** di `orders`.
+
+---
+
+## 57 · 27/08/2026 — «il riflesso del mezzo di pagamento guarda TUTTE le quote»
+
+1. **Cosa era stato deciso, e quando.** 16/08/2026: `orders.payment_method` e'
+   un riflesso di `order_payments`, scritto da un trigger — un mezzo solo
+   → quello, piu' di uno → misto.
+2. **La ragione di allora.** Due posti che dicono la stessa cosa e possono
+   contraddirsi sono un difetto; un riflesso lo scrive un trigger solo.
+3. **Cosa si decide adesso.** Il riflesso **salta le quote di tipo
+   `caparra`**, nate il 26/08.
+4. **Perche' la ragione di allora VALE ANCORA, e questo e' il prezzo.** Il
+   riflesso resta uno e scritto da un trigger solo: cambia cosa riflette, non
+   dove vive. La domanda a cui `payment_method` risponde e' «come ha pagato il
+   cliente quella sera», e un denaro arrivato settimane prima non ci sta
+   dentro. ⚠️ **E non era solo un'etichetta sbagliata**: misurato rompendolo,
+   senza quel filtro la chiusura FALLISCE — `invalid input value for enum
+   order_payment_method: "caparra"` — cioe' un conto che non si chiude col
+   cliente davanti. ⚠️ Prezzo dichiarato: un conto coperto interamente dalla
+   caparra resta senza mezzo di pagamento, ed e' vero.
