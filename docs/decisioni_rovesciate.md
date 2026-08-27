@@ -118,8 +118,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 59 | 27/08/2026 | il microfono non c'è perché la pagina è aperta dall'icona |
 | 60 | 27/08/2026 | la lista della spesa cerca il prodotto in magazzino |
 | 61 | 27/08/2026 | gli allergeni dedotti si confermano prima di stamparli |
+| 62 | 27/08/2026 | le categorie degli ingredienti le ridice anche il JavaScript |
+| 63 | 27/08/2026 | gli elenchi chiusi si scrivono dentro i prompt di MEMO |
 
-⚠️ **Righe: 62.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 64.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2426,3 +2428,52 @@ che non viene mai salvata perché non passa da nessun deposito.
    caso, ed è dichiarato: l'origine **vuota**, cioè «non l'ha guardato
    nessuno», che non è un dedotto — lì l'elenco resta fuori dal menu finché
    il sorvegliante notturno non esiste.
+
+## 62 · 27/08/2026 — «le categorie degli ingredienti le ridice anche il JavaScript»
+
+1. **Cosa era stato deciso, e quando.** Il 17/08, costruendo la rete dei
+   vocabolari: un vocabolario chiuso vive in **tre posti** che devono restare
+   d'accordo, e serve un guardiano perché i tre **non dicono la stessa cosa** —
+   il database dice quali valori sono legali, `constants.js` come si scrivono
+   in italiano.
+2. **La ragione di allora.** Fra il database e il JavaScript, se il secondo è
+   più stretto un valore legittimo **non si può scegliere e nessuno lo
+   scopre**; se è più largo, il salvataggio fallisce sull'unica persona che ci
+   prova. Il primo caso è silenzioso, e la rete esiste per quello.
+3. **Cosa si decide adesso.** Per **questa sola colonna** il gestionale non
+   ridice più niente: **legge** il catalogo (`listCategorieIngrediente()`).
+   `INGREDIENT_CATEGORIES` è tolto da `constants.js`, e la riga di
+   `SPECCHIATI` che lo sorvegliava è tolta con lui.
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, per intero,
+   per le altre ventinove righe di `SPECCHIATI`, che non sono state toccate.**
+   Quella regola presuppone un vocabolario che il gestionale **ridice**: qui ha
+   smesso, quindi il disaccordo **non può più esistere** — non ci sono due
+   elenchi, ce n'è uno. 🔴 E lasciare la riga avrebbe fatto il contrario di
+   sorvegliare: il primo giorno in cui Alessio aggiunge una categoria la prova
+   sarebbe diventata **rossa per un gesto legittimo**, cioè un allarme falso —
+   il modo in cui una rete viene spenta. ⚠️ **Il prezzo si paga**: al posto
+   della riga tolta ci sono **due guardiani nuovi** in
+   `tests/unita/vocabolari.test.js`, perché altrimenti fra sei mesi qualcuno
+   riscrive l'elenco credendo di sistemare qualcosa.
+
+## 63 · 27/08/2026 — «gli elenchi chiusi si scrivono dentro i prompt di MEMO»
+
+1. **Cosa era stato deciso, e quando.** Mai deciso esplicitamente: gli elenchi
+   erano scritti nei prompt da quando ogni funzione online è nata — le
+   categorie dei prodotti in **quattro posti**, e in uno dei quattro
+   (`posta-leggi`) non per proporre ma per **validare**.
+2. **La ragione di allora.** Le istruzioni di un modello si scrivono come un
+   testo, e un elenco dentro un testo si legge meglio di un segnaposto.
+3. **Cosa si decide adesso.** Gli elenchi si **chiedono al database**
+   (`vocabolari_per_assistente()`), che li ricava dalla rete dei vocabolari e
+   non li contiene.
+4. **Perché la ragione di allora non vale più.** Perché le categorie hanno
+   smesso di essere codice: un elenco scritto nel prompt sarebbe rimasto
+   quello di ieri, e MEMO avrebbe continuato a proporre le vecchie **sbagliando
+   senza dirlo**. 🔴 E il quarto posto era peggio: `CATEGORIE_VALIDE.has(c) ? c
+   : "altro"` avrebbe **scambiato con «altro»** una categoria nuova letta
+   correttamente su una fattura, senza nessun errore. ⚠️ **Dove la ragione vale
+   ancora è stata rispettata**: in `schede-prodotto` gli elenchi restano
+   scritti *anche* nelle istruzioni, perché lì servono a **spiegare quando
+   usare quale valore** («frigo_0_4 per carne, pesce, freschissimi») — e quella
+   parte è sapere di cucina, non un vocabolario del database.
