@@ -128,6 +128,27 @@ export async function listPriceHistory(ingredientId, { limit = 100 } = {}) {
   return data;
 }
 
+/**
+ * Media, estremi e variazione dei prezzi di un ingrediente — o di una sua
+ * sola versione, passando `articoloId`.
+ *
+ * ⚠️ RESTITUISCE `null` QUANDO NON C'E' NESSUNO STORICO, e chi chiama deve
+ *    dire «non lo so» invece di mostrare zeri: uno zero qui si leggerebbe
+ *    «questo ingrediente non e' mai rincarato», che e' un'altra cosa.
+ *
+ * ⚠️ Solo il titolare: sono prezzi d'acquisto. Chi non deve vederli riceve
+ *    un RIFIUTO, non un elenco vuoto — una schermata vuota e' una
+ *    rassicurazione falsa (regola del 13/08).
+ */
+export async function andamentoPrezzo(ingredientId, articoloId = null) {
+  const { data, error } = await supabase.rpc("andamento_prezzo", {
+    p_ingredient_id: ingredientId,
+    p_articolo_id: articoloId,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
 export async function deactivateIngredient(id) {
   const { error } = await supabase
     .from("ingredients")

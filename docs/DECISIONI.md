@@ -373,6 +373,16 @@ un controllo più soft.
 
 ## Prodotti, ingredienti e prezzi
 
+* 17/08 — 🔴 **UN REGALO NON DEVE FAR SCENDERE A ZERO IL PREZZO
+DELL'INGREDIENTE.** Il *lotto* costa zero — ed è vero — ma il prezzo
+dell'ingrediente e il suo storico non si toccano, altrimenti il food cost di
+ogni ricetta che lo usa risulta più basso del vero, ed è da lì che Alessio
+decide i prezzi del menu. *Il regalo vale zero per quella volta, non per
+sempre.* ⚠️ **Recuperata qui il 27/08**: viveva solo nel mandato del 17/08 e in
+`CLAUDE.md`, e il 27/08 il riflesso del prezzo l'ha contraddetta — a fermarlo è
+stata una prova scritta quel giorno, non una rilettura. Vale anche per la
+raccolta propria: il criterio non è «è un regalo», è che **un costo di zero non
+è una misura del valore di quell'ingrediente**.
 * 25/08 — Il gestionale VERRÀ RESETTATO prima dell'uso vero: i dati che entrano
 dopo sono tutti reali. Nessuna conversione da fare sui dati di oggi.
 * 25/08 — Nell'uso vero si caricano PRIMA le ricette con i loro ingredienti, POI

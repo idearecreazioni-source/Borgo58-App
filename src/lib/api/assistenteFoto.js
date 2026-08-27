@@ -183,6 +183,25 @@ export async function applicaLetturaEtichetta(ingredientId, campi) {
 }
 
 /**
+ * Fa nascere il PRODOTTO letto da un'etichetta — quella confezione, con
+ * marca e formato — appeso a un INGREDIENTE generico.
+ *
+ * ⚠️ E' il difetto che il 27/08/2026 ha chiuso il blocco della separazione:
+ *    prima una foto creava un INGREDIENTE nuovo ogni volta, quindi
+ *    «maionese Marca A» e «maionese Marca B» diventavano due ingredienti
+ *    invece di due versioni dello stesso. Da li' i 133 ingredienti del
+ *    gestionale di prova, 20 dei quali in categoria «altro».
+ *
+ * ⚠️ `ingredient_id` si passa DENTRO la scheda quando la schermata ha gia'
+ *    salvato l'ingrediente con tutti i suoi campi: senza, la funzione lo
+ *    cercherebbe per NOME, e un nome corretto a mano da Alessio ne farebbe
+ *    nascere un secondo — cioe' il difetto rientrato dalla finestra.
+ */
+export async function registraProdottoLetto(scheda) {
+  return eseguiOperazione("registra_prodotto_letto", { p_scheda: scheda });
+}
+
+/**
  * Segna quali campi ha proposto l'assistente e Alessio ha lasciato
  * com'erano. Il confronto lo fa il modulo: il database non ha modo di
  * sapere se un valore e' quello proposto o quello riscritto sopra.

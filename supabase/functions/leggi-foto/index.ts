@@ -82,6 +82,10 @@ Solo per "etichetta", riempi "scheda" così (per bolla, fattura e altro metti nu
 
 "scheda": {
   "nome": "il nome del prodotto come lo scriveresti in un ricettario, breve",
+  "ingrediente": "l'INGREDIENTE GENERICO, come lo chiamerebbe una ricetta: «maionese», «olio di oliva extra vergine», «passata di pomodoro». Senza marca, senza formato, senza aggettivi commerciali.",
+  "prodotto": "QUESTA CONFEZIONE, come la distingueresti dalle altre dello stesso ingrediente: marca e formato dentro il nome. Per esempio «Maionese Marca A flacone 500 ml».",
+  "formato": "il formato in parole: «flacone da 500 ml», «cassa da 6 kg», «bottiglia da 1 L». null se non si legge.",
+  "nome_esteso": "solo se il nome sull'immagine è una sigla abbreviata (uno scontrino), il nome per esteso: «MAION SG 500» -> «maionese». Altrimenti null.",
   "marca": "la marca, se si legge, altrimenti null",
   "unita": "kg" | "l" | "pz",
   "quantita_confezione": numero o null,
@@ -96,6 +100,13 @@ Solo per "etichetta", riempi "scheda" così (per bolla, fattura e altro metti nu
   "scadenza_letta": "la data di scadenza come si legge, oppure null",
   "lotto_letto": "il numero di lotto come si legge, oppure null"
 }
+
+L'INGREDIENTE E IL PRODOTTO SONO DUE COSE DIVERSE
+Il gestionale tiene UN solo ingrediente «maionese» e sotto di lui tutte le confezioni comprate nel tempo. Quindi "ingrediente" deve essere il nome che useresti in una ricetta, IDENTICO per due marche diverse dello stesso prodotto: se scrivi «Maionese Hellmann's» come ingrediente, nel ricettario nascono dieci maionesi e il food cost dei piatti si spezza in dieci pezzi.
+- "ingrediente": il nome generico, sempre lo stesso per lo stesso alimento.
+- "prodotto": questa confezione, distinguibile dalle altre.
+Esempio: etichetta «HELLMANN'S Maionese Classica 500 ml» -> ingrediente "maionese", prodotto "Maionese Hellmann's flacone 500 ml", marca "Hellmann's", formato "flacone da 500 ml".
+⚠️ Se l'alimento è sfuso e non ha marca né formato, "prodotto" può essere null: il gestionale lo ricava da sé.
 
 LA CONSERVAZIONE È QUELLA DELLA CONFEZIONE CHIUSA
 Un'etichetta dice quasi sempre due cose diverse: come si tiene il prodotto INTEGRO, e cosa farne DOPO L'APERTURA. Il gestionale ha bisogno della prima, perché è quella che decide dove va messo in magazzino e quando scade la partita.

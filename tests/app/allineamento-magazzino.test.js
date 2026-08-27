@@ -99,6 +99,14 @@ describe("si dichiara quanto c'è, e la differenza la calcola il gestionale", ()
       { ingredient_id: ing, quantity_received: 2, quantity_remaining: 2, unit_cost: 2, expiry_date: fra(1) },
       { ingredient_id: ing, quantity_received: 10, quantity_remaining: 10, unit_cost: 5, expiry_date: fra(60) },
     ]);
+
+    // ⚠️ IL LISTINO SI SCRIVE DOPO LE PARTITE, e l'ordine è diventato
+    // obbligatorio il 27/08/2026: da quel giorno `current_price` è un
+    // RIFLESSO dell'ultima partita entrata, quindi scriverlo prima lo
+    // faceva sovrascrivere dal costo dell'ultimo lotto (5,00) e questa
+    // prova non poteva più distinguere le tre risposte che separa.
+    // Il caso resta vero e legittimo: è un prezzo scritto a mano.
+    await titolare.from("ingredients").update({ current_price: LISTINO }).eq("id", ing);
   });
 
   afterAll(async () => {

@@ -26,6 +26,7 @@ import ScattaFoto from "../../components/ScattaFoto";
 import {
   applicaLetturaEtichetta,
   marcaCampiDallAssistente,
+  registraProdottoLetto,
 } from "../../lib/api/assistenteFoto";
 import {
   allergeniDaScrivere,
@@ -149,6 +150,9 @@ export default function IngredienteForm() {
   const [daConfermare, setDaConfermare] = useState([]);
   const [fonti, setFonti] = useState({});
   const [varianti, setVarianti] = useState([]);
+  // Da dove viene `current_price`: «prodotto», «a_mano», oppure vuoto —
+  // che vuol dire «non l'ha ancora detto nessuno» e non è la stessa cosa.
+  const [prezzoDa, setPrezzoDa] = useState(null);
   const [newPrice, setNewPrice] = useState("");
   const [priceNote, setPriceNote] = useState("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
@@ -201,6 +205,7 @@ export default function IngredienteForm() {
           if (cancelled) return;
           // Se e' gia' messo da parte, il pulsante deve dire «rimettilo».
           setAttivo(ing.active !== false);
+          setPrezzoDa(ing.prezzo_da ?? null);
           setForm({
             name: ing.name,
             category: ing.category,
@@ -364,6 +369,29 @@ export default function IngredienteForm() {
       //    appena compilato. Il guaio si dichiara invece di sparire.
       if (letturaEtichetta) {
         try {
+          // ------------------------------------------------------------
+          // IL PRODOTTO NASCE QUI, appeso all'ingrediente appena salvato.
+          // ------------------------------------------------------------
+          // ⚠️ Fino al 27/08/2026 una foto faceva nascere un INGREDIENTE
+          //    nuovo ogni volta: due marche di maionese diventavano due
+          //    ingredienti, e il food cost dei piatti si spezzava in due.
+          //    Ora l'ingrediente resta uno e sotto di lui stanno le
+          //    versioni comprate.
+          // ⚠️ Si passa `ingredient_id`: senza, la funzione cercherebbe per
+          //    NOME, e un nome corretto a mano qui sopra ne farebbe nascere
+          //    un secondo — il difetto rientrato dalla finestra.
+          const s = letturaEtichetta.scheda;
+          if (s?.prodotto || s?.marca || s?.formato) {
+            await registraProdottoLetto({
+              ingredient_id: idProdotto,
+              prodotto: s.prodotto ?? null,
+              marca: s.marca ?? null,
+              formato: s.formato ?? null,
+              nome_esteso: s.nome_esteso ?? null,
+              quantita_confezione: s.quantita_confezione ?? null,
+            });
+          }
+
           const daScrivere = allergeniDaScrivere(letturaEtichetta.scheda, form.allergens);
           if (daScrivere.length > 0) {
             await applicaLetturaEtichetta(idProdotto, { allergeni: daScrivere });
@@ -372,7 +400,7 @@ export default function IngredienteForm() {
           await marcaCampiDallAssistente(idProdotto, rimasti);
         } catch (errore) {
           setError(
-            `Il prodotto è salvato, ma non sono riuscito a registrare da dove vengono gli allergeni: ${errore.message}. Puoi correggerli a mano dalla scheda.`
+            `L'ingrediente è salvato, ma non sono riuscito a registrare la versione letta dall'etichetta e da dove vengono gli allergeni: ${errore.message}. Puoi sistemarli a mano dalla scheda.`
           );
           setSaving(false);
           return;
@@ -396,6 +424,10 @@ export default function IngredienteForm() {
     try {
       await updateIngredientPrice(id, Number(newPrice), { note: priceNote || undefined });
       setForm((f) => ({ ...f, current_price: Number(newPrice) }));
+      // ⚠️ Si aggiorna anche la provenienza: senza, la riga sotto il numero
+      //    continuerebbe a dire da dove veniva il prezzo di PRIMA — cioè una
+      //    frase diventata falsa nel momento in cui si preme il pulsante.
+      setPrezzoDa("a_mano");
       setPriceHistory(await listPriceHistory(id));
       setNewPrice("");
       setPriceNote("");
@@ -1070,6 +1102,26 @@ export default function IngredienteForm() {
                       {v.stesso_di && (
                         <span className="testo-sala text-b58-charcoal-soft"> · stesso prodotto</span>
                       )}
+                      {/* Marca e formato. ⚠️ Il commento sopra questa tabella
+                          li promette dal giorno in cui è stata scritta, e non
+                          c'erano: quelle colonne sono nate il 27/08/2026 con
+                          la separazione fra prodotto e ingrediente. Vanno a
+                          capo perché sono l'informazione con cui si
+                          riconosce la confezione, non un dettaglio del nome. */}
+                      {(v.marca || v.formato) && (
+                        <span className="block testo-sala text-b58-charcoal-soft">
+                          {[v.marca, v.formato].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                      {/* Quante volte quella versione è entrata davvero.
+                          Distingue «la compro sempre» da «l'ho provata una
+                          volta», che è la domanda con cui si guarda questa
+                          tabella. */}
+                      {v.carichi > 0 && (
+                        <span className="block testo-sala text-b58-charcoal-soft">
+                          entrata {v.carichi === 1 ? "una volta" : `${v.carichi} volte`}
+                        </span>
+                      )}
                     </td>
                     <td className="py-1.5">
                       {/* Chi la vende. Le diciture nate dalle prime fatture
@@ -1164,6 +1216,20 @@ export default function IngredienteForm() {
               )}
             </div>
           </div>
+
+          {/* DA DOVE VIENE QUESTO NUMERO.
+              ⚠️ Le risposte sono TRE, e la terza è quella che serve: un
+              prezzo misurato sull'ultima confezione entrata, uno scritto a
+              mano da Alessio, e «nessuno l'ha ancora detto». Prima del
+              27/08/2026 i tre casi si vedevano tutti allo stesso modo, e un
+              prezzo scritto a mano era indistinguibile da uno misurato. */}
+          <p className="testo-sala text-b58-charcoal-soft -mt-2 mb-4">
+            {prezzoDa === "prodotto"
+              ? "Viene dall'ultima confezione entrata in magazzino, e si aggiorna da sé al prossimo carico."
+              : prezzoDa === "a_mano"
+                ? "L'hai scritto tu. Al primo carico con un costo lo sostituirà quello pagato davvero."
+                : "Nessun carico l'ha ancora misurato, e nessuno l'ha scritto a mano."}
+          </p>
 
           <div className="flex flex-wrap gap-2 items-end mb-5 bg-white rounded-lg p-3 border border-b58-charcoal/10">
             <div>

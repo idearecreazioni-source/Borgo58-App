@@ -266,6 +266,12 @@ const OPERAZIONI = new Set([
   // ⚠️ Trovato da `tests/app/scritture-dal-corridoio.test.js`, non
   // rileggendo: la funzione era chiamata dritta dal browser.
   "applica_lettura_etichetta",
+  // Una foto fa nascere un PRODOTTO e non un ingrediente (27/08/2026).
+  // Tocca `ingredients`, `articoli_fornitore` e `allergeni_prodotto`: a
+  // metà lascerebbe un prodotto appeso a un ingrediente che non c'è, oppure
+  // un ingrediente nuovo senza il prodotto che l'ha fatto nascere — e
+  // quest'ultimo è precisamente il difetto che l'operazione chiude.
+  "registra_prodotto_letto",
   // I comandi vocali (26/08/2026). Confermare una cosa dettata la fa
   // succedere DAVVERO — allinea una giacenza, scrive una temperatura nel
   // registro HACCP, scarica del magazzino — e insieme aggiorna la riga
