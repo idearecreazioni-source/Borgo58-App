@@ -100,4 +100,47 @@ describe("i vincoli nuovi parlano italiano", () => {
     expect(error.message).not.toMatch(/violates check constraint/i);
     expect(error.message).toMatch(/costo unitario/i);
   });
+
+  it("un dato obbligatorio che manca arriva in italiano, non in inglese", async () => {
+    // 🔴 LA QUINTA FORMA (28/08/2026). Il messaggio di un `not null` non
+    // contiene nessun nome di vincolo fra virgolette, quindi passava
+    // attraverso tutte e quattro le maglie di `nomeDelVincolo()` e
+    // arrivava a schermo **in inglese**, nominando una colonna di
+    // database. Le colonne obbligatorie senza predefinito sono 341.
+    //
+    // ⚠️ SI ENTRA DAL COLLEGAMENTO DELL APP: la traduzione vive dentro
+    // `src/lib/supabase.js`, e un client proprio riceverebbe l inglese
+    // mentre la schermata riceve l italiano. Terza volta che questa
+    // lezione si ripresenta (18/08 coperti, 16/08 mance, 25/08 vincoli).
+    //
+    // ⚠️ NON LASCIA RESIDUI PER COSTRUZIONE: l inserimento e respinto,
+    // quindi non c e nessuna riga da ripulire — e non si passa da
+    // `righeMie()` perche non nasce niente di cui segnarsi l identificativo.
+    const { error } = await supabase.from("dining_tables").insert({ tipo: "tavolo" });
+
+    expect(error, "un tavolo senza nome dev essere respinto").not.toBeNull();
+    expect(error.code).toBe("23502");
+    expect(error.message).not.toMatch(/violates not-null constraint/i);
+    expect(error.message).toMatch(/obbligatorio/i);
+  });
+
+  it("il guardiano vede anche le forme che non sono limiti", async () => {
+    // 🔴 Fino al 28/08 `vincoli_senza_frase()` filtrava `contype = c`:
+    // un unicita o una chiave esterna nate mute erano invisibili **per
+    // sempre**, pur essendo forme che il gestionale sa tradurre.
+    // Qui si guarda la PROPRIETA sui dati veri: nessuna unicita muta.
+    const { data, error } = await titolare.rpc("vincoli_senza_frase");
+    expect(error).toBeNull();
+    const nomi = (data ?? []).map((r) => r.conname);
+    expect(nomi, `vincoli senza spiegazione: ${nomi.join(", ")}`).toEqual([]);
+
+    const { count } = await titolare
+      .from("vincoli_muti_noti")
+      .select("*", { count: "exact", head: true })
+      .eq("tipo", "f");
+    // ⚠️ Se fosse zero, la prova qui sopra sarebbe verde perche la linea
+    // di partenza delle chiavi esterne non e stata scritta — non perche
+    // nessuna e muta.
+    expect(count).toBeGreaterThan(0);
+  });
 });

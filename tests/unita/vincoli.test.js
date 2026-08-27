@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { conFraseTradotta, fraseDelRifiuto, nomeDelVincolo, vincoloNelCorpo } from "../../src/lib/calcoli/vincoli";
+import {
+  campoObbligatorio,
+  campoObbligatorioNelCorpo,
+  conFraseSulCampo,
+  conFraseTradotta,
+  fraseCampoObbligatorio,
+  fraseDelRifiuto,
+  nomeDelVincolo,
+  vincoloNelCorpo,
+} from "../../src/lib/calcoli/vincoli";
 
 // ⚠️ I messaggi qui sotto sono quelli VERI di Postgres, copiati da un
 // rifiuto misurato nel browser il 24/08 — non riscritti a memoria. Una
@@ -127,5 +136,70 @@ describe("la sostituzione della frase", () => {
   it("non tocca il messaggio di un vincolo diverso", () => {
     const f = conFraseTradotta(DA_POSTGREST, "un_altro_vincolo", "frase sbagliata");
     expect(f.message).toBe(DA_POSTGREST.message);
+  });
+});
+
+// ---------------------------------------------------------------------
+// LA QUINTA FORMA — il dato obbligatorio (28/08/2026)
+// ---------------------------------------------------------------------
+//
+// ⚠️ IL MESSAGGIO QUI SOTTO È VERO. Misurato il 28/08 sul progetto di
+// prova provocando il rifiuto e leggendo cosa torna, non ricopiato dalla
+// documentazione di Postgres: una prova su un messaggio immaginato
+// dimostra che il codice legge il messaggio che ho immaginato.
+const MANCA_UN_DATO =
+  'null value in column "obbl" of relation "_mis_b58" violates not-null constraint';
+
+describe("il dato obbligatorio che manca", () => {
+  it("riconosce la colonna e la tabella", () => {
+    expect(campoObbligatorio(MANCA_UN_DATO)).toEqual({ colonna: "obbl", tabella: "_mis_b58" });
+  });
+
+  it("🔴 e nessuna delle altre quattro forme lo vedeva", () => {
+    // È il difetto, detto come prova: prima del 28/08 questo messaggio
+    // usciva da tutte le maglie e arrivava a schermo in inglese.
+    expect(nomeDelVincolo(MANCA_UN_DATO)).toBeNull();
+  });
+
+  it("non confonde un doppione con un dato mancante", () => {
+    expect(
+      campoObbligatorio('duplicate key value violates unique constraint "uniq_single_active_menu"')
+    ).toBeNull();
+  });
+
+  it("lo trova dentro il corpo del corridoio, non solo in `message`", () => {
+    // Le due porte rispondono in due forme: guardarne una sola lascia muta
+    // metà dei rifiuti, ed è la metà delle scritture importanti.
+    expect(
+      campoObbligatorioNelCorpo({ errore: { codice: "23502", messaggio: MANCA_UN_DATO } })
+    ).toEqual({ colonna: "obbl", tabella: "_mis_b58" });
+  });
+
+  it("col commento della colonna dice il nome vero, e cosa fare", () => {
+    const f = fraseCampoObbligatorio("la data della serata", "movement_date");
+    expect(f).toContain("la data della serata");
+    expect(f).not.toContain("movement_date");
+    expect(f).toMatch(/riportare|riportarl|riportare|riportar/i);
+  });
+
+  it("senza commento usa il nome tecnico invece di inventare", () => {
+    // ⚠️ È il ramo NORMALE, non l'eccezione: al 28/08 il commento ce
+    // l'hanno 32 colonne obbligatorie su 341.
+    const f = fraseCampoObbligatorio(null, "movement_date");
+    expect(f).toContain("movement_date");
+  });
+
+  it("sostituisce la frase dove stava il messaggio, e lascia stare il resto", () => {
+    const dentro = { errore: { codice: "23502", messaggio: MANCA_UN_DATO }, altro: "non toccarmi" };
+    const fuori = conFraseSulCampo(dentro, "obbl", "MANCA X");
+    expect(fuori.errore.messaggio).toBe("MANCA X");
+    expect(fuori.altro).toBe("non toccarmi");
+  });
+
+  it("non tocca il messaggio di un'altra colonna", () => {
+    // Senza questo, `conFraseSulCampo` potrebbe sostituire qualunque
+    // messaggio di dato mancante — e la frase direbbe il campo sbagliato.
+    const dentro = { message: MANCA_UN_DATO };
+    expect(conFraseSulCampo(dentro, "un_altra_colonna", "MANCA X").message).toBe(MANCA_UN_DATO);
   });
 });

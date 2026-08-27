@@ -119,3 +119,106 @@ export function conFraseTradotta(corpo, nome, frase) {
   }
   return fuori;
 }
+
+// ---------------------------------------------------------------------
+// LA QUINTA FORMA: manca un dato obbligatorio (28/08/2026)
+// ---------------------------------------------------------------------
+//
+// 🔴 NON HA UN NOME DI VINCOLO, ed è per questo che era rimasta fuori.
+// Misurato sul progetto di prova provocando il rifiuto vero e leggendo
+// cosa torna, non dedotto dalla documentazione:
+//
+//   23502  null value in column "obbl" of relation "_mis_b58"
+//          violates not-null constraint
+//
+// Non c'è nessun nome fra virgolette da cercare, quindi tutte e quattro
+// le espressioni di `nomeDelVincolo()` falliscono e **la frase arriva a
+// schermo in inglese, così com'è**, nominando una colonna di database.
+// Le colonne obbligatorie senza valore predefinito sono 341, su 116
+// tabelle.
+//
+// ⚠️ E QUI NON SI FINGE UNA REGOLA. Un `not null` che arriva a chi lavora
+// è quasi sempre un difetto della schermata — un campo che non è stato
+// mandato — non una regola che quella persona può rispettare. Le altre
+// quattro forme dicono «non puoi, ed ecco perché»; questa dice «manca un
+// pezzo, ed ecco quale».
+
+/**
+ * Il dato obbligatorio mancante dentro un messaggio di Postgres, se c'è.
+ *
+ * @param {string} messaggio
+ * @returns {?{tabella: string, colonna: string}}
+ */
+export function campoObbligatorio(messaggio) {
+  const t = String(messaggio ?? "");
+  const m = /null value in column "([^"]+)" of relation "([^"]+)" violates not-null constraint/.exec(t);
+  return m ? { colonna: m[1], tabella: m[2] } : null;
+}
+
+/**
+ * Lo stesso, dentro un corpo di risposta e **dovunque sia**.
+ *
+ * ⚠️ Stessa ragione di `vincoloNelCorpo()`: le porte del gestionale sono
+ * due e rispondono in due forme diverse (PostgREST `{ code, message }`,
+ * il corridoio `{ errore: { codice, messaggio } }`). Guardare un campo
+ * solo lascerebbe muta metà dei casi.
+ */
+export function campoObbligatorioNelCorpo(corpo) {
+  if (corpo == null) return null;
+  if (typeof corpo === "string") return campoObbligatorio(corpo);
+  if (Array.isArray(corpo)) {
+    for (const x of corpo) {
+      const c = campoObbligatorioNelCorpo(x);
+      if (c) return c;
+    }
+    return null;
+  }
+  if (typeof corpo !== "object") return null;
+  for (const x of Object.values(corpo)) {
+    const c = campoObbligatorioNelCorpo(x);
+    if (c) return c;
+  }
+  return null;
+}
+
+/**
+ * La frase da mostrare al posto di quella di Postgres.
+ *
+ * ⚠️ SENZA COMMENTO SI USA IL NOME TECNICO, e non si tace: chi legge deve
+ * poter dire QUALE dato manca, e il nome della colonna è l'unica cosa che
+ * serve a trovarlo. Al 28/08 il commento ce l'hanno 32 colonne
+ * obbligatorie su 341 — quindi il ramo senza è quello normale, non
+ * l'eccezione, e va scritto perché regga da solo.
+ *
+ * @param {?string} spiegazione  il commento della colonna, in italiano
+ * @param {string}  colonna      il nome tecnico
+ */
+export function fraseCampoObbligatorio(spiegazione, colonna) {
+  const pulita = String(spiegazione ?? "").trim();
+  const quale = pulita || `«${colonna}»`;
+  return `Manca un dato che il gestionale considera obbligatorio: ${quale}. Non è una regola che puoi aggirare compilando diversamente — è un pezzo che non è arrivato. Se il campo a schermo ti sembrava pieno, questa è l'informazione da riportare.`;
+}
+
+/**
+ * Rimette la frase italiana al posto del messaggio di Postgres, dovunque
+ * fosse, per il caso del dato obbligatorio.
+ *
+ * ⚠️ Non si è riusato `conFraseTradotta()`: quella riconosce una stringa
+ * dal NOME del vincolo, e qui un nome non c'è. Confondere le due cose
+ * vorrebbe dire far finta che questo caso sia come gli altri quattro —
+ * ed è proprio il fatto che non lo sia ad averlo tenuto fuori fino a
+ * oggi.
+ */
+export function conFraseSulCampo(corpo, colonna, frase) {
+  if (corpo == null) return corpo;
+  if (typeof corpo === "string") {
+    return campoObbligatorio(corpo)?.colonna === colonna ? frase : corpo;
+  }
+  if (Array.isArray(corpo)) return corpo.map((x) => conFraseSulCampo(x, colonna, frase));
+  if (typeof corpo !== "object") return corpo;
+  const fuori = {};
+  for (const [k, x] of Object.entries(corpo)) {
+    fuori[k] = conFraseSulCampo(x, colonna, frase);
+  }
+  return fuori;
+}

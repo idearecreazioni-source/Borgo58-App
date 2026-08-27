@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
-import { conFraseTradotta, fraseDelRifiuto, vincoloNelCorpo } from "./calcoli/vincoli";
+import {
+  campoObbligatorioNelCorpo,
+  conFraseSulCampo,
+  conFraseTradotta,
+  fraseCampoObbligatorio,
+  fraseDelRifiuto,
+  vincoloNelCorpo,
+} from "./calcoli/vincoli";
 import { segnalaLetturaTagliata } from "./lettureTagliate";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -154,6 +161,36 @@ async function spiegazioneDelVincolo(nome, autorizzazione) {
   }
 }
 
+// Come si chiama in italiano un dato obbligatorio. Stessa forma e stesse
+// cautele di `spiegazioneDelVincolo()`: si chiede solo quando serve, si
+// ricorda **solo ciò che si è trovato** (ricordare un'assenza è la forma
+// più pura di frase diventata falsa, 25/08), e se la richiesta fallisce
+// si prosegue col nome tecnico — mai peggiorare un errore cercando di
+// spiegarlo.
+const nomiDeiCampi = new Map();
+
+async function spiegazioneDelCampo(campo, autorizzazione) {
+  const chiave = `${campo.tabella}.${campo.colonna}`;
+  if (nomiDeiCampi.has(chiave)) return nomiDeiCampi.get(chiave);
+  try {
+    const r = await fetch(`${supabaseUrl}/rest/v1/rpc/spiega_campo_obbligatorio`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: autorizzazione || `Bearer ${supabaseAnonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_tabella: campo.tabella, p_colonna: campo.colonna }),
+    });
+    const testo = r.ok ? await r.json() : null;
+    const frase = typeof testo === "string" && testo.trim() ? testo : null;
+    if (frase) nomiDeiCampi.set(chiave, frase);
+    return frase;
+  } catch {
+    return null;
+  }
+}
+
 // Riscrive il corpo di una risposta di rifiuto mettendoci la frase
 // italiana, **dovunque il messaggio si trovi**.
 //
@@ -169,6 +206,25 @@ async function conFraseItaliana(risposta, autorizzazione) {
   } catch {
     return risposta;
   }
+  // 🔴 LA QUINTA FORMA VIENE PRIMA, e l'ordine non è indifferente: un
+  // messaggio di dato mancante non contiene nessun nome di vincolo, quindi
+  // i due casi non possono confondersi — ma guardandolo dopo si sarebbe
+  // dovuto attraversare due volte lo stesso corpo per niente. Qui si esce
+  // appena si è riconosciuto qualcosa.
+  const campo = campoObbligatorioNelCorpo(corpo);
+  if (campo) {
+    const comeSiChiama = await spiegazioneDelCampo(campo, autorizzazione);
+    const tradotto = conFraseSulCampo(
+      corpo,
+      campo.colonna,
+      fraseCampoObbligatorio(comeSiChiama, campo.colonna)
+    );
+    return new Response(
+      JSON.stringify({ ...tradotto, campo_mancante: `${campo.tabella}.${campo.colonna}` }),
+      { status: risposta.status, statusText: risposta.statusText, headers: risposta.headers }
+    );
+  }
+
   const nome = vincoloNelCorpo(corpo);
   if (!nome) return risposta;
 
