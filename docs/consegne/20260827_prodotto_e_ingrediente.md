@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **HEAD dichiarato** | `ff75a19` — *Il prodotto e' una cosa, l'ingrediente un'altra* |
+| **HEAD dichiarato** | `2f4be17` — *Le versioni si leggono sul telefono* (sotto: `ff75a19`, *Il prodotto e' una cosa, l'ingrediente un'altra*) |
 | **Working tree** | pulito al momento del commit; questo riepilogo è il commit successivo e sola documentazione |
 | **Migrazioni** | `20260827000018` → `20260827000025` — **nessuna in produzione**, aspettano il push e il via libera di Alessio |
 | **Funzioni online** | `operazioni-atomiche` **v30** e `leggi-foto` **v4** installate **solo sul progetto di prova**; in produzione restano v29 e v3 |
@@ -295,16 +295,64 @@ rovesciamento.
 
 ---
 
-## Cosa NON è verificato con gli occhi
+## 🔴 LA SCHERMATA È STATA APERTA E MISURATA, e il rischio c'era
 
-- 🔴 **Nessuna schermata è stata aperta.** La riga che dice da dove viene il
-  prezzo, le colonne marca/formato, «entrata N volte»: **nessuno le ha viste**.
-  Sono provate dai dati che le alimentano, non dal disegno.
-- 🔴 **Nessuna misura di larghezza o di taglia del testo.** Ho aggiunto righe
-  di testo alla scheda di un ingrediente — che è **una delle due schermate
-  dichiarate illeggibili sul telefono il 25/08** — e **non ho misurato niente
-  a 375 punti**. Il rischio è concreto: le tre righe nuove nella colonna
-  «Versione» possono allungare una tabella che era già stretta.
+Dopo aver scritto la prima versione di questo riepilogo — che dichiarava di
+**non** aver misurato niente — la scheda di un ingrediente è stata aperta a
+**375 punti** sul progetto di prova. Era il caso da guardare: è **una delle
+due schermate dichiarate illeggibili sul telefono il 25/08**, e vi ho aggiunto
+tre righe di testo.
+
+⚠️ **Il database dietro la porta si è CONSTATATO dal DOM**, non dedotto dal
+numero di porta (trappola del 27/08): riferimento `bnwqgpuyzmzujxfbtyvs`, la
+prova. E i prodotti sulla prova sono zero, quindi la tabella non si sarebbe
+vista: sono stati costruiti **due prodotti col testo più lungo possibile**, e
+poi riportati via (contato dopo: **0** prodotti, **499** lotti, **133**
+ingredienti, e il prezzo dell'ingrediente rimesso a 16,20 con la provenienza
+di nuovo vuota).
+
+### La misura, prima
+
+| | valore |
+|---|---|
+| tabella delle versioni | **809 punti** in un riquadro da **295** |
+| colonna «Versione» | **74 punti** — il nome del prodotto, la marca e il formato a capo una parola per riga |
+| sbordi dentro la pagina | **14** |
+| testi sotto 3,20 mm | 0 |
+| scorrimento laterale della pagina | 0 |
+
+🔴 **E il mio contributo alla larghezza era ZERO**, misurato nascondendo le
+righe aggiunte: **809 con e senza**. La larghezza la facevano i **due menu**
+(232 + 423 punti). Le mie righe aggiungevano solo **altezza** — dentro una
+tabella che era già inutilizzabile sul telefono.
+
+### La cura, e la misura dopo
+
+Rifatta con la forma del 25/08 — **blocchetti sul telefono, tabella sul
+computer, e i campi in UN POSTO SOLO** (`celleVersione`), perché due elenchi
+di colonne divergono in silenzio e a restare indietro sarebbe il telefono.
+
+⚠️ **I due menu passano a `.tocco-campo`, che vale 8,50 mm in centimetri
+VERI, e la trappola è proprio qui**: un padding in punti fissi avrebbe dato
+**9,26 mm sul computer e 1,25 su un tablet a densità 64**. *I millimetri di un
+padding fisso dipendono dalla calibrazione, quelli di una misura in centimetri
+no.*
+
+Misurato a **tre densità** (37,8 computer · 59,5 tablet 8,3" · 64 tablet 7,9"):
+
+| | computer | tablet 8,3" | tablet 7,9" |
+|---|---|---|---|
+| bersaglio più piccolo | **8,50 mm** | **8,50 mm** | **8,50 mm** |
+| testi sotto 3,20 mm | **0** | **0** | **0** |
+| scorrimento laterale della pagina | **0** | **0** | **0** |
+| sbordi dentro la pagina | **0** | 0 | **3** |
+
+🟡 **I 3 punti a densità 64 sono dichiarati e NON corretti**: stanno nella
+tabella dello **storico prezzi**, che è un'altra tabella e non è stata
+toccata. La pagina non scorre di lato a nessuna densità, quindi **niente
+resta irraggiungibile**.
+
+## Cosa resta NON verificato con gli occhi
 - 🔴 **Nessuna foto vera è passata dal prompt nuovo.** Il testo che distingue
   `ingrediente` da `prodotto` è installato **solo sulla prova** e **nessuna
   chiamata all'API vera l'ha esercitato**: non si sa se MEMO risponde coi due
@@ -326,14 +374,23 @@ rovesciamento.
 
 ## Quali mie affermazioni sono diventate false mentre lavoravo
 
-1. Il referto della Fase B diceva che il riflesso prende *«l'`unit_cost` del
+1. 🔴 **Questo riepilogo diceva «nessuna schermata è stata aperta» e «nessuna
+   misura di larghezza o di taglia del testo».** Era vero quando l'ho scritto,
+   ed è **diventato falso mezz'ora dopo**: la scheda è stata aperta, misurata
+   a tre densità, trovata rotta e rifatta. La sezione sopra è la correzione, e
+   la misura ha trovato una cosa che il sospetto non conteneva — che **il mio
+   contributo alla larghezza era zero** e il difetto era tutto preesistente.
+   ⚠️ *È esattamente il caso per cui la terza domanda della rilettura esiste:
+   una frase scritta a inizio consegna era vera quando è stata scritta, e
+   resta lì a sembrare vera.*
+2. Il referto della Fase B diceva che il riflesso prende *«l'`unit_cost` del
    lotto entrato per ultimo fra quelli con un costo»*. **Falsa dopo la
    `…021`**: fra quelli con un costo **maggiore di zero**. Il referto è stato
    scritto prima ed **è rimasto com'era**, perché racconta il disegno di quel
    momento; la versione vera vive nel commento della funzione e nella `…021`.
-2. Il commento della `…018` su `prezzo_ultima_versione` diceva «vuoto se
+3. Il commento della `…018` su `prezzo_ultima_versione` diceva «vuoto se
    nessun lotto porta un costo». **Corretto nella `…021` e nella `…023`.**
-3. Ho scritto nel corpo della `…018` che la strada a mano «non è una
+4. Ho scritto nel corpo della `…018` che la strada a mano «non è una
    scappatoia» e che *«il verso opposto è la parte da provare rompendola»* —
    e **non l'ho provata lì**: quel controllo è nella `…019`, nata dopo.
 
