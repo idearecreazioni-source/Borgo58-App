@@ -250,6 +250,17 @@ dirlo. Il difetto peggiore è dimenticare l'uscita, non classificarla dopo.
 * 27/08 — Il **fornitore non si inventa**, come il frigo. Ma non ferma niente:
 una consegna senza fornitore è vera, un fornitore sbagliato no.
 
+* 27/08 — **La lista della spesa è LIBERA**: non accoppia mai col magazzino,
+è un elenco di cosa prendere. L'abbinamento si fa dopo, con la foto del
+documento quando la merce arriva davvero in cucina. ⚠️ Non «cerca ma non
+bloccare»: **non cerca affatto**.
+* 27/08 — **Ogni cosa rimasta in sospeso deve avere DUE uscite**: dirla a voce,
+oppure un collegamento alla schermata giusta **coi campi noti già compilati**,
+dove lui aggiunge solo il pezzo che manca. *«Se ti dico segna trenta euro
+pagati al fornitore, mi aspetto che un collegamento mi porti dove si segnano
+le spese, coi campi noti già compilati.»* ⚠️ **NON ANCORA COSTRUITO** (blocco 4
+del mandato del 27/08, non aperto).
+
 ## Caparra
 
 * 27/08 — La caparra su un conto **scontato** segue la regola del conto

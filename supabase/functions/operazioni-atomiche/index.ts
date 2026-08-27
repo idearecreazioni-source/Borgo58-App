@@ -280,6 +280,11 @@ const OPERAZIONI = new Set([
   // meta' di quel gesto invisibile nell'elenco delle scritture.
   "esegui_azione_dettata",
   "annulla_azione_dettata",
+  // ⚠️ Scegliere fra i candidati proposti ESEGUE, quindi è la stessa
+  // scrittura di `esegui_azione_dettata` con una decisione in più davanti:
+  // se uscisse da un'altra porta, metà dei gesti che scrivono a voce non
+  // comparirebbe nell'elenco delle scritture.
+  "scegli_per_azione_dettata",
 
   // ⚠️ Tengono una tabella sola e passano comunque di qui, per la stessa
   // ragione delle due righe qui sopra: la caparra entra dal corridoio

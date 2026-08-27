@@ -116,3 +116,15 @@ export async function revocaChiaveVoce(id) {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Sceglie fra i candidati che il gestionale ha proposto, ED ESEGUE.
+ *
+ * 🔴 Un gesto solo, non due: chi ha appena detto QUALE ha già detto anche
+ * sì. Due passaggi separati sarebbero il difetto che questo chiude — un
+ * pulsante che risponde a una domanda che non è stata fatta — con in più
+ * un tocco.
+ */
+export async function scegliPerAzione(id, sceltaId) {
+  return eseguiOperazione("scegli_per_azione_dettata", { p_id: id, p_scelta: sceltaId });
+}

@@ -45,6 +45,34 @@ const CARTELLA = "supabase/functions";
 const SENZA_TOKEN = {
   "posta-in-arrivo":
     "la chiama il servizio di posta, non un utente: la sua barriera e' la firma sulla consegna",
+  // 🔴 27/08/2026 — LA SCORCIATOIA VENIVA RESPINTA PRIMA DI ENTRARE.
+  //    Alessio ha costruito la Scorciatoia dell'orologio esattamente come
+  //    dicevano le istruzioni, e ha ricevuto «Missing authorization header»:
+  //    l'errore arrivava dal GATEWAY, prima che la funzione guardasse la
+  //    chiave. Misurato: `verify_jwt = true`.
+  //
+  // ⚠️ LA PROTEZIONE CHE SI TOGLIE QUI NON PROTEGGEVA NIENTE, ed e' la
+  //    ragione per cui questa e' la strada giusta e non la piu' comoda. La
+  //    verifica del gateway pretende un token — e il token che un client
+  //    qualunque manderebbe e' la **chiave anon, che e' pubblica**: sta nel
+  //    pacchetto del sito, la legge chiunque. Fermava la Scorciatoia di
+  //    Alessio e nessun altro.
+  //
+  // ⚠️ LA GUARDIA VERA RESTA, ED E' DENTRO: senza una chiave valida la
+  //    funzione risponde 401 **prima** di chiamare il modello (il controllo
+  //    e' alla riga della sessione, la chiamata all'assistente molto piu'
+  //    sotto), quindi una richiesta di uno sconosciuto non costa un
+  //    centesimo. La chiave e' 24 byte casuali, il database ne conserva la
+  //    sola impronta, si revoca dal gestionale, e ha il freno delle 60
+  //    dettature in un'ora con la traccia sull'uso.
+  //
+  // ⚠️ QUELLO CHE RESTA SCOPERTO, dichiarato: non c'e' un freno sui
+  //    tentativi FALLITI di indovinare una chiave. Con 24 byte casuali e'
+  //    un rischio teorico, ma e' un rischio teorico e non un rischio
+  //    assente — e il giorno che quella porta servisse a qualcosa di piu'
+  //    grosso, il freno va aggiunto.
+  "ascolta-voce":
+    "la chiama la Scorciatoia dell'orologio, che non ha nessun accesso: la sua barriera e' la chiave, controllata dentro prima di spendere",
 };
 
 const nome = process.argv[2];

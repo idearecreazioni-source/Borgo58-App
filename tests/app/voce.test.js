@@ -366,3 +366,172 @@ describe("un tipo acceso deve saperlo fare davvero", () => {
     }
   });
 });
+
+// =====================================================================
+// LA PORTA CHE RESPINGEVA L'OROLOGIO — 27/08/2026
+// =====================================================================
+// 🔴 Alessio ha costruito la Scorciatoia esattamente come dicono le
+//    istruzioni della schermata, e ha ricevuto
+//    `{"message":"Missing authorization header","code":"UNAUTHORIZED_NO_AUTH_HEADER"}`
+//    — un rifiuto del CANCELLO, prima che la funzione guardasse la chiave.
+//
+// ⚠️ La protezione tolta non proteggeva niente: il token che il cancello
+//    pretendeva è la chiave anon, che è **pubblica** e sta nel pacchetto
+//    del sito. Fermava la Scorciatoia di Alessio e nessun altro. La
+//    guardia vera è la chiave, controllata dentro **prima** di spendere.
+//
+// ⚠️ QUESTA PROVA NON COSTA UNA CHIAMATA ALL'ASSISTENTE: senza credenziali
+//    valide la funzione risponde 401 molto prima di parlare col modello.
+//    È il motivo per cui si può tenere accesa.
+describe("la Scorciatoia entra senza nessun accesso, e la chiave fa la guardia", () => {
+  const indirizzo = `${process.env.VITE_SUPABASE_URL}/functions/v1/ascolta-voce`;
+
+  // Come manda la Scorciatoia: solo corpo JSON, nessuna intestazione.
+  const comeLOrologio = async (corpo) => {
+    const r = await fetch(indirizzo, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo),
+    });
+    let letto;
+    try {
+      letto = JSON.parse(await r.text());
+    } catch {
+      letto = null;
+    }
+    return { stato: r.status, corpo: letto };
+  };
+
+  it("il cancello non respinge più prima della chiave", async () => {
+    const r = await comeLOrologio({ testo: "PROVA-voce dal cancello", chiave: "non-vale" });
+    // 🔴 Il rifiuto dev'essere NOSTRO e in italiano. Se torna
+    //    «Missing authorization header», la verifica del token è stata
+    //    riaccesa e la Scorciatoia è di nuovo muta.
+    expect(
+      r.corpo?.message,
+      "Il cancello respinge di nuovo prima della chiave: reinstallare la funzione della voce",
+    ).not.toBe("Missing authorization header");
+    expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+  });
+
+  // ⚠️ «Non esiste» e «è stata tolta» devono rispondere UGUALE: sono due
+  //    informazioni utili solo a chi sta provando a indovinarla.
+  it("chiave sbagliata e chiave revocata dicono la stessa cosa", async () => {
+    const { data: creata, error } = await titolare.rpc("crea_chiave_voce", {
+      p_nome: `PROVA-voce ${Date.now()}`,
+    });
+    expect(error).toBeNull();
+    try {
+      await titolare.rpc("revoca_chiave_voce", { p_id: creata.id });
+      const revocata = await comeLOrologio({ testo: "PROVA-voce", chiave: creata.chiave });
+      const inesistente = await comeLOrologio({ testo: "PROVA-voce", chiave: "questa-non-esiste" });
+      expect(revocata.stato).toBe(inesistente.stato);
+      expect(revocata.corpo?.errore?.messaggio).toBe(inesistente.corpo?.errore?.messaggio);
+    } finally {
+      await titolare.from("chiavi_voce").delete().eq("id", creata.id);
+    }
+  });
+
+  it("senza nessuna chiave la frase parla di chiave, non di accesso", async () => {
+    // ⚠️ Chi arriva qui senza niente è quasi sempre una Scorciatoia a cui
+    //    manca il campo: «autenticazione mancante» lo manderebbe a cercare
+    //    un accesso che non deve avere.
+    const r = await comeLOrologio({ testo: "PROVA-voce senza chiave" });
+    expect(r.stato).toBe(401);
+    expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+  });
+
+  // 🔴 QUESTA PROVA SI PROVA SU UN CASO DI CUI SI CONOSCE GIÀ LA RISPOSTA.
+  //    Provare a riaccendere il cancello per vedere la prova diventare
+  //    rossa **non si può**: il comando del CLI ha solo il flag che lo
+  //    spegne, e il valore è appiccicoso — misurato, una reinstallazione
+  //    senza flag l'ha lasciato spento. Quindi si dimostra l'altra metà:
+  //    che il segnale cercato **esiste e si riconosce**, su due porte che
+  //    il cancello lo tengono ancora chiuso davvero.
+  //
+  // ⚠️ Se un giorno anche queste due rispondessero in italiano, vorrebbe
+  //    dire che il cancello è stato spento su TUTTO — e allora è questa
+  //    prova a doverlo dire, non un riepilogo.
+  it("il segnale del cancello esiste, e si riconosce", async () => {
+    for (const f of ["leggi-foto", "operazioni-atomiche"]) {
+      const r = await fetch(`${process.env.VITE_SUPABASE_URL}/functions/v1/${f}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const letto = JSON.parse(await r.text());
+      expect(r.status, `${f} non è più dietro il cancello`).toBe(401);
+      expect(letto.message, `${f} non è più dietro il cancello`).toBe(
+        "Missing authorization header",
+      );
+    }
+  });
+});
+
+// =====================================================================
+// LE TRE DOMANDE, E LA SCELTA CHE NON ERA STATA OFFERTA — 27/08/2026
+// =====================================================================
+// 🔴 La verifica dentro la migrazione prova il rifiuto con un
+//    identificativo INESISTENTE — e quella rottura fa scattare il
+//    guardiano sbagliato: la scelta viene accettata e poi fallisce più
+//    sotto, perché quel prodotto non c'è. Misurato rompendo apposta.
+//
+// ⚠️ La rottura giusta è un prodotto che **esiste davvero** e che **non
+//    era fra i candidati**: lì l'unico controllo che può scattare è
+//    quello dei candidati. È la trappola del 26/08 letta al contrario —
+//    prima di rompere, guardare quale guardiano scatta per primo.
+describe("una scelta che non era stata offerta si rifiuta", () => {
+  it("un prodotto vero, ma non proposto, viene respinto", async () => {
+    const { data: prodotti } = await titolare
+      .from("ingredients")
+      .select("id,name")
+      .order("name")
+      .limit(3);
+    expect(prodotti?.length, "servono tre prodotti per questa prova").toBe(3);
+
+    // I candidati sono i primi due; il terzo esiste e non è fra loro.
+    const { data: det, error: e1 } = await titolare
+      .from("dettature")
+      .insert({ testo: "PROVA-voce scelta non offerta", provenienza: "app", esito: "capita" })
+      .select("id")
+      .single();
+    expect(e1).toBeNull();
+
+    try {
+      const { data: az, error: e2 } = await titolare
+        .from("azioni_dettate")
+        .insert({
+          dettatura_id: det.id,
+          progressivo: 1,
+          tipo: "giacenza",
+          dati: { quanto_ce: 1, candidati: [1, 2], nome_sentito: "PROVA-voce" },
+          sicuro: false,
+          frase: "PROVA-voce: quanto ce n'è",
+          stato: "in_attesa",
+        })
+        .select("id")
+        .single();
+      expect(e2).toBeNull();
+
+      const { error } = await titolare.rpc("scegli_per_azione_dettata", {
+        p_id: az.id,
+        p_scelta: prodotti[2].id,
+      });
+      expect(error, "una scelta mai proposta è stata accettata").not.toBeNull();
+      expect(error.message).toMatch(/proposto/i);
+
+      // ⚠️ E la riga non si è mossa: un rifiuto che lascia lo stato a metà
+      //    sarebbe peggio del rifiuto mancante.
+      const { data: dopo } = await titolare
+        .from("azioni_dettate")
+        .select("stato,dati")
+        .eq("id", az.id)
+        .single();
+      expect(dopo.stato).toBe("in_attesa");
+      expect(dopo.dati.ingredient_id).toBeUndefined();
+    } finally {
+      await titolare.from("azioni_dettate").delete().eq("dettatura_id", det.id);
+      await titolare.from("dettature").delete().eq("id", det.id);
+    }
+  });
+});

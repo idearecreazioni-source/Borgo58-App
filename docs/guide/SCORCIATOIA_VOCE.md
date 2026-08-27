@@ -91,6 +91,21 @@ sulla schermata iniziale compare quanti sono.
 
 ## Se non funziona
 
+**«Missing authorization header» — o qualunque altra cosa in inglese**
+🔴 **Non hai sbagliato niente tu**: è il gestionale che ha una porta chiusa
+dalla parte sua, e la Scorciatoia viene respinta *prima* che qualcuno guardi
+la chiave. È successo davvero il 27/08/2026, con una Scorciatoia costruita
+esattamente come dice questa guida. Si riapre reinstallando la funzione della
+voce dal computer — dimmelo e lo faccio.
+⚠️ Come si riconosce: le risposte del gestionale sono **in italiano**. Una
+risposta in inglese non viene dal gestionale, viene dal cancello che sta
+davanti.
+
+**«Non è arrivata nessuna chiave»**
+Nel corpo della richiesta manca il campo **chiave**, o è scritto con un nome
+diverso. Nel passo 6 devono esserci **due** campi di testo: `testo` e
+`chiave`.
+
 **«Questa chiave non vale»**
 La chiave è stata copiata male, oppure è stata tolta. Falla di nuovo dal
 gestionale e ricopiala nel passo 6.

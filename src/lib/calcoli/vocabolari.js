@@ -177,6 +177,18 @@ export const SPECCHI_ESENTI = [
 // senza la sua ragione scritta si allarga da sola, quindi ognuna ha la sua.
 export const GUARDIE_ESENTI = [
   {
+    funzione: "azione_domanda",
+    parametro: "p_stato",
+    perche:
+      "non è una guardia ma un ramo: nomina i due stati in cui una cosa dettata sta ancora ASPETTANDO (in_attesa, fallita), che sono di proposito un sottoinsieme dei quattro stati possibili. Una riga già eseguita o annullata non chiede più niente, e la funzione risponde vuoto invece di rifiutare. ⚠️ E il verso conta: se un giorno nascesse un quinto stato in cui una riga aspetta, questa funzione direbbe «non chiede niente» — quindi il tipo nuovo va nominato anche qui (27/08/2026)",
+  },
+  {
+    funzione: "azione_scelte",
+    parametro: "p_tipo",
+    perche:
+      "non è una guardia ma un ramo, e nemmeno sui tipi di azione: elenca i tre tipi i cui candidati sono PRODOTTI (giacenza, merce_buttata, carico_merce), accanto ai rami che traducono i frigoriferi e le pulizie. È «di che natura è la cosa da scegliere», che è un'altra domanda da «che tipo di comando vocale è» — e il discriminante del 17/08 dice che allora non si fondono (27/08/2026)",
+  },
+  {
     funzione: "annulla_prenotazione",
     parametro: "p_stato",
     perche:

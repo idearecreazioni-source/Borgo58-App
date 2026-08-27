@@ -70,7 +70,8 @@ LE COSE CHE SAI FARE — e nient'altro
 - "temperatura": la temperatura letta su un frigo o sull'abbattitore. dati: { "frigorifero": <numero del catalogo>|null, "gradi": <numero>, "note": "..."|null }
 - "promemoria": una cosa da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null }
 - "pulizia": una pulizia già fatta. dati: { "pulizia": <numero del catalogo>, "note": "..."|null }
-- "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "prodotto": <numero>|null, "nome_libero": "..."|null, "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "note": "..."|null }
+- "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "nome_libero": "come l'ha detto lui, parola per parola", "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "note": "..."|null }
+  🔴 QUI NON SI GUARDA IL CATALOGO, MAI. La lista della spesa è un elenco libero di cosa prendere: scrivi in "nome_libero" quello che ha detto, com'è stato detto, anche se in magazzino esiste un prodotto che si chiama quasi uguale — anzi, **soprattutto** allora. Niente numeri, e "sicuro" resta **true**: qui non c'è niente di cui essere incerti, perché non c'è niente da abbinare. L'abbinamento col magazzino si fa dopo, guardando il documento quando la merce arriva.
 - "merce_buttata": roba andata a male. dati: { "prodotto": <numero del catalogo>, "quantita": <numero>, "note": "..."|null }
 - "ricetta": vuole dettare un piatto nuovo. dati: { "nome": "...", "categoria": "antipasto"|"primo"|"secondo"|"dolce"|"finger_food", "porzioni": <numero>|null, "sentito": "quello che ha detto, per intero" }
 - "prodotto_nuovo": vuole creare un prodotto che in magazzino non c'è. dati: { "nome": "...", "categoria": <una delle categorie qui sotto>, "unita": "kg"|"l"|"pz"|"mazzo"|"g", "sentito": "..." }
@@ -95,6 +96,7 @@ Vale true SOLO se non hai dubbi né su cosa vuole né su quale cosa del catalogo
 
 IL CATALOGO — ABBINA COL NUMERO, MAI COL NOME
 Qui sotto trovi quello che il locale ha davvero, ognuno con un numero: prodotti, frigoriferi, pulizie, causali di prima nota (col loro "verso") e fornitori. Nei "dati" scrivi IL NUMERO, mai il nome.
+🔴 CON UNA SOLA ECCEZIONE, ed è netta: la LISTA DELLA SPESA non guarda il catalogo. Là si scrive quello che ha detto, e basta.
 ⚠️ "conti_correnti" è l'unico elenco SENZA numeri, e serve solo a sapere se ce ne sono: se è vuoto, il gestionale non può ancora registrare un bonifico — di' comunque mezzo "banca" se ha detto così, ci pensa lui a dirgli cosa fare.
 ⚠️ Lui dice i nomi come vengono in cucina: «passata di pomodoro» per «Passata di pomodoro Mutti 700 g». Se c'è UN solo candidato ragionevole, abbinalo e resta "sicuro". Se ce ne sono due — due tipi di olio, due tonni diversi — NON scegliere: metti "sicuro": false, scrivi nel motivo quali due hai trovato, e lascia il numero a null.
 
@@ -214,7 +216,17 @@ Deno.serve(async (req) => {
     catalogo = (data?.catalogo ?? {}) as Record<string, unknown>;
     spesa = (data?.spesa ?? null) as Record<string, unknown> | null;
   } else {
-    if (!authHeader) return errore(401, "auth", "Autenticazione mancante");
+    // ⚠️ LA FRASE DEVE COPRIRE LE DUE PORTE, non solo quella dell'app. Chi
+    //    arriva qui senza niente è quasi sempre una Scorciatoia a cui manca
+    //    il campo `chiave`: dirgli «autenticazione mancante» lo manda a
+    //    cercare un accesso che non deve avere.
+    if (!authHeader) {
+      return errore(
+        401,
+        "auth",
+        "Non è arrivata nessuna chiave. Se stai usando la Scorciatoia, controlla che nel corpo della richiesta ci sia anche il campo «chiave».",
+      );
+    }
     const { data: utente, error: authError } = await supabase.auth.getUser();
     if (authError || !utente?.user) {
       return errore(401, "auth", "Sessione non valida: rifare l'accesso");

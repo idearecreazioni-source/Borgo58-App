@@ -11,6 +11,7 @@ import {
   creaChiaveVoce,
   mandaDettato,
   revocaChiaveVoce,
+  scegliPerAzione,
 } from "../../lib/api/voce";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
 import {
@@ -247,6 +248,30 @@ export default function Detta() {
     }
   };
 
+  // ⚠️ Stessa guardia sincrona di «Sì, fallo», e con la STESSA chiave:
+  //    i due pulsanti fanno la stessa scrittura, quindi non devono poter
+  //    partire tutt'e due sulla stessa riga.
+  const scegli = async (azione, sceltaId) => {
+    if (!guardia.current.prendi(azione.id)) return;
+    setInAzione(azione.id);
+    segna(azione.id, { stato: "in_corso" });
+    setErrore("");
+    try {
+      await scegliPerAzione(azione.id, sceltaId);
+      segna(azione.id, { stato: "fatta" });
+      ricarica();
+      if (riscontro) {
+        const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
+        if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
+      }
+    } catch (e) {
+      segna(azione.id, { stato: "fallita", messaggio: e.message });
+    } finally {
+      guardia.current.lascia(azione.id);
+      setInAzione(null);
+    }
+  };
+
   const annulla = async (azione) => {
     if (!guardia.current.prendi(azione.id)) return;
     setInAzione(azione.id);
@@ -296,7 +321,18 @@ export default function Detta() {
     }
   };
 
-  const daGuardareOra = Array.isArray(attesa) ? attesa : [];
+  // 🔴 IL DOPPIONE — visto a schermo da Alessio, due volte. La stessa riga
+  //    compariva in DUE riquadri: quello di quello che ha appena detto e
+  //    quello delle cose che aspettano da prima, ognuno col suo «Sì,
+  //    fallo». La prima volta ha creduto di aver parlato due volte; la
+  //    seconda ha parlato una volta sola e il doppione c'era lo stesso.
+  //
+  // ⚠️ Comanda il riquadro di SOPRA, non quello di sotto: è quello che sta
+  //    guardando adesso, e ha accanto il testo che ha appena detto. Le
+  //    pendenze sono «quello che aspetta da PRIMA», e una riga di dieci
+  //    secondi fa non è da prima.
+  const giaSopra = new Set((riscontro?.daGuardare ?? []).map((a) => a.id));
+  const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter((a) => !giaSopra.has(a.id));
   const dettato = componiDettato(frasi, parziale);
 
   return (
@@ -429,6 +465,7 @@ export default function Detta() {
                     esito={esiti[a.id]}
                     onConferma={() => conferma(a)}
                     onAnnulla={() => annulla(a)}
+                    onScegli={(id) => scegli(a, id)}
                   />
                 ))}
               </ul>
@@ -469,6 +506,7 @@ export default function Detta() {
                   esito={esiti[a.id]}
                   onConferma={() => conferma(a)}
                   onAnnulla={() => annulla(a)}
+                  onScegli={(id) => scegli(a, id)}
                 />
               ))}
             </ul>
@@ -579,10 +617,27 @@ export default function Detta() {
 //    dall'altro (`gap-3` non basterebbe: sono 1,62 mm veri). Qui la
 //    distanza la fa `justify-between` con i due gesti agli estremi, e la
 //    riga intera è alta 1,05 cm.
-function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla }) {
+// 🔴 TRE DOMANDE, TRE RIGHE DIVERSE — e non sono tre frasi diverse.
+//    Il gestionale scriveva «ho trovato due prodotti… non so quale intendi»
+//    e sotto offriva **«Sì, fallo»**. Sì a cosa? Dove l'incertezza è su
+//    QUALE, un pulsante unico è la risposta a una domanda che non è stata
+//    fatta — e premerlo rifà la stessa cosa e fallisce di nuovo, perché
+//    quello che manca non è un permesso: è un'informazione.
+//
+// ⚠️ CHE DOMANDA SIA lo dice il DATABASE (`azione_domanda`), non questa
+//    schermata: riusa la funzione che già sa cosa manca. Deciderlo qui
+//    sarebbe la seconda definizione della stessa cosa, e il giorno che le
+//    due divergono la schermata offre un pulsante che il database rifiuta.
+function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla, onScegli }) {
   const inCorso = esito?.stato === "in_corso" || occupato;
   const fatta = esito?.stato === "fatta";
   const fallita = esito?.stato === "fallita";
+  const scelte = Array.isArray(azione.scelte) ? azione.scelte : [];
+  const chiedeQuale = azione.domanda === "scegli" && scelte.length > 0;
+  // ⚠️ `manca` è il caso in cui nemmeno il gestionale sa cosa proporre:
+  //    lì «Sì, fallo» è inutile quanto nel caso sopra, ma non c'è niente
+  //    da toccare. Resta la via d'uscita: ridire, o lasciar perdere.
+  const chiedeAltro = azione.domanda === "manca";
 
   return (
     <li className="rounded-lg border border-b58-cream-dark bg-b58-cream/40 p-3">
@@ -591,17 +646,59 @@ function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla
         {perchéAspetta(azione)}
         {quando ? ` · ${quando}` : ""}
       </p>
+
+      {/* ⚠️ UN RIFIUTO SENZA GESTO D'USCITA È UN VICOLO CIECO, e questo
+          progetto li tratta come un difetto a sé. Su una riga a cui manca
+          un'informazione che il gestionale non può proporre, gli unici
+          pulsanti sarebbero «Lascia perdere» — cioè buttare via quello che
+          ha detto. La via d'uscita c'è ed è ridirlo: qui si dice.
+          🔴 QUELLA VERA — un collegamento alla schermata giusta coi campi
+             già riempiti — è una decisione di Alessio del 27/08 e NON è
+             ancora costruita. Finché non c'è, questa frase è l'unica cosa
+             che impedisce alla riga di essere un vicolo cieco. */}
+      {chiedeAltro && !fatta && (
+        <p className="testo-sala mt-2 text-b58-charcoal-soft">
+          Ridillo a voce aggiungendo quello che manca: quello che hai detto resta qui finché
+          non lo fai.
+        </p>
+      )}
+
+      {chiedeQuale && !fatta && (
+        <div className="mt-2">
+          <p className="testo-sala text-b58-charcoal">Quale dei due?</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {scelte.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => onScegli(s.id)}
+                disabled={inCorso}
+                className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment disabled:opacity-60"
+              >
+                {s.nome}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={onConferma}
-          disabled={inCorso || fatta}
-          className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
-        >
-          {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
-              qualcosa ripreme. Le parole per intero, anche se occupano. */}
-          {fatta ? "✓ Fatto" : inCorso ? "Lo sto facendo…" : "Sì, fallo"}
-        </button>
+        {/* 🔴 «Sì, fallo» compare SOLO dove la domanda è «lo faccio o no?». */}
+        {!chiedeQuale && !chiedeAltro && (
+          <button
+            type="button"
+            onClick={onConferma}
+            disabled={inCorso || fatta}
+            className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
+          >
+            {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
+                qualcosa ripreme. Le parole per intero, anche se occupano. */}
+            {fatta ? "✓ Fatto" : inCorso ? "Lo sto facendo…" : "Sì, fallo"}
+          </button>
+        )}
+        {(chiedeQuale || chiedeAltro) && fatta && (
+          <span className="testo-sala text-b58-charcoal">✓ Fatto</span>
+        )}
         <button
           type="button"
           onClick={onAnnulla}
@@ -668,6 +765,19 @@ function GuidaScorciatoia() {
         <li className="testo-sala text-b58-charcoal">
           <b>7.</b> Dai il nome <b>Borgo 58</b> e tocca Fine. Dall'orologio lo trovi nell'app
           Comandi rapidi, e si può mettere sul quadrante.
+        </li>
+        {/* 🔴 IL PASSO CHE MANCAVA — 27/08/2026. Alessio ha costruito la
+            Scorciatoia esattamente come dicevano i sette passi, ed è stata
+            respinta prima di entrare. La causa non era nella Scorciatoia:
+            era una porta chiusa a monte, e adesso è aperta. Qui resta la
+            frase che riconosce quel rifiuto per nome, perché è l'unico che
+            arriva in inglese e non si capisce di chi sia la colpa. */}
+        <li className="testo-sala text-b58-charcoal">
+          <b>8.</b> Provala dal telefono: se risponde <b>«ho capito…»</b> è a posto.
+          <br />
+          Se risponde <b>«Missing authorization header»</b> — o qualunque altra cosa in
+          inglese — <b>non hai sbagliato niente tu</b>: è il gestionale che ha una
+          porta chiusa dalla parte sua. Dimmelo e la riapro.
         </li>
       </ol>
       {/* 🔴 Il limite si dichiara dentro la guida, non solo nel riepilogo:

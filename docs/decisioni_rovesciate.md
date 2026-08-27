@@ -116,8 +116,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 57 | 27/08/2026 | il riflesso del mezzo di pagamento guarda TUTTE le quote |
 | 58 | 27/08/2026 | una caparra piu' grande del conto fa rifiutare lo scalo |
 | 59 | 27/08/2026 | il microfono non c'è perché la pagina è aperta dall'icona |
+| 60 | 27/08/2026 | la lista della spesa cerca il prodotto in magazzino |
 
-⚠️ **Righe: 60.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 61.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2375,3 +2376,27 @@ che non viene mai salvata perché non passa da nessun deposito.
    difetto». ⚠️ Il caso dell'icona **non è stato tolto**: resta come terzo
    ramo, perché su un indirizzo cifrato è ancora vero — è la *precedenza* a
    essere cambiata.
+
+---
+
+## 60 · 27/08/2026 — «la lista della spesa cerca il prodotto in magazzino»
+
+1. **Cosa era stato deciso, e quando.** Dal giorno in cui il ramo è nato: la
+   lista della spesa cerca il prodotto nel catalogo, e ammette un nome libero
+   solo quando non trova niente — con la ragione scritta accanto, che era
+   giusta: *«prendi la carta forno» non è un prodotto del ricettario e non
+   deve diventarlo*.
+2. **La ragione di allora.** Una riga di lista abbinata al prodotto giusto è
+   una riga che il gestionale sa chiudere da sé quando la merce arriva.
+3. **Cosa si decide adesso.** La lista della spesa **non accoppia mai** col
+   magazzino: è un elenco libero di cosa prendere, e l'abbinamento si fa dopo,
+   con la foto del documento quando la merce arriva davvero in cucina.
+4. **Perché la ragione di allora non vale più.** Non è stata smentita:
+   **è stata smentita la sua metà mancante.** Usandolo si è visto che il
+   comportamento era incoerente — *se non trovava niente scriveva, se trovava
+   troppo si fermava*. «Due pacchi di sale grosso» restava in sospeso perché
+   in magazzino c'erano due sali. Cioè il gesto più semplice del gestionale
+   diventava **più difficile man mano che il magazzino si riempiva**, ed è il
+   contrario di quello che deve fare un elenco della spesa. ⚠️ Il prezzo che
+   si accetta: nessuna riga di lista si chiude più da sé al primo colpo — la
+   chiusura passerà dal documento, che è dove Alessio ha deciso che stia.
