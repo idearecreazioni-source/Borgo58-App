@@ -107,6 +107,42 @@ trovati censendo = tredici**, più **uno** che raccontava una regola abolita.
 **Quali blocchi non ho aperto**: **nessuno.** Il mandato è chiuso su tutti e
 quattro i blocchi.
 
+---
+
+## CODA · IL MODULO CHE RISULTAVA «NON SVILUPPATO»
+
+Segnalato da Alessio dopo il resto: la Dashboard diceva ancora «Modulo non
+ancora sviluppato» mentre MEMO foto e MEMO voce funzionavano **da quella
+notte** — ha dettato dal telefono e dall'orologio, e il promemoria è arrivato
+in Agenda.
+
+⚠️ **È la stessa famiglia della frase sugli allergeni trovata poche ore
+prima**: un posto rimasto indietro rispetto a quello che il gestionale fa.
+
+**Misurato da dove veniva** (l'elenco scritto a mano in `src/data/modules.js`):
+
+| | |
+|---|---|
+| moduli in elenco | **16** |
+| con una schermata | **13** |
+| senza | **3** — Ricerca Ricorrente, Monitoraggio Social, MEMO |
+| di questi, **diventati falsi** | **uno**: MEMO |
+
+Gli altri due lo dicono ancora **ed è vero** (misurato: nessuna rotta, nessuna
+schermata). *Si corregge quello che è diventato falso, non tutto.*
+
+⚠️ **E MEMO non prende una rotta sua**, che sarebbe stata la cura frettolosa:
+le sue schermate sono **due** e stanno già fuori dai moduli, perché sono gesti
+che partono da qualunque punto. Una terza voce che porta a una delle due
+sarebbe un doppione; una che porta a un riepilogo sarebbe una schermata
+inventata per riempire un elenco. Il modulo dichiara le sue **porte**, il menu
+non lo ripete, e chi arriva alla pagina a mano ci trova le due porte.
+
+**Visto a schermo** (prova): menu con **due** voci MEMO e non tre; la pagina
+del modulo dice «Questo modulo si usa da due porte, in cima al menu» coi due
+collegamenti; Ricerca Ricorrente e Monitoraggio Social continuano a dire «non
+ancora sviluppato».
+
 **Prove**: app **62 file / 438 prove** (uscita 0), pure **44 / 505**, lint
 **zero avvisi**, build verde.
 
