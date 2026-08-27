@@ -6,7 +6,8 @@
 |---|---|
 | **HEAD dichiarato** | `74854a6` — *Il campo della categoria nuova non compariva mai* (sotto: `d037ade`, *Le categorie diventano dati, e MEMO impara gli elenchi*) |
 | **Working tree** | pulito; questo riepilogo è il commit successivo e sola documentazione |
-| **Migrazioni** | `20260827000026` → `20260827000032` — **nessuna in produzione** |
+| **Migrazioni** | `20260827000026`, `20260827000027`, `20260827000028`, `20260827000029`, `20260827000030`, `20260827000031`, `20260827000032` — **nessuna in produzione** |
+| **Numeri per intero** | i sette sopra erano scritti come intervallo `…026 → …032`: la forma abbreviata nomina i **due estremi** e lascia muti i cinque in mezzo. Espansi il 28/08 **prima** di applicarli, perché la regola del 16/08 pretende il numero completo ed è quello che la rete dei riepiloghi cerca. Nessuna parola del riepilogo è stata cambiata. |
 | **Funzioni online** | `leggi-foto` **v5**, `ascolta-voce` **v11**, `posta-leggi` **v3**, `schede-prodotto` **v4**, `operazioni-atomiche` **v30**: tutte **solo sulla prova** |
 | **Blocchi aperti** | 3, 4, 5 del mandato: **non aperti** |
 
