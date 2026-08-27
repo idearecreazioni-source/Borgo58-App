@@ -152,9 +152,25 @@ export const MODULES = [
     id: "assistente-ai",
     number: 14,
     name: "MEMO",
-    description: "Query in linguaggio naturale, sintesi periodica.",
+    description: "Legge le foto, ascolta quello che detti, e propone cosa fare.",
     phase: 3,
     icon: "chat",
+    // 🔴 LE SUE PORTE SONO DUE, E SONO GIÀ IN CIMA AL MENU — 27/08/2026,
+    //    visto da Alessio: la Dashboard diceva ancora «modulo non ancora
+    //    sviluppato» mentre MEMO foto e MEMO voce funzionavano da quella
+    //    notte (ha dettato dall'orologio e il promemoria è arrivato in
+    //    Agenda). ⚠️ È la stessa famiglia della frase sugli allergeni
+    //    trovata poche ore prima: un posto rimasto indietro rispetto a
+    //    quello che il gestionale fa davvero.
+    // ⚠️ NON HA UNA `route` SUA, e non è una dimenticanza: le schermate
+    //    sono DUE e stanno già fuori dai moduli, perché sono gesti che
+    //    partono da qualunque punto. Una terza voce che porta a una delle
+    //    due sarebbe un doppione; una che porta a una pagina di riepilogo
+    //    sarebbe una schermata inventata per riempire un elenco.
+    porte: [
+      { a: "/fotografa", nome: "MEMO foto" },
+      { a: "/detta", nome: "MEMO voce" },
+    ],
   },
   {
     id: "archivio-documenti",

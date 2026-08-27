@@ -9,7 +9,12 @@ export default function Sidebar({ onNavigate }) {
 
   // Lo staff vede solo i moduli a lui consentiti — le voci riservate non
   // compaiono affatto (§3.5), non sono solo bloccate.
-  const visibleModules = MODULES.filter((m) => isTitolare || m.staffVisible);
+  // ⚠️ Chi ha le proprie porte già in cima al menu non compare una seconda
+  //    volta qui sotto: MEMO ne ha due, ed erano tre voci per lo stesso
+  //    modulo (27/08).
+  const visibleModules = MODULES.filter(
+    (m) => (isTitolare || m.staffVisible) && !m.porte
+  );
 
   // 🔴 ANCHE QUESTE SONO RIGHE DA TOCCARE (22/08). Misuravano 5,07 mm di
   // altezza e 1,89 di testo: sul computer è un menu, ma **sugli schermi

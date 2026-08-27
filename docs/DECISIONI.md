@@ -190,6 +190,11 @@ gesto, non il nome. Il titolo dice dove sei, il pulsante dice cosa fare.
 va messo** — «non ho capito a quale cosa ti riferisci», la fascia del
 microfono, i motivi delle righe in sospeso. Lì il nome sposterebbe la colpa su
 un personaggio invece di dire cosa fare.
+* 27/08 — Il modulo MEMO **non risulta più «non sviluppato»**: le sue due
+porte sono MEMO foto e MEMO voce, già in cima al menu, e la voce non si ripete
+una terza volta nell'elenco dei moduli. ⚠️ Gli altri due placeholder —
+Ricerca Ricorrente e Monitoraggio Social — **continuano a dirlo, ed è vero**:
+misurato, non hanno nessuna schermata.
 * 27/08 — Restano com'erano anche «Quanto sta costando», «9 foto lette» e la
 riga del tetto. E il **sorvegliante notturno non si battezza**: non esiste
 ancora.
