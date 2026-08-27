@@ -84,8 +84,48 @@ describe("ogni riga in sospeso ha la sua via d'uscita a mano", () => {
     expect(a.campi.causale).toBeUndefined();
     expect(a.campi.descrizione).toBeUndefined();
     expect(a.da_finire).toBe(true);
-    // E l'indirizzo non porta in giro l'importo.
-    expect(indirizzoAMano(a.percorso, azione)).not.toMatch(/30/);
+    // 🔴 E NELL'INDIRIZZO NON VIAGGIA NESSUN CAMPO: si guarda che dopo il
+    //    «?» ci sia SOLO `daVoce`, che è la proprietà vera.
+    // ⚠️ La prima versione cercava «30» dentro l'indirizzo, e falliva **una
+    //    volta su sei**: un identificativo casuale contiene quelle due cifre
+    //    ogni tanto (visto: «…8bb2a308f097»). *Una prova che cerca un valore
+    //    breve dentro una stringa che contiene un identificativo casuale
+    //    fallisce a caso* — e una prova intermittente è peggio di una rossa,
+    //    perché insegna a rilanciare invece che a guardare.
+    const dopoIlPunto = new URL(indirizzoAMano(a.percorso, azione), "http://x");
+    expect([...dopoIlPunto.searchParams.keys()]).toEqual(["daVoce"]);
+    expect(dopoIlPunto.searchParams.get("daVoce")).toBe(azione);
+  });
+
+  // 🔴 TROVATO APRENDO LA SCHERMATA, il 27/08: una categoria fuori elenco
+  //    arrivava al modulo, e un menu a tendina che riceve un valore che non
+  //    ha mostra **la prima opzione** — plausibile, e scelta da nessuno.
+  //    Sulla via automatica lo stesso valore fa FALLIRE l'azione contro il
+  //    vincolo del database: rumoroso. Sulla via a mano diventava silenzioso.
+  //    ⚠️ La strada che esiste per essere più sicura sarebbe stata la più
+  //       pericolosa delle due.
+  it("un valore fuori vocabolario non arriva alla schermata, e quelli veri sì", async () => {
+    const { data: dett } = await titolare
+      .from("dettature")
+      .insert({ testo: "TEST-AUTO promemoria con categoria storta", provenienza: "app", esito: "capita" })
+      .select("id").single();
+    mie.segna("dettature", dett.id);
+    const { data: az } = await titolare
+      .from("azioni_dettate")
+      .insert({
+        dettatura_id: dett.id, progressivo: 1, tipo: "promemoria",
+        // «fisco» non è fra le sei categorie ammesse; «alta» è una priorità vera.
+        dati: { titolo: "Chiamare il commercialista", categoria: "fisco", priorita: "alta" },
+        sicuro: false, frase: "Promemoria: chiamare il commercialista",
+        motivo: "Non ero sicuro: guardala tu.", stato: "in_attesa",
+      })
+      .select("id").single();
+    mie.segna("azioni_dettate", az.id);
+
+    const a = await azioneAMano(az.id);
+    expect(a.campi.categoria).toBeUndefined();          // lo storto resta fuori
+    expect(a.campi.priorita).toBe("alta");              // il vero passa
+    expect(a.campi.titolo).toBe("Chiamare il commercialista"); // il libero non è toccato
   });
 
   it("finita a mano, smette di aspettare", async () => {

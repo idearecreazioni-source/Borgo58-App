@@ -305,6 +305,13 @@ cancellazioni si **segnalano e basta**: le guarda lui una per una.
 * 27/08 — Il collegamento coi campi precompilati si fa **su tutte le schermate
 insieme**, non una alla volta: farne una sola ricrea l'incoerenza appena tolta
 dalla lista della spesa.
+* 27/08 — Le nove schermate della via d'uscita a mano si provano **in due**:
+Code una per una con le mani, Alessio col telefono man mano che le incontra.
+Sue parole: *«lui può accorgersi di alcune cose, io di altre»*.
+* 27/08 — L'ordine dei pezzi che restano del mandato: **prima la pagina che si
+ricarica**, poi il pollice, poi MEMO. Il motivo è che passando fra il
+gestionale e un'altra app si perde il punto in cui si era — *«è
+fastidiosissimo»* — mentre MEMO è un cambio di parole e può aspettare.
 
 ## Sorvegliante notturno
 
