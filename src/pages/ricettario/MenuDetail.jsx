@@ -16,10 +16,10 @@ import { foodCostLevel, formatEUR } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 
 const SECTIONS = [
-  { category: "antipasto", label: "Antipasti", target: 4 },
-  { category: "primo", label: "Primi", target: 4 },
-  { category: "secondo", label: "Secondi", target: 4 },
-  { category: "dolce", label: "Dolci", target: 2 },
+  { category: "antipasto", label: "Antipasti" },
+  { category: "primo", label: "Primi" },
+  { category: "secondo", label: "Secondi" },
+  { category: "dolce", label: "Dolci" },
 ];
 
 const LEVEL_CLASS = {
@@ -327,11 +327,6 @@ export default function MenuDetail() {
     }
   };
 
-  // La stagionalità delle ricette è per stagione (§2.5), non per mese — qui
-  // segnaliamo solo le ricette non marcate "tutto_anno", il controllo fine
-  // (mese corrente vs stagione) resta a vista dello chef.
-  const isOutOfSeason = (seasonality) =>
-    seasonality?.length > 0 && !seasonality.includes("tutto_anno");
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -348,7 +343,15 @@ export default function MenuDetail() {
       <div className="flex items-start justify-between gap-4 flex-wrap mt-3 mb-6">
         <div>
           <h1 className="font-display text-2xl text-b58-charcoal">{menu.name}</h1>
-          <p className="testo-sala-grande text-b58-charcoal-soft">Struttura {menu.structure}</p>
+          {/* ⚠️ «Struttura 4-4-4-2» TOLTA insieme al «/4», ed è la regola
+              dei cinque posti: lo stesso limite inventato era scritto in
+              DUE punti, e togliendone uno solo l'altro avrebbe continuato a
+              raccontarlo. Misurato: `menus.structure` è un predefinito del
+              database che NESSUNA schermata permette di cambiare, e tutti e
+              quattro i menu hanno lo stesso valore che nessuno ha scelto.
+              ⚠️ La colonna resta nel database: toglierla è una migrazione
+                 che nessuno ha chiesto, e un dato inerte non fa danno —
+                 quello che lo faceva era mostrarlo come se fosse una regola. */}
         </div>
         {menu.is_active ? (
           <span className="testo-sala font-medium uppercase tracking-wide bg-b58-olive text-b58-parchment rounded-full px-3 py-1.5">
@@ -414,7 +417,7 @@ export default function MenuDetail() {
       )}
 
       {/* Sezioni 4-4-4-2 */}
-      {SECTIONS.map(({ category, label, target }) => {
+      {SECTIONS.map(({ category, label }) => {
         const sectionItems = itemsByCategory[category];
         const catAvg = categoryAverages[category];
         // ⚠️ Solo i piatti pronti per la carta (20/08/2026, decisione di
@@ -434,8 +437,23 @@ export default function MenuDetail() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display testo-sala-titolo text-b58-charcoal">
                 {label}{" "}
+                {/* 🔴 IL «/4» È SPARITO — decisione di Alessio del 27/08,
+                    dopo aver visto «Secondi (5/4)»: un conteggio che supera
+                    il proprio limite.
+                    ⚠️ MISURATO PRIMA DI TOGLIERLO, perché la sua domanda era
+                       giusta — «se è un limite che qualcuno ha deciso,
+                       sparire il numero cancella l'avviso invece del
+                       problema». Non lo è: quel 4 era un numero FISSO NEL
+                       CODICE (`target: 4`), non leggeva niente, non
+                       impediva niente e nessuno poteva cambiarlo. È la
+                       famiglia di `RAPPRESENTANZA_PER_PERSON_THRESHOLD`
+                       (15/08): un numero che vive nel testo di una
+                       schermata e che nessun calcolo usa — cioè una regola
+                       promessa e mai applicata.
+                    ⚠️ Quanti piatti ci sono resta scritto: è un fatto. Ad
+                       essere sparito è il paragone con un limite inventato. */}
                 <span className="testo-sala-grande text-b58-charcoal-soft font-sans">
-                  ({sectionItems.length}/{target})
+                  ({sectionItems.length})
                 </span>
               </h2>
               {catAvg && (
@@ -445,61 +463,76 @@ export default function MenuDetail() {
               )}
             </div>
 
+            {/* 🔴 SUL TELEFONO NON È PIÙ UNA TABELLA — 27/08/2026, visto da
+                Alessio col telefono in mano: le intestazioni si leggevano
+                attaccate («Food costMargine») e la colonna del margine
+                restava fuori dal bordo.
+                ⚠️ MISURATO a 375 punti: sei colonne larghe **347-356 punti**
+                   dentro un contenitore da **295** — sbordo di 52-61. Il
+                   riquadro scorreva di lato, quindi la pagina intera no: la
+                   regola del 21/08 non era violata alla lettera, ma il
+                   margine bisognava andarselo a cercare trascinando.
+                ⚠️ E NON BASTAVA STRINGERE IL CAMPO PREZZO — l'ha detto
+                   Alessio e la misura gli dà ragione: sei colonne di numeri
+                   su uno schermo verticale non ci stanno comunque, e a
+                   marzo i piatti saranno di più.
+                🔴 I CAMPI STANNO IN UN POSTO SOLO (`VOCI`, qui sotto), ed è
+                   la lezione del 18/08 sulle prenotazioni: due elenchi di
+                   colonne divergono in silenzio, e a restare indietro è
+                   sempre quello che si guarda di meno — cioè il telefono,
+                   che è la strada maestra. */}
             {sectionItems.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full testo-sala-grande mb-3">
+              <>
+                {/* Sul telefono: un piatto per riquadro, coi suoi numeri sotto. */}
+                <div className="md:hidden space-y-2 mb-3">
+                  {sectionItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-b58-charcoal/10 bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">{nomeDelPiatto(item, id, menu)}</div>
+                        <button
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="tocco-bottone shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                        >
+                          Rimuovi
+                        </button>
+                      </div>
+                      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                        {VOCI.map((v) => (
+                          <div key={v.chiave} className="flex items-baseline justify-between gap-2">
+                            <dt className="testo-sala text-b58-charcoal-soft">{v.titolo}</dt>
+                            <dd className="testo-sala-grande">{v.mostra(item, handlePriceChange)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sul computer resta la tabella: lì le sei colonne ci stanno. */}
+                <table className="hidden md:table w-full testo-sala-grande mb-3">
                   <thead>
                     <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                       <th className="py-2 font-medium">Piatto</th>
-                      <th className="py-2 font-medium text-right">Food cost</th>
-                      <th className="py-2 font-medium text-right">Prezzo</th>
-                      <th className="py-2 font-medium text-right">Food cost %</th>
-                      <th className="py-2 font-medium text-right">Margine</th>
+                      {VOCI.map((v) => (
+                        <th key={v.chiave} className="py-2 font-medium text-right">
+                          {v.titolo}
+                        </th>
+                      ))}
                       <th className="py-2"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {sectionItems.map((item) => (
                       <tr key={item.id} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">
-                          {/* ⚠️ Il passo porta la PROPRIA destinazione: entrando
-                              in un piatto da qui, il ritorno deve riportare al
-                              menu, non all'elenco delle ricette. */}
-                          <Link
-                            to={`/ricettario/ricette/${item.recipe_id}`}
-                            state={{
-                              percorso: [
-                                { id, nome: menu?.name ?? "", a: `/ricettario/menu/${id}` },
-                              ],
-                            }}
-                            className="tocco-testo hover:text-b58-terracotta"
-                          >
-                            {item.recipe.name}
-                          </Link>
-                          {isOutOfSeason(item.recipe.seasonality) && (
-                            <span className="testo-sala text-b58-charcoal-soft ml-1.5">
-                              (stagione: {item.recipe.seasonality.join(", ")})
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 text-right text-b58-charcoal-soft">
-                          {formatEUR(item.economics?.food_cost_portion)}
-                        </td>
-                        <td className="py-2 text-right">
-                          <CampoAutosalvato
-                            type="number"
-                            step="0.5"
-                            value={item.selling_price}
-                            onSave={(v) => handlePriceChange(item.id, v)}
-                            className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
-                          />
-                        </td>
-                        <td className={`py-2 text-right font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`}>
-                          {item.economics?.food_cost_pct != null ? `${Number(item.economics.food_cost_pct).toFixed(1)}%` : "—"}
-                        </td>
-                        <td className="py-2 text-right text-b58-charcoal">
-                          {formatEUR(item.economics?.gross_margin)}
-                        </td>
+                        <td className="py-2 text-b58-charcoal">{nomeDelPiatto(item, id, menu)}</td>
+                        {VOCI.map((v) => (
+                          <td key={v.chiave} className={`py-2 text-right ${v.classe?.(item) ?? ""}`}>
+                            {v.mostra(item, handlePriceChange)}
+                          </td>
+                        ))}
                         <td className="py-2 text-right">
                           <button
                             onClick={() => handleRemoveItem(item.id)}
@@ -512,7 +545,7 @@ export default function MenuDetail() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </>
             )}
 
             {candidates.length > 0 && (
@@ -786,5 +819,80 @@ export default function MenuDetail() {
         )}
       </div>
     </div>
+  );
+}
+
+// =====================================================================
+// LE VOCI DI UN PIATTO IN CARTA — scritte UNA VOLTA (27/08/2026)
+// =====================================================================
+// 🔴 Le usano tutte e due le forme: i riquadri del telefono e la tabella
+//    del computer. Due elenchi di colonne divergono in silenzio, e a
+//    restare indietro è sempre quello che si guarda di meno — è la lezione
+//    del 18/08 sulle prenotazioni, dove a rimanere indietro sarebbe stato
+//    il telefono, cioè la strada maestra.
+// La stagionalità delle ricette è per stagione (§2.5), non per mese — qui
+// segnaliamo solo le ricette non marcate "tutto_anno", il controllo fine
+// (mese corrente vs stagione) resta a vista dello chef.
+// ⚠️ Sta FUORI dal componente dal 27/08: la usa anche `nomeDelPiatto`, che
+//    serve tanto ai riquadri del telefono quanto alla tabella del computer.
+const isOutOfSeason = (seasonality) =>
+  seasonality?.length > 0 && !seasonality.includes("tutto_anno");
+
+const VOCI = [
+  {
+    chiave: "food_cost",
+    titolo: "Food cost",
+    mostra: (item) => formatEUR(item.economics?.food_cost_portion),
+    classe: () => "text-b58-charcoal-soft",
+  },
+  {
+    chiave: "prezzo",
+    titolo: "Prezzo",
+    // ⚠️ È un campo, non un numero: si corregge da qui, e si salva da sé.
+    mostra: (item, onPrezzo) => (
+      <CampoAutosalvato
+        type="number"
+        step="0.5"
+        value={item.selling_price}
+        onSave={(v) => onPrezzo(item.id, v)}
+        className="w-20 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala-grande text-right"
+      />
+    ),
+  },
+  {
+    chiave: "food_cost_pct",
+    titolo: "Food cost %",
+    mostra: (item) =>
+      item.economics?.food_cost_pct != null
+        ? `${Number(item.economics.food_cost_pct).toFixed(1)}%`
+        : "—",
+    classe: (item) => `font-medium ${LEVEL_CLASS[foodCostLevel(item.economics?.food_cost_pct)]}`,
+  },
+  {
+    chiave: "margine",
+    titolo: "Margine",
+    mostra: (item) => formatEUR(item.economics?.gross_margin),
+    classe: () => "text-b58-charcoal",
+  },
+];
+
+// Il nome, col passo che porta la propria destinazione: entrando in un
+// piatto da qui, il ritorno riporta al menu e non all'elenco delle ricette.
+function nomeDelPiatto(item, menuId, menu) {
+  return (
+    <>
+      <Link
+        to={`/ricettario/ricette/${item.recipe_id}`}
+        state={{ percorso: [{ id: menuId, nome: menu?.name ?? "", a: `/ricettario/menu/${menuId}` }] }}
+        className="tocco-testo hover:text-b58-terracotta"
+      >
+        {item.recipe.name}
+      </Link>
+      {isOutOfSeason(item.recipe.seasonality) && (
+        <span className="testo-sala text-b58-charcoal-soft ml-1.5">
+          (stagione: {item.recipe.seasonality.join(", ")})
+        </span>
+      )}
+    </>
   );
 }

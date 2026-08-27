@@ -58,7 +58,10 @@ export default function MenuList() {
                 )}
               </div>
               <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
-                Struttura {m.structure}
+                {/* ⚠️ Vedi MenuDetail: il limite «4-4-4-2» è un predefinito
+                    che nessuno ha scelto e nessuna schermata può cambiare.
+                    Tolto qui insieme al conteggio «(5/4)», o uno dei due
+                    avrebbe continuato a raccontarlo (27/08). */}
                 {m.valid_from && <> · dal {formatDate(m.valid_from)}</>}
               </p>
             </button>

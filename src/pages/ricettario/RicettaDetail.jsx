@@ -27,7 +27,6 @@ import {
   swapStepOrder,
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
-import { storicoCostoRicetta } from "../../lib/api/storicoCosti";
 import { percorsoEntrando, ritornoIndietro } from "../../lib/calcoli/percorso";
 import { useAuth } from "../../context/AuthContext";
 import { addMenuItem, listMenus, menuDellaRicetta, removeMenuItem } from "../../lib/api/menus";
@@ -105,8 +104,6 @@ export default function RicettaDetail() {
   const [spuntando, setSpuntando] = useState(null);
   const [componiAperto, setComponiAperto] = useState(null);
   const [copiando, setCopiando] = useState(false);
-  const [storico, setStorico] = useState([]);
-  const [mostraStorico, setMostraStorico] = useState(false);
   const [menuDentro, setMenuDentro] = useState([]);
   const [salvandoMenu, setSalvandoMenu] = useState(null);
   const [erroreMenu, setErroreMenu] = useState("");
@@ -157,21 +154,16 @@ export default function RicettaDetail() {
   // una lettura in più; un numero vecchio accanto a uno nuovo no.
   const ricaricaRighe = async (elencoComponenti = preparations) => {
     const idFinger = elencoComponenti.filter((p) => p.recipe_type === "finger").map((p) => p.id);
-    const [ri, costi, c, cf, st] = await Promise.all([
+    const [ri, costi, c, cf] = await Promise.all([
       listRecipeIngredients(id),
       getRecipeRowCosts(id),
       getRecipeCost(id),
       listRecipeCostsFor(idFinger),
-      // ⚠️ Lo storico si rilegge INSIEME: ogni modifica di questa schermata
-      // scrive una voce, e un elenco caricato una volta sola mostrerebbe la
-      // storia di prima accanto al costo di adesso.
-      isTitolare ? storicoCostoRicetta(id) : Promise.resolve([]),
     ]);
     setRecipeIngredients(ri);
     setRowCosts(costi);
     setCost(c);
     setCostiFinger(cf);
-    setStorico(st);
   };
 
   const loadAll = async (elencoComponenti) => {
@@ -819,45 +811,18 @@ export default function RicettaDetail() {
             <div className="testo-sala text-b58-charcoal-soft">
               {cost ? formatEUR(cost.food_cost_base) : "—"} totale ricetta base
             </div>
-            {/* ⚠️ Il registro compare solo se ha qualcosa da dire: una
-                ricetta appena nata non ha una storia, e un riquadro vuoto
-                sarebbe ingombro su una schermata che si usa a lungo. */}
-            {isTitolare && storico.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setMostraStorico((v) => !v)}
-                className="tocco-bottone print:hidden testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta mt-1"
-              >
-                {mostraStorico ? "Nascondi com'è cambiato" : "Com'è cambiato"}
-              </button>
-            )}
+            {/* 🔴 IL REGISTRO «COM'È CAMBIATO» È TOLTO — decisione di
+                Alessio del 27/08: non gli serve.
+                ⚠️ E le righe si leggevano AL CONTRARIO: «Aggiunto Caponata
+                   — 6,12 €» dove 6,12 era il totale del PIATTO dopo
+                   l'aggiunta, non il costo della caponata. La decisione è
+                   toglierlo, non riscriverlo: un dato che non serve non
+                   migliora diventando corretto.
+                ⚠️ Lo storico resta NEL DATABASE e continua a riempirsi: a
+                   sparire è solo la schermata che lo mostrava. */}
           </div>
         </div>
 
-        {mostraStorico && storico.length > 0 && (
-          <div className="print:hidden mb-4 rounded-lg bg-white border border-b58-charcoal/10 divide-y divide-b58-charcoal/5">
-            {storico.map((v, i) => (
-              <div key={i} className="px-3 py-2 flex items-baseline justify-between gap-3 testo-sala-grande">
-                <div>
-                  <div className="text-b58-charcoal">{v.dettaglio}</div>
-                  <div className="testo-sala text-b58-charcoal-soft">{formatDate(v.rilevato_il)}</div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-b58-charcoal">{formatEUR(v.food_cost_base)}</div>
-                  {/* ⚠️ Un costo parziale lo DICE: un ingrediente mai
-                      comprato vale zero, e uno zero silenzioso fa sembrare
-                      il piatto più economico di quanto sia. */}
-                  {v.parziale && (
-                    <div className="testo-sala text-b58-terracotta-dark">
-                      parziale: {v.righe_senza_prezzo}{" "}
-                      {v.righe_senza_prezzo === 1 ? "ingrediente" : "ingredienti"} senza prezzo
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
@@ -997,7 +962,30 @@ export default function RicettaDetail() {
             fra i menu qui sotto. Se facesse finta di essere un interruttore
             mentirebbe sulla natura del dato. */}
         <div className="mb-4">
-          <label className={labelClass}>Stato</label>
+          {/* 🔴 L'ETICHETTA DICE IL VALORE — 27/08/2026, e nasce da una cosa
+              vista da Alessio col telefono: su «Agnello con carciofi» ha
+              letto «Pronta per la carta» mentre il piatto era in carta.
+              ⚠️ IL GESTIONALE NON SI CONTRADDICEVA. Misurato: il database
+                 era coerente (in_carta=true, in un menu attivo, ZERO
+                 disaccordi su tutte le ricette) e la striscia mostrava
+                 «✓ In carta» acceso. Ma a 375 punti i quattro stati vanno
+                 su DUE righe, e «Pronta per la carta» finisce sulla PRIMA,
+                 sopra quello vero. Chi guarda in fretta legge la prima.
+              ⚠️ La cura non è toccare la striscia — quattro stati in fila
+                 sono una decisione di Alessio del 24/08, e l'ordine è il
+                 percorso di un piatto. È dire con le PAROLE quello che
+                 oggi dice solo un colore: la stessa lezione della chiave
+                 della Scorciatoia, imparata lo stesso giorno.
+              ⚠️ E risolve anche il pulsante che «non risponde»: premendo lo
+                 stato in cui SI È GIÀ non succede niente ed è giusto, ma
+                 finché l'etichetta non lo dice sembra un guasto. */}
+          <label className={labelClass}>
+            Stato:{" "}
+            <span className="font-semibold normal-case tracking-normal text-b58-charcoal">
+              {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta, recipe.ritirata_il)
+                ?.label ?? "—"}
+            </span>
+          </label>
           <div className="flex flex-wrap items-center gap-2">
             {RECIPE_STATI.map((s) => {
               const attuale = statoRicetta(

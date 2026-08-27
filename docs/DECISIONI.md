@@ -161,6 +161,25 @@ gesto principale, cinque ne hanno molte. Quali altre contino è una domanda
 per Alessio, perché il criterio è suo.
 * 27/08 — Da ogni modulo si deve poter **tornare alla schermata iniziale**.
 
+## Ricettario e menu
+
+* 27/08 — Nella scheda ricetta lo **stato si legge nell'etichetta**, non solo
+dal colore di una pillola fra quattro: a 375 punti i quattro stati vanno su due
+righe e «Pronta per la carta» finisce sopra quello vero.
+* 27/08 — Il **conteggio «(5/4)» si toglie**, e con lui la riga «Struttura
+4-4-4-2»: misurato, quel limite era un numero fisso nel codice e un predefinito
+del database che nessuna schermata permette di cambiare. Quanti piatti ci sono
+resta scritto — è un fatto; sparisce il paragone con un limite che nessuno ha
+deciso.
+* 27/08 — La tabella dei piatti di un menu **sul telefono diventa un elenco**,
+un piatto per riquadro coi suoi numeri sotto. Non basta stringere il campo
+prezzo: sei colonne di numeri su uno schermo verticale non ci stanno comunque,
+e a marzo i piatti saranno di più.
+* 27/08 — Lo **storico del costo si toglie** dalla scheda ricetta: non serve.
+Le righe si leggevano al contrario (l'importo era il totale del piatto dopo
+l'aggiunta, non il costo dell'ingrediente aggiunto), ma la decisione è
+toglierlo, non riscriverlo.
+
 ## Assistente — foto
 
 * 26/08 — La schermata del tetto di spesa **mostra chi l'ha toccato e quando**.
