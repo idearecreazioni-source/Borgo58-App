@@ -280,6 +280,14 @@ const OPERAZIONI = new Set([
   // meta' di quel gesto invisibile nell'elenco delle scritture.
   "esegui_azione_dettata",
   "annulla_azione_dettata",
+
+  // ⚠️ Tengono una tabella sola e passano comunque di qui, per la stessa
+  // ragione delle due righe qui sopra: la caparra entra dal corridoio
+  // (`registra_caparra`) e se ne va dal corridoio (`togli_caparra`) — se
+  // la terza fine che puo' fare uscisse da un'altra porta, l'elenco delle
+  // scritture che toccano quel denaro non sarebbe piu' completo.
+  "trattieni_caparra",
+  "annulla_trattenuta_caparra",
 ]);
 
 const CORS = {

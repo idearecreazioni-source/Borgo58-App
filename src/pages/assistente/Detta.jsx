@@ -22,6 +22,7 @@ import {
   perchéAspetta,
   riconoscitoreDisponibile,
   statoDettatura,
+  unaVoltaSola,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
 
@@ -208,27 +209,48 @@ export default function Detta() {
   // -------------------------------------------------------------------
   // Confermare e annullare
   // -------------------------------------------------------------------
+  // 🔴 IL DOPPIO INVIO NON SI RENDE IMPROBABILE: SI RENDE IMPOSSIBILE.
+  //    Il pulsante spento arriva al render dopo, e fra il tocco e il render
+  //    chi non vede succedere niente ripreme — è quello che ha fatto Alessio
+  //    la notte del 27/08 su un movimento di cassa. Questa guardia è
+  //    SINCRONA: il secondo tocco non parte nemmeno.
+  //    ⚠️ Il database ha comunque l'ultima parola (una cosa già eseguita
+  //       viene respinta sotto blocco): qui si toglie il secondo giro di
+  //       rete e il secondo messaggio, che è ciò che confonde chi guarda.
   const [inAzione, setInAzione] = useState(null);
+  const [esiti, setEsiti] = useState({});
+  const guardia = useRef(unaVoltaSola());
+
+  // ⚠️ L'esito sta SULLA RIGA che è stata toccata, non in cima alla pagina:
+  //    «un rifiuto lontano dal gesto è un rifiuto che non c'è», ed è la
+  //    lezione del 17/08 pagata già una volta in Cassa.
+  const segna = (id, esito) => setEsiti((e) => ({ ...e, [id]: esito }));
 
   const conferma = async (azione) => {
+    if (!guardia.current.prendi(azione.id)) return;
     setInAzione(azione.id);
+    segna(azione.id, { stato: "in_corso" });
     setErrore("");
     try {
       await confermaAzione(azione.id);
+      segna(azione.id, { stato: "fatta" });
       ricarica();
       if (riscontro) {
         const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
         if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
       }
     } catch (e) {
-      setErrore(e.message);
+      segna(azione.id, { stato: "fallita", messaggio: e.message });
     } finally {
+      guardia.current.lascia(azione.id);
       setInAzione(null);
     }
   };
 
   const annulla = async (azione) => {
+    if (!guardia.current.prendi(azione.id)) return;
     setInAzione(azione.id);
+    segna(azione.id, { stato: "in_corso" });
     setErrore("");
     try {
       await annullaAzione(azione.id);
@@ -237,8 +259,9 @@ export default function Detta() {
         r ? { ...r, daGuardare: r.daGuardare.filter((a) => a.id !== azione.id) } : r,
       );
     } catch (e) {
-      setErrore(e.message);
+      segna(azione.id, { stato: "fallita", messaggio: e.message });
     } finally {
+      guardia.current.lascia(azione.id);
       setInAzione(null);
     }
   };
@@ -313,11 +336,29 @@ export default function Detta() {
           </span>
         </button>
 
+        {/* 🔴 IL SEGNO CHE STA ASCOLTANDO — decisione di Alessio del 24/08 e
+            ripetuta il 25/08: **bene visibile**. La notte del 27/08 ha
+            parlato, gli è sembrato che non lo ascoltasse, e ha ripetuto
+            tutto: il pallino da 3 mm accanto a una riga da 3,2 non si vede
+            con le mani occupate e il telefono appoggiato.
+            ⚠️ Tre segni insieme, e non è ridondanza: il pulsante che pulsa
+               si vede da lontano, il pallino dice «adesso», e il CONTATORE
+               delle frasi capite è l'unico che dimostra che sta capendo —
+               un'animazione va avanti uguale anche se il microfono è morto. */}
         {ascolto && (
-          <p className="testo-sala mt-3 flex items-center gap-2 text-b58-terracotta-dark font-medium">
-            <span className="inline-block h-3 w-3 rounded-full bg-b58-terracotta animate-pulse" />
-            Ti sto ascoltando
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-b58-terracotta/10 px-3 py-2">
+            <span className="inline-block h-4 w-4 shrink-0 rounded-full bg-b58-terracotta animate-pulse" />
+            <span className="testo-sala-lontano font-medium text-b58-terracotta-dark">
+              Ti sto ascoltando
+            </span>
+            <span className="testo-sala text-b58-charcoal-soft">
+              {frasi.length === 0
+                ? "parla pure, di' tutto di fila"
+                : frasi.length === 1
+                  ? "1 cosa sentita finora"
+                  : `${frasi.length} cose sentite finora`}
+            </span>
+          </div>
         )}
 
         {stato && !ascolto && <p className="testo-sala mt-3 text-b58-charcoal-soft">{stato}</p>}
@@ -384,6 +425,8 @@ export default function Detta() {
                     key={a.id}
                     azione={a}
                     occupato={inAzione === a.id}
+
+                    esito={esiti[a.id]}
                     onConferma={() => conferma(a)}
                     onAnnulla={() => annulla(a)}
                   />
@@ -422,6 +465,8 @@ export default function Detta() {
                   azione={a}
                   quando={daQuantoAspetta(a.giorni)}
                   occupato={inAzione === a.id}
+
+                  esito={esiti[a.id]}
                   onConferma={() => conferma(a)}
                   onAnnulla={() => annulla(a)}
                 />
@@ -534,7 +579,11 @@ export default function Detta() {
 //    dall'altro (`gap-3` non basterebbe: sono 1,62 mm veri). Qui la
 //    distanza la fa `justify-between` con i due gesti agli estremi, e la
 //    riga intera è alta 1,05 cm.
-function RigaDaGuardare({ azione, quando, occupato, onConferma, onAnnulla }) {
+function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla }) {
+  const inCorso = esito?.stato === "in_corso" || occupato;
+  const fatta = esito?.stato === "fatta";
+  const fallita = esito?.stato === "fallita";
+
   return (
     <li className="rounded-lg border border-b58-cream-dark bg-b58-cream/40 p-3">
       <p className="testo-sala font-medium text-b58-charcoal">{azione.frase}</p>
@@ -546,20 +595,32 @@ function RigaDaGuardare({ azione, quando, occupato, onConferma, onAnnulla }) {
         <button
           type="button"
           onClick={onConferma}
-          disabled={occupato}
+          disabled={inCorso || fatta}
           className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
         >
-          {occupato ? "…" : "Sì, fallo"}
+          {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
+              qualcosa ripreme. Le parole per intero, anche se occupano. */}
+          {fatta ? "✓ Fatto" : inCorso ? "Lo sto facendo…" : "Sì, fallo"}
         </button>
         <button
           type="button"
           onClick={onAnnulla}
-          disabled={occupato}
+          disabled={inCorso || fatta}
           className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
         >
           Lascia perdere
         </button>
       </div>
+
+      {/* 🔴 L'ESITO STA QUI, SULLA RIGA TOCCATA, e non in cima alla pagina:
+          «un rifiuto lontano dal gesto è un rifiuto che non c'è» — lezione
+          del 17/08, già pagata una volta in Cassa. La notte del 27/08
+          Alessio ha premuto due volte proprio perché non vedeva niente. */}
+      {fallita && (
+        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+          Non si è fatta: {esito.messaggio}
+        </p>
+      )}
     </li>
   );
 }

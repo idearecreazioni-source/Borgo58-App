@@ -333,3 +333,36 @@ describe("chi non è il titolare non tocca niente", () => {
     }
   });
 });
+
+// =====================================================================
+// LA PROMESSA CHE IL GESTIONALE NON MANTIENE — 27/08/2026
+// =====================================================================
+// 🔴 Il 27/08 undici tipi di comando vocale erano accesi e SETTE avevano
+//    un'esecuzione: i quattro scoperti erano esattamente quelli che
+//    toccano i soldi e le cose nuove. Nessun errore, nessun avviso —
+//    finché Alessio non premeva «Sì, fallo» e non succedeva niente.
+//
+// ⚠️ Questa prova guarda una PROPRIETÀ e non un conteggio: non «sono
+//    undici», ma «nessuno di quelli accesi è scoperto». Un numero qui
+//    sarebbe scaduto al primo tipo aggiunto.
+describe("un tipo acceso deve saperlo fare davvero", () => {
+  it("nessun tipo vocale acceso è senza esecuzione", async () => {
+    const { data, error } = await titolare.rpc("tipi_vocali_senza_ramo");
+    expect(error).toBeNull();
+    expect(
+      data,
+      `Il gestionale propone a voce cose che poi non sa fare: ${(data ?? [])
+        .map((r) => r.tipo)
+        .join(", ")}`,
+    ).toEqual([]);
+  });
+
+  // ⚠️ Le due traduttrici nuove seguono la regola delle altre tre: non
+  //    sono di nessuno, ci si arriva solo da dentro il database.
+  it("le traduttrici di causali e fornitori non sono chiamabili da fuori", async () => {
+    for (const f of ["voce_causale_numero", "voce_fornitore_numero"]) {
+      const { error } = await titolare.rpc(f, { p_n: 1 });
+      expect(error, `${f} è diventata chiamabile dal browser`).not.toBeNull();
+    }
+  });
+});

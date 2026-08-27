@@ -1,6 +1,6 @@
 # Quesiti per i consulenti — raccoglitore unico
 
-**Aggiornato il 25/08/2026** (i cinque quesiti per Tiziana T3-T7, piu' T8 e T9 nati con l'assistente che legge le etichette).
+**Aggiornato il 27/08/2026** (L18: la caparra tenuta perché il cliente non si è presentato).
 
 A cosa serve: le domande aperte per i consulenti erano sparse in una
 dozzina di posti — un avviso in una schermata, un rilievo in un referto,
@@ -422,6 +422,36 @@ risposta decide se diventa una scadenza vera.
 
 **Dove vive**: `supabase/migrations/20260802000001_agenda.sql`, tabella
 `tasks`, categoria «Fisco e scadenze».
+
+**Stato**: aperto.
+
+---
+
+## L18 · La caparra tenuta perché il cliente non si è presentato
+
+**Contesto.** Dal 27/08/2026 il gestionale sa registrare le tre fini di una
+caparra: scalata dal conto, restituita per la parte che avanza, e — da oggi —
+**tenuta**, quando il cliente non si presenta. In quest'ultimo caso non esce
+e non entra un euro: i soldi erano già in cassa da quando la caparra è stata
+presa. Quello che cambia è la loro natura, e il gestionale la registra
+separatamente dagli incassi del servizio.
+
+**Domanda.** «Quando tengo una caparra perché il cliente non si è presentato,
+quei soldi come vanno trattati? È un corrispettivo da assoggettare a IVA, o è
+un risarcimento fuori campo? E cambia qualcosa se la caparra l'avevo presa in
+contanti invece che per bonifico? Devo emettere un documento al cliente, o
+basta la registrazione interna?»
+
+**Cosa cambia nell'app.** Oggi la caparra tenuta è un'entrata di cassa già
+registrata (causale «Caparra ricevuta») più un segno che dice che è stata
+tenuta. Se la risposta è «corrispettivo», va deciso **se e quando** finisce
+sul registratore telematico — e la regola del 15/08 dice che niente si batte
+sul registratore senza passare da un conto, quindi servirebbe una strada
+apposta. Se è «fuori campo», resta com'è e basta l'etichetta.
+
+**Dove vive**: `supabase/migrations/20260827000003_la_caparra_trattenuta.sql`,
+colonne `cash_movements.caparra_trattenuta_il` e
+`caparra_trattenuta_perche`, funzione `caparre_trattenute()`.
 
 **Stato**: aperto.
 

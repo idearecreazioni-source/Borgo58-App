@@ -237,6 +237,35 @@ giorno.
 chiede alla fine: le altre della stessa filza si salvano lo stesso. La domanda
 dev'essere UNA SOLA, come per la foto.
 
+* 27/08 — **Le quattro cose che il gestionale propone a voce e non sapeva fare
+si costruiscono**, e restano tutte dietro la conferma: il criterio del 25/08
+(misura contro creazione) era metà costruito.
+* 27/08 — **Il doppio invio su una cosa che tocca i soldi non si rende
+improbabile: si rende impossibile**, anche premendo dieci volte, anche se la
+risposta tarda. Un promemoria doppio si cancella; trenta euro registrati due
+volte si scoprono fra tre mesi quando la cassa non torna.
+* 27/08 — **La causale di un movimento dettato resta FACOLTATIVA**: «ho pagato
+trenta euro al fornitore» non ne contiene nessuna, ed è il modo normale di
+dirlo. Il difetto peggiore è dimenticare l'uscita, non classificarla dopo.
+* 27/08 — Il **fornitore non si inventa**, come il frigo. Ma non ferma niente:
+una consegna senza fornitore è vera, un fornitore sbagliato no.
+
+## Caparra
+
+* 27/08 — La caparra su un conto **scontato** segue la regola del conto
+normale: copre quello che il cliente deve, il resto torna in contanti. Non una
+terza regola.
+* 27/08 — La caparra **più grande del conto** si restituisce in contanti; lo
+stesso su un conto **omaggiato**, dove torna intera.
+* 27/08 — Sui conti con caparra resta **un solo modo di pagamento**, ma il
+gestionale dice **perché**.
+* 27/08 — **La caparra trattenuta**: il cliente non si presenta, Alessio tiene
+i soldi, e diventano una voce a sé ritrovabile separatamente dagli incassi del
+servizio. ⚠️ Non genera nessun movimento: erano già in cassa.
+* 27/08 — Le tabelle **non classificate** nel perimetro del registro delle
+cancellazioni si **segnalano e basta**: le guarda lui una per una.
+* 27/08 — I **numeri doppi dei rovesciamenti non si rinumerano**.
+
 ## Sorvegliante notturno
 
 * 25/08 — Lavorerà solo DOPO l'inaugurazione: non è urgente, e prima viene ciò

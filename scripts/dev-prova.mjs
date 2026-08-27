@@ -48,11 +48,23 @@ if (url.includes(REF_PRODUZIONE)) {
   );
 }
 
+// ⚠️ LA PORTA SI LEGGE DA QUELLA VERA DI QUESTO AVVIO. Fino al 27/08 le
+// righe qui sotto scrivevano 5173 a mano, e con `--port 5199` dicevano il
+// falso: mandavano il telefono su un gestionale diverso da quello appena
+// aperto — senza nessun errore, mostrandone semplicemente un altro.
+const extraArgomenti = process.argv.slice(2).filter((a) => a !== "--");
+const portaScelta = (() => {
+  const i = extraArgomenti.indexOf("--port");
+  if (i >= 0 && extraArgomenti[i + 1]) return Number(extraArgomenti[i + 1]);
+  const attaccata = extraArgomenti.find((a) => a.startsWith("--port="));
+  return attaccata ? Number(attaccata.split("=")[1]) : 5173;
+})();
+
 const riferimento = url.match(/https?:\/\/([a-z0-9-]+)\.supabase\./i)?.[1] ?? "?";
 
 titolo("Gestionale collegato al progetto di PROVA");
 console.log(`   database:  ${riferimento}${riferimento === REF_PROVA ? "  (Borgo58-Prova)" : "  ⚠ non e' il progetto di prova dichiarato"}`);
-console.log("   indirizzo: http://localhost:5173");
+console.log(`   indirizzo: http://localhost:${portaScelta}`);
 
 // --- Gli indirizzi da scrivere sul telefono ---------------------------
 //
@@ -80,7 +92,7 @@ if (daFuori.length) {
   console.log("");
   console.log("   Dal telefono o dal tablet, sulla stessa rete:");
   for (const r of daFuori) {
-    console.log(`     http://${r.indirizzo}:5173     (${r.nome})`);
+    console.log(`     http://${r.indirizzo}:${portaScelta}     (${r.nome})`);
   }
   console.log("");
   console.log("   Se non si apre: il telefono e' su un'altra rete, oppure");
@@ -120,7 +132,82 @@ console.log("   Per tornare al locale vero: chiudi questa finestra e usa `npm ru
 //    (è condiviso con Alessio), quindi il collaudo deve poter aprire una
 //    porta sua invece di rubargli quella.
 //    Es. `npm run dev:prova -- --port 5199`.
-const extra = process.argv.slice(2).filter((a) => a !== "--");
+const extra = extraArgomenti;
+
+// ---------------------------------------------------------------------
+// L'INDIRIZZO CIFRATO — 27/08/2026
+// ---------------------------------------------------------------------
+// 🔴 PERCHE' SERVE, e non e' una comodita': **senza indirizzo cifrato il
+//    microfono non parte**. I browser danno il microfono solo alle pagine
+//    protette, e `localhost` e' l'unica eccezione — cioe' funziona dal
+//    computer e non dal telefono. Alessio l'ha misurato con le sue mani la
+//    notte del 27/08: stesso iPhone, stesso Safari, `http://…:5173` muto e
+//    `https://….ts.net` che detta.
+//
+// ⚠️ COSA RIPARTE DA SOLO E COSA NO, misurato invece che supposto:
+//    `tailscaled` gira come **servizio di Windows** e la configurazione di
+//    `tailscale serve` e' salvata nello stato del nodo — quindi
+//    l'indirizzo cifrato **sopravvive al riavvio da se'**. Quello che non
+//    sopravvive e' il **server del gestionale**, che e' questo comando.
+//    Per questo la cura non e' un servizio in piu': e' che *un comando
+//    solo* faccia tutte e due le cose.
+//
+// ⚠️ La porta si legge da quella VERA di questo avvio: con `--port 5199`
+//    un indirizzo cifrato puntato alla 5173 aprirebbe un altro gestionale
+//    — e non darebbe nessun errore, mostrerebbe l'altro.
+//
+// ⚠️ E' la rete privata di Alessio (`tailnet only`), non un indirizzo
+//    pubblico: ci arrivano solo i suoi dispositivi. Si toglie con
+//    `tailscale serve reset`.
+function indirizzoCifrato(porta) {
+  const ts =
+    process.platform === "win32" ? "C:/Program Files/Tailscale/tailscale.exe" : "tailscale";
+  const stato = esegui(ts, ["serve", "status", "--json"], { silenzioso: true });
+  if (!stato.ok) return null;
+
+  let letto;
+  try {
+    letto = JSON.parse(stato.uscita);
+  } catch {
+    return null;
+  }
+  const nome = Object.keys(letto?.Web ?? {})[0];
+  if (!nome) {
+    // Non c'e' nessuna pubblicazione: la si crea, sulla porta di adesso.
+    const fatto = esegui(ts, ["serve", "--bg", String(porta)], { silenzioso: true });
+    if (!fatto.ok) return null;
+    const ora = esegui(ts, ["serve", "status", "--json"], { silenzioso: true });
+    try {
+      const dopo = JSON.parse(ora.uscita);
+      const n = Object.keys(dopo?.Web ?? {})[0];
+      return n ? `https://${n.replace(/:443$/, "")}` : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // C'e' gia', ma potrebbe puntare a un'altra porta: si guarda invece di
+  // sperarlo — un indirizzo che apre il gestionale sbagliato non da'
+  // nessun errore, mostra semplicemente l'altro.
+  const versoDoveVa = letto.Web[nome]?.Handlers?.["/"]?.Proxy ?? "";
+  if (!versoDoveVa.endsWith(`:${porta}`)) {
+    esegui(ts, ["serve", "--bg", String(porta)], { silenzioso: true });
+  }
+  return `https://${nome.replace(/:443$/, "")}`;
+}
+
+
+const cifrato = indirizzoCifrato(portaScelta);
+console.log("");
+if (cifrato) {
+  console.log("   🎙 PER PARLARE DAL TELEFONO serve questo indirizzo, non il numero:");
+  console.log(`     ${cifrato}`);
+  console.log("   Il microfono del browser funziona solo su un indirizzo protetto.");
+  console.log("   (E' la tua rete privata: ci arrivano solo i tuoi dispositivi.)");
+} else {
+  console.log("   ⚠ Nessun indirizzo protetto: dal telefono il MICROFONO NON PARTIRA'.");
+  console.log("   Tutto il resto del gestionale funziona lo stesso col numero qui sopra.");
+}
 
 const r = esegui("npx", ["vite", ...extra], {
   shell: true,

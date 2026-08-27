@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   fabbisognoEvento,
@@ -8,6 +8,9 @@ import {
   getReservationDeposit,
   listTavoliPrenotazione,
   setReservationDeposit,
+  statoCaparra,
+  trattieniCaparra,
+  annullaTrattenutaCaparra,
   updateReservation,
 } from "../../lib/api/reservations";
 import { listMenus } from "../../lib/api/menus";
@@ -17,6 +20,7 @@ import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import Didascalia from "../../components/Didascalia";
+import { unaVoltaSola } from "../../lib/calcoli/voce";
 
 const emptyForm = {
   type: "prenotazione",
@@ -66,6 +70,21 @@ export default function ReservationForm() {
   const [form, setForm] = useState(emptyForm);
   const [customerId, setCustomerId] = useState(null);
   const [deposit, setDeposit] = useState(""); // caparra, solo titolare (tabella separata)
+  // 🔴 A CHE PUNTO È la caparra: c'è, è finita su un conto, o è stata tenuta
+  //    perché il cliente non è venuto. Lo dice il database in un posto solo
+  //    (`stato_caparra`): riconoscere una caparra fra i movimenti è una
+  //    definizione, e scritta qui diventerebbe la seconda.
+  const [caparra, setCaparra] = useState(null);
+  const [inCaparra, setInCaparra] = useState(false);
+  const [percheCaparra, setPercheCaparra] = useState("");
+  const [esitoCaparra, setEsitoCaparra] = useState("");
+  // 🔴 IL DOPPIO TOCCO, TROVATO GUARDANDO E NON RILEGGENDO. Premuto cinque
+  //    volte «Tengo la caparra», il dato ha retto (il database ne ammette
+  //    una sola) ma **a schermo compariva un errore rosso** — «era già
+  //    stata tenuta» — cioè il gesto riusciva e sembrava fallito.
+  //    `inCaparra` da solo non basta: spegne il pulsante al render dopo, e
+  //    fra il tocco e il render ci passano cinque tocchi.
+  const guardiaCaparra = useRef(unaVoltaSola());
   const [status, setStatus] = useState("confermata");
   const [tavoli, setTavoli] = useState([]);
   const [menus, setMenus] = useState([]);
@@ -106,6 +125,8 @@ export default function ReservationForm() {
           if (isTitolare) {
             const dep = await getReservationDeposit(id);
             if (!cancelled) setDeposit(dep ?? "");
+            const sc = await statoCaparra(id);
+            if (!cancelled) setCaparra(sc);
           }
         }
       } catch (e) {
@@ -222,6 +243,47 @@ export default function ReservationForm() {
     }
   };
 
+  // -------------------------------------------------------------------
+  // LA CAPARRA DI CHI NON È VENUTO — 27/08/2026
+  // -------------------------------------------------------------------
+  // 🔴 QUI NON ESCE E NON ENTRA UN EURO: i soldi sono in cassa da quando la
+  //    caparra è stata presa. Cambia la loro NATURA — da acconto su una cena
+  //    che ci sarà a incasso per una cena che non c'è stata — e senza questo
+  //    gesto quel denaro resterebbe in prima nota indistinguibile da una
+  //    caparra che aspetta ancora il suo conto.
+  const tieniLaCaparra = async () => {
+    if (!guardiaCaparra.current.prendi("tieni")) return;
+    setInCaparra(true);
+    setError("");
+    try {
+      const r = await trattieniCaparra(id, percheCaparra);
+      setCaparra(await statoCaparra(id));
+      setPercheCaparra("");
+      setEsitoCaparra(r?.messaggio ?? r?.risultato?.messaggio ?? "Fatto.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      guardiaCaparra.current.lascia("tieni");
+      setInCaparra(false);
+    }
+  };
+
+  const rimettiLaCaparra = async () => {
+    if (!guardiaCaparra.current.prendi("rimetti")) return;
+    setInCaparra(true);
+    setError("");
+    try {
+      const r = await annullaTrattenutaCaparra(id);
+      setCaparra(await statoCaparra(id));
+      setEsitoCaparra(r?.messaggio ?? r?.risultato?.messaggio ?? "Fatto.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      guardiaCaparra.current.lascia("rimetti");
+      setInCaparra(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto pb-16">
       <Link to="/calendario-eventi" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
@@ -279,6 +341,73 @@ export default function ReservationForm() {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------
+          LA CAPARRA DI CHI NON È VENUTO
+          🔴 Compare SOLO quando serve davvero: prenotazione segnata «non si
+             è presentato» E una caparra che non è finita su nessun conto.
+             Un riquadro che c'è sempre diventa arredamento, e questo è il
+             gesto che decide di dei soldi di qualcun altro.
+          ⚠️ E dice PRIMA che non esce niente: chi legge «tieni la caparra»
+             si aspetta un movimento, e non vedendolo cerca il guasto.
+         ------------------------------------------------------------------ */}
+      {isEdit && isTitolare && status === "non_presentata" &&
+        caparra?.c_e && !caparra.usata_su_conto && (
+        <div className="rounded-xl bg-b58-gold/10 ring-1 ring-b58-gold-dark/30 p-4 mb-4">
+          {caparra.tenuta_il ? (
+            <>
+              <p className="testo-sala-grande text-b58-charcoal">
+                <b>Caparra tenuta:</b> {formatEUR(caparra.importo)}. Erano già in cassa
+                e ci restano — non è uscito né entrato niente.
+              </p>
+              {caparra.tenuta_perche && (
+                <p className="testo-sala text-b58-charcoal-soft mt-1">{caparra.tenuta_perche}</p>
+              )}
+              <button
+                type="button"
+                onClick={rimettiLaCaparra}
+                disabled={inCaparra}
+                className="tocco-bottone mt-3 rounded-lg px-4 testo-sala-grande text-b58-terracotta-dark disabled:opacity-60"
+              >
+                {inCaparra ? "Un momento…" : "In realtà è arrivato: rimettila com'era"}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="testo-sala-grande text-b58-charcoal">
+                Aveva lasciato una caparra di <b>{formatEUR(caparra.importo)}</b>, e non è venuto.
+              </p>
+              <p className="testo-sala text-b58-charcoal-soft mt-1">
+                Se la tieni non esce e non entra niente: quei soldi sono in cassa da quando
+                te li ha dati. Cambia solo dove li ritrovi — fra le caparre tenute, non fra
+                gli incassi della serata.
+              </p>
+              <input
+                value={percheCaparra}
+                onChange={(e) => setPercheCaparra(e.target.value)}
+                placeholder="Perché la tieni (facoltativo)"
+                className={`${inputClass} mt-3`}
+              />
+              <button
+                type="button"
+                onClick={tieniLaCaparra}
+                disabled={inCaparra}
+                className="tocco-bottone mt-3 rounded-lg bg-b58-charcoal px-4 testo-sala-grande text-b58-parchment disabled:opacity-60"
+              >
+                {inCaparra ? "Un momento…" : "Tengo la caparra"}
+              </button>
+            </>
+          )}
+          {/* ⚠️ L'esito sta QUI, accanto al gesto: un riscontro in cima alla
+              pagina è un riscontro che non si vede — ed è il difetto per cui
+              la notte del 27/08 una conferma è stata premuta due volte. */}
+          {esitoCaparra && (
+            <p className="testo-sala mt-2 rounded-lg bg-b58-olive/10 px-3 py-2 text-b58-charcoal">
+              {esitoCaparra}
+            </p>
+          )}
         </div>
       )}
 

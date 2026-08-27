@@ -72,10 +72,11 @@ LE COSE CHE SAI FARE — e nient'altro
 - "pulizia": una pulizia già fatta. dati: { "pulizia": <numero del catalogo>, "note": "..."|null }
 - "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "prodotto": <numero>|null, "nome_libero": "..."|null, "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "note": "..."|null }
 - "merce_buttata": roba andata a male. dati: { "prodotto": <numero del catalogo>, "quantita": <numero>, "note": "..."|null }
-- "ricetta": vuole dettare o cambiare una ricetta. dati: { "sentito": "quello che ha detto, per intero" }
-- "prodotto_nuovo": vuole creare un prodotto che in magazzino non c'è. dati: { "nome": "...", "sentito": "..." }
-- "carico_merce": è arrivata della merce da registrare. dati: { "sentito": "..." }
-- "movimento_cassa": qualunque cosa tocchi i soldi. dati: { "sentito": "..." }
+- "ricetta": vuole dettare un piatto nuovo. dati: { "nome": "...", "categoria": "antipasto"|"primo"|"secondo"|"dolce"|"finger_food", "porzioni": <numero>|null, "sentito": "quello che ha detto, per intero" }
+- "prodotto_nuovo": vuole creare un prodotto che in magazzino non c'è. dati: { "nome": "...", "categoria": <una delle categorie qui sotto>, "unita": "kg"|"l"|"pz"|"mazzo"|"g", "sentito": "..." }
+- "carico_merce": è arrivata della merce da registrare. dati: { "prodotto": <numero del catalogo>, "quantita": <numero>, "fornitore": <numero>|null, "scadenza": "AAAA-MM-GG"|null, "costo_unitario": <numero>|null, "lotto": "..."|null }
+- "movimento_cassa": soldi usciti o entrati. dati: { "verso": "uscita"|"entrata", "importo": <numero>, "causale": <numero del catalogo>|null, "mezzo": "cassa"|"banca"|null, "fornitore": <numero>|null, "data": "AAAA-MM-GG"|null, "documento": "fattura"|"scontrino"|"non_documentato"|null, "descrizione": "a che serviva, in parole sue"|null }
+  🔴 "data" SOLO se ha detto UN GIORNO DIVERSO DA ADESSO («l'ho pagato lunedì», «era il 3»). Se sta raccontando una cosa di adesso lasciala a **null**: il gestionale ci mette la SERATA DI SERVIZIO, che dopo mezzanotte è ancora la sera prima — e una data di oggi messa da te sposterebbe l'uscita al giorno dopo senza che nessuno se ne accorga.
 - "nota_non_capita": NON HAI CAPITO cosa vuole. dati: { "sentito": "il pezzo di frase che non hai capito, com'è stato detto" }
 
 🔴 LA REGOLA PIÙ IMPORTANTE: MAGLIA LARGA, MA NON SI INVENTA.
@@ -93,12 +94,22 @@ Vale true SOLO se non hai dubbi né su cosa vuole né su quale cosa del catalogo
 ⚠️ Non è un voto sulla tua bravura: è quello che decide se il gestionale scrive da solo o si ferma a chiedere. Ammettere un dubbio costa a lui due secondi; sbagliare in silenzio gli costa un numero storto che scopre fra tre mesi.
 
 IL CATALOGO — ABBINA COL NUMERO, MAI COL NOME
-Qui sotto trovi quello che il locale ha davvero, ognuno con un numero. Nei "dati" scrivi IL NUMERO, mai il nome.
+Qui sotto trovi quello che il locale ha davvero, ognuno con un numero: prodotti, frigoriferi, pulizie, causali di prima nota (col loro "verso") e fornitori. Nei "dati" scrivi IL NUMERO, mai il nome.
+⚠️ "conti_correnti" è l'unico elenco SENZA numeri, e serve solo a sapere se ce ne sono: se è vuoto, il gestionale non può ancora registrare un bonifico — di' comunque mezzo "banca" se ha detto così, ci pensa lui a dirgli cosa fare.
 ⚠️ Lui dice i nomi come vengono in cucina: «passata di pomodoro» per «Passata di pomodoro Mutti 700 g». Se c'è UN solo candidato ragionevole, abbinalo e resta "sicuro". Se ce ne sono due — due tipi di olio, due tonni diversi — NON scegliere: metti "sicuro": false, scrivi nel motivo quali due hai trovato, e lascia il numero a null.
 
 🔴 E IN OGNI AZIONE CHE NOMINA QUALCOSA METTI SEMPRE ANCHE "nome_sentito": le parole con cui LUI l'ha chiamato, così come le ha dette. Serve in due casi, ed è obbligatorio in tutti e due: se il numero non si ritrova, il gestionale può dirgli «non ho trovato *bottarga di tonno*» invece di «non ho capito di che parlavi»; e sulla lista della spesa quel nome diventa la riga, perché lì una cosa scritta a mano è una riga legittima.
 
 ${JSON.stringify(catalogo)}
+
+LE QUATTRO COSE CHE CREANO — quelle che lui guarda prima
+🔴 Queste quattro non si salvano mai da sole: le guarda lui e preme «Sì, fallo». Ma i dati vanno riempiti lo stesso, e bene, perché quando lui conferma vengono scritte così come le hai capite.
+- "movimento_cassa": «ho pagato trenta euro al fornitore» → verso "uscita", importo 30. «bonifico», «con la carta», «dal conto» → mezzo "banca"; «in contanti», «dal cassetto», o niente → mezzo "cassa". La CAUSALE prendila dall'elenco causali del catalogo, e SOLO una che abbia lo stesso "verso": se nessuna calza, mettila a null — un movimento senza causale si registra lo stesso e si classifica dopo, mentre una causale sbagliata finisce nella colonna sbagliata del registro. In "descrizione" metti a che serviva, con le sue parole.
+- "carico_merce": una consegna arrivata. Se nomina più prodotti sono più azioni, una ciascuna.
+- "prodotto_nuovo": SOLO se il prodotto non è nel catalogo. Categoria e unità le proponi tu se sono ovvie («pomodori» → verdura, kg); se non lo sono lasciale a null e metti "sicuro": false.
+- "ricetta": nome e categoria del piatto. In "sentito" ricopia TUTTO quello che ha detto: gli ingredienti li mette lui a mano dopo, e quel testo è l'unica traccia di quello che aveva in testa.
+⚠️ Le categorie dei prodotti sono queste e nient'altro: verdura, frutta, carne_rossa, carne_bianca, pesce, crostacei_molluschi, latticini, uova, farine_cereali, legumi, olio_condimenti, spezie_aromi, secco_dispensa, bevande, altro.
+⚠️ "carico_merce" e "prodotto_nuovo" sono cose diverse: se il prodotto c'è già nel catalogo è un carico, se non c'è è un prodotto nuovo. Non fare tutt'e due per la stessa cosa.
 
 LE TEMPERATURE — LA REGOLA CHE NON HA ECCEZIONI
 🔴 Una temperatura si scrive SOLO se ha detto ANCHE quale frigo. Se ha detto solo un numero di gradi, "frigorifero" va a null, "sicuro" va a false e il motivo è «Non hai detto quale frigo». MAI indovinare quale intendesse, nemmeno se ce n'è uno solo che sta in quel campo di temperatura: quel registro va all'ASP, e una misura vera messa sotto il nome sbagliato non produce nessun errore e resta lì per anni.

@@ -115,8 +115,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 56 | 26/08/2026 | il conto del tavolo resta fuori dal registro delle cancellazioni |
 | 57 | 27/08/2026 | il riflesso del mezzo di pagamento guarda TUTTE le quote |
 | 58 | 27/08/2026 | una caparra piu' grande del conto fa rifiutare lo scalo |
+| 59 | 27/08/2026 | il microfono non c'è perché la pagina è aperta dall'icona |
 
-⚠️ **Righe: 59.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 60.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2350,3 +2351,27 @@ che non viene mai salvata perché non passa da nessun deposito.
    di un giorno: **e' arrivata la risposta che mancava**. ⚠️ Il prezzo che
    resta: su uno **sconto** la cosa non e' decisa, e infatti il gestionale li'
    non fa niente.
+---
+
+## 59 · 27/08/2026 — «il microfono non c'è perché la pagina è aperta dall'icona»
+
+1. **Cosa era stato deciso, e quando.** Poche ore prima, la stessa notte del
+   27/08/2026: la fascia che spiega perché il microfono non c'è dice che la
+   causa è **l'icona della schermata Home** — una pagina installata gira in
+   una finestra che il riconoscimento vocale non ha.
+2. **La ragione di allora.** Correggeva un difetto vero (prima la fascia
+   accusava il browser mentre il browser era giusto), ed era stata verificata:
+   l'app **è** configurata per aprirsi in finestra separata.
+3. **Cosa si decide adesso.** La causa è il **contesto non sicuro**: i browser
+   danno il microfono solo alle pagine cifrate, e `localhost` è l'unica
+   eccezione. L'ordine dei casi mette l'indirizzo prima dell'icona.
+4. **Perché la ragione di allora non vale più.** Era **falsa**, e lo dimostra
+   una misura di Alessio con le sue mani: stesso iPhone, stesso Safari, stessa
+   icona — `http://…:5173` muto, `https://….ts.net` che detta. 🔴 **Il modo in
+   cui è nata è la lezione**: era un SUPPOSTO scritto come tale nel mandato, e
+   una verifica ha trovato un fatto *vicino* (l'app si apre in finestra
+   separata) che è stato scambiato per conferma. **Un fatto vicino non è una
+   prova**, e «l'app è configurata così» non dimostra «è questo a causare il
+   difetto». ⚠️ Il caso dell'icona **non è stato tolto**: resta come terzo
+   ramo, perché su un indirizzo cifrato è ancora vero — è la *precedenza* a
+   essere cambiata.

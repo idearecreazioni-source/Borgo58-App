@@ -12,6 +12,42 @@
 //    contraddicono, qualcosa che tocca i soldi si salva da solo.
 
 /**
+ * Un gesto che non si può ripetere finché il primo non è finito.
+ *
+ * 🔴 PERCHÉ NON BASTA IL PULSANTE SPENTO. Spegnere il pulsante è una cosa
+ * che succede al render dopo; fra il tocco e il render ci sono
+ * millisecondi in cui il pulsante è ancora acceso, e chi non vede
+ * succedere niente ripreme. **Alessio l'ha fatto**, la notte del 27/08,
+ * su un movimento di cassa.
+ *
+ * ⚠️ Il database ha già l'ultima parola — una cosa dettata passa a
+ * «eseguita» sotto blocco, e la seconda conferma viene respinta. Questa
+ * guardia serve al gesto, non al dato: **toglie il secondo giro di rete e
+ * il secondo messaggio d'errore**, che è quello che confonde chi guarda.
+ *
+ * ⚠️ Sta qui e non dentro la schermata perché si possa provare: una regola
+ * dentro un componente si prova solo aprendo quel componente, e in questo
+ * progetto nessuna prova automatica guarda uno schermo.
+ */
+export function unaVoltaSola() {
+  const inCorso = new Set();
+  return {
+    /** true se il gesto è partito adesso; false se era già in corso. */
+    prendi(chiave) {
+      if (inCorso.has(chiave)) return false;
+      inCorso.add(chiave);
+      return true;
+    },
+    lascia(chiave) {
+      inCorso.delete(chiave);
+    },
+    quanti() {
+      return inCorso.size;
+    },
+  };
+}
+
+/**
  * Il riconoscimento vocale del browser, se c'è.
  *
  * ⚠️ È quello che Alessio ha già provato in cucina il 12/08, numeri
@@ -197,41 +233,85 @@ export function nonAncoraAccesa(errore) {
 //    iPhone serve Safari» **mentre lui era su Safari**. Una diagnosi
 //    falsa, e un vicolo cieco: gli dice di fare una cosa che ha già fatto.
 //
-// 🔴 LA CAUSA È IL RAGIONAMENTO, NON LA FRASE. Il codice guardava se la
-//    capacità c'era e, non trovandola, **deduceva il browser**. Ma su iOS
-//    una pagina aperta dall'icona della schermata Home gira in una
-//    finestra che il riconoscimento vocale non ce l'ha — pur essendo lo
-//    stesso motore di Safari. Il browser era giusto; era il *modo in cui
-//    la pagina girava* a essere diverso.
+// 🔴 E LA PRIMA CORREZIONE ERA SBAGLIATA A SUA VOLTA. Diceva che a
+//    mancare era l'**icona della schermata Home**. Non era vero: era
+//    un'ipotesi che somigliava alla causa, ed è stata scambiata per la
+//    causa perché un fatto vicino tornava (l'app *è* configurata per
+//    aprirsi in finestra separata). ⚠️ Un fatto vicino non è una prova.
 //
-// ⚠️ QUINDI NON SI GUARDA NESSUN NOME DI BROWSER. Si guardano due fatti:
-//    (1) la capacità c'è o no; (2) la pagina gira da icona o dentro un
-//    browser. Il nome non compare da nessuna parte in questa funzione, ed
-//    è voluto: dedurre il nome è precisamente ciò che ha prodotto il
-//    difetto.
+// ✅ LA CAUSA VERA, misurata da Alessio con le sue mani la stessa notte:
+//    dallo stesso iPhone e dallo stesso Safari, su `http://<indirizzo>:5173`
+//    il microfono non parte, su `https://<nome>.ts.net` parte e detta. **A
+//    cambiare è stato solo il protocollo.** I browser danno il microfono
+//    soltanto in **contesto sicuro** — una pagina cifrata, con l'unica
+//    eccezione di `localhost`, che è il motivo per cui sul computer ha
+//    sempre funzionato e nessuno se n'era accorto.
 //
-// ⚠️ E «da icona» si riconosce SENZA nominare iOS: una pagina installata
-//    su Android ha il riconoscimento e non finisce mai qui. La coppia
-//    «installata E senza microfono» è già, da sola, il caso dell'iPhone.
+// ⚠️ QUINDI NON SI GUARDA NESSUN NOME DI BROWSER, e nemmeno si deduce.
+//    Si guardano tre fatti, tutti osservabili:
+//      (1) la capacità c'è o no;
+//      (2) la pagina è in contesto sicuro o no;
+//      (3) gira da icona o dentro un browser.
+//    Il nome del browser non compare in nessun ramo, ed è voluto: dedurre
+//    il nome è precisamente ciò che ha prodotto il primo difetto.
 //
-// ⚠️ LA COSA CHE TOGLIE L'ANSIA VA DETTA IN TUTTI E DUE I CASI: la
-//    Scorciatoia dall'orologio **non passa dal browser**, quindi quella
-//    continua a funzionare. La fascia di prima lasciava credere il
-//    contrario, e chi legge «non sa trascrivere la voce» smette di
-//    provare anche l'altra strada.
+// ⚠️ L'ORDINE NON È INDIFFERENTE. Il contesto non cifrato viene **prima**
+//    dell'icona: una pagina aperta da icona su un indirizzo non cifrato ha
+//    due cose che non vanno, e quella che si toglie è l'indirizzo. Dire
+//    «apri dal browser» a chi è su `http` lo manderebbe a rifare lo stesso
+//    gesto con lo stesso esito.
+//
+// ⚠️ LA COSA CHE TOGLIE L'ANSIA VA DETTA IN TUTTI I CASI: la Scorciatoia
+//    dall'orologio **non passa dal browser**, quindi quella continua a
+//    funzionare. Chi legge «non sa trascrivere la voce» smette di provare
+//    anche l'altra strada.
+
+/**
+ * La pagina è in contesto sicuro? — cioè il browser le darebbe il microfono.
+ *
+ * ⚠️ Si crede a `isSecureContext`, che è il browser stesso a dichiarare, e
+ *    solo se manca si guarda il protocollo. `localhost` è sicuro anche in
+ *    chiaro: è l'eccezione prevista dagli standard, e la ragione per cui
+ *    dal computer non si è mai visto niente.
+ */
+export function inContestoSicuro(finestra = typeof window !== "undefined" ? window : null) {
+  if (!finestra) return true;
+  if (typeof finestra.isSecureContext === "boolean") return finestra.isSecureContext;
+  const protocollo = finestra.location?.protocol;
+  const nome = finestra.location?.hostname ?? "";
+  if (!protocollo) return true;
+  if (protocollo === "https:" || protocollo === "file:") return true;
+  return nome === "localhost" || nome === "127.0.0.1" || nome === "[::1]" || nome.endsWith(".localhost");
+}
 
 /**
  * In che condizione si trova la dettatura, e cosa dire a chi guarda.
  *
  * Restituisce `{ caso, frase, cosaFare }`; `caso` è uno di:
- *   · `c_e`       — il microfono c'è, non si dice niente;
- *   · `da_icona`  — la pagina gira dall'icona salvata, e da lì il
- *                   riconoscimento non c'è: si apre nel browser;
- *   · `browser`   — questo browser non lo sa fare davvero.
+ *   · `c_e`          — il microfono c'è, non si dice niente;
+ *   · `non_cifrato`  — l'indirizzo non è protetto, e i browser lì il
+ *                      microfono non lo danno a nessuno;
+ *   · `da_icona`     — la pagina gira dall'icona salvata, e da lì il
+ *                      riconoscimento non c'è: si apre nel browser;
+ *   · `browser`      — questo browser non lo sa fare davvero.
  */
 export function statoDettatura(finestra = typeof window !== "undefined" ? window : null) {
   if (riconoscitoreDisponibile(finestra)) {
     return { caso: "c_e", frase: null, cosaFare: null };
+  }
+
+  const laScorciatoia =
+    "La Scorciatoia dall'orologio non passa da qui e continua a funzionare, e tutto il resto del gestionale anche.";
+
+  // 🔴 Prima di tutto: l'indirizzo. È la causa misurata, ed è anche quella
+  //    che si toglie — le altre due si constatano e basta.
+  if (!inContestoSicuro(finestra)) {
+    return {
+      caso: "non_cifrato",
+      frase:
+        "Il microfono non parte perché questa pagina è aperta con un indirizzo non protetto: i browser danno il microfono solo alle pagine protette.",
+      cosaFare: `Apri il gestionale con l'indirizzo che comincia per https, oppure usalo dal computer. ${laScorciatoia}`,
+    };
   }
 
   // Non è un controllo sul sistema operativo: è «questa pagina gira come
@@ -241,9 +321,6 @@ export function statoDettatura(finestra = typeof window !== "undefined" ? window
       (finestra.navigator?.standalone === true ||
         finestra.matchMedia?.("(display-mode: standalone)")?.matches),
   );
-
-  const laScorciatoia =
-    "La Scorciatoia dall'orologio non passa da qui e continua a funzionare, e tutto il resto del gestionale anche.";
 
   if (daIcona) {
     return {

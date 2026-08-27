@@ -251,3 +251,54 @@ export async function fabbisognoEvento(menuId, persone) {
   if (error) throw error;
   return data ?? [];
 }
+
+// =====================================================================
+// LA CAPARRA TENUTA — 27/08/2026
+// =====================================================================
+// 🔴 Il cliente non si presenta e Alessio tiene i soldi. **Non esce e non
+//    entra un euro**: erano già in cassa da quando la caparra è stata
+//    presa. Quello che cambia è la natura — da acconto su una cena che ci
+//    sarà a incasso per una cena che non c'è stata — e senza questo gesto
+//    quel denaro resterebbe in prima nota sotto «Caparra ricevuta»,
+//    indistinguibile da una caparra che aspetta ancora il suo conto.
+//
+// ⚠️ Passa dal corridoio anche se tocca una tabella sola: la caparra entra
+//    ed esce da lì, e una terza strada renderebbe incompleto l'elenco
+//    delle scritture che toccano quel denaro.
+export async function trattieniCaparra(reservationId, perche) {
+  return eseguiOperazione("trattieni_caparra", {
+    p_reservation_id: reservationId,
+    p_perche: perche || null,
+  });
+}
+
+/** La via di ritorno: il cliente che telefona il giorno dopo. */
+export async function annullaTrattenutaCaparra(reservationId) {
+  return eseguiOperazione("annulla_trattenuta_caparra", {
+    p_reservation_id: reservationId,
+  });
+}
+
+/**
+ * Le caparre tenute, separate dagli incassi del servizio.
+ *
+ * ⚠️ Senza nomi e senza la ragione scritta a mano: sopravvivono alla
+ * pulizia della privacy e continuano a dire **di che serata** erano.
+ */
+export async function caparreTrattenute({ dal, al } = {}) {
+  const { data, error } = await supabase.rpc("caparre_trattenute", {
+    p_dal: dal || null,
+    p_al: al || null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** A che punto è la caparra di questa prenotazione. */
+export async function statoCaparra(reservationId) {
+  const { data, error } = await supabase.rpc("stato_caparra", {
+    p_reservation_id: reservationId,
+  });
+  if (error) throw error;
+  return data ?? { c_e: false };
+}
