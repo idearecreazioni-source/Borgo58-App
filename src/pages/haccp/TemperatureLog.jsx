@@ -40,6 +40,17 @@ import GiornataDiServizio from "../../components/GiornataDiServizio";
 // ⚠️ IL FORMATO STAMPABILE È PROVVISORIO: quello che l'ASP vuole davvero
 // lo dirà la biologa che segue l'HACCP.
 
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
+// Quello che il gestionale ha già capito da una temperatura dettata.
+// ⚠️ Il rimedio (`correctiveAction`) non arriva MAI dalla voce: si scrive
+//    solo quando la lettura è fuori range, e a quel punto lo decide chi
+//    guarda il frigo. Un rimedio precompilato su un registro che va
+//    all'ASP sarebbe una dichiarazione scritta da una macchina.
+const DA_VOCE = { gradi: "recordedTempC", note: "note" };
+
 const emptyEquipmentForm = { name: "", storageType: "", targetMinC: "", targetMaxC: "" };
 const emptyReadingForm = { recordedTempC: "", note: "", correctiveAction: "" };
 
@@ -59,6 +70,15 @@ export default function TemperatureLog() {
 
   const [openRow, setOpenRow] = useState(null);
   const [readingForm, setReadingForm] = useState(emptyReadingForm);
+
+  // 🔴 ARRIVATO QUI DA UNA TEMPERATURA DETTATA. Il caso più frequente è
+  //    proprio quello in cui il frigo NON è stato detto — il database si
+  //    rifiuta di indovinarlo, perché quel registro va all'ASP — quindi
+  //    spesso qui arriva solo il numero e la riga da aprire la sceglie lui.
+  const venuto = useDaVoce((c) => {
+    if (c.attrezzatura) setOpenRow(c.attrezzatura);
+    setReadingForm((f) => conCampi(f, c, DA_VOCE));
+  });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(
@@ -136,6 +156,12 @@ export default function TemperatureLog() {
             ? "Fuori range: registrata insieme al rimedio che hai scritto."
             : ""
       );
+      // 🔴 SI CHIUDE SOLO SE È QUELLA CHE AVEVA DETTO. Se aveva nominato un
+      //    frigo e la lettura finisce su un altro, quella cosa detta NON è
+      //    stata fatta: chiuderla la farebbe sparire dall'elenco senza che
+      //    la misura di quel frigo sia mai stata registrata.
+      const suo = venuto.azione?.campi?.attrezzatura;
+      if (!suo || suo === equipmentId) await venuto.chiudi();
       setOpenRow(null);
       setReadingForm(emptyReadingForm);
       await load();
@@ -162,6 +188,8 @@ export default function TemperatureLog() {
         ← HACCP
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Registro temperature</h1>
+
+      <StriscaDallaVoce venuto={venuto} />
 
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">

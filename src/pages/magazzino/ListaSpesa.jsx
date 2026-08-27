@@ -21,6 +21,9 @@ import { variazionePrezzoProdotto } from "../../lib/api/assistente";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
+import { useDaVoce } from "../../lib/daVoce";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
 const emptyAddForm = {
   mode: "ingredient",
   ingredient_id: "",
@@ -63,6 +66,24 @@ export default function ListaSpesa() {
   const [error, setError] = useState("");
 
   const [addForm, setAddForm] = useState(emptyAddForm);
+
+  // 🔴 ARRIVATO QUI DA UNA RIGA DI SPESA DETTATA.
+  // ⚠️ SEMPRE COME NOME LIBERO, ed è la decisione di Alessio del 27/08:
+  //    *«la lista della spesa è libera, non accoppia mai col magazzino»* —
+  //    e non è «cerca ma non bloccare»: non cerca affatto. L'abbinamento si
+  //    fa dopo, con la foto del documento quando la merce arriva.
+  //    Per questo si scrive in `custom_name` e non si tocca
+  //    `ingredient_id`, anche se il modulo saprebbe riceverlo.
+  const venuto = useDaVoce((c) => {
+    setAddForm((f) => ({
+      ...f,
+      mode: "custom",
+      custom_name: c.nome ?? f.custom_name,
+      quantity_needed: c.quantita ?? f.quantity_needed,
+      unit: c.unita ?? f.unit,
+      note: c.note ?? f.note,
+    }));
+  });
   const [adding, setAdding] = useState(false);
   const [addingThreshold, setAddingThreshold] = useState(false);
 
@@ -211,6 +232,8 @@ export default function ListaSpesa() {
         unit: addForm.unit || null,
         note: addForm.note || null,
       });
+      // 🔴 DOPO il salvataggio riuscito, mai prima.
+      await venuto.chiudi();
       setAddForm(emptyAddForm);
       await loadAll();
     } catch (e) {
@@ -332,6 +355,7 @@ export default function ListaSpesa() {
       </Link>
       <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
         <h1 className="font-display text-2xl text-b58-charcoal">Lista della spesa</h1>
+        <StriscaDallaVoce venuto={venuto} />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"

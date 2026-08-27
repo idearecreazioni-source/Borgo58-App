@@ -9,6 +9,22 @@ import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
 
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
+// Quello che il gestionale ha già capito da un carico dettato.
+// ⚠️ Il numero di lotto del fornitore non c'è in questo modulo: si scrive
+//    nella nota, come già fa il carico da fattura.
+const DA_VOCE = {
+  prodotto: "ingredient_id",
+  quantita: "quantity",
+  fornitore: "supplier_id",
+  scadenza: "expiry_date",
+  costo: "unit_cost",
+  note: "note",
+};
+
 const emptyForm = {
   ingredient_id: "",
   quantity: "",
@@ -24,6 +40,7 @@ export default function RegistraCarico() {
   const [ingredients, setIngredients] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -98,6 +115,8 @@ export default function RegistraCarico() {
         unitCost: isTitolare && form.unit_cost ? Number(form.unit_cost) : null,
         rigaLista: rigaScelta || null,
       });
+      // 🔴 DOPO il salvataggio riuscito, mai prima.
+      await venuto.chiudi();
       navigate("/magazzino");
     } catch (e) {
       setError(e.message);
@@ -122,6 +141,8 @@ export default function RegistraCarico() {
           {error}
         </p>
       )}
+
+      <StriscaDallaVoce venuto={venuto} />
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
         <div>

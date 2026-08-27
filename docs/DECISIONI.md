@@ -278,8 +278,11 @@ bloccare»: **non cerca affatto**.
 oppure un collegamento alla schermata giusta **coi campi noti già compilati**,
 dove lui aggiunge solo il pezzo che manca. *«Se ti dico segna trenta euro
 pagati al fornitore, mi aspetto che un collegamento mi porti dove si segnano
-le spese, coi campi noti già compilati.»* ⚠️ **NON ANCORA COSTRUITO** (blocco 4
-del mandato del 27/08, non aperto).
+le spese, coi campi noti già compilati.»* ✅ **COSTRUITO il 27/08**: dieci
+schermate su undici tipi di comando (la nota non capita non ne ha una, perché
+non si sa cosa volesse), lo stato **«fatta a mano»**, e il rifiuto che impedisce
+di rifare col gestionale una cosa già fatta a mano — *la stessa spesa in cassa
+due volte*.
 
 ## Caparra
 
@@ -296,6 +299,12 @@ servizio. ⚠️ Non genera nessun movimento: erano già in cassa.
 * 27/08 — Le tabelle **non classificate** nel perimetro del registro delle
 cancellazioni si **segnalano e basta**: le guarda lui una per una.
 * 27/08 — I **numeri doppi dei rovesciamenti non si rinumerano**.
+* 27/08 — Lo stato nuovo di una cosa detta e poi finita a mano si chiama
+**«fatta a mano»**: né annullata (vuol dire «ho detto di no») né eseguita
+(vuol dire «l'ha fatta il gestionale»).
+* 27/08 — Il collegamento coi campi precompilati si fa **su tutte le schermate
+insieme**, non una alla volta: farne una sola ricrea l'incoerenza appena tolta
+dalla lista della spesa.
 
 ## Sorvegliante notturno
 

@@ -3,6 +3,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { createRecipe } from "../../lib/api/recipes";
 import { RECIPE_CATEGORIES, RECIPE_TYPES, UNITS, eComponente } from "../../lib/constants";
 
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
+// Quello che il gestionale ha già capito da una ricetta dettata.
+// ⚠️ IL TESTO DETTATO NON HA UN CAMPO QUI, ed è dichiarato invece che
+//    nascosto: questo modulo crea lo scheletro (nome, categoria, porzioni)
+//    e le note stanno sulla scheda, non qui. Il dettato resta leggibile
+//    nella striscia in cima, che è dove serve mentre si riempie.
+const DA_VOCE = {
+  nome: "name",
+  categoria: "category",
+  porzioni: "portions_yield",
+};
+
 export default function RicettaForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -16,6 +31,7 @@ export default function RicettaForm() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
 
   // Preparazioni e finger si comportano allo stesso modo qui: hanno una
   // RESA invece delle porzioni, e la resa è obbligatoria.
@@ -44,6 +60,8 @@ export default function RicettaForm() {
         // Ogni ricetta nuova parte "in sviluppo" — la promozione a pronta/in
         // carta è sempre manuale, dalla scheda ricetta.
       });
+      // 🔴 DOPO il salvataggio riuscito, mai prima.
+      await venuto.chiudi();
       navigate(`/ricettario/ricette/${recipe.id}`);
     } catch (e) {
       setError(e.message);
@@ -64,6 +82,8 @@ export default function RicettaForm() {
           {error}
         </p>
       )}
+
+      <StriscaDallaVoce venuto={venuto} />
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
         <div>

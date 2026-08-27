@@ -26,6 +26,7 @@ import {
   unaVoltaSola,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
+import { indirizzoAMano } from "../../lib/calcoli/aMano";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -651,15 +652,37 @@ function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla
           progetto li tratta come un difetto a sé. Su una riga a cui manca
           un'informazione che il gestionale non può proporre, gli unici
           pulsanti sarebbero «Lascia perdere» — cioè buttare via quello che
-          ha detto. La via d'uscita c'è ed è ridirlo: qui si dice.
-          🔴 QUELLA VERA — un collegamento alla schermata giusta coi campi
-             già riempiti — è una decisione di Alessio del 27/08 e NON è
-             ancora costruita. Finché non c'è, questa frase è l'unica cosa
-             che impedisce alla riga di essere un vicolo cieco. */}
+          ha detto.
+          ✅ LE USCITE SONO DUE, dal 27/08: ridirlo a voce, oppure andare
+             nella schermata giusta coi campi già compilati — decisione di
+             Alessio, e qui sotto c'è il collegamento. */}
       {chiedeAltro && !fatta && (
         <p className="testo-sala mt-2 text-b58-charcoal-soft">
-          Ridillo a voce aggiungendo quello che manca: quello che hai detto resta qui finché
-          non lo fai.
+          Ridillo a voce aggiungendo quello che manca, oppure fallo a mano qui sotto:
+          quello che hai detto resta qui finché non fai una delle due.
+        </p>
+      )}
+
+      {/* 🔴 LA SECONDA USCITA — decisione di Alessio del 27/08, sue parole:
+          *«mi aspetto che un collegamento mi porti dove si segnano le spese,
+          coi campi noti già compilati, e io aggiungo solo il nome del
+          fornitore che ho omesso»*.
+          ⚠️ Il gestionale ha GIÀ CAPITO quasi tutto — l'importo, il verso,
+             che è un fornitore. Rimandarlo a un modulo vuoto butterebbe via
+             quel lavoro.
+          ⚠️ E il percorso arriva dal DATABASE (`azione_percorso`), non da una
+             mappa scritta qui: il giorno che nasce un tipo nuovo, una mappa
+             nel browser porterebbe da nessuna parte e nessuna verifica se ne
+             accorgerebbe. Quando non c'è — la nota non capita — il
+             collegamento non compare, perché non si sa dove mandare. */}
+      {azione.percorso && !fatta && (
+        <p className="testo-sala mt-2">
+          <Link
+            to={indirizzoAMano(azione.percorso, azione.id)}
+            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
+          >
+            Fallo a mano, coi campi già compilati →
+          </Link>
         </p>
       )}
 

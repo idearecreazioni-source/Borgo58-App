@@ -22,6 +22,9 @@ import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import CampoGiornata from "../../components/CampoGiornata";
 import { letturaTagliata } from "../../lib/lettureTagliate";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 const today = oggiLocale;
 
@@ -38,6 +41,29 @@ const emptyForm = {
   harvest_region: "",
   is_owner_injection: false,
   note: "",
+};
+
+// 🔴 ARRIVATO QUI DA UNA COSA DETTA A VOCE — è l'esempio di Alessio parola
+//    per parola: *«se ti dico segna trenta euro pagati al fornitore, mi
+//    aspetto che un collegamento mi porti dove si segnano le spese, coi
+//    campi noti già compilati, e io aggiungo solo il nome del fornitore che
+//    ho omesso»*.
+//
+// ⚠️ LA MAPPA STA QUI E NON NEL TELAIO COMUNE, ed è l'unico pezzo che non
+//    può essere comune: il database restituisce nomi leggibili («importo»,
+//    «verso»), questo modulo usa i nomi delle colonne. Una mappa globale
+//    sarebbe una seconda definizione di che cosa contiene questo modulo.
+//
+// ⚠️ E `conCampi` NON SOVRASCRIVE con un vuoto ciò che non è stato detto:
+//    la data proposta dalla serata e il mezzo predefinito restano.
+const DA_VOCE = {
+  verso: "direction",
+  importo: "amount",
+  data: "movement_date",
+  causale: "causale_id",
+  mezzo: "mezzo",
+  descrizione: "business_purpose",
+  note: "note",
 };
 
 export default function PrimaNota() {
@@ -115,6 +141,20 @@ export default function PrimaNota() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId, from, to]);
 
+  // 🔴 ARRIVATO QUI DA UNA COSA DETTA A VOCE — è l'esempio di Alessio parola
+  //    per parola: *«se ti dico segna trenta euro pagati al fornitore, mi
+  //    aspetto che un collegamento mi porti dove si segnano le spese, coi
+  //    campi noti già compilati, e io aggiungo solo il nome del fornitore
+  //    che ho omesso»*.
+  // ⚠️ La riga di traduzione sta QUI e non nel telaio comune, ed è l'unico
+  //    pezzo che non può essere comune: i nomi che il database restituisce
+  //    sono leggibili («importo», «verso»), quelli del modulo sono i nomi
+  //    delle colonne. Una mappa globale sarebbe una seconda definizione di
+  //    che cosa contiene questo modulo.
+  // ⚠️ E `?? f.x` in ogni campo: quello che non è stato detto NON si
+  //    sovrascrive con un vuoto — la data proposta dalla serata resta.
+  const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
+
   const causaliForDirection = form.direction === "entrata" ? causaliEntrata : causaliUscita;
 
   // Promemoria deterministico (§3.4): scontrino ≤400€ su un'uscita → suggerisci
@@ -156,6 +196,10 @@ export default function PrimaNota() {
         is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
         note: form.note || null,
       });
+      // 🔴 DOPO il salvataggio riuscito, mai prima: chiudendo prima, un
+      //    salvataggio fallito farebbe sparire la riga dall'elenco senza
+      //    che il movimento sia mai stato scritto.
+      await venuto.chiudi();
       setForm({ ...emptyForm, movement_date: form.movement_date, direction: form.direction, mezzo: form.mezzo });
       await reload();
     } catch (e) {
@@ -255,6 +299,7 @@ export default function PrimaNota() {
       {/* Nuovo movimento */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Nuovo movimento</h2>
+        <StriscaDallaVoce venuto={venuto} />
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
           <div className="flex gap-2 mb-3">
             <button

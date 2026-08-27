@@ -9,6 +9,8 @@ import {
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { formatEUR, formatQta, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import { useDaVoce } from "../../lib/daVoce";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // L'ALLINEAMENTO DEL MAGAZZINO — 20/08/2026.
 //
@@ -32,6 +34,14 @@ export default function Allineamento() {
   const [al, setAl] = useState(oggiLocale());
   const [costi, setCosti] = useState(null);
   const [dettaglio, setDettaglio] = useState([]);
+
+  // 🔴 ARRIVATO QUI DA UNA GIACENZA DETTATA: si apre la riga di quel
+  //    prodotto col numero già scritto. Quando il prodotto non è stato
+  //    riconosciuto arriva solo il numero, e la riga la sceglie lui.
+  const venuto = useDaVoce((c) => {
+    if (c.prodotto) setAperta(c.prodotto);
+    if (c.quanto) setQuanto(String(c.quanto));
+  });
 
   const carica = () => leggi(daAllineare()).then(setRighe);
 
@@ -58,6 +68,10 @@ export default function Allineamento() {
       // sarebbe un secondo posto dove dire la stessa cosa, e i due posti
       // prima o poi direbbero due cose diverse.
       setEsito(esitoVero.frase);
+      // 🔴 Solo se è il prodotto che aveva detto: allineandone un altro,
+      //    quella cosa detta non è stata fatta.
+      const suo = venuto.azione?.campi?.prodotto;
+      if (!suo || suo === r.ingredient_id) await venuto.chiudi();
       setAperta(null);
       setQuanto("");
       await carica();
@@ -88,6 +102,8 @@ export default function Allineamento() {
         Il gestionale calcola quanto <em>dovrebbe</em> esserci, seguendo le ricette al grammo.
         Quando apri la dispensa e il conto non torna, scrivi qui quanto ce n&apos;è davvero.
       </p>
+
+      <StriscaDallaVoce venuto={venuto} />
 
       {errore && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">

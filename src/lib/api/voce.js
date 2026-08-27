@@ -128,3 +128,43 @@ export async function revocaChiaveVoce(id) {
 export async function scegliPerAzione(id, sceltaId) {
   return eseguiOperazione("scegli_per_azione_dettata", { p_id: id, p_scelta: sceltaId });
 }
+
+// --- La via d'uscita a mano ---------------------------------------------
+//
+// 🔴 DECISIONE DI ALESSIO del 27/08: *«se ti dico segna trenta euro pagati
+//    al fornitore, mi aspetto che un collegamento mi porti dove si segnano
+//    le spese, coi campi noti già compilati»*. Quando una riga resta in
+//    sospeso il gestionale ha già capito quasi tutto: rimandarlo a un
+//    modulo vuoto butta via quel lavoro.
+
+/**
+ * Dove si va a finire a mano questa cosa detta, e con che cosa già scritto.
+ *
+ * ⚠️ I campi arrivano da QUI e non dall'indirizzo: così nell'indirizzo non
+ * finiscono importi e nomi di fornitori, e la schermata non può ricevere
+ * valori diversi da quelli dell'azione.
+ */
+export async function azioneAMano(id) {
+  const { data, error } = await supabase.rpc("azione_a_mano", { p_id: id });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * «L'ho finita io»: la riga smette di aspettare.
+ *
+ * 🔴 SENZA QUESTO PASSAGGIO la riga resterebbe in sospeso DOPO essere stata
+ * fatta, e la volta dopo Alessio la ridice a voce o preme «Sì, fallo» — la
+ * stessa spesa in cassa due volte. È il difetto peggiore di tutto il blocco.
+ *
+ * ⚠️ NON PASSA DAL CORRIDOIO, e la distinzione non è una scorciatoia:
+ * confermare o annullare FANNO succedere qualcosa (una giacenza si muove,
+ * una temperatura entra nel registro) e sono multi-tabella per costruzione.
+ * Questa scrive una riga sola su `azioni_dettate`, che è titolare-only, e
+ * non ha nessuna conseguenza altrove — categoria A del Contratto.
+ */
+export async function chiudiAMano(id) {
+  const { data, error } = await supabase.rpc("chiudi_azione_a_mano", { p_id: id });
+  if (error) throw error;
+  return data;
+}

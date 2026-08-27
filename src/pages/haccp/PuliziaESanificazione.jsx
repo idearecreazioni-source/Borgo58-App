@@ -36,6 +36,9 @@ import GiornataDiServizio from "../../components/GiornataDiServizio";
 // vuole davvero lo dirà la biologa che segue l'HACCP. Qui c'è una forma
 // ragionevole — chi, cosa, quando, con la nota — che verrà rifatta.
 
+import { useDaVoce } from "../../lib/daVoce";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
 const emptyTaskForm = { name: "", area: "", frequency: "giornaliera" };
 const emptyPestForm = { performed_by: "", type: "ispezione", findings: "", note: "" };
 
@@ -53,6 +56,16 @@ export default function PuliziaESanificazione() {
 
   const [openTaskId, setOpenTaskId] = useState(null);
   const [logNote, setLogNote] = useState("");
+
+  // 🔴 ARRIVATO QUI DA UNA PULIZIA DETTATA: si apre la riga di quel compito
+  //    del piano, con la nota già scritta. Se il compito non era stato
+  //    riconosciuto — il caso «non ho trovato quella pulizia nel piano» —
+  //    non si apre niente e lo sceglie lui: indovinare quale pulizia
+  //    intendesse metterebbe una firma sotto un compito mai fatto.
+  const venuto = useDaVoce((c) => {
+    if (c.compito) setOpenTaskId(c.compito);
+    if (c.note) setLogNote(c.note);
+  });
   const [saving, setSaving] = useState(false);
 
   const [pestForm, setPestForm] = useState(emptyPestForm);
@@ -111,6 +124,10 @@ export default function PuliziaESanificazione() {
     setError("");
     try {
       await addCleaningLog({ taskId, note: logNote });
+      // 🔴 Solo se è il compito che aveva detto: registrandone un altro,
+      //    quella cosa detta non è stata fatta.
+      const suo = venuto.azione?.campi?.compito;
+      if (!suo || suo === taskId) await venuto.chiudi();
       setOpenTaskId(null);
       setLogNote("");
       await load();
@@ -163,6 +180,8 @@ export default function PuliziaESanificazione() {
         ← HACCP
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Pulizia e disinfestazione</h1>
+
+      <StriscaDallaVoce venuto={venuto} />
 
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">

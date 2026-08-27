@@ -4,6 +4,21 @@ import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks
 import { TASK_CATEGORIES, TASK_RICORRENZE, TASK_STATUSES } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
+// Quello che il gestionale ha già capito da un promemoria dettato.
+// ⚠️ L'ora (`due_time`) non c'è: la voce dà il giorno, non l'ora, e
+//    inventarla metterebbe una scadenza precisa che nessuno ha detto.
+const DA_VOCE = {
+  titolo: "title",
+  descrizione: "description",
+  scadenza: "due_date",
+  priorita: "priority",
+  categoria: "category",
+};
+
 const emptyForm = {
   title: "",
   description: "",
@@ -44,6 +59,9 @@ export default function TaskForm() {
   const { isTitolare } = useAuth();
 
   const [form, setForm] = useState(emptyForm);
+  // ⚠️ Solo su un promemoria NUOVO: aprendo uno esistente i campi sono i
+  //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
+  const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
   const [origineModulo, setOrigineModulo] = useState(null);
   const [reminderSentAt, setReminderSentAt] = useState(null);
   const [initialRemindAt, setInitialRemindAt] = useState(null);
@@ -122,6 +140,8 @@ export default function TaskForm() {
         navigate("/agenda");
       } else {
         await createTask(payload);
+        // 🔴 DOPO il salvataggio riuscito, mai prima.
+        await venuto.chiudi();
         navigate("/agenda");
       }
     } catch (e) {
@@ -169,6 +189,8 @@ export default function TaskForm() {
           )}
         </div>
       )}
+
+      <StriscaDallaVoce venuto={venuto} />
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
         <div>

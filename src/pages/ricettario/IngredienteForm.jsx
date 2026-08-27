@@ -43,6 +43,17 @@ import {
   formatEUR,
 } from "../../lib/constants";
 
+// Quello che il gestionale ha già capito da un prodotto dettato.
+// ⚠️ Solo i tre campi che si possono dire a voce: il resto della scheda —
+//    allergeni, conservazione, scarto — lo compila MEMO da una foto
+//    dell'etichetta, oppure Alessio a mano. Precompilarli qui vorrebbe dire
+//    inventarli.
+import { useDaVoce } from "../../lib/daVoce";
+import { conCampi } from "../../lib/calcoli/aMano";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+
+const DA_VOCE = { nome: "name", categoria: "category", unita: "unit" };
+
 const emptyForm = {
   name: "",
   category: "",
@@ -127,6 +138,9 @@ export default function IngredienteForm() {
   const [entities, setEntities] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  // ⚠️ Solo su un prodotto NUOVO: aprendone uno esistente i campi sono i
+  //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
+  const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -365,6 +379,8 @@ export default function IngredienteForm() {
         }
       }
 
+      // 🔴 DOPO il salvataggio riuscito, mai prima.
+      await venuto.chiudi();
       navigate(`/ricettario/ingredienti/${idProdotto}`);
     } catch (e) {
       setError(e.message);
@@ -465,6 +481,8 @@ export default function IngredienteForm() {
           {error}
         </p>
       )}
+
+      <StriscaDallaVoce venuto={venuto} />
 
       {/* ⚠️ IL CONTESTO E' GIA' NOTO: si sta guardando un prodotto, quindi
           non si chiede dove mettere quello che viene letto — sarebbe una

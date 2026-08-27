@@ -10,6 +10,8 @@ import { CONSUMPTION_REASONS, formatDate, formatQta} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, statoLettura } from "../../lib/calcoli/letture";
+import { useDaVoce } from "../../lib/daVoce";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 const emptyConsumptionForm = { quantity: "", reason: "consumo", note: "" };
 
@@ -29,6 +31,20 @@ export default function MagazzinoHome() {
   const [error, setError] = useState("");
   const [openRow, setOpenRow] = useState(null);
   const [consumptionForm, setConsumptionForm] = useState(emptyConsumptionForm);
+
+  // 🔴 ARRIVATO QUI DA UN «HO BUTTATO…» DETTATO: si apre la riga di quel
+  //    prodotto, con la quantità e il motivo già scritti. Il motivo è
+  //    «spreco» perché è ciò che quel tipo di comando SIGNIFICA, non un
+  //    valore indovinato.
+  const venuto = useDaVoce((c) => {
+    if (c.prodotto) setOpenRow(c.prodotto);
+    setConsumptionForm((f) => ({
+      ...f,
+      quantity: c.quantita ?? f.quantity,
+      reason: c.motivo ?? f.reason,
+      note: c.note ?? f.note,
+    }));
+  });
   const [saving, setSaving] = useState(false);
   const [nonScaricate, setNonScaricate] = useState([]);
   const [troppoPiccoli, setTroppoPiccoli] = useState([]);
@@ -85,6 +101,9 @@ export default function MagazzinoHome() {
         reason: consumptionForm.reason,
         note: consumptionForm.note || null,
       });
+      // 🔴 Solo se è il prodotto che aveva detto.
+      const suoProdotto = venuto.azione?.campi?.prodotto;
+      if (!suoProdotto || suoProdotto === ingredientId) await venuto.chiudi();
       setOpenRow(null);
       setConsumptionForm(emptyConsumptionForm);
       await load();
@@ -100,6 +119,7 @@ export default function MagazzinoHome() {
 
   return (
     <div className="testo-sala max-w-5xl mx-auto">
+      <StriscaDallaVoce venuto={venuto} />
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Magazzino</h1>
