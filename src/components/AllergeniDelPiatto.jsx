@@ -17,7 +17,10 @@ import { ALLERGENS, formatEUR, labelFor } from "../lib/constants";
 const PAROLE_ORIGINE = {
   etichetta: "letto in etichetta",
   fonte: "da una fonte consultata",
-  dedotto: "dedotto dal nome del prodotto",
+  // ⚠️ Il nome QUI ci va, e non contraddice la regola: non è una risposta
+  //    dopo un gesto, è **da dove viene un dato** — e chi legge in sala ha
+  //    bisogno di sapere che l'ha dedotto una macchina, non una persona.
+  dedotto: "dedotto da MEMO",
   alessio: "verificato da te",
 };
 import { nonLetto } from "../lib/calcoli/letture";

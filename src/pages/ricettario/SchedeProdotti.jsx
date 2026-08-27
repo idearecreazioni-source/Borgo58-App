@@ -102,7 +102,7 @@ export default function SchedeProdotti() {
         Schede dei prodotti
         <Didascalia>
           Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui
-          l&apos;assistente completa il resto — conservazione, durata, temperatura attesa
+          MEMO completa il resto — conservazione, durata, temperatura attesa
           alla consegna, stagionalità e allergeni — dicendo sempre da dove viene ogni
           risposta.
         </Didascalia>
@@ -142,7 +142,7 @@ export default function SchedeProdotti() {
               >
                 {lavorando
                   ? "Sto compilando…"
-                  : `Compila con l'assistente (${quanti?.per_giro ?? daCompilare.length})`}
+                  : `Compila con MEMO (${quanti?.per_giro ?? daCompilare.length})`}
               </button>
               {/* 🔴 IL PULSANTE DICEVA UNA COSA FALSA (23/08/2026, reperto
                   di Alessio): «una chiamata sola per tutti» — e ne compilava
@@ -207,7 +207,10 @@ export default function SchedeProdotti() {
              ================================================================== */}
           <h2 className="mb-2 font-semibold">Da dove vengono gli allergeni</h2>
           <p className="mb-4 testo-sala-grande text-stone-600">
-            Quello che l&apos;assistente deduce vale: non c&apos;è niente da confermare. Questo
+            {/* ⚠️ Trovato dal censimento, non dall'elenco del mandato: è una
+                frase che DESCRIVE come lavora MEMO, non una risposta dopo un
+                gesto — quindi il nome ci va. */}
+            Quello che MEMO deduce vale: non c&apos;è niente da confermare. Questo
             elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
             in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
             prodotto per aprirlo e sistemare a mano quello che manca.

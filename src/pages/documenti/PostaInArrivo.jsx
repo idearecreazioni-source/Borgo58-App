@@ -852,7 +852,7 @@ export default function PostaInArrivo() {
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Posta in arrivo</h1>
       <p className="testo-sala-grande text-b58-charcoal-soft mb-6">
-        Quello che arriva alle caselle del locale. Il gestionale legge e{" "}
+        Quello che arriva alle caselle del locale. MEMO legge e{" "}
         <strong>propone cosa fare</strong>: decidi tu, una cosa alla volta.
       </p>
 

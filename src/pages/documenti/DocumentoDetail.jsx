@@ -175,7 +175,7 @@ export default function DocumentoDetail() {
             ) : (
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <p className="testo-sala text-b58-charcoal-soft">
-                  Contenuto non ancora letto: l'assistente di questo documento conosce solo la
+                  Contenuto non ancora letto: di questo documento MEMO conosce solo la
                   scheda qui sopra.
                 </p>
                 <button

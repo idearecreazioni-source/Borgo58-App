@@ -180,6 +180,20 @@ Le righe si leggevano al contrario (l'importo era il totale del piatto dopo
 l'aggiunta, non il costo dell'ingrediente aggiunto), ma la decisione è
 toglierlo, non riscriverlo.
 
+## MEMO (l'assistente)
+
+* 27/08 — **L'assistente si chiama MEMO.** «Fotografa» → **MEMO foto**,
+«Parla e basta» → **MEMO voce**, «Assistente AI» → **MEMO**.
+* 27/08 — ⚠️ **I due pulsanti restano «Fotografa» e «Premi e parla»**: sono il
+gesto, non il nome. Il titolo dice dove sei, il pulsante dice cosa fare.
+* 27/08 — ⚠️ **Nelle risposte dopo che ha parlato o fotografato il nome NON
+va messo** — «non ho capito a quale cosa ti riferisci», la fascia del
+microfono, i motivi delle righe in sospeso. Lì il nome sposterebbe la colpa su
+un personaggio invece di dire cosa fare.
+* 27/08 — Restano com'erano anche «Quanto sta costando», «9 foto lette» e la
+riga del tetto. E il **sorvegliante notturno non si battezza**: non esiste
+ancora.
+
 ## Assistente — foto
 
 * 26/08 — La schermata del tetto di spesa **mostra chi l'ha toccato e quando**.

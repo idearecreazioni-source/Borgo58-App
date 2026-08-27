@@ -151,7 +151,7 @@ export const MODULES = [
   {
     id: "assistente-ai",
     number: 14,
-    name: "Assistente AI",
+    name: "MEMO",
     description: "Query in linguaggio naturale, sintesi periodica.",
     phase: 3,
     icon: "chat",

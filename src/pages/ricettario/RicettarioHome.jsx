@@ -40,7 +40,15 @@ export default function RicettarioHome() {
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Schede dei prodotti</h3>
             <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
-              L&apos;assistente completa i campi mancanti. Gli allergeni li confermi tu.
+              {/* 🔴 DUE COSE IN UNA RIGA, e la seconda era FALSA. «Gli
+                  allergeni li confermi tu» è la regola che Alessio ha TOLTO
+                  il 25/08 — un allergene dedotto vale come confermato — e
+                  che il 27/08 era già stata trovata scritta in quattro
+                  posti dopo essere stata rimossa da uno solo. Questo è il
+                  QUINTO, trovato censendo i punti dove l'assistente è
+                  nominato. ⚠️ Non era una frase innocua: diceva a chi
+                  legge di fare un lavoro che il gestionale non chiede. */}
+              MEMO completa i campi mancanti, e dice sempre da dove viene ogni risposta.
             </p>
           </Link>
         )}

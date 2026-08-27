@@ -45,7 +45,7 @@ export default function Sidebar({ onNavigate }) {
         {isTitolare && (
           <NavLink to="/fotografa" onClick={onNavigate} className={linkClasses}>
             <Icon name="box" className="w-4 h-4" />
-            Fotografa
+            MEMO foto
           </NavLink>
         )}
 
@@ -56,7 +56,7 @@ export default function Sidebar({ onNavigate }) {
         {isTitolare && (
           <NavLink to="/detta" onClick={onNavigate} className={linkClasses}>
             <Icon name="box" className="w-4 h-4" />
-            Parla e basta
+            MEMO voce
           </NavLink>
         )}
 

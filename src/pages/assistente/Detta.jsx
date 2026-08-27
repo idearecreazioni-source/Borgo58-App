@@ -341,8 +341,10 @@ export default function Detta() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Parla e basta</h1>
-        <Didascalia testo="Premi una volta per accendere il microfono, di' tutto quello che ti serve di fila, poi ripremi per fermare. Quello che l'assistente capisce con sicurezza lo scrive da sé; il resto te lo chiede." />
+        {/* 🔴 SI CHIAMA MEMO (27/08). Il titolo prende il nome, il pulsante
+            «Premi e parla» no: quello è il gesto. */}
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">MEMO voce</h1>
+        <Didascalia testo="Premi una volta per accendere il microfono, di' tutto quello che ti serve di fila, poi ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo chiede." />
       </div>
 
       {errore && (
@@ -429,7 +431,7 @@ export default function Detta() {
 
         {spesa && !nonLetto(spesa) && spesa.tetto_euro != null && (
           <p className="testo-sala mt-3 text-b58-charcoal-soft">
-            Assistente, questo mese: {formatEUR(spesa.speso_euro)} su {formatEUR(spesa.tetto_euro)}.{" "}
+            MEMO, questo mese: {formatEUR(spesa.speso_euro)} su {formatEUR(spesa.tetto_euro)}.{" "}
             <Link to="/fotografa" className="text-b58-terracotta hover:underline">
               Il tetto si cambia da qui →
             </Link>
@@ -830,7 +832,7 @@ function GuidaScorciatoia() {
           <br />• <b>chiave</b> → la chiave che hai copiato qui sopra
         </li>
         <li className="testo-sala text-b58-charcoal">
-          <b>7.</b> Dai il nome <b>Borgo 58</b> e tocca Fine. Dall'orologio lo trovi nell'app
+          <b>7.</b> Dai il nome <b>MEMO</b> e tocca Fine. Dall'orologio lo trovi nell'app
           Comandi rapidi, e si può mettere sul quadrante.
         </li>
         {/* 🔴 IL PASSO CHE MANCAVA — 27/08/2026. Alessio ha costruito la

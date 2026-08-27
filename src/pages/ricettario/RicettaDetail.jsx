@@ -1937,7 +1937,11 @@ export default function RicettaDetail() {
                   vista del database e non nelle parole. Adesso il caso è uno
                   solo, e va detto per quello che è. */}
               <strong>Non l&apos;ha guardato nessuno.</strong> Su questi prodotti gli allergeni
-              non li ha ancora visti né una persona né l&apos;assistente:{" "}
+              {/* ⚠️ Trovato dal censimento, oltre l'elenco del mandato: dice
+                  CHI non ha guardato, non risponde a un gesto — e il nome
+                  serve, perché «né una persona né MEMO» è la coppia che
+                  spiega perché quell'elenco non si stampa. */}
+              non li ha ancora visti né una persona né MEMO:{" "}
               {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
               l&apos;elenco allergeni sul menu.
             </p>
