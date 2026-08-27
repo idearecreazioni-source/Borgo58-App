@@ -272,6 +272,11 @@ volte si scoprono fra tre mesi quando la cassa non torna.
 * 27/08 — **La causale di un movimento dettato resta FACOLTATIVA**: «ho pagato
 trenta euro al fornitore» non ne contiene nessuna, ed è il modo normale di
 dirlo. Il difetto peggiore è dimenticare l'uscita, non classificarla dopo.
+* 27/08 — Le istruzioni della Scorciatoia dicono **a quale gestionale**
+appartiene la chiave che si sta creando, con le parole e non col codice
+dell'indirizzo. Una chiave creata sulla prova non apre il locale vero, e
+viceversa — e il rifiuto («Questa chiave non vale») sembra una chiave copiata
+male. Alessio ci ha perso una notte.
 * 27/08 — Il **fornitore non si inventa**, come il frigo. Ma non ferma niente:
 una consegna senza fornitore è vera, un fornitore sbagliato no.
 

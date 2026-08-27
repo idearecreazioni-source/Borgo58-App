@@ -28,6 +28,7 @@ import {
 import { formatEUR } from "../../lib/constants";
 import { indirizzoAMano } from "../../lib/calcoli/aMano";
 import BarraDelPollice from "../../components/BarraDelPollice";
+import { ambienteCorrente } from "../../lib/ambiente";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -548,6 +549,29 @@ export default function Detta() {
               Con una Scorciatoia dell'iPhone puoi dettare dall'orologio senza tirare fuori il
               telefono. Serve una chiave, e la chiave si vede una volta sola.
             </p>
+
+            {/* 🔴 QUALE GESTIONALE, DETTO CON LE PAROLE — 27/08/2026, e
+                Alessio ci ha perso una notte.
+                Una chiave vale SOLO per il gestionale su cui è stata creata:
+                creata sulla prova non apre il locale vero, e viceversa. Il
+                gestionale lo sapeva già — l'indirizzo qui sotto è sempre
+                stato quello giusto — ma lo diceva **in codice**
+                (venti lettere a caso), che e illeggibile: chi lo incolla
+                non ha modo di accorgersi di quale dei due sta guardando.
+                ⚠️ E il modo in cui sbaglia è muto: la Scorciatoia risponde
+                   «Questa chiave non vale», che sembra una chiave scritta
+                   male e non un gestionale diverso. */}
+            <p
+              className={`testo-sala mt-2 rounded-lg px-3 py-2 ${
+                ambienteCorrente().produzione
+                  ? "bg-b58-charcoal/10 text-b58-charcoal"
+                  : "bg-b58-terracotta/10 text-b58-terracotta-dark"
+              }`}
+            >
+              Quella che crei qui vale per <b>{ambienteCorrente().nome}</b>, e solo per
+              quello. Se ne fai una mentre guardi l'altro gestionale, questa smette di
+              funzionare — e la Scorciatoia dirà soltanto «Questa chiave non vale».
+            </p>
             {/* ⚠️ MISURATO, non stimato: dentro il paragrafo questo gesto
                 faceva 7,87 mm di altezza a 390 punti — sotto la soglia
                 degli 8,5. Il testo resta uguale, il bersaglio cresce col
@@ -569,7 +593,8 @@ export default function Detta() {
             {chiaveNuova && (
               <div className="mt-3 rounded-lg border border-b58-terracotta bg-b58-terracotta/5 p-3">
                 <p className="testo-sala font-medium text-b58-charcoal">
-                  Ecco la chiave «{chiaveNuova.nome}». Copiala adesso: non si vedrà più.
+                  Ecco la chiave «{chiaveNuova.nome}» per <b>{ambienteCorrente().nome}</b>.
+                  Copiala adesso: non si vedrà più.
                 </p>
                 <code className="mt-2 block break-all rounded bg-white px-2 py-2 testo-sala">
                   {chiaveNuova.chiave}
@@ -768,6 +793,10 @@ function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla
 //    niente.
 function GuidaScorciatoia() {
   const indirizzo = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ascolta-voce`;
+  // ⚠️ L'indirizzo è sempre stato quello del gestionale aperto — il difetto
+  //    non era sbagliarlo, era non dire QUALE fosse: due indirizzi diversi
+  //    si distinguono solo per venti lettere a caso in mezzo.
+  const dove = ambienteCorrente();
   return (
     <div className="mt-3 rounded-lg bg-b58-cream px-3 py-3">
       <ol className="space-y-3">
@@ -782,7 +811,12 @@ function GuidaScorciatoia() {
           <b>3.</b> «Aggiungi azione» → cerca <b>Ottieni contenuto di URL</b>.
         </li>
         <li className="testo-sala text-b58-charcoal">
-          <b>4.</b> Nell'indirizzo incolla questo:
+          {/* ⚠️ I due punti e non «di»: `nome` porta già l'articolo dentro
+              («il locale vero», «il database di prova»), e «di il database»
+              è quello che si legge a schermo se si scrive la preposizione.
+              Visto guardando, non leggendo il codice. */}
+          <b>4.</b> Nell'indirizzo incolla questo. È l'indirizzo di questo
+          gestionale, cioè <b>{dove.nome}</b>:
           <code className="mt-1 block break-all rounded bg-white px-2 py-2">{indirizzo}</code>
         </li>
         <li className="testo-sala text-b58-charcoal">
@@ -811,6 +845,17 @@ function GuidaScorciatoia() {
           Se risponde <b>«Missing authorization header»</b> — o qualunque altra cosa in
           inglese — <b>non hai sbagliato niente tu</b>: è il gestionale che ha una
           porta chiusa dalla parte sua. Dimmelo e la riapro.
+          <br />
+          {/* 🔴 IL RIFIUTO CHE HA FATTO PERDERE UNA NOTTE (27/08). Dice
+              «chiave» e sembra una chiave copiata male; le ragioni vere sono
+              tre, e due non c'entrano con come l'hai copiata. */}
+          Se risponde <b>«Questa chiave non vale»</b>, sono tre le cose
+          possibili, in quest'ordine: la chiave è stata creata mentre guardavi{" "}
+          <b>l'altro gestionale</b> (è il caso più frequente, e qui sopra c'è
+          scritto quale stai guardando adesso); oppure l'hai copiata a metà —
+          sono <b>32 caratteri</b>, senza spazi; oppure l'hai tolta dall'elenco
+          qui sotto. In tutti e tre i casi si rifà: <b>Crea una chiave</b>, e la
+          vecchia si toglie.
         </li>
       </ol>
       {/* 🔴 Il limite si dichiara dentro la guida, non solo nel riepilogo:
