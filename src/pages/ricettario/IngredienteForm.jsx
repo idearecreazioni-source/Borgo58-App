@@ -782,7 +782,14 @@ export default function IngredienteForm() {
                 servisse è che 20 prodotti su 133 stavano in «altro».
                 ⚠️ STA SOTTO IL CAMPO, non in un'altra schermata: il momento
                 in cui uno si accorge che manca è mentre sta compilando. */}
-            {!nuovaCategoria ? (
+            {/* 🔴 `=== null`, NON `!nuovaCategoria`: gli stati sono TRE —
+                chiuso (`null`), aperto e vuoto (`""`), e scritto — e una
+                stringa vuota è FALSA, quindi con `!` il campo non compariva
+                MAI. Trovato aprendo la schermata, non rileggendola.
+                ⚠️ In SQL la stessa famiglia si presenta al contrario: là il
+                terzo stato sparisce dai CONFRONTI (26/08 e 27/08); qui in
+                JavaScript sparisce nei controlli di verità. */}
+            {nuovaCategoria === null ? (
               <button
                 type="button"
                 onClick={() => setNuovaCategoria("")}
