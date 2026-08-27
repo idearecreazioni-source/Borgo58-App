@@ -152,8 +152,13 @@ sistemare a mano ciò che manca.
 * 27/08 — Il gesto principale di una schermata sta **dove arriva il pollice**:
 in basso, sul lato della mano che tiene il telefono. Vale per «Fotografa»,
 «Premi e parla», e ogni schermata dove l'azione è una sola e si fa in piedi.
-⚠️ **NON ANCORA FATTO** — si scontra con la voce del 21/08 (niente
-scorrimento laterale) e la questione è fra le domande.
+✅ **FATTO il 27/08 sulle due schermate nominate**, e le due regole **stanno
+insieme**: misurato a 375 punti, la barra in basso è larga quanto la pagina
+(sbordo **zero**, nessuno scorrimento laterale) e non copre niente, perché
+tiene nel flusso uno spaziatore della propria altezza. Sul computer torna
+dov'era. ⚠️ Nessun'altra schermata ha **un'azione sola**: delle sette col
+gesto principale, cinque ne hanno molte. Quali altre contino è una domanda
+per Alessio, perché il criterio è suo.
 * 27/08 — Da ogni modulo si deve poter **tornare alla schermata iniziale**.
 
 ## Assistente — foto

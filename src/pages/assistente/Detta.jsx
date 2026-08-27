@@ -27,6 +27,7 @@ import {
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
 import { indirizzoAMano } from "../../lib/calcoli/aMano";
+import BarraDelPollice from "../../components/BarraDelPollice";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -358,6 +359,14 @@ export default function Detta() {
              e la parola scritta accanto.
          ------------------------------------------------------------ */}
       <div className="rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
+        {/* 🔴 IL GESTO STA DOVE ARRIVA IL POLLICE — decisione di Alessio del
+            27/08. Sul telefono questa è la barra in basso; sul computer resta
+            esattamente dov'era.
+            ⚠️ Misurato prima di spostarlo: il pulsante stava a **186 punti
+               dal bordo alto** su uno schermo da 375, cioè nel terzo
+               superiore — il punto più lontano dal pollice di chi tiene il
+               telefono in una mano e un barattolo nell'altra. */}
+        <BarraDelPollice>
         <button
           type="button"
           onClick={ascolto ? fermaEManda : accendi}
@@ -372,6 +381,7 @@ export default function Detta() {
             {inCorso ? "Sto capendo…" : ascolto ? "◼ Ferma e manda" : "🎙 Premi e parla"}
           </span>
         </button>
+        </BarraDelPollice>
 
         {/* 🔴 IL SEGNO CHE STA ASCOLTANDO — decisione di Alessio del 24/08 e
             ripetuta il 25/08: **bene visibile**. La notte del 27/08 ha

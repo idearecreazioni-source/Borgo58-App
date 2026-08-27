@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { leggiFoto, preparaFoto } from "../lib/api/assistenteFoto";
+import BarraDelPollice from "./BarraDelPollice";
 
 // Scatta o scegli una foto, mandala all'assistente, mostra cosa ha visto.
 //
@@ -17,11 +18,18 @@ import { leggiFoto, preparaFoto } from "../lib/api/assistenteFoto";
 // ⚠️ `capture="environment"` apre la fotocamera POSTERIORE sul telefono, e
 //    lascia comunque la galleria: chi ha gia' la foto non deve rifarla.
 
+// ⚠️ `gestoInBasso` è SPENTO di partenza, ed è la cosa importante: questo
+//    componente vive in due posti diversi. Su «Fotografa» la foto **è** la
+//    schermata, e il pulsante va dove arriva il pollice; sulla scheda di un
+//    prodotto la foto è **uno dei tanti campi**, e un pulsante inchiodato in
+//    fondo allo schermo direbbe che quello conta più del prezzo e degli
+//    allergeni. Chi usa il componente sa in quale dei due casi si trova.
 export default function ScattaFoto({
   genere = "qualunque",
   etichettaPulsante = "Fotografa",
   onLetto,
   disabilitato = false,
+  gestoInBasso = false,
 }) {
   const campo = useRef(null);
   const [foto, setFoto] = useState(null);
@@ -92,6 +100,7 @@ export default function ScattaFoto({
         className="hidden"
       />
 
+      <Forse dentro={gestoInBasso}>
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -117,6 +126,7 @@ export default function ScattaFoto({
           </button>
         )}
       </div>
+      </Forse>
 
       {/* ⚠️ L'anteprima resta finche' non si conferma: se un campo non
           torna, l'etichetta si riguarda invece di rifare la foto. */}
@@ -145,4 +155,13 @@ export default function ScattaFoto({
       )}
     </div>
   );
+}
+
+// Avvolge nella barra del pollice solo quando serve.
+//
+// ⚠️ Esiste per non scrivere due volte la stessa fila di pulsanti — una
+//    dentro la barra e una fuori. Due copie della stessa cosa divergono, e
+//    quella che resta indietro è sempre quella che si guarda di meno.
+function Forse({ dentro, children }) {
+  return dentro ? <BarraDelPollice>{children}</BarraDelPollice> : children;
 }

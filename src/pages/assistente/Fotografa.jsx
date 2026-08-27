@@ -79,9 +79,16 @@ export default function Fotografa() {
         Scatta una foto e l&apos;assistente ti dice cosa ci vede.
       </p>
 
+      {/* 🔴 IL GESTO STA DOVE ARRIVA IL POLLICE (27/08). Qui la foto È la
+          schermata, quindi il pulsante va in basso sul telefono.
+          ⚠️ Misurato prima di spostarlo: stava a **167 punti dal bordo
+             alto** su uno schermo da 375. Sulla scheda di un prodotto lo
+             stesso componente NON lo fa, perché lì la foto è uno dei tanti
+             campi. */}
       <ScattaFoto
         genere="qualunque"
         etichettaPulsante="Fotografa"
+        gestoInBasso
         onLetto={(risposta) => setEsito(risposta)}
       />
 
