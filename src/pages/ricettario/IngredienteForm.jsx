@@ -417,6 +417,119 @@ export default function IngredienteForm() {
     }
   };
 
+  // ------------------------------------------------------------------
+  // I CAMPI DI UNA VERSIONE, IN UN POSTO SOLO
+  // ------------------------------------------------------------------
+  // ⚠️ Li leggono DUE disposizioni — i blocchetti del telefono e la tabella
+  //    del computer — e due elenchi di colonne divergono in silenzio: a
+  //    restare indietro sarebbe il telefono, che è la strada maestra
+  //    (lezione del 25/08/2026 sul Ricettario).
+  const celleVersione = (v, i) => [
+    {
+      chiave: "versione",
+      intestazione: "Versione",
+      contenuto: (
+        <>
+          {v.descrizione}
+          {v.stesso_di && (
+            <span className="testo-sala text-b58-charcoal-soft"> · stesso prodotto</span>
+          )}
+          {/* Marca e formato. ⚠️ Il commento sopra questa tabella li promette
+              dal giorno in cui è stata scritta, e non c'erano: quelle colonne
+              sono nate il 27/08/2026 con la separazione fra prodotto e
+              ingrediente. Vanno a capo perché sono l'informazione con cui si
+              riconosce la confezione, non un dettaglio del nome. */}
+          {(v.marca || v.formato) && (
+            <span className="block testo-sala text-b58-charcoal-soft">
+              {[v.marca, v.formato].filter(Boolean).join(" · ")}
+            </span>
+          )}
+          {/* Quante volte quella versione è entrata davvero. Distingue «la
+              compro sempre» da «l'ho provata una volta», che è la domanda con
+              cui si guarda questo elenco. */}
+          {v.carichi > 0 && (
+            <span className="block testo-sala text-b58-charcoal-soft">
+              entrata {v.carichi === 1 ? "una volta" : `${v.carichi} volte`}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      chiave: "fornitore",
+      intestazione: "Chi la vende",
+      contenuto: (
+        // Le diciture nate dalle prime fatture non ce l'hanno, perché
+        // all'epoca non c'era nessun fornitore in anagrafica — e senza,
+        // l'ordine non può chiamare il prodotto come lo chiama lui.
+        <select
+          value={v.fornitore_id ?? ""}
+          onChange={(e) => assegnaFornitore(v.articolo_id, e.target.value)}
+          className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 max-w-full"
+        >
+          <option value="">chi la vende?</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      chiave: "prezzo",
+      intestazione: `Prezzo per ${form.unit}`,
+      intestazioneTabella: `€/${form.unit}`,
+      destra: true,
+      contenuto: (
+        <>
+          {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
+          {i === 0 && v.prezzo && <span className="testo-sala text-b58-olive"> ↓ la più conveniente</span>}
+        </>
+      ),
+    },
+    {
+      chiave: "ultima",
+      intestazione: "Ultima volta",
+      destra: true,
+      contenuto: (
+        <span className="text-b58-charcoal-soft testo-sala">
+          {v.ultima_volta ? formatDate(v.ultima_volta) : "—"}
+        </span>
+      ),
+    },
+    {
+      chiave: "collega",
+      intestazione: "È lo stesso prodotto di…",
+      intestazioneTabella: "",
+      destra: true,
+      // ⚠️ Con una versione sola non c'è niente da collegare: un menù che si
+      //    apre vuoto sembra un menù rotto, e accanto a quello del fornitore
+      //    fa sbagliare bersaglio.
+      soloTabella: varianti.length <= 1,
+      contenuto:
+        varianti.length > 1 ? (
+          // Il gestionale vede due stringhe e non può sapere che dentro c'è
+          // la stessa cosa: glielo dice Alessio, una volta, e da lì in poi
+          // le confronta da sole.
+          <select
+            value={v.stesso_di ?? ""}
+            onChange={(e) => collega(v.articolo_id, e.target.value || null)}
+            className="tocco-campo testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 max-w-full"
+          >
+            <option value="">— versione a sé —</option>
+            {varianti
+              .filter((a) => a.articolo_id !== v.articolo_id)
+              .map((a) => (
+                <option key={a.articolo_id} value={a.articolo_id}>
+                  = {a.descrizione}
+                </option>
+              ))}
+          </select>
+        ) : null,
+    },
+  ];
+
   const handleUpdatePrice = async () => {
     if (!newPrice) return;
     setUpdatingPrice(true);
@@ -1083,97 +1196,55 @@ export default function IngredienteForm() {
             Dalla più conveniente. Il prezzo è sempre per {form.unit}, così formati diversi si
             possono confrontare.
           </p>
-          <div className="overflow-x-auto">
+          {/* 🔴 BLOCCHETTI SUL TELEFONO, TABELLA SUL COMPUTER — la forma del
+              25/08/2026, e qui serviva. Misurato a 375 punti: la tabella
+              chiedeva **809 punti in un riquadro da 295**, e la colonna
+              «Versione» ne aveva **74** — dentro i quali il nome del prodotto,
+              la marca e il formato andavano a capo una parola per riga. La
+              larghezza la facevano i due menu (232 + 423 punti), non il testo.
+              ⚠️ E I CAMPI STANNO IN UN POSTO SOLO (`celleVersione`): due
+              elenchi di colonne divergono in silenzio, e a restare indietro
+              sarebbe il telefono, che è la strada maestra. */}
+          <div className="md:hidden space-y-3">
+            {varianti.map((v, i) => (
+              <div
+                key={v.articolo_id}
+                className="rounded-lg bg-white ring-1 ring-b58-charcoal/10 p-3 space-y-2"
+              >
+                {celleVersione(v, i).map((c) => (
+                  <div key={c.chiave} className={c.soloTabella ? "hidden" : ""}>
+                    <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">
+                      {c.intestazione}
+                    </div>
+                    <div className="testo-sala-grande text-b58-charcoal">{c.contenuto}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>
                 <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
-                  <th className="pb-2">Versione</th>
-                  <th className="pb-2">Chi la vende</th>
-                  <th className="pb-2 text-right">€/{form.unit}</th>
-                  <th className="pb-2 text-right">Ultima volta</th>
-                  <th className="pb-2"></th>
+                  {celleVersione(varianti[0], 0).map((c) => (
+                    <th key={c.chiave} className={`pb-2 ${c.destra ? "text-right" : ""}`}>
+                      {c.intestazioneTabella ?? c.intestazione}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {varianti.map((v, i) => (
                   <tr key={v.articolo_id} className="border-t border-b58-charcoal/10">
-                    <td className="py-1.5 text-b58-charcoal">
-                      {v.descrizione}
-                      {v.stesso_di && (
-                        <span className="testo-sala text-b58-charcoal-soft"> · stesso prodotto</span>
-                      )}
-                      {/* Marca e formato. ⚠️ Il commento sopra questa tabella
-                          li promette dal giorno in cui è stata scritta, e non
-                          c'erano: quelle colonne sono nate il 27/08/2026 con
-                          la separazione fra prodotto e ingrediente. Vanno a
-                          capo perché sono l'informazione con cui si
-                          riconosce la confezione, non un dettaglio del nome. */}
-                      {(v.marca || v.formato) && (
-                        <span className="block testo-sala text-b58-charcoal-soft">
-                          {[v.marca, v.formato].filter(Boolean).join(" · ")}
-                        </span>
-                      )}
-                      {/* Quante volte quella versione è entrata davvero.
-                          Distingue «la compro sempre» da «l'ho provata una
-                          volta», che è la domanda con cui si guarda questa
-                          tabella. */}
-                      {v.carichi > 0 && (
-                        <span className="block testo-sala text-b58-charcoal-soft">
-                          entrata {v.carichi === 1 ? "una volta" : `${v.carichi} volte`}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-1.5">
-                      {/* Chi la vende. Le diciture nate dalle prime fatture
-                          non ce l'hanno, perché all'epoca non c'era
-                          nessun fornitore in anagrafica — e senza, l'ordine
-                          non può chiamare il prodotto come lo chiama lui. */}
-                      <select
-                        value={v.fornitore_id ?? ""}
-                        onChange={(e) => assegnaFornitore(v.articolo_id, e.target.value)}
-                        className="testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
+                    {celleVersione(v, i).map((c) => (
+                      <td
+                        key={c.chiave}
+                        className={`py-1.5 text-b58-charcoal ${c.destra ? "text-right" : ""}`}
                       >
-                        <option value="">chi la vende?</option>
-                        {suppliers.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="py-1.5 text-right text-b58-charcoal">
-                      {v.prezzo ? Number(v.prezzo).toFixed(2) : "—"}
-                      {i === 0 && v.prezzo && (
-                        <span className="testo-sala text-b58-olive"> ↓</span>
-                      )}
-                    </td>
-                    <td className="py-1.5 text-right text-b58-charcoal-soft testo-sala">
-                      {v.ultima_volta ? formatDate(v.ultima_volta) : "—"}
-                    </td>
-                    <td className="py-1.5 text-right">
-                      {/* Il gestionale vede due stringhe e non può sapere che
-                          dentro c'è la stessa cosa: glielo dice Alessio, una
-                          volta, e da lì in poi le confronta da sole.
-                          ⚠️ Con una versione sola non c'è niente da collegare:
-                          un menù che si apre vuoto sembra un menù rotto, e
-                          accanto a quello del fornitore fa sbagliare bersaglio. */}
-                      {varianti.length > 1 && (
-                        <select
-                          value={v.stesso_di ?? ""}
-                          onChange={(e) => collega(v.articolo_id, e.target.value || null)}
-                          className="testo-sala rounded border border-b58-charcoal/15 bg-white px-1.5 py-1"
-                        >
-                          <option value="">— versione a sé —</option>
-                          {varianti
-                            .filter((a) => a.articolo_id !== v.articolo_id)
-                            .map((a) => (
-                              <option key={a.articolo_id} value={a.articolo_id}>
-                                = {a.descrizione}
-                              </option>
-                            ))}
-                        </select>
-                      )}
-                    </td>
+                        {c.contenuto}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
