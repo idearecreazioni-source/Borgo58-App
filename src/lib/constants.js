@@ -1,22 +1,21 @@
 // Etichette italiane per gli enum del database (schema Ricettario, migrazione 0001).
 
-export const INGREDIENT_CATEGORIES = [
-  { value: "verdura", label: "Verdura" },
-  { value: "frutta", label: "Frutta" },
-  { value: "carne_rossa", label: "Carne rossa" },
-  { value: "carne_bianca", label: "Carne bianca" },
-  { value: "pesce", label: "Pesce" },
-  { value: "crostacei_molluschi", label: "Crostacei e molluschi" },
-  { value: "latticini", label: "Latticini" },
-  { value: "uova", label: "Uova" },
-  { value: "farine_cereali", label: "Farine e cereali" },
-  { value: "legumi", label: "Legumi" },
-  { value: "olio_condimenti", label: "Olio e condimenti" },
-  { value: "spezie_aromi", label: "Spezie e aromi" },
-  { value: "secco_dispensa", label: "Secco / dispensa" },
-  { value: "bevande", label: "Bevande" },
-  { value: "altro", label: "Altro" },
-];
+// 🔴 LE CATEGORIE DEGLI INGREDIENTI NON STANNO PIÙ QUI (27/08/2026).
+//
+// Erano lo specchio di un enum. Dal 27/08 sono DATI — la tabella
+// `categorie_ingrediente` — perché Alessio deve poterne aggiungere una
+// MENTRE inserisce un prodotto: era una sua decisione, e la misura che la
+// motiva è che 20 prodotti su 133 finivano in «altro».
+//
+// ⚠️ E NON SONO STATE SOSTITUITE DA UN ELENCO NUOVO, apposta: uno specchio
+// di una TABELLA è una seconda verità che il giorno in cui Alessio aggiunge
+// una categoria resta indietro — cioè un valore legittimo che non si può
+// scegliere, che fra i due modi di sbagliare è quello SILENZIOSO, e quello
+// che la rete dei vocabolari esiste per chiudere.
+//
+// Si leggono con `listCategorieIngrediente()` in `lib/api/ingredients.js`.
+// La riga di `SPECCHIATI` in `lib/calcoli/vocabolari.js` è stata tolta per la
+// stessa ragione, e una prova impedisce di rimettere l'elenco qui.
 
 // ⚠️ IL GRAMMO C'È DAL 23/08/2026, per i prodotti da pizzico (zafferano,
 // cannella, spezie). La ragione è misurata: in kg il fabbisogno di una

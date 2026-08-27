@@ -129,6 +129,42 @@ export async function listPriceHistory(ingredientId, { limit = 100 } = {}) {
 }
 
 /**
+ * LE CATEGORIE, che dal 27/08/2026 sono DATI e non piu' un enum.
+ *
+ * ⚠️ NON esiste piu' un elenco scritto in `constants.js`, ed e' voluto: era
+ *    lo specchio di un enum, e uno specchio di una TABELLA sarebbe una
+ *    seconda verita' che il giorno in cui Alessio aggiunge una categoria
+ *    resterebbe indietro — cioe' un valore legittimo che non si puo'
+ *    scegliere, il caso silenzioso che la rete dei vocabolari esiste per
+ *    chiudere. Qui si legge la tabella, quindi non c'e' niente da tenere
+ *    d'accordo.
+ *
+ * ⚠️ Solo le ACCESE: una categoria spenta resta legale per gli ingredienti
+ *    che la portano, ma non si propone piu'.
+ */
+export async function listCategorieIngrediente() {
+  const { data, error } = await supabase.rpc("categorie_proponibili");
+  if (error) throw error;
+  return (data ?? []).map((c) => ({ value: c.codice, label: c.nome }));
+}
+
+/**
+ * Aggiunge una categoria MENTRE si sta inserendo un prodotto — richiesta di
+ * Alessio del 27/08/2026: se manca quella giusta, prima ci si fermava.
+ *
+ * ⚠️ Se esiste gia' NON fa finta di crearla: risponde `nuova: false` e dice
+ *    quale, perche' due categorie che si somigliano sono il doppione che il
+ *    catalogo esiste per evitare.
+ */
+export async function aggiungiCategoriaIngrediente(nome) {
+  const { data, error } = await supabase.rpc("aggiungi_categoria_ingrediente", {
+    p_nome: nome,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Media, estremi e variazione dei prezzi di un ingrediente — o di una sua
  * sola versione, passando `articoloId`.
  *

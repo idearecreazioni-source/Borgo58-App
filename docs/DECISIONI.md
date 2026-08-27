@@ -373,6 +373,22 @@ un controllo più soft.
 
 ## Prodotti, ingredienti e prezzi
 
+* 27/08 — Dalla schermata degli Ingredienti le **categorie non si possono
+aggiungere né modificare**, e serve poterlo fare **MENTRE si inserisce un
+prodotto**: se manca la categoria giusta, oggi ci si ferma. ✅ **FATTO il
+27/08**, e la misura che lo motiva: **20 prodotti su 133 stavano in «altro»**
+(15,0%). ⚠️ Il lavoro non era il pulsante: `ingredient_category` era un **enum
+di 15 valori**, e un enum non si allunga da una schermata. Ora è una tabella,
+e la categoria si aggiunge da sotto il campo mentre si compila la scheda.
+* 27/08 — ⚠️ **Se le categorie diventano modificabili, MEMO deve riceverle
+dall'elenco VERO**, altrimenti continua a proporre le vecchie e sbaglia senza
+dirlo. ✅ **FATTO**: gli elenchi arrivano dal database in tutte e quattro le
+funzioni online. Misurato: vivevano scritti a mano in **quattro posti**, e uno
+dei quattro non li proponeva — li **validava**, sostituendo con «altro»
+qualunque categoria nuova.
+* 27/08 — Una categoria **spenta resta legale** per gli ingredienti che la
+portano, ma **non si propone più** in nessun elenco. *Legale e proponibile
+sono due cose diverse.*
 * 17/08 — 🔴 **UN REGALO NON DEVE FAR SCENDERE A ZERO IL PREZZO
 DELL'INGREDIENTE.** Il *lotto* costa zero — ed è vero — ma il prezzo
 dell'ingrediente e il suo storico non si toccano, altrimenti il food cost di

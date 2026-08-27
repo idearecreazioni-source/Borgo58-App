@@ -209,7 +209,7 @@ RISPONDI SOLO CON QUESTO JSON, senza testo attorno:
                   "non_merce": "true per trasporto, contributi, sconti: entra nel totale ma non in magazzino",
                   "nuovo_ingrediente": {"nome": "come lo chiamerebbe un cuoco, senza marca né formato",
                                         "unita": "kg | l | pz | mazzo",
-                                        "categoria": "verdura | frutta | carne_rossa | carne_bianca | pesce | crostacei_molluschi | latticini | uova | farine_cereali | legumi | olio_condimenti | spezie_aromi | secco_dispensa | bevande | altro",
+                                        "categoria": "una fra quelle elencate in fondo a queste istruzioni, oppure null",
                                         "alimentare": "false per detersivi, carta, imballaggi"},
                   "unita_fattura": "l'unità di misura della riga: cassa, sacco, lattina, kg, pz…",
                   "fattore": "quante unità di base fa UNA di quelle: una cassa da 6 kg → 6, un sacco da 25 kg → 25, una lattina da 5 L → 5. Se la riga è già in kg/l/pz singoli → 1",
@@ -438,11 +438,67 @@ function numeroValido(v: unknown): number | null {
 // l'inserimento dell'ingrediente a meta' transazione, cioe' un carico che
 // non entra senza che sia chiaro il perche'.
 const UNITA_VALIDE = new Set(["kg", "l", "pz", "mazzo"]);
-const CATEGORIE_VALIDE = new Set([
-  "verdura", "frutta", "carne_rossa", "carne_bianca", "pesce",
-  "crostacei_molluschi", "latticini", "uova", "farine_cereali", "legumi",
-  "olio_condimenti", "spezie_aromi", "secco_dispensa", "bevande", "altro",
-]);
+
+// 🔴 LE CATEGORIE NON SONO PIU' UN INSIEME SCRITTO QUI (27/08/2026), ed era
+//    il posto peggiore dei quattro in cui vivevano.
+//
+//    Gli altri tre *propongono*: al massimo MEMO non conosce una categoria
+//    nuova e ne sceglie un'altra. Questo **sostituiva**:
+//
+//        categoria: CATEGORIE_VALIDE.has(categoria) ? categoria : "altro"
+//
+//    Da quando Alessio puo' aggiungere una categoria mentre inserisce un
+//    prodotto, quella riga avrebbe scambiato con «altro» una categoria
+//    nuova letta correttamente su una fattura — senza nessun errore e
+//    senza nessun avviso.
+//
+// ⚠️ SI CHIEDE AL DATABASE, e l'elenco arriva da `vocabolari_chiusi()`:
+//    non c'e' un secondo posto da tenere d'accordo. Si legge UNA VOLTA per
+//    ogni giro di lettura della posta, non per ogni riga.
+let categorieAmmesse: Set<string> | null = null;
+let vocabolariDiAlessio: Record<string, unknown> | null = null;
+
+async function caricaCategorieAmmesse(): Promise<void> {
+  categorieAmmesse = null;
+  vocabolariDiAlessio = null;
+  try {
+    const r = await db("rpc/vocabolari_per_assistente", { method: "POST", body: "{}" });
+    if (!r.ok) return;
+    const v = await r.json();
+    vocabolariDiAlessio = v ?? null;
+    const elenco = (v?.categorie_prodotto ?? []) as { codice?: string }[];
+    const codici = elenco.map((c) => c?.codice).filter(Boolean) as string[];
+    if (codici.length > 0) categorieAmmesse = new Set(codici);
+  } catch {
+    // Resta `null`: vedi `ingredienteProposto`.
+  }
+}
+
+/**
+ * Gli elenchi da attaccare alle istruzioni.
+ *
+ * ⚠️ SE NON SI SONO POTUTI LEGGERE non si ripiega su un elenco scritto qui:
+ *    sarebbe una seconda verita' che entra in gioco proprio quando il
+ *    database non risponde, cioe' quando nessuno la sta guardando. Si dice a
+ *    MEMO di lasciare la categoria vuota.
+ */
+function elenchiPerIlPrompt(): string {
+  const v = vocabolariDiAlessio;
+  if (!v) {
+    return `
+
+GLI ELENCHI NON SONO DISPONIBILI
+Non sono riuscito a leggere gli elenchi del gestionale: metti "categoria": null invece di indovinare.`;
+  }
+  const categorie = (v.categorie_prodotto as { codice: string; nome: string }[] | null) ?? [];
+  const righe = ["", "GLI ELENCHI DEL GESTIONALE — usa SOLO questi valori"];
+  righe.push(
+    `- categorie dei prodotti: ${categorie.map((c) => `${c.codice} (${c.nome})`).join(", ")}`,
+  );
+  const unita = v.unita as string[] | null;
+  if (unita?.length) righe.push(`- unita: ${unita.join(", ")}`);
+  return righe.join("\n");
+}
 
 /** Il nome proposto per un prodotto che in anagrafica non c'e'. */
 function ingredienteProposto(v: unknown): Record<string, unknown> | null {
@@ -452,10 +508,18 @@ function ingredienteProposto(v: unknown): Record<string, unknown> | null {
   if (!nome) return null;
   const unita = String(o.unita ?? "").trim();
   const categoria = String(o.categoria ?? "").trim();
+  // ⚠️ SE L'ELENCO NON SI E' POTUTO LEGGERE si lascia passare la categoria
+  //    com'e': la respingera' la chiave esterna — rumorosamente, davanti a
+  //    chi sta confermando — invece di essere sostituita in silenzio da un
+  //    elenco vecchio. Fra un rifiuto e un dato cambiato di nascosto, la
+  //    scelta di questo progetto e' sempre il rifiuto.
+  const categoriaBuona = categorieAmmesse
+    ? (categorieAmmesse.has(categoria) ? categoria : "altro")
+    : (categoria || "altro");
   return {
     nome,
     unita: UNITA_VALIDE.has(unita) ? unita : "kg",
-    categoria: CATEGORIE_VALIDE.has(categoria) ? categoria : "altro",
+    categoria: categoriaBuona,
     alimentare: o.alimentare === false ? false : true,
   };
 }
@@ -468,6 +532,11 @@ function temperaturaValida(v: unknown): number | null {
 
 /** Il lavoro vero. Gira DOPO che abbiamo già risposto — vedi in fondo. */
 async function leggiLaPosta() {
+  // Le categorie ammesse si leggono UNA VOLTA per giro, non per riga: sono
+  // le stesse per tutte le mail di questa passata, e chiederle a ogni riga
+  // sarebbe un giro di rete per niente.
+  await caricaCategorieAmmesse();
+
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
   // nome di un file dice spessissimo tutto — «Locazione Parlato
   // Borgo58-10.08.2026.odt» si spiega da solo. Trovato alla prima prova
@@ -603,7 +672,7 @@ async function leggiLaPosta() {
         // righe ci sta comodamente in dodicimila; e il tetto non si paga
         // se non lo si usa — si paga solo cio' che il modello scrive.
         max_tokens: 12000,
-        system: ISTRUZIONI,
+        system: ISTRUZIONI + elenchiPerIlPrompt(),
         messages: [
           {
             role: "user",

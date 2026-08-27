@@ -1,4 +1,4 @@
-import { INGREDIENT_CATEGORIES, labelFor, formatEUR } from "../constants";
+import { labelFor, formatEUR } from "../constants";
 
 // I CAMPI DI UN INGREDIENTE NELL'ELENCO, SCRITTI UNA VOLTA SOLA.
 //
@@ -23,7 +23,15 @@ import { INGREDIENT_CATEGORIES, labelFor, formatEUR } from "../constants";
 // «0,00 €», quindi un ingrediente mai acquistato si leggeva **gratis** —
 // che è la stessa forma dello scarto a zero e dell'elenco allergeni vuoto.
 // Un prezzo che non si conosce si dichiara.
-export function campiIngrediente(ing) {
+// ⚠️ LE CATEGORIE ARRIVANO DA FUORI (27/08/2026), e non è un parametro di
+// comodo: dal 27/08 sono DATI, e questo file non può più ridirle da sé —
+// sarebbe una seconda verità che resta indietro appena Alessio ne aggiunge
+// una. Chi chiama le ha già lette con `listCategorieIngrediente()`.
+//
+// ⚠️ E SE NON SONO ANCORA ARRIVATE si mostra il CODICE, non un vuoto: un
+// codice è brutto e vero, un vuoto si legge «questo prodotto non ha
+// categoria» — che è un'altra cosa (regola del 19/08).
+export function campiIngrediente(ing, categorie = []) {
   if (!ing) return [];
   const prezzo =
     ing.current_price === null || ing.current_price === undefined
@@ -33,7 +41,7 @@ export function campiIngrediente(ing) {
     {
       chiave: "categoria",
       etichetta: "Categoria",
-      valore: labelFor(INGREDIENT_CATEGORIES, ing.category),
+      valore: labelFor(categorie, ing.category) || ing.category || "",
     },
     {
       chiave: "provenienza",

@@ -43,7 +43,6 @@ import {
   FISCAL_PAYMENT_METHODS,
   FISCAL_TOOL_CATEGORIES,
   FISCAL_TOOL_STATUSES,
-  INGREDIENT_CATEGORIES,
   LEAVE_TYPES,
   MONTHS,
   NC_CATEGORIES,
@@ -74,8 +73,24 @@ import {
 // Ogni elenco di etichette dichiara QUALE colonna rispecchia. Il nome della
 // costante è scritto a mano perché finisca nel messaggio di una prova rossa:
 // «PAYMENT_METHODS non combacia» si legge, «la riga 14 non combacia» no.
+// 🔴 «INGREDIENT_CATEGORIES» NON È PIÙ IN QUESTO ELENCO (27/08/2026), e va
+// detto perché togliere una riga da una rete somiglia a indebolirla.
+//
+// Le categorie degli ingredienti sono diventate DATI — la tabella
+// `categorie_ingrediente` — e il gestionale non le ridice più: le LEGGE
+// (`listCategorieIngrediente()`). Quindi il disaccordo che questa rete
+// sorveglia **non può più esistere**: non ci sono due elenchi da tenere
+// d'accordo, ce n'è uno.
+//
+// ⚠️ Lasciarla qui avrebbe fatto il contrario di sorvegliare: il primo
+// giorno in cui Alessio aggiunge una categoria, la prova sarebbe diventata
+// ROSSA per un gesto legittimo — un allarme falso, cioè il modo in cui una
+// rete viene spenta.
+//
+// ⚠️ Al suo posto c'è una prova che impedisce di rimettere un elenco statico
+// in `constants.js`, in `tests/unita/vocabolari.test.js`: senza, fra sei mesi
+// qualcuno lo riscrive credendo di sistemare qualcosa.
 export const SPECCHIATI = [
-  { costante: "INGREDIENT_CATEGORIES", valori: INGREDIENT_CATEGORIES, tabella: "ingredients", colonna: "category" },
   { costante: "UNITS", valori: UNITS, tabella: "ingredients", colonna: "unit" },
   { costante: "STORAGE_TYPES", valori: STORAGE_TYPES, tabella: "ingredients", colonna: "storage_type" },
   { costante: "MONTHS", valori: MONTHS, tabella: "ingredients", colonna: "seasonality" },
@@ -306,6 +321,24 @@ export function guardieSospette(guardie, vocabolari, esenti = GUARDIE_ESENTI) {
  * modulo esporta, non un elenco scritto a mano — aggiungere un menu a
  * tendina nuovo e non dichiararlo diventa rosso.
  */
+// 🔴 LE CATEGORIE DEGLI INGREDIENTI NON DEVONO TORNARE UN ELENCO NEL CODICE.
+//
+// Dal 27/08/2026 sono DATI, e il gestionale le LEGGE. Rimettere un elenco
+// statico non darebbe nessun errore: darebbe una seconda verità che resta
+// indietro appena Alessio ne aggiunge una — cioè un valore legittimo che non
+// si può scegliere, il caso SILENZIOSO fra i due che questa rete chiude.
+//
+// ⚠️ È UNA FUNZIONE PURA CHE RICEVE IL MODULO, e non un controllo scritto
+// dentro la prova, per la stessa ragione dichiarata in cima a questo file:
+// così si può provare AL CONTRARIO su un modulo inventato, senza rompere
+// `constants.js` — che è il file da cui il gestionale prende i menu mentre
+// qualcuno lo sta collaudando.
+export function elenchiDiCategorieNelCodice(moduloCostanti) {
+  return Object.keys(moduloCostanti)
+    .filter((k) => /INGREDIENT_CATEG/i.test(k))
+    .sort();
+}
+
 export function specchiNonDichiarati(moduloCostanti, specchiati, esenti = SPECCHI_ESENTI) {
   const dichiarati = new Set([
     ...specchiati.map((s) => s.costante),

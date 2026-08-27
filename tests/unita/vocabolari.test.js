@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  elenchiDiCategorieNelCodice,
   guardieSospette,
   problemiVocabolari,
   SPECCHI_ESENTI,
@@ -222,5 +223,63 @@ describe("un elenco che non rispecchia nessuna colonna si dichiara", () => {
       expect(e.perche, `${e.costante} è esente ma non dice perché`).toBeTruthy();
       expect(e.perche.length).toBeGreaterThan(40);
     }
+  });
+});
+
+// ============================================================================
+// LE CATEGORIE NON TORNANO A ESSERE UN ELENCO SCRITTO A MANO
+// ============================================================================
+describe("le categorie degli ingredienti sono dati, non un elenco nel codice", () => {
+  it("`constants.js` non esporta piu' un elenco di categorie", async () => {
+    // 🔴 PERCHE' QUESTA PROVA ESISTE. Il 27/08/2026 le categorie sono passate
+    // da un enum a una TABELLA, perche' Alessio deve poterne aggiungere una
+    // mentre inserisce un prodotto. L'elenco statico e la riga di
+    // `SPECCHIATI` che lo sorvegliava sono stati TOLTI — e togliere una riga
+    // da una rete somiglia a indebolirla, quindi qui c'e' il guardiano che
+    // prende il loro posto.
+    //
+    // ⚠️ Rimetterlo non darebbe nessun errore: darebbe una seconda verita'
+    // che resta indietro appena Alessio aggiunge una categoria, cioe' un
+    // valore legittimo che non si puo' scegliere. E' il caso SILENZIOSO fra
+    // i due che la rete dei vocabolari esiste per chiudere.
+    const costanti = await import("../../src/lib/constants");
+    const sospette = elenchiDiCategorieNelCodice(costanti);
+    expect(
+      sospette,
+      "le categorie degli ingredienti sono tornate a essere un elenco nel codice: " +
+        "si leggono con listCategorieIngrediente(), vedi la nota in constants.js"
+    ).toEqual([]);
+  });
+
+
+  it("...e la prova DISCRIMINA: un elenco rimesso nel codice viene nominato", () => {
+    // ⚠️ È la controprova, e si fa su un modulo INVENTATO invece di rompere
+    // `constants.js`: il gestionale gira dalla stessa cartella in cui si
+    // lavora, e romperlo davvero farebbe comparire menu vuoti sotto le mani
+    // di chi sta collaudando (è la ragione scritta in cima a questo file).
+    const modulo = {
+      UNITS: [{ value: "kg" }],
+      INGREDIENT_CATEGORIES: [{ value: "verdura", label: "Verdura" }],
+    };
+    expect(elenchiDiCategorieNelCodice(modulo)).toEqual(["INGREDIENT_CATEGORIES"]);
+
+    // ...e non grida su un modulo sano, altrimenti sarebbe un guardiano che
+    // segnala sempre — e quelli si imparano a spegnere.
+    expect(elenchiDiCategorieNelCodice({ UNITS: [], ALLERGENS: [] })).toEqual([]);
+  });
+
+  it("...e nessuno rispecchia piu' `ingredients.category`", async () => {
+    // ⚠️ La controprova dell'altra meta': se qualcuno rimettesse la riga in
+    // `SPECCHIATI` puntando a una tabella che ora e' un catalogo, la prova
+    // sui dati veri diventerebbe rossa il primo giorno in cui Alessio
+    // aggiunge una categoria — un allarme falso su un gesto legittimo.
+    const { SPECCHIATI } = await import("../../src/lib/calcoli/vocabolari");
+    const specchi = SPECCHIATI.filter(
+      (s) => s.tabella === "ingredients" && s.colonna === "category"
+    );
+    expect(
+      specchi.map((s) => s.costante),
+      "qualcuno rispecchia di nuovo le categorie: diventerebbe rosso appena Alessio ne aggiunge una"
+    ).toEqual([]);
   });
 });

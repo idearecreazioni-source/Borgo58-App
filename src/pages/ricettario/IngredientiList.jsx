@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listIngredients } from "../../lib/api/ingredients";
-import { INGREDIENT_CATEGORIES } from "../../lib/constants";
+import { listIngredients, listCategorieIngrediente } from "../../lib/api/ingredients";
 import { campiIngrediente } from "../../lib/calcoli/ingredienti";
 
 export default function IngredientiList() {
@@ -15,7 +14,18 @@ export default function IngredientiList() {
   // rimettere — e un gesto che non si può disfare non è «mettere da
   // parte», è cancellare con un altro nome.
   const [conMessiDaParte, setConMessiDaParte] = useState(false);
+  // Le categorie sono DATI dal 27/08/2026: si leggono, non si ridicono.
+  const [categorie, setCategorie] = useState([]);
   const navigate = useNavigate();
+
+  // ⚠️ Le categorie si leggono UNA VOLTA, non a ogni filtro: non cambiano
+  //    mentre si guarda un elenco, e rileggerle a ogni tasto premuto nella
+  //    ricerca sarebbe un giro di rete per niente.
+  useEffect(() => {
+    listCategorieIngrediente()
+      .then(setCategorie)
+      .catch((e) => setError(e.message));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -77,7 +87,7 @@ export default function IngredientiList() {
           className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
         >
           <option value="">Tutte le categorie</option>
-          {INGREDIENT_CATEGORIES.map((c) => (
+          {categorie.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
@@ -148,7 +158,7 @@ export default function IngredientiList() {
                     </span>
                   )}
                 </div>
-                {campiIngrediente(ing).map((c) => (
+                {campiIngrediente(ing, categorie).map((c) => (
                   <p key={c.chiave} className="testo-sala-grande">
                     <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
                     {c.valore ? (
@@ -173,7 +183,7 @@ export default function IngredientiList() {
               <thead>
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                   <th className="px-4 py-3 font-medium">Nome</th>
-                  {campiIngrediente(sorted[0]).map((c) => (
+                  {campiIngrediente(sorted[0], categorie).map((c) => (
                     <th key={c.chiave} className="px-4 py-3 font-medium">
                       {c.etichetta}
                     </th>
@@ -195,7 +205,7 @@ export default function IngredientiList() {
                         </span>
                       )}
                     </td>
-                    {campiIngrediente(ing).map((c) => (
+                    {campiIngrediente(ing, categorie).map((c) => (
                       <td
                         key={c.chiave}
                         className={`px-4 py-3 ${c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal-soft"}`}

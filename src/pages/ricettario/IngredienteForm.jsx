@@ -21,6 +21,8 @@ import {
   updateIngredientFields,
   updateIngredientPrice,
   usiDellIngrediente,
+  listCategorieIngrediente,
+  aggiungiCategoriaIngrediente,
 } from "../../lib/api/ingredients";
 import ScattaFoto from "../../components/ScattaFoto";
 import {
@@ -35,7 +37,6 @@ import {
 } from "../../lib/calcoli/schedaLetta";
 import {
   ALLERGENS,
-  INGREDIENT_CATEGORIES,
   MONTHS,
   STORAGE_TYPES,
   SUPPLIER_CATEGORIES,
@@ -153,6 +154,12 @@ export default function IngredienteForm() {
   // Da dove viene `current_price`: «prodotto», «a_mano», oppure vuoto —
   // che vuol dire «non l'ha ancora detto nessuno» e non è la stessa cosa.
   const [prezzoDa, setPrezzoDa] = useState(null);
+  // Le categorie sono DATI dal 27/08/2026: si leggono, non si ridicono.
+  const [categorie, setCategorie] = useState([]);
+  // `null` = il campo per aggiungerne una non è aperto; "" = è aperto e vuoto.
+  const [nuovaCategoria, setNuovaCategoria] = useState(null);
+  const [aggiungendoCategoria, setAggiungendoCategoria] = useState(false);
+  const [esitoCategoria, setEsitoCategoria] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [priceNote, setPriceNote] = useState("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
@@ -199,6 +206,7 @@ export default function IngredienteForm() {
         if (cancelled) return;
         setEntities(ent);
         setSuppliers(await listSuppliers(ent.srls.id));
+        setCategorie(await listCategorieIngrediente());
 
         if (isEdit) {
           const ing = await getIngredient(id);
@@ -414,6 +422,38 @@ export default function IngredienteForm() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ------------------------------------------------------------------
+  // La categoria che manca si aggiunge da qui
+  // ------------------------------------------------------------------
+  // ⚠️ SI SELEZIONA DA SÉ dopo averla aggiunta: chi la scrive la vuole per
+  //    il prodotto che sta inserendo, e obbligarlo a cercarla nel menu
+  //    subito dopo averla creata sarebbe un passo in più per niente.
+  // ⚠️ E SE ESISTE GIÀ non si fa finta di averla creata: si dice quale, e la
+  //    si seleziona comunque — è quello che chi ha scritto quel nome
+  //    voleva. Due categorie che si somigliano sono il doppione che il
+  //    catalogo esiste per evitare.
+  const aggiungiCategoria = async () => {
+    const nome = (nuovaCategoria ?? "").trim();
+    if (!nome) return;
+    setAggiungendoCategoria(true);
+    setEsitoCategoria("");
+    try {
+      const r = await aggiungiCategoriaIngrediente(nome);
+      setCategorie(await listCategorieIngrediente());
+      setForm((f) => ({ ...f, category: r.codice }));
+      setNuovaCategoria(null);
+      setEsitoCategoria(
+        r.nuova
+          ? `«${r.nome}» aggiunta, ed è già scelta qui sopra.`
+          : `«${r.nome}» c'era già: l'ho scelta qui sopra invece di crearne una seconda.`
+      );
+    } catch (e) {
+      setEsitoCategoria(e.message);
+    } finally {
+      setAggiungendoCategoria(false);
     }
   };
 
@@ -729,12 +769,58 @@ export default function IngredienteForm() {
               <option value="" disabled>
                 Seleziona…
               </option>
-              {INGREDIENT_CATEGORIES.map((c) => (
+              {categorie.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
               ))}
             </select>
+
+            {/* 🔴 LA CATEGORIA SI AGGIUNGE DA QUI, mentre si inserisce il
+                prodotto — richiesta di Alessio del 27/08/2026: se manca
+                quella giusta, prima ci si fermava, e la misura di quanto
+                servisse è che 20 prodotti su 133 stavano in «altro».
+                ⚠️ STA SOTTO IL CAMPO, non in un'altra schermata: il momento
+                in cui uno si accorge che manca è mentre sta compilando. */}
+            {!nuovaCategoria ? (
+              <button
+                type="button"
+                onClick={() => setNuovaCategoria("")}
+                className="tocco-inline mt-1 testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta"
+              >
+                Manca la categoria giusta? Aggiungila
+              </button>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                <input
+                  value={nuovaCategoria}
+                  onChange={(e) => setNuovaCategoria(e.target.value)}
+                  placeholder="Es. Conserve"
+                  className={`${inputClass} flex-1 min-w-[140px]`}
+                />
+                <button
+                  type="button"
+                  disabled={aggiungendoCategoria || !nuovaCategoria.trim()}
+                  onClick={aggiungiCategoria}
+                  className="tocco-bottone rounded-lg bg-b58-olive px-3 testo-sala-grande text-white disabled:opacity-40"
+                >
+                  {aggiungendoCategoria ? "Aggiungo…" : "Aggiungi"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNuovaCategoria(null)}
+                  className="tocco-inline testo-sala text-b58-charcoal-soft underline"
+                >
+                  lascia stare
+                </button>
+              </div>
+            )}
+            {/* ⚠️ L'esito si dice SULLA RIGA, non in cima alla pagina: un
+                messaggio lontano dal gesto è un messaggio che non c'è
+                (lezione del 17/08, ripagata due volte il 27/08). */}
+            {esitoCategoria && (
+              <p className="mt-1 testo-sala text-b58-charcoal-soft">{esitoCategoria}</p>
+            )}
           </div>
 
           <div>
