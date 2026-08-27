@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   allergeniDelPiatto,
+  catenaAllergeni,
   dimenticaScelta,
 
   salvaScelta,
@@ -9,6 +10,16 @@ import {
   togliSostituzione,
 } from "../lib/api/recipes";
 import { ALLERGENS, formatEUR, labelFor } from "../lib/constants";
+
+// 🔴 L'ORIGINE SI DICE COME SERVE IN SALA, non col nome che ha in tabella.
+//    «dedotto» dice al cameriere cosa fare — mostrare gli ingredienti invece
+//    di garantire; «dedotto dal nome del prodotto» glielo dice meglio.
+const PAROLE_ORIGINE = {
+  etichetta: "letto in etichetta",
+  fonte: "da una fonte consultata",
+  dedotto: "dedotto dal nome del prodotto",
+  alessio: "verificato da te",
+};
 import { nonLetto } from "../lib/calcoli/letture";
 
 // GLI ALLERGENI DI UN PIATTO — la scheda dove si decide (24/08/2026,
@@ -52,6 +63,8 @@ export default function AllergeniDelPiatto({
   allergeniFinger = null,
 }) {
   const [righe, setRighe] = useState(null);
+  // Da dove viene ogni allergene, raggruppato per allergene.
+  const [catena, setCatena] = useState({});
   const [errore, setErrore] = useState("");
   const [aperto, setAperto] = useState(null); // quale allergene è espanso
   const [busy, setBusy] = useState(false);
@@ -59,6 +72,15 @@ export default function AllergeniDelPiatto({
   const ricarica = async () => {
     try {
       setRighe(await allergeniDelPiatto(recipeId));
+      // ⚠️ La catena si legge INSIEME alle righe: due letture separate su
+      //    due tocchi diversi possono raccontare due stati del piatto.
+      const c = await catenaAllergeni(recipeId);
+      setCatena(
+        c.reduce((m, r) => {
+          (m[r.allergene] ??= []).push(r);
+          return m;
+        }, {}),
+      );
       setErrore("");
     } catch (e) {
       // ⚠️ «Non lo so» non è «non ce ne sono»: un elenco vuoto qui si
@@ -66,6 +88,10 @@ export default function AllergeniDelPiatto({
       // pericolosa che questo gestionale possa scrivere.
       setErrore(e.message);
       setRighe([]);
+      // ⚠️ E la catena si svuota con loro: una provenienza rimasta a schermo
+      //    accanto a un elenco che non si è riusciti a leggere direbbe di
+      //    un piatto che non è quello che si sta guardando.
+      setCatena({});
     }
   };
 
@@ -124,6 +150,12 @@ export default function AllergeniDelPiatto({
         </p>
       )}
 
+      {/* 🔴 DA DOVE VIENE, sotto ogni allergene. È la domanda che Alessio
+          si è fatto guardando un piatto: «come mai c'è l'uovo se la pasta è
+          acqua e farina». Il gestionale sommava e non diceva da quale pezzo.
+          ⚠️ SEMPRE VISIBILE, non dietro un tocco: è l'informazione per cui
+             si apre questa schermata quando un cliente chiede, e nasconderla
+             dietro un gesto vorrebbe dire cercarla con qualcuno che aspetta. */}
       {righe === null ? (
         <p className="testo-sala-grande text-b58-charcoal-soft/60">Leggo gli allergeni…</p>
       ) : righe.length === 0 ? (
@@ -159,6 +191,20 @@ export default function AllergeniDelPiatto({
                   {aperto === r.allergene ? "chiudi" : "apri"}
                 </span>
               </button>
+
+              {/* La catena: quale prodotto lo porta, e per che strada. */}
+              {(catena[r.allergene] ?? []).length > 0 && (
+                <ul className="px-3 pb-2">
+                  {(catena[r.allergene] ?? []).map((c, n) => (
+                    <li key={`${c.prodotto_id}-${n}`} className="testo-sala text-b58-charcoal-soft">
+                      da <strong className="text-b58-charcoal">{c.prodotto}</strong>
+                      {(c.strada ?? []).length > 0 && <> · dentro {c.strada.join(" → ")}</>}
+                      {c.origine && <> · {PAROLE_ORIGINE[c.origine] ?? c.origine}</>}
+                      {c.fonte && <> ({c.fonte})</>}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {/* ⚠️ GLI INGREDIENTI SCOPERTI SI VEDONO SEMPRE, anche a
                   pannello chiuso: è il motivo per cui il database rifiuterà

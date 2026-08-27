@@ -135,6 +135,26 @@ aggiuntivo va sul conto lasciando pulito il food cost del piatto in carta. Gli
 ingredienti sostitutivi devono esistere in magazzino.
 * 25/08 — Al tavolo le risposte sono TRE, non due: si può, non si può, e «non
 l'ha ancora guardato nessuno».
+* 27/08 — Gli allergeni assegnati dall'assistente sono **ATTENDIBILI e non
+bloccano niente**. Conferma della voce del 24/08 e del 25/08.
+* 27/08 — In comanda si vede **l'allergene e basta**, con gli eliminabili
+premibili. I dettagli — da quale pezzo arriva — stanno nella RICETTA.
+* 27/08 — Nella ricetta si vede **la catena**: allergene → prodotto → dentro
+quale preparazione, più la ragione quando l'assistente ha dedotto. ⚠️ La
+postilla («l'uovo serve da coagulante») è sapere di Alessio, non del
+gestionale: non si inventa.
+* 27/08 — Dalla schermata delle schede prodotto **i prodotti si aprono**, per
+sistemare a mano ciò che manca.
+* 27/08 — L'assistente **continua a compilare tutto ciò che può dedurre**.
+
+## Come si gira nel gestionale
+
+* 27/08 — Il gesto principale di una schermata sta **dove arriva il pollice**:
+in basso, sul lato della mano che tiene il telefono. Vale per «Fotografa»,
+«Premi e parla», e ogni schermata dove l'azione è una sola e si fa in piedi.
+⚠️ **NON ANCORA FATTO** — si scontra con la voce del 21/08 (niente
+scorrimento laterale) e la questione è fra le domande.
+* 27/08 — Da ogni modulo si deve poter **tornare alla schermata iniziale**.
 
 ## Assistente — foto
 

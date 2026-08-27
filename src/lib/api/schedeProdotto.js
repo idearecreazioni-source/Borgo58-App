@@ -38,8 +38,14 @@ export async function compilaSchede(ids) {
   );
 }
 
-// I prodotti i cui allergeni sono ancora solo una stima del modello.
-// Finché sono qui dentro non valgono per la stampa del menu.
+// 🔴 QUESTA FUNZIONE È UN RESTO, e il commento che aveva sopra era una
+// FRASE DIVENTATA FALSA: diceva «finché sono qui dentro non valgono per la
+// stampa del menu», e dal 25/08/2026 non è più vero — un allergene dedotto
+// vale come confermato (decisione di Alessio). La rimozione di quella regola
+// fu fatta nella VISTA del database e non qui.
+//
+// ⚠️ Resta perché la usa ancora chi guarda i soli dedotti; per l'elenco con
+//    l'origine si usa `listOrigineAllergeni` qui sotto.
 export async function listAllergeniStimati() {
   const { data, error } = await supabase
     .from("ingredients")
@@ -72,4 +78,27 @@ export async function confermaTutti(scelte) {
   });
   if (error) throw error;
   return data;
+}
+
+/**
+ * I prodotti con la loro ORIGINE degli allergeni.
+ *
+ * 🔴 SOSTITUISCE `listAllergeniStimati`, che filtrava i soli «stimati» —
+ * e quel filtro era il resto di un cancello: dal 25/08/2026 un allergene
+ * dedotto **vale come confermato** (decisione di Alessio), quindi i
+ * dedotti non sono più una categoria in attesa di qualcosa.
+ *
+ * ⚠️ Quello che resta è il DATO, che serve al cameriere: da dove viene
+ * ogni allergene — letto in etichetta, da una fonte nominata, dedotto,
+ * o messo a mano da Alessio. Sparisce il cancello, non l'informazione.
+ */
+export async function listOrigineAllergeni() {
+  const { data, error } = await supabase
+    .from("ingredients")
+    .select("id, name, allergens, allergeni_tracce, origine_allergeni, alimentare")
+    .eq("active", true)
+    .eq("alimentare", true)
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
 }

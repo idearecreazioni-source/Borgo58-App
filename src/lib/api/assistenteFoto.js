@@ -144,11 +144,21 @@ export async function sbloccaSpesaAi() {
   return data;
 }
 
-/** Le ultime letture, per vedere dove sono finiti i soldi. */
+/**
+ * Le ultime letture, per vedere dove sono finiti i soldi.
+ *
+ * 🔴 DICEVANO SOLO «etichetta — 0,02 €» (visto da Alessio il 27/08). Fra un
+ * mese una riga così non dice niente: né SU COSA è stata spesa, né QUANDO.
+ * ⚠️ Il nome del prodotto era già in tabella (`ingredient_id`) e nessuno lo
+ * leggeva; la data c'era e non si mostrava. Non è stato aggiunto un dato:
+ * sono stati letti due dati che c'erano già.
+ * ⚠️ E resta vuoto quando la foto parte dalla Dashboard, dove un prodotto
+ * non c'è: lì il nome non si inventa, resta il genere.
+ */
 export async function listLettureFoto(quante = 30) {
   const { data, error } = await supabase
     .from("letture_foto")
-    .select("id, genere, riconosciuto, sicuro, esito, costo_euro, messaggio, creato_il")
+    .select("id, genere, riconosciuto, sicuro, esito, costo_euro, messaggio, creato_il, ingrediente:ingredients(name)")
     .order("creato_il", { ascending: false })
     .limit(quante);
   if (error) throw error;

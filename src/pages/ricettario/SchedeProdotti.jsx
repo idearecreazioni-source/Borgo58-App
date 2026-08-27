@@ -2,14 +2,35 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   compilaSchede,
-  confermaAllergeni,
-  confermaTutti,
-  listAllergeniStimati,
+  listOrigineAllergeni,
   listProdottiDaCompilare,
   quantiNeCompila,
 } from "../../lib/api/schedeProdotto";
 import { ALLERGENS, labelFor } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+
+// 🔴 L'ORIGINE SI DICE A PAROLE, e le parole sono quelle che serviranno in
+//    sala: non «stimati» ma «dedotto dal nome». Il cameriere legge questa
+//    riga davanti a un cliente che chiede, e «stimati» non gli dice cosa
+//    fare — «dedotto» sì: mostra gli ingredienti invece di garantire.
+// ⚠️ Il caso VUOTO non è un dedotto: è «non l'ha guardato nessuno», ed è
+//    l'unico che tiene ancora l'elenco fuori dal menu stampato. La decisione
+//    del 25/08 lo dichiara e lo affida al sorvegliante notturno, che non
+//    esiste ancora: finché non c'è, si dice.
+const ORIGINE = {
+  etichetta: "letto in etichetta",
+  fonte: "da una fonte consultata",
+  stimati: "dedotto dal nome",
+  confermati: "verificato da te",
+};
+
+function frasiOrigine(origine) {
+  return ORIGINE[origine] ?? "non l'ha guardato nessuno";
+}
+
+function coloreOrigine(origine) {
+  return origine ? "text-stone-600" : "text-b58-terracotta-dark";
+}
 
 const NOMI_CAMPI = {
   conservazione: "conservazione",
@@ -24,8 +45,7 @@ const NOMI_CAMPI = {
 
 export default function SchedeProdotti() {
   const [daCompilare, setDaCompilare] = useState([]);
-  const [stimati, setStimati] = useState([]);
-  const [scelte, setScelte] = useState({});
+  const [conAllergeni, setConAllergeni] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lavorando, setLavorando] = useState(false);
   const [esito, setEsito] = useState(null);
@@ -35,9 +55,9 @@ export default function SchedeProdotti() {
   const [quanti, setQuanti] = useState(null);
 
   const carica = async () => {
-    const [a, b] = await Promise.all([listProdottiDaCompilare(), listAllergeniStimati()]);
+    const [a, b] = await Promise.all([listProdottiDaCompilare(), listOrigineAllergeni()]);
     setDaCompilare(a);
-    setStimati(b);
+    setConAllergeni(b);
     // ⚠️ SILENZIO MOTIVATO, e la ragione è che qui non manca un dato: manca
     // una precisazione su un numero che c'è già. Se il conteggio non
     // risponde, il pulsante mostra il totale delle schede incomplete — cioè
@@ -47,12 +67,6 @@ export default function SchedeProdotti() {
     // ⚠️ E non è la lettura dell'elenco: quella sopra non ha nessun catch, e
     // se fallisce si vede.
     setQuanti(await quantiNeCompila().catch(() => null));
-    // Le caselle degli allergeni si ricostruiscono da ciò che è appena
-    // arrivato dal server, mai sopra una scelta in corso: il 12/08 una
-    // ricarica ha cancellato in silenzio il lavoro di Alessio.
-    setScelte((precedenti) =>
-      Object.fromEntries(b.map((i) => [i.id, precedenti[i.id] ?? [...(i.allergens ?? [])]]))
-    );
   };
 
   useEffect(() => {
@@ -73,48 +87,6 @@ export default function SchedeProdotti() {
     } finally {
       setLavorando(false);
     }
-  };
-
-  const tracceDi = (id) => stimati.find((i) => i.id === id)?.allergeni_tracce ?? [];
-
-  const conferma = async (id) => {
-    try {
-      // Le tracce si rimandano indietro come stanno: confermare gli
-      // allergeni non è il momento in cui cancellarle.
-      await confermaAllergeni(id, scelte[id] ?? [], tracceDi(id));
-      await carica();
-      setError("");
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const confermaTutte = async () => {
-    try {
-      await confermaTutti(
-        stimati.map((i) => ({
-          id: i.id,
-          allergeni: scelte[i.id] ?? [],
-          tracce: i.allergeni_tracce ?? [],
-        }))
-      );
-      await carica();
-      setError("");
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const spunta = (id, valore) => {
-    setScelte((s) => {
-      const attuali = s[id] ?? [];
-      return {
-        ...s,
-        [id]: attuali.includes(valore)
-          ? attuali.filter((v) => v !== valore)
-          : [...attuali, valore],
-      };
-    });
   };
 
   return (
@@ -214,64 +186,59 @@ export default function SchedeProdotti() {
               </p>
             </div>
           )}
-
-          <h2 className="mb-2 font-semibold">Allergeni da confermare ({stimati.length})</h2>
+          {/* ==================================================================
+              DA DOVE VENGONO GLI ALLERGENI
+              🔴 QUI C'ERA UN CANCELLO, e contraddiceva due decisioni in
+                 vigore. Diceva: «questi allergeni sono stimati dal nome del
+                 prodotto: finché non li confermi non vengono usati per la
+                 stampa del menu», con «Confermo tutti» accanto.
+                 · 24/08 — la compilazione è AUTOMATICA: niente conferma voce
+                   per voce, niente conferma di massa (proposta e rifiutata);
+                 · 25/08 — gli allergeni dedotti VALGONO COME CONFERMATI.
+                   L'origine informa il cameriere, non blocca niente.
+              🔴 E QUELLA FRASE ERA ANCHE FALSA: la rimozione del 25/08 fu
+                 fatta nella vista del database — dove un dedotto passa
+                 davvero — e non qui. La schermata è rimasta a raccontare una
+                 regola che il gestionale non applicava più.
+              ⚠️ SPARISCE IL CANCELLO, NON L'INFORMAZIONE: da dove viene ogni
+                 allergene resta, e serve al cameriere quando un cliente
+                 chiede. Su un dedotto mostra gli ingredienti invece di
+                 garantire.
+             ================================================================== */}
+          <h2 className="mb-2 font-semibold">Da dove vengono gli allergeni</h2>
           <p className="mb-4 testo-sala-grande text-stone-600">
-            Questi allergeni sono <strong>stimati dal nome del prodotto</strong>: finché non li
-            confermi <strong>non vengono usati per la stampa del menu</strong>. Sui prodotti crudi
-            il modello ci prende quasi sempre; sui prodotti lavorati l&apos;allergene sta
-            nell&apos;etichetta e non nel nome — il sedano dentro un ragù pronto, la soia dentro un
-            gelato. Quelli vanno guardati sulla confezione.
+            Quello che l&apos;assistente deduce vale: non c&apos;è niente da confermare. Questo
+            elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
+            in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
+            prodotto per aprirlo e sistemare a mano quello che manca.
           </p>
 
-          {stimati.length === 0 ? (
-            <p className="text-stone-600">Nessuno in attesa.</p>
+          {conAllergeni.length === 0 ? (
+            <p className="text-stone-600">Nessun prodotto ha allergeni.</p>
           ) : (
-            <>
-              <button
-                type="button"
-                className="tocco-bottone mb-4 rounded bg-b58-terracotta px-5 text-b58-parchment"
-                onClick={confermaTutte}
-              >
-                Confermo tutti ({stimati.length})
-              </button>
-              <p className="mb-4 testo-sala-grande text-stone-500">
-                Conferma in blocco quello che vedi spuntato qui sotto, così com&apos;è. Le
-                &laquo;possibili tracce&raquo; non ci sono e non le indovina nessuno: arriveranno
-                dalla foto dell&apos;etichetta al ricevimento merci.
-              </p>
-              <ul>
-              {stimati.map((i) => (
-                <li key={i.id} className="border-b border-stone-200 py-3 last:border-0">
-                  <div className="font-medium">{i.name}</div>
-                  <div className="my-2 flex flex-wrap gap-3">
-                    {/* ⚠️ Il bersaglio è l ETICHETTA, non il quadratino: si tocca
-                        la parola. Misurata a 5,00 mm nel censimento del 26/08 —
-                        e sono le caselle su cui Alessio corregge gli allergeni,
-                        cioè il dato che finisce sul menu. */}
-                    {ALLERGENS.map((a) => (
-                      <label key={a.value} className="tocco-campo inline-flex items-center testo-sala-grande">
-                        <input
-                          type="checkbox"
-                          className="mr-1"
-                          checked={(scelte[i.id] ?? []).includes(a.value)}
-                          onChange={() => spunta(i.id, a.value)}
-                        />
-                        {labelFor(ALLERGENS, a.value)}
-                      </label>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="tocco-bottone rounded border border-stone-300 px-4"
-                    onClick={() => conferma(i.id)}
+            <ul>
+              {conAllergeni.map((i) => (
+                <li key={i.id} className="border-b border-stone-200 last:border-0">
+                  {/* ⚠️ LA RIGA INTERA SI APRE, non una freccina in fondo: è
+                      la stessa forma della sala, e il bersaglio è alto
+                      1,05 cm invece dei millimetri di un&apos;icona. */}
+                  <Link
+                    to={`/ricettario/ingredienti/${i.id}`}
+                    className="tocco-riga flex flex-wrap items-baseline gap-x-2 gap-y-1 py-1"
                   >
-                    Confermo questi allergeni
-                  </button>
+                    <span className="font-medium">{i.name}</span>
+                    <span className="testo-sala text-stone-600">
+                      {(i.allergens ?? []).length === 0
+                        ? "nessun allergene"
+                        : (i.allergens ?? []).map((a) => labelFor(ALLERGENS, a)).join(", ")}
+                    </span>
+                    <span className={`testo-sala ${coloreOrigine(i.origine_allergeni)}`}>
+                      · {frasiOrigine(i.origine_allergeni)}
+                    </span>
+                  </Link>
                 </li>
               ))}
-              </ul>
-            </>
+            </ul>
           )}
         </>
       )}

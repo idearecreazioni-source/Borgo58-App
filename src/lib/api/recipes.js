@@ -315,3 +315,22 @@ export async function listRecipeAllergensFor(recipeIds) {
     ])
   );
 }
+
+/**
+ * DA DOVE VIENE OGNI ALLERGENE DI UNA RICETTA.
+ *
+ * 🔴 Le parole di Alessio: *«come mai è presente l'uovo in questo piatto di
+ * tortellini in brodo se la pasta è acqua e farina?»* — l'uovo è nel brodo.
+ * Il gestionale sommava gli allergeni dai pezzi e non diceva **da quale**,
+ * e un elenco senza provenienza davanti a un cliente non si può spiegare:
+ * si può solo ripetere.
+ *
+ * ⚠️ Serve nella RICETTA, dove Alessio guarda quando gli chiedono. **In
+ * comanda no**: lì si vede l'allergene e basta, con gli eliminabili
+ * premibili (decisione del 24/08). Le spiegazioni le dà lui di persona.
+ */
+export async function catenaAllergeni(recipeId) {
+  const { data, error } = await supabase.rpc("catena_allergeni", { p_recipe_id: recipeId });
+  if (error) throw error;
+  return data ?? [];
+}

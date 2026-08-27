@@ -117,8 +117,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 58 | 27/08/2026 | una caparra piu' grande del conto fa rifiutare lo scalo |
 | 59 | 27/08/2026 | il microfono non c'è perché la pagina è aperta dall'icona |
 | 60 | 27/08/2026 | la lista della spesa cerca il prodotto in magazzino |
+| 61 | 27/08/2026 | gli allergeni dedotti si confermano prima di stamparli |
 
-⚠️ **Righe: 61.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 62.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2400,3 +2401,28 @@ che non viene mai salvata perché non passa da nessun deposito.
    contrario di quello che deve fare un elenco della spesa. ⚠️ Il prezzo che
    si accetta: nessuna riga di lista si chiude più da sé al primo colpo — la
    chiusura passerà dal documento, che è dove Alessio ha deciso che stia.
+
+---
+
+## 61 · 27/08/2026 — «gli allergeni dedotti si confermano prima di stamparli»
+
+1. **Cosa era stato deciso, e quando.** Il 25/08 da me, **senza mandato**: un
+   allergene dedotto resta «da verificare» e il piatto che lo contiene non
+   stampa l'elenco sul menu, finché qualcuno non conferma.
+2. **La ragione di allora.** Su una materia di salute sbagliare dalla parte
+   di non promettere sembrava sempre la scelta prudente.
+3. **Cosa si decide adesso.** Un allergene dedotto **vale come confermato**.
+   L'origine informa il cameriere, non blocca niente. Sparisce la conferma di
+   massa, sparisce il blocco della stampa; **resta il dato**.
+4. **Perché la ragione di allora non vale più.** L'aveva già rovesciata
+   Alessio il 25/08 sera, e questa riga esiste perché **la rimozione fu fatta
+   in un posto solo su quattro**: tolta dalla vista del database, rimasta
+   nella schermata delle schede prodotto, nel commento della colonna, in un
+   commento dell'API e nella frase della scheda ricetta. 🔴 **Quindi non è
+   "tornata": non è mai stata tolta da tre posti su quattro** — e le parole
+   rimaste indietro non erano innocue, *dicevano una cosa falsa sul
+   gestionale*. Chi le leggeva credeva che confermare servisse a qualcosa che
+   già funzionava da sé. ⚠️ La ragione della prudenza resta vera per **un**
+   caso, ed è dichiarato: l'origine **vuota**, cioè «non l'ha guardato
+   nessuno», che non è un dedotto — lì l'elenco resta fuori dal menu finché
+   il sorvegliante notturno non esiste.

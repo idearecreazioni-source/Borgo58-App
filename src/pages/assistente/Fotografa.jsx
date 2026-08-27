@@ -256,6 +256,16 @@ export default function Fotografa() {
                   className="tocco-riga flex flex-wrap items-center justify-between gap-2 rounded-md bg-b58-cream-dark/40 px-3"
                 >
                   <span className="testo-sala text-b58-charcoal">
+                    {/* 🔴 SU COSA, e QUANDO. Prima c'era solo «etichetta —
+                        0,02 €»: fra un mese quella riga non dice niente su
+                        dove sono finiti i soldi dell'assistente.
+                        ⚠️ Il nome sta davanti perché è quello che si cerca
+                           scorrendo; il genere resta solo quando il nome
+                           non c'è — cioè quando la foto è partita dalla
+                           Dashboard, dove un prodotto non c'è ancora. */}
+                    {l.ingrediente?.name && (
+                      <strong className="font-medium">{l.ingrediente.name} · </strong>
+                    )}
                     {l.esito === "letta"
                       ? `${l.riconosciuto}${l.sicuro === false ? " (non sicuro)" : ""}`
                       : l.esito === "tetto"
@@ -266,8 +276,12 @@ export default function Fotografa() {
                             ? "non riconosciuta"
                             : "non è riuscita"}
                   </span>
-                  <span className="testo-sala text-b58-charcoal-soft">
-                    {formatEUR(l.costo_euro)}
+                  <span className="testo-sala text-b58-charcoal-soft whitespace-nowrap">
+                    {new Date(l.creato_il).toLocaleDateString("it-IT", {
+                      day: "numeric",
+                      month: "short",
+                    })}{" "}
+                    · {formatEUR(l.costo_euro)}
                   </span>
                 </li>
               ))}

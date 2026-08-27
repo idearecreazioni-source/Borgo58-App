@@ -1943,7 +1943,13 @@ export default function RicettaDetail() {
         <div className={isFingerFood ? "" : "mb-4"}>
           {allergens.daVerificare && (
             <p className="mb-3 rounded bg-red-50 px-3 py-2 testo-sala-grande text-red-800">
-              <strong>Non verificato.</strong> Allergeni solo stimati (o mai guardati) su:{" "}
+              {/* 🔴 QUESTA FRASE DICEVA UNA COSA FALSA fino al 27/08: parlava di
+                  allergeni «solo stimati», e dal 25/08 un dedotto vale come
+                  confermato — la rimozione di quella regola fu fatta nella
+                  vista del database e non nelle parole. Adesso il caso è uno
+                  solo, e va detto per quello che è. */}
+              <strong>Non l&apos;ha guardato nessuno.</strong> Su questi prodotti gli allergeni
+              non li ha ancora visti né una persona né l&apos;assistente:{" "}
               {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
               l&apos;elenco allergeni sul menu.
             </p>

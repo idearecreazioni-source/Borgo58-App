@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Logo from "./Logo";
@@ -6,6 +7,9 @@ import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { pathname } = useLocation();
+  // Sulla Dashboard il ritorno alla Dashboard non serve.
+  const inCasa = pathname === "/" || pathname === "/dashboard";
 
   return (
     <div className="min-h-screen bg-b58-cream flex">
@@ -51,7 +55,35 @@ export default function Layout() {
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar mobile */}
         <header className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
-          <Logo size="sm" />
+          {/* 🔴 DALLA DASHBOARD NON SI TORNAVA INDIETRO (27/08, visto da
+              Alessio col telefono): si tocca una sezione, si arriva nel
+              modulo, e in alto a sinistra non c'è niente che riporti a casa.
+              Misurato: **18 rotte di primo livello su 18** erano senza.
+              ⚠️ LA CURA È UNA SOLA, ED È QUI. Il difetto sta nel layout —
+                 cioè in nessuna schermata e in tutte — e curarlo schermata
+                 per schermata vorrebbe dire quindici modifiche e la
+                 sedicesima dimenticata. È la stessa forma del pulsante del
+                 menu, che per lo stesso motivo nessun censimento per
+                 schermata aveva visto (22/08).
+              ⚠️ E IL BERSAGLIO È IL LOGO, non un'icona in più: era già lì,
+                 è dove il pollice arriva, e «il logo riporta a casa» è la
+                 cosa che si prova per prima su qualunque schermo. Aggiungere
+                 una freccia accanto avrebbe messo due gesti a un centimetro
+                 l'uno dall'altro per fare la stessa cosa. */}
+          {inCasa ? (
+            <Logo size="sm" />
+          ) : (
+            <Link
+              to="/dashboard"
+              aria-label="Torna alla schermata iniziale"
+              className="tocco-bottone inline-flex items-center gap-1 rounded-lg pr-2 text-b58-charcoal hover:bg-b58-cream-dark"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              <Logo size="sm" />
+            </Link>
+          )}
           {/* 🔴 IL BERSAGLIO CHE NESSUN CENSIMENTO POTEVA VEDERE (22/08,
               trovato da una sessione parallela). Misurava **5,14 × 5,14
               mm** — `p-2` più un'icona da 22 punti — contro un criterio di
