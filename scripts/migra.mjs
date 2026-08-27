@@ -48,8 +48,10 @@ import {
   obbligatorio,
   REF_PRODUZIONE,
   strumento,
+  testoDeiRiepiloghi,
   titolo,
   versioniDoppie,
+  versioniNonNominate,
 } from "./comune.mjs";
 import {
   controllaMigrazione,
@@ -266,6 +268,48 @@ if (scoperte.length > 0) {
     "",
     "Scrivi il riepilogo in docs/consegne/ nominando la versione per intero,",
     "poi si riprende. Non si applica altro finche' l'arretrato non e' chiuso."
+  );
+}
+
+// --- Vincolo 0-bis: e nemmeno quelle che stanno per entrare ----------
+// 🔴 NASCE DA UNA MISURA DEL 28/08, e corregge il MOMENTO in cui il
+// vincolo qui sopra guarda. Quello controlla cio' che e' GIA' applicato:
+// per come e' fatto **non puo' fermare la prima applicazione non
+// documentata**, solo la successiva. E' esattamente quello che e'
+// successo il 27/08 — cinque migrazioni entrate in produzione senza
+// riepilogo, e il blocco arrivato il giro dopo. La rete non e' stata
+// aggirata e non e' rotta: ha fatto quello che sapeva fare, **in ritardo
+// di un giro**.
+//
+// 🔴 E IL 28/08 IL BUCO SI E' VISTO IN UNA FORMA NUOVA: quattro
+// migrazioni su quindici in attesa non erano nominate da nessun
+// riepilogo, perche' quello che le conteneva le scriveva come INTERVALLO
+// (`…026 → …032`), che nomina i due estremi e lascia mute le cinque in
+// mezzo. Il vincolo qui sopra se ne sarebbe accorto **solo dopo averle
+// applicate**.
+//
+// ⚠️ E QUI NON SI PRETENDONO I NUMERI VERI, che si conoscono solo dopo:
+// si pretende che il riepilogo ESISTA e nomini le versioni per intero.
+// La differenza e' tutta qui — un documento senza i numeri
+// dell'applicazione non e' un documento con dei buchi da riempire: e' il
+// racconto del lavoro, che a questo punto e' finito e committato. I
+// numeri si aggiungono dopo, come sempre.
+const nonNominate = versioniNonNominate(
+  mancanti.map((m) => m.versione),
+  testoDeiRiepiloghi()
+);
+if (nonNominate.length > 0) {
+  fermati(
+    "FERMO: queste migrazioni stanno per entrare in produzione e nessun riepilogo le nomina.",
+    ...nonNominate.map((v) => `  · ${v}`),
+    "",
+    "⚠️ Attenzione alla forma abbreviata: un riepilogo che scrive «…026 → …032»",
+    "nomina i due estremi e lascia mute quelle in mezzo. Il numero va scritto",
+    "per intero, una versione alla volta.",
+    "",
+    "Scrivi il riepilogo in docs/consegne/, poi si riprende. I numeri veri",
+    "dell'applicazione si aggiungono dopo: quello che serve adesso e' che il",
+    "documento esista e dica quali versioni entrano."
   );
 }
 

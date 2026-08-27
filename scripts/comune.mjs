@@ -68,15 +68,45 @@ export const PRIMA_CON_RIEPILOGO = "20260815000006";
  * @returns {string[]} le versioni scoperte, in ordine
  */
 export function migrazioniSenzaRiepilogo(versioniApplicate) {
+  return versioniNonNominate(versioniApplicate, testoDeiRiepiloghi());
+}
+
+/** Tutto il testo di `docs/consegne/`, in un pezzo solo. */
+export function testoDeiRiepiloghi() {
   const cartella = "docs/consegne";
-  if (!existsSync(cartella)) return [];
-  const testo = readdirSync(cartella)
+  if (!existsSync(cartella)) return "";
+  return readdirSync(cartella)
     .filter((f) => f.endsWith(".md"))
     .map((f) => readFileSync(path.join(cartella, f), "utf8"))
     .join("\n");
-  return [...versioniApplicate]
+}
+
+/**
+ * Quali di queste versioni non compaiono PER INTERO nei riepiloghi.
+ *
+ * ⚠️ LA PARTE PURA, separata apposta il 28/08: finche' la ricerca era
+ * dentro la funzione che legge la cartella, l'unico modo di provarla era
+ * avere davvero quei file — quindi non si poteva provare **il caso che
+ * conta**, cioe' una versione nominata a meta'.
+ *
+ * 🔴 E IL CASO CHE CONTA E' L'INTERVALLO. Un riepilogo che scrive
+ * «`…026` → `…032`» nomina i due estremi e lascia mute le cinque in mezzo:
+ * la ricerca trova `20260827000026` e `20260827000032` e non trova le
+ * altre — che e' il comportamento giusto, ma **nessuno lo scopriva**,
+ * perche' fino a oggi il controllo guardava solo cio' che era GIA'
+ * applicato. Il 28/08 quattro migrazioni su quindici erano in quello
+ * stato. La forma abbreviata era gia' nominata nel commento della soglia
+ * qui sopra come il motivo per cui le migrazioni fra il 10/08 e il 15/08
+ * non passerebbero: era una trappola descritta e mai chiusa.
+ *
+ * @param {Iterable<string>} versioni
+ * @param {string} testo il contenuto dei riepiloghi
+ * @returns {string[]} le versioni scoperte, in ordine
+ */
+export function versioniNonNominate(versioni, testo) {
+  return [...versioni]
     .filter((v) => v >= PRIMA_CON_RIEPILOGO)
-    .filter((v) => !testo.includes(v))
+    .filter((v) => !String(testo).includes(v))
     .sort();
 }
 
