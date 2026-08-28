@@ -121,8 +121,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 62 | 27/08/2026 | le categorie degli ingredienti le ridice anche il JavaScript |
 | 63 | 27/08/2026 | gli elenchi chiusi si scrivono dentro i prompt di MEMO |
 | 64 | 28/08/2026 | la rete dei riepiloghi guarda solo ciò che è già applicato |
+| 65 | 28/08/2026 | le migrazioni si applicano per istruzioni, non in blocco |
 
-⚠️ **Righe: 65.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 66.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2516,3 +2517,37 @@ che non viene mai salvata perché non passa da nessun deposito.
    cinque in mezzo, e il 28/08 quattro migrazioni su quindici erano in quello
    stato. Quella trappola era **già descritta** nel commento della soglia e non
    era mai stata chiusa per il futuro.
+
+---
+
+## 65 · 28/08/2026 — «le migrazioni si applicano per istruzioni, non in blocco»
+
+1. **Cosa era stato deciso, e quando.** Dal primo giorno del comando `migra`:
+   ogni migrazione si applica con `psql -v ON_ERROR_STOP=1 -f file.sql`, cioè
+   **una transazione per istruzione**.
+
+2. **La ragione di allora.** Un valore aggiunto a un enum non è usabile finché
+   la transazione che lo aggiunge non è chiusa (misurato il 19/08/2026).
+   Applicando per istruzioni, l'`alter type` su una riga sua è già committato
+   quando il blocco successivo lo adopera — e quelle migrazioni non vanno
+   spezzate in due file.
+
+3. **Cosa si decide adesso.** `--single-transaction` **per impostazione
+   predefinita**: o la migrazione entra tutta, registrazione compresa, o non
+   entra niente. Per istruzioni **solo** dove il file contiene davvero un
+   valore aggiunto a un enum — riconosciuto **dal file** e non ricordato a
+   memoria, e **dichiarato a voce alta** mentre succede. La regola vive in
+   `argomentiMigrazione()` in `scripts/comune.mjs`, un posto solo per tutt'e
+   quattro i comandi che applicano migrazioni.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Vale ancora, per otto
+   migrazioni su 310** — e le otto continuano a girare come prima. Quello che
+   era sbagliato non era la ragione: era **la sua larghezza**. Applicarla a
+   tutte e 310 per comodità di scrittura faceva pagare a ogni altra migrazione
+   il rischio di uno stato a metà **che nessuno può vedere**, ed è successo il
+   28/08: la `20260827000018` in produzione con tredici oggetti su tredici e
+   zero righe nel registro, mentre lo strumento stampava «una migrazione che
+   fallisce non lascia niente a meta'».
+   ⚠️ **Il danno non era lo stato a metà: era il silenzio.** Il registro diceva
+   289, il catalogo diceva un'altra cosa, e nessuno dei due dichiarava di
+   essere in disaccordo con l'altro.
