@@ -1018,3 +1018,35 @@ no per lo stesso ingrediente, cosa scrivo?»
 dell'etichetta comincia a raccoglierle e compaiono nella scheda ricetta
 separate dagli allergeni veri. Se basta la dicitura generale, restano
 dove sono — un dato dell'ingrediente, che nessuno stampa.
+
+## T10 · Devo tracciare le scadenze dei prodotti che compro?
+
+**Contesto.** Il gestionale ha uno scadenziario che segnala le partite vicine
+alla scadenza, e chiede quindi che ogni carico porti con sé una data. Ma
+Alessio **non usa conserve industriali** e **trasforma il fresco entro due
+giorni dall'acquisto**: in una cucina così, buona parte di quelle date
+descrive merce che è già stata usata prima ancora che il preavviso scatti.
+
+⚠️ Il 28/08/2026 il ripiego del preavviso è stato portato sul valore **più
+prudente** per tutti i prodotti (decisione sua). Questo rende la domanda più
+urgente, non meno: senza una regola vera lo scadenziario segnala molto, e un
+elenco che segnala sempre è un elenco che si smette di guardare.
+
+**Domanda, nelle parole di Alessio.** «Nel mio piano di autocontrollo, tenuto
+conto che non uso conserve industriali e trasformo il fresco entro due giorni
+dall'acquisto, devo tenere traccia delle scadenze dei prodotti acquistati o
+basta il controllo all'accettazione più i documenti dei fornitori? E per il
+pesce cambia qualcosa?»
+
+**Cosa cambia nell'app.** Se basta il controllo all'accettazione, la data di
+scadenza smette di essere un campo che il gestionale pretende, e lo
+scadenziario si restringe a ciò che davvero resta in cella. Se invece la
+tracciatura serve, resta com'è — e il preavviso prudente è la scelta giusta.
+⚠️ La risposta sul **pesce** può separare le due strade: è il prodotto dove
+il controllo all'accettazione pesa di più e la conservazione dura di meno.
+
+**Dove vive**: `src/pages/magazzino/Scadenze.jsx`, `partite_in_scadenza()`,
+`preavviso_giorni()`.
+
+**Stato**: aperto.
+
