@@ -120,8 +120,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 61 | 27/08/2026 | gli allergeni dedotti si confermano prima di stamparli |
 | 62 | 27/08/2026 | le categorie degli ingredienti le ridice anche il JavaScript |
 | 63 | 27/08/2026 | gli elenchi chiusi si scrivono dentro i prompt di MEMO |
+| 64 | 28/08/2026 | la rete dei riepiloghi guarda solo ciò che è già applicato |
 
-⚠️ **Righe: 64.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 65.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2477,3 +2478,41 @@ che non viene mai salvata perché non passa da nessun deposito.
    scritti *anche* nelle istruzioni, perché lì servono a **spiegare quando
    usare quale valore** («frigo_0_4 per carne, pesce, freschissimi») — e quella
    parte è sapere di cucina, non un vocabolario del database.
+
+---
+
+## 64 · 28/08/2026 — «la rete dei riepiloghi guarda solo ciò che è già applicato»
+
+1. **Cosa era stato deciso, e quando.** 16/08/2026: lo script che applica le
+   migrazioni si rifiuta di toccare la produzione se esiste una migrazione
+   **già applicata** che nessun riepilogo nomina. Il commento in
+   `scripts/comune.mjs` difende esplicitamente il momento: *«controlla ciò che
+   è GIÀ applicato, non ciò che sta per esserlo… pretenderlo prima
+   costringerebbe a scrivere un documento con dei buchi da riempire, cioè a
+   fingere»*.
+2. **La ragione di allora.** Il riepilogo contiene i **numeri veri
+   dell'applicazione** — quante migrazioni ci sono adesso, cosa dice il
+   connettore — che si conoscono solo dopo aver applicato.
+3. **Cosa si decide adesso.** Il controllo di prima **resta intero**, e gliene
+   si affianca uno che gira **prima** di applicare. Quello nuovo chiede una
+   cosa più debole: non i numeri, ma che il riepilogo **esista e nomini le
+   versioni per intero**.
+4. **Perché la ragione di allora non vale più.** 🔴 **Vale ancora, e non è
+   stata toccata** — infatti il controllo vecchio è ancora lì e chiede ancora i
+   numeri. Quello che è cambiato è che si sono separate **due domande** che quel
+   commento trattava come una sola: *«il riepilogo ha i numeri?»* (dopo) e *«il
+   riepilogo esiste e dice quali versioni entrano?»* (prima). La prima non si
+   può anticipare; la seconda sì, e non costa nessuna finzione.
+   ⚠️ **Il prezzo, dichiarato**: l'ordine scritto in CLAUDE.md §2 — *commit →
+   push → `npm run migra` → riepilogo* — adesso vuole il riepilogo **prima** del
+   comando, coi numeri veri aggiunti dopo. In pratica è già quello che si fa: il
+   riepilogo del 27/08 esisteva prima dell'applicazione e diceva «nessuna in
+   produzione».
+   ⚠️ **E la ragione che ha reso necessario il cambio non è quella misurata dal
+   mandato.** La rete non era rotta e non è stata aggirata: fa scattare il
+   blocco **un giro dopo**, ed è esattamente quello che è successo il 27/08. Il
+   buco vero era un altro, mai misurato prima — **la forma abbreviata**: un
+   riepilogo che scrive «`…026` → `…032`» nomina i due estremi e lascia mute le
+   cinque in mezzo, e il 28/08 quattro migrazioni su quindici erano in quello
+   stato. Quella trappola era **già descritta** nel commento della soglia e non
+   era mai stata chiusa per il futuro.
