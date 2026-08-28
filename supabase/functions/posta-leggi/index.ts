@@ -68,7 +68,29 @@ const QUANTE_PER_GIRO = 10;
 // in elenco con scritto cosa e' successo, e la si rimette in coda a mano
 // quando si e' capito il perche' — che e' il momento giusto per
 // riprovare, non «fra un quarto d'ora».
-const MAX_TENTATIVI = 3;
+// Il numero VERO vive in `service_settings.max_tentativi_lettura_posta`
+// (28/08/2026). Prima stava solo qui, e la schermata della Posta non aveva
+// modo di saperlo: non poteva distinguere una mail che sta per essere
+// letta da una che non lo sara MAI PIU, e diceva a tutt e due «la lettura
+// parte da sola entro un quarto d ora» — falso sulla seconda, visto con
+// gli occhi il 28/08 su una mail abbandonata.
+// Questo resta come RIPIEGO dichiarato se la lettura del parametro
+// fallisce: un tetto illeggibile non deve trasformarsi in «riprova per
+// sempre», che e la spesa che cresce da sola.
+const TENTATIVI_DI_RIPIEGO = 3;
+let MAX_TENTATIVI = TENTATIVI_DI_RIPIEGO;
+
+async function caricaTettoTentativi() {
+  try {
+    const r = await db("service_settings?select=max_tentativi_lettura_posta&limit=1");
+    if (!r.ok) return;
+    const righe = await r.json();
+    const n = Number(righe?.[0]?.max_tentativi_lettura_posta);
+    if (Number.isFinite(n) && n > 0) MAX_TENTATIVI = n;
+  } catch {
+    // Si tiene il ripiego: meglio fermarsi dopo tre che non fermarsi mai.
+  }
+}
 
 // ---------------------------------------------------------------------
 // GLI ALLEGATI CHE SI POSSONO LEGGERE DAVVERO
@@ -536,6 +558,7 @@ async function leggiLaPosta() {
   // le stesse per tutte le mail di questa passata, e chiederle a ogni riga
   // sarebbe un giro di rete per niente.
   await caricaCategorieAmmesse();
+  await caricaTettoTentativi();
 
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
   // nome di un file dice spessissimo tutto — «Locazione Parlato

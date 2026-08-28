@@ -3,10 +3,20 @@ import { Link } from "react-router-dom";
 import {
   confermaAzione,
   getAllegatoUrl,
+  getMaxTentativiLettura,
   listPostaInAttesa,
   rifiutaAzione,
+  riprovaLettura,
   scartaPosta,
 } from "../../lib/api/posta";
+import {
+  cosaCeDaLeggere,
+  etichettaConferma,
+  etichettaRifiuto,
+  motivoCaricoBloccato,
+  notaDiLettura,
+  statoLettura,
+} from "../../lib/calcoli/posta";
 import { listIngredients } from "../../lib/api/ingredients";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
@@ -680,7 +690,10 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
             onChange={(e) => cambia("fornitore_id", e.target.value)}
             className={campo}
           >
-            <option value="">— nessuno —</option>
+            {/* Non piu' «nessuno»: un carico senza fornitore non entra,
+                e l'etichetta dice cosa fare invece di offrire una strada
+                che porta a un rifiuto. */}
+            <option value="">— scegli il fornitore —</option>
             {nonLetto(fornitori) && (
               <option disabled>— non riesco a leggere i fornitori —</option>
             )}
@@ -737,7 +750,17 @@ export default function PostaInArrivo() {
   const [posta, setPosta] = useState([]);
   const [valori, setValori] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // 🔴 L'errore porta con se' DOVE e' successo (28/08/2026).
+  // Prima era una stringa sola, mostrata in cima alla pagina: su un elenco
+  // di mail, un rifiuto sulla terza compariva fuori dallo schermo e chi
+  // non vedeva succedere niente ripremeva. E' lo stesso difetto gia'
+  // curato in Cassa il 17/08 — «un rifiuto lontano dal gesto e' un
+  // rifiuto che non c'e'» — che qui non era mai stato curato.
+  // `dove` vuoto = e' un guasto del caricamento, e li' la cima e' il
+  // posto giusto perche' non c'e' nessuna riga a cui attaccarlo.
+  const [errore, setErrore] = useState(null);
+  const error = errore?.dove ? "" : (errore?.messaggio ?? "");
+  const setError = (m) => setErrore(m ? { dove: null, messaggio: m } : null);
   const [inCorso, setInCorso] = useState(null);
   // Servono solo al carico da fattura, ma si caricano una volta sola:
   // aprire «modifica» su una fattura non deve aspettare una query.
@@ -746,6 +769,15 @@ export default function PostaInArrivo() {
   // Quale azione ha i campi aperti. Uno alla volta: se si aprissero tutti
   // tornerebbe la schermata che Alessio ha già bocciato due volte.
   const [aperta, setAperta] = useState(null);
+  // Quale mail ha il testo aperto. 🔴 Fino al 28/08 il testo della mail
+  // arrivava nel browser e non si vedeva da nessuna parte: nessun gesto
+  // per leggerlo, e il soggetto non era cliccabile. Misurato quel giorno
+  // sul progetto di prova: 18 mail su 18 avevano un testo, e ZERO
+  // allegati — cioè l'unica cosa apribile era l'unica che non c'era.
+  const [testoAperto, setTestoAperto] = useState(null);
+  // Il tetto dei tentativi di lettura: vive in `service_settings` perché
+  // lo devono leggere in due (questa schermata e la funzione che legge).
+  const [maxTentativi, setMaxTentativi] = useState(null);
 
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
@@ -803,13 +835,21 @@ export default function PostaInArrivo() {
       .then((ent) => listSuppliers(ent.srls.id))
       .then(setFornitori)
       .catch((e) => setError(e.message));
+    // Il tetto dei tentativi. `leggi` marca NON_LETTO invece di ingoiare:
+    // se non si riesce a leggerlo la schermata NON indovina — dice che non
+    // sa se MEMO riprovera, e offre lo stesso la via d uscita.
+    leggi(getMaxTentativiLettura()).then(setMaxTentativi);
   }, []);
+
+  // NON_LETTO non e un numero: si passa `null`, e statoLettura risponde
+  // «non lo so» invece di far finta di saperlo.
+  const tettoTentativi = nonLetto(maxTentativi) ? null : maxTentativi;
 
   const cambia = (azioneId, chiave, valore) =>
     setValori((v) => ({ ...v, [azioneId]: { ...v[azioneId], [chiave]: valore } }));
 
   const agisci = async (azioneId, fn) => {
-    setError("");
+    setErrore(null);
     setInCorso(azioneId);
     try {
       await fn();
@@ -829,7 +869,8 @@ export default function PostaInArrivo() {
         leggi(listSuppliers()).then(setFornitori),
       ]);
     } catch (e) {
-      setError(e.message);
+      // Sulla riga toccata, mai in cima: e' li' che si sta guardando.
+      setErrore({ dove: azioneId, messaggio: e.message });
     } finally {
       setInCorso(null);
     }
@@ -887,18 +928,93 @@ export default function PostaInArrivo() {
                 <p className="testo-sala-grande text-b58-charcoal mt-1 mb-3">{m.proposta_sintesi}</p>
               )}
 
-              {m.stato === "da_leggere" && (
-                <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
-                  Non ancora letta — la lettura parte da sola entro un quarto d&apos;ora.
-                </p>
+              {/* 🔴 LO STATO DI LETTURA, DETTO COME STA (28/08/2026).
+                  Prima questa riga compariva su OGNI mail `da_leggere` e
+                  diceva sempre la stessa cosa. Su una mail che il lettore
+                  aveva abbandonato dopo tre tentativi era falsa — visto
+                  con gli occhi, non dedotto — e sotto ce n'erano altre
+                  due: «l'ho letta solo in parte» (non l'aveva letta) e
+                  «apri l'allegato» (quella mail non ne aveva). */}
+              {statoLettura(m, tettoTentativi).frase && (
+                <div
+                  className={
+                    statoLettura(m, tettoTentativi).chiave === "arresa"
+                      ? "testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
+                      : "testo-sala-grande text-b58-charcoal-soft mb-3"
+                  }
+                >
+                  <p>{statoLettura(m, tettoTentativi).frase}</p>
+                  {/* La via d'uscita. La funzione esisteva nel database dal
+                      12/08 e non la chiamava nessuno: l'unico gesto offerto
+                      su una mail bloccata era buttarla via. */}
+                  {statoLettura(m, tettoTentativi).puoRiprovare && (
+                    <button
+                      type="button"
+                      disabled={inCorso === m.id}
+                      onClick={() => agisci(m.id, () => riprovaLettura(m.id))}
+                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark testo-sala-grande px-3 py-1.5"
+                    >
+                      {inCorso === m.id ? "…" : "Fai riprovare a leggerla"}
+                    </button>
+                  )}
+                </div>
               )}
 
-              {m.lettura_note && (
-                <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
-                  Ho letto questa mail solo in parte: {m.lettura_note}. Apri l&apos;allegato e
-                  controlla i dati a mano.
-                </p>
-              )}
+              {(() => {
+                const ce = cosaCeDaLeggere(m);
+                const nota = notaDiLettura(
+                  m,
+                  statoLettura(m, tettoTentativi),
+                  ce
+                );
+                return nota ? (
+                  <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3">
+                    {nota.frase}
+                  </p>
+                ) : null;
+              })()}
+
+              {/* 🔴 LEGGERE LA MAIL. Il testo arrivava già nel browser — la
+                  lettura lo chiede con `*` — e non c'era nessun gesto per
+                  vederlo: il soggetto non era cliccabile e l'unica cosa
+                  apribile erano gli allegati. Misurato il 28/08 sul
+                  progetto di prova: 18 mail su 18 avevano un testo e ZERO
+                  avevano allegati, cioè il gesto esisteva solo per la cosa
+                  che non c'era mai.
+                  ⚠️ E quando non c'è niente da leggere lo si DICE: «non si
+                  apre perché non c'è niente» e «non si apre perché il gesto
+                  manca» sono due difetti diversi, e un elenco che non dice
+                  quale dei due sta capitando è esso stesso il difetto. */}
+              {(() => {
+                const ce = cosaCeDaLeggere(m);
+                if (!ce.haTesto) {
+                  return ce.nulla ? (
+                    <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
+                      Questa mail non ha né testo né allegati da aprire: c&apos;è solo
+                      l&apos;oggetto qui sopra.
+                    </p>
+                  ) : null;
+                }
+                return (
+                  <div className="mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setTestoAperto(testoAperto === m.id ? null : m.id)}
+                      className="tocco-bottone testo-sala-grande text-b58-terracotta hover:underline"
+                    >
+                      {testoAperto === m.id ? "Chiudi la mail" : "Leggi la mail"}
+                    </button>
+                    {testoAperto === m.id && (
+                      // `whitespace-pre-wrap` perché una mail va a capo dove
+                      // ha deciso chi l'ha scritta, e `break-words` perché un
+                      // link lungo non ha spazi: senza, sborda sul telefono.
+                      <p className="testo-sala-grande text-b58-charcoal bg-white/60 ring-1 ring-b58-charcoal/10 rounded-lg px-3 py-2 mt-2 whitespace-pre-wrap break-words">
+                        {m.testo}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {m.allegati?.length > 0 && (
                 <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
@@ -991,35 +1107,66 @@ export default function PostaInArrivo() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      type="button"
-                      disabled={inCorso === a.id}
-                      onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                      className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
-                    >
-                      {inCorso === a.id ? "…" : "Conferma"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={inCorso === a.id}
-                      onClick={() => agisci(a.id, () => rifiutaAzione(a.id))}
-                      className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
-                    >
-                      No
-                    </button>
-                    {/* Il carico non ha un «modifica»: le sue righe si
-                        aprono una alla volta da sole. */}
-                    {CAMPI[a.tipo]?.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setAperta(aperta === a.id ? null : a.id)}
-                        className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
-                      >
-                        {aperta === a.id ? "chiudi" : "modifica"}
-                      </button>
-                    )}
-                  </div>
+                  {/* 🔴 IL PULSANTE DICE COSA SUCCEDE A COSA (28/08/2026).
+                      Misurato a schermo quel giorno: dei 10 pulsanti della
+                      Posta, 5 non nominavano l'oggetto — «Conferma» due
+                      volte, «No» due volte, «modifica». Sono quelli che
+                      decidono se un documento entra in archivio o se della
+                      merce entra in magazzino.
+                      ⚠️ E il carico si SPEGNE CON LA RAGIONE invece di
+                      restare premibile per essere rifiutato: il rifiuto
+                      vero vive nella funzione del database, questa è la
+                      stessa regola detta prima. */}
+                  {(() => {
+                    const bloccato = motivoCaricoBloccato(a, valori[a.id]);
+                    return (
+                      <>
+                        {bloccato && (
+                          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                            {bloccato}
+                          </p>
+                        )}
+                        {/* Il rifiuto del database, DOVE si è premuto. I
+                            messaggi in italiano ci sono già (gli 86 rifiuti
+                            muti sono stati chiusi il 27/08); quello che
+                            mancava era farli arrivare sotto gli occhi. */}
+                        {errore?.dove === a.id && (
+                          <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                            {errore.messaggio}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <button
+                            type="button"
+                            disabled={inCorso === a.id || !!bloccato}
+                            onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
+                            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
+                          >
+                            {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={inCorso === a.id}
+                            onClick={() => agisci(a.id, () => rifiutaAzione(a.id))}
+                            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark disabled:opacity-50 transition-colors text-b58-charcoal testo-sala-grande px-3 py-1.5"
+                          >
+                            {etichettaRifiuto(a)}
+                          </button>
+                          {/* Il carico non ha un «modifica»: le sue righe si
+                              aprono una alla volta da sole. */}
+                          {CAMPI[a.tipo]?.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setAperta(aperta === a.id ? null : a.id)}
+                              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta ml-1"
+                            >
+                              {aperta === a.id ? "Chiudi i campi" : "Correggi i dati"}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
 
@@ -1037,6 +1184,13 @@ export default function PostaInArrivo() {
               >
                 Non serve niente di tutto questo — togli la mail
               </button>
+              {/* Anche qui l'esito sta sulla riga toccata: sia lo scarto sia
+                  «fai riprovare a leggerla» passano da `agisci(m.id, …)`. */}
+              {errore?.dove === m.id && (
+                <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-2">
+                  {errore.messaggio}
+                </p>
+              )}
             </div>
           );
         })

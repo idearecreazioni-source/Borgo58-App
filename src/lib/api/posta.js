@@ -97,3 +97,41 @@ export async function getAllegatoUrl(storagePath) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+/**
+ * Dopo quanti tentativi falliti MEMO smette di riprovare a leggere.
+ *
+ * ⚠️ Vive nel database e non qui: la schermata e la funzione online che
+ * legge devono usare LO STESSO numero, altrimenti la Posta racconta uno
+ * stato di lettura che non corrisponde a quello vero — ed è esattamente
+ * da lì che nasceva la frase «la lettura parte da sola entro un quarto
+ * d'ora» su una mail che il lettore aveva già abbandonato.
+ *
+ * Se la lettura fallisce si restituisce `null`: chi chiama ripiega su un
+ * valore dichiarato invece di far sparire la schermata.
+ */
+export async function getMaxTentativiLettura() {
+  const { data, error } = await supabase
+    .from("service_settings")
+    .select("max_tentativi_lettura_posta")
+    .limit(1)
+    .maybeSingle();
+  if (error) return null;
+  return data?.max_tentativi_lettura_posta ?? null;
+}
+
+/**
+ * Rimette in coda una mail che MEMO aveva abbandonato.
+ *
+ * 🔴 La funzione esisteva nel database dal 12/08 e NESSUNA schermata la
+ * chiamava: una mail arresa restava `da_leggere` per sempre, esclusa
+ * dalle letture future, e l'unico gesto offerto era buttarla via. Stessa
+ * famiglia della soglia di magazzino del 13/08 — tutto acceso, e muto.
+ *
+ * Azzera i tentativi e la nota: una riga sola, con il portiere dentro la
+ * funzione (categoria A, la RLS resta la barriera).
+ */
+export async function riprovaLettura(postaId) {
+  const { error } = await supabase.rpc("riprova_lettura_posta", { p_posta_id: postaId });
+  if (error) throw error;
+}
