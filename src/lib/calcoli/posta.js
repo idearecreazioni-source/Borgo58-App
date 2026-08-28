@@ -211,6 +211,40 @@ export function etichettaRifiuto(azione) {
  *    pulsante CON LA RAGIONE, invece di lasciarlo premere per essere
  *    rifiutato. Non è una seconda regola, è la stessa detta prima.
  */
+/**
+ * Perché questa azione non si può confermare — o `null` se si può.
+ *
+ * 🔴 L'ARCHIVIO nasce da una prova con le mani di Alessio (28/08/2026): ha
+ *    aperto una proposta, ha trovato i sei campi vuoti, ha premuto
+ *    «Archivia» così com'era, e **il gestionale ha archiviato senza
+ *    rifiutare e senza avvisare**. Nell'Archivio quella riga ha solo il
+ *    titolo: non compare cercando per tipo, non ha un posto nel tempo, e si
+ *    ritrova soltanto ricordandone le parole esatte.
+ *
+ * ⚠️ Il rifiuto VERO vive nel database (un vincolo sulla tabella, che copre
+ *    tutte e tre le porte da cui nasce un documento). Questo serve a
+ *    spegnere il pulsante CON LA RAGIONE invece di lasciarlo premere per
+ *    essere rifiutato: non è una seconda regola, è la stessa detta prima.
+ */
+export function motivoAzioneBloccata(azione, parametri) {
+  if (azione?.tipo === "archivia_documento" || azione?.tipo === "archivia_testo") {
+    const p = parametri ?? {};
+    const senzaTipo = !String(p.tipo ?? "").trim();
+    const senzaData = !String(p.data ?? "").trim();
+    if (senzaTipo && senzaData) {
+      return "Prima di archiviarlo servono il tipo e la data: premi «Correggi i dati» e scrivili. Senza, il documento non compare cercando per tipo e finisce in fondo all'elenco — si ritrova solo ricordandone il titolo esatto.";
+    }
+    if (senzaTipo) {
+      return "Manca il tipo del documento: premi «Correggi i dati» e scrivilo, altrimenti non comparirà cercando «contratti» o «fatture».";
+    }
+    if (senzaData) {
+      return "Manca la data del documento: premi «Correggi i dati» e scrivila, altrimenti finisce in fondo all'elenco senza un posto nel tempo.";
+    }
+    return null;
+  }
+  return motivoCaricoBloccato(azione, parametri);
+}
+
 export function motivoCaricoBloccato(azione, parametri) {
   if (azione?.tipo !== "carico_magazzino") return null;
   const p = parametri ?? {};

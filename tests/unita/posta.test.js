@@ -5,6 +5,7 @@ import {
   notaDiLettura,
   etichettaConferma,
   etichettaRifiuto,
+  motivoAzioneBloccata,
   motivoCaricoBloccato,
   TENTATIVI_DI_RIPIEGO,
 } from "../../src/lib/calcoli/posta.js";
@@ -221,5 +222,51 @@ describe("il carico si spegne CON LA RAGIONE, non si lascia premere per essere r
 
   it("le altre azioni non vengono bloccate da questa regola", () => {
     expect(motivoCaricoBloccato({ tipo: "archivia_documento" }, {})).toBeNull();
+  });
+});
+
+// 🔴 L'ARCHIVIO SENZA IDENTITA' — dimostrato con le mani da Alessio il
+//    28/08: sei campi vuoti, «Archivia» premuto, e il gestionale ha
+//    archiviato senza rifiutare e senza avvisare.
+describe("un documento non si archivia senza identita", () => {
+  it("senza tipo NE data: bloccato, e la ragione nomina tutt'e due", () => {
+    const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { titolo: "Rapportino" });
+    expect(m).toMatch(/tipo/i);
+    expect(m).toMatch(/data/i);
+    expect(m).toMatch(/Correggi i dati/);
+  });
+
+  it("manca solo il tipo: lo dice, e non parla della data", () => {
+    const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { data: "2026-07-12" });
+    expect(m).toMatch(/Manca il tipo/);
+    expect(m).not.toMatch(/Manca la data/);
+  });
+
+  it("manca solo la data: lo dice, e non parla del tipo", () => {
+    const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { tipo: "rapportino" });
+    expect(m).toMatch(/Manca la data/);
+    expect(m).not.toMatch(/Manca il tipo/);
+  });
+
+  it("e NON e' un muro: con tutt'e due si archivia", () => {
+    expect(
+      motivoAzioneBloccata({ tipo: "archivia_documento" }, { tipo: "rapportino", data: "2026-07-12" })
+    ).toBeNull();
+  });
+
+  it("uno spazio non e' un tipo: non basta riempire per finta", () => {
+    expect(
+      motivoAzioneBloccata({ tipo: "archivia_documento" }, { tipo: "   ", data: "2026-07-12" })
+    ).toMatch(/Manca il tipo/);
+  });
+
+  it("vale anche per il testo archiviato, che finisce nella stessa tabella", () => {
+    expect(motivoAzioneBloccata({ tipo: "archivia_testo" }, {})).toMatch(/tipo/i);
+  });
+
+  it("e il carico resta governato dalla sua regola, non da questa", () => {
+    expect(
+      motivoAzioneBloccata({ tipo: "carico_magazzino" }, { righe: [{ ingrediente_id: "a", quantita: "2" }] })
+    ).toMatch(/Scegli il fornitore/);
   });
 });

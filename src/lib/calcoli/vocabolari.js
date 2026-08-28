@@ -210,12 +210,6 @@ export const GUARDIE_ESENTI = [
       "non valida un vocabolario: accetta di proposito SOLO i due stati in cui si può annullare (annullata, rifiutata), che sono un sottoinsieme voluto degli stati di una prenotazione",
   },
   {
-    funzione: "preavviso_giorni",
-    parametro: "p_conservazione",
-    perche:
-      "non è una guardia ma un ramo: il frigo prende due giorni di preavviso, dispensa e freezer quattordici. Non rifiuta niente",
-  },
-  {
     funzione: "chiudi_riga_lista",
     parametro: "p_esito",
     perche:

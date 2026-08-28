@@ -13,7 +13,7 @@ import {
   cosaCeDaLeggere,
   etichettaConferma,
   etichettaRifiuto,
-  motivoCaricoBloccato,
+  motivoAzioneBloccata,
   notaDiLettura,
   statoLettura,
 } from "../../lib/calcoli/posta";
@@ -1118,7 +1118,7 @@ export default function PostaInArrivo() {
                       vero vive nella funzione del database, questa è la
                       stessa regola detta prima. */}
                   {(() => {
-                    const bloccato = motivoCaricoBloccato(a, valori[a.id]);
+                    const bloccato = motivoAzioneBloccata(a, valori[a.id]);
                     return (
                       <>
                         {bloccato && (
