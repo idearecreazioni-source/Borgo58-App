@@ -28,6 +28,7 @@ import {
   // Il riferimento del progetto vero: serve alla guardia che impedisce di
   // riprendere la sala da un database che non è quello del locale.
   REF_PRODUZIONE,
+  argomentiMigrazione,
 } from "./comune.mjs";
 
 const UTENTI_RICHIESTI = [
@@ -263,7 +264,7 @@ for (const file of migrazioni) {
   const etichetta = `${String(numero).padStart(2, " ")}/${migrazioni.length}  ${file}`;
   const r = esegui(
     psql,
-    ["-v", "ON_ERROR_STOP=1", "-d", url, "-f", path.join("supabase/migrations", file)],
+    argomentiMigrazione(url, path.join("supabase/migrations", file)).argomenti,
     { silenzioso: true }
   );
   diario.push(`===== ${file} =====\n${r.uscita}`);

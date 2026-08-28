@@ -55,6 +55,7 @@ import {
   titolo,
   versioniDoppie,
   formaDelDatabase,
+  argomentiMigrazione,
 } from "./comune.mjs";
 
 /** Il database usa-e-getta. Sempre lo stesso nome: si rifa' e si butta. */
@@ -403,7 +404,11 @@ for (const file of migrazioni) {
   const r = esegui(
     psql,
     [
-      "-v", "ON_ERROR_STOP=1", "-d", url,
+      "-v", "ON_ERROR_STOP=1",
+      // Stessa regola della produzione: atomica salvo enum. Se qui girasse
+      // diversamente, questa prova generale proverebbe una cosa che non succede.
+      ...(argomentiMigrazione(url, daApplicare).atomica ? ["--single-transaction"] : []),
+      "-d", url,
       ...(chiedeIlCatalogo ? ["-c", "set enable_seqscan = off"] : []),
       "-f", daApplicare,
     ],

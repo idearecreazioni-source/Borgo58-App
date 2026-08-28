@@ -331,3 +331,41 @@ export function formaDelDatabase(testo) {
       .filter(Boolean)
   );
 }
+
+/**
+ * Come si applica UNA migrazione con psql: atomica, salvo eccezione
+ * riconosciuta dal file.
+ *
+ * IL DIFETTO CHE CHIUDE, misurato il 28/08/2026 sul gestionale vero.
+ * Fino a oggi le migrazioni si applicavano con `psql -f` e basta. Senza
+ * `--single-transaction` psql chiude una transazione per ogni istruzione,
+ * quindi una migrazione che fallisce NELLA SUA VERIFICA lascia in
+ * produzione tutte le DDL che l'hanno preceduta e NON scrive la sua riga
+ * in `applied_migrations` — la registrazione e' l'ultima istruzione del
+ * file, e `ON_ERROR_STOP` si ferma prima.
+ * E' successo alla `20260827000018`: tredici oggetti su tredici gia' nel
+ * gestionale vero, zero righe nel registro, e lo strumento che stampava
+ * «una migrazione che fallisce non lascia niente a meta'».
+ * Il danno non e' lo stato a meta': e' che NESSUNO POTEVA SAPERLO. Il
+ * registro diceva 289 e il catalogo diceva un'altra cosa.
+ *
+ * L'ECCEZIONE SI RICONOSCE DAL FILE, NON SI RICORDA. Il valore aggiunto a
+ * un enum sta dentro una transazione, ma non e' usabile finche' quella
+ * transazione non e' chiusa (misurato il 19/08/2026). Quelle migrazioni
+ * girano per istruzioni, come prima — e lo DICONO, invece di farlo in
+ * silenzio. Misurate il 28/08: sono 8 su 310, tutte gia' applicate da
+ * settimane, e nessuna delle 21 in attesa.
+ *
+ * Il setaccio TOGLIE I COMMENTI prima di guardare: cercando la forma nel
+ * testo grezzo si trovano anche i commenti che ne parlano, e il 28/08 il
+ * conto grezzo diceva 11 invece di 8 — fra i tre falsi c'era proprio una
+ * delle migrazioni in attesa.
+ */
+export function argomentiMigrazione(url, percorso) {
+  const senzaCommenti = readFileSync(percorso, "utf8").replace(/--[^\n]*/g, "");
+  const perIstruzioni = /alter\s+type\s+[^;]*\badd\s+value\b/i.test(senzaCommenti);
+  const argomenti = ["-v", "ON_ERROR_STOP=1"];
+  if (!perIstruzioni) argomenti.push("--single-transaction");
+  argomenti.push("-d", url, "-f", percorso);
+  return { argomenti, atomica: !perIstruzioni };
+}

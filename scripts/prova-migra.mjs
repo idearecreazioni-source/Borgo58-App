@@ -37,6 +37,7 @@ import {
   strumento,
   titolo,
   versioniDoppie,
+  argomentiMigrazione,
 } from "./comune.mjs";
 import {
   controllaMigrazione,
@@ -179,9 +180,7 @@ for (const m of daApplicare) {
     );
   }
 
-  const r = esegui(
-    psql,
-    ["-v", "ON_ERROR_STOP=1", "-d", url, "-f", path.join(CARTELLA, m.file)],
+  const r = esegui(psql, argomentiMigrazione(url, path.join(CARTELLA, m.file)).argomenti,
     { silenzioso: true }
   );
   // Le NOTICE sono il racconto della verifica: si mostrano sempre, perche'

@@ -52,6 +52,7 @@ import {
   titolo,
   versioniDoppie,
   versioniNonNominate,
+  argomentiMigrazione,
 } from "./comune.mjs";
 import {
   controllaMigrazione,
@@ -434,13 +435,18 @@ const psql = strumento("psql");
 for (const m of mancanti) {
   console.log("");
   console.log(`── ${m.file}`);
-  const r = esegui(psql, ["-v", "ON_ERROR_STOP=1", "-d", urlProduzione, "-f", m.percorso]);
+  const { argomenti, atomica } = argomentiMigrazione(urlProduzione, m.percorso);
+  if (!atomica) {
+    console.log("   (per istruzioni, non atomica: contiene un valore aggiunto a un enum)");
+  }
+  const r = esegui(psql, argomenti);
   if (!r.ok) {
     fermati(
       `La migrazione ${m.file} si e' fermata con un errore.`,
       "Le successive NON sono state applicate.",
-      "Una migrazione che fallisce non lascia niente a meta': il blocco e' una sola transazione per istruzione,",
-      "ma la verifica in fondo solleva eccezione prima di registrare la versione."
+      atomica
+        ? "Questa girava dentro UNA transazione: non ha lasciato niente a meta', e non si e' registrata."
+        : "ATTENZIONE: questa girava PER ISTRUZIONI, quindi le istruzioni prima dell'errore SONO GIA' IN PRODUZIONE e la versione NON e' registrata. Prima di rilanciare, si constata dal catalogo cosa c'e' gia' — non si deduce dal fatto che si e' fermata."
     );
   }
 }
