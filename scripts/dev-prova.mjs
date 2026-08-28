@@ -23,6 +23,7 @@
 
 import { networkInterfaces } from "node:os";
 import { leggiConfigurazione, obbligatorio, esegui, fermati, titolo, REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
+import { assicuraTunnel } from "./telefono.mjs";
 
 const config = leggiConfigurazione(".env.test");
 const url = obbligatorio(
@@ -159,49 +160,32 @@ const extra = extraArgomenti;
 // ⚠️ E' la rete privata di Alessio (`tailnet only`), non un indirizzo
 //    pubblico: ci arrivano solo i suoi dispositivi. Si toglie con
 //    `tailscale serve reset`.
-function indirizzoCifrato(porta) {
-  const ts =
-    process.platform === "win32" ? "C:/Program Files/Tailscale/tailscale.exe" : "tailscale";
-  const stato = esegui(ts, ["serve", "status", "--json"], { silenzioso: true });
-  if (!stato.ok) return null;
+// ⚠️ LA REGOLA NON VIVE PIU' QUI: sta in scripts/telefono.mjs, perche' la
+//    usano in due (questo comando e `npm run telefono`) e una regola
+//    scritta in due corpi fra sei mesi cambia in uno solo.
+// 🔴 E DAL 28/08 NON RUBA PIU' L'INDIRIZZO A CHI STA LAVORANDO. Prima
+//    ripuntava sempre alla porta di questo avvio: cosi' `dev:collaudo`,
+//    che apre la 5199 solo per misurare le schermate, si portava via
+//    l'indirizzo del telefono di Alessio — e quando quel server veniva
+//    chiuso il telefono restava con una pagina bianca. Adesso si prende il
+//    posto solo se dall'altra parte non risponde piu' nessuno.
 
-  let letto;
-  try {
-    letto = JSON.parse(stato.uscita);
-  } catch {
-    return null;
-  }
-  const nome = Object.keys(letto?.Web ?? {})[0];
-  if (!nome) {
-    // Non c'e' nessuna pubblicazione: la si crea, sulla porta di adesso.
-    const fatto = esegui(ts, ["serve", "--bg", String(porta)], { silenzioso: true });
-    if (!fatto.ok) return null;
-    const ora = esegui(ts, ["serve", "status", "--json"], { silenzioso: true });
-    try {
-      const dopo = JSON.parse(ora.uscita);
-      const n = Object.keys(dopo?.Web ?? {})[0];
-      return n ? `https://${n.replace(/:443$/, "")}` : null;
-    } catch {
-      return null;
-    }
-  }
-
-  // C'e' gia', ma potrebbe puntare a un'altra porta: si guarda invece di
-  // sperarlo — un indirizzo che apre il gestionale sbagliato non da'
-  // nessun errore, mostra semplicemente l'altro.
-  const versoDoveVa = letto.Web[nome]?.Handlers?.["/"]?.Proxy ?? "";
-  if (!versoDoveVa.endsWith(`:${porta}`)) {
-    esegui(ts, ["serve", "--bg", String(porta)], { silenzioso: true });
-  }
-  return `https://${nome.replace(/:443$/, "")}`;
-}
-
-
-const cifrato = indirizzoCifrato(portaScelta);
+const { indirizzo: cifrato, esito, portaAltrui, portaMorta } = await assicuraTunnel(portaScelta);
 console.log("");
-if (cifrato) {
+if (cifrato && esito === "occupato-da-vivo") {
+  // ⚠️ NON gli si ruba il posto: dall'altra parte c'e' un gestionale acceso,
+  //    e quasi sempre e' quello che Alessio sta usando col telefono.
+  console.log(`   ⚠ L'indirizzo del telefono sta servendo la porta ${portaAltrui}, non questa.`);
+  console.log(`     ${cifrato}`);
+  console.log("   Questo server lo apri col numero qui sopra. Se volevi il telefono,");
+  console.log(`   chiudi il gestionale sulla porta ${portaAltrui} e riapri questo.`);
+} else if (cifrato) {
   console.log("   🎙 PER PARLARE DAL TELEFONO serve questo indirizzo, non il numero:");
   console.log(`     ${cifrato}`);
+  if (esito === "ripreso") {
+    console.log(`   (era rimasto puntato alla porta ${portaMorta}, dove non rispondeva`);
+    console.log("    piu' nessuno: da li' veniva la pagina bianca sul telefono.)");
+  }
   console.log("   Il microfono del browser funziona solo su un indirizzo protetto.");
   console.log("   (E' la tua rete privata: ci arrivano solo i tuoi dispositivi.)");
 } else {

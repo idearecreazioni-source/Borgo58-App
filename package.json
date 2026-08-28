@@ -35,7 +35,8 @@
     "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs",
     "dev:collaudo": "node scripts/dev-prova.mjs -- --port 5199",
     "quesiti": "node scripts/quesiti-stampabili.mjs",
-    "indice": "node scripts/indice-rovesciamenti.mjs"
+    "indice": "node scripts/indice-rovesciamenti.mjs",
+    "telefono": "node scripts/telefono.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
