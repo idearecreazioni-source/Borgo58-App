@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createEmployee, listEmployees, listExpiringDocuments } from "../../lib/api/personale";
 import { getEntities } from "../../lib/api/entities";
 import { CONTRACT_TYPES, EMPLOYEE_STATUSES, COMPLIANCE_DOC_TYPES, formatDate, labelFor } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 
 const emptyForm = { first_name: "", last_name: "", role: "", contract_type: "indeterminato" };
 
@@ -165,32 +166,26 @@ export default function PersonaleHome() {
           <p className="text-b58-charcoal-soft">Nessun dipendente ancora.</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full testo-sala-grande">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Mansione</th>
-                <th className="px-4 py-3 font-medium">Contratto</th>
-                <th className="px-4 py-3 font-medium">Stato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.map((e) => (
-                <tr
-                  key={e.id}
-                  onClick={() => navigate(`/personale/${e.id}`)}
-                  className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
-                >
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">{e.last_name} {e.first_name}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{e.role ?? "—"}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{e.contract_type ? labelFor(CONTRACT_TYPES, e.contract_type) : "—"}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{labelFor(EMPLOYEE_STATUSES, e.status)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ElencoAdattivo
+          righe={employees}
+          chiave={(e) => e.id}
+          titolo={(e) => `${e.last_name} ${e.first_name}`}
+          intestazioneTitolo="Nome"
+          onTocco={(e) => navigate(`/personale/${e.id}`)}
+          campi={(e) => [
+            { chiave: "mansione", etichetta: "Mansione", valore: e.role ?? "" },
+            {
+              chiave: "contratto",
+              etichetta: "Contratto",
+              valore: e.contract_type ? labelFor(CONTRACT_TYPES, e.contract_type) : "",
+            },
+            {
+              chiave: "stato",
+              etichetta: "Stato",
+              valore: labelFor(EMPLOYEE_STATUSES, e.status),
+            },
+          ]}
+        />
       )}
     </div>
   );

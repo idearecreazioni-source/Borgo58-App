@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createSupplier, listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { SUPPLIER_CATEGORIES, labelFor } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 
 const emptyNew = { name: "", category: "", contactPhone: "", isOccasional: false };
 
@@ -157,45 +158,38 @@ export default function FornitoriList() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full testo-sala-grande">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Contatto</th>
-                <th className="px-4 py-3 font-medium">Tipo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s) => (
-                <tr
-                  key={s.id}
-                  onClick={() => navigate(`/magazzino/fornitori/${s.id}`)}
-                  className={`border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark cursor-pointer ${s.active ? "" : "opacity-55"}`}
-                >
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">
-                    {s.name}
-                    {!s.active && (
-                      <span className="testo-sala text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5 ml-2">
-                        disattivato
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {s.category ? labelFor(SUPPLIER_CATEGORIES, s.category) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {s.contact_phone || s.contact_email || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {s.is_occasional ? "Occasionale" : "Abituale"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ElencoAdattivo
+          righe={filtered}
+          chiave={(s) => s.id}
+          titolo={(s) => s.name}
+          intestazioneTitolo="Nome"
+          attenuata={(s) => !s.active}
+          segno={(s) =>
+            !s.active && (
+              <span className="testo-sala text-b58-charcoal-soft bg-b58-charcoal/10 rounded-full px-2 py-0.5 ml-2 shrink-0">
+                disattivato
+              </span>
+            )
+          }
+          onTocco={(s) => navigate(`/magazzino/fornitori/${s.id}`)}
+          campi={(s) => [
+            {
+              chiave: "categoria",
+              etichetta: "Categoria",
+              valore: s.category ? labelFor(SUPPLIER_CATEGORIES, s.category) : "",
+            },
+            {
+              chiave: "contatto",
+              etichetta: "Contatto",
+              valore: s.contact_phone || s.contact_email || "",
+            },
+            {
+              chiave: "tipo",
+              etichetta: "Tipo",
+              valore: s.is_occasional ? "Occasionale" : "Abituale",
+            },
+          ]}
+        />
       )}
     </div>
   );

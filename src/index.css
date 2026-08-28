@@ -266,6 +266,41 @@ body {
   line-height: 1.2;
 }
 
+/* 🔴 IL PAVIMENTO CHE SAFARI IMPONE, E CHE I MILLIMETRI NON VEDONO
+   (29/08/2026). Su iPhone, toccare un campo il cui testo sta sotto
+   **16 punti CSS** fa ingrandire la pagina da sola, e la pagina resta
+   ingrandita: Alessio deve rimetterla a posto a mano ogni volta.
+
+   ⚠️ E LA SOGLIA DEI 3,20 mm NON LO CATTURA — misurato, non dedotto: alla
+   densita' di un telefono non calibrato (--pxcm 37,8) `.testo-sala` vale
+   **12,09 punti, cioe' esattamente 3,20 mm**. Rispetta il minimo del
+   progetto in pieno e fa zoomare lo stesso, perche' i 16 punti di Safari
+   sono in punti CSS e NON scalano con la calibrazione. Misurati 29 campi
+   su 29 sotto soglia in tre schermate, il peggiore a 12,09.
+
+   ⚠️ E' UN PAVIMENTO, NON UNA TAGLIA: `max()` alza solo chi sta sotto e
+   non rimpicciolisce mai nessuno, quindi dove la calibrazione e' alta
+   (un tablet a 64 fa 20,5 punti) non cambia niente. Sul computer non si
+   applica affatto: li' non esiste nessuno zoom da tocco, e cambiare la
+   taglia dei campi cambierebbe l'aspetto di ogni schermata per un
+   problema che quel dispositivo non ha.
+
+   ⚠️ Caselle e pallini restano fuori: non ci si scrive dentro, e Safari
+   non li ingrandisce. */
+@media (max-width: 767px) {
+  /* ⚠️ I due `:not` su `select` e `textarea` NON escludono niente — quegli
+     elementi un attributo `type` non ce l'hanno mai — e servono solo a dare
+     a tutti e tre la STESSA specificita'. Senza, `select` da solo (0,0,1)
+     perde contro la classe di taglia (0,1,0) mentre `input` la batte, e il
+     pavimento si applicherebbe a meta': misurati 3 menu a tendina rimasti a
+     12,09 punti in Prima nota mentre i campi accanto erano gia' saliti. */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select:not([type="checkbox"]):not([type="radio"]),
+  textarea:not([type="checkbox"]):not([type="radio"]) {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* 🔴 LA CARTA NON HA I MILLIMETRI DI UNO SCHERMO (25/08/2026).
    Le tre misure qui sopra sono in centimetri VERI dello schermo, e sono
    giuste per questo: un testo cresce dove il punto e' piccolo. Ma in

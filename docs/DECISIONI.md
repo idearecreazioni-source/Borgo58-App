@@ -683,6 +683,32 @@ carta vera. Il ticket di cucina resta a 6,8 mm.
 * 25/08 — I bersagli fra 5 e 8 mm nei moduli sono LASCIATI APPOSTA e si
 affrontano tutti insieme in un giro loro, non uno alla volta quando capita.
 ⚠️ **Fatto il 26/08**: zero sotto soglia su 73 schermate, a tre densità.
+* 🔴 29/08 — **QUARTA SOGLIA, ACCANTO A TESTO/BERSAGLI/GESTI: ogni campo in cui
+si scrive deve valere almeno 16 PUNTI CSS.** Sotto quella misura Safari su
+iPhone ingrandisce la pagina da sé appena si tocca il campo, e la pagina
+**resta** ingrandita: Alessio la rimette a posto a mano ogni volta.
+⚠️ **E le altre tre soglie NON la catturano** — misurato, non dedotto: alla
+densità di un telefono non calibrato `.testo-sala` vale **12,09 punti, cioè
+esattamente 3,20 mm**. Rispetta il minimo del progetto in pieno e fa zoomare
+lo stesso, perché i 16 punti di Safari sono in punti CSS e **non scalano con
+la calibrazione**. Misurati 29 campi su 29 sotto soglia in tre schermate.
+⚠️ È un **pavimento**, non una taglia: dove la calibrazione è alta non cambia
+niente, e sul computer non si applica affatto. Vive in `index.css`, una
+regola sola per tutti i campi. Dopo: **zero campi sotto soglia**.
+* 🔴 29/08 — **LA LARGHEZZA È UN TELAIO, NON UNA CORREZIONE PER SCHERMATA.**
+La forma «blocchetti sul telefono, tabella sul computer» decisa il 25/08 era
+stata **ricopiata a mano in 5 schermate su 32**: ora vive in un componente
+solo (`ElencoAdattivo`), e una schermata nuova non può più nascere storta.
+⚠️ **E la decisione del 21/08 sembrava rispettata e non lo era**: misurato su
+60 schermate, **15 costringono a scorrere di lato** e in tutte e 15 lo
+scorrimento è **dentro il riquadro**, non nella pagina — quindi un controllo
+che guardasse la pagina avrebbe detto zero su tutte e quindici.
+* 29/08 — **Una colonna vuota per TUTTE le righe non si mostra sul telefono**,
+ma resta sul computer. Nasce dai Fornitori, dove «Categoria» diceva «—» su
+tutti e undici. ⚠️ Non si toglie la colonna: il campo **è compilabile** dalla
+scheda del fornitore, quindi è un dato legittimo che oggi è solo vuoto.
+⚠️ E il criterio è «vuota per tutti», non «vuota su questa riga»: blocchetti
+di forma diversa uno dall'altro si leggono peggio di una riga vuota in più.
 * 26/08 — UN MISURATORE NUOVO SI PROVA PRIMA SU UN CASO DI CUI SI CONOSCE GIÀ
 LA RISPOSTA, altrimenti misura e non si sa cosa. Nasce dalla terza volta in
 due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodotti

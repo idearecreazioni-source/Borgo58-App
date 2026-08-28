@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listStockLots, listStockLotsDisplay } from "../../lib/api/stock";
 import { formatDate, formatQta} from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import { useAuth } from "../../context/AuthContext";
 import PrintButton from "../../components/PrintButton";
 
@@ -46,38 +47,28 @@ export default function Tracciabilita() {
       ) : lots.length === 0 ? (
         <p className="testo-sala-grande text-b58-charcoal-soft/60">Nessun lotto registrato ancora.</p>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent">
-          <table className="w-full testo-sala-grande">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Ingrediente</th>
-                <th className="px-4 py-3 font-medium">Fornitore</th>
-                <th className="px-4 py-3 font-medium">N. lotto</th>
-                <th className="px-4 py-3 font-medium">Ricevuto</th>
-                <th className="px-4 py-3 font-medium">Quantità</th>
-                <th className="px-4 py-3 font-medium">Rimanente</th>
-                <th className="px-4 py-3 font-medium">Scadenza</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lots.map((l) => (
-                <tr key={l.id} className="border-b border-b58-charcoal/5 last:border-0">
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">{l.ingredient?.name}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{l.supplier?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{l.supplier_batch_number ?? "—"}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{formatDate(l.received_at)}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {formatQta(l.quantity_received)} {l.ingredient?.unit}
-                  </td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {formatQta(l.quantity_remaining)} {l.ingredient?.unit}
-                  </td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{formatDate(l.expiry_date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ElencoAdattivo
+          righe={lots}
+          chiave={(l) => l.id}
+          titolo={(l) => l.ingredient?.name}
+          intestazioneTitolo="Ingrediente"
+          campi={(l) => [
+            { chiave: "fornitore", etichetta: "Fornitore", valore: l.supplier?.name ?? "" },
+            { chiave: "lotto", etichetta: "N. lotto", valore: l.supplier_batch_number ?? "" },
+            { chiave: "ricevuto", etichetta: "Ricevuto", valore: formatDate(l.received_at) },
+            {
+              chiave: "quantita",
+              etichetta: "Quantità",
+              valore: `${formatQta(l.quantity_received)} ${l.ingredient?.unit ?? ""}`,
+            },
+            {
+              chiave: "rimanente",
+              etichetta: "Rimanente",
+              valore: `${formatQta(l.quantity_remaining)} ${l.ingredient?.unit ?? ""}`,
+            },
+            { chiave: "scadenza", etichetta: "Scadenza", valore: formatDate(l.expiry_date) },
+          ]}
+        />
       )}
     </div>
   );

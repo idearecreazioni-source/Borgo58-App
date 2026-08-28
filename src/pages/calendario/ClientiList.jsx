@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createCustomer, listCustomers } from "../../lib/api/customers";
 import { formatDate } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 
 const emptyNew = { name: "", phone: "", email: "" };
 
@@ -128,34 +129,28 @@ export default function ClientiList() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full testo-sala-grande">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Telefono</th>
-                <th className="px-4 py-3 font-medium">Prenotazioni</th>
-                <th className="px-4 py-3 font-medium">Ultima</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((c) => (
-                <tr
-                  key={c.id}
-                  onClick={() => navigate(`/calendario-eventi/clienti/${c.id}`)}
-                  className="border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
-                >
-                  <td className="px-4 py-3 text-b58-charcoal font-medium">{c.name || "—"}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{c.phone}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">{c.stats?.reservation_count ?? 0}</td>
-                  <td className="px-4 py-3 text-b58-charcoal-soft">
-                    {c.stats?.last_reservation_date ? formatDate(c.stats.last_reservation_date) : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ElencoAdattivo
+          righe={customers}
+          chiave={(c) => c.id}
+          titolo={(c) => c.name || "—"}
+          intestazioneTitolo="Nome"
+          onTocco={(c) => navigate(`/calendario-eventi/clienti/${c.id}`)}
+          campi={(c) => [
+            { chiave: "telefono", etichetta: "Telefono", valore: c.phone },
+            {
+              chiave: "prenotazioni",
+              etichetta: "Prenotazioni",
+              valore: String(c.stats?.reservation_count ?? 0),
+            },
+            {
+              chiave: "ultima",
+              etichetta: "Ultima",
+              valore: c.stats?.last_reservation_date
+                ? formatDate(c.stats.last_reservation_date)
+                : "",
+            },
+          ]}
+        />
       )}
     </div>
   );

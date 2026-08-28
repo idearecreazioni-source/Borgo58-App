@@ -15,6 +15,7 @@ import {
 import { listSupplierInvoices } from "../../lib/api/supplierInvoices";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
@@ -469,30 +470,21 @@ export default function SezionePersonale() {
                   solito non sono le anticipazioni — è quello che le rende necessarie.
                 </Didascalia>
               </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full testo-sala-grande">
-                  <thead>
-                    <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                      <th className="py-2 font-medium">Motivo</th>
-                      <th className="py-2 pr-6 font-medium text-right">Quante</th>
-                      <th className="py-2 pr-6 font-medium text-right">Totale</th>
-                      <th className="py-2 font-medium text-right">Ancora aperte</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perTag.map((r) => (
-                      <tr key={r.tag} className="border-b border-b58-charcoal/5 last:border-0">
-                        <td className="py-2 text-b58-charcoal">{r.tag}</td>
-                        <td className="py-2 pr-6 text-right text-b58-charcoal-soft">{r.quante}</td>
-                        <td className="py-2 pr-6 text-right text-b58-charcoal">{formatEUR(r.totale)}</td>
-                        <td className="py-2 text-right text-b58-charcoal-soft">
-                          {r.aperte > 0 ? formatEUR(r.da_pagare) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ElencoAdattivo
+                righe={perTag}
+                chiave={(r) => r.tag}
+                titolo={(r) => r.tag}
+                intestazioneTitolo="Motivo"
+                campi={(r) => [
+                  { chiave: "quante", etichetta: "Quante", valore: String(r.quante) },
+                  { chiave: "totale", etichetta: "Totale", valore: formatEUR(r.totale), forte: true },
+                  {
+                    chiave: "aperte",
+                    etichetta: "Ancora aperte",
+                    valore: r.aperte > 0 ? formatEUR(r.da_pagare) : "",
+                  },
+                ]}
+              />
             </div>
           )}
 

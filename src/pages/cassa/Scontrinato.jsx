@@ -4,6 +4,7 @@ import { getIncassiPerGiorno, getQuadraturaFiscale, listContiDaFiscalizzare } fr
 import { listContiFiscalizzati, setDocumentoFiscale } from "../../lib/api/orders";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import Didascalia from "../../components/Didascalia";
@@ -224,41 +225,31 @@ export default function Scontrinato() {
                   notte appartiene alla sera prima.
                 </Didascalia>
               </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full testo-sala-grande">
-                  <thead>
-                    <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft/70">
-                      <th className="py-1 pr-3">Serata</th>
-                      <th className="py-1 pr-3 text-right">Conti</th>
-                      <th className="py-1 pr-3 text-right">Incassato</th>
-                      <th className="py-1 pr-3 text-right">Scontrinato</th>
-                      <th className="py-1 text-right">Da fare</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perGiorno.map((g) => (
-                      <tr key={g.serata} className="border-t border-b58-charcoal/10">
-                        <td className="py-2 pr-3 whitespace-nowrap">{formatDate(g.serata)}</td>
-                        <td className="py-2 pr-3 text-right">{g.quanti}</td>
-                        <td className="py-2 pr-3 text-right">{formatEUR(g.incassato)}</td>
-                        <td className="py-2 pr-3 text-right">{formatEUR(g.scontrinato)}</td>
-                        {/* ⚠️ La differenza si evidenzia solo quando c'è:
-                            un numero colorato che c'è sempre smette di
-                            essere un segnale. */}
-                        <td className="py-2 text-right">
-                          {Number(g.da_fiscalizzare) > 0 ? (
-                            <strong className="text-b58-terracotta-dark">
-                              {formatEUR(g.da_fiscalizzare)}
-                            </strong>
-                          ) : (
-                            <span className="text-b58-charcoal-soft/50">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ElencoAdattivo
+                righe={perGiorno}
+                chiave={(g) => g.serata}
+                titolo={(g) => formatDate(g.serata)}
+                intestazioneTitolo="Serata"
+                campi={(g) => [
+                  { chiave: "conti", etichetta: "Conti", valore: String(g.quanti) },
+                  { chiave: "incassato", etichetta: "Incassato", valore: formatEUR(g.incassato) },
+                  { chiave: "scontrinato", etichetta: "Scontrinato", valore: formatEUR(g.scontrinato) },
+                  {
+                    chiave: "dafare",
+                    etichetta: "Da fare",
+                    // ⚠️ La differenza si evidenzia solo quando c'è: un numero
+                    // colorato che c'è sempre smette di essere un segnale.
+                    valore:
+                      Number(g.da_fiscalizzare) > 0 ? (
+                        <strong className="text-b58-terracotta-dark">
+                          {formatEUR(g.da_fiscalizzare)}
+                        </strong>
+                      ) : (
+                        ""
+                      ),
+                  },
+                ]}
+              />
             </div>
           )}
 
