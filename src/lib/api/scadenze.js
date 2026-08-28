@@ -29,19 +29,21 @@ export async function chiudiPartita({ lottoId, come, note }) {
   });
 }
 
-// --- IL PRODOTTO FERMO (23/08/2026, blocco 3 del mandato) ---
+// --- IL PRODOTTO FERMO (23/08/2026) — TOLTO IL 28/08/2026 ---
 //
-// Domanda diversa dallo scadenziario, e servono tutte e due: quello
-// guarda la SCADENZA, questo guarda **da quanto una partita non viene
-// toccata**. Un barattolo aperto un mese fa, con scadenza fra un anno, lo
-// vede solo questo.
+// 🔴 `listPartiteFerme()` NON C'È PIÙ, e la funzione del database nemmeno.
+// Rispondeva «quali partite non vengono toccate da più della loro durata»,
+// e quella durata — dichiarata sul prodotto comprato — è stata tolta per
+// decisione di Alessio: la giudica ingestibile e non la vuole né scritta a
+// mano né dedotta da MEMO.
 //
-// ⚠️ Nessun `.limit()`, per la stessa ragione scritta in cima al file.
-export async function listPartiteFerme() {
-  const { data, error } = await supabase.rpc("partite_ferme");
-  if (error) throw error;
-  return data ?? [];
-}
+// ⚠️ NON È STATA LASCIATA A RISPONDERE VUOTO. Senza durata non poteva più
+// produrre nemmeno una riga, e un elenco sempre vuoto si legge «va tutto
+// bene» invece di «non lo so più» — uno zero non è una risposta.
+//
+// ⚠️ La domanda «da quanto non la tocca nessuno» resta, e la risponde
+// `listPartiteInGiacenza()` qui sotto: quello che sparisce è il giudizio
+// su quanto sia troppo, che senza una durata non può darlo nessuno.
 
 // «Ancora qui, ricordamelo fra N giorni».
 //

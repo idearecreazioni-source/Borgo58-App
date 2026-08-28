@@ -59,7 +59,6 @@ export async function createIngredient(payload) {
     p_allergens: payload.allergens ?? [],
     p_seasonality: payload.seasonality ?? [],
     p_storage_type: payload.storage_type ?? null,
-    p_shelf_life_days: payload.shelf_life_days ?? null,
     p_waste_percentage_default: payload.waste_percentage_default ?? 0,
     // ⚠️ Il PARAMETRO della funzione resta col nome vecchio: rinominarlo
     // romperebbe le chiamate per nome del corridoio. A cambiare e la
@@ -196,7 +195,7 @@ export async function deactivateIngredient(id) {
 // --- I campi messi dalla macchina (23/08/2026) ---
 //
 // L'assistente compila cinque campi di un prodotto nuovo — stagionalità,
-// conservazione, durata, temperatura di ricevimento, percentuale di scarto
+// conservazione, temperatura di ricevimento, percentuale di scarto
 // — e da oggi il database si ricorda **quali**, finché nessuno li guarda.
 //
 // ⚠️ Cambiare un campo lo toglie da solo dalla lista (ci pensa un trigger).

@@ -59,7 +59,6 @@ describe("i campi della scheda prodotto arrivano al database", () => {
       allergens: ["glutine", "soia"],
       seasonality: ["mar", "apr"],
       storage_type: "freezer",
-      shelf_life_days: 17,
       waste_percentage_default: 7,
       stock_minimum_threshold: 4,
       temperatura_attesa: "-18 °C",

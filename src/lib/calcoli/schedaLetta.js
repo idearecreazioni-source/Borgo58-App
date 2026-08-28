@@ -15,7 +15,6 @@ export const CAMPI_PROPONIBILI = [
   "categoria",
   "unita",
   "conservazione",
-  "durata",
   "temperatura",
   "stagionalita",
 ];
@@ -26,7 +25,6 @@ const NEL_MODULO = {
   categoria: "category",
   unita: "unit",
   conservazione: "storage_type",
-  durata: "shelf_life_days",
   temperatura: "temperatura_attesa",
   stagionalita: "seasonality",
 };
@@ -52,10 +50,6 @@ export function campiProposti(scheda, formAttuale = {}) {
     categoria: scheda.categoria ?? null,
     unita: scheda.unita ?? null,
     conservazione: scheda.conservazione ?? null,
-    durata:
-      scheda.durata_giorni === null || scheda.durata_giorni === undefined
-        ? null
-        : String(scheda.durata_giorni),
     temperatura: scheda.temperatura ?? null,
     stagionalita: Array.isArray(scheda.stagionalita) ? scheda.stagionalita : null,
   };

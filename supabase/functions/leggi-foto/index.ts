@@ -94,7 +94,6 @@ Solo per "etichetta", riempi "scheda" così (per bolla, fattura e altro metti nu
   "ingredienti_letti": "l'elenco ingredienti trascritto COM'È SCRITTO, oppure null se non c'è o non si legge",
   "allergeni": [ { "codice": "...", "origine": "etichetta" | "fonte" | "dedotto", "fonte": "..." | null } ],
   "conservazione": "frigo_0_4" | "frigo_4_8" | "freezer" | "dispensa" | "temperatura_ambiente" | null,
-  "durata_giorni": numero o null,
   "temperatura": "0-4 °C" | "4-8 °C" | "-18 °C" | "ambiente" | null,
   "dopo_apertura": "quello che l'etichetta dice di fare dopo l'apertura, come testo, oppure null",
   "scadenza_letta": "la data di scadenza come si legge, oppure null",
@@ -110,11 +109,11 @@ Esempio: etichetta «HELLMANN'S Maionese Classica 500 ml» -> ingrediente "maion
 
 LA CONSERVAZIONE È QUELLA DELLA CONFEZIONE CHIUSA
 Un'etichetta dice quasi sempre due cose diverse: come si tiene il prodotto INTEGRO, e cosa farne DOPO L'APERTURA. Il gestionale ha bisogno della prima, perché è quella che decide dove va messo in magazzino e quando scade la partita.
-- "conservazione", "durata_giorni" e "temperatura" riguardano SOLO la confezione chiusa e integra.
+- "conservazione" e "temperatura" riguardano SOLO la confezione chiusa e integra.
 - Quello che vale dopo l'apertura va tutto in "dopo_apertura", come testo, e non tocca gli altri tre campi.
-Esempio: «conservare in luogo fresco e asciutto; dopo l'apertura in frigorifero e consumare entro 3 giorni» → conservazione "dispensa", temperatura "ambiente", durata_giorni quella della scadenza stampata (non 3), dopo_apertura "in frigorifero, da consumare entro 3 giorni".
-⚠️ Sbagliare qui non produce nessun errore visibile: produce un barattolo chiuso che il gestionale segnala come in scadenza ogni tre giorni, finché nessuno guarda più gli avvisi.
-Se sull'etichetta c'è una data di scadenza e non una durata, calcola "durata_giorni" come i giorni che mancano dalla data di oggi a quella scadenza; se non riesci, metti null invece di inventare.
+Esempio: «conservare in luogo fresco e asciutto; dopo l'apertura in frigorifero e consumare entro 3 giorni» → conservazione "dispensa", temperatura "ambiente", dopo_apertura "in frigorifero, da consumare entro 3 giorni".
+⚠️ Sbagliare qui non produce nessun errore visibile: produce un prodotto messo nel posto sbagliato del magazzino.
+La data che conta è quella STAMPATA sulla confezione, e va in "scadenza_letta" com'è scritta: non ricavarne giorni e non calcolare niente.
 
 GLI ALLERGENI — È LA PARTE CHE CONTA DI PIÙ
 I codici ammessi sono esattamente questi: glutine, crostacei, uova, pesce, arachidi, soia, latte, frutta_guscio, sedano, senape, sesamo, anidride_solforosa, lupini, molluschi. Non inventarne altri.
@@ -278,17 +277,18 @@ Deno.serve(async (req) => {
   //    e la foto fosse una bolla, il modello avrebbe ottime probabilità di
   //    assecondarlo — e il caso «ho letto una bolla, ma non so ancora dove
   //    metterla» non si presenterebbe mai.
-  // ⚠️ LA DATA DI OGGI SI DICE, e in ora italiana. Serve per ricavare la
-  //    durata dalla scadenza stampata: senza, il modello non può saperla e
-  //    lascia il campo vuoto — che è la risposta onesta, ma è anche un
-  //    dato che il gestionale poteva avere per il costo di una riga.
-  const oggi = new Date().toLocaleDateString("it-IT", { timeZone: "Europe/Rome" });
+  // 🔴 LA DATA DI OGGI NON SI DICE PIÙ (28/08/2026). Serviva a una cosa
+  //    sola: ricavare "durata_giorni" dalla scadenza stampata. Quel campo
+  //    non esiste più — la durata dei prodotti comprati è stata tolta per
+  //    decisione di Alessio — e la scadenza si legge com'è scritta.
+  // ⚠️ Non è stata lasciata «perché male non fa»: un dato passato a un
+  //    modello senza una ragione scritta è una riga che il prossimo lettore
+  //    non sa se può togliere.
 
   const contesto =
     (genere === "etichetta"
       ? "Chi ha scattato questa foto si trovava nella schermata di un prodotto, quindi con ogni probabilità è un'etichetta. Ma se non lo è, dillo: non forzare la risposta."
-      : "Chi ha scattato questa foto non ha detto cosa fosse: guardala e dillo tu.") +
-    `\n\nOggi è il ${oggi}: usalo per ricavare "durata_giorni" quando sull'etichetta c'è una data di scadenza invece di una durata.`;
+      : "Chi ha scattato questa foto non ha detto cosa fosse: guardala e dillo tu.");
 
   const anthropic = new Anthropic({ apiKey: chiaveAI });
   let risposta = "";

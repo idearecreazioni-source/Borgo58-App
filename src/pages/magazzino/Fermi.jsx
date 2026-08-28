@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   abbattiPartita,
   chiudiPartita,
   dichiaraTrasformazione,
-  listPartiteFerme,
   listPartiteInGiacenza,
   rimandaPartita,
 } from "../../lib/api/scadenze";
@@ -44,11 +43,21 @@ export default function Fermi() {
   // là le risposte restano due. Cambia questa schermata, che quando la si
   // apre da lì mostra **tutte** le partite ancora in casa.
   //
-  // ⚠️ E LA RADICE RESTA SCOPERTA, dichiarata: questa schermata è vuota
-  // perché **2 prodotti su 129 hanno una durata**, e senza durata il
-  // fermo non si misura. Quella si cura con la shelf life, a parte.
-  const [ricerca] = useSearchParams();
-  const tutte = ricerca.get("tutte") === "1";
+  // 🔴 E LA RADICE È STATA TOLTA, NON CURATA (28/08/2026, decisione di
+  // Alessio). Questa schermata mostrava «i fermi da troppo», e per dire
+  // «troppo» serviva una durata dichiarata sul prodotto comprato. Quella
+  // durata non esiste più: lui la giudica ingestibile e non la vuole né
+  // scritta a mano né dedotta da MEMO.
+  //
+  // ⚠️ QUINDI SPARISCE IL GIUDIZIO, NON L'ELENCO. «Ferma da N giorni» si
+  // conta dall'ultima mossa e resta vero; «ferma da TROPPO» non lo può
+  // dire più nessuno. Un elenco che restasse a rispondere «niente fermo»
+  // si leggerebbe «va tutto bene» ed è invece «non lo so più» — uno zero
+  // non è una risposta.
+  //
+  // ⚠️ E i due modi diventano uno: non c'è più una selezione da fare, e
+  // `?tutte=1` non serve più a niente. Chi arriva dalle scadenze con una
+  // partita in mano trova la stessa schermata di sempre.
   const [cerca, setCerca] = useState("");
   const [partite, setPartite] = useState(null);
   const [ricette, setRicette] = useState([]);
@@ -71,7 +80,7 @@ export default function Fermi() {
       // Ma non si ingoia il guasto — un menu vuoto si legge «non ci sono
       // preparazioni», che è falso, ed è il difetto del 20/08.
       const [p, r] = await Promise.all([
-        tutte ? listPartiteInGiacenza(cerca || null) : listPartiteFerme(),
+        listPartiteInGiacenza(cerca || null),
         leggi(listRecipes({})),
       ]);
       setPartite(p);
@@ -94,7 +103,7 @@ export default function Fermi() {
     // filtra nel browser: 203 partite oggi, e quel numero cresce. Una
     // lettura senza limite torna al massimo di mille righe senza dirlo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tutte, cerca]);
+  }, [cerca]);
 
   const apri = (p) => {
     setAperta(aperta === p.lotto_id ? null : p.lotto_id);
@@ -348,11 +357,12 @@ export default function Fermi() {
           spiegazione — utile la prima volta, ingombro dalla seconda — e
           si apre dal segno. */}
       <h1 className="mb-3 mt-2 text-2xl font-semibold">
-        {tutte ? "Tutto quello che hai in casa" : "Fermi da troppo"}
+        Da quanto è ferma
         <Didascalia>
-          {tutte
-            ? "Ogni partita ancora in giacenza, con le sei risposte per ognuna. In cima quelle ferme da più della loro durata."
-            : "Partite che non vengono toccate da più della loro durata. È un'altra domanda rispetto alle scadenze: lì si guarda la data, qui i movimenti."}
+          Ogni partita ancora in giacenza, con le sei risposte per ognuna. In
+          cima quelle che nessuno tocca da più tempo. È un&apos;altra domanda
+          rispetto alle scadenze: lì si guarda la data stampata, qui i
+          movimenti.
         </Didascalia>
       </h1>
       {/* ⚠️ Il rimando è un BERSAGLIO, non una parola sottolineata dentro
@@ -366,20 +376,19 @@ export default function Fermi() {
         Vai alle scadenze
       </Link>
 
-      {/* ⚠️ SENZA RICERCA L'ELENCO COMPLETO NON SI USA: duecento righe da
-          scorrere per trovare il calamaro sono un collegamento che
-          «funziona» e resta inutilizzabile. Nell'elenco dei fermi invece
-          non c'è: là le righe sono poche e sono tutte da guardare. */}
-      {tutte && (
-        <div className="mb-4">
-          <input
-            value={cerca}
-            onChange={(e) => setCerca(e.target.value)}
-            placeholder="Cerca un prodotto…"
-            className="tocco-bottone w-full rounded border border-stone-300 px-3 testo-sala"
-          />
-        </div>
-      )}
+      {/* ⚠️ SENZA RICERCA L'ELENCO NON SI USA: duecento righe da scorrere
+          per trovare il calamaro sono un collegamento che «funziona» e
+          resta inutilizzabile. ⚠️ Dal 28/08 c'è sempre — prima mancava
+          nell'elenco dei fermi, dove le righe erano poche perché il
+          giudizio ne teneva fuori quasi tutte. */}
+      <div className="mb-4">
+        <input
+          value={cerca}
+          onChange={(e) => setCerca(e.target.value)}
+          placeholder="Cerca un prodotto…"
+          className="tocco-bottone w-full rounded border border-stone-300 px-3 testo-sala"
+        />
+      </div>
 
       {fatto && <p className="mb-4 rounded bg-stone-100 p-3">{fatto}</p>}
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
@@ -396,11 +405,9 @@ export default function Fermi() {
 
       {partite !== null && partite.length === 0 && (
         <p className="text-stone-600">
-          {tutte
-            ? cerca
-              ? `Nessun prodotto in casa con «${cerca}» nel nome.`
-              : "Non c'è niente in giacenza."
-            : "Niente fermo. ⚠️ Compaiono qui solo i prodotti a cui hai dato una durata: senza, il gestionale non ha niente con cui misurare il fermo."}
+          {cerca
+            ? `Nessun prodotto in casa con «${cerca}» nel nome.`
+            : "Non c'è niente in giacenza."}
         </p>
       )}
 
@@ -432,11 +439,12 @@ export default function Fermi() {
                     : ""}
                 </span>
                 <span className="block testo-sala text-stone-600">
-                  {/* ⚠️ Senza una durata dichiarata NON si scrive «dura 0»,
-                      che si leggerebbe «scaduta subito»: si dice che non
-                      si può giudicare. */}
-                  ferma da {p.ferma_da} giorni ·{" "}
-                  {p.durata_giorni == null ? "durata non dichiarata" : `dura ${p.durata_giorni}`}
+                  {/* 🔴 IL FATTO, NON IL GIUDIZIO (28/08/2026). Qui c'era
+                      anche «dura N giorni», e la riga diceva se il fermo
+                      fosse troppo. Senza la durata dei prodotti comprati
+                      quel confronto non si può fare, e scriverne uno finto
+                      sarebbe peggio: a giudicare è chi guarda. */}
+                  ferma da {p.ferma_da} giorni
                   {p.scadenza ? ` · scade il ${formatDate(p.scadenza)}` : ""}
                 </span>
               </button>

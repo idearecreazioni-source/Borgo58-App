@@ -93,7 +93,6 @@ describe("che cosa si mette nei campi da una scheda letta", () => {
     categoria: "olio_condimenti",
     unita: "kg",
     conservazione: "dispensa",
-    durata_giorni: 200,
     temperatura: "ambiente",
     allergeni: [
       { codice: "latte", origine: "etichetta", fonte: null },
@@ -104,9 +103,15 @@ describe("che cosa si mette nei campi da una scheda letta", () => {
   it("riempie i campi vuoti", () => {
     const { valori, proposti } = campiProposti(scheda, {});
     expect(valori.name).toBe("Pesto alla Genovese");
-    expect(valori.shelf_life_days).toBe("200");
+    expect(valori.storage_type).toBe("dispensa");
     expect(proposti).toContain("nome");
-    expect(proposti).toContain("durata");
+    expect(proposti).toContain("conservazione");
+    // 🔴 E LA DURATA NON C'È PIÙ (28/08/2026, decisione di Alessio): la
+    // durata di un prodotto comprato non si compila e non si deduce.
+    // ⚠️ Questa riga vale quanto le altre: senza, il giorno che qualcuno
+    // rimettesse il campo nel prompt nessuno se ne accorgerebbe.
+    expect(proposti).not.toContain("durata");
+    expect(valori.shelf_life_days).toBeUndefined();
   });
 
   it("NON sovrascrive quello che una persona ha già scritto", () => {
@@ -127,12 +132,16 @@ describe("che cosa si mette nei campi da una scheda letta", () => {
 
 describe("quali campi sono rimasti dell'assistente", () => {
   it("tiene quelli intatti e lascia cadere quelli riscritti", () => {
-    const proposti = { name: "Pesto", storage_type: "dispensa", shelf_life_days: "200" };
-    const alSalvataggio = { name: "Pesto mio", storage_type: "dispensa", shelf_life_days: "200" };
+    const proposti = { name: "Pesto", storage_type: "dispensa", temperatura_attesa: "ambiente" };
+    const alSalvataggio = { name: "Pesto mio", storage_type: "dispensa", temperatura_attesa: "ambiente" };
     const rimasti = campiRimastiDellAssistente(proposti, alSalvataggio);
     expect(rimasti).not.toContain("nome");
     expect(rimasti).toContain("conservazione");
-    expect(rimasti).toContain("durata");
+    expect(rimasti).toContain("temperatura");
+    // ⚠️ «durata» non è più un campo che l'assistente possa proporre: se
+    // ricomparisse qui, i due elenchi (questo e quello del database, in
+    // `marca_campi_dall_assistente`) si sarebbero separati.
+    expect(rimasti).not.toContain("durata");
   });
 
   it("confronta gli elenchi per contenuto, non per ordine", () => {

@@ -66,7 +66,6 @@ const emptyForm = {
   allergens: [],
   seasonality: [],
   storage_type: "",
-  shelf_life_days: "",
   waste_percentage_default: "0",
   stock_minimum_threshold: "",
   temperatura_attesa: "",
@@ -224,7 +223,6 @@ export default function IngredienteForm() {
             allergens: ing.allergens ?? [],
             seasonality: ing.seasonality ?? [],
             storage_type: ing.storage_type ?? "",
-            shelf_life_days: ing.shelf_life_days ?? "",
             waste_percentage_default: ing.waste_percentage_default ?? "0",
             stock_minimum_threshold: ing.stock_minimum_threshold ?? "",
             temperatura_attesa: ing.temperatura_attesa ?? "",
@@ -340,7 +338,6 @@ export default function IngredienteForm() {
         allergens: form.allergens,
         seasonality: form.seasonality,
         storage_type: form.storage_type || null,
-        shelf_life_days: form.shelf_life_days ? Number(form.shelf_life_days) : null,
         waste_percentage_default: Number(form.waste_percentage_default) || 0,
         // Vuoto e zero sono la stessa cosa qui: nessuna soglia. Zero
         // sarebbe una soglia che non scatta mai, e il database la rifiuta.
@@ -980,24 +977,6 @@ export default function IngredienteForm() {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className={labelClass}>Shelf life (giorni){segnoMacchina("durata")}</label>
-            <input
-              type="number"
-              min="0"
-              value={form.shelf_life_days}
-              onChange={(e) => setForm((f) => ({ ...f, shelf_life_days: e.target.value }))}
-              className={inputClass}
-            />
-            {/* 🔴 DA DOVE VIENE (23/08/2026). Stabilire una durata di
-                conservazione è responsabilità di chi la firma, e deve
-                reggersi su linee guida — non essere improvvisata. Il numero
-                non cambia: cambia che porta con sé su cosa si regge, ed è lo
-                stesso principio degli allergeni da confermare. */}
-            {fonti.durata && (
-              <p className="mt-1 testo-sala text-b58-charcoal-soft">secondo: {fonti.durata}</p>
-            )}
           </div>
           <div>
             {/* 🔴 LO SCARTO NON LO PROPONE PIÙ NESSUNO (23/08/2026,

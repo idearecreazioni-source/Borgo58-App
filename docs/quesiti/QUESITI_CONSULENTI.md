@@ -801,33 +801,33 @@ che risponde sul lato quantitativo.
 
 **Stato**: aperto.
 
-## T3 · Le durate delle preparazioni, per tipo di conservazione
+## T3 · ~~Le durate delle preparazioni, per tipo di conservazione~~ — RITIRATO
 
-**Contesto.** Il gestionale calcola da sé le scadenze: dalla data di
-produzione o di ricevimento più la durata del prodotto. Quella durata
-oggi è quasi sempre vuota — sul progetto di prova, misurato il
-25/08/2026, **3 prodotti su 132** ne hanno una — e senza di lei lo
-scadenziario non ha niente da contare. È il motivo per cui l'avviso sui
-prodotti fermi è costruito e quasi muto: non è rotto, è che non sa
-quanto durano le cose.
+**Stato: RITIRATO il 27/08/2026. Non va più chiesto a Tiziana.**
 
-**Domanda.** «Mi serve una tabella delle durate per tipo di
-conservazione: quanti giorni dura una preparazione in frigo, dopo
-l'abbattimento, sottovuoto e congelata? Vale per famiglie di prodotto
-(carne cotta, pesce crudo, salse, verdure lavorate) o va decisa
-preparazione per preparazione?»
+**Perché.** Il quesito chiedeva una tabella delle durate per tipo di
+conservazione — frigo, abbattitore, sottovuoto, congelato — da usare come
+valore proposto dal gestionale. **Alessio ha deciso che le durate le
+inserisce lui**, preparazione per preparazione, scrivendole una volta sulla
+ricetta: «questo ragù dura 5 giorni». Nessuna tabella da consultare, nessun
+valore proposto da nessuno.
 
-**Cosa cambia nell'app.** Le durate diventano il valore proposto sulla
-scheda del prodotto e sulla produzione: il gestionale calcola la
-scadenza e la mette nello scadenziario, che oggi resta vuoto. ⚠️ Finché
-non arrivano, **nessuna durata viene inventata dal sistema**: una data
-di scadenza sbagliata su un registro esibibile è peggio di una data
-assente, perché nessuno la mette in dubbio.
+⚠️ **E nella stessa decisione la durata è uscita dai prodotti COMPRATI**: non
+si compila a mano e non la deduce MEMO. Quindi cade anche la premessa del
+quesito — «quella durata oggi è quasi sempre vuota» — perché quel campo non
+esiste più.
 
-**Dove vive**: `ingredients.shelf_life_days` e `storage_type`,
-`src/pages/magazzino/Scadenze.jsx`, `src/pages/magazzino/Produzioni.jsx`.
+⚠️ **Non è una domanda a cui è arrivata una risposta: è una domanda che ha
+smesso di avere senso.** Resta scritta invece di sparire, perché fra sei mesi
+qualcuno che legge lo scadenziario si chiederà perché nessuno abbia mai
+chiesto a una biologa quanto dura una salsa in frigo — e questa è la risposta.
 
-**Stato**: aperto.
+⚠️ **Gli altri quesiti per Tiziana restano tutti aperti.** Questo non tocca
+il piano HACCP, i registri, né la raccolta propria.
+
+**Dove viveva**: `ingredients.shelf_life_days`, tolta dal database il 28/08
+con le migrazioni `20260828000003`→`…006`. Adesso la durata sta su
+`recipes.durata_giorni`, e la scrive Alessio.
 
 ---
 

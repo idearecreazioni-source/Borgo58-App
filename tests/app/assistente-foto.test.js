@@ -312,7 +312,7 @@ describe("l'assistente che legge le foto", () => {
         unit: "kg",
         current_price: 1,
         storage_type: "dispensa",
-        shelf_life_days: 200,
+        temperatura_attesa: "ambiente",
       })
       .select("id")
       .single();
@@ -320,13 +320,16 @@ describe("l'assistente che legge le foto", () => {
 
     await titolare.rpc("marca_campi_dall_assistente", {
       p_ingredient_id: prodotto.id,
-      p_campi: ["conservazione", "durata"],
+      p_campi: ["conservazione", "temperatura"],
     });
 
     // Riscrivere lo STESSO valore non è una correzione.
     await titolare.from("ingredients").update({ storage_type: "dispensa" }).eq("id", prodotto.id);
     // Cambiarlo sì.
-    await titolare.from("ingredients").update({ shelf_life_days: 90 }).eq("id", prodotto.id);
+    // ⚠️ Dal 28/08 la prova non usa più la durata: quel campo non esiste
+    // più sui prodotti comprati. La regola provata è la stessa — cambia il
+    // campo su cui si prova.
+    await titolare.from("ingredients").update({ temperatura_attesa: "0-4 °C" }).eq("id", prodotto.id);
 
     const { data } = await titolare
       .from("ingredients")
@@ -335,7 +338,7 @@ describe("l'assistente che legge le foto", () => {
       .single();
 
     expect(data.campi_dall_assistente).toContain("conservazione");
-    expect(data.campi_dall_assistente).not.toContain("durata");
+    expect(data.campi_dall_assistente).not.toContain("temperatura");
   });
 
   // -----------------------------------------------------------------

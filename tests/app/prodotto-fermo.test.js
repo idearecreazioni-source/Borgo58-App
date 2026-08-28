@@ -5,7 +5,7 @@ import {
   abbattiPartita,
   chiudiPartita,
   dichiaraTrasformazione,
-  listPartiteFerme,
+  listPartiteInGiacenza,
   rimandaPartita,
 } from "../../src/lib/api/scadenze";
 
@@ -25,7 +25,7 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
   let lotto;
 
   const partitaMia = async () =>
-    (await listPartiteFerme()).find((p) => p.lotto_id === lotto);
+    (await listPartiteInGiacenza(NOME)).find((p) => p.lotto_id === lotto);
 
   beforeAll(async () => {
     titolare = await clientAutenticato(credenziali().titolare);
@@ -58,14 +58,14 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
       ing = gia.data.id;
       await titolare
         .from("ingredients")
-        .update({ shelf_life_days: 10, tenuto_in_magazzino: true, active: true })
+        .update({ tenuto_in_magazzino: true, active: true })
         .eq("id", ing);
     } else {
       const { data: i, error } = await titolare
         .from("ingredients")
         .insert({
           entity_id: ente, name: NOME, category: "secco_dispensa", unit: "kg",
-          current_price: 5, shelf_life_days: 10, tenuto_in_magazzino: true,
+          current_price: 5, tenuto_in_magazzino: true,
         })
         .select("id")
         .single();
@@ -73,7 +73,7 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
       ing = i.id;
     }
 
-    // Ricevuta 40 giorni fa, mai toccata: ferma da 40, dura 10.
+    // Ricevuta 40 giorni fa e mai toccata: ferma da 40 giorni.
     const quaranta = new Date();
     quaranta.setDate(quaranta.getDate() - 40);
     const { data: l } = await titolare.from("stock_lots").insert({
@@ -106,12 +106,24 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
     }
   }
 
-  it("una partita ferma oltre la sua durata compare, e dice da quanto", async () => {
+  it("una partita dice da quanto nessuno la tocca", async () => {
+    // 🔴 QUI C'ERA IL GIUDIZIO, E NON C'È PIÙ (28/08/2026, decisione di
+    // Alessio). La prova diceva «una partita ferma oltre la sua DURATA
+    // compare», e controllava `durata_giorni` e la frase `perche`. La
+    // durata dei prodotti comprati è stata tolta: quel confronto non lo
+    // può fare più nessuno.
+    //
+    // ⚠️ Quello che resta è il FATTO, e si prova uguale: da quanti giorni
+    // nessuno la tocca. È un numero che si conta dall'ultima mossa e non
+    // ha bisogno di nessuna durata.
     const p = await partitaMia();
     expect(p, "la partita ferma da 40 giorni non compare").toBeDefined();
     expect(p.ferma_da).toBe(40);
-    expect(p.durata_giorni).toBe(10);
-    expect(p.perche).toMatch(/ferma da 40 giorni/i);
+    // ⚠️ E il giudizio NON deve essere tornato da un'altra porta: se
+    // ricomparissero queste colonne, vorrebbe dire che qualcuno ha rimesso
+    // una durata dedotta senza dirlo.
+    expect(p.durata_giorni).toBeUndefined();
+    expect(p.e_ferma).toBeUndefined();
   });
 
   it("🔴 «trasformato» NON scala il magazzino — la regola di Alessio", async () => {
@@ -162,10 +174,24 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
   });
 
   it("«ancora qui»: si rimanda, e il rinvio ha una fine", async () => {
+    // 🔴 COSA SI PROVA È CAMBIATO IL 28/08, e vale la pena dirlo. Prima
+    // l'elenco era quello degli ALLARMI — le partite ferme da troppo — e
+    // rimandarne una la faceva SPARIRE. Adesso l'elenco è quello di ciò che
+    // c'è in casa, e una partita rimandata resta lì: è ancora in cella.
+    //
+    // ⚠️ Quindi non si prova più la sparizione, si prova l'EFFETTO — la data
+    // fino a cui è stata rimandata. È una prova migliore: la sparizione era
+    // un effetto secondario, la data è la cosa che il gesto scrive.
     await rimandaPartita({ lottoId: lotto, giorni: 7 });
-    expect(await partitaMia(), "una partita rimandata compare ancora").toBeUndefined();
+    const rimandata = await partitaMia();
+    expect(rimandata, "la partita è sparita dall'elenco di ciò che c'è in casa").toBeDefined();
+    expect(rimandata.ricordamelo_il, "il rinvio non ha scritto nessuna data").toBeTruthy();
 
-    // ⚠️ Un rinvio senza fine sarebbe una cancellazione travestita.
+    // ⚠️ Un rinvio senza fine sarebbe una cancellazione travestita: la data
+    // dev'essere nel FUTURO, e scaduta deve tornare a non contare niente.
+    const oggi = new Date().toISOString().slice(0, 10);
+    expect(rimandata.ricordamelo_il > oggi, "il rinvio non guarda avanti").toBe(true);
+
     const ieri = new Date();
     ieri.setDate(ieri.getDate() - 1);
     await titolare.from("stock_lots")
@@ -185,7 +211,16 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
     fra30.setDate(fra30.getDate() + 30);
     await abbattiPartita({ lottoId: lotto, nuovaScadenza: fra30.toISOString().slice(0, 10) });
 
-    expect(await partitaMia(), "dopo l'abbattimento l'orologio non è ripartito").toBeUndefined();
+    // 🔴 ANCHE QUI SI PROVA L'EFFETTO invece della sparizione (28/08).
+    // «L'orologio riparte» vuol dire una cosa misurabile: la partita era
+    // ferma da 40 giorni, e dopo l'abbattimento è ferma da ZERO — perché
+    // l'abbattimento È una mossa. Prima lo si vedeva dal fatto che usciva
+    // dall'elenco degli allarmi, che era un modo indiretto di dire lo stesso.
+    const abbattuta = await partitaMia();
+    expect(abbattuta, "la partita è sparita dall'elenco di ciò che c'è in casa").toBeDefined();
+    expect(abbattuta.ferma_da, "dopo l'abbattimento l'orologio non è ripartito").toBe(0);
+    expect(abbattuta.scadenza, "la scadenza nuova non è stata scritta")
+      .toBe(fra30.toISOString().slice(0, 10));
   });
 
   it("🔴 «reso al fornitore» chiude il ciclo, ma NON è uno spreco", async () => {

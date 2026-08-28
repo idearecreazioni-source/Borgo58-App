@@ -433,12 +433,29 @@ preparazioni diverse.
 * 25/08 — SHELF LIFE e SCADENZA sono due dati DIVERSI: la scadenza è del prodotto
 ancora confezionato e la stampa il produttore; la shelf life è quanto dura una
 volta APERTO. Non confonderli.
-* 25/08 — La shelf life la deduce e compila l'assistente, MARCATA come dedotta e
-con la fonte nominata (stessa regola degli allergeni, dal 23/08). Serve da
-promemoria dei prodotti in scadenza.
-* 25/08 — La shelf life di una PREPARAZIONE è un'altra cosa ancora: si calcola da
-variabili interne — abbattimento in positivo o negativo, sottovuoto, cottura a
-bassa temperatura.
+* 25/08 — ~~La shelf life la deduce e compila l'assistente, MARCATA come dedotta
+e con la fonte nominata.~~ **SUPERATA il 27/08** — vedi la voce qui sotto.
+* 25/08 — ~~La shelf life di una PREPARAZIONE si calcola da variabili interne
+(abbattimento, sottovuoto, cottura a bassa temperatura).~~ **SUPERATA il
+27/08**: la scrive Alessio, non la calcola nessuno.
+* 🔴 **27/08 — LA SHELF LIFE CAMBIA CASA.** Supera le due voci qui sopra, e sono
+tre cose in una:
+  1. **Via la shelf life dai prodotti COMPRATI.** Alessio la giudica
+     ingestibile e non la vuole né compilata a mano né dedotta da MEMO.
+  2. **Esiste SOLO per le preparazioni fatte in azienda**, e la inserisce lui.
+     MEMO non deve dedurla.
+  3. **La DURATA si scrive una volta sola sulla RICETTA** («questo ragù dura 5
+     giorni») e **ogni produzione registrata calcola da sé la propria
+     scadenza**. Ha scelto questa strada e non «la data a mano su ogni
+     produzione», perché vuole scriverla una volta e ritrovarsela pronta
+     quando etichetta i barattoli.
+  ⚠️ **Resta in piedi**: la SCADENZA stampata sulla confezione di un prodotto
+  comprato, che MEMO continua a leggere dall'etichetta, e lo scadenziario che
+  ci lavora sopra.
+  ⚠️ **Muore, e Alessio l'ha accettato espressamente**: l'avviso «prodotto
+  aperto e fermo da troppo» sui prodotti comprati. Senza una durata nessuno
+  può dire cosa sia «troppo».
+  *(Applicata il 28/08 — migrazioni `20260828000003`→`…006`.)*
 
 ## Magazzino e scarico
 
@@ -787,7 +804,6 @@ la finestra intera.
 | separazione prodotto / ingrediente | *Prodotti, ingredienti e prezzi* |
 | spesa multi-foto | *Assistente — foto* |
 | media e trend dei prezzi | *Prodotti, ingredienti e prezzi* |
-| shelf life delle preparazioni | *Prodotti — campi* |
 | recupero delle decisioni del 14-21 agosto | *Copertura*, qui sopra |
 | separare la coda dei lavori dalle decisioni aperte in `CODA_E_DECISIONI.md` | deciso il 25/08 |
 
