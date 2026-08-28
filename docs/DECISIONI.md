@@ -456,6 +456,19 @@ tre cose in una:
   aperto e fermo da troppo» sui prodotti comprati. Senza una durata nessuno
   può dire cosa sia «troppo».
   *(Applicata il 28/08 — migrazioni `20260828000003`→`…006`.)*
+* 28/08 — **Senza la durata, il preavviso di scadenza ripiega sul valore PIÙ
+PRUDENTE, mai sul più corto.** Gli era stato proposto di sistemare a mano i
+prodotti colpiti: ha rifiutato e ha chiesto la correzione del telaio.
+⚠️ **La ragione è che i due errori non costano uguale**: un preavviso troppo
+lungo su un prodotto fresco è un fastidio, uno troppo corto su un prodotto che
+dura mesi è merce buttata — quando compare è già tardi. Quindi il ripiego non
+sta in mezzo, sta dalla parte che costa meno sbagliare.
+⚠️ **Il numero scritto a mano da lui vince sempre, anche se è corto**: la
+prudenza è il ripiego di chi non sa, non un tetto imposto a chi sa.
+Misurato sul progetto di prova: 133 prodotti su 133 ripiegavano, **18** in
+frigo ricevevano due giorni (fra cui burro, caciocavallo e crema di
+pistacchio). Dopo: 18 si allungano, 115 invariati, **zero si accorciano**.
+*(Migrazione `20260828000008` — non ancora in produzione.)*
 
 ## Magazzino e scarico
 
