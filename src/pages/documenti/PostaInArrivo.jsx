@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import {
   confermaAzione,
   getAllegatoUrl,
+  chiediLetturaAdesso,
   getMaxTentativiLettura,
+  lettorePostaFermo,
   listPostaInAttesa,
   rifiutaAzione,
   riprovaLettura,
@@ -778,6 +780,9 @@ export default function PostaInArrivo() {
   // Il tetto dei tentativi di lettura: vive in `service_settings` perché
   // lo devono leggere in due (questa schermata e la funzione che legge).
   const [maxTentativi, setMaxTentativi] = useState(null);
+  // Se MEMO sta leggendo la posta oppure no: senza saperlo la schermata
+  // non puo dire il vero su una mail non ancora letta.
+  const [lettore, setLettore] = useState(null);
 
   const ricarica = () =>
     listPostaInAttesa().then((righe) => {
@@ -839,6 +844,7 @@ export default function PostaInArrivo() {
     // se non si riesce a leggerlo la schermata NON indovina — dice che non
     // sa se MEMO riprovera, e offre lo stesso la via d uscita.
     leggi(getMaxTentativiLettura()).then(setMaxTentativi);
+    lettorePostaFermo().then(setLettore);
   }, []);
 
   // NON_LETTO non e un numero: si passa `null`, e statoLettura risponde
@@ -935,19 +941,21 @@ export default function PostaInArrivo() {
                   con gli occhi, non dedotto — e sotto ce n'erano altre
                   due: «l'ho letta solo in parte» (non l'aveva letta) e
                   «apri l'allegato» (quella mail non ne aveva). */}
-              {statoLettura(m, tettoTentativi).frase && (
+              {statoLettura(m, tettoTentativi, lettore).frase && (
                 <div
                   className={
-                    statoLettura(m, tettoTentativi).chiave === "arresa"
+                    ["arresa", "lettore_fermo", "non_so"].includes(
+                      statoLettura(m, tettoTentativi, lettore).chiave
+                    )
                       ? "testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-3"
                       : "testo-sala-grande text-b58-charcoal-soft mb-3"
                   }
                 >
-                  <p>{statoLettura(m, tettoTentativi).frase}</p>
+                  <p>{statoLettura(m, tettoTentativi, lettore).frase}</p>
                   {/* La via d'uscita. La funzione esisteva nel database dal
                       12/08 e non la chiamava nessuno: l'unico gesto offerto
                       su una mail bloccata era buttarla via. */}
-                  {statoLettura(m, tettoTentativi).puoRiprovare && (
+                  {statoLettura(m, tettoTentativi, lettore).puoRiprovare && (
                     <button
                       type="button"
                       disabled={inCorso === m.id}
@@ -957,6 +965,27 @@ export default function PostaInArrivo() {
                       {inCorso === m.id ? "…" : "Fai riprovare a leggerla"}
                     </button>
                   )}
+                  {/* 🔴 IL GESTO CHE MANCAVA su una mail MAI presa in mano.
+                      Fino al 28/08 una mail non ancora letta non offriva
+                      niente: si poteva solo buttarla via o aspettare una
+                      lettura che, su quel gestionale, non sarebbe mai
+                      arrivata. Costa — ogni giro chiama il modello — e per
+                      questo è un pulsante e non un ritentativo automatico. */}
+                  {statoLettura(m, tettoTentativi, lettore).puoLeggereAdesso && (
+                    <button
+                      type="button"
+                      disabled={inCorso === m.id}
+                      onClick={() =>
+                        agisci(m.id, async () => {
+                          await chiediLetturaAdesso();
+                          setLettore(await lettorePostaFermo());
+                        })
+                      }
+                      className="tocco-bottone mt-2 rounded-lg border border-b58-terracotta/40 hover:bg-b58-terracotta/10 disabled:opacity-50 transition-colors text-b58-terracotta-dark testo-sala-grande px-3 py-1.5"
+                    >
+                      {inCorso === m.id ? "…" : "Leggila adesso"}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -964,7 +993,7 @@ export default function PostaInArrivo() {
                 const ce = cosaCeDaLeggere(m);
                 const nota = notaDiLettura(
                   m,
-                  statoLettura(m, tettoTentativi),
+                  statoLettura(m, tettoTentativi, lettore),
                   ce
                 );
                 return nota ? (

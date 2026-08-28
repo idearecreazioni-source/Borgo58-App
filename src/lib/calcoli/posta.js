@@ -27,6 +27,35 @@
 export const TENTATIVI_DI_RIPIEGO = 3;
 
 /**
+ * Da quanto tace, in parole.
+ * ⚠️ Un numero di minuti a quattro cifre non dice niente a nessuno: «da 5
+ *    giorni» sì, ed è la cosa che fa capire che non è un ritardo — è un
+ *    guasto. Sul progetto di prova, il 28/08, erano 8374 minuti.
+ */
+export function daQuanto(minuti) {
+  const m = Number(minuti);
+  if (!Number.isFinite(m) || m < 1) return "poco";
+  if (m < 60) return m === 1 ? "1 minuto" : `${m} minuti`;
+  const ore = Math.floor(m / 60);
+  if (ore < 24) return ore === 1 ? "1 ora" : `${ore} ore`;
+  const giorni = Math.floor(ore / 24);
+  return giorni === 1 ? "1 giorno" : `${giorni} giorni`;
+}
+
+/** Una data con l'ora, in italiano: serve a dire QUANDO, non solo COSA. */
+export function quandoInItaliano(istante) {
+  const d = new Date(istante);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
  * In che stato di lettura si trova una mail, detto come stanno le cose.
  *
  * ⚠️ Le risposte sono TRE e non due, ed e' tutto il punto: «la sto per
@@ -34,13 +63,39 @@ export const TENTATIVI_DI_RIPIEGO = 3;
  *    in modo diverso e vanno dette in modo diverso. Prima erano due — e
  *    quella di mezzo si travestiva da prima.
  */
-export function statoLettura(mail, maxTentativi = TENTATIVI_DI_RIPIEGO) {
+export function statoLettura(mail, maxTentativi = TENTATIVI_DI_RIPIEGO, lettore = null) {
   const tentativi = mail?.tentativi_lettura ?? 0;
   const letto = Number(maxTentativi) > 0;
   const tetto = letto ? Number(maxTentativi) : TENTATIVI_DI_RIPIEGO;
 
   if (mail?.stato !== "da_leggere") {
-    return { chiave: "letta", frase: null, puoRiprovare: false };
+    // ⚠️ «Letta» va DETTA, non dedotta dalla presenza di una proposta qui
+    //    sotto: quello è un modo indiretto, che si capisce solo sapendo già
+    //    come funziona il gestionale. Alessio non riusciva a dire a colpo
+    //    d'occhio se MEMO avesse letto una mail (28/08/2026).
+    return {
+      chiave: "letta",
+      frase: mail?.proposta_il ? `Letta da MEMO il ${quandoInItaliano(mail.proposta_il)}.` : "Letta da MEMO.",
+      puoRiprovare: false,
+      puoLeggereAdesso: false,
+    };
+  }
+
+  // 🔴 SE IL LETTORE NON STA GIRANDO, NON SI PROMETTE UN QUARTO D'ORA.
+  //    Misurato il 28/08: tre mail sul progetto di prova dicevano da NOVE
+  //    GIORNI «la lettura parte da sola entro un quarto d'ora», e sul quel
+  //    gestionale non c'era nessun lavoro pianificato. La frase non era
+  //    invecchiata: era falsa ogni volta che veniva mostrata.
+  if (lettore?.fermo) {
+    return {
+      chiave: "lettore_fermo",
+      frase:
+        `MEMO non sta leggendo la posta su questo gestionale` +
+        (lettore.minuti > 0 ? ` (fermo da ${daQuanto(lettore.minuti)})` : "") +
+        `. Questa mail resterà così finché non gli chiedi tu di leggerla.`,
+      puoRiprovare: false,
+      puoLeggereAdesso: true,
+    };
   }
 
   // 🔴 SE IL TETTO NON SI È POTUTO LEGGERE, NON SI INDOVINA.
@@ -57,6 +112,7 @@ export function statoLettura(mail, maxTentativi = TENTATIVI_DI_RIPIEGO) {
         `MEMO ha già provato ${tentativi} volte a leggerla. Non riesco a dire se ci ` +
         `riproverà da solo: leggila tu qui sotto, oppure fagli fare un altro tentativo.`,
       puoRiprovare: true,
+      puoLeggereAdesso: false,
     };
   }
 
@@ -67,12 +123,14 @@ export function statoLettura(mail, maxTentativi = TENTATIVI_DI_RIPIEGO) {
         `MEMO ha provato ${tentativi} volte e si è fermato: da solo non ci riprova più. ` +
         `Puoi leggerla tu qui sotto, oppure fargli fare un altro tentativo.`,
       puoRiprovare: true,
+      puoLeggereAdesso: false,
     };
   }
   return {
     chiave: "in_coda",
     frase: "Non ancora letta — la lettura parte da sola entro un quarto d'ora.",
     puoRiprovare: false,
+    puoLeggereAdesso: false,
   };
 }
 

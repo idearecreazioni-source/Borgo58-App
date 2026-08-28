@@ -8,6 +8,7 @@ import {
   motivoAzioneBloccata,
   motivoCaricoBloccato,
   TENTATIVI_DI_RIPIEGO,
+  daQuanto,
 } from "../../src/lib/calcoli/posta.js";
 
 // ⚠️ Queste prove congelano la differenza fra «sta per essere letta» e
@@ -268,5 +269,71 @@ describe("un documento non si archivia senza identita", () => {
     expect(
       motivoAzioneBloccata({ tipo: "carico_magazzino" }, { righe: [{ ingrediente_id: "a", quantita: "2" }] })
     ).toMatch(/Scegli il fornitore/);
+  });
+});
+
+// 🔴 IL LETTORE FERMO — tre mail sul progetto di prova dicevano da NOVE
+//    GIORNI «la lettura parte da sola entro un quarto d'ora», su un
+//    gestionale dove non girava nessun lavoro pianificato.
+describe("la Posta dice se MEMO sta leggendo", () => {
+  const ferma = { stato: "da_leggere", tentativi_lettura: 0 };
+
+  it("se il lettore e fermo NON promette un quarto d'ora, e offre il gesto", () => {
+    const s = statoLettura(ferma, 3, { fermo: true, minuti: 8374, cosa_smette: "x" });
+    expect(s.chiave).toBe("lettore_fermo");
+    expect(s.frase).not.toMatch(/parte da sola/);
+    expect(s.frase).toMatch(/non sta leggendo/);
+    expect(s.puoLeggereAdesso).toBe(true);
+  });
+
+  it("e dice DA QUANTO in parole: 8374 minuti non significano niente per nessuno", () => {
+    const s = statoLettura(ferma, 3, { fermo: true, minuti: 8374, cosa_smette: "x" });
+    expect(s.frase).toMatch(/5 giorni/);
+    expect(s.frase).not.toMatch(/8374/);
+  });
+
+  it("se invece sta leggendo, la promessa torna vera", () => {
+    const s = statoLettura(ferma, 3, { fermo: false, minuti: 0, cosa_smette: null });
+    expect(s.chiave).toBe("in_coda");
+    expect(s.frase).toMatch(/parte da sola/);
+    expect(s.puoLeggereAdesso).toBe(false);
+  });
+
+  it("una mail ARRESA resta arresa anche col lettore fermo: e un altro problema", () => {
+    const s = statoLettura(
+      { stato: "da_leggere", tentativi_lettura: 3 },
+      3,
+      { fermo: false, minuti: 0 }
+    );
+    expect(s.chiave).toBe("arresa");
+  });
+
+  it("«letta» si DICE, e dice quando: prima lo si deduceva dalla proposta qui sotto", () => {
+    const s = statoLettura({ stato: "proposta", proposta_il: "2026-08-21T09:30:00Z" }, 3, null);
+    expect(s.chiave).toBe("letta");
+    expect(s.frase).toMatch(/Letta da MEMO il/);
+    expect(s.frase).toMatch(/21\/08\/2026/);
+  });
+
+  it("letta ma senza sapere quando: lo dice lo stesso, senza inventare una data", () => {
+    const s = statoLettura({ stato: "proposta" }, 3, null);
+    expect(s.frase).toBe("Letta da MEMO.");
+  });
+});
+
+describe("da quanto tace, in parole", () => {
+  it("minuti, ore e giorni", () => {
+    expect(daQuanto(1)).toBe("1 minuto");
+    expect(daQuanto(45)).toBe("45 minuti");
+    expect(daQuanto(60)).toBe("1 ora");
+    expect(daQuanto(300)).toBe("5 ore");
+    expect(daQuanto(1440)).toBe("1 giorno");
+    expect(daQuanto(8374)).toBe("5 giorni");
+  });
+
+  it("un numero che non e un numero non diventa «NaN giorni»", () => {
+    expect(daQuanto(null)).toBe("poco");
+    expect(daQuanto("boh")).toBe("poco");
+    expect(daQuanto(-3)).toBe("poco");
   });
 });

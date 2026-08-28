@@ -135,3 +135,35 @@ export async function riprovaLettura(postaId) {
   const { error } = await supabase.rpc("riprova_lettura_posta", { p_posta_id: postaId });
   if (error) throw error;
 }
+
+/**
+ * MEMO sta leggendo la posta su questo gestionale, oppure no?
+ *
+ * 🔴 La risposta esisteva nel database dal 12/08 (`lavori_in_silenzio()`) e
+ * nessuna schermata poteva leggerla: era eseguibile dal solo proprietario.
+ * Intanto la Posta prometteva «la lettura parte da sola entro un quarto
+ * d'ora» su mail ferme da nove giorni, su un gestionale dove non girava
+ * nessun lavoro pianificato.
+ *
+ * ⚠️ Non decide niente da sé: `lettore_posta_fermo()` lo CHIEDE a
+ * `lavori_in_silenzio()`, che è l'unico posto dove si stabilisce quando un
+ * lavoro è muto — con la sua tolleranza scritta in `lavori_sorvegliati`.
+ */
+export async function lettorePostaFermo() {
+  const { data, error } = await supabase.rpc("lettore_posta_fermo");
+  if (error) return null;
+  const r = Array.isArray(data) ? data[0] : data;
+  return r ?? null;
+}
+
+/**
+ * Chiede a MEMO di fare un giro di lettura adesso.
+ *
+ * ⚠️ Costa: ogni giro chiama il modello. È un gesto esplicito di Alessio, e
+ * per questo esiste un pulsante invece di un ritentativo automatico — la
+ * regola del 12/08 sui ritentativi che si pagano.
+ */
+export async function chiediLetturaAdesso() {
+  const { error } = await supabase.rpc("chiedi_lettura_posta");
+  if (error) throw error;
+}
