@@ -5,7 +5,13 @@
 | | |
 |---|---|
 | commit del lavoro | `a0d747f` |
-| migrazioni introdotte | `20260829000016` le cose da fare · `…017` lo storico · `…018` la voce · `…019` il permesso che avevo tolto · `…020` i giorni contati in Italia |
+| migrazioni introdotte | `20260829000016` le cose da fare · `20260829000017` lo storico · `20260829000018` la voce · `20260829000019` il permesso che avevo tolto · `20260829000020` i giorni contati in Italia |
+
+⚠️ **I numeri sono scritti per intero apposta**, e non è pignoleria: la rete
+dei riepiloghi è diventata rossa sulla forma abbreviata che avevo usato
+prima — *«un riepilogo che scrive `…026 → …032` nomina i due estremi e
+lascia mute quelle in mezzo»*. Con le versioni accorciate, quattro delle
+cinque migrazioni risultavano senza riepilogo.
 | applicate in produzione | **NO** — il push non è stato fatto (vedi il riepilogo del Blocco 1) |
 | applicate sul progetto di prova | sì, tutte e cinque |
 | funzione online cambiata | `ascolta-voce` (le istruzioni che MEMO legge) — **non installata da nessuna parte** |

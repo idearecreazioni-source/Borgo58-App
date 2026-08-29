@@ -957,6 +957,28 @@ Alessio. Nessun danno — solo un giro in più.
   deve poter uscire un foglio da mandargli. ⚠️ **Non è il modulo finger
   food**: quello dà il prezzo a pezzo, questo lo mette in una proposta con un
   totale e un aspetto presentabile.
+- 🆕 **Tre tabelle del registro delle cancellazioni restano da decidere**
+  (29/08/2026, Blocco 5). Le altre tredici sono state proposte in una
+  migrazione leggibile — cinque dentro, otto fuori, ognuna con la sua
+  ragione in una frase. Queste tre no:
+  · **`price_history`** — il mandato dice espressamente di non deciderla da
+    qui. Cancellarne una riga cambia il food cost di ogni piatto che usa
+    quell'ingrediente, all'indietro; ma è anche la tabella che cresce di
+    più, e il registro non si può ripulire da nessuno.
+  · **`reservation_deposits`** — soldi veri di clienti, con due ostacoli
+    TECNICI prima del merito: non ha una colonna `id` (la lapide nascerebbe
+    senza riferimento) e sparisce a cascata con la prenotazione, che la
+    pulizia notturna cancella PER PRIVACY.
+  · **`order_tables`** — 🔴 fermata da una misura del 29/08: sembrava dover
+    entrare con `orders`, ma **non ha una colonna `id`**. Prima della
+    decisione di merito serve una chiave primaria vera.
+- 🆕 **La funzione online della voce (`ascolta-voce`) non è installata da
+  nessuna parte** (29/08/2026, Blocco 3). Le istruzioni che MEMO legge
+  conoscono il tipo nuovo — «aggiungi il fondo bruno alle cose da fare» — e
+  il database sa eseguirlo, ma finché quella funzione non viene installata il
+  modello quel tipo **non lo produce mai**. ⚠️ È dormiente, non rotto: nessuna
+  schermata elenca i tipi vocali ad Alessio, quindi non promette niente che
+  non sappia fare. Va installata **dopo il push**, insieme alle migrazioni.
 
 ---
 
