@@ -36,7 +36,7 @@
 
 ### Quante sono, al 30/08/2026
 
-**49 richieste in tutto: 28 aperte**, **3 scartate da lui**, **17 chiuse**. Le nove del Ricettario (R1-R9) e i due pulsanti di MEMO (V4, V5) sono stati chiusi la notte del 30/08; la A1 resta **da chiarire**.
+**49 richieste in tutto: 27 aperte**, **3 scartate da lui**, **18 chiuse**. Chiuse la notte del 30/08: le nove del Ricettario (R1-R9), i due pulsanti di MEMO (V4, V5) e l'Agenda (A1), che era la richiesta rimasta senza descrizione.
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -128,7 +128,7 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| A1 | 🔴 **UNA MODIFICA ALL'AGENDA, decisa in una chat passata e mai arrivata in un mandato.** ⚠️ **Non so quale sia**: è la seconda delle due cose che Alessio ha nominato il 29/08 dicendo di averle già decise, e nella chat in cui l'ha detto non era scritto cosa fosse. **È la domanda n. 1 per lui.** Sta qui vuota apposta: una richiesta che so esistere e non so descrivere è comunque una richiesta, e cancellarla sarebbe perderla una seconda volta. | 29/08/2026 | Nominata da lui | in attesa · **da chiarire** |
+| A1 | ✅ **RIEMPITA IL 30/08, da lui.** Era: **quadrotti al posto delle righe** (il testo andava a capo cinque volte, «rimanda» stava in tre posizioni diverse); **la stella porta l'impegno in cima** e la si accende toccandola; **le stellate sempre in testa**, il resto raccolto sotto un titoletto «in ritardo (14)» che si apre e si chiude; e **resta l'impegno che nasce da solo da una fattura archiviata**, che è il motivo per cui l'Agenda esiste. | 29/08/2026, descritta il 30/08 | Nominata da lui, poi decisa | fatta · commit del 30/08 (nessuna migrazione) |
 | A2 | **`tasks` non sa quando un impegno è stato fatto**: la sezione «Fatti di recente» mostra l'ultima volta che qualcuno ha toccato la riga, che è un'altra domanda. In quella tabella ci sono gli adempimenti societari con importi e codici F24. | 14/08/2026 | Debito dichiarato dal validatore | in attesa · *da confermare* |
 
 ---

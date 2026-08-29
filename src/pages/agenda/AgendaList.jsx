@@ -9,7 +9,9 @@ import {
   spostaTask,
   stellaTask,
 } from "../../lib/api/tasks";
-import { TASK_CATEGORIES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
+import { formatDate, oggiLocale } from "../../lib/constants";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
+import { campiImpegno, daFareAdesso, sezioniDellAgenda } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
 import { toccaSubito, togliSubito } from "../../lib/calcoli/tocco";
 
@@ -19,14 +21,6 @@ const PRIORITY_BADGE = {
   bassa: "bg-b58-charcoal-soft/50",
 };
 
-// Le quattro corsie, nell'ordine in cui servono a rispondere alla domanda
-// vera: cosa devo fare adesso.
-const CORSIE = [
-  { key: "in_ritardo", titolo: "In ritardo", nascondiSeVuota: true },
-  { key: "questa_settimana", titolo: "Questa settimana" },
-  { key: "piu_avanti", titolo: "Più avanti" },
-  { key: "quando_capita", titolo: "Quando capita" },
-];
 
 const GIORNI = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
 
@@ -149,83 +143,6 @@ function RiservatoBadge() {
   );
 }
 
-// Una riga della lista, coi tre gesti a portata di pollice.
-function RigaImpegno({ t, onFatto, onSposta, onStella, onApri }) {
-  const [rimanda, setRimanda] = useState(false);
-  const senzaData = !t.due_date;
-
-  return (
-    <div className="px-4 py-3">
-      {/* ⚠️ `flex-wrap`: su un telefono da 390 punti la fila — casella,
-          stella, titolo, provenienza, data, «rimanda» — spingeva la pagina
-          fuori dallo schermo di 363 punti. Quello che non entra va a capo
-          invece di trascinarsi dietro la pagina. */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* 🔴 IL GESTO PIÙ FREQUENTE ERA IL BERSAGLIO PIÙ PICCOLO (25/08):
-            la casella nuda misurava **2,03 mm**, meno di un quarto della
-            soglia, ed è quella che chiude un impegno. Dentro un'etichetta
-            toccabile il quadratino resta piccolo e il bersaglio diventa
-            0,85 cm veri — è la forma che il resto dell'app usa già
-            dappertutto: le caselle nude erano tutte e sole qui. */}
-        <label className="tocco-bottone inline-flex items-center shrink-0" title="Fatto">
-          <input type="checkbox" checked={false} onChange={onFatto} />
-        </label>
-        <button type="button" onClick={onStella} className="tocco-bottone shrink-0 testo-sala-grande leading-none" title="Per me conta">
-          <span className={t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>★</span>
-        </button>
-        <button onClick={onApri} className="tocco-bottone flex-1 text-left min-w-0">
-          <span className="testo-sala text-b58-charcoal">{t.title}</span>
-          <span className="testo-sala text-b58-charcoal-soft ml-2">
-            · {labelFor(TASK_CATEGORIES, t.category)}
-          </span>
-          {/* ⚠️ L'anzianità è ciò che impedisce a «quando capita» di
-              diventare un cimitero: senza, una voce ferma da tre mesi
-              sembra scritta ieri. */}
-          {senzaData && t.giorni_in_lista > 13 && (
-            <span className="testo-sala text-b58-charcoal-soft/70 ml-2">
-              in lista da {Math.round(t.giorni_in_lista / 30) >= 1
-                ? `${Math.round(t.giorni_in_lista / 30)} mes${Math.round(t.giorni_in_lista / 30) === 1 ? "e" : "i"}`
-                : `${t.giorni_in_lista} giorni`}
-            </span>
-          )}
-        </button>
-        {/* Da dove viene, e ci si arriva con un tocco. */}
-        {t.origine_modulo && (
-          <Link
-            to={t.origine_modulo === "posta" ? "/documenti/posta" : "/documenti"}
-            className="tocco-bottone inline-flex items-center shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta underline"
-          >
-            da {t.origine_modulo === "posta" ? "Posta" : "Archivio documenti"}
-          </Link>
-        )}
-        {t.visibile_staff === false && <RiservatoBadge />}
-        {t.due_date && (
-          <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatDate(t.due_date)}</span>
-        )}
-        <button
-          type="button"
-          onClick={() => setRimanda((r) => !r)}
-          className="tocco-bottone shrink-0 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta"
-        >
-          {senzaData ? "dagli una data" : "rimanda"}
-        </button>
-      </div>
-      {rimanda && (
-        <div className="mt-2 pl-8">
-          <input
-            type="date"
-            defaultValue={t.due_date ?? ""}
-            onChange={(e) => {
-              onSposta(e.target.value);
-              setRimanda(false);
-            }}
-            className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function AgendaList() {
   const { isTitolare } = useAuth();
@@ -235,6 +152,9 @@ export default function AgendaList() {
   const [error, setError] = useState("");
   const [corsie, setCorsie] = useState([]);
   const [apri, setApri] = useState({});
+  // ⚠️ Quale quadrotto ha aperto il calendarietto: sta QUI e non dentro la
+  // riga, perche' con i quadrotti la riga non e' piu' un componente suo.
+  const [rimanda, setRimanda] = useState({});
   const [fatti, setFatti] = useState([]);
   const [mostraFatti, setMostraFatti] = useState(false);
   const navigate = useNavigate();
@@ -358,9 +278,8 @@ export default function AgendaList() {
   // ⚠️ Il badge conta SOLO ritardo e oggi. «Quando capita» non ci entra
   // mai: un numero fermo su venti smette di essere un'informazione e si
   // impara a ignorarlo.
-  const daFareAdesso = corsie.filter(
-    (c) => c.corsia === "in_ritardo" || c.giorni_alla_scadenza === 0
-  ).length;
+  const quanti = daFareAdesso(corsie);
+  const sezioni = sezioniDellAgenda(corsie);
 
   const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
 
@@ -372,9 +291,9 @@ export default function AgendaList() {
           {/* ⚠️ Il badge conta SOLO ritardo e oggi. «Quando capita» non ci
               entra mai: un numero fermo su venti smette di essere
               un'informazione e si impara a ignorarlo. */}
-          {daFareAdesso > 0 && (
+          {quanti > 0 && (
             <span className="ml-2 inline-flex items-center rounded-full bg-b58-terracotta text-b58-parchment testo-sala font-medium px-2 py-0.5 align-middle">
-              {daFareAdesso}
+              {quanti}
             </span>
           )}
         </h1>
@@ -433,19 +352,17 @@ export default function AgendaList() {
           </div>
         ) : (
           <div className="space-y-6">
-            {CORSIE.map((c) => {
-              const righe = corsie.filter((t) => t.corsia === c.key);
-              {/* «In ritardo» sparisce quando è vuota: una corsia vuota in
-                  cima ogni giorno è rumore che si impara a saltare. */}
+            {sezioni.map((c) => {
+              const righe = c.righe;
               if (righe.length === 0 && c.nascondiSeVuota) return null;
 
               let gruppi;
-              if (c.key === "questa_settimana") {
+              if (c.perGiorno) {
                 gruppi = raggruppa(righe, (r) => r.due_date).map(([k, v]) => [
                   etichettaGiorno(k, oggiISO),
                   v,
                 ]);
-              } else if (c.key === "piu_avanti") {
+              } else if (c.perMese) {
                 gruppi = raggruppa(righe, (r) => r.due_date.slice(0, 7)).map(([k, v]) => [
                   etichettaMese(`${k}-01`),
                   v,
@@ -454,26 +371,37 @@ export default function AgendaList() {
                 gruppi = [[null, righe]];
               }
 
-              const chiusa = c.key === "piu_avanti" && !apri[c.key];
+              // ⚠️ `apri[c.key]` è `undefined` finché nessuno tocca: allora
+              // vale quello che la sezione dichiara di suo. Un `false` di
+              // partenza aprirebbe tutto e toglierebbe senso al titoletto.
+              const chiusa = c.chiudibile && (apri[c.key] ?? !c.chiusaDiSuo) === false;
 
               return (
                 <section key={c.key}>
                   <button
                     type="button"
                     onClick={() =>
-                      c.key === "piu_avanti" && setApri((a) => ({ ...a, [c.key]: !a[c.key] }))
+                      c.chiudibile &&
+                      setApri((a) => ({ ...a, [c.key]: !(a[c.key] ?? !c.chiusaDiSuo) }))
                     }
                     className="tocco-bottone flex items-center gap-2 mb-2"
                   >
                     <h2
                       className={`font-display testo-sala-grande ${
-                        c.key === "in_ritardo" ? "text-b58-terracotta-dark" : "text-b58-charcoal"
+                        c.allarme ? "text-b58-terracotta-dark" : "text-b58-charcoal"
                       }`}
                     >
+                      {/* 🔴 LA STELLA STA NEL TITOLO — 30/08. Alessio, sulla
+                          sua schermata: «due grigie e una gialla, senza che
+                          niente dica cosa vogliano dire». La legenda non si
+                          scrive: si mette lo stesso segno nel titolo della
+                          sezione che quel segno produce, e la spiegazione
+                          diventa superflua. */}
+                      {c.key === "per_me_conta" && <span className="text-b58-gold">★ </span>}
                       {c.titolo}
                     </h2>
                     <span className="testo-sala text-b58-charcoal-soft">({righe.length})</span>
-                    {c.key === "piu_avanti" && (
+                    {c.chiudibile && (
                       <span className="testo-sala text-b58-charcoal-soft">{chiusa ? "▸" : "▾"}</span>
                     )}
                   </button>
@@ -489,18 +417,87 @@ export default function AgendaList() {
                               {titolo}
                             </p>
                           )}
-                          <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
-                            {elenco.map((t) => (
-                              <RigaImpegno
-                                key={t.id}
-                                t={t}
-                                onFatto={() => fatto(t)}
-                                onSposta={(d) => sposta(t, d)}
-                                onStella={() => stella(t)}
-                                onApri={() => navigate(`/agenda/${t.id}`)}
-                              />
-                            ))}
-                          </div>
+                          {/* 🔴 I QUADROTTI, col componente del 29/08 —
+                              30/08/2026, Blocco 3. Sulla schermata di Alessio
+                              la riga vecchia metteva in fila casella, stella,
+                              titolo, provenienza, data e «rimanda»: il titolo
+                              andava a capo CINQUE volte dentro un terzo di
+                              schermo, e «rimanda» finiva in tre posizioni
+                              diverse a seconda di quanto era lungo il resto.
+                              ⚠️ La cura non è stringere: è che un impegno ha
+                              un nome e tre informazioni, non sei colonne da
+                              incolonnare. */}
+                          <ElencoAdattivo
+                            righe={elenco}
+                            chiave={(t) => t.id}
+                            intestazioneTitolo="Impegno"
+                            titolo={(t) => (
+                              <span className="flex items-start gap-3">
+                                {/* 🔴 LA SPUNTA A SINISTRA E GRANDE: è il
+                                    gesto più frequente e si fa col pollice.
+                                    ⚠️ `tocco-azione` (1,2 cm) e non
+                                    `tocco-bottone` (0,85): la soglia è il
+                                    minimo, non l'obiettivo, e chiudere un
+                                    impegno è ciò per cui questa schermata
+                                    esiste. */}
+                                <label
+                                  className="tocco-azione inline-flex shrink-0 items-center"
+                                  title="Fatto"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={false}
+                                    onChange={() => fatto(t)}
+                                    className="spunta-grande"
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/agenda/${t.id}`)}
+                                  className="min-w-0 flex-1 text-left"
+                                >
+                                  {t.title}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => stella(t)}
+                                  className="tocco-azione shrink-0 leading-none testo-sala-grande"
+                                  title={t.preferito ? "Togli dalla testa" : "Portalo in testa"}
+                                >
+                                  <span
+                                    className={
+                                      t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"
+                                    }
+                                  >
+                                    ★
+                                  </span>
+                                </button>
+                              </span>
+                            )}
+                            segno={(t) => (t.visibile_staff === false ? <RiservatoBadge /> : null)}
+                            campi={campiImpegno}
+                            azione={(t) => ({
+                              // ⚠️ SEMPRE NELLO STESSO POSTO, in fondo al
+                              // quadrotto: è la richiesta di Alessio, e la
+                              // ragione è che un comando che si sposta si
+                              // cerca ogni volta.
+                              etichetta: t.due_date ? "rimanda" : "dagli una data",
+                              onClick: () => setRimanda((r) => ({ ...r, [t.id]: !r[t.id] })),
+                            })}
+                            aperta={(t) =>
+                              rimanda[t.id] ? (
+                                <input
+                                  type="date"
+                                  defaultValue={t.due_date ?? ""}
+                                  onChange={(e) => {
+                                    sposta(t, e.target.value);
+                                    setRimanda((r) => ({ ...r, [t.id]: false }));
+                                  }}
+                                  className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+                                />
+                              ) : null
+                            }
+                          />
                         </div>
                       ))}
                     </div>

@@ -427,6 +427,24 @@ body {
   min-height: calc(var(--pxcm) * 1.5);
 }
 
+/* 🔴 LA SPUNTA SI VEDE GRANDE, NON SOLO SI TOCCA GRANDE — 30/08/2026.
+   Il bersaglio di una casella e' gia' 1,2 cm veri perche' sta dentro
+   un'etichetta toccabile (cura del 25/08). Ma il QUADRATINO che si vede
+   era «h-5 w-5», cioe' **20 punti fissi**: misurato, 5,29 mm su un monitor
+   e **3,13 mm su un mini tablet**.
+   ⚠️ E' la stessa trappola dello stacco dei pulsanti di MEMO, trovata la
+      stessa notte in un posto diverso: una misura in punti resta uguale in
+      punti e si RIMPICCIOLISCE in millimetri veri man mano che lo schermo
+      diventa denso. Un bersaglio grande con dentro un segno piccolo si
+      centra a occhio, e a occhio si sbaglia.
+   ⚠️ 6 mm e' quasi il doppio della soglia dei testi (3,20) ed e' il gesto
+      piu' frequente dell'Agenda: chiudere un impegno. */
+.spunta-grande {
+  width: calc(var(--pxcm) * 0.6);
+  height: calc(var(--pxcm) * 0.6);
+  accent-color: var(--color-b58-olive, #6b7a4a);
+}
+
 /* --------------------------------------------------------------------
    Stampa di un singolo ticket (preconto oggi, comanda di cucina domani)
    --------------------------------------------------------------------
