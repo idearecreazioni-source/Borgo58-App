@@ -231,7 +231,7 @@ export const GUARDIE_ESENTI = [
     funzione: "voce_risolvi_dati",
     parametro: "p_tipo",
     perche:
-      "non valida niente e non rifiuta niente: elenca i TRE tipi di azione vocale che nominano un prodotto (giacenza, merce_buttata, lista_spesa), per tradurre il numero del catalogo nell'identificativo vero. Gli altri otto tipi passano di lì e ne escono intatti. ⚠️ E il vocabolario dei tipi non è nemmeno un vincolo `check`: vive in `tipi_azione_vocale`, una tabella, perché aggiungere un'azione deve essere una riga e non una migrazione — quindi non esiste nessun insieme del database con cui questa guardia potrebbe combaciare (26/08/2026, i comandi vocali)",
+      "non valida niente e non rifiuta niente: elenca i tipi di azione vocale che nominano qualcosa del catalogo — un prodotto (giacenza, merce_buttata, carico_merce), un frigo, una pulizia, una causale, e dal 29/08/2026 una preparazione da segnare fra le cose da fare — per tradurre il numero del catalogo nell'identificativo vero. Gli altri passano di lì e ne escono intatti. ⚠️ QUI C'ERA UN CONTEGGIO («gli altri otto tipi»), ed è diventato falso il giorno stesso in cui è stato aggiunto un tipo: un numero scritto in un commento è una frase destinata a diventare falsa, e quanti sono lo dice `tipi_azione_vocale`. ⚠️ E il vocabolario dei tipi non è nemmeno un vincolo `check`: vive in `tipi_azione_vocale`, una tabella, perché aggiungere un'azione deve essere una riga e non una migrazione — quindi non esiste nessun insieme del database con cui questa guardia potrebbe combaciare (26/08/2026, i comandi vocali)",
   },
 ];
 

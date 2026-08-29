@@ -218,7 +218,20 @@ describe("le migrazioni non chiamano le funzioni col portiere", () => {
           // vera, se quella stringa finisce in un `execute`. Depurare
           // ogni letterale aprirebbe una strada per aggirare il
           // guardiano — che è peggio dell'allarme falso che chiude.
-          .replace(/\bto_regproc(edure)?\s*\(\s*'[^']*'\s*\)/gi, " ");
+          .replace(/\bto_regproc(edure)?\s*\(\s*'[^']*'\s*\)/gi, " ")
+          // ⚠️ E C'È UN QUINTO MODO, trovato il 29/08 da un allarme falso
+          // sulla `20260829000019`: il CAST al catalogo,
+          // `'public.nome(args)'::regprocedure`. È la stessa forma di
+          // `to_regprocedure` scritta in un altro modo — il nome sta dentro
+          // una stringa, non viene eseguito niente — ed è quello che si usa
+          // per chiedere `has_function_privilege`, cioè proprio quando si
+          // sta verificando un PERMESSO invece di chiamare qualcosa.
+          //
+          // ⚠️ Vale la stessa cautela dell'altra: si depura SOLO il cast, non
+          // ogni stringa. Un letterale che finisce in un `execute` resta una
+          // chiamata vera, e depurarli tutti aprirebbe una strada per
+          // aggirare il guardiano.
+          .replace(/'[^']*'\s*::\s*regprocedure\b/gi, " ");
         for (const nome of guardiane) {
           const chiamata = new RegExp(`\\b${nome}\\s*\\(`);
           // ⚠️ Il confronto è sul numero di versione, non sul nome intero

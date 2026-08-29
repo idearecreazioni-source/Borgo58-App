@@ -200,6 +200,21 @@ describe("nessuna lettura resta muta", () => {
       // ⚠️ La lettura della SCHEDA invece non ha nessun catch: se fallisce
       // quella, si vede.
       "src/pages/ricettario/IngredienteForm.jsx",
+      // ⚠️ AGGIUNTO IL 29/08 con le cose da fare in cucina. Qui non manca
+      // un dato: manca un'**AVVERTENZA** — quali ingredienti non bastano
+      // per la preparazione che si sta per registrare. E quell'avvertenza
+      // **non blocca niente**, per decisione di Alessio: si comincia a
+      // cucinare e si compra quello che manca.
+      // 🔴 Il discriminante è il verso in cui si sbaglia: quello che si
+      // perde è un avviso, non una rassicurazione. Non compare nessun
+      // «c'è tutto» — chi non riceve niente è nella stessa condizione in
+      // cui era fino al 29/08, e se un ingrediente manca davvero se ne
+      // accorge il magazzino, che scarica quello che c'è e dichiara il
+      // resto.
+      // ⚠️ Le altre due letture di questa schermata — le preparazioni e le
+      // cose da fare — NON hanno catch: se falliscono si vede, e la
+      // schermata dice «non lo so» invece di disegnarsi vuota.
+      "src/pages/magazzino/Produzioni.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)

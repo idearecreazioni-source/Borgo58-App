@@ -525,6 +525,25 @@ il gestionale avvisa che l'autofattura la deve emettere lui. ⚠️ Non la
 emette: quella passa da Fatture in Cloud. E l'avviso **tace finché nessuno ha
 risposto** — un avviso che compare nel dubbio si impara a ignorare.
 
+* 🔴 29/08 — **LE PRODUZIONI HANNO UNA LISTA DELLE COSE DA FARE.** Accanto a
+ogni preparazione un pulsante che la aggiunge al volo. Le regole sono sue:
+la stessa cosa aggiunta due volte **non si duplica** (il gestionale dice che
+c'è già); una voce **si toglie da sola** quando si registra la preparazione,
+e fino ad allora si vede **da quanti giorni** è lì; se manca un ingrediente
+c'è un'**avvertenza cliccabile, NON un blocco**; l'ingrediente **non** si
+aggiunge alla spesa automaticamente — decide lui. Si modifica anche a voce,
+e lì **non serve conferma parlata**: se sbaglia si cancella una riga.
+* 🔴 29/08 — **UNA PREPARAZIONE PUÒ ESSERE RESA RICORRENTE**, e segue i
+giorni in cui **si lavora in cucina** — non quelli di apertura al pubblico.
+⚠️ Un ricorrente **non si duplica**: se la voce precedente è ancora in
+lista, non se ne aggiunge un'altra.
+* 29/08 — Nelle Produzioni l'elenco delle preparazioni è **cliccabile con la
+ricerca, in ordine ALFABETICO**: gli era stato proposto «le più frequenti in
+cima» e ha preferito l'alfabetico. Dentro ogni voce lo **storico** — quante
+volte, quanto è costata, la resa — così mentre registra vede il paragone.
+* 29/08 — La schermata delle Produzioni resta **separata** dal Magazzino: le
+altre rispondono a «cosa ho in casa», questa a «ho appena finito di
+cucinare».
 * 14/08 — Una preparazione con lotti NON si esplode in ingredienti: si CONSUMA
 come preparazione.
 * 19/08 — I mezzi di pagamento della lista della spesa tornano UNO SOLO,

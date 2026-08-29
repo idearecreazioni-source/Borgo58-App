@@ -220,7 +220,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 24 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 30 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -333,6 +333,27 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // nessun nome. Chi e' chiuso quando, un ristorante lo scrive sulla
       // porta.
       "giorni_chiusi_prenotabili",
+      // ⚠️ LE SEI DELLE COSE DA FARE IN CUCINA — 29/08, Blocco 3. Sono senza
+      // portiere **apposta**, ed e' la stessa ragione per cui la lista
+      // della spesa e lo scadenziario lo sono: quello che passa di qui e'
+      // roba di cucina — quali preparazioni ci sono, cosa c'e' da fare
+      // oggi, cosa manca per farlo — e chi la legge e' chi cucina, non chi
+      // ha il gestionale aperto in ufficio.
+      // 🔴 E un `is_titolare()` qui NON sarebbe una barriera in piu': sarebbe
+      // un muro davanti a chi deve passare. E' la lezione del 27/08 sui
+      // portieri messi dove i chiamanti hanno identita' diverse.
+      // ⚠️ Nessuna delle sei espone un prezzo o un costo d'acquisto.
+      // `riepilogo_preparazioni` il costo lo porta, ma **solo al titolare**:
+      // dentro c'e' `is_titolare()` su quella colonna sola, ed e' un filtro
+      // — non un portiere — perche' l'elenco deve rispondere anche agli
+      // altri. Compare in questo elenco proprio perche' la rete cerca il
+      // RIFIUTO e qui non c'e', ed e' giusto cosi'.
+      "aggiungi_da_fare",
+      "cose_da_fare",
+      "togli_da_fare",
+      "imposta_ricorrenza",
+      "ingredienti_che_mancano",
+      "riepilogo_preparazioni",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");
