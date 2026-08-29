@@ -10,6 +10,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   getCopertiDelGiorno,
   getPiantaDelGiorno,
+  getPercheChiuso,
   getPostoPerLaSerata,
   getRegolePrenotazione,
   getTurniDelGiorno,
@@ -287,6 +288,14 @@ export default function PiantaGiornata() {
   // sala: servono al ritardo, che è calcolato e non scritto.
   const [contiDellaSerata, setContiDellaSerata] = useState([]);
   const [regole, setRegole] = useState(null);
+  // 🔴 SE IL LOCALE È CHIUSO IN QUESTO GIORNO — e perché. 29/08/2026.
+  //
+  // ⚠️ NON serve a nascondere le prenotazioni: serve a NON nasconderle.
+  // Chiudendo un giorno per cui qualcuno aveva già prenotato, la strada
+  // ovvia sarebbe farle sparire dalla giornata — ed è precisamente quella
+  // che Alessio ha escluso: **sono clienti da chiamare**. Quindi la
+  // chiusura si dice in cima, e sotto resta tutto.
+  const [chiusura, setChiusura] = useState(null);
   // ⚠️ L'orologio batte anche qui, e non è una copia inutile di quello delle
   // Comande: questa schermata resta aperta sul telefono mentre si prendono
   // prenotazioni, e un tavolo che sfora mentre la si guarda deve sbarrarsi da
@@ -327,7 +336,7 @@ export default function PiantaGiornata() {
   const moduloRef = useRef(null);
 
   const ricarica = useCallback(async () => {
-    const [p, r, a, s, g, po, tu, reg] = await Promise.all([
+    const [p, r, a, s, g, po, tu, reg, ch] = await Promise.all([
       getPiantaDelGiorno(data),
       listReservations({ date: data }),
       listTavoliPrenotatiPerData(data),
@@ -336,12 +345,14 @@ export default function PiantaGiornata() {
       getPostoPerLaSerata(data),
       getTurniDelGiorno(data),
       getRegolePrenotazione(),
+      getPercheChiuso(data),
     ]);
     setSagome(p);
     setGruppi(g);
     setPosto(po);
     setTurni(tu);
     setRegole(reg);
+    setChiusura(ch);
     // I conti che nominano le prenotazioni di questa giornata: è così che si
     // sa chi è già arrivato, senza chiedere a nessuno di segnarlo. La stessa
     // domanda che si fa la sala, con la stessa risposta.
@@ -752,6 +763,24 @@ export default function PiantaGiornata() {
   // «È arrivato o no» in tre parole — il dato del giro D2, che nell'elenco
   // non c'era mai stato. ⚠️ Non è un campo scritto da nessuno: si deduce dal
   // conto aperto, e vuoto vuol dire «deve ancora arrivare, ed è presto».
+  // QUANTE PRENOTAZIONI CONFERMATE CI SONO GIA' A QUELL'ORA — 29/08/2026.
+  //
+  // ⚠️ Solo le CONFERMATE, ed e' la parte che decide se l'avviso dice il
+  // vero: una richiesta in attesa non tiene occupato niente (decisione di
+  // Alessio del 14/08), quindi contarla direbbe «c'e' gia' qualcuno» quando
+  // non c'e' ancora nessuno. E si esclude la riga stessa, che altrimenti
+  // si conterebbe da sola il giorno che venisse confermata.
+  const confermateAllOra = (p) => {
+    const ora = p.reservation_time?.slice(0, 5);
+    if (!ora) return 0;
+    return prenotazioni.filter(
+      (x) =>
+        x.id !== p.id &&
+        x.status === "confermata" &&
+        x.reservation_time?.slice(0, 5) === ora
+    ).length;
+  };
+
   const statoArrivo = (id) => {
     const r = ritardi.perPrenotazione.get(id);
     if (!r) return "";
@@ -1095,6 +1124,30 @@ export default function PiantaGiornata() {
         </label>
       </div>
 
+      {/* 🔴 «QUESTO GIORNO È CHIUSO», e le prenotazioni restano sotto.
+          29/08/2026, punto 1b del mandato.
+          ⚠️ Sta QUI, sopra tutto, e non accanto a una prenotazione: è un
+          fatto della giornata, non di una riga. E le righe non spariscono —
+          chi ha prenotato in un giorno che poi è stato chiuso va chiamato,
+          e se sparisce dall'elenco non lo chiama nessuno.
+          ⚠️ La frase cambia col motivo: «di lunedì siamo chiusi» non è
+          «siamo in ferie», e chi legge deve sapere quale delle due è. */}
+      {chiusura?.chiuso && (
+        <p className="testo-sala text-b58-charcoal bg-b58-gold/25 rounded-lg px-3 py-2 mb-4">
+          <strong>Questo giorno il locale è chiuso.</strong>{" "}
+          {chiusura.chiusura_a_date
+            ? chiusura.motivo || "C'è una chiusura scritta per questa data."
+            : "È il giorno di riposo settimanale."}
+          {prenotazioni.length > 0 && (
+            <>
+              {" "}
+              Le {prenotazioni.length === 1 ? "prenotazione" : `${prenotazioni.length} prenotazioni`} qui
+              sotto {prenotazioni.length === 1 ? "resta" : "restano"}: {prenotazioni.length === 1 ? "è gente" : "è gente"} da chiamare.
+            </>
+          )}
+        </p>
+      )}
+
       {caricamento ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : !letta ? (
@@ -1252,6 +1305,19 @@ export default function PiantaGiornata() {
                         >
                           {p.customer_phone}
                         </a>
+                      )}
+                      {/* 🔴 «A QUEST'ORA C'È GIÀ QUALCUNO» — 29/08/2026, 1c.
+                          ⚠️ STA ANCHE QUI, ed è il posto che conta: misurato
+                          aprendo la giornata, **una richiesta appena arrivata
+                          non ha ancora un tavolo**, quindi vive in questa
+                          striscia e non nell'elenco sotto la pianta. Metterlo
+                          solo là sarebbe stato un avviso quasi mai visto. */}
+                      {p.status === "richiesta_in_attesa" && confermateAllOra(p) > 0 && (
+                        <p className="testo-sala text-b58-charcoal bg-b58-gold/25 rounded-lg px-2 py-1 mt-1 inline-block">
+                          {confermateAllOra(p) === 1
+                            ? "A quest'ora c'è già una prenotazione."
+                            : `A quest'ora ci sono già ${confermateAllOra(p)} prenotazioni.`}
+                        </p>
                       )}
                     </div>
                     {modo === "assegna" && inCorso?.id === p.id ? (
@@ -1631,6 +1697,23 @@ export default function PiantaGiornata() {
                         </span>
                       )}
                     </button>
+                    {/* 🔴 «A QUEST'ORA C'È GIÀ QUALCUNO» — 29/08/2026, 1c.
+                        ⚠️ AVVISA, NON BLOCCA, ed è una decisione esplicita
+                        di Alessio: ha scartato l'idea di calcolare la
+                        rotazione dei tavoli. Una richiesta per le 20 quando
+                        c'è già gente resta possibile — lui vede, chiama il
+                        cliente, spiega, e se il cliente accetta prenota.
+                        ⚠️ E si contano SOLO LE CONFERMATE. Una richiesta in
+                        attesa non tiene occupato niente (decisione del
+                        14/08): contarla direbbe «c'è già qualcuno» quando
+                        non c'è ancora nessuno. */}
+                    {p.status === "richiesta_in_attesa" && confermateAllOra(p) > 0 && (
+                      <p className="testo-sala text-b58-charcoal bg-b58-gold/25 rounded-lg px-2 py-1 mt-1 inline-block">
+                        {confermateAllOra(p) === 1
+                          ? "A quest'ora c'è già una prenotazione."
+                          : `A quest'ora ci sono già ${confermateAllOra(p)} prenotazioni.`}
+                      </p>
+                    )}
                     {/* ⚠️ TELEFONO E NOTA SOTTO IL BOTTONE, non dentro: un
                         collegamento dentro un bottone non e' HTML valido, e sul
                         telefono il tocco finisce a chi capita. Compaiono solo se

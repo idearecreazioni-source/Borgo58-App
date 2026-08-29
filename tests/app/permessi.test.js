@@ -165,10 +165,19 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // in un tocco; e il freno anti-abuso che il Contratto §4 pretende su
   // tutto cio che e esposto ad `anon` vive dentro `voce_apri_sessione`
   // (60 dettature all ora, poi si ferma e lo dice).
-  it("solo 12 funzioni si possono eseguire con la sola chiave pubblica", async () => {
+  // ⚠️ SALITO DA 12 A 13 il 29/08/2026 col giorno chiuso, e la nuova e'
+  // aperta ad `anon` per la stessa ragione delle due sorelle del form
+  // pubblico: la legge il modulo di prenotazione, che nessuno ha ancora
+  // fatto entrare. `giorni_chiusi_prenotabili` restituisce SOLO delle
+  // date — quali giorni il locale e' chiuso — cioe' un'informazione che
+  // un ristorante scrive sulla porta. **Il motivo NON esce**: quello e'
+  // un appunto che Alessio scrive per se', e resta dentro
+  // `public_reservation_options`, che gia' lo mostrava.
+  it("solo 13 funzioni si possono eseguire con la sola chiave pubblica", async () => {
     const attese = [
       "check_recipe_component",
       "generate_foraged_lot",
+      "giorni_chiusi_prenotabili",
       "is_titolare",
       "normalize_phone",
       "public_reservation_options",
@@ -211,7 +220,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 23 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 24 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -311,6 +320,19 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // ⚠️ Il portiere ce l ha dove conta: `registra_dettatura` pretende il
       // titolare, e senza passare da li nessuno arriva a eseguire niente.
       "azione_si_esegue_da_se",
+      // ⚠️ AGGIUNTA IL 29/08 col giorno chiuso, e SENZA portiere per forza:
+      // la chiama il modulo di prenotazione pubblico, dove chi legge non ha
+      // e non puo' avere un accesso al gestionale. Un `is_titolare()` qui
+      // dentro non sarebbe una barriera, sarebbe un muro davanti all'unico
+      // che deve passare — e' la lezione del 27/08 sui portieri messi dove
+      // i chiamanti hanno identita' diverse.
+      // ⚠️ E `security definer` serve davvero: `service_hours`,
+      // `service_closures` e `service_settings` hanno la lettura concessa
+      // al solo `authenticated`, quindi senza non risponderebbe niente.
+      // Quello che esce sono DATE e basta: nessun motivo, nessun prezzo,
+      // nessun nome. Chi e' chiuso quando, un ristorante lo scrive sulla
+      // porta.
+      "giorni_chiusi_prenotabili",
     ].sort();
 
     const r = await titolare.rpc("funzioni_senza_portiere");

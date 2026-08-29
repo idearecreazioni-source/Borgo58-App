@@ -557,6 +557,20 @@ riportata qui per la sola parte che ha misurato lui). Il conteggio è un
 pavimento: sono le voci che quel file racconta, e una sua decisione presa
 altrove e mai rovesciata non è stata contata.
 
+* 🔴 29/08 — **IN UN GIORNO DI CHIUSURA NON SI PRENOTA.** È certo e non
+richiede nessun calcolo: le date chiuse non si possono scegliere dal modulo
+pubblico. ⚠️ E vale **anche a interruttore spento**: l'interruttore governa
+un calcolo (gli orari), una chiusura è un fatto che ha scritto lui.
+* 🔴 29/08 — **LE PRENOTAZIONI GIÀ PRESE IN UN GIORNO POI CHIUSO NON
+SPARISCONO**: sono clienti da chiamare. In cima alla giornata si scrive che
+il locale è chiuso, e le prenotazioni restano sotto. ⚠️ Farle sparire era la
+strada ovvia ed è quella che ha escluso.
+* 🔴 29/08 — **NIENTE BLOCCO SUGLI ORARI**, e ha scartato esplicitamente
+l'idea di calcolare la rotazione dei tavoli: una richiesta per le 20 quando
+c'è già qualcuno resta possibile — lui vede, chiama il cliente, spiega, e se
+il cliente accetta prenota. Serve **solo un avviso** sulla richiesta.
+⚠️ Non esiste nessuna durata del servizio in questo gestionale, e non si
+costruisce.
 * 14/08 — Una richiesta in attesa NON tiene occupato niente. Il tavolo lo dà
 Alessio dalla pianta. (Il calcolo dei posti liberi è stato **rimosso**, non
 spento: quella regola aveva senso solo finché quel conteggio esisteva.)

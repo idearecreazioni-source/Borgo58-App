@@ -312,6 +312,24 @@ export async function setGiornoCucina(weekday, siLavora) {
   if (error) throw error;
 }
 
+// PERCHE' UN GIORNO E' CHIUSO — 29/08/2026, punto 1b del mandato.
+//
+// ⚠️ **Non serve a nascondere niente.** Un giorno chiuso per cui c'erano
+// gia' delle prenotazioni non le fa sparire: sono clienti da chiamare, e
+// farle sparire e' precisamente la scelta che Alessio ha escluso. Questa
+// risposta serve a SCRIVERLO in cima alla giornata, con le prenotazioni
+// che restano sotto.
+//
+// Risposta: { chiuso, riposo, chiusura_a_date, motivo }
+//   · `riposo` = in quel giorno della settimana non si fa servizio;
+//   · `chiusura_a_date` = c'e' una chiusura scritta che copre quella data.
+// Possono valere tutti e due, e la frase da leggere e' diversa.
+export async function getPercheChiuso(data) {
+  const { data: r, error } = await supabase.rpc("perche_chiuso", { p_data: data });
+  if (error) throw error;
+  return r;
+}
+
 export async function deleteClosure(id) {
   const { error } = await supabase.from("service_closures").delete().eq("id", id);
   if (error) throw error;

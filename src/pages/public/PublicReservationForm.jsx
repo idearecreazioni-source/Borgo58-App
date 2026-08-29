@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { getReservationOptions, submitPublicReservation } from "../../lib/api/publicReservations";
-import { oggiLocale } from "../../lib/constants";
+import {
+  getGiorniChiusi,
+  getReservationOptions,
+  submitPublicReservation,
+} from "../../lib/api/publicReservations";
+import { formatDate, oggiLocale } from "../../lib/constants";
 import Logo from "../../components/Logo";
 
 const RESPONSE_HOURS = 24; // testo del brief §3.3: "entro [X ore]" — modificabile facilmente qui
@@ -39,6 +43,32 @@ export default function PublicReservationForm() {
   // `sold_out` e altrove non esiste.
   const [opzioni, setOpzioni] = useState(null);
   const [cercaOrari, setCercaOrari] = useState(false);
+
+  // LE DATE IN CUI SIAMO CHIUSI, chieste una volta sola all'apertura.
+  //
+  // ⚠️ Servono a due cose, e la prima e' quella che conta: il campo data
+  // non parte da oggi, parte dal **primo giorno in cui si mangia qui**.
+  // Un campo data del browser non sa spegnere i singoli giorni — sa solo
+  // avere un minimo — quindi questo e' l'unico posto in cui una data
+  // chiusa si puo' davvero rendere non selezionabile. Per tutte le altre
+  // c'e' il rifiuto immediato qui sotto, li' dove si e' toccato.
+  const [giorniChiusi, setGiorniChiusi] = useState([]);
+
+  useEffect(() => {
+    let annullato = false;
+    getGiorniChiusi()
+      .then((g) => {
+        if (!annullato) setGiorniChiusi(g);
+      })
+      // ⚠️ SILENZIO MOTIVATO: senza questo elenco il campo parte da oggi,
+      // che e' come si comportava fino al 29/08. Nessuna rassicurazione
+      // falsa — chi sceglie un giorno chiuso viene fermato lo stesso, dal
+      // database, che e' il posto dove quel rifiuto vive davvero.
+      .catch(() => {});
+    return () => {
+      annullato = true;
+    };
+  }, []);
 
   useEffect(() => {
     const persone = Number(form.partySize);
@@ -80,8 +110,51 @@ export default function PublicReservationForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.date, form.partySize]);
 
-  const sceltaOrari = Boolean(opzioni?.attivo);
+  // 🔴 LA CHIUSURA VALE ANCHE A INTERRUTTORE SPENTO — 29/08/2026.
+  //
+  // Fino a oggi tutto cio' che riguardava la chiusura viveva dentro il ramo
+  // `opzioni.attivo`: a interruttore spento il modulo tornava all'orario
+  // libero e **accettava una richiesta per un giorno chiuso** — misurato
+  // sul progetto di prova, dove l'interruttore e' spento. Nessun errore,
+  // nessun avviso: la richiesta entrava.
+  //
+  // ⚠️ E `!cercaOrari` non e' prudenza: mentre si cerca, `opzioni` e'
+  // ancora la risposta della data PRECEDENTE. Senza quel guardiano, il
+  // modulo direbbe «siamo chiusi» del giorno prima per un attimo, cioe'
+  // una frase vera su un'altra data.
+  const giornoChiuso = !cercaOrari && Boolean(opzioni?.chiuso);
+  const sceltaOrari = Boolean(opzioni?.attivo) && !giornoChiuso;
   const orariLiberi = opzioni?.orari ?? [];
+
+  // Il primo giorno in cui si mangia qui: da li' parte il campo data.
+  const primoGiornoUtile = (() => {
+    const chiusi = new Set(giorniChiusi);
+    const d = new Date(`${today}T12:00:00`);
+    // Trenta tentativi: oltre, o l'elenco e' sbagliato o il locale e'
+    // chiuso per un mese, e in tutt'e due i casi il campo torna a oggi
+    // invece di inventarsi una data.
+    for (let i = 0; i < 30; i += 1) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!chiusi.has(iso)) return iso;
+      d.setDate(d.getDate() + 1);
+    }
+    return today;
+  })();
+
+  // Se la data scelta e' chiusa, qual e' la prima aperta DOPO di lei. Una
+  // porta chiusa senza indicazione di dove sia quella aperta e' un vicolo
+  // cieco, e i vicoli ciechi sono un difetto a se'.
+  const primaApertaDopo = (() => {
+    if (!giornoChiuso || !form.date) return "";
+    const chiusi = new Set(giorniChiusi);
+    const d = new Date(`${form.date}T12:00:00`);
+    for (let i = 0; i < 30; i += 1) {
+      d.setDate(d.getDate() + 1);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!chiusi.has(iso)) return iso;
+    }
+    return "";
+  })();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -179,7 +252,7 @@ export default function PublicReservationForm() {
               <input
                 required
                 type="date"
-                min={today}
+                min={primoGiornoUtile}
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className={inputClass}
@@ -199,7 +272,20 @@ export default function PublicReservationForm() {
             </div>
           </div>
 
-          {sceltaOrari ? (
+          {giornoChiuso ? (
+            <div>
+              <label className={labelClass}>Orario</label>
+              <p className="testo-sala-grande text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
+                {opzioni?.motivo || "Quel giorno siamo chiusi."}
+                {primaApertaDopo && (
+                  <>
+                    {" "}
+                    Il primo giorno utile dopo quello è il {formatDate(primaApertaDopo)}.
+                  </>
+                )}
+              </p>
+            </div>
+          ) : sceltaOrari ? (
             <div>
               <label className={labelClass}>Orario</label>
               {cercaOrari ? (
@@ -215,10 +301,6 @@ export default function PublicReservationForm() {
                 // chi la leggeva poteva aspettarsi che il sito sapesse dire
                 // quanto spazio c'e'.
                 <p className="testo-sala-grande text-b58-charcoal-soft">Cerco gli orari disponibili…</p>
-              ) : opzioni.chiuso ? (
-                <p className="testo-sala-grande text-b58-charcoal-soft bg-b58-cream-dark/60 rounded-lg px-3 py-2">
-                  {opzioni.motivo}
-                </p>
               ) : (
                 // Un menu a tendina, non un muro di pulsanti: con l'orario
                 // ogni quarto d'ora sono tredici bottoni per una cena, e su
@@ -325,7 +407,7 @@ export default function PublicReservationForm() {
 
           <button
             type="submit"
-            disabled={submitting || (sceltaOrari && !form.time)}
+            disabled={submitting || giornoChiuso || cercaOrari || (sceltaOrari && !form.time)}
             className="w-full rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
           >
             {submitting ? "Invio…" : "Invia richiesta"}

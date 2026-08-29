@@ -38,6 +38,22 @@ export async function submitPublicReservation({
 // che Alessio ha segnato al completo guardando la sala.
 // Con "attivo: false" (interruttore spento nelle impostazioni) il form
 // torna a essere una richiesta libera, come prima del 10/08/2026.
+// LE DATE IN CUI SIAMO CHIUSI, dentro la finestra prenotabile — 29/08/2026.
+//
+// ⚠️ Serve a dirlo PRIMA che qualcuno scelga, non dopo. Un campo data del
+// browser non sa spegnere i singoli giorni: puo' solo avere un minimo e un
+// massimo. Quindi le date chiuse si ELENCANO accanto al campo, e chi ne
+// sceglie una viene fermato subito, li' dove ha toccato.
+//
+// ⚠️ Comprende il riposo settimanale: per chi prenota e' la stessa cosa —
+// quel giorno non si mangia qui. E NON porta il motivo: quello e' un
+// appunto che Alessio scrive per se'.
+export async function getGiorniChiusi() {
+  const { data, error } = await supabasePubblico.rpc("giorni_chiusi_prenotabili");
+  if (error) throw error;
+  return (data ?? []).map((r) => (typeof r === "string" ? r : r.giorni_chiusi_prenotabili));
+}
+
 export async function getReservationOptions({ date, partySize }) {
   const { data, error } = await supabasePubblico.rpc("public_reservation_options", {
     p_date: date,
