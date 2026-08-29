@@ -171,3 +171,29 @@ solo col primo scarico vero.
 **Cosa ho lasciato sul progetto di prova.** Le due migrazioni applicate.
 Niente dati: le prove di questo blocco hanno solo letto. Il fornitore toccato
 per il Blocco 4 è stato rimesso e ricontato (11 su 11 vuoti).
+
+---
+
+## 🔴 Due punti del Blocco 2 NON fatti, e perché
+
+**2g — «la scheda dell'ingrediente diventa il posto unico».** Non aperto.
+È l'unico punto del blocco senza una misura sotto: gli altri nominano un
+numero o una frase che ho potuto verificare, questo descrive un assetto.
+E la misura di stanotte ha spostato tre difetti su quattro **fuori** da
+quella scheda: prima di riorganizzarla andrebbe deciso cosa ci finisce
+davvero dentro, e quella è una decisione di Alessio. È fra le domande.
+
+**2n — l'allineamento a voce con la conferma parlata.** Fatto a metà, e la
+metà che manca è dichiarata:
+- ✅ **dettare una giacenza funziona già**: il tipo `giacenza` è acceso e
+  l'Allineamento apre la riga col numero detto. Non l'ho costruito io: c'era.
+- 🔴 **la conferma PARLATA no.** Misurato: in tutto il gestionale non esiste
+  nessuna sintesi vocale — MEMO oggi risponde a schermo, mai a voce.
+  Costruirla è un lavoro a sé, e soprattutto **non potrei provarla**: che una
+  voce si senta, si capisca e non arrivi in ritardo lo dice un orecchio, e
+  qui non c'è. Farla e dichiararla «fatta» senza averla sentita sarebbe la
+  cosa peggiore su un gesto che scrive un numero di giacenza.
+
+⚠️ La decisione del 14/08 la permette («la voce risponde e conferma, non
+annuncia mai di sua iniziativa»), quindi non è bloccata da niente: è solo un
+lavoro che vuole una prova che io non posso fare.
