@@ -2,7 +2,9 @@
 
 **Blocco 4 del mandato del 29/08/2026 — le tre cose approvate e mai fatte.**
 **Commit dichiarato: `f9765a8`** — working tree pulito al momento del commit.
-**Migrazione introdotta: `20260829000003`.**
+**Migrazioni introdotte: `20260829000003` e `20260829000004`.**
+⚠️ La seconda è nata **dopo il commit di questa consegna** (`40f15f7`) come
+correzione di un difetto della prima: vedi *«Le due porte»* in fondo.
 ⚠️ **Applicata al progetto di prova, NON in produzione**: aspetta il push.
 
 ---
@@ -169,3 +171,34 @@ Vault**, i **sei lavori pianificati accesi** e la **parola d'ordine allineata
 nei Secrets** — tutte e tre volute, sono il punto 4d. Le tre mail lette
 restano lette: sono dati di collaudo di Alessio, non miei. La mail di
 verifica creata dalla migrazione è stata tolta con le sue lapidi.
+
+---
+
+## Le due porte — migrazione `20260829000004`
+
+🔴 **Trovate dalla rete, non da una rilettura.** La prova che conta le
+funzioni capaci di scavalcare i permessi senza chiedere chi sei è diventata
+rossa da sola: **23 attese, 25 trovate**. Le due in più erano `consumi_ai` e
+`fonti_ai_scoperte`, nate poche ore prima nella migrazione
+`20260829000003` — scritte da me, con il permesso messo a mano copiando la
+forma delle funzioni accanto.
+
+⚠️ **È la trappola già scritta il 24/08 e ripetuta il 27/08**: *un permesso
+ricopiato è una riscrittura come le altre*. Riletta il giorno prima,
+ripetuta il giorno dopo. A prenderla è stata di nuovo una rete.
+
+⚠️ **E non era un dettaglio di forma**: `consumi_ai` dice quanto si spende in
+assistente, che è roba del titolare. Con quel permesso lo poteva chiedere
+chiunque entrasse col codice della sala.
+
+**La cura non è il portiere**, ed è il criterio del 27/08: prima si guarda
+**chi la chiama**. Misurato cercando in tutto `src/` e `tests/`: **nessuna
+schermata le chiama**, le usano solo funzioni che il portiere ce l'hanno già
+o che sono aperte al solo ruolo di servizio. Quindi **si chiude la porta**
+invece di mettere un guardiano per un caso che, chiusa la porta, non esiste
+più.
+
+La verifica controlla anche il verso opposto — che chiudere la porta non
+abbia spento in silenzio chi le usa dall'interno: il titolare continua a
+vedere quanto ha speso, e le funzioni online continuano a poter guardare il
+tetto.
