@@ -3,6 +3,8 @@
 > **Blocco 1** del mandato del 30/08. Chiude le richieste **R1, R2, R3, R4,
 > R5, R6, R7, R8, R9** di [`docs/RICHIESTE.md`](../RICHIESTE.md).
 >
+> **Il commit che sta sotto questo riepilogo: `7cbed18`.**
+>
 > **Nessuna migrazione.** Il database non cambia di una riga: tutto quello
 > che serviva a distinguere un finger da una selezione era **già scritto**
 > (`recipe_type` e `category`), e il difetto era che nessuno glielo chiedeva
