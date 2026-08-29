@@ -3,13 +3,10 @@ import { Link } from "react-router-dom";
 import {
   abbattiPartita,
   chiudiPartita,
-  dichiaraTrasformazione,
   listPartiteInGiacenza,
   rimandaPartita,
 } from "../../lib/api/scadenze";
-import { listRecipes } from "../../lib/api/recipes";
 import { formatDate, formatQta, oggiLocale } from "../../lib/constants";
-import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import Didascalia from "../../components/Didascalia";
 
 // IL PRODOTTO FERMO (23/08/2026, blocco 3 del mandato). Disegno di Alessio.
@@ -60,33 +57,22 @@ export default function Fermi() {
   // partita in mano trova la stessa schermata di sempre.
   const [cerca, setCerca] = useState("");
   const [partite, setPartite] = useState(null);
-  const [ricette, setRicette] = useState([]);
   const [aperta, setAperta] = useState(null);
   const [error, setError] = useState("");
   const [fatto, setFatto] = useState("");
   const [inCorso, setInCorso] = useState(false);
 
-  // I campi delle tre risposte che chiedono qualcosa.
-  const [quantita, setQuantita] = useState("");
-  const [ricettaId, setRicettaId] = useState("");
-  const [descrizione, setDescrizione] = useState("");
-  const [scadeIl, setScadeIl] = useState("");
+  // ⚠️ Restava un campo per ognuna delle risposte che chiedevano qualcosa.
+  // Tolta «l'ho trasformato», ne serve uno solo: gli altri quattro erano
+  // codice che nessuno chiamava piu'.
   const [nuovaScadenza, setNuovaScadenza] = useState("");
 
   const carica = async () => {
     try {
-      // ⚠️ Le ricette sono una lettura ACCESSORIA: se cadono, la risposta
-      // «trasformato» resta possibile scrivendo a mano in cosa è finito.
-      // Ma non si ingoia il guasto — un menu vuoto si legge «non ci sono
-      // preparazioni», che è falso, ed è il difetto del 20/08.
-      const [p, r] = await Promise.all([
-        listPartiteInGiacenza(cerca || null),
-        leggi(listRecipes({})),
-      ]);
-      setPartite(p);
-      // Solo ciò che può contenere qualcosa: un piatto finito non è una
-      // preparazione in cui la merce «vive».
-      setRicette(nonLetto(r) ? NON_LETTO : r.filter((x) => x.recipe_type !== "piatto_finito"));
+      // ⚠️ L'elenco delle preparazioni non si legge piu': serviva al menu
+      // «in cosa e' finito» della risposta «l'ho trasformato», che dal
+      // 29/08 non c'e' piu'. Una lettura in meno a ogni apertura.
+      setPartite(await listPartiteInGiacenza(cerca || null));
       setError("");
     } catch (e) {
       // ⚠️ «Non lo so» non è «non c'è niente» (regola del 19/08): se la
@@ -107,10 +93,6 @@ export default function Fermi() {
 
   const apri = (p) => {
     setAperta(aperta === p.lotto_id ? null : p.lotto_id);
-    setQuantita("");
-    setRicettaId("");
-    setDescrizione("");
-    setScadeIl("");
     setNuovaScadenza("");
     setError("");
     setFatto("");
@@ -242,108 +224,36 @@ export default function Fermi() {
         {/* ⚠️ Dentro il gesto, non sopra la schermata (regola del 18/08):
             la data si chiede a mano perché la tabella delle durate dopo
             abbattimento non ce l'ha ancora nessuno. */}
+        {/* ⚠️ Qui c'era «quando arrivera' la tabella della biologa, il
+            gestionale la proporra' da se'»: una promessa diventata FALSA il
+            27/08, quando Alessio ha deciso che le durate le stabilisce lui e
+            quella tabella non la chiede piu'. Una promessa che nessuno
+            manterra' fa aspettare invece di far decidere. */}
         <p className="mt-1 testo-sala text-stone-500">
-          La durata dopo l&apos;abbattimento la decidi tu: quando arriverà la tabella della
-          biologa, il gestionale la proporrà da sé.
+          La durata dopo l&apos;abbattimento la decidi tu.
         </p>
       </div>
 
       {/* «Trasformato» — la risposta che NON scala. */}
+      {/* 🔴 «L'HO TRASFORMATO» E' STATA TOLTA (29/08/2026, decisione di
+          Alessio). Il suo stesso pulsante ammetteva di non fare niente —
+          «la giacenza non cambia: scende quando registri la preparazione» —
+          e un gesto che dichiara di non avere effetto fa credere di aver
+          fatto qualcosa quando non si e' fatto nulla.
+          ⚠️ Al suo posto un COLLEGAMENTO, non un'azione: chi ha trasformato
+          quella merce deve andare a registrare la produzione, che e' il
+          gesto che scala davvero la giacenza. */}
       <div>
         <span className={etichetta}>L&apos;ho trasformato</span>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div>
-            <label className={etichetta} htmlFor={`qta-${p.lotto_id}`}>
-              Quanto, in {p.unita} (ce ne sono {formatQta(p.da_guardare)})
-            </label>
-            <input
-              id={`qta-${p.lotto_id}`}
-              type="number"
-              step="0.0001"
-              min="0"
-              className={campo}
-              value={quantita}
-              onChange={(e) => setQuantita(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className={etichetta} htmlFor={`ric-${p.lotto_id}`}>
-              In cosa è finito
-            </label>
-            {/* 🔴 «Non lo so» non è «non ce ne sono»: se le preparazioni
-                non si sono lette, il menu NON si disegna vuoto — un menu
-                vuoto si legge «non ci sono preparazioni», che è falso.
-                Resta la strada di scriverlo a mano, che basta da sola. */}
-            {nonLetto(ricette) ? (
-              <p className="testo-sala text-stone-600">
-                Non sono riuscito a leggere le preparazioni. Scrivi qui sotto in cosa è finito.
-              </p>
-            ) : (
-              <select
-                id={`ric-${p.lotto_id}`}
-                className={campo}
-                value={ricettaId}
-                onChange={(e) => setRicettaId(e.target.value)}
-              >
-                <option value="">Scrivilo qui sotto…</option>
-                {ricette.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          {!ricettaId && (
-            <div>
-              <label className={etichetta} htmlFor={`desc-${p.lotto_id}`}>
-                Oppure scrivi in cosa
-              </label>
-              <input
-                id={`desc-${p.lotto_id}`}
-                type="text"
-                className={campo}
-                value={descrizione}
-                onChange={(e) => setDescrizione(e.target.value)}
-              />
-            </div>
-          )}
-          <div>
-            <label className={etichetta} htmlFor={`sc-${p.lotto_id}`}>
-              Scadenza della preparazione (se la sai)
-            </label>
-            <input
-              id={`sc-${p.lotto_id}`}
-              type="date"
-              className={campo}
-              value={scadeIl}
-              onChange={(e) => setScadeIl(e.target.value)}
-            />
-          </div>
-        </div>
-        <button
-          type="button"
-          className={`${bottone} mt-2`}
-          disabled={inCorso || !quantita || (!ricettaId && !descrizione.trim())}
-          onClick={() =>
-            esegui(
-              () =>
-                dichiaraTrasformazione({
-                  lottoId: p.lotto_id,
-                  quantita: Number(quantita),
-                  ricettaId,
-                  descrizione,
-                  scadeIl,
-                }),
-              `${p.prodotto}: ${quantita} ${p.unita} risultano trasformati. La giacenza non cambia.`
-            )
-          }
+        <p className="testo-sala text-stone-600">
+          La giacenza scende quando registri la preparazione, non da qui.
+        </p>
+        <Link
+          to="/magazzino/produzioni"
+          className="tocco-bottone mt-1 inline-flex items-center rounded-lg border border-stone-300 px-4 testo-sala-grande text-stone-700"
         >
-          <span className="block testo-sala font-semibold">Trasformato</span>
-          <span className="block testo-sala text-stone-500">
-            la giacenza non cambia: scende quando registri la preparazione
-          </span>
-        </button>
+          Vai a registrare la preparazione
+        </Link>
       </div>
     </div>
   );
@@ -445,7 +355,19 @@ export default function Fermi() {
                       quel confronto non si può fare, e scriverne uno finto
                       sarebbe peggio: a giudicare è chi guarda. */}
                   ferma da {p.ferma_da} giorni
-                  {p.scadenza ? ` · scade il ${formatDate(p.scadenza)}` : ""}
+                  {/* 🔴 IL PASSATO AL PASSATO (29/08/2026). Diceva «scade il
+                      10 giu 2026» il 29 di agosto: una data passata con un
+                      verbo al presente si legge come una scadenza futura, e
+                      chi scorre in fretta non se ne accorge. */}
+                  {p.scadenza &&
+                    (new Date(p.scadenza) < new Date(new Date().toDateString()) ? (
+                      <span className="font-semibold text-red-700">
+                        {" · SCADUTO il "}
+                        {formatDate(p.scadenza)}
+                      </span>
+                    ) : (
+                      ` · scade il ${formatDate(p.scadenza)}`
+                    ))}
                 </span>
               </button>
               {aperta === p.lotto_id && pannello(p)}

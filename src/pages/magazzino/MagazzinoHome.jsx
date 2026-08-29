@@ -190,16 +190,21 @@ export default function MagazzinoHome() {
           >
             Scadenze
           </Link>
-          {/* ⚠️ Accanto alle Scadenze, e sono due domande diverse: lì si
-              guarda la data, qui da quanto una partita non viene toccata.
-              Un barattolo aperto un mese fa, con scadenza fra un anno, lo
-              vede solo questo. */}
-          <Link
-            to="/magazzino/fermi"
-            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
-          >
-            Fermi da troppo
-          </Link>
+          {/* 🔴 «FERMI DA TROPPO» E' USCITA DA QUI (29/08/2026, decisione di
+              Alessio). Il commento che stava in questo punto diceva che era
+              «una domanda diversa» dalle Scadenze — ed era vero quando la
+              alimentava `partite_ferme()`, che non esiste piu'. Misurato coi
+              dati veri: mostrava gli **stessi identici 201 lotti** dell'altra
+              schermata, con un taglio diverso.
+              ⚠️ Due voci di menu per lo stesso elenco insegnano che una e'
+              inutile — e prima o poi si smette di aprire anche quella che
+              serve. Il taglio «da quanto e' ferma» e' diventato un
+              ORDINAMENTO dentro le Scadenze, dove l'elenco e' uno solo.
+              ⚠️ La schermata NON e' stata cancellata: e' l'unica strada per
+              le risposte che le Scadenze non danno (abbattuto, reso al
+              fornitore), e ci si arriva dal pulsante «Altre risposte…» che
+              sta li'. Toglierla del tutto riaprirebbe la porta mancante del
+              23/08. */}
           <Link
             to="/magazzino/produzioni"
             className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
