@@ -16,6 +16,8 @@ import {
   updateFormatoTavolo,
   updateRegolePrenotazione,
   updateServiceHour,
+  listSettimanaCucina,
+  setGiornoCucina,
 } from "../../lib/api/sala";
 
 // Quando si è aperti, come si chiamano i tavoli, quando si è chiusi.
@@ -43,21 +45,24 @@ export default function SalaEOrari() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [avviso, setAvviso] = useState("");
-  const [nuovaChiusura, setNuovaChiusura] = useState({ dal: "", al: "", motivo: "" });
+  const [nuovaChiusura, setNuovaChiusura] = useState({ dal: "", al: "", motivo: "", siLavoraInCucina: null });
+  const [cucina, setCucina] = useState([]);
 
   const ricarica = useCallback(async () => {
-    const [t, o, c, r, f] = await Promise.all([
+    const [t, o, c, r, f, k] = await Promise.all([
       listSagome(),
       listServiceHours(),
       listClosures(),
       getRegolePrenotazione(),
       listFormatiTavolo(),
+      listSettimanaCucina(),
     ]);
     setTavoli(t);
     setOrari(o);
     setChiusure(c);
     setRegole(r);
     setFormati(f);
+    setCucina(k);
   }, []);
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export default function SalaEOrari() {
   const aggiungiChiusura = async () => {
     if (!nuovaChiusura.dal) return;
     await esegui(() => createClosure(nuovaChiusura));
-    setNuovaChiusura({ dal: "", al: "", motivo: "" });
+    setNuovaChiusura({ dal: "", al: "", motivo: "", siLavoraInCucina: null });
   };
 
   const orariDelGiorno = (weekday) => orari.filter((o) => o.weekday === weekday);
@@ -462,6 +467,60 @@ export default function SalaEOrari() {
         </div>
       </div>
 
+      {/* 🔴 QUANDO SI LAVORA IN CUCINA — 29/08/2026, decisione di Alessio.
+          «Aperto al pubblico» e «si lavora in cucina» sono DUE cose distinte
+          e restano due interruttori: il giorno di chiusura e' spesso proprio
+          quello delle preparazioni lunghe. */}
+      <div className={sezioneClass}>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quando si lavora in cucina</h2>
+        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
+          Non è la stessa cosa di «aperto al pubblico»: il giorno di chiusura è spesso
+          proprio quello delle preparazioni lunghe. Da qui il gestionale sa quando far
+          comparire da sole le cose da preparare.
+        </p>
+        <div className="space-y-2">
+          {/* ⚠️ Si riusa l'elenco dei giorni che questa schermata ha gia' —
+              oggetti `{weekday, nome}` che partono dal LUNEDI' — invece di
+              scriverne uno indicizzato per numero: quello dava i giorni
+              sfalsati di uno, perche' nel database 0 e' domenica. */}
+          {GIORNI.map(({ weekday: g, nome }) => {
+            const riga = cucina.find((c) => c.weekday === g);
+            const aperto = orari.some((o) => o.weekday === g && o.attivo);
+            return (
+              <div key={g} className="flex flex-wrap items-center gap-3 bg-white rounded-lg px-3 py-2">
+                <span className="testo-sala-grande text-b58-charcoal w-28 shrink-0">{nome}</span>
+                <span className="testo-sala text-b58-charcoal-soft w-40 shrink-0">
+                  {aperto ? "aperto al pubblico" : "chiuso al pubblico"}
+                </span>
+                {/* ⚠️ TRE pulsanti e non una spunta: le risposte sono tre, e
+                    «non l'ho ancora deciso» non è la stessa cosa di «no».
+                    Con una spunta il terzo stato sparirebbe dentro il no. */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { v: true, testo: "Si lavora" },
+                    { v: false, testo: "No" },
+                    { v: null, testo: "Non l'ho deciso" },
+                  ].map((s) => (
+                    <button
+                      key={String(s.v)}
+                      type="button"
+                      onClick={() => esegui(() => setGiornoCucina(g, s.v))}
+                      className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
+                        riga?.si_lavora === s.v
+                          ? "bg-b58-terracotta text-b58-parchment"
+                          : "border border-b58-charcoal/20 text-b58-charcoal-soft"
+                      }`}
+                    >
+                      {s.testo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Chiusure */}
       <div className={sezioneClass}>
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Chiusure straordinarie</h2>
@@ -504,6 +563,28 @@ export default function SalaEOrari() {
               className={`${inputClass} w-full`}
             />
           </div>
+          {/* ⚠️ TRE risposte, non una spunta: «non l'ho deciso» vuol dire
+              «vale la settimana tipo», ed e' diverso da «no». Durante due
+              settimane di ferie probabilmente non si cucina, ma e' lui a
+              doverlo dire — e il giorno di chiusura tecnica con dentro le
+              preparazioni lunghe e' proprio il caso per cui esiste. */}
+          <div>
+            <label className={labelClass}>In cucina si lavora?</label>
+            <select
+              value={nuovaChiusura.siLavoraInCucina === null ? "" : String(nuovaChiusura.siLavoraInCucina)}
+              onChange={(e) =>
+                setNuovaChiusura((c) => ({
+                  ...c,
+                  siLavoraInCucina: e.target.value === "" ? null : e.target.value === "true",
+                }))
+              }
+              className={inputClass}
+            >
+              <option value="">Come al solito</option>
+              <option value="true">Sì, si lavora</option>
+              <option value="false">No, nemmeno in cucina</option>
+            </select>
+          </div>
           <button
             type="button"
             onClick={aggiungiChiusura}
@@ -522,6 +603,14 @@ export default function SalaEOrari() {
               <span>
                 {c.dal === c.al ? c.dal : `${c.dal} → ${c.al}`}
                 {c.motivo ? ` — ${c.motivo}` : ""}
+                {/* Si dice solo quando qualcuno si e' pronunciato: scriverlo
+                    sempre farebbe sembrare una decisione anche il silenzio. */}
+                {c.si_lavora_in_cucina === true && (
+                  <span className="testo-sala text-b58-olive-dark"> · in cucina si lavora</span>
+                )}
+                {c.si_lavora_in_cucina === false && (
+                  <span className="testo-sala text-b58-charcoal-soft"> · nemmeno in cucina</span>
+                )}
               </span>
               <button
                 onClick={() => esegui(() => deleteClosure(c.id))}

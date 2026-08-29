@@ -268,16 +268,47 @@ export async function updateServiceHour(id, payload) {
 export async function listClosures() {
   const { data, error } = await supabase
     .from("service_closures")
-    .select("id, dal, al, motivo")
+    .select("id, dal, al, motivo, si_lavora_in_cucina")
     .order("dal", { ascending: false });
   if (error) throw error;
   return data;
 }
 
-export async function createClosure({ dal, al, motivo }) {
+export async function createClosure({ dal, al, motivo, siLavoraInCucina }) {
   const { error } = await supabase
     .from("service_closures")
-    .insert({ dal, al: al || dal, motivo: motivo?.trim() || null });
+    .insert({
+      dal,
+      al: al || dal,
+      motivo: motivo?.trim() || null,
+      // ⚠️ Vuoto = «vale la settimana tipo», e NON «no»: durante due
+      // settimane di ferie probabilmente non si cucina, ma e' Alessio a
+      // doverlo dire. Un no messo qui da noi spegnerebbe le preparazioni
+      // ricorrenti in silenzio.
+      si_lavora_in_cucina: siLavoraInCucina ?? null,
+    });
+  if (error) throw error;
+}
+
+// LA SETTIMANA DELLA CUCINA — 29/08/2026.
+// ⚠️ E' una domanda DIVERSA da «il locale e' aperto»: il giorno di chiusura
+// e' spesso proprio quello delle preparazioni lunghe (decisione di Alessio).
+// Sette righe, una per giorno; `si_lavora` puo' essere vuoto e vuoto vuol
+// dire «non l'ha ancora detto», che e' una risposta diversa da no.
+export async function listSettimanaCucina() {
+  const { data, error } = await supabase
+    .from("settimana_cucina")
+    .select("weekday, si_lavora")
+    .order("weekday");
+  if (error) throw error;
+  return data;
+}
+
+export async function setGiornoCucina(weekday, siLavora) {
+  const { error } = await supabase
+    .from("settimana_cucina")
+    .update({ si_lavora: siLavora, aggiornato_il: new Date().toISOString() })
+    .eq("weekday", weekday);
   if (error) throw error;
 }
 
