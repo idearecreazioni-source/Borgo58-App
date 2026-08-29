@@ -678,6 +678,24 @@ una pasta insieme, poi i secondi, poi il dolce.
 
 ## Comande e sala
 
+* 🔴 29/08 — **«NON LO SO» NON È «È DEL TURNO CENTRALE».** Quando una
+  prenotazione cade fuori dagli orari del servizio, il tavolo non prende più
+  il colore del turno di mezzo: prende un **rigato grigio** che dice che lì
+  manca un'informazione. ⚠️ Misurato da Alessio due volte, e la seconda è
+  quella che conta — coi servizi configurati bene, su una prenotazione delle
+  **19:29** con apertura alle **20:00**. Non è un caso di collaudo:
+  succederà a locale funzionante ogni volta che qualcuno prenota prima
+  dell'apertura. ⚠️ E **non è una quarta fascia**: le fasce restano tre, e il
+  segno si vede che non è una fascia invece di sembrarne una.
+* 🔴 29/08 — **LA LEGENDA DEI COLORI TORNA**, sotto la pianta e dietro un
+  tocco. Rovescia il n. 7 del 18/08, che le aveva tolte — e la ragione di
+  allora non era sbagliata: *una spiegazione che il lettore ha già in testa è
+  ingombro*. ⚠️ **Quello che è cambiato sono i segni, non il fastidio**: il
+  18/08 erano tre fasce, oggi sono **otto**, e tre di questi sono nati dopo
+  che le legende erano state tolte — cioè non sono mai stati scritti da
+  nessuna parte. ⚠️ **Non sta sempre a schermo**, e lì la ragione del 18/08
+  resta intera. Rovesciamento n. 66.
+
 * 25/08 — Serve un FILTRO nelle Comande che divida chi cena da chi fa apericena,
 per avere quanti coperti fa la sala e quanti l'area lunch — agganciabile alle
 linee della Proiezione.

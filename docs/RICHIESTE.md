@@ -36,7 +36,7 @@
 
 ### Quante sono, al 29/08/2026
 
-**41 richieste in tutto: 35 aperte**, **2 scartate da lui**, **4 chiuse**. Tre sono marcate «da confermare» o «da chiarire».
+**41 richieste in tutto: 33 aperte**, **2 scartate da lui**, **6 chiuse**. Tre sono marcate «da confermare» o «da chiarire».
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -60,9 +60,9 @@ lui, e non so cosa sia.
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
 | S1 | **Quando due prenotazioni cadono sullo stesso tavolo, il tavolo si vede a due colori.** Oggi il doppio colore si accende solo se le due prenotazioni sono in fasce diverse: mettendone tre alla stessa ora non succede niente. E servono più di due tinte per dire che sono tre — due tinte dicono «due». | 29/08/2026 | Provato da lui sulla pianta. **Era già stato deciso in una chat passata e non era mai arrivato in un mandato: è la richiesta che ha fatto nascere questo file.** | in attesa |
-| S2 | **Quando il gestionale non sa in che fascia cade una prenotazione, non deve metterla in mezzo.** Oggi «non lo so» e «è del turno centrale» hanno lo stesso identico colore. Succede a locale funzionante ogni volta che qualcuno prenota prima dell'orario di apertura (misurato su una prenotazione delle 19:29 con apertura alle 20:00). | 29/08/2026 | Due schermate sue | in attesa |
+| S2 | **Quando il gestionale non sa in che fascia cade una prenotazione, non deve metterla in mezzo.** Oggi «non lo so» e «è del turno centrale» hanno lo stesso identico colore. Succede a locale funzionante ogni volta che qualcuno prenota prima dell'orario di apertura (misurato su una prenotazione delle 19:29 con apertura alle 20:00). | 29/08/2026 | Due schermate sue | fatta · migrazione `20260829000026` |
 | S3 | **Il riquadro delle informazioni in alto a destra della pianta ha una misura fissa mentre la pianta si adatta**: *«troppo grande da cellulare e troppo piccolo da pc»*. Sulla sua schermata «BASE-Tavolo …» è tagliato a metà e il riquadro copre la pianta invece di starle accanto. | 29/08/2026 | Sue parole | in attesa |
-| S4 | **La legenda dei colori dev'essere scritta dentro il gestionale**, raggiungibile dalla pianta. Oggi non esiste in nessun posto: serve a lui adesso e servirà a chi lavorerà in sala. | 29/08/2026 | Mandato del 29/08 | in attesa |
+| S4 | **La legenda dei colori dev'essere scritta dentro il gestionale**, raggiungibile dalla pianta. Oggi non esiste in nessun posto: serve a lui adesso e servirà a chi lavorerà in sala. | 29/08/2026 | Mandato del 29/08 | fatta · commit di stanotte |
 | S5 | **Le due colonne sulla schermata della sala, sul computer.** | prima del 21/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | S6 | **Un tavolo con due turni dentro il riquadro del tavolo.** | 18/08/2026 | Riepilogo del giro D3 | in attesa · *da confermare* |
 | S7 | **Il coperto in meno per il tavolo contro il muro.** | 18/08/2026 | Chiesta e poi **ritirata da lui** lo stesso giorno (*«è già fantastica così»*): la correzione a mano copre già il caso. | scartata da Alessio |

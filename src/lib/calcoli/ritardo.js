@@ -234,6 +234,87 @@ export function statoDelConto(conto) {
   };
 }
 
+// =====================================================================
+// COSA VOGLIONO DIRE I SEGNI — l'elenco che legge la legenda
+// =====================================================================
+//
+// 🔴 STA QUI, ACCANTO ALLA FUNZIONE CHE DECIDE LA PRECEDENZA, e non nella
+// schermata che lo mostra. L'ordine di questo elenco È l'ordine scritto
+// nel corpo di `segnoDelTavolo` qui sotto: chi cambia la precedenza ha la
+// legenda sotto gli occhi, e non può cambiarne una senza vedere l'altra.
+//
+// ⚠️ È la stessa forma decisa il 18/08 per le due legende di allora — *le
+// due legende DICHIARANO la precedenza, e l'ordine arriva dallo STESSO
+// dato con cui il colore viene deciso*. Quelle sono state tolte; la
+// regola con cui erano costruite no.
+//
+// ⚠️ E una prova pura pretende che i nomi qui elencati siano ESATTAMENTE
+// quelli che la pianta sa disegnare: una legenda che spiega un colore che
+// non esiste, o che tace su uno che esiste, è una legenda che mente.
+export const SEGNI_IN_ORDINE = [
+  {
+    chiave: "selezionato",
+    nome: "Il tavolo che stai toccando",
+    dice: "è la risposta al tuo dito: vince su tutto, perché un tavolo che non cambia quando lo tocchi sembra rotto.",
+  },
+  {
+    chiave: "inviata",
+    nome: "La comanda è partita",
+    dice: "l'ordine è andato in cucina. Non vuol dire «sono seduti»: chi è seduto si vede guardando la sala.",
+  },
+  {
+    chiave: "presto",
+    nome: "Primo giro",
+    dice: "arrivano entro l'ora del primo turno, quindi il tavolo può servire una seconda volta.",
+  },
+  {
+    chiave: "pieno",
+    nome: "A servizio avviato",
+    dice: "arrivano dopo il primo giro: il tavolo resta loro per la serata.",
+  },
+  {
+    chiave: "tardi",
+    nome: "Ultimo turno",
+    dice: "arrivano dopo l'ora degli ultimi arrivi. Non chiude niente: colora il tavolo e basta.",
+  },
+  {
+    chiave: "misto",
+    nome: "Più di una fascia",
+    dice: "sullo stesso tavolo ci sono orari di fasce diverse — tipicamente un primo giro e un ultimo turno.",
+  },
+  {
+    chiave: "ignota",
+    nome: "Non lo so",
+    dice: "la prenotazione cade fuori dagli orari del servizio, quindi il gestionale non sa in che fascia metterla. Non è una quarta fascia: è un'informazione che manca.",
+  },
+  {
+    chiave: "ritardo",
+    campione: "pieno",
+    barrato: true,
+    nome: "Doveva essere già qui",
+    dice: "l'ora è passata da più della tolleranza e nessuno ha ancora aperto un conto. La sbarratura passa SOPRA il colore, così non toglie l'ora a chi la stava leggendo.",
+  },
+  {
+    chiave: "daInviare",
+    campione: "libero",
+    pallino: "pieno",
+    nome: "C'è roba da mandare in cucina",
+    dice: "dei piatti sono segnati e non sono partiti. È il caso che costa di più, per questo il pallino è pieno.",
+  },
+  {
+    chiave: "contoVuoto",
+    campione: "libero",
+    pallino: "vuoto",
+    nome: "Conto aperto e ancora niente",
+    dice: "si sono seduti e non hanno ancora ordinato: devi tornare al tavolo.",
+  },
+  {
+    chiave: "libero",
+    nome: "Libero",
+    dice: "nessuno l'ha prenotato e nessuno ci è seduto.",
+  },
+];
+
 export function segnoDelTavolo({
   selezionato,
   contoAperto,

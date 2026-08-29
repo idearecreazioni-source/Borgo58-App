@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PiantaSala from "../../components/PiantaSala";
+import LegendaDellaSala from "../../components/LegendaDellaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
@@ -1464,6 +1465,12 @@ export default function PiantaGiornata() {
               </button>
             )}
           </div>
+
+          {/* 🔴 LA LEGENDA DEI COLORI — richiesta di Alessio del 29/08.
+              Sta SOTTO la pianta e dietro un tocco: i segni sono otto, e
+              nessuno li tiene a mente; ma una spiegazione sempre a schermo
+              si legge il primo giorno e poi diventa arredamento. */}
+          <LegendaDellaSala />
 
           {/* PRENOTAZIONE NUOVA — il gesto principale di questa pagina */}
           {!dentroLaPianta && moduloNuova}

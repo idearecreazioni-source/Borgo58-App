@@ -122,8 +122,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 63 | 27/08/2026 | gli elenchi chiusi si scrivono dentro i prompt di MEMO |
 | 64 | 28/08/2026 | la rete dei riepiloghi guarda solo ciò che è già applicato |
 | 65 | 28/08/2026 | le migrazioni si applicano per istruzioni, non in blocco |
+| 66 | 29/08/2026 | la legenda dei colori si toglie dalla schermata |
 
-⚠️ **Righe: 66.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 67.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2551,3 +2552,46 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ **Il danno non era lo stato a metà: era il silenzio.** Il registro diceva
    289, il catalogo diceva un'altra cosa, e nessuno dei due dichiarava di
    essere in disaccordo con l'altro.
+
+---
+
+## 66 · 29/08/2026 — «la legenda dei colori si toglie dalla schermata»
+
+1. **Cosa era stato deciso, e quando.** Il **18/08/2026** Alessio ha tolto le
+   due legende dei colori dalla pianta e dalle Comande — è il rovesciamento
+   n. 7, e le considerava superflue: aveva scartato anche la via di mezzo di
+   nasconderle dietro un tocco.
+
+2. **La ragione di allora.** Era buona, e non è mai stata «le legende non
+   servono»: *quelle regole le aveva scritte lui*, quindi la spiegazione era
+   rivolta a qualcuno che non c'era. **Una spiegazione che il lettore ha già
+   in testa è ingombro**, e l'ingombro su una schermata che si usa in
+   servizio si paga in secondi.
+   ⚠️ E il prezzo era stato dichiarato nella nota di allora: «da oggi la
+   precedenza dei colori è dichiarata solo nel codice e nel riepilogo del
+   giro D2 — in nessuna schermata. Il giorno che entrerà personale nuovo va
+   rimessa».
+
+3. **Cosa si decide adesso.** La legenda torna, **sotto la pianta e dietro un
+   tocco** (`LegendaDellaSala`). Richiesta di Alessio, sue parole: *«serve a
+   lui adesso e servirà a chi lavorerà in sala, che non può chiedere a lui
+   ogni volta»*.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché non è più vero
+   che il lettore ce l'ha in testa, e non per colpa del personale nuovo: i
+   segni sono cambiati sotto.** Il 18/08 erano tre fasce; oggi sono **otto**
+   — tre fasce, il tavolo selezionato, la comanda partita, i due pallini, la
+   sbarratura del ritardo e, da stanotte, il rigato di «non lo so». Fra
+   questi ce ne sono tre che **nessuno ha mai spiegato a nessuno**, perché
+   sono nati dopo che le legende erano state tolte.
+   ⚠️ **La ragione di allora resta però intera nella FORMA**, ed è per questo
+   che la legenda non sta sempre a schermo: si apre da un gesto e si
+   richiude. Alessio nel 18/08 aveva scartato proprio questa via di mezzo —
+   la si riprende adesso perché ciò che è cambiato è il numero dei segni, non
+   il fastidio di una spiegazione fissa. **Il prezzo che si paga è un tocco;
+   quello che si pagava prima era che tre segni su otto non fossero scritti
+   da nessuna parte.**
+   ⚠️ E una prova pura (`tests/unita/legenda-sala.test.js`) tiene la legenda
+   incollata ai colori veri **nei due versi**: un colore aggiunto e non
+   spiegato, o una voce spiegata che nessuno disegna più, diventano rossi. Il
+   difetto di una legenda non è che sia brutta — è che invecchia in silenzio.
