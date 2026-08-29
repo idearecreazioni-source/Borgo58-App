@@ -36,8 +36,7 @@
 
 ### Quante sono, al 29/08/2026
 
-**41 richieste in tutto: 38 aperte** (28 in attesa, 10 in corso), **2 scartate
-da lui**, **1 chiusa**. Tre sono marcate «da confermare» o «da chiarire».
+**41 richieste in tutto: 35 aperte**, **2 scartate da lui**, **4 chiuse**. Tre sono marcate «da confermare» o «da chiarire».
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -83,7 +82,7 @@ lui, e non so cosa sia.
 | R7 | **«Descrizione per il menu» è tagliata**: il testo d'esempio finisce fuori dal riquadro a metà parola. | 29/08/2026 | Sua schermata | in corso |
 | R8 | **Le tabelle degli ingredienti dentro una ricetta scorrono di lato**: «Rimuovi» tagliato a metà su tutte le righe, «% scarto» a capo nell'intestazione, il «kg» sotto la quantità invece che accanto. | 29/08/2026 | Sua schermata | in corso |
 | R9 | **«Salva modifiche» sta schiacciato in un angolo a metà schermata**, con roba da compilare ancora sopra. | 29/08/2026 | Sua schermata | in corso |
-| R10 | **Via la spunta «Guarnizione opzionale (esclusa dal food cost)».** | 29/08/2026 | Decisione esplicita sua | in corso |
+| R10 | **Via la spunta «Guarnizione opzionale (esclusa dal food cost)».** | 29/08/2026 | Decisione esplicita sua | fatta · migrazione `20260829000023` |
 | R11 | **Estrazione ricette col pulsante «estrapola»**, con aiuto alla lista della spesa. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | R12 | **La resa al posto dello scarto standard**: lo scarto è una proprietà della coppia ingrediente × preparazione, non dell'ingrediente. La resa vive sulla riga di ricetta, espressa in lordo → netto («1,5 kg di cozze danno 400 g»), non in percentuale. | 14/08/2026 | Blocco 5 del mandato cumulativo | in attesa |
 | R13 | **La scheda dell'ingrediente diventa il posto unico.** Dichiarata non aperta il 29/08: è l'unico punto del suo blocco senza una misura sotto, e prima di riorganizzarla va deciso cosa ci finisce dentro. | 29/08/2026 | Blocco 2 del mandato del 29/08 | in attesa |
@@ -94,8 +93,8 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| M1 | **Sulla scheda di un materiale di consumo spariscono cinque campi**: «Fotografa l'etichetta», «Provenienza» con «Produzione interna (orto)», «Conservazione» (e con essa l'etichetta gialla «messo dalla macchina»), e — la più importante — **«È un alimento»**, che è la casella con cui la carta forno tornerebbe in mezzo al baccalà. | 29/08/2026 | Sua schermata («Carta forno») | in attesa |
-| M2 | **Categorie e unità di misura proprie dei materiali**, al posto di quelle alimentari (oggi la carta forno è in categoria «Altro»). Ha chiesto esplicitamente che le proponga io e che lui le corregga leggendo. | 29/08/2026 | Sua richiesta | in attesa |
+| M1 | **Sulla scheda di un materiale di consumo spariscono cinque campi**: «Fotografa l'etichetta», «Provenienza» con «Produzione interna (orto)», «Conservazione» (e con essa l'etichetta gialla «messo dalla macchina»), e — la più importante — **«È un alimento»**, che è la casella con cui la carta forno tornerebbe in mezzo al baccalà. | 29/08/2026 | Sua schermata («Carta forno») | fatta · commit di stanotte |
+| M2 | **Categorie e unità di misura proprie dei materiali**, al posto di quelle alimentari (oggi la carta forno è in categoria «Altro»). Ha chiesto esplicitamente che le proponga io e che lui le corregga leggendo. | 29/08/2026 | Sua richiesta | fatta · migrazione `20260829000024` |
 | M3 | ⚠️ **Restano e sono giusti**: scorta minima, «avvisami se il prezzo sale», il fornitore. E **i valori senza senso rimasti** («tutto l'anno», «temperatura ambiente») **non si cancellano**: sono solo sul progetto di prova e spariranno col reset. | 29/08/2026 | Sua decisione | scartata da Alessio |
 
 ---
@@ -104,7 +103,7 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| V1 | **I due pulsanti «Fotografa» e «Premi e parla» vanno in fondo, larghi quanto lo schermo, staccati dal bordo, alla stessa altezza in tutte e due le schermate.** Oggi «Premi e parla» è attaccato al bordo inferiore (dove su iPhone c'è la barra di sistema) e «Fotografa» è in basso a sinistra, largo un terzo — il punto più scomodo con una mano sola, che è come tiene il telefono mentre l'altra regge la confezione. | 29/08/2026 | Sue schermate | in attesa |
+| V1 | **I due pulsanti «Fotografa» e «Premi e parla» vanno in fondo, larghi quanto lo schermo, staccati dal bordo, alla stessa altezza in tutte e due le schermate.** Oggi «Premi e parla» è attaccato al bordo inferiore (dove su iPhone c'è la barra di sistema) e «Fotografa» è in basso a sinistra, largo un terzo — il punto più scomodo con una mano sola, che è come tiene il telefono mentre l'altra regge la confezione. | 29/08/2026 | Sue schermate | fatta · commit `8a58cab` |
 | V2 | **La conferma parlata dell'allineamento a voce.** Dettare una giacenza funziona già; quello che manca è che MEMO risponda **a voce**. Dichiarato non fatto il 29/08 per una ragione onesta: in questo ambiente non c'è un orecchio che possa provarla. | 14/08/2026 | Blocco 2 del mandato cumulativo | in attesa |
 | V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | in attesa |
 

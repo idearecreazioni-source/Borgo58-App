@@ -187,8 +187,8 @@ export async function listPriceHistory(ingredientId, { limit = 100 } = {}) {
  * ⚠️ Solo le ACCESE: una categoria spenta resta legale per gli ingredienti
  *    che la portano, ma non si propone piu'.
  */
-export async function listCategorieIngrediente() {
-  const { data, error } = await supabase.rpc("categorie_proponibili");
+export async function listCategorieIngrediente(ambito = "alimenti") {
+  const { data, error } = await supabase.rpc("categorie_proponibili", { p_ambito: ambito });
   if (error) throw error;
   return (data ?? []).map((c) => ({ value: c.codice, label: c.nome }));
 }
@@ -201,9 +201,29 @@ export async function listCategorieIngrediente() {
  *    quale, perche' due categorie che si somigliano sono il doppione che il
  *    catalogo esiste per evitare.
  */
-export async function aggiungiCategoriaIngrediente(nome) {
+/**
+ * LE UNITA DI MISURA, che dal 29/08/2026 sono DATI come le categorie.
+ *
+ * ⚠️ `ambito` dice in quale dei due mondi si sta: su una carta forno non si
+ *    offrono kg, g e mazzo. Le unita che servono a tutti e due — il litro,
+ *    il pezzo — stanno in una riga sola con ambito «entrambi», perche
+ *    sdoppiarle darebbe due righe che dicono la stessa cosa.
+ *
+ * ⚠️ NON c e un «aggiungi unita» come per le categorie, ed e dichiarato:
+ *    `ingredients.unit` e ancora un vocabolario chiuso del database, quindi
+ *    un unita creata al volo verrebbe RIFIUTATA al salvataggio. Un gesto
+ *    che riesce a meta e peggio di un gesto che non c e.
+ */
+export async function listUnita(ambito = "alimenti") {
+  const { data, error } = await supabase.rpc("unita_proponibili", { p_ambito: ambito });
+  if (error) throw error;
+  return (data ?? []).map((u) => ({ value: u.codice, label: u.nome }));
+}
+
+export async function aggiungiCategoriaIngrediente(nome, ambito = "alimenti") {
   const { data, error } = await supabase.rpc("aggiungi_categoria_ingrediente", {
     p_nome: nome,
+    p_ambito: ambito,
   });
   if (error) throw error;
   return data;

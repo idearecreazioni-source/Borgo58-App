@@ -25,13 +25,20 @@
 // ⚠️ E NON c'è il milligrammo, per una scelta che non si può correggere
 // dopo: un valore di enum non si toglie, e in mg tutti i prezzi si
 // vedrebbero «0,00 €» (misurato su nove spezie su nove).
-export const UNITS = [
-  { value: "kg", label: "kg" },
-  { value: "g", label: "g" },
-  { value: "l", label: "l" },
-  { value: "pz", label: "pz" },
-  { value: "mazzo", label: "mazzo" },
-];
+// 🔴 LE UNITÀ DI MISURA NON STANNO PIÙ QUI — 29/08/2026.
+//
+// Sono diventate DATI (la tabella `unita_misura`) perché i materiali di
+// consumo avessero le loro: su un rotolo di carta forno non si offrono kg,
+// g e mazzo. Da quel momento un elenco scritto qui è una SECONDA VERITÀ, e
+// il primo giorno è già rimasta indietro — il database ne ammetteva nove e
+// questo elenco ne offriva cinque, cioè quattro valori legittimi che nessuna
+// schermata poteva scegliere.
+//
+// ⚠️ NON L'HO TROVATO RILEGGENDO: l'ha trovato la rete dei vocabolari,
+// diventata rossa da sola. È il caso per cui esiste.
+//
+// Si leggono con `useUnita()` (`src/lib/unita.js`). Stessa strada delle
+// categorie degli ingredienti, uscite di qui il 27/08 per la stessa ragione.
 
 export const STORAGE_TYPES = [
   { value: "frigo_0_4", label: "Frigo 0-4°C" },

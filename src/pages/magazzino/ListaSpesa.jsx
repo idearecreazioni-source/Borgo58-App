@@ -15,7 +15,7 @@ import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
-import { ESITI_RIGA_LISTA, PAYMENT_METHODS, UNITS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
+import { ESITI_RIGA_LISTA, PAYMENT_METHODS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
 import { listCausali } from "../../lib/api/cash";
 import { variazionePrezzoProdotto } from "../../lib/api/assistente";
 import DatoNonLetto from "../../components/DatoNonLetto";
@@ -23,6 +23,7 @@ import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import { useUnita } from "../../lib/unita";
 
 const emptyAddForm = {
   mode: "ingredient",
@@ -58,6 +59,9 @@ const ESITI_SCELTA = [
 ];
 
 export default function ListaSpesa() {
+  // Le unita' si chiedono al database, non a un elenco scritto qui: la
+  // ragione per esteso sta in src/lib/unita.js.
+  const UNITS = useUnita();
   const { isTitolare } = useAuth();
   const [items, setItems] = useState([]);
   const [ingredients, setIngredients] = useState([]);

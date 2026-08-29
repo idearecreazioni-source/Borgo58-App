@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createRecipe } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, RECIPE_TYPES, UNITS, eComponente } from "../../lib/constants";
+import { RECIPE_CATEGORIES, RECIPE_TYPES, eComponente } from "../../lib/constants";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import { useUnita } from "../../lib/unita";
 
 // Quello che il gestionale ha già capito da una ricetta dettata.
 // ⚠️ IL TESTO DETTATO NON HA UN CAMPO QUI, ed è dichiarato invece che
@@ -19,6 +20,9 @@ const DA_VOCE = {
 };
 
 export default function RicettaForm() {
+  // Le unita' si chiedono al database, non a un elenco scritto qui: la
+  // ragione per esteso sta in src/lib/unita.js.
+  const UNITS = useUnita();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",

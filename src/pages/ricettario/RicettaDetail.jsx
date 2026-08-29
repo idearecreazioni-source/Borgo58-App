@@ -46,7 +46,6 @@ import {
   statoRicetta,
   SEASONS,
   STEP_PHASES,
-  UNITS,
   VIDEO_PLATFORMS,
   formatDate,
   formatEUR,
@@ -54,6 +53,7 @@ import {
   labelFor,
   recipeStatusLabel,
 } from "../../lib/constants";
+import { useUnita } from "../../lib/unita";
 
 const emptyIngredientForm = {
   ingredient_id: "",
@@ -78,6 +78,9 @@ const emptyStepForm = {
 };
 
 export default function RicettaDetail() {
+  // Le unita' si chiedono al database, non a un elenco scritto qui: la
+  // ragione per esteso sta in src/lib/unita.js.
+  const UNITS = useUnita();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isTitolare } = useAuth();

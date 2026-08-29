@@ -66,7 +66,6 @@ import {
   TASK_RICORRENZE,
   TASK_STATUSES,
   TIP_MEZZI,
-  UNITS,
   VIDEO_PLATFORMS,
 } from "../constants";
 
@@ -90,8 +89,18 @@ import {
 // ⚠️ Al suo posto c'è una prova che impedisce di rimettere un elenco statico
 // in `constants.js`, in `tests/unita/vocabolari.test.js`: senza, fra sei mesi
 // qualcuno lo riscrive credendo di sistemare qualcosa.
+// 🔴 E DAL 29/08/2026 NON C'È PIÙ NEANCHE «UNITS», per la stessa ragione e
+// con la stessa forma. Le unità di misura sono diventate dati
+// (`unita_misura`) perché i materiali di consumo avessero le loro, e il
+// gestionale le LEGGE con `useUnita()`.
+//
+// ⚠️ QUESTA RETE HA FATTO IL SUO MESTIERE PRIMA DI USCIRNE: è diventata rossa
+// da sola nel momento in cui il database ha imparato «rotolo» e la schermata
+// no — «il database ammette conf, m, paio, rotolo e la schermata non li offre
+// — un valore legittimo che nessuno può scegliere, e in silenzio». Non è
+// stata tolta per farla tacere: è stata tolta dopo aver seguito quello che
+// diceva.
 export const SPECCHIATI = [
-  { costante: "UNITS", valori: UNITS, tabella: "ingredients", colonna: "unit" },
   { costante: "STORAGE_TYPES", valori: STORAGE_TYPES, tabella: "ingredients", colonna: "storage_type" },
   { costante: "MONTHS", valori: MONTHS, tabella: "ingredients", colonna: "seasonality" },
   { costante: "ALLERGENS", valori: ALLERGENS, tabella: "ingredients", colonna: "allergens" },
@@ -329,7 +338,7 @@ export function guardieSospette(guardie, vocabolari, esenti = GUARDIE_ESENTI) {
 // qualcuno lo sta collaudando.
 export function elenchiDiCategorieNelCodice(moduloCostanti) {
   return Object.keys(moduloCostanti)
-    .filter((k) => /INGREDIENT_CATEG/i.test(k))
+    .filter((k) => /INGREDIENT_CATEG/i.test(k) || /^UNITS$/.test(k))
     .sort();
 }
 

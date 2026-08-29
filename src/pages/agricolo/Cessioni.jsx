@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { createCession, deleteCession, listCessions } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { UNITS, formatDate, formatEUR, oggiLocale } from "../../lib/constants";
+import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import { useUnita } from "../../lib/unita";
 
 const today = oggiLocale;
 
@@ -15,6 +16,9 @@ const emptyForm = {
 };
 
 export default function Cessioni() {
+  // Le unita' si chiedono al database, non a un elenco scritto qui: la
+  // ragione per esteso sta in src/lib/unita.js.
+  const UNITS = useUnita();
   const [entities, setEntities] = useState(null);
   const [cessions, setCessions] = useState([]);
   const [ingredients, setIngredients] = useState([]);

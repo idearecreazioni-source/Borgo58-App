@@ -261,11 +261,13 @@ describe("le categorie degli ingredienti sono dati, non un elenco nel codice", (
       UNITS: [{ value: "kg" }],
       INGREDIENT_CATEGORIES: [{ value: "verdura", label: "Verdura" }],
     };
-    expect(elenchiDiCategorieNelCodice(modulo)).toEqual(["INGREDIENT_CATEGORIES"]);
+    // ⚠️ Dal 29/08 anche UNITS: le unita sono dati, e un elenco rimesso qui
+    //    sarebbe la stessa seconda verita che la rete ha appena trovato.
+    expect(elenchiDiCategorieNelCodice(modulo)).toEqual(["INGREDIENT_CATEGORIES", "UNITS"]);
 
     // ...e non grida su un modulo sano, altrimenti sarebbe un guardiano che
     // segnala sempre — e quelli si imparano a spegnere.
-    expect(elenchiDiCategorieNelCodice({ UNITS: [], ALLERGENS: [] })).toEqual([]);
+    expect(elenchiDiCategorieNelCodice({ ALLERGENS: [], MONTHS: [] })).toEqual([]);
   });
 
   it("...e nessuno rispecchia piu' `ingredients.category`", async () => {

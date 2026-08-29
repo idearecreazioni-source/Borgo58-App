@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { createCrop, deleteCrop, listCrops, updateCrop } from "../../lib/api/agricolo";
 import { getEntities } from "../../lib/api/entities";
 import { listIngredients } from "../../lib/api/ingredients";
-import { CROP_STATUSES, UNITS, formatDate, oggiLocale } from "../../lib/constants";
+import { CROP_STATUSES, formatDate, oggiLocale } from "../../lib/constants";
 import Didascalia from "../../components/Didascalia";
+import { useUnita } from "../../lib/unita";
 
 const STATUS_BADGE = {
   pianificato: "bg-b58-charcoal-soft/50",
@@ -21,6 +22,9 @@ const emptyForm = {
 const daysTo = (d) => Math.round((new Date(d) - new Date()) / 86400000);
 
 export default function AgricoloHome() {
+  // Le unita' si chiedono al database, non a un elenco scritto qui: la
+  // ragione per esteso sta in src/lib/unita.js.
+  const UNITS = useUnita();
   const [entities, setEntities] = useState(null);
   const [crops, setCrops] = useState([]);
   const [ingredients, setIngredients] = useState([]);

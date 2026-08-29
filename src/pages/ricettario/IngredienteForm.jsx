@@ -23,6 +23,7 @@ import {
   updateIngredientPrice,
   usiDellIngrediente,
   listCategorieIngrediente,
+  listUnita,
   aggiungiCategoriaIngrediente,
 } from "../../lib/api/ingredients";
 import ScattaFoto from "../../components/ScattaFoto";
@@ -41,7 +42,6 @@ import {
   MONTHS,
   STORAGE_TYPES,
   SUPPLIER_CATEGORIES,
-  UNITS,
   formatDate,
   formatEUR,
 } from "../../lib/constants";
@@ -158,6 +158,10 @@ export default function IngredienteForm() {
   // Le categorie sono DATI dal 27/08/2026: si leggono, non si ridicono.
   const [categorie, setCategorie] = useState([]);
   // `null` = il campo per aggiungerne una non è aperto; "" = è aperto e vuoto.
+  // ⚠️ ANCHE LE UNITA SONO DATI dal 29/08, come le categorie dal 27/08:
+  //    un elenco scritto nel codice sarebbe una seconda verita accanto alla
+  //    tabella, e il giorno che se ne aggiunge una resterebbe indietro.
+  const [unita, setUnita] = useState([]);
   const [nuovaCategoria, setNuovaCategoria] = useState(null);
   const [aggiungendoCategoria, setAggiungendoCategoria] = useState(false);
   const [esitoCategoria, setEsitoCategoria] = useState("");
@@ -253,6 +257,32 @@ export default function IngredienteForm() {
     });
   }, [schedaDaFoto, isEdit]);
 
+  // 🔴 IN QUALE DEI DUE MONDI SI STA — richiesta di Alessio del 29/08, da
+  //    una sua schermata: sulla scheda della «Carta forno» gli venivano
+  //    proposte verdura, pesce e latticini, e come unita kg, g e mazzo.
+  //    ⚠️ Nasce dal prodotto e non dalla schermata da cui si e entrati: un
+  //    materiale aperto da un collegamento vecchio resta un materiale.
+  const ambito = form.alimentare === false ? "materiali" : "alimenti";
+
+  // I due cataloghi seguono il mondo, e si rileggono quando cambia: senza
+  // questo, spuntando «e un alimento» su una scheda l elenco resterebbe
+  // quello dei materiali — cioe direbbe il falso senza nessun errore.
+  useEffect(() => {
+    let annullato = false;
+    (async () => {
+      try {
+        const [c, u] = await Promise.all([listCategorieIngrediente(ambito), listUnita(ambito)]);
+        if (annullato) return;
+        setCategorie(c);
+        setUnita(u);
+      } catch {
+        // Un catalogo che non si legge NON si finge vuoto: resta com era, e
+        // l errore vero lo dice il caricamento della scheda qui sotto.
+      }
+    })();
+    return () => { annullato = true; };
+  }, [ambito]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -261,7 +291,6 @@ export default function IngredienteForm() {
         if (cancelled) return;
         setEntities(ent);
         setSuppliers(await listSuppliers(ent.srls.id));
-        setCategorie(await listCategorieIngrediente());
 
         if (isEdit) {
           const ing = await getIngredient(id);
@@ -494,8 +523,8 @@ export default function IngredienteForm() {
     setAggiungendoCategoria(true);
     setEsitoCategoria("");
     try {
-      const r = await aggiungiCategoriaIngrediente(nome);
-      setCategorie(await listCategorieIngrediente());
+      const r = await aggiungiCategoriaIngrediente(nome, ambito);
+      setCategorie(await listCategorieIngrediente(ambito));
       setForm((f) => ({ ...f, category: r.codice }));
       setNuovaCategoria(null);
       setEsitoCategoria(
@@ -757,7 +786,10 @@ export default function IngredienteForm() {
           non si chiede dove mettere quello che viene letto — sarebbe una
           domanda con una risposta sola. Ma se la foto non e' un'etichetta,
           l'assistente lo dice e non si tocca niente. */}
-      <div className="mb-4">
+      {/* 🔴 5a · LA FOTO DELL ETICHETTA NON HA SENSO SU UN MATERIALE
+          (Alessio, 29/08): un rotolo di carta forno non ha allergeni,
+          conservazione ne scadenza da leggere. */}
+      <div className={eAlimento ? "mb-4" : "hidden"}>
         <ScattaFoto
           genere="etichetta"
           etichettaPulsante="Fotografa l'etichetta"
@@ -940,7 +972,7 @@ export default function IngredienteForm() {
               onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
               className={inputClass}
             >
-              {UNITS.map((u) => (
+              {unita.map((u) => (
                 <option key={u.value} value={u.value}>
                   {u.label}
                 </option>
@@ -951,8 +983,13 @@ export default function IngredienteForm() {
 
         {/* Provenienza */}
         <div>
-          <label className={labelClass}>Provenienza</label>
-          <div className="flex gap-2 mb-3">
+          {/* 🔴 5b · «PRODUZIONE INTERNA (ORTO)» NON HA SENSO SU UN MATERIALE
+              (Alessio, 29/08): un rotolo di carta forno non viene dall orto.
+              ⚠️ Spariscono i due pulsanti, NON il fornitore: quello resta e
+              serve — un materiale si compra da qualcuno come tutto il resto,
+              ed e stato detto espressamente di lasciarlo. */}
+          <label className={eAlimento ? labelClass : "hidden"}>Provenienza</label>
+          <div className={eAlimento ? "flex gap-2 mb-3" : "hidden"}>
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "fornitore_esterno" }))}
@@ -1069,7 +1106,11 @@ export default function IngredienteForm() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+          {/* 🔴 5c · LA CONSERVAZIONE NON HA SENSO SU UN MATERIALE
+              (Alessio, 29/08): frigo, freezer e dispensa parlano di roba da
+              mangiare. Con lei sparisce anche l etichetta gialla «messo
+              dalla macchina», che ne era il segno. */}
+          <div className={eAlimento ? undefined : "hidden"}>
             <label className={labelClass}>Conservazione{segnoMacchina("conservazione")}</label>
             <select
               value={form.storage_type}
@@ -1145,20 +1186,43 @@ export default function IngredienteForm() {
                 smette di leggere.
               </Didascalia>
             </label>
-            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
-              <input
-                type="checkbox"
-                checked={form.alimentare}
-                onChange={(e) => setForm((f) => ({ ...f, alimentare: e.target.checked }))}
-              />
-              È un alimento
-              <Didascalia>
-                Togli la spunta per detersivi, carta, imballaggi: restano sotto
-                controllo prezzi, con la loro scorta minima e la loro lista
-                della spesa, ma stanno in Magazzino → Materiali di consumo e
-                non possono entrare in una ricetta.
-              </Didascalia>
-            </label>
+            {/* 🔴 5d · DENTRO I MATERIALI DI CONSUMO LA RISPOSTA È IMPLICITA
+                (Alessio, 29/08, ed è il più importante dei cinque campi che ha
+                chiesto di togliere): una casella «È un alimento» spuntabile da
+                qui rimanda la carta forno in mezzo al baccalà, e disfa il
+                lavoro fatto. Su un alimento la casella resta — è da lì che si
+                dichiara che una cosa è un materiale. */}
+            {eAlimento ? (
+              <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+                <input
+                  type="checkbox"
+                  checked={form.alimentare}
+                  onChange={(e) => setForm((f) => ({ ...f, alimentare: e.target.checked }))}
+                />
+                È un alimento
+                <Didascalia>
+                  Togli la spunta per detersivi, carta, imballaggi: restano sotto
+                  controllo prezzi, con la loro scorta minima e la loro lista
+                  della spesa, ma stanno in Magazzino → Materiali di consumo e
+                  non possono entrare in una ricetta.
+                </Didascalia>
+              </label>
+            ) : (
+              /* ⚠️ LA VIA DI RITORNO, ed è un'aggiunta mia sopra la richiesta:
+                 togliendo la casella e basta, un prodotto finito qui per
+                 sbaglio non potrebbe più tornare fra gli ingredienti da
+                 nessuna schermata — e un vicolo cieco, in questo progetto, è
+                 un difetto a sé. Non è la casella di prima: è un gesto
+                 NOMINATO, che non si preme per distrazione mentre si guarda
+                 il prezzo. Se ad Alessio non serve, si toglie in tre righe. */
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, alimentare: true }))}
+                className="tocco-inline testo-sala text-b58-charcoal-soft underline hover:text-b58-terracotta self-start"
+              >
+                Non è un materiale: rimettilo fra gli ingredienti
+              </button>
+            )}
             {/* 🔴 LE SPEZIE A PIZZICO (23/08/2026, decisione di Alessio).
                 Non è una preferenza di comodo: un prodotto che in un piatto
                 pesa meno di un decimo di grammo il magazzino non lo sa
