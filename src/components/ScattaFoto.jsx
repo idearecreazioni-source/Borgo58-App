@@ -101,7 +101,7 @@ export default function ScattaFoto({
       />
 
       <Forse dentro={gestoInBasso}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => campo.current?.click()}
@@ -111,7 +111,20 @@ export default function ScattaFoto({
           //    il gesto principale della schermata — si preme col telefono
           //    in una mano e il barattolo nell'altra. Misurato a 390 punti:
           //    col minimo veniva 8,50 mm esatti, cioè al limite.
-          className="tocco-azione testo-sala flex items-center rounded-md bg-stone-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+          // 🔴 LARGO QUANTO LO SCHERMO — decisione di Alessio del 29/08.
+          //    Misurato prima, a 375 punti: era **85 punti su 375**, cioè il
+          //    23% dello schermo, in basso a SINISTRA, con 274 punti vuoti
+          //    alla sua destra. È il punto più scomodo da raggiungere con una
+          //    mano sola — che è esattamente come si tiene il telefono mentre
+          //    l'altra mano regge la confezione da fotografare.
+          //    ⚠️ `flex-1` e non `w-full`: quando la foto c'è già, accanto
+          //       compare «Togli», e con `w-full` finirebbe a capo su una
+          //       riga sua facendo crescere la barra. Da solo, `flex-1`
+          //       prende tutto lo spazio: è la stessa cosa.
+          //    ⚠️ E SOLO SUL TELEFONO: sul computer la regola del pollice non
+          //       vale, e senza `md:flex-none` il pulsante diventava largo
+          //       710 punti su 1280 — misurato, non temuto.
+          className="tocco-azione testo-sala flex flex-1 items-center justify-center rounded-md bg-stone-700 px-4 py-2 font-semibold text-white disabled:opacity-50 md:flex-none md:justify-start"
         >
           {inCorso ? "Sto guardando…" : foto ? "Rifai la foto" : etichettaPulsante}
         </button>

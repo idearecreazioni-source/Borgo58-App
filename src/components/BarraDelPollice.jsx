@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+
 // =====================================================================
 // IL GESTO STA DOVE ARRIVA IL POLLICE — 27/08/2026
 // =====================================================================
@@ -38,13 +40,41 @@
  *                 spaziatore: deve combaciare, o resta un buco o si copre.
  */
 export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
+  const barra = useRef(null);
+  // 🔴 LO SPAZIATORE SI MISURA, NON SI DICHIARA. Fino al 29/08 la sua altezza
+  //    era un numero passato a mano, e il commento qui sopra diceva già il
+  //    rischio: «deve combaciare, o resta un buco o si copre». Un numero
+  //    scritto a mano che deve combaciare con una cosa che cambia è una frase
+  //    destinata a diventare falsa — e adesso la barra è più alta di prima,
+  //    perché si stacca dal bordo. Chiedendogliela, non possono più separarsi.
+  const [alto, setAlto] = useState(altezza);
+  useEffect(() => {
+    const el = barra.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const guarda = () => setAlto(`${el.getBoundingClientRect().height}px`);
+    guarda();
+    const ro = new ResizeObserver(guarda);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <>
       {/* Lo spaziatore: c'è solo dove la barra è fissa, cioè sul telefono. */}
-      <div aria-hidden="true" className="md:hidden" style={{ height: altezza }} />
+      <div aria-hidden="true" className="md:hidden" style={{ height: alto }} />
 
       <div
+        ref={barra}
         data-barra-pollice=""
+        // 🔴 STACCATA DAL BORDO INFERIORE — decisione di Alessio del 29/08,
+        //    da una sua schermata: «Premi e parla» finiva attaccato al bordo,
+        //    dove su iPhone c'è la barra di sistema. Misurato a 375 punti:
+        //    distanza dal bordo basso ZERO.
+        //    ⚠️ «env(safe-area-inset-bottom)» da solo NON basta: su un iPhone
+        //       senza la barra di sistema vale 0, e il pulsante tornerebbe
+        //       appiccicato. Lo stacco minimo c'è sempre, l'inset si somma
+        //       dove serve.
+        style={{ paddingBottom: "calc(0.5cm + env(safe-area-inset-bottom, 0px))" }}
         className={
           // ⚠️ `left-0 right-0` e non `w-full`: dentro un contenitore con
           //    margini, `w-full` prende la larghezza del contenitore e la
