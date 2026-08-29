@@ -3,6 +3,8 @@
 > **Aggiunta 1** al mandato del 30/08. Chiude **V4** e **V5** di
 > [`docs/RICHIESTE.md`](../RICHIESTE.md).
 >
+> **Il commit che sta sotto questo riepilogo: `06eaaab`.**
+>
 > **Nessuna migrazione.**
 
 ---
