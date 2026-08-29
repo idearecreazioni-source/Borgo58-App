@@ -9,6 +9,8 @@ import {
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { formatEUR, formatQta, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
+import { propostaLeggibile } from "../../lib/calcoli/quantita";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import { useDaVoce } from "../../lib/daVoce";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
@@ -56,7 +58,10 @@ export default function Allineamento() {
   }, [mostraTrend, dal, al]);
 
   const elenco = useMemo(() => (nonLetto(righe) ? [] : righe), [righe]);
-  const inEsaurimento = useMemo(() => elenco.filter((r) => r.sotto_soglia).length, [elenco]);
+  // ⚠️ Qui si contavano i prodotti sotto scorta, per la frase in cima che
+  // il 29/08 è uscita. Il dato `sotto_soglia` continua ad arrivare e non è
+  // stato tolto: lo guarda la Lista della spesa, che è dove serve a
+  // decidere cosa ordinare.
 
   const conferma = async (r) => {
     setSalvando(true);
@@ -126,12 +131,17 @@ export default function Allineamento() {
         </p>
       ) : (
         <>
-          {inEsaurimento > 0 && (
-            <p className="testo-sala text-b58-charcoal-soft mb-2">
-              In cima {inEsaurimento === 1 ? "c'è il prodotto" : `ci sono i ${inEsaurimento} prodotti`} in
-              esaurimento: è lì che il numero serve per decidere cosa ordinare.
-            </p>
-          )}
+          {/* 🔴 QUI C'ERA «In cima ci sono i 55 prodotti in esaurimento»
+              (tolta il 29/08). Diceva due cose, tutte e due sbagliate:
+              l'elenco e' in ordine ALFABETICO — Aceto, Agnello, Amido… —
+              quindi non c'era nessun «in cima»; e «in esaurimento»
+              compariva anche sull'agnello a **0 kg**, che non e' in
+              esaurimento: e' finito.
+              ⚠️ Il segno «in esaurimento» e' uscito da ogni riga per
+              richiesta esplicita di Alessio. Chi guarda questa schermata
+              sta contando quello che ha davanti, non decidendo cosa
+              ordinare: quella decisione si prende dalla Lista della spesa,
+              che la soglia la guarda gia'. */}
           <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/5">
             {elenco.map((r) => (
               <div key={r.ingredient_id} className="px-4 py-3">
@@ -143,19 +153,22 @@ export default function Allineamento() {
                     // chi deve solo confermare non riscrive niente, e chi
                     // corregge parte da lì. Scriverlo vuoto farebbe ridigitare
                     // un numero che è già a schermo.
-                    setQuanto(String(r.atteso));
+                    setQuanto(propostaLeggibile(r.atteso, r.unita));
                     setEsito("");
                   }}
                   className="tocco-riga w-full flex items-center justify-between gap-3 text-left"
                 >
-                  <span className="testo-sala text-b58-charcoal">
-                    {r.nome}
-                    {r.sotto_soglia && (
-                      <span className="ml-2 testo-sala text-b58-terracotta-dark">in esaurimento</span>
-                    )}
-                  </span>
-                  <span className="testo-sala text-b58-charcoal-soft">
-                    dovrebbe essercene {formatQta(r.atteso)} {r.unita}
+                  {/* 🔴 IL NOME GROSSO, IL NUMERO ACCANTO (29/08/2026).
+                      Prima il nome e la giacenza avevano lo stesso peso, e
+                      davanti allo scaffale si cerca il NOME: e' l'unica
+                      cosa che si sta confrontando con la merce in mano. */}
+                  <span className="testo-sala-titolo text-b58-charcoal">{r.nome}</span>
+                  {/* 🔴 «dovrebbe essercene» ERA SU OGNI RIGA — 121 volte,
+                      misurate. Tre parole ripetute centoventun volte non
+                      informano: riempiono. Restano il numero e l'unita', e
+                      cosa vogliano dire sta scritto UNA VOLTA in cima. */}
+                  <span className="testo-sala-grande text-b58-charcoal-soft">
+                    {formatQta(r.atteso)} {r.unita}
                     {/* 🔴 IL SEGNO CHE LA RIGA SI APRE (23/08/2026). Il campo
                         per scrivere quanto ce n'è davvero **c'era già** — è
                         dentro la riga — ma la pagina si apriva con **zero
@@ -290,36 +303,32 @@ export default function Allineamento() {
           {nonLetto(dettaglio) ? (
             <DatoNonLetto cosa="il dettaglio per prodotto" className="mt-4" />
           ) : dettaglio.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full testo-sala mt-5">
-                <thead>
-                  <tr className="text-left testo-sala uppercase tracking-wide text-b58-charcoal-soft">
-                    <th className="py-1.5 font-medium">Prodotto</th>
-                    <th className="py-1.5 font-medium text-right">Differenza</th>
-                    <th className="py-1.5 font-medium text-right">Vale</th>
-                    <th className="py-1.5 font-medium text-right">Volte</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dettaglio.map((d) => (
-                    <tr key={d.ingredient_id} className="border-t border-b58-charcoal/5">
-                      <td className="py-1.5 text-b58-charcoal">{d.nome}</td>
-                      <td className="py-1.5 text-right text-b58-charcoal-soft">
-                        {Number(d.differenza) > 0 ? "+" : ""}
-                        {formatQta(d.differenza)} {d.unita}
-                      </td>
-                      <td
-                        className={`py-1.5 text-right ${Number(d.valore) > 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}
-                      >
-                        {Number(d.valore) > 0 ? "+" : ""}
-                        {formatEUR(d.valore)}
-                      </td>
-                      <td className="py-1.5 text-right text-b58-charcoal-soft">{d.quante}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ElencoAdattivo
+              righe={dettaglio}
+              chiave={(d) => d.ingredient_id}
+              titolo={(d) => d.nome}
+              intestazioneTitolo="Prodotto"
+              campi={(d) => [
+                {
+                  chiave: "differenza",
+                  etichetta: "Differenza",
+                  valore: `${Number(d.differenza) > 0 ? "+" : ""}${formatQta(d.differenza)} ${d.unita}`,
+                },
+                {
+                  chiave: "vale",
+                  etichetta: "Vale",
+                  // ⚠️ Il segno resta colorato solo quando la differenza e'
+                  // in piu': un colore che c'e' sempre smette di segnalare.
+                  valore:
+                    Number(d.valore) > 0 ? (
+                      <span className="text-b58-terracotta-dark">+{formatEUR(d.valore)}</span>
+                    ) : (
+                      formatEUR(d.valore)
+                    ),
+                },
+                { chiave: "volte", etichetta: "Volte", valore: String(d.quante) },
+              ]}
+            />
           ) : (
             <p className="testo-sala text-b58-charcoal-soft mt-4">
               In questo periodo non hai corretto nessuna giacenza.

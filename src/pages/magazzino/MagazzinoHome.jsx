@@ -47,6 +47,21 @@ export default function MagazzinoHome() {
   });
   const [saving, setSaving] = useState(false);
   const [nonScaricate, setNonScaricate] = useState([]);
+
+  // I messaggi raggruppati per giorno, nell'ordine in cui arrivano dal
+  // database. ⚠️ L'ordine NON si rifà qui: quello che arriva è già ordinato,
+  // e riordinarlo nel browser sarebbe una seconda regola che un giorno dice
+  // una cosa diversa dalla prima.
+  const perGiorno = useMemo(() => {
+    if (statoLettura(nonScaricate) !== "pieno") return [];
+    const per = new Map();
+    for (const r of nonScaricate) {
+      const g = formatDate(r.serata ?? r.quando);
+      if (!per.has(g)) per.set(g, []);
+      per.get(g).push(r);
+    }
+    return [...per.entries()];
+  }, [nonScaricate]);
   const [troppoPiccoli, setTroppoPiccoli] = useState([]);
 
   // I due numeri del riepilogo, contati dalle righe che si vedono sotto.
@@ -280,16 +295,28 @@ export default function MagazzinoHome() {
           <p className="testo-sala text-b58-charcoal-soft mt-1">
             Le bevande non compaiono: il magazzino non le segue.
           </p>
-          <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto">
-            {nonScaricate.map((r) => (
-              <li key={r.id} className="testo-sala text-b58-charcoal">
+          {/* 🔴 LA DATA UNA VOLTA SOLA, IN CIMA AL SUO GIORNO (29/08/2026).
+              Misurato sulla schermata: tre righe di fila ripetevano «23 ago
+              2026», e la ripetizione era meta' della confusione — la data
+              occupava il posto dove si cerca *cosa* non e' sceso.
+              ⚠️ E fra un messaggio e l'altro adesso c'e' una linea: erano
+              righe attaccate e una frase lunga sembrava continuare nella
+              successiva. */}
+          <div className="mt-2 max-h-56 overflow-y-auto">
+            {perGiorno.map(([giorno, righe]) => (
+              <div key={giorno} className="mb-3 last:mb-0">
+                <div className="testo-sala uppercase tracking-wide text-b58-charcoal-soft/80">
+                  {giorno}
+                </div>
+                <ul className="divide-y divide-b58-charcoal/10">
+            {righe.map((r) => (
+              <li key={r.id} className="testo-sala text-b58-charcoal py-1.5">
                 {/* 🔴 UNA RIGA PUÒ VENIRE DA DUE POSTI (23/08/2026): un
                     conto chiuso o una produzione. Fino a stamattina la
                     schermata le chiamava tutte «conto» e le produzioni
                     comparivano col tavolo vuoto — invisibili, perché
                     sepolte sotto 1.840 bevande. */}
                 <span className="text-b58-charcoal-soft">
-                  {formatDate(r.serata ?? r.quando)} ·{" "}
                   {r.produzione ? `produzione ${r.produzione}` : r.tavolo || "conto senza tavolo"} ·{" "}
                 </span>
                 {r.tipo === "voce_libera" && "voce libera, nessuna ricetta: "}
@@ -338,7 +365,10 @@ export default function MagazzinoHome() {
                 )}
               </li>
             ))}
-          </ul>
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

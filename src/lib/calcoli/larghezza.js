@@ -49,12 +49,12 @@ export const NOTE_LARGHE = {
   "src/pages/fiscale/Deducibilita.jsx": "247 punti — report con totali",
   "src/pages/agricolo/AgricoloHome.jsx": "231 punti — righe con pulsanti e riga che si apre",
   "src/pages/fiscale/DeduzioniFiscali.jsx": "170 punti — report con totali",
-  // 🔴 TROVATA DALLA RETE, NON DALLA MISURA A SCHERMO: a 375 punti dava
-  // zero sbordo perche' sul progetto di prova l'elenco era vuoto — ed e'
-  // proprio la schermata che Alessio ha fotografato come illeggibile.
-  // *Una schermata senza dati non e' una schermata senza difetti.*
-  "src/pages/magazzino/Allineamento.jsx": "riga 294 — va rifatta dal Blocco 5",
-  "src/pages/magazzino/MagazzinoHome.jsx": "116 punti — va rifatta dal Blocco 5 (elenco unico per ingrediente)",
+  "src/pages/magazzino/MagazzinoHome.jsx":
+    // ⚠️ Misurato il 29/08: l elenco e gia una riga per ingrediente (133 su
+    // 133) — il difetto delle righe ripetute era altrove. Qui resta il solo
+    // sbordo, e la tabella ha righe che si aprono: il componente adattivo
+    // non le regge, e rifarle e un lavoro a se.
+    "116 punti — righe espandibili, il componente adattivo non le copre",
   "src/pages/cassa/PrimaNota.jsx": "58 punti — righe con un gesto per riga",
   "src/pages/cassa/Previsione.jsx": "58 punti — report",
   "src/pages/menu-editor/BevandeVini.jsx": "8 punti — tabella di MODIFICA, i campi si scrivono dentro",
