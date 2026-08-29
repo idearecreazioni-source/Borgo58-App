@@ -2,11 +2,22 @@ import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 
 // statusFilter: "in_carta" | "pronta" | "in_sviluppo" | undefined (tutte)
-export async function listRecipes({ search, category, statusFilter, tipo } = {}) {
+// 🔴 `selezioni` — 30/08/2026. Una SELEZIONE di finger è un `piatto_finito`
+// di categoria `finger_food`: nel database non è un quarto tipo, ma per chi
+// guarda è un'altra cosa e vuole un altro elenco. Tre valori e non due:
+//   · `true`  → solo le selezioni;
+//   · `false` → i piatti che NON sono selezioni (l'elenco «Piatti»);
+//   · assente → non filtra (è così che si chiedono i finger singoli, dove
+//     la distinzione non esiste).
+// ⚠️ Senza il caso `false` una selezione comparirebbe in DUE elenchi, e chi
+// la corregge in uno non saprebbe di averla corretta anche nell'altro.
+export async function listRecipes({ search, category, statusFilter, tipo, selezioni } = {}) {
   let query = supabase.from("recipes").select("*").order("name");
   if (search) query = query.ilike("name", `%${search}%`);
   if (category) query = query.eq("category", category);
   if (tipo) query = query.eq("recipe_type", tipo);
+  if (selezioni === true) query = query.eq("category", "finger_food");
+  if (selezioni === false) query = query.neq("category", "finger_food");
   // ⚠️ I QUATTRO STATI (24/08): «ritirata» non è un quinto caso appiccicato
   // — entra anche nei filtri degli altri tre, perché un piatto ritirato NON
   // è «in sviluppo» solo perché non è pronto. Senza queste esclusioni una

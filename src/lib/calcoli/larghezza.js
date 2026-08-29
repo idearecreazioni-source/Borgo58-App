@@ -69,7 +69,6 @@ export const NOTE_LARGHE = {
   "src/pages/calendario/PreventivoDetail.jsx": "non misurata a schermo (serve un preventivo aperto)",
   "src/pages/calendario/ReservationForm.jsx": "non misurata a schermo (dentro un modulo)",
   "src/pages/ricettario/MenuDetail.jsx": "non misurata a schermo (serve un menu aperto)",
-  "src/pages/ricettario/RicettaDetail.jsx": "non misurata a schermo (serve una ricetta aperta)",
   "src/pages/ricettario/StaffRicettaDetail.jsx": "non misurata a schermo (serve una ricetta aperta)",
   "src/pages/personale/DipendenteDetail.jsx": "non misurata a schermo (serve un dipendente aperto)",
   "src/pages/cassa/ScontiOmaggi.jsx": "non misurata a schermo (nessuno sconto sul progetto di prova)",

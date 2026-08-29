@@ -123,8 +123,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 64 | 28/08/2026 | la rete dei riepiloghi guarda solo ciò che è già applicato |
 | 65 | 28/08/2026 | le migrazioni si applicano per istruzioni, non in blocco |
 | 66 | 29/08/2026 | la legenda dei colori si toglie dalla schermata |
+| 67 | 30/08/2026 | un piatto di finger food si riconosce dalla categoria |
 
-⚠️ **Righe: 67.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 68.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2595,3 +2596,41 @@ che non viene mai salvata perché non passa da nessun deposito.
    incollata ai colori veri **nei due versi**: un colore aggiunto e non
    spiegato, o una voce spiegata che nessuno disegna più, diventano rossi. Il
    difetto di una legenda non è che sia brutta — è che invecchia in silenzio.
+
+---
+
+## 67 · 30/08/2026 — «un piatto di finger food si riconosce dalla categoria»
+
+1. **Cosa era stato deciso, e quando.** Il **24/08/2026**, blocco 3 del
+   mandato del collaudo, sopra la riga che lo decide c'era scritto: *«la
+   domanda è sulla CATEGORIA e non su "contiene finger": un piatto di finger
+   food è tale perché Alessio l'ha messo lì, non perché dentro ci sia finito
+   un bocconcino»*. In codice: `eFingerFood(recipe.category)`.
+
+2. **La ragione di allora.** Che un piatto sia una *selezione* è una
+   **decisione di Alessio**, non una deduzione del gestionale. Dedurlo dal
+   contenuto — «ha dentro dei finger, quindi è un piatto di finger food» —
+   sarebbe una regola scritta da noi sulle sue cose, e cambierebbe da sola
+   ogni volta che lui aggiunge o toglie un bocconcino.
+
+3. **Cosa si decide adesso.** La domanda ha **due** condizioni:
+   `recipe_type = 'piatto_finito'` **e** `category = 'finger_food'`. Vive in
+   `eSelezione()`, dentro `src/lib/calcoli/tipoRicetta.js`, e la fanno cinque
+   posti invece di una schermata sola.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Vale ancora, per
+   intero, e non è quella a cambiare: era scritta a metà.** La categoria dice
+   *«è roba da finger food»*, e non dice *«è la cosa che si vende»*. Un
+   **finger singolo** messo in quella categoria — misurato sul progetto di
+   prova: **uno**, e Alessio l'aveva davanti — rispondeva sì, e la sua scheda
+   si comportava da piatto composto: gli mostrava una sezione «Finger» con
+   «Cerca un finger…», cioè un finger che cerca sé stesso.
+   ⚠️ La seconda condizione **non toglie niente alla scelta di Alessio**: non
+   guarda cosa c'è dentro il piatto, guarda che sia un piatto. La sua
+   decisione resta l'unica cosa che rende una ricetta una selezione — adesso
+   è esprimibile.
+   ⚠️ **E la lezione generale è sul commento, non sul codice**: la frase
+   sopra quella riga diceva la ragione *giusta* e la applicava *male*, e per
+   sei giorni ha impedito di vedere il difetto — perché chi rileggeva trovava
+   una spiegazione convincente. *Un commento che difende una riga sbagliata
+   è più difficile da smentire della riga.*

@@ -175,8 +175,18 @@ export default function AllergeniDelPiatto({
               <button
                 type="button"
                 onClick={() => apri(r.allergene)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-b58-cream-dark/40"
+                /* ⚠️ `flex-wrap`: alla densità di un mini tablet il nome
+                   dell'allergene più il cartellino dello stato più «apri»
+                   sbordavano — il testo è in centimetri veri e cresce col
+                   tablet, la riga no. Misurato il 30/08. */
+                className="w-full flex flex-wrap items-center gap-3 px-3 py-2.5 text-left hover:bg-b58-cream-dark/40"
               >
+                {/* ⚠️ NIENTE `min-w-0` qui, ed è una correzione su me stesso:
+                    messo insieme a `flex-wrap` lasciava stringere la casella
+                    sotto la parola, e «Anidride solforosa» usciva dai bordi
+                    invece di mandare a capo i cartellini. Con `flex-wrap` da
+                    solo la riga va a capo e non sborda: misurato a tutte e
+                    tre le densità. */}
                 <span className="flex-1 testo-sala-grande text-b58-charcoal font-medium">
                   {etichetta(r.allergene)}
                 </span>

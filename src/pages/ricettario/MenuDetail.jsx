@@ -13,6 +13,7 @@ import {
 } from "../../lib/api/menus";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
 import { foodCostLevel, formatEUR } from "../../lib/constants";
+import { senzaFoodCostInBreve, senzaFoodCost } from "../../lib/calcoli/inCarta";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 
 const SECTIONS = [
@@ -563,11 +564,20 @@ export default function MenuDetail() {
                       non pronti si mostrano lo stesso, spenti e col
                       perché: nasconderli farebbe cercare per dieci minuti
                       un piatto che c'è, e che manca solo di una spunta. */}
+                  {/* 🔴 LA SECONDA PORTA — 30/08. Il freno sul food cost
+                      mancante vive nella striscia degli stati della scheda
+                      ricetta, ma in carta ci si arriva anche da qui: un
+                      controllo su una porta sola è teatro (trappola delle due
+                      porte, 26/08). La regola è la stessa funzione. */}
                   {candidates.map((r) => {
-                    const bloccata = menu.is_active && !r.pronta_per_carta;
+                    const nonPronta = menu.is_active && !r.pronta_per_carta;
+                    const senzaCosto = menu.is_active && senzaFoodCost(allRecipeCosts[r.id]);
+                    const bloccata = nonPronta || senzaCosto;
                     return (
                       <option key={r.id} value={r.id} disabled={bloccata}>
-                        {r.name}{bloccata ? " — non ancora pronta per la carta" : ""}
+                        {r.name}
+                        {nonPronta ? " — non ancora pronta per la carta" : ""}
+                        {!nonPronta && senzaCosto ? senzaFoodCostInBreve(allRecipeCosts[r.id]) : ""}
                       </option>
                     );
                   })}

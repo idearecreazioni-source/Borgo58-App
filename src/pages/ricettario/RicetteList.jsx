@@ -22,10 +22,37 @@ import { campiRicetta } from "../../lib/calcoli/ricette";
 // insieme si rifarebbe in piccolo il problema che si sta togliendo — un
 // elenco misto dove serve un'etichetta per capire cosa si sta guardando.
 // Se le porte giuste sono due, si toglie una riga di questo elenco.
+//
+// ⚠️ E DAL 30/08 OGNI PORTA PORTA CON SÉ IL TIPO DI CIÒ CHE SI CREA
+// (`crea`): il modulo di creazione non chiede più «che cos'è» — lo sa dal
+// posto da cui si entra. Vedi `RicettaForm.jsx`.
 const PORTE = [
-  { value: "piatto_finito", label: "Piatti", vuoto: "Nessun piatto." },
-  { value: "preparazione", label: "Preparazioni", vuoto: "Nessuna preparazione." },
-  { value: "finger", label: "Finger", vuoto: "Nessun finger." },
+  { value: "piatto_finito", label: "Piatti", vuoto: "Nessun piatto.", crea: "piatto_finito", nuovo: "+ Nuovo piatto" },
+  { value: "preparazione", label: "Preparazioni", vuoto: "Nessuna preparazione.", crea: "preparazione", nuovo: "+ Nuova preparazione" },
+  { value: "finger", label: "Finger", vuoto: "Nessun finger.", crea: "finger", nuovo: "+ Nuovo finger" },
+];
+
+// 🔴 DENTRO «FINGER», DUE COSE DIVERSE — 30/08/2026, struttura decisa da
+// Alessio: *«un selettore a due posizioni: singoli finger e piatti composti
+// da finger»*.
+//
+// ⚠️ NON SONO UNA QUARTA PORTA, ed è la ragione per cui stanno qui dentro:
+// un bocconcino e il tagliere che lo contiene si guardano insieme — si
+// compone l'uno guardando gli altri. Metterli fra le tre porte li
+// allontanerebbe di un tocco proprio nel gesto in cui servono vicini.
+//
+// ⚠️ E LA SELEZIONE NON È UN «PIATTO» PER L'ELENCO «PIATTI»: la porta dei
+// piatti la esclude (`selezioni: false`). Una riga che compare in due
+// elenchi fa credere di averla corretta anche dove non si è guardato.
+const MODI_FINGER = [
+  { value: "singoli", label: "Singoli finger", vuoto: "Nessun finger.", crea: "finger", nuovo: "+ Nuovo finger" },
+  {
+    value: "selezioni",
+    label: "Piatti composti da finger",
+    vuoto: "Nessuna selezione di finger.",
+    crea: "selezione",
+    nuovo: "+ Nuova selezione",
+  },
 ];
 
 export default function RicetteList() {
@@ -48,9 +75,25 @@ export default function RicetteList() {
   // riporterebbe ai piatti a ogni giro.
   const [params, setParams] = useSearchParams();
   const porta = PORTE.find((p) => p.value === params.get("tipo")) ?? PORTE[0];
+  const suiFinger = porta.value === "finger";
+  const modo = MODI_FINGER.find((m) => m.value === params.get("modo")) ?? MODI_FINGER[0];
+  const suSelezioni = suiFinger && modo.value === "selezioni";
+  // Dove si sta guardando, e cosa si crea premendo il pulsante: una sola
+  // risposta per tutt'e due, così non possono dire due cose diverse.
+  const dove = suiFinger ? modo : porta;
+
   const cambiaPorta = (valore) => {
     const nuovi = new URLSearchParams(params);
     nuovi.set("tipo", valore);
+    // ⚠️ Uscendo dai finger il sotto-modo si toglie dall'indirizzo: lasciato
+    // lì tornerebbe addosso rientrando, e chi rientra dalle Preparazioni
+    // non ha chiesto niente sulle selezioni.
+    if (valore !== "finger") nuovi.delete("modo");
+    setParams(nuovi, { replace: true });
+  };
+  const cambiaModo = (valore) => {
+    const nuovi = new URLSearchParams(params);
+    nuovi.set("modo", valore);
     setParams(nuovi, { replace: true });
   };
 
@@ -60,7 +103,11 @@ export default function RicetteList() {
       search: search || undefined,
       category: category || undefined,
       statusFilter: statusFilter || undefined,
-      tipo: porta.value,
+      // Una selezione è un `piatto_finito` nel database: si chiede quello,
+      // e la si separa dagli altri piatti con la categoria.
+      tipo: suSelezioni ? "piatto_finito" : porta.value,
+      selezioni:
+        porta.value === "piatto_finito" ? false : suSelezioni ? true : undefined,
     };
     // Il food cost è riservato al titolare — lo staff non lo carica nemmeno.
     const jobs = isTitolare
@@ -74,7 +121,7 @@ export default function RicetteList() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [search, category, statusFilter, porta.value, isTitolare]);
+  }, [search, category, statusFilter, porta.value, suSelezioni, isTitolare]);
 
   // I FILTRI SULLE CARATTERISTICHE (blocco 2(d)).
   //
@@ -142,14 +189,14 @@ export default function RicetteList() {
           >
             ← Ricettario
           </Link>
-          <h1 className="font-display text-2xl text-b58-charcoal mt-1">{porta.label}</h1>
+          <h1 className="font-display text-2xl text-b58-charcoal mt-1">{dove.label}</h1>
         </div>
         {isTitolare && (
           <Link
-            to="/ricettario/ricette/nuova"
+            to={`/ricettario/ricette/nuova?tipo=${dove.crea}`}
             className="tocco-riga inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
           >
-            + Nuova ricetta
+            {dove.nuovo}
           </Link>
         )}
       </div>
@@ -173,6 +220,29 @@ export default function RicetteList() {
           </button>
         ))}
       </div>
+
+      {/* IL SELETTORE DENTRO «FINGER» — 30/08/2026.
+          ⚠️ Compare SOLO sui finger: sulle altre due porte non c'è niente da
+          separare, e una riga di comandi che c'è sempre diventa arredamento
+          (18/08). */}
+      {suiFinger && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {MODI_FINGER.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => cambiaModo(m.value)}
+              className={`tocco-riga rounded-full px-4 border testo-sala transition-colors ${
+                m.value === modo.value
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark font-medium"
+                  : "border-b58-charcoal/15 text-b58-charcoal-soft hover:border-b58-charcoal/40"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-4">
         <input
@@ -235,7 +305,7 @@ export default function RicetteList() {
       ) : filtrate.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
           <p className="text-b58-charcoal-soft">
-            {filtroAttivo ? "Nessuna ricetta corrisponde ai filtri." : porta.vuoto}
+            {filtroAttivo ? "Nessuna ricetta corrisponde ai filtri." : dove.vuoto}
           </p>
         </div>
       ) : (
@@ -264,7 +334,7 @@ export default function RicetteList() {
                       {statusInfo.label}
                     </span>
                   </div>
-                  {campiRicetta(r, { porta: porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
+                  {campiRicetta(r, { porta: suSelezioni ? "piatto_finito" : porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
                     <p key={c.chiave} className="testo-sala-grande">
                       <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
                       {c.valore ? (
@@ -287,7 +357,7 @@ export default function RicetteList() {
               <thead>
                 <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
                   <th className="px-4 py-3 font-medium">Nome</th>
-                  {campiRicetta(filtrate[0], { porta: porta.value, isTitolare }).map((c) => (
+                  {campiRicetta(filtrate[0], { porta: suSelezioni ? "piatto_finito" : porta.value, isTitolare }).map((c) => (
                     <th key={c.chiave} className="px-4 py-3 font-medium">
                       {c.etichetta}
                     </th>
@@ -305,7 +375,7 @@ export default function RicetteList() {
                       className="tocco-riga border-b border-b58-charcoal/5 last:border-0 hover:bg-b58-cream-dark/40 cursor-pointer"
                     >
                       <td className="px-4 py-3 text-b58-charcoal font-medium">{r.name}</td>
-                      {campiRicetta(r, { porta: porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
+                      {campiRicetta(r, { porta: suSelezioni ? "piatto_finito" : porta.value, isTitolare, costo: costs[r.id] }).map((c) => (
                         <td
                           key={c.chiave}
                           className={`px-4 py-3 ${c.forte ? "text-b58-charcoal" : "text-b58-charcoal-soft"}`}

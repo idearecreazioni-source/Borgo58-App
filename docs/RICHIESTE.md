@@ -34,9 +34,9 @@
 
 **Gli stati:** `in attesa` · `in corso` · `fatta` · `scartata da Alessio`.
 
-### Quante sono, al 29/08/2026
+### Quante sono, al 30/08/2026
 
-**41 richieste in tutto: 33 aperte**, **2 scartate da lui**, **6 chiuse**. Tre sono marcate «da confermare» o «da chiarire».
+**49 richieste in tutto: 30 aperte**, **3 scartate da lui**, **15 chiuse**. Le nove del Ricettario (R1-R9) sono state chiuse la notte del 30/08; la A1 resta **da chiarire**.
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -73,15 +73,15 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| R1 | **Il tipo di ricetta non si sceglie più: lo dice il posto da cui entri.** Via la schermata dei tre pulsanti; da «Piatti» si va dritti alla scheda di un piatto, da «Preparazioni» a quella di una preparazione. | 29/08/2026 | Struttura decisa da lui | in corso |
-| R2 | **Nella sezione Finger, un selettore fra «singoli finger» e «piatti composti da finger»**, col pulsante di creazione che si adatta. | 29/08/2026 | Struttura decisa da lui | in corso |
-| R3 | **Il piatto composto da finger non è una ricetta**: non ha ingredienti, né fasi, né scarto — ha solo un elenco di finger da metterci dentro. Oggi una ricetta di tipo Finger contiene una sezione «Finger» con «Cerca un finger…», cioè un finger che cerca sé stesso. | 29/08/2026 | Sua schermata | in corso |
-| R4 | **Il prezzo del piatto composto lo scrive lui**: il gestionale mostra la somma dei costi dei finger dentro e non calcola il prezzo di vendita. *Un tagliere di quattro pezzi non costa quattro volte il pezzo.* | 29/08/2026 | Decisione esplicita sua | in corso |
-| R5 | **Le parole devono seguire il tipo**: su una ricetta di tipo Finger il titolo dice «Dove è usata questa PREPARAZIONE». | 29/08/2026 | Sua schermata | in corso |
-| R6 | **L'avviso «non ha ancora un food cost» non è rosso su una ricetta appena creata.** Resta, ma diventa rosso e bloccante solo quando si prova a mandare il piatto in carta. *Un piatto senza food cost è un problema il giorno che va sul menu, non il giorno che lo inventi.* | 29/08/2026 | Decisione esplicita sua | in corso |
-| R7 | **«Descrizione per il menu» è tagliata**: il testo d'esempio finisce fuori dal riquadro a metà parola. | 29/08/2026 | Sua schermata | in corso |
-| R8 | **Le tabelle degli ingredienti dentro una ricetta scorrono di lato**: «Rimuovi» tagliato a metà su tutte le righe, «% scarto» a capo nell'intestazione, il «kg» sotto la quantità invece che accanto. | 29/08/2026 | Sua schermata | in corso |
-| R9 | **«Salva modifiche» sta schiacciato in un angolo a metà schermata**, con roba da compilare ancora sopra. | 29/08/2026 | Sua schermata | in corso |
+| R1 | **Il tipo di ricetta non si sceglie più: lo dice il posto da cui entri.** Via la schermata dei tre pulsanti; da «Piatti» si va dritti alla scheda di un piatto, da «Preparazioni» a quella di una preparazione. | 29/08/2026 | Struttura decisa da lui | fatta · commit del 30/08 (nessuna migrazione) |
+| R2 | **Nella sezione Finger, un selettore fra «singoli finger» e «piatti composti da finger»**, col pulsante di creazione che si adatta. | 29/08/2026 | Struttura decisa da lui | fatta · commit del 30/08 (nessuna migrazione) |
+| R3 | **Il piatto composto da finger non è una ricetta**: non ha ingredienti, né fasi, né scarto — ha solo un elenco di finger da metterci dentro. Oggi una ricetta di tipo Finger contiene una sezione «Finger» con «Cerca un finger…», cioè un finger che cerca sé stesso. | 29/08/2026 | Sua schermata | fatta · commit del 30/08 (nessuna migrazione) |
+| R4 | **Il prezzo del piatto composto lo scrive lui**: il gestionale mostra la somma dei costi dei finger dentro e non calcola il prezzo di vendita. *Un tagliere di quattro pezzi non costa quattro volte il pezzo.* | 29/08/2026 | Decisione esplicita sua | fatta · commit del 30/08 (nessuna migrazione) |
+| R5 | **Le parole devono seguire il tipo**: su una ricetta di tipo Finger il titolo dice «Dove è usata questa PREPARAZIONE». | 29/08/2026 | Sua schermata | fatta · commit del 30/08 (nessuna migrazione) |
+| R6 | **L'avviso «non ha ancora un food cost» non è rosso su una ricetta appena creata.** Resta, ma diventa rosso e bloccante solo quando si prova a mandare il piatto in carta. *Un piatto senza food cost è un problema il giorno che va sul menu, non il giorno che lo inventi.* | 29/08/2026 | Decisione esplicita sua | fatta · commit del 30/08 (nessuna migrazione) |
+| R7 | **«Descrizione per il menu» è tagliata**: il testo d'esempio finisce fuori dal riquadro a metà parola. | 29/08/2026 | Sua schermata | fatta · commit del 30/08 (nessuna migrazione) |
+| R8 | **Le tabelle degli ingredienti dentro una ricetta scorrono di lato**: «Rimuovi» tagliato a metà su tutte le righe, «% scarto» a capo nell'intestazione, il «kg» sotto la quantità invece che accanto. | 29/08/2026 | Sua schermata | fatta · commit del 30/08 (nessuna migrazione) |
+| R9 | **«Salva modifiche» sta schiacciato in un angolo a metà schermata**, con roba da compilare ancora sopra. | 29/08/2026 | Sua schermata | fatta · commit del 30/08 (nessuna migrazione) |
 | R10 | **Via la spunta «Guarnizione opzionale (esclusa dal food cost)».** | 29/08/2026 | Decisione esplicita sua | fatta · migrazione `20260829000023` |
 | R11 | **Estrazione ricette col pulsante «estrapola»**, con aiuto alla lista della spesa. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | R12 | **La resa al posto dello scarto standard**: lo scarto è una proprietà della coppia ingrediente × preparazione, non dell'ingrediente. La resa vive sulla riga di ricetta, espressa in lordo → netto («1,5 kg di cozze danno 400 g»), non in percentuale. | 14/08/2026 | Blocco 5 del mandato cumulativo | in attesa |
@@ -105,7 +105,22 @@ lui, e non so cosa sia.
 |---|---|---|---|---|
 | V1 | **I due pulsanti «Fotografa» e «Premi e parla» vanno in fondo, larghi quanto lo schermo, staccati dal bordo, alla stessa altezza in tutte e due le schermate.** Oggi «Premi e parla» è attaccato al bordo inferiore (dove su iPhone c'è la barra di sistema) e «Fotografa» è in basso a sinistra, largo un terzo — il punto più scomodo con una mano sola, che è come tiene il telefono mentre l'altra regge la confezione. | 29/08/2026 | Sue schermate | fatta · commit `8a58cab` |
 | V2 | **La conferma parlata dell'allineamento a voce.** Dettare una giacenza funziona già; quello che manca è che MEMO risponda **a voce**. Dichiarato non fatto il 29/08 per una ragione onesta: in questo ambiente non c'è un orecchio che possa provarla. | 14/08/2026 | Blocco 2 del mandato cumulativo | in attesa |
+| V4 | 🔴 **I due pulsanti di MEMO vanno rifatti: la cura del 29/08 non è bastata.** Sue parole del 30/08 dopo averli guardati: sono rimasti «in fondo alla schermata, attaccati» — lo stacco portato da 12 a 13 punti **non è uno stacco**. Vuole: stacco dal bordo di **circa 1 cm vero**, pulsanti **alti circa 1,5 cm veri** (⚠️ in centimetri, non in punti, o sul mini tablet non restano un centimetro), **tutti e due con lo stile scuro pieno di «Premi e parla»**, **scritta più grande**, e **l'emoji della macchina fotografica** accanto a «Fotografa» come il microfono sta accanto all'altro. Il risultato: le due schermate indistinguibili nel gesto — cambia solo la parola e il simbolo. | 30/08/2026 | Sue schermate | in attesa |
+| V5 | **La regola dell'azione principale in `DECISIONI.md` va completata con QUANTO VALE LO STACCO e QUANTO È ALTO il pulsante.** Senza quei due numeri la prossima schermata rinasce con 13 punti. | 30/08/2026 | Sua richiesta | in attesa |
 | V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | in attesa |
+
+---
+
+## Produzioni
+
+| # | Richiesta | Chiesta il | Da dove viene | Stato |
+|---|---|---|---|---|
+| P1 | **Il modulo di registrazione non deve più essere sempre aperto.** Toccare una preparazione la mette solo nella lista delle cose da fare; il modulo si apre **solo** da «Registrala», con la preparazione già scelta. Oggi i due gesti si confondono, e la schermata è lunga anche quando stai solo guardando. | 30/08/2026 | L'ha aperta lui il 30/08 | in attesa |
+| P2 | **«Registrala» deve fare quello che dice**: aprire il modulo. Oggi prometteva di registrare mentre portava a un modulo già aperto sotto. Non va rinominato, va fatto. | 30/08/2026 | Sua decisione | in attesa |
+| P3 | **«Da fare» diventa una sezione sua in cima** — un titoletto «Da fare (3)» coi quadrotti sotto, e l'elenco completo delle preparazioni più giù. Oggi è incollata sopra il modulo e i due sembrano lo stesso gesto. | 30/08/2026 | Sua decisione | in attesa |
+| P4 | **L'elenco delle preparazioni in quadrotti SIA su telefono SIA su computer** — e qui il computer non fa eccezione: quell'elenco non ha colonne da confrontare, ha un nome e tre informazioni in fila. | 30/08/2026 | Decisione esplicita sua | in attesa |
+| P5 | ⚠️ **Da misurare, non da correggere alla cieca**: su «Busiate trafilate» lo storico dice «costata 0,00 €». O quella ricetta non ha ingredienti prezzati, o il costo si perde per strada. Se è un dato vero, **quello zero deve dirlo** invece di sembrare un prezzo. | 30/08/2026 | Sua osservazione | in attesa |
+| P6 | ⚠️ **Resta com'è e non si tocca**: la ricerca, l'ordine alfabetico, lo storico dentro ogni voce e «Rendila ricorrente». *«La schermata è carina sia su pc che su cell»*: si sistema, non si rifà. | 30/08/2026 | Sua decisione | scartata da Alessio |
 
 ---
 

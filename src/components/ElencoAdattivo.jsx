@@ -90,8 +90,16 @@ export default function ElencoAdattivo({
         {righe.map((r, i) => {
           const dentro = (
             <>
-              <div className="flex items-baseline justify-between gap-3 mb-1">
-                <span className="text-b58-charcoal font-medium testo-sala-grande">
+              {/* 🔴 `flex-wrap` e `min-w-0` — 30/08/2026, e questa l'ha
+                  trovata la MISURA e non la rilettura: alla densita' di un
+                  mini tablet (59,5 e 64 punti per centimetro, non i 37,8 di
+                  un monitor) il titolo piu' il segno sbordavano di 8 punti.
+                  ⚠️ E stava in un COMPONENTE, cioe' in tutti e otto gli
+                  elenchi che lo usano: e' la famiglia del 22/08 — un difetto
+                  che sta dappertutto non compare in nessun censimento per
+                  schermate. */}
+              <div className="flex flex-wrap items-baseline justify-between gap-3 mb-1">
+                <span className="min-w-0 text-b58-charcoal font-medium testo-sala-grande">
                   {titolo(r)}
                 </span>
                 {segno?.(r)}

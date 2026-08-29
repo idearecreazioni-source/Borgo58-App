@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createRecipe } from "../../lib/api/recipes";
-import { RECIPE_CATEGORIES, RECIPE_TYPES, eComponente } from "../../lib/constants";
+import { RECIPE_CATEGORIES } from "../../lib/constants";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
@@ -19,16 +19,76 @@ const DA_VOCE = {
   porzioni: "portions_yield",
 };
 
+// 🔴 IL TIPO NON SI SCEGLIE PIÙ: LO DICE IL POSTO DA CUI ENTRI —
+// 30/08/2026, struttura decisa da Alessio.
+//
+// Fino a ieri «Nuova ricetta» apriva una schermata con tre pulsanti, e non
+// era soltanto brutta (misurato sulla sua schermata: «Finger (un pezzo di
+// un piatto di finger food)» andava a capo sei volte e sfondava il
+// riquadro): era **una domanda a cui chi la leggeva aveva già risposto**.
+// Chi preme «+ Nuova» stando nell'elenco delle Preparazioni sta creando
+// una preparazione, e richiederglielo è un passo che serve solo a poterlo
+// sbagliare.
+//
+// ⚠️ IL TIPO STA NELL'INDIRIZZO e non in uno stato interno, per la stessa
+// ragione per cui ci sta la porta dell'elenco: un indirizzo copiato,
+// ricaricato o messo fra i preferiti deve riaprire la stessa cosa.
+//
+// ⚠️ E LA SELEZIONE È UNA QUARTA PORTA, non una categoria da scegliere: un
+// piatto composto da finger è un `piatto_finito` di categoria
+// `finger_food`, e farlo mettere lì a mano rimetterebbe in piedi
+// esattamente il modo in cui è nato il finger-che-cerca-sé-stesso.
+const PORTE = {
+  piatto_finito: {
+    titolo: "Nuovo piatto",
+    indietro: { a: "/ricettario/ricette?tipo=piatto_finito", etichetta: "Piatti" },
+    esempio: 'Es. "Risotto zucca e provola affumicata"',
+    conPorzioni: true,
+    crea: "Crea piatto",
+  },
+  preparazione: {
+    titolo: "Nuova preparazione",
+    indietro: { a: "/ricettario/ricette?tipo=preparazione", etichetta: "Preparazioni" },
+    esempio: 'Es. "Crema pasticcera"',
+    conResa: true,
+    nota: "Un semilavorato riutilizzabile in altre ricette. La resa è quanto ne viene da una dose: è la base per calcolare il costo quando la userai dentro un'altra ricetta.",
+    crea: "Crea preparazione",
+  },
+  finger: {
+    titolo: "Nuovo finger",
+    indietro: { a: "/ricettario/ricette?tipo=finger", etichetta: "Finger" },
+    esempio: 'Es. "Bocconcino di tonno"',
+    conResa: true,
+    nota: "Un pezzo finito che entra in una selezione di finger. La resa è quanti pezzi vengono da una dose.",
+    crea: "Crea finger",
+  },
+  selezione: {
+    titolo: "Nuova selezione di finger",
+    indietro: { a: "/ricettario/ricette?tipo=finger&modo=selezioni", etichetta: "Selezioni" },
+    esempio: 'Es. "Tagliere di quattro"',
+    // ⚠️ NIENTE CATEGORIA E NIENTE PORZIONI: la categoria è decisa (è una
+    // selezione di finger food, ed è ciò che la rende tale) e le porzioni
+    // sono una — un tagliere è un tagliere. Due caselle da riempire sempre
+    // allo stesso modo sono due modi di sbagliare senza guadagnarci niente.
+    nota: "Dentro ci vanno solo finger: li scegli nella scheda, subito dopo. Non ha ingredienti, né fasi, né scarto — quelli stanno dentro i singoli finger.",
+    crea: "Crea selezione",
+  },
+};
+
 export default function RicettaForm() {
   // Le unita' si chiedono al database, non a un elenco scritto qui: la
   // ragione per esteso sta in src/lib/unita.js.
   const UNITS = useUnita();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const chiave = PORTE[params.get("tipo")] ? params.get("tipo") : "piatto_finito";
+  const porta = PORTE[chiave];
+  const eSelezione = chiave === "selezione";
+
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    category: eSelezione ? "finger_food" : "",
     subcategory: "",
-    recipe_type: "piatto_finito",
     portions_yield: 4,
     yield_quantity: "",
     yield_unit: "kg",
@@ -36,10 +96,6 @@ export default function RicettaForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
-
-  // Preparazioni e finger si comportano allo stesso modo qui: hanno una
-  // RESA invece delle porzioni, e la resa è obbligatoria.
-  const isPreparazione = eComponente(form.recipe_type);
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -52,15 +108,18 @@ export default function RicettaForm() {
     try {
       const recipe = await createRecipe({
         name: form.name.trim(),
-        category: form.category,
+        category: eSelezione ? "finger_food" : form.category,
         subcategory: form.subcategory || null,
-        recipe_type: form.recipe_type,
-        // Le preparazioni si costano per unità di resa (yield_quantity), non
-        // per porzione — portions_yield resta 1 di default, non è il campo
-        // rilevante per loro.
-        portions_yield: isPreparazione ? 1 : Number(form.portions_yield) || 1,
-        yield_quantity: isPreparazione ? Number(form.yield_quantity) || null : null,
-        yield_unit: isPreparazione ? form.yield_unit : null,
+        // ⚠️ Una selezione è un `piatto_finito` nel database: la sua
+        // diversità sta nella categoria, non in un quarto tipo. Aggiungere
+        // un valore all'enum vorrebbe dire ricontrollare ogni posto che
+        // oggi sa distinguere tre casi.
+        recipe_type: eSelezione ? "piatto_finito" : chiave,
+        // Le preparazioni e i finger si costano per unità di resa, non per
+        // porzione — portions_yield resta 1, non è il campo rilevante.
+        portions_yield: porta.conPorzioni ? Number(form.portions_yield) || 1 : 1,
+        yield_quantity: porta.conResa ? Number(form.yield_quantity) || null : null,
+        yield_unit: porta.conResa ? form.yield_unit : null,
         // Ogni ricetta nuova parte "in sviluppo" — la promozione a pronta/in
         // carta è sempre manuale, dalla scheda ricetta.
       });
@@ -75,11 +134,14 @@ export default function RicettaForm() {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Link to="/ricettario/ricette" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
-        ← Ricette
+    <div className="max-w-xl mx-auto pb-24">
+      <Link
+        to={porta.indietro.a}
+        className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
+      >
+        ← {porta.indietro.etichetta}
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">Nuova ricetta</h1>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">{porta.titolo}</h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -89,131 +151,108 @@ export default function RicettaForm() {
 
       <StriscaDallaVoce venuto={venuto} />
 
-      <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
-        <div>
-          <label className={labelClass}>Tipo</label>
-          {/* ⚠️ `flex-wrap` e `min-w-0`: i tre tipi in fila sforavano di 62
-              punti a 390 di larghezza — «Finger (un pezzo di un piatto)» non
-              si accorcia, quindi o va a capo o spinge fuori la pagina. */}
-          <div className="flex flex-wrap gap-2 [&>*]:min-w-0">
-            {RECIPE_TYPES.map((t) => (
-              <button
-                type="button"
-                key={t.value}
-                onClick={() => setForm((f) => ({ ...f, recipe_type: t.value }))}
-                className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
-                  form.recipe_type === t.value
-                    ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
-                    : "border-b58-charcoal/15 text-b58-charcoal-soft"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {isPreparazione && (
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-1.5">
-              Un semilavorato riutilizzabile in altre ricette (es. crema pasticcera).
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className={labelClass}>Nome</label>
-          <input
-            required
-            autoFocus
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder={isPreparazione ? 'Es. "Crema pasticcera"' : 'Es. "Risotto zucca e provola affumicata"'}
-            className={inputClass}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit}>
+        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
           <div>
-            <label className={labelClass}>Categoria</label>
-            <select
+            <label className={labelClass}>Nome</label>
+            <input
               required
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+              autoFocus
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder={porta.esempio}
               className={inputClass}
-            >
-              <option value="" disabled>Seleziona…</option>
-              {RECIPE_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+            />
           </div>
 
-          {isPreparazione ? (
-            <div className="grid grid-cols-2 gap-2">
+          {!eSelezione && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Resa</label>
-                <input
-                  required
-                  type="number"
-                  step="0.0001"
-                  min="0"
-                  value={form.yield_quantity}
-                  onChange={(e) => setForm((f) => ({ ...f, yield_quantity: e.target.value }))}
-                  placeholder="Es. 1"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Unità</label>
+                <label className={labelClass}>Categoria</label>
                 <select
-                  value={form.yield_unit}
-                  onChange={(e) => setForm((f) => ({ ...f, yield_unit: e.target.value }))}
+                  required
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   className={inputClass}
                 >
-                  {UNITS.map((u) => (
-                    <option key={u.value} value={u.value}>{u.label}</option>
+                  <option value="" disabled>Seleziona…</option>
+                  {RECIPE_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
               </div>
+
+              {porta.conResa ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className={labelClass}>Resa</label>
+                    <input
+                      required
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={form.yield_quantity}
+                      onChange={(e) => setForm((f) => ({ ...f, yield_quantity: e.target.value }))}
+                      placeholder="Es. 1"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Unità</label>
+                    <select
+                      value={form.yield_unit}
+                      onChange={(e) => setForm((f) => ({ ...f, yield_unit: e.target.value }))}
+                      className={inputClass}
+                    >
+                      {UNITS.map((u) => (
+                        <option key={u.value} value={u.value}>{u.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className={labelClass}>Porzioni (ricetta base)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.portions_yield}
+                    onChange={(e) => setForm((f) => ({ ...f, portions_yield: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              )}
             </div>
-          ) : (
+          )}
+
+          {porta.nota && (
+            <p className="testo-sala text-b58-charcoal-soft/80">{porta.nota}</p>
+          )}
+
+          {!eSelezione && (
             <div>
-              <label className={labelClass}>Porzioni (ricetta base)</label>
+              <label className={labelClass}>Sottocategoria (opzionale)</label>
               <input
-                type="number"
-                min="1"
-                value={form.portions_yield}
-                onChange={(e) => setForm((f) => ({ ...f, portions_yield: e.target.value }))}
+                value={form.subcategory}
+                onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
+                placeholder='Es. "pesce", "vegetariano"'
                 className={inputClass}
               />
             </div>
           )}
         </div>
-        {isPreparazione && (
-          <p className="testo-sala text-b58-charcoal-soft/70 -mt-2">
-            Quanto produce la ricetta base — es. "1 kg" di crema. È la base per calcolare il
-            costo quando la userai come componente in un'altra ricetta.
-          </p>
-        )}
 
-        <div>
-          <label className={labelClass}>Sottocategoria (opzionale)</label>
-          <input
-            value={form.subcategory}
-            onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
-            placeholder='Es. "pesce", "vegetariano"'
-            className={inputClass}
-          />
-        </div>
-
-        <p className="testo-sala text-b58-charcoal-soft/70">
-          Ingredienti, fasi, allergeni e HACCP si aggiungono nella scheda dopo la creazione.
-        </p>
-
+        {/* 🔴 L'AZIONE PRINCIPALE IN FONDO, LARGA QUANTO LO SCHERMO —
+            decisione del 29/08 (i due pulsanti di MEMO), qui applicata al
+            Ricettario. Il pulsante stava dentro il riquadro, in fondo a
+            destra: con una mano sola, sul telefono, è il punto più scomodo
+            che ci sia. */}
         <button
           type="submit"
           disabled={saving}
-          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+          className="w-full mt-4 tocco-azione rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 testo-sala-grande"
         >
-          {saving ? "Creo…" : "Crea ricetta"}
+          {saving ? "Creo…" : porta.crea}
         </button>
       </form>
     </div>
