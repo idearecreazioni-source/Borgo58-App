@@ -413,6 +413,20 @@ body {
   min-height: calc(var(--pxcm) * 1.2);
 }
 
+/* 🔴 IL GESTO PRINCIPALE DI MEMO: 1,5 cm VERI — 30/08/2026, decisione di
+   Alessio dopo aver guardato le due schermate.
+   ⚠️ NON e' una soglia in piu' accanto alle altre: 1,2 cm («tocco-azione»)
+      resta il minimo di un'azione principale qualunque. Questo e' il caso
+      in cui l'azione e' UNA SOLA e si fa in piedi, col telefono in una
+      mano e la confezione nell'altra.
+   ⚠️ E in centimetri veri, non in punti: e' la stessa trappola dello
+      stacco dal bordo, misurata lo stesso giorno — un valore in punti resta
+      19 punti su ogni schermo, cioe' 5,00 mm su un monitor e 2,95 su un
+      mini tablet. */
+.tocco-azione-grande {
+  min-height: calc(var(--pxcm) * 1.5);
+}
+
 /* --------------------------------------------------------------------
    Stampa di un singolo ticket (preconto oggi, comanda di cucina domani)
    --------------------------------------------------------------------

@@ -374,7 +374,11 @@ export default function Detta() {
           type="button"
           onClick={ascolto ? fermaEManda : accendi}
           disabled={inCorso}
-          className={`tocco-azione w-full rounded-xl px-4 font-medium transition-colors disabled:opacity-60 ${
+          // ⚠️ «tocco-azione-grande»: 1,5 cm veri, decisi da Alessio il
+          //    30/08 insieme allo stacco dal bordo. La misura sta in
+          //    «index.css» perche' i pulsanti che la usano sono due, e due
+          //    numeri scritti a mano si separano al primo ritocco.
+          className={`tocco-azione-grande w-full rounded-xl px-4 font-medium transition-colors disabled:opacity-60 ${
             ascolto
               ? "bg-b58-terracotta text-white animate-pulse"
               : "bg-b58-charcoal text-white hover:bg-b58-charcoal-soft"

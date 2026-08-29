@@ -36,7 +36,7 @@
 
 ### Quante sono, al 30/08/2026
 
-**49 richieste in tutto: 30 aperte**, **3 scartate da lui**, **15 chiuse**. Le nove del Ricettario (R1-R9) sono state chiuse la notte del 30/08; la A1 resta **da chiarire**.
+**49 richieste in tutto: 28 aperte**, **3 scartate da lui**, **17 chiuse**. Le nove del Ricettario (R1-R9) e i due pulsanti di MEMO (V4, V5) sono stati chiusi la notte del 30/08; la A1 resta **da chiarire**.
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -105,8 +105,8 @@ lui, e non so cosa sia.
 |---|---|---|---|---|
 | V1 | **I due pulsanti «Fotografa» e «Premi e parla» vanno in fondo, larghi quanto lo schermo, staccati dal bordo, alla stessa altezza in tutte e due le schermate.** Oggi «Premi e parla» è attaccato al bordo inferiore (dove su iPhone c'è la barra di sistema) e «Fotografa» è in basso a sinistra, largo un terzo — il punto più scomodo con una mano sola, che è come tiene il telefono mentre l'altra regge la confezione. | 29/08/2026 | Sue schermate | fatta · commit `8a58cab` |
 | V2 | **La conferma parlata dell'allineamento a voce.** Dettare una giacenza funziona già; quello che manca è che MEMO risponda **a voce**. Dichiarato non fatto il 29/08 per una ragione onesta: in questo ambiente non c'è un orecchio che possa provarla. | 14/08/2026 | Blocco 2 del mandato cumulativo | in attesa |
-| V4 | 🔴 **I due pulsanti di MEMO vanno rifatti: la cura del 29/08 non è bastata.** Sue parole del 30/08 dopo averli guardati: sono rimasti «in fondo alla schermata, attaccati» — lo stacco portato da 12 a 13 punti **non è uno stacco**. Vuole: stacco dal bordo di **circa 1 cm vero**, pulsanti **alti circa 1,5 cm veri** (⚠️ in centimetri, non in punti, o sul mini tablet non restano un centimetro), **tutti e due con lo stile scuro pieno di «Premi e parla»**, **scritta più grande**, e **l'emoji della macchina fotografica** accanto a «Fotografa» come il microfono sta accanto all'altro. Il risultato: le due schermate indistinguibili nel gesto — cambia solo la parola e il simbolo. | 30/08/2026 | Sue schermate | in attesa |
-| V5 | **La regola dell'azione principale in `DECISIONI.md` va completata con QUANTO VALE LO STACCO e QUANTO È ALTO il pulsante.** Senza quei due numeri la prossima schermata rinasce con 13 punti. | 30/08/2026 | Sua richiesta | in attesa |
+| V4 | 🔴 **I due pulsanti di MEMO vanno rifatti: la cura del 29/08 non è bastata.** Sue parole del 30/08 dopo averli guardati: sono rimasti «in fondo alla schermata, attaccati» — lo stacco portato da 12 a 13 punti **non è uno stacco**. Vuole: stacco dal bordo di **circa 1 cm vero**, pulsanti **alti circa 1,5 cm veri** (⚠️ in centimetri, non in punti, o sul mini tablet non restano un centimetro), **tutti e due con lo stile scuro pieno di «Premi e parla»**, **scritta più grande**, e **l'emoji della macchina fotografica** accanto a «Fotografa» come il microfono sta accanto all'altro. Il risultato: le due schermate indistinguibili nel gesto — cambia solo la parola e il simbolo. | 30/08/2026 | Sue schermate | fatta · commit del 30/08 (nessuna migrazione) |
+| V5 | **La regola dell'azione principale in `DECISIONI.md` va completata con QUANTO VALE LO STACCO e QUANTO È ALTO il pulsante.** Senza quei due numeri la prossima schermata rinasce con 13 punti. | 30/08/2026 | Sua richiesta | fatta · commit del 30/08 (nessuna migrazione) |
 | V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | in attesa |
 
 ---

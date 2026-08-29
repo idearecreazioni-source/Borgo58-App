@@ -89,9 +89,12 @@ export default function Fotografa() {
              alto** su uno schermo da 375. Sulla scheda di un prodotto lo
              stesso componente NON lo fa, perché lì la foto è uno dei tanti
              campi. */}
+      {/* ⚠️ NIENTE «etichettaPulsante» QUI, dal 30/08: la scritta e' quella
+          predefinita del componente, «📷 Fotografa», e l'emoji deve stare in
+          un posto solo. Scritta a mano qui, il giorno che cambia resta
+          indietro proprio la schermata per cui e' stata decisa. */}
       <ScattaFoto
         genere="qualunque"
-        etichettaPulsante="Fotografa"
         gestoInBasso
         onLetto={(risposta) => setEsito(risposta)}
       />

@@ -864,6 +864,26 @@ di forma diversa uno dall'altro si leggono peggio di una riga vuota in più.
   ⚠️ **E «alla stessa altezza in tutte» e la parte che si perde per prima**:
   due schermate che fanno lo stesso gesto in due posti diversi si imparano
   peggio di una sola.
+  * 🔴 **30/08 — I DUE NUMERI, decisi da Alessio dopo che la prima cura non
+    era bastata: lo stacco dal bordo vale UN CENTIMETRO VERO, il pulsante e
+    alto UN CENTIMETRO E MEZZO VERO, e il testo dentro sei millimetri.**
+    Le sue parole guardando le schermate: *«lo stacco che hai messo ieri —
+    da 12 a 13 punti — NON E UNO STACCO»*.
+    ⚠️ **«VERO» E LA META DELLA DECISIONE, non un rafforzativo.** In CSS
+    «0.5cm» non e mezzo centimetro: e la stima di un monitor a 96 punti per
+    pollice. Misurato il 30/08 sullo stacco che c era: restava **19 punti su
+    ogni schermo**, cioe 5,00 mm a densita 37,8 e **2,95 mm** su un mini
+    tablet a 64 — si rimpiccioliva proprio dove le mani sono occupate. Le
+    due misure si scrivono con l unita del progetto (`--pxcm`), e la seconda
+    vive in una classe (`.tocco-azione-grande`), non in un numero ricopiato
+    in ogni schermata.
+    ⚠️ **1,2 cm (`tocco-azione`) resta il minimo di un azione principale
+    qualunque**: 1,5 e il caso in cui l azione e UNA SOLA e si fa in piedi.
+    ⚠️ **E le due schermate devono vedersi UGUALI, non solo misurare uguale**:
+    stesso sfondo, stessa forma, stessa larghezza — cambiano solo la parola e
+    il simbolo. Misurato il 30/08 su MEMO foto e MEMO voce a tutte e tre le
+    densita: 15,00 mm di altezza, 10,00 di stacco, 6,00 di testo, 343 punti di
+    larghezza, `rgb(43,38,33)` — identici numero per numero.
 * 26/08 — UN MISURATORE NUOVO SI PROVA PRIMA SU UN CASO DI CUI SI CONOSCE GIÀ
 LA RISPOSTA, altrimenti misura e non si sa cosa. Nasce dalla terza volta in
 due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodotti

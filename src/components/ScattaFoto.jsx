@@ -26,7 +26,14 @@ import BarraDelPollice from "./BarraDelPollice";
 //    allergeni. Chi usa il componente sa in quale dei due casi si trova.
 export default function ScattaFoto({
   genere = "qualunque",
-  etichettaPulsante = "Fotografa",
+  // 🔴 L'EMOJI STA NEL VALORE PREDEFINITO, non appiccicata a schermo —
+  //    30/08, richiesta di Alessio: *«l'emoji della macchina fotografica
+  //    accanto a "Fotografa", come il microfono sta accanto a "Premi e
+  //    parla"»*.
+  //    ⚠️ Chi passa un'etichetta sua (la scheda di un prodotto dice
+  //       «Fotografa l'etichetta») decide anche il simbolo: appiccicarlo
+  //       qui dentro lo metterebbe davanti a parole che non lo chiedono.
+  etichettaPulsante = "📷 Fotografa",
   onLetto,
   disabilitato = false,
   gestoInBasso = false,
@@ -124,9 +131,20 @@ export default function ScattaFoto({
           //    ⚠️ E SOLO SUL TELEFONO: sul computer la regola del pollice non
           //       vale, e senza `md:flex-none` il pulsante diventava largo
           //       710 punti su 1280 — misurato, non temuto.
-          className="tocco-azione testo-sala flex flex-1 items-center justify-center rounded-md bg-stone-700 px-4 py-2 font-semibold text-white disabled:opacity-50 md:flex-none md:justify-start"
+          // 🔴 LO STESSO IDENTICO PULSANTE DI «PREMI E PARLA» — 30/08/2026,
+          //    decisione di Alessio dopo aver guardato le due schermate
+          //    affiancate: *«devono avere entrambi lo stile di quello di
+          //    MEMO voce — quello scuro, pieno, largo»*.
+          //    ⚠️ Cambiano solo la PAROLA e il SIMBOLO. Due gesti che si
+          //       fanno nello stesso posto, con la stessa mano, nella stessa
+          //       condizione (in piedi, con qualcosa nell'altra mano) non
+          //       hanno nessuna ragione di vedersi diversi — e vedersi
+          //       diversi fa cercare la differenza dove non c'e'.
+          //    ⚠️ 1,5 cm veri (non 1,2) e testo da 6 mm: le due misure sono
+          //       decise da lui e vivono in «index.css», non qui.
+          className="tocco-azione-grande testo-sala-lontano flex flex-1 items-center justify-center rounded-xl bg-b58-charcoal px-4 py-2 font-medium text-white transition-colors hover:bg-b58-charcoal-soft disabled:opacity-50 md:flex-none md:justify-start"
         >
-          {inCorso ? "Sto guardando…" : foto ? "Rifai la foto" : etichettaPulsante}
+          {inCorso ? "Sto guardando…" : foto ? "📷 Rifai la foto" : etichettaPulsante}
         </button>
 
         {foto && !inCorso && (

@@ -74,7 +74,21 @@ export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
         //       senza la barra di sistema vale 0, e il pulsante tornerebbe
         //       appiccicato. Lo stacco minimo c'è sempre, l'inset si somma
         //       dove serve.
-        style={{ paddingBottom: "calc(0.5cm + env(safe-area-inset-bottom, 0px))" }}
+        //
+        // 🔴 UN CENTIMETRO VERO, NON «0.5cm» DI CSS — 30/08/2026, e questa
+        //    l'ha vista Alessio e l'ha MISURATA il gestionale.
+        //    Le sue parole: *«lo stacco che hai messo ieri NON e' uno
+        //    stacco»*. Aveva ragione due volte:
+        //    · era piccolo (5,00 mm sul monitor di chi l'ha scritto);
+        //    · ⚠️ e soprattutto **NON ERA IN CENTIMETRI VERI**. In CSS «cm»
+        //      vuol dire 96 punti per pollice, che e' la STIMA di un
+        //      monitor: misurato, restava **19 punti su ogni schermo**, cioe'
+        //      5,00 mm a densita' 37,8 e **2,95 mm** su un mini tablet a 64.
+        //      Lo stacco si rimpiccioliva proprio dove le mani sono occupate.
+        //    ⚠️ La cura e' l'unita' del progetto («--pxcm»), la stessa con
+        //       cui e' fatta l'altezza del pulsante: cosi' le due misure non
+        //       possono piu' separarsi al cambio di dispositivo.
+        style={{ paddingBottom: "calc(var(--pxcm) * 1 + env(safe-area-inset-bottom, 0px))" }}
         className={
           // ⚠️ `left-0 right-0` e non `w-full`: dentro un contenitore con
           //    margini, `w-full` prende la larghezza del contenitore e la
