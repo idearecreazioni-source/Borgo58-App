@@ -472,6 +472,44 @@ pistacchio). Dopo: 18 si allungano, 115 invariati, **zero si accorciano**.
 
 ## Magazzino e scarico
 
+* 🔴 29/08 — **«APERTO AL PUBBLICO» E «SI LAVORA IN CUCINA» SONO DUE COSE
+DISTINTE**, con due interruttori separati per ogni giorno. La ragione è sua:
+*il giorno di chiusura è spesso proprio quello delle preparazioni lunghe.*
+Se per un giorno coincidono si spuntano tutti e due, ma il gestionale deve
+poterli tenere distinti. ⚠️ **Le sette caselle NON nascono con un valore
+comodo**: dove il locale è aperto si riempiono da sé (se si serve, si
+cucina — non è un'ipotesi), dove è chiuso restano **vuote** e decide lui. In
+produzione la casella da compilare è **una sola, il lunedì**.
+* 29/08 — **Le tre risposte si mostrano con tre pulsanti, non con una
+spunta**: con una spunta «non l'ho ancora deciso» sparirebbe dentro il «no».
+Vale per il lavoro in cucina e per il regime di esonero dei fornitori.
+* 🔴 29/08 — **LA SOGLIA SUGLI SCARTI MINIMI È IN PERCENTUALE, non in peso**:
+sotto l'1% della dose prevista non si segnala niente. La ragione è sua:
+*venti grammi di pinoli sono rumore, venti di zafferano sono un mese di
+scorta.* ⚠️ **Senza la dose prevista si segnala lo stesso**: tacere perché
+non si sa quanto pesa sarebbe nascondere.
+* 29/08 — **Nell'Allineamento sparisce «in esaurimento»** da ogni riga
+(richiesta esplicita). Chi guarda quella schermata sta contando quello che ha
+davanti, non decidendo cosa ordinare: quella decisione si prende dalla Lista
+della spesa. ⚠️ Il dato non è stato tolto, solo il segno a schermo.
+* 29/08 — **Il numero che il gestionale propone si arrotonda**: due decimali
+per chili e litri, interi per pezzi e mazzi — un mezzo mazzo non esiste.
+Si arrotonda solo ciò che si **propone**, mai ciò che si registra.
+* 29/08 — **«Fermi da troppo» esce dal menu del Magazzino** perché mostrava
+gli stessi identici lotti delle Scadenze. ⚠️ **Non è cancellata**: resta
+l'unica strada per «abbattuto» e «reso al fornitore», e ci si arriva dal
+pulsante «Altre risposte…». Il taglio «da quanto è ferma» è diventato un
+ordinamento dentro le Scadenze.
+* 29/08 — **Le fatture si guardano una lista per volta** (da pagare /
+pagate), col conto sull'etichetta, e l'ordine parte dalla **scadenza**.
+* 29/08 — **Il credito di un fornitore si dice dentro la fattura**, non in un
+riquadro in cima, e dice che **si consuma tutto alla prima fattura che
+paghi**. Alessio ha scartato «mostrarlo solo sulla più vecchia».
+* 29/08 — **Il fornitore può essere segnato «in regime di esonero»**, e allora
+il gestionale avvisa che l'autofattura la deve emettere lui. ⚠️ Non la
+emette: quella passa da Fatture in Cloud. E l'avviso **tace finché nessuno ha
+risposto** — un avviso che compare nel dubbio si impara a ignorare.
+
 * 14/08 — Una preparazione con lotti NON si esplode in ingredienti: si CONSUMA
 come preparazione.
 * 19/08 — I mezzi di pagamento della lista della spesa tornano UNO SOLO,
