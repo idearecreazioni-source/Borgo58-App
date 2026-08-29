@@ -34,6 +34,17 @@
 
 **Gli stati:** `in attesa` · `in corso` · `fatta` · `scartata da Alessio`.
 
+### Quante sono, al 29/08/2026
+
+**41 richieste in tutto: 38 aperte** (28 in attesa, 10 in corso), **2 scartate
+da lui**, **1 chiusa**. Tre sono marcate «da confermare» o «da chiarire».
+
+⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
+potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
+solo a voce o in chat cancellate non ci sono, e non c e modo di sapere quante
+siano. **La A1 e la prova che ne mancano**: so che esiste perche l ha nominata
+lui, e non so cosa sia.
+
 ### Che differenza c'è con gli altri tre file
 
 | file | risponde a |
