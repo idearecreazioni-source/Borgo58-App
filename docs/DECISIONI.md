@@ -28,6 +28,15 @@ una decisione che verrà rovesciata senza che nessuno se ne accorga.
 5. **Nel riepilogo di consegna si dichiara quali voci si sono toccate.**
 6. **Vale anche per il validatore**: legge questo file prima di scrivere
    un mandato, invece di fidarsi delle proprie note.
+7. 🔴 **Ogni mandato, prima di partire, legge [`RICHIESTE.md`](RICHIESTE.md);
+   ogni riepilogo aggiorna lo stato di quelle che ha chiuso.** Una richiesta
+   che nessun mandato ha ancora raccolto resta lì **visibile**, non sparisce.
+   ⚠️ Nasce il 29/08/2026 da un difetto misurato: Alessio ha nominato **due**
+   cose che aveva deciso in chat passate — il doppio colore sui tavoli e una
+   modifica all'Agenda — e **nessuna delle due era mai arrivata in un
+   mandato**. Vivevano dentro una conversazione, e le conversazioni
+   finiscono. ⚠️ E una richiesta fatta **si segna fatta, non si cancella**:
+   *una richiesta cancellata non si distingue da una dimenticata.*
 
 ---
 
@@ -43,6 +52,7 @@ posto sbagliato.
 | [`decisioni_rovesciate.md`](decisioni_rovesciate.md) | «questa decisione l'abbiamo già cambiata prima? e perché?» |
 | [`CODA_E_DECISIONI.md`](CODA_E_DECISIONI.md) | «cosa resta da fare, e quali scelte tecniche sono ancora aperte?» |
 | [`CONTRATTO.md`](CONTRATTO.md) | «cosa dice l'architettura, che nessuna sessione può cambiare da sola?» |
+| [`RICHIESTE.md`](RICHIESTE.md) | «cosa mi ha chiesto Alessio e non e ancora fatto?» |
 
 ⚠️ **Il primo dei tre è quello che conta di più quando questo file tace**:
 un rovesciamento racconta *cosa è cambiato*, non *cosa vale adesso* — ma
@@ -820,6 +830,22 @@ tutti e undici. ⚠️ Non si toglie la colonna: il campo **è compilabile** dal
 scheda del fornitore, quindi è un dato legittimo che oggi è solo vuoto.
 ⚠️ E il criterio è «vuota per tutti», non «vuota su questa riga»: blocchetti
 di forma diversa uno dall'altro si leggono peggio di una riga vuota in più.
+* 🔴 29/08 — **QUINTA SOGLIA, accanto a testo / bersagli / gesti pericolosi /
+  campi da 16 punti: L AZIONE PRINCIPALE DI UNA SCHERMATA STA IN FONDO, LARGA
+  QUANTO LO SCHERMO, STACCATA DAL BORDO INFERIORE, e alla stessa altezza in
+  tutte le schermate.** Approvata da Alessio il 29/08, e allarga la voce del
+  27/08 («il gesto principale sta dove arriva il pollice») da una collocazione
+  a una **misura ricontrollabile**.
+  ⚠️ **Le tre parti servono tutte, e ognuna chiude un difetto visto in una sua
+  schermata**: *in fondo* perche la mano che tiene il telefono ci arriva senza
+  spostarsi; *larga quanto lo schermo* perche «Fotografa» era largo un terzo e
+  in basso a sinistra, cioe il punto piu scomodo con una mano sola — che e
+  esattamente come tiene il telefono mentre l altra regge la confezione da
+  fotografare; *staccata dal bordo* perche «Premi e parla» era attaccato al
+  bordo inferiore, dove su iPhone c e la barra di sistema.
+  ⚠️ **E «alla stessa altezza in tutte» e la parte che si perde per prima**:
+  due schermate che fanno lo stesso gesto in due posti diversi si imparano
+  peggio di una sola.
 * 26/08 — UN MISURATORE NUOVO SI PROVA PRIMA SU UN CASO DI CUI SI CONOSCE GIÀ
 LA RISPOSTA, altrimenti misura e non si sa cosa. Nasce dalla terza volta in
 due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodotti
