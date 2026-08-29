@@ -399,6 +399,21 @@ sempre.* ⚠️ **Recuperata qui il 27/08**: viveva solo nel mandato del 17/08 e
 stata una prova scritta quel giorno, non una rilettura. Vale anche per la
 raccolta propria: il criterio non è «è un regalo», è che **un costo di zero non
 è una misura del valore di quell'ingrediente**.
+* 🔴 29/08 — **I NON ALIMENTARI HANNO UNA SEZIONE SEPARATA**, e non un
+filtro nella stessa schermata (scelta esplicita fra due). ⚠️ **Non è un
+secondo magazzino**: carta forno, detersivi e guanti hanno comunque prezzo,
+fornitore, giacenza, entrano nella lista della spesa e sono costi che
+finiscono nella proiezione fiscale. Quello che gli si toglie è il **vestito
+da ingrediente** — allergeni, stagionalità, temperatura attesa alla
+consegna — e la possibilità di finire in una ricetta. Serve una scheda più
+corta per la stessa merce, non un impianto nuovo.
+* 🔴 29/08 — **DODICI MESI ACCESI SONO «TUTTO L'ANNO»**, e vale nei due
+versi e per tutte e due le mani (la sua e quella di MEMO): dodici mesi
+diventano «tutto l'anno», e togliendo un mese da «tutto l'anno» restano
+undici mesi accesi. ⚠️ A schermo i due casi si vedono uguali, nel database
+no — e il giorno che si vorrà sapere cosa è davvero stagionale, dodici mesi
+accesi uno per uno non si distinguono da un prodotto disponibile tutto
+l'anno.
 * 25/08 — Il gestionale VERRÀ RESETTATO prima dell'uso vero: i dati che entrano
 dopo sono tutti reali. Nessuna conversione da fare sui dati di oggi.
 * 25/08 — Nell'uso vero si caricano PRIMA le ricette con i loro ingredienti, POI
@@ -917,7 +932,7 @@ la finestra intera.
 
 | cosa | dove sta la decisione |
 |---|---|
-| separazione prodotto / ingrediente | *Prodotti, ingredienti e prezzi* |
+| ~~separazione prodotto / ingrediente~~ — ✅ **FATTA il 27/08** (migrazioni `20260827000018`, `…020`, `…024`): la riga era rimasta qui, e il 29/08 ha fatto credere che il lavoro non ci fosse | *Prodotti, ingredienti e prezzi* |
 | spesa multi-foto | *Assistente — foto* |
 | media e trend dei prezzi | *Prodotti, ingredienti e prezzi* |
 | recupero delle decisioni del 14-21 agosto | *Copertura*, qui sopra |

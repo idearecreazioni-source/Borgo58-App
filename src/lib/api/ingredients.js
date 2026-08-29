@@ -9,7 +9,48 @@ const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_enti
 // come preparazione — e due strade per la stessa cosa finiscono per dire
 // due numeri diversi. In magazzino invece si vedono, ed è giusto: quanto
 // ragù c'è in cella è una domanda vera.
-export async function listIngredients({ search, category, includiPreparazioni, includiNonAttivi } = {}) {
+// ⚠️ `alimentare` NON è un filtro come gli altri, ed è il motivo per cui
+// ha un valore predefinito: dal 29/08 gli Ingredienti sono **solo gli
+// alimenti**, e i materiali di consumo (carta, detersivi, imballaggi)
+// hanno una sezione loro in Magazzino — decisione di Alessio, scelta fra
+// due. Chi non lo nomina ottiene gli alimenti; chi vuole i materiali lo
+// chiede con `alimentare: false`; chi li vuole tutti passa `null`.
+// ⚠️ Il predefinito è `true` e non «tutti» apposta: le nove schermate che
+// già chiamano questa funzione parlano tutte di cibo — ricette, cessioni
+// agricole, raccolta propria, fatture — e con «tutti» avrebbero
+// continuato a mescolare il baccalà con lo sgrassatore in silenzio.
+// ESISTE GIÀ UN INGREDIENTE CON QUESTO NOME? — 29/08/2026, punto 2c.
+//
+// 🔴 Nasce da un difetto misurato, non da una precauzione. Da MEMO foto il
+// percorso è `/fotografa` → «Apri la scheda di un prodotto nuovo» →
+// `create_ingredient`, e `create_ingredient` **non accorpa niente**:
+// nessun `nome_ingrediente_chiave`, nessun `on conflict`, e su
+// `ingredients` non esiste nessun indice unico sul nome. Fotografare
+// l'etichetta di una seconda marca di un prodotto che c'è già fa nascere
+// **un secondo ingrediente generico** — cioè il difetto che la separazione
+// del 27/08 era andata a togliere, rientrato dalla porta principale.
+//
+// ⚠️ NON È UN VINCOLO, ed è voluto: due prodotti possono legittimamente
+// chiamarsi quasi uguali, e se accorpare lo decide l'assistente
+// (decisione del 25/08). Questa serve a DIRLO prima di salvare, con la
+// via d'uscita — un rifiuto senza gesto d'uscita è un vicolo cieco.
+export async function ingredienteConQuestoNome(nome) {
+  const pulito = (nome ?? "").trim();
+  if (!pulito) return [];
+  const { data, error } = await supabase.rpc("ingrediente_con_questo_nome", {
+    p_nome: pulito,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listIngredients({
+  search,
+  category,
+  includiPreparazioni,
+  includiNonAttivi,
+  alimentare = true,
+} = {}) {
   let query = supabase
     .from("ingredients")
     .select(SELECT)
@@ -22,6 +63,11 @@ export async function listIngredients({ search, category, includiPreparazioni, i
   if (!includiNonAttivi) query = query.eq("active", true);
 
   if (!includiPreparazioni) query = query.is("preparazione_id", null);
+
+  // `null` vuol dire «tutti e due»: è il solo caso in cui non si filtra.
+  if (alimentare !== null && alimentare !== undefined) {
+    query = query.eq("alimentare", alimentare);
+  }
 
   if (search) query = query.ilike("name", `%${search}%`);
   if (category) query = query.eq("category", category);

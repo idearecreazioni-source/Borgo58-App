@@ -248,6 +248,18 @@ export default function MagazzinoHome() {
           >
             Spesa spicciola
           </Link>
+          {/* 🔴 SEZIONE SEPARATA, non un filtro dentro gli Ingredienti
+              (decisione di Alessio del 29/08, scelta fra due). Misurato:
+              4 prodotti su 133 non sono alimenti, e stavano in mezzo al
+              baccalà portandosi dietro allergeni, stagionalità e
+              temperatura di consegna. ⚠️ Non è un secondo magazzino —
+              prezzo, fornitore, giacenza e lista della spesa restano. */}
+          <Link
+            to="/magazzino/materiali"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+          >
+            Materiali di consumo
+          </Link>
           <Link
             to="/magazzino/carico"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"

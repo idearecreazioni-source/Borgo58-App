@@ -16,6 +16,7 @@ import {
   createIngredient,
   eliminaIngrediente,
   getIngredient,
+  ingredienteConQuestoNome,
   listPriceHistory,
   mettiDaParteIngrediente,
   updateIngredientFields,
@@ -52,6 +53,7 @@ import {
 //    inventarli.
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import { meseAcceso, stagionalitaDopoIlTocco } from "../../lib/calcoli/stagionalita";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 const DA_VOCE = { nome: "name", categoria: "category", unita: "unit" };
@@ -178,6 +180,60 @@ export default function IngredienteForm() {
   //    contro un dato che resterebbe in giro per sempre.
   const posizione = useLocation();
   const schedaDaFoto = posizione.state?.daFoto ?? null;
+
+  // ⚠️ ARRIVANDO DA «+ Nuovo materiale» la scheda nasce gia' spuntata come
+  // materiale di consumo: chi è entrato da lì ha già detto cos'è, e
+  // chiederglielo di nuovo è un passo per niente. Vale solo in creazione.
+  const nasceMateriale = new URLSearchParams(posizione.search).get("materiale") === "1";
+
+  // 🔴 «QUESTO NOME CE L'HA GIÀ QUALCUNO» — 29/08/2026, punto 2c.
+  //
+  // Da MEMO foto si arriva sempre qui in CREAZIONE, anche quando
+  // l'ingrediente generico esiste già: misurato, `create_ingredient` non
+  // accorpa niente e su `ingredients` non c'è nessun indice unico sul
+  // nome. Fotografando la seconda marca di una cosa che c'è già nasceva
+  // **un secondo ingrediente generico**, cioè il difetto che la
+  // separazione del 27/08 era andata a togliere.
+  //
+  // ⚠️ AVVISA, NON BLOCCA: due prodotti possono legittimamente chiamarsi
+  // quasi uguali, e se accorpare lo decide l'assistente (25/08). Qui si
+  // dice **prima di salvare**, con la via d'uscita — aprire quello che
+  // c'è già e appendergli la confezione, invece di crearne un altro.
+  //
+  // ⚠️ Solo in creazione: in modifica il nome combacia con se stesso.
+  const [omonimi, setOmonimi] = useState([]);
+  useEffect(() => {
+    if (isEdit) {
+      setOmonimi([]);
+      return;
+    }
+    const nome = form.name.trim();
+    if (nome.length < 3) {
+      setOmonimi([]);
+      return;
+    }
+    let annullato = false;
+    // Mezzo secondo: si cerca quando si smette di scrivere, non a ogni
+    // lettera. Un giro di rete per carattere e' rumore.
+    const attesa = setTimeout(() => {
+      ingredienteConQuestoNome(nome)
+        .then((r) => {
+          if (!annullato) setOmonimi(r);
+        })
+        // ⚠️ SILENZIO MOTIVATO: senza questa risposta la scheda si comporta
+        // come si comportava fino al 29/08. Non compare nessuna
+        // rassicurazione falsa — non viene detto «il nome e' libero».
+        .catch(() => {});
+    }, 500);
+    return () => {
+      annullato = true;
+      clearTimeout(attesa);
+    };
+  }, [form.name, isEdit]);
+  useEffect(() => {
+    if (!nasceMateriale || isEdit) return;
+    setForm((f) => (f.alimentare === false ? f : { ...f, alimentare: false }));
+  }, [nasceMateriale, isEdit]);
 
   useEffect(() => {
     if (!schedaDaFoto || isEdit) return;
@@ -606,12 +662,19 @@ export default function IngredienteForm() {
     if (!daConfermare.includes(campo)) return null;
     return (
       <span className="inline-flex items-center gap-2 ml-2 align-middle">
-        <span className="rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[0.68rem] font-medium">
+        {/* 🔴 ERANO DUE MISURE IN PIXEL FISSI (`text-[0.68rem]`), trovate
+            MISURANDO questa scheda il 29/08 e non leggendola: su un tablet
+            calibrato valevano **1,70 mm** di testo, e «va bene così» era un
+            bersaglio da **2,12 mm** — un pulsante che si preme con un dito.
+            È la famiglia dei pixel fissi già tolta dal Ricettario il 25/08,
+            rimasta qui dentro. Le classi del progetto sono in centimetri
+            veri e valgono 3,20 mm su qualunque schermo. */}
+        <span className="rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 testo-sala font-medium">
           messo dalla macchina
         </span>
         <button
           type="button"
-          className="text-[0.68rem] underline text-b58-charcoal-soft hover:text-b58-charcoal"
+          className="tocco-bottone testo-sala underline text-b58-charcoal-soft hover:text-b58-charcoal"
           onClick={async () => {
             // ⚠️ Si conferma SUBITO, senza aspettare il salvataggio del
             // modulo: «va bene così» non cambia nessun valore, quindi non
@@ -642,20 +705,44 @@ export default function IngredienteForm() {
     );
   };
 
+  // 🔴 IL VESTITO DA INGREDIENTE SI TOGLIE A CHI NON È UN ALIMENTO —
+  // 29/08/2026, punto 2a, decisione di Alessio.
+  // ⚠️ Non è un secondo magazzino: prezzo, fornitore, scorta minima,
+  // sorveglianza dei prezzi e giacenza RESTANO — carta forno e detersivi
+  // sono costi come gli altri. Spariscono solo i campi che descrivono un
+  // cibo, e che su un rotolo di carta non vogliono dire niente.
+  // ⚠️ Misurato prima di nasconderli, sui 4 non alimentari veri: «Carta
+  // forno» portava stagionalità «tutto l'anno», temperatura di consegna
+  // «ambiente» e il 3% di scarto.
+  // ⚠️ I VALORI NON SI CANCELLANO, si smette di mostrarli: cancellarli
+  // sarebbe una decisione sui suoi dati che nessuno mi ha chiesto. Restano
+  // inerti — dal 29/08 un non alimentare non può entrare in una ricetta, e
+  // il divieto è nel database.
+  const eAlimento = form.alimentare !== false;
+
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   return (
     <div className="max-w-3xl mx-auto pb-16">
+      {/* 🔴 IL RITORNO SEGUE IL PRODOTTO, non la schermata da cui la scheda
+          è nata (visto aprendo una scheda, il 29/08). Da quando i materiali
+          di consumo hanno una sezione loro, «← Ingredienti» su una carta
+          forno porta in un elenco dove quel prodotto **non c'è più**: un
+          vicolo cieco, che in questo progetto è un difetto a sé. */}
       <Link
-        to="/ricettario/ingredienti"
+        to={eAlimento ? "/ricettario/ingredienti" : "/magazzino/materiali"}
         className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta"
       >
-        ← Ingredienti
+        {eAlimento ? "← Ingredienti" : "← Materiali di consumo"}
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        {isEdit ? form.name || "Ingrediente" : "Nuovo ingrediente"}
+        {isEdit
+          ? form.name || (eAlimento ? "Ingrediente" : "Materiale di consumo")
+          : eAlimento
+            ? "Nuovo ingrediente"
+            : "Nuovo materiale di consumo"}
       </h1>
 
       {error && (
@@ -753,6 +840,25 @@ export default function IngredienteForm() {
               placeholder='Es. "Pomodoro San Marzano DOP"'
               className={inputClass}
             />
+            {omonimi.length > 0 && (
+              <p className="mt-1.5 testo-sala text-b58-charcoal bg-b58-gold/25 rounded-lg px-3 py-2">
+                Questo nome ce l&apos;ha già{" "}
+                {omonimi.map((o, i) => (
+                  <span key={o.id}>
+                    {i > 0 && ", "}
+                    <Link
+                      to={`/ricettario/ingredienti/${o.id}`}
+                      className="underline font-medium hover:text-b58-terracotta-dark"
+                    >
+                      {o.name}
+                    </Link>
+                  </span>
+                ))}
+                . Se è la stessa cosa comprata da un&apos;altra marca, aprilo e
+                aggiungi lì la confezione: così il costo dei piatti resta su un
+                ingrediente solo.
+              </p>
+            )}
           </div>
 
           <div>
@@ -978,7 +1084,7 @@ export default function IngredienteForm() {
               ))}
             </select>
           </div>
-          <div>
+          <div className={eAlimento ? undefined : "hidden"}>
             {/* 🔴 LO SCARTO NON LO PROPONE PIÙ NESSUNO (23/08/2026,
                 decisione di Alessio): il dato vero emerge dalla
                 preparazione — un chilo di alici che diventa un chilo di
@@ -1048,7 +1154,9 @@ export default function IngredienteForm() {
               È un alimento
               <Didascalia>
                 Togli la spunta per detersivi, carta, imballaggi: restano sotto
-                controllo prezzi ma fuori dal Ricettario.
+                controllo prezzi, con la loro scorta minima e la loro lista
+                della spesa, ma stanno in Magazzino → Materiali di consumo e
+                non possono entrare in una ricetta.
               </Didascalia>
             </label>
             {/* 🔴 LE SPEZIE A PIZZICO (23/08/2026, decisione di Alessio).
@@ -1074,7 +1182,7 @@ export default function IngredienteForm() {
             </label>
           </div>
 
-          <div>
+          <div className={eAlimento ? undefined : "hidden"}>
             {/* 🔴 IL NOME È LA CURA (23/08/2026, reperto di Alessio): «come
                 fa a sapere a che temperatura sono gli ingredienti che
                 arrivano? Dovrebbe sapere a che temperatura DOVREBBERO
@@ -1102,7 +1210,7 @@ export default function IngredienteForm() {
           </div>
         </div>
 
-        <div>
+        <div className={eAlimento ? undefined : "hidden"}>
           <label className={labelClass}>Note HACCP</label>
           <textarea
             value={form.haccp_notes}
@@ -1112,7 +1220,7 @@ export default function IngredienteForm() {
           />
         </div>
 
-        <div>
+        <div className={eAlimento ? undefined : "hidden"}>
           <label className={labelClass}>Allergeni</label>
           <div className="flex flex-wrap gap-2">
             {ALLERGENS.map((a) => (
@@ -1132,16 +1240,34 @@ export default function IngredienteForm() {
           </div>
         </div>
 
-        <div>
+        <div className={eAlimento ? undefined : "hidden"}>
+          {/* 🔴 DODICI MESI ACCESI SONO «TUTTO L'ANNO» — 29/08/2026,
+              decisione di Alessio. Misurato prima di scriverlo: **35
+              prodotti su 133** avevano tutti e dodici i mesi accesi e
+              **zero** dicevano «tutto l'anno», che pure esiste nel
+              vocabolario dal primo giorno. A schermo i due casi si vedono
+              uguali; nel database no, e il giorno che si vorrà sapere cosa
+              è davvero stagionale non si distinguono.
+              ⚠️ La regola vale NEI DUE VERSI, e il secondo è quello che il
+              database non può fare: togliendo agosto da «tutto l'anno»
+              restano **undici** mesi, e quali undici lo sa solo chi ha
+              toccato. Sta in `src/lib/calcoli/stagionalita.js`; la
+              normalizzazione, che deve valere anche per MEMO e per le
+              fatture, è un trigger. */}
           <label className={labelClass}>Stagionalità{segnoMacchina("stagionalita")}</label>
           <div className="flex flex-wrap gap-2">
             {MONTHS.map((m) => (
               <button
                 type="button"
                 key={m.value}
-                onClick={() => toggleArrayValue("seasonality", m.value)}
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    seasonality: stagionalitaDopoIlTocco(f.seasonality, m.value),
+                  }))
+                }
                 className={`tocco-bottone inline-flex items-center rounded-full testo-sala px-3 py-1.5 border transition-colors ${
-                  form.seasonality.includes(m.value)
+                  meseAcceso(form.seasonality, m.value)
                     ? "bg-b58-olive text-b58-parchment border-b58-olive"
                     : "border-b58-charcoal/15 text-b58-charcoal-soft"
                 }`}
@@ -1164,7 +1290,13 @@ export default function IngredienteForm() {
             disabled={saving}
             className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
-            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea ingrediente"}
+            {saving
+              ? "Salvo…"
+              : isEdit
+                ? "Salva modifiche"
+                : eAlimento
+                  ? "Crea ingrediente"
+                  : "Crea materiale"}
           </button>
         </div>
       </form>

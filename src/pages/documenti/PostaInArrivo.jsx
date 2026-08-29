@@ -818,7 +818,16 @@ export default function PostaInArrivo() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
     // Se non ci sono fatture da caricare non servono, e non fanno danno.
-    listIngredients().then(setIngredienti).catch((e) => setError(e.message));
+    // 🔴 `alimentare: null` VUOL DIRE «TUTTI E DUE», ed è obbligatorio qui.
+    //
+    // Dal 29/08 `listIngredients()` di suo restituisce **solo gli
+    // alimenti**: i materiali di consumo hanno una sezione loro. Ma su una
+    // fattura ci sono anche detersivi e carta — questa schermata lo sa già,
+    // e infatti creando un prodotto scrive `alimentare: c !== "altro"`.
+    // Senza `null`, una riga di detersivo non avrebbe potuto essere
+    // abbinata allo sgrassatore che c'è già, e avrebbe fatto nascere un
+    // doppione **senza nessun errore**.
+    listIngredients({ alimentare: null }).then(setIngredienti).catch((e) => setError(e.message));
     // 🔴 IL DIFETTO n. 11, in due pezzi.
     //
     // `listSuppliers()` era chiamata SENZA la società, mentre ovunque
@@ -871,7 +880,9 @@ export default function PostaInArrivo() {
       // ESATTAMENTE il difetto che il commento qui sopra racconta, con
       // un'altra causa. Ora non si tace: il menu lo dichiara.
       await Promise.all([
-        leggi(listIngredients()).then(setIngredienti),
+        // `alimentare: null` = alimenti E materiali di consumo: su una
+        // fattura ci sono tutti e due. Vedi la nota più sopra.
+        leggi(listIngredients({ alimentare: null })).then(setIngredienti),
         leggi(listSuppliers()).then(setFornitori),
       ]);
     } catch (e) {

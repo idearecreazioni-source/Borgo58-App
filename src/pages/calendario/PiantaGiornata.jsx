@@ -236,7 +236,7 @@ function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, 
                 ragione: gruppo.ragione ?? "",
               })
             }
-            className="text-[12px] text-b58-charcoal-soft underline"
+            className="tocco-bottone testo-sala text-b58-charcoal-soft underline"
           >
             Correggi il numero
           </button>
@@ -245,7 +245,7 @@ function CopertiDelGruppo({ gruppo, correzione, setCorrezione, salvando, salva, 
               type="button"
               disabled={salvando}
               onClick={() => azzeraCorrezione(gruppo)}
-              className="tocco-bottone text-[12px] text-b58-charcoal-soft underline"
+              className="tocco-bottone testo-sala text-b58-charcoal-soft underline"
             >
               Torna al calcolato ({gruppo.coperti_calcolati})
             </button>

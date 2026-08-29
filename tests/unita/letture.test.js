@@ -142,6 +142,12 @@ describe("nessuna lettura resta muta", () => {
       // Il modulo pubblico: il destinatario è un ospite, e senza le opzioni
       // torna all'orario libero — che è uno stato dichiarato della pagina,
       // non una rassicurazione.
+      // ⚠️ DAL 29/08 I SILENZI QUI DENTRO SONO DUE, e il secondo va detto o
+      // questa nota diventa falsa: l'elenco dei giorni chiusi, che serve a
+      // far partire il campo data dal primo giorno in cui si mangia qui. Se
+      // non risponde, il campo parte da oggi — cioè come si comportava fino
+      // al 29/08 — e chi sceglie un giorno chiuso viene fermato lo stesso,
+      // dal database, che è il posto dove quel rifiuto vive davvero.
       "src/pages/public/PublicReservationForm.jsx",
       // ⚠️ AGGIUNTO IL 20/08 col blocco C, e questa riga mancava: la copia dei
       // numeri negli appunti può essere negata dal browser, e non è un guasto
@@ -183,6 +189,17 @@ describe("nessuna lettura resta muta", () => {
       // di quello che toglie. Se invece fallisse la SCRITTURA — assegnare
       // il cliente — l'errore si vede, perche' li' un catch non c'e'.
       "src/components/ClientePagante.jsx",
+      // ⚠️ AGGIUNTO IL 29/08 con l'avviso «questo nome ce l'ha già qualcuno».
+      // Qui non manca un dato: manca un **avvertimento su un nome che si
+      // sta scrivendo**. Se la ricerca non risponde, la scheda si comporta
+      // come si comportava fino al 29/08 — si salva, e nasce un prodotto.
+      // 🔴 E il discriminante è il verso in cui si sbaglia: quel che si
+      // perde è un avviso, non una rassicurazione. Non compare da nessuna
+      // parte «il nome è libero»: chi non riceve niente non sa niente, che
+      // è la stessa cosa che sapeva prima.
+      // ⚠️ La lettura della SCHEDA invece non ha nessun catch: se fallisce
+      // quella, si vede.
+      "src/pages/ricettario/IngredienteForm.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)
