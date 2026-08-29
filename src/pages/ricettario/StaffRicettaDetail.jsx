@@ -127,9 +127,6 @@ export default function StaffRicettaDetail() {
                           preparazione
                         </span>
                       )}
-                      {ri.is_optional && (
-                        <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
-                      )}
                       {ri.prep_note && (
                         <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
                       )}

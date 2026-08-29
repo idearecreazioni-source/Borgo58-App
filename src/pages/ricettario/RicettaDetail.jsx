@@ -62,7 +62,6 @@ const emptyIngredientForm = {
   unit: "",
   waste_percentage: "",
   prep_note: "",
-  is_optional: false,
 };
 
 const emptyStepForm = {
@@ -587,7 +586,6 @@ export default function RicettaDetail() {
           ? Number(ingredientForm.waste_percentage)
           : null,
         prep_note: ingredientForm.prep_note || null,
-        is_optional: ingredientForm.is_optional,
       });
       setIngredientForm(emptyIngredientForm);
       setIngredientSearch("");
@@ -1398,9 +1396,6 @@ export default function RicettaDetail() {
                             {ri.component.recipe_type === "finger" ? "finger" : "preparazione"}
                           </span>
                         )}
-                        {ri.is_optional && (
-                          <span className="testo-sala text-b58-charcoal-soft ml-1.5">(opzionale)</span>
-                        )}
                         {ri.prep_note && (
                           <div className="testo-sala text-b58-charcoal-soft">{ri.prep_note}</div>
                         )}
@@ -1423,11 +1418,7 @@ export default function RicettaDetail() {
                         </td>
                       )}
                       <td className="py-2 text-right text-b58-charcoal">
-                        {ri.is_optional ? (
-                          <span className="text-b58-charcoal-soft/60">escluso</span>
-                        ) : (
-                          formatEUR(rowCost)
-                        )}
+                        {formatEUR(rowCost)}
                       </td>
                       <td className="py-2 text-right">
                         <button
@@ -1582,15 +1573,7 @@ export default function RicettaDetail() {
               />
             )}
           </div>
-          <div className="flex items-center justify-between">
-            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
-              <input
-                type="checkbox"
-                checked={ingredientForm.is_optional}
-                onChange={(e) => setIngredientForm((f) => ({ ...f, is_optional: e.target.checked }))}
-              />
-              Guarnizione opzionale (esclusa dal food cost)
-            </label>
+          <div className="flex items-center justify-end">
             <button
               type="button"
               disabled={

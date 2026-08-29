@@ -78,6 +78,12 @@ create temp table costo_prima on commit drop as
 --    `create or replace view` sa solo AGGIUNGERE colonne in fondo: per
 --    toglierne una in mezzo rifiuta con 42P16.
 -- ---------------------------------------------------------------------
+--    ⚠️ E LA CATENA E PIU LUNGA DI DUE: `v_recipe_row_costs` la usa
+--    `v_recipe_costs`, che la usa `v_menu_item_economics`. Non l ho dedotto —
+--    me l ha detto Postgres rifiutando il primo tentativo. Vanno tolte
+--    dall alto verso il basso e rifatte dal basso verso l alto.
+drop view if exists v_menu_item_economics;
+drop view if exists v_recipe_costs;
 drop view if exists v_recipe_row_costs;
 drop view if exists recipe_ingredients_display;
 
@@ -93,7 +99,6 @@ drop view if exists recipe_ingredients_display;
 -- rete-guardie: espansione_costo_ricetta — la colonna is_optional si toglie apposta: la guarnizione opzionale non esiste piu
 drop function if exists public.espansione_costo_ricetta(uuid);
 
-Output format is unaligned.
 CREATE OR REPLACE FUNCTION public.duplica_ricetta(p_recipe_id uuid, p_nome text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -686,6 +691,32 @@ create view v_recipe_row_costs with (security_invoker = true) as
 
 grant select, insert, update, delete on v_recipe_row_costs to authenticated;
 
+create view v_recipe_costs with (security_invoker = true) as
+  select r.id as recipe_id,
+         r.portions_yield,
+         (coalesce(sum(rc.costo), 0::numeric))::numeric(14,4) as food_cost_base,
+         (coalesce(sum(rc.costo), 0::numeric) / nullif(r.portions_yield, 0)::numeric)::numeric(14,4) as food_cost_portion
+    from recipes r
+    left join v_recipe_row_costs rc on rc.recipe_id = r.id
+   group by r.id, r.portions_yield;
+
+grant select, insert, update, delete on v_recipe_costs to authenticated;
+
+create view v_menu_item_economics with (security_invoker = true) as
+  select mi.id as menu_item_id,
+         mi.menu_id,
+         mi.recipe_id,
+         mi.selling_price,
+         vrc.food_cost_portion,
+         case when mi.selling_price > 0::numeric
+              then ((vrc.food_cost_portion / mi.selling_price) * 100::numeric)::numeric(6,2)
+              else null::numeric end as food_cost_pct,
+         (mi.selling_price - vrc.food_cost_portion)::numeric(12,2) as gross_margin
+    from menu_items mi
+    join v_recipe_costs vrc on vrc.recipe_id = mi.recipe_id;
+
+grant select, insert, update, delete on v_menu_item_economics to authenticated;
+
 -- ---------------------------------------------------------------------
 -- 5. E adesso la colonna puo' cadere.
 -- ---------------------------------------------------------------------
@@ -706,6 +737,7 @@ do $verifica$
 declare
   v_foto      jsonb;
   v_tit       uuid;
+  v_ente      uuid;
   v_ing       uuid;
   v_prep      uuid;
   v_piatto    uuid;
@@ -776,14 +808,20 @@ begin
     raise exception 'Verifica impossibile: nessun titolare in user_roles.';
   end if;
 
-  insert into ingredients (name, unit, category, current_price)
-  values ('VERIFICA-guarnizione', 'kg', 'verdura', 10)
+  select id into v_ente from entities where entity_type = 'srls' limit 1;
+  if v_ente is null then select id into v_ente from entities limit 1; end if;
+  if v_ente is null then
+    raise exception 'Verifica impossibile: nessuna societa in entities.';
+  end if;
+
+  insert into ingredients (entity_id, name, unit, category, current_price)
+  values (v_ente, 'VERIFICA-guarnizione', 'kg', 'verdura', 10)
   returning id into v_ing;
 
-  insert into recipes (name, recipe_type, yield_quantity, yield_unit, portions_yield)
-  values ('VERIFICA-preparazione', 'preparazione', 1, 'kg', 1) returning id into v_prep;
-  insert into recipes (name, recipe_type, portions_yield)
-  values ('VERIFICA-piatto', 'piatto', 1) returning id into v_piatto;
+  insert into recipes (name, category, recipe_type, yield_quantity, yield_unit, portions_yield)
+  values ('VERIFICA-preparazione', 'primo', 'preparazione', 1, 'kg', 1) returning id into v_prep;
+  insert into recipes (name, category, recipe_type, portions_yield)
+  values ('VERIFICA-piatto', 'primo', 'piatto_finito', 1) returning id into v_piatto;
   v_miei := v_miei || v_prep || v_piatto;
 
   insert into recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
@@ -839,8 +877,10 @@ begin
   -- (9) `ingredienti_del_menu` e `simula_prezzo_ingrediente`, che
   --     chiedevano tutt e due l espansione filtrata.
   insert into menus (name, is_active) values ('VERIFICA-carta', false) returning id into v_menu;
-  insert into menu_items (menu_id, recipe_id, price) values (v_menu, v_piatto, 100);
+  insert into menu_items (menu_id, recipe_id, category, selling_price) values (v_menu, v_piatto, 'primo', 100);
 
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_tit, 'role', 'authenticated')::text, true);
   select count(*) into v_quante from ingredienti_del_menu(v_menu);
   if v_quante <> 1 then
     raise exception 'Gli ingredienti del menu sono % invece di 1.', v_quante;
@@ -854,6 +894,7 @@ begin
   --      conta il numero, conta che RISPONDANO senza morire.
   select count(*) into v_quante from prodotti_troppo_piccoli();
   select registra_storico_costi(array[v_piatto], 'composizione', 'VERIFICA') into v_n;
+  perform set_config('request.jwt.claims', null, true);
 
   -- (11) `storico_al_cambio_riga`: il trigger aveva un ramo sulla colonna
   --      sparita. Si tocca una riga e si pretende che non esploda.
@@ -864,10 +905,23 @@ begin
   --    «l ultima riga», che il 26/08 ha cancellato uno sconto vero.
   delete from menu_items where menu_id = v_menu;
   delete from menus where id = v_menu;
-  delete from storico_costi_ricetta where ricetta_id = any(v_miei);
+  delete from storico_costi_ricetta where recipe_id = any(v_miei);
   delete from recipe_ingredients where recipe_id = any(v_miei);
   delete from recipes where id = any(v_miei);
   delete from ingredients where id = v_ing;
+
+  -- ⚠️ E LE LAPIDI CHE QUESTA VERIFICA HA LASCIATO, tolte una per una.
+  --    Cancellando le proprie righe da tabelle sorvegliate, il registro
+  --    delle cancellazioni ne conserva una copia — e quel registro e
+  --    ESIBIBILE: righe finte la dentro sono dati di prova in mezzo ai
+  --    dati veri. Si tolgono SOLO quelle riconoscibili come proprie,
+  --    per identificativo o per il legame con cio che questa verifica
+  --    ha creato. Mai un criterio che potrebbe pescare un dato vero.
+  delete from deleted_records
+   where record_id = any(array[v_ing::text, v_menu::text, v_riga::text] || v_miei::text[])
+      or record->>'recipe_id' = any(v_miei::text[])
+      or record->>'menu_id' = v_menu::text
+      or record->>'ingredient_id' = v_ing::text;
 
   perform pretendi_nessun_residuo(v_foto, 'la verifica della guarnizione opzionale');
   raise notice 'Guarnizione opzionale tolta: 9 funzioni e 2 viste rifatte e CHIAMATE, permessi invariati, food cost identico.';
