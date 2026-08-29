@@ -49,12 +49,16 @@ export const NOTE_LARGHE = {
   "src/pages/fiscale/Deducibilita.jsx": "247 punti — report con totali",
   "src/pages/agricolo/AgricoloHome.jsx": "231 punti — righe con pulsanti e riga che si apre",
   "src/pages/fiscale/DeduzioniFiscali.jsx": "170 punti — report con totali",
-  "src/pages/magazzino/MagazzinoHome.jsx":
-    // ⚠️ Misurato il 29/08: l elenco e gia una riga per ingrediente (133 su
-    // 133) — il difetto delle righe ripetute era altrove. Qui resta il solo
-    // sbordo, e la tabella ha righe che si aprono: il componente adattivo
-    // non le regge, e rifarle e un lavoro a se.
-    "116 punti — righe espandibili, il componente adattivo non le copre",
+  // ✅ MAGAZZINO: TOLTO DA QUI IL 29/08 (sera). Era l'unica tabella che
+  // questo elenco dichiarava «il componente adattivo non la copre», e la
+  // cura non e' stata rifarla a mano: e' stato **insegnare al componente**
+  // le righe che si aprono (`azione` e `aperta` in `ElencoAdattivo`).
+  // Misurato dopo, a 375 punti: sbordo **zero**, col modulo dello scarico
+  // aperto; sul computer la tabella e' intatta, cinque intestazioni e la
+  // riga che si apre a tutta larghezza.
+  // ⚠️ E la cura ha prodotto un difetto suo, trovato misurando: un
+  // `[&>*]:min-w-0` scavalcava la larghezza minima del campo nota, che
+  // invece di andare a capo si schiacciava a **14 punti**.
   "src/pages/cassa/PrimaNota.jsx": "58 punti — righe con un gesto per riga",
   "src/pages/cassa/Previsione.jsx": "58 punti — report",
   "src/pages/menu-editor/BevandeVini.jsx": "8 punti — tabella di MODIFICA, i campi si scrivono dentro",

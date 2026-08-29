@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   listProdottiTroppoPiccoli,
@@ -9,6 +9,7 @@ import {
 import { CONSUMPTION_REASONS, formatDate, formatQta} from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import { leggi, statoLettura } from "../../lib/calcoli/letture";
 import { useDaVoce } from "../../lib/daVoce";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
@@ -423,140 +424,123 @@ export default function MagazzinoHome() {
           </p>
         </div>
       ) : (
-        <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto">
-          <table className="w-full testo-sala">
-            <thead>
-              <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                <th className="px-4 py-3 font-medium">Ingrediente</th>
-                {/* 🔴 NON «Giacenza», e non è una sfumatura: quel numero
-                    è quanto ci SAREBBE se ogni ricetta fosse rispettata al
-                    grammo. Chiamandolo giacenza si smette di controllarlo —
-                    è una stima presentata come dato, la stessa famiglia
-                    della sala disegnata vuota. */}
-                <th className="px-4 py-3 font-medium">Dovrebbe esserci</th>
-                <th className="px-4 py-3 font-medium">Soglia minima</th>
-                <th className="px-4 py-3 font-medium">Scade prima</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {levels.map((l) => {
-                const urgency = expiryUrgency(l.nearest_expiry);
-                return (
-                  <Fragment key={l.ingredient_id}>
-                    <tr className="border-b border-b58-charcoal/5 last:border-0">
-                      <td className="px-4 py-3 text-b58-charcoal font-medium">
-                        {l.ingredient_name}
-                        {/* Un prodotto fuori magazzino non è mai «sotto
-                            soglia»: la sua giacenza non scende, quindi il
-                            confronto non vuol dire niente. */}
-                        {l.below_threshold && l.tenuto_in_magazzino !== false && (
-                          <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
-                            sotto soglia
-                          </span>
-                        )}
-                      </td>
-                      {/* 🔴 UN NUMERO FERMO NON SI MOSTRA COME GIACENZA
-                          (23/08/2026). Per i prodotti che il magazzino non
-                          segue — le spezie a pizzico — quel numero è quello
-                          dell'ultimo carico e non scenderà mai: mostrarlo
-                          sarebbe informazione di assenza spacciata per
-                          misura. Si dice invece che non lo si sta
-                          seguendo. */}
-                      <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {l.tenuto_in_magazzino === false
-                          ? "fuori magazzino"
-                          : `${formatQta(l.current_quantity)} ${l.unit}`}
-                      </td>
-                      {/* Su un prodotto fuori magazzino la soglia non fa
-                          niente — non entra in lista della spesa — e
-                          mostrarla sarebbe una promessa che nessuno
-                          mantiene. */}
-                      <td className="px-4 py-3 text-b58-charcoal-soft">
-                        {l.tenuto_in_magazzino === false || l.stock_minimum_threshold == null
-                          ? "—"
-                          : `${formatQta(l.stock_minimum_threshold)} ${l.unit}`}
-                      </td>
-                      <td
-                        className={`px-4 py-3 ${
-                          urgency === "danger"
-                            ? "text-b58-terracotta-dark font-medium"
-                            : urgency === "warning"
-                            ? "text-b58-gold-dark font-medium"
-                            : "text-b58-charcoal-soft"
-                        }`}
-                      >
-                        {formatDate(l.nearest_expiry)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => toggleRow(l.ingredient_id)}
-                          disabled={l.current_quantity <= 0}
-                          className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          {openRow === l.ingredient_id ? "Annulla" : "Scarico"}
-                        </button>
-                      </td>
-                    </tr>
-                    {openRow === l.ingredient_id && (
-                      <tr className="bg-white">
-                        <td colSpan={5} className="px-4 py-3">
-                          <div className="flex flex-wrap gap-2 items-end">
-                            <div className="w-28">
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max={l.current_quantity}
-                                value={consumptionForm.quantity}
-                                onChange={(e) =>
-                                  setConsumptionForm((f) => ({ ...f, quantity: e.target.value }))
-                                }
-                                placeholder={`Qtà (${l.unit})`}
-                                className={inputClass}
-                              />
-                            </div>
-                            <div className="w-48">
-                              <select
-                                value={consumptionForm.reason}
-                                onChange={(e) =>
-                                  setConsumptionForm((f) => ({ ...f, reason: e.target.value }))
-                                }
-                                className={inputClass}
-                              >
-                                {CONSUMPTION_REASONS.map((r) => (
-                                  <option key={r.value} value={r.value}>{r.label}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="flex-1 min-w-[160px]">
-                              <input
-                                value={consumptionForm.note}
-                                onChange={(e) =>
-                                  setConsumptionForm((f) => ({ ...f, note: e.target.value }))
-                                }
-                                placeholder="Nota (opzionale)"
-                                className={inputClass}
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              disabled={saving || !consumptionForm.quantity}
-                              onClick={() => handleConsumption(l.ingredient_id)}
-                              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
-                            >
-                              {saving ? "Salvo…" : "Conferma"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ElencoAdattivo
+          righe={levels}
+          chiave={(l) => l.ingredient_id}
+          titolo={(l) => l.ingredient_name}
+          intestazioneTitolo="Ingrediente"
+          /* Un prodotto fuori magazzino non e' mai «sotto soglia»: la sua
+             giacenza non scende, quindi il confronto non vuol dire niente. */
+          segno={(l) =>
+            l.below_threshold && l.tenuto_in_magazzino !== false ? (
+              <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                sotto soglia
+              </span>
+            ) : null
+          }
+          campi={(l) => [
+            {
+              chiave: "quanto",
+              /* 🔴 NON «Giacenza», e non e' una sfumatura: quel numero e'
+                 quanto ci SAREBBE se ogni ricetta fosse rispettata al
+                 grammo. Chiamandolo giacenza si smette di controllarlo — e'
+                 una stima presentata come dato, la stessa famiglia della
+                 sala disegnata vuota. */
+              etichetta: "Dovrebbe esserci",
+              /* 🔴 UN NUMERO FERMO NON SI MOSTRA COME GIACENZA (23/08/2026).
+                 Per i prodotti che il magazzino non segue — le spezie a
+                 pizzico — quel numero e' quello dell'ultimo carico e non
+                 scendera' mai: mostrarlo sarebbe informazione di assenza
+                 spacciata per misura. Si dice invece che non lo si segue. */
+              valore:
+                l.tenuto_in_magazzino === false
+                  ? "fuori magazzino"
+                  : `${formatQta(l.current_quantity)} ${l.unit}`,
+            },
+            {
+              chiave: "soglia",
+              etichetta: "Soglia minima",
+              /* Su un prodotto fuori magazzino la soglia non fa niente — non
+                 entra in lista della spesa — e mostrarla sarebbe una
+                 promessa che nessuno mantiene. */
+              valore:
+                l.tenuto_in_magazzino === false || l.stock_minimum_threshold == null
+                  ? null
+                  : `${formatQta(l.stock_minimum_threshold)} ${l.unit}`,
+            },
+            {
+              chiave: "scade",
+              etichetta: "Scade prima",
+              valore: l.nearest_expiry ? formatDate(l.nearest_expiry) : null,
+              forte: expiryUrgency(l.nearest_expiry) !== "none",
+            },
+          ]}
+          /* 🔴 IL GESTO DELLA RIGA, e la riga che si apre sotto: e' quello
+             che questa tabella aveva e che il componente non copriva. */
+          azione={(l) => ({
+            etichetta: openRow === l.ingredient_id ? "Annulla" : "Scarico",
+            onClick: () => toggleRow(l.ingredient_id),
+            spenta: l.current_quantity <= 0,
+          })}
+          aperta={(l) =>
+            openRow === l.ingredient_id ? (
+              /* ⚠️ `flex-wrap` e basta: sul telefono i tre campi vanno a capo
+                 invece di spingere il riquadro oltre il bordo — e' il
+                 difetto misurato il 25/08 su HACCP, Magazzino e Comande.
+                 🔴 QUI C'ERA ANCHE `[&>*]:min-w-0`, e faceva il danno che
+                 doveva evitare: scavalcava il `min-w-[160px]` del campo
+                 nota, che invece di andare a capo si SCHIACCIAVA a 14
+                 punti — misurato, 12 punti di sbordo dentro il riquadro.
+                 Con la larghezza minima al suo posto, i campi si
+                 impilano. */
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="w-28">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={l.current_quantity}
+                    value={consumptionForm.quantity}
+                    onChange={(e) =>
+                      setConsumptionForm((f) => ({ ...f, quantity: e.target.value }))
+                    }
+                    placeholder={`Qta (${l.unit})`}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="w-48 max-w-full">
+                  <select
+                    value={consumptionForm.reason}
+                    onChange={(e) => setConsumptionForm((f) => ({ ...f, reason: e.target.value }))}
+                    className={inputClass}
+                  >
+                    {CONSUMPTION_REASONS.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-[160px]">
+                  <input
+                    value={consumptionForm.note}
+                    onChange={(e) => setConsumptionForm((f) => ({ ...f, note: e.target.value }))}
+                    placeholder="Nota (opzionale)"
+                    className={inputClass}
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={saving || !consumptionForm.quantity}
+                  onClick={() => handleConsumption(l.ingredient_id)}
+                  className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60"
+                >
+                  {saving ? "Salvo…" : "Conferma"}
+                </button>
+              </div>
+            ) : null
+          }
+        />
       )}
 
       {!isTitolare && (

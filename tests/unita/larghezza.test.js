@@ -48,7 +48,17 @@ describe("la rete riconosce una tabella senza riparo", () => {
 describe("nessuna tabella larga NUOVA nelle schermate", () => {
   it("le tabelle senza riparo sono solo quelle gia' dichiarate", () => {
     const inattese = [];
-    for (const file of tuttiIFile("src/pages")) {
+    // 🔴 ANCHE I COMPONENTI, dal 29/08 (sera). Fino a stanotte la rete
+    // guardava solo `src/pages`, e la ragione c'era: le tabelle stavano
+    // tutte nelle schermate. Ma dal 29/08 una tabella vive dentro un
+    // COMPONENTE — quella di `ElencoAdattivo` — e un componente e' il
+    // posto peggiore dove lasciarne scappare una: non compare in nessuna
+    // schermata e finisce in TUTTE.
+    // ⚠️ E' la stessa forma del difetto del 22/08 — *un difetto che sta
+    // dappertutto non compare in un censimento fatto per posti*: li' era il
+    // pulsante del menu, che stava fuori da tutte e 67 le schermate
+    // misurate perche' non era in nessuna ed era in tutte.
+    for (const file of [...tuttiIFile("src/pages"), ...tuttiIFile("src/components")]) {
       if (PER_LA_CARTA.includes(file)) continue;
       const righe = tabelleSenzaRiparo(fs.readFileSync(file, "utf8"));
       if (righe.length && !NOTE_LARGHE[file]) inattese.push(`${file}:${righe.join(",")}`);

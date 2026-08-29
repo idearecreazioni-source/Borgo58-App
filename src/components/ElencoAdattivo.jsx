@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 // L'ELENCO CHE CAMBIA FORMA COL DISPOSITIVO — 29/08/2026
 //
 // 🔴 PERCHE' ESISTE. La larghezza e' il difetto piu' ripetuto di questo
@@ -37,6 +39,26 @@ export default function ElencoAdattivo({
   // si capisce quali righe sono comparse.
   segno,
   attenuata,
+  // 🔴 LE RIGHE CHE SI APRONO — 29/08/2026, Blocco 4 del mandato.
+  //
+  // Il Magazzino era rimasto l'unica tabella larga che questo componente
+  // «non copre»: misurata a 375 punti sborda di **116**, e lo sbordo è
+  // DENTRO il riquadro (`overflow-x-auto`) — dove la decisione del 21/08,
+  // «mai scorrimento laterale», sembrava rispettata e non lo era.
+  // Il pezzo che mancava non era la larghezza: era che quella tabella ha
+  // **una riga che si apre**, con dentro un modulo.
+  //
+  //   · `azione(r)` → { etichetta, onClick, spenta } — il gesto della riga;
+  //   · `aperta(r)` → cosa mostrare sotto, quando è aperta (null = chiusa).
+  //
+  // ⚠️ SE C'È UN'AZIONE, IL BLOCCHETTO NON È PIÙ UN PULSANTE. Un bottone
+  // dentro un bottone non è HTML valido e sul telefono il tocco finisce a
+  // chi capita — è la stessa trappola del numero di telefono dentro la
+  // riga della prenotazione (19/08). Quindi con `azione` il riquadro
+  // diventa un `div`, e se serve anche `onTocco` il titolo prende il suo
+  // pulsante per conto proprio.
+  azione,
+  aperta,
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
@@ -95,6 +117,34 @@ export default function ElencoAdattivo({
           const stile = `w-full text-left rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 ${
             attenuata?.(r) ? "opacity-55" : ""
           }`;
+          const gesto = azione?.(r);
+          const dentroAperta = aperta?.(r);
+          // Con un'azione il riquadro è un contenitore, non un pulsante:
+          // dentro ci sta il gesto, e sotto quello che si apre.
+          if (gesto || dentroAperta) {
+            return (
+              <div key={chiave(r)} className={stile}>
+                {onTocco ? (
+                  <button type="button" onClick={() => onTocco(r)} className="w-full text-left">
+                    {dentro}
+                  </button>
+                ) : (
+                  dentro
+                )}
+                {gesto && (
+                  <button
+                    type="button"
+                    onClick={gesto.onClick}
+                    disabled={gesto.spenta}
+                    className="tocco-bottone mt-2 inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 disabled:opacity-40"
+                  >
+                    {gesto.etichetta}
+                  </button>
+                )}
+                {dentroAperta && <div className="mt-3">{dentroAperta}</div>}
+              </div>
+            );
+          }
           // Senza un gesto non si costruisce un pulsante: un riquadro che si
           // preme e non fa niente insegna che premere non serve.
           return onTocco ? (
@@ -120,12 +170,19 @@ export default function ElencoAdattivo({
                   {c.etichetta}
                 </th>
               ))}
+              {/* La colonna del gesto non ha intestazione: il pulsante dice
+                  gia' cosa fa, e un titolo sopra sarebbe una parola in piu'
+                  su una riga che ne ha gia' cinque. */}
+              {azione && <th className="px-4 py-3"></th>}
             </tr>
           </thead>
           <tbody>
-            {righe.map((r) => (
+            {righe.map((r) => {
+              const gesto = azione?.(r);
+              const dentroAperta = aperta?.(r);
+              return (
+              <Fragment key={chiave(r)}>
               <tr
-                key={chiave(r)}
                 onClick={onTocco ? () => onTocco(r) : undefined}
                 className={`border-b border-b58-charcoal/5 last:border-0 ${
                   onTocco ? "hover:bg-b58-cream-dark/40 cursor-pointer" : ""
@@ -145,8 +202,29 @@ export default function ElencoAdattivo({
                     )}
                   </td>
                 ))}
+                {gesto && (
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={gesto.onClick}
+                      disabled={gesto.spenta}
+                      className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      {gesto.etichetta}
+                    </button>
+                  </td>
+                )}
               </tr>
-            ))}
+              {dentroAperta && (
+                <tr className="bg-white">
+                  <td colSpan={colonne.length + (azione ? 2 : 1)} className="px-4 py-3">
+                    {dentroAperta}
+                  </td>
+                </tr>
+              )}
+              </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
