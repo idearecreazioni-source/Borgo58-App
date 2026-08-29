@@ -4,6 +4,8 @@
 > [`docs/RICHIESTE.md`](../RICHIESTE.md) — quella che era rimasta **vuota**,
 > perché nessuno sapeva più cosa fosse.
 >
+> **Il commit che sta sotto questo riepilogo: `f0ae198`.**
+>
 > **Nessuna migrazione.** Tutto quello che serviva — la stella, le corsie,
 > l'anzianità — era **già nel database**: mancava il modo di leggerlo.
 
