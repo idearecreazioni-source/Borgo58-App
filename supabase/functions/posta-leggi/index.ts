@@ -560,6 +560,31 @@ async function leggiLaPosta() {
   await caricaCategorieAmmesse();
   await caricaTettoTentativi();
 
+  // 🔴 IL TETTO DI SPESA SI GUARDA PRIMA DI CHIAMARE IL MODELLO (29/08/2026).
+  // Alessio ha deciso: **un tetto solo** per MEMO foto, MEMO voce, la posta
+  // e qualunque cosa venga dopo. Finora la lettura della posta era l'unica
+  // che spendeva senza guardarlo — se fossero arrivate cento mail difficili,
+  // avrebbe continuato a provarci senza che niente la fermasse.
+  // ⚠️ Si chiede `tetto_ai_raggiunto` e non `spesa_ai_del_mese`: la seconda
+  // e' riservata al titolare, e qui non c'e' nessun utente — girando con la
+  // chiave di servizio riceverebbe un rifiuto (trappola del 27/08). E questa
+  // risponde si'/no senza dire nessun importo.
+  // ⚠️ Se la domanda non riesce, si VA AVANTI: un tetto illeggibile non deve
+  // fermare la posta — sarebbe un guasto che spegne il gestionale invece di
+  // spegnere una spesa.
+  try {
+    const r = await db("rpc/tetto_ai_raggiunto", { method: "POST", body: "{}" });
+    if (r.ok) {
+      const righe = await r.json();
+      if (righe?.[0]?.fermo) {
+        console.log("posta non letta: " + righe[0].frase);
+        return;
+      }
+    }
+  } catch (e) {
+    console.log("tetto di spesa non leggibile, si va avanti: " + String(e));
+  }
+
   // Gli allegati arrivano insieme al messaggio, e non per completezza: il
   // nome di un file dice spessissimo tutto — «Locazione Parlato
   // Borgo58-10.08.2026.odt» si spiega da solo. Trovato alla prima prova
@@ -874,8 +899,15 @@ async function leggiLaPosta() {
           stato: "proposta",
           proposta_sintesi: typeof p.sintesi === "string" ? p.sintesi.slice(0, 300) : null,
           proposta_modello: modello,
+          // ⚠️ La somma resta per le righe vecchie che la portano gia', ma
+          // i due numeri si conservano SEPARATI: un token di domanda e uno
+          // di risposta non costano uguale, e sommandoli il costo non si
+          // puo' piu' ricostruire. Era il motivo per cui la spesa della
+          // posta non entrava nel totale del mese.
           proposta_token:
             (esito.usage?.input_tokens ?? 0) + (esito.usage?.output_tokens ?? 0),
+          proposta_token_domanda: esito.usage?.input_tokens ?? null,
+          proposta_token_risposta: esito.usage?.output_tokens ?? null,
           proposta_il: new Date().toISOString(),
           lettura_note: scartati.length ? scartati.join("; ") : null,
         }),

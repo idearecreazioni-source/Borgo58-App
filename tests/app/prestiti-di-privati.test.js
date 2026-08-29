@@ -29,7 +29,6 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
   let titolare;
   let staff;
   let ente;
-  let causale;
 
   async function pulisci() {
     const { data } = await titolare.from("prestiti_privati").select("id").like("da_chi", `${MARCA}%`);
@@ -57,13 +56,10 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
     titolare = await clientAutenticato(credenziali().titolare);
     staff = await clientAutenticato(credenziali().staff);
     ente = await primaEntita(titolare);
-    const { data } = await titolare
-      .from("cash_causali")
-      .select("id")
-      .eq("kind", "entrata")
-      .eq("active", true)
-      .limit(1);
-    causale = data?.[0]?.id ?? null;
+    // ⚠️ La causale non si cerca piu' qui: dal 29/08 la mette la funzione
+    // del database, che e' la sola a sapere qual e'. Prima la sceglieva
+    // chi chiamava, e sceglieva «la prima non di sistema» — cioe' una
+    // qualunque.
     await pulisci();
   });
 
@@ -86,7 +82,6 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
           p_importo: 4990,
           p_mezzo: "cassa",
           p_ricevuto_il: `${ANNO}-03-01`,
-          p_causale_id: causale,
         },
       },
     });
@@ -132,7 +127,6 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
           p_importo: 1000,
           p_mezzo: "cassa",
           p_restituito_il: `${ANNO}-04-01`,
-          p_causale_id: null,
         },
       },
     });
@@ -151,7 +145,6 @@ describe("prestiti di privati: soldi che stanno in cassa e non sono nostri", () 
           p_importo: 4000,
           p_mezzo: "cassa",
           p_restituito_il: `${ANNO}-04-02`,
-          p_causale_id: null,
         },
       },
     });

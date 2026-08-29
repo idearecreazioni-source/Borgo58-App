@@ -207,6 +207,11 @@ describe("tesoreria: il denaro che cambia posto, e il cassetto che si conta", ()
       "Caparra ricevuta",
       "Differenza di cassa in meno",
       "Differenza di cassa in più",
+      // 🔴 Le due dei prestiti (29/08/2026): un finanziamento non e' un
+      // ricavo e restituirlo non e' un costo, e a tenerli fuori dai
+      // riepiloghi e' proprio l'essere «di sistema».
+      "Prestito ricevuto",
+      "Restituzione di prestito",
       "Rimborso al titolare",
       "Versamento dalla cassa",
       "Versamento in banca",
