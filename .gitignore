@@ -71,3 +71,13 @@ public/sessione.local
 # in un `.sql` usa-e-getta, e la riga qui sopra non lo copriva — infatti
 # uno c'e' finito dentro un commit. Stessa regola, estensione diversa.
 _*.local.*
+
+# 🔴 E LA REGOLA QUI SOPRA ERA ANCORA TROPPO STRETTA (29/08/2026).
+# `*.local.mjs` copre solo i .mjs, `_*.local.*` solo quelli che cominciano
+# per underscore: `q.local.sql` non era ne' l'uno ne' l'altro, ed e' finito
+# dentro un commit. E non e' la prima volta — il commento sopra racconta
+# gia' di due file finiti in un commit, e la cura di allora fu scritta sui
+# nomi di allora.
+# ⚠️ Questa e' larga quanto la convenzione: qualunque nome, qualunque
+# estensione, purche' dica `.local.` in mezzo.
+*.local.*
