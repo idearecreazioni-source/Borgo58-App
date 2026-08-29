@@ -7,6 +7,7 @@ import {
   listPrestiti,
   registraPrestito,
   registraRestituzione,
+  salvaRiservaPrestiti,
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale } from "../../lib/constants";
@@ -95,8 +96,12 @@ export default function Prestiti() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId]);
 
-  const causaleEntrata = (causali ?? []).find((c) => c.kind === "entrata" && c.active && !c.di_sistema);
-  const causaleUscita = (causali ?? []).find((c) => c.kind === "uscita" && c.active && !c.di_sistema);
+  // 🔴 QUI LA SCHERMATA SCEGLIEVA LA CAUSALE, e la sceglieva male: prendeva
+  // «la prima entrata non di sistema» e «la prima uscita non di sistema», cioe'
+  // una qualunque, decisa dall'ordine dell'elenco — in pratica «Altro incasso»
+  // e «Altra uscita». Un prestito risultava un incasso e restituirlo un costo.
+  // Adesso la mette la funzione del database, che e' la sola a sapere qual e':
+  // due causali di sistema, «Prestito ricevuto» e «Restituzione di prestito».
 
   const salva = async () => {
     if (!form.daChi.trim() || !Number(form.importo)) return;
@@ -110,7 +115,6 @@ export default function Prestiti() {
         importo: Number(form.importo),
         mezzo: form.mezzo,
         ricevutoIl: form.ricevutoIl,
-        causaleId: causaleEntrata?.id ?? null,
         nota: form.nota,
       });
       setEsito(r.messaggio);
@@ -135,7 +139,6 @@ export default function Prestiti() {
         importo: q,
         mezzo: restituzione.mezzo,
         restituitoIl: restituzione.data,
-        causaleId: causaleUscita?.id ?? null,
       });
       setEsito(r.messaggio);
       setRestituzione(null);
@@ -202,6 +205,35 @@ export default function Prestiti() {
               un testo scritto qui — che una seconda schermata potrebbe
               mostrare senza. */}
           <p className="testo-sala text-b58-charcoal-soft/70 mt-3 leading-snug">{spazio.avvertenza}</p>
+
+          {/* 🔴 LA RISERVA LA DECIDE ALESSIO (28/08), non una riga di codice.
+              ⚠️ Sta QUI, dentro il riquadro che la nomina, e non in una
+              schermata di impostazioni: il numero si vuole cambiare nel
+              momento in cui si legge la frase che lo dichiara. */}
+          <label className="flex flex-wrap items-baseline gap-2 mt-3 pt-3 border-t border-b58-charcoal/10">
+            <span className="testo-sala text-b58-charcoal-soft">Riserva da tenere da parte</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="100"
+              min="0"
+              defaultValue={spazio.riserva ?? ""}
+              onBlur={async (e) => {
+                const v = e.target.value;
+                if (Number(v) === Number(spazio.riserva)) return;
+                try {
+                  await salvaRiservaPrestiti(entityId, v);
+                  await carica();
+                } catch (err) {
+                  setErrore(err.message);
+                }
+              }}
+              className="tocco-campo w-28 rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-right"
+            />
+            <span className="testo-sala text-b58-charcoal-soft/70">
+              vuoto = 5.000 €; zero = nessuna riserva
+            </span>
+          </label>
         </div>
       )}
 

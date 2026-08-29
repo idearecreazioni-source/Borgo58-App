@@ -616,6 +616,31 @@ persona disfa a mano un dato fiscale registrato.
 per ora»*. Le colonne restano obbligatorie, quindi chi scrive senza data
 ottiene un errore invece di una data inventata. ⚠️ Recuperata il 26/08 dai
 rovesciamenti.
+* 🔴 29/08 — **UN PRESTITO ENTRA CON UNA CAUSALE DI SISTEMA SUA, e restituirlo
+pure.** Attua la decisione del 20/08 (*un finanziamento non è un ricavo,
+restituire il capitale non è un costo*), che finora era affidata a chi
+compilava. ⚠️ **Misurato il difetto vero, ed era peggio di «senza causale»**:
+la schermata sceglieva «la prima causale non di sistema», cioè una qualunque
+decisa dall'ordine dell'elenco — un prestito risultava «Altro incasso» e una
+restituzione «Altra uscita», che entra dritta fra i costi da classificare e
+nel calcolo delle imposte. ⚠️ La causale **esce dalla firma** invece di
+diventare obbligatoria: è sempre la stessa, e chiederla è offrire la
+possibilità di sbagliarla.
+* 29/08 — **Si restituisce con lo STESSO mezzo con cui il prestito è entrato**
+(decisione del 20/08, finora non imposta): il rifiuto arriva dal database e
+**nomina** il mezzo giusto. Restituire dalla banca soldi entrati in cassa
+farebbe risultare denaro uscito da dove non era mai entrato.
+* 29/08 — **La riserva prima di restituire resta 5.000 € ma la cambia Alessio**
+da *Cassa → Prestiti*, senza migrazione. ⚠️ **Vuoto e zero sono due risposte
+diverse**: vuoto vale il ripiego di 5.000, zero vuol dire «nessuna riserva».
+* 29/08 — 🔴 **LA SORVEGLIANZA DEI LAVORI ESCE DA CIÒ CHE SORVEGLIA.** La
+sentinella controllava cinque lavori automatici ed era essa stessa un lavoro
+automatico: se si fermava, **nessun dato da nessuna parte** lo diceva
+(misurato: la tabella dei battiti aveva cinque righe e nessuna era la sua).
+Ora lascia il proprio battito, e a guardarlo è **il gestionale quando Alessio
+lo apre** — che è fuori dai lavori pianificati. ⚠️ **Il prezzo, dichiarato**:
+se non apre il gestionale per due giorni, per due giorni nessuno guarda. È
+comunque un'altra cosa rispetto a «non guarda nessuno mai».
 * 22/08 — I PRESTITI DI PRIVATI non hanno scadenza: il gestionale non chiede
 quando restituire, dice solo quanto si può restituire adesso.
 * 23/08 — In Cassa quattro riquadri piccoli invece di tre grandi, con in evidenza

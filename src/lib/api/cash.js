@@ -184,6 +184,20 @@ export async function listMovimentiAttesi(entityId, finoAl) {
   return data ?? [];
 }
 
+// LA RISERVA PRIMA DI RESTITUIRE UN PRESTITO — la decide Alessio (28/08).
+// ⚠️ Ha una sua funzione invece di passare da `salvaImpostazioniTesoreria`:
+// quella scrive i due parametri del POS, e mescolare due gesti che si fanno
+// da due schermate diverse fa sì che salvarne uno tocchi l'altro.
+// ⚠️ Vuoto e zero sono due risposte DIVERSE: vuoto vuol dire «vale il ripiego
+// di 5.000», zero vuol dire «nessuna riserva, restituisci pure tutto».
+export async function salvaRiservaPrestiti(entityId, valore) {
+  const { error } = await supabase.from("impostazioni_tesoreria").upsert({
+    entity_id: entityId,
+    riserva_prestiti: valore === "" || valore == null ? null : Number(valore),
+  });
+  if (error) throw error;
+}
+
 export async function getImpostazioniTesoreria(entityId) {
   const { data, error } = await supabase
     .from("impostazioni_tesoreria")
@@ -449,25 +463,32 @@ export async function getSpazioDiManovra(entityId) {
 // Il prestito e il movimento che ne consegue: due tabelle, quindi passa dal
 // corridoio (Contratto B4). I soldi sono entrati davvero e il saldo deve
 // vederli — ma con un nome che non sia «incasso».
-export async function registraPrestito({ entityId, daChi, importo, mezzo, ricevutoIl, causaleId, nota }) {
+// 🔴 LA CAUSALE NON SI PASSA PIU' (29/08/2026), e non e' una semplificazione:
+// la sceglieva la SCHERMATA, prendendo «la prima causale d'entrata non di
+// sistema» — cioe' una qualunque, decisa dall'ordine dell'elenco. Un prestito
+// finiva registrato come «Altro incasso» e una restituzione come «Altra
+// uscita», che entra dritta fra i costi da classificare.
+// Adesso la mette la funzione del database, che e' la sola a sapere qual e'.
+export async function registraPrestito({ entityId, daChi, importo, mezzo, ricevutoIl, nota }) {
   return eseguiOperazione("registra_prestito_privato", {
     p_entity_id: entityId,
     p_da_chi: daChi,
     p_importo: importo,
     p_mezzo: mezzo,
     p_ricevuto_il: ricevutoIl,
-    p_causale_id: causaleId ?? null,
     p_nota: nota ?? null,
   });
 }
 
-export async function registraRestituzione({ prestitoId, importo, mezzo, restituitoIl, causaleId, nota }) {
+// ⚠️ E il MEZZO non e' piu' libero: si restituisce da dove il prestito e'
+// entrato, e a rifiutare e' il database. La schermata lo propone gia' giusto,
+// ma «lo propone» e «lo impone» sono due cose diverse.
+export async function registraRestituzione({ prestitoId, importo, mezzo, restituitoIl, nota }) {
   return eseguiOperazione("registra_restituzione_prestito", {
     p_prestito_id: prestitoId,
     p_importo: importo,
     p_mezzo: mezzo,
     p_restituito_il: restituitoIl,
-    p_causale_id: causaleId ?? null,
     p_nota: nota ?? null,
   });
 }
