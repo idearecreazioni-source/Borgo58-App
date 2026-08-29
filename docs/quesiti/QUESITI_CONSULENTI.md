@@ -40,6 +40,16 @@ cumulativa a fine mese appoggiandomi ai DDT, o serve documento per
 documento? Quale percentuale di compensazione si applica agli ortaggi? E
 come si gestisce dentro Fatture in Cloud?»
 
+⚠️ **Terza parte, aggiunta il 29/08/2026**: «E le autofatture vuoi riceverle
+in copia, oppure ti basta vederle nel cassetto fiscale?»
+
+**Perché adesso.** Il mandato del 29/08 prevede una casella «fornitore in
+regime di esonero» sulla scheda del fornitore, che faccia avvisare il
+gestionale quando si registra un acquisto da uno di loro. ⚠️ *Non è ancora
+costruita* — il blocco delle Fatture Fornitori non è stato aperto — ma la
+risposta a questa domanda decide **se basta un avviso o serve anche un invio**,
+e senza si arriva a fine anno con le autofatture mancanti.
+
 **Cosa cambia nell'app.** Decide se serve un tipo di documento nuovo nel
 carico da fattura, se il raggruppamento è mensile o per consegna, e con
 quale aliquota di compensazione si valorizza la riga. Tocca anche la
