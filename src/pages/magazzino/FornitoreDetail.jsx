@@ -67,6 +67,7 @@ export default function FornitoreDetail() {
         paymentTerms: supplier.payment_terms,
         deliveryDays: supplier.delivery_days,
         isOccasional: supplier.is_occasional,
+        regimeEsonero: supplier.regime_esonero,
         notes: supplier.notes,
         canaleOrdine: supplier.canale_ordine,
       });
@@ -162,6 +163,43 @@ export default function FornitoreDetail() {
             </span>
           </span>
         </label>
+
+        {/* 🔴 IL REGIME DI ESONERO (29/08/2026). Serve coi contadini e con
+            l'ortofrutta locale: chi e' in esonero non emette fattura, e il
+            documento lo deve fare Alessio. Senza un posto dove segnarselo si
+            arriva a fine anno con venti autofatture mancanti — e l'assenza
+            di un documento non produce nessun segnale.
+            ⚠️ TRE risposte e non una spunta: «non gliel'ho chiesto» e' lo
+            stato vero di quasi tutti i fornitori, ed e' diverso da «no». Con
+            una spunta il terzo stato sparirebbe dentro il no, e il
+            gestionale affermerebbe una cosa che nessuno ha verificato.
+            ⚠️ Qui non si emette niente: l'autofattura passa da Fatture in
+            Cloud. Serve che il gestionale SAPPIA e AVVISI. */}
+        <div className="mb-4">
+          <label
+            className="block testo-sala-grande text-b58-charcoal mb-1"
+            htmlFor="regime-esonero"
+          >
+            È in regime di esonero?
+          </label>
+          <select
+            id="regime-esonero"
+            value={supplier.regime_esonero === null || supplier.regime_esonero === undefined ? "" : String(supplier.regime_esonero)}
+            onChange={(e) =>
+              handleChange("regime_esonero", e.target.value === "" ? null : e.target.value === "true")
+            }
+            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
+          >
+            <option value="">Non gliel&apos;ho ancora chiesto</option>
+            <option value="true">Sì: l&apos;autofattura la faccio io</option>
+            <option value="false">No: la fattura la emette lui</option>
+          </select>
+          {supplier.regime_esonero === true && (
+            <p className="testo-sala text-b58-terracotta-dark mt-1">
+              ⚠️ Per ogni acquisto da questo fornitore l&apos;autofattura la devi emettere tu.
+            </p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>

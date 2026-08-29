@@ -43,6 +43,7 @@ const supplierPayload = ({
   isOccasional,
   notes,
   canaleOrdine,
+  regimeEsonero,
 }) => ({
   ...(entityId ? { entity_id: entityId } : {}),
   name,
@@ -61,6 +62,12 @@ const supplierPayload = ({
   // Vuoto vuol dire «non l'ha ancora detto»: la schermata degli ordini
   // offre le strade che i recapiti permettono, senza sceglierne una.
   canale_ordine: canaleOrdine || null,
+  // 🔴 IL REGIME DI ESONERO ha TRE risposte, e il terzo stato e' quello
+  // vero di quasi tutti: «nessuno gliel'ha ancora chiesto». Un `false`
+  // scritto qui direbbe «ho verificato che non lo e'» su un fornitore che
+  // Alessio non ha mai guardato — e su un contadino quella e' esattamente
+  // l'affermazione che fa saltare l'autofattura.
+  regime_esonero: regimeEsonero === "" || regimeEsonero === undefined ? null : regimeEsonero,
 });
 
 export async function createSupplier(input) {

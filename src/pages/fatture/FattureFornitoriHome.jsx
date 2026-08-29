@@ -58,6 +58,15 @@ export default function FattureFornitoriHome() {
   // legge SOLO all'apertura — poi comanda chi tocca i filtri, altrimenti
   // l'indirizzo tornerebbe a imporre la sua scelta a ogni ricarica.
   const [parametri] = useSearchParams();
+  // 🔴 UNA SEZIONE PER VOLTA (29/08/2026). Le due liste erano gia'
+  // separate — «Da pagare» e «Pagate di recente» — ma stavano una sotto
+  // l'altra: sul telefono si scorre dentro le pagate cercando quelle da
+  // pagare, che e' il contrario di quello che si e' venuti a fare.
+  const [sezione, setSezione] = useState("da_pagare");
+  // 🔴 L'ORDINE PARTE DALLA SCADENZA, ed e' la domanda con cui si apre
+  // questa schermata: «cosa devo pagare adesso». Gli altri servono a
+  // guardare, non a decidere.
+  const [ordine, setOrdine] = useState("scadenza");
   const [filtri, setFiltri] = useState({
     supplierId: parametri.get("fornitore") ?? "",
     dal: "",
@@ -78,6 +87,21 @@ export default function FattureFornitoriHome() {
   // capito se la fattura fosse stata cancellata, e l'istinto è premere di
   // nuovo. Un rifiuto lontano dal gesto è un rifiuto che non c'è.
   const [erroreRiga, setErroreRiga] = useState(null);
+
+  // Come si ordinano le due liste. ⚠️ L'ordine si applica a una COPIA:
+  // riordinare l'elenco che arriva dal database cambierebbe anche quello
+  // che le altre parti della schermata leggono.
+  const ordinate = (righe) =>
+    [...righe].sort((a, b) => {
+      if (ordine === "importo") return Number(b.da_pagare ?? b.amount) - Number(a.da_pagare ?? a.amount);
+      if (ordine === "fornitore") return (a.supplier?.name ?? "").localeCompare(b.supplier?.name ?? "");
+      if (ordine === "data") return (b.invoice_date ?? "").localeCompare(a.invoice_date ?? "");
+      // Scadenza: le piu' vicine per prime, e chi non ce l'ha in fondo —
+      // una fattura senza scadenza non e' «scaduta oggi».
+      const sa = a.due_date ?? "9999-12-31";
+      const sb = b.due_date ?? "9999-12-31";
+      return sa.localeCompare(sb);
+    });
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -431,6 +455,32 @@ export default function FattureFornitoriHome() {
       </div>
     ) : null;
 
+  // 🔴 IL CREDITO DOVE SERVE (29/08/2026, decisione di Alessio). Stava in
+  // un riquadro in cima che elencava i crediti fornitore per fornitore, e
+  // chiedeva a chi legge di tenerselo a mente fino alla fattura giusta.
+  // Adesso lo dice la fattura stessa, al momento di pagarla.
+  // ⚠️ E dice che si consuma TUTTO alla prima che paghi: Alessio ha
+  // scartato l'altra strada — mostrarlo solo sulla piu' vecchia — perche'
+  // quella nasconde il credito su tutte le altre.
+  const RigaCredito = ({ inv }) => {
+    if (inv.status === "pagata") return null;
+    const suo = crediti.find(
+      (c) => c.supplier_id === inv.supplier_id && Number(c.residuo) > 0
+    );
+    if (!suo) return null;
+    return (
+      <div className="mt-2 testo-sala bg-b58-sage/15 rounded px-2 py-1.5 text-b58-charcoal-soft">
+        <strong className="text-b58-charcoal">{formatEUR(suo.residuo)}</strong> di credito con questo
+        fornitore — si consuma tutto alla prima fattura che paghi.
+        <Didascalia etichetta="Da dove viene">
+          Sono note di credito arrivate dopo che la fattura era già pagata: quello storno
+          non si poteva scalare da lì, quindi resta a credito e si usa sulla fattura
+          successiva dello stesso fornitore.
+        </Didascalia>
+      </div>
+    );
+  };
+
   const RigaDocumenti = ({ inv }) => {
     const liberi = documenti.filter((d) => !d.supplier_invoice_id && d.entity_id === inv.entity_id);
     return (
@@ -515,32 +565,17 @@ export default function FattureFornitoriHome() {
         </div>
       </div>
 
-      {/* IL CREDITO CHE RESTA (n. 8 del collaudo). Sta accanto al «da
-          pagare» e non in una schermata a parte: una nota di credito
-          arrivata dopo il pagamento è la cosa più facile da dimenticare, e
-          sono soldi suoi. */}
-      {crediti.length > 0 && (
-        <div className="rounded-xl bg-b58-sage/15 ring-1 ring-b58-sage/40 p-4 mb-4">
-          <p className="testo-sala text-b58-charcoal font-medium mb-1">Crediti da usare</p>
-          <ul className="testo-sala text-b58-charcoal-soft space-y-0.5">
-            {crediti.map((c) => (
-              <li key={`${c.societa}-${c.supplier_id}`}>
-                <strong className="text-b58-charcoal">{formatEUR(c.residuo)}</strong> con {c.fornitore}
-                {" — "}
-                {c.societa} ({c.quante} {Number(c.quante) === 1 ? "nota" : "note"})
-              </li>
-            ))}
-          </ul>
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-2">
-            Te li propongo al prossimo pagamento di quel fornitore.
-            <Didascalia etichetta="Da dove vengono">
-              Sono note di credito arrivate dopo che la fattura era già pagata: quello
-              storno non si poteva scalare da lì, quindi resta a credito e si usa sulla
-              fattura successiva dello stesso fornitore.
-            </Didascalia>
-          </p>
-        </div>
-      )}
+      {/* 🔴 IL RIQUADRO «CREDITI DA USARE» E' USCITO DA QUI (29/08/2026,
+          decisione di Alessio). Stava in cima, elencava i crediti fornitore
+          per fornitore, e chiedeva a chi legge di tenerli a mente fino a
+          quando fosse arrivato in fondo alla fattura giusta.
+          ⚠️ Adesso il credito si dice DENTRO il riquadro di ogni fattura di
+          quel fornitore, dove serve: al momento di pagare. E dice anche che
+          si consuma tutto alla prima fattura che paghi — Alessio ha scartato
+          l'altra strada, «mostrarlo solo sulla piu' vecchia».
+          ⚠️ Il totale dei crediti NON e' sparito: resta nella riga sotto il
+          numero grosso, dov'era gia' («gia' al netto di … di note di
+          credito»). */}
 
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -567,7 +602,12 @@ export default function FattureFornitoriHome() {
           onClick={() => setNuovaAperta(true)}
           className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-4  mb-4"
         >
-          + Registra una fattura a mano
+          {/* 🔴 SI CHIAMAVA «+ Registra una fattura a mano» (29/08/2026).
+              Alessio, che questo gestionale se l'e' fatto costruire, l'ha
+              letto come «emetti una fattura a un fornitore» e ha chiesto se
+              avrebbe mai dovuto farlo. Se lo fraintende lui, lo fraintende
+              chiunque: «ricevuta» dice da che parte arriva il documento. */}
+          + Aggiungi una fattura ricevuta
         </button>
       )}
 
@@ -603,6 +643,21 @@ export default function FattureFornitoriHome() {
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
+            {/* 🔴 L'AVVISO SUL REGIME DI ESONERO (29/08/2026). Chi e' in
+                esonero non emette fattura: il documento lo deve fare
+                Alessio, e senza un promemoria qui si arriva a fine anno con
+                venti autofatture mancanti — l'assenza di un documento non
+                produce nessun segnale da sola.
+                ⚠️ Compare SOLO quando la risposta e' si'. Sul «non gliel'ho
+                chiesto» tace, perche' il gestionale non sa: un avviso messo
+                nel dubbio si impara a ignorare, e allora non avvisa piu'
+                nemmeno quando serve. */}
+            {suppliers.find((s) => s.id === form.supplier_id)?.regime_esonero === true && (
+              <p className="testo-sala text-b58-terracotta-dark sm:col-span-2">
+                ⚠️ Questo fornitore è in regime di esonero: l&apos;autofattura la devi emettere tu.
+                Il gestionale non la emette — passa da Fatture in Cloud.
+              </p>
+            )}
             <input
               value={form.invoice_number}
               onChange={(e) => setForm((f) => ({ ...f, invoice_number: e.target.value }))}
@@ -716,21 +771,69 @@ export default function FattureFornitoriHome() {
         )}
       </div>
 
+      {/* L'interruttore e l'ordine. ⚠️ Il conto sta sull'etichetta: senza,
+          per sapere quante sono bisogna aprire la sezione — e chi apre
+          «Pagate» per contarle ha perso di vista quelle da pagare. */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setSezione("da_pagare")}
+          className={`tocco-bottone rounded-lg px-4 testo-sala-grande ${
+            sezione === "da_pagare"
+              ? "bg-b58-charcoal text-b58-parchment"
+              : "border border-b58-charcoal/20 text-b58-charcoal-soft"
+          }`}
+        >
+          Da pagare ({tutteDaPagare.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setSezione("pagate")}
+          className={`tocco-bottone rounded-lg px-4 testo-sala-grande ${
+            sezione === "pagate"
+              ? "bg-b58-charcoal text-b58-parchment"
+              : "border border-b58-charcoal/20 text-b58-charcoal-soft"
+          }`}
+        >
+          Pagate ({pagate.quante})
+        </button>
+        <select
+          value={ordine}
+          onChange={(e) => setOrdine(e.target.value)}
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
+          aria-label="Come ordinare"
+        >
+          <option value="scadenza">Ordina: scadenza</option>
+          <option value="importo">Ordina: importo</option>
+          <option value="fornitore">Ordina: fornitore</option>
+          <option value="data">Ordina: data della fattura</option>
+        </select>
+      </div>
+
+      {sezione === "da_pagare" && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Da pagare</h2>
         {/* ⚠️ Con un filtro attivo l'elenco è parziale e i totali no: senza
             dirlo, un elenco corto accanto a un totale grande sembra un
             errore di somma. */}
-        <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-          {filtroAttivo
-            ? `${daPagare.length} di ${tutteDaPagare.length} da pagare — i totali in alto restano quelli interi.`
-            : `Tutte e ${tutteDaPagare.length}.`}
-        </p>
+        {/* Stesso caso sul «da pagare»: con l'elenco vuoto il conteggio non
+            aggiunge niente a «Nessuna fattura da pagare». ⚠️ Col filtro
+            attivo pero' RESTA anche a zero, e non e' un'incoerenza: «0 di 11
+            da pagare» dice che le altre undici ci sono e le sta nascondendo
+            il filtro — senza, un elenco vuoto sembrerebbe un debito
+            azzerato. */}
+        {(daPagare.length > 0 || filtroAttivo) && (
+          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
+            {filtroAttivo
+              ? `${daPagare.length} di ${tutteDaPagare.length} da pagare — i totali in alto restano quelli interi.`
+              : `Tutte e ${tutteDaPagare.length}.`}
+          </p>
+        )}
         {daPagare.length === 0 ? (
           <p className="testo-sala text-b58-charcoal-soft/60">Nessuna fattura da pagare.</p>
         ) : (
           <ul className="space-y-2">
-            {daPagare.map((inv) => {
+            {ordinate(daPagare).map((inv) => {
               const urgency = dueUrgency(inv.due_date);
               return (
                 <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
@@ -852,6 +955,7 @@ export default function FattureFornitoriHome() {
                   )}
 
                   <RigaNote inv={inv} />
+                  <RigaCredito inv={inv} />
                   {(docPerId === inv.id || (inv.documenti ?? []).length > 0) && (
                     <RigaDocumenti inv={inv} />
                   )}
@@ -990,18 +1094,38 @@ export default function FattureFornitoriHome() {
         )}
       </div>
 
-      {pagate.righe.length > 0 && (
+      )}
+
+      {sezione === "pagate" && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
           <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Pagate di recente</h2>
+          {/* 🔴 IL CASO VUOTO SI DICE (29/08/2026): a marzo sara' il primo
+              giorno, e una sezione che sparisce quando e' vuota lascia chi
+              la cerca a chiedersi se l'ha sognata. */}
+          {pagate.righe.length === 0 && (
+            <p className="testo-sala text-b58-charcoal-soft/60">
+              Nessuna fattura pagata{filtroAttivo ? " fra quelle che corrispondono ai filtri" : " ancora"}.
+            </p>
+          )}
           {/* Il taglio si dichiara: un elenco tagliato in silenzio sembra
               completo, ed è la stessa forma dello zero al posto del buco. */}
-          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-            {pagate.quante > pagate.righe.length
-              ? `Le ultime ${pagate.righe.length} di ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : " pagate in tutto"}.`
-              : `Tutte e ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : ""}.`}
-          </p>
+          {/* 🔴 «TUTTE E 0» (trovato guardando, il 29/08). Con un filtro che
+              non pesca niente questa riga diceva «Tutte e 0 che
+              corrispondono ai filtri» — e stava SOTTO un «Nessuna fattura
+              pagata» che diceva gia' la stessa cosa, in italiano.
+              ⚠️ A marzo sara' il primo giorno del locale, e questa
+              schermata sara' vuota per settimane: e' proprio lo stato in
+              cui verra' guardata di piu'. Un conteggio ha senso quando c'e'
+              qualcosa da contare. */}
+          {pagate.righe.length > 0 && (
+            <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
+              {pagate.quante > pagate.righe.length
+                ? `Le ultime ${pagate.righe.length} di ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : " pagate in tutto"}.`
+                : `Tutte e ${pagate.quante}${filtroAttivo ? " che corrispondono ai filtri" : ""}.`}
+            </p>
+          )}
           <ul className="space-y-2">
-            {pagate.righe.map((inv) => (
+            {ordinate(pagate.righe).map((inv) => (
               <li key={inv.id} className="bg-white rounded-lg border border-b58-charcoal/10 p-3">
                 <div className="testo-sala text-b58-charcoal-soft flex items-center justify-between gap-2 flex-wrap">
                   <span>
