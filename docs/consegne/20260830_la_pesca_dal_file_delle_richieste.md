@@ -3,6 +3,9 @@
 **Commit che sta sotto questo riepilogo:** `237c4ec`
 **Migrazioni introdotte:** nessuna. Questo blocco non aggiunge codice: usa il
 file per **decidere** invece che per registrare, e riporta se ha funzionato.
+**Stato in produzione:** le sei migrazioni dei blocchi 1-3 sono **applicate**
+il 30/08 dopo il push. In produzione ci sono **350 migrazioni**, l'ultima e'
+`20260830000007`.
 
 ---
 

@@ -2,7 +2,11 @@
 
 **Commit che sta sotto questo riepilogo:** `237c4ec`
 **Migrazioni introdotte:** `20260830000003` («Altro» torna agli alimenti).
-**Applicate in produzione:** nessuna. Aspetta il push.
+**Applicate in produzione:** ✅ **sì, il 30/08 dopo il push di Alessio.** In
+produzione ci sono **350 migrazioni**, l'ultima è `20260830000007`. Misurato
+dopo, non dedotto: **zero residui** (14 ricette come prima, zero prodotti,
+zero lotti, zero conti, zero produzioni, **zero lapidi**) e **zero trigger
+lasciati spenti**.
 **Già applicata stamattina, prima di ogni altra cosa:** `20260830000001`
 («Varie ed eventuali»), che era in coda dalla sessione precedente —
 verificata sul database vero: 344 migrazioni, la categoria vecchia non c'è

@@ -4,7 +4,11 @@
 **Migrazioni introdotte:** `20260830000004` (lo zero che non è un prezzo),
 `20260830000005` (il costo dichiara se è intero), più la parte di
 `20260830000007` che classifica `stock_consumptions.quantita_senza_costo`.
-**Applicate in produzione:** nessuna. Aspettano il push.
+**Applicate in produzione:** ✅ **sì, il 30/08 dopo il push di Alessio.** In
+produzione ci sono **350 migrazioni**, l'ultima è `20260830000007`. Misurato
+dopo, non dedotto: **zero residui** (14 ricette come prima, zero prodotti,
+zero lotti, zero conti, zero produzioni, **zero lapidi**) e **zero trigger
+lasciati spenti**.
 
 ---
 

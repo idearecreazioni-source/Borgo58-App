@@ -5,7 +5,11 @@
 `20260830000006` (i due legami parlano italiano), `20260830000007` (le tre
 colonne nuove dichiarano che fanno quando cambia l'unità — condivisa col
 blocco 2).
-**Applicate in produzione:** nessuna. Aspettano il push di Alessio.
+**Applicate in produzione:** ✅ **sì, il 30/08 dopo il push di Alessio.** In
+produzione ci sono **350 migrazioni**, l'ultima è `20260830000007`. Misurato
+dopo, non dedotto: **zero residui** (14 ricette come prima, zero prodotti,
+zero lotti, zero conti, zero produzioni, **zero lapidi**) e **zero trigger
+lasciati spenti**.
 **Applicate sul progetto di prova:** tutte, e verificate rompendole.
 
 ---
