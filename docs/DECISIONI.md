@@ -917,6 +917,28 @@ computer e PROVATO ricaricandolo, non solo generato.
 ricostruzione da zero SI LASCIANO COSÌ: il segnale è onesto e spiegato, e
 riscrivere un file già applicato costa una regola per guadagnare silenzio.
 
+* 🔴 **30/08 — UNA VERIFICA NON SPEGNE MAI IL REGISTRO DELLE CANCELLAZIONI.**
+Le verifiche delle migrazioni costruiscono e cancellano righe dentro il
+gestionale **vero** — fra cui un conto, che il 26/08 è stato deciso che sta
+**dentro** quel registro — e per poter ripulire lo **spegnevano**. Misurato
+il 30/08: **23 file di migrazione**, **30 occorrenze**, il più vecchio del
+20/08. La verifica resta (*provare dove conta è giusto*), la pulizia no.
+  ⚠️ **La strada scelta è una terza**, e non una delle due poste: la verifica
+  **non cancella, ANNULLA** — vive dentro una sotto-transazione che alla fine
+  viene fatta rientrare, quindi non c'è niente da cancellare e la guardia
+  resta accesa per tutto il tempo. ✅ **Provata**, non dedotta: dentro la
+  sotto-transazione il conto esiste, fuori restano zero conti, le lapidi sono
+  **10475 prima e 10475 dopo**, zero trigger spenti.
+  ⚠️ **Perché non le altre due.** Far *registrare* la cancellazione di prova e
+  poi togliere la lapide vuol dire scrivere righe finte in un registro
+  **esibibile** e poi correggerlo — il difetto chiuso il 19/08. Usare **solo
+  tabelle fuori dal perimetro** vuol dire provare lo scarico senza toccare i
+  conti, cioè provare un'altra cosa.
+  ⚠️ **Le 23 di prima NON si riscrivono** (regola del 23/08): sono congelate
+  in `tests/unita/registro-cancellazioni-acceso.test.js`, che diventa rossa
+  se ne compare una ventiquattresima — e anche se una delle 23 viene
+  sistemata e nessuno la toglie dall'elenco.
+
 ## Caparre
 
 * 26/08 — **La caparra entra in cassa NEL MOMENTO IN CUI LA RICEVI**, non alla
