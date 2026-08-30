@@ -69,3 +69,18 @@ export async function listMargineCarta() {
   if (error) throw error;
   return data;
 }
+
+// LE PROPOSTE DI ABBINAMENTO — 30/08/2026.
+//
+// 🔴 Il gestionale PROPONE quale prodotto comprato corrisponde a una voce
+// della carta, e nella proposta si vedono **produttore, annata e formato**:
+// «Grillo» contro «Grillo» è testa o croce (parole di Alessio).
+// ⚠️ **Propone e basta**: la funzione del database non scrive niente, e il
+//    collegamento nasce solo quando lui tocca «Collega».
+// ⚠️ L'annata **non ha una colonna**: per la decisione del 30/08 vive dentro
+//    la descrizione della confezione, e la proposta mostra quella per intero.
+export async function proposteAbbinamento() {
+  const { data, error } = await supabase.rpc("abbinamenti_carta_proposti");
+  if (error) throw error;
+  return data ?? [];
+}

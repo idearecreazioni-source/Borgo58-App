@@ -4,6 +4,7 @@ import {
   createBarItem,
   listBarItems,
   listMargineCarta,
+  proposteAbbinamento,
   setBarItemActive,
   updateBarItem,
 } from "../../lib/api/barItems";
@@ -44,6 +45,9 @@ export default function BevandeVini() {
   //    finiscono per dire due numeri diversi.
   const [prodotti, setProdotti] = useState([]);
   const [margini, setMargini] = useState(new Map());
+  // 🔴 LE PROPOSTE (30/08): quale prodotto comprato somiglia a questa voce.
+  //    Raccolte per voce, perché è lì che si guardano.
+  const [proposte, setProposte] = useState(new Map());
   // ⚠️ «NON L'HO LETTO» NON È «NON C'È NIENTE», e vale per tutti e due.
   //    Un elenco di prodotti vuoto perché la lettura è fallita si legge
   //    «non hai nessun prodotto in magazzino», e una carta senza margini
@@ -62,6 +66,17 @@ export default function BevandeVini() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
+  const caricaProposte = () =>
+    leggi(proposteAbbinamento()).then((righe) => {
+      if (nonLetto(righe)) return setProposte(righe);
+      const per = new Map();
+      for (const r of righe) {
+        if (!per.has(r.bar_item_id)) per.set(r.bar_item_id, []);
+        per.get(r.bar_item_id).push(r);
+      }
+      setProposte(per);
+    });
+
   const caricaMargini = () =>
     leggi(listMargineCarta()).then((righe) =>
       setMargini(nonLetto(righe) ? righe : new Map(righe.map((r) => [r.bar_item_id, r])))
@@ -70,6 +85,7 @@ export default function BevandeVini() {
   useEffect(() => {
     load();
     caricaMargini();
+    caricaProposte();
     // ⚠️ Le bevande comprate stanno fra gli alimentari come tutto il resto:
     //    una bottiglia e' un prodotto, non una categoria a parte.
     leggi(listIngredients()).then(setProdotti);
@@ -78,7 +94,7 @@ export default function BevandeVini() {
   // Dopo ogni modifica che tocca il collegamento o la resa il margine cambia:
   // si ricarica quello che e' cambiato SUL SERVER, mai quello che si sta
   // scrivendo (trappola del 12/08).
-  const dopoModifica = () => load().then(caricaMargini);
+  const dopoModifica = () => load().then(caricaMargini).then(caricaProposte);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -155,6 +171,53 @@ export default function BevandeVini() {
           />
           <Didascalia>vuoto = si vende intera</Didascalia>
         </label>
+
+        {/* 🔴 LA PROPOSTA (30/08). Il gestionale dice quale prodotto comprato
+            somiglia a questa voce, e **si vedono produttore, annata e
+            formato**: «Grillo» contro «Grillo» è testa o croce.
+            ⚠️ **Propone, non decide**: finché non si tocca «Collega» non
+               succede niente, e il menu qui sopra resta la strada di sempre.
+            ⚠️ **L'annata non ha una colonna** (decisione del 30/08: l'annata
+               è una confezione): si legge dentro la descrizione, ed è per
+               questo che la descrizione si mostra per intero invece di
+               essere riassunta.
+            ⚠️ Compare solo dove la voce NON è già collegata e solo se c'è
+               qualcosa da proporre: una proposta a caso si accetta guardando
+               di sfuggita, e da lì in poi il magazzino scarica il vino
+               sbagliato senza che nessun errore lo dica. */}
+        {!v.ingredient_id && !nonLetto(proposte) && (proposte.get(v.id) ?? []).length > 0 && (
+          <span className="basis-full flex flex-wrap items-center gap-2">
+            <span className="testo-sala text-b58-charcoal-soft">Forse è:</span>
+            {(proposte.get(v.id) ?? []).slice(0, 3).map((pr) => (
+              <button
+                key={pr.ingredient_id}
+                type="button"
+                onClick={() =>
+                  updateBarItem(v.id, { ingredient_id: pr.ingredient_id })
+                    .then(dopoModifica)
+                    .catch((err) => setError(err.message))
+                }
+                className="tocco-bottone inline-flex flex-col items-start text-left rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors px-3 py-1"
+              >
+                <span className="testo-sala text-b58-charcoal font-medium">{pr.prodotto}</span>
+                {(pr.confezioni ?? []).length > 0 ? (
+                  <span className="testo-sala text-b58-charcoal-soft">
+                    {[pr.confezioni[0].marca, pr.confezioni[0].formato, pr.confezioni[0].descrizione]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                ) : (
+                  /* ⚠️ «Non ne hai ancora comprato» è un'informazione, non un
+                     vuoto: dice che di quel prodotto non c'è nessuna
+                     confezione su cui leggere annata e formato. */
+                  <span className="testo-sala text-b58-charcoal-soft/70 italic">
+                    di questo non hai ancora comprato nessuna confezione
+                  </span>
+                )}
+              </button>
+            ))}
+          </span>
+        )}
 
         {nonLetto(margini) ? (
           <span className="testo-sala text-b58-terracotta-dark">
