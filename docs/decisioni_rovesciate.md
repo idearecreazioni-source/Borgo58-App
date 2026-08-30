@@ -124,8 +124,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 65 | 28/08/2026 | le migrazioni si applicano per istruzioni, non in blocco |
 | 66 | 29/08/2026 | la legenda dei colori si toglie dalla schermata |
 | 67 | 30/08/2026 | un piatto di finger food si riconosce dalla categoria |
+| 68 | 30/08/2026 | "Altro" sta in entrambi i mondi: sdoppiarla darebbe due righe che dicono la stessa cosa |
 
-⚠️ **Righe: 68.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 69.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2634,3 +2635,33 @@ che non viene mai salvata perché non passa da nessun deposito.
    sei giorni ha impedito di vedere il difetto — perché chi rileggeva trovava
    una spiegazione convincente. *Un commento che difende una riga sbagliata
    è più difficile da smentire della riga.*
+
+---
+
+## 68 · 30/08/2026 — «"Altro" sta in entrambi i mondi: sdoppiarla darebbe due righe che dicono la stessa cosa»
+
+1. **Cosa era stato deciso, e quando.** Il **29/08/2026**, nel commento
+   della migrazione che ha dato ai materiali di consumo le loro categorie:
+   *«"Altro" sta in entrambi apposta — sdoppiarla darebbe due righe che
+   dicono la stessa cosa»*.
+
+2. **La ragione di allora.** Due contenitori generici per lo stesso mondo
+   sono due posti dove finisce la stessa roba, e chi cerca deve guardare in
+   tutti e due. Un contenitore solo, condiviso fra alimenti e materiali,
+   toglie il caso.
+
+3. **Cosa si decide adesso.** Alessio ha chiesto che «Imballaggi e asporto»
+   diventi **«Varie ed eventuali»** — l'asporto non lo farà. Quindi i
+   materiali hanno adesso **due** contenitori generici: quello nuovo e
+   «Altro», che ha `ambito = 'entrambi'`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Vale ancora, ed è il
+   prezzo che accettiamo.** Lui ha chiesto quella categoria con quel nome, e
+   toccare «Altro» per far quadrare i conti vorrebbe dire prendere al posto
+   suo una decisione che non ha preso.
+   ⚠️ La tensione è **scritta dentro la migrazione `20260830000001`** invece
+   di essere nascosta, e la scelta gli è posta come domanda: quale delle due
+   tenere si chiude con tre righe, ma è sua.
+   ⚠️ E il conto del prezzo è piccolo, misurato: **zero prodotti** stanno in
+   una delle due — il momento per decidere è adesso, prima che qualcuno ci
+   metta dentro qualcosa.

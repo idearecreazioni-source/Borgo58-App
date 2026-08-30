@@ -36,7 +36,7 @@
 
 ### Quante sono, al 30/08/2026
 
-**49 richieste in tutto: 25 aperte**, **3 scartate da lui**, **20 chiuse**. Chiuse la notte del 30/08: le nove del Ricettario (R1-R9), i due pulsanti di MEMO (V4, V5), l'Agenda (A1 — la richiesta rimasta senza descrizione) e i due punti delle Comande (S1, S3).
+**51 richieste in tutto: 25 aperte**, **3 scartate da lui**, **22 chiuse**. Chiuse la notte del 30/08: le nove del Ricettario (R1-R9), i due pulsanti di MEMO (V4, V5), l'Agenda (A1 — quella rimasta senza descrizione), i due punti delle Comande (S1, S3) e la categoria dei materiali (M4).
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -95,6 +95,7 @@ lui, e non so cosa sia.
 |---|---|---|---|---|
 | M1 | **Sulla scheda di un materiale di consumo spariscono cinque campi**: «Fotografa l'etichetta», «Provenienza» con «Produzione interna (orto)», «Conservazione» (e con essa l'etichetta gialla «messo dalla macchina»), e — la più importante — **«È un alimento»**, che è la casella con cui la carta forno tornerebbe in mezzo al baccalà. | 29/08/2026 | Sua schermata («Carta forno») | fatta · commit di stanotte |
 | M2 | **Categorie e unità di misura proprie dei materiali**, al posto di quelle alimentari (oggi la carta forno è in categoria «Altro»). Ha chiesto esplicitamente che le proponga io e che lui le corregga leggendo. | 29/08/2026 | Sua richiesta | fatta · migrazione `20260829000024` |
+| M4 | **«Imballaggi e asporto» diventa «Varie ed eventuali»** — l'asporto non lo farà. Le altre cinque categorie dei materiali vanno bene così. | 30/08/2026 | Sua decisione dopo aver guardato le sei proposte | fatta · migrazione `20260830000001` |
 | M3 | ⚠️ **Restano e sono giusti**: scorta minima, «avvisami se il prezzo sale», il fornitore. E **i valori senza senso rimasti** («tutto l'anno», «temperatura ambiente») **non si cancellano**: sono solo sul progetto di prova e spariranno col reset. | 29/08/2026 | Sua decisione | scartata da Alessio |
 
 ---
@@ -163,6 +164,14 @@ lui, e non so cosa sia.
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
 | D1 | **Tre tabelle restano da decidere** se entrano nel registro: `price_history` (il mandato dice di non deciderla da lì), `reservation_deposits` (non ha una colonna `id` e sparisce a cascata con la pulizia della privacy), `order_tables` (non ha una chiave primaria vera). | 29/08/2026 | Blocco 5 del 29/08 | in attesa |
+
+---
+
+## Il computer e il telefono
+
+| # | Richiesta | Chiesta il | Da dove viene | Stato |
+|---|---|---|---|---|
+| T1 | **Dopo un riavvio del computer, dal telefono si vede solo bianco**: il gestionale di prova non riparte da solo e il tunnel punta a una porta vuota. Ha imparato a rilanciarlo a mano, ma è una cosa che dovrà fare per sempre e che nessuno gli dice. | 30/08/2026 | Successo altre due volte il 29/08 | fatta a metà · c'è il file da copiare, l'installazione è sua |
 
 ---
 
