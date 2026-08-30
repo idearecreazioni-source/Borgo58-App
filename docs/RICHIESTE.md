@@ -53,13 +53,13 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
-**55 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**21 in attesa** · **0 in corso** · **31 fatte** · **3 scartate da lui**.
-La somma fa **55**, cioè il numero delle righe: se non tornasse, questo
+**63 richieste in tutto**, e ognuna sta in uno dei quattro stati:
+**23 in attesa** · **0 in corso** · **37 fatte** · **3 scartate da lui**.
+La somma fa **63**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **21** ancora aperte, **6** si possono fare adesso e
-**15** aspettano qualcun altro (un consulente, la banca, un
+Delle **23** ancora aperte, **6** si possono fare adesso e
+**17** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
 <!-- FINE CONTEGGIO -->
@@ -222,6 +222,21 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | # | Richiesta | Chiesta il | Da dove viene | Quando | Stato |
 |---|---|---|---|---|---|
 | T1 | **Dopo un riavvio del computer, dal telefono si vede solo bianco**: il gestionale di prova non riparte da solo e il tunnel punta a una porta vuota. Ha imparato a rilanciarlo a mano, ma è una cosa che dovrà fare per sempre e che nessuno gli dice. | 30/08/2026 | Successo altre due volte il 29/08 | — | fatta · commit `2e93004`, e confermato da lui il 30/08: riavvia il computer e il telefono si apre da solo, senza toccare niente |
+
+---
+
+## Magazzino e fatture — dalle sue foto del 30/08
+
+| # | Richiesta | Chiesta il | Da dove viene | Quando | Stato |
+|---|---|---|---|---|---|
+| G1 | **Il riquadro «cosa non è sceso» dice quanto manca ma non SU QUANTO.** Senza il paragone quel numero non si può giudicare: 0,2 g su 1,5 kg sono polvere, 0,2 g su 0,3 g sono tutto. | 30/08/2026 | Sua foto | — | fatta · migrazione `20260830000008` |
+| G2 | **L'unità si adatta**: 0,2 g invece di 0.0002 kg. *Un peso che ha bisogno di quattro decimali è nell'unità sbagliata.* | 30/08/2026 | Sue parole | — | fatta · commit del 30/08 |
+| G3 | **Il punto inglese**: nella stessa schermata convivevano «0.309» e «1,37 l». Cercato il telaio: dieci punti in sei file. | 30/08/2026 | Sua foto | — | fatta · commit del 30/08 |
+| G4 | **I prodotti dell'elenco devono aprirsi al tocco**: oggi non reagiscono. | 30/08/2026 | Richiesta esplicita | — | fatta · commit del 30/08 |
+| G5 | **Il titolo e la riga dei numeri finiscono sotto l'orologio del telefono.** ⚠️ NON diagnosticata: non si può fotografare il suo telefono. Misurato che l'app si apre a tutto schermo ma con la striscia di sistema **opaca**, quindi in quella modalità il contenuto non può finirci sotto — il che punta a Safari o a un semplice scorrimento. | 30/08/2026 | Sua foto | aspetta | in attesa · serve che lui dica se apre dall'icona o dal browser |
+| G6 | **Il blocco del totale delle fatture va allineato a sinistra sul telefono e a destra sul computer.** *«Sul cellulare mi sembrano storte.»* | 30/08/2026 | Sue parole | — | fatta · commit del 30/08 |
+| G7 | **La proposta bottiglia comprata → riga della carta**, con produttore, annata e formato visibili. Propone, non decide. | 30/08/2026 | Sua decisione | — | fatta · migrazioni `20260830000009`→`…011` |
+| G8 | **Sul gestionale di prova la pagina si ricarica tornando da un'altra app.** ✅ **Diagnosticata**: è il server di sviluppo, non il telefono e non l'app — il suo client, quando il collegamento cade e torna, ricarica la pagina da solo. Provato dall'inizio alla fine. **Sul sito pubblicato quel client non c'è.** Nessuna cura costruita: è una decisione sua. | 30/08/2026 | Sue parole | aspetta | in attesa · serve che lui provi su borgo58.it |
 
 ---
 
