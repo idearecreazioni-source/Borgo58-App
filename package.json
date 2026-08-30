@@ -37,6 +37,7 @@
     "dev:misura": "node scripts/dev-misura.mjs",
     "quesiti": "node scripts/quesiti-stampabili.mjs",
     "indice": "node scripts/indice-rovesciamenti.mjs",
+    "richieste": "node scripts/indice-richieste.mjs",
     "telefono": "node scripts/telefono.mjs"
   },
   "dependencies": {
