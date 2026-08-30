@@ -321,21 +321,51 @@ export function segnoDelTavolo({
   comandaInviata = false,
   daInviare = false,
   fasce = [],
+  quante = 0,
   inRitardo,
 }) {
+  // 🔴 LE FASCE SI DEDUPLICANO QUI DENTRO — 30/08/2026, e l'ha trovato una
+  // prova nuova, non una rilettura. La riga diceva `fasce.length > 1`, cioè
+  // *«più di una fascia»*, e contava i DOPPIONI: tre prenotazioni della
+  // stessa fascia davano «misto», che vuol dire «fasce diverse» ed era
+  // falso.
+  // ⚠️ Oggi non morde, perché l'unico chiamante (`segniDellaSala`) le
+  // deduplica prima. Ma la funzione è pubblica e il nome del parametro non
+  // dice «già deduplicate»: il difetto era armato per il prossimo che la
+  // chiama. Si toglie il caso invece di scriverlo in un commento.
+  const distinte = [...new Set(fasce.filter(Boolean))];
   const colore = selezionato
     ? "selezionato"
     : comandaInviata
       ? "inviata"
-      : fasce.length > 1
+      : distinte.length > 1
         ? "misto"
-        : (fasce[0] ?? null);
+        : (distinte[0] ?? null);
 
   // ⚠️ Il pieno vince sul vuoto: se c'è roba da mandare, quello è il gesto
   // che manca — anche quando una parte è già partita.
   const pallino = daInviare ? "pieno" : contoAperto && !comandaInviata ? "vuoto" : null;
 
-  return { colore, barrato: Boolean(inRitardo), pallino };
+  // 🔴 QUANTE PRENOTAZIONI CI SONO SOPRA — 30/08/2026, richiesta di Alessio.
+  //
+  // Lui: *«ho preso tre prenotazioni sullo stesso tavolo alla stessa ora e
+  // non è successo niente. E servono più di due tinte per dire che sono
+  // tre: due tinte dicono "due"»*.
+  //
+  // 🔴 MISURATO PRIMA DI CORREGGERE, costruendo la scena sul progetto di
+  // prova: tre prenotazioni sullo stesso tavolo alle 20:30 danno **una
+  // tinta sola** (`--color-b58-turno`). ⚠️ E non è che il doppio colore «si
+  // perda» da qualche parte: **la domanda non è mai stata fatta.** Il
+  // colore risponde a *«in che fascia arrivano»*, e tre prenotazioni alla
+  // stessa ora sono tutte nella stessa fascia — infatti `fasce` viene
+  // ridotta a un valore solo, ed è giusto.
+  //
+  // ⚠️ E LA CURA NON È UNA TERZA TINTA. Alessio ha ragione che due tinte
+  // dicono «due»: ma tre tinte direbbero «tre» e quattro no, e a quel punto
+  // servirebbe una legenda per un numero. **Un numero si scrive.** Il
+  // colore continua a dire la fascia, la cifra dice quante sono: due canali
+  // per due domande, come la sbarratura e il pallino.
+  return { colore, barrato: Boolean(inRitardo), pallino, quante: quante > 1 ? quante : 0 };
 }
 
 // =====================================================================
@@ -436,6 +466,11 @@ export function segniDellaSala({ sagome = [], gruppi = [], fatti = {} }) {
       comandaInviata: dentro.some((f) => f.comandaInviata),
       daInviare: dentro.some((f) => f.daInviare),
       fasce: [...new Set(dentro.flatMap((f) => f.fasce ?? []).filter(Boolean))],
+      // ⚠️ QUI NON SI TOGLIE IL DOPPIONE, e la differenza è tutta: le fasce
+      // si deduplicano (due prenotazioni della stessa fascia sono una
+      // fascia sola), le prenotazioni no — due prenotazioni sono due
+      // prenotazioni. È la stessa riga letta con due domande diverse.
+      quante: dentro.reduce((n, f) => n + (f.fasce?.length ?? 0), 0),
       inRitardo: dentro.some((f) => f.inRitardo),
     });
     for (const id of insieme) {
@@ -445,7 +480,15 @@ export function segniDellaSala({ sagome = [], gruppi = [], fatti = {} }) {
       // sbarratura. Un tavolo che aspetta di mandare in cucina continua ad
       // aspettare anche mentre lo si tocca.
       segni[id] = fatti[id]?.selezionato
-        ? { colore: "selezionato", barrato: delGruppo.barrato, pallino: delGruppo.pallino }
+        ? {
+            colore: "selezionato",
+            barrato: delGruppo.barrato,
+            pallino: delGruppo.pallino,
+            // ⚠️ Il numero NON si perde selezionando, come la sbarratura e
+            // il pallino: quante persone aspettano quel tavolo resta vero
+            // anche mentre lo si tocca.
+            quante: delGruppo.quante,
+          }
         : delGruppo;
     }
   }

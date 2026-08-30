@@ -110,7 +110,7 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
         //    punti d'altezza in tutto. Adesso il riquadro cresce nel vuoto
         //    della pianta e ne ha 241: la riga si può separare invece di
         //    tagliarla. *Il vincolo è caduto, non la regola.*
-        <p className="testo-sala-grande truncate text-b58-charcoal-soft leading-none">
+        <p className="testo-riquadro truncate text-b58-charcoal-soft">
           {prima.ora?.slice(0, 5)}
           {prima.persone ? ` · ${prima.persone}` : ""}
           {altre > 0 ? ` · +${altre}` : ""}
@@ -120,15 +120,25 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
       {/* Il nome, sulla riga intera: 205 punti invece dei 159 che
           restavano mettendogli l'orario accanto. Sono 46 punti, cioè tre
           lettere in più — e con nomi da 12-16 lettere sono la differenza
-          fra leggerlo e no. */}
+          fra leggerlo e no.
+          🔴 E DAL 30/08 VA A CAPO INVECE DI TRONCARSI. Sulla schermata di
+          Alessio si leggeva «BASE-Tavolo …»: misurato, «BASE-Tavolo Amato»
+          chiede 246 punti dove il riquadro ne ha 168, e nemmeno alla soglia
+          minima ci starebbe su una riga.
+          ⚠️ E questo è il nome PER CUI si guarda il riquadro: la nota del
+          24/08 diceva già la regola — *si tronca un nome secondario, non
+          quello per cui si guarda* — e qui era applicata al contrario.
+          ⚠️ `break-words` e non solo il ritorno a capo: un nome senza spazi
+          più lungo della riga uscirebbe dai bordi invece di andare a capo,
+          che è il difetto di prima con un'altra faccia. */}
       {nome && (
-        <p className="testo-sala-lontano truncate font-semibold text-b58-charcoal">
+        <p className="testo-riquadro-grande break-words font-semibold text-b58-charcoal">
           {nome}
         </p>
       )}
 
       {etichetta && (
-        <p className="testo-sala-grande text-b58-charcoal-soft leading-none">{etichetta}</p>
+        <p className="testo-riquadro text-b58-charcoal-soft">{etichetta}</p>
       )}
 
       {/* CHI AVEVA PRENOTATO, quando è una persona diversa da chi paga.
@@ -137,7 +147,7 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
           tavolo alla prenotazione. Tronca se il nome è lunghissimo — ma
           tronca UN nome secondario, non quello per cui si guarda. */}
       {etichetta && prima?.nome && prima.nome !== nome && (
-        <p className="testo-sala-grande truncate text-b58-charcoal-soft/80 leading-none">
+        <p className="testo-riquadro truncate text-b58-charcoal-soft/80">
           prenotato da {prima.nome}
         </p>
       )}
@@ -145,7 +155,7 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
       {/* ⚠️ Non è un riquadro vuoto: è un invito. «Chi paga?» dice insieme
           che il dato manca e che si prende toccando qui. */}
       {order && !cliente && (
-        <p className="testo-sala-lontano font-semibold text-b58-terracotta-dark">
+        <p className="testo-riquadro-grande font-semibold text-b58-terracotta-dark">
           Chi paga? →
         </p>
       )}

@@ -439,6 +439,42 @@ body {
       centra a occhio, e a occhio si sbaglia.
    ⚠️ 6 mm e' quasi il doppio della soglia dei testi (3,20) ed e' il gesto
       piu' frequente dell'Agenda: chiudere un impegno. */
+/* 🔴 IL TESTO DENTRO IL RIQUADRO DELLA PIANTA — 30/08/2026, richiesta di
+   Alessio: *«troppo grande da cellulare e troppo piccolo da pc»*, e sulla
+   sua schermata «BASE-Tavolo …» tagliato a meta'.
+   Le due frasi sembrano contraddirsi e non lo sono: **il riquadro si adatta
+   alla pianta, il testo dentro no.** Il riquadro e' posizionato in
+   PERCENTUALE del disegno — quindi si rimpicciolisce col telefono e cresce
+   col monitor — mentre il testo e' in centimetri veri, cioe' uguale
+   dappertutto. Da vicino il testo e' troppo grande per il riquadro, da
+   lontano troppo piccolo per lui.
+   ⚠️ LA CURA E' L'UNITA': dentro quel riquadro il testo si misura sul
+   RIQUADRO («cqw» = un centesimo della sua larghezza), non sullo schermo.
+   ⚠️ CON UN PAVIMENTO IN CENTIMETRI VERI, e non e' un dettaglio: su un
+   riquadro molto stretto una proporzione pura scenderebbe sotto i 3,20 mm,
+   che e' la soglia sotto cui in questo progetto un testo non si legge. E
+   con un tetto, o su un monitor grande diventerebbe un cartellone.
+   ⚠️ Serve «container-type» sul contenitore («.pannello-pianta»): senza,
+   «cqw» si misura sulla finestra e la cura non fa niente — in silenzio. */
+.pannello-pianta {
+  container-type: inline-size;
+}
+
+.testo-riquadro {
+  font-size: clamp(calc(var(--pxcm) * 0.32), 7cqw, calc(var(--pxcm) * 0.45));
+  line-height: 1.15;
+}
+
+.testo-riquadro-grande {
+  /* ⚠️ IL PAVIMENTO E' 3,20 mm, non 4: e' la soglia del progetto, e un
+     pavimento piu' alto della soglia e' proprio cio' che rendeva il testo
+     «troppo grande da cellulare» — su uno schermo denso vinceva sempre lui
+     e la proporzione non serviva a niente. Misurato: con 4 mm il nome
+     chiedeva 246 punti dentro un riquadro da 168. */
+  font-size: clamp(calc(var(--pxcm) * 0.32), 11cqw, calc(var(--pxcm) * 0.75));
+  line-height: 1.15;
+}
+
 .spunta-grande {
   width: calc(var(--pxcm) * 0.6);
   height: calc(var(--pxcm) * 0.6);

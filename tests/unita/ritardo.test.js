@@ -201,10 +201,14 @@ describe("La precedenza dei segni sulla sala", () => {
     // diventasse un colore come gli altri, questa diventerebbe rossa — e
     // sarebbe giusto, perché quel giorno il tavolo in ritardo smetterebbe di
     // dire a che ora doveva arrivare, o smetterebbe di rispondere al dito.
+    // ⚠️ `quante` è entrato in questo oggetto il 30/08 e ha reso rosse due
+    // prove che confrontano il segno PER INTERO. È il verso giusto: un
+    // canale nuovo sul segno di un tavolo deve costringere a rileggere le
+    // prove che lo descrivono, non passare inosservato.
     const scelto = segnoDelTavolo({ selezionato: true, fasce: ["presto"], inRitardo: true });
-    expect(scelto).toEqual({ colore: "selezionato", barrato: true, pallino: null });
+    expect(scelto).toEqual({ colore: "selezionato", barrato: true, pallino: null, quante: 0 });
     const solo = segnoDelTavolo({ fasce: [], inRitardo: true });
-    expect(solo).toEqual({ colore: null, barrato: true, pallino: null });
+    expect(solo).toEqual({ colore: null, barrato: true, pallino: null, quante: 0 });
   });
 });
 
@@ -307,7 +311,12 @@ describe("Il tavolone si colora intero", () => {
       gruppi,
       fatti: { t8: { selezionato: true }, t9: { inRitardo: true } },
     });
-    expect(segni.t8).toEqual({ colore: "selezionato", barrato: true, pallino: null });
+    expect(segni.t8).toEqual({
+      colore: "selezionato",
+      barrato: true,
+      pallino: null,
+      quante: 0,
+    });
   });
 });
 
@@ -393,5 +402,67 @@ describe("la fascia che deve ancora arrivare", () => {
 
   it("regge senza l'elenco delle servite", () => {
     expect(fascePerIlTavolo(["primo"], fasce, undefined)).toEqual(["presto"]);
+  });
+});
+
+// =====================================================================
+// QUANTE PRENOTAZIONI CI SONO SUL TAVOLO — 30/08/2026
+// =====================================================================
+// 🔴 Il caso che conta è **tre alla stessa ora**: è quello di Alessio, ed è
+// l'unico in cui il colore non può dire niente — tre prenotazioni della
+// stessa fascia sono una fascia sola, e la deduplicazione è giusta. Una
+// prova su tre ore diverse misurerebbe la fascia, non il conteggio.
+describe("Quante prenotazioni ci sono sul tavolo", () => {
+  it("🔴 tre alla stessa ora: UN colore, ma il numero dice tre", () => {
+    const s = segnoDelTavolo({ fasce: ["pieno", "pieno", "pieno"], quante: 3 });
+    expect(s.colore).toBe("pieno");
+    expect(s.quante).toBe(3);
+  });
+
+  it("una sola non porta nessun numero", () => {
+    // Una pastiglia con dentro «1» su ogni tavolo prenotato sarebbe rumore:
+    // il colore lo dice già che c'è qualcuno.
+    expect(segnoDelTavolo({ fasce: ["pieno"], quante: 1 }).quante).toBe(0);
+    expect(segnoDelTavolo({ fasce: [], quante: 0 }).quante).toBe(0);
+  });
+
+  it("le fasce si deduplicano, le prenotazioni no", () => {
+    // È la stessa riga letta con due domande diverse, e la prova la tiene
+    // ferma: se un giorno il conteggio cominciasse a deduplicare, tre
+    // prenotazioni alla stessa ora tornerebbero a dire «una».
+    const sagome = [{ id: "a" }];
+    const segni = segniDellaSala({
+      sagome,
+      gruppi: [],
+      fatti: { a: { fasce: ["tardi", "tardi", "tardi"] } },
+    });
+    expect(segni.a.colore).toBe("tardi");
+    expect(segni.a.quante).toBe(3);
+  });
+
+  it("su un tavolone si sommano i tavoli", () => {
+    const sagome = [{ id: "t7" }, { id: "t8" }];
+    const segni = segniDellaSala({
+      sagome,
+      gruppi: [{ tavoli: ["t7", "t8"] }],
+      fatti: { t7: { fasce: ["presto"] }, t8: { fasce: ["presto"] } },
+    });
+    // Due prenotazioni su due tavoli accostati sono due prenotazioni sullo
+    // stesso tavolone: il numero è del gruppo, come il colore.
+    expect(segni.t7.quante).toBe(2);
+    expect(segni.t8.quante).toBe(2);
+  });
+
+  it("🔴 il numero NON si perde selezionando il tavolo", () => {
+    // Come la sbarratura e il pallino: quante persone aspettano quel tavolo
+    // resta vero anche mentre lo si tocca.
+    const sagome = [{ id: "a" }];
+    const segni = segniDellaSala({
+      sagome,
+      gruppi: [],
+      fatti: { a: { selezionato: true, fasce: ["pieno", "pieno"] } },
+    });
+    expect(segni.a.colore).toBe("selezionato");
+    expect(segni.a.quante).toBe(2);
   });
 });

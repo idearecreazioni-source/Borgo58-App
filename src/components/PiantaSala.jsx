@@ -882,6 +882,50 @@ export default function PiantaSala({
                   </text>
                 )}
               </g>
+              {/* 🔴 QUANTE PRENOTAZIONI CI SONO SOPRA — 30/08/2026, richiesta
+                  di Alessio: *«tre prenotazioni sullo stesso tavolo alla
+                  stessa ora e non è successo niente. E servono più di due
+                  tinte per dire che sono tre: due tinte dicono "due"»*.
+                  🔴 MISURATO costruendo la scena: tre prenotazioni alle 20:30
+                     su T3 danno **una tinta sola**, ed è giusto — sono tutte
+                     della stessa fascia. La domanda «quante sono» non era
+                     mai stata fatta.
+                  ⚠️ E NON È UNA TERZA TINTA: tre tinte direbbero «tre» e
+                     quattro no, e servirebbe una legenda per un numero.
+                     **Un numero si scrive.** Il colore continua a dire la
+                     fascia; la pastiglia dice quante — due canali per due
+                     domande, come la sbarratura e il pallino.
+                  ⚠️ FUORI DALLA SAGOMA, in alto a destra: dentro ci stanno
+                     il nome e la cifra dei coperti, e la decisione del
+                     18/08 dice che non ci entra altro. Sul bordo non ruba
+                     spazio a nessuna delle due. */}
+              {/* 🔴 LA CIFRA SI CONTRORUOTA, e questa l'ha trovata l'OCCHIO e
+                  non il codice: sul telefono la pianta si mette in piedi
+                  (`rotate(-90)` su tutto il disegno) e il «3» usciva
+                  coricato. Le scritte della sagoma hanno la loro
+                  controrotazione dal 14/08; le pastiglie che c'erano prima
+                  sono cerchi, e su un cerchio girare non si vede.
+                  ⚠️ `rotate(90)` DOPO il `translate`: così gira attorno al
+                  centro della pastiglia invece che attorno all'origine della
+                  sagoma — che la manderebbe da un'altra parte. */}
+              {info?.quante > 1 && (
+                <g
+                  transform={`translate(${bx + box.larghezza} ${by})${
+                    verticale ? " rotate(90)" : ""
+                  }`}
+                >
+                  <circle r="26" fill="var(--color-b58-charcoal)" />
+                  <text
+                    y="12"
+                    textAnchor="middle"
+                    fontSize="34"
+                    fontWeight="600"
+                    fill="var(--color-b58-parchment)"
+                  >
+                    {info.quante}
+                  </text>
+                </g>
+              )}
               {/* Qui c'era un pallino che segnava «spostato solo per oggi».
                   Tolto su richiesta di Alessio: quale tavolo ha spostato
                   lo sa, l'ha appena fatto lui — e un segno che non serve
@@ -982,7 +1026,11 @@ export default function PiantaSala({
           // riquadro, e due riquadri uno dentro l'altro costavano 24 punti di
           // altezza su 487 — che è quello che faceva sforare la casella
           // dell'ora (Alessio, 19/08).
-          className="absolute overflow-auto"
+          // ⚠️ `pannello-pianta`: rende questo riquadro il METRO del testo
+          //    che ci sta dentro (30/08). Vedi il commento in index.css —
+          //    senza, il testo si misura sulla finestra e resta uguale
+          //    mentre il riquadro cambia taglia.
+          className="pannello-pianta absolute overflow-auto"
           style={
             verticale
               ? {

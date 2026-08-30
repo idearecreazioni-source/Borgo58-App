@@ -96,6 +96,17 @@ export default function LegendaDellaSala() {
               </li>
             ))}
           </ul>
+          {/* 🔴 IL NUMERO NON E' UN COLORE, e per questo sta FUORI
+              dall'elenco della precedenza — 30/08/2026. L'elenco qui sopra
+              risponde a *«quando su un tavolo c'è più di una cosa, quale
+              vince»*: il numero non gareggia con nessuno, si somma. Metterlo
+              in fila con le tinte direbbe che a volte le sostituisce. */}
+          <p className="testo-sala text-b58-charcoal mt-2">
+            <strong>La pastiglia scura col numero</strong> — quante prenotazioni ci sono
+            su quel tavolo, quando è più di una. Il colore dice in che fascia arrivano,
+            e tre prenotazioni alla stessa ora hanno tutte la stessa fascia: il numero è
+            l&apos;unica cosa che può dire quante sono.
+          </p>
           <p className="testo-sala text-b58-charcoal-soft mt-2">
             I confini delle tre fasce non sono ore fisse: vengono dagli orari di quel
             servizio, e una domenica di pranzo non ha gli stessi di una cena.
