@@ -125,8 +125,12 @@ rossa da sola il giorno che l'indice resta indietro.
 | 66 | 29/08/2026 | la legenda dei colori si toglie dalla schermata |
 | 67 | 30/08/2026 | un piatto di finger food si riconosce dalla categoria |
 | 68 | 30/08/2026 | "Altro" sta in entrambi i mondi: sdoppiarla darebbe due righe che dicono la stessa cosa |
+| 69 | 30/08/2026 | i materiali di consumo tengono due contenitori generici |
+| 70 | 30/08/2026 | il nome del tavolo si mostra grande e va a capo |
+| 71 | 30/08/2026 | toccare una preparazione apre il modulo di registrazione |
+| 72 | 30/08/2026 | una porzione per confezione non si può scrivere |
 
-⚠️ **Righe: 69.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 73.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2665,3 +2669,101 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ E il conto del prezzo è piccolo, misurato: **zero prodotti** stanno in
    una delle due — il momento per decidere è adesso, prima che qualcuno ci
    metta dentro qualcosa.
+
+## 69 · 30/08/2026 — «i materiali di consumo tengono due contenitori generici»
+
+1. **Cosa era stato deciso e quando.** Poche ore prima, il **30/08 di
+   mattina** (rovesciamento n. 68): «Varie ed eventuali» prende il posto di
+   «Imballaggi e asporto», e **«Altro» non si tocca** — perché toccarlo
+   avrebbe voluto dire prendere al posto di Alessio una decisione che non
+   aveva preso. La tensione era scritta nella migrazione `20260830000001` e
+   posta a lui come domanda.
+
+2. **La ragione di allora.** Un contenitore generico condiviso fra alimenti
+   e materiali toglie il caso «in quale dei due ho messo la carta forno?».
+   E soprattutto: la scelta era sua, non mia.
+
+3. **Cosa si decide adesso.** Ha risposto: **«Altro» esce dai materiali** e
+   resta ai soli alimenti. Fra i materiali il generico è uno solo, il suo.
+   Migrazione `20260830000003`, con la sanatoria per i **4 prodotti non
+   alimentari** che stavano dentro «Altro» sul progetto di prova (in
+   produzione: **zero**, misurato).
+
+4. **Perché la ragione di allora non vale più.** Non è che fosse sbagliata:
+   **era una domanda, e la domanda ha avuto risposta**. La ragione vera del
+   n. 68 non era «due contenitori vanno bene», era «la scelta è di Alessio».
+   ⚠️ **E la finestra era stretta**: la sanatoria è gratis finché nessun
+   prodotto vero sta in mezzo. Misurato prima di muoversi — zero in
+   produzione — e fatta adesso invece che fra un mese.
+
+## 70 · 30/08/2026 — «il nome del tavolo si mostra grande e va a capo»
+
+1. **Cosa era stato deciso e quando.** La **notte del 30/08**, poche ore
+   prima: sulla schermata di Alessio si leggeva «BASE-Tavolo …» tagliato a
+   metà, e la cura era stata mandarlo **a capo** lasciandolo grande
+   (`testo-riquadro-grande`, fino a 7,5 mm).
+
+2. **La ragione di allora.** *Si tronca un nome secondario, non quello per
+   cui si guarda il riquadro* — regola del 24/08. Un nome intero, grande, su
+   più righe, invece di un nome tagliato.
+
+3. **Cosa si decide adesso.** Alessio ha scelto la seconda strada:
+   **piccolo e intero**, cioè `testo-riquadro`, che parte da 3,20 mm.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora per metà**:
+   il nome non si tronca, e su quello non si è tornati indietro. Quello che
+   cambia è il prezzo dell'altra metà — grande e su tre righe si mangiava il
+   riquadro, che in servizio deve dire **anche** l'ora e i coperti. Le sue
+   parole: *un nome tagliato in servizio non si legge comunque*, quindi fra
+   le due strade vince quella che lascia spazio al resto.
+   ⚠️ E 3,20 mm resta **la soglia del progetto**, non un'eccezione concessa
+   qui: la regola del 24/08 — *3,20 è il minimo, non l'obiettivo* — continua
+   a valere per il biglietto della cucina e per tutto il resto.
+
+## 71 · 30/08/2026 — «toccare una preparazione apre il modulo di registrazione»
+
+1. **Cosa era stato deciso e quando.** Il **29/08**, costruendo la schermata
+   delle Produzioni: toccare una preparazione la seleziona e apre sotto il
+   modulo con dosi, peso uscito, scadenza e nota, già pronto.
+
+2. **La ragione di allora.** La schermata risponde a *«ho appena finito di
+   cucinare»*: portare in un gesto solo dalla scelta alla registrazione
+   sembrava la strada più corta.
+
+3. **Cosa si decide adesso.** Alessio ha separato i due gesti: **toccare una
+   preparazione la mette fra le cose da fare e non apre niente**; il modulo
+   si apre **solo** da «Registrala», con la preparazione già scelta.
+
+4. **Perché la ragione di allora non vale più.** Il gesto unico non era più
+   corto: era **ambiguo**. Lo stesso tocco diceva «questa mi interessa» e
+   «sto per registrarla», e la schermata restava lunga anche quando si stava
+   solo guardando cosa c'era da fare — che sul tablet in cucina si sente.
+   ⚠️ **E il prezzo si paga, quindi va scritto**: per registrare una cosa
+   appena finita adesso servono **due gesti** invece di uno. È la strada che
+   ha chiesto lui, ed è una domanda del riepilogo del 30/08.
+
+## 72 · 30/08/2026 — «una porzione per confezione non si può scrivere»
+
+1. **Cosa era stato deciso e quando.** La **notte del 30/08**, poche ore
+   prima, dentro la migrazione `20260830000002`: il vincolo
+   `porzioni_per_unita > 1`, perché «una porzione per confezione **è** la
+   bottiglia intera, cioè due modi di dire la stessa cosa».
+
+2. **La ragione di allora.** Due modi di dire la stessa cosa, in questo
+   progetto, sono un difetto: prima o poi i due si separano e nessuno sa
+   quale credere.
+
+3. **Cosa si decide adesso.** Il limite scende a **`> 0`**. Migrazione
+   `20260830000007`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché era vera solo
+   per i prodotti misurati A PEZZI, e non me n'ero accorto.** L'ha
+   dimostrato la verifica, provando a cambiare l'unità per davvero: portando
+   un caffè da chili a grammi, «8 tazzine da un chilo» diventa **0,008 da un
+   grammo** — legittimo — e il vincolo lo **respingeva**. Cambiare unità a un
+   prodotto sarebbe fallito con un errore che non c'entrava niente.
+   ⚠️ È la regola del 24/08 letta al contrario: *un limite che rifiuta anche
+   i casi buoni è peggio di nessun limite*.
+   ⚠️ **E la cosa che il vincolo voleva impedire non è stata abbandonata**:
+   resta dove appartiene, nella schermata, che propone il campo **vuoto** e
+   lo dice sotto («vuoto = si vende intera»).
