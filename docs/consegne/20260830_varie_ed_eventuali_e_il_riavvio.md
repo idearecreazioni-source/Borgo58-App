@@ -3,6 +3,8 @@
 > **Blocco 5** del mandato del 30/08. Chiude **M4**; **T1** è fatta a metà,
 > e la metà che manca è di Alessio.
 >
+> **Il commit che sta sotto questo riepilogo: `2e93004`.**
+>
 > **Migrazione `20260830000001`** — applicata al progetto di prova,
 > **non ancora in produzione**: aspetta il suo push.
 
