@@ -275,7 +275,15 @@ export default function ArchivioDocumentiHome() {
             <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (opz., es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={`${inputClass} mb-3`} />
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="testo-sala-grande text-b58-charcoal-soft" />
+              {/* 🔴 SBORDAVA LA PAGINA (31/08/2026), misurato a 390 punti:
+                  il pulsante «Scegli file» lo disegna il browser con una
+                  larghezza sua, e senza `max-w-full` la riga arrivava a 401
+                  su 390 — cioe' la PAGINA scorreva di lato, che e' proprio
+                  cio' che la decisione del 21/08 vieta. Non un riquadro
+                  interno: la pagina.
+                  ⚠️ Ed era anche alto **5,29 mm** contro gli 8,5 di soglia:
+                  `tocco-campo` lo porta a norma. */}
+              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="max-w-full tocco-campo testo-sala-grande text-b58-charcoal-soft" />
               <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Carico…" : "+ Salva documento"}
               </button>
@@ -332,7 +340,11 @@ export default function ArchivioDocumentiHome() {
               <ul className="space-y-2">
           {sez.righe.map((d) => (
             <li key={d.id} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 flex items-start justify-between gap-3">
-              <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-left min-w-0">
+              {/* ⚠️ 6,53 mm misurati il 31/08: sotto la soglia degli 8,5.
+                  Il riquadro sembra grande — ha `p-4` — ma il padding non
+                  si preme: il bersaglio e' il pulsante, e finiva alto quanto
+                  le sue due righe di testo. Preesistente, non nato stanotte. */}
+              <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-left min-w-0 tocco-campo">
                 <div className="text-b58-charcoal font-medium">{d.title}</div>
                 <div className="testo-sala text-b58-charcoal-soft mt-0.5">
                   {d.document_date && <>{formatDate(d.document_date)} · </>}

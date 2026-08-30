@@ -113,7 +113,19 @@ export const NOTE_LARGHE = {
   // ⚠️ E la cura ha prodotto un difetto suo, trovato misurando: un
   // `[&>*]:min-w-0` scavalcava la larghezza minima del campo nota, che
   // invece di andare a capo si schiacciava a **14 punti**.
-  "src/pages/cassa/PrimaNota.jsx": "58 punti — righe con un gesto per riga",
+  // ✅ PRIMA NOTA: TOLTA DA QUI IL 31/08. Curata col telaio, come il
+  // Magazzino: la tabella e' diventata `ElencoAdattivo` — blocchetti sul
+  // telefono, tabella sul computer, campi dichiarati una volta sola.
+  // ⚠️ IL DEBITO ERA SCRITTO 58 PUNTI E MISURATO A 390 NE FACEVA **43**:
+  // il numero vecchio veniva da un'altra larghezza. *Un numero scritto in
+  // un commento e' una frase destinata a diventare falsa*, e questa e' la
+  // prova che il debito andava rimisurato prima di curarlo, non creduto.
+  // ⚠️ E lo zero non si legge sulla TASCA, che e' vuota: li' la stessa
+  // misura diceva zero sbordi prima della cura. Misurato su Borgo 58, con
+  // venti righe dentro — la regola del 30/08, *uno zero misurato su dati
+  // magri si legge come una cura*.
+  // Dopo, a 390 punti: sbordo **zero**, venti blocchetti; sul computer la
+  // tabella e' intatta con le cinque intestazioni.
   "src/pages/cassa/Previsione.jsx": "58 punti — report",
   "src/pages/menu-editor/BevandeVini.jsx": "8 punti — tabella di MODIFICA, i campi si scrivono dentro",
   "src/pages/fiscale/PrevisioneDettaglio.jsx": "non misurata a schermo — matrice",

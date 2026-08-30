@@ -306,6 +306,26 @@ export async function listConteggiCassa(entityId, limite = 10) {
   return data;
 }
 
+// QUANTO E' USCITO DALLA TASCA, E PER COSA — 31/08/2026
+//
+// 🔴 PERCHE' NON E' UN SALDO, ed e' la decisione del 30/08 alla lettera:
+// *«da li' escono soldi e basta, quindi un saldo sarebbe sempre negativo e
+// si leggerebbe come un debito. Quello che serve e' il CONTO: quanto e per
+// cosa»*.
+//
+// ⚠️ IL DIFETTO CHE CHIUDE ERA VIVO E MUTO. La funzione del database
+// esisteva dal 30/08 e **nessuna schermata la chiamava**: la Prima nota
+// mostrava sulla tasca il saldo di cassa come su ogni altro soggetto —
+// misurato il 31/08 con un'uscita da 40 euro, diceva **«Contante in cassa:
+// −40,00 €»**, cioe' esattamente il debito che quella decisione vietava.
+// E' la famiglia «tutto acceso, e muto» (13/08): costruito, giusto, e mai
+// chiamato da nessuno.
+export async function spesoDallaTasca(dal = null, al = null) {
+  const { data, error } = await supabase.rpc('speso_dalla_tasca', { p_dal: dal, p_al: al });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getCashBalance(entityId) {
   const { data, error } = await supabase
     .from("v_cash_balance")

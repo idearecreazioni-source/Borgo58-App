@@ -132,7 +132,7 @@ export default function DocumentoDetail() {
         <input
           value={doc.title}
           onChange={(e) => setField("title", e.target.value)}
-          className="font-display text-xl text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none w-full mb-4"
+          className="font-display text-xl tocco-campo text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none w-full mb-4"
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">

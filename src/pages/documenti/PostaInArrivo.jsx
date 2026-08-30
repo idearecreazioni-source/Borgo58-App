@@ -1207,7 +1207,28 @@ export default function PostaInArrivo() {
                             {errore.messaggio}
                           </p>
                         )}
+                        {/* 🔴 SU «NIENTE DA FARE» NON SI CONFERMA NIENTE
+                            (31/08/2026, visto aprendo la schermata). Su
+                            un'azione di tipo `nessuna` comparivano due
+                            pulsanti: **«Conferma "Senza titolo"»** e «Non
+                            farlo» — sotto una frase che diceva «Nessuna
+                            azione qui».
+                            ⚠️ «Senza titolo» non era un difetto di
+                            disegno: e' il titolo di ripiego che il
+                            gestionale scrive davvero su quelle azioni —
+                            misurato sul database, tutte e tre le `nessuna`
+                            in attesa lo portano. Il difetto era offrire di
+                            confermarlo.
+                            ⚠️ E' la famiglia del 27/08 — *un «si'» puo'
+                            essere la risposta a una domanda che nessuno ha
+                            fatto*: la' il pulsante ricompariva quando
+                            mancava un'informazione, qui quando non c'e'
+                            niente da fare.
+                            ⚠️ Il gesto vero c'era gia' ed e' uno solo:
+                            «togli la mail», in fondo alla mail. */}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {a.tipo !== "nessuna" && (
+                            <>
                           <button
                             type="button"
                             disabled={inCorso === a.id || !!bloccato}
@@ -1224,6 +1245,8 @@ export default function PostaInArrivo() {
                           >
                             {etichettaRifiuto(a)}
                           </button>
+                            </>
+                          )}
                           {/* Il carico non ha un «modifica»: le sue righe si
                               aprono una alla volta da sole. */}
                           {CAMPI[a.tipo]?.length > 0 && (

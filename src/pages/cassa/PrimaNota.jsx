@@ -5,6 +5,7 @@ import {
   deleteCashMovement,
   getCashBalance,
   listCashMovements,
+  spesoDallaTasca,
   listCausali,
 } from "../../lib/api/cash";
 import { getEntities } from "../../lib/api/entities";
@@ -19,6 +20,7 @@ import {
 } from "../../lib/constants";
 import { downloadCsv } from "../../lib/csv";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import ElencoAdattivo from "../../components/ElencoAdattivo";
 import CampoGiornata from "../../components/CampoGiornata";
 import { letturaTagliata } from "../../lib/lettureTagliate";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
@@ -121,14 +123,27 @@ export default function PrimaNota() {
       .catch((e) => setError(e.message));
   }, []);
 
+  // 🔴 IL CONTO DELLA TASCA, NON IL SUO SALDO (31/08/2026).
+  //    La decisione del 30/08 lo dice per esteso: da li' escono soldi e
+  //    basta, quindi un saldo sarebbe SEMPRE negativo e si leggerebbe come
+  //    un debito. Misurato il 31/08 aprendo la schermata con un'uscita da
+  //    40 euro dentro: diceva «Contante in cassa: −40,00 €».
+  const [contoTasca, setContoTasca] = useState(null);
+
   const reload = () => {
     if (!entityId) return Promise.resolve();
     return Promise.all([
       listCashMovements({ entityId, from: from || undefined, to: to || undefined }),
       getCashBalance(entityId),
-    ]).then(([mov, bal]) => {
+      // ⚠️ Si chiede SOLO sulla tasca: la funzione ha il suo portiere e
+      //    sugli altri soggetti non avrebbe niente da dire.
+      entities?.tasca && entityId === entities.tasca.id
+        ? spesoDallaTasca(from || null, to || null)
+        : Promise.resolve(null),
+    ]).then(([mov, bal, conto]) => {
       setMovements(mov);
       setBalance(bal);
+      setContoTasca(conto);
     });
   };
 
@@ -274,7 +289,25 @@ export default function PrimaNota() {
           ← Cassa
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          {balance && (
+          {/* 🔴 SULLA TASCA IL CONTO, NON IL SALDO (31/08/2026) — la
+              decisione del 30/08 alla lettera. Quanto e' uscito e per
+              cosa: un numero che si legge per quello che e', invece di un
+              saldo negativo che si legge come un debito. */}
+          {inTasca && (
+            <span className="testo-sala text-b58-charcoal-soft">
+              Speso dalla tasca:{" "}
+              <span className="font-medium text-b58-charcoal">
+                {formatEUR((contoTasca ?? []).reduce((t, r) => t + Number(r.totale || 0), 0))}
+              </span>
+              {(contoTasca ?? []).length > 0 && (
+                <span>
+                  {" — "}
+                  {contoTasca.map((r) => r.causale + " " + formatEUR(r.totale)).join(" · ")}
+                </span>
+              )}
+            </span>
+          )}
+          {!inTasca && balance && (
             <span className="testo-sala text-b58-charcoal-soft">
               Contante in cassa:{" "}
               <span className={`font-medium ${Number(balance.balance) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
@@ -296,7 +329,15 @@ export default function PrimaNota() {
               onChange={(e) => {
                 const scelto = e.target.value;
                 setEntityId(scelto);
-                if (entities?.tasca && scelto === entities.tasca.id) setDirection("uscita");
+                // ⚠️ E il mezzo torna al contante per la stessa ragione: chi
+                //    aveva scelto «Banca» su un altro soggetto si vedrebbe
+                //    respinto per una scelta fatta PRIMA di cambiare
+                //    soggetto, e con un messaggio che parla di conti
+                //    correnti invece che della tasca.
+                if (entities?.tasca && scelto === entities.tasca.id) {
+                  setDirection("uscita");
+                  setForm((f) => ({ ...f, mezzo: "cassa" }));
+                }
               }}
               className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
             >
@@ -356,8 +397,19 @@ export default function PrimaNota() {
 
           {/* Da dove passa il denaro. Fino al 13/08/2026 il modulo
               trattava TUTTO come contante: registrare un bonifico faceva
-              calare il cassetto di soldi che non ne erano usciti. */}
-          <div className="flex gap-2 mb-3">
+              calare il cassetto di soldi che non ne erano usciti.
+
+              🔴 SULLA TASCA NON SI SCEGLIE (31/08/2026): la tasca E' il
+              contante che Alessio tiene addosso — lo dice la decisione del
+              30/08 e lo dice la frase qui sopra. Offrire «Banca» era
+              offrire la possibilita' di sbagliare, e il rifiuto che ne
+              usciva MANDAVA FUORI STRADA: misurato il 31/08, il database
+              risponde «non c'e' nessun conto corrente registrato: aprilo
+              da Cassa → Conti correnti» — cioe' manda ad aprire un conto
+              in banca per una spesa fatta in contanti di tasca propria.
+              ⚠️ Stessa forma di Uscita/Entrata qui sopra: non si spegne un
+              pulsante, si toglie una scelta che non esiste. */}
+          <div className={`flex gap-2 mb-3 ${inTasca ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, mezzo: "cassa" }))}
@@ -549,78 +601,79 @@ export default function PrimaNota() {
               Totali periodo: <span className="text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</span>{" "}
               <span className="text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full testo-sala">
-                <thead>
-                  <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-                    <th className="py-2 font-medium">Data</th>
-                    {/* ⚠️ Da dove escono o entrano i soldi è la distinzione
-                        che DECIDE questa schermata, e fino al collaudo del
-                        17/08 non c'era: due uscite comparivano identiche, e
-                        per capire quale era uscita dalla banca bisognava
-                        fare i conti coi riquadri dei saldi qui sopra.
-                        Cassa e banca sono due saldi che non si sommano
-                        mai: leggerli confusi è leggerli sbagliati. */}
-                    <th className="py-2 font-medium">Da dove</th>
-                    <th className="py-2 font-medium">Causale</th>
-                    <th className="py-2 font-medium">Documento</th>
-                    <th className="py-2 font-medium text-right">Importo</th>
-                    <th className="py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movements.map((m) => (
-                    <tr key={m.id} className="border-b border-b58-charcoal/5 last:border-0">
-                      <td className="py-2 text-b58-charcoal-soft">{formatDate(m.movement_date)}</td>
-                      <td className="py-2 whitespace-nowrap">
-                        <span
-                          className={`testo-sala rounded-full px-2 py-0.5 ${
-                            m.mezzo === "banca"
-                              ? "bg-b58-charcoal/10 text-b58-charcoal"
-                              : "bg-b58-gold/20 text-b58-gold-dark"
-                          }`}
-                        >
-                          {m.mezzo === "banca" ? "Banca" : "Contante"}
-                        </span>
-                      </td>
-                      <td className="py-2 text-b58-charcoal">
-                        {m.causale?.label ?? "—"}
-                        {m.is_owner_injection && (
-                          <span className="testo-sala text-b58-charcoal-soft bg-b58-cream-dark rounded-full px-2 py-0.5 ml-1.5">
-                            versamento titolare
-                          </span>
-                        )}
-                        {m.business_purpose && (
-                          <div className="testo-sala text-b58-charcoal-soft">{m.business_purpose}</div>
-                        )}
-                        {/* ⚠️ La nota non si vedeva da nessuna parte, e le
-                            causali di sistema si chiamano «Uscita» e «Altra
-                            uscita»: due righe diverse comparivano con la
-                            stessa parola sopra. La descrizione la scrive
-                            lui nella nota — mostrarla è tutto ciò che
-                            serviva perché una riga si riconosca. */}
-                        {m.note && <div className="testo-sala text-b58-charcoal-soft">{m.note}</div>}
-                      </td>
-                      <td className="py-2 text-b58-charcoal-soft testo-sala">
-                        {labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento)}
-                        {m.document_reference ? ` · ${m.document_reference}` : ""}
-                        {m.harvest_region && <div>Regione: {m.harvest_region}</div>}
-                      </td>
-                      <td className={`py-2 text-right font-medium ${m.direction === "entrata" ? "text-b58-olive-dark" : "text-b58-terracotta-dark"}`}>
-                        {m.direction === "entrata" ? "+" : "−"}{formatEUR(m.amount)}
-                      </td>
-                      <td className="py-2 text-right">
-                        <ConfermaDistruttiva
-                          etichetta="Rimuovi"
-                          cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
-                          onConferma={() => handleDelete(m.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* 🔴 LA TABELLA DIVENTA IL TELAIO (31/08/2026), e il difetto
+                l'ha trovato una MISURA, non una rilettura: aperta a 390
+                punti con venti righe dentro, questa tabella sbordava di
+                **43 punti** — e lo sbordo era DENTRO il riquadro
+                (`overflow-x-auto`), cioe' nel punto esatto in cui la
+                decisione del 21/08 «mai scorrimento laterale» sembrava
+                rispettata e non lo era.
+                ⚠️ E LO ZERO DELLA TASCA NON PROVAVA NIENTE: sulla tasca,
+                che e' vuota, la stessa misura diceva zero sbordi. E' la
+                regola del 30/08 — *uno zero misurato su dati magri si
+                legge come una cura*. Il difetto e' comparso solo tornando
+                su Borgo 58, dove le righe ci sono.
+                ⚠️ La forma non e' nuova: e' `ElencoAdattivo`, il telaio
+                del 29/08 — blocchetti sul telefono, tabella sul computer,
+                coi campi dichiarati UNA VOLTA SOLA. */}
+            <ElencoAdattivo
+              righe={movements}
+              chiave={(m) => m.id}
+              titolo={(m) => formatDate(m.movement_date)}
+              intestazioneTitolo="Data"
+              campi={(m) => [
+                {
+                  chiave: "mezzo",
+                  etichetta: "Da dove",
+                  // ⚠️ Cassa e banca sono due saldi che non si sommano mai:
+                  //    leggerli confusi e' leggerli sbagliati. Fino al
+                  //    collaudo del 17/08 questa colonna non c'era, e due
+                  //    uscite comparivano identiche.
+                  valore: m.mezzo === "banca" ? "Banca" : "Contante",
+                },
+                {
+                  chiave: "causale",
+                  etichetta: "Causale",
+                  // ⚠️ La nota va insieme alla causale e non in una colonna
+                  //    sua: le causali di sistema si chiamano «Uscita» e
+                  //    «Altra uscita», quindi due righe diverse comparirebbero
+                  //    con la stessa parola sopra. La descrizione la scrive
+                  //    lui nella nota.
+                  valore: [
+                    m.causale?.label ?? "—",
+                    m.is_owner_injection ? "(versamento titolare)" : "",
+                    m.business_purpose || "",
+                    m.note || "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                },
+                {
+                  chiave: "documento",
+                  etichetta: "Documento",
+                  valore: [
+                    labelFor(CASH_DOCUMENT_TYPES, m.tipo_documento),
+                    m.document_reference || "",
+                    m.harvest_region ? `Regione: ${m.harvest_region}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                },
+                {
+                  chiave: "importo",
+                  etichetta: "Importo",
+                  forte: true,
+                  valore: `${m.direction === "entrata" ? "+" : "−"}${formatEUR(m.amount)}`,
+                },
+              ]}
+              aperta={(m) => (
+                <ConfermaDistruttiva
+                  etichetta="Rimuovi"
+                  cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
+                  onConferma={() => handleDelete(m.id)}
+                />
+              )}
+            />
           </>
         )}
       </div>
