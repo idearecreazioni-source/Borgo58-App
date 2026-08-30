@@ -33,6 +33,60 @@
 // E' la stessa forma di `vincoli_muti_noti` del 25/08: una soglia
 // dichiarata invece di un controllo che grida sempre e viene spento.
 
+// =====================================================================
+// IL CENSIMENTO RIFATTO — 30/08/2026, e la DEFINIZIONE del metro
+// =====================================================================
+// 🔴 LA DEFINIZIONE, scritta perche' il metro non possa piu' essere
+//    interpretato. **Sbordo di una schermata = quanto contenuto non ci sta,
+//    OVUNQUE si trovi.** Si calcola come il massimo fra:
+//      (a) quanto la PAGINA eccede la finestra, e
+//      (b) per ogni riquadro che sa scorrere di suo, quanto il suo
+//          contenuto eccede lo spazio che ha (`scrollWidth - clientWidth`).
+//
+// ⚠️ **LA DISTINZIONE NON E' «riquadro fatto apposta» CONTRO «riquadro che
+//    sborda»**: alla larghezza di un telefono quella distinzione non esiste.
+//    E': un riquadro che **non scorre** e' una RETE — sta li' perche' una
+//    parola lunghissima non rompa la pagina — e non conta; un riquadro che
+//    **scorre** e' un DIFETTO, e conta esattamente quanto scorre. La
+//    decisione del 21/08 dice «mai scorrimento laterale» e la cura del
+//    25/08 e' «blocchetti sul telefono, tabella sul computer»: non c'e'
+//    nessun caso in cui a 375 punti scorrere di lato sia voluto.
+//
+// ✅ IL METRO E' STATO RIPROVATO su quattro casi di risposta nota prima di
+//    fidarsene, e uno doveva farlo fallire:
+//      · `/fiscale/andamento`  → **377**, identico al 29/08;
+//      · `/ricettario/menu`    → **0**, e deve essere zero;
+//      · `/fiscale/deducibilita` → 280 (il 29/08 erano 247) e `/agricolo`
+//        → 251 (erano 231): il numero e' cresciuto coi DATI del progetto
+//        di prova, non col codice;
+//      · e su **tutti e quattro** il metro «ingenuo» — quello che guarda
+//        solo `document.scrollWidth` — risponde **zero**. E' il caso che
+//        lo fa fallire, ed e' lo stesso errore del 29/08.
+//
+// 🔴 IL CENSIMENTO DEL 30/08: **71 schermate aperte a 375 punti, 9 larghe**
+//    (erano 15 il 29/08). In tutte e nove lo sbordo della PAGINA e' zero.
+//      457  /fiscale/previsioni/nuova   ← la piu' larga, e il 29/08 era
+//                                          dichiarata «non misurata»
+//      377  /fiscale/andamento
+//      280  /fiscale/deducibilita
+//      251  /agricolo
+//      170  /fiscale/deduzioni
+//       58  /cassa/previsione
+//       58  /cassa/prima-nota
+//        8  /editor-menu/bevande
+//        7  /personale/mance
+//
+// ⚠️ **SETTE SONO SPARITE DALL'ELENCO DEL 29/08, E NON TUTTE PERCHE' CURATE.**
+//    Il Magazzino lo e' davvero (curato il 29/08 sera). Tracciabilita',
+//    Clienti, Fornitori, Scontrinato, Personale e Cassa/Personale misurano
+//    zero **anche perche' sul progetto di prova quelle tabelle hanno meno
+//    righe di allora**: una tabella corta non sborda. *Uno zero misurato su
+//    dati magri non e' una cura.*
+//
+// 🔴 E IL SETACCIO HA UN PUNTO CIECO, misurato: `/personale/mance` sborda di
+//    7 punti e **non contiene nessuna `<table>`** — quindi questa rete non
+//    la vede e non la vedra' mai. Il setaccio copre le tabelle scritte a
+//    mano; un riquadro largo fatto di altro gli e' invisibile.
 // I documenti che nascono per la carta: li' la tabella e' la forma giusta,
 // e nasconderla sul telefono farebbe uscire un foglio sbagliato.
 export const PER_LA_CARTA = [
@@ -63,7 +117,7 @@ export const NOTE_LARGHE = {
   "src/pages/cassa/Previsione.jsx": "58 punti — report",
   "src/pages/menu-editor/BevandeVini.jsx": "8 punti — tabella di MODIFICA, i campi si scrivono dentro",
   "src/pages/fiscale/PrevisioneDettaglio.jsx": "non misurata a schermo — matrice",
-  "src/pages/fiscale/PrevisioneForm.jsx": "non misurata a schermo — modulo a matrice",
+  "src/pages/fiscale/PrevisioneForm.jsx": "457 punti misurati il 30/08 — modulo a matrice, ed e' la piu' larga di tutte",
   "src/pages/fiscale/Previsioni.jsx": "non misurata a schermo",
   "src/pages/haccp/TemperatureLog.jsx": "non misurata a schermo (registro vuoto sul progetto di prova)",
   "src/pages/calendario/PreventivoDetail.jsx": "non misurata a schermo (serve un preventivo aperto)",
