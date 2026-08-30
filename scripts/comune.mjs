@@ -12,7 +12,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 
 /** Il progetto di produzione. Se compare dove non deve, si interrompe tutto. */
 export const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
@@ -368,4 +368,92 @@ export function argomentiMigrazione(url, percorso) {
   if (!perIstruzioni) argomenti.push("--single-transaction");
   argomenti.push("-d", url, "-f", percorso);
   return { argomenti, atomica: !perIstruzioni };
+}
+
+// --- QUANDO E' STATA FATTA L'ULTIMA COPIA DI SICUREZZA ----------------
+//
+// 🔴 Serve al sesto freno di `npm run migra` (30/08/2026): non si tocca il
+// database vero se la copia e' vecchia. Qui c'e' la parte che GUARDA il
+// disco; la parte che DECIDE e' `backupTroppoVecchio()`, tenuta separata
+// apposta — cosi' si puo' provare a tavolino, senza dover invecchiare un
+// backup vero per vedere il rifiuto. E' la stessa separazione con cui in
+// questo progetto l'email di conferma e la sentinella si provano senza
+// spedire niente a nessuno.
+
+/** Quante ore puo' avere la copia prima che le migrazioni si fermino. */
+export const ORE_MASSIME_BACKUP = Number(process.env.BACKUP_MASSIMO_ORE || 24);
+
+/**
+ * L'ora locale scritta nel NOME di una cartella di backup, o null.
+ * Il formato e' quello di `timbroLocale()`: `2026-08-30_2059`.
+ *
+ * ⚠️ Si legge dal nome e non dalla data del file: il nome e' l'ora in cui
+ * la copia e' stata presa, e resta vera anche se la cartella viene
+ * copiata su una chiavetta. La data del file no.
+ */
+export function quandoDalNome(nome) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})$/.exec(nome);
+  if (!m) return null;
+  const [, a, me, g, h, mi] = m.map(Number);
+  const d = new Date(a, me - 1, g, h, mi, 0, 0);
+  // Una data impossibile (13 come mese, 32 come giorno) scivolerebbe nel
+  // mese dopo: si controlla che torni uguale invece di fidarsi.
+  if (d.getFullYear() !== a || d.getMonth() !== me - 1 || d.getDate() !== g) return null;
+  return d;
+}
+
+/**
+ * La copia di sicurezza piu' recente e COMPLETA, o null.
+ *
+ * ⚠️ «Completa» vuol dire che contiene `05_conteggi.txt`, che il backup
+ * scrive verso la fine: una cartella lasciata da un backup interrotto ha
+ * il nome con l'ora giusta e dentro non ha niente su cui contare le
+ * righe. Sarebbe **una copia recente che non e' una copia**, cioe' la
+ * cosa peggiore — un freno che si lascia soddisfare da un guscio.
+ */
+export function copiaPiuRecente(cartella) {
+  const radice = cartella || path.join(homedir(), "Desktop", "Backup Borgo 58");
+  if (!existsSync(radice)) return null;
+  let migliore = null;
+  for (const voce of readdirSync(radice, { withFileTypes: true })) {
+    if (!voce.isDirectory()) continue;
+    const quando = quandoDalNome(voce.name);
+    if (!quando) continue;
+    if (!existsSync(path.join(radice, voce.name, "05_conteggi.txt"))) continue;
+    if (!migliore || quando > migliore.quando) {
+      migliore = { nome: voce.name, quando, dove: path.join(radice, voce.name) };
+    }
+  }
+  return migliore;
+}
+
+/**
+ * Decide se si puo' procedere. Restituisce **null se va bene**, altrimenti
+ * la frase che dice cosa non va — in italiano, perche' finisce davanti a
+ * chi lancia il comando.
+ *
+ * ⚠️ I casi sono TRE e non due, ed e' la differenza che conta: «non c'e'
+ * nessuna copia» e «la copia e' vecchia» sono due guai diversi e mandano
+ * a guardare in due posti diversi. Un rifiuto unico li confonderebbe.
+ */
+export const oreTonde = (ore) => Math.round(ore * 10) / 10;
+
+export function backupTroppoVecchio(copia, adesso, oreMassime) {
+  if (!copia) {
+    return "Non trovo nessuna copia di sicurezza completa sul Desktop.";
+  }
+  const ore = (adesso.getTime() - copia.quando.getTime()) / 3_600_000;
+  if (ore < 0) {
+    // Una copia «del futuro» non e' un caso da scuola: succede se l'orologio
+    // del computer e' stato spostato, e allora tutti i conti sull'eta' sono
+    // senza senso. Si rifiuta invece di far finta di sapere.
+    return `La copia piu' recente (${copia.nome}) risulta fatta nel futuro: l'orologio del computer non torna.`;
+  }
+  if (ore > oreMassime) {
+    // ⚠️ Un decimale, non l'intero: con l'arrotondamento in giu' una copia di
+    //    mezz'ora si legge «ha 0 ore, e il limite e' 0», che sembra un errore
+    //    del programma invece di un rifiuto.
+    return `La copia piu' recente (${copia.nome}) ha ${oreTonde(ore)} ore, e il limite e' ${oreMassime}.`;
+  }
+  return null;
 }

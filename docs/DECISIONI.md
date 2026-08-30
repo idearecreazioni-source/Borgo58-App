@@ -800,6 +800,33 @@ mette il gestionale da sé.
 * 25/08 — In produzione NON deve nascere nessun conto bancario inventato: la
 banca la sceglie Alessio.
 
+## La tasca di Alessio
+
+* 🔴 30/08 — **LA TASCA È UN TERZO SOGGETTO, accanto a Borgo 58 e a Orto
+Borgo 58, e ha un saldo suo.** Alessio tiene contanti propri e ci compra roba
+per il progetto **senza fattura**, da prima che esistesse la partita IVA. Non
+è deducibile, e **lui non la dichiara**: vuole solo saperne il conto.
+  ⚠️ **Non è la stessa cosa delle anticipazioni del socio** (Blocco 7 del
+  15/08): quelle sono spese fatte **per conto della società**, che la società
+  poi pareggia. La tasca no — non c'è niente da pareggiare, e infatti **non
+  registra nessuna entrata**.
+* 🔴 30/08 — **LA TASCA REGISTRA SOLO USCITE, MAI ENTRATE.** Non è una
+convenzione: è cosa la tasca è. Un'entrata in tasca sarebbe denaro che il
+progetto restituisce ad Alessio, cioè un pareggio — che è precisamente la
+cosa che lui ha detto di non voler fare.
+* 🔴 30/08 — **DALLA TASCA SI PUÒ SCEGLIERE SOLO «INDEDUCIBILE», E
+SCEGLIERE ALTRO DEV'ESSERE IMPOSSIBILE.** Non «sconsigliato», non
+preselezionato: impossibile. ⚠️ **Il vincolo sta nel DATABASE, non nella
+schermata** — una regola nella schermata la aggira chiunque scriva da
+un'altra porta, ed è la stessa ragione per cui in questo progetto gli
+invarianti sono vincoli e non controlli di interfaccia.
+* 🔴 30/08 — **LA TASCA RESTA FUORI DALLA PROIEZIONE FISCALE PER
+COSTRUZIONE, non per promemoria.** Non un filtro da ricordarsi di scrivere in
+ogni schermata nuova: la separazione deve nascere dal fatto che la proiezione
+lavora **per soggetto** e la tasca è un soggetto a sé. ⚠️ *Una cosa tenuta
+fuori da un promemoria rientra alla prima schermata che nessuno si ricorda di
+filtrare.*
+
 ## HACCP
 
 * 23/08 — Nei registri lo storico infinito è sostituito da «cosa è successo oggi»
@@ -918,6 +945,25 @@ due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodot
 da un metro rivelatosi storto NON si citano più come fatti: o si rimisurano, o
 si scrivono con la scala accanto. La regola per esteso sta in CLAUDE.md §8.
 
+* 🔴 **30/08 — «NOVE SCHERMATE LARGHE» NON È UN NUMERO PULITO, E VA SCRITTO
+COL SUO PERCHÉ ACCANTO.** Il censimento del 30/08 dice **9 schermate larghe
+su 71 aperte a 375 punti**, contro le **15 del 29/08**. ⚠️ **Sei di quelle
+sparite non sono guarite**: Tracciabilità, Clienti, Fornitori, Scontrinato,
+Personale e Cassa/Personale misurano zero **anche perché sul progetto di
+prova quelle tabelle hanno meno righe di allora**. Una sola è curata davvero,
+il Magazzino.
+  ⚠️ **Una tabella corta non sborda, e uno zero misurato su dati magri non è
+  una cura.** Il numero va **rimisurato quando il magazzino avrà volume vero**
+  — non prima, perché prima direbbe sempre di sì.
+  ⚠️ **Perché la nota sta qui e non solo nel riepilogo del 30/08**: un
+  riepilogo ha la data nel nome ed è una fotografia per costruzione; questo
+  file dice cosa vale adesso. Senza la nota accanto, fra un mese «nove»
+  sembrerà un numero pulito e nessuno andrà a rimisurarlo.
+  ⚠️ **E il conto giusto è SEI, non sette**: il mandato di stasera diceva
+  sette, e la fonte — il [censimento del 30/08](consegne/20260830_i_sette_blocchi_del_pomeriggio.md)
+  — ne nomina **sette sparite di cui una curata**. Scritto sei perché è quello
+  che la misura dice.
+
 ## Fatture e amministrazione
 
 * 16/08 — UN RIFIUTO SI SOLLEVA DOVE NASCE IL PROBLEMA, non dove scatta il
@@ -937,10 +983,80 @@ accende da sola. ⚠️ Recuperata il 26/08 dai rovesciamenti, e non contraddice
 voce del 14/08 in *Sala e pianta*: là si toglieva il conteggio che decideva se
 un cliente poteva prenotare, qui si somma quello che la pianta dice oggi.
 
+## Il gestionale di prova e la copia del vero
+
+* 🔴 30/08 — **DOPO IL COLLAUDO IL GESTIONALE DI PROVA DIVENTA UNA COPIA DI
+QUELLO VERO.** Smette di essere un mondo inventato: quello che si prova si
+prova sui dati che ci sono davvero.
+* 🔴 30/08 — **LA DIREZIONE È UNICA — VERO → PROVA — E IL CONTRARIO DEV'ESSERE
+IMPEDITO, non sconsigliato.** Girata, i dati finti finiscono **sopra le
+ricette vere**. ⚠️ *Un divieto affidato a chi lancia il comando è un divieto
+che regge finché nessuno ha fretta*: la direzione va imposta dallo strumento,
+come già fa il controllo che tiene le prove automatiche lontane dalla
+produzione.
+* 30/08 — **QUANDO SI ALLINEA: all'accensione del computer, più una volta al
+giorno se resta acceso.** ⚠️ **Non a un'ora fissa**, e la ragione è sua: *il
+computer di notte è spento* — un lavoro pianificato alle tre di notte non
+girerebbe mai, e nessuno se ne accorgerebbe.
+* 🔴 30/08 — **LA COPIA DICE A SCHERMO DI QUANDO È.** Una copia senza data è
+indistinguibile da una copia di stamattina, e chi guarda un numero su un
+gestionale di prova deve sapere a quale giorno appartiene. ⚠️ È la stessa
+famiglia della fascia che dichiara su quale database si sta scrivendo (16/08):
+non serve accorgersi del segno, serve accorgersi **quando cambia**.
+* 🔴 30/08 — **LA COPIA NON PARTE SE C'È UN LAVORO IN CORSO: si ferma e dice
+perché.** Non aspetta, non salta il turno in silenzio, non sovrascrive.
+⚠️ *Una copia che parte in mezzo a un lavoro non fa danno alla produzione —
+che è in sola lettura — ma butta via il lavoro sulla prova, e lo butta senza
+dirlo.*
+* 🔴 30/08 — **L'ALLINEAMENTO È LA PROVA DEL BACKUP.** Ricaricare il
+gestionale vero dentro quello di prova **è** il ripristino provato che la
+decisione del 23/08 pretende. ⚠️ **E questo è il punto della decisione, non un
+effetto collaterale**: così la prova del ripristino smette di essere una cosa
+da ricordarsi e diventa una cosa che succede da sé. *La disciplina si degrada,
+l'automazione no.*
+* 30/08 — **A FINE COLLAUDO SI RESETTANO TUTTI E DUE I GESTIONALI**, non solo
+quello di prova.
+
 ## Backup
 
 * 23/08 — Il via libera alle migrazioni arriva solo dopo che il backup è fuori dal
 computer e PROVATO ricaricandolo, non solo generato.
+* 🔴 **30/08 — IL COMANDO DELLE MIGRAZIONI SI RIFIUTA DI TOCCARE IL
+GESTIONALE VERO SE L'ULTIMO BACKUP È PIÙ VECCHIO DI 24 ORE.** È il **sesto
+freno**, accanto ai cinque che c'erano. ⚠️ **La decisione del 23/08 era una
+regola scritta, ed è stata scavalcata il 30/08**: sei migrazioni sono entrate
+nel gestionale vero senza backup, e l'ultimo era del 23. *Una regola che vive
+come intenzione si degrada quando la giornata è lunga* — quindi diventa una
+condizione che ferma il programma, nella stessa forma della rete che già
+impedisce di applicare ciò che non è passato dal progetto di prova.
+  ⚠️ **IL LIMITE, DICHIARATO, E NON È PICCOLO**: il comando sa **quando** è
+  stata fatta la copia. **Non sa che sia stata portata fuori dal computer**, e
+  **non sa che il ripristino sia stato provato**. La decisione del 23/08 chiede
+  tutte e tre le cose: qui se ne automatizza **una**, e le altre due **restano
+  di Alessio** — dette a voce alta nel rifiuto stesso, invece di sparire dentro
+  un «fatto».
+  ⚠️ **Una copia recente ma INCOMPLETA non vale**: si pretende che la cartella
+  contenga il conteggio delle righe, che il backup scrive verso la fine. Una
+  cartella lasciata da un backup interrotto ha il nome con l'ora giusta e
+  dentro non ha niente — sarebbe *una copia recente che non è una copia*, cioè
+  un freno che si lascia soddisfare da un guscio.
+  ⚠️ **E il quando si legge dal NOME della cartella, non dalla data del file**:
+  il nome è l'ora in cui la copia è stata presa e resta vera anche se la
+  cartella viene messa su una chiavetta; la data del file cambierebbe a ogni
+  copia e direbbe «recente» di un backup vecchio spostato ieri.
+  ⚠️ **Il freno viene PRIMA degli altri cinque**, ed è una scelta: è quello che
+  protegge i dati, ed è il più rapido da soddisfare — un comando solo, meno di
+  un minuto. Il rifiuto lo nomina, perché *un rifiuto senza gesto d'uscita è un
+  vicolo cieco*.
+  ✅ **Provato come vuole la regola — due rotture su controlli diversi**: tolta
+  la pretesa che la copia sia completa diventa rossa **una** prova (quella sul
+  guscio); tolto il confronto sull'età ne diventano rosse **due** (il limite e
+  il suo bordo), e nessuna delle due è la prima. Più il freno **esercitato
+  dentro `npm run migra`**, non solo nelle sue funzioni: col limite forzato a
+  zero il comando si è fermato, col limite normale è passato oltre.
+  🔴 **Ed esercitarlo ha trovato un difetto che rileggerlo non aveva trovato**:
+  la riga di riscontro stampava «`undefined` ore fa».
+
 * 25/08 — Le tre migrazioni che si fermano nel loro blocco di verifica durante una
 ricostruzione da zero SI LASCIANO COSÌ: il segnale è onesto e spiegato, e
 riscrivere un file già applicato costa una regola per guadagnare silenzio.
@@ -966,6 +1082,33 @@ il 30/08: **23 file di migrazione**, **30 occorrenze**, il più vecchio del
   in `tests/unita/registro-cancellazioni-acceso.test.js`, che diventa rossa
   se ne compare una ventiquattresima — e anche se una delle 23 viene
   sistemata e nessuno la toglie dall'elenco.
+
+
+* 🔴 **30/08 — UNA PROVA NON TOCCA MAI LE TABELLE DOVE ALESSIO METTE ROBA
+SUA.** Non «le tocca con prudenza», non «le rimette a posto»: **non le
+tocca.** Una prova che scrive dentro le ricette, i prodotti, i fornitori o i
+conti veri lascia dietro di sé righe che nessuno può distinguere dalle sue —
+ed è già successo (il 26/08 una riga di prova è rimasta nel gestionale vero
+perché una variabile era stata riusata tre volte).
+  ⚠️ **La strada è quella scelta il 30/08 e vale come regola, non come
+  espediente**: la verifica **non cancella, ANNULLA** — vive dentro una
+  sotto-transazione fatta rientrare alla fine. Non c'è niente da cancellare,
+  quindi non c'è niente da sbagliare cancellando.
+  ⚠️ E ne discende la seconda metà, che è la stessa cosa detta dall'altro
+  verso: **il registro delle cancellazioni non si spegne mai.** Se non si
+  cancella niente, non c'è nessuna lapide da nascondere — e la guardia resta
+  accesa per tutto il tempo della prova.
+
+* 🔴 **30/08 — IL VOLUME PER LE PROVE NON SI TIENE IN MAGAZZINO: una prova si
+costruisce il volume che le serve e poi lo butta.** Non si lasciano in giro
+migliaia di righe finte «perché prima o poi serviranno a provare che regge».
+  ⚠️ **Non è una regola nuova: è quella del 27/08 applicata alla quantità** —
+  *un esempio si costruisce, non si prende in prestito*. Là diceva **da dove**
+  prendere i dati di una prova, qui dice **quanti**: le mille righe che
+  servono a far scattare un limite se le fabbrica la prova che le usa.
+  ⚠️ E il prezzo dell'altra strada è misurato, non temuto: un volume tenuto in
+  magazzino invecchia, e uno zero misurato su dati magri **si legge come una
+  cura** (è successo il 30/08 con sei schermate su nove).
 
 ## Caparre
 

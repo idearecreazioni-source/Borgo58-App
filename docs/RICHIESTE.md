@@ -53,13 +53,13 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
-**63 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**23 in attesa** · **0 in corso** · **37 fatte** · **3 scartate da lui**.
-La somma fa **63**, cioè il numero delle righe: se non tornasse, questo
+**70 richieste in tutto**, e ognuna sta in uno dei quattro stati:
+**28 in attesa** · **0 in corso** · **38 fatte** · **4 scartate da lui**.
+La somma fa **70**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **23** ancora aperte, **6** si possono fare adesso e
-**17** aspettano qualcun altro (un consulente, la banca, un
+Delle **28** ancora aperte, **9** si possono fare adesso e
+**19** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
 <!-- FINE CONTEGGIO -->
@@ -189,6 +189,12 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | C1 | **Finanziamenti da terzi dentro «Ce la faccio?».** | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
 | C2 | **Il caricamento dell'estratto conto**, rinviato da lui finché non sceglie la banca. | 15/08/2026 | Blocco 6 del mandato personale e tesoreria | aspetta | in attesa |
 | C3 | **Il simulatore col registratore fiscale virtuale**: prima si guarda cosa succede, poi si decide. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
+| C4 | 🔴 **Il pulsante «il cliente vuole fattura» in Comande.** Lo stato `fattura_da_emettere` **esiste già** nel database ed è **già isolato nei conteggi** — ma **dalla sala non lo si raggiunge**: manca il gesto alla chiusura del conto, e manca la strada per chiuderlo quando la fattura viene emessa. *Un cliente che chiede la fattura al tavolo è un caso normale, e oggi in sala non c'è niente da premere.* | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
+| C5 | **La chiusura dell'anno fiscale, con avviso se restano conti senza documento.** Riusa il meccanismo delle chiusure mensili, che esiste già e tiene lo storico delle chiusure precedenti senza riscrivere il passato. | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
+| C6 | **Produrre per la commercialista ciò che solo il gestionale ha**: valore del magazzino al 31/12, elenco dei beni durevoli comprati, conti senza documento, merce ricevuta senza fattura. ⚠️ **NIENTE ratei e risconti**: scartati da lui perché costerebbero un campo in più a ogni movimento, per sempre. | 30/08/2026 | Sua richiesta, coi confini messi da lui | aspetta | in attesa · la forma la deve dire la commercialista (quesito L22) |
+| C7 | **Caricare la chiusura ufficiale della commercialista per il confronto — SOLO SUI RICAVI.** ⚠️ **Non su tutta la chiusura**, ed è una sua decisione con la ragione dentro: competenza e cassa **non coincidono per costruzione**, e uno strumento che segnala quella differenza insegna a ignorare gli avvisi. Da costruire **quando avrà in mano il primo documento vero**, non prima. | 30/08/2026 | Sua decisione | aspetta | in attesa · aspetta il primo documento vero della commercialista |
+| C8 | 🔴 **Il collegamento al registratore telematico deve arrivare PRIMA dell'apertura.** Aperto il 19/08 e col suo mandato dal 20/08 (`docs/mandati/20260820_il_registratore_telematico.md`); il 30/08 Alessio ne ha **alzato la priorità**. ⚠️ Prima di comprare l'apparecchio va fatta al fornitore la domanda già scritta in `CLAUDE.md` §10 — *sa dire al gestionale che la carta è finita?* — perché quella risposta non si aggiunge dopo. | 19/08/2026, priorità alzata il 30/08 | Mandato del 20/08 + sua decisione | aspetta | in attesa · aspetta la scelta dell'apparecchio |
+| C9 | ✅ **`conti_senza_documento` non ha il controllo sul titolare nel suo corpo** — vero, **misurato il 30/08**. ⚠️ **Ma non è scoperta, e la cura giusta era già in casa**: **nessun ruolo la può eseguire** (`anon` no, `authenticated` no, `service_role` no), e le due sole funzioni che la chiamano — `conti_da_fiscalizzare` e `registra_conteggio_cassa` — hanno **entrambe** il portiere. È la cura (a) della regola del 27/08: *nessun utente → si chiude la porta, e non serve nessun portiere.* La porta era già chiusa. | 30/08/2026 | Sospetto del mandato, poi misurato | — | fatta · misurata e trovata già chiusa, nessuna modifica |
 
 ---
 
@@ -206,6 +212,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | si può fare adesso | in attesa |
 | N7 | **Il costo del personale e i premi** — la voce di spesa più grossa dell'anno non passa da nessun modulo. Fermo in attesa dei documenti veri di Gianna. | 15/08/2026 | Blocchi 1 e 2 del mandato personale e tesoreria | aspetta | in attesa · aspetta il prospetto del costo aziendale e il calendario delle paghe |
 | N8 | **Il simulatore di assunzione**: costo dal livello CCNL, non da un lordo digitato. | 15/08/2026 | Blocco 4 dello stesso mandato | aspetta | in attesa |
+| N11 | 🔴 **L'archivio a sezioni.** `documents.doc_type` esiste ed è obbligatorio, ma è **testo libero**: nessun vocabolario, nessun vincolo oltre al non-vuoto — quindi «Fattura», «fattura» e «Fatture» diventano **tre sezioni diverse**. Va chiuso l'elenco e mostrato l'archivio diviso. Le otto categorie sono sue: Fatture ricevute · Fornitori e DDT · Banca e finanziamenti · Contratti e affitti · Autorizzazioni e pratiche · Personale · Fisco e adempimenti · Attrezzature e garanzie. ⚠️ Vale la regola del 27/08: **una categoria spenta resta legale** per i documenti che la portano, non si distrugge. | 30/08/2026 | Sua richiesta, categorie sue | si può fare adesso | in attesa |
 
 ---
 
@@ -236,7 +243,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | G5 | **Il titolo e la riga dei numeri finiscono sotto l'orologio del telefono.** ⚠️ NON diagnosticata: non si può fotografare il suo telefono. Misurato che l'app si apre a tutto schermo ma con la striscia di sistema **opaca**, quindi in quella modalità il contenuto non può finirci sotto — il che punta a Safari o a un semplice scorrimento. | 30/08/2026 | Sua foto | aspetta | in attesa · serve che lui dica se apre dall'icona o dal browser |
 | G6 | **Il blocco del totale delle fatture va allineato a sinistra sul telefono e a destra sul computer.** *«Sul cellulare mi sembrano storte.»* | 30/08/2026 | Sue parole | — | fatta · commit del 30/08 |
 | G7 | **La proposta bottiglia comprata → riga della carta**, con produttore, annata e formato visibili. Propone, non decide. | 30/08/2026 | Sua decisione | — | fatta · migrazioni `20260830000009`→`…011` |
-| G8 | **Sul gestionale di prova la pagina si ricarica tornando da un'altra app.** ✅ **Diagnosticata**: è il server di sviluppo, non il telefono e non l'app — il suo client, quando il collegamento cade e torna, ricarica la pagina da solo. Provato dall'inizio alla fine. **Sul sito pubblicato quel client non c'è.** Nessuna cura costruita: è una decisione sua. | 30/08/2026 | Sue parole | aspetta | in attesa · serve che lui provi su borgo58.it |
+| G8 | **Sul gestionale di prova la pagina si ricarica tornando da un'altra app.** ✅ **Diagnosticata il 30/08**: è il **server di sviluppo**, non il telefono e non l'app — il suo client, quando il collegamento cade e torna, ricarica la pagina da sé. Provato dall'inizio alla fine. **Sul sito pubblicato quel client non c'è.** 🔴 **Alessio ha deciso di LASCIARLA COM'È**: nessuna cura costruita. ⚠️ La riga **resta scritta con la diagnosi accanto**, non cancellata — *una richiesta cancellata non si distingue da una dimenticata*, e il giorno che il sintomo tornasse sul sito vero questa diagnosi dice subito dove NON cercare. | 30/08/2026 | Sue parole | — | scartata da Alessio |
 
 ---
 

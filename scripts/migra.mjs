@@ -53,6 +53,10 @@ import {
   versioniDoppie,
   versioniNonNominate,
   argomentiMigrazione,
+  backupTroppoVecchio,
+  copiaPiuRecente,
+  ORE_MASSIME_BACKUP,
+  oreTonde,
 } from "./comune.mjs";
 import {
   controllaMigrazione,
@@ -246,6 +250,70 @@ if (mancanti.length === 0) {
   console.log("");
   process.exit(0);
 }
+
+// --- IL SESTO FRENO: NIENTE MIGRAZIONI SU UN BACKUP VECCHIO -----------
+//
+// 🔴 NASCE IL 30/08/2026, e nasce da un fatto e non da un timore: quella
+// sera sei migrazioni sono entrate nel gestionale vero **senza backup**,
+// contro la decisione del 23/08 — e a rilevarlo e' stata la sessione che
+// le aveva applicate, accusandosi da sola. L'ultimo backup era del 23.
+//
+// ⚠️ LA REGOLA C'ERA GIA' ED ERA UN'INTENZIONE. E' la stessa forma del
+// vincolo 0 (i riepiloghi): una regola scritta in un documento si degrada
+// quando la giornata e' lunga, e allora smette di proteggere proprio nel
+// momento in cui serve. Qui diventa una condizione che ferma il
+// programma.
+//
+// 🔴 IL LIMITE E' DICHIARATO, E NON E' PICCOLO: questo controllo sa
+// **QUANDO e' stata fatta la copia**. Non sa
+//   · che sia stata portata **fuori dal computer** — e un backup che vive
+//     sullo stesso disco del database che protegge non protegge da un
+//     disco rotto;
+//   · che il **ripristino sia stato provato** — un file generato non e' un
+//     backup: e' un file.
+// Quelle due meta' restano di Alessio, e nessun controllo dentro questo
+// programma puo' prendersele. La decisione del 23/08 le chiede tutte e
+// tre; qui se ne automatizza **una**, e le altre due si dicono a voce
+// alta invece di sparire dentro un «fatto».
+//
+// ⚠️ E LA CARTELLA VUOLE `05_conteggi.txt`: e' quello che dimostra che il
+// backup e' arrivato in fondo. Una cartella nata da un backup interrotto
+// a meta' ha un nome con l'ora giusta e dentro non ha niente su cui
+// contare le righe — cioe' sarebbe **una copia recente che non e' una
+// copia**. ⚠️ Lo zip invece NON si pretende: `backup.mjs` dichiara che se
+// lo zip fallisce la copia non e' persa, e pretenderlo qui direbbe il
+// contrario di quello che dice il comando che lo produce.
+//
+// ⚠️ IL QUANDO SI LEGGE DAL **NOME** DELLA CARTELLA, non dalla data del
+// file: il nome e' l'ora locale in cui la copia e' stata presa
+// (`timbroLocale()`), e resta vera anche se la cartella viene copiata,
+// spostata o messa su una chiavetta. La data del file cambierebbe a ogni
+// copia, e direbbe «recente» di un backup vecchio spostato ieri.
+{
+  const trovata = copiaPiuRecente(config.BACKUP_CARTELLA);
+  const motivo = backupTroppoVecchio(trovata, new Date(), ORE_MASSIME_BACKUP);
+  if (motivo) {
+    fermati(
+      "FERMO: non si tocca il gestionale vero senza una copia di sicurezza recente.",
+      `  ${motivo}`,
+      "",
+      `Il limite e' ${ORE_MASSIME_BACKUP} ore: oltre, un guasto si porterebbe via`,
+      "piu' di una giornata di lavoro, e le migrazioni sono precisamente il",
+      "momento in cui il database vero cambia forma.",
+      "",
+      "La via d'uscita e' un comando solo, e ci mette meno di un minuto:",
+      "  npm run backup",
+      "",
+      "⚠️ E il comando sa solo QUANDO e' stata fatta la copia. Che sia stata",
+      "portata fuori dal computer e che il ripristino sia stato provato",
+      "(npm run backup:ripristina) restano cose che deve fare Alessio: la",
+      "decisione del 23/08 ne chiede tre, qui se ne controlla una."
+    );
+  }
+  const ore = oreTonde((Date.now() - trovata.quando.getTime()) / 3_600_000);
+  console.log(`  copia di sicurezza: ${trovata.nome} (${ore} ore fa)`);
+}
+
 
 // --- Vincolo 0: il debito dei riepiloghi non si accumula --------------
 // ⚠️ Nasce il 16/08/2026 da un rilievo del validatore: il 15/08 quattro

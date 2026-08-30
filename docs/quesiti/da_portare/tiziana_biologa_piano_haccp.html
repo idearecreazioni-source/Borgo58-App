@@ -71,28 +71,27 @@ Il documento completo, con tutte le domande per tutti i consulenti, resta nel ge
 </div>
 
 <div class="quesito">
-  <h2>T3 · Le durate delle preparazioni, per tipo di conservazione</h2>
-  <p><strong>Contesto.</strong> Il gestionale calcola da sé le scadenze: dalla data di</p>
-<p>produzione o di ricevimento più la durata del prodotto. Quella durata</p>
-<p>oggi è quasi sempre vuota — sul progetto di prova, misurato il</p>
-<p>25/08/2026, <strong>3 prodotti su 132</strong> ne hanno una — e senza di lei lo</p>
-<p>scadenziario non ha niente da contare. È il motivo per cui l'avviso sui</p>
-<p>prodotti fermi è costruito e quasi muto: non è rotto, è che non sa</p>
-<p>quanto durano le cose.</p>
-<p><strong>Domanda.</strong> «Mi serve una tabella delle durate per tipo di</p>
-<p>conservazione: quanti giorni dura una preparazione in frigo, dopo</p>
-<p>l'abbattimento, sottovuoto e congelata? Vale per famiglie di prodotto</p>
-<p>(carne cotta, pesce crudo, salse, verdure lavorate) o va decisa</p>
-<p>preparazione per preparazione?»</p>
-<p><strong>Cosa cambia nell'app.</strong> Le durate diventano il valore proposto sulla</p>
-<p>scheda del prodotto e sulla produzione: il gestionale calcola la</p>
-<p>scadenza e la mette nello scadenziario, che oggi resta vuoto. ⚠️ Finché</p>
-<p>non arrivano, <strong>nessuna durata viene inventata dal sistema</strong>: una data</p>
-<p>di scadenza sbagliata su un registro esibibile è peggio di una data</p>
-<p>assente, perché nessuno la mette in dubbio.</p>
-<p><strong>Dove vive</strong>: <code>ingredients.shelf_life_days</code> e <code>storage_type</code>,</p>
-<p><code>src/pages/magazzino/Scadenze.jsx</code>, <code>src/pages/magazzino/Produzioni.jsx</code>.</p>
-<p><strong>Stato</strong>: aperto.</p>
+  <h2>T3 · ~~Le durate delle preparazioni, per tipo di conservazione~~ — RITIRATO</h2>
+  <p><strong>Stato: RITIRATO il 27/08/2026. Non va più chiesto a Tiziana.</strong></p>
+<p><strong>Perché.</strong> Il quesito chiedeva una tabella delle durate per tipo di</p>
+<p>conservazione — frigo, abbattitore, sottovuoto, congelato — da usare come</p>
+<p>valore proposto dal gestionale. **Alessio ha deciso che le durate le</p>
+<p>inserisce lui**, preparazione per preparazione, scrivendole una volta sulla</p>
+<p>ricetta: «questo ragù dura 5 giorni». Nessuna tabella da consultare, nessun</p>
+<p>valore proposto da nessuno.</p>
+<p>⚠️ <strong>E nella stessa decisione la durata è uscita dai prodotti COMPRATI</strong>: non</p>
+<p>si compila a mano e non la deduce MEMO. Quindi cade anche la premessa del</p>
+<p>quesito — «quella durata oggi è quasi sempre vuota» — perché quel campo non</p>
+<p>esiste più.</p>
+<p>⚠️ **Non è una domanda a cui è arrivata una risposta: è una domanda che ha</p>
+<p>smesso di avere senso.** Resta scritta invece di sparire, perché fra sei mesi</p>
+<p>qualcuno che legge lo scadenziario si chiederà perché nessuno abbia mai</p>
+<p>chiesto a una biologa quanto dura una salsa in frigo — e questa è la risposta.</p>
+<p>⚠️ <strong>Gli altri quesiti per Tiziana restano tutti aperti.</strong> Questo non tocca</p>
+<p>il piano HACCP, i registri, né la raccolta propria.</p>
+<p><strong>Dove viveva</strong>: <code>ingredients.shelf_life_days</code>, tolta dal database il 28/08</p>
+<p>con le migrazioni <code>20260828000003</code>→<code>…006</code>. Adesso la durata sta su</p>
+<p><code>recipes.durata_giorni</code>, e la scrive Alessio.</p>
 </div>
 <div class="risposta">
   <div class="etichetta">Risposta</div>
@@ -277,6 +276,37 @@ Il documento completo, con tutte le domande per tutti i consulenti, resta nel ge
 <p>dell'etichetta comincia a raccoglierle e compaiono nella scheda ricetta</p>
 <p>separate dagli allergeni veri. Se basta la dicitura generale, restano</p>
 <p>dove sono — un dato dell'ingrediente, che nessuno stampa.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>T10 · Devo tracciare le scadenze dei prodotti che compro?</h2>
+  <p><strong>Contesto.</strong> Il gestionale ha uno scadenziario che segnala le partite vicine</p>
+<p>alla scadenza, e chiede quindi che ogni carico porti con sé una data. Ma</p>
+<p>Alessio <strong>non usa conserve industriali</strong> e **trasforma il fresco entro due</p>
+<p>giorni dall'acquisto**: in una cucina così, buona parte di quelle date</p>
+<p>descrive merce che è già stata usata prima ancora che il preavviso scatti.</p>
+<p>⚠️ Il 28/08/2026 il ripiego del preavviso è stato portato sul valore **più</p>
+<p>prudente** per tutti i prodotti (decisione sua). Questo rende la domanda più</p>
+<p>urgente, non meno: senza una regola vera lo scadenziario segnala molto, e un</p>
+<p>elenco che segnala sempre è un elenco che si smette di guardare.</p>
+<p><strong>Domanda, nelle parole di Alessio.</strong> «Nel mio piano di autocontrollo, tenuto</p>
+<p>conto che non uso conserve industriali e trasformo il fresco entro due giorni</p>
+<p>dall'acquisto, devo tenere traccia delle scadenze dei prodotti acquistati o</p>
+<p>basta il controllo all'accettazione più i documenti dei fornitori? E per il</p>
+<p>pesce cambia qualcosa?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se basta il controllo all'accettazione, la data di</p>
+<p>scadenza smette di essere un campo che il gestionale pretende, e lo</p>
+<p>scadenziario si restringe a ciò che davvero resta in cella. Se invece la</p>
+<p>tracciatura serve, resta com'è — e il preavviso prudente è la scelta giusta.</p>
+<p>⚠️ La risposta sul <strong>pesce</strong> può separare le due strade: è il prodotto dove</p>
+<p>il controllo all'accettazione pesa di più e la conservazione dura di meno.</p>
+<p><strong>Dove vive</strong>: <code>src/pages/magazzino/Scadenze.jsx</code>, <code>partite_in_scadenza()</code>,</p>
+<p><code>preavviso_giorni()</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
 </div>
 <div class="risposta">
   <div class="etichetta">Risposta</div>

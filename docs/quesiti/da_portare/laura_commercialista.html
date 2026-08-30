@@ -38,6 +38,14 @@ Il documento completo, con tutte le domande per tutti i consulenti, resta nel ge
 <p>cumulativa a fine mese appoggiandomi ai DDT, o serve documento per</p>
 <p>documento? Quale percentuale di compensazione si applica agli ortaggi? E</p>
 <p>come si gestisce dentro Fatture in Cloud?»</p>
+<p>⚠️ <strong>Terza parte, aggiunta il 29/08/2026</strong>: «E le autofatture vuoi riceverle</p>
+<p>in copia, oppure ti basta vederle nel cassetto fiscale?»</p>
+<p><strong>Perché adesso.</strong> Il mandato del 29/08 prevede una casella «fornitore in</p>
+<p>regime di esonero» sulla scheda del fornitore, che faccia avvisare il</p>
+<p>gestionale quando si registra un acquisto da uno di loro. ⚠️ *Non è ancora</p>
+<p>costruita* — il blocco delle Fatture Fornitori non è stato aperto — ma la</p>
+<p>risposta a questa domanda decide <strong>se basta un avviso o serve anche un invio</strong>,</p>
+<p>e senza si arriva a fine anno con le autofatture mancanti.</p>
 <p><strong>Cosa cambia nell'app.</strong> Decide se serve un tipo di documento nuovo nel</p>
 <p>carico da fattura, se il raggruppamento è mensile o per consegna, e con</p>
 <p>quale aliquota di compensazione si valorizza la riga. Tocca anche la</p>
@@ -406,6 +414,158 @@ Il documento completo, con tutte le domande per tutti i consulenti, resta nel ge
 <p>risposta decide se diventa una scadenza vera.</p>
 <p><strong>Dove vive</strong>: <code>supabase/migrations/20260802000001_agenda.sql</code>, tabella</p>
 <p><code>tasks</code>, categoria «Fisco e scadenze».</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L18 · La caparra tenuta perché il cliente non si è presentato</h2>
+  <p><strong>Contesto.</strong> Dal 27/08/2026 il gestionale sa registrare le tre fini di una</p>
+<p>caparra: scalata dal conto, restituita per la parte che avanza, e — da oggi —</p>
+<p><strong>tenuta</strong>, quando il cliente non si presenta. In quest'ultimo caso non esce</p>
+<p>e non entra un euro: i soldi erano già in cassa da quando la caparra è stata</p>
+<p>presa. Quello che cambia è la loro natura, e il gestionale la registra</p>
+<p>separatamente dagli incassi del servizio.</p>
+<p><strong>Domanda.</strong> «Quando tengo una caparra perché il cliente non si è presentato,</p>
+<p>quei soldi come vanno trattati? È un corrispettivo da assoggettare a IVA, o è</p>
+<p>un risarcimento fuori campo? E cambia qualcosa se la caparra l'avevo presa in</p>
+<p>contanti invece che per bonifico? Devo emettere un documento al cliente, o</p>
+<p>basta la registrazione interna?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Oggi la caparra tenuta è un'entrata di cassa già</p>
+<p>registrata (causale «Caparra ricevuta») più un segno che dice che è stata</p>
+<p>tenuta. Se la risposta è «corrispettivo», va deciso <strong>se e quando</strong> finisce</p>
+<p>sul registratore telematico — e la regola del 15/08 dice che niente si batte</p>
+<p>sul registratore senza passare da un conto, quindi servirebbe una strada</p>
+<p>apposta. Se è «fuori campo», resta com'è e basta l'etichetta.</p>
+<p><strong>Dove vive</strong>: <code>supabase/migrations/20260827000003_la_caparra_trattenuta.sql</code>,</p>
+<p>colonne <code>cash_movements.caparra_trattenuta_il</code> e</p>
+<p><code>caparra_trattenuta_perche</code>, funzione <code>caparre_trattenute()</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L19 · Gli acquisti fatti PRIMA della partita IVA</h2>
+  <p><strong>Contesto.</strong> Alessio ha comprato roba per il progetto <strong>prima</strong> che la</p>
+<p>S.r.l.s. avesse la partita IVA, pagando di tasca propria. Sono due casi</p>
+<p>diversi e vanno tenuti distinti, perché il gestionale li registra in due posti</p>
+<p>diversi: quelli <strong>con fattura</strong> e quelli <strong>senza nessun documento</strong>.</p>
+<p>Su questi ultimi lui ha già deciso di <strong>non dichiararli</strong>: li registra soltanto</p>
+<p>per saperne il conto, in un soggetto a sé chiamato «la tasca» — che è fuori</p>
+<p>dalla proiezione fiscale per costruzione, non per promemoria.</p>
+<p><strong>Domanda.</strong> «Gli acquisti fatti prima che la società avesse la partita IVA,</p>
+<p><strong>quelli con fattura</strong>: come devono essere intestati per restare recuperabili —</p>
+<p>alla società, a me come persona fisica, o è già tardi se sono intestati nel</p>
+<p>modo sbagliato? C'è un termine oltre il quale non si recupera più nulla?</p>
+<p>E <strong>quelli senza fattura</strong>: confermi che non sono recuperabili in nessuna</p>
+<p>forma, né come costo né come IVA?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Se la risposta al primo caso è «recuperabili», quegli</p>
+<p>acquisti devono poter entrare come <strong>spese della società</strong> con la loro data</p>
+<p>vera, e il gestionale deve poterli distinguere da quelli correnti. Se la</p>
+<p>risposta al secondo è quella attesa, «la tasca» resta come è disegnata: solo</p>
+<p>uscite, sola regola «Indeducibile», fuori da ogni calcolo di imposta.</p>
+<p>⚠️ <strong>La differenza non è cosmetica</strong>: sbagliando, o si perde un recupero</p>
+<p>legittimo, o si mette in una dichiarazione una spesa che non ci può stare.</p>
+<p><strong>Dove vive</strong>: la tasca è una decisione del 30/08 (<code>docs/DECISIONI.md</code>,</p>
+<p>sezione *La tasca di Alessio*).</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L20 · Il cliente chiede la fattura invece dello scontrino — da quando decorrono i dodici giorni</h2>
+  <p><strong>Contesto.</strong> In sala al tavolo esce <strong>solo il preconto</strong>, che è un documento</p>
+<p>non fiscale: al registratore telematico non parte niente finché il conto non</p>
+<p>viene chiuso. Se il cliente chiede la fattura, quel conto non deve produrre</p>
+<p>uno scontrino ma una fattura — che sarà emessa <strong>dopo</strong>, da Fatture in Cloud.</p>
+<p>⚠️ E c'è un fatto del locale che sposta la domanda: **una serata di servizio</p>
+<p>attraversa la mezzanotte** — il gestionale la chiama «serata» e la fa finire</p>
+<p>alle 5 del mattino, quindi un conto pagato all'una di notte appartiene alla</p>
+<p>sera prima, non al giorno di calendario in cui esce.</p>
+<p><strong>Domanda.</strong> «Quando un cliente chiede la fattura invece dello scontrino, da</p>
+<p>quale data decorrono i dodici giorni per l'emissione: dalla **serata di</p>
+<p>servizio** in cui ha mangiato e pagato, o dal giorno di calendario in cui il</p>
+<p>conto è stato chiuso? E nel frattempo, al momento del pagamento, devo</p>
+<p>consegnargli qualcosa — un documento commerciale “fattura da emettere”, una</p>
+<p>ricevuta — oppure il preconto basta?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Lo stato <code>fattura_da_emettere</code> <strong>esiste già</strong> nel</p>
+<p>database ed è già tenuto fuori dai conteggi degli incassi scontrinati; quello</p>
+<p>che manca è il gesto in sala e la strada per chiuderlo. La risposta decide</p>
+<p><strong>da quale data il gestionale conta i giorni</strong> e quindi quando l'avviso</p>
+<p>comincia a suonare: contando dal giorno sbagliato, l'avviso arriva un giorno</p>
+<p>tardi proprio sui conti di fine serata, che sono la maggioranza.</p>
+<p><strong>Dove vive</strong>: <code>orders</code>, stato <code>fattura_da_emettere</code>; la serata di servizio è</p>
+<p><code>serataDiServizio()</code> e <code>service_settings.ora_fine_serata</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L21 · Un conto dell'anno prima regolarizzato dopo la chiusura dell'anno</h2>
+  <p><strong>Contesto.</strong> Può succedere che un conto resti senza il suo documento fiscale</p>
+<p>e che ce ne si accorga <strong>dopo</strong> che l'anno è stato chiuso — per esempio una</p>
+<p>fattura che il cliente chiede e che nessuno ha emesso, o uno scontrino non</p>
+<p>uscito perché la stampante non funzionava. Il gestionale sa già elencare i</p>
+<p>conti senza documento, e sa tenere lo storico delle chiusure senza riscrivere</p>
+<p>il passato.</p>
+<p><strong>Domanda.</strong> «Un conto dell'anno scorso che regolarizzo adesso, dopo che</p>
+<p>l'anno è già stato chiuso: dove finisce — nell'anno in cui il cliente ha</p>
+<p>mangiato, o in quello in cui emetto il documento? E il gestionale come deve</p>
+<p>mostrarlo: sulla serata vera, sull'anno di emissione, o su tutti e due</p>
+<p>dichiarando lo scarto?»</p>
+<p><strong>Cosa cambia nell'app.</strong> C'è già una regola del progetto che ci somiglia — dal</p>
+<p>15/08, uno scontrino ristampato il giorno dopo porta la data di quando esce, ma</p>
+<p><strong>l'incasso resta nella serata in cui il cliente ha pagato</strong>, e lo scarto si</p>
+<p><strong>dichiara invece di appianarlo</strong>. La domanda è se quella regola regge anche</p>
+<p>attraverso la chiusura di un anno, o se lì la risposta è un'altra.</p>
+<p>⚠️ **Appianare lo scarto per far tornare i due mondi farebbe risultare quella</p>
+<p>serata più magra del vero**, ed è il motivo per cui la regola esiste.</p>
+<p><strong>Dove vive</strong>: <code>serata_di_servizio(closed_at)</code> e <code>documento_emesso_il</code>;</p>
+<p><code>conti_senza_documento()</code>.</p>
+<p><strong>Stato</strong>: aperto.</p>
+</div>
+<div class="risposta">
+  <div class="etichetta">Risposta</div>
+  <div class="riga"></div><div class="riga"></div><div class="riga"></div><div class="riga"></div>
+</div>
+
+<div class="quesito">
+  <h2>L22 · In che forma consegni la chiusura, e in che forma la vuoi tu</h2>
+  <p><strong>Contesto.</strong> Sono due direzioni, e vanno decise insieme perché sono lo stesso</p>
+<p>scambio guardato dai due lati. <strong>Da te verso il gestionale</strong>: Alessio vuole</p>
+<p>poter caricare la chiusura ufficiale per confrontarla con quello che il</p>
+<p>gestionale ha registrato — ⚠️ <strong>solo sui ricavi</strong>, per sua decisione esplicita,</p>
+<p>perché competenza e cassa non coincidono per costruzione e uno strumento che</p>
+<p>segnala quella differenza insegna a ignorare gli avvisi. **Dal gestionale verso</p>
+<p>di te<strong>: ci sono cose che </strong>solo il gestionale ha** — il valore del magazzino</p>
+<p>alla fine dell'anno, l'elenco dei beni durevoli comprati, i conti rimasti senza</p>
+<p>documento, la merce ricevuta senza fattura.</p>
+<p><strong>Domanda.</strong> «In che forma mi consegni la chiusura dell'anno, in modo che io</p>
+<p>possa caricarla nel gestionale e confrontare almeno i ricavi — un PDF, un file</p>
+<p>di testo, un foglio di calcolo, e con quali voci? E dall'altra parte: il valore</p>
+<p>del magazzino al 31 dicembre, i beni durevoli, i conti senza documento e la</p>
+<p>merce ricevuta senza fattura, <strong>in che forma li vuoi da me</strong> e <strong>entro quando</strong>?»</p>
+<p><strong>Cosa cambia nell'app.</strong> Decide la forma di due lavori che oggi non esistono:</p>
+<p>il caricamento della chiusura e il pacchetto di fine anno. ⚠️ **Costruirli</p>
+<p>prima della risposta vorrebbe dire indovinare un formato**, e un lettore che</p>
+<p>si aspetta un formato sbagliato non dà errore: **legge un numero plausibile</p>
+<p>nella riga sbagliata**, che è il difetto più caro di tutti.</p>
+<p>⚠️ <strong>Ratei e risconti sono esplicitamente fuori</strong>, per decisione sua:</p>
+<p>costerebbero un campo in più su ogni movimento, per sempre.</p>
+<p><strong>Dove vive</strong>: da costruire — richieste <strong>C6</strong> e <strong>C7</strong> in</p>
+<p>[<code>docs/RICHIESTE.md</code>](../RICHIESTE.md).</p>
 <p><strong>Stato</strong>: aperto.</p>
 </div>
 <div class="risposta">

@@ -1,6 +1,6 @@
 # Quesiti per i consulenti — raccoglitore unico
 
-**Aggiornato il 27/08/2026** (L18: la caparra tenuta perché il cliente non si è presentato).
+**Aggiornato il 30/08/2026** (L19-L22: gli acquisti prima della partita IVA, la fattura chiesta al tavolo, il conto regolarizzato dopo la chiusura dell'anno, e in che forma ci si scambia la chiusura con la commercialista).
 
 A cosa serve: le domande aperte per i consulenti erano sparse in una
 dozzina di posti — un avviso in una schermata, un rilievo in un referto,
@@ -462,6 +462,133 @@ apposta. Se è «fuori campo», resta com'è e basta l'etichetta.
 **Dove vive**: `supabase/migrations/20260827000003_la_caparra_trattenuta.sql`,
 colonne `cash_movements.caparra_trattenuta_il` e
 `caparra_trattenuta_perche`, funzione `caparre_trattenute()`.
+
+**Stato**: aperto.
+
+---
+
+## L19 · Gli acquisti fatti PRIMA della partita IVA
+
+**Contesto.** Alessio ha comprato roba per il progetto **prima** che la
+S.r.l.s. avesse la partita IVA, pagando di tasca propria. Sono due casi
+diversi e vanno tenuti distinti, perché il gestionale li registra in due posti
+diversi: quelli **con fattura** e quelli **senza nessun documento**.
+Su questi ultimi lui ha già deciso di **non dichiararli**: li registra soltanto
+per saperne il conto, in un soggetto a sé chiamato «la tasca» — che è fuori
+dalla proiezione fiscale per costruzione, non per promemoria.
+
+**Domanda.** «Gli acquisti fatti prima che la società avesse la partita IVA,
+**quelli con fattura**: come devono essere intestati per restare recuperabili —
+alla società, a me come persona fisica, o è già tardi se sono intestati nel
+modo sbagliato? C'è un termine oltre il quale non si recupera più nulla?
+E **quelli senza fattura**: confermi che non sono recuperabili in nessuna
+forma, né come costo né come IVA?»
+
+**Cosa cambia nell'app.** Se la risposta al primo caso è «recuperabili», quegli
+acquisti devono poter entrare come **spese della società** con la loro data
+vera, e il gestionale deve poterli distinguere da quelli correnti. Se la
+risposta al secondo è quella attesa, «la tasca» resta come è disegnata: solo
+uscite, sola regola «Indeducibile», fuori da ogni calcolo di imposta.
+⚠️ **La differenza non è cosmetica**: sbagliando, o si perde un recupero
+legittimo, o si mette in una dichiarazione una spesa che non ci può stare.
+
+**Dove vive**: la tasca è una decisione del 30/08 (`docs/DECISIONI.md`,
+sezione *La tasca di Alessio*).
+
+**Stato**: aperto.
+
+---
+
+## L20 · Il cliente chiede la fattura invece dello scontrino — da quando decorrono i dodici giorni
+
+**Contesto.** In sala al tavolo esce **solo il preconto**, che è un documento
+non fiscale: al registratore telematico non parte niente finché il conto non
+viene chiuso. Se il cliente chiede la fattura, quel conto non deve produrre
+uno scontrino ma una fattura — che sarà emessa **dopo**, da Fatture in Cloud.
+⚠️ E c'è un fatto del locale che sposta la domanda: **una serata di servizio
+attraversa la mezzanotte** — il gestionale la chiama «serata» e la fa finire
+alle 5 del mattino, quindi un conto pagato all'una di notte appartiene alla
+sera prima, non al giorno di calendario in cui esce.
+
+**Domanda.** «Quando un cliente chiede la fattura invece dello scontrino, da
+quale data decorrono i dodici giorni per l'emissione: dalla **serata di
+servizio** in cui ha mangiato e pagato, o dal giorno di calendario in cui il
+conto è stato chiuso? E nel frattempo, al momento del pagamento, devo
+consegnargli qualcosa — un documento commerciale “fattura da emettere”, una
+ricevuta — oppure il preconto basta?»
+
+**Cosa cambia nell'app.** Lo stato `fattura_da_emettere` **esiste già** nel
+database ed è già tenuto fuori dai conteggi degli incassi scontrinati; quello
+che manca è il gesto in sala e la strada per chiuderlo. La risposta decide
+**da quale data il gestionale conta i giorni** e quindi quando l'avviso
+comincia a suonare: contando dal giorno sbagliato, l'avviso arriva un giorno
+tardi proprio sui conti di fine serata, che sono la maggioranza.
+
+**Dove vive**: `orders`, stato `fattura_da_emettere`; la serata di servizio è
+`serataDiServizio()` e `service_settings.ora_fine_serata`.
+
+**Stato**: aperto.
+
+---
+
+## L21 · Un conto dell'anno prima regolarizzato dopo la chiusura dell'anno
+
+**Contesto.** Può succedere che un conto resti senza il suo documento fiscale
+e che ce ne si accorga **dopo** che l'anno è stato chiuso — per esempio una
+fattura che il cliente chiede e che nessuno ha emesso, o uno scontrino non
+uscito perché la stampante non funzionava. Il gestionale sa già elencare i
+conti senza documento, e sa tenere lo storico delle chiusure senza riscrivere
+il passato.
+
+**Domanda.** «Un conto dell'anno scorso che regolarizzo adesso, dopo che
+l'anno è già stato chiuso: dove finisce — nell'anno in cui il cliente ha
+mangiato, o in quello in cui emetto il documento? E il gestionale come deve
+mostrarlo: sulla serata vera, sull'anno di emissione, o su tutti e due
+dichiarando lo scarto?»
+
+**Cosa cambia nell'app.** C'è già una regola del progetto che ci somiglia — dal
+15/08, uno scontrino ristampato il giorno dopo porta la data di quando esce, ma
+**l'incasso resta nella serata in cui il cliente ha pagato**, e lo scarto si
+**dichiara invece di appianarlo**. La domanda è se quella regola regge anche
+attraverso la chiusura di un anno, o se lì la risposta è un'altra.
+⚠️ **Appianare lo scarto per far tornare i due mondi farebbe risultare quella
+serata più magra del vero**, ed è il motivo per cui la regola esiste.
+
+**Dove vive**: `serata_di_servizio(closed_at)` e `documento_emesso_il`;
+`conti_senza_documento()`.
+
+**Stato**: aperto.
+
+---
+
+## L22 · In che forma consegni la chiusura, e in che forma la vuoi tu
+
+**Contesto.** Sono due direzioni, e vanno decise insieme perché sono lo stesso
+scambio guardato dai due lati. **Da te verso il gestionale**: Alessio vuole
+poter caricare la chiusura ufficiale per confrontarla con quello che il
+gestionale ha registrato — ⚠️ **solo sui ricavi**, per sua decisione esplicita,
+perché competenza e cassa non coincidono per costruzione e uno strumento che
+segnala quella differenza insegna a ignorare gli avvisi. **Dal gestionale verso
+di te**: ci sono cose che **solo il gestionale ha** — il valore del magazzino
+alla fine dell'anno, l'elenco dei beni durevoli comprati, i conti rimasti senza
+documento, la merce ricevuta senza fattura.
+
+**Domanda.** «In che forma mi consegni la chiusura dell'anno, in modo che io
+possa caricarla nel gestionale e confrontare almeno i ricavi — un PDF, un file
+di testo, un foglio di calcolo, e con quali voci? E dall'altra parte: il valore
+del magazzino al 31 dicembre, i beni durevoli, i conti senza documento e la
+merce ricevuta senza fattura, **in che forma li vuoi da me** e **entro quando**?»
+
+**Cosa cambia nell'app.** Decide la forma di due lavori che oggi non esistono:
+il caricamento della chiusura e il pacchetto di fine anno. ⚠️ **Costruirli
+prima della risposta vorrebbe dire indovinare un formato**, e un lettore che
+si aspetta un formato sbagliato non dà errore: **legge un numero plausibile
+nella riga sbagliata**, che è il difetto più caro di tutti.
+⚠️ **Ratei e risconti sono esplicitamente fuori**, per decisione sua:
+costerebbero un campo in più su ogni movimento, per sempre.
+
+**Dove vive**: da costruire — richieste **C6** e **C7** in
+[`docs/RICHIESTE.md`](../RICHIESTE.md).
 
 **Stato**: aperto.
 
