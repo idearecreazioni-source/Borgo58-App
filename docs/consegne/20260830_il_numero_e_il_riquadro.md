@@ -3,6 +3,8 @@
 > **Blocco 4** del mandato del 30/08. Chiude **S1** e **S3** di
 > [`docs/RICHIESTE.md`](../RICHIESTE.md).
 >
+> **Il commit che sta sotto questo riepilogo: `55b1bd6`.**
+>
 > **Nessuna migrazione.** Il database sapeva già tutto: mancava la domanda.
 
 ---
