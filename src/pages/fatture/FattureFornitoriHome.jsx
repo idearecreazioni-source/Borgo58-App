@@ -541,7 +541,18 @@ export default function FattureFornitoriHome() {
             </Didascalia>
           </h1>
         </div>
-        <div className="text-right">
+        {/* 🔴 A SINISTRA SUL TELEFONO, A DESTRA SUL COMPUTER (30/08,
+            richiesta di Alessio guardando la schermata dal cellulare: *«mi
+            sembrano storte»*).
+            ⚠️ Sul computer questo blocco sta sul **bordo destro** accanto al
+            titolo, e allineato a destra è giusto — un importo che finisce sul
+            margine si legge in colonna. Sul telefono invece va **sotto** il
+            titolo, a tutta larghezza: lì «a destra» vuol dire staccato dal
+            testo che lo spiega, e le tre righe sembrano non appartenersi.
+            ⚠️ È la stessa forma della regola del 25/08 — *blocchetti sul
+            telefono, tabella sul computer* — applicata a un allineamento
+            invece che a una tabella: la forma segue lo schermo, il dato no. */}
+        <div className="text-left md:text-right">
           {totaliPerSocieta.length === 0 ? (
             <>
               <div className="text-2xl text-b58-charcoal font-medium">{formatEUR(0)}</div>

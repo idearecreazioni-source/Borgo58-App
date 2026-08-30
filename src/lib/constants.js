@@ -592,10 +592,38 @@ export const formatPercento = (value, decimali = 1) =>
 // quattro decimali che nessuno userà mai per prendere una decisione.
 // Al massimo due decimali, e gli zeri in coda si tolgono: «10 kg» si legge
 // meglio di «10,00 kg», e «5,88 kg» dice tutto quello che serve.
-export const formatQta = (value) =>
-  value == null || value === ""
-    ? "—"
-    : new Intl.NumberFormat("it-IT", { maximumFractionDigits: 2 }).format(Number(value));
+// 🔴 UNA QUANTITÀ PICCOLISSIMA NON SI SCRIVE «0» (30/08/2026), ed è la
+// stessa famiglia dell'importo curato poche ore prima. `maximumFractionDigits: 2`
+// faceva diventare **0,0002 kg** un secco **«0»** — e per questo dieci punti
+// del gestionale scavalcavano questa funzione e stampavano il numero grezzo,
+// col punto inglese in mezzo a una frase italiana.
+// ⚠️ La cura non è alzare i decimali per tutti: è che un numero **diverso da
+// zero non possa mai scriversi zero**. Sopra lo 0,01 restano due decimali,
+// che è come si leggono le quantità di cucina.
+export const formatQta = (value) => {
+  if (value == null || value === "") return "—";
+  const n = Number(value);
+  const decimali = n !== 0 && Math.abs(n) < 0.01 ? 4 : 2;
+  return new Intl.NumberFormat("it-IT", { maximumFractionDigits: decimali }).format(n);
+};
+
+// 🔴 UN PESO CHE HA BISOGNO DI QUATTRO DECIMALI È NELL'UNITÀ SBAGLIATA —
+// parole di Alessio, 30/08/2026, guardando «mancano 0.0002 kg» nel Magazzino.
+//
+// ⚠️ **Cambia solo COME SI SCRIVE, mai il dato**: sotto l'unità intera i chili
+// diventano grammi e i litri millilitri, perché è così che una persona legge
+// duecento milligrammi. Sopra, non si tocca niente.
+// ⚠️ **E si ferma alle due unità che hanno un sottomultiplo naturale**: pezzi,
+// mazzi e rotoli non ne hanno, e inventarne uno sarebbe peggio del problema.
+const SOTTOMULTIPLO = { kg: ["g", 1000], l: ["ml", 1000] };
+
+export function qtaConUnita(valore, unita) {
+  if (valore == null || valore === "") return `— ${unita ?? ""}`.trim();
+  const n = Number(valore);
+  const giu = SOTTOMULTIPLO[unita];
+  if (giu && n !== 0 && Math.abs(n) < 1) return `${formatQta(n * giu[1])} ${giu[0]}`;
+  return `${formatQta(n)} ${unita ?? ""}`.trim();
+}
 
 export const formatDate = (value) =>
   value

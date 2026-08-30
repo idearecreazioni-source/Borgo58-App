@@ -17,7 +17,7 @@ import { listMenus } from "../../lib/api/menus";
 import { trattativeDelGiorno } from "../../lib/api/preventivi";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
-import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor } from "../../lib/constants";
+import { RESERVATION_STATUSES, RESERVATION_TYPES, formatEUR, labelFor, qtaConUnita } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import Didascalia from "../../components/Didascalia";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
@@ -640,7 +640,7 @@ export default function ReservationForm() {
                         <tr key={n.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
                           <td className="py-2 text-b58-charcoal">{n.nome}</td>
                           <td className="py-2 text-right text-b58-charcoal-soft">
-                            {Number(n.quantita).toFixed(2)} {n.unita}
+                            {qtaConUnita(n.quantita, n.unita)}
                           </td>
                           <td className="py-2 text-right text-b58-charcoal">{formatEUR(n.costo)}</td>
                         </tr>

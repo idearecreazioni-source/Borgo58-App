@@ -15,7 +15,7 @@ import { listStockLevels } from "../../lib/api/stock";
 import { listSuppliers, listSuppliersDisplay } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { useAuth } from "../../context/AuthContext";
-import { ESITI_RIGA_LISTA, PAYMENT_METHODS, formatDate, formatEUR, labelFor, formatQta} from "../../lib/constants";
+import { ESITI_RIGA_LISTA, PAYMENT_METHODS, formatDate, formatEUR, labelFor, formatQta, qtaConUnita } from "../../lib/constants";
 import { listCausali } from "../../lib/api/cash";
 import { variazionePrezzoProdotto } from "../../lib/api/assistente";
 import DatoNonLetto from "../../components/DatoNonLetto";
@@ -459,8 +459,8 @@ export default function ListaSpesa() {
                         {/* I numeri veri, letti adesso dal magazzino. */}
                         {item.numeri?.soglia != null && (
                           <div className="testo-sala text-b58-charcoal-soft mt-0.5">
-                            in cella {Number(item.numeri.giacenza ?? 0)} {item.unit} · scorta minima{" "}
-                            {Number(item.numeri.soglia)} {item.unit}
+                            in cella {qtaConUnita(item.numeri.giacenza ?? 0, item.unit)} · scorta minima{" "}
+                            {qtaConUnita(item.numeri.soglia, item.unit)}
                             {Number(item.numeri.mancante) > 0 && (
                               <> · ne mancano {Number(item.numeri.mancante)}</>
                             )}

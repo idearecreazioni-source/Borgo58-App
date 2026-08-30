@@ -25,7 +25,7 @@ import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente"
 import { righeListaAperte } from "../../lib/api/shoppingList";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
-import { formatDate } from "../../lib/constants";
+import { formatDate, qtaConUnita } from "../../lib/constants";
 
 // La posta arrivata al locale, in attesa di una decisione.
 //
@@ -522,7 +522,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                 <li key={i}>
                   · <strong className="text-b58-charcoal">{nomeRiga(r)}</strong> va sulla riga
                   {scelta.quantita_richiesta != null && (
-                    <> da {Number(scelta.quantita_richiesta)} {scelta.unita}</>
+                    <> da {qtaConUnita(scelta.quantita_richiesta, scelta.unita)}</>
                   )}{" "}
                   in lista dal {new Date(scelta.in_lista_dal).toLocaleDateString("it-IT")}
                   {aperte.length > 1 && (
@@ -533,7 +533,7 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
                     >
                       {aperte.map((x) => (
                         <option key={x.id} value={x.id}>
-                          {x.quantita_richiesta != null ? `${Number(x.quantita_richiesta)} ${x.unita} · ` : ""}
+                          {x.quantita_richiesta != null ? `${qtaConUnita(x.quantita_richiesta, x.unita)} · ` : ""}
                           {new Date(x.in_lista_dal).toLocaleDateString("it-IT")}
                         </option>
                       ))}

@@ -9,7 +9,7 @@ import {
   segnaOrdineRicevuto,
 } from "../../lib/api/ordini";
 import { listaSpesa } from "../../lib/api/shoppingList";
-import { formatDate, formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR, qtaConUnita } from "../../lib/constants";
 
 // Fase B della filiera della spesa: l'ordine parte nella lingua del
 // fornitore, e parte dal telefono di Alessio.
@@ -293,7 +293,7 @@ export default function Ordini() {
                             {r.quantita != null && (
                               <span className="text-b58-charcoal-soft">
                                 {" "}
-                                — {Number(r.quantita)} {r.unita_fattura ?? r.unita_base ?? ""}
+                                — {qtaConUnita(r.quantita, r.unita_fattura ?? r.unita_base ?? "")}
                               </span>
                             )}
                             {/* Due numeri, sempre: se il formato della
@@ -302,7 +302,7 @@ export default function Ordini() {
                             {r.quantita_base != null && r.unita_fattura && (
                               <span className="testo-sala text-b58-charcoal-soft">
                                 {" "}
-                                (ti servono {Number(r.quantita_base)} {r.unita_base})
+                                (ti servono {qtaConUnita(r.quantita_base, r.unita_base)})
                               </span>
                             )}
                             {r.prezzo_atteso != null && (

@@ -14,7 +14,7 @@ import {
 import { listRecipes } from "../../lib/api/recipes";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { puoAndareInCarta } from "../../lib/calcoli/carta";
-import { formatDate, formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR, qtaConUnita } from "../../lib/constants";
 
 // IL PREVENTIVO — la schermata che commuta (blocco 2 del mandato).
 //
@@ -710,7 +710,7 @@ function VistaCosto({
                   <tr key={f.ingredient_id} className="border-b border-b58-charcoal/5 last:border-0">
                     <td className="py-1.5 text-b58-charcoal">{f.nome}</td>
                     <td className="py-1.5 text-right text-b58-charcoal-soft">
-                      {Number(f.quantita).toFixed(3)} {f.unita}
+                      {qtaConUnita(f.quantita, f.unita)}
                     </td>
                     <td className="py-1.5 text-right text-b58-charcoal">{formatEUR(f.costo)}</td>
                   </tr>

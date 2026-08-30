@@ -6,7 +6,7 @@ import {
   listStockLevels,
   recordStockConsumption,
 } from "../../lib/api/stock";
-import { CONSUMPTION_REASONS, formatDate, formatQta} from "../../lib/constants";
+import { CONSUMPTION_REASONS, formatDate, formatQta, qtaConUnita } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
@@ -361,8 +361,18 @@ export default function MagazzinoHome() {
                   <>
                     {" "}—{" "}
                     {r.tipo === "preparazione_non_seguita"
-                      ? `non sono scesi ${Number(r.quantita_mancante)} ${r.unita}`
-                      : `mancano ${Number(r.quantita_mancante)} ${r.unita}`}
+                      ? `non sono scesi ${qtaConUnita(r.quantita_mancante, r.unita)}`
+                      : `mancano ${qtaConUnita(r.quantita_mancante, r.unita)}`}
+                    {/* 🔴 «MANCANO 0,2 g» NON SI PUÒ GIUDICARE SENZA SAPERE SU
+                        QUANTO (30/08, richiesta di Alessio). Su 1,5 kg è
+                        polvere; su 0,3 g è tutto. Il numero c'era già —
+                        `anomalie_scarico.quantita_richiesta` è registrata dal
+                        23/08 — e non veniva scritto da nessuna parte.
+                        ⚠️ Se il paragone manca non si inventa: si tace, e
+                        resta il solo «mancano». */}
+                    {r.quantita_richiesta != null && Number(r.quantita_richiesta) > 0 && (
+                      <> su {qtaConUnita(r.quantita_richiesta, r.unita)}</>
+                    )}
                   </>
                 )}
                 {/* 🔴 «SCESO A METÀ» NON DEVE ESSERE SILENZIOSO (23/08/2026).
@@ -481,8 +491,16 @@ export default function MagazzinoHome() {
               forte: expiryUrgency(l.nearest_expiry) !== "none",
             },
           ]}
-          /* 🔴 IL GESTO DELLA RIGA, e la riga che si apre sotto: e' quello
-             che questa tabella aveva e che il componente non copriva. */
+          /* 🔴 IL PRODOTTO SI APRE AL TOCCO (30/08, richiesta di Alessio:
+             *«i prodotti dell'elenco devono aprirsi al tocco, oggi non
+             reagiscono»*). Il componente lo sapeva già fare — `onTocco` c'è
+             dal 29/08 — e questa schermata non gliela passava: si poteva
+             aprire un prodotto solo centrando il pulsante «Scarico».
+             ⚠️ Il pulsante RESTA, e non è un doppione ambiguo: fa la stessa
+             identica cosa del tocco, ed è il segno visibile che quel
+             riquadro si apre. Toglierlo lascerebbe un gesto che nessuno
+             indovina. */
+          onTocco={(l) => toggleRow(l.ingredient_id)}
           azione={(l) => ({
             etichetta: openRow === l.ingredient_id ? "Annulla" : "Scarico",
             onClick: () => toggleRow(l.ingredient_id),
