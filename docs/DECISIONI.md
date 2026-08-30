@@ -844,6 +844,27 @@ lavora **per soggetto** e la tasca è un soggetto a sé. ⚠️ *Una cosa tenuta
 fuori da un promemoria rientra alla prima schermata che nessuno si ricorda di
 filtrare.*
 
+* ✅ **COSTRUITA il 30/08 — migrazione `20260830000012`.** Tutte e tre le
+regole vivono nel **database**: un trigger su `cash_movements` rifiuta le
+entrate e rifiuta qualunque regola diversa da «Indeducibile» (riempiendola da
+sé quando nessuno la nomina); due trigger su `fiscal_settings` e
+`scenari_proiezione` impediscono di dare alla tasca dei parametri fiscali o
+una previsione — **è così che resta fuori dalla proiezione per costruzione**.
+  ⚠️ **Ed è per questo che nessuna delle diciannove schermate esistenti la
+  offre**: `getEntities()` restituisce i soggetti **per nome** (`srls`,
+  `agricola`, `tasca`), e chi apre un menu a tendina nomina quelli che vuole.
+  Non c'è nessun filtro che qualcuno debba ricordarsi di scrivere.
+  ⚠️ **Si registra dalla Prima nota**, scegliendo il soggetto: lì il verso è
+  uno solo e la schermata **dice perché**, invece di sembrare rotta.
+  ⚠️ **`speso_dalla_tasca()` non si chiama «saldo»**: da lì escono soldi e
+  basta, quindi un saldo sarebbe sempre negativo e si leggerebbe come un
+  debito. Quello che serve è il **conto**: quanto e per cosa.
+  ✅ **Provata con due rotture su controlli diversi**: tolto il rifiuto delle
+  entrate diventa rossa la prova dell'entrata; fatta sovrascrivere in silenzio
+  la regola diversa, diventa rossa quella della regola. E tutta la verifica
+  vive dentro una **sotto-transazione annullata** — zero righe lasciate, zero
+  lapidi, registro delle cancellazioni acceso per tutto il tempo.
+
 ## HACCP
 
 * 23/08 — Nei registri lo storico infinito è sostituito da «cosa è successo oggi»

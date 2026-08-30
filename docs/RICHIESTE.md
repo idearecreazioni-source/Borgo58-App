@@ -53,9 +53,9 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
-**70 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**27 in attesa** · **0 in corso** · **39 fatte** · **4 scartate da lui**.
-La somma fa **70**, cioè il numero delle righe: se non tornasse, questo
+**71 richieste in tutto**, e ognuna sta in uno dei quattro stati:
+**27 in attesa** · **0 in corso** · **40 fatte** · **4 scartate da lui**.
+La somma fa **71**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
 Delle **27** ancora aperte, **9** si possono fare adesso e
@@ -189,6 +189,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | C1 | **Finanziamenti da terzi dentro «Ce la faccio?».** | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
 | C2 | **Il caricamento dell'estratto conto**, rinviato da lui finché non sceglie la banca. | 15/08/2026 | Blocco 6 del mandato personale e tesoreria | aspetta | in attesa |
 | C3 | **Il simulatore col registratore fiscale virtuale**: prima si guarda cosa succede, poi si decide. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
+| C10 | 🔴 **LA TASCA: un terzo soggetto accanto a Borgo 58 e Orto Borgo 58.** Alessio tiene contanti suoi e ci compra roba per il progetto **senza fattura**. Non è deducibile e lui non la dichiara: vuole solo saperne il conto. Registra **solo uscite**, l'unica regola ammessa è «Indeducibile», e resta fuori dalla proiezione fiscale **per costruzione**. | 30/08/2026 | Sua decisione | — | fatta · migrazione `20260830000012` (non ancora in produzione al momento in cui scrivo: aspetta il push) |
 | C4 | 🔴 **Il pulsante «il cliente vuole fattura» in Comande.** Lo stato `fattura_da_emettere` **esiste già** nel database ed è **già isolato nei conteggi** — ma **dalla sala non lo si raggiunge**: manca il gesto alla chiusura del conto, e manca la strada per chiuderlo quando la fattura viene emessa. *Un cliente che chiede la fattura al tavolo è un caso normale, e oggi in sala non c'è niente da premere.* | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
 | C5 | **La chiusura dell'anno fiscale, con avviso se restano conti senza documento.** Riusa il meccanismo delle chiusure mensili, che esiste già e tiene lo storico delle chiusure precedenti senza riscrivere il passato. | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
 | C6 | **Produrre per la commercialista ciò che solo il gestionale ha**: valore del magazzino al 31/12, elenco dei beni durevoli comprati, conti senza documento, merce ricevuta senza fattura. ⚠️ **NIENTE ratei e risconti**: scartati da lui perché costerebbero un campo in più a ogni movimento, per sempre. | 30/08/2026 | Sua richiesta, coi confini messi da lui | aspetta | in attesa · la forma la deve dire la commercialista (quesito L22) |

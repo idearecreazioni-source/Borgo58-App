@@ -155,6 +155,15 @@ export default function PrimaNota() {
   //    sovrascrive con un vuoto — la data proposta dalla serata resta.
   const venuto = useDaVoce((c) => setForm((f) => conCampi(f, c, DA_VOCE)));
 
+  // 🔴 LA TASCA (30/08): il contante che Alessio spende di suo per il
+  //    progetto, senza documento. Da li' escono soldi e basta.
+  // ⚠️ IL DIVIETO NON E' QUI: e' un trigger del database (migrazione
+  //    `20260830000012`), perche' una regola nella schermata la aggira
+  //    chiunque scriva da un'altra porta. Questa riga serve solo a non
+  //    offrire un gesto che verrebbe rifiutato — *un pulsante premibile per
+  //    essere respinto e' un vicolo cieco*.
+  const inTasca = Boolean(entities?.tasca && entityId === entities.tasca.id);
+
   const causaliForDirection = form.direction === "entrata" ? causaliEntrata : causaliUscita;
 
   // Promemoria deterministico (§3.4): scontrino ≤400€ su un'uscita → suggerisci
@@ -280,11 +289,20 @@ export default function PrimaNota() {
           {entities && (
             <select
               value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
+              // ⚠️ Passando alla tasca con «entrata» gia' scelto, il salvataggio
+              //    verrebbe respinto dal database per una scelta fatta PRIMA di
+              //    cambiare soggetto — un rifiuto che non c'entra col gesto.
+              //    Il verso torna su «uscita», che li' e' l'unico.
+              onChange={(e) => {
+                const scelto = e.target.value;
+                setEntityId(scelto);
+                if (entities?.tasca && scelto === entities.tasca.id) setDirection("uscita");
+              }}
               className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
             >
               <option value={entities.srls.id}>{entities.srls.name}</option>
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
+              {entities.tasca && <option value={entities.tasca.id}>{entities.tasca.name}</option>}
             </select>
           )}
         </div>
@@ -301,7 +319,17 @@ export default function PrimaNota() {
         <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">Nuovo movimento</h2>
         <StriscaDallaVoce venuto={venuto} />
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-          <div className="flex gap-2 mb-3">
+          {/* ⚠️ Sulla tasca il verso e' uno solo, e la schermata lo DICE invece
+              di sembrare rotta: un pulsante che sparisce senza spiegazione si
+              legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
+          {inTasca && (
+            <p className="testo-sala text-b58-charcoal-soft mb-3">
+              Dalla tasca escono soldi e basta: e' il contante che spendi di tuo,
+              senza documento. Non e' deducibile e non entra in nessun calcolo
+              fiscale — serve solo a saperne il conto.
+            </p>
+          )}
+          <div className={`flex gap-2 mb-3 ${inTasca ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setDirection("uscita")}
