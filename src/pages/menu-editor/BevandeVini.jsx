@@ -6,9 +6,9 @@ import {
   listMargineCarta,
   proposteAbbinamento,
   setBarItemActive,
+  prodottiPerLaCarta,
   updateBarItem,
 } from "../../lib/api/barItems";
-import { listIngredients } from "../../lib/api/ingredients";
 import { formatEUR, formatQta } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import Didascalia from "../../components/Didascalia";
@@ -86,9 +86,14 @@ export default function BevandeVini() {
     load();
     caricaMargini();
     caricaProposte();
-    // ⚠️ Le bevande comprate stanno fra gli alimentari come tutto il resto:
-    //    una bottiglia e' un prodotto, non una categoria a parte.
-    leggi(listIngredients()).then(setProdotti);
+    // 🔴 SOLO I PRODOTTI SEGNATI «VA IN CARTA» (31/08/2026, decisione di
+    //    Alessio). Prima qui arrivava **tutto il magazzino**: misurato
+    //    aprendo la schermata, ventisei menu da 116 voci — per collegare un
+    //    vino bisognava scorrere fra aglio, agnello e baccala'.
+    // ⚠️ E NON BASTAVANO I SETTE MONDI: dentro «Vini» ci sono anche il vino
+    //    da cucina e le bottiglie del personale. Il mondo dice che cosa e',
+    //    il segno dice se si vende.
+    leggi(prodottiPerLaCarta()).then(setProdotti);
   }, []);
 
   // Dopo ogni modifica che tocca il collegamento o la resa il margine cambia:
@@ -145,12 +150,25 @@ export default function BevandeVini() {
             }
             className="tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala bg-transparent max-w-[14rem]"
           >
+            {/* ⚠️ Un elenco vuoto NON si lascia muto: si legge «non c'e'
+                niente da collegare», che qui e' falso — i prodotti ci sono,
+                nessuno li ha ancora segnati. Regola del 19/08: assenza di
+                informazione e informazione di assenza sono due cose
+                diverse. */}
             <option value="">
-              {nonLetto(prodotti) ? "— non ho letto i prodotti —" : "— non collegata —"}
+              {nonLetto(prodotti)
+                ? "— non ho letto i prodotti —"
+                : prodotti.length === 0
+                  ? "— nessun prodotto segnato «va in carta» —"
+                  : "— non collegata —"}
             </option>
             {(nonLetto(prodotti) ? [] : prodotti).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
+              <option key={p.ingredient_id} value={p.ingredient_id}>
+                {p.prodotto}
+                {/* ⚠️ Il mondo accanto al nome: dentro la carta ci finiscono
+                    vini, bevande e liquori, e due bottiglie possono
+                    chiamarsi quasi uguale. */}
+                {p.mondo_nome ? ` · ${p.mondo_nome}` : ""}
               </option>
             ))}
           </select>

@@ -79,6 +79,23 @@ export async function listMargineCarta() {
 //    collegamento nasce solo quando lui tocca «Collega».
 // ⚠️ L'annata **non ha una colonna**: per la decisione del 30/08 vive dentro
 //    la descrizione della confezione, e la proposta mostra quella per intero.
+// I PRODOTTI CHE POSSONO STARE IN CARTA — 31/08/2026
+//
+// 🔴 IL DIFETTO, MISURATO APRENDO LA SCHERMATA: il menu «Prodotto» di ogni
+// riga di carta elencava **tutti i 133 alimenti del magazzino** — aglio,
+// agnello, baccala', basilico. Ventisei menu da 116 voci ciascuno, per
+// collegare un vino a una bottiglia.
+//
+// ⚠️ E UN PRODOTTO NON E' UNA RIGA DI CARTA (rilievo di Alessio): la stessa
+// bottiglia sta in carta **due volte**, al calice e alla bottiglia, a
+// prezzi diversi. Per questo qui non si riversa niente: si dice **cosa si
+// puo' mettere**, col conto di quante righe ne escono gia'.
+export async function prodottiPerLaCarta(mondo = null) {
+  const { data, error } = await supabase.rpc("prodotti_per_la_carta", { p_mondo: mondo });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function proposteAbbinamento() {
   const { data, error } = await supabase.rpc("abbinamenti_carta_proposti");
   if (error) throw error;
