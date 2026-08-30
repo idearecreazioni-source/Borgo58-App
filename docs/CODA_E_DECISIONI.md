@@ -389,7 +389,7 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
    nuova con un nome diverso»*.
    ✅ **BLOCCO 3 CHIUSO il 20/08 — IL MANDATO È COMPLETO** su tutti e tre i
    blocchi: [consegna](consegne/20260820_lo_storico_dei_costi.md), migrazione
-   `20260820000003`, **non ancora in produzione**.
+   `20260820000003`, **in produzione** (verificato il 30/08/2026).
    ✅ **La misura della condizione (b), fatta prima di scegliere**: su un
    albero di **76 ricette** con la profondità che Alessio descrive, una
    fattura da venti righe fa cambiare il costo a **51 ricette** (233 se si
@@ -536,7 +536,7 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     **solo cibo**, quindi un preventivo può risultare in linea sul cibo e in
     perdita sulla serata.
     ✅ **BLOCCO 0 FATTO il 20/08** — [consegna](consegne/20260820_il_fabbisogno_di_un_evento.md),
-    migrazione `20260820000005`, **non ancora in produzione**. La prova è stata
+    migrazione `20260820000005`, **in produzione** (verificato il 30/08/2026). La prova è stata
     scritta **prima** e vista diventare rossa con l'errore vero
     (*«Cannot read properties of null»*, 3 su 3), poi la riparazione l'ha resa
     verde. Il calcolo non si fa più nel browser: `fabbisogno_menu_evento`
@@ -585,7 +585,7 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     mezzanotte e le due dà **ieri**. È la trappola dell'audit dell'08/08,
     riaperta in un posto nuovo.
     ✅ **BLOCCO 3 FATTO il 20/08** — [consegna](consegne/20260820_il_foglio_del_preventivo.md),
-    migrazione `20260820000007`, **non ancora in produzione**. Tre gesti
+    migrazione `20260820000007`, **in produzione** (verificato il 30/08/2026). Tre gesti
     separati — prepara il foglio, apri su WhatsApp, manda la mail — e **solo
     la mail è irreversibile**, quindi solo lei chiede conferma.
     🔴 **Una misura ha cambiato due promesse del mandato**: in questo progetto
@@ -600,7 +600,7 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     foglio viaggia. La vista dei costi è `print:hidden`.
     ✅ **DECISO: TRENTA GIORNI**, come valore proposto e modificabile su ogni
     preventivo ([consegna](consegne/20260820_la_validita_di_trenta_giorni.md),
-    migrazione `20260820000008`, non ancora in produzione).
+    migrazione `20260820000008`, in produzione — verificato il 30/08/2026).
     🔴 **E costruendolo è saltata fuori una cosa che non era vera**: la
     scadenza c'era nella mail e su WhatsApp ma **non nella vista che si
     stampa** — cioè proprio sul foglio che il cliente si porta via. Il pezzo
@@ -614,7 +614,7 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
     **158 migrazioni**, validità proposta **30 giorni**, 0 preventivi,
     0 movimenti, **26** tracce nel registro cancellazioni — invariate.
     ✅ **BLOCCO 4 FATTO il 20/08** — [consegna](consegne/20260820_l_evento_accettato.md),
-    migrazione `20260820000009`, **non ancora in produzione**. È Alessio a dire
+    migrazione `20260820000009`, **in produzione** (verificato il 30/08/2026). È Alessio a dire
     «accettato»: da lì nasce l'evento in calendario, il preventivo si collega, e
     la spunta «sala piena» si accende **se la capienza è esaurita**.
     🔴 **La regola è una proprietà, non un elenco di casi**: quante persone sono

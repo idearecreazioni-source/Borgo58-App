@@ -60,6 +60,34 @@ un rovesciamento racconta *cosa è cambiato*, non *cosa vale adesso* — ma
 
 ---
 
+## Le frasi che dichiarano uno stato
+
+* 🔴 **30/08 — UNA FRASE SCRITTA A MANO CHE DICHIARA UNO STATO È DESTINATA A
+DIVENTARE FALSA.** Non si scrive a mano: **si chiede al gestionale**. Dove non
+si può, la frase porta accanto **la data in cui era vera**.
+  La regola nasce da due casi dello stesso giorno: `DECISIONI.md` diceva
+  «Migrazione `20260828000008` — non ancora in produzione» e quella migrazione
+  c'era da due giorni; e i quattro riepiloghi del 30/08 dicevano «nessuna
+  migrazione applicata», che è diventato falso **cinque minuti dopo**.
+  ⚠️ **IL TELAIO, misurato prima di correggere**: nei documenti **vivi** —
+  quelli che dichiarano cosa vale adesso — le frasi che dicono cosa c'è in
+  produzione erano **22**, di cui **12 senza la data accanto**. Di quelle,
+  **sei** dicevano «non ancora in produzione» di una migrazione che invece
+  c'era: **sei su sei false**, controllate una per una sul database vero.
+  ⚠️ **E la distinzione che rende il conto onesto**: un **riepilogo di
+  consegna** ha la data nel nome del file, quindi le sue frasi sono una
+  fotografia **per costruzione** — «aspetta il push» scritto il 18/08 è un
+  fatto del 18/08, non una bugia di oggi. Un **documento vivo** no. Il primo
+  setaccio non distingueva i due e contava **602** frasi, fra cui le 369 righe
+  «non è stato verificato» delle riletture, che parlano di un atto passato e
+  devono restare.
+  ✅ **La famiglia più affilata è una rete**, non un proposito:
+  `tests/app/frasi-sullo-stato.test.js` chiede al database se una migrazione
+  detta «non ancora in produzione» c'è davvero, e diventa rossa se sì.
+  ⚠️ **Il limite è dichiarato**: copre solo le frasi che nominano una
+  migrazione. «Zero prodotti», «nessun conto» non hanno un nome da confrontare
+  e restano affidate alla regola scritta.
+
 ## Copertura
 
 ⚠️ **Denso dal 14/08/2026 in poi.** Se lavori su un modulo e non trovi
@@ -493,7 +521,7 @@ prudenza è il ripiego di chi non sa, non un tetto imposto a chi sa.
 Misurato sul progetto di prova: 133 prodotti su 133 ripiegavano, **18** in
 frigo ricevevano due giorni (fra cui burro, caciocavallo e crema di
 pistacchio). Dopo: 18 si allungano, 115 invariati, **zero si accorciano**.
-*(Migrazione `20260828000008` — non ancora in produzione.)*
+*(Migrazione `20260828000008` — **in produzione**, verificato il 30/08/2026.)*
 
 ## Magazzino e scarico
 

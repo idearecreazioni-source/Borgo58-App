@@ -305,8 +305,14 @@ export default function MagazzinoHome() {
               le tre che contano — ma un elenco che tace su ciò che esclude è
               la stessa famiglia della risposta più corta che ha l'aria di
               essere intera. La frase sta qui, dove sta il dubbio. */}
+          {/* 🔴 LA RAGIONE È CAMBIATA IL 30/08, IL TAGLIO NO. La frase diceva
+              «il magazzino non le segue», ed è diventata falsa stamattina:
+              da quando la carta è agganciata ai prodotti, il magazzino le
+              segue eccome. Il taglio invece **resta** — è la decisione del
+              23/08 e non si tocca — e adesso la frase dice la ragione vera. */}
           <p className="testo-sala text-b58-charcoal-soft mt-1">
-            Le bevande non compaiono: il magazzino non le segue.
+            Le bevande non compaiono in questo elenco: una riga da bere non è un
+            buco del magazzino.
           </p>
           {/* 🔴 LA DATA UNA VOLTA SOLA, IN CIMA AL SUO GIORNO (29/08/2026).
               Misurato sulla schermata: tre righe di fila ripetevano «23 ago
