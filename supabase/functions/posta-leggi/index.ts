@@ -478,10 +478,17 @@ const UNITA_VALIDE = new Set(["kg", "l", "pz", "mazzo"]);
 //    non c'e' un secondo posto da tenere d'accordo. Si legge UNA VOLTA per
 //    ogni giro di lettura della posta, non per ogni riga.
 let categorieAmmesse: Set<string> | null = null;
+// 🔴 LE SEZIONI DELL'ARCHIVIO (30/08/2026). Fino a stanotte il «tipo» di un
+//    documento era testo libero e il modello ne scriveva uno suo; adesso
+//    `documents.doc_type` punta a un catalogo, quindi una parola inventata
+//    **farebbe fallire l'archiviazione**. Si legge lo stesso elenco che si
+//    manda al modello: non c'e' un secondo posto da tenere d'accordo.
+let sezioniAmmesse: Set<string> | null = null;
 let vocabolariDiAlessio: Record<string, unknown> | null = null;
 
 async function caricaCategorieAmmesse(): Promise<void> {
   categorieAmmesse = null;
+  sezioniAmmesse = null;
   vocabolariDiAlessio = null;
   try {
     const r = await db("rpc/vocabolari_per_assistente", { method: "POST", body: "{}" });
@@ -491,6 +498,9 @@ async function caricaCategorieAmmesse(): Promise<void> {
     const elenco = (v?.categorie_prodotto ?? []) as { codice?: string }[];
     const codici = elenco.map((c) => c?.codice).filter(Boolean) as string[];
     if (codici.length > 0) categorieAmmesse = new Set(codici);
+    const sez = (v?.sezioni_archivio ?? []) as { codice?: string }[];
+    const codiciSez = sez.map((s) => s?.codice).filter(Boolean) as string[];
+    if (codiciSez.length > 0) sezioniAmmesse = new Set(codiciSez);
   } catch {
     // Resta `null`: vedi `ingredienteProposto`.
   }
@@ -517,9 +527,27 @@ Non sono riuscito a leggere gli elenchi del gestionale: metti "categoria": null 
   righe.push(
     `- categorie dei prodotti: ${categorie.map((c) => `${c.codice} (${c.nome})`).join(", ")}`,
   );
+  const sezioni = (v.sezioni_archivio as { codice: string; nome: string }[] | null) ?? [];
+  if (sezioni.length) {
+    righe.push(
+      `- sezioni dell'archivio (il "tipo" di un documento): ${sezioni.map((s) => `${s.codice} (${s.nome})`).join(", ")}`,
+    );
+  }
   const unita = v.unita as string[] | null;
   if (unita?.length) righe.push(`- unita: ${unita.join(", ")}`);
   return righe.join("\n");
+}
+
+/**
+ * La sezione proposta per un documento: solo una di quelle del catalogo.
+ * Vuota se il modello ne ha scritta una che non esiste — «non lo so» e' una
+ * risposta, «Fatture ricevute» messo a caso non lo e'.
+ */
+function sezioneProposta(v: unknown): string | null {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  if (!sezioniAmmesse) return s;
+  return sezioniAmmesse.has(s) ? s : null;
 }
 
 /** Il nome proposto per un prodotto che in anagrafica non c'e'. */
@@ -879,7 +907,17 @@ async function leggiLaPosta() {
               contenuto:
                 (allegato && testiEsatti.get(allegato.file_name)) ||
                 (dati.contenuto ? String(dati.contenuto).slice(0, 20000) : null),
-              tipo: dati.tipo ?? null,
+              // ⚠️ IL TIPO PASSA DAL FILTRO, e se non appartiene all'elenco
+              //    diventa VUOTO invece di essere corretto a indovinare:
+              //    la schermata lo blocca con la sua ragione e Alessio
+              //    sceglie. Un valore fuori elenco scritto lo stesso
+              //    farebbe fallire l'archiviazione al momento della
+              //    conferma, cioe' nel punto peggiore.
+              // ⚠️ E se l'elenco non si e' potuto leggere si lascia passare
+              //    com'e': lo respingera' la chiave esterna, rumorosamente,
+              //    invece di essere svuotato in silenzio da un elenco che
+              //    non c'era. Stessa scelta della categoria dei prodotti.
+              tipo: sezioneProposta(dati.tipo),
               data: dataValida(dati.data ?? a.data),
               controparte: dati.controparte ?? null,
               importo: numeroValido(dati.importo),

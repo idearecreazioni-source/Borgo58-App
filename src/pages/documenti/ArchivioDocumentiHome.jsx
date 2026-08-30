@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createDocument, getDocumentUrl, listDocuments, uploadDocumentFile } from "../../lib/api/documents";
+import { createDocument, getDocumentUrl, listDocuments, sezioniArchivio, uploadDocumentFile } from "../../lib/api/documents";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
@@ -8,11 +8,14 @@ import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { contaPostaInAttesa } from "../../lib/api/posta";
 import { formatDate, formatEUR } from "../../lib/constants";
 
-// Suggerimenti di tipo (nessuna categoria fissa, §3.13: è testo libero).
-const TYPE_SUGGESTIONS = [
-  "Contratto d'affitto", "Licenza / SCIA", "Assicurazione", "Atto societario",
-  "Contratto fornitura", "Utenza", "Certificazione", "Altro",
-];
+// 🔴 L'ELENCO DEI TIPI E' CHIUSO DAL 30/08/2026, e non vive piu' qui.
+// Prima erano otto SUGGERIMENTI su un campo di testo libero: si potevano
+// ignorare, e «Fattura», «fattura» e «Fatture» diventavano tre sezioni
+// diverse. Le otto sezioni vere le ha decise Alessio e stanno nel database
+// (`sezioni_archivio`), dove un legame impedisce di scriverne una nona.
+// ⚠️ Le vecchie scritte a mano non sono state buttate: sono nel catalogo
+//    SPENTE, quindi restano legali per i documenti che le portano e non si
+//    propongono piu' (regola del 27/08).
 
 const emptyForm = {
   title: "", doc_type: "", document_date: "", counterparties: "", amount: "", expiry_date: "", note: "",
@@ -28,6 +31,7 @@ export default function ArchivioDocumentiHome() {
   // che ce n'è dell'altro da guardare.
   const [postaInAttesa, setPostaInAttesa] = useState(0);
   const [documents, setDocuments] = useState([]);
+  const [sezioni, setSezioni] = useState([]);
   const [search, setSearch] = useState("");
   // Quello che si sta ancora scrivendo, e quello su cui si cerca davvero.
   // Prima partiva una richiesta a OGNI tasto premuto: scrivere «locazione»
@@ -50,6 +54,10 @@ export default function ArchivioDocumentiHome() {
     // assente, si legge «non c'è niente in attesa».
     leggi(getEntities()).then(setEntities);
     leggi(contaPostaInAttesa()).then(setPostaInAttesa);
+    // ⚠️ E la terza: senza le sezioni il menu resta vuoto e non si puo'
+    //    archiviare niente. `leggi` fa in modo che una lettura fallita si
+    //    denunci invece di sembrare «non ce ne sono».
+    leggi(sezioniArchivio()).then(setSezioni);
   }, []);
 
   const reload = () => listDocuments({ search: cercato || undefined }).then(setDocuments);
@@ -69,6 +77,47 @@ export default function ArchivioDocumentiHome() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cercato]);
+
+  // 🔴 L'ARCHIVIO SI GUARDA A SEZIONI (30/08/2026, richiesta di Alessio).
+  //    Prima era un elenco solo, ordinato per data: per trovare una fattura
+  //    bisognava scorrere anche i contratti e le pratiche.
+  // ⚠️ L'ORDINE DELLE SEZIONI E' QUELLO DEL CATALOGO, non alfabetico e non
+  //    per quantita': lo ha deciso lui, e una sezione che si sposta perche'
+  //    e' cresciuta e' una sezione che si cerca due volte.
+  // ⚠️ E UNA SEZIONE VUOTA NON COMPARE: qui si cerca un documento, e otto
+  //    riquadri di cui sei vuoti sono sei righe da saltare ogni volta. Che
+  //    la sezione esista si vede aprendo il menu del modulo.
+  // ⚠️ I documenti SENZA sezione stanno in fondo e si dicono: sono i due
+  //    scritti prima che l'elenco fosse chiuso, e vanno sistemati a mano —
+  //    nasconderli li farebbe sparire dall'archivio.
+  // ⚠️ Il segno «non letto» non e' un elenco: si guarda PRIMA di usarlo.
+  //    Qui diventa un elenco vuoto per non far cadere il raggruppamento,
+  //    e il menu del modulo lo dichiara al posto suo — cosi' l'assenza
+  //    non si traveste da «non ce ne sono».
+  const elencoSezioni = useMemo(() => (nonLetto(sezioni) ? [] : sezioni), [sezioni]);
+
+  const perSezione = useMemo(() => {
+    const gruppi = new Map();
+    for (const d of documents) {
+      const chiave = d.doc_type ?? "";
+      if (!gruppi.has(chiave)) gruppi.set(chiave, []);
+      gruppi.get(chiave).push(d);
+    }
+    const ordinate = elencoSezioni
+      .filter((s) => gruppi.has(s.codice))
+      .map((s) => ({ codice: s.codice, titolo: s.etichetta, righe: gruppi.get(s.codice) }));
+    // Una sezione che i documenti portano ma che il catalogo non offre piu'
+    // (spenta, e quindi fuori da `sezioni`) non deve sparire dall'elenco.
+    for (const [codice, righe] of gruppi) {
+      if (codice && !ordinate.some((o) => o.codice === codice)) {
+        ordinate.push({ codice, titolo: codice, righe });
+      }
+    }
+    if (gruppi.has("")) {
+      ordinate.push({ codice: "", titolo: "Senza sezione", righe: gruppi.get("") });
+    }
+    return ordinate;
+  }, [documents, elencoSezioni]);
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -180,10 +229,21 @@ export default function ArchivioDocumentiHome() {
           <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Titolo del documento" className={`${inputClass} sm:col-span-2`} />
-              <input list="doc-type-suggestions" value={form.doc_type} onChange={(e) => setForm((f) => ({ ...f, doc_type: e.target.value }))} placeholder="Tipo (libero)" className={inputClass} />
-              <datalist id="doc-type-suggestions">
-                {TYPE_SUGGESTIONS.map((t) => <option key={t} value={t} />)}
-              </datalist>
+              {/* ⚠️ Un menu, non un campo libero: e' il vocabolario chiuso che
+                  fa esistere le sezioni. E la prima voce dice «Sezione…»
+                  invece di essere gia' una scelta — un menu che si apre su
+                  «Fatture ricevute» archivierebbe li' tutto quello che
+                  nessuno guarda. */}
+              {nonLetto(sezioni) ? (
+                <DatoNonLetto cosa="le sezioni dell'archivio" nonVuolDire="che non ce ne siano" />
+              ) : (
+              <select value={form.doc_type} onChange={(e) => setForm((f) => ({ ...f, doc_type: e.target.value }))} className={inputClass}>
+                <option value="">Sezione…</option>
+                {elencoSezioni.map((s) => (
+                  <option key={s.codice} value={s.codice}>{s.etichetta}</option>
+                ))}
+              </select>
+              )}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
               <div>
@@ -262,13 +322,19 @@ export default function ArchivioDocumentiHome() {
           <p className="text-b58-charcoal-soft">{search ? "Nessun documento corrisponde." : "Nessun documento ancora."}</p>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {documents.map((d) => (
+        <div className="space-y-6">
+          {perSezione.map((sez) => (
+            <section key={sez.codice || "(senza)"}>
+              <h2 className="font-display testo-sala-grande text-b58-charcoal mb-2">
+                {sez.titolo}{" "}
+                <span className="testo-sala text-b58-charcoal-soft font-normal">({sez.righe.length})</span>
+              </h2>
+              <ul className="space-y-2">
+          {sez.righe.map((d) => (
             <li key={d.id} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 flex items-start justify-between gap-3">
               <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-left min-w-0">
                 <div className="text-b58-charcoal font-medium">{d.title}</div>
                 <div className="testo-sala text-b58-charcoal-soft mt-0.5">
-                  {d.doc_type && <>{d.doc_type} · </>}
                   {d.document_date && <>{formatDate(d.document_date)} · </>}
                   {d.counterparties && <>{d.counterparties} · </>}
                   {d.amount != null && <>{formatEUR(d.amount)} · </>}
@@ -284,7 +350,10 @@ export default function ArchivioDocumentiHome() {
               </div>
             </li>
           ))}
-        </ul>
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

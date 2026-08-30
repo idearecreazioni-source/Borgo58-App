@@ -290,10 +290,10 @@ export function motivoAzioneBloccata(azione, parametri) {
     const senzaTipo = !String(p.tipo ?? "").trim();
     const senzaData = !String(p.data ?? "").trim();
     if (senzaTipo && senzaData) {
-      return "Prima di archiviarlo servono il tipo e la data: premi «Correggi i dati» e scrivili. Senza, il documento non compare cercando per tipo e finisce in fondo all'elenco — si ritrova solo ricordandone il titolo esatto.";
+      return "Prima di archiviarlo servono la sezione e la data: premi «Correggi i dati», scegli la sezione e scrivi la data. Senza, il documento non compare in nessuna sezione dell'archivio e si ritrova solo ricordandone il titolo esatto.";
     }
     if (senzaTipo) {
-      return "Manca il tipo del documento: premi «Correggi i dati» e scrivilo, altrimenti non comparirà cercando «contratti» o «fatture».";
+      return "Manca la sezione dell'archivio: premi «Correggi i dati» e scegline una, altrimenti il documento non compare in nessuna sezione. Se l'assistente non l'ha proposta è perché non ha saputo dire quale sia: sceglierla è più sicuro che indovinarla.";
     }
     if (senzaData) {
       return "Manca la data del documento: premi «Correggi i dati» e scrivila, altrimenti finisce in fondo all'elenco senza un posto nel tempo.";

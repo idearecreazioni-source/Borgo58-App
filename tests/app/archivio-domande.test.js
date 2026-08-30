@@ -46,7 +46,7 @@ describe("chiedi all'archivio: cosa finisce davanti all'assistente", () => {
       .insert([
         {
           title: TITOLO_A,
-          doc_type: "contratto",
+          doc_type: "contratti",   // ⚠️ dal 30/08 le sezioni sono un elenco chiuso
           // ⚠️ La data serve: dal 28/08 un documento senza tipo E data non
           // entra in archivio (vincolo `documents_ha_identita`). Non e una
           // formalita della prova — e la stessa identita che si pretende da
@@ -58,7 +58,7 @@ describe("chiedi all'archivio: cosa finisce davanti all'assistente", () => {
         },
         {
           title: TITOLO_B,
-          doc_type: "preventivo",
+          doc_type: "fornitori_ddt",
           document_date: "2026-07-02",
           counterparties: "Altra ditta di prova",
           testo: "Preventivo per la fornitura di tovaglie e tovaglioli in lino.",

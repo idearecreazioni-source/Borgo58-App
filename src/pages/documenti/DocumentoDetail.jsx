@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { deleteDocument, getDocument, getDocumentUrl, updateDocument } from "../../lib/api/documents";
+import { deleteDocument, getDocument, getDocumentUrl, sezioniArchivio, updateDocument } from "../../lib/api/documents";
 import { leggiContenutoDocumento } from "../../lib/api/assistente";
 import { formatDate } from "../../lib/constants";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import DatoNonLetto from "../../components/DatoNonLetto";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 export default function DocumentoDetail() {
@@ -15,6 +17,7 @@ export default function DocumentoDetail() {
   const [saving, setSaving] = useState(false);
   const [leggendo, setLeggendo] = useState(false);
   const [esitoLettura, setEsitoLettura] = useState(null);
+  const [sezioni, setSezioni] = useState([]);
 
   useEffect(() => {
     setLoading(true);
@@ -26,6 +29,21 @@ export default function DocumentoDetail() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  // 🔴 LE SEZIONI SI CHIEDONO PASSANDO QUELLA CHE IL DOCUMENTO PORTA GIA'
+  //    (30/08/2026), e non e' un di piu': un menu a tendina che riceve un
+  //    valore fuori elenco **mostra la prima opzione**, senza nessun errore
+  //    (trappola del 27/08, vista a schermo). Su un documento archiviato con
+  //    una sezione poi spenta, aprire la scheda e salvare gliela
+  //    cambierebbe — e il difetto sarebbe indistinguibile da una scelta.
+  // ⚠️ Si aspetta il documento, perche' la sua sezione e' il parametro.
+  useEffect(() => {
+    if (!doc) return;
+    // ⚠️ `leggi` invece di un `catch` che svuota: se la lettura fallisce il
+    //    valore resta il segno «non letto», e la schermata lo dichiara invece
+    //    di mostrare un menu vuoto che si legge «non ce ne sono».
+    leggi(sezioniArchivio(doc.doc_type ?? null)).then(setSezioni);
+  }, [doc?.doc_type, doc]);
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -119,8 +137,23 @@ export default function DocumentoDetail() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className={labelClass}>Tipo</label>
-            <input value={doc.doc_type ?? ""} onChange={(e) => setField("doc_type", e.target.value)} className={inputClass} />
+            <label className={labelClass}>Sezione</label>
+            {nonLetto(sezioni) ? (
+              <DatoNonLetto
+                cosa="le sezioni dell'archivio"
+                nonVuolDire="che questo documento non abbia una sezione"
+                onRiprova={() => leggi(sezioniArchivio(doc.doc_type ?? null)).then(setSezioni)}
+              />
+            ) : (
+            <select value={doc.doc_type ?? ""} onChange={(e) => setField("doc_type", e.target.value)} className={inputClass}>
+              <option value="">Senza sezione</option>
+              {sezioni.map((s) => (
+                <option key={s.codice} value={s.codice}>
+                  {s.etichetta}{s.attiva ? "" : " (non si usa piu')"}
+                </option>
+              ))}
+            </select>
+            )}
           </div>
           <div>
             <label className={labelClass}>Controparti</label>

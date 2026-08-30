@@ -1,6 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { titolare } from "./aiuto";
+// 🔴 IL CLIENT SI COSTRUISCE, non si importa: `aiuto.js` non esporta nessun
+//    `titolare`, quindi questa riga dava `undefined`. Non aveva mai fatto
+//    danno perche la prova usciva PRIMA di usarlo — finche nessun documento
+//    vivo diceva «non ancora in produzione», il controllo tornava subito.
+//    ⚠️ Cioe la rete nata oggi non poteva scattare: al primo caso vero
+//    sarebbe morta con «Cannot read properties of undefined» invece di
+//    nominare la frase falsa. L hanno fatta arrivare fin li le frasi scritte
+//    stanotte, che sono il primo caso vero.
+import { clientAutenticato, credenziali } from "./aiuto";
+
+const titolare = await clientAutenticato(credenziali().titolare);
 
 // 🔴 UNA FRASE SCRITTA A MANO CHE DICHIARA UNO STATO È DESTINATA A DIVENTARE
 // FALSA — regola approvata da Alessio il 30/08/2026, e nasce da due casi

@@ -54,11 +54,11 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **71 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**27 in attesa** · **0 in corso** · **40 fatte** · **4 scartate da lui**.
+**26 in attesa** · **0 in corso** · **41 fatte** · **4 scartate da lui**.
 La somma fa **71**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **27** ancora aperte, **9** si possono fare adesso e
+Delle **26** ancora aperte, **8** si possono fare adesso e
 **18** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
@@ -189,7 +189,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | C1 | **Finanziamenti da terzi dentro «Ce la faccio?».** | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
 | C2 | **Il caricamento dell'estratto conto**, rinviato da lui finché non sceglie la banca. | 15/08/2026 | Blocco 6 del mandato personale e tesoreria | aspetta | in attesa |
 | C3 | **Il simulatore col registratore fiscale virtuale**: prima si guarda cosa succede, poi si decide. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa |
-| C10 | 🔴 **LA TASCA: un terzo soggetto accanto a Borgo 58 e Orto Borgo 58.** Alessio tiene contanti suoi e ci compra roba per il progetto **senza fattura**. Non è deducibile e lui non la dichiara: vuole solo saperne il conto. Registra **solo uscite**, l'unica regola ammessa è «Indeducibile», e resta fuori dalla proiezione fiscale **per costruzione**. | 30/08/2026 | Sua decisione | — | fatta · migrazione `20260830000012` (non ancora in produzione al momento in cui scrivo: aspetta il push) |
+| C10 | 🔴 **LA TASCA: un terzo soggetto accanto a Borgo 58 e Orto Borgo 58.** Alessio tiene contanti suoi e ci compra roba per il progetto **senza fattura**. Non è deducibile e lui non la dichiara: vuole solo saperne il conto. Registra **solo uscite**, l'unica regola ammessa è «Indeducibile», e resta fuori dalla proiezione fiscale **per costruzione**. | 30/08/2026 | Sua decisione | — | fatta · migrazione `20260830000012` |
 | C4 | 🔴 **Il pulsante «il cliente vuole fattura» in Comande.** Lo stato `fattura_da_emettere` **esiste già** nel database ed è **già isolato nei conteggi** — ma **dalla sala non lo si raggiunge**: manca il gesto alla chiusura del conto, e manca la strada per chiuderlo quando la fattura viene emessa. *Un cliente che chiede la fattura al tavolo è un caso normale, e oggi in sala non c'è niente da premere.* | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
 | C5 | **La chiusura dell'anno fiscale, con avviso se restano conti senza documento.** Riusa il meccanismo delle chiusure mensili, che esiste già e tiene lo storico delle chiusure precedenti senza riscrivere il passato. | 30/08/2026 | Sua richiesta | si può fare adesso | in attesa |
 | C6 | **Produrre per la commercialista ciò che solo il gestionale ha**: valore del magazzino al 31/12, elenco dei beni durevoli comprati, conti senza documento, merce ricevuta senza fattura. ⚠️ **NIENTE ratei e risconti**: scartati da lui perché costerebbero un campo in più a ogni movimento, per sempre. | 30/08/2026 | Sua richiesta, coi confini messi da lui | aspetta | in attesa · la forma la deve dire la commercialista (quesito L22) |
@@ -213,7 +213,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | si può fare adesso | in attesa |
 | N7 | **Il costo del personale e i premi** — la voce di spesa più grossa dell'anno non passa da nessun modulo. Fermo in attesa dei documenti veri di Gianna. | 15/08/2026 | Blocchi 1 e 2 del mandato personale e tesoreria | aspetta | in attesa · aspetta il prospetto del costo aziendale e il calendario delle paghe |
 | N8 | **Il simulatore di assunzione**: costo dal livello CCNL, non da un lordo digitato. | 15/08/2026 | Blocco 4 dello stesso mandato | aspetta | in attesa |
-| N11 | 🔴 **L'archivio a sezioni.** `documents.doc_type` esiste ed è obbligatorio, ma è **testo libero**: nessun vocabolario, nessun vincolo oltre al non-vuoto — quindi «Fattura», «fattura» e «Fatture» diventano **tre sezioni diverse**. Va chiuso l'elenco e mostrato l'archivio diviso. Le otto categorie sono sue: Fatture ricevute · Fornitori e DDT · Banca e finanziamenti · Contratti e affitti · Autorizzazioni e pratiche · Personale · Fisco e adempimenti · Attrezzature e garanzie. ⚠️ Vale la regola del 27/08: **una categoria spenta resta legale** per i documenti che la portano, non si distrugge. | 30/08/2026 | Sua richiesta, categorie sue | si può fare adesso | in attesa |
+| N11 | 🔴 **L'archivio a sezioni.** `documents.doc_type` era **testo libero**: «Fattura», «fattura» e «Fatture» sarebbero state tre sezioni diverse. Le otto sezioni sono sue. ⚠️ Vale la regola del 27/08: **una categoria spenta resta legale** per i documenti che la portano, non si distrugge. | 30/08/2026 | Sua richiesta, categorie sue | — | fatta · migrazione `20260830000013` |
 
 ---
 

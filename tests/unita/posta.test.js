@@ -232,21 +232,21 @@ describe("il carico si spegne CON LA RAGIONE, non si lascia premere per essere r
 describe("un documento non si archivia senza identita", () => {
   it("senza tipo NE data: bloccato, e la ragione nomina tutt'e due", () => {
     const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { titolo: "Rapportino" });
-    expect(m).toMatch(/tipo/i);
+    expect(m).toMatch(/sezione/i);
     expect(m).toMatch(/data/i);
     expect(m).toMatch(/Correggi i dati/);
   });
 
   it("manca solo il tipo: lo dice, e non parla della data", () => {
     const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { data: "2026-07-12" });
-    expect(m).toMatch(/Manca il tipo/);
+    expect(m).toMatch(/Manca la sezione/);
     expect(m).not.toMatch(/Manca la data/);
   });
 
   it("manca solo la data: lo dice, e non parla del tipo", () => {
     const m = motivoAzioneBloccata({ tipo: "archivia_documento" }, { tipo: "rapportino" });
     expect(m).toMatch(/Manca la data/);
-    expect(m).not.toMatch(/Manca il tipo/);
+    expect(m).not.toMatch(/Manca la sezione/);
   });
 
   it("e NON e' un muro: con tutt'e due si archivia", () => {
@@ -258,11 +258,11 @@ describe("un documento non si archivia senza identita", () => {
   it("uno spazio non e' un tipo: non basta riempire per finta", () => {
     expect(
       motivoAzioneBloccata({ tipo: "archivia_documento" }, { tipo: "   ", data: "2026-07-12" })
-    ).toMatch(/Manca il tipo/);
+    ).toMatch(/Manca la sezione/);
   });
 
   it("vale anche per il testo archiviato, che finisce nella stessa tabella", () => {
-    expect(motivoAzioneBloccata({ tipo: "archivia_testo" }, {})).toMatch(/tipo/i);
+    expect(motivoAzioneBloccata({ tipo: "archivia_testo" }, {})).toMatch(/sezione/i);
   });
 
   it("e il carico resta governato dalla sua regola, non da questa", () => {

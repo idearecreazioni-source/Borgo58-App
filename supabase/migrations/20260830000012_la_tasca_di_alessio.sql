@@ -72,11 +72,19 @@ as $fn$
   select exists (select 1 from entities where id = p_entity_id and entity_type = 'tasca');
 $fn$;
 
--- ⚠️ Nasce aperta a chiunque abbia la chiave pubblica (trappola dell'11/08):
---    si richiude e si concede solo a chi la usa. La chiamano i trigger, che
---    girano coi permessi del proprietario, e le schermate del titolare.
+-- 🔴 LA PORTA SI CHIUDE E BASTA, e non le si mette un portiere.
+--    Nasce aperta a chiunque abbia la chiave pubblica (trappola
+--    dell'11/08), e la rete dei permessi l'ha nominata subito. Ma la cura
+--    giusta e' la (a) della regola del 27/08 — *nessun utente la chiama,
+--    quindi si chiude la porta e non serve nessun portiere*:
+--    · la chiamano SOLO i tre trigger qui sotto, che sono `security
+--      definer` e la eseguono coi permessi del proprietario;
+--    · nessuna schermata la chiama;
+--    · e un `is_titolare()` dentro sarebbe stato **la cura sbagliata**:
+--      dentro un `security definer` l'identita' resta quella di chi
+--      chiama, quindi un movimento di cassa scritto dalla sala sarebbe
+--      stato rifiutato da un controllo che non c'entrava niente.
 revoke all on function e_una_tasca(uuid) from public, anon, authenticated;
-grant execute on function e_una_tasca(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 3. DALLA TASCA ESCONO SOLDI E BASTA, E SEMPRE INDEDUCIBILI

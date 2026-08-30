@@ -16,6 +16,28 @@ export async function listDocuments({ search } = {}) {
   return data;
 }
 
+// 🔴 LE SEZIONI DELL'ARCHIVIO (30/08/2026). Prima `doc_type` era testo
+// libero, quindi «Fattura», «fattura» e «Fatture» erano tre sezioni diverse.
+//
+// ⚠️ SI PASSA SEMPRE IL VALORE CORRENTE, e non e' un di piu': un menu a
+//    tendina che riceve un valore fuori elenco **mostra la prima opzione**,
+//    senza nessun errore (trappola del 27/08, vista a schermo). Chi apre un
+//    documento vecchio e salva cambierebbe la sua sezione senza saperlo.
+//    La funzione del database aggiunge la sezione corrente anche se spenta.
+export async function sezioniArchivio(corrente = null) {
+  const { data, error } = await supabase.rpc("sezioni_archivio_per", { p_corrente: corrente });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Quante ne ha ogni sezione — comprese le VUOTE, che sono un'informazione:
+// «qui non c'e' ancora niente» non e' «questa sezione non esiste».
+export async function documentiPerSezione() {
+  const { data, error } = await supabase.rpc("documenti_per_sezione");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getDocument(id) {
   const { data, error } = await supabase.from("documents").select("*").eq("id", id).single();
   if (error) throw error;

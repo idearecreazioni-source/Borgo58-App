@@ -65,9 +65,9 @@ un rovesciamento racconta *cosa è cambiato*, non *cosa vale adesso* — ma
 * 🔴 **30/08 — UNA FRASE SCRITTA A MANO CHE DICHIARA UNO STATO È DESTINATA A
 DIVENTARE FALSA.** Non si scrive a mano: **si chiede al gestionale**. Dove non
 si può, la frase porta accanto **la data in cui era vera**.
-  La regola nasce da due casi dello stesso giorno: `DECISIONI.md` diceva
-  «Migrazione `20260828000008` — non ancora in produzione» e quella migrazione
-  c'era da due giorni; e i quattro riepiloghi del 30/08 dicevano «nessuna
+  La regola nasce da due casi dello stesso giorno: `DECISIONI.md` dichiarava
+  che la migrazione `20260828000008` non era ancora entrata in produzione, e
+  quella migrazione c'era da due giorni; e i quattro riepiloghi del 30/08 dicevano «nessuna
   migrazione applicata», che è diventato falso **cinque minuti dopo**.
   ⚠️ **IL TELAIO, misurato prima di correggere**: nei documenti **vivi** —
   quelli che dichiarano cosa vale adesso — le frasi che dicono cosa c'è in
@@ -1038,6 +1038,37 @@ respinto sul gesto, e il messaggio NOMINA il menu dove il piatto si trova.
 * 23/08 — Le fatture le emette Alessio e si generano SOLO DAL GESTIONALE, che poi
 le invia a Fatture in Cloud. La fattura nasce dal conto, quindi non c'è niente
 da riconciliare. La numerazione deve avere UNA SOLA sorgente.
+
+## Archivio Documenti
+
+* 🔴 **30/08 — L'ARCHIVIO SI GUARDA A SEZIONI, E L'ELENCO DELLE SEZIONI È
+CHIUSO.** Fino a stanotte il tipo di un documento era **testo libero**:
+«Fattura», «fattura» e «Fatture» sarebbero diventate tre sezioni diverse.
+Le **otto** sono sue: Fatture ricevute · Fornitori e DDT · Banca e
+finanziamenti · Contratti e affitti · Autorizzazioni e pratiche · Personale ·
+Fisco e adempimenti · Attrezzature e garanzie.
+  ⚠️ **Vale la regola del 27/08**: i valori scritti a mano prima di stanotte
+  **non si buttano e non si indovinano** — entrano nel catalogo **spenti**,
+  così i documenti che li portano restano validi e nessuno li propone più.
+  *Indovinare a quale delle otto appartenga «Verbale» sarebbe riscrivere un
+  suo dato senza che nessuno lo chieda.* Sul progetto di prova ne sono state
+  conservate **nove**; in produzione i documenti sono **zero**.
+  ⚠️ **Una sezione VUOTA non compare nell'elenco** — qui si cerca un
+  documento, e sei riquadri vuoti sono sei righe da saltare ogni volta. Che
+  la sezione esista si vede aprendo il menu.
+  ⚠️ **E i documenti senza sezione stanno in fondo e si dicono**: nasconderli
+  li farebbe sparire dall'archivio.
+  ⚠️ **L'ordine è quello del catalogo**, non alfabetico e non per quantità:
+  una sezione che si sposta perché è cresciuta è una sezione che si cerca due
+  volte.
+* 🔴 **30/08 — L'ASSISTENTE PROPONE UNA SEZIONE DELL'ELENCO, NON UNA PAROLA
+SUA.** Chiudere il vocabolario avrebbe rotto la posta, che scriveva il tipo
+proposto dal modello dritto in archivio. L'elenco arriva al modello dallo
+stesso catalogo (`vocabolari_per_assistente`), e il valore che torna **passa
+da un filtro**: se non appartiene, arriva **vuoto** — e la schermata lo dice
+invece di archiviare nella sezione sbagliata.
+  ⚠️ **Solo le sezioni ACCESE arrivano al modello**: proporne una spenta
+  rimetterebbe in circolo una parola che l'elenco chiuso ha appena tolto.
 
 ## Preventivi ed eventi
 

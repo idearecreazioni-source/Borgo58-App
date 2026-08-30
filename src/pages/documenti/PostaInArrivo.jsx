@@ -23,6 +23,7 @@ import { listIngredients } from "../../lib/api/ingredients";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { variantiIngrediente, variazionePrezzo } from "../../lib/api/assistente";
 import { righeListaAperte } from "../../lib/api/shoppingList";
+import { sezioniArchivio } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, qtaConUnita } from "../../lib/constants";
@@ -749,6 +750,8 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
 }
 
 export default function PostaInArrivo() {
+  // Le sezioni dell'archivio, per il menu del campo «tipo» (30/08/2026).
+  const [sezioni, setSezioni] = useState([]);
   const [posta, setPosta] = useState([]);
   const [valori, setValori] = useState({});
   const [loading, setLoading] = useState(true);
@@ -853,6 +856,10 @@ export default function PostaInArrivo() {
     // se non si riesce a leggerlo la schermata NON indovina — dice che non
     // sa se MEMO riprovera, e offre lo stesso la via d uscita.
     leggi(getMaxTentativiLettura()).then(setMaxTentativi);
+    // ⚠️ Senza, il menu delle sezioni resta vuoto e non si puo' archiviare
+    //    niente: `leggi` fa in modo che una lettura fallita si denunci
+    //    invece di sembrare «non ce ne sono».
+    leggi(sezioniArchivio()).then(setSezioni);
     lettorePostaFermo().then(setLettore);
   }, []);
 
@@ -1135,6 +1142,30 @@ export default function PostaInArrivo() {
                       {CAMPI[a.tipo].map((c) => (
                         <div key={c} className="min-w-0">
                           <label className={etichetta}>{ETICHETTE[c]}</label>
+                          {/* 🔴 IL «TIPO» DI UN DOCUMENTO E' UN MENU CHIUSO (30/08).
+                              Prima era testo libero, e il modello ne scriveva uno
+                              suo: «Fattura», «fattura» e «Fatture» diventavano tre
+                              sezioni diverse dell'archivio.
+                              ⚠️ E il valore proposto arriva GIA' FILTRATO dalla
+                                 funzione online: se il modello ha scritto una
+                                 sezione che non esiste, arriva VUOTO — perche' un
+                                 menu che riceve un valore fuori elenco mostra la
+                                 prima opzione, senza nessun errore (trappola del
+                                 27/08). Vuoto, il pulsante si spegne e dice cosa
+                                 manca; con la prima opzione, il documento
+                                 finirebbe nella sezione sbagliata in silenzio. */}
+                          {c === "tipo" ? (
+                            <select
+                              value={valori[a.id]?.[c] ?? ""}
+                              onChange={(e) => cambia(a.id, c, e.target.value)}
+                              className={campo}
+                            >
+                              <option value="">Sezione…</option>
+                              {(nonLetto(sezioni) ? [] : sezioni).map((s) => (
+                                <option key={s.codice} value={s.codice}>{s.etichetta}</option>
+                              ))}
+                            </select>
+                          ) : (
                           <input
                             type={TIPO_CAMPO[c] ?? "text"}
                             step={c === "importo" ? "0.01" : undefined}
@@ -1142,6 +1173,7 @@ export default function PostaInArrivo() {
                             onChange={(e) => cambia(a.id, c, e.target.value)}
                             className={campo}
                           />
+                          )}
                         </div>
                       ))}
                     </div>
