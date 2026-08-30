@@ -593,7 +593,24 @@ il mezzo è decorativo.
 detto cosa manca. Non si respinge tutto il conto.
 * 23/08 — Le spezie a pizzico si possono trascurare. MA per VANIGLIA e ZAFFERANO
 il costo va incluso: il criterio non è la categoria «spezia», è il VALORE.
-* 23/08 — Il vino non compare nell'elenco degli scarichi mancati.
+* ~~23/08 — Il vino non compare nell'elenco degli scarichi mancati.~~
+**SUPERATA IN PARTE il 30/08** — la riga vecchia resta perche' la ragione di
+allora vale ancora per meta' (rovesciamento n. 73).
+* 🔴 **30/08 — LE BEVANDE COLLEGATE A UN PRODOTTO ENTRANO NELL'ELENCO DEGLI
+SCARICHI MANCATI COME TUTTO IL RESTO; QUELLE NON COLLEGATE RESTANO FUORI.**
+  ⚠️ **E' cambiato il mondo, non l'opinione**: dal 30/08 il magazzino segue le
+  bevande. Una bottiglia collegata a un prodotto che non c'e' **e'** un buco
+  del magazzino, identico a quello del baccala'.
+  ⚠️ **Per le non collegate la ragione del 23/08 vale intera, ed e' il prezzo
+  che accettiamo**: li' non c'e' nessun prodotto da far scendere, e una riga a
+  ogni conto direbbe ogni sera la stessa cosa — erano **1.840 righe tutte
+  uguali** che seppellivano le venti che contano. Si dichiara **nella carta**,
+  una volta sola.
+  ✅ **Misurato il 30/08 dentro una transazione annullata**: la voce collegata
+  senza giacenza produce **1** riga di anomalia col nome del prodotto, quella
+  non collegata **0**, e dopo l'annullamento non e' rimasto niente.
+  ⚠️ **Il codice era gia' cosi' dalla migrazione `20260830000002`**: a restare
+  indietro era la frase qui sopra.
 * 23/08 — Per i prodotti di valore si usa l'unità GRAMMI, non la confezione: le
 bustine legano al formato del fornitore.
 * 23/08 — AVVISO SUL PRODOTTO FERMO: un solo avviso con risposte predeterminate —
@@ -939,6 +956,33 @@ di forma diversa uno dall'altro si leggono peggio di una riga vuota in più.
     il simbolo. Misurato il 30/08 su MEMO foto e MEMO voce a tutte e tre le
     densita: 15,00 mm di altezza, 10,00 di stacco, 6,00 di testo, 343 punti di
     larghezza, `rgb(43,38,33)` — identici numero per numero.
+* 🔴 **30/08 — LO SPAZIO PER L'OROLOGIO E PER LA BARRA DEL POLLICE È UN
+TELAIO, e sta su `#root`.** Alessio apre il gestionale **dall'icona sulla
+schermata del telefono**: lì l'app prende lo schermo intero e in cima non c'è
+più nessuna barra del browser a tenere il contenuto lontano dall'orologio.
+  ⚠️ **Il difetto era DOPPIO, e la seconda metà era invisibile**: lo stacco che
+  la barra del pollice metteva in fondo con `env(safe-area-inset-bottom)`
+  valeva **zero**, perché quelle variabili restano a zero finché il viewport
+  non dichiara `viewport-fit=cover` — che non c'era. *Una riga scritta,
+  giusta, e che non poteva avere effetto* — la famiglia della dichiarazione
+  perdente del 25/08.
+  ⚠️ **STA SU `#root` E NON SUL `Layout`**, ed è una scelta: sul Layout
+  resterebbero fuori proprio le tre schermate che si vedono per prime aprendo
+  dall'icona — la richiesta del PIN, il modulo di prenotazione, l'informativa.
+  ⚠️ **E LA MISURA NON SI SCEGLIE: è quella che dichiara il sistema.** Su un
+  computer o su un tablet senza tacca vale **zero** e non cambia niente.
+  Nessun numero da tarare, nessun elenco di telefoni da tenere aggiornato — ed
+  è questo che ne fa un telaio invece di una pezza.
+  ✅ **Misurato a 390 punti su due gusci diversi**, con un orologio finto da 47
+  punti: il titolo del modulo di prenotazione passa da **160 a 207** — 47
+  esatti — e il logo comincia a **87**, cioè 40 punti **sotto** la fine
+  dell'orologio. Senza orologio finto: padding **zero**, guscio **844 = tutto
+  lo schermo**, **nessuno scorrimento in più**.
+  ⚠️ **Chi chiede «tutto lo schermo» chiede tutto lo schermo MENO il telaio**
+  (`844 → 797`, misurato): senza quella riga la pagina scorrerebbe della misura
+  dell'orologio su ogni schermata corta, e la cura si vedrebbe come un difetto
+  nuovo. Sta anche quella in un posto solo, non nelle sei schermate che oggi
+  chiedono l'altezza piena.
 * 26/08 — UN MISURATORE NUOVO SI PROVA PRIMA SU UN CASO DI CUI SI CONOSCE GIÀ
 LA RISPOSTA, altrimenti misura e non si sa cosa. Nasce dalla terza volta in
 due giorni che uno strumento di misura ha mentito. ⚠️ E i numeri già prodotti

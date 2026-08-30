@@ -129,8 +129,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 70 | 30/08/2026 | il nome del tavolo si mostra grande e va a capo |
 | 71 | 30/08/2026 | toccare una preparazione apre il modulo di registrazione |
 | 72 | 30/08/2026 | una porzione per confezione non si può scrivere |
+| 73 | 30/08/2026 | il vino non compare nell'elenco degli scarichi mancati |
 
-⚠️ **Righe: 73.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 74.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2767,3 +2768,45 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ **E la cosa che il vincolo voleva impedire non è stata abbandonata**:
    resta dove appartiene, nella schermata, che propone il campo **vuoto** e
    lo dice sotto («vuoto = si vende intera»).
+
+## 73 · 30/08/2026 — «il vino non compare nell'elenco degli scarichi mancati»
+
+1. **Cosa era stato deciso e quando.** Il **23/08/2026**, e sta in
+   `DECISIONI.md` alla voce *Magazzino e scarico*: *«Il vino non compare
+   nell'elenco degli scarichi mancati»*. Il ramo (a) di
+   `scarica_magazzino_conto` esclude `destination = 'bar'`.
+
+2. **La ragione di allora.** Misurate **1.840 righe tutte uguali**, che
+   seppellivano le venti che contano. *Un guardiano che grida sempre si
+   impara a spegnere* — e quelle righe gridavano per una cosa che non era un
+   buco del magazzino: era **come si ordina da bere**, perché il magazzino
+   allora non seguiva le bevande.
+
+3. **Cosa si decide adesso.** Le bevande **collegate a un prodotto** entrano
+   nell'elenco **come tutto il resto**; quelle **non collegate** restano
+   fuori. Decisione di Alessio del 30/08, su una via di mezzo proposta.
+
+4. **Perché la ragione di allora non vale più — e per metà vale ancora.**
+   🔴 **È cambiato il mondo, non l'opinione**: dal 30/08 il magazzino **segue
+   le bevande** (`bar_items.ingredient_id`, migrazione `20260830000002`). Una
+   bottiglia collegata a un prodotto che non c'è **è** un buco del magazzino,
+   identico a quello del baccalà: tacerlo sarebbe la cosa che l'elenco esiste
+   per non fare.
+   ⚠️ **Per le non collegate la ragione del 23/08 vale intera, e questo è il
+   prezzo che accettiamo**: lì non c'è nessun prodotto da far scendere, quindi
+   una riga di anomalia a ogni conto direbbe ogni sera la stessa cosa. Si
+   dichiara **nella carta**, una volta — *un avviso ripetuto a ogni serata è
+   un avviso che si spegne.*
+
+   ✅ **Misurato il 30/08 sul progetto di prova, dentro una transazione
+   annullata**: una voce della carta **collegata** a un prodotto senza
+   giacenza produce **1 riga** di anomalia col nome del prodotto; una voce
+   **non collegata**, sullo stesso conto, ne produce **0**. Il fabbisogno
+   calcolato contiene **solo** la collegata. Dopo l'annullamento: **zero**
+   prodotti, **zero** voci di carta e **zero** conti rimasti.
+
+   ⚠️ **E il codice era già così**: la migrazione del 30/08 lo aveva fatto e
+   lo dichiarava nel proprio commento. A restare indietro era **la frase in
+   `DECISIONI.md`**, che diceva ancora il divieto intero — cioè *una regola
+   tolta che vive in più posti di quanti se ne toccano togliendola*, la
+   trappola del 27/08, stavolta col codice avanti e le parole indietro.

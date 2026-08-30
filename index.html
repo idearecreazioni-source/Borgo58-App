@@ -19,7 +19,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Borgo 58" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 🔴 `viewport-fit=cover` (30/08/2026) — E' LA META' CHE MANCAVA, e
+         senza di lei l'altra meta' era INERTE. Su iOS le variabili
+         `env(safe-area-inset-*)` — quanto spazio si mangiano l'orologio in
+         cima e la barra del pollice in fondo — valgono **zero** finche' il
+         viewport non dichiara di coprire tutto lo schermo.
+         ⚠️ Quindi lo stacco che `BarraDelPollice` metteva in fondo con
+         `env(safe-area-inset-bottom)` **non ha mai fatto niente**: era una
+         riga scritta, giusta, e che non poteva avere effetto. E' la stessa
+         famiglia della dichiarazione perdente del 25/08 — una riga che
+         nessun errore smentisce e che non fa quello che dice.
+         ⚠️ E NON E' UNA PEZZA PER IL TELEFONO: `env()` vale **zero dove non
+         c'e' niente da evitare** — un computer, un tablet senza tacca. Il
+         margine e' esattamente quello che il sistema dichiara pericoloso,
+         quindi non c'e' nessun numero da tarare e nessun caso da elencare. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Impedisce a Google Translate di tradurre/manipolare il DOM: la
          traduzione automatica va in conflitto con React (crash
          "insertBefore ... not a child of this node" sugli aggiornamenti). -->

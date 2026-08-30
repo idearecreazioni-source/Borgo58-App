@@ -88,7 +88,14 @@ export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
         //    ⚠️ La cura e' l'unita' del progetto («--pxcm»), la stessa con
         //       cui e' fatta l'altezza del pulsante: cosi' le due misure non
         //       possono piu' separarsi al cambio di dispositivo.
-        style={{ paddingBottom: "calc(var(--pxcm) * 1 + env(safe-area-inset-bottom, 0px))" }}
+        //
+        // 🔴 E FINO AL 30/08 LA META' `env()` DI QUESTA RIGA NON FACEVA
+        //    NIENTE. Quelle variabili restano a **zero** finche' il viewport
+        //    non dichiara `viewport-fit=cover`, e in `index.html` non c'era:
+        //    una riga scritta, giusta, e che non poteva avere effetto —
+        //    la stessa famiglia della dichiarazione perdente del 25/08.
+        //    Adesso c'e', e il nome vive in un posto solo (`index.css`).
+        style={{ paddingBottom: "calc(var(--pxcm) * 1 + var(--sicuro-basso, 0px))" }}
         className={
           // ⚠️ `left-0 right-0` e non `w-full`: dentro un contenitore con
           //    margini, `w-full` prende la larghezza del contenitore e la

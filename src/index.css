@@ -71,6 +71,81 @@ body {
 }
 
 /* --------------------------------------------------------------------
+   IL TELAIO CHE STA LONTANO DALL'OROLOGIO E DALLA BARRA DEL POLLICE
+   30/08/2026
+   --------------------------------------------------------------------
+   🔴 IL DIFETTO VISTO DA ALESSIO: aprendo il gestionale **dall'icona sulla
+   schermata del telefono**, il titolo e la riga dei numeri finivano sotto
+   l'orologio. Aperta dall'icona l'app non e' dentro Safari: prende lo
+   schermo intero, e in cima non c'e' piu' nessuna barra del browser a
+   tenere il contenuto lontano dall'orologio.
+
+   🔴 E IL DIFETTO ERA DOPPIO, con la seconda meta' invisibile: lo stacco
+   che la barra del pollice metteva in fondo con `env(safe-area-inset-bottom)`
+   valeva **zero**, perche' quelle variabili restano a zero finche' il
+   viewport non dichiara `viewport-fit=cover` — che in `index.html` non
+   c'era. Una riga scritta, giusta, e che non poteva avere effetto.
+
+   ⚠️ SI CERCA IL TELAIO, NON I DUE CASI. Il difetto non e' di una
+   schermata: e' del guscio dell'app, cioe' **di nessuna schermata e di
+   tutte** — la stessa forma del pulsante del menu (22/08) e del ritorno
+   alla schermata iniziale (27/08), che per la stessa ragione nessun
+   censimento per schermata aveva visto. Quindi la cura sta qui e nel
+   `Layout`, in un posto solo.
+
+   ⚠️ E LA MISURA NON SI SCEGLIE: e' quella che dichiara il sistema. Su un
+   computer, su un tablet senza tacca, e in una modalita' dove iOS ha gia'
+   lasciato il posto all'orologio, `env()` vale **zero** e non cambia
+   niente. Non c'e' nessun numero da tarare e nessun elenco di telefoni da
+   tenere aggiornato — che e' precisamente cio' che rende questo un telaio
+   e non una pezza.
+
+   ⚠️ I nomi sono in italiano come tutto il resto del progetto, e c'e' il
+   ripiego `, 0px` su ognuno: un browser che non conosce `env()` non deve
+   lasciare la variabile vuota, o `calc()` si rompe in silenzio. */
+:root {
+  --sicuro-alto: env(safe-area-inset-top, 0px);
+  --sicuro-basso: env(safe-area-inset-bottom, 0px);
+  --sicuro-sinistra: env(safe-area-inset-left, 0px);
+  --sicuro-destra: env(safe-area-inset-right, 0px);
+}
+
+/* 🔴 IL TELAIO STA SU `#root`, cioe' SOPRA OGNI SCHERMATA, login e
+   pagine pubbliche comprese. Metterlo sul `Layout` avrebbe lasciato fuori
+   proprio le tre schermate che si vedono per prime aprendo dall'icona: la
+   richiesta del PIN, il modulo di prenotazione e l'informativa.
+   ⚠️ In fondo NON si mette niente: chi ha bisogno del fondo e' la barra del
+   pollice, che e' fissata allo schermo e non dentro questo flusso — se lo
+   stacco lo mettesse anche il guscio, si sommerebbe. */
+#root {
+  padding-top: var(--sicuro-alto);
+  padding-left: var(--sicuro-sinistra);
+  padding-right: var(--sicuro-destra);
+}
+
+/* ⚠️ E CHI CHIEDE «TUTTO LO SCHERMO» DEVE CHIEDERE TUTTO LO SCHERMO MENO IL
+   TELAIO. `100vh` comprende la fascia dell'orologio: senza questa riga la
+   pagina scorrerebbe **della misura dell'orologio** su ogni schermata corta,
+   e la cura si vedrebbe come un difetto nuovo.
+   ⚠️ Si scrive qui e non nelle sei schermate che chiedono l'altezza piena:
+   sono quattro file oggi, e il settimo che la chiedera' domani nascerebbe
+   storto. E' la stessa ragione per cui il telaio non sta nel `Layout`. */
+#root .min-h-screen {
+  min-height: calc(100vh - var(--sicuro-alto));
+}
+#root .h-screen {
+  height: calc(100vh - var(--sicuro-alto));
+}
+
+/* ⚠️ In stampa il telaio non esiste: il foglio non ha un orologio. */
+@media print {
+  #root {
+    padding: 0;
+  }
+}
+
+
+/* --------------------------------------------------------------------
    Target di tocco in CENTIMETRI REALI (§3.2.1)
    --------------------------------------------------------------------
    Lezione emersa provando il simulatore su tablet: un pulsante "+" da

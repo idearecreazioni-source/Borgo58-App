@@ -54,12 +54,12 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **70 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**28 in attesa** · **0 in corso** · **38 fatte** · **4 scartate da lui**.
+**27 in attesa** · **0 in corso** · **39 fatte** · **4 scartate da lui**.
 La somma fa **70**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **28** ancora aperte, **9** si possono fare adesso e
-**19** aspettano qualcun altro (un consulente, la banca, un
+Delle **27** ancora aperte, **9** si possono fare adesso e
+**18** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
 <!-- FINE CONTEGGIO -->
@@ -240,7 +240,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | G2 | **L'unità si adatta**: 0,2 g invece di 0.0002 kg. *Un peso che ha bisogno di quattro decimali è nell'unità sbagliata.* | 30/08/2026 | Sue parole | — | fatta · commit del 30/08 |
 | G3 | **Il punto inglese**: nella stessa schermata convivevano «0.309» e «1,37 l». Cercato il telaio: dieci punti in sei file. | 30/08/2026 | Sua foto | — | fatta · commit del 30/08 |
 | G4 | **I prodotti dell'elenco devono aprirsi al tocco**: oggi non reagiscono. | 30/08/2026 | Richiesta esplicita | — | fatta · commit del 30/08 |
-| G5 | **Il titolo e la riga dei numeri finiscono sotto l'orologio del telefono.** ⚠️ NON diagnosticata: non si può fotografare il suo telefono. Misurato che l'app si apre a tutto schermo ma con la striscia di sistema **opaca**, quindi in quella modalità il contenuto non può finirci sotto — il che punta a Safari o a un semplice scorrimento. | 30/08/2026 | Sua foto | aspetta | in attesa · serve che lui dica se apre dall'icona o dal browser |
+| G5 | **Il titolo e la riga dei numeri finiscono sotto l'orologio del telefono.** 🔴 **Sbloccata il 30/08 dalla sua risposta**: apre **dall'ICONA sulla schermata del telefono**, quindi l'app prende lo schermo intero e in cima non c'è più nessuna barra del browser a tenere il contenuto lontano dall'orologio. ⚠️ **E il difetto era doppio**: lo stacco che la barra del pollice metteva in fondo con `env(safe-area-inset-bottom)` valeva **zero**, perché mancava `viewport-fit=cover` — una riga scritta, giusta, e che non poteva avere effetto. | 30/08/2026 | Sua foto, diagnosi sua | — | fatta · commit di stanotte (nessuna migrazione) — il telaio sta su `#root`, non nelle schermate |
 | G6 | **Il blocco del totale delle fatture va allineato a sinistra sul telefono e a destra sul computer.** *«Sul cellulare mi sembrano storte.»* | 30/08/2026 | Sue parole | — | fatta · commit del 30/08 |
 | G7 | **La proposta bottiglia comprata → riga della carta**, con produttore, annata e formato visibili. Propone, non decide. | 30/08/2026 | Sua decisione | — | fatta · migrazioni `20260830000009`→`…011` |
 | G8 | **Sul gestionale di prova la pagina si ricarica tornando da un'altra app.** ✅ **Diagnosticata il 30/08**: è il **server di sviluppo**, non il telefono e non l'app — il suo client, quando il collegamento cade e torna, ricarica la pagina da sé. Provato dall'inizio alla fine. **Sul sito pubblicato quel client non c'è.** 🔴 **Alessio ha deciso di LASCIARLA COM'È**: nessuna cura costruita. ⚠️ La riga **resta scritta con la diagnosi accanto**, non cancellata — *una richiesta cancellata non si distingue da una dimenticata*, e il giorno che il sintomo tornasse sul sito vero questa diagnosi dice subito dove NON cercare. | 30/08/2026 | Sue parole | — | scartata da Alessio |
