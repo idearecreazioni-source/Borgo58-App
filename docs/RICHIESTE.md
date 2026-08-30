@@ -54,12 +54,12 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **71 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**26 in attesa** · **0 in corso** · **41 fatte** · **4 scartate da lui**.
+**25 in attesa** · **0 in corso** · **42 fatte** · **4 scartate da lui**.
 La somma fa **71**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **26** ancora aperte, **8** si possono fare adesso e
-**18** aspettano qualcun altro (un consulente, la banca, un
+Delle **25** ancora aperte, **8** si possono fare adesso e
+**17** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
 <!-- FINE CONTEGGIO -->
@@ -156,7 +156,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | V2 | **La conferma parlata dell'allineamento a voce.** Dettare una giacenza funziona già; quello che manca è che MEMO risponda **a voce**. Dichiarato non fatto il 29/08 per una ragione onesta: in questo ambiente non c'è un orecchio che possa provarla. | 14/08/2026 | Blocco 2 del mandato cumulativo | si può fare adesso | in attesa |
 | V4 | 🔴 **I due pulsanti di MEMO vanno rifatti: la cura del 29/08 non è bastata.** Sue parole del 30/08 dopo averli guardati: sono rimasti «in fondo alla schermata, attaccati» — lo stacco portato da 12 a 13 punti **non è uno stacco**. Vuole: stacco dal bordo di **circa 1 cm vero**, pulsanti **alti circa 1,5 cm veri** (⚠️ in centimetri, non in punti, o sul mini tablet non restano un centimetro), **tutti e due con lo stile scuro pieno di «Premi e parla»**, **scritta più grande**, e **l'emoji della macchina fotografica** accanto a «Fotografa» come il microfono sta accanto all'altro. Il risultato: le due schermate indistinguibili nel gesto — cambia solo la parola e il simbolo. | 30/08/2026 | Sue schermate | — | fatta · commit del 30/08 (nessuna migrazione) |
 | V5 | **La regola dell'azione principale in `DECISIONI.md` va completata con QUANTO VALE LO STACCO e QUANTO È ALTO il pulsante.** Senza quei due numeri la prossima schermata rinasce con 13 punti. | 30/08/2026 | Sua richiesta | — | fatta · commit del 30/08 (nessuna migrazione) |
-| V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | aspetta | in attesa |
+| V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | — | fatta · 🔴 **la riga era invecchiata: misurato il 31/08, `ascolta-voce` è installata dal 29/08 (versione 2)** e il deploy è posteriore all'ultimo commit del file — 15:24 UTC contro 14:09. Cioè era già chiusa e nessuno l'aveva segnata |
 
 ---
 

@@ -82,10 +82,41 @@ si può, la frase porta accanto **la data in cui era vera**.
   «non è stato verificato» delle riletture, che parlano di un atto passato e
   devono restare.
   ✅ **La famiglia più affilata è una rete**, non un proposito:
-  `tests/app/frasi-sullo-stato.test.js` chiede al database se una migrazione
-  detta «non ancora in produzione» c'è davvero, e diventa rossa se sì.
+  `tests/unita/frasi-sullo-stato.test.js` diventa rossa se un documento vivo
+  scrive quella frase nominando una migrazione.
+  * 🔴 **31/08 — QUELLA FRASE NON SI SCRIVE MAI, e la rete non chiede più
+    niente a nessun database.** Scelta da Alessio fra le due strade che gli
+    erano state poste, dopo che il 30/08 era stato dichiarato il limite: la
+    rete interrogava il progetto di **PROVA**, quindi nella finestra fra i due
+    — una migrazione applicata alla prova e non ancora al gestionale vero —
+    avrebbe accusato di bugia una frase **vera**. *Un guardiano che grida su
+    chi ha ragione si impara a spegnere.*
+    ⚠️ **Le due strade erano**: (a) farle interrogare la produzione, (b)
+    scrivere nella regola che la frase non si scrive e chiedere al gestionale.
+    Ha scelto la (b), e regge meglio per tre ragioni: **non esiste più nessuna
+    finestra** (la frase è vietata sempre, non a seconda di quando la si
+    guarda); la (a) avrebbe messo le credenziali della **produzione** dentro
+    una prova automatica, che in questo progetto ha un controllo apposta per
+    starne lontana; e senza database la rete smette di essere una prova
+    sull'app e diventa una **prova pura**, che gira a ogni commit dentro il
+    gancio invece che solo con `npm run test:app`.
+    ⚠️ **Cosa si perde, dichiarato**: prima la rete diceva *«questa frase è
+    FALSA»*, adesso dice *«questa frase non si scrive»*. È più severa e sa
+    meno. Chi vuole sapere cosa c'è in produzione lo chiede al gestionale con
+    `npm run migra`, che guarda il database vero.
+    ⚠️ **Il numero della migrazione sulla riga è ciò che distingue una
+    dichiarazione da una CITAZIONE**, ed è quello che permette a questa regola
+    di essere scritta: le due righe qui sopra nominano la frase per
+    spiegarla, e non portano nessun numero. Misurato il 31/08 prima di
+    costruire.
+    ✅ **Provata con due rotture su controlli diversi**, che rendono rosse due
+    prove diverse: una frase scritta apposta in un documento vivo fa fallire
+    il controllo dei documenti, il setaccio spento fa fallire la prova al
+    contrario. Più la prova che non dipende più dal database: una versione
+    **inventata** (`20991231000099`, che nessun database ha) viene presa lo
+    stesso.
   ⚠️ **Il limite è dichiarato**: copre solo le frasi che nominano una
-  migrazione. «Zero prodotti», «nessun conto» non hanno un nome da confrontare
+  migrazione. «Zero prodotti», «nessun conto» non hanno un nome da riconoscere
   e restano affidate alla regola scritta.
 
 ## Copertura
