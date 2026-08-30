@@ -2,16 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "gestionale-prova",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:prova"],
-      "port": 5173
-    },
-    {
-      "name": "collaudo-prova",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:collaudo"],
-      "port": 5199
+      "name": "collaudo-5188",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-misura.mjs"],
+      "port": 5188
     }
   ]
 }

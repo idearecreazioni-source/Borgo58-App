@@ -131,8 +131,17 @@ export default function RiquadroDelTavolo({ prenotazioni = [], order, onApri }) 
           ⚠️ `break-words` e non solo il ritorno a capo: un nome senza spazi
           più lungo della riga uscirebbe dai bordi invece di andare a capo,
           che è il difetto di prima con un'altra faccia. */}
+      {/* 🔴 PICCOLO E INTERO, scelto da Alessio il 30/08 fra le due strade.
+          Poche ore prima l'avevo messo GRANDE e mandato a capo: intero
+          anche cosi', ma su tre righe si mangiava il riquadro.
+          ⚠️ La sua ragione, ed è una regola: *un nome tagliato in servizio
+          non si legge comunque*, quindi fra «grande e a capo» e «piccolo e
+          intero» vince il secondo — e 3,20 mm resta la soglia del progetto,
+          non un&apos;eccezione concessa qui.
+          ⚠️ `break-words` RESTA come rete: un nome senza spazi più lungo
+          della riga uscirebbe dai bordi invece di andare a capo. */}
       {nome && (
-        <p className="testo-riquadro-grande break-words font-semibold text-b58-charcoal">
+        <p className="testo-riquadro break-words font-semibold text-b58-charcoal">
           {nome}
         </p>
       )}

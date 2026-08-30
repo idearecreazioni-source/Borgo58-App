@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createBarItem,
   listBarItems,
+  listMargineCarta,
   setBarItemActive,
   updateBarItem,
 } from "../../lib/api/barItems";
-import { formatEUR } from "../../lib/constants";
+import { listIngredients } from "../../lib/api/ingredients";
+import { formatEUR, formatQta } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import Didascalia from "../../components/Didascalia";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Carta di vini e bevande (§3.2.1). Vive nell'Editor Menu insieme al resto
 // dell'offerta, ma su una tabella propria: menu_items pretende una ricetta
@@ -35,6 +38,18 @@ const emptyForm = {
 
 export default function BevandeVini() {
   const [items, setItems] = useState([]);
+  // 🔴 I PRODOTTI DEL MAGAZZINO e IL MARGINE (30/08). Il margine lo calcola
+  //    il database, non questa schermata: e' l'unico posto dove il prezzo
+  //    d'acquisto e la resa si incontrano, e due calcoli della stessa cosa
+  //    finiscono per dire due numeri diversi.
+  const [prodotti, setProdotti] = useState([]);
+  const [margini, setMargini] = useState(new Map());
+  // ⚠️ «NON L'HO LETTO» NON È «NON C'È NIENTE», e vale per tutti e due.
+  //    Un elenco di prodotti vuoto perché la lettura è fallita si legge
+  //    «non hai nessun prodotto in magazzino», e una carta senza margini
+  //    si legge «nessuna voce rende niente». Si usa il marcatore del
+  //    progetto invece di un booleano mio: la regola vive in un posto
+  //    solo, e una prova automatica la sorveglia.
   const [showInactive, setShowInactive] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -47,9 +62,23 @@ export default function BevandeVini() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
+  const caricaMargini = () =>
+    leggi(listMargineCarta()).then((righe) =>
+      setMargini(nonLetto(righe) ? righe : new Map(righe.map((r) => [r.bar_item_id, r])))
+    );
+
   useEffect(() => {
     load();
+    caricaMargini();
+    // ⚠️ Le bevande comprate stanno fra gli alimentari come tutto il resto:
+    //    una bottiglia e' un prodotto, non una categoria a parte.
+    leggi(listIngredients()).then(setProdotti);
   }, []);
+
+  // Dopo ogni modifica che tocca il collegamento o la resa il margine cambia:
+  // si ricarica quello che e' cambiato SUL SERVER, mai quello che si sta
+  // scrivendo (trappola del 12/08).
+  const dopoModifica = () => load().then(caricaMargini);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -79,6 +108,90 @@ export default function BevandeVini() {
 
   // Raggruppamento per sezione e categoria, nell'ordine in cui si legge
   // una carta: prima i vini, poi il resto.
+  // 🔴 QUANTO PAGHI UNA CONFEZIONE E QUANTO LA INCASSI. E le risposte sono
+  //    TRE, non due: collegata e prezzata · collegata e senza prezzo · non
+  //    collegata. Le ultime due non rendono niente e NON si dicono uguale —
+  //    la prima si cura comprando, la seconda collegando. Un motivo solo
+  //    manderebbe a cercare nel posto sbagliato.
+  const RigaMagazzino = ({ v }) => {
+    const m = nonLetto(margini) ? null : margini.get(v.id);
+    return (
+      <div className="px-2 pt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <label className="flex items-center gap-1 testo-sala text-b58-charcoal-soft">
+          <span>Prodotto</span>
+          <select
+            value={v.ingredient_id || ""}
+            disabled={nonLetto(prodotti)}
+            onChange={(e) =>
+              updateBarItem(v.id, { ingredient_id: e.target.value || null })
+                .then(dopoModifica)
+                .catch((err) => setError(err.message))
+            }
+            className="tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala bg-transparent max-w-[14rem]"
+          >
+            <option value="">
+              {nonLetto(prodotti) ? "— non ho letto i prodotti —" : "— non collegata —"}
+            </option>
+            {(nonLetto(prodotti) ? [] : prodotti).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1 testo-sala text-b58-charcoal-soft">
+          <span>Porzioni da una confezione</span>
+          <CampoAutosalvato
+            type="number"
+            step="1"
+            value={v.porzioni_per_unita ?? ""}
+            onSave={(n) =>
+              updateBarItem(v.id, { porzioni_per_unita: n === "" ? null : Number(n) })
+                .then(dopoModifica)
+                .catch((err) => setError(err.message))
+            }
+            className="w-16 tocco-campo rounded border border-b58-charcoal/15 px-2 py-1 testo-sala text-right"
+          />
+          <Didascalia>vuoto = si vende intera</Didascalia>
+        </label>
+
+        {nonLetto(margini) ? (
+          <span className="testo-sala text-b58-terracotta-dark">
+            il margine non è stato letto —{" "}
+            <button type="button" onClick={caricaMargini} className="underline tocco-testo">
+              riprova
+            </button>
+          </span>
+        ) : m?.motivo === "non_collegata" ? (
+          <span className="testo-sala text-b58-charcoal-soft/70">
+            non collegata: non scarica la cantina e non ha margine
+          </span>
+        ) : m?.motivo === "prezzo_mancante" ? (
+          <span className="testo-sala text-b58-charcoal-soft/70">
+            di questo prodotto non si sa ancora quanto è costato
+          </span>
+        ) : m ? (
+          <span className="testo-sala text-b58-charcoal-soft">
+            paghi {formatEUR(m.costo_confezione)} · incassi {formatEUR(m.incasso_confezione)} ·{" "}
+            <strong className="text-b58-charcoal">rende {formatEUR(m.margine_confezione)}</strong>
+            {m.porzioni_per_unita ? ` (${m.porzioni_per_unita} porzioni)` : ""}
+            {/* 🔴 IL NUMERO SI SCRIVE IN ITALIANO — visto a schermo il
+                30/08: diceva «ne restano 1.3721», col punto inglese e
+                quattro decimali, in mezzo a una frase italiana. È la
+                famiglia del «26.6%» del 24/08.
+                ⚠️ E si dice «da vendere» e non «porzioni»: su una voce
+                venduta intera una porzione È una bottiglia, e chiamarla
+                porzione sarebbe vero e illeggibile. */}
+            {m.porzioni_disponibili != null
+              ? ` · ne restano ${formatQta(m.porzioni_disponibili)} da vendere`
+              : ""}
+          </span>
+        ) : null}
+      </div>
+    );
+  };
+
   const sezioni = ["vini", "bevande"].map((section) => {
     const diSezione = visibili.filter((i) => i.section === section);
     const perChiave = new Map();
@@ -250,7 +363,16 @@ export default function BevandeVini() {
                     <table className="w-full testo-sala-grande">
                       <tbody>
                         {cat.voci.map((v) => (
-                          <tr key={v.id} className={`border-b border-b58-charcoal/5 ${v.active ? "" : "opacity-50"}`}>
+                          // 🔴 DUE RIGHE E NON UNA (30/08, misurato). Il
+                          // collegamento al magazzino stava DENTRO la cella
+                          // del nome, e il menu dei prodotti allargava la
+                          // colonna: misurato a 375 punti, la tabella
+                          // passava da 351 a 509 in un riquadro da 343 —
+                          // cioè 158 punti di scorrimento in più, tutti
+                          // miei. Su una riga sua a tutta larghezza cresce
+                          // in ALTEZZA e non tocca nessuna colonna.
+                          <Fragment key={v.id}>
+                          <tr className={`${v.active ? "" : "opacity-50"}`}>
                             <td className="py-2 pr-2">
                               <CampoAutosalvato
                                 value={v.name}
@@ -292,6 +414,12 @@ export default function BevandeVini() {
                               </button>
                             </td>
                           </tr>
+                          <tr className={`border-b border-b58-charcoal/5 ${v.active ? "" : "opacity-50"}`}>
+                            <td colSpan={5} className="pb-2">
+                              <RigaMagazzino v={v} />
+                            </td>
+                          </tr>
+                          </Fragment>
                         ))}
                       </tbody>
                     </table>

@@ -36,7 +36,9 @@
 
 ### Quante sono, al 30/08/2026
 
-**51 richieste in tutto: 25 aperte**, **3 scartate da lui**, **22 chiuse**. Chiuse la notte del 30/08: le nove del Ricettario (R1-R9), i due pulsanti di MEMO (V4, V5), l'Agenda (A1 — quella rimasta senza descrizione), i due punti delle Comande (S1, S3) e la categoria dei materiali (M4).
+**53 richieste in tutto: 19 aperte**, **3 scartate da lui**, **31 chiuse**. Chiuse la notte del 30/08: le nove del Ricettario (R1-R9), i due pulsanti di MEMO (V4, V5), l'Agenda (A1), i due punti delle Comande (S1, S3) e la categoria dei materiali (M4). Chiuse il **30/08 di giorno**: le cinque delle Produzioni (P1-P5), il nome del tavolo (S8), «Altro» fra i materiali (M5), l'avvio automatico del gestionale (T1) e — per la parte che serviva — la cantina (N4).
+
+⚠️ **E QUESTA È LA PRIMA VOLTA CHE IL FILE HA DECISO IL LAVORO invece di registrarlo**: il mandato del 30/08 chiedeva di pescare da qui le richieste aperte più vecchie. Ne sono state prese **due** (T1 e N4, ferme dal 14/08) e le altre venivano dal mandato stesso. Cosa ha funzionato e cosa no è scritto nel riepilogo del blocco 4.
 
 ⚠️ **Il numero e un PAVIMENTO, non un censimento.** Sono le richieste che ho
 potuto trovare scritte nei riepiloghi, nei mandati e nella coda: quelle dette
@@ -63,6 +65,7 @@ lui, e non so cosa sia.
 | S2 | **Quando il gestionale non sa in che fascia cade una prenotazione, non deve metterla in mezzo.** Oggi «non lo so» e «è del turno centrale» hanno lo stesso identico colore. Succede a locale funzionante ogni volta che qualcuno prenota prima dell'orario di apertura (misurato su una prenotazione delle 19:29 con apertura alle 20:00). | 29/08/2026 | Due schermate sue | fatta · migrazione `20260829000026` |
 | S3 | **Il riquadro delle informazioni in alto a destra della pianta ha una misura fissa mentre la pianta si adatta**: *«troppo grande da cellulare e troppo piccolo da pc»*. Sulla sua schermata «BASE-Tavolo …» è tagliato a metà e il riquadro copre la pianta invece di starle accanto. | 29/08/2026 | Sue parole | fatta · commit del 30/08 (nessuna migrazione) |
 | S4 | **La legenda dei colori dev'essere scritta dentro il gestionale**, raggiungibile dalla pianta. Oggi non esiste in nessun posto: serve a lui adesso e servirà a chi lavorerà in sala. | 29/08/2026 | Mandato del 29/08 | fatta · commit di stanotte |
+| S8 | **Il nome del tavolo nel riquadro delle informazioni resta INTERO E PICCOLO** (3,2 mm) invece che grande e tagliato: *un nome tagliato in servizio non si legge comunque*. | 30/08/2026 | Sua scelta fra le due strade | fatta · commit del 30/08 (nessuna migrazione) |
 | S5 | **Le due colonne sulla schermata della sala, sul computer.** | prima del 21/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | S6 | **Un tavolo con due turni dentro il riquadro del tavolo.** | 18/08/2026 | Riepilogo del giro D3 | in attesa · *da confermare* |
 | S7 | **Il coperto in meno per il tavolo contro il muro.** | 18/08/2026 | Chiesta e poi **ritirata da lui** lo stesso giorno (*«è già fantastica così»*): la correzione a mano copre già il caso. | scartata da Alessio |
@@ -96,6 +99,7 @@ lui, e non so cosa sia.
 | M1 | **Sulla scheda di un materiale di consumo spariscono cinque campi**: «Fotografa l'etichetta», «Provenienza» con «Produzione interna (orto)», «Conservazione» (e con essa l'etichetta gialla «messo dalla macchina»), e — la più importante — **«È un alimento»**, che è la casella con cui la carta forno tornerebbe in mezzo al baccalà. | 29/08/2026 | Sua schermata («Carta forno») | fatta · commit di stanotte |
 | M2 | **Categorie e unità di misura proprie dei materiali**, al posto di quelle alimentari (oggi la carta forno è in categoria «Altro»). Ha chiesto esplicitamente che le proponga io e che lui le corregga leggendo. | 29/08/2026 | Sua richiesta | fatta · migrazione `20260829000024` |
 | M4 | **«Imballaggi e asporto» diventa «Varie ed eventuali»** — l'asporto non lo farà. Le altre cinque categorie dei materiali vanno bene così. | 30/08/2026 | Sua decisione dopo aver guardato le sei proposte | fatta · migrazione `20260830000001` |
+| M5 | **Via «Altro» dai materiali di consumo**: «Varie ed eventuali» e «Altro» sono la stessa idea in due posti, e «Altro» è pure condiviso con gli alimenti. Ne resta uno solo, il suo. | 30/08/2026 | Sua approvazione di una mia proposta | fatta · migrazione `20260830000003` |
 | M3 | ⚠️ **Restano e sono giusti**: scorta minima, «avvisami se il prezzo sale», il fornitore. E **i valori senza senso rimasti** («tutto l'anno», «temperatura ambiente») **non si cancellano**: sono solo sul progetto di prova e spariranno col reset. | 29/08/2026 | Sua decisione | scartata da Alessio |
 
 ---
@@ -116,11 +120,11 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| P1 | **Il modulo di registrazione non deve più essere sempre aperto.** Toccare una preparazione la mette solo nella lista delle cose da fare; il modulo si apre **solo** da «Registrala», con la preparazione già scelta. Oggi i due gesti si confondono, e la schermata è lunga anche quando stai solo guardando. | 30/08/2026 | L'ha aperta lui il 30/08 | in attesa |
-| P2 | **«Registrala» deve fare quello che dice**: aprire il modulo. Oggi prometteva di registrare mentre portava a un modulo già aperto sotto. Non va rinominato, va fatto. | 30/08/2026 | Sua decisione | in attesa |
-| P3 | **«Da fare» diventa una sezione sua in cima** — un titoletto «Da fare (3)» coi quadrotti sotto, e l'elenco completo delle preparazioni più giù. Oggi è incollata sopra il modulo e i due sembrano lo stesso gesto. | 30/08/2026 | Sua decisione | in attesa |
-| P4 | **L'elenco delle preparazioni in quadrotti SIA su telefono SIA su computer** — e qui il computer non fa eccezione: quell'elenco non ha colonne da confrontare, ha un nome e tre informazioni in fila. | 30/08/2026 | Decisione esplicita sua | in attesa |
-| P5 | ⚠️ **Da misurare, non da correggere alla cieca**: su «Busiate trafilate» lo storico dice «costata 0,00 €». O quella ricetta non ha ingredienti prezzati, o il costo si perde per strada. Se è un dato vero, **quello zero deve dirlo** invece di sembrare un prezzo. | 30/08/2026 | Sua osservazione | in attesa |
+| P1 | **Il modulo di registrazione non deve più essere sempre aperto.** Toccare una preparazione la mette solo nella lista delle cose da fare; il modulo si apre **solo** da «Registrala», con la preparazione già scelta. Oggi i due gesti si confondono, e la schermata è lunga anche quando stai solo guardando. | 30/08/2026 | L'ha aperta lui il 30/08 | fatta · commit del 30/08 (nessuna migrazione) |
+| P2 | **«Registrala» deve fare quello che dice**: aprire il modulo. Oggi prometteva di registrare mentre portava a un modulo già aperto sotto. Non va rinominato, va fatto. | 30/08/2026 | Sua decisione | fatta · commit del 30/08 (nessuna migrazione) |
+| P3 | **«Da fare» diventa una sezione sua in cima** — un titoletto «Da fare (3)» coi quadrotti sotto, e l'elenco completo delle preparazioni più giù. Oggi è incollata sopra il modulo e i due sembrano lo stesso gesto. | 30/08/2026 | Sua decisione | fatta · commit del 30/08 (nessuna migrazione) |
+| P4 | **L'elenco delle preparazioni in quadrotti SIA su telefono SIA su computer** — e qui il computer non fa eccezione: quell'elenco non ha colonne da confrontare, ha un nome e tre informazioni in fila. | 30/08/2026 | Decisione esplicita sua | fatta · commit del 30/08 (nessuna migrazione) |
+| P5 | ⚠️ **Da misurare, non da correggere alla cieca**: su «Busiate trafilate» lo storico dice «costata 0,00 €». O quella ricetta non ha ingredienti prezzati, o il costo si perde per strada. Se è un dato vero, **quello zero deve dirlo** invece di sembrare un prezzo. | 30/08/2026 | Sua osservazione | fatta · migrazioni `20260830000004` e `20260830000005` — 🔴 **misurato, e non era nessuna delle due ipotesi**: il costo vero era **0,0034 €** (scritto «0,00 €») e **405 g di farina** erano usciti da un lotto **senza prezzo d'acquisto**, quindi contati zero. Curati tutti e due |
 | P6 | ⚠️ **Resta com'è e non si tocca**: la ricerca, l'ordine alfabetico, lo storico dentro ogni voce e «Rendila ricorrente». *«La schermata è carina sia su pc che su cell»*: si sistema, non si rifà. | 30/08/2026 | Sua decisione | scartata da Alessio |
 
 ---
@@ -151,7 +155,7 @@ lui, e non so cosa sia.
 | N1 | **Casella dedicata e mail dei clienti dentro il gestionale.** | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | N2 | **Sito web**, dopo l'app, col gestionale spostato su un sottodominio. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | in attesa |
 | N3 | **Autoprodotti in magazzino e raccolta propria col registro HACCP** — rimandati da lui all'apertura dell'azienda agricola. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | in attesa (rimandata da lui) |
-| N4 | **Cantina e bevande** con la stessa macchina del magazzino: mescita al calice, «bottiglia aperta» e «bottiglia buttata», inventario ogni 3 mesi con lo scostamento in bottiglie e in euro. | 14/08/2026 | Blocco 3 del mandato cumulativo | in attesa |
+| N4 | **Cantina e bevande** con la stessa macchina del magazzino: mescita al calice, «bottiglia aperta» e «bottiglia buttata», inventario ogni 3 mesi con lo scostamento in bottiglie e in euro. | 14/08/2026 | Blocco 3 del mandato cumulativo | **fatta per la parte che serve** · migrazione `20260830000002`: i vini sono prodotti del magazzino, l'annata è una confezione, la resa in calici, il margine. ⚠️ **Bottiglia aperta/buttata e inventario NON sono stati costruiti, per decisione sua del 30/08**: li sistema il conteggio dell'Allineamento, che esiste già |
 | N5 | **Fatture in Cloud nelle due direzioni** (prerequisito suo: piano Complete e accesso). | 14/08/2026 | Blocco 4 del mandato cumulativo | in attesa (aspetta lui) |
 | N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | in attesa |
 | N7 | **Il costo del personale e i premi** — la voce di spesa più grossa dell'anno non passa da nessun modulo. Fermo in attesa dei documenti veri di Gianna. | 15/08/2026 | Blocchi 1 e 2 del mandato personale e tesoreria | in attesa (aspetta Gianna) |
@@ -171,7 +175,7 @@ lui, e non so cosa sia.
 
 | # | Richiesta | Chiesta il | Da dove viene | Stato |
 |---|---|---|---|---|
-| T1 | **Dopo un riavvio del computer, dal telefono si vede solo bianco**: il gestionale di prova non riparte da solo e il tunnel punta a una porta vuota. Ha imparato a rilanciarlo a mano, ma è una cosa che dovrà fare per sempre e che nessuno gli dice. | 30/08/2026 | Successo altre due volte il 29/08 | fatta a metà · c'è il file da copiare, l'installazione è sua |
+| T1 | **Dopo un riavvio del computer, dal telefono si vede solo bianco**: il gestionale di prova non riparte da solo e il tunnel punta a una porta vuota. Ha imparato a rilanciarlo a mano, ma è una cosa che dovrà fare per sempre e che nessuno gli dice. | 30/08/2026 | Successo altre due volte il 29/08 | **fatta** · lui ha installato il file e riavviato: il gestionale di prova è ripartito da solo e il telefono si apre senza toccare niente (riferito da lui il 30/08) |
 
 ---
 

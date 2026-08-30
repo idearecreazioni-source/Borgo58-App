@@ -914,9 +914,14 @@ export default function Sala() {
   // Vini e bevande non sono ricette: sulla riga della comanda finiscono
   // come testo, col formato accanto al nome ("Grillo · calice"), perche' in
   // cucina e al bar la differenza fra un calice e una bottiglia conta.
+  // 🔴 E DAL 30/08 LA RIGA PORTA ANCHE L'IDENTIFICATIVO DELLA VOCE: il testo
+  //    e' quello che si legge, `barItemId` e' quello che il magazzino
+  //    riconosce. Senza il secondo, una bottiglia venduta non scaricava
+  //    niente e nessuno poteva contarla.
   const handleAddBarItem = (item) =>
     withBusy(() =>
       addDraftItem(order.id, {
+        barItemId: item.id,
         freeTextName: item.serving ? `${item.name} · ${item.serving}` : item.name,
         destination: "bar",
         quantity: 1,

@@ -940,6 +940,70 @@ l'ha ancora deciso nessuno.
 * 27/08 — Sui conti con caparra scalata resta **un solo modo di pagamento**, ma
 la schermata deve **dire perché** invece di sembrare rotta. ✅ Fatto.
 
+## Vini e bevande
+
+* 🔴 30/08 — **VINI E BEVANDE SONO PRODOTTI DEL MAGAZZINO COME TUTTO IL
+RESTO.** Parole sue: *«non vedo motivi per non trattare vini e bevande come
+tutto il resto»*. Una bottiglia è un prodotto comprato come la carta forno —
+fornitore, prezzo d'acquisto, giacenza, scorta minima, lista della spesa — e
+su un'osteria il conto lo fa il vino. ⚠️ **Non è un modulo nuovo**: si riusa
+quello che c'è.
+🔴 **Misurato prima di costruire, e la risposta era peggiore della domanda**:
+la carta (`bar_items`) non aveva **nessun** legame col resto del gestionale —
+zero chiavi esterne in entrata, zero in uscita, zero funzioni del database che
+la nominassero. E una bottiglia venduta finiva sulla comanda **come testo
+libero**, quindi un vino della carta e un nome digitato a mano erano la stessa
+identica riga: nessuno poteva contare quante bottiglie erano uscite.
+*(Fatto il 30/08 — migrazione `20260830000002`.)*
+* 30/08 — **L'ANNATA È UNA CONFEZIONE, NON UNA RIGA NUOVA.** L'ingrediente è
+«Nero d'Avola del produttore X»; ogni annata è una confezione comprata sotto
+di lui, con la sua data e il suo prezzo. È la struttura prodotto/ingrediente
+del 27/08, riusata — non se ne fa una seconda, o l'elenco raddoppia a ogni
+vendemmia. ⚠️ **Conseguenza: nessuna colonna nuova.** `articoli_fornitore` ha
+già descrizione, marca, formato, fornitore e storico prezzi.
+* 30/08 — **LA RESA IN CALICI ESISTE SOLO PER CIÒ CHE SI VENDE AL BICCHIERE.**
+Una bottiglia fa sei calici, e vendere un calice scarica un sesto. ⚠️ Tutto il
+resto lo vende **a bottiglia intera** e **non terrà birra alla spina**: niente
+fusti, nessun altro caso di resa, e la colonna nasce vuota su tutte le voci.
+* 30/08 — **LE BOTTIGLIE APERTE E NON FINITE NON HANNO UN GESTO APPOSTA**: le
+sistema il conteggio dell'Allineamento, che esiste per questo.
+* 30/08 — **LA CARTA RESTA COM'È** — sezioni, ordine di comparsa, come si legge
+sul menu. Cambia solo che ogni voce dice **quale prodotto consuma**.
+⚠️ E quando non lo dice, la schermata lo **dichiara** («non collegata: non
+scarica la cantina e non ha margine») invece di mostrare un margine vuoto.
+
+## Produzioni
+
+* 🔴 30/08 — **TOCCARE UNA PREPARAZIONE LA METTE FRA LE COSE DA FARE, E NON
+APRE NIENTE.** Il modulo di registrazione si apre **solo** da «Registrala»,
+con la preparazione già scelta. Prima il tocco faceva due cose in una, e la
+schermata era lunga anche quando si stava solo guardando cosa c'era da fare.
+⚠️ **Il prezzo è dichiarato**: per registrare una cosa appena finita servono
+due gesti invece di uno.
+* 30/08 — **«REGISTRALA» DEVE FARE QUELLO CHE DICE**: apre il modulo. Prima
+prometteva di registrare mentre portava a un modulo già aperto più sotto.
+* 30/08 — **«DA FARE» È UNA SEZIONE SUA IN CIMA**, con un titoletto e i suoi
+quadrotti; l'elenco completo delle preparazioni sta più giù. Prima erano
+incollate e i due gesti si confondevano.
+* 🔴 30/08 — **L'ELENCO DELLE PREPARAZIONI È IN QUADROTTI SUL TELEFONO E SUL
+COMPUTER**, e qui il computer **non fa eccezione**. La ragione è sua: *quell'
+elenco non ha colonne da confrontare, ha un nome e tre informazioni in fila* —
+una tabella serve a incolonnare numeri.
+* 30/08 — **Restano com'erano e non si toccano**: la ricerca, l'ordine
+alfabetico, lo storico dentro ogni voce e «Rendila ricorrente». *«La schermata
+è carina sia su pc che su cell»*: si sistema, non si rifà.
+
+## Materiali di consumo
+
+* 30/08 — **«IMBALLAGGI E ASPORTO» DIVENTA «VARIE ED EVENTUALI»**: l'asporto
+non lo farà. Le altre cinque categorie vanno bene così.
+*(Fatto — migrazione `20260830000001`, applicata in produzione il 30/08.)*
+* 30/08 — **«ALTRO» SPARISCE DAI MATERIALI DI CONSUMO** e resta solo fra gli
+alimenti. «Varie ed eventuali» e «Altro» sono la stessa idea in due posti, e
+fra i materiali ne resta uno solo — il suo. ⚠️ **Non si cancella**: gli
+alimenti che ce l'hanno addosso lo tengono.
+*(Fatto — migrazione `20260830000003`.)*
+
 ## Rovesciamenti — come si tiene l'elenco
 
 * 27/08 — **L'indice dei rovesciamenti si GENERA, non si tiene a mano**

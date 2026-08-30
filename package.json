@@ -34,6 +34,7 @@
     "numeri:censimento": "node scripts/censimento-numeri.mjs",
     "ricostruzione:verifica": "node scripts/ricostruzione-verifica.mjs",
     "dev:collaudo": "node scripts/dev-prova.mjs -- --port 5199",
+    "dev:misura": "node scripts/dev-misura.mjs",
     "quesiti": "node scripts/quesiti-stampabili.mjs",
     "indice": "node scripts/indice-rovesciamenti.mjs",
     "telefono": "node scripts/telefono.mjs"

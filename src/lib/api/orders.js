@@ -247,12 +247,21 @@ export async function updateOrderNote(orderId, note) {
 
 // --- Righe della comanda ---
 
-export async function addDraftItem(orderId, { recipeId, freeTextName, destination, quantity, unitPrice, note, turno }) {
+export async function addDraftItem(orderId, { recipeId, barItemId, freeTextName, destination, quantity, unitPrice, note, turno }) {
   const { data, error } = await supabase
     .from("order_items")
     .insert({
       order_id: orderId,
       recipe_id: recipeId || null,
+      // 🔴 QUALE VOCE DELLA CARTA E' STATA VENDUTA (30/08). Senza, un Grillo
+      //    ordinato dalla carta e un «Grillo» digitato a mano nel modulo
+      //    delle voci libere erano la stessa identica riga: nessuno poteva
+      //    dire quante bottiglie erano uscite, e senza identita' il margine
+      //    non e' calcolabile nemmeno a posteriori.
+      // ⚠️ Il nome resta comunque in `free_text_name`, FOTOGRAFATO: se
+      //    domani la carta rinomina un vino, un conto di ieri continua a
+      //    mostrare quello che il cliente aveva letto.
+      bar_item_id: barItemId || null,
       free_text_name: freeTextName || null,
       destination,
       quantity,

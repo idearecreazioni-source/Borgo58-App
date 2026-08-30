@@ -539,12 +539,32 @@ export const labelFor = (list, value) =>
 // 10.000: **i numeri a quattro cifre sono la fascia in cui i due mondi
 // divergono**, e sono quelli dei prestiti, degli stipendi e delle fatture
 // grosse.
-export const formatEUR = (value) =>
-  new Intl.NumberFormat("it-IT", {
+//
+// 🔴 E UN IMPORTO PICCOLISSIMO NON SI SCRIVE «0,00 €» (30/08/2026). Nasce da
+// una cosa vista da Alessio: nelle Produzioni «Busiate trafilate» diceva
+// **costata 0,00 €**, e misurando il costo vero era **0,0034 €**. Non era un
+// dato mancante: era un dato vero scritto in un modo che si legge «gratis».
+// ⚠️ È la famiglia che questo progetto insegue — un numero *plausibile* al
+// posto di uno vero — e qui la cura sta in un posto solo, non nella
+// schermata dove è stato visto.
+// ⚠️ Vale nei due versi: anche −0,004 € non è zero.
+// ⚠️ E NON tocca il caso «vuoto»: un importo che non c'è continua a
+// scriversi 0,00 € come prima. È un difetto suo, di un'altra famiglia, e
+// cambiarlo qui toccherebbe ogni schermata del gestionale in una notte in
+// cui nessuno può guardarle tutte.
+const SOTTO_UN_CENTESIMO = 0.005;
+export const formatEUR = (value) => {
+  const n = Number(value ?? 0);
+  const scritto = new Intl.NumberFormat("it-IT", {
     style: "currency",
     currency: "EUR",
     useGrouping: "always",
-  }).format(value ?? 0);
+  }).format(n);
+  if (n !== 0 && Math.abs(n) < SOTTO_UN_CENTESIMO) {
+    return n > 0 ? "meno di 0,01 €" : "meno di −0,01 €";
+  }
+  return scritto;
+};
 
 // UNA PERCENTUALE COME LA SCRIVE UNA PERSONA (24/08/2026).
 //

@@ -49,8 +49,17 @@ describe("le parole dei materiali di consumo", () => {
     expect(codiciMat).not.toContain("verdura");
     expect(codiciMat).not.toContain("pesce");
     expect(codiciMat).toContain("pulizia");
-    // «Altro» sta in tutti e due: è l'unica riga con ambito «entrambi».
-    expect(codiciMat).toContain("altro");
+    // 🔴 «ALTRO» NON STA PIÙ FRA I MATERIALI — decisione di Alessio del
+    //    30/08: «Varie ed eventuali» e «Altro» sono la stessa idea in due
+    //    posti, e fra i materiali ne resta uno solo, il suo.
+    //    ⚠️ Questa riga diceva il contrario, ed era giusta fino al 30/08:
+    //    si CAMBIA, non si toglie — una prova cancellata non si distingue
+    //    da una dimenticata.
+    expect(codiciMat).not.toContain("altro");
+    expect(codiciMat).toContain("varie_materiali");
+    // ⚠️ E dalla parte degli alimenti «Altro» C'È ANCORA: togliere il
+    //    doppione non deve portarsi via il generico che serviva. Senza
+    //    questa riga la prova passerebbe anche cancellando la categoria.
     expect((catAli ?? []).map((c) => c.codice)).toContain("altro");
     expect((catAli ?? []).map((c) => c.codice)).toContain("verdura");
   });
@@ -99,7 +108,9 @@ describe("le parole dei materiali di consumo", () => {
           entity_id: ente,
           name: `${NOME} ${u.codice}`,
           unit: u.codice,
-          category: "altro",
+          // ⚠️ Dal 30/08 un materiale non sta più in «Altro»: quella
+          // categoria è rimasta ai soli alimenti.
+          category: "varie_materiali",
           alimentare: false,
           current_price: 1,
         })
