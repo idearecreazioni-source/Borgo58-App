@@ -345,7 +345,12 @@ export const supabase = createClient(
 // restare l'unica porta del ruolo anonimo, §6 del CLAUDE.md) ma far sì
 // che una pagina pubblica si comporti da pubblica per tutti. Senza
 // sessione salvata: nessun token da allegare, nessuna eccezione.
-export const supabasePubblico = createClient(supabaseUrl, supabaseAnonKey, {
+// ⚠️ ANCHE QUESTO: di `createClient` in questo file ce ne sono DUE, e la
+//    prima cura ne aveva sistemato uno solo. La CI e' tornata rossa sulla
+//    riga 348 invece che sulla 308 — stesso errore, altro punto.
+//    *Curare l'occorrenza che l'errore nomina, invece di cercarle tutte, e'
+//    il modo di fare due giri per un difetto solo.*
+export const supabasePubblico = createClient(supabaseUrl || URL_DI_RIPIEGO, supabaseAnonKey || "configurazione-mancante", {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
