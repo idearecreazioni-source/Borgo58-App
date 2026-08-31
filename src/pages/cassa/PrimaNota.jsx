@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   createCashMovement,
   deleteCashMovement,
@@ -116,11 +116,23 @@ export default function PrimaNota() {
     Promise.all([getEntities(), listCausali("entrata"), listCausali("uscita")])
       .then(([ent, cin, cout]) => {
         setEntities(ent);
-        setEntityId(ent.srls.id);
+        // 🔴 SI ARRIVA GIA' SUL SOGGETTO CHIESTO (31/08/2026). Da Cassa
+        //    «La mia tasca» porta qui con `?soggetto=tasca`: senza, si
+        //    arriverebbe su Borgo 58 e bisognerebbe cambiare a mano — ed è
+        //    esattamente il gesto in cui si sbaglia, perché una spesa
+        //    registrata sul soggetto sbagliato non dà nessun errore.
+        const chiesto = searchParams.get("soggetto");
+        const scelto =
+          (chiesto === "tasca" && ent.tasca) ||
+          (chiesto === "agricola" && ent.agricola) ||
+          ent.srls;
+        setEntityId(scelto.id);
+        if (ent.tasca && scelto.id === ent.tasca.id) setDirection("uscita");
         setCausaliEntrata(cin);
         setCausaliUscita(cout);
       })
       .catch((e) => setError(e.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 🔴 IL CONTO DELLA TASCA, NON IL SUO SALDO (31/08/2026).
@@ -129,6 +141,7 @@ export default function PrimaNota() {
   //    un debito. Misurato il 31/08 aprendo la schermata con un'uscita da
   //    40 euro dentro: diceva «Contante in cassa: −40,00 €».
   const [contoTasca, setContoTasca] = useState(null);
+  const [searchParams] = useSearchParams();
 
   const reload = () => {
     if (!entityId) return Promise.resolve();
@@ -178,6 +191,13 @@ export default function PrimaNota() {
   //    offrire un gesto che verrebbe rifiutato — *un pulsante premibile per
   //    essere respinto e' un vicolo cieco*.
   const inTasca = Boolean(entities?.tasca && entityId === entities.tasca.id);
+
+  // ⚠️ L'elenco si filtra QUI e non in `constants.js`: là è il vocabolario
+  //    di tutta la prima nota, e restringerlo per un soggetto lo
+  //    restringerebbe per tutti.
+  const tipiDocumento = inTasca
+    ? CASH_DOCUMENT_TYPES.filter((d) => d.value !== "fattura" && d.value !== "autofattura")
+    : CASH_DOCUMENT_TYPES;
 
   const causaliForDirection = form.direction === "entrata" ? causaliEntrata : causaliUscita;
 
@@ -336,7 +356,20 @@ export default function PrimaNota() {
                 //    correnti invece che della tasca.
                 if (entities?.tasca && scelto === entities.tasca.id) {
                   setDirection("uscita");
-                  setForm((f) => ({ ...f, mezzo: "cassa" }));
+                  // ⚠️ E il tipo documento torna a «non documentato» se era
+                  //    una fattura: un valore fuori elenco in un menu a
+                  //    tendina mostra la PRIMA opzione senza nessun errore
+                  //    (trappola del 27/08), e qui la prima sarebbe
+                  //    «Scontrino» — cioè un documento che nessuno ha detto
+                  //    di avere.
+                  setForm((f) => ({
+                    ...f,
+                    mezzo: "cassa",
+                    tipo_documento:
+                      f.tipo_documento === "fattura" || f.tipo_documento === "autofattura"
+                        ? "non_documentato"
+                        : f.tipo_documento,
+                  }));
                 }
               }}
               className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-1.5 testo-sala text-b58-charcoal"
@@ -475,7 +508,14 @@ export default function PrimaNota() {
                 onChange={(e) => setForm((f) => ({ ...f, tipo_documento: e.target.value }))}
                 className={inputClass}
               >
-                {CASH_DOCUMENT_TYPES.map((d) => (
+                {/* 🔴 SULLA TASCA NIENTE FATTURA (31/08/2026, deciso da
+                    Alessio): la tasca è **per definizione spesa senza
+                    fattura**, e un'opzione che non può mai essere giusta è
+                    un errore che aspetta.
+                    ⚠️ SOLO LÌ, non altrove: su Borgo 58 e sull'orto una
+                    fattura è la normalità. Lo scontrino invece resta anche
+                    sulla tasca — quello ce l'hai quasi sempre. */}
+                {tipiDocumento.map((d) => (
                   <option key={d.value} value={d.value}>{d.label}</option>
                 ))}
               </select>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   listProdottiTroppoPiccoli,
   listScarichiNonRiusciti,
   listStockLevels,
+  mondiDelMagazzino,
   recordStockConsumption,
 } from "../../lib/api/stock";
 import { CONSUMPTION_REASONS, formatDate, formatQta, qtaConUnita } from "../../lib/constants";
@@ -28,6 +29,14 @@ const expiryUrgency = (dateStr) => {
 export default function MagazzinoHome() {
   const { isTitolare } = useAuth();
   const [levels, setLevels] = useState([]);
+  // 🔴 I SETTE MONDI (31/08/2026, decisi da Alessio). Il mondo scelto sta
+  //    nell'INDIRIZZO e non in uno stato volatile: cosi' e' una sezione che
+  //    si puo' salvare e riaprire, non un filtro che si perde ricaricando.
+  //    E' la forma che la decisione del 29/08 chiede — *sezioni separate,
+  //    non un filtro nella stessa schermata*.
+  const [mondi, setMondi] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mondoScelto = searchParams.get("mondo") || "";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openRow, setOpenRow] = useState(null);
@@ -75,7 +84,19 @@ export default function MagazzinoHome() {
     [levels]
   );
 
-  const load = () => listStockLevels().then(setLevels);
+  // ⚠️ Il filtro sta QUI e non nella lettura: il conto dei mondi si legge
+  //    dal database su TUTTO il magazzino, e rileggere l'elenco a ogni tocco
+  //    farebbe lampeggiare la schermata per una cosa che è già in mano.
+  const levelsDelMondo = useMemo(
+    () => (mondoScelto ? levels.filter((l) => l.mondo === mondoScelto) : levels),
+    [levels, mondoScelto]
+  );
+
+  const load = () =>
+    Promise.all([listStockLevels(), leggi(mondiDelMagazzino())]).then(([l, m]) => {
+      setLevels(l);
+      setMondi(m);
+    });
 
   useEffect(() => {
     setLoading(true);
@@ -442,17 +463,70 @@ export default function MagazzinoHome() {
         </div>
       )}
 
+      {/* 🔴 I SETTE MONDI DEL MAGAZZINO — 31/08/2026, decisi da Alessio, in
+          quest'ordine. Fino a stamattina il Magazzino era un elenco unico
+          con «Materiali di consumo» come pulsante a parte: la forma vecchia
+          a DUE mondi, mentre il database ne aveva sette da ore.
+          ⚠️ L'ORDINE E' IL SUO, non alfabetico e non per quantità: *un mondo
+          che si sposta perché è cresciuto è un mondo che si cerca due
+          volte*.
+          ⚠️ E IL CONTO LO FA IL DATABASE (`mondi_del_magazzino`), non questa
+          schermata: due posti che contano la stessa cosa prima o poi dicono
+          due numeri diversi. */}
+      {!statoLettura(mondi).nonLetto && mondi.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setSearchParams({})}
+            className={`tocco-bottone rounded-lg border px-3 testo-sala font-medium transition-colors ${
+              mondoScelto === ""
+                ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                : "border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal"
+            }`}
+          >
+            Tutti
+          </button>
+          {mondi.map((m) => (
+            <button
+              key={m.codice}
+              type="button"
+              onClick={() => setSearchParams({ mondo: m.codice })}
+              className={`tocco-bottone rounded-lg border px-3 testo-sala font-medium transition-colors ${
+                mondoScelto === m.codice
+                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  : "border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal"
+              }`}
+            >
+              {m.nome}{" "}
+              {/* ⚠️ Il conto si vede anche quando è ZERO, e non si nasconde:
+                  un mondo vuoto che sparisce si legge «non esiste», e il
+                  giorno che si carica la prima bottiglia nessuno saprebbe
+                  dove cercarla. */}
+              <span className="text-b58-charcoal-soft font-normal">({m.quanti_prodotti})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
-      ) : levels.length === 0 ? (
+      ) : levelsDelMondo.length === 0 ? (
         <div className="rounded-xl border border-dashed border-b58-charcoal/20 p-10 text-center">
+          {/* ⚠️ UN ELENCO VUOTO DICE PERCHE': con un mondo scelto, «nessun
+              ingrediente ancora» sarebbe falso — ce ne sono, solo non in
+              questo mondo. Regola del 19/08: assenza di informazione e
+              informazione di assenza sono due cose diverse. */}
           <p className="text-b58-charcoal-soft">
-            Nessun ingrediente ancora. Aggiungili dal Ricettario, poi registra qui i carichi.
+            {mondoScelto
+              ? `Nessun prodotto in «${
+                  mondi.find?.((m) => m.codice === mondoScelto)?.nome ?? mondoScelto
+                }». Gli altri mondi sono lì sopra.`
+              : "Nessun ingrediente ancora. Aggiungili dal Ricettario, poi registra qui i carichi."}
           </p>
         </div>
       ) : (
         <ElencoAdattivo
-          righe={levels}
+          righe={levelsDelMondo}
           chiave={(l) => l.ingredient_id}
           titolo={(l) => l.ingredient_name}
           intestazioneTitolo="Ingrediente"

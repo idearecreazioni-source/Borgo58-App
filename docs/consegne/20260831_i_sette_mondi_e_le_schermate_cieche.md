@@ -9,6 +9,22 @@
 * **Prove**: 657 pure verdi (58 file), **458 sull'app verdi** (66 file),
   lint pulito.
 
+### Le cinque migrazioni che entrano, per intero
+
+⚠️ **Aggiunte il 31/08 alle 11:47, e il difetto era mio**: questo riepilogo
+diceva «cinque migrazioni nuove aspettano il push» **senza nominarne
+nessuna**. A prenderlo è stato il freno di `npm run migra`, che si rifiuta di
+toccare la produzione finché un riepilogo non dice **quali versioni**
+entrano — e la regola vuole il numero **scritto per intero**, perché una
+forma abbreviata («…001 → …005») nomina i due estremi e lascia mute quelle in
+mezzo.
+
+* `20260831000001` — i sette mondi del magazzino
+* `20260831000002` — l'annata è un campo suo, e il segno «va in carta»
+* `20260831000003` — l'ordine dice l'annata, e la carta dice da quanto è ferma
+* `20260831000004` — la bottiglia aperta, quella buttata, e l'inventario
+* `20260831000005` — i vincoli nuovi parlano italiano, le porzioni si classificano
+
 ---
 
 ## Cosa abbiamo rovesciato

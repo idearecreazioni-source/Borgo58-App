@@ -366,8 +366,26 @@ export default function CassaHome() {
             <Link to="/cassa/scontrinato" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
               Incassato e scontrinato
             </Link>
+            {/* ⚠️ QUESTA NON E' LA TASCA, e i due si somigliano abbastanza da
+                scambiarsi: qui si registra una spesa fatta **per conto della
+                società**, che la società poi ti pareggia — misurato il
+                31/08, scrive in `anticipazioni_socio` sul soggetto Borgo 58.
+                La tasca è l'altra cosa: soldi tuoi che non torneranno
+                indietro, e non c'è niente da pareggiare. */}
             <Link to="/cassa/personale" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
-              Ho messo di tasca mia
+              Anticipo io, poi mi rimborso
+            </Link>
+            {/* 🔴 LA PORTA DELLA TASCA — 31/08/2026. Il soggetto esisteva in
+                produzione dall'01:06 e **da Cassa non ci si arrivava**: il
+                menu della Prima nota lo offre, ma bisognava sapere di
+                cercarlo lì. È la stessa famiglia dei Preventivi rimasti
+                irraggiungibili per giorni (20/08) — *la rotta c'era e nessun
+                collegamento ci portava*.
+                ⚠️ L'indirizzo porta il soggetto: si arriva alla Prima nota
+                **già sulla tasca**, invece di arrivarci su Borgo 58 e dover
+                cambiare — che è il gesto in cui si sbaglia. */}
+            <Link to="/cassa/prima-nota?soggetto=tasca" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+              La mia tasca
             </Link>
             {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
                 Preventivi è rimasta irraggiungibile per giorni perché la

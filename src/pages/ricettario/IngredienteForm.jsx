@@ -78,6 +78,10 @@ const emptyForm = {
   avvisa_rincari: true,
   alimentare: true,
   tenuto_in_magazzino: true,
+  // ⚠️ NASCE FALSO, ed è la prudenza nel verso giusto: un prodotto che
+  //    dovrebbe stare in carta e non c'è si vede subito (manca dal menu);
+  //    uno che non doveva starci **si vende a un cliente**.
+  va_in_carta: false,
 };
 
 export default function IngredienteForm() {
@@ -315,6 +319,7 @@ export default function IngredienteForm() {
             avvisa_rincari: ing.avvisa_rincari !== false,
             alimentare: ing.alimentare !== false,
             tenuto_in_magazzino: ing.tenuto_in_magazzino !== false,
+            va_in_carta: ing.va_in_carta === true,
           });
           // I campi che ha messo la macchina e che nessuno ha ancora
           // guardato. ⚠️ Vuoto NON vuol dire «li ha scritti Alessio»: vuol
@@ -435,6 +440,7 @@ export default function IngredienteForm() {
         avvisa_rincari: form.avvisa_rincari,
         alimentare: form.alimentare,
         tenuto_in_magazzino: form.tenuto_in_magazzino,
+        va_in_carta: form.va_in_carta,
       };
 
       let idProdotto = id;
@@ -1242,6 +1248,29 @@ export default function IngredienteForm() {
               <Didascalia>
                 Togli la spunta alle spezie a pizzico: si comprano, ma non si
                 scaricano e non entrano in lista della spesa.
+              </Didascalia>
+            </label>
+
+            {/* 🔴 IL SEGNO DELLA CARTA — costruito nel database il 31/08 e
+                per mezza giornata **senza nessuna schermata che lo
+                scrivesse**: la colonna c'era, la Cantina la leggeva, e non
+                esisteva un posto dove spuntarla. Quinta volta della stessa
+                famiglia in due giorni.
+                ⚠️ E NON SI DEDUCE DAL MONDO, ed è la ragione di Alessio:
+                dentro «Vini» ci sono anche il vino da cucina e le bottiglie
+                del personale. Il mondo dice **che cosa è**, questo dice **se
+                si vende**. */}
+            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+              <input
+                type="checkbox"
+                checked={form.va_in_carta}
+                onChange={(e) => setForm((f) => ({ ...f, va_in_carta: e.target.checked }))}
+              />
+              Si vende al cliente (va in carta)
+              <Didascalia>
+                Spunta le bottiglie e le bevande che finiscono sulla carta.
+                Il vino da cucina e l&apos;acqua del personale no: stanno in
+                magazzino, ma non si vendono.
               </Didascalia>
             </label>
           </div>

@@ -3,6 +3,20 @@ import { eseguiOperazione } from "../operazioni";
 
 // Giacenza per ingrediente (soglia, prossima scadenza) — vista sicura,
 // nessun dato economico: stessa query per titolare e staff.
+// I SETTE MONDI, COL CONTO DI COSA C'E' DENTRO — 31/08/2026
+//
+// 🔴 LA FUNZIONE ESISTEVA DA STANOTTE E NESSUNO LA CHIAMAVA. I sette mondi
+// erano provati, applicati e in produzione, e il Magazzino restava un elenco
+// unico con «Materiali di consumo» come pulsante a parte — la forma vecchia
+// a due mondi. L'ha visto Alessio in dieci minuti.
+// ⚠️ Ed e' la quarta volta in due giorni: e' la famiglia che
+// `tests/app/funzioni-senza-schermata.test.js` esiste per prendere.
+export async function mondiDelMagazzino() {
+  const { data, error } = await supabase.rpc("mondi_del_magazzino");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listStockLevels() {
   const { data, error } = await supabase
     .from("v_stock_levels")
