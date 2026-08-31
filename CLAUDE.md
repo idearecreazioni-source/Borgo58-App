@@ -50,7 +50,17 @@ Il motivo di fondo non è cambiato: **Alessio non è un programmatore**, e un me
   2. **Ogni mandato che tocca dati irreversibili dichiara cosa NON deve cambiare, in una forma verificabile dopo**: «la 012 deve risultare non applicata, le tracce invariate — controllalo e riportalo». Un divieto che non si può ricontrollare dopo non è un divieto.
   3. **Nessun numero, nome di comando o percorso esce da un mandato se non è stato aperto in quella stessa sessione.** Ricordarselo da ieri non vale — ed è la stessa regola che questo progetto applica già ai conteggi scritti a mano.
   ⚠️ **Il complemento sta dalla parte di chi esegue**: se un comando del mandato non fa quello che il mandato dice, **non si aggira** — o si corregge lo strumento (è nato così `--salta`), o ci si ferma e lo si scrive.
-- **Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai. *(Questa non è cambiata: è la sola cosa che separa un mio commit dal sito pubblico.)*
+- 🔴 **DAL 31/08/2026 SI LAVORA A RAMI E PROPOSTE, e `master` e' protetto.** Deciso da Alessio. Il giro e':
+  1. **io lavoro su un ramo** (`git checkout -b …`), mai su `master`;
+  2. **io pusho il ramo e apro la proposta** — posso farlo, l'accesso c'e';
+  3. **i controlli girano su GitHub** (`.github/workflows/controlli.yml`): codice, 657 prove pure, compilazione, e le 459 prove contro il progetto di prova;
+  4. **io guardo l'esito della coda**, leggo i commenti di eventuali controlli automatici esterni, e **sistemo quello che emerge** — non aspetto che lo faccia lui;
+  5. **poi scrivo in chat**, lui verifica e da' l'ok;
+  6. **il merge su `master` avviene solo dopo il suo ok.**
+  ⚠️ **LA REGOLA VECCHIA NON E' STATA INDEBOLITA, E' STATA SPOSTATA DOVE MORDE**: *«il push e' la sola cosa che separa un mio commit dal sito pubblico»* era vera quando il push andava su `master`. Adesso pushare un **ramo** non pubblica niente — a pubblicare e' il **merge**, che resta suo. La barriera e' la stessa, in un punto piu' utile: prima separava il commit dal sito, adesso ci mette in mezzo **1.116 prove**.
+  ⚠️ **E il freno delle migrazioni si rafforza da solo**: `nonAncoraSuGitHub` confronta con `origin/master`, quindi una migrazione che vive su un ramo non ancora unito **non si puo' applicare al gestionale vero**. Nessuna riga da cambiare: la protezione nasce dalla forma del flusso.
+  Guida per Alessio, click per click, in [`docs/CI.md`](docs/CI.md).
+- ~~**Il `git push` lo fa sempre Alessio.** Io creo i commit, non pusho mai.~~ **SUPERATA il 31/08** dalla voce qui sopra: la ragione di allora vale ancora ed e' proprio cio' che regge il flusso nuovo — vedi sotto.
   - 🔴 **E LA REGOLA HA UN BUCO CHE NON È UMANO** — misurato il 20/08/2026. Dal terminale di Claude Code `git push` fallisce sempre (§4), ma **la stessa copia di lavoro è aperta anche nell'interfaccia grafica, che ha il suo pulsante di pubblicazione**. Il 20/08, mentre Alessio era fuori, i due commit del blocco 4 dei preventivi sono usciti su GitHub per quella strada.
   - ⚠️ **Il pulsante fa DUE cose, e la seconda non si vede**: (a) ogni push su `master` **ripubblica il sito** (§11), quindi il codice va online; (b) **cade la condizione «solo migrazioni già su GitHub»** che tiene le migrazioni lontane dal database vero. Quel controllo (`nonAncoraSuGitHub` in `scripts/migra.mjs`) fa `git fetch` e confronta con `origin/master`: **appena il push avviene, da qualunque strada, il freno cade da solo — ed è quello che deve fare.** Non è un difetto del controllo: è che *chi* pusha non è verificato da niente.
   - ⚠️ **Cosa restava in piedi quella sera, misurato**: dei sei controlli di `npm run migra`, cinque erano già soddisfatti (identità del database, riepilogo scritto, passata dal progetto di prova, committata, su GitHub). **L'unica cosa che separava la migrazione dal database vero era che nessuno digitasse `npm run migra -- --conferma`.**
@@ -130,7 +140,9 @@ strumenti a riga di comando di PostgreSQL 17 (`pg_dump`, `psql`) sono un
 prerequisito una-tantum sulla macchina di Alessio; le chiavi vivono in
 `.env.db`, git-ignored, mai nel repository (modello in `.env.db.example`).
 
-**Push (lo fa Alessio, mai io):** il terminale di Claude Code ha i prompt di autenticazione disattivati, quindi `git push` da qui fallisce sempre. Va lanciato in una **finestra PowerShell normale**. L'08/08/2026 anche Git Credential Manager è finito nel prompt testuale `Username for 'https://github.com'` (vicolo cieco: GitHub non accetta più le password). Quello che ha funzionato — login dal browser, niente token da digitare:
+🔴 **QUESTA FRASE ERA FALSA, ed e' stata corretta il 31/08/2026 misurandola.** Diceva: *«il terminale di Claude Code ha i prompt di autenticazione disattivati, quindi `git push` da qui fallisce sempre»*. **Provato**: `git push --dry-run` risponde `[new branch]` con esito **0**, e `gh auth status` dice che l'accesso e' attivo con i permessi `repo` e `workflow`. ⚠️ **Non e' invecchiata in silenzio: ha fatto credere un limite tecnico che non esiste**, e per settimane il flusso di lavoro e' stato disegnato attorno a un ostacolo immaginario. *Una frase che descrive una capacita' si verifica, non si cita.*
+
+**Push:** il terminale ha l'accesso a GitHub e puo' pushare rami e aprire proposte di modifica (`gh`, autenticato). Va lanciato in una **finestra PowerShell normale**. L'08/08/2026 anche Git Credential Manager è finito nel prompt testuale `Username for 'https://github.com'` (vicolo cieco: GitHub non accetta più le password). Quello che ha funzionato — login dal browser, niente token da digitare:
 ```powershell
 gh auth login --hostname github.com --git-protocol https --web
 gh auth setup-git

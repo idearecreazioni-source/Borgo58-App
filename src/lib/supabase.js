@@ -305,9 +305,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: { fetch: fetchCheDenuncia },
-});
+// 🔴 SENZA CONFIGURAZIONE NON SI SCHIANTA, MA NON FINGE NEMMENO — 31/08/2026.
+//
+// Il difetto l'ha trovato la CI al primo giro, e il gancio locale non poteva
+// vederlo: qui sopra c'e' un avviso che dice «configurazione mancante», e la
+// riga dopo chiamava `createClient` lo stesso — che con l'indirizzo vuoto
+// solleva `supabaseUrl is required` e **butta giu' l'import**. Un avviso
+// seguito da uno schianto non e' un avviso.
+//
+// ⚠️ In locale non si vedeva perche' `.env.local` c'e' sempre; su una
+// macchina pulita — la CI, un computer nuovo — no. Ed e' bastato che UNA
+// prova pura importasse una funzione di calcolo da un file che, per arrivarci,
+// tira dentro questo modulo (`payloadMancia` da `api/personale.js`).
+//
+// ⚠️ L'INDIRIZZO DI RIPIEGO E' PALESEMENTE FINTO, e non e' un dettaglio: un
+// ripiego plausibile farebbe partire l'app puntando al nulla senza che nessuno
+// se ne accorga. Cosi' invece chi prova davvero a leggere qualcosa riceve un
+// errore di rete che **nomina il problema**.
+const URL_DI_RIPIEGO = "https://configurazione-supabase-mancante.invalid";
+export const supabase = createClient(
+  supabaseUrl || URL_DI_RIPIEGO,
+  supabaseAnonKey || "configurazione-mancante",
+  {
+    global: { fetch: fetchCheDenuncia },
+  }
+);
 
 // Il varco pubblico (/prenota) parla SEMPRE da anonimo, anche se in quel
 // browser il gestionale è aperto e loggato.
@@ -323,7 +345,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // restare l'unica porta del ruolo anonimo, §6 del CLAUDE.md) ma far sì
 // che una pagina pubblica si comporti da pubblica per tutti. Senza
 // sessione salvata: nessun token da allegare, nessuna eccezione.
-export const supabasePubblico = createClient(supabaseUrl, supabaseAnonKey, {
+// ⚠️ ANCHE QUESTO: di `createClient` in questo file ce ne sono DUE, e la
+//    prima cura ne aveva sistemato uno solo. La CI e' tornata rossa sulla
+//    riga 348 invece che sulla 308 — stesso errore, altro punto.
+//    *Curare l'occorrenza che l'errore nomina, invece di cercarle tutte, e'
+//    il modo di fare due giri per un difetto solo.*
+export const supabasePubblico = createClient(supabaseUrl || URL_DI_RIPIEGO, supabaseAnonKey || "configurazione-mancante", {
   auth: {
     persistSession: false,
     autoRefreshToken: false,

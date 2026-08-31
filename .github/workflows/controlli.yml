@@ -1,0 +1,208 @@
+# =====================================================================
+# I CONTROLLI CHE GIRANO SU GITHUB — 31/08/2026
+# =====================================================================
+#
+# PERCHE' ESISTE, misurato prima di scrivere.
+# Fino a oggi l'unica rete contro le regressioni era il gancio prima del
+# commit (`.githooks/pre-commit`), e aveva tre buchi:
+#   1. e' LOCALE — vive su un computer solo, va acceso a mano con
+#      `git config core.hooksPath .githooks`, e basta `--no-verify` per
+#      saltarlo;
+#   2. NON lancia le 459 prove sul database (6 minuti e mezzo, misurati):
+#      quelle dipendevano dal fatto che qualcuno si ricordasse di lanciarle
+#      — cioe' disciplina, e in questo progetto vale la regola opposta:
+#      *preferire l'automazione alla disciplina, perche' la disciplina si
+#      degrada*;
+#   3. su GitHub non girava NIENTE: fra un push e `borgo58.it` non c'era
+#      nessun controllo indipendente, e il sito andava online comunque.
+#
+# ⚠️ QUELLO CHE QUESTA PIPELINE NON PUO' FARE, e va detto perche' non si
+# scambi per una garanzia intera: **nessuna prova di questo progetto guarda
+# una schermata**. Le regressioni visive — una schermata che sborda, un
+# pulsante sparito, un menu che offre la voce sbagliata — le trova solo un
+# occhio. Il 31/08 i tre difetti piu' grossi li ha trovati Alessio in dieci
+# minuti, non le 1116 prove.
+
+name: Controlli
+
+# 🔴 UN COMMIT, UN VERDETTO — corretto il 31/08/2026 poche ore dopo averlo
+#    scritto sbagliato, e a rilevarlo e' stato Alessio guardando la proposta.
+#
+#    LA RIGA DI PRIMA DICEVA: *«girano ANCHE sulla proposta, che non e' un
+#    doppione»*. **Era falsa, ed e' stata misurata falsa**: con `push` su
+#    ogni ramo E `pull_request`, un ramo che ha una proposta aperta fa
+#    partire DUE giri identici sullo stesso commit — sei giri per tre
+#    commit, contati sul registro.
+#
+# 🔴 E IL PREZZO NON ERANO I MINUTI: erano DUE VERDETTI OPPOSTI SULLA STESSA
+#    RIGA DI CODICE. Il 31/08 il commit `cc677ea` aveva insieme un giro
+#    rosso (partito prima che i segreti esistessero) e un giro verde con 459
+#    prove su 459 — perche' ne era stato rilanciato uno solo. Un sistema di
+#    controlli che risponde due cose diverse sullo stesso codice non e' un
+#    sistema di controlli: e' la famiglia dei *due posti che dicono la
+#    stessa cosa e possono contraddirsi*.
+#    ⚠️ E il danno peggiore e' quello lento: **un rosso che non corrisponde
+#    a niente di rotto insegna a non guardare i rossi.**
+#
+#    LA RAGIONE DI ALESSIO RESTA INTERA, ed e' proprio per questo che la
+#    forma cambia invece di sparire: con `master` protetto il lavoro vive
+#    sui rami, e i controlli devono girare PRIMA che una modifica sia unita,
+#    non dopo. La proposta lo fa gia' — e lo fa meglio, perche' prova il
+#    codice **come sara' una volta unito a master**, non com'e' sul ramo.
+#    Quindi: la proposta copre il lavoro sui rami, il push copre `master`
+#    dopo l'unione. Nessuna occasione persa, nessun doppione.
+#
+# ⚠️ QUELLO CHE SI PERDE, dichiarato: un ramo spinto **senza** proposta
+#    aperta non viene piu' controllato. Nel giro di lavoro deciso il 31/08 e'
+#    una finestra di secondi (spingo il ramo e apro subito la proposta), ma
+#    se un giorno si prendesse l'abitudine di spingere rami e lasciarli li',
+#    quei rami non li guarderebbe piu' nessuno.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# 🔴 UNA CODA PER RAMO — corretto il 31/08/2026, misurando un giro ANNULLATO.
+#
+#    COM'ERA: una coda sola per tutto il repository, `cancel-in-progress:
+#    false`. Sembrava prudente ed era sbagliata in due modi, tutti e due visti
+#    succedere sul ramo di questa proposta:
+#
+#    1. **I giri si accodavano dietro commit gia' superati.** Misurato: un
+#       giro su un commit non piu' in cima ha tenuto occupato il database per
+#       **9 minuti e 56 secondi** prima di lasciar partire quello buono.
+#    2. 🔴 **UN RAMO POTEVA ANNULLARE I CONTROLLI DI UN ALTRO.** GitHub tiene
+#       **un solo** giro in attesa per coda: quando ne arriva uno nuovo,
+#       scarta quello che aspettava. Con una coda condivisa, un push sul ramo
+#       A annulla il giro in attesa del ramo B — e **nessuno lo rilancia**.
+#       Quel ramo resta con un controllo che non ha verificato niente, e non
+#       e' rosso: e' «annullato», che a colpo d'occhio non somiglia a un
+#       problema. *La forma piu' silenziosa di un controllo che non controlla.*
+#
+#    COM'E' ADESSO: la coda del giro e' **per ramo**, quindi un ramo non puo'
+#    piu' toccare i controlli di un altro. Dentro lo stesso ramo l'annullamento
+#    di un giro superato resta — ed e' giusto: quello in cima non viene mai
+#    scartato, perche' quando ne arriva uno piu' nuovo la cima si sposta con lui.
+concurrency:
+  group: controlli-${{ github.ref }}
+  # ⚠️ `false` e non `true`: annullare un giro **mentre le prove stanno
+  #    scrivendo** sul database di prova lascerebbe righe a meta'. Meglio
+  #    aspettare che sporcare — e' la ragione di sempre, spostata dove non fa
+  #    danno.
+  cancel-in-progress: false
+
+jobs:
+  # -------------------------------------------------------------------
+  # 1. I CONTROLLI CHE NON TOCCANO NIENTE
+  # -------------------------------------------------------------------
+  # Girano SEMPRE, anche su una proposta di modifica che arriva da fuori:
+  # non hanno bisogno di nessuna chiave. Sono gli stessi quattro del gancio
+  # locale, cosi' quello che passa qui e' quello che passa li'.
+  codice:
+    name: Codice, prove pure e compilazione
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          # ⚠️ LA VERSIONE E' QUELLA DELLA PUBBLICAZIONE, non «l'ultima»:
+          #    Cloudflare Pages usa NODE_VERSION=22.16.0 (CLAUDE.md §11), e
+          #    Vite 8 pretende ^20.19 || >=22.12. Un numero generico puo'
+          #    risolversi in una minor piu' vecchia — ed e' scritto in §11
+          #    perche' era gia' successo.
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Il codice non ha avvisi
+        run: npm run lint -- --max-warnings=0
+
+      - name: Le prove che non toccano il database
+        run: npm run test
+
+      - name: L'app si compila
+        run: npm run build
+
+  # -------------------------------------------------------------------
+  # 2. LE PROVE CONTRO IL DATABASE DI PROVA
+  # -------------------------------------------------------------------
+  # 🔴 QUESTE SONO LE RETI VERE del progetto: i permessi, i vocabolari
+  #    chiusi, i portieri, le funzioni senza schermata, i vincoli che
+  #    parlano italiano. Il gancio locale non le lanciava.
+  #
+  # ⚠️ SCRIVONO SU UN DATABASE VERO (il progetto di prova), quindi girano
+  #    solo DOPO che il codice e' passato: far scrivere righe da un ramo che
+  #    non compila nemmeno e' sporcare per niente.
+  database:
+    name: Prove contro il progetto di prova
+    needs: codice
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # 🔴 LA SERRATURA STA QUI, NON SUL GIRO INTERO — 31/08/2026.
+    #    A dover restare uno alla volta e' **questo** lavoro, che scrive sul
+    #    progetto di prova. Tenendo la serratura sul giro intero, anche il
+    #    controllo del codice — che non tocca niente — si metteva in fila
+    #    dietro le prove di un altro ramo, per otto minuti e mezzo, senza
+    #    nessuna ragione.
+    # ⚠️ RESIDUO DICHIARATO: fra rami diversi questo lavoro puo' ancora
+    #    accodarsi, e un terzo ramo puo' scartare quello in attesa. Con un
+    #    solo ramo alla volta — come si lavora qui — non capita; il giorno che
+    #    ci fossero tre proposte aperte insieme, quel caso torna. *Si scrive
+    #    invece di far finta che sia chiuso.*
+    concurrency:
+      group: prove-sul-database-di-prova
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      # 🔴 SE LE CHIAVI NON CI SONO, LO DICE E SI FERMA — non passa in
+      #    silenzio. Una proposta di modifica che arriva da un repository
+      #    forestiero non riceve i segreti (lo impedisce GitHub, ed e'
+      #    giusto): senza questa riga il lavoro finirebbe verde **senza aver
+      #    provato niente**, e un verde che non ha provato niente e' peggio
+      #    di un rosso.
+      #    ⚠️ E' la regola del 19/08: *una risposta piu' corta che ha l'aria
+      #    di essere intera*.
+      - name: Le chiavi ci sono?
+        env:
+          URL: ${{ secrets.PROVA_SUPABASE_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Le chiavi del progetto di prova non sono arrivate."
+            echo "Se questa e' una proposta di modifica da un repository forestiero"
+            echo "e' normale: GitHub non passa i segreti, ed e' una protezione."
+            echo "In quel caso le prove sul database vanno lanciate a mano prima"
+            echo "di approvare. Se invece e' un ramo di questo repository,"
+            echo "mancano i Secrets: vedi docs/CI.md."
+            exit 1
+          fi
+
+      # ⚠️ Le prove leggono da `process.env` (tests/app/aiuto.js), quindi qui
+      #    non serve nessun file: bastano le variabili.
+      # ⚠️ E `aiuto.js` ha un controllo suo che si RIFIUTA di partire se
+      #    l'indirizzo e' quello del locale vero — quella rete resta la
+      #    difesa vera, questa e' solo il modo di passare i valori.
+      - name: Le prove contro il database
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.PROVA_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_EMAIL: ${{ secrets.TEST_TITOLARE_EMAIL }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_EMAIL: ${{ secrets.TEST_STAFF_EMAIL }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: npm run test:app
