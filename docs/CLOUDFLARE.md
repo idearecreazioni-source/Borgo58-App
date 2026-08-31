@@ -53,8 +53,15 @@ appoggiarsi al fatto che qualcuno legga un avviso.
 
 ## 3 · Parte A · La produzione è agganciata a `master`?
 
+⚠️ **«Workers & Pages» NON è una voce della barra laterale** — misurato il
+31/08 su una fotografia del pannello vero. La barra ha *Account home ·
+Recents · Domains · Observe · Build · Protect & connect · Manage account*, e
+il progetto sta dentro **Build → Compute → Workers & Pages**.
+*Cloudflare rinomina le sue voci: se un giorno non si trova, si cerca il nome
+del progetto invece del nome del menu.*
+
 1. Vai su **dash.cloudflare.com** ed entra
-2. Colonna a sinistra: **Workers & Pages**
+2. Colonna a sinistra, sezione **Build** → **Compute** → **Workers & Pages**
 3. Clicca sul progetto **borgo58-app**
 4. In alto, linguetta **Settings**
 5. Sezione **Builds & deployments** (*Compilazioni e distribuzioni*)
@@ -124,25 +131,97 @@ di Alessio, righe `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 ## 5 · La chiave per la pulizia
 
-Serve per le due pulizie automatiche della sezione 6. La crea Alessio, una
+**✅ Questa sezione è scritta su una fotografia della pagina vera** (31/08/2026),
+non su come dovrebbe essere. Le altre no — vedi la sezione 9.
+
+Serve per le pulizie automatiche (sezione 6) e per il pulsante (7a). Si fa una
 volta sola.
 
-1. In alto a destra nel pannello: **My Profile**
-2. Linguetta **API Tokens** → **Create Token**
-3. In fondo: **Create Custom Token** → **Get started**
-4. Nome: `pulizia deployment`
-5. Sotto **Permissions**, dai tre menu a tendina: **Account** ·
-   **Cloudflare Pages** · **Edit**
-6. Sotto **Account Resources**: il proprio account
-7. **Continue to summary** → **Create Token**
+### 5a · Dove si arriva
 
-🔴 **La chiave compare UNA VOLTA SOLA.** Chiusa la pagina è persa e ne va
-fatta un'altra. Va messa subito in Bitwarden.
+⚠️ **Non è sotto «My Profile».** È una chiave dell'**account**, non della
+persona, e sta in un posto suo:
 
-### Dove va
+1. **dash.cloudflare.com** → colonna a sinistra, in fondo: **Manage account**
+2. Sotto, la voce **Account API tokens**
+3. Pulsante **Create Token**
 
-**Su GitHub**, perché le pulizie automatiche girano lì:
-**Settings → Secrets and variables → Actions → New repository secret**, due
+Indirizzo diretto, se è più comodo:
+`https://dash.cloudflare.com/124e479908976a117d12b1daadde0d97/api-tokens/create`
+
+### 5b · 🔴 La pagina si apre con dei permessi GIÀ DENTRO, e sono troppi
+
+Questa è la parte che conta, e non è un dettaglio di forma.
+
+Sotto **Permission policies** compaiono già due riquadri, e nella pagina vera
+del 31/08 contenevano:
+
+| riquadro | quanti permessi |
+|---|---|
+| *All zones in …'s Account* | «AI Audit Read, Access: Apps and Policies Read, Analytics Read» **+41 altri** |
+| *Entire …'s Account account* | «AI Gateway Metadata Read, AI Gateway Read, AI Search Metadata Read» **+143 altri** |
+
+Sono **circa 190 permessi di lettura su tutto l'account**. Salvando così, si
+crea una chiave che può leggere quasi tutto — domini, sicurezza, analisi,
+fatturazione — per fare un lavoro che ha bisogno di **una cosa sola**:
+cancellare vecchie costruzioni del sito.
+
+⚠️ **Vanno tolti tutti e due.** Su ogni riquadro c'è il modo di rimuoverlo (un
+cestino, una X o un menu sul riquadro stesso). Se un riquadro non si riesce a
+togliere, si **modifica** finché non resta solo il permesso qui sotto.
+
+### 5c · L'unico permesso che deve restare
+
+Con **+ Add policy** (o modificando un riquadro esistente), la chiave deve
+finire con **una sola** riga:
+
+| campo | valore |
+|---|---|
+| Ambito (*resource*) | **Entire account** — il proprio account |
+| Gruppo | **Cloudflare Pages** |
+| Livello | **Edit** |
+
+⚠️ **`Edit` e non `Read`**: la chiave deve poter *cancellare*. Con `Read` la
+pulizia leggerebbe l'elenco e fallirebbe al primo tentativo di togliere
+qualcosa — e fallirebbe in modo poco chiaro, con un rifiuto di permessi.
+
+### 5d · La scadenza — una scelta, non un dettaglio
+
+Sotto **Token expiration** ci sono: *No expiration · 7 days · 30 days ·
+90 days · 1 year · Custom*.
+
+**Consiglio: 1 year.**
+
+- *No expiration* è comodo e crea **una chiave che sa cancellare e non muore
+  mai**: se un giorno finisce nel posto sbagliato, non c'è niente che la
+  fermi da sé.
+- *1 year* costa un gesto fra un anno. ⚠️ **E quando scadrà si farà notare in
+  modo rumoroso**, non in silenzio: la pulizia diventerà un riquadro rosso su
+  GitHub che dice che la chiave non vale più. Un guasto che si vede è
+  accettabile; una chiave eterna no.
+
+Conviene mettersi il promemoria in Agenda lo stesso giorno.
+
+### 5e · Il filtro sugli indirizzi
+
+Sotto **Client IP address filtering**: **lasciare vuoto**.
+
+⚠️ Le pulizie automatiche girano **dai server di GitHub**, che cambiano
+indirizzo di continuo. Un filtro le farebbe smettere di funzionare, e il
+motivo non sarebbe evidente da nessuna parte.
+
+### 5f · Creare e copiare
+
+In fondo alla pagina: **Continue to summary** → si rilegge il riepilogo (deve
+nominare *Cloudflare Pages* e nient'altro) → **Create Token**.
+
+🔴 **LA CHIAVE COMPARE UNA VOLTA SOLA.** Chiusa la pagina è persa e ne va
+fatta un'altra. Va messa **subito** in Bitwarden.
+
+### 5g · Dove va la chiave
+
+**Su GitHub**, perché le pulizie automatiche e il pulsante girano lì:
+**Settings → Secrets and variables → Actions → New repository secret**. Due
 segreti:
 
 | Nome | Valore |
@@ -150,12 +229,19 @@ segreti:
 | `CLOUDFLARE_API_TOKEN` | la chiave appena creata |
 | `CLOUDFLARE_ACCOUNT_ID` | `124e479908976a117d12b1daadde0d97` |
 
-**Sul computer**, se si vuole lanciare la pulizia a mano: si copia
+**Sul computer**, solo se si vuole lanciare la pulizia dal terminale: si copia
 `.env.cloudflare.example` in `.env.cloudflare` e si completa. Quel file è
 git-ignored e non entra mai nel repository.
 
-⚠️ **È una chiave che sa cancellare siti**, e ha il solo permesso che le
-serve. Vale la regola delle altre: mai nel progetto, mai in chat.
+⚠️ **È una chiave che sa cancellare siti.** Vale la regola delle altre: mai
+nel progetto, mai in chat, sempre in Bitwarden.
+
+### 5h · Come si controlla che sia venuta bene
+
+Torna su **Account API tokens**: la riga `pulizia deployment` deve dire
+**Cloudflare Pages: Edit** e nient'altro. Se dice «41 permissions» o simili,
+è rimasto dentro uno dei due riquadri di partenza: si modifica il token e si
+tolgono.
 
 ---
 
@@ -240,7 +326,7 @@ visto i numeri e ha confermato.
 È l'unica strada che non richiede nessuna chiave, e va bene finché le righe
 sono poche.
 
-1. **dash.cloudflare.com** → **Workers & Pages** → **borgo58-app**
+1. **dash.cloudflare.com** → **Compute** → **Workers & Pages** → **borgo58-app**
 2. Linguetta **Deployments** (*Distribuzioni*)
 3. Ogni riga è una costruzione, con accanto il ramo da cui è nata e
    un'etichetta: **Production** oppure **Preview**
@@ -259,23 +345,47 @@ morto». Nel dubbio resta, e si guarda a mano.
 
 ---
 
-## 8 · Cosa NON è verificato
+## 8 · 🔴 Cosa è misurato e cosa no — sezione per sezione
 
-🔴 **Nel pannello Cloudflare di Alessio non è mai entrato nessuno da qui.** I
-nomi delle voci delle sezioni 3, 4 e 5 sono scritti **come dovrebbero
-essere**, non come li ha visti qualcuno: le etichette cambiano ogni tanto e
-possono comparire in italiano. Se una voce non si trova, si guarda cosa c'è
-davvero invece di cercarla mezz'ora.
+Questa pagina è nata scritta **su come il pannello dovrebbe essere**, e
+Alessio l'ha smentita in due punti nel giro di un'ora. Da qui in avanti ogni
+sezione dichiara su cosa poggia, perché *una guida che sbaglia un nome fa
+perdere mezz'ora a cercare una voce che non esiste*.
 
-🔴 **Le due pulizie automatiche non hanno mai girato per davvero.** La parte
-che decide *quali* costruzioni si tolgono è provata da 11 prove automatiche,
-e le due protezioni più importanti — non toccare il sito vivo, non
-scambiare la produzione per un'anteprima — sono state provate **rompendole
-apposta**: tolte, diventa rossa esattamente la prova che le sorveglia. Ma la
-telefonata che le cancella davvero **non l'ha mai fatta nessuno**, perché la
-chiave non esiste ancora.
+| sezione | su cosa poggia |
+|---|---|
+| 1-2 · il quadro e il problema | ✅ **misurato**: pacchetto scaricato dall'anteprima, riferimento del gestionale vero trovato dentro |
+| 3-4 · produzione e variabili | 🟡 **il percorso sì** (fotografia della barra laterale), **i nomi dentro le pagine no** |
+| 5 · la chiave | ✅ **misurato**: scritto su una fotografia della pagina vera del 31/08 |
+| 6 · le pulizie automatiche | ✅ il codice e le prove · ❌ **non hanno mai girato per davvero** |
+| 7a-7b · pulsante e comando | ✅ esistono e rispondono · ❌ **non hanno mai cancellato niente** |
+| 7c · a mano dal pannello | 🟡 **il percorso sì**, l'interno della pagina **Deployments** no |
 
-✅ **Quello che invece è misurato**: il numero dell'account
-(`124e479908976a117d12b1daadde0d97`) e il nome del progetto (`borgo58-app`)
-vengono dal collegamento che Cloudflare scrive da sé sulle proposte di
+### I due errori già trovati, tenuti scritti
+
+*Si tengono invece di cancellarli: sono la prova che questa pagina va
+verificata sul pannello, non citata.*
+
+1. **«My Profile → API Tokens»** — falso. La chiave è dell'**account** e sta
+   in **Manage account → Account API tokens**.
+2. **«Workers & Pages» nella barra laterale** — falso. Sta dentro **Build →
+   Compute**.
+
+### Cosa resta non verificato, per intero
+
+🔴 **Le due pulizie automatiche non hanno mai girato.** La parte che decide
+*quali* costruzioni si tolgono è provata da 11 prove, e le due protezioni più
+importanti — non toccare il sito vivo, non scambiare la produzione per
+un'anteprima — sono state provate **rompendole apposta**: tolte, diventa rossa
+esattamente la prova che le sorveglia. Ma **la telefonata che cancella davvero
+non l'ha mai fatta nessuno**, perché la chiave non esiste ancora.
+
+🔴 **Dentro le pagine delle sezioni 3, 4 e 7c non è mai entrato nessuno da
+qui.** I nomi dei campi sono quelli attesi. Se non combaciano, **si guarda
+cosa c'è davvero e si corregge questa pagina** — non si cerca la voce
+mancante per mezz'ora.
+
+✅ **Quello che è misurato con certezza**: il numero dell'account
+(`124e479908976a117d12b1daadde0d97`) e il nome del progetto (`borgo58-app`),
+che vengono dal collegamento che Cloudflare scrive da sé sulle proposte di
 modifica.
