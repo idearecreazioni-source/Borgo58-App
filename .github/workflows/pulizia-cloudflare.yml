@@ -41,6 +41,16 @@ on:
   delete:
   push:
     branches: [master]
+  # 🔴 SU OGNI PROPOSTA, UNA LETTURA E BASTA — 31/08/2026.
+  #    Serve perche' la chiave di Cloudflare vive **solo** nei segreti di
+  #    GitHub: non si puo' rileggere da nessuna parte, quindi l'unico posto da
+  #    cui si puo' guardare cosa c'e' davvero su Cloudflare e' un giro come
+  #    questo. Senza, «quante costruzioni ci sono» resterebbe una cosa che si
+  #    puo' solo chiedere ad Alessio di andare a contare a mano — ed e'
+  #    esattamente cosi' che e' nata la stima sbagliata di 7 contro 375.
+  # ⚠️ NON TOCCA NIENTE: nessun `--conferma`. Legge e stampa.
+  pull_request:
+    branches: [master]
   # 🔴 IL PULSANTE PER LA PULIZIA DEL PASSATO — 31/08/2026.
   #    Le due pulizie automatiche valgono da quando esistono e non toccano
   #    quello che c'era prima. Per quello serviva un gesto **una volta sola**,
@@ -108,7 +118,11 @@ jobs:
   # -------------------------------------------------------------------
   produzione:
     name: Conservazione, e la pulizia una volta sola
-    if: github.event_name != 'delete'
+    # ⚠️ MAI SU UNA PROPOSTA: qui si cancella davvero. Una proposta ottiene la
+    #    sola lettura del lavoro qui sotto. Prima questa riga diceva
+    #    `!= 'delete'`, che con l'aggiunta di `pull_request` avrebbe messo a
+    #    cancellare un giro che deve solo guardare.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -140,3 +154,42 @@ jobs:
             exit 0
           fi
           node scripts/cloudflare.mjs $MODO --conferma
+
+  # -------------------------------------------------------------------
+  # 3. COSA C'E' SU CLOUDFLARE — sola lettura, su ogni proposta
+  # -------------------------------------------------------------------
+  stato:
+    name: Cosa c'e' su Cloudflare (sola lettura)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ⚠️ SERVE LA STORIA INTERA: `--orfani` chiede a git quali rami
+          #    esistono davvero su GitHub, e con un solo commit scaricato non
+          #    puo' saperlo.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm ci
+
+      - name: Conteggi, e cosa toglierebbe la conservazione
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Chiave di Cloudflare non configurata: lettura saltata."
+            exit 0
+          fi
+          node scripts/cloudflare.mjs
+
+      - name: E cosa toglierebbe la pulizia dei rami spariti
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then exit 0; fi
+          node scripts/cloudflare.mjs --orfani
