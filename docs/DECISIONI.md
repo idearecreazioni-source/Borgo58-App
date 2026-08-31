@@ -1338,8 +1338,28 @@ già descrizione, marca, formato, fornitore e storico prezzi.
 Una bottiglia fa sei calici, e vendere un calice scarica un sesto. ⚠️ Tutto il
 resto lo vende **a bottiglia intera** e **non terrà birra alla spina**: niente
 fusti, nessun altro caso di resa, e la colonna nasce vuota su tutte le voci.
-* 30/08 — **LE BOTTIGLIE APERTE E NON FINITE NON HANNO UN GESTO APPOSTA**: le
-sistema il conteggio dell'Allineamento, che esiste per questo.
+* ~~30/08 — **LE BOTTIGLIE APERTE E NON FINITE NON HANNO UN GESTO APPOSTA**: le
+sistema il conteggio dell'Allineamento, che esiste per questo.~~
+**SUPERATA IL 31/08**, su sua richiesta — vedi la voce qui sotto.
+* 🔴 31/08 — **LA BOTTIGLIA APERTA E QUELLA BUTTATA HANNO I LORO GESTI.**
+Rovescia la voce qui sopra, chiesta da lui stanotte insieme agli altri due
+punti dei vini.
+  ⚠️ **La ragione del 30/08 non era sbagliata e resta scritta**: il conteggio
+  dell'Allineamento *sistema* davvero una bottiglia mezza vuota. Quello che
+  non fa è **distinguere** un fondo buttato da un calice venduto — nei conti
+  finiscono uguali, e sono due fatti diversi: **uno è ricavo, l'altro
+  perdita**.
+  ⚠️ **Aprire NON scarica niente**, e la schermata lo dice: scaricano i calici
+  quando si vendono. Senza quella riga, il primo che stappa e non vede
+  cambiare la giacenza pensa che il gestionale si sia rotto.
+  ⚠️ **Buttare il fondo scarica come SPRECO**, non come consumo — il motivo
+  esisteva già nel vocabolario degli scarichi. E **chiede quanti calici
+  restavano**: senza quel numero la perdita non si può contare.
+  ⚠️ **L'inventario dice bottiglie E euro**, com'è stato chiesto: un valore da
+  solo non dice se manca una bottiglia da cento o dieci da dieci, e sono due
+  problemi diversi. **Rilegge** le rettifiche dell'Allineamento senza
+  scriverne nessuna.
+  *(Migrazione `20260831000004`, schermata *Magazzino → Cantina*.)*
 * 30/08 — **LA CARTA RESTA COM'È** — sezioni, ordine di comparsa, come si legge
 sul menu. Cambia solo che ogni voce dice **quale prodotto consuma**.
 ⚠️ E quando non lo dice, la schermata lo **dichiara** («non collegata: non

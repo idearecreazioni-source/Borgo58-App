@@ -41,6 +41,7 @@ import Tracciabilita from "./pages/haccp/Tracciabilita";
 import Scadenze from "./pages/magazzino/Scadenze";
 import Fermi from "./pages/magazzino/Fermi";
 import Allineamento from "./pages/magazzino/Allineamento";
+import Cantina from "./pages/magazzino/Cantina";
 import Materiali from "./pages/magazzino/Materiali";
 import FornitoriList from "./pages/magazzino/FornitoriList";
 import FornitoreDetail from "./pages/magazzino/FornitoreDetail";
@@ -227,6 +228,7 @@ function AppRoutes() {
             merce divergerebbero al primo campo aggiunto. */}
         <Route path="/magazzino/materiali" element={<Materiali />} />
         <Route path="/magazzino/allineamento" element={<Allineamento />} />
+        <Route path="/magazzino/cantina" element={<Cantina />} />
         {/* Anagrafica Fornitori (§3.11): dati economici (P.IVA, condizioni di
             pagamento) — titolare-only, coerente col resto di §3.5. */}
         <Route

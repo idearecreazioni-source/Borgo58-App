@@ -227,6 +227,17 @@ export default function MagazzinoHome() {
           >
             Produzioni
           </Link>
+          {/* 🔴 LA CANTINA E' UNA SEZIONE SUA, e non un filtro dentro il
+              magazzino: le altre rispondono a «cosa ho in casa», questa a
+              «quali bottiglie sono aperte» — un fatto che la giacenza, che
+              e' un numero solo, non puo' dire. Stessa ragione per cui le
+              Produzioni sono separate. */}
+          <Link
+            to="/magazzino/cantina"
+            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
+          >
+            Cantina
+          </Link>
           <Link
             to="/magazzino/allineamento"
             className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
