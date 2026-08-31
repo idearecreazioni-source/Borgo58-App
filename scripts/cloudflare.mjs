@@ -154,11 +154,36 @@ export function configurazione(file = ".env.cloudflare") {
   return { token, account, progetto };
 }
 
-async function chiedi(cfg, percorso, opzioni = {}) {
+const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * 🔴 SI RIPROVA SUL LIMITE E SUI GUASTI PASSEGGERI — 31/08/2026, e il numero
+ *    che l'ha reso necessario e' 375.
+ *
+ *    Finche' le costruzioni da togliere erano una manciata, una richiesta per
+ *    volta bastava. Con **375** si fanno centinaia di chiamate di fila, e
+ *    Cloudflare a un certo punto risponde «troppe richieste» (429). Senza
+ *    questo blocco la pulizia si fermerebbe **a meta'**, dopo averne
+ *    cancellate un pezzo: non un disastro (si rilancia, e riparte da dove e'
+ *    arrivata), ma un guasto che sembra un difetto.
+ *
+ * ⚠️ Si riprova SOLO su 429 e sui guasti del server (5xx). Un 403 vuol dire
+ *    che la chiave non ha il permesso, e riprovare dieci volte la stessa cosa
+ *    non la fa diventare vera: quello si dichiara subito.
+ */
+async function chiedi(cfg, percorso, opzioni = {}, tentativo = 1) {
   const r = await fetch(`${API}/accounts/${cfg.account}/pages/projects/${cfg.progetto}${percorso}`, {
     ...opzioni,
     headers: { Authorization: `Bearer ${cfg.token}`, "Content-Type": "application/json" },
   });
+
+  if ((r.status === 429 || r.status >= 500) && tentativo <= 5) {
+    const pausa = Math.min(60000, 2000 * 2 ** (tentativo - 1));
+    console.log(`  (${r.status} — aspetto ${pausa / 1000}s e riprovo, tentativo ${tentativo} di 5)`);
+    await aspetta(pausa);
+    return chiedi(cfg, percorso, opzioni, tentativo + 1);
+  }
+
   const corpo = await r.json().catch(() => ({}));
   if (!r.ok || corpo.success === false) {
     const detta = (corpo.errors ?? []).map((e) => `${e.code}: ${e.message}`).join(" · ");
@@ -262,7 +287,15 @@ async function principale() {
     console.log("");
     return;
   }
-  for (const c of daTogliere) console.log(`  ${descrivi(c)}`);
+  // ⚠️ NON SI STAMPANO 375 RIGHE. Un elenco che non entra nello schermo non
+  //    e' un elenco: e' rumore in cui il numero che conta si perde. Se ne
+  //    mostrano poche come campione, e **il totale sta in fondo**, dove lo si
+  //    legge prima di confermare.
+  const CAMPIONE = 15;
+  for (const c of daTogliere.slice(0, CAMPIONE)) console.log(`  ${descrivi(c)}`);
+  if (daTogliere.length > CAMPIONE) {
+    console.log(`  … e altre ${daTogliere.length - CAMPIONE}`);
+  }
 
   if (!conferma) {
     console.log("");
@@ -282,7 +315,15 @@ async function principale() {
     }
     await chiedi(cfg, `/deployments/${c.id}?force=true`, { method: "DELETE" });
     tolte++;
-    console.log(`  tolta ${descrivi(c)}`);
+    // ⚠️ Su centinaia di righe si scrive l'avanzamento, non ogni riga: chi
+    //    guarda vuole sapere **a che punto e'**, non rileggere l'elenco.
+    if (daTogliere.length > 30) {
+      if (tolte % 25 === 0 || tolte === daTogliere.length) {
+        console.log(`  ${tolte} di ${daTogliere.length}…`);
+      }
+    } else {
+      console.log(`  tolta ${descrivi(c)}`);
+    }
   }
   console.log("");
   console.log(`  Tolte ${tolte} su ${daTogliere.length}.`);

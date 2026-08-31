@@ -277,71 +277,83 @@ esiste davvero: dopo un ritorno indietro a una versione precedente.
 
 ---
 
-## 7 · La pulizia del passato, una volta sola
+## 7 · La pulizia del passato
 
-🔴 **Nessuna delle due pulizie automatiche tocca quello che c'è già**:
-valgono da quando esistono. *Chiudere il rubinetto non svuota il secchio.*
+### 🔴 Il numero vero è 375, e cambia la risposta
 
-Tre strade, dalla più comoda alla più faticosa. **Fanno la stessa cosa.**
+Il 31/08 Alessio ha guardato il pannello: **375 costruzioni di anteprima**.
 
-### 7a · Il pulsante su GitHub — senza terminale
+⚠️ **Prima di quel numero questa pagina consigliava di farla a mano, «due
+minuti».** Era una stima costruita su quello che si era visto passare in una
+sessione, ed era sbagliata di **cinquanta volte**. Resta scritta qui perché è
+l'esempio più netto di una regola di questo progetto: *un numero che nessuno
+ha contato non è un numero, e marcarlo come stima non lo rende innocuo — chi
+lo legge ci costruisce sopra una decisione.*
+
+**Con 375 righe e nessun pulsante «cancellale tutte», la strada a mano non
+esiste.** Restano le due automatiche, e **vengono prima della chiave**: senza
+quella non si fa niente.
+
+### 7a · Il pulsante su GitHub — la strada normale
 
 Funziona appena la chiave della sezione 5 è fra i segreti del repository, e
 appena questo lavoro è stato unito a `master`.
 
-1. Vai su **https://github.com/idearecreazioni-source/Borgo58-App/actions**
-2. Nella colonna a sinistra clicca **Pulizia Cloudflare**
-3. A destra compare il pulsante **Run workflow**
-4. Si apre un menu a tendina, **Che cosa togliere**:
+1. **https://github.com/idearecreazioni-source/Borgo58-App/actions**
+2. Colonna a sinistra: **Pulizia Cloudflare**
+3. Pulsante **Run workflow**
+4. Menu **Che cosa togliere**:
+   - **orfani** → le anteprime dei rami che su GitHub non esistono più
    - **produzione** → tiene le ultime 10 versioni di `borgo58.it`
-   - **orfani** → toglie le anteprime dei rami che su GitHub non esistono più
-5. **Run workflow**, e in un minuto è fatto
+5. **Run workflow**
 
-⚠️ Lanciale **una per volta**: sono due pulizie diverse.
+⚠️ Una per volta: sono due pulizie diverse.
 
-### 7b · Il comando, dal computer di Alessio
+### 7b · Il comando, dal computer
 
-Serve `.env.cloudflare` completato (sezione 5). Il comando **in sola lettura**
-non tocca niente e dice solo cosa c'è:
-
-```bash
-npm run cloudflare
-```
-
-Stampa quante costruzioni ci sono, quante di produzione, quante anteprime, e
-quali toglierebbe. Poi, quando i numeri convincono:
+Serve `.env.cloudflare` completato. **In sola lettura non tocca niente** ed è
+il modo giusto di cominciare, perché stampa i numeri veri prima di qualunque
+gesto:
 
 ```bash
-npm run cloudflare -- --conferma              # tiene le ultime 10 di produzione
+npm run cloudflare                            # quante ce ne sono, e quali toglierebbe
 npm run cloudflare -- --orfani                # cosa toglierebbe fra le anteprime
 npm run cloudflare -- --orfani --conferma     # e le toglie
+npm run cloudflare -- --conferma              # tiene le ultime 10 di produzione
 ```
 
-⚠️ **Senza `--conferma` non tocca niente**, come `npm run migra`. Un comando
-che cancella non lo fa perché è stato lanciato: lo fa perché qualcuno ha
-visto i numeri e ha confermato.
+### 7c · Cosa succede davvero su centinaia di righe
 
-### 7c · A mano dal pannello — se la chiave non c'è ancora
+Tre cose sono state messe **per quel numero**, non in generale:
 
-È l'unica strada che non richiede nessuna chiave, e va bene finché le righe
-sono poche.
+- **Non stampa 375 righe**: ne mostra 15 come campione e scrive il totale in
+  fondo. *Un elenco che non entra nello schermo è rumore in cui il numero che
+  conta si perde.*
+- **Riprova sul limite di Cloudflare.** Centinaia di chiamate di fila fanno
+  scattare il «troppe richieste» (429): senza, la pulizia si fermerebbe a
+  metà. Riprova aspettando, fino a cinque volte. ⚠️ Solo su 429 e sui guasti
+  del server: un «non hai il permesso» si dichiara subito, perché riprovarlo
+  dieci volte non lo fa diventare vero.
+- **Dice a che punto è**, ogni 25 righe, invece di elencarle una per una.
+- ⚠️ **Si può interrompere e rilanciare**: riparte da quello che resta.
 
-1. **dash.cloudflare.com** → **Compute** → **Workers & Pages** → **borgo58-app**
-2. Linguetta **Deployments** (*Distribuzioni*)
-3. Ogni riga è una costruzione, con accanto il ramo da cui è nata e
-   un'etichetta: **Production** oppure **Preview**
-4. 🔴 **Le righe Production NON si toccano**: sono `borgo58.it`, presente e
-   passato
-5. Sulle righe **Preview**, il pulsante coi **tre puntini** a fine riga →
-   **Delete deployment**
+### 7d · 🔴 Una domanda ancora senza risposta
 
-⚠️ **Non c'è nessun pulsante «cancellale tutte»**: si fa una riga per volta.
-Con quattro o cinque righe sono due minuti; è esattamente il motivo per cui
-esistono la 7a e la 7b.
+**Non è ancora chiaro da dove vengano 375 anteprime**, e la cosa non è
+oziosa: fino al 31/08 il lavoro andava tutto su `master`, che è la
+*produzione* — quindi dei rami di lavoro non dovrebbero esserci quasi
+tracce.
 
-⚠️ **Un'anteprima di cui Cloudflare non sa dire il ramo non viene toccata**
-dalle strade automatiche: «non so da dove viene» non è «viene da un ramo
-morto». Nel dubbio resta, e si guarda a mano.
+⚠️ **E la risposta decide se la pulizia funziona.** Il comando `--orfani`
+toglie le anteprime dei **rami che su GitHub non esistono più**. Se quelle
+375 righe portano il nome di rami spariti, le prende tutte. Se invece
+portano un nome che esiste ancora — `master` compreso — **non ne toglie
+nessuna, e non sarebbe un difetto: sarebbe la regola che fa il suo lavoro su
+dati diversi da quelli previsti.**
+
+**Prima di lanciare la pulizia va guardato che nome portano quelle righe.**
+Lo dice `npm run cloudflare` in sola lettura, o si legge nella colonna del
+ramo nella pagina **Deployments**.
 
 ---
 
@@ -370,6 +382,11 @@ verificata sul pannello, non citata.*
    in **Manage account → Account API tokens**.
 2. **«Workers & Pages» nella barra laterale** — falso. Sta dentro **Build →
    Compute**.
+3. **«La pulizia a mano sono due minuti»** — falso, e il peggiore dei tre
+   perché era un **consiglio**, non un nome. Le anteprime sono **375**: a
+   mano non si fa. La stima era costruita su quello che si era visto passare
+   in una sessione, ed è finita in una raccomandazione operativa. *Un numero
+   che nessuno ha contato non diventa innocuo perché lo si chiama stima.*
 
 ### Cosa resta non verificato, per intero
 
