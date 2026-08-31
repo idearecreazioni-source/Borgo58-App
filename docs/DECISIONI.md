@@ -1275,6 +1275,59 @@ la nominassero. E una bottiglia venduta finiva sulla comanda **come testo
 libero**, quindi un vino della carta e un nome digitato a mano erano la stessa
 identica riga: nessuno poteva contare quante bottiglie erano uscite.
 *(Fatto il 30/08 — migrazione `20260830000002`.)*
+* 🔴 31/08 — **IL MAGAZZINO SI DIVIDE IN SETTE MONDI**, in quest'ordine:
+**Alimentari · Vini · Bevande · Liquori e distillati · Materiale di consumo ·
+Pulizia e sanificazione · Varie ed eventuali.**
+  ⚠️ **Fino a stanotte erano DUE** — 'alimenti' (15 categorie) e 'materiali'
+  (6) — quindi un vino finiva dentro la categoria «Bevande» del mondo
+  'alimenti', **in mezzo alla farina e al pesce**.
+  ⚠️ **«Pulizia e sanificazione» e «Varie ed eventuali» erano CATEGORIE e
+  diventano mondi loro**; le altre quattro dei materiali restano dentro
+  «Materiale di consumo».
+  ⚠️ **«Bevande» non si spegne e non si duplica: CAMBIA MONDO.** Spegnerla e
+  crearne una gemella lascerebbe due parole per la stessa cosa — il difetto
+  chiuso il 30/08 con «Varie ed eventuali» e «Altro».
+  ⚠️ **Si è fatto adesso perché adesso costa zero**: misurato il 31/08 sul
+  gestionale vero, gli ingredienti sono **zero**. Fra un mese la stessa
+  modifica avrebbe dentro una decisione su ogni riga già scritta.
+  ⚠️ **Vini e Liquori nascono con categorie PROPOSTE**, da correggere
+  leggendo: senza, quei due mondi nascerebbero vuoti e un vino non avrebbe
+  dove stare. È il precedente del 29/08 sui materiali.
+  *(Migrazione `20260831000001`.)*
+* 🔴 31/08 — **L'ANNATA ESCE DALLA DESCRIZIONE E DIVENTA UN CAMPO SUO.**
+Attua la voce del 30/08 qui sotto — l'annata resta una confezione, ma smette
+di vivere dentro un testo libero.
+  ⚠️ **Nasce vuota, e vuoto non è zero**: quasi niente ha un'annata.
+  ⚠️ **E l'ORDINE al fornitore la dice**: con due annate a catalogo,
+  «Nero d'Avola Contrada Sole — 6 bottiglie» è un ordine che il fornitore non
+  sa evadere, e **sbaglia in silenzio** — la merce arriva lo stesso,
+  dell'annata sbagliata. ⚠️ Solo sulla **dicitura sua**: sul nome interno
+  l'annata non si attacca, o quel nome somiglierebbe a una dicitura vera.
+  *(Migrazioni `20260831000002` e `…003`.)*
+* 🔴 31/08 — **IL PRODOTTO DICE SE VA IN CARTA**, ed è un segno a sé.
+⚠️ **I sette mondi non bastano**, ed è la ragione di Alessio: *dentro «Vini»
+ci sono anche bottiglie che in carta non ci vanno* — il vino da cucina,
+l'acqua del personale. **Il mondo dice che cosa è, il segno dice se si
+vende**: due domande diverse, e un filtro sul mondo risponderebbe alla prima
+credendo di rispondere alla seconda.
+  ⚠️ **Nasce falso per tutti**, che è la prudenza nel verso giusto: un
+  prodotto che manca dal menu si vede subito, uno che non doveva starci **si
+  vende a un cliente**.
+  ⚠️ **Un prodotto NON è una riga di carta**: la stessa bottiglia ci sta due
+  volte, al calice e alla bottiglia, a prezzi diversi. Il gestionale dice
+  *cosa si può mettere*, non riversa il magazzino uno-a-uno.
+* 🔴 31/08 — **L'ALLERTA È SULLA CARTA, NON SULLA GIACENZA.** Parole sue:
+*«non a giacenza zero: quella capita ogni settimana e rientra col carico
+dopo»* — e un'allerta che suona sempre si impara a ignorare. Quello che
+invecchia è **il foglio stampato**: la carta porta la data dell'ultima
+stampa, e il gestionale dice quante etichette sono entrate e quante uscite da
+allora, e da quanti giorni è ferma.
+  ⚠️ **Non dice SE ristampare**: mostra i numeri e decide lui. Una soglia
+  inventata sarebbe una regola scritta da noi sulle sue cose.
+  ⚠️ **Una carta mai stampata non è «ferma da zero giorni»**: resta vuota, e
+  chi legge distingue «non l'hai ancora stampata» da «l'hai stampata
+  stamattina».
+  *(Migrazione `20260831000003`.)*
 * 30/08 — **L'ANNATA È UNA CONFEZIONE, NON UNA RIGA NUOVA.** L'ingrediente è
 «Nero d'Avola del produttore X»; ogni annata è una confezione comprata sotto
 di lui, con la sua data e il suo prezzo. È la struttura prodotto/ingrediente

@@ -53,9 +53,9 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
-**71 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**25 in attesa** · **0 in corso** · **42 fatte** · **4 scartate da lui**.
-La somma fa **71**, cioè il numero delle righe: se non tornasse, questo
+**78 richieste in tutto**, e ognuna sta in uno dei quattro stati:
+**25 in attesa** · **0 in corso** · **49 fatte** · **4 scartate da lui**.
+La somma fa **78**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
 Delle **25** ancora aperte, **8** si possono fare adesso e
@@ -208,6 +208,13 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | N3 | **Autoprodotti in magazzino e raccolta propria col registro HACCP** — rimandati da lui all'apertura dell'azienda agricola. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | aspetta | in attesa · rimandata da lui all'apertura dell'azienda agricola |
 | N4 | **Cantina e bevande** con la stessa macchina del magazzino. | 14/08/2026 | Blocco 3 del mandato cumulativo | — | fatta · **solo la mescita al calice**, migrazione `20260830000002`: i vini sono prodotti del magazzino, l'annata è una confezione, il margine si vede. ⚠️ **NON copriva** «bottiglia aperta»/«bottiglia buttata» né l'inventario trimestrale: sono tornate righe loro, **N9** e **N10** |
 | N9 | **«Bottiglia aperta» e «bottiglia buttata»**: i due gesti di sala per il vino che si stappa e per il fondo che si butta. Il 30/08 Alessio ha deciso di **non** costruirli e di lasciarli al conteggio dell'Allineamento — ma la richiesta resta scritta, perché quella decisione si può riguardare. | 14/08/2026 | Blocco 3 del mandato cumulativo, scorporato da N4 il 30/08 | aspetta | in attesa · rimandata da lui il 30/08 |
+| N12 | 🔴 **Il magazzino si divide in SETTE MONDI**: Alimentari · Vini · Bevande · Liquori e distillati · Materiale di consumo · Pulizia e sanificazione · Varie ed eventuali. Oggi sono due (`alimenti` e `materiali`), e un vino finirebbe dentro «Bevande», in mezzo alla farina e al pesce. | 31/08/2026 | Sua decisione, ordine suo | — | fatta · migrazione `20260831000001` |
+| N13 | **L'annata diventa un campo suo**, fuori dalla descrizione della confezione. Con quaranta etichette e due annate dello stesso vino è il motivo per cui la proposta dell'abbinamento sbaglia. Va fatto PRIMA che carichi le etichette: dopo è una rilavorazione. | 31/08/2026 | Sua decisione | — | fatta · migrazione `20260831000002`, e l'ordine al fornitore ora la dice (`20260831000003`) |
+| N14 | **Il segno «questo va in carta» sul prodotto.** In magazzino c'è anche il vino da cucina, l'acqua del personale, la birra del bar: sulla carta va solo ciò che si vende al cliente. ⚠️ I sette mondi non bastano — dentro «Vini» ci sono bottiglie che in carta non ci vanno. | 31/08/2026 | Sua decisione | — | fatta · migrazione `20260831000002` |
+| N15 | **L'editor della carta dei vini come quello del menu**, e dentro ci va ciò che sta in magazzino ed è segnato «va in carta». ⚠️ Un prodotto NON è una riga di carta: la stessa bottiglia ci sta due volte, al calice e alla bottiglia. | 31/08/2026 | Sua decisione | si può fare adesso | fatta · solo la parte dei prodotti — il menu passa da 116 voci a quelle segnate. ⚠️ **La somiglianza di FORMA con l'editor del menu non è stata fatta** |
+| N16 | **E1 · Sotto scorta → nasce l'ordine.** | 31/08/2026 | Sua richiesta | — | fatta · 🔴 **misurato il 31/08: la catena c'era già intera** — un vino sotto scorta entra da sé in lista, arriva nella bozza e il testo si scrive da solo. Nessun codice nuovo |
+| N17 | **E2 · L'ordine si scrive da solo col listino del fornitore**, con le parole del fornitore e non con quelle di Alessio. | 31/08/2026 | Sua richiesta | — | fatta · `bozza_ordine` lo faceva già; quello che mancava davvero era **l'annata nell'ordine** (`20260831000003`): con due annate a catalogo il fornitore non sa quale mandare, e sbaglia in silenzio |
+| N18 | **E3 · La carta vecchia.** Non a giacenza zero — quella capita ogni settimana e un'allerta che suona sempre si impara a ignorare. L'allerta è sulla CARTA: porta la data dell'ultima stampa, quante etichette sono entrate e uscite da allora, e da quanti giorni è ferma. | 31/08/2026 | Sua richiesta, approvata in questa forma | — | fatta · migrazione `20260831000003` (`carta_da_ristampare`, `segna_carta_stampata`). ⚠️ **La schermata non è stata costruita**: il gestionale sa rispondere, nessuno glielo chiede ancora |
 | N10 | **Inventario della cantina ogni 3 mesi**, con lo scostamento mostrato **in bottiglie e in euro** — non una rettifica silenziosa. | 14/08/2026 | Blocco 3 del mandato cumulativo, scorporato da N4 il 30/08 | si può fare adesso | in attesa |
 | N5 | **Fatture in Cloud nelle due direzioni** (prerequisito suo: piano Complete e accesso). | 14/08/2026 | Blocco 4 del mandato cumulativo | aspetta | in attesa · aspetta il piano Complete e l'accesso, che decide lui |
 | N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | si può fare adesso | in attesa |
