@@ -196,7 +196,27 @@ esiste davvero: dopo un ritorno indietro a una versione precedente.
 🔴 **Nessuna delle due pulizie automatiche tocca quello che c'è già**:
 valgono da quando esistono. *Chiudere il rubinetto non svuota il secchio.*
 
-Il comando in sola lettura — **non tocca niente**, dice solo cosa c'è:
+Tre strade, dalla più comoda alla più faticosa. **Fanno la stessa cosa.**
+
+### 7a · Il pulsante su GitHub — senza terminale
+
+Funziona appena la chiave della sezione 5 è fra i segreti del repository, e
+appena questo lavoro è stato unito a `master`.
+
+1. Vai su **https://github.com/idearecreazioni-source/Borgo58-App/actions**
+2. Nella colonna a sinistra clicca **Pulizia Cloudflare**
+3. A destra compare il pulsante **Run workflow**
+4. Si apre un menu a tendina, **Che cosa togliere**:
+   - **produzione** → tiene le ultime 10 versioni di `borgo58.it`
+   - **orfani** → toglie le anteprime dei rami che su GitHub non esistono più
+5. **Run workflow**, e in un minuto è fatto
+
+⚠️ Lanciale **una per volta**: sono due pulizie diverse.
+
+### 7b · Il comando, dal computer di Alessio
+
+Serve `.env.cloudflare` completato (sezione 5). Il comando **in sola lettura**
+non tocca niente e dice solo cosa c'è:
 
 ```bash
 npm run cloudflare
@@ -207,7 +227,7 @@ quali toglierebbe. Poi, quando i numeri convincono:
 
 ```bash
 npm run cloudflare -- --conferma              # tiene le ultime 10 di produzione
-npm run cloudflare -- --orfani                # anteprime di rami che non esistono più
+npm run cloudflare -- --orfani                # cosa toglierebbe fra le anteprime
 npm run cloudflare -- --orfani --conferma     # e le toglie
 ```
 
@@ -215,8 +235,27 @@ npm run cloudflare -- --orfani --conferma     # e le toglie
 che cancella non lo fa perché è stato lanciato: lo fa perché qualcuno ha
 visto i numeri e ha confermato.
 
-⚠️ **Un'anteprima di cui Cloudflare non sa dire il ramo NON viene toccata**:
-«non so da dove viene» non è «viene da un ramo morto». Nel dubbio resta.
+### 7c · A mano dal pannello — se la chiave non c'è ancora
+
+È l'unica strada che non richiede nessuna chiave, e va bene finché le righe
+sono poche.
+
+1. **dash.cloudflare.com** → **Workers & Pages** → **borgo58-app**
+2. Linguetta **Deployments** (*Distribuzioni*)
+3. Ogni riga è una costruzione, con accanto il ramo da cui è nata e
+   un'etichetta: **Production** oppure **Preview**
+4. 🔴 **Le righe Production NON si toccano**: sono `borgo58.it`, presente e
+   passato
+5. Sulle righe **Preview**, il pulsante coi **tre puntini** a fine riga →
+   **Delete deployment**
+
+⚠️ **Non c'è nessun pulsante «cancellale tutte»**: si fa una riga per volta.
+Con quattro o cinque righe sono due minuti; è esattamente il motivo per cui
+esistono la 7a e la 7b.
+
+⚠️ **Un'anteprima di cui Cloudflare non sa dire il ramo non viene toccata**
+dalle strade automatiche: «non so da dove viene» non è «viene da un ramo
+morto». Nel dubbio resta, e si guarda a mano.
 
 ---
 

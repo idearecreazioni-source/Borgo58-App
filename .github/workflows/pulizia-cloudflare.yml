@@ -41,7 +41,21 @@ on:
   delete:
   push:
     branches: [master]
+  # 🔴 IL PULSANTE PER LA PULIZIA DEL PASSATO — 31/08/2026.
+  #    Le due pulizie automatiche valgono da quando esistono e non toccano
+  #    quello che c'era prima. Per quello serviva un gesto **una volta sola**,
+  #    e senza questo blocco l'unica strada era il terminale con una chiave sul
+  #    computer di Alessio. Da qui si lancia da GitHub, con un menu a tendina.
   workflow_dispatch:
+    inputs:
+      cosa:
+        description: "Che cosa togliere"
+        required: true
+        default: produzione
+        type: choice
+        options:
+          - produzione   # tiene le ultime 10 versioni di borgo58.it
+          - orfani       # anteprime di rami che su GitHub non esistono piu'
 
 # Non tocca niente su GitHub: legge un nome di ramo e parla con Cloudflare.
 permissions: {}
@@ -93,7 +107,7 @@ jobs:
   # 2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione
   # -------------------------------------------------------------------
   produzione:
-    name: Restano le ultime 10 versioni di produzione
+    name: Conservazione, e la pulizia una volta sola
     if: github.event_name != 'delete'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -113,10 +127,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # ⚠️ Un menu a tendina puo' dare solo i valori dell'elenco, ma il
+          #    valore passa lo stesso da una variabile e non dentro la riga di
+          #    comando: la regola vale per la forma, non per il caso singolo.
+          SCELTA: ${{ inputs.cosa }}
         run: |
+          MODO=""
+          if [ "$SCELTA" = "orfani" ]; then MODO="--orfani"; fi
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::notice::Chiave di Cloudflare non configurata: conservazione saltata."
             echo "Quando la vorrai attiva: docs/CLOUDFLARE.md, sezione 5."
             exit 0
           fi
-          node scripts/cloudflare.mjs --conferma
+          node scripts/cloudflare.mjs $MODO --conferma
