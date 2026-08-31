@@ -64,8 +64,8 @@ del gestionale vero.
 ### 3b · Bloccare `master`
 
 Da qui in avanti nessuno — nemmeno Alessio — potrà scrivere direttamente su
-`master`: ogni modifica passa da una **proposta** (una *pull request*) che
-deve essere approvata e i cui controlli devono essere verdi.
+`master`: ogni modifica passa da una **proposta**, i cui controlli devono
+essere verdi.
 
 1. Sempre in **Settings**, colonna a sinistra: **Rules** → **Rulesets**
    *(sui repository più vecchi si chiama «Branches» → «Add branch protection
@@ -77,20 +77,44 @@ deve essere approvata e i cui controlli devono essere verdi.
 6. Nell'elenco **Rules**, spunta queste quattro:
    - ☑ **Restrict deletions** — nessuno può cancellare il ramo
    - ☑ **Require a pull request before merging** — niente scritture dirette
-     - dentro, metti **Required approvals: 1**
+     - 🔴 **dentro, lascia `Required approvals` a `0`.** Vedi l'avvertenza
+       qui sotto: mettere `1` **blocca tutto**.
    - ☑ **Require status checks to pass**
-     - **Add checks** e cerca questi due nomi, uno per volta:
+     - **Add checks** e cerca questi due nomi, uno per volta — sono
+       esattamente questi, copiati dai controlli veri:
        - `Codice, prove pure e compilazione`
        - `Prove contro il progetto di prova`
-     - ⚠️ **Compaiono nell'elenco solo dopo che la pipeline è girata almeno
-       una volta.** Quindi: prima si pubblica questo lavoro, si aspetta che
-       giri, e **poi** si torna qui ad aggiungerli.
    - ☑ **Block force pushes** — nessuno può riscrivere la storia
 7. **Create**
 
-⚠️ **Il punto 6 è quello che conta.** Senza «Require status checks», la
-proposta si può approvare anche con i controlli rossi — e la protezione
-diventa una formalità.
+### 🔴 `Required approvals: 1` ti bloccherebbe fuori — correzione del 31/08
+
+**Questa pagina diceva di metterlo a `1`, ed era un consiglio che rende il
+repository inutilizzabile.**
+
+Il motivo: **GitHub non permette a chi apre una proposta di approvarla da
+sé.** Qui le proposte le apre l'account di Alessio, ed è l'unica persona nel
+repository. Con una approvazione richiesta, **nessuna proposta potrebbe mai
+essere unita** — né da lui né da me — se non scavalcando la regola. E una
+protezione che si scavalca a ogni giro smette di proteggere dopo la seconda
+volta.
+
+⚠️ **Con `0` non si perde niente di quello che conta.** La protezione vera
+sono le altre tre righe: niente scritture dirette su `master`, i controlli
+devono essere verdi, e la storia non si riscrive. L'approvazione, con una
+persona sola, sarebbe stata un timbro che si mette da sé.
+
+⚠️ **Il giorno che entrerà qualcun altro**, `Required approvals: 1` torna
+sensato — e da quel momento vuol dire davvero *«qualcun altro ha guardato»*.
+
+### ⚠️ Due cose da sapere prima di premere Create
+
+**I due controlli compaiono nell'elenco solo dopo che sono girati almeno una
+volta.** Al 31/08 sono girati, quindi ci sono.
+
+🔴 **Il punto 6 è quello che conta.** Senza «Require status checks», una
+proposta si può unire anche con i controlli rossi — e tutta la rete diventa
+una formalità.
 
 ---
 

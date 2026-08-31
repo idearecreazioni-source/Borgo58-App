@@ -151,6 +151,18 @@ jobs:
     #    controllo del codice — che non tocca niente — si metteva in fila
     #    dietro le prove di un altro ramo, per otto minuti e mezzo, senza
     #    nessuna ragione.
+    # 🔴 E IL «MEGLIO ASPETTARE CHE SPORCARE» NON BASTAVA — misurato il
+    #    31/08. Rifiutando `cancel-in-progress: true` questo file diceva di
+    #    proteggere il progetto di prova da un giro ucciso a meta'. **La
+    #    protezione era nel posto sbagliato**: a uccidere il giro non e' stata
+    #    una coda, e' stato il LIMITE DI TEMPO qui sotto — le prove si sono
+    #    impiantate, `timeout-minutes` le ha tagliate a 30 minuti, e la
+    #    pulizia della prova non e' mai partita. Il giro dopo e' diventato
+    #    rosso su una riga rimasta indietro.
+    # ⚠️ Da qui la vera difesa, che sta nelle PROVE e non qui: una prova
+    #    riconosce le proprie righe da un nome diverso a ogni giro, e le segna
+    #    da ripulire **prima** di affermare qualcosa su di loro. Nessun
+    #    accorgimento in questo file puo' impedire che un lavoro venga ucciso.
     # ⚠️ RESIDUO DICHIARATO: fra rami diversi questo lavoro puo' ancora
     #    accodarsi, e un terzo ramo puo' scartare quello in attesa. Con un
     #    solo ramo alla volta — come si lavora qui — non capita; il giorno che

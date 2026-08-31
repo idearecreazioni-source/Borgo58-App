@@ -139,15 +139,40 @@ describe("il catalogo e la traduzione dei numeri", () => {
 });
 
 describe("una dettatura fa quello che ha capito", () => {
+  // 🔴 IL TITOLO E DIVERSO A OGNI GIRO — 31/08/2026, dopo un rosso vero.
+  //
+  //    Prima era fisso («PROVA-voce una cosa») e la prova pretendeva di
+  //    trovarne **una**. Il 31/08 un giro e' stato ucciso dal limite di tempo
+  //    del lavoro **mentre girava**: la sua pulizia non e' mai partita, la
+  //    riga e' rimasta, e il giro dopo ne ha trovate **due**.
+  //
+  // ⚠️ E il difetto si aggravava da solo: `mie.segna` veniva DOPO
+  //    l'affermazione, quindi ogni fallimento lasciava dietro anche la riga
+  //    appena creata. Due oggi, tre domani, per sempre.
+  //
+  // ⚠️ E' la regola del 23/08 applicata al nome invece che all'identificativo:
+  //    *il perimetro di una prova dev'essere fatto di roba che la prova ha
+  //    creato* — e un nome uguale a ogni giro non e' roba di questo giro.
+  //    Con un nome diverso ogni volta, un residuo di ieri non puo' piu'
+  //    confondersi con la riga di adesso.
+  const titoloDelPromemoria = `PROVA-voce una cosa ${crypto.randomUUID().slice(0, 8)}`;
+
   it("le misure sicure si salvano, le creazioni aspettano — nella stessa filza", async () => {
+    // ⚠️ Si portano via i residui dei giri uccisi a meta': stesso marcatore
+    //    «PROVA-voce una cosa», sul database di PROVA, dove nessun impegno
+    //    vero puo' chiamarsi cosi'. Senza, quelle righe resterebbero li' per
+    //    sempre — e le prove girano una alla volta, quindi non c'e' nessun
+    //    altro giro a cui possano appartenere.
+    await titolare.from("tasks").delete().like("title", "PROVA-voce una cosa%");
+
     const { data, error } = await titolare.rpc("registra_dettatura", {
       p_testo: "PROVA-voce: ricordami una cosa e cinquanta euro di gasolio",
       p_azioni: [
         {
           tipo: "promemoria",
           sicuro: true,
-          frase: "Promemoria: PROVA-voce una cosa",
-          dati: { titolo: "PROVA-voce una cosa" },
+          frase: `Promemoria: ${titoloDelPromemoria}`,
+          dati: { titolo: titoloDelPromemoria },
         },
         {
           tipo: "movimento_cassa",
@@ -172,9 +197,13 @@ describe("una dettatura fa quello che ha capito", () => {
     //    di fidarsi dello stato scritto sulla riga. «Eseguita» e «ha
     //    prodotto qualcosa» sono due affermazioni diverse.
     const { data: nato } = await titolare
-      .from("tasks").select("id").eq("title", "PROVA-voce una cosa");
+      .from("tasks").select("id").eq("title", titoloDelPromemoria);
+    // ⚠️ SI SEGNA PRIMA DI AFFERMARE, e non e' pignoleria: se
+    //    l'affermazione qui sotto fallisce, la riga appena creata deve
+    //    comunque essere ripulita. Segnandola dopo, ogni fallimento
+    //    lasciava un residuo che rendeva rosso anche il giro successivo.
+    for (const t of nato ?? []) mie.segna("tasks", t.id);
     expect(nato).toHaveLength(1);
-    mie.segna("tasks", nato[0].id);
     expect(azioni[1].stato).toBe("in_attesa");
     expect(azioni[1].natura).toBe("creazione");
   });
