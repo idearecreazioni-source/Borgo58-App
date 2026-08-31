@@ -31,6 +31,29 @@ function credenzialiDiProva() {
       if (m) out[m[1]] = m[2].trim();
     }
   }
+  // 🔴 UN VALORE STORTO QUI AVVELENA ANCHE LE PROVE PURE — difetto mio,
+  //    trovato da Alessio il 01/09/2026 e riprodotto prima di correggerlo.
+  //    Questa mappatura entra in `env`, che vitest applica a TUTTE le prove:
+  //    quindi un `PROVA_SUPABASE_URL` scritto male (per esempio il solo
+  //    riferimento del progetto, senza `https://`) copriva il
+  //    `VITE_SUPABASE_URL` buono e faceva fallire `npm run test` con
+  //    «Invalid supabaseUrl» — su prove che col progetto di prova non
+  //    c'entrano niente. Il suo `.env` era corretto nella riga che lui
+  //    guardava, e il valore rotto arrivava da un'altra riga.
+  //
+  // ⚠️ LA CURA NON E' SCARTARLO IN SILENZIO: un valore storto scartato
+  //    farebbe girare `npm run test:app` senza sapere dove, e il rifiuto
+  //    arriverebbe piu' avanti con un'altra faccia. Si RIFIUTA qui, e il
+  //    messaggio nomina la casella e cosa c'e' che non va.
+  const male = (v) => v && !/^https:\/\//i.test(v);
+  if (male(out.PROVA_SUPABASE_URL)) {
+    throw new Error(
+      `PROVA_SUPABASE_URL in .env non e' un indirizzo: "${out.PROVA_SUPABASE_URL}".\n` +
+        "Deve cominciare per https:// — e' l'indirizzo del progetto Borgo58-Prova\n" +
+        "(Settings -> Data API), non il suo riferimento. Vedi .env.example."
+    );
+  }
+
   const prova = {};
   if (out.PROVA_SUPABASE_URL) prova.VITE_SUPABASE_URL = out.PROVA_SUPABASE_URL;
   if (out.PROVA_SUPABASE_ANON_KEY) prova.VITE_SUPABASE_ANON_KEY = out.PROVA_SUPABASE_ANON_KEY;
