@@ -12,6 +12,30 @@ una decisione che verrà rovesciata senza che nessuno se ne accorga.
 
 ---
 
+## La stima, e il confronto che la tiene onesta
+
+* 🔴 **31/08 — SI DÀ UNA STIMA DI QUANTO CI VUOLE, E IN FONDO AL RIEPILOGO SI
+SCRIVE QUANTO CI È VOLUTO DAVVERO.** Regola di Alessio, e vale **da oggi e per
+sempre, non solo sul mandato in cui è nata**.
+  * **QUANDO**: subito dopo il blocco 0 — cioè **appena si è misurato lo stato
+    e verificate le premesse**, mai prima. *Una stima fatta senza aver
+    misurato è un numero inventato*, e un numero inventato non è una stima: è
+    una rassicurazione.
+  * **COSA**: quanto ci vuole per il **mandato intero**, non per il pezzo che
+    si sta guardando.
+  * **E POI IL CONFRONTO**, come riga di chiusura del riepilogo: *quanto avevo
+    stimato · quanto ci ho messo · la differenza*.
+  ⚠️ **IL CONFRONTO È LA REGOLA, non un di più.** Senza, sbagliare la stima
+  non costa niente, e la volta dopo si sbaglia uguale: è la stessa forma per
+  cui in questo progetto un conteggio scritto a mano invecchia finché
+  qualcuno non lo rimisura. *Una stima che nessuno confronta non è una
+  previsione, è un augurio.*
+  ⚠️ **E la differenza si scrive anche quando è brutta.** Una stima sbagliata
+  del doppio, dichiarata, vale più di una stima aggiustata dopo: la seconda
+  non insegna niente a nessuno.
+
+---
+
 ## Come si usa — la regola
 
 1. **Ogni decisione di Alessio si aggiunge qui NELLO STESSO MANDATO in
