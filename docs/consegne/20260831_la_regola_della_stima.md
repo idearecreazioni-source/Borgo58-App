@@ -2,7 +2,7 @@
 
 **31/08/2026, tardo pomeriggio.** Riepilogo per il validatore.
 
-* **HEAD dichiarato**: il commit immediatamente precedente a questo file.
+* **HEAD dichiarato**: `a23270e17f115f15f37a827f99dc2e0d834b07d1` — il commit che sta sotto questo file.
 * **Nessuna migrazione nuova.** Il repository, il progetto di prova e la
   produzione sono tutti e tre a **367**, ultima `20260831000011`.
 
