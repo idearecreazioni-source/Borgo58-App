@@ -40,6 +40,16 @@ ricostruzione_*.log
 # la fonte, non sei PDF binari da tenere allineati a mano.
 docs/collaudo/documenti/
 
+# ⚠️ E LA STESSA REGOLA VALEVA GIA' PER I FOGLI DEI CONSULENTI, ed era
+# applicata al contrario (31/08/2026). I sei .html di `docs/quesiti/da_portare/`
+# si rigenerano identici con `npm run quesiti` — misurato: rigenerati su un
+# clone pulito, `diff -rq` dice ZERO differenze rispetto a quelli committati.
+# La fonte e' `docs/quesiti/QUESITI_CONSULENTI.md`; questi sono la stampa.
+# 🔴 Il rischio non era lo spazio: e' che modificando il documento dei quesiti
+# la stampa restasse indietro senza che nessuno potesse vederlo — due posti
+# che dicono la stessa cosa e possono contraddirsi.
+docs/quesiti/da_portare/
+
 # 🔴 I file di servizio della riga di comando di Supabase (19/08/2026).
 # "supabase/.temp/linked-project.json" dichiara a quale progetto il comando
 # "supabase" e' collegato — e nel repository c'era quello di PRODUZIONE.
