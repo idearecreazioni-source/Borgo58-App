@@ -22,12 +22,12 @@ import { fermati, strumento, titolo } from "./comune.mjs";
 const prova = process.argv.includes("--prova");
 const chiave = prova ? "DB_URL_PROVA" : "DB_URL_PRODUZIONE";
 
-const env = readFileSync(".env.db", "utf8");
+const env = readFileSync(".env", "utf8");
 const riga = env.match(new RegExp(`^${chiave}=(.*)$`, "m"));
 if (!riga) {
   fermati(
-    `In .env.db manca ${chiave}.`,
-    "Il modello dei valori attesi e' in .env.db.example."
+    `In .env manca ${chiave}.`,
+    "Il modello dei valori attesi e' in .env.example."
   );
 }
 

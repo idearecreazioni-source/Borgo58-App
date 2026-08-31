@@ -26,7 +26,7 @@ git config core.hooksPath .githooks
 
 Il secondo comando è **obbligatorio, non opzionale**: attiva i controlli automatici pre-commit (lint a zero, build, verifica delle migrazioni). Su un clone nuovo non si attiva da solo — senza, i protocolli di `CLAUDE.md` §5 tornano affidati alla memoria.
 
-Poi creare `.env.local` copiando `.env.example` (chiavi Supabase; la `anon` è pubblica per progettazione) e avviare:
+Poi creare `.env` copiando `.env.example` (chiavi Supabase; la `anon` è pubblica per progettazione) e avviare:
 
 ```
 npm run dev

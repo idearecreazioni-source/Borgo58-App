@@ -11,7 +11,7 @@ Due livelli, due comandi:
 
 Fino al 10/08 le prove scrivevano nel database del locale. Adesso girano
 sul **progetto di prova** (`docs/AMBIENTE_PROVA.md`): un database
-usa-e-getta, ricostruibile da zero con un comando. Se `.env.test`
+usa-e-getta, ricostruibile da zero con un comando. Se `.env`
 contenesse l'indirizzo del progetto vero, le prove **non partono**: il
 controllo è in `aiuto.js`, non nella buona memoria di chi le lancia.
 
@@ -26,9 +26,9 @@ Le prove entrano come i tablet: con **utenti dedicati**, mai coi PIN reali.
 2. I ruoli li assegna già `npm run prova:ricostruisci`. Se servisse
    rifarlo a mano: `supabase/diagnostica/20260809_setup_utenti_di_prova.sql`
    nell'SQL Editor **del progetto di prova**.
-3. Copiare `.env.test.example` in `.env.test` e completarlo (indirizzo del
+3. Copiare `.env.example` in `.env` e completarlo (indirizzo del
    progetto di prova, chiave anon, password).
-   `.env.test` è escluso dal repository (`.gitignore`): **non va mai committato**.
+   `.env` è escluso dal repository (`.gitignore`): **non va mai committato**.
 
 ## Regole di comportamento delle prove sull'app
 

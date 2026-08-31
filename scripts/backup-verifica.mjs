@@ -243,7 +243,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   // --- 4. E il database vero, adesso -----------------------------------
   if (adesso) {
     const url = config.DB_URL_PRODUZIONE;
-    if (!url) fermati("Manca DB_URL_PRODUZIONE in .env.db.");
+    if (!url) fermati("Manca DB_URL_PRODUZIONE in .env.");
     const vive = conteggiDichiarati(interroga(url, SQL_CONTEGGI));
     const scostamenti = differenze(vive, nelFile);
     if (scostamenti.length === 0) {

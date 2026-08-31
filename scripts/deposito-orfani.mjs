@@ -25,7 +25,7 @@ const BUCKET = "documents";
 const conferma = process.argv.includes("--conferma");
 
 const config = leggiConfigurazione();
-const url = obbligatorio(config, "SUPABASE_URL_PRODUZIONE", "docs/BACKUP.md §2");
+const url = obbligatorio(config, "VITE_SUPABASE_URL", "docs/BACKUP.md §2");
 const service = obbligatorio(config, "SERVICE_ROLE_PRODUZIONE", "docs/BACKUP.md §2");
 // ⚠️ L'archivio si legge da psql e NON con la chiave di servizio, e la
 // ragione è una misura del 20/08: in questo progetto `service_role` **non ha

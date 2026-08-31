@@ -21,7 +21,7 @@
 //      spalancherebbe una porta. L'elenco sta qui sotto, scritto una
 //      volta, invece che in un comando da ricordarsi a memoria.
 //
-// Il token vive in `.env.db`, git-ignored, mai nel repository.
+// Il token vive in `.env`, git-ignored, mai nel repository.
 
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -113,7 +113,7 @@ if (!disponibili.includes(nome)) {
 
 // La chiave puo' arrivare da due strade, e la seconda e' quella buona.
 //
-// `.env.db` funziona, ma pretende che qualcuno copi il token a mano — e
+// `.env` funziona, ma pretende che qualcuno copi il token a mano — e
 // il 12/08/2026 si e' scoperto che dal pannello Supabase non c'e' un
 // momento in cui lo si possa copiare per intero: dopo la generazione la
 // pagina lo mostra gia' mascherato. Copiarlo «da dove si vede» produce
@@ -121,7 +121,7 @@ if (!disponibili.includes(nome)) {
 //
 // `npx supabase login` apre il browser, Alessio autorizza, e la chiave se
 // la prende il programma da solo: nessuno la vede e nessuno la incolla.
-// Se in `.env.db` non c'e' niente, si usa quella — ed e' la strada
+// Se in `.env` non c'e' niente, si usa quella — ed e' la strada
 // preferita, non un ripiego.
 const config = leggiConfigurazione();
 const token = config.SUPABASE_ACCESS_TOKEN || null;
@@ -190,7 +190,7 @@ if (!diverso.ok) {
 if (!suProva) {
   // ⚠️ La stringa e' OBBLIGATORIA, non facoltativa (rilievo della
   // validazione del 16/08). Nella prima stesura il controllo stava dentro
-  // un `if (urlProduzione)`: senza quella variabile nel .env.db la rete
+  // un `if (urlProduzione)`: senza quella variabile nel .env la rete
   // non scattava **e non lo diceva**. Una rete che si disattiva quando
   // manca una variabile e' una rete che non c'e' — e si sarebbe scoperto
   // solo dopo, guardando cos'e' finito in produzione senza riepilogo.
@@ -220,7 +220,7 @@ if (!suProva) {
 
 titolo(`Installazione di ${nome}${suProva ? " — PROGETTO DI PROVA" : ""}`);
 console.log(`  progetto: ${REF}${suProva ? " (prova)" : " (PRODUZIONE)"}`);
-console.log(`  chiave: ${token ? "da .env.db" : "quella lasciata da `npx supabase login`"}`);
+console.log(`  chiave: ${token ? "da .env" : "quella lasciata da `npx supabase login`"}`);
 console.log(
   `  verifica del token in ingresso: ${
     SENZA_TOKEN[nome] ? `SPENTA — ${SENZA_TOKEN[nome]}` : "accesa"

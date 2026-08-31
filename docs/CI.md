@@ -45,7 +45,7 @@ nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
 3. Nella colonna a sinistra: **Secrets and variables** → **Actions**
 4. Pulsante verde **New repository secret**
 5. Aggiungine **sei**, uno alla volta. Nome esatto a sinistra, valore preso
-   dal file `.env.test` sul computer:
+   dal file `.env` sul computer:
 
    | Nome del segreto | Da dove prendere il valore |
    |---|---|

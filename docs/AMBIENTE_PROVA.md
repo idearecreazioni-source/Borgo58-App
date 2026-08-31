@@ -54,7 +54,7 @@ Create new user**, quattro volte, con questi indirizzi:
 
 Le password le scegli tu e **non devono essere quelle vere**: questo è un
 database usa-e-getta. Quelle dei due utenti `test-` vanno scritte nel file
-`.env.test` (punto 3).
+`.env` (punto 3).
 
 Spunta **Auto Confirm User** su tutti e quattro.
 
@@ -62,7 +62,7 @@ Spunta **Auto Confirm User** su tutti e quattro.
 
 ## 3. Completare i due file di chiavi
 
-Nel file **`.env.db`** (quello di `docs/BACKUP.md`, punto 2) riempi le due
+Nel file **`.env`** (quello di `docs/BACKUP.md`, punto 2) riempi le due
 righe rimaste:
 
 - **`DB_URL_PROVA`** — nel progetto di prova: **Connect → Session pooler**,
@@ -70,7 +70,7 @@ righe rimaste:
   password del punto 1.
 - **`PROVA_ANON_KEY`** — **Settings → API Keys** → la chiave **`anon`**.
 
-Poi fai una copia di `.env.test.example` chiamata **`.env.test`** e
+Poi fai una copia di `.env.example` chiamata **`.env`** e
 riempila con: l'indirizzo del progetto di prova (**Settings → Data API →
 Project URL**), la stessa chiave `anon`, e le password dei due utenti
 `test-`.
@@ -150,7 +150,7 @@ Tre cose da sapere:
 npm run dev:prova
 ```
 
-Apre lo stesso gestionale collegato al progetto di prova. `.env.local` non
+Apre lo stesso gestionale collegato al progetto di prova. `.env` non
 si tocca: `npm run dev` continua ad aprire il locale vero, e non c'è niente
 da rimettere a posto dopo.
 
@@ -173,7 +173,7 @@ dice.
 ## 5. Da adesso in poi: due regole
 
 1. **Le prove automatiche girano qui.** `npm run test:app` usa
-   `.env.test`, che punta al progetto di prova. Se qualcuno ci rimettesse
+   `.env`, che punta al progetto di prova. Se qualcuno ci rimettesse
    l'indirizzo del database vero, le prove **si rifiutano di partire**: il
    controllo è dentro il codice, non affidato alla memoria.
 2. **Ogni migrazione si applica prima qui, poi in produzione.**

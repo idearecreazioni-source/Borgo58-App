@@ -1,8 +1,8 @@
 // Attrezzi condivisi dai comandi di copia, ricostruzione e confronto.
 //
 // Regola non negoziabile di questo file: NESSUNA credenziale nel
-// repository. Tutto viene letto da `.env.db`, che vive solo sul PC di
-// Alessio ed e' escluso da git (.gitignore copre `.env.*`).
+// repository. Tutto viene letto da `.env`, che vive solo sul PC di
+// Alessio ed e' escluso da git (.gitignore copre `.env`).
 //
 // Seconda regola: i comandi che scrivono o cancellano puntano SOLO al
 // progetto di prova. Il controllo non e' una raccomandazione scritta in
@@ -148,11 +148,11 @@ export function versioniDoppie(elenco) {
     .map(([versione, file]) => `  ${versione}: ${file.join("  +  ")}`);
 }
 
-export function leggiConfigurazione(file = ".env.db") {
+export function leggiConfigurazione(file = ".env") {
   if (!existsSync(file)) {
     fermati(
       `Manca il file ${file}.`,
-      "Copia `.env.db.example` in `.env.db` e completalo seguendo docs/BACKUP.md."
+      "Copia `.env.example` in `.env` e completalo seguendo docs/BACKUP.md."
     );
   }
   const out = {};
@@ -165,7 +165,7 @@ export function leggiConfigurazione(file = ".env.db") {
 
 export function obbligatorio(config, nome, aiuto) {
   const v = config[nome];
-  if (!v) fermati(`Manca ${nome} nel file .env.db.`, aiuto);
+  if (!v) fermati(`Manca ${nome} nel file .env.`, aiuto);
   return v;
 }
 
@@ -179,7 +179,7 @@ export function soloProva(url) {
     fermati(
       "FERMO: questa stringa di collegamento punta al database VERO.",
       "I comandi di ricostruzione e ripristino lavorano solo sul progetto di prova.",
-      "Controlla DB_URL_PROVA in .env.db."
+      "Controlla DB_URL_PROVA in .env."
     );
   }
   return url;

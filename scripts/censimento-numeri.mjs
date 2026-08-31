@@ -22,15 +22,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const config = leggiConfigurazione(".env.db");
+const config = leggiConfigurazione();
 const vero = process.argv.includes("--vero");
 const url = vero ? config.DB_URL_PRODUZIONE : config.DB_URL_PROVA;
 if (!url) {
-  console.error("Manca l'indirizzo del database in .env.db");
+  console.error("Manca l'indirizzo del database in .env");
   process.exit(1);
 }
 if (!vero && url.includes(REF_PRODUZIONE)) {
-  console.error("FERMO: .env.db punta al database vero sulla riga della prova.");
+  console.error("FERMO: .env punta al database vero sulla riga della prova.");
   process.exit(1);
 }
 

@@ -124,26 +124,46 @@ const rifai = process.argv.includes("--rifai");
 const scenario = process.argv.includes("--scenario");
 
 // ---------------------------------------------------------------------
-// 1. L'ambiente: si legge da .env.test, che è già il file che dice qual è
-//    il progetto di prova (lo usa anche `npm run test:app`).
+// 1. L'ambiente: si legge da `.env`, il file unico di configurazione
+//    locale (lo usa anche `npm run test:app`).
+//
+// 🔴 IL PROGETTO DI PROVA HA NOMI SUOI (`PROVA_*`), e non e' una
+//    preferenza di stile: `VITE_SUPABASE_URL` in quel file vuol dire il
+//    LOCALE VERO, perche' e' la riga che finisce nel sito pubblicato.
+//    Riusare quel nome qui significherebbe che lo stesso nome vale due
+//    cose diverse — che e' esattamente il motivo per cui prima i file
+//    erano tre.
 // ---------------------------------------------------------------------
-if (!existsSync(".env.test")) {
-  fermati("Manca .env.test.", "Copia .env.test.example in .env.test (vedi docs/AMBIENTE_PROVA.md).");
+if (!existsSync(".env")) {
+  fermati("Manca .env.", "Copia .env.example in .env (vedi docs/AMBIENTE_PROVA.md).");
 }
 const conf = {};
-for (const riga of readFileSync(".env.test", "utf8").split(/\r?\n/)) {
+for (const riga of readFileSync(".env", "utf8").split(/\r?\n/)) {
   const m = riga.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
   if (m) conf[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
 }
-for (const nome of ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY", "TEST_TITOLARE_EMAIL", "TEST_TITOLARE_PASSWORD"]) {
-  if (!conf[nome]) fermati(`Manca ${nome} in .env.test.`, "Vedi tests/app/LEGGIMI.md.");
+for (const nome of ["PROVA_SUPABASE_URL", "PROVA_ANON_KEY", "TEST_TITOLARE_EMAIL", "TEST_TITOLARE_PASSWORD"]) {
+  if (!conf[nome]) fermati(`Manca ${nome} in .env.`, "Vedi tests/app/LEGGIMI.md.");
 }
-if (conf.VITE_SUPABASE_URL.includes(REF_PRODUZIONE)) {
+if (conf.PROVA_SUPABASE_URL.includes(REF_PRODUZIONE)) {
   fermati(
-    "FERMO: .env.test punta al database VERO del locale.",
+    "FERMO: PROVA_SUPABASE_URL punta al database VERO del locale.",
     "Questo comando SCRIVE: deve poter parlare solo col progetto di prova."
   );
 }
+
+// 🔴 E I VALORI SI PASSANO DAL PROCESSO, PRIMA che Vite parta. In
+//    modalita' `test` Vite carica `.env` da solo, e li' dentro
+//    `VITE_SUPABASE_URL` e' il LOCALE VERO: senza queste due righe i
+//    moduli dell'app si collegherebbero al gestionale del locale.
+// ✅ Che il processo vinca sul file non e' dedotto, e' misurato
+//    (31/08/2026): stesso `ssrLoadModule`, file che dice una cosa e
+//    processo che ne dice un'altra — vince il processo.
+// ⚠️ Il controllo del punto 2 resta comunque, e guarda cosa i moduli
+//    hanno DAVVERO caricato: e' l'unica rete che se ne accorgerebbe se
+//    questa precedenza cambiasse in una versione futura di Vite.
+process.env.VITE_SUPABASE_URL = conf.PROVA_SUPABASE_URL;
+process.env.VITE_SUPABASE_ANON_KEY = conf.PROVA_ANON_KEY;
 // ---------------------------------------------------------------------
 // 2. I moduli VERI dell'app, caricati come li carica l'app.
 //
@@ -152,7 +172,7 @@ if (conf.VITE_SUPABASE_URL.includes(REF_PRODUZIONE)) {
 // "../supabase"`) e leggono la configurazione da `import.meta.env`. Node
 // da solo non sa fare né l'una né l'altra cosa. Facendoli girare dentro
 // Vite, in modalità `test`, si ottengono due cose insieme: la
-// configurazione arriva da `.env.test` (cioè dal progetto di prova) e il
+// configurazione arriva dal progetto di prova (passata qui sopra) e il
 // codice caricato è **esattamente quello che gira nel browser** — non una
 // copia da tenere allineata a mano.
 //
@@ -215,7 +235,7 @@ const { oggiLocale, traGiorniLocale } = await carica("/src/lib/constants.js");
 // non si vedrebbe.
 const ambiente = ambienteCorrente();
 if (ambiente.produzione) {
-  fermati("FERMO: i moduli dell'app si sono collegati al database VERO.", "Controlla .env.test.");
+  fermati("FERMO: i moduli dell'app si sono collegati al database VERO.", "Controlla PROVA_SUPABASE_URL in .env.");
 }
 titolo("Stato di partenza del progetto di prova");
 console.log(`   database: ${ambiente.riferimento} — ${ambiente.nome}`);

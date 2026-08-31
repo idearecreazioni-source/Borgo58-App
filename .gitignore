@@ -15,11 +15,18 @@ dist-ssr
 # Nessun file di chiavi entra mai nel repository: *.local copre .env.local,
 # ma un giorno qualcuno creera' un ".env" e basta — e senza questa riga
 # finirebbe pushato su GitHub. Prevenzione da una riga (audit 09/08/2026).
+# 🔴 DAL 31/08/2026 IL FILE E' UNO SOLO: `.env`. Prima erano tre
+# (`.env.local`, `.env.test`, `.env.db`), nati in tre momenti diversi e
+# mai per una decisione. Dentro `.env` ci sono valori SEGRETI — la chiave
+# che riscrive tutto il database, la password del collegamento diretto,
+# i PIN degli utenti di collaudo — quindi non entra mai nel repository.
+# Nel repository sta solo il modello, `.env.example`, con le caselle
+# vuote e scritto dove si prende ogni valore.
+# ⚠️ `.env.*` resta e copre anche i tre nomi vecchi, che sul computer di
+#    Alessio esistono ancora finche' non li toglie lui.
 .env
 .env.*
 !.env.example
-!.env.test.example
-!.env.db.example
 
 # Resoconti delle ricostruzioni del database di prova (utili solo sul momento).
 ricostruzione_*.log

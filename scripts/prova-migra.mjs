@@ -15,7 +15,7 @@
 //
 // DUE PROTEZIONI, e sono nel programma e non nella memoria di chi lancia:
 //   1. Si rifiuta di partire se `DB_URL_PROVA` contiene il riferimento del
-//      progetto VERO. Un .env.db compilato male applicherebbe in silenzio
+//      progetto VERO. Un .env compilato male applicherebbe in silenzio
 //      sui dati di Alessio cio' che si credeva di provare.
 //   2. Non registra niente da se' in `applied_migrations`: lo fa ogni
 //      migrazione come ultima istruzione (§7.4). Se una non si registra,
@@ -68,7 +68,7 @@ const url = obbligatorio(
 if (url.includes(REF_PRODUZIONE)) {
   fermati(
     "FERMO: DB_URL_PROVA punta al database VERO.",
-    `Ci si aspetta qualcosa di diverso da ${REF_PRODUZIONE}. Controlla .env.db.`
+    `Ci si aspetta qualcosa di diverso da ${REF_PRODUZIONE}. Controlla .env.`
   );
 }
 
