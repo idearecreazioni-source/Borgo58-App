@@ -45,6 +45,15 @@ import { spawnSync } from "node:child_process";
 //    lavora qui, sono molti.
 export const PRODUZIONI_DA_TENERE = 10;
 
+// 🔴 QUANTE ANTEPRIME SI TENGONO PER OGNI RAMO — deciso da Alessio il
+//    31/08/2026: «quelle dei branch solo gli ultimi due».
+//
+// ⚠️ E' **per ramo**, non in tutto, ed e' la differenza che conta: un tetto
+//    complessivo farebbe sparire l'anteprima di un ramo poco toccato solo
+//    perche' su un altro si e' lavorato molto. Due per ramo vuol dire: quella
+//    di adesso, e quella di prima per confronto.
+export const ANTEPRIME_PER_RAMO = 2;
+
 // =====================================================================
 // LA PARTE CHE DECIDE — pura, cosi' si prova senza chiamare nessuno
 // =====================================================================
@@ -71,6 +80,34 @@ export function produzioniDaTogliere(costruzioni, { tieni = PRODUZIONI_DA_TENERE
   if (vivo) tenute.add(vivo);
 
   return produzione.filter((c) => !tenute.has(c.id));
+}
+
+/**
+ * Quali anteprime si tolgono: **oltre le ultime N di ogni ramo**.
+ *
+ * ⚠️ Si raggruppa per ramo e si ordina dentro ogni gruppo. Ordinare tutto
+ * insieme e poi tagliare darebbe un risultato diverso e sbagliato: i rami su
+ * cui si lavora molto scaccerebbero quelli fermi.
+ *
+ * ⚠️ Un'anteprima di cui Cloudflare non sa dire il ramo NON si tocca: finisce
+ * in un gruppo suo che nessuno sa contare. Nel dubbio resta.
+ */
+export function anteprimeDaTogliere(costruzioni, { tieni = ANTEPRIME_PER_RAMO } = {}) {
+  const perRamo = new Map();
+  for (const c of costruzioni) {
+    if (c.environment !== "preview") continue;
+    const ramo = ramoDi(c);
+    if (ramo === "") continue;
+    if (!perRamo.has(ramo)) perRamo.set(ramo, []);
+    perRamo.get(ramo).push(c);
+  }
+
+  const via = [];
+  for (const gruppo of perRamo.values()) {
+    gruppo.sort((a, b) => new Date(b.created_on) - new Date(a.created_on));
+    via.push(...gruppo.slice(tieni));
+  }
+  return via;
 }
 
 /**
@@ -261,7 +298,8 @@ async function principale() {
   console.log("");
   console.log(`  costruzioni in tutto     ${costruzioni.length}`);
   console.log(`  di produzione            ${produzione.length}`);
-  console.log(`  anteprime dei rami       ${anteprime.length}`);
+  const rami = new Set(anteprime.map(ramoDi).filter(Boolean));
+  console.log(`  anteprime dei rami       ${anteprime.length} (su ${rami.size} rami)`);
   console.log(`  quella che serve il sito ${vivo ? String(vivo).slice(0, 8) : "non dichiarata"}`);
 
   let daTogliere;
@@ -275,8 +313,16 @@ async function principale() {
     daTogliere = anteprimeOrfane(costruzioni, vivi);
     perche = `anteprime di rami che su GitHub non esistono piu' (rami vivi: ${vivi.length})`;
   } else {
-    daTogliere = produzioniDaTogliere(costruzioni, { tieni: PRODUZIONI_DA_TENERE, vivo });
-    perche = `versioni di produzione oltre le ultime ${PRODUZIONI_DA_TENERE}`;
+    // ⚠️ LA CONSERVAZIONE ORDINARIA E' UNA COSA SOLA CON DUE REGOLE, non due
+    //    comandi: chi la lancia vuole «metti in ordine», e dividerla in due
+    //    gesti vorrebbe dire che prima o poi se ne fa uno solo.
+    daTogliere = [
+      ...produzioniDaTogliere(costruzioni, { tieni: PRODUZIONI_DA_TENERE, vivo }),
+      ...anteprimeDaTogliere(costruzioni, { tieni: ANTEPRIME_PER_RAMO }),
+    ];
+    perche =
+      `produzione oltre le ultime ${PRODUZIONI_DA_TENERE}, ` +
+      `e anteprime oltre le ultime ${ANTEPRIME_PER_RAMO} di ogni ramo`;
   }
 
   console.log("");

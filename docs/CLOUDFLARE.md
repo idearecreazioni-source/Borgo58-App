@@ -129,96 +129,133 @@ di Alessio, righe `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 ---
 
-## 5 · La chiave per la pulizia
+## 5 · La chiave per la pulizia — passo per passo
 
-**✅ Questa sezione è scritta su una fotografia della pagina vera** (31/08/2026),
-non su come dovrebbe essere. Le altre no — vedi la sezione 9.
+**✅ Scritto su due fotografie del pannello vero** (31/08/2026). Le voci qui
+sotto sono **copiate letteralmente** dallo schermo, in inglese come compaiono.
+Dove una schermata non è stata vista, è detto — e non è stata indovinata.
 
-Serve per le pulizie automatiche (sezione 6) e per il pulsante (7a). Si fa una
-volta sola.
+### Passo 1 · Arrivare alla pagina giusta
 
-### 5a · Dove si arriva
+⚠️ **Non è sotto «My Profile».** È una chiave dell'**account**:
 
-⚠️ **Non è sotto «My Profile».** È una chiave dell'**account**, non della
-persona, e sta in un posto suo:
+1. **dash.cloudflare.com**
+2. Colonna a sinistra, **in fondo**: la sezione **Manage account**
+3. Dentro, la voce **Account API tokens**
+4. Il pulsante **Create Token**
 
-1. **dash.cloudflare.com** → colonna a sinistra, in fondo: **Manage account**
-2. Sotto, la voce **Account API tokens**
-3. Pulsante **Create Token**
+In cima alla pagina si legge il percorso: **Account API tokens › Create a token**.
 
 Indirizzo diretto, se è più comodo:
 `https://dash.cloudflare.com/124e479908976a117d12b1daadde0d97/api-tokens/create`
 
-### 5b · 🔴 La pagina si apre con dei permessi GIÀ DENTRO, e sono troppi
+### Passo 2 · Il nome
 
-Questa è la parte che conta, e non è un dettaglio di forma.
+Nel riquadro **Token name**, scrivere:
 
-Sotto **Permission policies** compaiono già due riquadri, e nella pagina vera
-del 31/08 contenevano:
+```
+pulizia deployment
+```
 
-| riquadro | quanti permessi |
+### Passo 3 · 🔴 I permessi — il passo dove si sbaglia
+
+Sotto **Permission policies** compare una griglia di **modelli**. Questi, con
+i loro numeri esatti:
+
+| colonna sinistra | | colonna destra | |
+|---|---|---|---|
+| Create Account Tokens | 1 | Developer Services | 19 |
+| Edit Cloudflare Workers | 11 | Edit load balancers | 2 |
+| Edit zone DNS | 1 | Network Services | 5 |
+| **Read all resources** | **190** | Read analytics | 4 |
+| Read billing | 1 | Read Radar | 1 |
+| Security | 5 | Stream and Images | 5 |
+| WordPress | 6 | Workers AI | 2 |
+| **Write all resources** | **166** | Zero Trust | 5 |
+| Zone Administration | 6 | **Start from scratch** | *Build a custom permission policy* |
+
+🔴 **Nessuno di questi modelli è quello giusto.** Non esiste un modello
+«Cloudflare Pages»: il più vicino, *Edit Cloudflare Workers*, dà 11 permessi
+che non c'entrano.
+
+🔴 **E «Read all resources» è la trappola in cui si è già caduti**: applicato,
+riempie la pagina con **190 permessi** divisi in due riquadri — uno da 44 sui
+domini («All zones in …'s Account») e uno da 146 sull'account intero
+(«Entire …'s Account account»). 44 + 146 = 190. Salvando così si crea una
+chiave che legge quasi tutto l'account per fare un lavoro che ha bisogno di
+**una cosa sola**.
+
+**Va scelta l'ultima voce in basso a destra, quella col segno +:**
+
+> **Start from scratch** — *Build a custom permission policy*
+
+⚠️ **Se nella pagina ci sono già dei riquadri di permessi** (perché un modello
+era stato applicato prima), il modo sicuro di ripartire puliti è **ricaricare
+la pagina di creazione** dall'indirizzo qui sopra: il modulo torna vuoto e non
+serve sapere come si toglie un riquadro.
+
+### Passo 4 · Il permesso, uno solo
+
+🟡 **Questa schermata non è ancora stata vista da qui**, quindi non ne
+descrivo i campi: sarebbe la quarta volta che questa pagina racconta un
+pannello immaginario.
+
+**Quello che si deve ottenere è certo, ed è questo:**
+
+| | |
 |---|---|
-| *All zones in …'s Account* | «AI Audit Read, Access: Apps and Policies Read, Analytics Read» **+41 altri** |
-| *Entire …'s Account account* | «AI Gateway Metadata Read, AI Gateway Read, AI Search Metadata Read» **+143 altri** |
-
-Sono **circa 190 permessi di lettura su tutto l'account**. Salvando così, si
-crea una chiave che può leggere quasi tutto — domini, sicurezza, analisi,
-fatturazione — per fare un lavoro che ha bisogno di **una cosa sola**:
-cancellare vecchie costruzioni del sito.
-
-⚠️ **Vanno tolti tutti e due.** Su ogni riquadro c'è il modo di rimuoverlo (un
-cestino, una X o un menu sul riquadro stesso). Se un riquadro non si riesce a
-togliere, si **modifica** finché non resta solo il permesso qui sotto.
-
-### 5c · L'unico permesso che deve restare
-
-Con **+ Add policy** (o modificando un riquadro esistente), la chiave deve
-finire con **una sola** riga:
-
-| campo | valore |
-|---|---|
-| Ambito (*resource*) | **Entire account** — il proprio account |
-| Gruppo | **Cloudflare Pages** |
+| Ambito | l'**account** intero (non un dominio, non una zona) |
+| Gruppo di permessi | **Cloudflare Pages** |
 | Livello | **Edit** |
 
 ⚠️ **`Edit` e non `Read`**: la chiave deve poter *cancellare*. Con `Read` la
 pulizia leggerebbe l'elenco e fallirebbe al primo tentativo di togliere
-qualcosa — e fallirebbe in modo poco chiaro, con un rifiuto di permessi.
+qualcosa.
 
-### 5d · La scadenza — una scelta, non un dettaglio
+⚠️ **Un permesso solo.** Se alla fine ne risultano due o più, si torna
+indietro: quella chiave non deve saper fare altro.
 
-Sotto **Token expiration** ci sono: *No expiration · 7 days · 30 days ·
-90 days · 1 year · Custom*.
+### Passo 5 · La scadenza
 
-**Consiglio: 1 year.**
+Sotto **Token expiration** ci sono, esattamente: **No expiration · 7 days ·
+30 days · 90 days · 1 year · Custom**.
 
-- *No expiration* è comodo e crea **una chiave che sa cancellare e non muore
-  mai**: se un giorno finisce nel posto sbagliato, non c'è niente che la
-  fermi da sé.
-- *1 year* costa un gesto fra un anno. ⚠️ **E quando scadrà si farà notare in
-  modo rumoroso**, non in silenzio: la pulizia diventerà un riquadro rosso su
-  GitHub che dice che la chiave non vale più. Un guasto che si vede è
-  accettabile; una chiave eterna no.
+**Scegliere `1 year`.**
 
-Conviene mettersi il promemoria in Agenda lo stesso giorno.
+- *No expiration* crea **una chiave che sa cancellare e non muore mai**: se un
+  giorno finisce nel posto sbagliato, niente la ferma da sé.
+- *1 year* costa un gesto fra un anno, ⚠️ **e quando scadrà si farà notare in
+  modo rumoroso**: la pulizia diventerà un riquadro rosso su GitHub che dice
+  che la chiave non vale più. Un guasto che si vede è accettabile; una chiave
+  eterna no.
 
-### 5e · Il filtro sugli indirizzi
+Conviene metterselo in Agenda lo stesso giorno.
 
-Sotto **Client IP address filtering**: **lasciare vuoto**.
+### Passo 6 · Il filtro sugli indirizzi
 
-⚠️ Le pulizie automatiche girano **dai server di GitHub**, che cambiano
-indirizzo di continuo. Un filtro le farebbe smettere di funzionare, e il
-motivo non sarebbe evidente da nessuna parte.
+Sotto **Client IP address filtering** c'è un menu **Allow** e un campo
+*«Enter an IP address or CIDR range…»*.
 
-### 5f · Creare e copiare
+**Lasciare tutto vuoto.** ⚠️ Le pulizie automatiche girano **dai server di
+GitHub**, che cambiano indirizzo di continuo: un filtro le farebbe smettere di
+funzionare, e il motivo non si vedrebbe da nessuna parte.
 
-In fondo alla pagina: **Continue to summary** → si rilegge il riepilogo (deve
-nominare *Cloudflare Pages* e nient'altro) → **Create Token**.
+### Passo 7 · Creare, e copiare subito
+
+In fondo alla pagina: **Continue to summary** → si rilegge il riepilogo, che
+deve nominare **Cloudflare Pages** e nient'altro → **Create Token**.
 
 🔴 **LA CHIAVE COMPARE UNA VOLTA SOLA.** Chiusa la pagina è persa e ne va
-fatta un'altra. Va messa **subito** in Bitwarden.
+fatta un'altra. **Va messa subito in Bitwarden.**
 
-### 5g · Dove va la chiave
+### Passo 8 · Controllare che sia venuta bene
+
+Tornare su **Account API tokens**: la riga `pulizia deployment` deve dire
+**Cloudflare Pages** e basta. Se dice *190 permissions*, o nomina zone,
+analytics o billing, è rimasto dentro un modello: si cancella il token e si
+rifà dal passo 1.
+
+### Passo 9 · Dove va la chiave
 
 **Su GitHub**, perché le pulizie automatiche e il pulsante girano lì:
 **Settings → Secrets and variables → Actions → New repository secret**. Due
@@ -229,19 +266,12 @@ segreti:
 | `CLOUDFLARE_API_TOKEN` | la chiave appena creata |
 | `CLOUDFLARE_ACCOUNT_ID` | `124e479908976a117d12b1daadde0d97` |
 
-**Sul computer**, solo se si vuole lanciare la pulizia dal terminale: si copia
+**Sul computer**, solo per lanciare la pulizia dal terminale: si copia
 `.env.cloudflare.example` in `.env.cloudflare` e si completa. Quel file è
 git-ignored e non entra mai nel repository.
 
-⚠️ **È una chiave che sa cancellare siti.** Vale la regola delle altre: mai
-nel progetto, mai in chat, sempre in Bitwarden.
-
-### 5h · Come si controlla che sia venuta bene
-
-Torna su **Account API tokens**: la riga `pulizia deployment` deve dire
-**Cloudflare Pages: Edit** e nient'altro. Se dice «41 permissions» o simili,
-è rimasto dentro uno dei due riquadri di partenza: si modifica il token e si
-tolgono.
+⚠️ **È una chiave che sa cancellare siti.** Mai nel progetto, mai in chat,
+sempre in Bitwarden.
 
 ---
 
@@ -253,7 +283,7 @@ e non chiedono niente a nessuno.
 | quando | cosa fa |
 |---|---|
 | **cancelli un ramo su GitHub** | toglie da Cloudflare le anteprime di quel ramo |
-| **una pubblicazione nuova su `master`** | lascia **le ultime 10** versioni di produzione |
+| **una pubblicazione nuova su `master`** | lascia **le ultime 10** versioni di produzione **e le ultime 2 anteprime di ogni ramo** |
 
 ⚠️ **Perché serviva costruirle**: nessuna delle due esiste come impostazione
 di Cloudflare. Non è un limite del piano — quelle manopole non ci sono per
@@ -263,6 +293,13 @@ nessuno.
 unito a `master`**: GitHub fa girare l'evento «ramo cancellato» dalla copia
 che sta sul ramo principale, e non potrebbe fare altrimenti — il ramo, in
 quel momento, non c'è più.
+
+⚠️ **Due anteprime per ramo, e «per ramo» è la parte che conta** (deciso da
+Alessio il 31/08). Un tetto complessivo farebbe sparire l'anteprima di un ramo
+poco toccato solo perché su un altro si è lavorato molto; due per ramo vuol
+dire *quella di adesso, e quella di prima per confronto*. Il numero vive in
+`scripts/cloudflare.mjs` (`ANTEPRIME_PER_RAMO`), con una prova che diventa
+rossa se qualcuno contasse tutte insieme invece che per ramo.
 
 ⚠️ **Dieci versioni di produzione è una decisione, non un numero tecnico**: le
 versioni vecchie sono anche il modo di **tornare indietro** se una
