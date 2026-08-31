@@ -2,7 +2,13 @@
 
 **31/08/2026** · ramo `ci/controlli-automatici`
 
-**Commit di questa consegna**: `954bc84` — *«Via due copie che git conservava già»*.
+**Commit di questa consegna**, in ordine:
+
+| hash | cosa |
+|---|---|
+| `954bc84` | Via due copie che git conservava già |
+| `5431df5` | La riga che rendeva la pulizia definitiva era rimasta fuori |
+
 Questo riepilogo è l'ultimo commit della consegna ed è **sola documentazione**.
 
 **Nessuna migrazione. Nessuna riga di codice toccata.** Solo documenti e
@@ -97,6 +103,29 @@ risponde *«direbbero esattamente la stessa cosa»*, quindi si toglie il doppion
 invece di costruirgli un guardiano.
 
 Aggiunta la riga a `.gitignore` col perché e con la misura accanto.
+
+---
+
+## 3.3 · 🔴 Un difetto mio nel mezzo della consegna, e l'ha preso una rete
+
+**La riga di `.gitignore` era stata scritta e non era entrata nel commit.**
+`git rm --cached` mette in coda le cancellazioni; la modifica al file restava
+nella copia di lavoro, e un `git commit` senza `-a` e senza `git add` ha
+portato dentro **solo la prima metà**.
+
+⚠️ **E la metà mancante era quella che fa il lavoro.** Misurato mettendo da
+parte la riga: i sei file **ricompaiono subito come «da aggiungere»**, quindi
+il primo `git add -A` li avrebbe rimessi nel repository — e la pulizia sarebbe
+stata annullata **senza che nessuno vedesse niente**. Cioè il difetto esatto
+che quella riga esiste per chiudere.
+
+⚠️ **A trovarlo è stato il gancio che controlla se restano modifiche non
+committate**, non una mia rilettura. È la regola di sempre: *preferire
+l'automazione alla disciplina*.
+
+⚠️ **E il messaggio di `954bc84` diceva il falso** — «solo documenti e
+`.gitignore`». **Non è stato riscritto**: la correzione sta in `5431df5`, dove
+si vede anche cosa era andato storto. Nessun force-push su un ramo già spinto.
 
 ---
 
