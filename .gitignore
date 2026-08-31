@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
 *.local
 
 # Nessun file di chiavi entra mai nel repository: *.local copre .env.local,

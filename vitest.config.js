@@ -26,5 +26,11 @@ export default defineConfig({
     // Le prove contro il database vero possono richiedere qualche secondo.
     testTimeout: 30000,
     hookTimeout: 30000,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{js,jsx}"],
+      reporter: ["text", "html", "json-summary"],
+      reportsDirectory: "coverage",
+    },
   },
 });
