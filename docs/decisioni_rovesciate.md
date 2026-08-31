@@ -130,8 +130,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 71 | 30/08/2026 | toccare una preparazione apre il modulo di registrazione |
 | 72 | 30/08/2026 | una porzione per confezione non si può scrivere |
 | 73 | 30/08/2026 | il vino non compare nell'elenco degli scarichi mancati |
+| 74 | 31/08/2026 | le bottiglie aperte non hanno un gesto apposta |
 
-⚠️ **Righe: 74.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 75.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2810,3 +2811,35 @@ che non viene mai salvata perché non passa da nessun deposito.
    `DECISIONI.md`**, che diceva ancora il divieto intero — cioè *una regola
    tolta che vive in più posti di quanti se ne toccano togliendola*, la
    trappola del 27/08, stavolta col codice avanti e le parole indietro.
+
+---
+
+## 74 · 31/08/2026 — «le bottiglie aperte non hanno un gesto apposta»
+
+1. **Cosa era stato deciso e quando.** Il **30/08/2026**, e sta in
+   `DECISIONI.md` alla voce *Vini e bevande*: *«le bottiglie aperte e non
+   finite non hanno un gesto apposta: le sistema il conteggio
+   dell'Allineamento, che esiste per questo»*.
+
+2. **La ragione di allora.** Vera, e non è una svista: il conteggio
+   dell'Allineamento **sistema** davvero una bottiglia mezza vuota — la
+   riporta al numero giusto, con la differenza in unità e in euro. Costruire
+   un gesto in più per una cosa già coperta è codice che nessuno usa, e in
+   questo progetto è già stato tolto una volta.
+
+3. **Cosa si decide adesso.** I due gesti si costruiscono: **«bottiglia
+   aperta»** (che non scarica niente: scaricano i calici vendendosi) e
+   **«bottiglia buttata»** (che scarica il fondo come *spreco*). Chiesti da
+   Alessio la notte del 31/08, insieme agli altri due punti dei vini.
+
+4. **Perché la ragione di allora non vale più — e per metà vale ancora.**
+   🔴 **L'Allineamento sistema, ma non DISTINGUE.** Un fondo buttato e un
+   calice venduto finiscono nel conteggio allo stesso modo, e sono due fatti
+   opposti: **uno è ricavo, l'altro è perdita**. A fine anno, senza il gesto,
+   non si sa quanto vino è finito nel lavandino — sparisce dentro «non torna»
+   invece che dentro «l'ho buttato».
+   ⚠️ **E la metà che vale ancora è quella che tiene in piedi il disegno**:
+   proprio perché l'Allineamento funziona, questi gesti **non ricalcolano
+   niente** — aprire non tocca la giacenza, e l'inventario **rilegge** le
+   rettifiche che l'Allineamento scrive, senza scriverne nessuna.
+   *(Migrazione `20260831000004`, schermata *Magazzino → Cantina*.)*
