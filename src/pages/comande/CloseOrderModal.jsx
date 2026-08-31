@@ -16,6 +16,7 @@ import {
 } from "../../lib/constants";
 import { allergeniTolti, nomeRiga, totaleRiga } from "../../lib/calcoli/righeComanda";
 import { fiscalizzaConto } from "../../lib/fiscalizzazione";
+import { setDocumentoFiscale } from "../../lib/api/orders";
 import { serataCorrente } from "../../lib/giornataOperativa";
 import { NON_LETTO, leggi, nonLetto } from "../../lib/calcoli/letture";
 
@@ -117,6 +118,19 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
   // dimenticanza: un omaggio non incassa niente, quindi non c'è nessun
   // corrispettivo da emettere — è la stessa riga che `quadratura_fiscale`
   // dice a parole da agosto.
+  // 🔴 «IL CLIENTE VUOLE FATTURA» — 31/08/2026, chiesto da Alessio.
+  //
+  // Lo stato `fattura_da_emettere` esisteva gia' su `orders`, era gia'
+  // isolato nei conteggi, e da *Cassa → Incassato e scontrinato* si poteva
+  // gia' segnare e poi chiudere col numero vero. **Mancava solo il gesto in
+  // SALA**: chi chiude il conto davanti al cliente doveva ricordarselo e
+  // andarlo a segnare dopo, da un'altra schermata.
+  //
+  // ⚠️ NON SI EMETTE E NON SI TRASMETTE NIENTE: al tavolo esce il preconto,
+  //    e questo resta uno **stato interno**. La fattura la fa Alessio da
+  //    Fatture in Cloud, e quando c'e' si chiude da Cassa col suo numero.
+  const [vuoleFattura, setVuoleFattura] = useState(false);
+
   const run = async (fn, { fiscalizza = true } = {}) => {
     setBusy(true);
     setError("");
@@ -141,7 +155,31 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
       // proprio ciò che questo blocco evita. Lo scarto, se nasce, si vede
       // in Cassa fra i conti fiscalizzati in ritardo.
       const serata = await serataCorrente().catch(() => null);
-      await fiscalizzaConto(order, { serata });
+      // 🔴 SE IL CLIENTE VUOLE FATTURA LO SCONTRINO NON ESCE, e il conto si
+      //    segna «fattura promessa». Emettere tutti e due documenterebbe
+      //    **due volte lo stesso incasso**, ed e' la stessa ragione per cui
+      //    non stampano l'annullamento e l'omaggio (decisione del 22/08).
+      // ⚠️ E QUESTA SCRITTURA NON PUO' RIMETTERE IN DISCUSSIONE IL CONTO,
+      //    che a questo punto e' gia' chiuso: se fallisce, il conto resta
+      //    «nessuno ha detto cosa e' stato emesso» — cioe' esattamente dove
+      //    stava prima — e si fa notare da solo nell'elenco di Cassa. Per
+      //    questo l'errore non si solleva: la sala non si blocca davanti al
+      //    cliente che aspetta il resto.
+      if (vuoleFattura) {
+        await setDocumentoFiscale(order.id, {
+          tipo: "fattura_da_emettere",
+          numero: null,
+          emessoIl: serata ?? null,
+          // SILENZIO MOTIVATO: il conto e' gia' chiuso e il cliente aspetta
+          // il resto. Se questa scrittura fallisce, il conto resta «nessuno
+          // ha detto cosa e' stato emesso» — cioe' esattamente dove stava
+          // prima — e si fa notare da solo nell'elenco di Cassa, dove la
+          // fattura si segna e si chiude. Fermare la sala per marcare uno
+          // stato interno sarebbe la sala bloccata davanti al cliente.
+        }).catch(() => {});
+      } else {
+        await fiscalizzaConto(order, { serata });
+      }
     }
     onDone();
   };
@@ -409,6 +447,35 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   </button>
                 ))}
               </div>
+              {/* 🔴 «IL CLIENTE VUOLE FATTURA» — 31/08/2026, chiesto da
+                  Alessio. Sta SOPRA i pulsanti di pagamento perché è lì
+                  che il cliente lo dice: dopo aver incassato, chi chiude
+                  se n'è già andato dalla schermata.
+                  ⚠️ NON EMETTE E NON TRASMETTE NIENTE: al tavolo esce il
+                  preconto, e questo è uno **stato interno**. La fattura la
+                  fa Alessio da Fatture in Cloud, e quando c'è la chiude da
+                  *Cassa → Incassato e scontrinato* col numero vero.
+                  ⚠️ E DICE COSA CAMBIA, invece di lasciarlo indovinare:
+                  spuntandola lo scontrino non esce, perché documentare due
+                  volte lo stesso incasso non è una prudenza — è un
+                  doppione. */}
+              <label className="tocco-riga flex items-start gap-2 rounded-lg border border-b58-charcoal/15 px-3 py-2 mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={vuoleFattura}
+                  onChange={(e) => setVuoleFattura(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="testo-sala text-b58-charcoal">
+                  Il cliente vuole fattura
+                  <span className="block testo-sala text-b58-charcoal-soft">
+                    {vuoleFattura
+                      ? "Lo scontrino non esce. Il conto resta «fattura promessa» finché non la emetti da Cassa."
+                      : "Lo scontrino esce come sempre."}
+                  </span>
+                </span>
+              </label>
+
               {/* ⚠️ DUE RIGHE DA DUE, non quattro stretti (22/08). Anche
                   con la finestra larga, «Pagano in due modi» a 3,20 mm non
                   sta in un quarto di riga. *Un'etichetta tagliata su un
