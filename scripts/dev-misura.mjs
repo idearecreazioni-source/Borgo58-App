@@ -8,7 +8,7 @@ import { leggiConfigurazione, obbligatorio, esegui, fermati, REF_PRODUZIONE } fr
 
 const cfg = leggiConfigurazione();
 const url = obbligatorio(cfg, "PROVA_SUPABASE_URL", "E l indirizzo del progetto Borgo58-Prova.");
-const chiave = obbligatorio(cfg, "PROVA_ANON_KEY", "E la chiave anon del progetto di prova.");
+const chiave = obbligatorio(cfg, "PROVA_SUPABASE_ANON_KEY", "E la chiave anon del progetto di prova.");
 if (url.includes(REF_PRODUZIONE)) fermati("FERMO: punta al gestionale VERO.");
 
 console.log(`Misura: http://localhost:5188 — progetto di PROVA`);

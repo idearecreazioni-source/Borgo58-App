@@ -33,7 +33,7 @@ function credenzialiDiProva() {
   }
   const prova = {};
   if (out.PROVA_SUPABASE_URL) prova.VITE_SUPABASE_URL = out.PROVA_SUPABASE_URL;
-  if (out.PROVA_ANON_KEY) prova.VITE_SUPABASE_ANON_KEY = out.PROVA_ANON_KEY;
+  if (out.PROVA_SUPABASE_ANON_KEY) prova.VITE_SUPABASE_ANON_KEY = out.PROVA_SUPABASE_ANON_KEY;
   for (const n of ["TEST_TITOLARE_EMAIL", "TEST_TITOLARE_PASSWORD", "TEST_STAFF_EMAIL", "TEST_STAFF_PASSWORD"]) {
     if (out[n]) prova[n] = out[n];
   }

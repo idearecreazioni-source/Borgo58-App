@@ -142,7 +142,7 @@ for (const riga of readFileSync(".env", "utf8").split(/\r?\n/)) {
   const m = riga.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
   if (m) conf[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
 }
-for (const nome of ["PROVA_SUPABASE_URL", "PROVA_ANON_KEY", "TEST_TITOLARE_EMAIL", "TEST_TITOLARE_PASSWORD"]) {
+for (const nome of ["PROVA_SUPABASE_URL", "PROVA_SUPABASE_ANON_KEY", "TEST_TITOLARE_EMAIL", "TEST_TITOLARE_PASSWORD"]) {
   if (!conf[nome]) fermati(`Manca ${nome} in .env.`, "Vedi tests/app/LEGGIMI.md.");
 }
 if (conf.PROVA_SUPABASE_URL.includes(REF_PRODUZIONE)) {
@@ -163,7 +163,7 @@ if (conf.PROVA_SUPABASE_URL.includes(REF_PRODUZIONE)) {
 //    hanno DAVVERO caricato: e' l'unica rete che se ne accorgerebbe se
 //    questa precedenza cambiasse in una versione futura di Vite.
 process.env.VITE_SUPABASE_URL = conf.PROVA_SUPABASE_URL;
-process.env.VITE_SUPABASE_ANON_KEY = conf.PROVA_ANON_KEY;
+process.env.VITE_SUPABASE_ANON_KEY = conf.PROVA_SUPABASE_ANON_KEY;
 // ---------------------------------------------------------------------
 // 2. I moduli VERI dell'app, caricati come li carica l'app.
 //

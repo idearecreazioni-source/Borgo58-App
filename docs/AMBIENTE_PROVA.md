@@ -68,7 +68,7 @@ righe rimaste:
 - **`DB_URL_PROVA`** — nel progetto di prova: **Connect → Session pooler**,
   copia la riga `postgresql://...` e sostituisci `[YOUR-PASSWORD]` con la
   password del punto 1.
-- **`PROVA_ANON_KEY`** — **Settings → API Keys** → la chiave **`anon`**.
+- **`PROVA_SUPABASE_ANON_KEY`** — **Settings → API Keys** → la chiave **`anon`**.
 
 Poi fai una copia di `.env.example` chiamata **`.env`** e
 riempila con: l'indirizzo del progetto di prova (**Settings → Data API →

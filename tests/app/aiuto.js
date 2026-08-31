@@ -31,7 +31,7 @@ export function clientAnonimo() {
   if (!URL || !ANON) {
     throw new Error(
       "Manca l'indirizzo del progetto di prova in .env " +
-        "(PROVA_SUPABASE_URL e PROVA_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
+        "(PROVA_SUPABASE_URL e PROVA_SUPABASE_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
     );
   }
   if (URL.includes(REF_PRODUZIONE)) {

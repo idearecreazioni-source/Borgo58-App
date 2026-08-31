@@ -33,7 +33,7 @@ const url = obbligatorio(
 );
 const chiave = obbligatorio(
   config,
-  "PROVA_ANON_KEY",
+  "PROVA_SUPABASE_ANON_KEY",
   "E' la chiave anon del progetto di prova (Settings -> API Keys)."
 );
 
