@@ -1,0 +1,25 @@
+# Chiavi dei comandi di copia e ripristino (npm run backup, npm run prova:*).
+#
+# Copiare questo file in ".env.db" e completarlo. ".env.db" vive SOLO su
+# questo computer: e' escluso dal repository e non va mai mandato a
+# nessuno. Chi ha questo file puo' leggere e riscrivere tutto il
+# gestionale: va trattato come le chiavi del locale.
+#
+# Dove si prendono i valori: docs/BACKUP.md (paragrafo 2).
+
+# --- Database VERO (solo lettura: da qui esce la copia di sicurezza) ---
+DB_URL_PRODUZIONE=postgresql://postgres.oudjuqbqszisdtwzbxdo:6fQjt1azC6zbDlMk@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+SUPABASE_URL_PRODUZIONE=https://oudjuqbqszisdtwzbxdo.supabase.co
+SERVICE_ROLE_PRODUZIONE=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91ZGp1cWJxc3ppc2R0d3pieGRvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTQ0MDQwMiwiZXhwIjoyMTAxMDE2NDAyfQ.1WMrObAKwpLWtTFl48V9eIyRyiwmBpotevvgfNVkis8
+
+# --- Database di PROVA (qui si prova, si rompe e si rifa') ---
+DB_URL_PROVA=postgresql://postgres.bnwqgpuyzmzujxfbtyvs:GAR1vGN8GXiNKRD0@aws-1-eu-west-1.pooler.supabase.com:5432/postgres
+PROVA_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJud3FncHV5em16dWp4ZmJ0eXZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjYwODUsImV4cCI6MjEwMTk0MjA4NX0.RTMYRtuUMknNyq-tVvpvBkKNQgWDhioQZKPqXmnljSc
+
+# --- Dove finiscono le copie (lasciare vuoto = Desktop\Backup Borgo 58) ---
+BACKUP_CARTELLA=
+
+
+# Incolla qui la password del progetto Borgo58-Prova, poi salva.
+PASSWORD_PROVA=GAR1vGN8GXiNKRD0
+
