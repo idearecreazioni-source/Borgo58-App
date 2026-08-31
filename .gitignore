@@ -15,12 +15,18 @@ dist-ssr
 # Nessun file di chiavi entra mai nel repository: *.local copre .env.local,
 # ma un giorno qualcuno creera' un ".env" e basta — e senza questa riga
 # finirebbe pushato su GitHub. Prevenzione da una riga (audit 09/08/2026).
+# 🔴 DAL 31/08/2026 IL FILE E' UNO SOLO: `.env`. Prima erano tre
+# (`.env.local`, `.env.test`, `.env.db`), nati in tre momenti diversi e
+# mai per una decisione. Dentro `.env` ci sono valori SEGRETI — la chiave
+# che riscrive tutto il database, la password del collegamento diretto,
+# i PIN degli utenti di collaudo — quindi non entra mai nel repository.
+# Nel repository sta solo il modello, `.env.example`, con le caselle
+# vuote e scritto dove si prende ogni valore.
+# ⚠️ `.env.*` resta e copre anche i tre nomi vecchi, che sul computer di
+#    Alessio esistono ancora finche' non li toglie lui.
 .env
 .env.*
 !.env.example
-!.env.test.example
-!.env.db.example
-!.env.cloudflare.example
 
 # Resoconti delle ricostruzioni del database di prova (utili solo sul momento).
 ricostruzione_*.log
@@ -40,6 +46,16 @@ ricostruzione_*.log
 # `npm run collaudo:documenti`: nel repository sta il generatore, che e'
 # la fonte, non sei PDF binari da tenere allineati a mano.
 docs/collaudo/documenti/
+
+# ⚠️ E LA STESSA REGOLA VALEVA GIA' PER I FOGLI DEI CONSULENTI, ed era
+# applicata al contrario (31/08/2026). I sei .html di `docs/quesiti/da_portare/`
+# si rigenerano identici con `npm run quesiti` — misurato: rigenerati su un
+# clone pulito, `diff -rq` dice ZERO differenze rispetto a quelli committati.
+# La fonte e' `docs/quesiti/QUESITI_CONSULENTI.md`; questi sono la stampa.
+# 🔴 Il rischio non era lo spazio: e' che modificando il documento dei quesiti
+# la stampa restasse indietro senza che nessuno potesse vederlo — due posti
+# che dicono la stessa cosa e possono contraddirsi.
+docs/quesiti/da_portare/
 
 # 🔴 I file di servizio della riga di comando di Supabase (19/08/2026).
 # "supabase/.temp/linked-project.json" dichiara a quale progetto il comando

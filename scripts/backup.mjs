@@ -174,11 +174,11 @@ console.log(`   ${conteggi.split("\n").length} tabelle, ${righeTotali} righe in 
 // I documenti veri (Archivio Documenti). Vivono fuori dal database.
 // ---------------------------------------------------------------------
 const service = config.SERVICE_ROLE_PRODUZIONE;
-const urlApi = config.SUPABASE_URL_PRODUZIONE;
+const urlApi = config.VITE_SUPABASE_URL;
 if (!service || !urlApi) {
   console.log("");
   console.log("  ATTENZIONE: i documenti caricati (PDF, foto) NON sono stati copiati.");
-  console.log("  Mancano SUPABASE_URL_PRODUZIONE e SERVICE_ROLE_PRODUZIONE in .env.db.");
+  console.log("  Mancano VITE_SUPABASE_URL e SERVICE_ROLE_PRODUZIONE in .env.");
 } else {
   titolo("Documenti caricati");
   const sb = createClient(urlApi, service, { auth: { persistSession: false } });

@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 //
 // Le prove entrano come entrano i tablet: con utenti di PROVA dedicati
 // (test-titolare / test-staff), mai con i PIN reali. Le credenziali vivono
-// solo in .env.test, che .gitignore esclude dal repository.
+// solo in `.env`, che .gitignore esclude dal repository.
 //
 // Regola di comportamento delle prove: leggere liberamente, scrivere SOLO
 // dati di prova marcati e ripulirli sempre — e mai toccare le tabelle
@@ -19,22 +19,25 @@ import { createClient } from "@supabase/supabase-js";
 // impone da solo — non una raccomandazione scritta in un documento.
 const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
 
-// .env.test (caricato da vitest.config.js) ha la precedenza su .env.local:
-// e' quel file a dire su quale database girano le prove.
+// I valori arrivano da `.env` (il progetto di prova si chiama li' dentro
+// `PROVA_*`, ribattezzato `VITE_*` da vitest.config.js) oppure dalle
+// variabili d'ambiente della pipeline. Il processo ha la precedenza sul
+// file, quindi e' sempre la mappatura a decidere su quale database si
+// gira — e il controllo qui sotto e' la rete se sbagliasse.
 const URL = process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
 const ANON = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export function clientAnonimo() {
   if (!URL || !ANON) {
     throw new Error(
-      "Manca l'indirizzo del progetto di prova in .env.test " +
-        "(VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
+      "Manca l'indirizzo del progetto di prova in .env " +
+        "(PROVA_SUPABASE_URL e PROVA_SUPABASE_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
     );
   }
   if (URL.includes(REF_PRODUZIONE)) {
     throw new Error(
       "FERMO: le prove stanno puntando al database VERO del locale. " +
-        "In .env.test va l'indirizzo del progetto di prova (docs/AMBIENTE_PROVA.md)."
+        "In .env, PROVA_SUPABASE_URL deve essere il progetto di prova (docs/AMBIENTE_PROVA.md)."
     );
   }
   return createClient(URL, ANON, {
@@ -51,8 +54,8 @@ export function credenziali() {
   } = process.env;
   if (!TEST_TITOLARE_EMAIL || !TEST_TITOLARE_PASSWORD || !TEST_STAFF_EMAIL || !TEST_STAFF_PASSWORD) {
     throw new Error(
-      "Manca .env.test con le credenziali degli utenti di prova. " +
-        "Copiare .env.test.example in .env.test e completarlo (vedi tests/app/LEGGIMI.md)."
+      "Mancano in .env le credenziali degli utenti di prova. " +
+        "Copiare .env.example in .env e completarlo (vedi tests/app/LEGGIMI.md)."
     );
   }
   return {

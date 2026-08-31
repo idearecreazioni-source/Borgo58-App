@@ -31,8 +31,8 @@
 //   npm run cloudflare -- --ramo <nome>     le costruzioni di quel ramo
 //   npm run cloudflare -- --orfani          i rami che su GitHub non ci sono piu'
 //
-// Le chiavi vivono in `.env.cloudflare` (git-ignored, modello in
-// `.env.cloudflare.example`) oppure nelle variabili d'ambiente — che e' come
+// Le chiavi vivono in `.env` (git-ignored, modello in
+// `.env.example`) oppure nelle variabili d'ambiente — che e' come
 // arrivano quando gira su GitHub.
 
 import { existsSync, readFileSync } from "node:fs";
@@ -165,7 +165,7 @@ function fermati(...righe) {
  * Le chiavi: prima le variabili d'ambiente (e' cosi' che arrivano su
  * GitHub), poi il file locale. Mai nel repository, in nessuno dei due casi.
  */
-export function configurazione(file = ".env.cloudflare") {
+export function configurazione(file = ".env") {
   const da = { ...process.env };
   if (existsSync(file)) {
     for (const riga of readFileSync(file, "utf8").split(/\r?\n/)) {
@@ -184,7 +184,7 @@ export function configurazione(file = ".env.cloudflare") {
     fermati(
       "Mancano le chiavi di Cloudflare.",
       "Servono CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID,",
-      "nel file .env.cloudflare oppure come variabili d'ambiente.",
+      "nel file .env oppure come variabili d'ambiente.",
       "Come si creano: docs/CLOUDFLARE.md, sezione 5."
     );
   }

@@ -301,7 +301,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // In sviluppo: se manca la configurazione, lo diciamo chiaramente in console.
   console.warn(
     "Configurazione Supabase mancante. Imposta VITE_SUPABASE_URL e " +
-      "VITE_SUPABASE_ANON_KEY nel file .env.local (vedi .env.example)."
+      "VITE_SUPABASE_ANON_KEY nel file .env (vedi .env.example)."
   );
 }
 
@@ -313,7 +313,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // solleva `supabaseUrl is required` e **butta giu' l'import**. Un avviso
 // seguito da uno schianto non e' un avviso.
 //
-// ⚠️ In locale non si vedeva perche' `.env.local` c'e' sempre; su una
+// ⚠️ In locale non si vedeva perche' `.env` c'e' sempre; su una
 // macchina pulita — la CI, un computer nuovo — no. Ed e' bastato che UNA
 // prova pura importasse una funzione di calcolo da un file che, per arrivarci,
 // tira dentro questo modulo (`payloadMancia` da `api/personale.js`).

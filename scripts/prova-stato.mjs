@@ -62,7 +62,7 @@ if (!urlVero.includes(REF_PRODUZIONE)) {
   fermati("DB_URL_PRODUZIONE non punta al progetto del locale: il confronto non avrebbe senso.");
 }
 if (urlProva.includes(REF_PRODUZIONE)) {
-  fermati("DB_URL_PROVA punta al database VERO. Controlla .env.db.");
+  fermati("DB_URL_PROVA punta al database VERO. Controlla .env.");
 }
 
 titolo("Leggo il locale vero e il progetto di prova");

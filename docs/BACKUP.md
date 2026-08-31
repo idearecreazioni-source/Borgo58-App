@@ -48,11 +48,11 @@ punto 4 (probabilmente "Command Line Tools" era rimasto senza spunta).
 ## 2. Una volta sola: le chiavi
 
 Serve un file di chiavi che vive **solo sul tuo computer**. Nel progetto
-c'è il modello: si chiama `.env.db.example`.
+c'è il modello: si chiama `.env.example`.
 
-1. Nella cartella del progetto, fai una copia di `.env.db.example` e
-   rinominala **`.env.db`** (senza `.example`).
-2. Apri `.env.db` col Blocco note e riempi le righe così:
+1. Nella cartella del progetto, fai una copia di `.env.example` e
+   rinominala **`.env`** (senza `.example`).
+2. Apri `.env` col Blocco note e riempi le righe così:
 
 **`DB_URL_PRODUZIONE`** — è l'indirizzo del database vero:
    - vai su **supabase.com** → progetto **borgo58**;
@@ -162,7 +162,7 @@ Ordine delle cose da fare — nessuna di queste va improvvisata quel giorno:
    con l'indirizzo del progetto nuovo al posto di quello di prova.
 4. Rimettere i valori del Vault e i Secrets della funzione delle notifiche
    (`supabase/diagnostica/20260809_firma_notifiche_setup.sql`).
-5. Cambiare l'indirizzo del database in due punti: il file `.env.local`
+5. Cambiare l'indirizzo del database in due punti: il file `.env`
    del computer e le variabili del sito su Cloudflare.
 6. Ricaricare i documenti dell'archivio dalla cartella `file/` della copia.
 

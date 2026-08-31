@@ -193,16 +193,16 @@ const urlProva = obbligatorio(
 );
 
 // Barriera al contrario rispetto a `soloProva()`: qui si PRETENDE il
-// database vero, perche' un .env.db compilato male applicherebbe le
+// database vero, perche' un .env compilato male applicherebbe le
 // migrazioni al progetto sbagliato lasciando la produzione indietro.
 if (!urlProduzione.includes(REF_PRODUZIONE)) {
   fermati(
     "FERMO: DB_URL_PRODUZIONE non punta al progetto vero.",
-    `Ci si aspetta il riferimento ${REF_PRODUZIONE}. Controlla .env.db.`
+    `Ci si aspetta il riferimento ${REF_PRODUZIONE}. Controlla .env.`
   );
 }
 if (urlProva.includes(REF_PRODUZIONE)) {
-  fermati("FERMO: DB_URL_PROVA punta al database VERO. Controlla .env.db.");
+  fermati("FERMO: DB_URL_PROVA punta al database VERO. Controlla .env.");
 }
 
 titolo("Cosa manca in produzione");

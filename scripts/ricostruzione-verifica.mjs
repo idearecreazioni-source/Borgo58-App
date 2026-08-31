@@ -281,7 +281,7 @@ order by 1;
 // ---------------------------------------------------------------------
 
 const config = leggiConfigurazione();
-const madre = obbligatorio(config, "DB_URL_PROVA", "manca in .env.db");
+const madre = obbligatorio(config, "DB_URL_PROVA", "manca in .env");
 soloProva(madre);
 
 if (!/\/postgres(\?|$)/.test(madre)) {

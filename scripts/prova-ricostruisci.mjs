@@ -55,7 +55,7 @@ on conflict (user_id) do update set role = excluded.role;
 
 const config = leggiConfigurazione();
 const url = soloProva(obbligatorio(config, "DB_URL_PROVA", "E' la stringa 'Session pooler' del progetto Borgo58-Prova."));
-const chiaveAnon = obbligatorio(config, "PROVA_ANON_KEY", "E' la chiave anon del progetto di prova (Settings -> API Keys).");
+const chiaveAnon = obbligatorio(config, "PROVA_SUPABASE_ANON_KEY", "E' la chiave anon del progetto di prova (Settings -> API Keys).");
 const psql = strumento("psql");
 const azzera = process.argv.includes("--azzera");
 
@@ -198,7 +198,7 @@ sql(
 // variabili (`:'chiave'` arriverebbe al database così com'è — bug vero,
 // trovato alla prima ricostruzione).
 if (!/^[A-Za-z0-9_.-]+$/.test(chiaveAnon)) {
-  fermati("PROVA_ANON_KEY contiene caratteri inattesi.", "Deve essere la chiave `anon` del progetto di prova.");
+  fermati("PROVA_SUPABASE_ANON_KEY contiene caratteri inattesi.", "Deve essere la chiave `anon` del progetto di prova.");
 }
 sql(
   `select vault.create_secret('${chiaveAnon}', 'chiave_anon', 'Chiave pubblica del progetto di prova.')

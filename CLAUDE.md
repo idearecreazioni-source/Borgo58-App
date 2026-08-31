@@ -113,7 +113,7 @@ Archivio:   C:\Users\User\Desktop\Claude cowork\Borgo 58 - Osteria Contemporanea
 - **Dev server**: `localhost:5173`, già configurato con `host: true` (raggiungibile da altri dispositivi sulla stessa WiFi all'IP del PC).
 - Scorciatoia per Alessio: **`Avvia Borgo 58.bat`** sul Desktop (doppio click; la finestra nera deve restare aperta).
 
-**Variabili d'ambiente** (in `.env.local`, git-ignored; modello in `.env.example`):
+**Variabili d'ambiente** (in `.env`, git-ignored; modello in `.env.example`):
 ```
 VITE_SUPABASE_URL=https://oudjuqbqszisdtwzbxdo.supabase.co
 VITE_SUPABASE_ANON_KEY=<chiave anon, pubblica per progettazione>
@@ -144,7 +144,7 @@ npm run funzione:viva -- <nome>   # il corpo VIVO di una funzione del database
 `Borgo58-Prova` (usa-e-getta, ricostruibile da zero dalle migrazioni). Gli
 strumenti a riga di comando di PostgreSQL 17 (`pg_dump`, `psql`) sono un
 prerequisito una-tantum sulla macchina di Alessio; le chiavi vivono in
-`.env.db`, git-ignored, mai nel repository (modello in `.env.db.example`).
+`.env`, git-ignored, mai nel repository (modello in `.env.example`).
 
 🔴 **QUESTA FRASE ERA FALSA, ed e' stata corretta il 31/08/2026 misurandola.** Diceva: *«il terminale di Claude Code ha i prompt di autenticazione disattivati, quindi `git push` da qui fallisce sempre»*. **Provato**: `git push --dry-run` risponde `[new branch]` con esito **0**, e `gh auth status` dice che l'accesso e' attivo con i permessi `repo` e `workflow`. ⚠️ **Non e' invecchiata in silenzio: ha fatto credere un limite tecnico che non esiste**, e per settimane il flusso di lavoro e' stato disegnato attorno a un ostacolo immaginario. *Una frase che descrive una capacita' si verifica, non si cita.*
 
@@ -185,7 +185,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
    ```
 5. **Lint pulito prima di ogni commit.**
 6. **Query verso tabelle che crescono: limite esplicito — MA MAI su ciò che alimenta un documento esibibile** (vedi §8, trappola).
-7. **Ogni migrazione si applica PRIMA sul progetto di prova, poi in produzione** (10/08/2026, blocco 1 del Mandato strutturale). Vale anche per le prove automatiche: `npm run test:app` gira sul progetto di prova e si rifiuta di partire se `.env.test` punta alla produzione (controllo dentro `tests/app/aiuto.js`, non nella disciplina di chi lancia il comando).
+7. **Ogni migrazione si applica PRIMA sul progetto di prova, poi in produzione** (10/08/2026, blocco 1 del Mandato strutturale). Vale anche per le prove automatiche: `npm run test:app` gira sul progetto di prova e si rifiuta di partire se `.env` punta alla produzione (controllo dentro `tests/app/aiuto.js`, non nella disciplina di chi lancia il comando).
 8. **I dati di prova si cancellano subito dopo la prova** (regola di Alessio, 12/08/2026, data dopo la pulizia del database prima di collegare la posta). Vale per le prove dal vivo in produzione, non solo per le migrazioni — quelle già ripuliscono da sé nel blocco di verifica. Il motivo non è l'ordine: da quando entra roba vera (documenti, fatture, prenotazioni di clienti), una riga finta indistinguibile da una vera toglie fiducia a **tutto** quello che il gestionale dice. Se una prova deve lasciare qualcosa dietro di sé, va detto ad Alessio prima, non dopo.
 9. **Modello per materia, non per sezione del brief**: Opus per multi-entità, fiscale/API, RLS e prima nota nuove, registratore telematico. La verifica dal vivo però non è negoziabile con nessun modello.
 
@@ -727,7 +727,7 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 - **Posti liberi in tempo reale sul form pubblico (10/08) — ⚠️ SMONTATO il 14/08, resta come origine delle decisioni** (di quelle quattro sopravvivono l'orario libero ogni 15 minuti, la conferma sempre sua e l'email al cliente; il conteggio dei posti e la richiesta che tiene il posto sono decaduti con la pianta viva) — quattro decisioni di Alessio: orario libero ogni 15 minuti con ultimo ingresso (non turni fissi), **conferma sempre sua** (niente prenotazioni automatiche), richiesta in attesa che tiene il posto, email automatica al cliente quando conferma (da fare, vedi §10). Migrazioni `20260810000001` e `20260810000002`, schermata `Sala e orari`, 3 prove automatiche nuove. Verificato dal vivo da Alessio **dal telefono, fuori casa**: richiesta inviata dal sito pubblico → salvata → notifica su Telegram.
   - Difetto trovato solo accendendo davvero, con i numeri veri: il lunedì (riposo) il sito rispondeva *«non abbiamo più posto»* invece di *«siamo chiusi»* — un cliente che ci prova due volte conclude che siamo sempre pieni. Le tre situazioni ora hanno tre frasi distinte: chiuso, troppo tardi per oggi (capita **ogni sera** dopo l'ultimo ingresso, ed è l'unica in cui una telefonata salva ancora un coperto), pieno. **Con i dati segnaposto il difetto era invisibile.**
 - **Canale Telegram blindato + form pubblico riparato (09/08)** — la Edge Function delle notifiche accettava chiunque avesse la chiave anon (che è pubblica): ora serve anche una parola d'ordine condivisa, che vive nel Vault e nelle variabili d'ambiente, mai nel repository. Nella stessa passata è emerso che **`/prenota` non funzionava da un browser con il gestionale aperto** — vedi §6 (`supabasePubblico`) e §8. Suite di prove: **9 pure + 17 sul database vero**.
-- **Prove automatiche + gancio pre-commit** — `npm run test` (pure, senza rete) e `npm run test:app` (database vero, utenti di prova dedicati in `.env.test`; istruzioni in `tests/app/LEGGIMI.md`). Il gancio in `.githooks/pre-commit` blocca il commit se lint, prove o build non passano: va attivato una volta con `git config core.hooksPath .githooks`.
+- **Prove automatiche + gancio pre-commit** — `npm run test` (pure, senza rete) e `npm run test:app` (database vero, utenti di prova dedicati in `.env`; istruzioni in `tests/app/LEGGIMI.md`). Il gancio in `.githooks/pre-commit` blocca il commit se lint, prove o build non passano: va attivato una volta con `git config core.hooksPath .githooks`.
 - **Piano correzioni integrità (09/08)** — completato per intero: le **11 operazioni multi-scrittura** trovate da Cowork e dalla verifica incrociata sono ora **16 funzioni Postgres atomiche** (una chiamata = una transazione) invocate solo attraverso il corridoio `operazioni-atomiche` via `eseguiOperazione()`. Ogni migrazione dei 4 blocchi contiene le proprie prove: impersonificazione di titolare E staff, fallimenti a metà forzati dove onestamente possibile (mance con dipendente inesistente; dipendente con mance il cui promemoria torna "da_fare"), pulizia completa. Verificato in produzione: zero `security definer` senza `search_path`. **Per ogni nuova operazione multi-tabella**: funzione SQL + riga nell'elenco del corridoio + wrapper client — mai scritture in sequenza dal browser (il gancio pre-commit non lo controlla ancora da solo: attenzione).
 - **§3.18 permessi trasversali** — tutti e tre i casi risolti e verificati dal vivo: 🔴 Agenda/tasks (era una fuga di dati **attiva**: nomi e documenti dei dipendenti visibili allo staff), 🟡 scheda cliente a due livelli, 🟢 Anagrafica Fornitori (era un modulo intero mai costruito, non solo una vista).
 - **Audit di robustezza (05/08)** — registro migrazioni, 5 indici mancanti, lint a zero.
@@ -1189,7 +1189,7 @@ Configurazione effettiva del progetto:
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Env: `VITE_SUPABASE_URL` | `https://oudjuqbqszisdtwzbxdo.supabase.co` |
-| Env: `VITE_SUPABASE_ANON_KEY` | chiave anon (da `.env.local`) |
+| Env: `VITE_SUPABASE_ANON_KEY` | chiave anon (da `.env`) |
 | Env: `NODE_VERSION` | `22.16.0` |
 
 - Il preset "Vite" non fa altro che riempire build command e output directory: compilarli a mano dà lo stesso risultato.

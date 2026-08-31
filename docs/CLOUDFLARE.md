@@ -108,7 +108,7 @@ l'anteprima di un ramo parlava col gestionale vero.
 
 4. **Save** in fondo
 
-I due valori di prova sono gli stessi che stanno in `.env.test` sul computer
+I due valori di prova sono gli stessi che stanno in `.env` sul computer
 di Alessio, righe `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 ### ⚠️ Tre avvertenze, e la terza è quella che frega
@@ -274,7 +274,7 @@ segreti:
 | `CLOUDFLARE_ACCOUNT_ID` | `124e479908976a117d12b1daadde0d97` |
 
 **Sul computer**, solo per lanciare la pulizia dal terminale: si copia
-`.env.cloudflare.example` in `.env.cloudflare` e si completa. Quel file è
+`.env.example` in `.env` e si completa. Quel file è
 git-ignored e non entra mai nel repository.
 
 ⚠️ **È una chiave che sa cancellare siti.** Mai nel progetto, mai in chat,
@@ -380,7 +380,7 @@ appena questo lavoro è stato unito a `master`.
 
 ### 7b · Il comando, dal computer
 
-Serve `.env.cloudflare` completato. **In sola lettura non tocca niente** ed è
+Serve `.env` completato. **In sola lettura non tocca niente** ed è
 il modo giusto di cominciare, perché stampa i numeri veri prima di qualunque
 gesto:
 

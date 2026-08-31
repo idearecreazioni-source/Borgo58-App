@@ -5,17 +5,17 @@
 // stesso gestionale sul progetto di prova, che è dove si collauda.
 //
 // ⚠️ PERCHE' NON BASTA CAMBIARE UN FILE. Fino al 16/08/2026 l'unico modo
-// di provare qualcosa era cambiare a mano `.env.local` e ricordarsi di
+// di provare qualcosa era cambiare a mano `.env` e ricordarsi di
 // rimetterlo com'era. Due difetti in uno: si dimentica (e il giorno dopo
 // il gestionale vero è collegato alla prova, quindi Alessio scrive
 // prenotazioni e movimenti in un database usa-e-getta), oppure non si
 // dimentica ma nel frattempo non c'è **nessun segno in schermata** di
 // dove si sta scrivendo. Le due schermate sono identiche.
 //
-// Qui i valori non si copiano da nessuna parte: si leggono da `.env.test`,
+// Qui i valori non si copiano da nessuna parte: si leggono da `.env`,
 // che è già il file che dice qual è il progetto di prova (lo usa
 // `npm run test:app`), e si passano a Vite solo per questa esecuzione.
-// `.env.local` resta intatto, quindi `npm run dev` continua ad aprire il
+// `.env` resta intatto, quindi `npm run dev` continua ad aprire il
 // locale vero senza che nessuno debba rimettere niente a posto.
 //
 // L'altra metà del lavoro è in `src/components/SegnaleDatabase.jsx`: il
@@ -25,15 +25,15 @@ import { networkInterfaces } from "node:os";
 import { leggiConfigurazione, obbligatorio, esegui, fermati, titolo, REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
 import { assicuraTunnel } from "./telefono.mjs";
 
-const config = leggiConfigurazione(".env.test");
+const config = leggiConfigurazione();
 const url = obbligatorio(
   config,
-  "VITE_SUPABASE_URL",
+  "PROVA_SUPABASE_URL",
   "E' l'indirizzo del progetto Borgo58-Prova (Settings -> Data API)."
 );
 const chiave = obbligatorio(
   config,
-  "VITE_SUPABASE_ANON_KEY",
+  "PROVA_SUPABASE_ANON_KEY",
   "E' la chiave anon del progetto di prova (Settings -> API Keys)."
 );
 
@@ -43,9 +43,9 @@ const chiave = obbligatorio(
 // riconoscibili — un movimento di cassa inventato è identico a uno vero.
 if (url.includes(REF_PRODUZIONE)) {
   fermati(
-    "FERMO: .env.test punta al database VERO del locale.",
+    "FERMO: PROVA_SUPABASE_URL punta al database VERO del locale.",
     "Questo comando serve ad aprire il gestionale sul progetto di PROVA.",
-    "Controlla VITE_SUPABASE_URL in .env.test (vedi docs/AMBIENTE_PROVA.md)."
+    "Controlla PROVA_SUPABASE_URL in .env (vedi docs/AMBIENTE_PROVA.md)."
   );
 }
 
@@ -126,7 +126,7 @@ console.log("");
 console.log("   Per tornare al locale vero: chiudi questa finestra e usa `npm run dev`.");
 
 // Vite espone al browser le variabili `VITE_*` dell'ambiente, e queste
-// vincono su `.env.local` — verificato compilando e cercando l'indirizzo
+// vincono su `.env` — verificato compilando e cercando l'indirizzo
 // dentro il pacchetto prodotto, non dato per buono dalla documentazione.
 // ⚠️ Quello che si scrive dopo `--` arriva a Vite. Serve per la porta: il
 //    gestionale vero gira sulla 5173 e non si ferma mai dopo una verifica

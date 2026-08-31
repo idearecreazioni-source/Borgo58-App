@@ -81,7 +81,7 @@ conto prima di aver verificato che la password è dentro la cassaforte.
 rientrare è servita la procedura di recupero. Nessun danno, ma mezz'ora
 buttata e un attimo di panico evitabile.
 
-**Sul computer** vivono i file `.env.db`, `.env.local`, `.env.test`: sono
+**Sul computer** vivono i file `.env`, `.env`, `.env`: sono
 chiavi del database vero, non password di siti. Non si copiano, non si
 mandano, non si mettono in cloud.
 
