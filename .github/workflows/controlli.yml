@@ -1,0 +1,152 @@
+# =====================================================================
+# I CONTROLLI CHE GIRANO SU GITHUB — 31/08/2026
+# =====================================================================
+#
+# PERCHE' ESISTE, misurato prima di scrivere.
+# Fino a oggi l'unica rete contro le regressioni era il gancio prima del
+# commit (`.githooks/pre-commit`), e aveva tre buchi:
+#   1. e' LOCALE — vive su un computer solo, va acceso a mano con
+#      `git config core.hooksPath .githooks`, e basta `--no-verify` per
+#      saltarlo;
+#   2. NON lancia le 459 prove sul database (6 minuti e mezzo, misurati):
+#      quelle dipendevano dal fatto che qualcuno si ricordasse di lanciarle
+#      — cioe' disciplina, e in questo progetto vale la regola opposta:
+#      *preferire l'automazione alla disciplina, perche' la disciplina si
+#      degrada*;
+#   3. su GitHub non girava NIENTE: fra un push e `borgo58.it` non c'era
+#      nessun controllo indipendente, e il sito andava online comunque.
+#
+# ⚠️ QUELLO CHE QUESTA PIPELINE NON PUO' FARE, e va detto perche' non si
+# scambi per una garanzia intera: **nessuna prova di questo progetto guarda
+# una schermata**. Le regressioni visive — una schermata che sborda, un
+# pulsante sparito, un menu che offre la voce sbagliata — le trova solo un
+# occhio. Il 31/08 i tre difetti piu' grossi li ha trovati Alessio in dieci
+# minuti, non le 1116 prove.
+
+name: Controlli
+
+# 🔴 GIRA A OGNI COMMIT SU QUALUNQUE RAMO, non solo su master — chiesto da
+#    Alessio il 31/08. La ragione e' che con master protetto **il lavoro vive
+#    sui rami**: se i controlli girassero solo su master, girerebbero solo
+#    DOPO che una modifica e' gia' stata approvata e unita, cioe' troppo
+#    tardi per servire a qualcosa.
+# ⚠️ E girano ANCHE sulla proposta (`pull_request`), che non e' un doppione:
+#    la proposta prova il codice **come sarebbe una volta unito a master**,
+#    non com'e' sul ramo. Due cose diverse quando master si e' mosso nel
+#    frattempo.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [master]
+
+# 🔴 UNO ALLA VOLTA, E NON E' UN'OTTIMIZZAZIONE: le prove sull'app scrivono
+#    tutte sullo STESSO progetto di prova. Due giri insieme si pestano i
+#    piedi — e' successo il 10/08 in locale, dove un file che aggiungeva un
+#    tavolo ha fatto fallire un altro file che contava i coperti: l'errore
+#    sembrava un difetto del calcolo, e non lo era.
+# ⚠️ `cancel-in-progress: false`: un giro a meta' che viene ucciso lascia
+#    righe di prova nel database. Meglio aspettare che sporcare.
+concurrency:
+  group: prove-sul-database-di-prova
+  cancel-in-progress: false
+
+jobs:
+  # -------------------------------------------------------------------
+  # 1. I CONTROLLI CHE NON TOCCANO NIENTE
+  # -------------------------------------------------------------------
+  # Girano SEMPRE, anche su una proposta di modifica che arriva da fuori:
+  # non hanno bisogno di nessuna chiave. Sono gli stessi quattro del gancio
+  # locale, cosi' quello che passa qui e' quello che passa li'.
+  codice:
+    name: Codice, prove pure e compilazione
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          # ⚠️ LA VERSIONE E' QUELLA DELLA PUBBLICAZIONE, non «l'ultima»:
+          #    Cloudflare Pages usa NODE_VERSION=22.16.0 (CLAUDE.md §11), e
+          #    Vite 8 pretende ^20.19 || >=22.12. Un numero generico puo'
+          #    risolversi in una minor piu' vecchia — ed e' scritto in §11
+          #    perche' era gia' successo.
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Il codice non ha avvisi
+        run: npm run lint -- --max-warnings=0
+
+      - name: Le prove che non toccano il database
+        run: npm run test
+
+      - name: L'app si compila
+        run: npm run build
+
+  # -------------------------------------------------------------------
+  # 2. LE PROVE CONTRO IL DATABASE DI PROVA
+  # -------------------------------------------------------------------
+  # 🔴 QUESTE SONO LE RETI VERE del progetto: i permessi, i vocabolari
+  #    chiusi, i portieri, le funzioni senza schermata, i vincoli che
+  #    parlano italiano. Il gancio locale non le lanciava.
+  #
+  # ⚠️ SCRIVONO SU UN DATABASE VERO (il progetto di prova), quindi girano
+  #    solo DOPO che il codice e' passato: far scrivere righe da un ramo che
+  #    non compila nemmeno e' sporcare per niente.
+  database:
+    name: Prove contro il progetto di prova
+    needs: codice
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      # 🔴 SE LE CHIAVI NON CI SONO, LO DICE E SI FERMA — non passa in
+      #    silenzio. Una proposta di modifica che arriva da un repository
+      #    forestiero non riceve i segreti (lo impedisce GitHub, ed e'
+      #    giusto): senza questa riga il lavoro finirebbe verde **senza aver
+      #    provato niente**, e un verde che non ha provato niente e' peggio
+      #    di un rosso.
+      #    ⚠️ E' la regola del 19/08: *una risposta piu' corta che ha l'aria
+      #    di essere intera*.
+      - name: Le chiavi ci sono?
+        env:
+          URL: ${{ secrets.PROVA_SUPABASE_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Le chiavi del progetto di prova non sono arrivate."
+            echo "Se questa e' una proposta di modifica da un repository forestiero"
+            echo "e' normale: GitHub non passa i segreti, ed e' una protezione."
+            echo "In quel caso le prove sul database vanno lanciate a mano prima"
+            echo "di approvare. Se invece e' un ramo di questo repository,"
+            echo "mancano i Secrets: vedi docs/CI.md."
+            exit 1
+          fi
+
+      # ⚠️ Le prove leggono da `process.env` (tests/app/aiuto.js), quindi qui
+      #    non serve nessun file: bastano le variabili.
+      # ⚠️ E `aiuto.js` ha un controllo suo che si RIFIUTA di partire se
+      #    l'indirizzo e' quello del locale vero — quella rete resta la
+      #    difesa vera, questa e' solo il modo di passare i valori.
+      - name: Le prove contro il database
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.PROVA_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_EMAIL: ${{ secrets.TEST_TITOLARE_EMAIL }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_EMAIL: ${{ secrets.TEST_STAFF_EMAIL }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: npm run test:app
