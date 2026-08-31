@@ -2,7 +2,7 @@
 
 **31/08/2026, pomeriggio.** Riepilogo per il validatore.
 
-* **HEAD dichiarato**: il commit immediatamente precedente a questo file.
+* **HEAD dichiarato**: `bfccb7ed42ff7dbacb5bc3249eed724baa95200e` — il commit che sta sotto questo file.
 * **Prove**: 657 pure verdi (58 file), **459 sull'app verdi** (67 file), lint
   e build puliti.
 
