@@ -25,30 +25,71 @@
 
 name: Controlli
 
-# 🔴 GIRA A OGNI COMMIT SU QUALUNQUE RAMO, non solo su master — chiesto da
-#    Alessio il 31/08. La ragione e' che con master protetto **il lavoro vive
-#    sui rami**: se i controlli girassero solo su master, girerebbero solo
-#    DOPO che una modifica e' gia' stata approvata e unita, cioe' troppo
-#    tardi per servire a qualcosa.
-# ⚠️ E girano ANCHE sulla proposta (`pull_request`), che non e' un doppione:
-#    la proposta prova il codice **come sarebbe una volta unito a master**,
-#    non com'e' sul ramo. Due cose diverse quando master si e' mosso nel
-#    frattempo.
+# 🔴 UN COMMIT, UN VERDETTO — corretto il 31/08/2026 poche ore dopo averlo
+#    scritto sbagliato, e a rilevarlo e' stato Alessio guardando la proposta.
+#
+#    LA RIGA DI PRIMA DICEVA: *«girano ANCHE sulla proposta, che non e' un
+#    doppione»*. **Era falsa, ed e' stata misurata falsa**: con `push` su
+#    ogni ramo E `pull_request`, un ramo che ha una proposta aperta fa
+#    partire DUE giri identici sullo stesso commit — sei giri per tre
+#    commit, contati sul registro.
+#
+# 🔴 E IL PREZZO NON ERANO I MINUTI: erano DUE VERDETTI OPPOSTI SULLA STESSA
+#    RIGA DI CODICE. Il 31/08 il commit `cc677ea` aveva insieme un giro
+#    rosso (partito prima che i segreti esistessero) e un giro verde con 459
+#    prove su 459 — perche' ne era stato rilanciato uno solo. Un sistema di
+#    controlli che risponde due cose diverse sullo stesso codice non e' un
+#    sistema di controlli: e' la famiglia dei *due posti che dicono la
+#    stessa cosa e possono contraddirsi*.
+#    ⚠️ E il danno peggiore e' quello lento: **un rosso che non corrisponde
+#    a niente di rotto insegna a non guardare i rossi.**
+#
+#    LA RAGIONE DI ALESSIO RESTA INTERA, ed e' proprio per questo che la
+#    forma cambia invece di sparire: con `master` protetto il lavoro vive
+#    sui rami, e i controlli devono girare PRIMA che una modifica sia unita,
+#    non dopo. La proposta lo fa gia' — e lo fa meglio, perche' prova il
+#    codice **come sara' una volta unito a master**, non com'e' sul ramo.
+#    Quindi: la proposta copre il lavoro sui rami, il push copre `master`
+#    dopo l'unione. Nessuna occasione persa, nessun doppione.
+#
+# ⚠️ QUELLO CHE SI PERDE, dichiarato: un ramo spinto **senza** proposta
+#    aperta non viene piu' controllato. Nel giro di lavoro deciso il 31/08 e'
+#    una finestra di secondi (spingo il ramo e apro subito la proposta), ma
+#    se un giorno si prendesse l'abitudine di spingere rami e lasciarli li',
+#    quei rami non li guarderebbe piu' nessuno.
 on:
   push:
-    branches: ['**']
+    branches: [master]
   pull_request:
     branches: [master]
 
-# 🔴 UNO ALLA VOLTA, E NON E' UN'OTTIMIZZAZIONE: le prove sull'app scrivono
-#    tutte sullo STESSO progetto di prova. Due giri insieme si pestano i
-#    piedi — e' successo il 10/08 in locale, dove un file che aggiungeva un
-#    tavolo ha fatto fallire un altro file che contava i coperti: l'errore
-#    sembrava un difetto del calcolo, e non lo era.
-# ⚠️ `cancel-in-progress: false`: un giro a meta' che viene ucciso lascia
-#    righe di prova nel database. Meglio aspettare che sporcare.
+# 🔴 UNA CODA PER RAMO — corretto il 31/08/2026, misurando un giro ANNULLATO.
+#
+#    COM'ERA: una coda sola per tutto il repository, `cancel-in-progress:
+#    false`. Sembrava prudente ed era sbagliata in due modi, tutti e due visti
+#    succedere sul ramo di questa proposta:
+#
+#    1. **I giri si accodavano dietro commit gia' superati.** Misurato: un
+#       giro su un commit non piu' in cima ha tenuto occupato il database per
+#       **9 minuti e 56 secondi** prima di lasciar partire quello buono.
+#    2. 🔴 **UN RAMO POTEVA ANNULLARE I CONTROLLI DI UN ALTRO.** GitHub tiene
+#       **un solo** giro in attesa per coda: quando ne arriva uno nuovo,
+#       scarta quello che aspettava. Con una coda condivisa, un push sul ramo
+#       A annulla il giro in attesa del ramo B — e **nessuno lo rilancia**.
+#       Quel ramo resta con un controllo che non ha verificato niente, e non
+#       e' rosso: e' «annullato», che a colpo d'occhio non somiglia a un
+#       problema. *La forma piu' silenziosa di un controllo che non controlla.*
+#
+#    COM'E' ADESSO: la coda del giro e' **per ramo**, quindi un ramo non puo'
+#    piu' toccare i controlli di un altro. Dentro lo stesso ramo l'annullamento
+#    di un giro superato resta — ed e' giusto: quello in cima non viene mai
+#    scartato, perche' quando ne arriva uno piu' nuovo la cima si sposta con lui.
 concurrency:
-  group: prove-sul-database-di-prova
+  group: controlli-${{ github.ref }}
+  # ⚠️ `false` e non `true`: annullare un giro **mentre le prove stanno
+  #    scrivendo** sul database di prova lascerebbe righe a meta'. Meglio
+  #    aspettare che sporcare — e' la ragione di sempre, spostata dove non fa
+  #    danno.
   cancel-in-progress: false
 
 jobs:
@@ -103,6 +144,33 @@ jobs:
     needs: codice
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    # 🔴 LA SERRATURA STA QUI, NON SUL GIRO INTERO — 31/08/2026.
+    #    A dover restare uno alla volta e' **questo** lavoro, che scrive sul
+    #    progetto di prova. Tenendo la serratura sul giro intero, anche il
+    #    controllo del codice — che non tocca niente — si metteva in fila
+    #    dietro le prove di un altro ramo, per otto minuti e mezzo, senza
+    #    nessuna ragione.
+    # 🔴 E IL «MEGLIO ASPETTARE CHE SPORCARE» NON BASTAVA — misurato il
+    #    31/08. Rifiutando `cancel-in-progress: true` questo file diceva di
+    #    proteggere il progetto di prova da un giro ucciso a meta'. **La
+    #    protezione era nel posto sbagliato**: a uccidere il giro non e' stata
+    #    una coda, e' stato il LIMITE DI TEMPO qui sotto — le prove si sono
+    #    impiantate, `timeout-minutes` le ha tagliate a 30 minuti, e la
+    #    pulizia della prova non e' mai partita. Il giro dopo e' diventato
+    #    rosso su una riga rimasta indietro.
+    # ⚠️ Da qui la vera difesa, che sta nelle PROVE e non qui: una prova
+    #    riconosce le proprie righe da un nome diverso a ogni giro, e le segna
+    #    da ripulire **prima** di affermare qualcosa su di loro. Nessun
+    #    accorgimento in questo file puo' impedire che un lavoro venga ucciso.
+    # ⚠️ RESIDUO DICHIARATO: fra rami diversi questo lavoro puo' ancora
+    #    accodarsi, e un terzo ramo puo' scartare quello in attesa. Con un
+    #    solo ramo alla volta — come si lavora qui — non capita; il giorno che
+    #    ci fossero tre proposte aperte insieme, quel caso torna. *Si scrive
+    #    invece di far finta che sia chiuso.*
+    concurrency:
+      group: prove-sul-database-di-prova
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4

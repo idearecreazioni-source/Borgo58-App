@@ -39,6 +39,12 @@ Il motivo di fondo non è cambiato: **Alessio non è un programmatore**, e un me
 > **Storico**: fino al 09/08/2026 esisteva una terza sessione, **"Cowork"**, che teneva il brief tecnico e dialogava via cartella di scambio (§3). Il canale non è più attivo: i suoi documenti restano validi come origine delle decisioni, ma non vanno più attese risposte da lì.
 
 **Regole non derogabili:**
+- 🔴 **OGNI AFFERMAZIONE VA VERIFICATA PRIMA DI SCRIVERLA** — regola di Alessio, 31/08/2026, e vale adesso e in qualsiasi lavoro futuro. Vale in chat, nei messaggi di commit, nei riepiloghi, nelle guide, nelle proposte di modifica e nei commenti al codice.
+  - **Se una cosa non è stata misurata, non si scrive.** Si misura, oppure si dice «non lo so», oppure si chiede. Non esiste la terza strada di scriverla lo stesso.
+  - **Vietato basarsi su ipotesi teoriche, deduzioni plausibili o comportamenti dati per noti.** «Funziona così», «di solito è», «dovrebbe essere» non sono verifiche.
+  - ⚠️ **Un'avvertenza accanto non sana l'affermazione.** Marcarla «stima» o «non verificato» la fa sembrare prudente e la lascia utilizzabile: chi la legge ci costruisce sopra una decisione. Il 31/08 una stima di ~7 anteprime, marcata come tale, è diventata il consiglio «puliscile a mano, sono due minuti» — ed erano 369 costruzioni di produzione.
+  - ⚠️ **E se non c'è un errore misurato, non se ne dichiara uno.** Lo stesso giorno un difetto è stato inventato, corretto e raccontato in una proposta: il valore contestato l'aveva scritto io stesso in una guida, nessuno l'aveva mai applicato, e nessun errore era mai avvenuto.
+  - ⚠️ **Quando una cosa dipende da una schermata che da qui non si può aprire, si chiede quella schermata** — non si descrive lo stesso con una riserva. Una riserva non rende seguibile un passo che non si può seguire.
 - **Le migrazioni di PRODUZIONE le applico io** — *cambiato da Alessio il 12/08/2026*, dopo tre tentativi falliti di incollare a mano un file lungo nell'SQL Editor (paste troncato a metà, comando PowerShell finito nell'editor SQL). Gli avevo raccomandato il contrario e gliel'ho scritto nella scelta stessa: ha deciso lui. **Il motivo della regola vecchia resta vero** — era il punto in cui un mio errore si fermava prima dei dati veri — quindi al suo posto valgono, senza eccezioni:
   1. **Mai in produzione ciò che non è già passato dal progetto di prova**, applicato e verificato lì.
   2. **Glielo dico PRIMA**, in una frase: cosa sto per applicare e cosa cambia per il locale.
