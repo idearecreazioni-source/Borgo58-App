@@ -323,20 +323,45 @@ esiste davvero: dopo un ritorno indietro a una versione precedente.
 
 ## 7 · La pulizia del passato
 
-### 🔴 Il numero vero è 375, e cambia la risposta
+### 🔴 I numeri veri, letti da dentro GitHub il 31/08/2026
 
-Il 31/08 Alessio ha guardato il pannello: **375 costruzioni di anteprima**.
+```
+costruzioni in tutto     381
+di produzione            369
+anteprime dei rami       12  (su 2 rami)
+quella che serve il sito a4b20e70
 
-⚠️ **Prima di quel numero questa pagina consigliava di farla a mano, «due
-minuti».** Era una stima costruita su quello che si era visto passare in una
-sessione, ed era sbagliata di **cinquanta volte**. Resta scritta qui perché è
-l'esempio più netto di una regola di questo progetto: *un numero che nessuno
-ha contato non è un numero, e marcarlo come stima non lo rende innocuo — chi
-lo legge ci costruisce sopra una decisione.*
+Da togliere: 367
+```
 
-**Con 375 righe e nessun pulsante «cancellale tutte», la strada a mano non
-esiste.** Restano le due automatiche, e **vengono prima della chiave**: senza
-quella non si fa niente.
+**Le costruzioni che si accumulano sono quelle di PRODUZIONE**, una per ogni
+push su `master` dall'8 agosto. Le anteprime dei rami sono **12**, su due soli
+rami — le due proposte aperte.
+
+⚠️ **Questa pagina ha detto due cose sbagliate su questo numero, in ordine.**
+Prima «circa 7 anteprime», stimate su quello che si era visto passare in una
+sessione. Poi «375 anteprime», che era il totale letto a occhio dal pannello
+**senza distinguere produzione da anteprima**. Il numero giusto lo ha detto la
+macchina, interrogata: *l'unico modo di sapere quante sono è chiederlo, e
+finché non lo si chiede ogni risposta è un'opinione.*
+
+### 🔴 E la pulizia dei rami spariti non toglie NIENTE
+
+Misurato nello stesso giro: **«Niente da togliere»**, rami vivi 3.
+
+Era la domanda aperta di questa pagina — *«se quelle righe portano il nome di
+un ramo ancora vivo, `--orfani` non ne toglie nessuna»* — e la risposta è
+esattamente quella. Non è un difetto: è la regola applicata a dati diversi da
+quelli che ci si aspettava.
+
+**A fare il lavoro è la conservazione**, e l'aritmetica torna:
+369 − 10 = **359** di produzione, più 12 − (2 rami × 2) = **8** anteprime →
+**367**.
+
+⚠️ **E qui c'è una conseguenza da guardare in faccia**: togliere 359
+costruzioni di produzione vuol dire **rinunciare a 359 punti di ritorno**. Le
+ultime 10 restano, e per come si lavora qui sono molte — ma è una scelta, non
+un'operazione di ordine.
 
 ### 7a · Il pulsante su GitHub — la strada normale
 
