@@ -20,6 +20,7 @@ dist-ssr
 !.env.example
 !.env.test.example
 !.env.db.example
+!.env.cloudflare.example
 
 # Resoconti delle ricostruzioni del database di prova (utili solo sul momento).
 ricostruzione_*.log

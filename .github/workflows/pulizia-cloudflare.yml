@@ -1,0 +1,122 @@
+# =====================================================================
+# LA PULIZIA DELLE COSTRUZIONI SU CLOUDFLARE — 31/08/2026
+# =====================================================================
+#
+# Chiesto da Alessio. Due pulizie diverse in un file solo, perche' sono la
+# stessa cosa vista da due parti: **quello che Cloudflare costruisce non se
+# ne va mai da solo.** Non ha nessuna impostazione di conservazione, e dal
+# pannello si cancella una riga alla volta.
+#
+#   1. UN RAMO CANCELLATO → via le sue anteprime.
+#      Cancellare un ramo su GitHub non tocca i siti gia' costruiti da quel
+#      ramo: i due sistemi non si parlano. Restano indirizzi pubblici vivi di
+#      rami che non esistono piu'.
+#      🔴 E finche' le anteprime non avranno le chiavi del progetto di prova,
+#         un indirizzo di ramo e' il gestionale collegato ai DATI VERI del
+#         locale — misurato il 31/08 scaricando il pacchetto servito.
+#
+#   2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione.
+#      Il numero l'ha deciso Alessio, e non e' tecnico: le versioni vecchie
+#      sono anche la via per **tornare indietro** se una pubblicazione va
+#      male. Vive in `scripts/cloudflare.mjs`, non qui.
+#
+# ⚠️ QUANDO GIRANO, e le due occasioni sono scelte, non casuali:
+#    - la pulizia dei rami parte sull'evento «ramo cancellato», che GitHub fa
+#      girare **dalla copia che sta su `master`** — non da quella del ramo,
+#      che in quel momento non c'e' piu'. Quindi comincia a funzionare solo
+#      DOPO che questo file e' stato unito;
+#    - la conservazione parte a ogni push su `master`, cioe' **nel momento
+#      esatto in cui nasce una versione di produzione nuova** e una vecchia
+#      esce dalle prime dieci. Si regola da se': se non si pubblica, non c'e'
+#      niente da togliere, e un lavoro a orario fisso girerebbe a vuoto.
+#
+# ⚠️ NESSUNA DELLE DUE PULISCE IL PASSATO. Valgono da quando esistono; quello
+#    che era gia' li' si toglie una volta a mano con
+#    `npm run cloudflare -- --orfani --conferma`.
+#    *Chiudere il rubinetto non svuota il secchio.*
+
+name: Pulizia Cloudflare
+
+on:
+  delete:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Non tocca niente su GitHub: legge un nome di ramo e parla con Cloudflare.
+permissions: {}
+
+jobs:
+  # -------------------------------------------------------------------
+  # 1. UN RAMO CANCELLATO → via le sue anteprime
+  # -------------------------------------------------------------------
+  anteprime:
+    name: Via le anteprime del ramo cancellato
+    # ⚠️ Solo i RAMI: `delete` scatta anche per le etichette, e un'etichetta
+    #    non ha nessuna anteprima da togliere.
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      # 🔴 SE LA CHIAVE NON C'E', LO DICE E SI FERMA — non finisce verde
+      #    facendo finta di aver pulito. *Un verde che non ha fatto niente e'
+      #    peggio di un rosso.*
+      - name: La chiave di Cloudflare c'e'?
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
+            echo "::error::Mancano CLOUDFLARE_API_TOKEN o CLOUDFLARE_ACCOUNT_ID fra i Secrets."
+            echo "Come si creano e dove si mettono: docs/CLOUDFLARE.md, sezione 5."
+            exit 1
+          fi
+
+      # ⚠️ IL NOME DEL RAMO PASSA DA UNA VARIABILE, MAI DENTRO IL COMANDO.
+      #    Un nome di ramo lo sceglie chi lo crea: e' testo che arriva da
+      #    fuori. Infilarlo dritto nella riga di comando vorrebbe dire
+      #    lasciargli scrivere pezzi di comando; fra virgolette in una
+      #    variabile e' un valore e basta.
+      - name: Toglile
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RAMO: ${{ github.event.ref }}
+        run: node scripts/cloudflare.mjs --ramo "$RAMO" --conferma
+
+  # -------------------------------------------------------------------
+  # 2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione
+  # -------------------------------------------------------------------
+  produzione:
+    name: Restano le ultime 10 versioni di produzione
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      # ⚠️ QUI NON SI FERMA SE LA CHIAVE MANCA, e la differenza e' voluta:
+      #    questo lavoro parte a ogni push su `master`, e senza la chiave
+      #    farebbe comparire un rosso su ogni pubblicazione — cioe' un
+      #    guardiano che grida sempre, che si impara a spegnere. Lo dice e
+      #    passa oltre. Il caso «ramo cancellato» invece si ferma, perche' li'
+      #    e' un gesto voluto che non ha fatto quello che prometteva.
+      - name: Conservazione
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Chiave di Cloudflare non configurata: conservazione saltata."
+            echo "Quando la vorrai attiva: docs/CLOUDFLARE.md, sezione 5."
+            exit 0
+          fi
+          node scripts/cloudflare.mjs --conferma

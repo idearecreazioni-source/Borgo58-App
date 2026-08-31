@@ -38,7 +38,8 @@
     "quesiti": "node scripts/quesiti-stampabili.mjs",
     "indice": "node scripts/indice-rovesciamenti.mjs",
     "richieste": "node scripts/indice-richieste.mjs",
-    "telefono": "node scripts/telefono.mjs"
+    "telefono": "node scripts/telefono.mjs",
+    "cloudflare": "node scripts/cloudflare.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
