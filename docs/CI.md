@@ -120,6 +120,17 @@ git -C "C:\Users\User\Desktop\Claude code\Borgo58-App" push -u origin HEAD
 
 GitHub risponde con un indirizzo da aprire per creare la proposta.
 
+🔴 **E i controlli partono quando la proposta viene APERTA, non quando il
+ramo viene spinto.** È una precisazione del 31/08, arrivata correggendo un
+difetto: prima partivano in tutte e due le occasioni, e lo stesso commit
+finiva giudicato **due volte** — con la possibilità concreta, capitata
+davvero, che un giro dicesse «non passa» e l'altro «459 prove su 459».
+⚠️ *Un rosso che non corrisponde a niente di rotto insegna a non guardare i
+rossi*, quindi la regola adesso è: **un commit, un verdetto**.
+⚠️ **Il prezzo, dichiarato**: un ramo spinto e lasciato lì **senza aprire la
+proposta** non viene controllato da nessuno. Aprire la proposta non è un
+passaggio burocratico — è il gesto che accende i controlli.
+
 ⚠️ **E il freno delle migrazioni continua a funzionare, anzi meglio**: il
 controllo `nonAncoraSuGitHub` guarda `origin/master`. Una migrazione che sta
 su un ramo non ancora unito **non è su `master`**, quindi non si può

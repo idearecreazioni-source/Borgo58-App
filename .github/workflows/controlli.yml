@@ -25,18 +25,41 @@
 
 name: Controlli
 
-# 🔴 GIRA A OGNI COMMIT SU QUALUNQUE RAMO, non solo su master — chiesto da
-#    Alessio il 31/08. La ragione e' che con master protetto **il lavoro vive
-#    sui rami**: se i controlli girassero solo su master, girerebbero solo
-#    DOPO che una modifica e' gia' stata approvata e unita, cioe' troppo
-#    tardi per servire a qualcosa.
-# ⚠️ E girano ANCHE sulla proposta (`pull_request`), che non e' un doppione:
-#    la proposta prova il codice **come sarebbe una volta unito a master**,
-#    non com'e' sul ramo. Due cose diverse quando master si e' mosso nel
-#    frattempo.
+# 🔴 UN COMMIT, UN VERDETTO — corretto il 31/08/2026 poche ore dopo averlo
+#    scritto sbagliato, e a rilevarlo e' stato Alessio guardando la proposta.
+#
+#    LA RIGA DI PRIMA DICEVA: *«girano ANCHE sulla proposta, che non e' un
+#    doppione»*. **Era falsa, ed e' stata misurata falsa**: con `push` su
+#    ogni ramo E `pull_request`, un ramo che ha una proposta aperta fa
+#    partire DUE giri identici sullo stesso commit — sei giri per tre
+#    commit, contati sul registro.
+#
+# 🔴 E IL PREZZO NON ERANO I MINUTI: erano DUE VERDETTI OPPOSTI SULLA STESSA
+#    RIGA DI CODICE. Il 31/08 il commit `cc677ea` aveva insieme un giro
+#    rosso (partito prima che i segreti esistessero) e un giro verde con 459
+#    prove su 459 — perche' ne era stato rilanciato uno solo. Un sistema di
+#    controlli che risponde due cose diverse sullo stesso codice non e' un
+#    sistema di controlli: e' la famiglia dei *due posti che dicono la
+#    stessa cosa e possono contraddirsi*.
+#    ⚠️ E il danno peggiore e' quello lento: **un rosso che non corrisponde
+#    a niente di rotto insegna a non guardare i rossi.**
+#
+#    LA RAGIONE DI ALESSIO RESTA INTERA, ed e' proprio per questo che la
+#    forma cambia invece di sparire: con `master` protetto il lavoro vive
+#    sui rami, e i controlli devono girare PRIMA che una modifica sia unita,
+#    non dopo. La proposta lo fa gia' — e lo fa meglio, perche' prova il
+#    codice **come sara' una volta unito a master**, non com'e' sul ramo.
+#    Quindi: la proposta copre il lavoro sui rami, il push copre `master`
+#    dopo l'unione. Nessuna occasione persa, nessun doppione.
+#
+# ⚠️ QUELLO CHE SI PERDE, dichiarato: un ramo spinto **senza** proposta
+#    aperta non viene piu' controllato. Nel giro di lavoro deciso il 31/08 e'
+#    una finestra di secondi (spingo il ramo e apro subito la proposta), ma
+#    se un giorno si prendesse l'abitudine di spingere rami e lasciarli li',
+#    quei rami non li guarderebbe piu' nessuno.
 on:
   push:
-    branches: ['**']
+    branches: [master]
   pull_request:
     branches: [master]
 
