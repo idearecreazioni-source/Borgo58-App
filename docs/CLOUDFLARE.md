@@ -194,26 +194,33 @@ era stato applicato prima), il modo sicuro di ripartire puliti è **ricaricare
 la pagina di creazione** dall'indirizzo qui sopra: il modulo torna vuoto e non
 serve sapere come si toglie un riquadro.
 
-### Passo 4 · Il permesso, uno solo
+### Passo 4 · Il permesso — **uno solo, ed è questo**
 
-🟡 **Questa schermata non è ancora stata vista da qui**, quindi non ne
-descrivo i campi: sarebbe la quarta volta che questa pagina racconta un
-pannello immaginario.
+Dopo **Start from scratch** compare l'elenco dei permessi, diviso in gruppi
+(*Developer Platform · AI & Machine Learning · DNS & Zones · App Security ·
+Rules & Configuration · Cloudflare One / Zero Trust · Analytics & Logs ·
+Network Services · Media · Email & Messaging · Cache & Performance ·
+Account & Billing · Other*), ognuno con un contatore tipo `0/51`.
 
-**Quello che si deve ottenere è certo, ed è questo:**
+**Nel gruppo `Developer Platform`, la voce da accendere è:**
 
-| | |
-|---|---|
-| Ambito | l'**account** intero (non un dominio, non una zona) |
-| Gruppo di permessi | **Cloudflare Pages** |
-| Livello | **Edit** |
+> **Pages** — *«Grants write access to Cloudflare Pages»*
+> livelli: **Read** · **Edit** → **scegliere `Edit`**
+
+**E basta. Tutti gli altri gruppi restano a `0`.**
 
 ⚠️ **`Edit` e non `Read`**: la chiave deve poter *cancellare*. Con `Read` la
 pulizia leggerebbe l'elenco e fallirebbe al primo tentativo di togliere
 qualcosa.
 
-⚠️ **Un permesso solo.** Se alla fine ne risultano due o più, si torna
-indietro: quella chiave non deve saper fare altro.
+⚠️ **La voce si chiama `Pages`, non «Cloudflare Pages»**, ed è dentro
+*Developer Platform*. Nello stesso gruppo ci sono **Workers Scripts**,
+**Workers CI**, **Workers Containers**, **Workers KV Storage** e altre due
+dozzine di voci che le somigliano e **non c'entrano niente**.
+
+⚠️ **Se il contatore di `Developer Platform` dice più di quanto ti aspetti**,
+è probabile che siano accesi sia *Read* sia *Edit* sulla stessa voce: non è
+un errore, ma `Edit` da solo basta.
 
 ### Passo 5 · La scadenza
 
@@ -419,7 +426,15 @@ verificata sul pannello, non citata.*
    in **Manage account → Account API tokens**.
 2. **«Workers & Pages» nella barra laterale** — falso. Sta dentro **Build →
    Compute**.
-3. **«La pulizia a mano sono due minuti»** — falso, e il peggiore dei tre
+3. **Il passo dei permessi lasciato «non visto» per tre giri.** Non era un
+   nome sbagliato: era che *si poteva chiedere la fotografia di quella
+   schermata e non è stato fatto*, continuando invece a descrivere un pannello
+   mai aperto. La lista dei permessi l'ha dovuta recuperare Alessio.
+   ⚠️ **La regola che ne esce**: quando una guida dipende da una schermata che
+   chi la scrive non può aprire, la cosa da fare non è scriverla lo stesso con
+   un'avvertenza — è **chiedere quella schermata**. Un'avvertenza non rende
+   utilizzabile un passo che non si può seguire.
+4. **«La pulizia a mano sono due minuti»** — falso, e il peggiore dei tre
    perché era un **consiglio**, non un nome. Le anteprime sono **375**: a
    mano non si fa. La stima era costruita su quello che si era visto passare
    in una sessione, ed è finita in una raccomandazione operativa. *Un numero
