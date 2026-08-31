@@ -190,7 +190,15 @@ export async function listPriceHistory(ingredientId, { limit = 100 } = {}) {
 export async function listCategorieIngrediente(ambito = "alimenti") {
   const { data, error } = await supabase.rpc("categorie_proponibili", { p_ambito: ambito });
   if (error) throw error;
-  return (data ?? []).map((c) => ({ value: c.codice, label: c.nome }));
+  // ⚠️ Il MONDO viaggia insieme al resto: la schermata raggruppa il menu
+  //    per mondo, e senza queste due righe il dato si fermerebbe qui — la
+  //    famiglia di stanotte, il valore che esiste e non arriva.
+  return (data ?? []).map((c) => ({
+    value: c.codice,
+    label: c.nome,
+    mondo: c.mondo ?? null,
+    mondo_nome: c.mondo_nome ?? null,
+  }));
 }
 
 /**

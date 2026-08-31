@@ -344,6 +344,29 @@ export default function IngredienteForm() {
     };
   }, [id, isEdit]);
 
+  // ⚠️ STA QUI, sopra il `if (loading)`: un hook dopo un ritorno anticipato
+  //    non viene chiamato sempre nello stesso ordine, e React lo vieta —
+  //    il lint l'ha preso subito.
+  // ⚠️ Si raggruppa in questa schermata e non nella lettura: l'elenco arriva
+  //    già ordinato per mondo dal database, quindi basta spezzarlo dove il
+  //    mondo cambia — nessun riordino, nessuna seconda regola.
+  // ⚠️ E una categoria SENZA mondo non sparisce: finirebbe in silenzio fuori
+  //    dal menu, e chi la cerca non saprebbe perché non c'è.
+  const gruppiDiCategorie = useMemo(() => {
+    const fuori = [];
+    for (const c of categorie) {
+      const ultimo = fuori[fuori.length - 1];
+      if (ultimo && ultimo.mondo === (c.mondo ?? null)) ultimo.righe.push(c);
+      else
+        fuori.push({
+          mondo: c.mondo ?? null,
+          nome: c.mondo_nome ?? "Senza mondo",
+          righe: [c],
+        });
+    }
+    return fuori;
+  }, [categorie]);
+
   const priceAlert = useMemo(() => {
     if (priceHistory.length === 0) return null;
     const threeMonthsAgo = new Date();
@@ -910,10 +933,28 @@ export default function IngredienteForm() {
               <option value="" disabled>
                 Seleziona…
               </option>
-              {categorie.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
+              {/* 🔴 RAGGRUPPATE PER MONDO — 31/08/2026, trovato guardando
+                  subito dopo aver spostato «Dolce e da meditazione» dai
+                  vini ai liquori. Il menu mostrava **ventiquattro voci
+                  piatte**: l'ordine era giusto, ma chi sceglieva non sapeva
+                  in quale dei sette mondi sarebbe finito il prodotto — e i
+                  mondi sono il modo in cui il Magazzino si divide.
+                  ⚠️ Non è un errore che il gestionale segnala: è un prodotto
+                  che finisce nel mondo sbagliato **senza che nessuno se ne
+                  accorga**.
+                  ⚠️ E l'ordine dei gruppi arriva già fatto dal database
+                  (`categorie_proponibili` ordina per mondo): la schermata
+                  non riordina niente per conto suo, o sarebbe un secondo
+                  posto dove quell'ordine può divergere da quello di
+                  Alessio. */}
+              {gruppiDiCategorie.map((g) => (
+                <optgroup key={g.mondo ?? "(senza)"} label={g.nome}>
+                  {g.righe.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 
