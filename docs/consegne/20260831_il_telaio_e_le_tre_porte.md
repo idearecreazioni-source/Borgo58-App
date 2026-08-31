@@ -3,8 +3,19 @@
 **31/08/2026, mezzogiorno.** Riepilogo per il validatore.
 
 * **HEAD dichiarato**: `35671ba66782b3cf4968a27b48c8461352c799e9` — il commit che sta sotto questo file.
-* **Migrazioni**: 365 nel repository e sulla prova, **361 in produzione** al
-  momento in cui scrivo — le quattro nuove entrano subito dopo.
+* **Migrazioni**: 365 nel repository e sulla prova, **361 in produzione**.
+  Le quattro nuove **aspettano il push di Alessio**: `npm run migra` si è
+  rifiutato di applicarle perché non sono ancora su GitHub — *la produzione
+  non deve mai correre avanti al repository*.
+
+🔴 **E DUE FRENI HANNO RIFIUTATO DAVVERO, oggi.** Il primo perché questo
+riepilogo non nominava le migrazioni per intero; il secondo perché **la
+cartella dei backup non era più sul Desktop** — Alessio l'ha portata fuori dal
+computer, cioè ha fatto esattamente la sua metà. ⚠️ **E lì c'è una tensione
+vera fra due regole del 23/08**: «porta la copia fuori» fa sparire la copia
+dal Desktop, e il freno la cerca lì. Ogni volta che lui fa la cosa giusta, il
+freno scatta. La via d'uscita è un minuto (`npm run backup`), ma la tensione
+va decisa da lui — è la domanda 1.
 * **Prove**: 657 pure verdi (58 file), **459 sull'app verdi** (67 file), lint
   pulito.
 
@@ -255,6 +266,10 @@ premute.
 4. **Il riepilogo non nominava nessuna delle cinque migrazioni**, e l'ha
    trovato un freno, non io.
 5. **`va_in_carta` costruita** — e senza nessun posto dove scriverla.
+6. **E una di OGGI, scritta due ore fa in questo stesso file**: «le quattro
+   nuove entrano subito dopo». Non sono entrate — serve il push. Corretta
+   qui, ed è la terza domanda della rilettura obbligatoria che fa il suo
+   lavoro.
 
 ### Blocchi non aperti
 **Blocco 6** per intero: etichetta «investimento», chiusura dell'anno fiscale,
