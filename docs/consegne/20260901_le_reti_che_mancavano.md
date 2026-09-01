@@ -310,3 +310,29 @@ com'erano stamattina.
 **Fuori dalla CI, e resta la cosa più urgente di tutte**: rigenerare le
 chiavi finite nella storia pubblica (§ sopra). Quella nessun codice la
 chiude.
+
+
+---
+
+## 7 · Un errore mio, dichiarato
+
+Alle 15:47 ho lanciato le 459 prove contro il progetto di prova **mentre il
+giro dei controlli su GitHub stava lanciando le stesse prove sullo stesso
+database**. Due scrittori sulla stessa dispensa: la mia esecuzione locale ha
+riportato una prova rossa (`coperti-sala`, «c'è posto?»), e non era un
+difetto del codice.
+
+🔴 **La regola era già scritta e l'ho violata io**: *«le prove sull'app
+girano in fila, mai in parallelo — il database è uno solo»* (CLAUDE.md §8,
+lezione del 10/08). Il file dei controlli tiene una serratura fra i rami; non
+può sapere che qualcuno sta lanciando le stesse prove da un'altra macchina.
+
+Ho fermato la mia esecuzione per lasciare il campo al giro di GitHub, che è
+quello che conta. ⚠️ **E fermarla a metà lascia righe indietro**: se il giro
+di GitHub dovesse risultare rosso su una prova di sala, la prima ipotesi da
+verificare è questa, non una regressione.
+
+⚠️ **Le due esecuzioni complete citate al § 5 non sono toccate**: sono
+finite alle 15:16 e alle 15:32, quando il lavoro «Prove contro il progetto
+di prova» su GitHub si fermava al preflight in zero secondi senza aprire
+nessun collegamento.
