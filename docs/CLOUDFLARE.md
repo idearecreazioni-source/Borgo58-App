@@ -558,22 +558,32 @@ esattamente allo stato di oggi, in due gesti, senza toccare il codice.
 sempre: le ultime dieci versioni di produzione restano su Cloudflare apposta
 (sezione 6), e si ripubblica una di quelle dal pannello.
 
-### Il test negativo — *un commit rosso non deve pubblicare*
+### Il controllo strutturale del workflow, e cosa NON dimostra
 
-Due cose, e sono diverse:
+🔴 **NON SI CHIAMA PIÙ «test negativo», e la correzione non è di parole.**
+Chiamandolo così si lascia credere che qualcuno abbia visto un commit rosso
+*non* pubblicare. **Nessuno l'ha visto.** Quello che c'è è un controllo sulla
+**forma** del workflow, ed è una cosa più debole e più onesta:
 
-1. **Nel repository**, `tests/unita/cancello-pubblicazione.test.js` (12
-   prove) pretende che il cancello sia scritto **dove GitHub lo fa
-   rispettare da sé**: `needs: [codice, database]`. Un lavoro che dipende da
-   due lavori e che uno dei due fallisce **non parte** — non è una nostra
-   condizione, quindi non è una condizione che possiamo sbagliare.
-   Controprovata rompendola in tre modi: tolto `database` da `needs`, tolto
-   il vincolo sul ramo, rimesso l'account fra i segreti. Tre rossi diversi,
-   ognuno quello giusto.
-2. **Dal vivo**, al passo 2: con `prova` si fa fallire apposta una prova su
-   `master`, e non deve comparire **nessuna** costruzione nuova. ⚠️ Si fa
-   **lì**, in modalità anteprima, e non dopo: l'unico modo di provarlo con
-   `si` sarebbe rompere apposta il ramo principale col sito in gioco.
+`tests/unita/cancello-pubblicazione.test.js` (12 prove) pretende che il
+cancello sia scritto **dove GitHub lo fa rispettare da sé** —
+`needs: [codice, database]`. Un lavoro che dipende da due lavori e che uno
+dei due fallisce non parte: non è una nostra condizione, quindi non è una
+condizione che possiamo sbagliare. Controprovato rompendolo in tre modi
+(tolto `database` da `needs`, tolto il vincolo sul ramo, rimesso l'account
+fra i segreti): tre rossi diversi, ognuno quello giusto.
+
+⚠️ **Che cosa NON dimostra**: che una CI rossa non pubblichi. Dimostra che la
+riga che lo impedirebbe c'è e non è stata tolta. La distanza fra le due cose
+è la stessa che passa fra «la funzione è stata riscritta» e «la funzione
+risponde», e in questo progetto quella distanza è già costata una volta.
+
+**La dimostrazione dal vivo si fa al passo 2**, in modalità `prova`: si fa
+fallire apposta una prova su `master` e non deve comparire **nessuna**
+costruzione nuova. ⚠️ Si fa lì e non dopo, perché l'unico modo di provarlo
+con `si` sarebbe rompere apposta il ramo principale col sito in gioco.
+Finché quel passo non è stato fatto, **la dimostrazione dal vivo non esiste**
+e non va scritta da nessuna parte come se esistesse.
 
 ### Cosa questo piano NON chiude
 

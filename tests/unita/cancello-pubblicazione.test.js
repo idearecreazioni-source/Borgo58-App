@@ -2,17 +2,23 @@
 // IL CANCELLO FRA UN COMMIT E borgo58.it — 01/09/2026
 // =====================================================================
 //
-// 🔴 IL TEST NEGATIVO CHIESTO DAL VALIDATORE: *un commit con i controlli
-//    rossi non deve poter produrre una pubblicazione di produzione.*
+// 🔴 QUESTO E' UN CONTROLLO STRUTTURALE DEL WORKFLOW, NON UN TEST NEGATIVO
+//    — e il nome conta, perche' il nome vecchio prometteva una cosa che
+//    nessuno ha visto. «Test negativo» si legge *«abbiamo guardato un commit
+//    rosso non pubblicare»*: non e' successo. Qui si prova che la riga che
+//    lo impedirebbe **c'e' e non e' stata tolta**.
 //
-// ⚠️ E' un test sulla FORMA del lavoro, non sul suo comportamento, e va
-//    detto perche' e' precisamente il limite: quello che si prova qui e' che
-//    il cancello e' scritto dove GitHub lo fa rispettare da se' — un
-//    `needs:` sui due lavori dei controlli, che salta il lavoro dipendente
-//    se uno dei due fallisce. Non si prova facendo davvero fallire un giro
-//    su `master`, perche' l'unico modo sarebbe rompere apposta il ramo
-//    principale. Il giro vero si prova col valore `prova` della variabile,
-//    che pubblica un'anteprima invece del sito (docs/CLOUDFLARE.md, § 9).
+//    Il cancello e' `needs: [codice, database]`, cioe' e' scritto dove
+//    GitHub lo fa rispettare da se': un lavoro che dipende da due lavori e
+//    che uno dei due fallisce non parte. Non e' una nostra condizione,
+//    quindi non e' una condizione che possiamo sbagliare.
+//
+// ⚠️ LA DISTANZA FRA LE DUE COSE E' LA STESSA che passa fra «la funzione e'
+//    stata riscritta» e «la funzione risponde» (17/08), e in questo progetto
+//    quella distanza e' gia' costata una volta. La dimostrazione dal vivo si
+//    fa col valore `prova` della variabile, che costruisce un'anteprima
+//    invece del sito (docs/CLOUDFLARE.md, § 9): finche' non e' stata fatta,
+//    **non esiste**, e non va scritta da nessuna parte come se esistesse.
 //
 // ⚠️ E LA FORMA E' LA COSA CHE SI PUO' PERDERE IN SILENZIO: togliendo
 //    `needs`, o allargando la condizione, il lavoro comincerebbe a

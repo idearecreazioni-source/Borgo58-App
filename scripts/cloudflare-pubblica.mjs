@@ -33,8 +33,10 @@ const progetto = process.env.CLOUDFLARE_PROJECT || "borgo58-app";
 // I tre valori: assente/`no` = non fa niente · `prova` = costruisce
 // un'ANTEPRIMA del ramo di produzione · `si` = pubblica davvero.
 //
-// 🔴 IL VALORE `prova` E' IL TEST NEGATIVO, ed e' il motivo per cui i valori
-//    sono tre e non due. In quel modo il giro intero — controlli verdi →
+// 🔴 IL VALORE `prova` E' LA DIMOSTRAZIONE DAL VIVO, ed e' il motivo per cui
+//    i valori sono tre e non due. Quella nel repository e' un controllo
+//    sulla FORMA del workflow, e dice solo che la riga c'e'. Qui il giro
+//    intero — controlli verdi →
 //    pubblicazione, controlli rossi → nessuna pubblicazione — si puo'
 //    provare per davvero **senza mettere in gioco borgo58.it**: quello che
 //    esce e' un indirizzo di anteprima. *Un interruttore che si puo'

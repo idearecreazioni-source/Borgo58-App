@@ -462,7 +462,8 @@ sostituisce.
    più una supposizione: la versione `797262b8` è andata **in produzione,
    riuscita**, il 31/08 alle 23:11:12 **con i controlli di quel commit
    rossi**. Il piano per chiuderla — cosa è verificato, cosa no, in che
-   ordine si accende, come si torna indietro e il test negativo — è in
+   ordine si accende, come si torna indietro e il controllo
+   strutturale del workflow — è in
    [`docs/CLOUDFLARE.md` § 9](../CLOUDFLARE.md). ⚠️ Il codice si può unire
    subito **senza che cambi niente**: resta spento finché non lo accende
    lui. Cambia come va online `borgo58.it`, quindi è una decisione sua.

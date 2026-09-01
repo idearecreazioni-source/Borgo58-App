@@ -310,7 +310,9 @@ jobs:
   #    Invertendo l'ordine si pubblicherebbe due volte; saltando il primo,
   #    il cancello resterebbe scavalcabile da Cloudflare.
   #
-  # ⚠️ IL VALORE `prova` ESISTE PER IL TEST NEGATIVO. Con `prova` questo
+  # ⚠️ IL VALORE `prova` ESISTE PER LA DIMOSTRAZIONE DAL VIVO — quella nel
+  #    repository e' un controllo sulla FORMA di questo file, e dice solo che
+  #    la riga c'e'. Con `prova` questo
   #    lavoro costruisce un'ANTEPRIMA e non tocca il sito: cosi' il giro
   #    intero — verde pubblica, rosso non pubblica — si prova per davvero
   #    prima di metterci in mezzo borgo58.it. Con `si` pubblica.
