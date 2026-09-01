@@ -41,6 +41,7 @@
     "richieste": "node scripts/indice-richieste.mjs",
     "telefono": "node scripts/telefono.mjs",
     "cloudflare": "node scripts/cloudflare.mjs",
+    "cloudflare:verifica": "node scripts/cloudflare-verifica.mjs",
     "peso": "node scripts/peso-pacchetto.mjs",
     "copertura": "node scripts/copertura.mjs"
   },
