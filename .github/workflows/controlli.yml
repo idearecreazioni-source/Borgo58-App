@@ -281,3 +281,142 @@ jobs:
           TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
           TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
         run: npm run test:app
+
+  # -------------------------------------------------------------------
+  # 3. LA PROVA GENERALE — la filiera intera, senza il sito in gioco
+  # -------------------------------------------------------------------
+  #
+  # ⚠️ COSA DIMOSTRA, DETTO PER QUELLO CHE E'. Dimostra **dal vivo la filiera
+  #    consentita**: dopo due lavori verdi, la costruzione esce e finisce su
+  #    un'anteprima. Il **blocco con i controlli rossi NON e' osservato dal
+  #    vivo**: e' garantito da `needs:`, che lo fa rispettare GitHub, e
+  #    sorvegliato dal controllo strutturale del workflow
+  #    (`tests/unita/cancello-pubblicazione.test.js`). Sono due affermazioni
+  #    diverse e vanno tenute separate — la prima riga che avevo scritto le
+  #    mescolava, e prometteva la seconda.
+  #
+  # 🔴 ESISTE PERCHE' UN INTERRUTTORE CHE SI PUO' ACCENDERE SOLO SULLA COSA
+  #    VERA NON SI PROVA MAI PRIMA. Qui la filiera gira intera — compila,
+  #    controlla il pacchetto, carica con Wrangler — ma con la coppia del
+  #    progetto di PROVA e su un ramo di anteprima.
+  prova_di_rilascio:
+    name: Prova generale del rilascio — nessuna produzione toccata
+    needs: [codice, database]
+    if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'prova'
+    environment: anteprima
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # 🔴 IL BERSAGLIO SU CLOUDFLARE E' DICHIARATO UNA VOLTA, IN CIMA, e lo
+    #    leggono sia il controllo sia il caricamento. Passandolo al solo
+    #    caricamento, il controllo approverebbe un bersaglio e Wrangler ne
+    #    scriverebbe un altro.
+    # ⚠️ E' l'UNICO nome che la filiera accetta partendo dal ramo di
+    #    produzione: qualunque altro viene respinto dal controllo di coerenza.
+    env:
+      RAMO_ANTEPRIMA: prova-di-rilascio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      - run: npm ci
+
+      # ⚠️ PRIMA di compilare: se il bersaglio non torna non si spendono tre
+      #    minuti, e non resta in giro un `dist/` costruito per un bersaglio
+      #    che e' stato respinto.
+      - name: Ambiente, ramo di GitHub e ramo di Cloudflare vanno d'accordo?
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente anteprima --controlla
+
+      - name: Compila, con la coppia del progetto di prova
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Il pacchetto parla col progetto di prova?
+        run: node scripts/rilascio.mjs --ambiente anteprima --controlla-pacchetto dist
+
+      - name: Carica sul ramo di anteprima
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente anteprima --conferma
+
+  # -------------------------------------------------------------------
+  # 4. LA PUBBLICAZIONE VERA
+  # -------------------------------------------------------------------
+  #
+  # 🔴 IL FATTO CHE LA GIUSTIFICA E' MISURATO. Letto dall'API di Cloudflare in
+  #    sola lettura il 01/09: la versione `797262b8` risulta **PRODUZIONE,
+  #    riuscita**, il 31/08 alle 23:11:12 — e i controlli di quel commit erano
+  #    **rossi**. Non e' che la pubblicazione arrivava prima dei controlli:
+  #    arrivava anche quando erano rossi.
+  #
+  # ⚠️ TRE BARRIERE, E LA TERZA E' UNA PERSONA:
+  #    1. `needs:` — GitHub non fa partire un lavoro che dipende da due lavori
+  #       se uno dei due fallisce. Non e' una nostra condizione, quindi non e'
+  #       una condizione che possiamo sbagliare.
+  #    2. l'interruttore, che e' una **Variable del REPOSITORY** e non
+  #       dell'ambiente. 🔴 Non e' un dettaglio: GitHub valuta `if:` PRIMA di
+  #       assegnare l'ambiente, quindi una variabile d'ambiente qui dentro
+  #       leggerebbe vuoto e il lavoro verrebbe saltato SEMPRE — un cancello
+  #       che sembra funzionare perche' non pubblica mai. Fallisce nella
+  #       direzione sicura e **in silenzio**, che e' la forma peggiore.
+  #    3. l'ambiente `produzione`, con revisore obbligatorio: il lavoro si
+  #       ferma e aspetta. E' la barriera che regge anche se le prime due
+  #       venissero allargate per sbaglio.
+  pubblica:
+    name: Manda in produzione — due lavori verdi e un'approvazione
+    needs: [codice, database]
+    if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'si'
+    environment: produzione
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      - run: npm ci
+
+      # ⚠️ ANCHE QUI, E NON PERCHE' `if:` NON BASTI: `if:` guarda il ramo di
+      #    GitHub, questo guarda **quale ramo Cloudflare chiama produzione** —
+      #    che e' un dato del pannello e puo' cambiare senza che il workflow se
+      #    ne accorga. Il giorno che i due divergessero, `if:` sarebbe ancora
+      #    verde e si pubblicherebbe sul ramo sbagliato.
+      - name: Il ramo di produzione di Cloudflare e' questo?
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente produzione --controlla
+
+      - name: Compila, con la coppia della produzione
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      # ⚠️ STESSO CONTROLLO, ATTESA DIVERSA — e' cio' che rende «una filiera
+      #    sola» una cosa vera e non una frase: cambia il progetto atteso, non
+      #    il codice che controlla.
+      - name: Il pacchetto parla col gestionale vero?
+        run: node scripts/rilascio.mjs --ambiente produzione --controlla-pacchetto dist
+
+      - name: Pubblica con Wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente produzione --conferma

@@ -41,6 +41,7 @@
     "richieste": "node scripts/indice-richieste.mjs",
     "telefono": "node scripts/telefono.mjs",
     "cloudflare": "node scripts/cloudflare.mjs",
+    "cloudflare:verifica": "node scripts/cloudflare-verifica.mjs",
     "peso": "node scripts/peso-pacchetto.mjs",
     "copertura": "node scripts/copertura.mjs"
   },
@@ -62,6 +63,7 @@
     "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wrangler": "4.128.0"
   }
 }

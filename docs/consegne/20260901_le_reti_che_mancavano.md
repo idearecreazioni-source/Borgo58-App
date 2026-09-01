@@ -405,26 +405,44 @@ misure sostengono.
 | il P0 della CI | **non è chiuso.** Il preflight e la traduzione dei nomi sono corretti, e la suite risulta sana quando la configurazione è valida; ma il P0 si chiude **solo con un giro GitHub verde sul commit da rilasciare**, con le prove realmente eseguite. Un verde locale non lo sostituisce. |
 | le 12 prove sulle schermate | sono **prove di componenti in `jsdom`**: montano l'albero React e leggono il DOM. **Non** sono un browser vero, **non** sono verifica visiva, **non** coprono navigazione completa, autenticazione reale, RLS attraverso l'interfaccia, telefono, doppio invio, rete interrotta o concorrenza. |
 | i controlli sulle migrazioni | sono **statici**: leggono i file. Non applicano niente, non provano l'idempotenza, non ricostruiscono da zero. Quello lo fa `npm run ricostruzione:verifica`, che vuole un motore Postgres e resta fuori dalla pipeline. |
-| Cloudflare | è **dimostrato** che le anteprime non aspettano i controlli: il 01/09 alle 15:48:53 l'anteprima del ramo era pubblicata mentre le prove sul database non erano partite. Sulla **produzione** l'affermazione poggia su `docs/CI.md` e sull'assenza di un lavoro di pubblicazione vincolato ai controlli, **non** su un'osservazione diretta. |
+| Cloudflare | è **dimostrato su tutti e due i fronti**, e la produzione non poggia più su un documento. Anteprime: il 01/09 alle 15:48:53 l'anteprima del ramo era pubblicata mentre le prove sul database non erano partite. Produzione: la pubblicazione `797262b8` risulta **PRODUZIONE, `deploy/success`** il 31/08 alle 23:11:12 mentre i controlli di quello stesso commit (giro 36) erano **rossi**; e la pubblicazione `5d3b7a86` risulta riuscita alle 19:10:02.596, cioè **prima** che i controlli partissero (19:10:03). Letto dall'API di Cloudflare in sola lettura. |
 | il peso del pacchetto | è un rilievo **prestazionale**. Non è un P0 di sicurezza né di coerenza dei dati. |
 
-### E la formula sui segreti esposti
+### E i segreti esposti nel commit `30cfab9`
 
-Va detta così, e non «non sono state cambiate»:
+🔴 **IL CONFRONTO FATTO IL 01/09 VERSO LE 15:20 È RITIRATO**, e con lui la
+formula che ne derivava. Non era una verifica affidabile — diceva al più che
+due stringhe coincidevano in un istante, su un ambiente solo, e non poteva
+dire niente degli altri — e per farlo rileggeva i valori esposti,
+allungandone inutilmente la vita. **Da qui in avanti nessun confronto,
+nemmeno booleano, fra i valori esposti nella storia pubblica e quelli
+presenti nell'ambiente o nei pannelli.** Quella formula non va usata come
+base di nessuna conclusione.
 
-> Al confronto eseguito il **01/09/2026 verso le 15:20**, con i valori che
-> questa sessione ha ricevuto al proprio avvio, le categorie *collegamento
-> al database di produzione*, *chiave di servizio di produzione*,
-> *collegamento e chiave del progetto di prova* e *password degli utenti di
-> collaudo* risultavano **invariate** rispetto a quelle esposte nel commit
-> `30cfab9`. `PASSWORD_PROVA` e `PIN_COLLAUDO` sono **non verificabili** da
-> qui. Token Cloudflare, chiave dell'assistente e firme dei webhook **non
-> compaiono** in quei file. Il proprietario dichiara una rotazione
-> successiva o diversa: **senza un nuovo confronto non è possibile
-> affermare lo stato attuale.**
+Restano tre affermazioni, e restano **separate** perché rispondono a domande
+diverse:
 
-Il confronto è stato solo booleano: nessuna impronta, nessun prefisso,
-nessun valore è stato stampato, scritto o committato.
+- **Esposizione storica pubblica: confermata.** Il commit `30cfab9` porta in
+  chiaro le credenziali del database di produzione e del progetto di prova e
+  le password degli utenti di collaudo. È nella storia pubblica del
+  repository.
+- **Rotazione / revoca: dichiarata eseguita dal proprietario.** Alessio
+  dichiara di aver ruotato password e credenziali dopo la ristrutturazione.
+  Questa sessione non la verifica e non la mette in dubbio.
+- **Verifica residua: da eseguire nei pannelli**, senza riportare valori.
+
+⚠️ **E i due lati non si chiudono con lo stesso gesto — confonderli
+chiuderebbe la questione prima del tempo.** La rotazione chiude
+l'**utilizzabilità**: da quel momento la copia esposta non apre più niente.
+**Non toglie la copia dalla storia pubblica**, che resta leggibile a chiunque
+cloni il repository, e resta leggibile anche dopo. Quindi *una data di
+rotazione non è una risposta alla domanda «quel valore è ancora là dentro»*:
+la risposta è sì, e lo sarà finché la storia non viene riscritta — operazione
+diversa, con un force-push, che comunque non tocca le copie già clonate.
+Sono due decisioni del proprietario, non un lavoro rinviato.
+
+Nessuna impronta, nessun prefisso, nessun suffisso e nessun valore è stato
+stampato, scritto o committato — né allora né adesso.
 
 ---
 
@@ -433,16 +451,22 @@ nessun valore è stato stampato, scritto o committato.
 Due sole cose non stanno nel repository e nessuna riga di codice le
 sostituisce.
 
-1. **Rigenerare le chiavi esposte** nel commit `30cfab9`, che resta
-   leggibile nella storia pubblica: password del database di produzione,
-   chiave di servizio, password del database di prova, password degli utenti
-   di collaudo. ⚠️ Cambiando la chiave del gestionale va aggiornata anche
-   Cloudflare, o il sito smette di funzionare: va fatto in quest'ordine.
-2. **Decidere se la pubblicazione deve aspettare i controlli.** Oggi
-   Cloudflare compila e pubblica per conto suo. Si chiude spegnendo la
-   pubblicazione automatica del ramo principale e facendola partire dai
-   controlli — cambia come va online `borgo58.it`, quindi è una decisione
-   sua, non un lavoro rinviato.
+1. **Chiudere i DUE lati delle chiavi esposte** nel commit `30cfab9`,
+   perché sono due e un gesto solo ne chiude uno: (a) la **rotazione**, che
+   toglie l'utilizzabilità — dichiarata eseguita, resta da riscontrare nei
+   pannelli, senza riportare valori; (b) la **copia nella storia pubblica**,
+   che la rotazione non tocca e che si toglie solo riscrivendo la storia.
+   ⚠️ Cambiando la chiave del gestionale va aggiornata anche Cloudflare, o il
+   sito smette di funzionare: va fatto in quest'ordine.
+2. **Decidere se la pubblicazione deve aspettare i controlli.** Non è
+   più una supposizione: la versione `797262b8` è andata **in produzione,
+   riuscita**, il 31/08 alle 23:11:12 **con i controlli di quel commit
+   rossi**. Il piano per chiuderla — cosa è verificato, cosa no, in che
+   ordine si accende, come si torna indietro e il controllo
+   strutturale del workflow — è in
+   [`docs/CLOUDFLARE.md` § 9](../CLOUDFLARE.md). ⚠️ Il codice si può unire
+   subito **senza che cambi niente**: resta spento finché non lo accende
+   lui. Cambia come va online `borgo58.it`, quindi è una decisione sua.
 
 
 ---
@@ -518,3 +542,64 @@ commit che si propone, con **entrambi** i lavori verdi, **67 file su 67 e
 459 prove su 459**, nessuna prova saltata, e **nessun altro scrittore** sul
 progetto di prova durante quel giro. Finché quel giro non esiste, il P0
 resta **aperto**.
+
+---
+
+## 12 · La filiera di rilascio, e le anteprime spente
+
+*Aggiunto il 01/09/2026 sera, dopo il merge della proposta precedente.*
+
+### Cosa abbiamo rovesciato
+
+- **Cosa era stato deciso e quando**: fino al 31/08 la pubblicazione la faceva
+  Cloudflare da sé, a ogni push, e le anteprime nascevano da sole su ogni ramo.
+- **La ragione di allora**: era la cosa che funzionava senza che nessuno la
+  costruisse, e per mesi non c'era nessuna CI da aspettare.
+- **Cosa si decide adesso**: la pubblicazione passa da GitHub, dopo due lavori
+  verdi e un'approvazione; le anteprime automatiche sono spente e tornano a
+  comando.
+- **Perché la ragione di allora non vale più**: **c'è una CI, e la
+  pubblicazione non la aspettava** — misurato, non dedotto: la versione
+  `797262b8` è andata in produzione il 31/08 alle 23:11:12 con i controlli di
+  quel commit **rossi**.
+
+### E un difetto vivo trovato misurando, non leggendo
+
+L'ambiente `preview` di Cloudflare aveva **l'indirizzo del progetto di prova e
+la chiave della produzione**. Verificato facendo la richiesta esatta che farebbe
+il browser di chi apre un'anteprima: **`401 Invalid API key`**. Ogni anteprima
+costruita da giorni era un guscio.
+
+⚠️ **Ciascuna metà era giusta**, ed è per questo che nessuno l'aveva vista.
+*Il difetto non stava in nessuno dei due valori: stava nella loro coppia.*
+Da qui la terza barriera della filiera: **si guarda il pacchetto compilato**,
+non le variabili — le variabili dicono le intenzioni, il pacchetto è quello che
+il browser usa davvero.
+
+### Il gesto sul pannello, con la misura
+
+Anteprime automatiche spente il 01/09 alle 20:21. Fotografia prima, confronto
+dopo su 21 campi: **un solo campo cambiato**,
+`preview_deployment_setting: all → none`. Invariati e verificati per nome
+`production_deployments_enabled: true`, `production_branch: master`, il
+collegamento a GitHub e `canonical_deployment` (la produzione online è la
+stessa di prima).
+
+⚠️ **Una cautela presa e da ricordare**: la modifica ha rimandato indietro il
+blocco `source` **intero** con un campo cambiato, non il solo campo. Mandando il
+campo da solo, una semantica di sostituzione avrebbe cancellato il collegamento
+a GitHub — e *quello* non è un guasto che si ripara con una tendina.
+
+### Cosa NON è stato verificato
+
+- **Il permesso di pubblicare della chiave di Cloudflare**: le quattro letture
+  passano (4 su 4), ma **leggere non è scrivere**. Nessuna scrittura è stata
+  provata.
+- **Il percorso GitHub → Wrangler non è mai stato eseguito**: nessun
+  Environment esiste, nessun valore è stato inserito, i due lavori nuovi
+  vengono saltati.
+- **Il blocco con la CI rossa non è osservato dal vivo**: è garantito da
+  `needs:` e sorvegliato dal controllo strutturale del workflow.
+- **Nessuna anteprima è stata guardata da un occhio** dopo la correzione della
+  coppia: la coppia giusta è provata nel pacchetto, non a schermo.
+
