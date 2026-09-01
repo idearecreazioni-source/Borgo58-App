@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -110,8 +112,21 @@ describe("la pulizia di cio' che nessun giro sta usando", () => {
   //    considererebbe abbandonata una riga di un giro ancora vivo — che e'
   //    esattamente il difetto che si sta chiudendo.
   it("e lascia stare tutto quello che un giro vivo potrebbe aver scritto", () => {
-    expect(MINUTI_DI_GRAZIA).toBeGreaterThanOrEqual(30);
     const otto = Date.now() - 8 * 60_000;
     expect(new Date(nonDiNessuno()).getTime()).toBeLessThan(otto);
+  });
+
+  // 🔴 IL RAPPORTO CHE RENDE LA BONIFICA UNA REGOLA E NON UN'ABITUDINE.
+  //    Oltre `timeout-minutes` nessun giro su GitHub puo' essere vivo:
+  //    lo uccide il runner. Se la grazia fosse uguale o piu' corta, la
+  //    prima riga di un giro partito a T diventerebbe candidata mentre
+  //    quel giro puo' ancora scrivere.
+  // ⚠️ Il tetto si LEGGE dal file dei controlli, non si ricopia: un numero
+  //    ricopiato e' una frase destinata a diventare falsa.
+  it("la grazia supera il tetto di tempo del lavoro sul database", () => {
+    const workflow = readFileSync(".github/workflows/controlli.yml", "utf8");
+    const tetti = [...workflow.matchAll(/timeout-minutes:\s*(\d+)/g)].map((m) => Number(m[1]));
+    expect(tetti.length).toBeGreaterThan(0);
+    expect(MINUTI_DI_GRAZIA).toBeGreaterThan(Math.max(...tetti));
   });
 });

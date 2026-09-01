@@ -121,8 +121,34 @@ export function giornoDiProva(anno, numero = NUMERO_CORSA) {
   return new Date(Date.UTC(anno, 0, 1 + numero)).toISOString().slice(0, 10);
 }
 
-/** Quanto aspettare prima di considerare abbandonata una riga di prova. */
-export const MINUTI_DI_GRAZIA = 30;
+/**
+ * Quanto aspettare prima di considerare abbandonata una riga di prova.
+ *
+ * 🔴 NON E' UN NUMERO SCELTO A OCCHIO, ED ERA SBAGLIATO A 30 (corretto il
+ *    01/09/2026 su rilievo della revisione). Il lavoro sul database ha
+ *    `timeout-minutes: 30`: un giro puo' vivere fino a mezz'ora prima che
+ *    il runner lo uccida. Con la grazia **uguale** a quel tetto, la prima
+ *    riga di un giro partito a T diventava candidata alla bonifica a T+30
+ *    — cioe' nell'istante in cui quel giro poteva essere ancora vivo.
+ *
+ * ⚠️ LA REGOLA, e da qui il numero: **la grazia dev'essere STRETTAMENTE
+ *    MAGGIORE del tetto di tempo del lavoro**, perche' oltre quel tetto
+ *    nessun giro puo' piu' essere vivo — non per convenzione, ma perche'
+ *    lo uccide GitHub. Cosi' la bonifica non dipende dall'esistenza di un
+ *    processo: dipende da un dato scritto (`created_at`) e da una scadenza
+ *    che il runner fa rispettare.
+ *
+ * ⚠️ Sorvegliato: `tests/unita/isolamento-prove.test.js` legge il tetto
+ *    dal file dei controlli e diventa rosso se qualcuno lo alza sopra
+ *    questa grazia. *Un rapporto fra due numeri che nessuno controlla e'
+ *    un rapporto che prima o poi si rompe.*
+ *
+ * ⚠️ LIMITE DICHIARATO: un giro lanciato **a mano**, su un computer, non
+ *    ha nessun tetto di tempo. Per quello i 45 minuti restano una
+ *    convenzione — larga cinque volte e mezza il giro piu' lungo misurato
+ *    (480 secondi).
+ */
+export const MINUTI_DI_GRAZIA = 45;
 
 /** L'istante prima del quale una riga di prova non e' piu' di nessun giro vivo. */
 export const nonDiNessuno = () =>
