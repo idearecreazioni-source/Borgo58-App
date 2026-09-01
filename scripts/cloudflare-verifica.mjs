@@ -20,21 +20,21 @@
 //      3. la chiave vede l'account?                     (sola lettura)
 //      4. la chiave vede il progetto del sito?          (sola lettura)
 //
-//    E una quinta, che e' l'unica che scrive:
-//
-//      5. la chiave sa PUBBLICARE?  → `--anteprima <ramo> --conferma`
-//
-// ⚠️ LA QUINTA PUBBLICA UN'ANTEPRIMA, MAI LA PRODUZIONE, ed e' voluto: il
-//    permesso di scrittura non si deduce leggendo — l'unico modo di sapere
-//    se una chiave puo' pubblicare e' farle pubblicare qualcosa. Si sceglie
-//    la cosa che non fa danno. Il ramo di produzione e' rifiutato dal
-//    comando stesso, non dalla buona volonta' di chi lo lancia.
+// 🔴 E NON NE ESISTE UNA QUINTA. Fino al 01/09 questo comando sapeva anche
+//    PUBBLICARE un'anteprima, chiedendo a Cloudflare di costruire dal
+//    repository. E' stato tolto: era **la stessa macchina dell'anteprima
+//    automatica**, solo innescata da noi — quindi non provava il percorso che
+//    conta, e teneva in piedi una seconda strada per pubblicare proprio
+//    mentre il disegno nuovo ne toglieva una.
+//    La filiera e' una sola: `scripts/rilascio.mjs`, dove GitHub compila e
+//    Wrangler carica. Qui si LEGGE.
+// ⚠️ Conseguenza da tenere presente: **il permesso di scrivere non e'
+//    dimostrato da niente di quello che sta in questo file**, e il comando lo
+//    dice a voce alta invece di lasciarlo intendere.
 //
 // ⚠️ NON STAMPA MAI LA CHIAVE, ne' un pezzo, ne' una sua impronta. Le
 //    risposte sono si'/no con il motivo in italiano.
 // =====================================================================
-
-import { readFileSync } from "node:fs";
 
 const API = "https://api.cloudflare.com/client/v4";
 
@@ -51,10 +51,12 @@ const API = "https://api.cloudflare.com/client/v4";
 // ---------------------------------------------------------------------
 export const FORMA_ACCOUNT = /^[0-9a-f]{32}$/;
 
-export function accountDalRepository(file = ".env.example") {
-  const riga = readFileSync(file, "utf8").match(/^CLOUDFLARE_ACCOUNT_ID=(.*)$/m);
-  return riga ? riga[1].trim() : "";
-}
+// 🔴 NESSUN RIPIEGO SU `.env.example`, e la funzione che lo leggeva e' stata
+//    TOLTA invece di lasciata inutilizzata. Un valore preso da un file di
+//    esempio e' configurazione che nessuno ha scelto: sembra funzionare
+//    finche' qualcuno cambia account, e allora il ripiego serve il numero
+//    vecchio senza che nessun errore lo dica. Il numero vive in UN posto solo
+//    — la Variable di GitHub, o `.env` sul computer.
 
 export function problemaDellAccount(valore) {
   if (!valore) return "Manca il numero dell'account Cloudflare.";
@@ -63,25 +65,6 @@ export function problemaDellAccount(valore) {
       "Il numero dell'account non ha la forma giusta: sono 32 caratteri fra " +
       "0-9 e a-f minuscole. Si legge nell'indirizzo del pannello, subito dopo " +
       "dash.cloudflare.com/ — vedi docs/CLOUDFLARE.md, sezione 5."
-    );
-  return null;
-}
-
-// ---------------------------------------------------------------------
-// ⚠️ IL RAMO DI PRODUZIONE E' RIFIUTATO QUI DENTRO, non nel workflow: una
-//    regola scritta nel file che esegue vale anche per chi lancia il
-//    comando a mano dal proprio computer, ed e' li' che si sbaglia.
-// ---------------------------------------------------------------------
-export const RAMO_DI_PRODUZIONE = "master";
-
-export function problemaDelRamo(ramo) {
-  if (!ramo) return "Serve il nome del ramo su cui costruire l'anteprima.";
-  if (ramo === RAMO_DI_PRODUZIONE)
-    return (
-      `«${RAMO_DI_PRODUZIONE}» e' il ramo di produzione: una costruzione li' ` +
-      "sopra e' il sito vero, non un'anteprima. Questo comando non lo fa. " +
-      "Per la produzione si passa dai controlli verdi (docs/CLOUDFLARE.md, " +
-      "sezione 9)."
     );
   return null;
 }
@@ -186,46 +169,48 @@ export async function verifica({ token, account, progetto, chiediFn = chiedi }) 
 }
 
 // ---------------------------------------------------------------------
-// La quinta: la sola che scrive. Chiede a Cloudflare di costruire il ramo.
+// FOTOGRAFA e CONFRONTA — servono al gesto sul pannello.
 //
-// ⚠️ COSTRUISCE CLOUDFLARE, NON GITHUB, ed e' la scelta che regge tutto il
-//    piano: il pacchetto del sito ha bisogno dell'indirizzo e della chiave
-//    pubblica del gestionale, che oggi vivono **solo** nelle variabili del
-//    progetto Cloudflare. Facendo costruire a GitHub bisognerebbe portarle
-//    anche li' — cioe' aggiungere un posto dove vivono, che e' il problema
-//    che questo mese abbiamo passato a togliere. Cosi' GitHub dice
-//    «costruisci» e le variabili non si muovono da dove sono.
+// ⚠️ «Verifica che la produzione non sia stata toccata» e' una frase; il
+//    confronto fra due fotografie e' una misura. E guarda anche le due
+//    pubblicazioni vive: se cambiasse quella canonica, la produzione SAREBBE
+//    stata toccata anche con tutti gli interruttori uguali.
 // ---------------------------------------------------------------------
-export async function pubblicaAnteprima({ token, account, progetto, ramo, chiediFn = chiedi }) {
-  const guaio = problemaDelRamo(ramo);
-  if (guaio) return { ok: false, dettaglio: guaio };
-  return costruisci({ token, account, progetto, ramo, chiediFn });
-}
-
-// ⚠️ SENZA GUARDIA, e per questo NON e' esportata come comando: e' il pezzo
-//    che sa parlare con Cloudflare, e la regola su quale ramo si possa
-//    toccare vive in chi la chiama. Il comando delle anteprime rifiuta
-//    `master`; quello della produzione lo pretende, e ci arriva solo da un
-//    giro in cui i due lavori dei controlli sono gia' verdi.
-export async function costruisci({ token, account, progetto, ramo, chiediFn = chiedi }) {
-  const corpo = new FormData();
-  corpo.append("branch", ramo);
-  const r = await chiediFn(`/accounts/${account}/pages/projects/${progetto}/deployments`, token, {
-    method: "POST",
-    body: corpo,
-  });
-  if (r.corpo?.success !== true) return { ok: false, dettaglio: motivo(r) };
-  const d = r.corpo.result;
+export function daConfrontare(risultato) {
   return {
-    ok: true,
-    dettaglio: `anteprima ${d?.short_id ?? d?.id} sul ramo «${d?.deployment_trigger?.metadata?.branch ?? ramo}» · ${d?.url ?? "indirizzo non dichiarato"}`,
-    ambiente: d?.environment,
+    source: risultato?.source,
+    production_branch: risultato?.production_branch,
+    latest_deployment: {
+      id: risultato?.latest_deployment?.id,
+      environment: risultato?.latest_deployment?.environment,
+      created_on: risultato?.latest_deployment?.created_on,
+    },
+    canonical_deployment: {
+      id: risultato?.canonical_deployment?.id,
+      environment: risultato?.canonical_deployment?.environment,
+      created_on: risultato?.canonical_deployment?.created_on,
+    },
   };
 }
 
-// ---------------------------------------------------------------------
-// Il comando
-// ---------------------------------------------------------------------
+export function piatto(oggetto, prefisso = "") {
+  return Object.entries(oggetto ?? {}).flatMap(([k, v]) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? piatto(v, `${prefisso}${k}.`)
+      : [[`${prefisso}${k}`, JSON.stringify(v)]],
+  );
+}
+
+export function differenze(prima, dopo) {
+  const a = new Map(piatto(prima));
+  const b = new Map(piatto(dopo));
+  const campi = [...new Set([...a.keys(), ...b.keys()])].sort();
+  return {
+    confrontati: campi.length,
+    cambiati: campi.filter((c) => a.get(c) !== b.get(c)).map((c) => ({ campo: c, prima: a.get(c), dopo: b.get(c) })),
+  };
+}
+
 async function principale() {
   const argomenti = process.argv.slice(2);
   const valore = (nome) => {
@@ -234,8 +219,34 @@ async function principale() {
   };
 
   const token = process.env.CLOUDFLARE_API_TOKEN ?? "";
-  const account = process.env.CLOUDFLARE_ACCOUNT_ID || accountDalRepository();
+  const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
   const progetto = process.env.CLOUDFLARE_PROJECT || "borgo58-app";
+
+  // ⚠️ Prima delle quattro letture: fotografare e confrontare NON hanno
+  //    bisogno che le letture passino — servono proprio a documentare uno
+  //    stato, anche quando qualcosa non torna.
+  const fotografa = valore("--fotografa");
+  const confronta = valore("--confronta");
+  if (fotografa || confronta) {
+    const { readFileSync, writeFileSync } = await import("node:fs");
+    const r = await chiedi(`/accounts/${account}/pages/projects/${progetto}`, token);
+    if (r.corpo?.success !== true) {
+      console.error(`Cloudflare non risponde sul progetto «${progetto}»: ${motivo(r)}`);
+      process.exit(1);
+    }
+    const adesso = daConfrontare(r.corpo.result);
+    if (fotografa) {
+      writeFileSync(fotografa, JSON.stringify({ quando: new Date().toISOString(), ...adesso }, null, 2));
+      console.log(`Fotografia scritta in ${fotografa}.`);
+      return;
+    }
+    const prima = JSON.parse(readFileSync(confronta, "utf8"));
+    delete prima.quando;
+    const d = differenze(prima, adesso);
+    for (const c of d.cambiati) console.log(`CAMBIATO  ${c.campo}: ${c.prima} → ${c.dopo}`);
+    console.log(`\ncampi confrontati: ${d.confrontati} · cambiati: ${d.cambiati.length}`);
+    return;
+  }
 
   console.log("Cosa puo' davvero la chiave di Cloudflare\n");
   const esiti = await verifica({ token, account, progetto });
@@ -244,32 +255,14 @@ async function principale() {
   const cadute = esiti.filter((e) => !e.ok).length;
   console.log(
     `\n  ${esiti.length - cadute} su ${esiti.length}. ` +
-      (cadute ? "Finche' una di queste e' NO, il resto non si prova.\n" : "Nessuna scrittura provata: il permesso di pubblicare NON e' dimostrato da queste.\n"),
+      (cadute
+        ? "Finche' una di queste e' NO, non si pubblica niente.\n"
+        : "⚠️ Nessuna scrittura provata: il permesso di PUBBLICARE non e' dimostrato da queste.\n"),
   );
 
-  const ramo = valore("--anteprima");
-  if (!ramo) {
-    if (cadute) process.exit(1);
-    console.log("  Per provare anche la scrittura, senza toccare il sito vero:");
-    console.log("    node scripts/cloudflare-verifica.mjs --anteprima <ramo> --conferma\n");
-    return;
-  }
-  if (cadute) {
-    console.error("Le letture non passano: non si prova a scrivere.");
-    process.exit(1);
-  }
-  if (!argomenti.includes("--conferma")) {
-    console.log(`  Costruirebbe un'anteprima del ramo «${ramo}». Con --conferma la costruisce davvero.\n`);
-    return;
-  }
-
-  const esito = await pubblicaAnteprima({ token, account, progetto, ramo });
-  console.log(`  ${esito.ok ? "OK  " : "NO  "}La chiave sa pubblicare?\n      ${esito.dettaglio}`);
-  if (esito.ok && esito.ambiente && esito.ambiente !== "preview") {
-    console.error(`\n🔴 Cloudflare dichiara ambiente «${esito.ambiente}», atteso «preview». Guarda il pannello.`);
-    process.exit(1);
-  }
-  if (!esito.ok) process.exit(1);
+  if (cadute) process.exit(1);
+  console.log("  Questo comando LEGGE e basta. Per pubblicare c'e' una filiera");
+  console.log("  sola, e passa da GitHub: docs/CLOUDFLARE.md, sezione 9.\n");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await principale();

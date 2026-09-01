@@ -542,3 +542,64 @@ commit che si propone, con **entrambi** i lavori verdi, **67 file su 67 e
 459 prove su 459**, nessuna prova saltata, e **nessun altro scrittore** sul
 progetto di prova durante quel giro. Finché quel giro non esiste, il P0
 resta **aperto**.
+
+---
+
+## 12 · La filiera di rilascio, e le anteprime spente
+
+*Aggiunto il 01/09/2026 sera, dopo il merge della proposta precedente.*
+
+### Cosa abbiamo rovesciato
+
+- **Cosa era stato deciso e quando**: fino al 31/08 la pubblicazione la faceva
+  Cloudflare da sé, a ogni push, e le anteprime nascevano da sole su ogni ramo.
+- **La ragione di allora**: era la cosa che funzionava senza che nessuno la
+  costruisse, e per mesi non c'era nessuna CI da aspettare.
+- **Cosa si decide adesso**: la pubblicazione passa da GitHub, dopo due lavori
+  verdi e un'approvazione; le anteprime automatiche sono spente e tornano a
+  comando.
+- **Perché la ragione di allora non vale più**: **c'è una CI, e la
+  pubblicazione non la aspettava** — misurato, non dedotto: la versione
+  `797262b8` è andata in produzione il 31/08 alle 23:11:12 con i controlli di
+  quel commit **rossi**.
+
+### E un difetto vivo trovato misurando, non leggendo
+
+L'ambiente `preview` di Cloudflare aveva **l'indirizzo del progetto di prova e
+la chiave della produzione**. Verificato facendo la richiesta esatta che farebbe
+il browser di chi apre un'anteprima: **`401 Invalid API key`**. Ogni anteprima
+costruita da giorni era un guscio.
+
+⚠️ **Ciascuna metà era giusta**, ed è per questo che nessuno l'aveva vista.
+*Il difetto non stava in nessuno dei due valori: stava nella loro coppia.*
+Da qui la terza barriera della filiera: **si guarda il pacchetto compilato**,
+non le variabili — le variabili dicono le intenzioni, il pacchetto è quello che
+il browser usa davvero.
+
+### Il gesto sul pannello, con la misura
+
+Anteprime automatiche spente il 01/09 alle 20:21. Fotografia prima, confronto
+dopo su 21 campi: **un solo campo cambiato**,
+`preview_deployment_setting: all → none`. Invariati e verificati per nome
+`production_deployments_enabled: true`, `production_branch: master`, il
+collegamento a GitHub e `canonical_deployment` (la produzione online è la
+stessa di prima).
+
+⚠️ **Una cautela presa e da ricordare**: la modifica ha rimandato indietro il
+blocco `source` **intero** con un campo cambiato, non il solo campo. Mandando il
+campo da solo, una semantica di sostituzione avrebbe cancellato il collegamento
+a GitHub — e *quello* non è un guasto che si ripara con una tendina.
+
+### Cosa NON è stato verificato
+
+- **Il permesso di pubblicare della chiave di Cloudflare**: le quattro letture
+  passano (4 su 4), ma **leggere non è scrivere**. Nessuna scrittura è stata
+  provata.
+- **Il percorso GitHub → Wrangler non è mai stato eseguito**: nessun
+  Environment esiste, nessun valore è stato inserito, i due lavori nuovi
+  vengono saltati.
+- **Il blocco con la CI rossa non è osservato dal vivo**: è garantito da
+  `needs:` e sorvegliato dal controllo strutturale del workflow.
+- **Nessuna anteprima è stata guardata da un occhio** dopo la correzione della
+  coppia: la coppia giusta è provata nel pacchetto, non a schermo.
+

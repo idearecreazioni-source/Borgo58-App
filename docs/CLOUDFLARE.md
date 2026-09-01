@@ -49,6 +49,19 @@ meccanismo non lo impedisce.
 **La cura è la sezione 4**, e toglie il problema alla radice invece di
 appoggiarsi al fatto che qualcuno legga un avviso.
 
+> 🔴 **AGGIORNAMENTO 01/09/2026 — LA CURA ERA STATA FATTA A METÀ, e la metà
+> mancante l'ha resa invisibile invece che innocua.** Qualcuno ha spostato
+> `VITE_SUPABASE_URL` dell'ambiente `preview` sul progetto di prova e ha
+> lasciato indietro `VITE_SUPABASE_ANON_KEY`, che è rimasta quella della
+> produzione. Misurato facendo la richiesta esatta che farebbe il browser:
+> **`401 Invalid API key`**. Quindi da giorni un'anteprima non era «il
+> gestionale coi dati veri» — non era niente: si apriva e non leggeva nulla.
+> ⚠️ **Ciascuna metà era giusta**, ed è per questo che nessuno l'ha vista:
+> guardando l'indirizzo si dice «punta alla prova, bene»; guardando la chiave
+> «è la anon, bene». *Il difetto non stava in nessuno dei due valori: stava
+> nella loro coppia.* Chiuso dal controllo del pacchetto compilato della
+> sezione 9, che guarda il risultato invece delle intenzioni.
+
 ---
 
 ## 3 · Parte A · La produzione è agganciata a `master`?
@@ -147,7 +160,7 @@ Dove una schermata non è stata vista, è detto — e non è stata indovinata.
 In cima alla pagina si legge il percorso: **Account API tokens › Create a token**.
 
 Indirizzo diretto, se è più comodo:
-`https://dash.cloudflare.com/124e479908976a117d12b1daadde0d97/api-tokens/create`
+``https://dash.cloudflare.com/<il numero del tuo account>/api-tokens/create` — il numero lo trovi già nell'indirizzo mentre sei nel pannello`
 
 ### Passo 2 · Il nome
 
@@ -271,7 +284,7 @@ segreti:
 | Nome | Valore |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | la chiave appena creata |
-| `CLOUDFLARE_ACCOUNT_ID` | `124e479908976a117d12b1daadde0d97` |
+| `CLOUDFLARE_ACCOUNT_ID` | il numero che sta nell'indirizzo del pannello, subito dopo `dash.cloudflare.com/`. **Il valore non si ricopia qui**: su GitHub vive nella Variable omonima di ciascun ambiente, che è l'unica sorgente operativa. |
 
 **Sul computer**, solo per lanciare la pulizia dal terminale: si copia
 `.env.example` in `.env` e si completa. Quel file è
@@ -479,118 +492,125 @@ qui.** I nomi dei campi sono quelli attesi. Se non combaciano, **si guarda
 cosa c'è davvero e si corregge questa pagina** — non si cerca la voce
 mancante per mezz'ora.
 
-✅ **Quello che è misurato con certezza**: il numero dell'account
-(`124e479908976a117d12b1daadde0d97`) e il nome del progetto (`borgo58-app`),
-che vengono dal collegamento che Cloudflare scrive da sé sulle proposte di
-modifica.
+✅ **Quello che è misurato con certezza**: il numero dell'account e il nome
+del progetto (`borgo58-app`), che vengono dal collegamento che Cloudflare
+scrive da sé sulle proposte di modifica. ⚠️ Il numero **non è ricopiato qui**
+dal 01/09: sta nella Variable di GitHub e nel `.env` di Alessio, e basta —
+vedi la sezione 5.
 
 ---
 
-## 9 · 🔴 La pubblicazione non aspetta i controlli — il piano per chiuderla
+## 9 · 🔴 La pubblicazione non aspettava i controlli — la filiera che la chiude
 
-*Scritto il 01/09/2026. Qui non c'è niente di fatto sul pannello: c'è cosa
-è misurato, cosa no, che cosa si accende, in che ordine, e come si torna
-indietro.*
+*Scritto il 01/09/2026. Qui c'è cosa è misurato, cosa no, che cosa si accende,
+in che ordine, e come si torna indietro.*
 
 ### Il fatto, misurato — non dedotto dai documenti
 
-Fino al 01/09 questa pagina e `docs/CI.md` dicevano che Cloudflare pubblica
-per conto suo, e lo dicevano **senza averlo guardato**. Adesso è guardato,
-leggendo l'API di Cloudflare in sola lettura:
+Fino al 01/09 questa pagina e `docs/CI.md` dicevano che Cloudflare pubblica per
+conto suo, e lo dicevano **senza averlo guardato**. Adesso è guardato, leggendo
+l'API in sola lettura:
 
 | versione | dove è finita | quando | i controlli di quel commit |
 |---|---|---|---|
 | `797262b8` | **PRODUZIONE**, riuscita | 31/08, 23:11:12 | **rossi** (giro 36) |
 | `5d3b7a86` | **PRODUZIONE**, riuscita | 01/09, 19:10:02.596 | partiti alle **19:10:03**, cioè *dopo* |
 
-⚠️ **La prima riga è quella che conta**: non è che la pubblicazione arriva
-prima dei controlli — è che **arriva anche quando i controlli sono rossi**.
-Fra un commit e `borgo58.it` oggi non c'è nessun cancello.
+⚠️ **La prima riga è quella che conta**: non è che la pubblicazione arriva prima
+dei controlli — **arriva anche quando i controlli sono rossi**.
 
-### Cosa è verificato e cosa è solo ipotizzato
+### E le anteprime automatiche erano rotte
 
-*Distinti apposta: un piano che mescola le due cose fa scoprire il pezzo che
-manca a metà strada.*
+Misurato lo stesso giorno, facendo **la richiesta esatta che farebbe il browser
+di chi apre un'anteprima**: l'ambiente `preview` aveva l'indirizzo del progetto
+di **prova** e la chiave `anon` della **produzione**, e rispondeva
+`401 Invalid API key`. Ciascuna metà era giusta — è per questo che nessuno
+l'aveva vista — ma **nessuno guardava la coppia**. Sono state **spente** il
+01/09 alle 20:21 (`preview_deployment_setting: all → none`, un solo campo
+cambiato su 21 confrontati) e tornano dal lavoro `anteprima.yml`, a comando e
+con la coppia giusta.
 
-| | stato |
-|---|---|
-| I due interruttori di Cloudflare sono **separati e reversibili** — `production_deployments_enabled` e `preview_deployment_setting` — e stanno in `source.config` del progetto | ✅ **letto dall'API** |
-| Il numero dell'account **non è un segreto**: sta in chiaro in `.env.example` riga 138 e qui alla sezione 5, e ha la forma giusta (32 caratteri esadecimali minuscoli) | ✅ **letto dal repository e controllato** |
-| La chiave che sta **sul computer** è valida e attiva, è legata a questo account e vede il progetto | ✅ **`npm run cloudflare:verifica`, 4 su 4** |
-| La chiave che sta **fra i segreti di GitHub** | 🟡 **presenza apparente nel giro** e nient'altro: nel registro compare come `***`, cioè GitHub ha nascosto qualcosa. Permessi e funzionamento **restano da verificare**, e non si deduce che sia la stessa che sta sul computer. |
-| `CLOUDFLARE_ACCOUNT_ID` fra i segreti | 🟡 nel registro del 01/09 la variabile risulta **vuota**. Che il segreto non ci sia **non vuol dire che la pipeline possa farne a meno**: il piano lo toglie dai segreti e lo prende dal repository, perché non è un segreto — non perché sia superfluo. |
-| La chiave sa **pubblicare** | 🔴 **non dimostrato.** Il permesso di scrittura non si legge: l'unico modo di saperlo è farle pubblicare qualcosa. Lo dimostra il passo 2 qui sotto, su un'**anteprima**. |
-| Che l'API accetti «costruisci questo ramo» nella forma prevista | 🔴 **non dimostrato**, e il passo 2 serve anche a questo: se non l'accetta, lo dice **prima** di aver toccato la produzione. |
+### Una filiera sola
 
-### Come si prova senza rischiare niente
+Anteprima e produzione fanno **la stessa cosa**: GitHub compila → il pacchetto
+viene controllato → Wrangler carica. La differenza è un **dato**, non un
+percorso: quale progetto Supabase il pacchetto deve nominare, e su quale ramo di
+Cloudflare si scrive. *Due percorsi divergono, e a divergere per prima è sempre
+la strada meno battuta.*
 
-```bash
-npm run cloudflare:verifica                       # quattro letture, non scrive
-npm run cloudflare:verifica -- --anteprima <ramo> # dice cosa farebbe
-npm run cloudflare:verifica -- --anteprima <ramo> --conferma   # lo fa
-```
+Vive in `scripts/rilascio.mjs`. Tre controlli, tutti **fail-closed**:
 
-⚠️ **Il ramo `master` è rifiutato dal comando stesso**, non dalla buona
-volontà di chi lo lancia: una costruzione su quel ramo è il sito vero, non
-un'anteprima. E il comando **non stampa mai la chiave**, né un pezzo, né una
-sua impronta.
+1. **la coerenza** — ambiente dichiarato, ramo di GitHub e ramo di Cloudflare
+   devono dire la stessa storia, e il ramo di produzione **si chiede a
+   Cloudflare** invece di fidarsi di un nome scritto nel workflow;
+2. **il pacchetto compilato** — otto porte sbarrate: nessun indirizzo, più
+   indirizzi, indirizzo sbagliato, nessuna chiave, chiave illeggibile, chiave
+   che non dichiara il progetto, **coppia disallineata**, e **chiave di
+   servizio** (il caso in cui pubblicare sarebbe peggio di qualunque 401);
+3. **Wrangler**, alla versione esatta bloccata dal lockfile — la filiera di
+   rilascio non dipende da quale versione è uscita quel giorno.
+
+### Dove vive cosa
+
+| | dove | perché lì |
+|---|---|---|
+| `PUBBLICAZIONE_DA_GITHUB` | **Repository Variable** | 🔴 è letta in `job.if`, che GitHub valuta **prima** di assegnare l'ambiente. Messa nell'ambiente leggerebbe vuoto e il lavoro verrebbe saltato **sempre**: un cancello che sembra funzionare perché non pubblica mai — fallisce nella direzione sicura e **in silenzio**, che è la forma peggiore |
+| `CLOUDFLARE_ACCOUNT_ID` | **Environment Variable** (in tutti e due) | non è un segreto, ma è configurazione operativa: un posto solo, separato per ambiente. **Nessun ripiego su `.env.example`** |
+| `CLOUDFLARE_API_TOKEN` | **Environment Secret**, uno per ambiente | token distinti: tracce distinte, revoca indipendente |
+| `SUPABASE_URL` | **Environment Variable** | prova nell'uno, produzione nell'altro. Stesso nome, valore diverso: il lavoro non sceglie la coppia — gliela dà l'ambiente |
+| `SUPABASE_ANON_KEY` | **Environment Secret** | ⚠️ **non è un segreto applicativo**: finisce nel pacchetto del browser per costruzione, e a proteggere i dati è la **RLS**. Sta lì per comodità operativa, e nessuna sicurezza dipende dal fatto che sia nascosta |
+| rami ammessi | ambiente `produzione`: **solo `master`** | |
+| approvazione | ambiente `produzione`: **revisore obbligatorio** | è la barriera che regge anche se le prime due venissero allargate per sbaglio |
+
+🔴 **Un limite dichiarato**: «autorizzazioni minime separate» oggi è
+**operativo, non capacitivo**. Il permesso che serve è `Cloudflare Pages: Edit`,
+e **non è verificato** che Cloudflare offra un permesso «solo anteprime». Due
+token danno tracce distinte e revoca indipendente — non danno al token
+dell'anteprima meno potere su quello di produzione.
 
 ### La sequenza, e perché è in quest'ordine
 
-*L'ordine è tutto il piano: invertendo due passi si apre una finestra in cui
-il sito si pubblica due volte o non si pubblica affatto.*
-
 | | cosa | chi | cosa succederebbe sbagliando l'ordine |
 |---|---|---|---|
-| **0** | Unire la proposta con il lavoro nuovo | io | **niente**: senza la variabile il lavoro viene saltato. È ciò che rende sicuro unire prima di decidere. |
-| **1** | `npm run cloudflare:verifica --anteprima <ramo> --conferma` → **la chiave sa pubblicare?** | io, quando autorizzi | se si scoprisse **dopo** aver spento la pubblicazione automatica, il sito resterebbe fermo con nessuna strada per pubblicarlo |
-| **2** | Su GitHub, variabile `PUBBLICAZIONE_DA_GITHUB = prova` → **il giro generale**: i controlli verdi costruiscono un'**anteprima** di `master`, i rossi non costruiscono niente | Alessio | provare direttamente con `si` vorrebbe dire che il primo giro vero è anche il primo collaudo |
-| **3** | Su GitHub, variabile `CLOUDFLARE_ACCOUNT_ID` (valore in chiaro, sezione 5) | Alessio | senza, il lavoro si ferma dicendo che manca il numero |
-| **4** | Sul pannello Cloudflare: **Settings → Builds → Production branch → spegnere le pubblicazioni automatiche**. Le anteprime restano accese. | Alessio | **spegnendo dopo** il passo 5 si pubblicherebbe due volte lo stesso commit; **spegnendo prima** del passo 1 il sito resterebbe senza nessuno che lo pubblica |
+| **0** | unire la proposta | io | **niente**: senza la Variable i lavori vengono saltati |
+| **1** | ✅ **fatto il 01/09**: spegnere le anteprime automatiche | — | — |
+| **2** | creare i due Environment coi loro valori | Alessio | senza, i lavori si fermano dicendo cosa manca |
+| **3** | `PUBBLICAZIONE_DA_GITHUB = prova` → il giro generale verso un'anteprima | Alessio | provare con `si` vuol dire che il primo giro vero è anche il primo collaudo |
+| **4** | spegnere la pubblicazione automatica della produzione sul pannello | Alessio | **spegnendo dopo** il passo 5 si pubblicherebbe due volte lo stesso commit; **spegnendo prima** del passo 3 il sito resterebbe senza nessuno che lo pubblica |
 | **5** | `PUBBLICAZIONE_DA_GITHUB = si` | Alessio | — |
 
-### Il rollback, in una riga
+### Il rollback, e come si controlla che la produzione non sia stata toccata
 
-**Rimettere `PUBBLICAZIONE_DA_GITHUB` a `no`** (o cancellarla) e
-**riaccendere la pubblicazione automatica** sul pannello: si torna
-esattamente allo stato di oggi, in due gesti, senza toccare il codice.
-⚠️ E se una pubblicazione va male, la via per tornare indietro è quella di
-sempre: le ultime dieci versioni di produzione restano su Cloudflare apposta
-(sezione 6), e si ripubblica una di quelle dal pannello.
+`npm run cloudflare:verifica -- --fotografa prima.json` **prima**, il gesto, e
+`-- --confronta prima.json` **dopo**: stampa riga per riga cosa è cambiato su
+tutto `source.config` e sulle due pubblicazioni vive. *«Verifica che la
+produzione non sia stata toccata» è una frase; il confronto fra due fotografie
+è una misura.* Per tornare indietro: la Variable a `no` e l'interruttore del
+pannello com'era — due gesti, nessuna modifica al codice.
 
 ### Il controllo strutturale del workflow, e cosa NON dimostra
 
-🔴 **NON SI CHIAMA PIÙ «test negativo», e la correzione non è di parole.**
-Chiamandolo così si lascia credere che qualcuno abbia visto un commit rosso
-*non* pubblicare. **Nessuno l'ha visto.** Quello che c'è è un controllo sulla
-**forma** del workflow, ed è una cosa più debole e più onesta:
-
-`tests/unita/cancello-pubblicazione.test.js` (12 prove) pretende che il
-cancello sia scritto **dove GitHub lo fa rispettare da sé** —
-`needs: [codice, database]`. Un lavoro che dipende da due lavori e che uno
-dei due fallisce non parte: non è una nostra condizione, quindi non è una
-condizione che possiamo sbagliare. Controprovato rompendolo in tre modi
-(tolto `database` da `needs`, tolto il vincolo sul ramo, rimesso l'account
-fra i segreti): tre rossi diversi, ognuno quello giusto.
+🔴 **Non si chiama «test negativo», e la correzione non è di parole.** Quel nome
+lascia credere che qualcuno abbia visto un commit rosso *non* pubblicare.
+**Nessuno l'ha visto.** `tests/unita/cancello-pubblicazione.test.js` prova che
+il cancello è scritto **dove GitHub lo fa rispettare da sé** —
+`needs: [codice, database]` — e che non è stato tolto. Controprovato
+rompendolo in tre modi: tre rossi diversi, ognuno quello giusto.
 
 ⚠️ **Che cosa NON dimostra**: che una CI rossa non pubblichi. Dimostra che la
-riga che lo impedirebbe c'è e non è stata tolta. La distanza fra le due cose
-è la stessa che passa fra «la funzione è stata riscritta» e «la funzione
-risponde», e in questo progetto quella distanza è già costata una volta.
+riga che lo impedirebbe c'è. La distanza fra le due cose è la stessa che passa
+fra «la funzione è stata riscritta» e «la funzione risponde», e in questo
+progetto quella distanza è già costata una volta.
 
-**La dimostrazione dal vivo si fa al passo 2**, in modalità `prova`: si fa
-fallire apposta una prova su `master` e non deve comparire **nessuna**
-costruzione nuova. ⚠️ Si fa lì e non dopo, perché l'unico modo di provarlo
-con `si` sarebbe rompere apposta il ramo principale col sito in gioco.
-Finché quel passo non è stato fatto, **la dimostrazione dal vivo non esiste**
-e non va scritta da nessuna parte come se esistesse.
+E anche `prova_di_rilascio` va detto per quello che è: dimostra **dal vivo la
+filiera consentita** — dopo due lavori verdi la costruzione esce e finisce su
+un'anteprima. Il **blocco con i controlli rossi resta garantito da `needs:` e
+sorvegliato dal controllo strutturale, non osservato dal vivo.**
 
 ### Cosa questo piano NON chiude
 
-- **Le anteprime restano libere**, ed è voluto: servono a guardare un lavoro
-  prima di unirlo, e farle aspettare i controlli toglierebbe proprio la cosa
-  per cui esistono. ⚠️ Ma restano indirizzi pubblici che non hanno passato
-  nessun controllo.
 - **Non è un controllo su cosa si vede.** I due lavori verdi dicono che il
-  codice compila e che 459 prove passano; il 31/08 i tre difetti più grossi
-  li ha trovati Alessio in dieci minuti guardando.
+  codice compila e che 459 prove passano; il 31/08 i tre difetti più grossi li
+  ha trovati Alessio in dieci minuti guardando.
+- **Le anteprime a comando non passano dai controlli**, ed è voluto: servono a
+  guardare un lavoro *prima* che sia finito.

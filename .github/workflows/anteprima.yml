@@ -1,0 +1,107 @@
+# =====================================================================
+# UN'ANTEPRIMA, A COMANDO — 01/09/2026
+# =====================================================================
+#
+# 🔴 PERCHE' ESISTE. Fino al 01/09 le anteprime le costruiva da se'
+#    l'integrazione Cloudflare↔GitHub, a ogni push e prima dei controlli.
+#    Erano anche ROTTE: l'ambiente `preview` aveva l'indirizzo del progetto di
+#    prova e la chiave della produzione, e rispondeva `401 Invalid API key` a
+#    ogni richiesta. Quella costruzione automatica e' stata spenta.
+#
+#    Questa e' il suo posto: **manuale**, con la coppia giusta, e con i
+#    controlli che quella non aveva.
+#
+# ⚠️ PERCORSO DISTINTO, E LA DISTINZIONE E' TUTTA QUI: compila GITHUB e
+#    carica WRANGLER. L'integrazione compilava Cloudflare dal repository —
+#    stesso risultato in apparenza, ma nessun punto in cui infilare un
+#    controllo.
+name: Anteprima
+
+# 🔴 NESSUN `push`, NESSUNA `pull_request`. Un'anteprima nasce solo quando
+#    qualcuno preme un pulsante: e' il contrario di quello che si e' spento.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anteprima-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  anteprima:
+    name: Compila e pubblica un'anteprima — mai la produzione
+    # PRIMA BARRIERA, statica e valutata prima che parta un solo passo.
+    # ⚠️ `ref_type` esclude le etichette e ogni riferimento che non sia un
+    #    ramo: un'etichetta non ha un'anteprima da costruire, e lasciarla
+    #    passare vorrebbe dire pubblicare da un riferimento che nessuno sta
+    #    lavorando.
+    if: >-
+      github.ref_type == 'branch' &&
+      github.ref_name != 'master' &&
+      github.ref_name != 'main' &&
+      github.ref_name != 'production'
+    # I segreti di questo lavoro sono altri da quelli della produzione, e
+    # dichiarare l'ambiente e' cio' che glieli associa davvero.
+    environment: anteprima
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # 🔴 IL BERSAGLIO SU CLOUDFLARE E' DICHIARATO UNA VOLTA, IN CIMA, e lo
+    #    leggono sia il controllo sia il caricamento. Passandolo al solo
+    #    caricamento, il controllo approverebbe un bersaglio e Wrangler ne
+    #    scriverebbe un altro — cioe' un guardiano che sorveglia una cosa
+    #    diversa da quella che succede.
+    env:
+      RAMO_ANTEPRIMA: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      # Porta dentro anche Wrangler, alla versione esatta bloccata dal
+      # lockfile: la filiera di rilascio non dipende da cosa e' uscito oggi.
+      - run: npm ci
+
+      # SECONDA BARRIERA, piu' forte della prima: chiede a Cloudflare QUAL E'
+      # il ramo di produzione invece di fidarsi dei nomi scritti sopra. Se un
+      # giorno quel ramo cambiasse nome, la riga `if:` invecchierebbe in
+      # silenzio; questa no.
+      # ⚠️ PRIMA di compilare: se il bersaglio non torna non si spendono tre
+      #    minuti, e soprattutto non resta in giro un `dist/` costruito per un
+      #    bersaglio che e' stato respinto.
+      - name: Ambiente, ramo di GitHub e ramo di Cloudflare vanno d'accordo?
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente anteprima --controlla
+
+      # ⚠️ Le variabili di compilazione stanno a livello di PASSO, non di
+      #    lavoro: dopo l'assegnazione dell'ambiente non c'e' nessun dubbio su
+      #    quando vengono risolte. Costa una riga e toglie una domanda.
+      # ⚠️ La chiave `anon` NON E' UN SEGRETO APPLICATIVO: finisce nel
+      #    pacchetto del browser per costruzione, e a proteggere i dati e' la
+      #    RLS. Sta fra i Secrets per comodita' operativa — per non vederla
+      #    nei registri e per cambiarla in un posto solo.
+      - name: Compila, con la coppia del progetto di prova
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      # TERZA BARRIERA, e guarda il RISULTATO invece delle intenzioni: e' la
+      # rete che sull'anteprima automatica non c'era, ed e' il motivo per cui
+      # il disallineamento e' vissuto giorni senza che nessuno lo vedesse.
+      - name: Il pacchetto parla col progetto di prova?
+        run: node scripts/rilascio.mjs --ambiente anteprima --controlla-pacchetto dist
+
+      - name: Pubblica con Wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PROJECT: borgo58-app
+        run: node scripts/rilascio.mjs --ambiente anteprima --conferma

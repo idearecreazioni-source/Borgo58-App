@@ -11,9 +11,18 @@
 #      Cancellare un ramo su GitHub non tocca i siti gia' costruiti da quel
 #      ramo: i due sistemi non si parlano. Restano indirizzi pubblici vivi di
 #      rami che non esistono piu'.
-#      🔴 E finche' le anteprime non avranno le chiavi del progetto di prova,
-#         un indirizzo di ramo e' il gestionale collegato ai DATI VERI del
-#         locale — misurato il 31/08 scaricando il pacchetto servito.
+#      🔴 QUESTA FRASE E' DIVENTATA FALSA — corretta il 01/09/2026.
+#         Diceva: «finche' le anteprime non avranno le chiavi del progetto di
+#         prova, un indirizzo di ramo e' il gestionale collegato ai DATI VERI
+#         del locale». MISURATO facendo la richiesta esatta che farebbe il
+#         browser di chi apre un'anteprima: l'ambiente `preview` ha
+#         l'indirizzo del progetto di PROVA e la chiave della PRODUZIONE, e
+#         risponde `401 Invalid API key`. Un'anteprima automatica non tocca i
+#         dati veri: **non tocca niente, e' un guscio**.
+#      ⚠️ Non e' meno grave, e' grave in un altro modo: chi apre un'anteprima
+#         per guardare un lavoro vede un gestionale rotto e non sa perche'.
+#      ⚠️ E dal 01/09 le anteprime automatiche sono SPENTE: le costruisce a
+#         comando `.github/workflows/anteprima.yml`, con la coppia giusta.
 #
 #   2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione.
 #      Il numero l'ha deciso Alessio, e non e' tecnico: le versioni vecchie
