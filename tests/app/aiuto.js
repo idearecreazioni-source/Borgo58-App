@@ -35,8 +35,11 @@ import { problemaDellIndirizzo, problemiDelleChiavi } from "../../scripts/chiavi
 // variabili d'ambiente della pipeline. Il processo ha la precedenza sul
 // file, quindi e' sempre la mappatura a decidere su quale database si
 // gira — e il controllo qui sotto e' la rete se sbagliasse.
-const URL = process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-const ANON = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+// ⚠️ `import.meta.env` esiste sotto Vite e NON esiste in node: senza il `?.`
+//    questo modulo si schianta appena qualcuno lo importa da un programma
+//    normale con la variabile assente. Successo il 01/09/2026.
+const URL = process.env.VITE_SUPABASE_URL || import.meta.env?.VITE_SUPABASE_URL;
+const ANON = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY;
 
 // =====================================================================
 // OGNI GIRO RICONOSCE LE PROPRIE RIGHE — 01/09/2026
@@ -148,7 +151,6 @@ export function giornoDiProva(anno, numero = NUMERO_CORSA) {
  *    convenzione — larga cinque volte e mezza il giro piu' lungo misurato
  *    (480 secondi).
  */
-export const MINUTI_DI_GRAZIA = 45;
 
 /**
  * Il tetto di tempo di UN GIRO DI PROVE, anche lanciato a mano.
@@ -173,12 +175,24 @@ export const MINUTI_DI_GRAZIA = 45;
  *    `prenotazione-pubblica` (`pianta_del_giorno`) — e non possono essere
  *    ristrette per giro: parlano della sala vera, ed e' il loro senso. Un
  *    tavolo di prova rimasto indietro le farebbe sbagliare per sempre.
+ *
+ * ⚠️ I DUE NUMERI VIVONO IN `scripts/tempi-prove.mjs`, non qui: il
+ *    programma che impone il tetto e' un comando `node` normale, e questo
+ *    file legge `import.meta.env`, che sotto node non esiste. Importarli
+ *    da qui lo faceva morire prima di partire.
  */
-export const MINUTI_MASSIMI_DI_UN_GIRO = 40;
+// ⚠️ SI IMPORTA **E** SI RIESPORTA, e non e' ridondanza: `export { X } from
+//    "..."` non crea nessun legame locale, quindi `nonDiNessuno()` usata
+//    qui sotto sarebbe rimasta senza definizione. Difetto mio, trovato
+//    subito dopo averlo introdotto.
+import {
+  MINUTI_DI_GRAZIA,
+  MINUTI_MASSIMI_DI_UN_GIRO,
+  nonDiNessuno,
+} from "../../scripts/tempi-prove.mjs";
 
-/** L'istante prima del quale una riga di prova non e' piu' di nessun giro vivo. */
-export const nonDiNessuno = () =>
-  new Date(Date.now() - MINUTI_DI_GRAZIA * 60_000).toISOString();
+export { MINUTI_DI_GRAZIA, MINUTI_MASSIMI_DI_UN_GIRO, nonDiNessuno };
+
 
 /**
  * Gli identificativi da togliere: le righe di questo giro, piu' quelle

@@ -19,7 +19,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-import { MINUTI_MASSIMI_DI_UN_GIRO } from "../tests/app/aiuto.js";
+import { MINUTI_MASSIMI_DI_UN_GIRO } from "./tempi-prove.mjs";
 
 const argomenti = [
   path.join("node_modules", "vitest", "vitest.mjs"),
