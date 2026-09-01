@@ -305,7 +305,8 @@ sbagliata che smette di fare danno resta una configurazione sbagliata.*
 ### Quindi cosa resta ad Alessio
 
 **Per la CI: niente.** Il giro deve diventare verde da solo, coi segreti
-com'erano stamattina.
+com'erano stamattina. ⚠️ *Che poi lo sia diventato non lo chiude: vedi
+§ 11.*
 
 **Fuori dalla CI, e resta la cosa più urgente di tutte**: rigenerare le
 chiavi finite nella storia pubblica (§ sopra). Quella nessun codice la
@@ -442,3 +443,78 @@ sostituisce.
    pubblicazione automatica del ramo principale e facendola partire dai
    controlli — cambia come va online `borgo58.it`, quindi è una decisione
    sua, non un lavoro rinviato.
+
+
+---
+
+## 11 · L'invariante della bonifica, e cosa NON chiude il P0
+
+### L'invariante, per esteso
+
+> **Una riga è bonificabile dopo 45 minuti soltanto perché ogni esecuzione
+> supportata passa da un limite forzato inferiore: 30 minuti in GitHub
+> (`timeout-minutes`) e 40 minuti nel comando locale canonico
+> (`npm run test:app`).**
+
+45 > 40 > 30. Se uno dei tre numeri si muove nel verso sbagliato, la
+bonifica può cancellare le righe di un giro ancora vivo. Nessuno dei tre è
+ricopiato: il tetto di GitHub si **legge** dal file dei controlli, quello
+locale dal comando, e una prova pura li confronta
+(`tests/unita/isolamento-prove.test.js`, `tests/unita/tetto-del-giro.test.js`).
+
+### Il limite, dichiarato
+
+> **Un invio diretto di Vitest che aggiri il comando canonico non è
+> protetto dal limite locale.**
+
+Poiché quell'aggiramento è possibile nella normale operatività — basta
+`npx vitest run tests/app --config vitest.app.config.js` — **non è stato
+solo documentato: è stato reso impossibile**. La configurazione delle prove
+sul database si rifiuta di partire senza il segno che il comando canonico
+mette (`BORGO58_CON_TETTO`), e lo dice:
+
+```
+Le prove contro il database si lanciano con `npm run test:app`, non
+chiamando vitest a mano: è quel comando a imporre il tetto di tempo
+(40 minuti) senza il quale la bonifica delle righe abbandonate
+potrebbe cancellare le righe di un giro ancora vivo.
+Per un file solo: npm run test:app -- tests/app/quello.test.js
+```
+
+⚠️ È un **rifiuto** e non un avviso: un avviso lo si legge una volta e poi
+diventa arredamento, e qui in gioco ci sono le righe di un altro giro.
+⚠️ E non toglie niente a chi deve provare un file solo: il comando canonico
+inoltra i filtri.
+
+### Il caso «giro ancora attivo», al confine
+
+Una riga appena creata non dimostra niente: dimostra il caso facile. Il caso
+che conta è **un giro che ha superato la vecchia soglia (30 minuti) ed è
+ancora vivo**. È provato in modo deterministico, con orologio finto e senza
+far girare niente (`tests/unita/tetto-del-giro.test.js`):
+
+- a **35 minuti** il giro è ancora vivo (nessun segnale inviato) e le sue
+  righe più vecchie hanno 35 minuti, cioè **sotto la grazia**: nessuna
+  bonifica le può toccare;
+- a **40 minuti** arriva `SIGTERM`, e 15 secondi dopo `SIGKILL`;
+- quindi **nessun entrypoint supportato può restare vivo fino ai 45**.
+
+Non esiste un lease con battito: al suo posto c'è questo — un limite
+forzato su ogni via supportata, più il rifiuto di quelle non supportate.
+
+### Cosa NON chiude il P0 della CI
+
+Va detto perché in questo documento c'erano frasi più larghe del vero:
+
+| fatto | cosa vale |
+|---|---|
+| il giro **40** (`7a3535f`, entrambi i lavori verdi) | **niente**: la mia esecuzione locale gli si è sovrapposta per 65 secondi. È un **esperimento concorrente**, non una misura. |
+| il giro **39** (`a1f4432`, 67/67 file e 459/459 prove) | è un giro verde su un commit **superato**: non chiude il P0 per il codice che si sta proponendo. |
+| le mie esecuzioni locali verdi | **niente**: un verde locale non sostituisce il lavoro su GitHub. |
+| le due esecuzioni che ho interrotto per errore | **niente**, e sono dichiarate: hanno lasciato **zero** residui (censimento fatto). |
+
+**Il P0 della CI si chiude con una cosa sola**: un giro su GitHub, sul
+commit che si propone, con **entrambi** i lavori verdi, **67 file su 67 e
+459 prove su 459**, nessuna prova saltata, e **nessun altro scrittore** sul
+progetto di prova durante quel giro. Finché quel giro non esiste, il P0
+resta **aperto**.

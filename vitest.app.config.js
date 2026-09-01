@@ -26,6 +26,30 @@ import { leggiChiaviDiProva } from "./scripts/chiavi.mjs";
 // ⚠️ Su GitHub `.env` non esiste: i valori arrivano dai Secrets come
 //    variabili d'ambiente gia' chiamate `VITE_*`, e il lettore le prende da
 //    li'. L'ambiente vince sul file — regola dichiarata e provata.
+// 🔴 QUESTA CONFIGURAZIONE SI USA SOLO DAL COMANDO CANONICO — 01/09/2026,
+//    su rilievo della revisione. Il tetto di tempo che protegge la bonifica
+//    vive in `scripts/prove-app.mjs`: un `npx vitest run tests/app --config
+//    vitest.app.config.js` lanciato a mano lo scavalcherebbe e girerebbe
+//    **senza nessun tetto**, potendo restare vivo oltre i 45 minuti della
+//    grazia. Cioe' esattamente il caso che il tetto esiste per rendere
+//    impossibile.
+//
+// ⚠️ E' UN RIFIUTO, non un avviso: un avviso lo si legge una volta e poi
+//    diventa arredamento, e qui in gioco ci sono le righe di un altro giro.
+//
+// ⚠️ NON TOGLIE NIENTE A CHI DEVE PROVARE UN FILE SOLO: il comando
+//    canonico inoltra i filtri —
+//        npm run test:app -- tests/app/tesoreria.test.js
+if (!process.env.BORGO58_CON_TETTO) {
+  throw new Error(
+    "Le prove contro il database si lanciano con `npm run test:app`, non\n" +
+      "chiamando vitest a mano: e' quel comando a imporre il tetto di tempo\n" +
+      "(40 minuti) senza il quale la bonifica delle righe abbandonate\n" +
+      "potrebbe cancellare le righe di un giro ancora vivo.\n" +
+      "Per un file solo: npm run test:app -- tests/app/quello.test.js"
+  );
+}
+
 export default defineConfig({
   test: {
     environment: "node",
