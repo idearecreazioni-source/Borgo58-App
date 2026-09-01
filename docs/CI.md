@@ -35,7 +35,7 @@ codice che non passa le prove.
 
 ## 3 · Cosa deve fare Alessio, una volta sola
 
-### 3a · Mettere le chiavi del progetto di prova su GitHub
+### 3a · Mettere i tre segreti del progetto di prova su GitHub
 
 Servono perché le 459 prove parlano col database di prova. **Non finiscono
 nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
@@ -44,46 +44,44 @@ nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
 2. In alto, la linguetta **Settings**
 3. Nella colonna a sinistra: **Secrets and variables** → **Actions**
 4. Pulsante verde **New repository secret**
-5. Aggiungine **sei**, uno alla volta. Nome esatto a sinistra, valore preso
-   dal file `.env` sul computer:
+5. Aggiungine **tre**, uno alla volta. Nome esatto a sinistra, valore preso
+   dalla riga **con lo stesso nome** nel file `.env` sul computer:
 
-   | Nome del segreto | Riga da copiare dal file `.env` |
-   |---|---|
-   | `PROVA_SUPABASE_URL` | `PROVA_SUPABASE_URL` |
-   | `PROVA_SUPABASE_ANON_KEY` | `PROVA_SUPABASE_ANON_KEY` |
-   | `TEST_TITOLARE_EMAIL` | `TEST_TITOLARE_EMAIL` |
-   | `TEST_TITOLARE_PASSWORD` | `TEST_TITOLARE_PASSWORD` |
-   | `TEST_STAFF_EMAIL` | `TEST_STAFF_EMAIL` |
-   | `TEST_STAFF_PASSWORD` | `TEST_STAFF_PASSWORD` |
+   | Nome del segreto | Riga da copiare dal file `.env` | Cos'è |
+   |---|---|---|
+   | `PROVA_SUPABASE_ANON_KEY` | `PROVA_SUPABASE_ANON_KEY` | una chiave |
+   | `TEST_TITOLARE_PASSWORD` | `TEST_TITOLARE_PASSWORD` | un PIN |
+   | `TEST_STAFF_PASSWORD` | `TEST_STAFF_PASSWORD` | un PIN |
 
-   **Il nome del segreto e il nome della riga sono lo stesso, tutte e sei le
+   **Il nome del segreto e il nome della riga sono lo stesso, tutte e tre le
    volte.** Se ti trovi a copiare una riga che si chiama diversamente, è
    quella sbagliata.
 
-🔴 **QUESTA TABELLA DICEVA DI COPIARE LE RIGHE SBAGLIATE, ed è stata
-corretta il 01/09/2026.** Diceva di prendere il valore di `PROVA_SUPABASE_URL`
-dalla riga **`VITE_SUPABASE_URL`** e quello della chiave dalla riga
-`VITE_SUPABASE_ANON_KEY`: in `.env` quelle due righe sono **il locale vero**.
-La tabella era giusta prima del 31/08, quando i file erano tre e in
-`.env.test` quel nome voleva dire il progetto di prova; il giorno in cui i
-tre file sono diventati uno è diventata falsa, e nessuno se n'è accorto
-perché descriveva un gesto che si fa una volta sola.
+🔴 **ERANO SEI, E TRE NON DOVEVANO ESSERCI — corretto il 01/09/2026.**
+L'indirizzo del progetto di prova e le due caselle di posta degli utenti di
+collaudo **sono già scritte in chiaro nel repository** (`REF_PROVA` in
+`scripts/comune.mjs`, e le due righe di `.env.example`). Metterle in un
+segreto non le nascondeva a nessuno, e in cambio le rendeva **impossibili da
+rileggere**: è esattamente così che due sono rimaste vuote e nella terza è
+finita la riga sbagliata, **senza che nessuno potesse accorgersene
+guardando**. *Una casella che non si può rileggere non si può nemmeno
+correggere a vista.* Da oggi il giro le prende dal repository, e i tre
+segreti rimasti sono le sole cose che un segreto deve contenere: una chiave
+e due PIN.
 
-⚠️ **Cosa è successo davvero seguendo la guida**: nel segreto
-`PROVA_SUPABASE_URL` è finita una riga che non è l'indirizzo dell'API — e le
-prove sono morte con «Invalid supabaseUrl» dopo sei minuti di lavoro, con
-sessantasette file falliti e un messaggio che non nominava la causa. Le due
-righe `TEST_*_EMAIL` non erano state create affatto.
+⚠️ **E il bersaglio delle prove non PUÒ più essere il locale vero**: prima
+era un controllo che lo verificava, adesso l'indirizzo è ricavato da
+`REF_PROVA`. *Un vincolo batte un controllo.* Se qualcuno passa a mano un
+indirizzo `https://` diverso — cosa che si può ancora fare, per puntare le
+prove a un terzo progetto — il rifiuto sulla produzione scatta come prima.
 
-⚠️ **Sono le chiavi del progetto di PROVA, mai quelle del locale vero**, e
-non è solo una raccomandazione: prima ancora di far partire le prove, il
-giro dei controlli lancia `node scripts/chiavi-di-prova.mjs`, che si ferma
-se una delle sei caselle manca, se l'indirizzo non comincia per `https://`,
-se qualcuno ha incollato la **stringa di collegamento al database**
-(`postgresql://…`, che in `.env` si chiama `DB_URL_PROVA`) e se l'indirizzo
-è quello del gestionale vero. Nel registro finiscono **solo i nomi** delle
-caselle, mai i valori. La stessa regola vale sul computer di Alessio:
-`npm run test:app` lancia lo stesso controllo prima di partire.
+⚠️ **Prima di far partire qualunque prova**, il giro lancia
+`node scripts/chiavi-di-prova.mjs`, che si ferma se uno dei tre segreti
+manca e se l'indirizzo è quello del gestionale vero, e **dice** (senza
+fermarsi) se in `PROVA_SUPABASE_URL` c'è rimasta la riga sbagliata. Nel
+registro finiscono **solo i nomi** delle caselle, mai i valori. Lo stesso
+controllo gira sul computer di Alessio: `npm run test:app` lo lancia per
+primo.
 
 ### 3b · Bloccare `master`
 

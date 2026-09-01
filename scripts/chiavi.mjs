@@ -36,9 +36,26 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
-import { REF_PRODUZIONE } from "./comune.mjs";
+import { REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
 
-export { REF_PRODUZIONE };
+export { REF_PRODUZIONE, REF_PROVA };
+
+/**
+ * L'indirizzo dell'API del progetto di prova — RICAVATO, non configurato.
+ *
+ * 🔴 NON E' UN SEGRETO E NON DEVE ESSERLO (01/09/2026). Il riferimento del
+ *    progetto di prova sta in chiaro in `scripts/comune.mjs` (`REF_PROVA`),
+ *    in CLAUDE.md e in una dozzina di riepiloghi: chiuderlo dentro un
+ *    segreto non nasconde niente, e in cambio crea una casella che
+ *    **nessuno puo' rileggere per controllarla**. E' cosi' che il 31/08 ci
+ *    e' finita dentro la riga sbagliata: un valore che non si puo' guardare
+ *    non si puo' nemmeno correggere a vista.
+ *
+ * ⚠️ E cosi' il bersaglio delle prove non PUO' essere la produzione: prima
+ *    era un controllo che lo verificava, adesso e' la forma del valore.
+ *    *Un vincolo batte un controllo*, ed e' la regola di questo progetto.
+ */
+export const INDIRIZZO_PROVA = `https://${REF_PROVA}.supabase.co`;
 
 /**
  * Le sei caselle che servono per far girare le prove contro il database.
@@ -49,13 +66,43 @@ export { REF_PRODUZIONE };
  * vuol dire il LOCALE VERO e il progetto di prova si chiama `PROVA_*`.
  */
 export const CHIAVI_DI_PROVA = [
-  { env: "VITE_SUPABASE_URL", file: "PROVA_SUPABASE_URL", cosa: "l'indirizzo del progetto di prova" },
+  {
+    env: "VITE_SUPABASE_URL",
+    file: "PROVA_SUPABASE_URL",
+    cosa: "l'indirizzo del progetto di prova",
+    // Ricavato dal repository: vedi INDIRIZZO_PROVA qui sopra.
+    dalRepository: INDIRIZZO_PROVA,
+  },
   { env: "VITE_SUPABASE_ANON_KEY", file: "PROVA_SUPABASE_ANON_KEY", cosa: "la chiave pubblica del progetto di prova" },
-  { env: "TEST_TITOLARE_EMAIL", file: "TEST_TITOLARE_EMAIL", cosa: "la posta dell'utente di prova titolare" },
+  {
+    env: "TEST_TITOLARE_EMAIL",
+    file: "TEST_TITOLARE_EMAIL",
+    cosa: "la posta dell'utente di prova titolare",
+    // 🔴 Anche questa NON e' un segreto: sta in chiaro in `.env.example`
+    //    dal giorno in cui quel file esiste. Tenerla in un segreto di GitHub
+    //    ha un solo effetto — che nessuno possa rileggerla — ed e' il motivo
+    //    per cui il 31/08 e' rimasta vuota senza che nessuno se ne accorgesse.
+    dalRepository: "test-titolare@borgo58.app",
+  },
   { env: "TEST_TITOLARE_PASSWORD", file: "TEST_TITOLARE_PASSWORD", cosa: "il PIN dell'utente di prova titolare" },
-  { env: "TEST_STAFF_EMAIL", file: "TEST_STAFF_EMAIL", cosa: "la posta dell'utente di prova di sala" },
+  {
+    env: "TEST_STAFF_EMAIL",
+    file: "TEST_STAFF_EMAIL",
+    cosa: "la posta dell'utente di prova di sala",
+    dalRepository: "test-staff@borgo58.app",
+  },
   { env: "TEST_STAFF_PASSWORD", file: "TEST_STAFF_PASSWORD", cosa: "il PIN dell'utente di prova di sala" },
 ];
+
+/**
+ * Le sole tre caselle che sono davvero un segreto, e le uniche che devono
+ * vivere nei Secrets di GitHub.
+ *
+ * ⚠️ Una chiave e due PIN. Tutto il resto e' gia' leggibile nel repository,
+ *    e metterlo in un segreto non lo protegge: lo rende soltanto
+ *    incontrollabile.
+ */
+export const SEGRETI_VERI = CHIAVI_DI_PROVA.filter((c) => !c.dalRepository).map((c) => c.file);
 
 /**
  * Cosa non va nell'indirizzo, in italiano — oppure niente.
@@ -149,6 +196,16 @@ export function problemiDelleChiavi(valori, da = "env") {
  *    nella pipeline non viene mai percorso.
  */
 export function leggiChiaviDiProva(ambiente = process.env, file = ".env") {
+  const daFile = righeDelFile(file);
+  const valori = {};
+  for (const chiave of CHIAVI_DI_PROVA) {
+    const scelto = valoreScelto(chiave, ambiente, daFile);
+    if (scelto) valori[chiave.env] = scelto;
+  }
+  return valori;
+}
+
+function righeDelFile(file) {
   const daFile = {};
   if (existsSync(file)) {
     for (const riga of readFileSync(file, "utf8").split(/\r?\n/)) {
@@ -156,12 +213,49 @@ export function leggiChiaviDiProva(ambiente = process.env, file = ".env") {
       if (m) daFile[m[1]] = m[2].trim();
     }
   }
-  const valori = {};
-  for (const chiave of CHIAVI_DI_PROVA) {
-    const dallAmbiente = (ambiente[chiave.env] ?? "").trim();
-    const dalFile = (daFile[chiave.file] ?? "").trim();
-    const scelto = dallAmbiente || dalFile;
-    if (scelto) valori[chiave.env] = scelto;
+  return daFile;
+}
+
+function valoreScelto(chiave, ambiente, daFile) {
+  const fornito = ((ambiente[chiave.env] ?? "").trim() || (daFile[chiave.file] ?? "").trim()) || "";
+  if (!chiave.dalRepository) return fornito;
+  // 🔴 SULL'INDIRIZZO il valore fornito vale solo se e' un indirizzo. Se
+  //    qualcuno ha incollato la riga sbagliata — la stringa di collegamento
+  //    al database, che e' quello che e' successo il 31/08 — non si tira a
+  //    indovinare **e non si blocca il lavoro per una cosa che il
+  //    repository sa gia'**: si usa il valore ricavato, e lo si dice.
+  //    ⚠️ Un indirizzo https fornito vince sempre, anche se punta altrove:
+  //    e' cosi' che si puo' ancora puntare le prove a un terzo progetto, ed
+  //    e' anche il caso in cui il rifiuto sulla produzione deve scattare.
+  if (chiave.env === "VITE_SUPABASE_URL") {
+    return /^https:\/\//i.test(fornito) ? fornito : chiave.dalRepository;
   }
-  return valori;
+  return fornito || chiave.dalRepository;
+}
+
+/**
+ * Le caselle in cui c'e' scritto qualcosa che non si puo' usare, e per cui
+ * si e' preso il valore del repository. **Non bloccano niente**: si dicono.
+ *
+ * ⚠️ Perche' dirle invece di tacere: una configurazione sbagliata che
+ *    smette di fare danno resta comunque una configurazione sbagliata, e il
+ *    giorno che qualcuno toglie il valore ricavato tornerebbe a mordere.
+ */
+export function righeIgnorate(ambiente = process.env, file = ".env") {
+  const daFile = righeDelFile(file);
+  const note = [];
+  for (const chiave of CHIAVI_DI_PROVA) {
+    if (!chiave.dalRepository) continue;
+    const fornito = ((ambiente[chiave.env] ?? "").trim() || (daFile[chiave.file] ?? "").trim()) || "";
+    if (!fornito) continue;
+    if (valoreScelto(chiave, ambiente, daFile) !== fornito) {
+      const perche = /^postgres(ql)?:\/\//i.test(fornito)
+        ? "contiene la stringa di collegamento al database (`DB_URL_PROVA`) invece dell'indirizzo dell'API"
+        : "non contiene un indirizzo `https://`";
+      note.push(
+        `${chiave.file} ${perche}: e' stata ignorata, e si usa l'indirizzo ricavato dal repository. Va comunque messa a posto.`
+      );
+    }
+  }
+  return note;
 }

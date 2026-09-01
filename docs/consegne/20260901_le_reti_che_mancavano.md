@@ -262,19 +262,51 @@ legato le etichette ai campi.
 spinto quando il documento è stato scritto. Che il preflight fermi il giro
 con un messaggio giusto è provato **da qui**, non su GitHub.
 
-🔴 **DUE COSE LE PUÒ FARE SOLO ALESSIO, e senza di quelle il giro resta
-rosso** (nessuna riga di codice le sostituisce):
+🔴 **CORRETTO POCHE ORE DOPO: le due cose che «poteva fare solo Alessio»
+erano una sola, ed era mia.**
 
-1. **`PROVA_SUPABASE_URL`** va rimesso: dentro ci va l'indirizzo che in
-   `.env` sta sulla riga con lo stesso nome — quello che comincia per
-   `https://` e finisce per `.supabase.co`. Adesso c'è dentro un'altra
-   riga.
-2. **`TEST_TITOLARE_EMAIL` e `TEST_STAFF_EMAIL`** non esistono come segreti:
-   vanno creati.
+Questo documento diceva, alle 15:26: *«`PROVA_SUPABASE_URL` va rimesso» e
+«`TEST_TITOLARE_EMAIL` e `TEST_STAFF_EMAIL` non esistono come segreti:
+vanno creati»*. Alessio ha risposto che gli stavo chiedendo di rimettere a
+posto a mano un lavoro che dovevo finire io. **Aveva ragione, misurato:**
 
-⚠️ **E una terza, che riguarda una password**: il valore finito in
-`PROVA_SUPABASE_URL` è la stringa di collegamento del progetto di prova, che
-**contiene la password del database**. È stata trattata come un indirizzo —
-passata alla pipeline, e leggibile da chiunque abbia accesso in scrittura al
-repository tramite un workflow. Non tocca il locale vero (è il progetto
-usa-e-getta), ma **è una password e va cambiata**.
+| casella | è un segreto? | dove sta già scritta in chiaro |
+|---|---|---|
+| `PROVA_SUPABASE_ANON_KEY` | **sì**, è una chiave | — |
+| `TEST_TITOLARE_PASSWORD` | **sì**, è un PIN | — |
+| `TEST_STAFF_PASSWORD` | **sì**, è un PIN | — |
+| l'indirizzo del progetto di prova | **no** | `REF_PROVA` in `scripts/comune.mjs`, e una dozzina di riepiloghi |
+| `TEST_TITOLARE_EMAIL` | **no** | `.env.example`, riga 99 |
+| `TEST_STAFF_EMAIL` | **no** | `.env.example`, riga 101 |
+
+⚠️ **E il danno del segreto di troppo non è teorico: è il difetto stesso.**
+Chiudere in un segreto un valore che il repository conosce non lo nasconde a
+nessuno — lo rende **irrileggibile**. È per questo che due caselle sono
+rimaste vuote e nella terza è finita la riga sbagliata *senza che nessuno
+potesse accorgersene guardando*. **Una casella che non si può rileggere non
+si può correggere a vista.**
+
+Quindi le tre caselle pubbliche **non passano più dai Secrets**: il giro le
+prende dal repository. I segreti restano tre — una chiave e due PIN — e sono
+già a posto.
+
+⚠️ **La rete sulla produzione non si è allentata, si è irrigidita**: prima
+era un controllo che verificava il bersaglio, adesso l'indirizzo è **ricavato
+da `REF_PROVA`**, quindi non può *essere* la produzione. Un indirizzo
+`https://` passato a mano continua a vincere — così si possono ancora
+puntare le prove a un terzo progetto — ed è il caso in cui il rifiuto scatta
+come prima. Provato nei due versi.
+
+⚠️ **La casella storta viene comunque DETTA, non nascosta**: il preflight
+stampa una riga («in `PROVA_SUPABASE_URL` c'è `DB_URL_PROVA`, l'ho ignorata,
+va comunque messa a posto») senza fermare il lavoro. *Una configurazione
+sbagliata che smette di fare danno resta una configurazione sbagliata.*
+
+### Quindi cosa resta ad Alessio
+
+**Per la CI: niente.** Il giro deve diventare verde da solo, coi segreti
+com'erano stamattina.
+
+**Fuori dalla CI, e resta la cosa più urgente di tutte**: rigenerare le
+chiavi finite nella storia pubblica (§ sopra). Quella nessun codice la
+chiude.

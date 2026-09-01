@@ -84,6 +84,13 @@ progetto. Il 31/08/2026 la seconda è finita al posto della prima nei
 segreti di GitHub, e il giro dei controlli è morto sei minuti dopo con
 sessantasette file falliti e un messaggio che non nominava la causa.
 
+⚠️ **Su GitHub `PROVA_SUPABASE_URL` non serve**: il giro dei controlli
+ricava l'indirizzo del progetto di prova da `REF_PROVA` in
+`scripts/comune.mjs`, che è già in chiaro. Nei Secrets vanno solo la chiave
+`anon` e i due PIN degli utenti di collaudo — vedi `docs/CI.md` §3a. Qui in
+`.env` la riga serve invece a `npm run dev:prova` e agli altri comandi, e va
+compilata.
+
 ⚠️ **Adesso c'è un controllo che lo dice subito**: `npm run test:app` (e la
 pipeline) lanciano `node scripts/chiavi-di-prova.mjs` prima di far partire
 qualunque prova. Si ferma se una delle sei caselle manca, se l'indirizzo non

@@ -11,7 +11,7 @@
 //    su GitHub i segreti escono comunque mascherati: quello che serve e'
 //    il NOME della casella e cosa le manca.
 
-import { leggiChiaviDiProva, problemiDelleChiavi } from "./chiavi.mjs";
+import { SEGRETI_VERI, leggiChiaviDiProva, problemiDelleChiavi, righeIgnorate } from "./chiavi.mjs";
 
 // ⚠️ Legge dall'ambiente E da `.env`, con la precedenza dichiarata in
 //    `leggiChiaviDiProva()`: cosi' lo stesso comando serve alla pipeline
@@ -21,8 +21,17 @@ const dentroLaPipeline = Boolean(process.env.GITHUB_ACTIONS);
 const valori = leggiChiaviDiProva();
 const problemi = problemiDelleChiavi(valori, dentroLaPipeline ? "env" : "file");
 
+// ⚠️ Le caselle scritte male ma non necessarie NON fermano il lavoro: si
+//    dicono. Fermarsi su una cosa che il repository sa gia' sarebbe
+//    chiedere a una persona di rimettere a posto un valore per far girare
+//    un controllo che quel valore non gli serve.
+for (const nota of righeIgnorate()) console.log(`⚠️  ${nota}`);
+
 if (problemi.length === 0) {
-  console.log("Le sei chiavi del progetto di prova ci sono e hanno la forma giusta.");
+  console.log(
+  "Le prove hanno tutto quello che serve: i tre segreti ci sono, e il bersaglio\n" +
+    "e' il progetto di prova."
+);
   process.exit(0);
 }
 
@@ -37,6 +46,9 @@ console.error("");
 console.error("Se invece e' un ramo di questo repository, le caselle nominate qui");
 console.error("sopra vanno messe a posto nei Secrets del repository:");
 console.error("  Settings -> Secrets and variables -> Actions");
-console.error("I nomi dei segreti sono PROVA_SUPABASE_URL, PROVA_SUPABASE_ANON_KEY");
-console.error("e i quattro TEST_*. Guida passo passo in docs/CI.md.");
+console.error(`I segreti da avere sono TRE, e sono questi: ${SEGRETI_VERI.join(", ")}.`);
+console.error("Tutto il resto — l'indirizzo del progetto di prova e le due");
+console.error("caselle di posta degli utenti di collaudo — lo sa gia' il");
+console.error("repository e non va messo in nessun segreto.");
+console.error("Guida passo passo in docs/CI.md.");
 process.exit(1);

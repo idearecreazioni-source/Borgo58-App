@@ -249,11 +249,16 @@ jobs:
       #    divergevano, e nessuno dei tre guardava le quattro credenziali.
       - name: Le chiavi ci sono e sono quelle giuste?
         env:
-          VITE_SUPABASE_URL: ${{ secrets.PROVA_SUPABASE_URL }}
+          # 🔴 TRE, NON SEI — 01/09/2026. Le altre tre caselle (l'indirizzo
+          #    del progetto di prova e le due di posta degli utenti di
+          #    collaudo) NON sono segreti: stanno in chiaro nel repository,
+          #    in `scripts/comune.mjs` e in `.env.example`. Chiuderle in un
+          #    segreto non nascondeva niente e in cambio le rendeva
+          #    **irrileggibili** — ed e' esattamente cosi' che il 31/08 due
+          #    sono rimaste vuote e nella terza e' finita la riga sbagliata
+          #    senza che nessuno potesse accorgersene guardando.
           VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
-          TEST_TITOLARE_EMAIL: ${{ secrets.TEST_TITOLARE_EMAIL }}
           TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
-          TEST_STAFF_EMAIL: ${{ secrets.TEST_STAFF_EMAIL }}
           TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
         run: node scripts/chiavi-di-prova.mjs
 
@@ -264,10 +269,15 @@ jobs:
       #    difesa vera, questa e' solo il modo di passare i valori.
       - name: Le prove contro il database
         env:
-          VITE_SUPABASE_URL: ${{ secrets.PROVA_SUPABASE_URL }}
+          # 🔴 TRE, NON SEI — 01/09/2026. Le altre tre caselle (l'indirizzo
+          #    del progetto di prova e le due di posta degli utenti di
+          #    collaudo) NON sono segreti: stanno in chiaro nel repository,
+          #    in `scripts/comune.mjs` e in `.env.example`. Chiuderle in un
+          #    segreto non nascondeva niente e in cambio le rendeva
+          #    **irrileggibili** — ed e' esattamente cosi' che il 31/08 due
+          #    sono rimaste vuote e nella terza e' finita la riga sbagliata
+          #    senza che nessuno potesse accorgersene guardando.
           VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
-          TEST_TITOLARE_EMAIL: ${{ secrets.TEST_TITOLARE_EMAIL }}
           TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
-          TEST_STAFF_EMAIL: ${{ secrets.TEST_STAFF_EMAIL }}
           TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
         run: npm run test:app

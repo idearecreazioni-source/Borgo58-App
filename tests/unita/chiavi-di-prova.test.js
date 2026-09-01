@@ -5,10 +5,13 @@ import path from "node:path";
 
 import {
   CHIAVI_DI_PROVA,
+  INDIRIZZO_PROVA,
   REF_PRODUZIONE,
+  SEGRETI_VERI,
   leggiChiaviDiProva,
   problemaDellIndirizzo,
   problemiDelleChiavi,
+  righeIgnorate,
 } from "../../scripts/chiavi.mjs";
 
 // LA RETE SULLE CHIAVI DEL PROGETTO DI PROVA — 01/09/2026.
@@ -156,14 +159,100 @@ describe("da dove si leggono le chiavi", () => {
     expect(valori.VITE_SUPABASE_ANON_KEY).toBe("chiave-del-file");
   });
 
-  // Una per volta: se ne manca una sola, il rifiuto nomina quella e basta.
+  // Una per volta: se ne manca uno dei tre segreti veri, il rifiuto nomina
+  // quello e basta. Se manca una delle tre caselle che il repository sa
+  // gia', non manca niente — ed e' il punto della correzione del 01/09.
   for (const chiave of CHIAVI_DI_PROVA) {
-    it(`se manca ${chiave.env} lo dice, e dice solo quello`, () => {
+    const soloSegreto = !chiave.dalRepository;
+    it(`se manca ${chiave.env} ${soloSegreto ? "lo dice, e dice solo quello" : "non blocca niente"}`, () => {
       const meno = { ...sane };
       delete meno[chiave.env];
       const problemi = problemiDelleChiavi(leggiChiaviDiProva(meno, path.join(tmpdir(), "niente")));
-      expect(problemi).toHaveLength(1);
-      expect(problemi[0]).toContain(chiave.env);
+      if (soloSegreto) {
+        expect(problemi).toHaveLength(1);
+        expect(problemi[0]).toContain(chiave.env);
+      } else {
+        expect(problemi).toEqual([]);
+      }
     });
   }
+});
+
+// ---------------------------------------------------------------------
+// 🔴 QUELLO CHE IL REPOSITORY SA GIA' NON E' UN SEGRETO — 01/09/2026.
+//
+// Il difetto che questo blocco chiude non e' tecnico, e' di disegno: sei
+// caselle su sei erano state messe nei Secrets di GitHub, e tre di quelle
+// sei sono scritte in chiaro nel repository — l'indirizzo del progetto di
+// prova (`REF_PROVA` in `scripts/comune.mjs`) e le due caselle di posta
+// degli utenti di collaudo (`.env.example`).
+//
+// ⚠️ Metterle in un segreto non le nascondeva a nessuno, e in cambio le
+//    rendeva **irrileggibili**: e' cosi' che due sono rimaste vuote e
+//    nella terza e' finita la riga sbagliata, senza che nessuno potesse
+//    accorgersene guardando. *Una casella che non si puo' rileggere non si
+//    puo' nemmeno correggere a vista.*
+// ---------------------------------------------------------------------
+const soloIlNecessario = {
+  VITE_SUPABASE_ANON_KEY: "chiave-pubblica-finta",
+  TEST_TITOLARE_PASSWORD: "pin-finto",
+  TEST_STAFF_PASSWORD: "pin-finto",
+};
+
+describe("cosa deve stare davvero nei Secrets", () => {
+  it("sono tre: una chiave e due PIN", () => {
+    expect(SEGRETI_VERI).toEqual([
+      "PROVA_SUPABASE_ANON_KEY",
+      "TEST_TITOLARE_PASSWORD",
+      "TEST_STAFF_PASSWORD",
+    ]);
+  });
+
+  it("con quei tre soli, le prove hanno tutto quello che serve", () => {
+    const valori = leggiChiaviDiProva(soloIlNecessario, path.join(tmpdir(), "niente"));
+    expect(problemiDelleChiavi(valori)).toEqual([]);
+    expect(valori.VITE_SUPABASE_URL).toBe(INDIRIZZO_PROVA);
+    expect(valori.TEST_TITOLARE_EMAIL).toBe("test-titolare@borgo58.app");
+    expect(valori.TEST_STAFF_EMAIL).toBe("test-staff@borgo58.app");
+  });
+
+  // 🔴 IL CASO ESATTO DEI SECRETS DI OGGI, ricostruito dal registro del
+  //    giro del 31/08: dentro la casella dell'indirizzo c'e' la stringa di
+  //    collegamento al database, e le due di posta sono vuote.
+  it("e il guasto del 31/08 non ferma piu' niente — ma viene detto", () => {
+    const comeOggi = {
+      ...soloIlNecessario,
+      VITE_SUPABASE_URL: "postgresql://postgres.bnwqgpuyzmzujxfbtyvs:x@pooler:5432/postgres",
+    };
+    const senzaFile = path.join(tmpdir(), "niente");
+    const valori = leggiChiaviDiProva(comeOggi, senzaFile);
+    expect(problemiDelleChiavi(valori)).toEqual([]);
+    expect(valori.VITE_SUPABASE_URL).toBe(INDIRIZZO_PROVA);
+    const note = righeIgnorate(comeOggi, senzaFile);
+    expect(note).toHaveLength(1);
+    expect(note[0]).toContain("DB_URL_PROVA");
+  });
+
+  // 🔴 E LA RETE SULLA PRODUZIONE NON SI E' ALLENTATA: un indirizzo `https`
+  //    fornito vince sempre — e' cosi' che si puo' ancora puntare le prove
+  //    altrove — quindi il caso pericoloso arriva fino al rifiuto.
+  it("un indirizzo del locale vero passato a mano viene ancora RIFIUTATO", () => {
+    const valori = leggiChiaviDiProva(
+      { ...soloIlNecessario, VITE_SUPABASE_URL: `https://${REF_PRODUZIONE}.supabase.co` },
+      path.join(tmpdir(), "niente")
+    );
+    expect(problemiDelleChiavi(valori)).toHaveLength(1);
+    expect(problemiDelleChiavi(valori)[0]).toContain("LOCALE VERO");
+  });
+
+  it("l'indirizzo ricavato non puo' essere quello del locale vero, per costruzione", () => {
+    expect(INDIRIZZO_PROVA).not.toContain(REF_PRODUZIONE);
+    expect(INDIRIZZO_PROVA).toMatch(/^https:\/\/[a-z]+\.supabase\.co$/);
+  });
+
+  it("una casella scritta bene viene usata, e non produce nessuna nota", () => {
+    const senzaFile = path.join(tmpdir(), "niente");
+    expect(righeIgnorate(sane, senzaFile)).toEqual([]);
+    expect(leggiChiaviDiProva(sane, senzaFile).VITE_SUPABASE_URL).toBe(sane.VITE_SUPABASE_URL);
+  });
 });
