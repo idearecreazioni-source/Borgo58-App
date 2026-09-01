@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { costoRicettaAllaData, storicoCostoRicetta } from "../../src/lib/api/storicoCosti";
 import { supabase } from "../../src/lib/supabase";
 
@@ -18,7 +18,12 @@ import { supabase } from "../../src/lib/supabase";
 // sbagliate (catena che perde un livello, moltiplicatore ignorato)
 // coinciderebbero col numero giusto. Con sei si separano — 12,00 contro
 // 2,00 contro 4,00.
-const MARCA = "TEST-AUTO storico";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO storico");
 const QUANTI = 6;
 const PREZZO = 2.0;
 

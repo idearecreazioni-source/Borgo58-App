@@ -207,6 +207,16 @@ export default function PublicReservationForm() {
   // nativo di Safari, che aggiunge margini suoi e riporta il disallineamento.
   const inputClass =
     "w-full min-w-0 appearance-none rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+  // 🔴 OGNI ETICHETTA E' LEGATA AL SUO CAMPO (`htmlFor` + `id`), dal
+  //    01/09/2026. Prima nessuna lo era, e non e' una finezza da manuale:
+  //    su un telefono l'etichetta e' un bersaglio grande sopra un campo
+  //    piccolo, e toccarla non faceva niente. E' l'unica pagina di questo
+  //    gestionale che tocca un cliente, e la sola in cui chi sbaglia il
+  //    bersaglio non ha nessuno a cui chiedere.
+  //    ⚠️ Trovato dalla prima prova che ha montato questa schermata
+  //    (`tests/schermate/varco-pubblico.test.jsx`): cercava i campi per
+  //    etichetta, come li cerca un lettore di schermo, e non ne trovava
+  //    nessuno.
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   if (done) {
@@ -248,8 +258,9 @@ export default function PublicReservationForm() {
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 min-w-0">
-              <label className={labelClass}>Data</label>
+              <label className={labelClass} htmlFor="prenota-data">Data</label>
               <input
+                id="prenota-data"
                 required
                 type="date"
                 min={primoGiornoUtile}
@@ -259,8 +270,9 @@ export default function PublicReservationForm() {
               />
             </div>
             <div className="min-w-0">
-              <label className={labelClass}>Persone</label>
+              <label className={labelClass} htmlFor="prenota-persone">Persone</label>
               <input
+                id="prenota-persone"
                 required
                 type="number"
                 min="1"
@@ -287,7 +299,7 @@ export default function PublicReservationForm() {
             </div>
           ) : sceltaOrari ? (
             <div>
-              <label className={labelClass}>Orario</label>
+              <label className={labelClass} htmlFor="prenota-orario">Orario</label>
               {cercaOrari ? (
                 // 🔴 DICEVA «Cerco i posti liberi…» (corretta il 22/08). Il
                 // calcolo dei posti liberi **non esiste piu' dal 14/08**:
@@ -307,6 +319,7 @@ export default function PublicReservationForm() {
                 // un telefono occupano mezza schermata prima ancora che
                 // l'ospite abbia scritto il proprio nome.
                 <select
+                  id="prenota-orario"
                   required
                   value={form.time}
                   onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
@@ -323,8 +336,9 @@ export default function PublicReservationForm() {
             </div>
           ) : (
             <div>
-              <label className={labelClass}>Ora</label>
+              <label className={labelClass} htmlFor="prenota-ora">Ora</label>
               <input
+                id="prenota-ora"
                 required
                 type="time"
                 value={form.time}
@@ -335,8 +349,9 @@ export default function PublicReservationForm() {
           )}
 
           <div>
-            <label className={labelClass}>Nome e cognome</label>
+            <label className={labelClass} htmlFor="prenota-nome">Nome e cognome</label>
             <input
+              id="prenota-nome"
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -346,16 +361,18 @@ export default function PublicReservationForm() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
-              <label className={labelClass}>Telefono</label>
+              <label className={labelClass} htmlFor="prenota-telefono">Telefono</label>
               <input
+                id="prenota-telefono"
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 className={inputClass}
               />
             </div>
             <div className="min-w-0">
-              <label className={labelClass}>Email</label>
+              <label className={labelClass} htmlFor="prenota-email">Email</label>
               <input
+                id="prenota-email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -368,8 +385,9 @@ export default function PublicReservationForm() {
           </p>
 
           <div>
-            <label className={labelClass}>Note (allergie, occasione speciale…)</label>
+            <label className={labelClass} htmlFor="prenota-note">Note (allergie, occasione speciale…)</label>
             <textarea
+              id="prenota-note"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               rows={2}

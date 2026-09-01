@@ -60,20 +60,43 @@ Spunta **Auto Confirm User** su tutti e quattro.
 
 ---
 
-## 3. Completare i due file di chiavi
+## 3. Completare le chiavi
 
-Nel file **`.env`** (quello di `docs/BACKUP.md`, punto 2) riempi le due
-righe rimaste:
+Fai una copia di `.env.example` chiamata **`.env`** e riempi le righe del
+progetto di prova. Sono **tre**, e le prime due non vanno confuse con la
+terza:
 
-- **`DB_URL_PROVA`** — nel progetto di prova: **Connect → Session pooler**,
-  copia la riga `postgresql://...` e sostituisci `[YOUR-PASSWORD]` con la
-  password del punto 1.
-- **`PROVA_SUPABASE_ANON_KEY`** — **Settings → API Keys** → la chiave **`anon`**.
+- **`PROVA_SUPABASE_URL`** — **Settings → Data API → Project URL**. È un
+  indirizzo, comincia per `https://`.
+- **`PROVA_SUPABASE_ANON_KEY`** — **Settings → API Keys** → la chiave
+  **`anon`**.
+- **`DB_URL_PROVA`** — **Connect → Session pooler**: copia la riga
+  `postgresql://...` e sostituisci `[YOUR-PASSWORD]` con la password del
+  punto 1.
 
-Poi fai una copia di `.env.example` chiamata **`.env`** e
-riempila con: l'indirizzo del progetto di prova (**Settings → Data API →
-Project URL**), la stessa chiave `anon`, e le password dei due utenti
-`test-`.
+Più le password dei due utenti `test-` del punto 2.
+
+🔴 **`PROVA_SUPABASE_URL` e `DB_URL_PROVA` descrivono lo stesso progetto e
+non sono la stessa cosa** — il primo è la porta da cui entra il gestionale,
+il secondo è il collegamento diretto al database e **contiene una
+password**. Da fuori si somigliano: portano tutti e due il riferimento del
+progetto. Il 31/08/2026 la seconda è finita al posto della prima nei
+segreti di GitHub, e il giro dei controlli è morto sei minuti dopo con
+sessantasette file falliti e un messaggio che non nominava la causa.
+
+⚠️ **Su GitHub `PROVA_SUPABASE_URL` non serve**: il giro dei controlli
+ricava l'indirizzo del progetto di prova da `REF_PROVA` in
+`scripts/comune.mjs`, che è già in chiaro. Nei Secrets vanno solo la chiave
+`anon` e i due PIN degli utenti di collaudo — vedi `docs/CI.md` §3a. Qui in
+`.env` la riga serve invece a `npm run dev:prova` e agli altri comandi, e va
+compilata.
+
+⚠️ **Adesso c'è un controllo che lo dice subito**: `npm run test:app` (e la
+pipeline) lanciano `node scripts/chiavi-di-prova.mjs` prima di far partire
+qualunque prova. Si ferma se una delle sei caselle manca, se l'indirizzo non
+comincia per `https://`, se è una stringa `postgresql://` e se è il progetto
+del **locale vero**. Nel messaggio finisce il **nome** della casella, mai il
+valore.
 
 ---
 

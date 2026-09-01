@@ -1,5 +1,5 @@
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { fiscalizzaConto } from "../../src/lib/fiscalizzazione";
 import { segnalaScontrinoNonUscito } from "../../src/lib/api/orders";
 import { GUASTI, creaRegistratoreSimulato } from "../../src/lib/registratoreSimulato";
@@ -13,7 +13,12 @@ import { supabase } from "../../src/lib/supabase";
 //
 // ⚠️ Quindi la prova che conta è quella in cui la stampa **fallisce** o
 // **mente**: se girasse solo sul giorno buono non misurerebbe niente.
-const MARCA = "TEST-AUTO auto";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO auto");
 const SERATA = "1995-11-08";
 
 describe("la fiscalizzazione automatica alla chiusura del conto", () => {

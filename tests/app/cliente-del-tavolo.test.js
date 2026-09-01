@@ -1,10 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-  clientAutenticato,
-  corridoioInstallato,
-  credenziali,
-  denunciaSaltiCorridoio,
-} from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, marchio } from "./aiuto";
 
 // IL CLIENTE PAGANTE DEL TAVOLO — 23/08/2026, blocco 5 del mandato.
 //
@@ -17,7 +12,12 @@ import {
 // nell'elenco del corridoio risponde 404, e **nessuna prova SQL se ne
 // accorge** — la verifica dentro la migrazione chiama la funzione, non la
 // porta.
-const NOME = "TEST-AUTO pagante";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("TEST-AUTO pagante");
 const TEL = "+399991234501";
 const TEL2 = "+399991234502";
 

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 
 // L'attributo di deducibilità (§9 del mandato «personale e tesoreria»).
 //
@@ -21,7 +21,12 @@ import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 // 4. **«Senza documento non si deduce» vale anche scrivendo dritto in
 //    tabella**, scavalcando la schermata: se valesse solo nel form, prima o
 //    poi una riga entrerebbe da un'altra porta.
-const MARCA = "TEST-AUTO deducibilita";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO deducibilita");
 const ANNO = 2097;
 
 describe("deducibilità: una regola sola, il terzo stato, e la RLS vera", () => {

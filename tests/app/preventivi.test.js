@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import {
   fabbisognoPreventivo,
   foglioPreventivo,
@@ -23,7 +23,12 @@ import { supabase } from "../../src/lib/supabase";
 //   ✗ letto come «+25%»:           10 × 1,25 + 120 → 13,25
 //   ✗ costo da un secondo posto:    0,00
 // Sono tutte diverse: con numeri comodi avrebbero coinciso.
-const MARCA = "TEST-AUTO preventivo";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO preventivo");
 const PERSONE = 10;
 const FOOD_COST = 25;
 const EXTRA = 120;

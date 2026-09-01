@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bigliettiCucina } from "../../src/lib/calcoli/turni";
-import { clientAutenticato, credenziali, sagomeDiProva } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, righeDaTogliere, sagomeDiProva } from "./aiuto";
 
 // I TURNI DEI PASTI, sui dati veri.
 //
@@ -22,15 +22,13 @@ describe("i turni dei pasti", () => {
 
   const SELECT_CUCINA = "*, recipe:recipe_id(name), order:order_id!inner(table_label, status, note)";
 
+  // ⚠️ Solo i conti di questo giro, piu' quelli abbandonati da mezz'ora:
+  //    vedi la nota in cima a `aiuto.js` (01/09/2026).
   async function pulisciConti() {
-    const { data: vecchi } = await titolare
-      .from("orders")
-      .select("id")
-      .like("table_label", "__PROVA__%");
-    for (const o of vecchi ?? []) {
-      await titolare.from("chiamate_turno").delete().eq("order_id", o.id);
-      await titolare.from("order_items").delete().eq("order_id", o.id);
-      await titolare.from("orders").delete().eq("id", o.id);
+    for (const id of await righeDaTogliere(titolare, "orders", "table_label", "__PROVA__")) {
+      await titolare.from("chiamate_turno").delete().eq("order_id", id);
+      await titolare.from("order_items").delete().eq("order_id", id);
+      await titolare.from("orders").delete().eq("id", id);
     }
   }
 
@@ -199,7 +197,7 @@ describe("i turni dei pasti", () => {
     // schermata non è l'unica porta.
     const { data: chiuso, error: erroreConto } = await titolare
       .from("orders")
-      .insert({ table_label: "__PROVA__chiuso", status: "annullato" })
+      .insert({ table_label: `${marchio("__PROVA__")}chiuso`, status: "annullato" })
       .select()
       .single();
     expect(erroreConto).toBeNull();

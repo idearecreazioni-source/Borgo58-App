@@ -47,6 +47,22 @@ export const REF_PROVA = "bnwqgpuyzmzujxfbtyvs";
 export const PRIMA_CON_RIEPILOGO = "20260815000006";
 
 /**
+ * La prima migrazione che PUO' registrarsi da sola (01/09/2026).
+ *
+ * ⚠️ NON E' UNA SOGLIA SCELTA, e' un fatto: `20260805000001` e' la
+ * migrazione che CREA la tabella `applied_migrations`. Le trentatre' che
+ * la precedono non possono nominarla — non esisteva — e le ventisei senza
+ * blocco di verifica sono dello stesso periodo, prima che il protocollo
+ * §5 fosse scritto. Applicare la regola all'indietro darebbe trentatre'
+ * falsi allarmi, e un controllo che grida sempre viene spento.
+ *
+ * Da qui in avanti la regola vale intera, ed e' una PROPRIETA' della
+ * cartella — non un elenco di nomi da tenere aggiornato a mano, che
+ * invecchierebbe alla prima migrazione nuova.
+ */
+export const PRIMA_CON_AUTO_REGISTRAZIONE = "20260805000001";
+
+/**
  * Le migrazioni gia' applicate che nessun riepilogo nomina.
  *
  * ⚠️ IL SENSO DELLA RETE, detto una volta. La regola «nessun push senza

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
+import { NUMERO_CORSA, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, giornoDiProva, marchio, primaEntita, righeDaTogliere } from "./aiuto";
 
 // La tesoreria (Blocco 6a del mandato «personale e tesoreria»).
 //
@@ -17,7 +17,7 @@ import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorri
 //    verificata da fuori, non solo dentro la migrazione che l'ha chiusa.
 // 4. **Il cassetto contato produce una differenza dichiarata**, mai un
 //    aggiustamento silenzioso.
-const MARCA = "TEST-AUTO tesoreria";
+const MARCA = marchio("TEST-AUTO tesoreria");
 // ⚠️ UN ANNO NEL PASSATO, e dal 17/08/2026 non e' indifferente: i saldi
 // contano solo i movimenti FINO A OGGI (un assegno che uscira' fra un mese
 // non e' ancora uscito). Con l'anno di prova nel FUTURO — com'era fino a
@@ -25,7 +25,12 @@ const MARCA = "TEST-AUTO tesoreria";
 // asserzioni diventavano rosse. L'anno serve solo a non incrociare i dati
 // veri, e per quello un anno passato va bene uguale: il locale apre nel
 // 2027.
-const ANNO = 1995;
+// ⚠️ UN ANNO DIVERSO PER OGNI GIRO (01/09/2026): la pulizia qui sotto
+// cancella TUTTO l'anno, ed e' giusto — ma solo se quell'anno e' di questo
+// giro e di nessun altro. Con l'anno fisso, due esecuzioni insieme si
+// svuotavano i movimenti a vicenda. La fascia 1800-1889 e' vuota per
+// costruzione: il locale apre nel 2027.
+const ANNO = 1800 + NUMERO_CORSA;
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
@@ -376,13 +381,19 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
   let titolare;
   let staff;
   let ente;
-  const GIORNO = "2091-09-01";
+  // ⚠️ Un giorno di fantasia diverso per ogni giro: `quadratura_fiscale`
+  //    somma una GIORNATA, quindi due giri sullo stesso giorno si
+  //    sommerebbero e «100» diventerebbe «200» (01/09/2026).
+  const GIORNO = giornoDiProva(2091);
 
+  // ⚠️ Solo i conti di questo giro (01/09/2026). Prima cancellava per
+  //    `like("TEST-AUTO fisc%")`: due giri insieme sullo stesso progetto di prova si
+  //    portavano via i conti a vicenda, e il rosso sembrava una
+  //    regressione. Vedi la nota in cima a `aiuto.js`.
   async function pulisci() {
-    const { data } = await titolare.from("orders").select("id").like("note", "TEST-AUTO fisc%");
-    for (const o of data ?? []) {
-      await titolare.from("order_items").delete().eq("order_id", o.id);
-      await titolare.from("orders").delete().eq("id", o.id);
+    for (const id of await righeDaTogliere(titolare, "orders", "note", "TEST-AUTO fisc")) {
+      await titolare.from("order_items").delete().eq("order_id", id);
+      await titolare.from("orders").delete().eq("id", id);
     }
   }
 
@@ -412,7 +423,9 @@ describe("incassato e scontrinato: due totali e la differenza in elenco", () => 
         // che è esattamente la regola voluta. La prova sbagliava a datare,
         // non il codice: un conto chiuso alle 02:00 è la sera prima.
         closed_at: `${GIORNO}T21:00:00+02:00`,
-        note: "TEST-AUTO fisc",
+        // Il marchio di questo giro sta QUI perche' e' la colonna su cui
+        // guarda la pulizia (01/09/2026).
+        note: marchio("TEST-AUTO fisc"),
         documento_fiscale: documento ?? null,
         documento_emesso_il: documento === "fattura" ? GIORNO : null,
       })
@@ -531,13 +544,19 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
   let titolare;
   let staff;
   let ente;
-  const GIORNO = "2089-04-01";
+  // ⚠️ Qui il totale e' per ANNO (`ricavi_non_fiscalizzati`), quindi a
+  //    cambiare deve essere l'anno e non il giorno (01/09/2026).
+  const ANNO_IMP = 2100 + NUMERO_CORSA;
+  const GIORNO = `${ANNO_IMP}-04-01`;
 
+  // ⚠️ Solo i conti di questo giro (01/09/2026). Prima cancellava per
+  //    `like("TEST-AUTO imp%")`: due giri insieme sullo stesso progetto di prova si
+  //    portavano via i conti a vicenda, e il rosso sembrava una
+  //    regressione. Vedi la nota in cima a `aiuto.js`.
   async function pulisci() {
-    const { data } = await titolare.from("orders").select("id").like("note", "TEST-AUTO imp%");
-    for (const o of data ?? []) {
-      await titolare.from("order_items").delete().eq("order_id", o.id);
-      await titolare.from("orders").delete().eq("id", o.id);
+    for (const id of await righeDaTogliere(titolare, "orders", "note", "TEST-AUTO imp")) {
+      await titolare.from("order_items").delete().eq("order_id", id);
+      await titolare.from("orders").delete().eq("id", id);
     }
   }
 
@@ -572,7 +591,8 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
         // che è esattamente la regola voluta. La prova sbagliava a datare,
         // non il codice: un conto chiuso alle 02:00 è la sera prima.
         closed_at: `${GIORNO}T21:00:00+02:00`,
-        note: "TEST-AUTO imp",
+        // Come sopra: il marchio sta sulla colonna che la pulizia guarda.
+        note: marchio("TEST-AUTO imp"),
       })
       .select()
       .single();
@@ -589,18 +609,18 @@ describe("imposte: due cifre, e la vera sta in mezzo", () => {
 
     const { data } = await titolare.rpc("ricavi_non_fiscalizzati", {
       p_entity_id: ente,
-      p_anno: 2089,
+      p_anno: ANNO_IMP,
     });
     expect(Number(data[0].importo)).toBe(250);
     expect(Number(data[0].conti)).toBe(1);
   });
 
   it("lo staff non legge né i ricavi non fiscalizzati né le due stime", async () => {
-    const a = await staff.rpc("ricavi_non_fiscalizzati", { p_entity_id: ente, p_anno: 2089 });
+    const a = await staff.rpc("ricavi_non_fiscalizzati", { p_entity_id: ente, p_anno: ANNO_IMP });
     expect(a.error).toBeTruthy();
     const b = await staff.rpc("imposte_e_fiscalizzato", {
       p_entity_id: ente,
-      p_anno: 2089,
+      p_anno: ANNO_IMP,
       p_imponibile: 1000,
       p_costo_lavoro: 0,
     });

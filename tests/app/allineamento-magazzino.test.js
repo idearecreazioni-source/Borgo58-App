@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import {
   allineaGiacenza,
   daAllineare,
@@ -25,7 +25,12 @@ import { oggiLocale } from "../../src/lib/constants";
 // ⚠️ E il prezzo di listino è **7,00**, che non è nessuno dei due costi delle
 // partite: così la correzione in aumento distingue «ultimo prezzo pagato» da
 // «costo di una partita scelta da un ordinamento».
-const MARCA = "TEST-AUTO allineamento";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO allineamento");
 const LISTINO = 7;
 
 describe("si dichiara quanto c'è, e la differenza la calcola il gestionale", () => {

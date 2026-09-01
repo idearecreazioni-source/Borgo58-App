@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import {
   abbattiPartita,
@@ -16,7 +16,12 @@ import {
 // risponde **404**, e nessuna prova scritta in SQL se ne accorgerebbe —
 // la funzione esiste, è solo irraggiungibile dall'app. È la ragione per
 // cui `npm run funzione --prova` è nato il 15/08.
-const NOME = "TEST-AUTO prodotto fermo";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("TEST-AUTO prodotto fermo");
 
 describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
   let titolare;

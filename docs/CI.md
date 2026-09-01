@@ -35,7 +35,7 @@ codice che non passa le prove.
 
 ## 3 · Cosa deve fare Alessio, una volta sola
 
-### 3a · Mettere le chiavi del progetto di prova su GitHub
+### 3a · Mettere i tre segreti del progetto di prova su GitHub
 
 Servono perché le 459 prove parlano col database di prova. **Non finiscono
 nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
@@ -44,22 +44,44 @@ nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
 2. In alto, la linguetta **Settings**
 3. Nella colonna a sinistra: **Secrets and variables** → **Actions**
 4. Pulsante verde **New repository secret**
-5. Aggiungine **sei**, uno alla volta. Nome esatto a sinistra, valore preso
-   dal file `.env` sul computer:
+5. Aggiungine **tre**, uno alla volta. Nome esatto a sinistra, valore preso
+   dalla riga **con lo stesso nome** nel file `.env` sul computer:
 
-   | Nome del segreto | Da dove prendere il valore |
-   |---|---|
-   | `PROVA_SUPABASE_URL` | riga `VITE_SUPABASE_URL` |
-   | `PROVA_SUPABASE_ANON_KEY` | riga `VITE_SUPABASE_ANON_KEY` |
-   | `TEST_TITOLARE_EMAIL` | riga omonima |
-   | `TEST_TITOLARE_PASSWORD` | riga omonima |
-   | `TEST_STAFF_EMAIL` | riga omonima |
-   | `TEST_STAFF_PASSWORD` | riga omonima |
+   | Nome del segreto | Riga da copiare dal file `.env` | Cos'è |
+   |---|---|---|
+   | `PROVA_SUPABASE_ANON_KEY` | `PROVA_SUPABASE_ANON_KEY` | una chiave |
+   | `TEST_TITOLARE_PASSWORD` | `TEST_TITOLARE_PASSWORD` | un PIN |
+   | `TEST_STAFF_PASSWORD` | `TEST_STAFF_PASSWORD` | un PIN |
 
-⚠️ **Sono le chiavi del progetto di PROVA, mai quelle del locale vero.** E
-non è solo una raccomandazione: le prove hanno un controllo dentro
-(`tests/app/aiuto.js`) che **si rifiuta di partire** se l'indirizzo è quello
-del gestionale vero.
+   **Il nome del segreto e il nome della riga sono lo stesso, tutte e tre le
+   volte.** Se ti trovi a copiare una riga che si chiama diversamente, è
+   quella sbagliata.
+
+🔴 **ERANO SEI, E TRE NON DOVEVANO ESSERCI — corretto il 01/09/2026.**
+L'indirizzo del progetto di prova e le due caselle di posta degli utenti di
+collaudo **sono già scritte in chiaro nel repository** (`REF_PROVA` in
+`scripts/comune.mjs`, e le due righe di `.env.example`). Metterle in un
+segreto non le nascondeva a nessuno, e in cambio le rendeva **impossibili da
+rileggere**: è esattamente così che due sono rimaste vuote e nella terza è
+finita la riga sbagliata, **senza che nessuno potesse accorgersene
+guardando**. *Una casella che non si può rileggere non si può nemmeno
+correggere a vista.* Da oggi il giro le prende dal repository, e i tre
+segreti rimasti sono le sole cose che un segreto deve contenere: una chiave
+e due PIN.
+
+⚠️ **E il bersaglio delle prove non PUÒ più essere il locale vero**: prima
+era un controllo che lo verificava, adesso l'indirizzo è ricavato da
+`REF_PROVA`. *Un vincolo batte un controllo.* Se qualcuno passa a mano un
+indirizzo `https://` diverso — cosa che si può ancora fare, per puntare le
+prove a un terzo progetto — il rifiuto sulla produzione scatta come prima.
+
+⚠️ **Prima di far partire qualunque prova**, il giro lancia
+`node scripts/chiavi-di-prova.mjs`, che si ferma se uno dei tre segreti
+manca e se l'indirizzo è quello del gestionale vero, e **dice** (senza
+fermarsi) se in `PROVA_SUPABASE_URL` c'è rimasta la riga sbagliata. Nel
+registro finiscono **solo i nomi** delle caselle, mai i valori. Lo stesso
+controllo gira sul computer di Alessio: `npm run test:app` lo lancia per
+primo.
 
 ### 3b · Bloccare `master`
 
@@ -169,7 +191,7 @@ esattamente ciò che quel freno esiste per fare.
 
 | lavoro | cosa fa | quanto ci mette |
 |---|---|---|
-| **Codice, prove pure e compilazione** | il codice non ha avvisi · 657 prove che non toccano il database · l'app si compila | ~3 minuti |
+| **Codice, prove pure e compilazione** | il codice non ha avvisi · 697 prove che non toccano il database · 12 prove che montano una schermata · l'app si compila · quanto pesa il pacchetto | ~4 minuti |
 | **Prove contro il progetto di prova** | 459 prove contro il database vero di prova | ~7 minuti |
 
 Il secondo parte **solo se il primo è verde**: far scrivere righe di prova da
@@ -178,10 +200,17 @@ un ramo che non compila nemmeno è sporcare per niente.
 🔴 **NON controlla — e va detto perché non si scambi per una garanzia
 intera:**
 
-* **Nessuna prova guarda una schermata.** Una schermata che sborda, un
-  pulsante sparito, un menu che offre la voce sbagliata: quelle le trova solo
-  un occhio. Il 31/08 i tre difetti più grossi li ha trovati Alessio in dieci
-  minuti, non le 1.116 prove.
+* **Quasi nessuna prova guarda una schermata**, e quelle che lo fanno non
+  guardano *come si vede*. Dal 01/09/2026 ce ne sono 12 che **montano** una
+  schermata: provano che si apre, che chi non è entrato non ne vede una, che
+  la pagina del cliente parla dal collegamento anonimo. Ma **una schermata
+  che sborda, un testo troppo piccolo, un colore che non si distingue con le
+  luci basse, un pulsante sparito: quelli li trova solo un occhio.** Il 31/08
+  i tre difetti più grossi li ha trovati Alessio in dieci minuti, non le
+  1.116 prove.
+  ⚠️ E il conto di quanto è coperto si chiede a `npm run copertura`, che lo
+  dice **cartella per cartella**: le regole pure stanno al 92%, le schermate
+  al 2%. Un totale unico su questo progetto non vuol dire niente.
 * **Non controlla il database vero.** Le migrazioni restano un gesto
   separato (`npm run migra`), coi suoi sei freni.
 * **Non impedisce a Cloudflare di pubblicare.** Cloudflare compila per conto
@@ -190,7 +219,7 @@ intera:**
 
 ---
 
-## 6 · Due trappole chiuse nel file, che vale la pena conoscere
+## 6 · Tre trappole chiuse, che vale la pena conoscere
 
 1. **Un giro alla volta sul database di prova.** Le prove sull'app scrivono
    tutte sullo stesso progetto: due giri insieme si pestano i piedi. È già
@@ -203,6 +232,18 @@ intera:**
    **verde senza aver provato niente**: e un verde che non ha provato niente è
    peggio di un rosso. È la regola del 19/08 — *una risposta più corta che ha
    l'aria di essere intera*.
+3. 🔴 **E il controllo guardava una casella sola, fino al 01/09/2026.**
+   Chiedeva che `PROVA_SUPABASE_URL` non fosse vuota, e quella c'era: ha
+   detto di sì, e sei minuti dopo il giro è morto con 67 file falliti e un
+   messaggio che **non nominava la causa** (mancavano due segreti e il terzo
+   non era un indirizzo). Il danno non era il rosso: era che chi lo leggeva
+   andava a cercare il guasto nel codice — che era sano, tanto che dieci
+   minuti prima, sullo **stesso identico contenuto**, erano passate 459 prove
+   su 459.
+   Adesso il controllo guarda tutte e sei le caselle e la forma
+   dell'indirizzo, in un posto solo (`scripts/chiavi.mjs`) usato dalla
+   pipeline, da `vitest` e dalle prove. Prima erano tre condizioni sparse in
+   tre file, e **nessuna delle tre guardava le credenziali degli utenti**.
 
 ---
 

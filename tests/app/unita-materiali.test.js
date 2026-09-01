@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 
 // LE PAROLE DEI MATERIALI DI CONSUMO — provate su dati veri.
 //
@@ -16,7 +16,12 @@ import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 // funzione è stata riscritta» e «la funzione risponde» (17/08). Il caso in
 // cui si romperebbe è il peggiore possibile — l'elenco propone «rotolo»,
 // Alessio lo sceglie, e il salvataggio lo rifiuta.
-const NOME = "TEST-AUTO unita materiali";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("TEST-AUTO unita materiali");
 
 describe("le parole dei materiali di consumo", () => {
   let titolare;
