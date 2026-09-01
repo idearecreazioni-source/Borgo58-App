@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { segnalaScontrinoNonUscito } from "../../src/lib/api/orders";
 import { scontrinoEmesso } from "../../src/lib/registratore";
 import { GUASTI, creaRegistratoreSimulato } from "../../src/lib/registratoreSimulato";
@@ -18,7 +18,12 @@ import { supabase } from "../../src/lib/supabase";
 //
 // ⚠️ Date nel 1995: il locale apre nel 2027, e una serata passata e lontana
 // non incrocia nessun dato vero.
-const MARCA = "TEST-AUTO sim";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO sim");
 const SERATA = "1995-09-12";
 
 describe("i guasti del registratore, sul gestionale vero", () => {

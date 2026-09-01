@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { accettaPreventivo, nuovaVersionePreventivo, salvaPreventivo, trattativeDelGiorno } from "../../src/lib/api/preventivi";
 import { annullaPrenotazione } from "../../src/lib/api/reservations";
 import { supabase } from "../../src/lib/supabase";
@@ -18,7 +18,12 @@ import { supabase } from "../../src/lib/supabase";
 // sala, non si scrive qui: un evento con TUTTI i posti della sera riempie,
 // uno da 2 persone no. Se il gestionale prendesse la scorciatoia «è un
 // evento, quindi blocca», il secondo caso diventerebbe rosso.
-const MARCA = "TEST-AUTO evento";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO evento");
 const GIORNO_PIENO = "1995-09-20";
 const GIORNO_LIBERO = "1995-09-21";
 const GIORNO_TRATTATIVA = "1995-09-22";

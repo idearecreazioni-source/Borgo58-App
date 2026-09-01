@@ -336,3 +336,109 @@ verificare è questa, non una regressione.
 finite alle 15:16 e alle 15:32, quando il lavoro «Prove contro il progetto
 di prova» su GitHub si fermava al preflight in zero secondi senza aprire
 nessun collegamento.
+
+
+---
+
+## 8 · Le prove non si cancellano più le righe a vicenda
+
+Il rosso del giro `035038b` (66 file su 67, 457 prove su 459) non era una
+regressione: era la **classe di difetto** che l'incidente ha scoperto.
+Corretta qui dentro, per intero.
+
+**Il fatto, misurato.** `beforeAll` di `tesoreria.test.js` cancellava
+`like("note", "TEST-AUTO fisc%")` — cioè *tutti* i conti che somigliano a
+una prova. Con due esecuzioni insieme, una portava via i conti che l'altra
+aveva appena creato: `expected +0 to be 100`, `expected [] to have a length
+of 1`.
+
+⚠️ **Il filtro c'era: era largo quanto tutti.** Per questo il setaccio del
+23/08 (`pulizieACaso()`) non poteva vederlo — per lui un `like` è un filtro
+come gli altri.
+
+**La misura della classe intera**, non del solo file segnalato: **43 punti
+in 22 file**, tutti con una costante fissa (`const MARCA = "TEST-AUTO …"`)
+usata sia per scrivere sia come modello `like`.
+
+**Le due metà della cura**, perché una sola non basta:
+
+1. **Il marchio del giro** (`marchio()`, `soloMiei()` in `tests/app/aiuto.js`):
+   ogni esecuzione ha un identificatore proprio, e i modelli `like` prendono
+   solo le proprie righe. Le 22 costanti sono state convertite.
+2. **Le date di fantasia per giro** (`NUMERO_CORSA`, `giornoDiProva()`):
+   dove la prova conta **un totale di giornata o di anno**
+   (`quadratura_fiscale`, `ricavi_non_fiscalizzati`, i saldi) il marchio non
+   serve a niente — due giri sullo stesso giorno si sommano e «100» diventa
+   «200». Le fasce scelte (1800-1889, 2100-2189) sono vuote per costruzione:
+   il locale apre nel 2027.
+
+⚠️ **E un giro ucciso a metà non lascia più righe di nessuno**: quelle di
+un'esecuzione abbandonata si tolgono comunque, ma **solo dopo mezz'ora**
+(`MINUTI_DI_GRAZIA`), che è quattro volte il giro più lungo misurato (8
+minuti su GitHub). Nessuna esecuzione viva può finirci dentro.
+
+**Le reti che lo tengono fermo:**
+
+| | |
+|---|---|
+| `tests/unita/isolamento-prove.test.js` | 10 prove pure: due giri diversi hanno marchi e date che non si toccano, e il modello dell'uno non prende le righe dell'altro |
+| `pulizieDiTutti()` in `scripts/pulizie.mjs` | setaccio su **tutti** i file, script usa-e-getta compresi, dentro `npm run test` |
+
+**Controprova fatta**: rimessa fissa una sola costante, il setaccio torna a
+segnalare 2 righe; rimessa a posto, **0**.
+
+⚠️ **E il setaccio ha dovuto imparare a riconoscere la cura**: alla prima
+versione segnalava tutte e 43 le righe *già corrette*, perché guardava la
+riga del `like` e non **come è definita la costante**. È la lezione del
+22/08 — *un censimento automatico dice dove guardare, non cosa è vero*.
+
+---
+
+## 9 · Correzioni al linguaggio di questo riepilogo
+
+Scritte perché le affermazioni precedenti erano più larghe di quello che le
+misure sostengono.
+
+| dove | come va detto |
+|---|---|
+| il P0 della CI | **non è chiuso.** Il preflight e la traduzione dei nomi sono corretti, e la suite risulta sana quando la configurazione è valida; ma il P0 si chiude **solo con un giro GitHub verde sul commit da rilasciare**, con le prove realmente eseguite. Un verde locale non lo sostituisce. |
+| le 12 prove sulle schermate | sono **prove di componenti in `jsdom`**: montano l'albero React e leggono il DOM. **Non** sono un browser vero, **non** sono verifica visiva, **non** coprono navigazione completa, autenticazione reale, RLS attraverso l'interfaccia, telefono, doppio invio, rete interrotta o concorrenza. |
+| i controlli sulle migrazioni | sono **statici**: leggono i file. Non applicano niente, non provano l'idempotenza, non ricostruiscono da zero. Quello lo fa `npm run ricostruzione:verifica`, che vuole un motore Postgres e resta fuori dalla pipeline. |
+| Cloudflare | è **dimostrato** che le anteprime non aspettano i controlli: il 01/09 alle 15:48:53 l'anteprima del ramo era pubblicata mentre le prove sul database non erano partite. Sulla **produzione** l'affermazione poggia su `docs/CI.md` e sull'assenza di un lavoro di pubblicazione vincolato ai controlli, **non** su un'osservazione diretta. |
+| il peso del pacchetto | è un rilievo **prestazionale**. Non è un P0 di sicurezza né di coerenza dei dati. |
+
+### E la formula sui segreti esposti
+
+Va detta così, e non «non sono state cambiate»:
+
+> Al confronto eseguito il **01/09/2026 verso le 15:20**, con i valori che
+> questa sessione ha ricevuto al proprio avvio, le categorie *collegamento
+> al database di produzione*, *chiave di servizio di produzione*,
+> *collegamento e chiave del progetto di prova* e *password degli utenti di
+> collaudo* risultavano **invariate** rispetto a quelle esposte nel commit
+> `30cfab9`. `PASSWORD_PROVA` e `PIN_COLLAUDO` sono **non verificabili** da
+> qui. Token Cloudflare, chiave dell'assistente e firme dei webhook **non
+> compaiono** in quei file. Il proprietario dichiara una rotazione
+> successiva o diversa: **senza un nuovo confronto non è possibile
+> affermare lo stato attuale.**
+
+Il confronto è stato solo booleano: nessuna impronta, nessun prefisso,
+nessun valore è stato stampato, scritto o committato.
+
+---
+
+## 10 · Azione del proprietario
+
+Due sole cose non stanno nel repository e nessuna riga di codice le
+sostituisce.
+
+1. **Rigenerare le chiavi esposte** nel commit `30cfab9`, che resta
+   leggibile nella storia pubblica: password del database di produzione,
+   chiave di servizio, password del database di prova, password degli utenti
+   di collaudo. ⚠️ Cambiando la chiave del gestionale va aggiornata anche
+   Cloudflare, o il sito smette di funzionare: va fatto in quest'ordine.
+2. **Decidere se la pubblicazione deve aspettare i controlli.** Oggi
+   Cloudflare compila e pubblica per conto suo. Si chiude spegnendo la
+   pubblicazione automatica del ramo principale e facendola partire dai
+   controlli — cambia come va online `borgo58.it`, quindi è una decisione
+   sua, non un lavoro rinviato.

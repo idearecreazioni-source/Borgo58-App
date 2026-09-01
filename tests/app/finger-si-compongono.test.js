@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { duplicaRicetta, listPreparations, listRecipeCostsFor } from "../../src/lib/api/recipes";
 // ⚠️ `listPreparations` usa il collegamento dell'APP, non quello della prova:
 // senza entrare anche da lì risponderebbe «permission denied» e la prova
@@ -20,7 +20,12 @@ import { supabase } from "../../src/lib/supabase";
 // Alessio, e serve a distinguere le tre risposte possibili allo scarico di
 // magazzino — 2 pezzi per tipo (giusto), 1 (le porzioni ignorate), 6 (i
 // finger contati come porzioni).
-const MARCA = "TEST-AUTO finger";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO finger");
 const QUANTI = 6;
 const GRAMMI = 0.010; // 10 g a finger, a 20 €/kg → 0,20 € l'uno
 

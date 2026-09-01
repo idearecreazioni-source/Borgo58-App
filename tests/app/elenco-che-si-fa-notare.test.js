@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { registraConteggioCassa } from "../../src/lib/api/cash";
 import { segnalaScontrinoNonUscito, listContiFiscalizzatiInRitardo } from "../../src/lib/api/orders";
 import { emettiScontrino, scontrinoEmesso, ESITI } from "../../src/lib/registratore";
@@ -15,7 +15,12 @@ import { supabase } from "../../src/lib/supabase";
 // passata e lontana non incrocia nessun dato vero (regola del 17/08 —
 // e le date non sono mai un posto neutro, quindi si sceglie il passato,
 // non il futuro, che nel frattempo ha acquistato significato).
-const MARCA = "TEST-AUTO fisc";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO fisc");
 const SERATA_VUOTA = "1995-07-01";
 const SERATA = "1995-07-02";
 const GIORNO_DOPO = "1995-07-04";

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 
 // Blocco 2 del mandato di correzione: un solo calcolo per ogni numero.
 //
@@ -13,7 +13,12 @@ import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 // La ricetta di prova è a tre livelli apposta: il difetto curato era che
 // il simulatore si rompeva proprio sui piatti con un semilavorato, e che
 // un rincaro dentro una preparazione non mostrava nessun piatto.
-const MARCA = "TEST-AUTO food cost";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO food cost");
 
 describe("il food cost si calcola in un posto solo", () => {
   let titolare;

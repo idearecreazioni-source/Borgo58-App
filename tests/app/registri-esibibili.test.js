@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali } from "./aiuto";
+import { clientAutenticato, credenziali, marchio } from "./aiuto";
 
 // Blocco 6 del mandato di correzione: i registri che si esibiscono.
 //
@@ -11,7 +11,12 @@ import { clientAutenticato, credenziali } from "./aiuto";
 //
 // Le prove entrano con lo STAFF dove il gesto è di sala (le non
 // conformità le chiude chi lavora), col titolare dove il dato è suo.
-const MARCA = "TEST-AUTO registri";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO registri");
 
 describe("i registri che si esibiscono non accettano righe che mentono", () => {
   let staff;

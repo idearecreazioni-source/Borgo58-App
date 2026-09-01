@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita, righeMie } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, nonDiNessuno, primaEntita, righeMie, soloMiei } from "./aiuto";
 
 // I comandi vocali, provati sul database vero.
 //
@@ -160,10 +160,20 @@ describe("una dettatura fa quello che ha capito", () => {
   it("le misure sicure si salvano, le creazioni aspettano — nella stessa filza", async () => {
     // ⚠️ Si portano via i residui dei giri uccisi a meta': stesso marcatore
     //    «PROVA-voce una cosa», sul database di PROVA, dove nessun impegno
-    //    vero puo' chiamarsi cosi'. Senza, quelle righe resterebbero li' per
-    //    sempre — e le prove girano una alla volta, quindi non c'e' nessun
-    //    altro giro a cui possano appartenere.
-    await titolare.from("tasks").delete().like("title", "PROVA-voce una cosa%");
+    //    vero puo' chiamarsi cosi'.
+    //
+    // 🔴 MA SOLO QUELLI VECCHI, dal 01/09/2026. La riga diceva: *«le prove
+    //    girano una alla volta, quindi non c'e' nessun altro giro a cui
+    //    possano appartenere»*. Quell'assunzione e' stata smentita lo
+    //    stesso giorno: due esecuzioni insieme sullo stesso progetto di
+    //    prova esistono eccome, e cosi' scritta questa riga cancellava il
+    //    promemoria che l'altra aveva appena creato. Adesso tocca solo cio'
+    //    che nessun giro vivo puo' aver scritto (vedi `aiuto.js`).
+    await titolare
+      .from("tasks")
+      .delete()
+      .like("title", "PROVA-voce una cosa%")
+      .lt("created_at", nonDiNessuno());
 
     const { data, error } = await titolare.rpc("registra_dettatura", {
       p_testo: "PROVA-voce: ricordami una cosa e cinquanta euro di gasolio",
@@ -249,7 +259,10 @@ describe("una dettatura fa quello che ha capito", () => {
           tipo: "nota_non_capita",
           sicuro: true,
           frase: "Da riguardare",
-          dati: { sentito: "PROVA-voce quella cosa là del coso" },
+          // Il marchio del giro sta dentro la frase, perche' e' da li' che
+          // nasce la descrizione dell'impegno — ed e' su quella che la
+          // ricerca qui sotto conta «uno».
+          dati: { sentito: `${marchio("PROVA-voce quella cosa")} là del coso` },
         },
       ],
       p_esito: "non_capita",
@@ -262,7 +275,9 @@ describe("una dettatura fa quello che ha capito", () => {
       .from("tasks")
       .select("id, description")
       .eq("origine_modulo", "voce")
-      .like("description", "%PROVA-voce quella cosa%");
+      // ⚠️ Solo la nota di QUESTO giro: con il modello condiviso, la nota di
+      //    un'altra esecuzione faceva contare due dove la prova pretende uno.
+      .like("description", `%${soloMiei("PROVA-voce quella cosa")}`);
     expect(task).toHaveLength(1);
     mie.segna("tasks", task[0].id);
   });

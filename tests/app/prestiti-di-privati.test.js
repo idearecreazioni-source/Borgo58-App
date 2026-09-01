@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, marchio, primaEntita } from "./aiuto";
 
 // I prestiti di privati (mandato del 22/08).
 //
@@ -16,7 +16,12 @@ import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorri
 // 3. **I prestiti sono del titolare**, e la RLS si prova solo col token
 //    vero: dentro una migrazione si gira come proprietari (§5 punto 2).
 // 4. **Non si restituisce piu' del dovuto**, e il rifiuto arriva fin qui.
-const MARCA = "TEST-AUTO prestiti";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO prestiti");
 // ⚠️ Un anno passato, come in tesoreria: i saldi contano solo cio' che e'
 // gia' avvenuto, e il locale apre nel 2027.
 const ANNO = 1994;

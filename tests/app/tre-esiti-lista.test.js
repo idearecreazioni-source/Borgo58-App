@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
+import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, marchio, primaEntita } from "./aiuto";
 
 // I TRE ESITI di una riga della lista chiusa a mano — blocco 2 del mandato
 // «la lista non scrive mai un'uscita».
@@ -13,7 +13,12 @@ import { clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorri
 // ⚠️ E IL CASO DA PROVARE È QUELLO CHE HA QUALCOSA DA FARE (regola del
 // 17/08): ogni prova qui sotto guarda una differenza che si produce — un
 // movimento che nasce, un lotto che entra, un prezzo che NON si muove.
-const NOME = "TEST-AUTO tre esiti";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("TEST-AUTO tre esiti");
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { catene, fileDaSetacciare, pulizieACaso } from "../../scripts/pulizie.mjs";
+import { catene, fileDaSetacciare, pulizieACaso, pulizieDiTutti } from "../../scripts/pulizie.mjs";
 
 // 🔴 UNA PULIZIA CANCELLA SOLO LE RIGHE CHE HA CREATO LEI (23/08/2026).
 //
@@ -103,6 +103,37 @@ describe("nessuna pulizia sceglie a caso", () => {
       "Queste pulizie scelgono cosa cancellare con un criterio che potrebbe\n" +
         "pescare un dato vero. Una pulizia cancella SOLO righe di cui conosce\n" +
         "l'identificativo, perché le ha create lei e se l'è segnato:\n  " +
+        colpevoli.join("\n  ")
+    ).toEqual([]);
+  });
+});
+
+describe("nessuna pulizia cancella le righe di un altro giro", () => {
+  // 🔴 IL FATTO, misurato il 01/09/2026. Le 459 prove contro il database
+  //    sono partite da due macchine insieme sullo stesso progetto di prova.
+  //    Il giro su GitHub e' diventato rosso su `tesoreria.test.js` con
+  //    «expected +0 to be 100»: un numero che sembra una regressione del
+  //    gestionale e non lo era. Cancellava per marcatore condiviso —
+  //    `like("note", "TEST-AUTO fisc%")` — e il `beforeAll` di un giro
+  //    portava via i conti che l'altro aveva appena creato.
+  //
+  // ⚠️ IL FILTRO C'ERA: era largo quanto tutti. Per questo `pulizieACaso()`
+  //    non poteva vederlo — per lei un `like` e' un filtro come gli altri.
+  it("il marcatore porta sempre il marchio del giro, o la pulizia guarda l'ora", () => {
+    const colpevoli = [];
+    for (const f of fileDaSetacciare(".")) {
+      if (f.endsWith("tests/unita/pulizie.test.js")) continue;
+      for (const p of pulizieDiTutti(readFileSync(f, "utf8"))) {
+        colpevoli.push(`${f}:${p.riga} — ${p.perche}`);
+      }
+    }
+    expect(
+      colpevoli,
+      "Queste righe scelgono con un marcatore che due esecuzioni diverse si\n" +
+        "possono scambiare. O il modello porta il marchio del giro\n" +
+        "(`marchio(...)` / `soloMiei(...)` da tests/app/aiuto.js), oppure la\n" +
+        "pulizia si limita a cio' che nessun giro vivo puo' aver scritto\n" +
+        "(`.lt(\"created_at\", nonDiNessuno())`):\n  " +
         colpevoli.join("\n  ")
     ).toEqual([]);
   });

@@ -154,6 +154,69 @@ export function pulizieACaso(testo) {
   return fuori;
 }
 
+/**
+ * Le pulizie che cancellano per MARCATORE CONDIVISO — 01/09/2026.
+ *
+ * 🔴 IL FATTO. Alle 15:47 le 459 prove contro il database sono partite da
+ *    due macchine insieme sullo stesso progetto di prova. Il giro su GitHub
+ *    e' diventato rosso su `tesoreria.test.js` con «expected +0 to be 100»:
+ *    un numero che sembra una regressione del gestionale e non lo era. La
+ *    causa: `beforeAll` cancellava `like("note", "TEST-AUTO fisc%")`, cioe'
+ *    **tutti** i conti che somigliano a una prova, compresi quelli che
+ *    l'altra esecuzione aveva appena creato.
+ *
+ * ⚠️ E' la stessa regola del 23/08 — *si cancella solo cio' che si e'
+ *    creato* — in una forma che il setaccio di allora non vedeva: un
+ *    modello `like` **e'** un filtro, quindi `pulizieACaso()` lo lasciava
+ *    passare. Il filtro c'era; era largo quanto tutti.
+ *
+ * ⚠️ DUE FORME RESTANO LECITE, e vanno riconosciute o questo controllo
+ *    grida su cose giuste:
+ *      · il modello che porta il marchio del giro (`soloMiei(...)`, o una
+ *        stringa che contiene `#${CORSA}`): prende solo le proprie righe;
+ *      · la pulizia **a tempo** (`.lt("created_at", nonDiNessuno())`): tocca
+ *        solo cio' che nessun giro vivo puo' aver scritto.
+ *
+ * @returns {{riga: number, perche: string, catena: string}[]}
+ */
+export function pulizieDiTutti(testo) {
+  const fuori = [];
+  // ⚠️ IL SETACCIO DEVE RICONOSCERE LA CURA, o grida su cio' che e' gia'
+  //    stato sistemato: quasi tutte le prove costruiscono il modello da una
+  //    costante (`const MARCA = marchio("TEST-AUTO ...")`), quindi bisogna
+  //    guardare **come e' definita quella costante**, non solo la riga del
+  //    `like`. E' la lezione del 22/08 e del 26/08: *un censimento
+  //    automatico dice dove guardare, non cosa e' vero.*
+  const diCorsa = new Set(
+    [...testo.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:`[^`]*\$\{)?\s*(?:marchio|soloMiei)\(/g)].map(
+      (m) => m[1]
+    )
+  );
+  for (const c of catene(testo)) {
+    if (!c.testo.includes(".delete(") && !/const .*=|let .*=/.test(c.testo)) continue;
+    const modello = c.testo.match(/\.i?like\(\s*["'`][^"'`]+["'`]\s*,\s*(["'`])([^"'`]*)\1\s*\)/);
+    if (!modello) continue;
+    const pattern = modello[2];
+    if (!pattern.includes("%")) continue;
+    const nominaUnaCostanteDiCorsa = [...diCorsa].some((n) =>
+      new RegExp(`\\$\\{${n}[}.]`).test(pattern)
+    );
+    const diQuestoGiro =
+      /\$\{(marchio|soloMiei)\(|#\$\{CORSA\}/.test(c.testo) || nominaUnaCostanteDiCorsa;
+    const aTempo = /nonDiNessuno\(\)|created_at.*lt|\.lt\(\s*["'`]created_at/.test(c.testo);
+    const cancellaQui = c.testo.includes(".delete(");
+    if (diQuestoGiro || aTempo) continue;
+    fuori.push({
+      riga: c.riga,
+      perche: cancellaQui
+        ? `cancella per marcatore condiviso ("${pattern}"): porterebbe via anche le righe di un altro giro`
+        : `sceglie per marcatore condiviso ("${pattern}"): conterebbe anche le righe di un altro giro`,
+      catena: c.testo.trim().slice(0, 120),
+    });
+  }
+  return fuori;
+}
+
 /** Tutti i file di codice sotto una cartella. */
 export function fileDiCodice(radice) {
   const out = [];

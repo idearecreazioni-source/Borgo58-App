@@ -38,6 +38,115 @@ import { problemaDellIndirizzo, problemiDelleChiavi } from "../../scripts/chiavi
 const URL = process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
 const ANON = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// =====================================================================
+// OGNI GIRO RICONOSCE LE PROPRIE RIGHE — 01/09/2026
+// =====================================================================
+// 🔴 IL FATTO, misurato oggi. Alle 15:47 sono partite le 459 prove da due
+//    macchine insieme sullo stesso progetto di prova. Il giro di GitHub e'
+//    diventato rosso su `tesoreria.test.js` con «expected +0 to be 100» e
+//    «expected [] to have a length of 1»: numeri che sembrano una
+//    regressione del gestionale e non lo erano.
+//
+//    La causa e' che alcune pulizie cancellavano per MARCATORE CONDIVISO —
+//    `like("note", "TEST-AUTO fisc%")`, `like("table_label", "__PROVA__%")`
+//    — quindi il `beforeAll` del secondo giro portava via i conti che il
+//    primo aveva appena creato.
+//
+// ⚠️ LA REGOLA C'ERA GIA', ed e' di Alessio (23/08, CLAUDE.md §8): *«uno
+//    script di prova cancella SOLO righe di cui conosce l'identificativo,
+//    perche' le ha create lui e se l'e' segnato»*. `righeMie()` qui sotto
+//    esiste per questo. Quelle quattro pulizie non la usavano, e per di
+//    piu' una portava scritto nel commento *«le prove girano una alla
+//    volta»* — un'assunzione che nessuno stava piu' facendo rispettare.
+//
+// ⚠️ E LA CURA NON PUO' ESSERE SOLTANTO «ognuno le sue»: un giro ucciso a
+//    meta' (un limite di tempo, un `pkill`) lascia righe che, con un
+//    marchio unico, non sarebbero piu' di nessuno — e resterebbero li' per
+//    sempre a sporcare la sala del progetto di prova, dove altre prove
+//    contano i tavoli. Quindi le due cose insieme:
+//
+//      · le righe DI QUESTO GIRO si tolgono sempre, per marchio proprio;
+//      · quelle di un giro ABBANDONATO si tolgono solo se sono piu'
+//        vecchie di mezz'ora — e mezz'ora e' quattro volte il giro piu'
+//        lungo misurato (8 minuti), quindi nessun giro vivo puo' finirci
+//        dentro.
+
+/**
+ * Il marchio di QUESTA esecuzione: due prove che girano insieme non se lo
+ * possono scambiare.
+ *
+ * ⚠️ Sta nel valore scritto (`__PROVA__#ab12 1`) e non in una colonna a
+ *    parte, perche' le tabelle vere non hanno una colonna «quale giro di
+ *    prove ti ha scritto» — e non devono averla.
+ */
+export const CORSA = `${process.pid.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+/**
+ * Il marcatore condiviso, reso di questo giro.
+ *
+ * ⚠️ `corsa` si puo' passare da fuori: serve alle prove pure che
+ *    dimostrano che due giri diversi non si toccano
+ *    (`tests/unita/isolamento-prove.test.js`). Nel gestionale non lo passa
+ *    nessuno.
+ */
+export const marchio = (base, corsa = CORSA) => `${base}#${corsa}`;
+
+/** Il modello `like` che prende SOLO le righe di questo giro. */
+export const soloMiei = (base, corsa = CORSA) => `${marchio(base, corsa)}%`;
+
+/** Il numero stabile 0-89 ricavato da un marchio di giro. */
+export const numeroDiCorsa = (corsa) =>
+  [...corsa].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 90, 7);
+
+/**
+ * Un numero stabile 0-89 per questo giro.
+ *
+ * 🔴 SERVE A DARE A OGNI GIRO LE PROPRIE DATE DI FANTASIA, ed e' la meta'
+ *    che un marchio nel testo non puo' coprire: molte prove non contano le
+ *    proprie righe, contano **un totale di giornata o di anno**
+ *    (`quadratura_fiscale`, `ricavi_non_fiscalizzati`, i saldi). Con due
+ *    giri sulla stessa giornata quel totale somma i conti di tutti e due, e
+ *    l'asserzione «100» diventa «200» senza che niente sia rotto.
+ *
+ * ⚠️ Le fasce sono scelte VUOTE apposta: gli anni 1800-1889 e 2100-2189 non
+ *    contengono nessun dato del locale, ne' vero ne' di collaudo — il
+ *    locale apre nel 2027. Un anno vicino a quelli veri (2026, 2027)
+ *    sarebbe un marcatore che smette di essere neutro appena qualcuno
+ *    interroga quella colonna (CLAUDE.md §8, 17/08).
+ */
+export const NUMERO_CORSA = numeroDiCorsa(CORSA);
+
+/** Un giorno di fantasia diverso per ogni giro, dentro l'anno dato. */
+export function giornoDiProva(anno, numero = NUMERO_CORSA) {
+  return new Date(Date.UTC(anno, 0, 1 + numero)).toISOString().slice(0, 10);
+}
+
+/** Quanto aspettare prima di considerare abbandonata una riga di prova. */
+export const MINUTI_DI_GRAZIA = 30;
+
+/** L'istante prima del quale una riga di prova non e' piu' di nessun giro vivo. */
+export const nonDiNessuno = () =>
+  new Date(Date.now() - MINUTI_DI_GRAZIA * 60_000).toISOString();
+
+/**
+ * Gli identificativi da togliere: le righe di questo giro, piu' quelle
+ * abbandonate da un giro morto a meta'.
+ *
+ * ⚠️ Sono due interrogazioni e non una condizione sola: `or(...)` di
+ *    PostgREST con dentro una data e un modello diventa illeggibile, e una
+ *    pulizia che nessuno riesce a rileggere e' il difetto che questo blocco
+ *    chiude.
+ */
+export async function righeDaTogliere(client, tabella, colonna, base) {
+  const { data: miei } = await client.from(tabella).select("id").like(colonna, soloMiei(base));
+  const { data: vecchie } = await client
+    .from(tabella)
+    .select("id")
+    .like(colonna, `${base}%`)
+    .lt("created_at", nonDiNessuno());
+  return [...new Set([...(miei ?? []), ...(vecchie ?? [])].map((r) => r.id))];
+}
+
 export function clientAnonimo() {
   if (!URL || !ANON) {
     throw new Error(
@@ -130,8 +239,24 @@ export async function primaEntita(titolare) {
  * sia un tavolo vero.
  */
 export async function sagomeDiProva(titolare, quante = 3) {
-  const etichette = Array.from({ length: quante }, (_, i) => `__PROVA__ ${i + 1}`);
+  // ⚠️ Le etichette portano il marchio del giro (01/09/2026): due giri
+  //    insieme non si cancellano piu' i tavoli a vicenda. La pulizia delle
+  //    sagome abbandonate da un giro morto e' piu' sotto, ed e' a tempo.
+  const etichette = Array.from({ length: quante }, (_, i) => `${marchio("__PROVA__")} ${i + 1}`);
   await titolare.from("dining_tables").delete().in("label", etichette);
+
+  // Le sagome di un giro abbandonato: si tolgono solo se nessun giro vivo
+  // puo' averle create. ⚠️ Best-effort: se una e' ancora agganciata a un
+  // conto, la cancellazione viene respinta e si riprova al giro dopo —
+  // meglio una sagoma di troppo che una prova che fallisce per la pulizia.
+  const abbandonate = await titolare
+    .from("dining_tables")
+    .select("id")
+    .like("label", "__PROVA__%")
+    .lt("created_at", nonDiNessuno());
+  for (const s of abbandonate.data ?? []) {
+    await titolare.from("dining_tables").delete().eq("id", s.id);
+  }
 
   // Dal 18/08/2026 un tavolo DEVE avere un formato: è da lì che vengono i
   // suoi coperti, e senza il conteggio della serata sarebbe più basso del

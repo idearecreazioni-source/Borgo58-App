@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 import { fabbisognoEvento } from "../../src/lib/api/reservations";
 import { supabase } from "../../src/lib/supabase";
 
@@ -21,7 +21,12 @@ import { supabase } from "../../src/lib/supabase";
 //   · totale giusto 13,200 kg → 26,40 €
 // Le risposte sbagliate danno numeri tutti diversi: 1,200 (catena persa),
 // 13,000 (scarto ignorato), 52,800 (porzioni ignorate).
-const MARCA = "TEST-AUTO evento";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO evento");
 const PERSONE = 8;
 const PORZIONI = 4;
 const PEZZI = 6;

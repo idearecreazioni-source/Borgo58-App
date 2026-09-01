@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali } from "./aiuto";
+import { clientAutenticato, credenziali, marchio } from "./aiuto";
 import {
   destinatariCommerciali,
   numeriPerBroadcast,
@@ -25,7 +25,12 @@ import { supabase } from "../../src/lib/supabase";
 //   3 · l'aveva dato e si è cancellato → non riceve
 // ⚠️ Il terzo non è un doppione del secondo: distingue «non lo so» da «ha
 // detto di no», che sono due stati diversi con due date diverse.
-const MARCA = "TEST-AUTO consenso";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO consenso");
 
 describe("il consenso decide chi riceve, e lo decide il database", () => {
   let titolare;

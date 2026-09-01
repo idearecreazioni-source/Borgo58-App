@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali } from "./aiuto";
+import { clientAutenticato, credenziali, marchio } from "./aiuto";
 
 // IN UN MENU CI VANNO SOLO I PIATTI — decisione di Alessio del 20/08/2026.
 //
@@ -11,7 +11,12 @@ import { clientAutenticato, credenziali } from "./aiuto";
 // 🔴 E LA PREPARAZIONE E IL BOCCONCINO NASCONO ENTRAMBI «PRONTI PER LA
 // CARTA»: se fossero respinti solo perché quel segno è spento, questo file
 // non starebbe misurando il criterio giusto.
-const MARCA = "TEST-AUTO menu";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO menu");
 
 describe("una preparazione e un finger non entrano in un menu", () => {
   let titolare;

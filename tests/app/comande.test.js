@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { orderTotals } from "../../src/lib/api/orders";
-import { clientAutenticato, credenziali, sagomeDiProva } from "./aiuto";
+import { clientAutenticato, credenziali, righeDaTogliere, sagomeDiProva, soloMiei } from "./aiuto";
 
 // Il giro comanda completo, come lo fa un tablet — ma automatico.
 //
@@ -35,14 +35,15 @@ describe("comande: tre tavoli accostati, un conto solo", () => {
   let prova = { ids: [], sagome: [], pulisci: async () => {} };
   let ordine;
 
+  // ⚠️ TOGLIE I CONTI DI QUESTO GIRO, non tutti quelli che somigliano a una
+  //    prova (01/09/2026). Prima cancellava per `like("__PROVA__%")`: con
+  //    due giri insieme sullo stesso progetto di prova, il `beforeAll` del
+  //    secondo portava via i conti che il primo aveva appena aperto. Vedi
+  //    la nota in cima a `aiuto.js`.
   async function pulisciConti() {
-    const { data: vecchi } = await titolare
-      .from("orders")
-      .select("id")
-      .like("table_label", "__PROVA__%");
-    for (const o of vecchi ?? []) {
-      await titolare.from("order_items").delete().eq("order_id", o.id);
-      await titolare.from("orders").delete().eq("id", o.id);
+    for (const id of await righeDaTogliere(titolare, "orders", "table_label", "__PROVA__")) {
+      await titolare.from("order_items").delete().eq("order_id", id);
+      await titolare.from("orders").delete().eq("id", id);
     }
   }
 
@@ -86,7 +87,10 @@ describe("comande: tre tavoli accostati, un conto solo", () => {
     const { data: aperti } = await staff
       .from("orders")
       .select("id")
-      .like("table_label", "__PROVA__%")
+      // ⚠️ Il conteggio guarda SOLO i conti di questo giro: con il modello
+      //    condiviso, un conto aperto da un'altra esecuzione faceva
+      //    fallire l'asserzione senza che niente fosse rotto.
+      .like("table_label", soloMiei("__PROVA__"))
       .eq("status", "aperto");
     expect(aperti).toHaveLength(1);
   });

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 
 // 🔴 L'UNITA' DI UN PRODOTTO NON SI CAMBIA DI NASCOSTO (23/08/2026).
 //
@@ -15,7 +15,12 @@ import { clientAutenticato, credenziali, primaEntita } from "./aiuto";
 // nuovo e' `security definer` e legge dodici tabelle — se una di quelle
 // letture fosse fatta coi permessi del chiamante, dalla sala fallirebbe.
 // Solo una prova col token di un utente vero lo dice.
-const NOME = "TEST-AUTO cambio unita";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("TEST-AUTO cambio unita");
 
 describe("l'unita' di un prodotto non si cambia se i numeri non la seguono", () => {
   let titolare;

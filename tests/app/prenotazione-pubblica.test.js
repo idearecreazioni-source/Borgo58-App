@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAnonimo, clientAutenticato, credenziali, sagomeDiProva } from "./aiuto";
+import { clientAnonimo, clientAutenticato, credenziali, marchio, sagomeDiProva } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import {
   getReservationOptions,
@@ -20,7 +20,12 @@ import {
 // Questa prova rifà esattamente quella scena: prima entra, poi invia.
 
 const TELEFONO = "3999000099";
-const NOME = "PROVA AUTOMATICA form pubblico";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const NOME = marchio("PROVA AUTOMATICA form pubblico");
 
 // Un momento in cui il locale accetta davvero prenotazioni.
 //

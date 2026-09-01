@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { credenziali } from "./aiuto";
+import { credenziali, marchio } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import { dimenticaLettureTagliate, elencoLettureTagliate, letturaTagliata } from "../../src/lib/lettureTagliate";
 
@@ -18,7 +18,12 @@ import { dimenticaLettureTagliate, elencoLettureTagliate, letturaTagliata } from
 // qui il riconoscimento vive DENTRO quel collegamento, e una prova con un
 // client proprio non lo eserciterebbe affatto — passerebbe verde su un
 // difetto intatto.
-const MARCA = "TEST-AUTO taglio";
+// ⚠️ IL MARCHIO E' DI QUESTO GIRO, dal 01/09/2026: le pulizie e i
+//    conteggi qui sotto usano questo valore in un modello `like`, e con
+//    un valore fisso due esecuzioni insieme sullo stesso progetto di
+//    prova si cancellano e si contano le righe a vicenda. Vedi la nota
+//    in cima a `aiuto.js`.
+const MARCA = marchio("TEST-AUTO taglio");
 const QUANTE = 1200;
 
 describe("una lettura tagliata si denuncia", () => {
