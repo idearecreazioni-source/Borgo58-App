@@ -1,0 +1,280 @@
+# Le reti che mancavano attorno alla CI — il P0, le migrazioni, le schermate, il peso
+
+**01/09/2026.** Riepilogo per il validatore.
+
+* **HEAD dichiarato**: `e2472954` — il commit che sta sotto questo file
+  (`quanto pesa il gestionale, e quanto ne e' provato`).
+* **Ramo**: `claude/code-review-remediation-f7o4xj`, aperto da `797262b` (master).
+* **Prove**: **697 pure** verdi (61 file) · **12 sulle schermate** verdi
+  (2 file, strato nuovo) · **459 contro il progetto di prova** verdi
+  (67 file, lanciate da qui, uscita 0) · lint pulito · build pulita ·
+  peso sotto il tetto.
+* **Migrazioni**: **nessuna**. Niente tocca il database, né vero né di prova.
+* **Working tree**: pulito dopo questo commit.
+
+Origine del lavoro: una revisione esterna commissionata da Alessio, che
+dichiara «implementazione disastrosa» e «copertura ridicola, appena il 9%».
+Questo documento riporta **cosa di quel referto è vero misurandolo**, cosa
+non lo è, e cosa è stato costruito di conseguenza.
+
+---
+
+## Cosa abbiamo rovesciato
+
+**Niente.** Nessuna decisione presa in passato è stata ribaltata, e vale la
+pena dire qual era il candidato più vicino, perché *non* lo è.
+
+Il file dei controlli dichiarava, dal 31/08: *«nessuna prova di questo
+progetto guarda una schermata»*. Da oggi ce ne sono dodici che ne montano
+una. **Non era una decisione: era un limite dichiarato** — nato dal fatto
+che le prove giravano in `node`, senza nessun ambiente di schermo. Non è
+stato rovesciato niente: è stato tolto un impedimento, e la frase è stata
+**riscritta invece di lasciarla lì a invecchiare**, dichiarando cosa quelle
+dodici prove continuano a NON fare.
+
+La ragione di allora resta intera e sta scritta nella forma nuova: *una
+schermata che sborda, un testo sotto i tre millimetri, un colore che non si
+distingue con le luci basse, li trova solo un occhio*.
+
+---
+
+## 1 · Il P0 è vero, e la sua conclusione no
+
+**Vero, misurato sul registro di GitHub.** Il giro dei controlli sull'ultimo
+commit di `master` (`797262b`, 31/08 ore 23:11) è **rosso**: il lavoro sul
+codice passa, quello contro il database muore con **67 file falliti e 146
+prove saltate**, fra «Invalid supabaseUrl» e credenziali mancanti.
+
+**Non vero: che questo dica qualcosa sul gestionale.** Dieci minuti prima,
+sullo **stesso identico contenuto** (il giro della proposta delle 22:55,
+commit `31b66e7`), le stesse prove erano passate **459 su 459 in 391
+secondi**. Il referto esterno lo nota lealmente e non ne trae la
+conclusione; il primo giudizio («implementazione disastrosa») sì, e su
+questo punto è **contraddetto dalla misura**.
+
+**E la misura è stata rifatta oggi, da qui**, non citata: lanciando
+`npm run test:app` contro il progetto di prova, sull'albero di `master`,
+**67 file su 67, 459 prove su 459, uscita 0, 480 secondi**. Rifatta una
+seconda volta dopo tutte le modifiche di questa consegna
+(§ *Cosa è stato verificato*).
+
+### La causa, letta riga per riga
+
+Nel registro del giro rosso, il blocco `env` del passo che fallisce dice:
+
+```
+VITE_SUPABASE_URL: ***      <- c'era, ma non era un indirizzo
+TEST_TITOLARE_EMAIL:        <- VUOTA
+TEST_STAFF_EMAIL:           <- VUOTA
+```
+
+Due segreti mai creati, e nel terzo un valore che non è un indirizzo API.
+
+### La radice sta nella guida, e nessun controllo poteva prenderla
+
+`docs/CI.md` §3a diceva di riempire il segreto `PROVA_SUPABASE_URL`
+copiando la riga **`VITE_SUPABASE_URL`** di `.env`. In `.env`, **dal
+31/08**, quella riga è il **locale vero**.
+
+La tabella era giusta finché i file erano tre e in `.env.test` quel nome
+voleva dire il progetto di prova. È diventata falsa il giorno in cui i tre
+file sono diventati uno — **lo stesso giorno in cui è stata scritta** — e
+non se n'è accorto nessuno perché descrive un gesto che si fa una volta
+sola.
+
+⚠️ **Chi l'avesse seguita alla lettera avrebbe puntato le 459 prove — che
+SCRIVONO — al database del locale.** Non è successo: `tests/app/aiuto.js`
+rifiuta l'indirizzo di produzione, e la rete ha retto. Ma la guida
+mandava lì.
+
+⚠️ **E la casella non è ambigua per caso**: in `.env` il progetto di prova
+ha *due* righe che lo descrivono — `PROVA_SUPABASE_URL` (l'API, `https://`)
+e `DB_URL_PROVA` (il collegamento diretto, `postgresql://`, **con dentro una
+password**). Da fuori si somigliano: portano tutte e due il riferimento del
+progetto.
+
+### Cosa era rotto nel repository, e non solo nel pannello
+
+Il passo «Le chiavi ci sono?» guardava **una casella sola** e solo se
+vuota. Quella c'era, quindi ha detto di sì. Il costo non sono i sei minuti:
+è che **il rosso non nomina la causa**, e chi lo legge va a cercare il
+guasto nel codice.
+
+E la validazione era **divisa in tre file che divergevano**: la forma
+dell'indirizzo in `vitest.config.js`, il rifiuto della produzione in
+`tests/app/aiuto.js`, la presenza nel workflow. **Nessuno dei tre guardava
+le quattro credenziali degli utenti** — cioè esattamente da dove è arrivato
+il guasto. Peggio: la validazione della forma viveva nel ramo che legge
+`.env`, cioè **l'unico ramo che nella pipeline non viene mai percorso**.
+
+### Cosa c'è adesso
+
+Una regola sola in `scripts/chiavi.mjs`, tre lettori: il preflight
+(`scripts/chiavi-di-prova.mjs`), `vitest.app.config.js`, `tests/app/aiuto.js`.
+Rifiuta, **nominandoli tutti insieme**: una qualunque delle sei caselle
+vuota · un indirizzo che non comincia per `https://` · una stringa
+`postgresql://` (nominando la confusione vera, `DB_URL_PROVA`) · l'indirizzo
+del gestionale vero.
+
+⚠️ **Non ripete mai il valore.** Dentro quella stringa c'è una password in
+chiaro: un messaggio che la ristampa la porta nel registro della pipeline e
+nella prima segnalazione che qualcuno incolla in chat.
+
+⚠️ **Vale anche in locale**: `npm run test:app` lancia lo stesso comando
+prima di vitest. *Un controllo che vale solo in un posto è il difetto del
+31/08.*
+
+✅ **Visto funzionare su un caso vero, non costruito**: in questo ambiente
+`VITE_SUPABASE_URL` punta al **locale vero**, e il preflight lo dice e si
+ferma.
+
+### E le prove pure non dipendono più dal database
+
+`vitest.config.js` leggeva `.env` e infilava le chiavi in `test.env`, che
+vitest applica a **tutte** le prove: un valore storto lì dentro faceva
+fallire `npm run test` con «Invalid supabaseUrl» su prove che non aprono
+nessun collegamento. **Era già successo il 31/08.** La configurazione del
+progetto di prova vive ora in `vitest.app.config.js`.
+
+La **precedenza** fra ambiente e file non era scritta da nessuna parte e i
+due documenti ne dicevano due versioni opposte. Ora è dichiarata —
+*l'ambiente vince* — e provata nei due versi.
+
+---
+
+## 2 · Il P1 sulle migrazioni è vero
+
+Il workflow non guarda le migrazioni. `versioniDoppie()` esiste dal 22/08 ma
+vive dentro `npm run migra` e `npm run prova:migra`: comandi che girano sul
+computer di Alessio.
+
+Sei prove pure sulla cartella **vera**. Il difetto che chiudono è già
+successo il 22/08 — due file con lo stesso numero, uno applicato e l'altro
+dato per applicato — e quel giorno **in sala aggiungere un piatto a una
+comanda falliva**.
+
+Misurato oggi: **367 file, 367 versioni distinte, zero doppie**; 33 senza
+auto-registrazione e 26 senza blocco di verifica, **tutte e trentatré
+precedenti a `20260805000001`**, che è la migrazione che *crea*
+`applied_migrations`. La soglia non è scelta: è quel fatto.
+
+⚠️ **Quello che queste prove NON fanno**: non applicano niente. Che le 367
+migrazioni girino davvero in ordine su un database vuoto lo dice
+`npm run ricostruzione:verifica`, che ha bisogno di un motore Postgres e
+resta fuori dalla pipeline.
+
+---
+
+## 3 · Il P1 sulle schermate è vero, e il «9%» va letto diviso
+
+**Misurato**, non discusso: delle 13.241 istruzioni di `src/`, le prove pure
+ne toccavano **1.310 — il 9,89%**. Il numero del referto è giusto. Il
+giudizio che ci si appoggia sopra, no, perché il totale mette insieme cose
+che si provano in tre modi diversi:
+
+| cartella | file | istruzioni | prima | dopo |
+|---|---|---|---|---|
+| `src/lib/calcoli` | 40 | 1.097 | **91,9%** | 92,0% |
+| `src/lib` (radice) | 19 | 666 | 44,3% | 46,1% |
+| `src/lib/api` | 41 | 2.058 | 0,3% | 1,7% |
+| `src/pages` | 89 | 8.731 | **0,0%** | **2,1%** |
+| `src/components` | 25 | 627 | 0,0% | 3,0% |
+| `src/context` | 1 | 33 | 0,0% | **66,7%** |
+| **in tutto** | | 13.241 | **9,89%** | **11,96%** |
+
+⚠️ **`src/lib/api` è esercitata dalle 459 prove contro il database**, che
+questo strumento non vede: quel «1,7%» non è la sua copertura vera.
+
+⚠️ **`src/pages` è i due terzi del gestionale**, ed era a zero. Non per
+dimenticanza: le prove giravano in `node`, e montare un componente non era
+possibile.
+
+Dodici prove nuove: tre sulla pagina che vede un cliente (compresa la
+sorveglianza del difetto del 09/08 — `/prenota` deve parlare **solo** dal
+collegamento anonimo) e nove sulle porte chiuse a chi non è entrato.
+
+🔴 **E la prima prova che ha montato una schermata ha trovato un difetto**:
+cercava i campi per etichetta, come li cerca un lettore di schermo, e non ne
+trovava **nessuno**. Nel modulo pubblico nessuna etichetta era legata al suo
+campo. Su un telefono l'etichetta è un bersaglio grande sopra un campo
+piccolo, e toccarla non faceva niente — sull'unica pagina dove chi sbaglia
+il bersaglio non ha nessuno a cui chiedere. Otto campi legati.
+
+---
+
+## 4 · Il peso del pacchetto — vero, misurato, non risolto
+
+Un solo file di codice: **1.488,89 kB, 351,24 compressi**, 91 `import`
+statici in `src/App.jsx`. La compilazione un avviso lo dava già e **non
+fermava niente**.
+
+⚠️ **Chi lo paga non è chi si crede**: il tablet di sala lo scarica una
+volta; **chi apre `/prenota` dal telefono scarica tutto il gestionale** —
+magazzino, prima nota, proiezione fiscale — per compilare quattro caselle.
+
+`npm run peso` misura e si ferma sopra il tetto dichiarato (400 kB
+compressi). **Non divide il pacchetto**: caricare le schermate a pezzi
+cambia cosa succede *in servizio* quando un pezzo non arriva, ed è una
+decisione di Alessio, posta in chat con le due strade.
+
+---
+
+## 5 · Cosa è stato verificato, e come
+
+| | |
+|---|---|
+| lint | pulito (`oxlint`, zero avvisi) |
+| prove pure | **697 su 697**, 61 file |
+| prove sulle schermate | **12 su 12**, 2 file |
+| prove contro il progetto di prova | **459 su 459**, 67 file, uscita 0 |
+| build | pulita |
+| peso | 351,35 kB compressi, tetto 400 |
+
+**Controprove fatte, non promesse** — ogni rete è stata rotta apposta e
+guardata diventare rossa, poi rimessa a posto:
+
+| rete rotta | esito |
+|---|---|
+| il controllo delle chiavi guarda una casella sola | 3 prove rosse su 18 |
+| un doppione di versione + una migrazione senza niente dentro | 3 prove rosse su 6 |
+| `RequireAuth` lascia passare tutti | 6 prove rosse su 12 |
+
+🔴 **E il misuratore della copertura ha mentito alla prima versione**: v8
+riscrive il riassunto a ogni giro, quindi l'unione leggeva due volte lo
+stesso file e dichiarava `src/lib/calcoli` al **5,1%**. L'ha preso la regola
+del 26/08 — *un misuratore nuovo si prova su un caso di cui si conosce già
+la risposta*: quella cartella era stata misurata al 91,9% dieci minuti
+prima. **Senza quel numero noto davanti, il 5,1% sarebbe finito in questo
+riepilogo.**
+
+---
+
+## 6 · Cosa NON è stato verificato, e cosa resta ad Alessio
+
+⚠️ **Nessuna immagine è stata guardata.** Le dodici prove nuove montano le
+schermate in un ambiente finto (`jsdom`) e leggono il DOM: dicono che una
+schermata **si apre** e **cosa contiene**, non come si vede.
+
+⚠️ **Il modulo pubblico non è stato aperto da un telefono vero** dopo aver
+legato le etichette ai campi.
+
+⚠️ **La pipeline corretta non è ancora girata**: questo ramo non è stato
+spinto quando il documento è stato scritto. Che il preflight fermi il giro
+con un messaggio giusto è provato **da qui**, non su GitHub.
+
+🔴 **DUE COSE LE PUÒ FARE SOLO ALESSIO, e senza di quelle il giro resta
+rosso** (nessuna riga di codice le sostituisce):
+
+1. **`PROVA_SUPABASE_URL`** va rimesso: dentro ci va l'indirizzo che in
+   `.env` sta sulla riga con lo stesso nome — quello che comincia per
+   `https://` e finisce per `.supabase.co`. Adesso c'è dentro un'altra
+   riga.
+2. **`TEST_TITOLARE_EMAIL` e `TEST_STAFF_EMAIL`** non esistono come segreti:
+   vanno creati.
+
+⚠️ **E una terza, che riguarda una password**: il valore finito in
+`PROVA_SUPABASE_URL` è la stringa di collegamento del progetto di prova, che
+**contiene la password del database**. È stata trattata come un indirizzo —
+passata alla pipeline, e leggibile da chiunque abbia accesso in scrittura al
+repository tramite un workflow. Non tocca il locale vero (è il progetto
+usa-e-getta), ma **è una password e va cambiata**.
