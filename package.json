@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run tests/unita",
     "test:schermate": "vitest run tests/schermate --config vitest.schermate.config.js",
-    "test:app": "node scripts/chiavi-di-prova.mjs && vitest run tests/app --no-file-parallelism --config vitest.app.config.js",
+    "test:app": "node scripts/chiavi-di-prova.mjs && node scripts/prove-app.mjs",
     "backup": "node scripts/backup.mjs",
     "prova:ricostruisci": "node scripts/prova-ricostruisci.mjs",
     "prova:migra": "node scripts/prova-migra.mjs",

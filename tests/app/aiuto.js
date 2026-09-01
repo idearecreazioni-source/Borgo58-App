@@ -150,6 +150,32 @@ export function giornoDiProva(anno, numero = NUMERO_CORSA) {
  */
 export const MINUTI_DI_GRAZIA = 45;
 
+/**
+ * Il tetto di tempo di UN GIRO DI PROVE, anche lanciato a mano.
+ *
+ * 🔴 PERCHE' ESISTE (01/09/2026, rilievo della revisione). La bonifica si
+ *    appoggia a una scadenza; su GitHub quella scadenza la fa rispettare
+ *    il runner (`timeout-minutes`), ma **un giro lanciato su un computer
+ *    non aveva nessun tetto**. Un giro impiantato per un'ora restava vivo
+ *    oltre la grazia, e le sue righe diventavano candidate alla bonifica
+ *    mentre lui poteva ancora scriverle. Era una convenzione, e una
+ *    convenzione non e' una protezione.
+ *
+ * ⚠️ ORA IL TETTO C'E' ANCHE IN LOCALE: `npm run test:app` passa da
+ *    `scripts/prove-app.mjs`, che ammazza il giro a questo minuto. Cosi'
+ *    la regola vale ovunque per costruzione — **nessun giro puo' vivere
+ *    fino alla grazia**, e non perche' di solito dura otto minuti.
+ *
+ * ⚠️ SCARTATA LA TERZA STRADA (togliere la bonifica e lasciare i residui):
+ *    misurato che **non e' sicura**. Tre prove leggono la sala INTERA e non
+ *    solo le proprie sagome — `coperti-sala` (tutte le `dining_tables`
+ *    attive), `evento-accettato` (`coperti_del_giorno`),
+ *    `prenotazione-pubblica` (`pianta_del_giorno`) — e non possono essere
+ *    ristrette per giro: parlano della sala vera, ed e' il loro senso. Un
+ *    tavolo di prova rimasto indietro le farebbe sbagliare per sempre.
+ */
+export const MINUTI_MASSIMI_DI_UN_GIRO = 40;
+
 /** L'istante prima del quale una riga di prova non e' piu' di nessun giro vivo. */
 export const nonDiNessuno = () =>
   new Date(Date.now() - MINUTI_DI_GRAZIA * 60_000).toISOString();

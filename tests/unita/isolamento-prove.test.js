@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   CORSA,
   MINUTI_DI_GRAZIA,
+  MINUTI_MASSIMI_DI_UN_GIRO,
   NUMERO_CORSA,
   giornoDiProva,
   marchio,
@@ -128,5 +129,22 @@ describe("la pulizia di cio' che nessun giro sta usando", () => {
     const tetti = [...workflow.matchAll(/timeout-minutes:\s*(\d+)/g)].map((m) => Number(m[1]));
     expect(tetti.length).toBeGreaterThan(0);
     expect(MINUTI_DI_GRAZIA).toBeGreaterThan(Math.max(...tetti));
+  });
+
+  // 🔴 E VALE ANCHE PER UN GIRO LANCIATO A MANO — 01/09/2026, rilievo
+  //    della revisione. Su GitHub il tetto lo impone il runner; su un
+  //    computer non lo imponeva nessuno, e un giro impiantato per un'ora
+  //    restava vivo oltre la grazia. «Di solito dura otto minuti» non e'
+  //    un limite: e' una convenzione, e una convenzione non protegge.
+  it("nessun giro puo' vivere fino alla grazia, nemmeno lanciato a mano", () => {
+    expect(MINUTI_DI_GRAZIA).toBeGreaterThan(MINUTI_MASSIMI_DI_UN_GIRO);
+  });
+
+  // ⚠️ Il tetto vale solo se il comando ci passa davvero: `test:app` deve
+  //    lanciare il programma che lo impone, non `vitest` dritto.
+  it("e il comando delle prove passa dal programma che lo impone", () => {
+    const pacchetto = JSON.parse(readFileSync("package.json", "utf8"));
+    expect(pacchetto.scripts["test:app"]).toContain("scripts/prove-app.mjs");
+    expect(pacchetto.scripts["test:app"]).not.toMatch(/(^|&&\s*)vitest\s/);
   });
 });
