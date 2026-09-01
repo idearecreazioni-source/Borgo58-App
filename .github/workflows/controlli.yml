@@ -17,11 +17,18 @@
 #      nessun controllo indipendente, e il sito andava online comunque.
 #
 # ⚠️ QUELLO CHE QUESTA PIPELINE NON PUO' FARE, e va detto perche' non si
-# scambi per una garanzia intera: **nessuna prova di questo progetto guarda
-# una schermata**. Le regressioni visive — una schermata che sborda, un
-# pulsante sparito, un menu che offre la voce sbagliata — le trova solo un
-# occhio. Il 31/08 i tre difetti piu' grossi li ha trovati Alessio in dieci
-# minuti, non le 1116 prove.
+# scambi per una garanzia intera. La riga qui sotto diceva, fino al
+# 01/09/2026: *«nessuna prova di questo progetto guarda una schermata»*. Da
+# oggi non e' piu' vera alla lettera — ce ne sono dodici che ne **montano**
+# una — e per questo va riscritta invece di restare li' a invecchiare:
+#
+#   quelle dodici provano che una schermata si apre, che chi non e' entrato
+#   non ne vede una, che la pagina del cliente parla dal collegamento
+#   anonimo. **Non provano come si vede.** Una schermata che sborda, un
+#   testo sotto i tre millimetri, un colore che non si distingue con le luci
+#   basse, un pulsante sparito: quelli li trova solo un occhio. Il 31/08 i
+#   tre difetti piu' grossi li ha trovati Alessio in dieci minuti, non le
+#   1116 prove — e quella frase resta vera.
 
 name: Controlli
 
@@ -126,8 +133,34 @@ jobs:
       - name: Le prove che non toccano il database
         run: npm run test
 
+      # 🔴 LE PRIME PROVE CHE MONTANO UNA SCHERMATA — 01/09/2026.
+      #    Misurato con la copertura alla mano: `src/lib/calcoli` (le regole
+      #    pure) stava al 91,9%, `src/pages` — 89 file, i due terzi del
+      #    gestionale — stava a **zero**. Non «poco»: zero, perche' in questo
+      #    progetto non esisteva un ambiente di schermo in cui montare un
+      #    componente.
+      #    ⚠️ Non sostituiscono un occhio, e la riga in cima a questo file
+      #    resta vera: un testo troppo piccolo o un riquadro che sborda li
+      #    trova Alessio col tablet in mano. Provano cio' che si puo'
+      #    affermare senza guardare — che una schermata si monta, che chi non
+      #    e' entrato non ne vede una, che la pagina del cliente parla dal
+      #    collegamento anonimo.
+      - name: Le prove che montano una schermata
+        run: npm run test:schermate
+
       - name: L'app si compila
         run: npm run build
+
+      # 🔴 QUANTO PESA — aggiunto il 01/09/2026, misurando.
+      #    La compilazione un avviso lo dava gia' («Some chunks are larger
+      #    than 500 kB»), e non fermava niente: un avviso che non ferma e'
+      #    arredamento. Oggi il gestionale e' **un solo file** da 351,24 kB
+      #    compressi, e chi apre `/prenota` dal telefono lo scarica tutto —
+      #    magazzino, prima nota, proiezione fiscale — per compilare quattro
+      #    caselle. Questo passo non lo sistema: impedisce che peggiori in
+      #    silenzio. Il tetto e il modo di alzarlo stanno nel comando.
+      - name: Quanto pesa il pacchetto
+        run: npm run peso
 
   # -------------------------------------------------------------------
   # 2. LE PROVE CONTRO IL DATABASE DI PROVA
@@ -182,27 +215,47 @@ jobs:
 
       - run: npm ci
 
-      # 🔴 SE LE CHIAVI NON CI SONO, LO DICE E SI FERMA — non passa in
-      #    silenzio. Una proposta di modifica che arriva da un repository
-      #    forestiero non riceve i segreti (lo impedisce GitHub, ed e'
-      #    giusto): senza questa riga il lavoro finirebbe verde **senza aver
-      #    provato niente**, e un verde che non ha provato niente e' peggio
-      #    di un rosso.
+      # 🔴 SE LE CHIAVI NON CI SONO — O NON SONO QUELLE GIUSTE — LO DICE E SI
+      #    FERMA, prima di sprecare sei minuti. Una proposta di modifica che
+      #    arriva da un repository forestiero non riceve i segreti (lo
+      #    impedisce GitHub, ed e' giusto): senza questo passo il lavoro
+      #    finirebbe verde **senza aver provato niente**, e un verde che non
+      #    ha provato niente e' peggio di un rosso.
       #    ⚠️ E' la regola del 19/08: *una risposta piu' corta che ha l'aria
       #    di essere intera*.
-      - name: Le chiavi ci sono?
+      #
+      # 🔴 GUARDAVA UNA CASELLA SOLA, ED E' COSTATO UN GIRO INTERO —
+      #    corretto il 01/09/2026 con il registro del guasto davanti.
+      #    Il 31/08 alle 23:11, su `master`, questo passo ha detto di si' e
+      #    le prove sono morte sei minuti dopo con **67 file falliti**.
+      #    Nel registro di quel giro si legge cosa era arrivato davvero:
+      #        VITE_SUPABASE_URL: ***      <- c'era, ma era la stringa di
+      #                                       collegamento al database, non
+      #                                       l'indirizzo dell'API
+      #        TEST_TITOLARE_EMAIL:        <- VUOTA
+      #        TEST_STAFF_EMAIL:           <- VUOTA
+      #    Il passo chiedeva **una** cosa — che `PROVA_SUPABASE_URL` non
+      #    fosse vuota — e quella c'era.
+      #    ⚠️ IL DANNO NON ERA IL ROSSO: era che il rosso NON NOMINAVA LA
+      #    CAUSA. Settantanove messaggi diversi, nessuno dei quali diceva
+      #    «mancano due segreti e il terzo non e' un indirizzo», e chi legge
+      #    va a cercare il guasto nel codice — che era sano: dieci minuti
+      #    prima, sullo stesso identico contenuto, erano passate 459 prove
+      #    su 459.
+      #
+      # ⚠️ La regola vive in `scripts/chiavi.mjs` e NON in questo file: la
+      #    guardano anche `vitest.config.js` e `tests/app/aiuto.js`, e tre
+      #    posti che dicono pezzi della stessa cosa divergono — infatti
+      #    divergevano, e nessuno dei tre guardava le quattro credenziali.
+      - name: Le chiavi ci sono e sono quelle giuste?
         env:
-          URL: ${{ secrets.PROVA_SUPABASE_URL }}
-        run: |
-          if [ -z "$URL" ]; then
-            echo "::error::Le chiavi del progetto di prova non sono arrivate."
-            echo "Se questa e' una proposta di modifica da un repository forestiero"
-            echo "e' normale: GitHub non passa i segreti, ed e' una protezione."
-            echo "In quel caso le prove sul database vanno lanciate a mano prima"
-            echo "di approvare. Se invece e' un ramo di questo repository,"
-            echo "mancano i Secrets: vedi docs/CI.md."
-            exit 1
-          fi
+          VITE_SUPABASE_URL: ${{ secrets.PROVA_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_EMAIL: ${{ secrets.TEST_TITOLARE_EMAIL }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_EMAIL: ${{ secrets.TEST_STAFF_EMAIL }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: node scripts/chiavi-di-prova.mjs
 
       # ⚠️ Le prove leggono da `process.env` (tests/app/aiuto.js), quindi qui
       #    non serve nessun file: bastano le variabili.

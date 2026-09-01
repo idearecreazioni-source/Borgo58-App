@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { problemaDellIndirizzo, problemiDelleChiavi } from "../../scripts/chiavi.mjs";
+
 // Attrezzi per le prove contro un database vero (npm run test:app).
 //
 // Il database e' quello del progetto di PROVA, mai quello del locale:
@@ -14,10 +16,19 @@ import { createClient } from "@supabase/supabase-js";
 // sorvegliate da deleted_records, per non lasciare lapidi di prova nel
 // registro delle cancellazioni.
 
-// Il progetto VERO. Le prove non devono poterlo toccare: dal 10/08/2026
-// girano sul progetto di prova, e questa costante e' il controllo che lo
-// impone da solo — non una raccomandazione scritta in un documento.
-const REF_PRODUZIONE = "oudjuqbqszisdtwzbxdo";
+// Il progetto VERO non si tocca: dal 10/08/2026 le prove girano sul
+// progetto di prova, e il controllo lo impone da solo — non e' una
+// raccomandazione scritta in un documento.
+//
+// ⚠️ LA REGOLA NON E' PIU' SCRITTA QUI — 01/09/2026. Vive in
+//    `scripts/chiavi.mjs` insieme a quella che il preflight applica prima
+//    di far partire vitest e a quella che traduce i nomi in
+//    `vitest.app.config.js`. Erano tre condizioni sparse in tre file e
+//    divergevano: questa guardava che il bersaglio non fosse il locale
+//    vero, vitest guardava la forma dell'indirizzo, la pipeline guardava
+//    solo che ci fosse qualcosa. **Nessuna delle tre guardava le quattro
+//    credenziali degli utenti** — ed e' esattamente da li' che il 31/08 e'
+//    arrivato il giro rosso con 67 file falliti.
 
 // I valori arrivano da `.env` (il progetto di prova si chiama li' dentro
 // `PROVA_*`, ribattezzato `VITE_*` da vitest.config.js) oppure dalle
@@ -34,10 +45,10 @@ export function clientAnonimo() {
         "(PROVA_SUPABASE_URL e PROVA_SUPABASE_ANON_KEY). Vedi docs/AMBIENTE_PROVA.md."
     );
   }
-  if (URL.includes(REF_PRODUZIONE)) {
+  const guaio = problemaDellIndirizzo(URL);
+  if (guaio) {
     throw new Error(
-      "FERMO: le prove stanno puntando al database VERO del locale. " +
-        "In .env, PROVA_SUPABASE_URL deve essere il progetto di prova (docs/AMBIENTE_PROVA.md)."
+      `FERMO: l'indirizzo su cui girerebbero le prove ${guaio}`
     );
   }
   return createClient(URL, ANON, {
@@ -52,9 +63,17 @@ export function credenziali() {
     TEST_STAFF_EMAIL,
     TEST_STAFF_PASSWORD,
   } = process.env;
-  if (!TEST_TITOLARE_EMAIL || !TEST_TITOLARE_PASSWORD || !TEST_STAFF_EMAIL || !TEST_STAFF_PASSWORD) {
+  // ⚠️ NOMINA QUALE CASELLA MANCA, non «mancano le credenziali»: il 31/08
+  //    ne mancavano due su quattro e il messaggio non lo diceva, quindi il
+  //    registro della pipeline ripeteva la stessa frase per settantanove
+  //    volte senza mai nominare la casella vuota.
+  const problemi = problemiDelleChiavi(
+    { TEST_TITOLARE_EMAIL, TEST_TITOLARE_PASSWORD, TEST_STAFF_EMAIL, TEST_STAFF_PASSWORD },
+    "file"
+  ).filter((riga) => riga.startsWith("TEST_"));
+  if (problemi.length > 0) {
     throw new Error(
-      "Mancano in .env le credenziali degli utenti di prova. " +
+      `Mancano le credenziali degli utenti di prova:\n  · ${problemi.join("\n  · ")}\n` +
         "Copiare .env.example in .env e completarlo (vedi tests/app/LEGGIMI.md)."
     );
   }

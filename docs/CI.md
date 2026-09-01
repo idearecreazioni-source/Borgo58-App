@@ -47,19 +47,43 @@ nel codice**: GitHub le tiene cifrate e non le mostra a nessuno.
 5. Aggiungine **sei**, uno alla volta. Nome esatto a sinistra, valore preso
    dal file `.env` sul computer:
 
-   | Nome del segreto | Da dove prendere il valore |
+   | Nome del segreto | Riga da copiare dal file `.env` |
    |---|---|
-   | `PROVA_SUPABASE_URL` | riga `VITE_SUPABASE_URL` |
-   | `PROVA_SUPABASE_ANON_KEY` | riga `VITE_SUPABASE_ANON_KEY` |
-   | `TEST_TITOLARE_EMAIL` | riga omonima |
-   | `TEST_TITOLARE_PASSWORD` | riga omonima |
-   | `TEST_STAFF_EMAIL` | riga omonima |
-   | `TEST_STAFF_PASSWORD` | riga omonima |
+   | `PROVA_SUPABASE_URL` | `PROVA_SUPABASE_URL` |
+   | `PROVA_SUPABASE_ANON_KEY` | `PROVA_SUPABASE_ANON_KEY` |
+   | `TEST_TITOLARE_EMAIL` | `TEST_TITOLARE_EMAIL` |
+   | `TEST_TITOLARE_PASSWORD` | `TEST_TITOLARE_PASSWORD` |
+   | `TEST_STAFF_EMAIL` | `TEST_STAFF_EMAIL` |
+   | `TEST_STAFF_PASSWORD` | `TEST_STAFF_PASSWORD` |
 
-⚠️ **Sono le chiavi del progetto di PROVA, mai quelle del locale vero.** E
-non è solo una raccomandazione: le prove hanno un controllo dentro
-(`tests/app/aiuto.js`) che **si rifiuta di partire** se l'indirizzo è quello
-del gestionale vero.
+   **Il nome del segreto e il nome della riga sono lo stesso, tutte e sei le
+   volte.** Se ti trovi a copiare una riga che si chiama diversamente, è
+   quella sbagliata.
+
+🔴 **QUESTA TABELLA DICEVA DI COPIARE LE RIGHE SBAGLIATE, ed è stata
+corretta il 01/09/2026.** Diceva di prendere il valore di `PROVA_SUPABASE_URL`
+dalla riga **`VITE_SUPABASE_URL`** e quello della chiave dalla riga
+`VITE_SUPABASE_ANON_KEY`: in `.env` quelle due righe sono **il locale vero**.
+La tabella era giusta prima del 31/08, quando i file erano tre e in
+`.env.test` quel nome voleva dire il progetto di prova; il giorno in cui i
+tre file sono diventati uno è diventata falsa, e nessuno se n'è accorto
+perché descriveva un gesto che si fa una volta sola.
+
+⚠️ **Cosa è successo davvero seguendo la guida**: nel segreto
+`PROVA_SUPABASE_URL` è finita una riga che non è l'indirizzo dell'API — e le
+prove sono morte con «Invalid supabaseUrl» dopo sei minuti di lavoro, con
+sessantasette file falliti e un messaggio che non nominava la causa. Le due
+righe `TEST_*_EMAIL` non erano state create affatto.
+
+⚠️ **Sono le chiavi del progetto di PROVA, mai quelle del locale vero**, e
+non è solo una raccomandazione: prima ancora di far partire le prove, il
+giro dei controlli lancia `node scripts/chiavi-di-prova.mjs`, che si ferma
+se una delle sei caselle manca, se l'indirizzo non comincia per `https://`,
+se qualcuno ha incollato la **stringa di collegamento al database**
+(`postgresql://…`, che in `.env` si chiama `DB_URL_PROVA`) e se l'indirizzo
+è quello del gestionale vero. Nel registro finiscono **solo i nomi** delle
+caselle, mai i valori. La stessa regola vale sul computer di Alessio:
+`npm run test:app` lancia lo stesso controllo prima di partire.
 
 ### 3b · Bloccare `master`
 
@@ -169,7 +193,7 @@ esattamente ciò che quel freno esiste per fare.
 
 | lavoro | cosa fa | quanto ci mette |
 |---|---|---|
-| **Codice, prove pure e compilazione** | il codice non ha avvisi · 657 prove che non toccano il database · l'app si compila | ~3 minuti |
+| **Codice, prove pure e compilazione** | il codice non ha avvisi · 697 prove che non toccano il database · 12 prove che montano una schermata · l'app si compila · quanto pesa il pacchetto | ~4 minuti |
 | **Prove contro il progetto di prova** | 459 prove contro il database vero di prova | ~7 minuti |
 
 Il secondo parte **solo se il primo è verde**: far scrivere righe di prova da
@@ -178,10 +202,17 @@ un ramo che non compila nemmeno è sporcare per niente.
 🔴 **NON controlla — e va detto perché non si scambi per una garanzia
 intera:**
 
-* **Nessuna prova guarda una schermata.** Una schermata che sborda, un
-  pulsante sparito, un menu che offre la voce sbagliata: quelle le trova solo
-  un occhio. Il 31/08 i tre difetti più grossi li ha trovati Alessio in dieci
-  minuti, non le 1.116 prove.
+* **Quasi nessuna prova guarda una schermata**, e quelle che lo fanno non
+  guardano *come si vede*. Dal 01/09/2026 ce ne sono 12 che **montano** una
+  schermata: provano che si apre, che chi non è entrato non ne vede una, che
+  la pagina del cliente parla dal collegamento anonimo. Ma **una schermata
+  che sborda, un testo troppo piccolo, un colore che non si distingue con le
+  luci basse, un pulsante sparito: quelli li trova solo un occhio.** Il 31/08
+  i tre difetti più grossi li ha trovati Alessio in dieci minuti, non le
+  1.116 prove.
+  ⚠️ E il conto di quanto è coperto si chiede a `npm run copertura`, che lo
+  dice **cartella per cartella**: le regole pure stanno al 92%, le schermate
+  al 2%. Un totale unico su questo progetto non vuol dire niente.
 * **Non controlla il database vero.** Le migrazioni restano un gesto
   separato (`npm run migra`), coi suoi sei freni.
 * **Non impedisce a Cloudflare di pubblicare.** Cloudflare compila per conto
@@ -190,7 +221,7 @@ intera:**
 
 ---
 
-## 6 · Due trappole chiuse nel file, che vale la pena conoscere
+## 6 · Tre trappole chiuse, che vale la pena conoscere
 
 1. **Un giro alla volta sul database di prova.** Le prove sull'app scrivono
    tutte sullo stesso progetto: due giri insieme si pestano i piedi. È già
@@ -203,6 +234,18 @@ intera:**
    **verde senza aver provato niente**: e un verde che non ha provato niente è
    peggio di un rosso. È la regola del 19/08 — *una risposta più corta che ha
    l'aria di essere intera*.
+3. 🔴 **E il controllo guardava una casella sola, fino al 01/09/2026.**
+   Chiedeva che `PROVA_SUPABASE_URL` non fosse vuota, e quella c'era: ha
+   detto di sì, e sei minuti dopo il giro è morto con 67 file falliti e un
+   messaggio che **non nominava la causa** (mancavano due segreti e il terzo
+   non era un indirizzo). Il danno non era il rosso: era che chi lo leggeva
+   andava a cercare il guasto nel codice — che era sano, tanto che dieci
+   minuti prima, sullo **stesso identico contenuto**, erano passate 459 prove
+   su 459.
+   Adesso il controllo guarda tutte e sei le caselle e la forma
+   dell'indirizzo, in un posto solo (`scripts/chiavi.mjs`) usato dalla
+   pipeline, da `vitest` e dalle prove. Prima erano tre condizioni sparse in
+   tre file, e **nessuna delle tre guardava le credenziali degli utenti**.
 
 ---
 
