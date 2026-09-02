@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import { indirizziDiAccesso, marcatore } from "./scripts/indirizzi-accesso.mjs";
 
 // LE PROVE CHE GUARDANO UNA SCHERMATA — `npm run test:schermate` (01/09/2026)
 //
@@ -27,6 +28,18 @@ import { defineConfig } from "vitest/config";
 //    lo **dice** invece di disegnare il vuoto — la regola del 19/08.
 export default defineConfig({
   plugins: [react()],
+
+  // ⚠️ LA STESSA INIEZIONE DI `vite.config.js`, e serve davvero: dal 02/09
+  //    `AuthContext.jsx` legge gli indirizzi di accesso da qui invece di
+  //    averli scritti dentro. Senza questa riga, qualunque prova che montasse
+  //    una schermata dentro `AuthProvider` si romperebbe — e non oggi, il
+  //    giorno che qualcuno ne scrive una. *Meglio la riga adesso che
+  //    l'indagine fra tre mesi.*
+  // ⚠️ E il valore viene dallo STESSO modulo, non ricopiato: se i predefiniti
+  //    cambiassero, qui cambierebbero da soli.
+  define: {
+    __INDIRIZZI_ACCESSO__: JSON.stringify(marcatore(indirizziDiAccesso({}))),
+  },
   test: {
     environment: "jsdom",
     env: { TZ: "Europe/Rome" },
