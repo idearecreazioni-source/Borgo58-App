@@ -8,6 +8,9 @@
     "browser": true,
     "es2024": true
   },
+  "globals": {
+    "__INDIRIZZI_ACCESSO__": "readonly"
+  },
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": [

@@ -98,3 +98,8 @@ _*.local.*
 # ⚠️ Questa e' larga quanto la convenzione: qualunque nome, qualunque
 # estensione, purche' dica `.local.` in mezzo.
 *.local.*
+
+# Le cartelle che le prove sulla compilazione creano e ripuliscono da se.
+# ⚠️ `dist` da solo NON le prende: sono `dist-prova-a`, `-b`, `-c`. Se una
+#    prova venisse uccisa a meta, resterebbero li — e finirebbero committate.
+dist-prova-*

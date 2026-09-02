@@ -253,6 +253,24 @@ describe("il controllo del pacchetto compilato", () => {
   });
 });
 
+// Il codice vero di un file, senza i commenti.
+//
+// 🔴 SERVE PERCHÉ UNA CITAZIONE NON È UN'IMPORTAZIONE — 02/09/2026. La prima
+//    stesura cercava il nome del modulo nel testo intero, e appena
+//    `AuthContext.jsx` ha spiegato **nel commento** perché non lo importa, il
+//    guardiano ha suonato. Aveva ragione a guardare lì e torto sul bersaglio:
+//    quello che fa entrare `node:fs` nel pacchetto è un'importazione, non una
+//    frase.
+// ⚠️ E si toglie il commento invece di cercare la sola forma `import ... from`:
+//    così restano prese anche le forme dinamiche — `import(…)`, `require(…)`,
+//    un percorso composto — che una regexp sugli import si lascerebbe
+//    scappare.
+function codiceSenzaCommenti(testo) {
+  return testo
+    .replace(/\/\*[\s\S]*?\*\//g, " ") // blocchi
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1 "); // righe, senza rovinare «https://»
+}
+
 // Tutti i file che finiscono nel pacchetto del browser, letti dal disco.
 // ⚠️ Con `node:fs` e non con un comando esterno: un comando che non esiste
 //    fallisce e fa rispondere «zero» a un controllo che non ha guardato.
@@ -272,9 +290,31 @@ describe("🔴 il confine fra i due mondi", () => {
     //    browser. Questa prova diventa rossa il giorno che qualcuno lo fa
     //    «solo per riusare una funzione» — che è esattamente come
     //    succederebbe.
-    const testo = readFileSync("src/context/AuthContext.jsx", "utf8");
-    expect(testo).not.toContain("indirizzi-accesso");
-    expect(testo).not.toContain("scripts/");
+    const codice = codiceSenzaCommenti(
+      readFileSync("src/context/AuthContext.jsx", "utf8"),
+    );
+    expect(codice).not.toContain("indirizzi-accesso");
+    expect(codice).not.toContain("scripts/");
+  });
+
+  it("e il controllo guarda il CODICE, non i commenti", () => {
+    // ⚠️ Il guardiano deve distinguere «ne parla» da «lo importa», o il
+    //    commento che spiega perché non importarlo lo farebbe suonare — e un
+    //    guardiano che suona sul caso giusto si impara a spegnere.
+    expect(codiceSenzaCommenti('// import x from "indirizzi-accesso"')).not.toContain(
+      "indirizzi-accesso",
+    );
+    expect(codiceSenzaCommenti('/* indirizzi-accesso */')).not.toContain(
+      "indirizzi-accesso",
+    );
+    // …ma il codice vero resta, ed è quello che conta.
+    expect(codiceSenzaCommenti('import x from "indirizzi-accesso";')).toContain(
+      "indirizzi-accesso",
+    );
+    // e un indirizzo web non si rompe togliendo i commenti
+    expect(codiceSenzaCommenti('const u = "https://borgo58.it";')).toContain(
+      "https://borgo58.it",
+    );
   });
 
   it("nessun file del browser importa il modulo solo-Node", () => {
@@ -292,7 +332,7 @@ describe("🔴 il confine fra i due mondi", () => {
     expect(nomi.length).toBeGreaterThan(50); // se leggesse zero file, tacerebbe
 
     const colpevoli = nomi.filter((n) =>
-      readFileSync(n, "utf8").includes("indirizzi-accesso"),
+      codiceSenzaCommenti(readFileSync(n, "utf8")).includes("indirizzi-accesso"),
     );
     expect(colpevoli).toEqual([]);
   });

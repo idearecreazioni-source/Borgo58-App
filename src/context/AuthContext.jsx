@@ -7,8 +7,35 @@ const AuthContext = createContext(null);
 // è la password dell'account. L'app prova prima il titolare, poi lo staff —
 // il PIN stesso determina il ruolo (i due PIN devono essere diversi). Gli
 // account vanno creati dalla dashboard Supabase; Claude non gestisce credenziali.
-const TITOLARE_EMAIL = "alessio@borgo58.app";
-const STAFF_EMAIL = "staff@borgo58.app";
+//
+// 🔴 GLI INDIRIZZI NON SONO PIÙ SCRITTI QUI — 02/09/2026.
+//
+// Erano due costanti, e ha funzionato per un mese: un database solo, nessun
+// ambiente separato. Dal 01/09 gli ambienti sono **due** — l'anteprima
+// collegata al progetto di prova e `borgo58.it` — e **lo stesso pacchetto**
+// serve tutti e due: cambiare l'indirizzo per entrare nell'uno cambierebbe
+// anche l'altro. Il 01/09 Alessio ha aperto l'anteprima e non è potuto
+// entrare, perché questa schermata prova **solo** i due indirizzi che aveva
+// dentro e l'indirizzo non si digita.
+//
+// ⚠️ QUELLO CHE ARRIVA QUI È GIÀ VALIDATO. La decisione — quali indirizzi, e
+// il rifiuto di quelli storti — avviene **a tempo di costruzione**, in
+// `scripts/indirizzi-accesso.mjs`. Qui non si sceglie e non si controlla
+// niente: si legge. Se un valore fosse sbagliato, la costruzione sarebbe già
+// fallita e questo pacchetto non esisterebbe.
+//
+// 🔴 E QUESTO FILE NON IMPORTA QUEL MODULO, né oggi né mai: è solo-Node, e
+// tirandolo dentro finirebbe `node:fs` nel pacchetto del browser. Riceve
+// **soltanto** la stringa iniettata da `define`, e la spezza con
+// `decodeURIComponent`, che è una funzione del linguaggio e non di Node.
+// C'è una prova che legge tutti i file di `src/` e diventa rossa se qualcuno
+// lo importa «solo per riusare una funzione».
+//
+// ⚠️ Senza nessuna variabile impostata, questi due valgono esattamente
+// `alessio@borgo58.app` e `staff@borgo58.app`: la produzione non cambia.
+const [, TITOLARE_CODIFICATO, STAFF_CODIFICATO] = __INDIRIZZI_ACCESSO__.split(",");
+const TITOLARE_EMAIL = decodeURIComponent(TITOLARE_CODIFICATO);
+const STAFF_EMAIL = decodeURIComponent(STAFF_CODIFICATO);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
