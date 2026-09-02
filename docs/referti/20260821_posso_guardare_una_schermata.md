@@ -64,6 +64,14 @@ la password** di due utenti fissi — `alessio@borgo58.app` (titolare) e
 E sul progetto di prova quei quattro utenti **ci sono già**: li usano le 292
 prove automatiche, con le credenziali in `.env.test` (git-ignored).
 
+> ⚠️ **`.env.test` NON ESISTE PIÙ DAL 31/08/2026** — nota aggiunta il 01/09.
+> I tre file di chiavi (`.env.local`, `.env.test`, `.env.db`) sono diventati
+> **uno solo, `.env`**; il modello con le caselle è `.env.example`. Le righe
+> qui sopra **restano com'erano scritte quel giorno**: questo è un documento
+> datato, non una guida, e correggerlo lo renderebbe un racconto falso di
+> quello che è successo. La nota c'è perché quel nome ha già mandato a
+> cercare un file inesistente.
+
 Quindi servirebbe **una cosa sola**:
 
 > una **password diversa** per quegli utenti **sul solo progetto di prova** —
