@@ -99,7 +99,13 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
 
   it("il lavoro di anteprima rifiuta i riferimenti che non sono rami", () => {
     expect(anteprima).toMatch(/github\.ref_type == 'branch'/);
-    expect(anteprima).toMatch(/^permissions:\n\s+contents: read$/m);
+    // ⚠️ `\r?\n` E NON `\n`: questo file si legge dal disco, e su Windows
+    //    arriva coi fine riga di quel sistema. Con `\n` secco la prova
+    //    falliva **solo sul computer di Alessio** — e non per un difetto del
+    //    workflow, ma perché la regola cercava una forma di fine riga invece
+    //    del permesso. Il controllo è lo stesso: «permissions:» e sotto,
+    //    rientrato, «contents: read».
+    expect(anteprima).toMatch(/^permissions:\r?\n\s+contents: read$/m);
   });
 });
 

@@ -9,3 +9,31 @@
 # gli scostamenti interni (xref) smettono di puntare dove devono — cioè
 # il file resta li' ma nessun lettore lo apre piu'.
 *.pdf binary
+
+# ---------------------------------------------------------------------
+# Gli script Node vanno letti con fine riga di Linux — 02/09/2026
+# ---------------------------------------------------------------------
+# 🔴 IL FATTO, misurato. Su Windows tre file di prova non si aprivano
+# affatto: `cloudflare.test.js`, `cancello-pubblicazione.test.js` e
+# `rilascio-indirizzi.test.js`, con un errore che non diceva dove
+# («SyntaxError: Invalid or unexpected token»). Sono **71 prove su 817**
+# che in locale non giravano — e il totale che restava a schermo, 746,
+# aveva l'aria di essere intero.
+#
+# LA CAUSA SONO TRE COSE INSIEME, e nessuna da sola fa danno: il file
+# comincia con `#!/usr/bin/env node`, ha i fine riga di Windows, e lo si
+# legge su Windows. Provate tutte e quattro le combinazioni: rompe solo
+# quella. E' un difetto noto dello strumento delle prove
+# (vitest-dev/vitest#3244), non del nostro codice — e su GitHub non morde,
+# perche' li' gira Linux.
+#
+# ⚠️ E' LA STESSA CURA CHE QUESTO FILE APPLICA GIA' SOPRA a `.githooks/**`
+# e `*.sh`, per la stessa ragione, scritta ad agosto. Quando fu scritta,
+# questi script non c'erano.
+#
+# ⚠️ LA REGOLA E' SU `*.mjs` E NON SUI TRE FILE COLPEVOLI, apposta: oggi
+# quelli che cominciano con `#!` sono tre, ma un elenco di tre nomi
+# invecchia al primo file nuovo. Cosi' copre anche le sottocartelle — dove
+# oggi nessuno ha quella riga, e domani non si sa.
+*.mjs text eol=lf
+
