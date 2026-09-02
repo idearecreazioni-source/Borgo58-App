@@ -31,8 +31,14 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
+import {
+  INDIRIZZI_PREDEFINITI,
+  indirizziDiAccesso,
+  problemaDegliIndirizzi,
+} from "./indirizzi-accesso.mjs";
 
 const API = "https://api.cloudflare.com/client/v4";
 
@@ -137,6 +143,61 @@ export function problemaDelPacchetto(cartella, refAtteso, leggi = leggiIlCompila
   return null;
 }
 
+// ---------------------------------------------------------------------
+// LA NONA: GLI INDIRIZZI DI ACCESSO — 02/09/2026
+// ---------------------------------------------------------------------
+// 🔴 IL RISCHIO CHE CHIUDE, ed e' l'unico serio di tutto il lavoro sugli
+//    indirizzi configurabili: se qualcuno impostasse `VITE_EMAIL_TITOLARE` o
+//    `VITE_EMAIL_STAFF` sull'ambiente **produzione** con indirizzi che sul
+//    gestionale vero non esistono, **Alessio non entrerebbe piu' in
+//    borgo58.it** — e se ne accorgerebbe davanti alla schermata di accesso,
+//    cioe' chiuso fuori.
+//
+// ⚠️ LA DIFESA STA QUI E NON IN UN PASSO DEL WORKFLOW, e la ragione e' la
+//    stessa che regge tutto questo file: **la filiera e' una sola**. Messa
+//    qui, vale per tutte e tre le strade che pubblicano (l'anteprima del
+//    ramo, la prova generale, la produzione) senza che nessuno si ricordi di
+//    aggiungerla alla quarta.
+//
+// ⚠️ E SI FERMA **PRIMA DI WRANGLER**: il sito resta com'era. Un controllo
+//    che scattasse dopo il caricamento direbbe soltanto che il danno c'e'.
+
+/**
+ * Quali indirizzi ci si aspetta di trovare nel pacchetto, per ambiente.
+ *
+ * 🔴 IN PRODUZIONE SONO SEMPRE I PREDEFINITI. Non «quelli configurati»: e'
+ *    esattamente la configurazione dell'ambiente produzione la cosa di cui
+ *    diffidare. Chiedere all'ambiente cosa aspettarsi renderebbe il controllo
+ *    d'accordo con qualunque cosa trovi — cioe' un controllo che approva
+ *    sempre.
+ *
+ * ⚠️ In anteprima sono quelli **configurati**, ed e' giusto: l'anteprima
+ *    esiste per entrarci con utenti che non sono quelli del locale vero. La
+ *    compilazione e' avvenuta nello stesso lavoro, quindi l'ambiente del
+ *    processo e' lo stesso che ha costruito il pacchetto.
+ */
+export function indirizziAttesi(ambiente, env = process.env) {
+  return ambiente === "produzione" ? INDIRIZZI_PREDEFINITI : indirizziDiAccesso(env);
+}
+
+/**
+ * Il guaio da dire, gia' scritto per chi lo legge dentro un giro di GitHub.
+ * ⚠️ Un rifiuto che non dice **cosa fare** manda a cercare: in produzione la
+ *    cura e' sempre la stessa — svuotare quelle due caselle.
+ */
+export function problemaDegliIndirizziDiAccesso(cartella, ambiente, env = process.env, leggi) {
+  const guaio = problemaDegliIndirizzi(cartella, indirizziAttesi(ambiente, env), leggi);
+  if (!guaio) return null;
+  if (ambiente !== "produzione") return guaio;
+  return (
+    `${guaio}\n` +
+    "In produzione gli indirizzi di accesso devono restare quelli predefiniti.\n" +
+    "Se sull'ambiente «produzione» sono state impostate VITE_EMAIL_TITOLARE o\n" +
+    "VITE_EMAIL_STAFF, vanno tolte: con indirizzi che sul gestionale vero non\n" +
+    "esistono, nessuno riuscirebbe piu' a entrare in borgo58.it."
+  );
+}
+
 function leggiIlCompilato(cartella) {
   const assets = join(cartella, "assets");
   if (!existsSync(assets)) return null;
@@ -187,7 +248,11 @@ async function principale() {
   if (cartella) {
     const guaio = problemaDelPacchetto(cartella, AMBIENTI[ambiente].supabase);
     if (guaio) ferma(guaio);
+    const guaioIndirizzi = problemaDegliIndirizziDiAccesso(cartella, ambiente);
+    if (guaioIndirizzi) ferma(guaioIndirizzi);
+    const attesi = indirizziAttesi(ambiente);
     console.log(`Il pacchetto parla col ${AMBIENTI[ambiente].nome}, e la coppia indirizzo/chiave torna.`);
+    console.log(`Si entra con «${attesi.titolare}» e «${attesi.staff}».`);
     return;
   }
 
@@ -223,6 +288,13 @@ async function principale() {
   const guaioPacchetto = problemaDelPacchetto("dist", AMBIENTI[ambiente].supabase);
   if (guaioPacchetto) ferma(guaioPacchetto);
 
+  // ⚠️ E gli indirizzi si ricontrollano QUI per la stessa ragione del
+  //    pacchetto: fra il controllo di prima e adesso c'e' stata una
+  //    compilazione. Questo e' l'ultimo momento in cui fermarsi costa
+  //    ancora zero — dopo, il sito e' gia' cambiato.
+  const guaioIndirizzi = problemaDegliIndirizziDiAccesso("dist", ambiente);
+  if (guaioIndirizzi) ferma(guaioIndirizzi);
+
   // ⚠️ Wrangler viene da `node_modules`, bloccato dal lockfile: la filiera di
   //    rilascio non dipende da quale versione e' uscita quel giorno.
   const wrangler = join("node_modules", ".bin", "wrangler");
@@ -235,4 +307,29 @@ async function principale() {
   if (esito.status !== 0) ferma(`Wrangler si e' fermato con codice ${esito.status}. Il sito resta com'era.`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) await principale();
+// 🔴 `pathToFileURL` E NON `file://` + IL PERCORSO — corretto il 02/09/2026,
+//    misurando. Su Windows `process.argv[1]` e' `C:\…\rilascio.mjs` con le
+//    barre rovesce, mentre `import.meta.url` e' `file:///C:/…/rilascio.mjs`:
+//    il confronto **non torna mai**, quindi da qui lo script usciva con
+//    codice **0 senza aver controllato niente**.
+//
+// ⚠️ Su Linux funzionava, ed e' per questo che nessuno se n'era accorto: in
+//    CI il controllo del pacchetto gira davvero. Ma chi lo lanciasse dal
+//    computer di Alessio per guardare un pacchetto prima di pubblicare
+//    otterrebbe **silenzio e codice zero** — cioe' la faccia esatta di «va
+//    tutto bene». *Un guardiano che approva senza aver guardato*, nel file
+//    che di guardiani ne contiene nove.
+//
+// 🔴 E `process.argv[1]` VA GUARDATO PRIMA: quando questo modulo viene
+//    **importato** — da una prova, o da `node -e` — quel valore puo' non
+//    esistere, e `pathToFileURL(undefined)` **solleva un'eccezione**. La
+//    prima stesura di questa correzione non lo guardava: importare il modulo
+//    moriva prima ancora di leggerne una funzione.
+//    ⚠️ Trovato importandolo davvero, non rileggendolo — e la forma vecchia
+//    quel guaio non ce l'aveva, perche' concatenare `undefined` a una stringa
+//    non fa esplodere niente. *Una correzione puo' aprire un buco che il
+//    difetto che cura non aveva.*
+const lanciatoDaRigaDiComando =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (lanciatoDaRigaDiComando) await principale();
