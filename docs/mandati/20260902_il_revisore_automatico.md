@@ -129,22 +129,35 @@ apposta.
 non li decidiamo noi. Oggi è gratis per i repository pubblici; domani è una
 loro scelta.
 
-🔴 **E il rischio del terzo non è teorico: è già successo.** Ad agosto 2025
-dei ricercatori hanno pubblicato come, **nel dicembre 2024**, erano riusciti
-a eseguire codice proprio sui server di CodeRabbit passando da un file di
-configurazione messo dentro una proposta, e da lì a impossessarsi della
-chiave dell'applicazione GitHub — cioè dell'accesso in scrittura a **oltre un
-milione di repository**. Segnalato in modo responsabile a gennaio 2025 e
-**chiuso da loro nel giro di ore**, ruotando tutte le credenziali.
-([ricerca Kudelski](https://research.kudelskisecurity.com/2025/08/19/how-we-exploited-coderabbit-from-a-simple-pr-to-rce-and-write-access-on-1m-repositories/))
+### 🔴 Un precedente storico, CHIUSO — non un difetto attuale
 
-⚠️ **Cosa se ne ricava, senza esagerare né minimizzare**: il difetto è stato
-trovato e chiuso, e la segnalazione responsabile ha funzionato. Ma dice una
-cosa che resta vera di **qualunque** applicazione di questo tipo: un servizio
-che tiene un permesso di scrittura su un milione di repository è un bersaglio
-concentrato, e chi lo installa accetta anche il rischio di **come è custodito
-altrove**. È il motivo per cui il §5 elenca cosa **non** deve poter
-raggiungere.
+**Va letto sapendo fin dal titolo com'è finito**, altrimenti è allarmismo.
+
+| quando | cosa |
+|---|---|
+| **dicembre 2024** | dei ricercatori riescono a eseguire codice sui server di CodeRabbit, passando da un file di configurazione messo dentro una proposta |
+| | da lì arrivano alla chiave dell'applicazione GitHub, cioè all'accesso in scrittura su **oltre un milione di repository** |
+| **gennaio 2025** | segnalato in modo responsabile |
+| **gennaio 2025** | ✅ **corretto da CodeRabbit nel giro di ore**, disattivando lo strumento vulnerabile e ruotando tutte le credenziali |
+| **agosto 2025** | la ricerca viene pubblicata |
+
+**Fonte tecnica, primaria** — il resoconto dei ricercatori che l'hanno
+trovato: [*How We Exploited CodeRabbit: From a Simple PR to RCE and Write
+Access on 1M
+Repositories*](https://research.kudelskisecurity.com/2025/08/19/how-we-exploited-coderabbit-from-a-simple-pr-to-rce-and-write-access-on-1m-repositories/),
+Kudelski Security Research, 19/08/2025.
+
+🔴 **Cosa NON dimostra**: non è la prova di un difetto attuale. Quel buco è
+chiuso da gennaio 2025, e il fatto che la segnalazione responsabile abbia
+funzionato è un dato **a favore**, non contro.
+
+⚠️ **Cosa invece dice, e resta vero di qualunque servizio di questo tipo**: chi
+tiene un permesso di scrittura su un milione di repository è un **bersaglio
+concentrato**, e chi lo installa accetta anche il rischio di come quel
+permesso è custodito **altrove**, dove noi non possiamo guardare. È il motivo
+per cui il §5d (un solo repository) e il §7 (si spegne in un minuto) esistono:
+non impediscono il guaio a casa loro, **riducono cosa c'è da perdere a casa
+nostra**.
 
 ---
 
@@ -157,20 +170,59 @@ SCRITTURA sul repository su cui la si installa.** Non è un servizio in sola
 lettura, e chiamarlo così sarebbe falso: **la scrittura le serve per fare il
 suo mestiere** — senza, non potrebbe pubblicare nessun commento.
 
-### 5b · Cosa comprende la scrittura, e cosa NON comprende
+### 5b · Il comportamento previsto — cosa dovrebbe FARE
 
-| chiede | per farci cosa |
-|---|---|
-| **leggere** il contenuto del repository, i dati di servizio, le proposte | leggere il codice e il diff da rivedere |
-| **leggere** (sola lettura) lavori automatici, esiti dei controlli, discussioni, elenco delle persone | capire il contesto della proposta |
-| 🔴 **scrivere** i **commenti** sulle proposte e gli **esiti dei controlli** | pubblicare la revisione |
+Una cosa sola, ed è tutto ciò che ci si aspetta da lui:
 
-⚠️ **La scrittura NON comprende il contenuto del repository.** Con quei
-permessi **non può**: mandare commit, creare rami, modificare file, unire una
-proposta. Il suo intervento si ferma alle parole che scrive sotto la
-proposta.
+> leggere il diff di una proposta e **pubblicare commenti di revisione**.
 
-### 5c · 🔴 Si installa SOLO su Borgo58-App
+Non deve mandare modifiche, non deve unire niente, non deve toccare il
+gestionale vero. Se facesse altro, sarebbe fuori da ciò per cui lo si
+installa.
+
+⚠️ **Questo è il comportamento atteso, e NON è la stessa cosa dei permessi
+che gli vengono concessi.** I due si confondono facilmente, ed è il motivo
+per cui hanno due paragrafi separati.
+
+### 5c · 🔴 I permessi effettivi — DA TRASCRIVERE, non da dedurre
+
+**Questo paragrafo è VUOTO apposta, e va riempito prima di decidere.**
+
+🔴 **Una prima stesura di questo documento affermava che l'applicazione «non
+può mandare commit, creare rami, modificare file, unire una proposta».
+Quell'affermazione è stata TOLTA perché non era stata misurata**: veniva da
+un riassunto trovato in rete, non dalla schermata di installazione di GitHub
+— che da qui non si può aprire. In questo progetto vale la regola che *se una
+cosa non è stata misurata non si scrive*, e una riserva accanto non la sana:
+chi legge ci costruisce sopra una decisione.
+
+**Cosa serve, e lo può fare solo Alessio.** Aprendo la pagina di
+installazione dell'applicazione, GitHub mostra **prima di installare** un
+elenco intitolato più o meno *«questa applicazione avrà il permesso di…»*,
+diviso in **lettura** e **lettura e scrittura**.
+
+Va **trascritto qui sotto per intero**, voce per voce, senza riassumerlo:
+
+```
+LETTURA
+  (da trascrivere dalla schermata)
+
+LETTURA E SCRITTURA
+  (da trascrivere dalla schermata)
+```
+
+⚠️ **Fino a quando questo riquadro è vuoto, questo documento NON dice cosa
+l'applicazione può o non può fare** — dice solo cosa ci si aspetta che
+faccia (§5b). Sono due cose diverse, e la seconda non si può dedurre dalla
+prima.
+
+⚠️ **E la voce da guardare per prima è quella sul contenuto del
+repository**: se comparisse in «lettura e scrittura», l'applicazione
+potrebbe modificare file, e la valutazione cambia — non perché lo farebbe,
+ma perché **potrebbe**, e quello che conta in un permesso è cosa consente,
+non cosa si prevede.
+
+### 5d · 🔴 Si installa SOLO su Borgo58-App
 
 Al momento dell'installazione GitHub chiede fra *«tutti i repository»* e
 *«solo quelli che scelgo»*. **Va scelta la seconda, e va selezionato
@@ -182,10 +234,10 @@ nuovo: si estenderebbe da solo, in silenzio, a cose che non sono mai state
 guardate. *Un permesso che cresce da sé è la stessa famiglia dell'elenco
 scritto a mano che invecchia.*
 
-### 5d · 🔴 Cosa NON deve ricevere né poter leggere — ed è una cosa diversa
+### 5e · 🔴 Cosa NON deve ricevere né poter leggere — ed è una cosa diversa
 
-Il punto 5b riguarda **il repository**. Questo riguarda **tutto il resto**, e
-i due non vanno confusi:
+I punti 5b e 5c riguardano **il repository**. Questo riguarda **tutto il
+resto**, e i due non vanno confusi:
 
 ```
 ❌ i Secrets di GitHub          (SERVICE_ROLE_PRODUZIONE, DB_URL_PRODUZIONE,
@@ -196,31 +248,49 @@ i due non vanno confusi:
 ❌ i file .env del computer di Alessio
 ```
 
-**Perché non li riceve**, e non è una promessa ma come sono fatte le cose:
-un'applicazione GitHub e i segreti dei lavori automatici sono **due mondi
-separati**. I segreti li riceve un lavoro che gira dentro GitHub, e solo se
-il file del lavoro glieli passa riga per riga — è quello che fanno oggi
-`controlli.yml` (12 volte) e `anteprima.yml` (3). Un'applicazione esterna non
-sta in quel giro e non ha modo di chiederli.
+**Perché non li legge direttamente**: un'applicazione GitHub e i segreti dei
+lavori automatici sono **due meccanismi separati**. I segreti li riceve un
+lavoro che gira dentro GitHub, e solo se il file del lavoro glieli passa riga
+per riga — è quello che fanno oggi `controlli.yml` (12 volte) e
+`anteprima.yml` (3). Un'applicazione esterna non sta in quel giro e non ha un
+modo di chiederli.
 
-⚠️ **È la differenza che separa la strada A dalla B**, ed è il motivo per cui
-la B va guardata con più attenzione: un revisore che gira *dentro* i nostri
-lavori sta nello stesso posto delle chiavi, e la distanza è una riga di
-configurazione.
+🔴 **MA QUESTO NON È UNA GARANZIA ASSOLUTA, e va scritto così invece che come
+una rassicurazione.** «Non può leggerli direttamente» è una cosa più stretta
+di «non potranno mai uscire». Un'applicazione che ha un permesso di
+**scrittura** e venisse compromessa non è inerte: chi la controllasse
+potrebbe agire sul repository con la sua identità, e da lì si aprono strade
+che oggi non sappiamo enumerare — perché dipendono da difetti futuri, non da
+quelli noti.
 
-### 5e · Il repository è pubblico: cosa vuol dire davvero
+⚠️ **La forma onesta di questa frase è**: la separazione toglie la lettura
+diretta dei segreti; **non rende l'integrazione priva di rischio**, e non
+chiude ogni percorso futuro. È esattamente per questo che il §5d (un solo
+repository) e il §7 (si spegne in un minuto) non sono formalità: **riducono
+cosa c'è da perdere**, che è l'unica cosa su cui abbiamo davvero potere.
+
+⚠️ **È anche la differenza che separa la strada A dalla B**, ed è il motivo
+per cui la B va guardata con più attenzione: un revisore che gira *dentro* i
+nostri lavori sta nello stesso posto delle chiavi, e la distanza è una riga
+di configurazione.
+
+### 5f · Il repository è pubblico: cosa vuol dire davvero
 
 Il codice e la storia pubblica di `Borgo58-App` **sono già visibili a
-chiunque**, oggi, senza bisogno di nessuna applicazione. Quindi la lettura
-del §5b **non allarga niente**: dà a un servizio un accesso più comodo a
+chiunque**, oggi, senza bisogno di nessuna applicazione. Quindi **la parte in
+lettura non allarga niente**: dà a un servizio un accesso più comodo a
 qualcosa che è già aperto.
+
+⚠️ **Questo vale per la lettura, non per la scrittura.** Che il repository sia
+pubblico non dice niente su chi può scriverci: quello lo dicono i permessi del
+§5c, che **vanno ancora trascritti**.
 
 🔴 **Quello che l'integrazione NON deve fare è allargarsi ad altre risorse**,
 e sono tre cose distinte da tenere ferme:
 
-1. **non altri repository** — vedi 5c;
+1. **non altri repository** — vedi 5d;
 2. **non i segreti, gli ambienti, i token e i file di configurazione locali**
-   — vedi 5d;
+   — vedi 5e;
 3. **non il gestionale vero**: il database, il deposito dei documenti e
    l'account di Cloudflare stanno fuori da GitHub, e nessun permesso di
    questa applicazione li tocca.
@@ -229,13 +299,13 @@ e sono tre cose distinte da tenere ferme:
 integrazione chiedesse un permesso in più, la domanda da farsi è *«a quale
 di queste tre cose si sta avvicinando?»* — non *«sembra ragionevole?»*.
 
-### 5f · Il quadro delle due strade
+### 5g · Il quadro delle due strade
 
 | | A · CodeRabbit | B · Claude |
 |---|---|---|
 | legge il codice del repository | sì | sì |
 | scrive commenti sulle proposte | **sì** | **sì** |
-| può modificare file o unire proposte | **no** | dipende da come si scrive il lavoro |
+| può modificare file o unire proposte | 🔴 **da verificare** — §5c | dipende da come si scrive il lavoro |
 | riceve i Secrets di GitHub | **no** | **sì, se il lavoro glieli passa** |
 | una chiave nuova da custodire | no | **sì** (`ANTHROPIC_API_KEY`) |
 | attinge al credito del locale | **no** | 🔴 **sì** |
@@ -285,7 +355,7 @@ La decisione resta di Alessio.
 ed è una condizione che pongo io: un revisore che per essere tolto obbliga a
 rimettere le mani nel programma non è una prova, è un impegno.
 
-⚠️ **E spegnendo la A i permessi del §5b decadono tutti insieme**: non resta
+⚠️ **E spegnendo la A i permessi concessi decadono tutti insieme**: non resta
 un accesso residuo da ricordarsi di togliere a parte. È una conseguenza di
 come è stata installata — su **un** repository scelto a mano, non su tutti.
 
@@ -301,9 +371,10 @@ Tre ragioni misurate:
    la posta e le etichette non possono smettere di funzionare per colpa di un
    revisore.
 2. **Non entra dove stanno le chiavi.** Non riceve i Secrets di GitHub, non
-   vede gli Environment, non tocca i file `.env` — §5d. ⚠️ **E questo non
+   vede gli Environment, non tocca i file `.env` — §5e. ⚠️ **E questo non
    vuol dire che sia in sola lettura**: scrive, e scrive commenti sulle
-   proposte. Quello che non può è modificare file o unire una proposta.
+   proposte. ⚠️ **Che cosa NON possa fare non lo affermo**: dipende dai
+   permessi del §5c, che vanno ancora trascritti dalla schermata.
 3. **Costa zero**, quindi la domanda «serve davvero?» si può rispondere
    guardando invece che immaginando.
 
@@ -348,4 +419,4 @@ una decisione di spesa, non tecnica.
   funzionato, ma **quanto sia robusto adesso non lo possiamo verificare da
   qui**: è una cosa che si accetta o non si accetta, non che si misura.
   ⚠️ Quello che si può fare è **ridurre cosa c'è da perdere**, ed è
-  esattamente ciò che fanno il §5c e il §5d.
+  esattamente ciò che fanno il §5d e il §5e.
