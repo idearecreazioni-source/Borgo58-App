@@ -1,0 +1,141 @@
+# =====================================================================
+# CODEQL — SOLO SEGNALAZIONE, non un cancello — 02/09/2026
+# =====================================================================
+#
+# PERCHE' ESISTE, e perche' proprio questo invece di un revisore esterno.
+# Il 02/09 e' stata valutata e **scartata** un'applicazione di terzi per la
+# revisione automatica delle proposte (#16): i permessi che GitHub pubblica
+# per quella applicazione comprendono **lettura e scrittura su `code`**, e
+# per un revisore e' piu' di quanto il mestiere richieda — con l'aggravante
+# che i permessi di un'applicazione GitHub si prendono tutti o si lascia
+# stare. Decisione di Alessio.
+#
+# Questo gira **dentro GitHub**, nel nostro repository, senza nessun terzo e
+# con `contents` in **sola lettura**.
+#
+# ---------------------------------------------------------------------
+# 🔴 COSA NON VEDE, e va detto perche' non si scambi per una rete intera
+# ---------------------------------------------------------------------
+# Misurato il 02/09 contando i file del progetto:
+#
+#   quello che CodeQL guarda   (schermate, script, funzioni online, lavori)  280
+#   quello che NON guarda      (le migrazioni SQL)                           367
+#
+# 🔴 In questo progetto la sicurezza vera **vive nel database**: le regole di
+# accesso (RLS), i portieri delle funzioni `security definer`, i vincoli. E'
+# una scelta scritta nel Contratto — *«gli invarianti sono vincoli del
+# database, non controlli nella schermata»* — e **CodeQL e' cieco proprio
+# li'**, perche' non analizza SQL.
+#
+# ⚠️ Quella parte e' gia' sorvegliata, ed e' bene saperlo per non aspettarsi
+# da qui una cosa che c'e' gia': **459 prove** girano contro il progetto di
+# prova, e fra loro ci sono i controlli sui permessi, sulle funzioni senza
+# portiere, sui vocabolari chiusi e sui vincoli che parlano italiano.
+#
+# ⚠️ E non vede nemmeno: la logica di dominio (un calcolo fiscale sbagliato,
+# un food cost contato due volte), le schermate, e se un controllo
+# **discrimina** invece di limitarsi a passare.
+
+name: CodeQL
+
+# 🔴 SOLO SEGNALAZIONE — decisione esplicita di Alessio, 02/09/2026:
+#    *«Per ora deve soltanto segnalare: non diventa un controllo obbligatorio
+#    di merge finche' non vediamo il primo giro e i possibili falsi
+#    allarmi.»*
+#
+#    Cio' che rende un controllo obbligatorio, in questo repository, non e'
+#    scritto qui: e' l'elenco `required_status_checks` nelle regole di
+#    `master`, dove oggi ci sono **due** voci e questa non c'e'.
+#    ⚠️ Quindi per renderlo obbligatorio un giorno **non si tocca questo
+#    file**: si aggiunge il nome all'elenco delle regole. Sta scritto qui
+#    perche' e' precisamente il posto dove qualcuno andrebbe a cercarlo.
+#
+# ⚠️ E la ragione della prudenza e' misurata, non teorica: **8 script di
+#    servizio** di questo progetto lanciano altri programmi (`git`, `psql`,
+#    `wrangler`, `vitest`), e su quella forma CodeQL segnala volentieri.
+#    Sarebbero segnalazioni tecnicamente comprensibili e **praticamente
+#    falsi allarmi**, perche' quegli script li lancia solo chi ha gia' il
+#    computer in mano. *Un guardiano che grida a vuoto si impara a spegnere*
+#    — quindi prima si guarda quanto grida, poi si decide se dargli potere.
+on:
+  pull_request:
+    branches: [master]
+  # ⚠️ IL GIRO SETTIMANALE NON E' UN DOPPIONE del giro sulle proposte: le
+  #    regole di CodeQL cambiano nel tempo, quindi **codice fermo puo'
+  #    diventare segnalabile senza che nessuno lo tocchi**. Senza questo, una
+  #    vulnerabilita' scoperta dopo l'ultima proposta resterebbe invisibile
+  #    fino alla successiva — che in questo progetto puo' essere fra
+  #    settimane.
+  schedule:
+    # Lunedi' alle 6:00 UTC. ⚠️ L'ora e' in UTC e l'Italia cambia ora due
+    #    volte l'anno: qui non importa (nessuno aspetta questo giro a
+    #    un'ora precisa), ma **e' la trappola che in questo progetto ha gia'
+    #    morso** sui lavori del database, ed e' scritta per non riprovarci.
+    - cron: '0 6 * * 1'
+
+# ⚠️ CONTENTS IN SOLA LETTURA. E' la differenza netta con la strada scartata:
+#    li' la scrittura sul codice era concessa a un terzo, qui non e' concessa
+#    a nessuno.
+permissions:
+  contents: read
+  # Serve per depositare i risultati nella sezione Security del repository.
+  security-events: write
+  # Serve a CodeQL per leggere i lavori quando analizza `actions`.
+  actions: read
+
+# ⚠️ Una coda per ramo, come negli altri lavori: un ramo non deve poter
+#    annullare l'analisi di un altro. La ragione lunga sta in `controlli.yml`.
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  analisi:
+    name: Analisi CodeQL (${{ matrix.lingua }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      # ⚠️ `fail-fast: false`: se una delle due analisi si rompe, l'altra
+      #    deve arrivare in fondo lo stesso. Meta' risposta e' meglio di
+      #    nessuna, **purche' si veda che e' meta'** — e qui si vede, perche'
+      #    i due lavori compaiono separati col loro nome.
+      fail-fast: false
+      matrix:
+        include:
+          # Le 218 schermate, i 48 script e le 11 funzioni online.
+          - lingua: javascript-typescript
+          # 🔴 I 3 lavori di GitHub, ed e' la parte che vale di piu': un
+          #    lavoro scritto male puo' consegnare i segreti a chi apre una
+          #    proposta da fuori. CodeQL riconosce quella famiglia, compreso
+          #    `pull_request_target` — che questo repository evita apposta, e
+          #    che da oggi ha anche un guardiano invece di una sola
+          #    intenzione scritta.
+          - lingua: actions
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepara CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.lingua }}
+          # 🔴 LA SUITE STANDARD SI OTTIENE NON SCRIVENDO NIENTE, ed e' il
+          #    motivo per cui qui sotto non c'e' nessuna riga `queries`.
+          #    Decisione di Alessio: **suite standard**, non
+          #    `security-extended` — quella aggiunge regole piu' larghe e piu'
+          #    rumorose, e finche' non si e' visto quanto grida quella
+          #    normale, allargarla significherebbe tarare al buio.
+          # ⚠️ Scritto come commento e non lasciato al silenzio: un'assenza
+          #    non si distingue da una dimenticanza, e fra sei mesi qualcuno
+          #    aggiungerebbe `security-extended` credendo di completare una
+          #    configurazione incompleta.
+          #
+          # ⚠️ `build-mode: none`: niente da compilare. JavaScript e i lavori
+          #    di GitHub si analizzano come sono.
+          build-mode: none
+
+      - name: Analizza
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /lingua:${{ matrix.lingua }}
