@@ -37,10 +37,3 @@
 # oggi nessuno ha quella riga, e domani non si sa.
 *.mjs text eol=lf
 
-# ⚠️ E LA STESSA COSA VALE PER I FILE DEI LAVORI DI GITHUB. Una prova legge
-# `anteprima.yml` e ci cerca due righe una sotto l'altra: con i fine riga di
-# Windows in mezzo non le trova, e fallisce **solo sul computer di Alessio**.
-# Stessa radice, altro tipo di file — misurata il 02/09 subito dopo la
-# precedente, ed e' comparsa solo quando i tre file di prova hanno
-# ricominciato ad aprirsi.
-*.yml text eol=lf
