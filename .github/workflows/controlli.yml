@@ -110,6 +110,21 @@ jobs:
     name: Codice, prove pure e compilazione
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # 🔴 I PERMESSI SI DICHIARANO, non si ereditano — 03/09/2026.
+    #    Segnalato da CodeQL al primo giro su master
+    #    (`actions/missing-workflow-permissions`, #1 e #2): questo lavoro non
+    #    diceva cosa ha il diritto di fare, quindi prendeva quello che
+    #    l'impostazione del repository concede di suo.
+    # ⚠️ ESPOSIZIONE OGGI: NESSUNA — misurato, l'impostazione del repository
+    #    dice `read`. Non si corregge un buco: si toglie una **dipendenza da
+    #    una configurazione**. Il giorno che quell'impostazione cambiasse,
+    #    questo lavoro si troverebbe con piu' potere di quanto gli serva, e
+    #    nessuno collegherebbe le due cose — la stessa forma della protezione
+    #    di `master`, che aiuta ma non e' una legge.
+    # ⚠️ E chiude un'incoerenza: gli altri due lavori di questo file
+    #    (`prova_di_rilascio` e `pubblica`) li dichiaravano gia'.
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -177,6 +192,21 @@ jobs:
     needs: codice
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # 🔴 I PERMESSI SI DICHIARANO, non si ereditano — 03/09/2026.
+    #    Segnalato da CodeQL al primo giro su master
+    #    (`actions/missing-workflow-permissions`, #1 e #2): questo lavoro non
+    #    diceva cosa ha il diritto di fare, quindi prendeva quello che
+    #    l'impostazione del repository concede di suo.
+    # ⚠️ ESPOSIZIONE OGGI: NESSUNA — misurato, l'impostazione del repository
+    #    dice `read`. Non si corregge un buco: si toglie una **dipendenza da
+    #    una configurazione**. Il giorno che quell'impostazione cambiasse,
+    #    questo lavoro si troverebbe con piu' potere di quanto gli serva, e
+    #    nessuno collegherebbe le due cose — la stessa forma della protezione
+    #    di `master`, che aiuta ma non e' una legge.
+    # ⚠️ E chiude un'incoerenza: gli altri due lavori di questo file
+    #    (`prova_di_rilascio` e `pubblica`) li dichiaravano gia'.
+    permissions:
+      contents: read
 
     # 🔴 LA SERRATURA STA QUI, NON SUL GIRO INTERO — 31/08/2026.
     #    A dover restare uno alla volta e' **questo** lavoro, che scrive sul
