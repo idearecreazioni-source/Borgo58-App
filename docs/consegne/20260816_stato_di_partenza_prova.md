@@ -107,6 +107,14 @@ cosa. Si caricano quindi **dentro Vite** (`ssrLoadModule`, modalità
 `test`), che è già una dipendenza del progetto: la configurazione arriva da
 `.env.test`, e il codice esercitato è quello che gira nel browser.
 
+> ⚠️ **`.env.test` NON ESISTE PIÙ DAL 31/08/2026** — nota aggiunta il 01/09.
+> I tre file di chiavi (`.env.local`, `.env.test`, `.env.db`) sono diventati
+> **uno solo, `.env`**; il modello con le caselle è `.env.example`. Le righe
+> qui sopra **restano com'erano scritte quel giorno**: questo è un documento
+> datato, non una guida, e correggerlo lo renderebbe un racconto falso di
+> quello che è successo. La nota c'è perché quel nome ha già mandato a
+> cercare un file inesistente.
+
 ### ⚠️ La demolizione NON passa dall'app, ed è una scelta
 
 L'app si **rifiuta** di cancellare un conto chiuso — è la regola del Blocco

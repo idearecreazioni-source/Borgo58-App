@@ -11,6 +11,14 @@ la credenziale.
 sono di collaudo (`test-titolare@`, `test-staff@`) con le password in
 `.env.test`, che le 292 prove usano ogni giorno.
 
+> ⚠️ **`.env.test` NON ESISTE PIÙ DAL 31/08/2026** — nota aggiunta il 01/09.
+> I tre file di chiavi (`.env.local`, `.env.test`, `.env.db`) sono diventati
+> **uno solo, `.env`**; il modello con le caselle è `.env.example`. Le righe
+> qui sopra **restano com'erano scritte quel giorno**: questo è un documento
+> datato, non una guida, e correggerlo lo renderebbe un racconto falso di
+> quello che è successo. La nota c'è perché quel nome ha già mandato a
+> cercare un file inesistente.
+
 🔴 **Ma non bastavano, e la misura lo ha dimostrato provandoci**: il modulo di
 accesso del gestionale accetta **solo** `alessio@borgo58.app` e
 `staff@borgo58.app` — sono due costanti nel codice (`AuthContext.jsx`). Con la

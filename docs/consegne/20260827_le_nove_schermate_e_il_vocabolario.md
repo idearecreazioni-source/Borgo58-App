@@ -36,6 +36,14 @@ cioè **il progetto di prova**. `oudjuqbqszisdtwzbxdo` sarebbe il vero.
 che legge `.env.test` e **si rifiuta di partire** se manca. Non ha mai potuto
 aprire la produzione.
 
+> ⚠️ **`.env.test` NON ESISTE PIÙ DAL 31/08/2026** — nota aggiunta il 01/09.
+> I tre file di chiavi (`.env.local`, `.env.test`, `.env.db`) sono diventati
+> **uno solo, `.env`**; il modello con le caselle è `.env.example`. Le righe
+> qui sopra **restano com'erano scritte quel giorno**: questo è un documento
+> datato, non una guida, e correggerlo lo renderebbe un racconto falso di
+> quello che è successo. La nota c'è perché quel nome ha già mandato a
+> cercare un file inesistente.
+
 🔴 **La causa vera**: **qualunque** `npx vite --port <numero>` o
 `npm run dev -- --port <numero>` apre il gestionale **vero** su una porta
 qualsiasi, identico a vedersi. La 5199 è «la porta del collaudo» per
