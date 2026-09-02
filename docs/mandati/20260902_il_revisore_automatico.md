@@ -121,9 +121,9 @@ primi tre giri veri, non prima.**
 
 🔴 **Una prima stesura di questo documento diceva che «legge un repository
 già pubblico», e faceva credere sola lettura. Era sbagliato**, e l'ha
-rilevato Alessio: per **scrivere i commenti** serve anche il permesso di
-scrittura. Cosa comprende esattamente sta nel §5, che è stato riscritto
-apposta.
+rilevato Alessio: **pubblicare un commento non è un gesto di sola lettura**.
+🔴 E l'elenco vero, letto dopo, dice molto di più: **scrittura sul codice** —
+§5c.
 
 ⚠️ Resta vero che **è un terzo che entra**, e la sua qualità e i suoi prezzi
 non li decidiamo noi. Oggi è gratis per i repository pubblici; domani è una
@@ -165,10 +165,15 @@ nostra**.
 
 ### 5a · Cosa è, in una frase
 
-🔴 **CodeRabbit è un'applicazione GitHub, e chiede permessi di LETTURA E DI
-SCRITTURA sul repository su cui la si installa.** Non è un servizio in sola
-lettura, e chiamarlo così sarebbe falso: **la scrittura le serve per fare il
-suo mestiere** — senza, non potrebbe pubblicare nessun commento.
+**CodeRabbit è un'applicazione GitHub**: si installa su un account e le si
+concedono dei permessi sui repository che si scelgono.
+
+**Quali permessi chiede è ora LETTO da GitHub** — l'elenco per intero è nel
+§5c, e la riga che pesa è *lettura e scrittura su **code***.
+
+⚠️ **Il comportamento atteso (§5b) e i permessi concessi (§5c) restano due
+cose diverse**, ed è la distinzione che questo documento ha imparato a caro
+prezzo: due affermazioni sbagliate di fila nascevano proprio dal confonderle.
 
 ### 5b · Il comportamento previsto — cosa dovrebbe FARE
 
@@ -184,43 +189,62 @@ installa.
 che gli vengono concessi.** I due si confondono facilmente, ed è il motivo
 per cui hanno due paragrafi separati.
 
-### 5c · 🔴 I permessi effettivi — DA TRASCRIVERE, non da dedurre
+### 5c · 🔴 I permessi effettivi — LETTI, non dedotti
 
-**Questo paragrafo è VUOTO apposta, e va riempito prima di decidere.**
+**Letti il 02/09/2026 dalla pagina che GitHub pubblica**, linguetta
+*Transparency* → *2. Permissions*:
+<https://github.com/marketplace/coderabbitai?tab=transparency>
 
-🔴 **Una prima stesura di questo documento affermava che l'applicazione «non
-può mandare commit, creare rami, modificare file, unire una proposta».
-Quell'affermazione è stata TOLTA perché non era stata misurata**: veniva da
-un riassunto trovato in rete, non dalla schermata di installazione di GitHub
-— che da qui non si può aprire. In questo progetto vale la regola che *se una
-cosa non è stata misurata non si scrive*, e una riserva accanto non la sana:
-chi legge ci costruisce sopra una decisione.
+| ambito | accesso | a cosa |
+|---|---|---|
+| Repository | **lettura** | actions, discussions, merge queues, metadata |
+| Repository | 🔴 **lettura e SCRITTURA** | **checks, code, commit statuses, issues, pull requests** |
+| Organization | lettura | members |
+| User | lettura | repository pubblici, informazioni pubbliche dell'organizzazione, dati pubblici del profilo |
 
-**Cosa serve, e lo può fare solo Alessio.** Aprendo la pagina di
-installazione dell'applicazione, GitHub mostra **prima di installare** un
-elenco intitolato più o meno *«questa applicazione avrà il permesso di…»*,
-diviso in **lettura** e **lettura e scrittura**.
+⚠️ **Non è la schermata di installazione, è la scheda di trasparenza** — ma la
+pubblica GitHub, non CodeRabbit, ed è la stessa lista che l'installazione
+ripropone. Chi vuole la controprova la rilegge lì al momento di installare.
 
-Va **trascritto qui sotto per intero**, voce per voce, senza riassumerlo:
+---
+
+🔴 **LA RIGA CHE CAMBIA LA VALUTAZIONE: «lettura e scrittura su CODE».**
+
+**L'applicazione può scrivere il codice del repository.** Non solo commenti:
+il codice.
+
+⚠️ **E questo smentisce una frase che era in questo documento**, presa da un
+riassunto trovato in rete e tolta il 02/09 perché non misurata: diceva che
+l'applicazione *«non può modificare file, creare rami, unire proposte»*.
+**Era falsa sul punto più importante.** Se fosse rimasta, avrebbe fatto
+decidere sulla base del contrario del vero.
+*È la dimostrazione, in un caso solo, del perché in questo progetto una cosa
+non misurata non si scrive nemmeno con una riserva accanto.*
+
+---
+
+**Cosa limita quel permesso, misurato il 02/09 sul repository vero:**
+
+`master` **è protetto**, e le regole attive sono quattro:
 
 ```
-LETTURA
-  (da trascrivere dalla schermata)
-
-LETTURA E SCRITTURA
-  (da trascrivere dalla schermata)
+pull_request            → nessuna scrittura diretta su master
+required_status_checks  → «Codice, prove pure e compilazione»
+                          «Prove contro il progetto di prova»
+non_fast_forward        → la storia non si riscrive
+deletion                → il ramo non si cancella
 ```
 
-⚠️ **Fino a quando questo riquadro è vuoto, questo documento NON dice cosa
-l'applicazione può o non può fare** — dice solo cosa ci si aspetta che
-faccia (§5b). Sono due cose diverse, e la seconda non si può dedurre dalla
-prima.
+⚠️ **Quindi il permesso di scrivere codice NON arriva a `borgo58.it`**: per
+andare online una modifica deve passare da una proposta, coi due controlli
+verdi, e il merge lo fa Alessio. Quello che l'applicazione potrebbe fare è
+**scrivere su un ramo o dentro una proposta** — visibile, e fermabile prima
+del merge.
 
-⚠️ **E la voce da guardare per prima è quella sul contenuto del
-repository**: se comparisse in «lettura e scrittura», l'applicazione
-potrebbe modificare file, e la valutazione cambia — non perché lo farebbe,
-ma perché **potrebbe**, e quello che conta in un permesso è cosa consente,
-non cosa si prevede.
+🔴 **Ma la protezione è una CONFIGURAZIONE, non una legge**: vale finché
+quelle quattro regole restano attive. Il giorno che qualcuno le allentasse,
+questo permesso tornerebbe a valere quanto dice — e nessuno collegherebbe le
+due cose.
 
 ### 5d · 🔴 Si installa SOLO su Borgo58-App
 
@@ -257,8 +281,9 @@ modo di chiederli.
 
 🔴 **MA QUESTO NON È UNA GARANZIA ASSOLUTA, e va scritto così invece che come
 una rassicurazione.** «Non può leggerli direttamente» è una cosa più stretta
-di «non potranno mai uscire». Un'applicazione che ha un permesso di
-**scrittura** e venisse compromessa non è inerte: chi la controllasse
+di «non potranno mai uscire». E dai permessi del §5c **la capacità di
+scrittura risulta davvero, e arriva al codice**: un'applicazione compromessa
+non sarebbe inerte: chi la controllasse
 potrebbe agire sul repository con la sua identità, e da lì si aprono strade
 che oggi non sappiamo enumerare — perché dipendono da difetti futuri, non da
 quelli noti.
@@ -282,8 +307,9 @@ lettura non allarga niente**: dà a un servizio un accesso più comodo a
 qualcosa che è già aperto.
 
 ⚠️ **Questo vale per la lettura, non per la scrittura.** Che il repository sia
-pubblico non dice niente su chi può scriverci: quello lo dicono i permessi del
-§5c, che **vanno ancora trascritti**.
+pubblico non dice niente su chi può scriverci — e i permessi del §5c dicono
+che **la scrittura sul codice c'è**. A tenerla lontana da `borgo58.it` è la
+protezione di `master`, non la natura pubblica del repository.
 
 🔴 **Quello che l'integrazione NON deve fare è allargarsi ad altre risorse**,
 e sono tre cose distinte da tenere ferme:
@@ -305,7 +331,7 @@ di queste tre cose si sta avvicinando?»* — non *«sembra ragionevole?»*.
 |---|---|---|
 | legge il codice del repository | sì | sì |
 | scrive commenti sulle proposte | **sì** | **sì** |
-| può modificare file o unire proposte | 🔴 **da verificare** — §5c | dipende da come si scrive il lavoro |
+| può scrivere codice sul repository | 🔴 **sì** (§5c) — ma non su `master`, che è protetto | dipende da come si scrive il lavoro |
 | riceve i Secrets di GitHub | **no** | **sì, se il lavoro glieli passa** |
 | una chiave nuova da custodire | no | **sì** (`ANTHROPIC_API_KEY`) |
 | attinge al credito del locale | **no** | 🔴 **sì** |
@@ -363,7 +389,25 @@ come è stata installata — su **un** repository scelto a mano, non su tutti.
 
 ## 8 · Cosa consiglio, e perché
 
-**La A (CodeRabbit), per un periodo di prova dichiarato.**
+🔴 **IL CONSIGLIO SI È INDEBOLITO DOPO AVER LETTO I PERMESSI, e lo scrivo
+invece di aggiustarlo in silenzio.** Quando l'ho formulato credevo — sulla
+base di una fonte non misurata — che l'applicazione non potesse toccare il
+codice. **Può.** Non è più la scelta comoda che sembrava.
+
+**Resta la A (CodeRabbit), per un periodo di prova dichiarato, ma è una
+scelta più stretta di prima.**
+
+⚠️ **Il criterio con cui la difendo ancora**: la scrittura sul codice **non
+arriva a `borgo58.it`** finché `master` resta protetto, e la protezione è
+misurata (quattro regole attive, §5c). Quindi l'applicazione può scrivere
+dove si vede — un ramo, una proposta — e non dove si pubblica.
+
+⚠️ **E il criterio con cui si può legittimamente decidere di NO**: quel
+permesso è più largo del mestiere. Un revisore che deve solo commentare non
+ha bisogno di poter scrivere codice, e **non esiste un modo di concederne
+meno**: i permessi di un'applicazione GitHub si prendono tutti o si lascia
+stare. *Chi giudica sproporzionato quel permesso rispetto al lavoro non sta
+sbagliando.*
 
 Tre ragioni misurate:
 
@@ -372,9 +416,9 @@ Tre ragioni misurate:
    revisore.
 2. **Non entra dove stanno le chiavi.** Non riceve i Secrets di GitHub, non
    vede gli Environment, non tocca i file `.env` — §5e. ⚠️ **E questo non
-   vuol dire che sia in sola lettura**: scrive, e scrive commenti sulle
-   proposte. ⚠️ **Che cosa NON possa fare non lo affermo**: dipende dai
-   permessi del §5c, che vanno ancora trascritti dalla schermata.
+   vuol dire che sia in sola lettura**: 🔴 ha **scrittura sul codice** (§5c).
+   A fermarla prima di `borgo58.it` è la protezione di `master` — quattro
+   regole attive, misurate — non una proprietà dell'applicazione.
 3. **Costa zero**, quindi la domanda «serve davvero?» si può rispondere
    guardando invece che immaginando.
 
@@ -414,6 +458,9 @@ una decisione di spesa, non tecnica.
 * **Se le istruzioni bastano a farlo tacere sulle scelte volute.** Nessuno
   l'ha provato qui, e resta la domanda che decide se il revisore serve o
   dà fastidio.
+* **Se la schermata di installazione mostri esattamente le stesse voci** della
+  scheda di trasparenza. È GitHub a pubblicarle entrambe, ma la controprova
+  la può fare solo chi apre l'installazione.
 * **Come CodeRabbit custodisce oggi la propria chiave.** Il difetto del
   dicembre 2024 è stato chiuso in ore e la segnalazione responsabile ha
   funzionato, ma **quanto sia robusto adesso non lo possiamo verificare da
