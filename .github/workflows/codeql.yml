@@ -60,12 +60,32 @@ name: CodeQL
 on:
   pull_request:
     branches: [master]
-  # ⚠️ IL GIRO SETTIMANALE NON E' UN DOPPIONE del giro sulle proposte: le
-  #    regole di CodeQL cambiano nel tempo, quindi **codice fermo puo'
-  #    diventare segnalabile senza che nessuno lo tocchi**. Senza questo, una
-  #    vulnerabilita' scoperta dopo l'ultima proposta resterebbe invisibile
-  #    fino alla successiva — che in questo progetto puo' essere fra
-  #    settimane.
+
+  # 🔴 AGGIUNTO IL 02/09 DOPO IL PRIMO GIRO, e non e' una rifinitura: senza
+  #    questo, **la sezione Security del repository resta vuota**.
+  #
+  #    Misurato: la prima esecuzione ha passato tutti i controlli e il
+  #    conteggio delle segnalazioni rispondeva **0** — ma quello zero non
+  #    voleva dire «nessun difetto»: voleva dire «CodeQL non ha mai girato
+  #    sul ramo principale». Le segnalazioni del repository nascono
+  #    dall'analisi del ramo predefinito, e un'analisi su una proposta
+  #    riporta **solo cio' che quella proposta introduce**.
+  #
+  # ⚠️ E' la famiglia che questo progetto insegue da settimane: *una risposta
+  #    piu' corta che ha l'aria di essere intera*. Uno zero che si legge
+  #    «va tutto bene» e significa «non ho guardato».
+  #
+  # ⚠️ Lo ha detto CodeQL stesso, in un avviso sul primo giro — e vale la
+  #    pena scriverlo: **l'avviso non era un difetto del codice, era un
+  #    difetto della mia configurazione**, e senza leggerlo sarebbe passato.
+  push:
+    branches: [master]
+
+  # ⚠️ IL GIRO SETTIMANALE NON E' UN DOPPIONE dei due qui sopra: le regole di
+  #    CodeQL cambiano nel tempo, quindi **codice fermo puo' diventare
+  #    segnalabile senza che nessuno lo tocchi**. Push e proposte guardano
+  #    solo quando qualcosa si muove; questo guarda anche quando non si muove
+  #    niente.
   schedule:
     # Lunedi' alle 6:00 UTC. ⚠️ L'ora e' in UTC e l'Italia cambia ora due
     #    volte l'anno: qui non importa (nessuno aspetta questo giro a
@@ -116,8 +136,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 🔴 v4 E NON v3 — corretto il 02/09 dopo il primo giro, su indicazione
+      #    di Alessio. La prima stesura usava la v3, e CodeQL stesso ha
+      #    avvisato che **sara' dismessa a dicembre 2026**: tre mesi.
+      # ⚠️ Verificato che la v4 esista e sia viva prima di scriverla, invece
+      #    di fidarsi dell'avviso: le due versioni escono lo stesso giorno
+      #    (v4.37.9 e v3.37.9, entrambe del 26/08/2026), quindi la v4 non e'
+      #    un'anteprima — e' la strada normale.
+      # ⚠️ Scelto `@v4` e non una versione esatta: e' la forma che GitHub
+      #    documenta per le proprie azioni, e riceve le correzioni di
+      #    sicurezza senza che nessuno se ne ricordi. *Qui il rischio di
+      #    restare indietro e' piu' grande di quello di muoversi.*
       - name: Prepara CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.lingua }}
           # 🔴 LA SUITE STANDARD SI OTTIENE NON SCRIVENDO NIENTE, ed e' il
@@ -136,6 +167,6 @@ jobs:
           build-mode: none
 
       - name: Analizza
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: /lingua:${{ matrix.lingua }}
