@@ -328,8 +328,23 @@ function testoDaPacchetto(byte: Uint8Array, dentro: string): string | null {
       // Fine paragrafo → a capo, così le righe non si incollano fra loro.
       .replace(/<\/(text:p|w:p)>/g, "\n")
       .replace(/<[^>]+>/g, "")
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      // 🔴 `&amp;` SI DECODIFICA PER ULTIMO — corretto il 02/09/2026.
+      //    Prima era il primo, e produceva una DOPPIA decodifica: un documento
+      //    che contiene scritto `&amp;lt;` (cioe' il testo letterale `&lt;`)
+      //    diventava `&lt;` e poi `<`. Misurato prima di correggere.
+      // ⚠️ NON e' un difetto di sicurezza: questo testo non finisce mai dentro
+      //    una pagina (in tutto il gestionale non c'e' un solo punto che scriva
+      //    testo grezzo in HTML). E' un difetto di TRASCRIZIONE, ed e' quello
+      //    che conta: su questo testo l'assistente risponde a domande su
+      //    contratti e fatture, e il 12/08 e' stato deciso che dev'essere una
+      //    trascrizione esatta — *«un riassunto sarebbe una risposta sbagliata
+      //    conservata per sempre»*. Un testo corrotto e' la stessa cosa.
+      // ⚠️ L'ordine e' la correzione: decodificando `&amp;` per ultimo, cio'
+      //    che esce da `&lt;` non viene ridecodificato.
+      //    Trovato da CodeQL al primo giro su master (js/double-escaping).
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      .replace(/&amp;/g, "&")
       .replace(/[ \t]+/g, " ")
       .replace(/\n{3,}/g, "\n\n")
       .trim()
