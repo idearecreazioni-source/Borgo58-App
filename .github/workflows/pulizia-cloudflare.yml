@@ -111,28 +111,24 @@ jobs:
             echo "::error::Hai scelto «ramo» ma non hai scritto quale. Rilancia scrivendo il nome esatto del ramo nel campo «Solo per ramo»."
             exit 1
           fi
-          # 🔴 SENZA IL TOKEN NON SI PULISCE, e NON e' un rosso: e' un
-          #    avviso che nomina il ramo rimasto sporco e il comando per
-          #    toglierlo. Un giro che tace sarebbe indistinguibile da uno
-          #    che ha pulito davvero; questo dice di non aver fatto niente.
+          # 🔴 SE MANCA UNA CREDENZIALE SI FERMA COL ROSSO. Qui si cancella,
+          #    e ogni giro e' un gesto voluto: finire verde senza aver pulito
+          #    sarebbe indistinguibile dall'aver pulito.
+          # ⚠️ Si guardano tutt'e due prima di uscire: altrimenti la seconda
+          #    si scopre solo dopo aver messo la prima.
+          MANCA=""
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
             echo "Le anteprime del ramo \"$RAMO\" sono ancora vive su Cloudflare."
             echo "Si tolgono a mano: npm run cloudflare -- --ramo \"$RAMO\" --conferma"
             echo "Come si crea il token: docs/CLOUDFLARE.md, sezione 5."
-            # Se mancano tutt'e due, si dicono tutt'e due: altrimenti il
-            # secondo si scopre solo dopo aver messo il primo.
-            if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-              echo "E manca anche la VARIABILE CLOUDFLARE_ACCOUNT_ID: va messa in Settings -> Secrets and variables -> Actions -> scheda Variables."
-            fi
-            exit 0
+            MANCA=1
           fi
-          # ⚠️ L'ACCOUNT INVECE FA FALLIRE: il token si puo' scegliere di
-          #    non darlo, la variabile o c'e' o e' una configurazione rotta.
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
-            exit 1
+            MANCA=1
           fi
+          if [ -n "$MANCA" ]; then exit 1; fi
           node scripts/cloudflare.mjs --ramo "$RAMO" --conferma
 
   # -------------------------------------------------------------------
@@ -151,7 +147,6 @@ jobs:
         with:
           node-version: '22.16.0'
 
-      # ⚠️ QUI NON SI FERMA SE LA CHIAVE MANCA: lo dice e passa oltre.
       - name: Conservazione
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -163,11 +158,20 @@ jobs:
         run: |
           MODO=""
           if [ "$SCELTA" = "orfani" ]; then MODO="--orfani"; fi
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::notice::Chiave di Cloudflare non configurata: conservazione saltata."
-            echo "Quando la vorrai attiva: docs/CLOUDFLARE.md, sezione 5."
-            exit 0
+          # 🔴 SE MANCA UNA CREDENZIALE SI FERMA COL ROSSO, come nel lavoro
+          #    qui sopra: anche questo cancella, e anche questo parte solo
+          #    quando qualcuno lo chiede.
+          MANCA=""
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "Come si crea: docs/CLOUDFLARE.md, sezione 5."
+            MANCA=1
           fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
+            MANCA=1
+          fi
+          if [ -n "$MANCA" ]; then exit 1; fi
           node scripts/cloudflare.mjs $MODO --conferma
 
   # -------------------------------------------------------------------
