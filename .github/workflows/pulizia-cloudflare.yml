@@ -96,31 +96,73 @@ jobs:
         with:
           node-version: '22.16.0'
 
-      # 🔴 SE LA CHIAVE NON C'E', LO DICE E SI FERMA — non finisce verde
-      #    facendo finta di aver pulito. *Un verde che non ha fatto niente e'
-      #    peggio di un rosso.*
-      - name: La chiave di Cloudflare c'e'?
-        env:
-          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$TOKEN" ] || [ -z "$ACCOUNT" ]; then
-            echo "::error::Mancano CLOUDFLARE_API_TOKEN o CLOUDFLARE_ACCOUNT_ID fra i Secrets."
-            echo "Come si creano e dove si mettono: docs/CLOUDFLARE.md, sezione 5."
-            exit 1
-          fi
-
       # ⚠️ IL NOME DEL RAMO PASSA DA UNA VARIABILE, MAI DENTRO IL COMANDO.
       #    Un nome di ramo lo sceglie chi lo crea: e' testo che arriva da
       #    fuori. Infilarlo dritto nella riga di comando vorrebbe dire
       #    lasciargli scrivere pezzi di comando; fra virgolette in una
       #    variabile e' un valore e basta.
+      #
+      # ⚠️ IL CONTROLLO STA DENTRO QUESTO PASSO, e non in uno prima —
+      #    03/09/2026. Un passo separato che vuole «dirlo e passare oltre»
+      #    non puo' farlo: un `exit 0` non salta il passo dopo, servirebbero
+      #    una condizione e un valore di uscita, cioe' PIU' codice. Fondere
+      #    i due passi e' la modifica piu' piccola che ottiene la cosa.
       - name: Toglile
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # 🔴 L'ACCOUNT E' UNA VARIABILE, NON UN SEGRETO — corretto il
+          #    03/09/2026, ed era la causa per cui questo lavoro falliva
+          #    sempre. MISURATO: `anteprima.yml` e `controlli.yml` leggono
+          #    l'account da `vars.CLOUDFLARE_ACCOUNT_ID` da quando esistono;
+          #    questo file era l'unico dei quattro a cercarlo fra i segreti,
+          #    dove non c'e' e non deve esserci. Non mancava una
+          #    configurazione: c'era una fonte sbagliata scritta qui dentro.
+          # ⚠️ E non e' una svista da poco: un identificativo di account non
+          #    e' una credenziale, e tenerlo fra i segreti fa credere che
+          #    nasconderlo protegga qualcosa.
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           RAMO: ${{ github.event.ref }}
-        run: node scripts/cloudflare.mjs --ramo "$RAMO" --conferma
+        run: |
+          # 🔴 SENZA IL TOKEN SI DICE E CI SI FERMA, SENZA UN ROSSO —
+          #    03/09/2026, e ROVESCIA una decisione del 31/08 che diceva
+          #    *«un verde che non ha fatto niente e' peggio di un rosso»*.
+          #    La ragione di allora vale ancora, e per questo la cura non e'
+          #    tacere: `::warning::` NON e' un verde muto — il giro compare
+          #    con l'annotazione gialla in cima, e la riga dice **cosa non e'
+          #    stato tolto e come toglierlo a mano**. Cioe' riesce a dire di
+          #    non aver fatto niente, che e' precisamente quello che la
+          #    regola del 31/08 voleva ottenere col rosso.
+          # ⚠️ Il prezzo, dichiarato: un giallo si legge meno di un rosso. Se
+          #    il token non venisse mai messo, ogni ramo cancellato
+          #    lascerebbe le sue anteprime vive. Il contrappeso c'e' gia': il
+          #    lavoro di sola lettura su ogni proposta, e
+          #    `npm run cloudflare -- --orfani`.
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "Le anteprime del ramo \"$RAMO\" sono ancora vive su Cloudflare."
+            echo "Si tolgono a mano: npm run cloudflare -- --ramo \"$RAMO\" --conferma"
+            echo "Come si crea il token: docs/CLOUDFLARE.md, sezione 5."
+            # ⚠️ SE MANCANO TUTT'E DUE SI DICONO TUTT'E DUE. Senza questa
+            #    riga il secondo si scoprirebbe solo dopo aver messo il
+            #    primo: due giri per una configurazione sola. E' la regola
+            #    del 27/08 — *ogni rifiuto che ha piu' di una causa le
+            #    elenca, o manda a cercare nella prima che viene in mente*.
+            if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+              echo "E manca anche la VARIABILE CLOUDFLARE_ACCOUNT_ID: va messa in Settings -> Secrets and variables -> Actions -> scheda Variables."
+            fi
+            exit 0
+          fi
+          # ⚠️ L'ACCOUNT INVECE FA FALLIRE, e la differenza e' voluta: il
+          #    token e' una cosa che si puo' scegliere di non dare, la
+          #    variabile dell'account e' una configurazione che c'e' o e'
+          #    rotta. E il messaggio dice DOVE si mette, perche' il rifiuto
+          #    vecchio mandava a cercare nei segreti — cioe' nel posto
+          #    sbagliato.
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
+            exit 1
+          fi
+          node scripts/cloudflare.mjs --ramo "$RAMO" --conferma
 
   # -------------------------------------------------------------------
   # 2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione
@@ -144,12 +186,23 @@ jobs:
       #    questo lavoro parte a ogni push su `master`, e senza la chiave
       #    farebbe comparire un rosso su ogni pubblicazione — cioe' un
       #    guardiano che grida sempre, che si impara a spegnere. Lo dice e
-      #    passa oltre. Il caso «ramo cancellato» invece si ferma, perche' li'
-      #    e' un gesto voluto che non ha fatto quello che prometteva.
+      #    passa oltre.
+      # 🔴 LA RIGA CHE STAVA QUI E' DIVENTATA FALSA OGGI, 03/09/2026, e si
+      #    corregge invece di lasciarla. Diceva: *«il caso "ramo cancellato"
+      #    invece si ferma»*. Da oggi, senza il TOKEN, non si ferma nemmeno
+      #    quello: dice «pulizia non eseguita» con un'annotazione gialla e
+      #    passa oltre. Resta una differenza vera fra i due, ed e' un'altra:
+      #    la' l'annotazione nomina **il ramo** e il comando esatto per
+      #    toglierlo a mano, perche' li' un gesto voluto non ha fatto quello
+      #    che prometteva; qui non c'e' nessun gesto di nessuno.
+      # ⚠️ E QUI L'ACCOUNT MANCANTE NON FA FALLIRE, al contrario del lavoro
+      #    delle anteprime — voluto, e per la ragione scritta qui sopra:
+      #    questo parte a ogni push su `master`, quindi un rosso qui sarebbe
+      #    un rosso su ogni pubblicazione. La' parte una volta, su un gesto.
       - name: Conservazione
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           # ⚠️ Un menu a tendina puo' dare solo i valori dell'elenco, ma il
           #    valore passa lo stesso da una variabile e non dentro la riga di
           #    comando: la regola vale per la forma, non per il caso singolo.
@@ -187,7 +240,7 @@ jobs:
       - name: Conteggi, e cosa toglierebbe la conservazione
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::notice::Chiave di Cloudflare non configurata: lettura saltata."
@@ -198,7 +251,7 @@ jobs:
       - name: E cosa toglierebbe la pulizia dei rami spariti
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then exit 0; fi
           node scripts/cloudflare.mjs --orfani
