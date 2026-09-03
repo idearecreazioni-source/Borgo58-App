@@ -101,63 +101,33 @@ jobs:
       #    fuori. Infilarlo dritto nella riga di comando vorrebbe dire
       #    lasciargli scrivere pezzi di comando; fra virgolette in una
       #    variabile e' un valore e basta.
-      #
-      # ⚠️ IL CONTROLLO STA DENTRO QUESTO PASSO, e non in uno prima —
-      #    03/09/2026. Un passo separato che vuole «dirlo e passare oltre»
-      #    non puo' farlo: un `exit 0` non salta il passo dopo, servirebbero
-      #    una condizione e un valore di uscita, cioe' PIU' codice. Fondere
-      #    i due passi e' la modifica piu' piccola che ottiene la cosa.
       - name: Toglile
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # 🔴 L'ACCOUNT E' UNA VARIABILE, NON UN SEGRETO — corretto il
-          #    03/09/2026, ed era la causa per cui questo lavoro falliva
-          #    sempre. MISURATO: `anteprima.yml` e `controlli.yml` leggono
-          #    l'account da `vars.CLOUDFLARE_ACCOUNT_ID` da quando esistono;
-          #    questo file era l'unico dei quattro a cercarlo fra i segreti,
-          #    dove non c'e' e non deve esserci. Non mancava una
-          #    configurazione: c'era una fonte sbagliata scritta qui dentro.
-          # ⚠️ E non e' una svista da poco: un identificativo di account non
-          #    e' una credenziale, e tenerlo fra i segreti fa credere che
-          #    nasconderlo protegga qualcosa.
+          # 🔴 L'ACCOUNT E' UNA VARIABILE, NON UN SEGRETO: stessa fonte di
+          #    `anteprima.yml` e `controlli.yml`. Un identificativo di
+          #    account non e' una credenziale.
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           RAMO: ${{ github.event.ref }}
         run: |
-          # 🔴 SENZA IL TOKEN SI DICE E CI SI FERMA, SENZA UN ROSSO —
-          #    03/09/2026, e ROVESCIA una decisione del 31/08 che diceva
-          #    *«un verde che non ha fatto niente e' peggio di un rosso»*.
-          #    La ragione di allora vale ancora, e per questo la cura non e'
-          #    tacere: `::warning::` NON e' un verde muto — il giro compare
-          #    con l'annotazione gialla in cima, e la riga dice **cosa non e'
-          #    stato tolto e come toglierlo a mano**. Cioe' riesce a dire di
-          #    non aver fatto niente, che e' precisamente quello che la
-          #    regola del 31/08 voleva ottenere col rosso.
-          # ⚠️ Il prezzo, dichiarato: un giallo si legge meno di un rosso. Se
-          #    il token non venisse mai messo, ogni ramo cancellato
-          #    lascerebbe le sue anteprime vive. Il contrappeso c'e' gia': il
-          #    lavoro di sola lettura su ogni proposta, e
-          #    `npm run cloudflare -- --orfani`.
+          # 🔴 SENZA IL TOKEN NON SI PULISCE, e NON e' un rosso: e' un
+          #    avviso che nomina il ramo rimasto sporco e il comando per
+          #    toglierlo. Un giro che tace sarebbe indistinguibile da uno
+          #    che ha pulito davvero; questo dice di non aver fatto niente.
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::warning::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
             echo "Le anteprime del ramo \"$RAMO\" sono ancora vive su Cloudflare."
             echo "Si tolgono a mano: npm run cloudflare -- --ramo \"$RAMO\" --conferma"
             echo "Come si crea il token: docs/CLOUDFLARE.md, sezione 5."
-            # ⚠️ SE MANCANO TUTT'E DUE SI DICONO TUTT'E DUE. Senza questa
-            #    riga il secondo si scoprirebbe solo dopo aver messo il
-            #    primo: due giri per una configurazione sola. E' la regola
-            #    del 27/08 — *ogni rifiuto che ha piu' di una causa le
-            #    elenca, o manda a cercare nella prima che viene in mente*.
+            # Se mancano tutt'e due, si dicono tutt'e due: altrimenti il
+            # secondo si scopre solo dopo aver messo il primo.
             if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
               echo "E manca anche la VARIABILE CLOUDFLARE_ACCOUNT_ID: va messa in Settings -> Secrets and variables -> Actions -> scheda Variables."
             fi
             exit 0
           fi
-          # ⚠️ L'ACCOUNT INVECE FA FALLIRE, e la differenza e' voluta: il
-          #    token e' una cosa che si puo' scegliere di non dare, la
-          #    variabile dell'account e' una configurazione che c'e' o e'
-          #    rotta. E il messaggio dice DOVE si mette, perche' il rifiuto
-          #    vecchio mandava a cercare nei segreti — cioe' nel posto
-          #    sbagliato.
+          # ⚠️ L'ACCOUNT INVECE FA FALLIRE: il token si puo' scegliere di
+          #    non darlo, la variabile o c'e' o e' una configurazione rotta.
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
             exit 1
@@ -182,23 +152,10 @@ jobs:
         with:
           node-version: '22.16.0'
 
-      # ⚠️ QUI NON SI FERMA SE LA CHIAVE MANCA, e la differenza e' voluta:
-      #    questo lavoro parte a ogni push su `master`, e senza la chiave
-      #    farebbe comparire un rosso su ogni pubblicazione — cioe' un
-      #    guardiano che grida sempre, che si impara a spegnere. Lo dice e
-      #    passa oltre.
-      # 🔴 LA RIGA CHE STAVA QUI E' DIVENTATA FALSA OGGI, 03/09/2026, e si
-      #    corregge invece di lasciarla. Diceva: *«il caso "ramo cancellato"
-      #    invece si ferma»*. Da oggi, senza il TOKEN, non si ferma nemmeno
-      #    quello: dice «pulizia non eseguita» con un'annotazione gialla e
-      #    passa oltre. Resta una differenza vera fra i due, ed e' un'altra:
-      #    la' l'annotazione nomina **il ramo** e il comando esatto per
-      #    toglierlo a mano, perche' li' un gesto voluto non ha fatto quello
-      #    che prometteva; qui non c'e' nessun gesto di nessuno.
-      # ⚠️ E QUI L'ACCOUNT MANCANTE NON FA FALLIRE, al contrario del lavoro
-      #    delle anteprime — voluto, e per la ragione scritta qui sopra:
-      #    questo parte a ogni push su `master`, quindi un rosso qui sarebbe
-      #    un rosso su ogni pubblicazione. La' parte una volta, su un gesto.
+      # ⚠️ QUI NON SI FERMA SE LA CHIAVE MANCA: questo lavoro parte a ogni
+      #    push su `master`, e un rosso qui sarebbe un rosso su ogni
+      #    pubblicazione — cioe' un guardiano che grida sempre, che si
+      #    impara a spegnere. Lo dice e passa oltre.
       - name: Conservazione
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
