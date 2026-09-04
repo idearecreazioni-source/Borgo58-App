@@ -256,9 +256,10 @@ Conviene metterselo in Agenda lo stesso giorno.
 Sotto **Client IP address filtering** c'è un menu **Allow** e un campo
 *«Enter an IP address or CIDR range…»*.
 
-**Lasciare tutto vuoto.** ⚠️ Le pulizie automatiche girano **dai server di
-GitHub**, che cambiano indirizzo di continuo: un filtro le farebbe smettere di
-funzionare, e il motivo non si vedrebbe da nessuna parte.
+**Lasciare tutto vuoto.** ⚠️ Le pulizie girano **dai server di GitHub**,
+che cambiano indirizzo di continuo: un filtro le farebbe smettere di
+funzionare, e il motivo non si vedrebbe da nessuna parte. Vale anche adesso
+che partono solo dal pulsante: il pulsante si preme qui, il lavoro gira lì.
 
 ### Passo 7 · Creare, e copiare subito
 
@@ -277,7 +278,7 @@ rifà dal passo 1.
 
 ### Passo 9 · Dove va la chiave
 
-**Su GitHub**, perché le pulizie automatiche e il pulsante girano lì:
+**Su GitHub**, perché è lì che il pulsante fa girare le pulizie:
 **Settings → Secrets and variables → Actions → New repository secret**. Due
 segreti:
 
@@ -295,24 +296,60 @@ sempre in Bitwarden.
 
 ---
 
-## 6 · Le due pulizie automatiche
+## 6 · Le due pulizie, e si chiedono a mano
 
-Vivono in [`.github/workflows/pulizia-cloudflare.yml`](../.github/workflows/pulizia-cloudflare.yml)
-e non chiedono niente a nessuno.
+🔴 **QUESTA SEZIONE SI INTITOLAVA «Le due pulizie automatiche» E DICEVA CHE
+«non chiedono niente a nessuno». Non è più vero dal 03/09/2026**, e la frase è
+rimasta scritta un giorno di troppo. Prometteva questo:
 
-| quando | cosa fa |
+> | quando | cosa fa |
+> |---|---|
+> | ~~**cancelli un ramo su GitHub**~~ | ~~toglie da Cloudflare le anteprime di quel ramo~~ |
+> | ~~**una pubblicazione nuova su `master`**~~ | ~~lascia le ultime 10 versioni di produzione~~ |
+
+⚠️ **Il pericolo di quella frase andava in un verso solo, ed è il peggiore**:
+chi la leggeva credeva che le costruzioni sparissero da sole, quindi non
+premeva mai il pulsante — e intanto si accumulavano. Una promessa di
+automatismo che non c'è non lascia un buco visibile: lascia qualcuno
+tranquillo.
+
+**Come stanno le cose adesso.** Le due pulizie esistono, fanno esattamente
+quello che facevano, e vivono nello stesso file
+([`.github/workflows/pulizia-cloudflare.yml`](../.github/workflows/pulizia-cloudflare.yml)).
+Quello che è cambiato è **chi le fa partire**:
+
+| cosa toglie | quando parte |
 |---|---|
-| **cancelli un ramo su GitHub** | toglie da Cloudflare le anteprime di quel ramo |
-| **una pubblicazione nuova su `master`** | lascia **le ultime 10** versioni di produzione **e le ultime 2 anteprime di ogni ramo** |
+| le anteprime dei rami che su GitHub non esistono più | **solo se qualcuno preme il pulsante** e sceglie «orfani» |
+| le anteprime di **un** ramo preciso | **solo dal pulsante**, scegliendo «ramo» e scrivendo quale |
+| le versioni vecchie di produzione, lasciando **le ultime 10** e **le ultime 2 anteprime di ogni ramo** | **solo dal pulsante**, scegliendo «produzione» |
+
+⚠️ **Nessun evento di GitHub cancella niente**: né un ramo cancellato, né un
+push, né un merge, né un orario. I due eventi che lo facevano — `delete` e
+`push` — sono stati tolti, e `push` era il peggiore dei due perché rendeva
+**ogni merge** una cancellazione.
+
+⚠️ **La voce già selezionata nel menu è «guarda», che non tocca niente**
+(04/09/2026). Prima era «produzione»: chi apriva il menu e premeva Run senza
+leggere si portava via le versioni del sito vero. Su un menu a scelte GitHub
+presenta comunque una voce come selezionata — non esiste «nessuna scelta» —
+quindi l'unica strada perché la scelta sia davvero di chi preme è che quella
+preselezionata sia innocua.
+
+⚠️ **Il prezzo, dichiarato: se nessuno preme il pulsante, le costruzioni si
+accumulano.** È il costo accettato per non avere cancellazioni che partono da
+sole, e questa riga esiste perché sia una decisione e non una sorpresa.
 
 ⚠️ **Perché serviva costruirle**: nessuna delle due esiste come impostazione
 di Cloudflare. Non è un limite del piano — quelle manopole non ci sono per
 nessuno.
 
-⚠️ **La pulizia dei rami comincia a funzionare solo DOPO che il file è stato
-unito a `master`**: GitHub fa girare l'evento «ramo cancellato» dalla copia
-che sta sul ramo principale, e non potrebbe fare altrimenti — il ramo, in
-quel momento, non c'è più.
+⚠️ **E che non tornino automatiche lo sorveglia una prova**, non la memoria di
+chi modifica il file: [`tests/unita/pulizia-manuale.test.js`](../tests/unita/pulizia-manuale.test.js)
+diventa rossa se un evento nuovo compare sotto `on:`, se un lavoro che
+cancella perde il vincolo del pulsante, o se la voce preselezionata torna a
+essere una pulizia. Cerca `--conferma` **dovunque sia**, quindi copre anche il
+lavoro che qualcuno scriverà fra sei mesi.
 
 ⚠️ **Due anteprime per ramo, e «per ramo» è la parte che conta** (deciso da
 Alessio il 31/08). Un tetto complessivo farebbe sparire l'anteprima di un ramo
@@ -384,12 +421,18 @@ appena questo lavoro è stato unito a `master`.
 1. **https://github.com/idearecreazioni-source/Borgo58-App/actions**
 2. Colonna a sinistra: **Pulizia Cloudflare**
 3. Pulsante **Run workflow**
-4. Menu **Che cosa togliere**:
+4. Menu **Che cosa togliere** — si apre già su **guarda**, che non tocca niente:
+   - **guarda** → dice solo cosa c'è e cosa se ne andrebbe. **Non cancella.**
    - **orfani** → le anteprime dei rami che su GitHub non esistono più
    - **produzione** → tiene le ultime 10 versioni di `borgo58.it`
+   - **ramo** → le anteprime di un ramo solo, il cui nome va scritto nel campo sotto
 5. **Run workflow**
 
-⚠️ Una per volta: sono due pulizie diverse.
+⚠️ **Una per volta**: sono pulizie diverse, e ognuna è un lavoro col suo nome
+— così sulla schermata di GitHub si legge quale sta girando.
+
+⚠️ **Il primo giro conviene farlo con «guarda»**: stampa i numeri veri senza
+toccare niente, e da lì si decide se vale la pena premere di nuovo.
 
 ### 7b · Il comando, dal computer
 
@@ -451,7 +494,7 @@ perdere mezz'ora a cercare una voce che non esiste*.
 | 1-2 · il quadro e il problema | ✅ **misurato**: pacchetto scaricato dall'anteprima, riferimento del gestionale vero trovato dentro |
 | 3-4 · produzione e variabili | 🟡 **il percorso sì** (fotografia della barra laterale), **i nomi dentro le pagine no** |
 | 5 · la chiave | ✅ **misurato**: scritto su una fotografia della pagina vera del 31/08 |
-| 6 · le pulizie automatiche | ✅ il codice e le prove · ❌ **non hanno mai girato per davvero** |
+| 6 · le due pulizie, a mano | ✅ il codice e le prove (comprese le 15 che le tengono manuali) · ❌ **non hanno mai cancellato niente per davvero** |
 | 7a-7b · pulsante e comando | ✅ esistono e rispondono · ❌ **non hanno mai cancellato niente** |
 | 7c · a mano dal pannello | 🟡 **il percorso sì**, l'interno della pagina **Deployments** no |
 
@@ -480,7 +523,7 @@ verificata sul pannello, non citata.*
 
 ### Cosa resta non verificato, per intero
 
-🔴 **Le due pulizie automatiche non hanno mai girato.** La parte che decide
+🔴 **Le due pulizie non hanno mai cancellato niente.** La parte che decide
 *quali* costruzioni si tolgono è provata da 11 prove, e le due protezioni più
 importanti — non toccare il sito vivo, non scambiare la produzione per
 un'anteprima — sono state provate **rompendole apposta**: tolte, diventa rossa
