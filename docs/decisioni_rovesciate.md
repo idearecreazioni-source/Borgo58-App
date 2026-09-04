@@ -131,8 +131,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 72 | 30/08/2026 | una porzione per confezione non si può scrivere |
 | 73 | 30/08/2026 | il vino non compare nell'elenco degli scarichi mancati |
 | 74 | 31/08/2026 | le bottiglie aperte non hanno un gesto apposta |
+| 75 | 03/09/2026 | le due pulizie di Cloudflare partono da sole |
+| 76 | 04/09/2026 | produzione e orfani stanno in un lavoro solo |
 
-⚠️ **Righe: 75.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 77.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
