@@ -2,15 +2,20 @@
 # LA PULIZIA DELLE COSTRUZIONI SU CLOUDFLARE — 31/08/2026
 # =====================================================================
 #
-# Chiesto da Alessio. Due pulizie diverse in un file solo, perche' sono la
-# stessa cosa vista da due parti: **quello che Cloudflare costruisce non se
-# ne va mai da solo.** Non ha nessuna impostazione di conservazione, e dal
+# Chiesto da Alessio. Tre pulizie in un file solo, perche' sono la stessa
+# cosa vista da tre parti: **quello che Cloudflare costruisce non se ne va
+# mai da solo.** Non ha nessuna impostazione di conservazione, e dal
 # pannello si cancella una riga alla volta.
+#
+# 🔴 UNA SCELTA DEL MENU = UN LAVORO COL SUO NOME. Prima «orfani» e
+#    «produzione» finivano nello stesso lavoro, che si chiamava
+#    «Conservazione»: chi guardava la schermata leggeva un nome e ne
+#    stava eseguendo un altro.
 #
 # 🔴 NON SI CANCELLA NIENTE DA SOLO: la pulizia si chiede dal pulsante.
 #    ⚠️ Il prezzo: se nessuno lo preme, le costruzioni si accumulano.
 #
-#   1. LE ANTEPRIME DI UN RAMO.
+#   1. LE ANTEPRIME ORFANE, e quelle di UN ramo preciso.
 #      Cancellare un ramo su GitHub non tocca i siti gia' costruiti da quel
 #      ramo: i due sistemi non si parlano. Restano indirizzi pubblici vivi di
 #      rami che non esistono piu'.
@@ -77,11 +82,79 @@ permissions: {}
 
 jobs:
   # -------------------------------------------------------------------
-  # 1. LE ANTEPRIME DI UN RAMO → si chiedono dal pulsante
+  # 1. LE ANTEPRIME ORFANE → rami che su GitHub non esistono piu'
   # -------------------------------------------------------------------
-  anteprime:
-    name: Via le anteprime di un ramo
-    # 🔴 Solo dal pulsante, e solo scegliendo «ramo».
+  orfani:
+    name: Rimuovi anteprime orfane
+    if: github.event_name == 'workflow_dispatch' && inputs.cosa == 'orfani'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      - name: Toglile
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # 🔴 L'ACCOUNT E' UNA VARIABILE, NON UN SEGRETO: stessa fonte di
+          #    `anteprima.yml` e `controlli.yml`.
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # 🔴 Se manca una credenziale si ferma col rosso: qui si cancella, e
+          #    finire verde senza aver pulito sarebbe indistinguibile
+          #    dall'aver pulito. Si guardano tutt'e due prima di uscire.
+          MANCA=""
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "Come si crea: docs/CLOUDFLARE.md, sezione 5."
+            MANCA=1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
+            MANCA=1
+          fi
+          if [ -n "$MANCA" ]; then exit 1; fi
+          node scripts/cloudflare.mjs --orfani --conferma
+
+  # -------------------------------------------------------------------
+  # 2. LA CONSERVAZIONE → restano le ultime 10 di produzione
+  # -------------------------------------------------------------------
+  produzione:
+    name: Conserva le ultime versioni di produzione
+    if: github.event_name == 'workflow_dispatch' && inputs.cosa == 'produzione'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      - name: Conserva
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          MANCA=""
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "Come si crea: docs/CLOUDFLARE.md, sezione 5."
+            MANCA=1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
+            MANCA=1
+          fi
+          if [ -n "$MANCA" ]; then exit 1; fi
+          node scripts/cloudflare.mjs --conferma
+
+  # -------------------------------------------------------------------
+  # 3. LE ANTEPRIME DI UN RAMO PRECISO
+  # -------------------------------------------------------------------
+  ramo:
+    name: Rimuovi anteprime del ramo indicato
     if: github.event_name == 'workflow_dispatch' && inputs.cosa == 'ramo'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -91,17 +164,11 @@ jobs:
         with:
           node-version: '22.16.0'
 
-      # ⚠️ IL NOME DEL RAMO PASSA DA UNA VARIABILE, MAI DENTRO IL COMANDO.
-      #    Un nome di ramo lo sceglie chi lo crea: e' testo che arriva da
-      #    fuori. Infilarlo dritto nella riga di comando vorrebbe dire
-      #    lasciargli scrivere pezzi di comando; fra virgolette in una
-      #    variabile e' un valore e basta.
+      # ⚠️ IL NOME DEL RAMO PASSA DA UNA VARIABILE, MAI DENTRO IL COMANDO:
+      #    e' testo scritto da una persona, quindi e' un valore e basta.
       - name: Toglile
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # 🔴 L'ACCOUNT E' UNA VARIABILE, NON UN SEGRETO: stessa fonte di
-          #    `anteprima.yml` e `controlli.yml`. Un identificativo di
-          #    account non e' una credenziale.
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           RAMO: ${{ inputs.ramo }}
         run: |
@@ -111,11 +178,6 @@ jobs:
             echo "::error::Hai scelto «ramo» ma non hai scritto quale. Rilancia scrivendo il nome esatto del ramo nel campo «Solo per ramo»."
             exit 1
           fi
-          # 🔴 SE MANCA UNA CREDENZIALE SI FERMA COL ROSSO. Qui si cancella,
-          #    e ogni giro e' un gesto voluto: finire verde senza aver pulito
-          #    sarebbe indistinguibile dall'aver pulito.
-          # ⚠️ Si guardano tutt'e due prima di uscire: altrimenti la seconda
-          #    si scopre solo dopo aver messo la prima.
           MANCA=""
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
@@ -132,47 +194,28 @@ jobs:
           node scripts/cloudflare.mjs --ramo "$RAMO" --conferma
 
   # -------------------------------------------------------------------
-  # 2. UNA PUBBLICAZIONE NUOVA → restano le ultime 10 di produzione
+  # 4. UNA SCELTA CHE NESSUN LAVORO ESEGUE → rosso, non verde muto
   # -------------------------------------------------------------------
-  produzione:
-    name: Conservazione, e la pulizia una volta sola
-    # 🔴 Solo dal pulsante, e MAI su una proposta: qui si cancella davvero.
-    #    Una proposta ottiene solo la lettura del lavoro piu' sotto.
-    if: github.event_name == 'workflow_dispatch' && inputs.cosa != 'ramo'
+  # 🔴 Ogni lavoro qui sopra guarda UNA scelta precisa. Il prezzo e' che una
+  #    voce aggiunta al menu senza il suo lavoro farebbe un giro con tutto
+  #    saltato — cioe' un verde che non ha fatto niente. Questo lo rende un
+  #    rosso.
+  scelta-sconosciuta:
+    name: Scelta non riconosciuta
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      && inputs.cosa != 'orfani'
+      && inputs.cosa != 'produzione'
+      && inputs.cosa != 'ramo'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.16.0'
-
-      - name: Conservazione
+      - name: Dillo e fermati
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          # ⚠️ Un menu a tendina puo' dare solo i valori dell'elenco, ma il
-          #    valore passa lo stesso da una variabile e non dentro la riga di
-          #    comando: la regola vale per la forma, non per il caso singolo.
           SCELTA: ${{ inputs.cosa }}
         run: |
-          MODO=""
-          if [ "$SCELTA" = "orfani" ]; then MODO="--orfani"; fi
-          # 🔴 SE MANCA UNA CREDENZIALE SI FERMA COL ROSSO, come nel lavoro
-          #    qui sopra: anche questo cancella, e anche questo parte solo
-          #    quando qualcuno lo chiede.
-          MANCA=""
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::PULIZIA NON ESEGUITA: manca il segreto CLOUDFLARE_API_TOKEN."
-            echo "Come si crea: docs/CLOUDFLARE.md, sezione 5."
-            MANCA=1
-          fi
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
-            MANCA=1
-          fi
-          if [ -n "$MANCA" ]; then exit 1; fi
-          node scripts/cloudflare.mjs $MODO --conferma
+          echo "::error::La scelta \"$SCELTA\" non ha nessun lavoro che la esegua: non e' stato pulito niente. Chi ha aggiunto la voce al menu deve aggiungere anche il suo lavoro in .github/workflows/pulizia-cloudflare.yml."
+          exit 1
 
   # -------------------------------------------------------------------
   # 3. COSA C'E' SU CLOUDFLARE — sola lettura, su ogni proposta
