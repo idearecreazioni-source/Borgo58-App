@@ -66,9 +66,19 @@ on:
       cosa:
         description: "Che cosa togliere"
         required: true
-        default: produzione
+        # 🔴 LA VOCE GIA' SELEZIONATA NON CANCELLA — 04/09/2026.
+        #    Era `produzione`: chi apriva il menu e premeva Run senza leggere
+        #    si portava via le versioni del sito vero. Una voce preselezionata
+        #    che cancella non e' una scelta di chi preme, e' una scelta del
+        #    menu — ed e' la stessa forma del difetto gia' corretto qui il
+        #    31/08, quando due pulizie diverse stavano sotto un nome solo.
+        # ⚠️ «Nessuna voce selezionata» non esiste: su un `choice` GitHub
+        #    presenta comunque la prima. L'unica strada e' che quella sia
+        #    innocua.
+        default: guarda
         type: choice
         options:
+          - guarda       # non tocca niente: dice solo cosa c'e' e cosa se ne andrebbe
           - produzione   # tiene le ultime 10 versioni di borgo58.it
           - orfani       # anteprime di rami che su GitHub non esistono piu'
           - ramo         # le anteprime di UN ramo, scritto qui sotto
@@ -81,6 +91,59 @@ on:
 permissions: {}
 
 jobs:
+  # -------------------------------------------------------------------
+  # 0. GUARDA E BASTA — la voce gia' selezionata nel menu
+  # -------------------------------------------------------------------
+  # 🔴 ESISTE PERCHE' IL DEFAULT NON DEVE CANCELLARE. Non e' una comodita' in
+  #    piu': e' il lavoro che rende innocua la voce che GitHub presenta gia'
+  #    scelta a chi apre il menu. Senza di lui il default dovrebbe essere una
+  #    pulizia, e premere Run senza leggere cancellerebbe.
+  # ⚠️ Stesse due letture del lavoro sulle proposte, e nessun `--conferma`.
+  #    Serve anche da solo: la chiave di Cloudflare vive nei segreti di
+  #    GitHub, quindi da un computer non si puo' guardare cosa c'e' davvero
+  #    senza un giro come questo.
+  # ⚠️ NIENTE `npm ci`: `scripts/cloudflare.mjs` importa solo `node:fs` e
+  #    `node:child_process`. Come i tre lavori qui sotto.
+  guarda:
+    name: Guarda e basta (non cancella niente)
+    if: github.event_name == 'workflow_dispatch' && inputs.cosa == 'guarda'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+
+      - name: Cosa c'e', e cosa toglierebbe la conservazione
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # 🔴 QUI SI FERMA COL ROSSO SE MANCA UNA CREDENZIALE, al contrario
+          #    del lavoro sulle proposte che tira dritto. La differenza e' chi
+          #    guarda: li' nessuno ha chiesto niente, qui qualcuno ha premuto
+          #    un pulsante e aspetta una risposta — e «non ho potuto guardare»
+          #    non deve somigliare a «non c'e' niente da togliere».
+          MANCA=""
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Non ho potuto guardare: manca il segreto CLOUDFLARE_API_TOKEN."
+            echo "Come si crea: docs/CLOUDFLARE.md, sezione 5."
+            MANCA=1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Manca la VARIABILE CLOUDFLARE_ACCOUNT_ID: Settings -> Secrets and variables -> Actions -> scheda Variables. Non e' un segreto."
+            MANCA=1
+          fi
+          if [ -n "$MANCA" ]; then exit 1; fi
+          node scripts/cloudflare.mjs
+
+      - name: E cosa toglierebbe la pulizia dei rami spariti
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/cloudflare.mjs --orfani
+
   # -------------------------------------------------------------------
   # 1. LE ANTEPRIME ORFANE → rami che su GitHub non esistono piu'
   # -------------------------------------------------------------------
@@ -204,6 +267,7 @@ jobs:
     name: Scelta non riconosciuta
     if: >-
       github.event_name == 'workflow_dispatch'
+      && inputs.cosa != 'guarda'
       && inputs.cosa != 'orfani'
       && inputs.cosa != 'produzione'
       && inputs.cosa != 'ramo'
