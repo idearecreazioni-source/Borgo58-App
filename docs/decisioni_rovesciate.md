@@ -131,8 +131,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 72 | 30/08/2026 | una porzione per confezione non si può scrivere |
 | 73 | 30/08/2026 | il vino non compare nell'elenco degli scarichi mancati |
 | 74 | 31/08/2026 | le bottiglie aperte non hanno un gesto apposta |
+| 75 | 03/09/2026 | le due pulizie di Cloudflare partono da sole |
+| 76 | 04/09/2026 | produzione e orfani stanno in un lavoro solo |
 
-⚠️ **Righe: 75.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 77.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2843,3 +2845,55 @@ che non viene mai salvata perché non passa da nessun deposito.
    niente** — aprire non tocca la giacenza, e l'inventario **rilegge** le
    rettifiche che l'Allineamento scrive, senza scriverne nessuna.
    *(Migrazione `20260831000004`, schermata *Magazzino → Cantina*.)*
+
+## 75 · 03/09/2026 — «le due pulizie di Cloudflare partono da sole»
+
+1. **Cosa era stato deciso e quando.** Il **31/08/2026**, nascendo
+   `.github/workflows/pulizia-cloudflare.yml`: due pulizie **automatiche**,
+   una sull'evento «ramo cancellato» e una a ogni `push` su `master`.
+
+2. **La ragione di allora.** *Quello che Cloudflare costruisce non se ne va
+   mai da solo*, e un lavoro a orario fisso girerebbe a vuoto: gli eventi
+   scelti erano esattamente i momenti in cui nasce qualcosa da togliere.
+
+3. **Cosa si decide adesso.** Nessun evento di GitHub cancella più niente:
+   né `push`, né `delete`, né un merge. La pulizia si chiede dal pulsante, ed
+   è l'unica strada. Decisione di Alessio, dopo che la correzione della fonte
+   dell'account ha reso visibile la conseguenza.
+
+4. **Perché la ragione di allora non vale più — o vale ancora e questo è il
+   prezzo.** 🔴 **La ragione era giusta sul QUANDO e sbagliata sul CHI.** Gli
+   eventi erano davvero i momenti giusti; il difetto è che legavano una
+   **cancellazione irreversibile** a un gesto fatto con tutt'altra intenzione
+   — **unire una proposta**. Misurato prima di decidere: il primo merge
+   avrebbe tolto **35 costruzioni** (12 di produzione, 23 anteprime).
+   ⚠️ **Il prezzo che accettiamo**, scritto nel file: se nessuno preme il
+   pulsante, le costruzioni si accumulano di nuovo. *Cancellare per errore
+   costa più che accumulare.*
+   *(Proposta #20, commit `5b77991` ed `e976235`.)*
+
+## 76 · 04/09/2026 — «produzione e orfani stanno in un lavoro solo»
+
+1. **Cosa era stato deciso e quando.** Il **03/09/2026**, poche ore prima: un
+   lavoro solo copriva le scelte `produzione` e `orfani`, con la condizione
+   `inputs.cosa != 'ramo'`.
+
+2. **La ragione di allora.** Erano due varianti dello stesso comando
+   (`cloudflare.mjs` con o senza `--orfani`), quindi sembrava un lavoro solo
+   con un parametro.
+
+3. **Cosa si decide adesso.** Tre lavori distinti, uno per scelta, ciascuno
+   col suo nome — più un quarto che rifiuta col rosso una scelta che nessun
+   lavoro esegue.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Era sbagliata, e si è
+   vista solo usandola**: lanciando `orfani`, nella schermata compariva il
+   lavoro «Conservazione». *Due varianti dello stesso comando non sono la
+   stessa cosa se producono due effetti diversi* — una tiene le ultime dieci
+   versioni del sito, l'altra toglie anteprime di rami morti. Chi guarda
+   legge **il nome del lavoro**, non il parametro, e il nome poteva
+   descriverne solo una.
+   ⚠️ **E la condizione larga non era solo un nome sbagliato**: essendo un
+   raccoglitore, una voce nuova del menu avrebbe eseguito **la conservazione**
+   al posto di quello che era stato chiesto.
+   *(Proposta #21, commit `c6ae726`.)*
