@@ -291,6 +291,14 @@ misurato, non hanno nessuna schermata.
 * 27/08 — Restano com'erano anche «Quanto sta costando», «9 foto lette» e la
 riga del tetto. E il **sorvegliante notturno non si battezza**: non esiste
 ancora.
+* 04/09 — **Tutte le caselle Borgo 58 confluiscono nel gestionale fin dal primo
+  collegamento**, in una posta unica ma distinguibile per casella. **MEMO legge
+  soltanto le mail selezionate da Alessio, una per una**: le altre restano
+  consultabili nel gestionale ma non vengono analizzate dal modello. Non ci
+  sono cartelle, etichette o regole che affidino molte mail a MEMO insieme.
+  Il gesto per escludere una mail è «Ignora»: non invia un rifiuto al mittente
+  e non cancella la mail. La ragione è tenere fuori spam e posta inutile, così
+  le letture restano utili e controllate.
 
 ## Assistente — foto
 
