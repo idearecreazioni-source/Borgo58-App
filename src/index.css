@@ -426,6 +426,31 @@ body {
   }
 }
 
+/* 🔴 L'ECCEZIONE STA ACCANTO ALLA REGOLA CHE SCAVALCA, non nella schermata
+   che la usa (05/09/2026). Una pagina che oltre una certa larghezza si
+   dispone **a colonne affiancate** può essere più larga del tetto qui
+   sopra: quel tetto esiste perché una RIGA lunga non si legge, e in due
+   colonne le righe restano corte.
+
+   ⚠️ E DEVE STARE QUI PER FORZA, non è una preferenza di stile: provato
+   e misurato: un `2xl:max-w-[88rem]` scritto nella schermata NON vince —
+   le utility di Tailwind v4 stanno in `@layer utilities`, e una regola
+   fuori da ogni layer batte una regola dentro un layer **a prescindere
+   dalla specificità**. Il tetto restava 1024 punti e sembrava che la
+   correzione non avesse fatto niente.
+
+   ⚠️ LA SOGLIA È 1536 (`2xl:`), NON 1280 come per `contenuto-ampio`, ed è
+   voluto: sotto i 1536 punti utili due colonne verrebbero troppo strette,
+   quindi lì la pagina resta a colonna sola col tetto normale. La stessa
+   soglia è scritta nella schermata che apre le due colonne: se una delle
+   due cambiasse senza l'altra, la pagina si allargherebbe restando a
+   colonna sola — cioè il difetto che questa correzione chiude. */
+@media (min-width: 1536px) {
+  main.contenuto-ampio > .contenuto-affiancato {
+    max-width: 88rem;
+  }
+}
+
 /* 🔴 LA CARTA NON HA I MILLIMETRI DI UNO SCHERMO (25/08/2026).
    Le tre misure qui sopra sono in centimetri VERI dello schermo, e sono
    giuste per questo: un testo cresce dove il punto e' piccolo. Ma in
