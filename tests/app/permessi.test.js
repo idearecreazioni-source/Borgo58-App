@@ -408,4 +408,137 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // questo file e agli altri OTTO che saltano prove. Il suo messaggio
   // diceva «le tre prove del corridoio»: erano tre quando è stata scritta,
   // oggi sono 26 — adesso il numero se lo conta da solo.
+
+  // ===================================================================
+  // IL TERZO ELENCO CONGELATO: LE VISTE — 04/09/2026
+  // ===================================================================
+  //
+  // 🔴 NASCE DA UN DIFETTO VIVO, non da un sospetto. `v_cash_balance` e
+  //    `v_discounts_gifts_monthly` erano nate con `security_invoker` il
+  //    02/08 e l'hanno perso il 13/08, a un `create or replace view` che
+  //    non ripeteva l'opzione: Postgres non la conserva, e non dice
+  //    niente. Da quel giorno le due viste giravano coi permessi del
+  //    proprietario — che ha `rolbypassrls` — e la RLS delle tabelle
+  //    sotto non veniva applicata.
+  //
+  // ⚠️ PROVATO DAL VIVO sul progetto di prova il 04/09, non dedotto: con
+  //    l'utente staff di collaudo `is_titolare()` risponde NO e le
+  //    tabelle sorgenti rispondono vuote, mentre le due viste — stessa
+  //    sessione, stesso istante — rispondevano piene, con lo stesso
+  //    numero di righe del titolare.
+  //
+  // 🔴 PERCHÉ UN ELENCO E NON UN «devono essere tutte protette»: otto
+  //    viste scavalcano la RLS **apposta**, e sono il pattern `_display`
+  //    del Contratto §6 — mostrare allo staff le colonne operative di
+  //    tabelle titolare-only. Metterle `security_invoker` per uniformità
+  //    le renderebbe mute in cucina (è scritto nella migrazione del
+  //    29/08). Il discriminante non è la meccanica, identica in tutte:
+  //    è che quelle otto **non espongono colonne economiche** e che
+  //    qualcuno le ha decise per iscritto.
+  //
+  // ⚠️ QUESTO ELENCO SCENDE SOLO CON UNA RIGA TOLTA E DICHIARATA nella
+  //    stessa consegna, e sale solo se qualcuno spiega perché — come i
+  //    due elenchi qui sopra.
+  it("solo 8 viste scavalcano la RLS, e sono le aperture volute", async () => {
+    const attese = [
+      // Le sei `_display`: il pattern del Contratto §6. Ognuna porta il
+      // proprio commento in tabella che dice cosa NON espone.
+      "menu_items_display",
+      "produzioni_display",
+      "recipe_ingredients_display",
+      "shopping_list_display",
+      "stock_lots_display",
+      "suppliers_display",
+      // Non sono `_display` ma hanno la stessa ragione, scritta nella
+      // migrazione che le ha create.
+      "v_recipe_allergens", // 01/08: «leggibile anche dallo staff … sicura»
+      "v_stock_levels", // 02/08: «Nessun dato economico: sicura per titolare e staff»
+    ];
+
+    const r = await titolare.rpc("viste_che_scavalcano_rls");
+    expect(r.error).toBeNull();
+
+    // Il messaggio deve dire QUALE è comparsa, non solo che il numero non
+    // torna: chi legge una prova rossa deve poter decidere.
+    const ora = (r.data ?? []).map((x) => x.vista ?? x).sort();
+    expect(ora).toEqual(attese);
+  });
+
+  it("🔴 e le due viste dei soldi NON sono fra quelle: è il difetto che questa rete chiude", async () => {
+    // ⚠️ Ridondante col confronto qui sopra, e voluto: quello dice «l'elenco
+    //    è cambiato», questo dice **quale difetto è tornato**. Il giorno che
+    //    qualcuno aggiorna l'elenco senza guardare, questa riga resta rossa.
+    const r = await titolare.rpc("viste_che_scavalcano_rls");
+    expect(r.error).toBeNull();
+    const nomi = (r.data ?? []).map((x) => x.vista ?? x);
+    expect(nomi).not.toContain("v_cash_balance");
+    expect(nomi).not.toContain("v_discounts_gifts_monthly");
+  });
+
+  it("nessuna vista che scavalca espone colonne di denaro", async () => {
+    // 🔴 LA PROPRIETÀ CHE CONTA DAVVERO, ed è più forte dell'elenco: una
+    //    vista `_display` nuova, o una colonna aggiunta a una che c'è,
+    //    passerebbe il confronto dei nomi e non questo. È il modo in cui
+    //    il difetto tornerebbe senza chiamarsi allo stesso modo.
+    // ⚠️ Il setaccio dice dove guardare, non cosa è vero (26/08): se un
+    //    giorno segnalasse una colonna che è una quantità e non un
+    //    importo, si guarda la colonna — non si allarga il setaccio per
+    //    farlo tacere.
+    const r = await titolare.rpc("viste_che_scavalcano_rls");
+    expect(r.error).toBeNull();
+    const conDenaro = (r.data ?? []).filter((x) => x.espone_denaro).map((x) => x.vista);
+    expect(conDenaro).toEqual([]);
+  });
+
+  it("la rete delle viste è riservata al titolare, e RIFIUTA invece di rispondere vuoto", async () => {
+    // ⚠️ La differenza è tutta qui: un elenco vuoto si legge «nessuna vista
+    //    scavalca la RLS» — una rassicurazione falsa proprio sulla rete che
+    //    esiste per non farsi rassicurare (regola del 27/08).
+    const r = await staff.rpc("viste_che_scavalcano_rls");
+    expect(r.error).not.toBeNull();
+    expect(r.data).toBeNull();
+  });
+
+  it("🔴 lo staff non riceve niente dalle due viste dei soldi", async () => {
+    // LA PROVA CHE LA MIGRAZIONE ESISTE PER SUPERARE, e l'unica che guarda
+    // il COMPORTAMENTO invece della forma dello schema: una verifica dentro
+    // una migrazione non potrebbe scriverla, perché lì si gira come
+    // proprietari e la RLS non esiste (lezione del 16/08).
+    // ⚠️ `head: true` chiede il solo conteggio: nessuna riga di cassa viene
+    //    scaricata nemmeno dalla prova.
+    for (const vista of ["v_cash_balance", "v_discounts_gifts_monthly"]) {
+      const r = await staff.from(vista).select("*", { count: "exact", head: true });
+      // Vuoto o rifiutato vanno bene entrambi: quello che non deve
+      // succedere è che arrivino righe.
+      expect(r.error ? true : r.count === 0).toBe(true);
+    }
+  });
+
+  it("...e il titolare invece sì, altrimenti la correzione avrebbe rotto la schermata", async () => {
+    // 🔴 IL VERSO OPPOSTO, e senza di lui la prova qui sopra sarebbe
+    //    soddisfatta anche da una vista rotta o revocata a tutti: «vuoto per
+    //    tutti» non è la correzione, è un guasto diverso.
+    //
+    // ⚠️ E NON BASTA `error === null`: una vista revocata al titolare, o
+    //    svuotata da una `where` sbagliata, risponde **senza errore e con
+    //    zero righe**. Quel silenzio soddisfa la prova qui sopra («lo staff
+    //    non riceve niente») e passerebbe anche qui — cioè le due prove
+    //    insieme direbbero «corretto» di un gestionale in cui la cassa non
+    //    si vede più da nessuno. Si pretende un conteggio **positivo**: è
+    //    la sola forma che distingue «la RLS morde» da «la vista è rotta».
+    //
+    // ⚠️ PREZZO DICHIARATO: da qui in avanti questa prova DIPENDE DAI DATI
+    //    del progetto di prova. `v_cash_balance` regge da sé (fa un `left
+    //    join` sulle entità, quindi risponde una riga per entità anche
+    //    senza movimenti), ma `v_discounts_gifts_monthly` aggrega gli
+    //    sconti: su un progetto ricostruito da zero e mai popolato sarebbe
+    //    vuota, e questa prova diventerebbe rossa **per assenza di dati,
+    //    non per un difetto**. Chi la vede rossa guardi prima se lo stato
+    //    di partenza c'è (`npm run prova:base`).
+    for (const vista of ["v_cash_balance", "v_discounts_gifts_monthly"]) {
+      const r = await titolare.from(vista).select("*", { count: "exact", head: true });
+      expect(r.error, `${vista}: il titolare non riesce a leggerla`).toBeNull();
+      expect(r.count, `${vista}: il titolare la legge ma è vuota — vista rotta o svuotata, non protetta`).toBeGreaterThan(0);
+    }
+  });
 });
