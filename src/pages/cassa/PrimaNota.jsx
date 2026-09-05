@@ -26,6 +26,13 @@ import { letturaTagliata } from "../../lib/lettureTagliate";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import {
+  campoDescrizione,
+  causaleDaSalvare,
+  causaleFissa,
+  spaccaturaTasca,
+  totaleTasca,
+} from "../../lib/calcoli/tasca";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 const today = oggiLocale;
@@ -199,6 +206,12 @@ export default function PrimaNota() {
     ? CASH_DOCUMENT_TYPES.filter((d) => d.value !== "fattura" && d.value !== "autofattura")
     : CASH_DOCUMENT_TYPES;
 
+  // 🔴 COME SI CHIAMA IL CAMPO DELLA DESCRIZIONE (SPEC-0005, 06/09/2026):
+  //    la regola sta in `src/lib/calcoli/tasca.js`, così si prova senza
+  //    montare la schermata — e soprattutto si prova che per gli ALTRI
+  //    soggetti non cambia niente, che è la metà facile da dimenticare.
+  const descrizione = campoDescrizione(inTasca);
+
   const causaliForDirection = form.direction === "entrata" ? causaliEntrata : causaliUscita;
 
   // Promemoria deterministico (§3.4): scontrino ≤400€ su un'uscita → suggerisci
@@ -230,7 +243,7 @@ export default function PrimaNota() {
         direction: form.direction,
         amount: Number(form.amount),
         movement_date: form.movement_date,
-        causale_id: form.causale_id || null,
+        causale_id: causaleDaSalvare(inTasca, form.causale_id),
         mezzo: form.mezzo,
         tipo_documento: form.tipo_documento,
         document_reference: form.document_reference || null,
@@ -317,12 +330,23 @@ export default function PrimaNota() {
             <span className="testo-sala text-b58-charcoal-soft">
               Speso dalla tasca:{" "}
               <span className="font-medium text-b58-charcoal">
-                {formatEUR((contoTasca ?? []).reduce((t, r) => t + Number(r.totale || 0), 0))}
+                {formatEUR(totaleTasca(contoTasca))}
               </span>
-              {(contoTasca ?? []).length > 0 && (
+              {/* 🔴 LA RIGA «senza causale» NON SI MOSTRA (SPEC-0005). Da
+                  quando la causale sulla tasca è fissa non se ne salva più
+                  nessuna, quindi la spaccatura leggerebbe «senza causale»
+                  sotto un modulo che ha appena dichiarato «Indeducibile» —
+                  due parti della stessa schermata che raccontano cose
+                  diverse dello stesso fatto.
+                  ⚠️ Il TOTALE resta intero, quelle uscite comprese: si
+                  toglie l'assenza, non il dato. E un movimento vecchio con
+                  una causale scelta a mano continua a comparire con la sua. */}
+              {spaccaturaTasca(contoTasca).length > 0 && (
                 <span>
                   {" — "}
-                  {contoTasca.map((r) => r.causale + " " + formatEUR(r.totale)).join(" · ")}
+                  {spaccaturaTasca(contoTasca)
+                    .map((r) => r.causale + " " + formatEUR(r.totale))
+                    .join(" · ")}
                 </span>
               )}
             </span>
@@ -490,16 +514,35 @@ export default function PrimaNota() {
             />
             <div>
               <label className={labelClass}>Causale</label>
-              <select
-                value={form.causale_id}
-                onChange={(e) => setForm((f) => ({ ...f, causale_id: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="">—</option>
-                {causaliForDirection.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
+              {/* 🔴 SULLA TASCA LA CAUSALE NON SI SCEGLIE (SPEC-0005,
+                  06/09/2026). Qui c'era il menu delle causali di uscita, e
+                  offriva una scelta che il database non poteva rispettare:
+                  dalla tasca l'unica classificazione ammessa è
+                  «Indeducibile», e il trigger `guardia_movimenti_tasca`
+                  (migrazione `20260830000012`) la impone comunque.
+                  ⚠️ Un menu che si apre per essere smentito è la stessa
+                  famiglia del pulsante premibile per essere respinto.
+                  ⚠️ IL DIVIETO RESTA NEL DATABASE: questa riga non lo
+                  sostituisce, evita solo di offrire il gesto sbagliato. */}
+              {causaleFissa(inTasca) ? (
+                <p
+                  data-prova="causale-fissa"
+                  className={`${inputClass} bg-b58-cream-dark/50 text-b58-charcoal-soft`}
+                >
+                  {causaleFissa(inTasca)}
+                </p>
+              ) : (
+                <select
+                  value={form.causale_id}
+                  onChange={(e) => setForm((f) => ({ ...f, causale_id: e.target.value }))}
+                  className={inputClass}
+                >
+                  <option value="">—</option>
+                  {causaliForDirection.map((c) => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label className={labelClass}>Tipo documento</label>
@@ -554,18 +597,39 @@ export default function PrimaNota() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <input
-              value={form.document_reference}
-              onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
-              placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (opz.)"}
-              className={inputClass}
-            />
-            <input
-              value={form.business_purpose}
-              onChange={(e) => setForm((f) => ({ ...f, business_purpose: e.target.value }))}
-              placeholder="Finalità aziendale (opz., utile in verifica)"
-              className={inputClass}
-            />
+            <div>
+              {/* ⚠️ L'etichetta qui accanto compare con quella della
+                  descrizione e serve solo a tenere allineate le due
+                  caselle: senza, quella con il titolo diventa più alta e
+                  l'altra si stira per raggiungerla. */}
+              {descrizione.conEtichetta && (
+                <label className={labelClass}>Rif. documento</label>
+              )}
+              <input
+                value={form.document_reference}
+                onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
+                placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (opz.)"}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              {/* 🔴 «FINALITÀ AZIENDALE» È IL LINGUAGGIO DELLA VERIFICA
+                  FISCALE, e sulla tasca non c'è nessuna verifica fiscale da
+                  superare: lì quel riquadro serve a dire CHE COSA HAI
+                  PAGATO. Il nome e l'esempio li decide
+                  `campoDescrizione()`, non questa schermata.
+                  ⚠️ Il titolo compare solo sulla tasca: altrove il campo
+                  continua a chiamarsi come si chiamava, dentro il grigio. */}
+              {descrizione.conEtichetta && (
+                <label className={labelClass}>{descrizione.etichetta}</label>
+              )}
+              <input
+                value={form.business_purpose}
+                onChange={(e) => setForm((f) => ({ ...f, business_purpose: e.target.value }))}
+                placeholder={descrizione.segnaposto}
+                className={inputClass}
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
