@@ -111,7 +111,42 @@ export default function Dashboard() {
   const daGuardare = richieste.length + posta;
 
   return (
-    <div className="max-w-3xl mx-auto">
+    /* 🔴 IL TELAIO DELLA MATTINA SU UNO SCHERMO DA SCRIVANIA (05/09/2026).
+
+       MISURATO su questa schermata, a monitor spento e finestra vera:
+       a 1920×1080 il contenuto restava largo **1024 punti dentro 1600**
+       disponibili, con **288 punti vuoti per lato**; a 2560 erano 608.
+       Il tetto di 64rem lo mette `contenuto-ampio` (index.css) e per la
+       maggior parte delle schermate va bene — qui no.
+
+       ⚠️ E ALLARGARE LA COLONNA SAREBBE STATO PEGGIO, ed è la misura che
+          ha deciso la forma: dentro una riga di impegno l'inchiostro è
+          **95 punti su 1024**, col resto occupato da un buco di **590**
+          fra il titolo e l'etichetta della priorità. Questo contenuto non
+          è stretto: è **rado**. Stirarlo allarga i buchi, non li riempie.
+          Quindi la larghezza si usa mettendo i blocchi **accanto**, non
+          allungando le righe.
+
+       ⚠️ LA SOGLIA È UNA SOLA — 1536 punti (`2xl:`) — e vale sia per il
+          tetto sia per le due colonne, apposta: così la larghezza in più
+          finisce SEMPRE in una seconda colonna e mai in righe più lunghe.
+          Sotto quella soglia non cambia niente: telefono, tablet, e anche
+          i portatili da 1280 e 1440 restano identici a prima (a 1440 il
+          vuoto misurato è 48 punti per lato, che non è il difetto).
+
+       ⚠️ 88rem NON È UN NUMERO NUOVO: è l'ultimo gradino della scala che
+          `contenuto-ampio` usa già (`max-w-6xl` → 88rem). Oltre i ~1600
+          punti utili i margini tornano, ed è dichiarato: più larghe di
+          così le righe smettono di leggersi.
+
+       ⚠️ `contenuto-affiancato` È UNA CLASSE DI `index.css`, NON UNA
+          UTILITY: provato e misurato, un `2xl:max-w-[88rem]` scritto qui
+          NON vince — il tetto di `contenuto-ampio` sta fuori da ogni
+          layer e batte le utility di Tailwind a prescindere dalla
+          specificità. La misura restava 1024 punti e sembrava che non
+          avessi fatto niente. La regola è documentata accanto a quella
+          che scavalca. */
+    <div className="max-w-3xl contenuto-affiancato mx-auto">
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
@@ -135,6 +170,27 @@ export default function Dashboard() {
       {loading ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
       ) : (
+        /* 🔴 DUE COLONNE SOLO DA 1536 PUNTI IN SU, e la ragione è nella
+           misura sopra: il contenuto della mattina è **rado**, quindi la
+           larghezza in più si spende affiancando i blocchi.
+
+           ⚠️ L'ORDINE DICHIARATO NON È ROVESCIATO, ed è la cosa da
+              guardare per prima: nell'albero della pagina i blocchi
+              restano nella sequenza di sempre — chi aspetta una risposta
+              da fuori, le cose che non vanno, il quadro della giornata,
+              e per ultimi gli impegni. Sotto 1536 si impilano ESATTAMENTE
+              come prima; sopra, i primi tre stanno nella colonna
+              principale e gli impegni in quella di fianco, che è più
+              stretta. La precedenza resta quella: cambia dove finisce
+              l'ultimo posto, non quale blocco lo occupa.
+           ⚠️ E vale anche per chi legge con la voce sintetica: l'ordine
+              dell'albero è l'ordine di lettura, e non lo tocca nessuna
+              griglia.
+           ⚠️ `mt-6` sulla seconda colonna, tolto da 1536 in su: sotto la
+              soglia riproduce esattamente lo `space-y-6` che c'era prima
+              fra l'ultimo blocco della prima colonna e il primo della
+              seconda. Senza, impilandosi si toccherebbero. */
+        <div className="2xl:grid 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] 2xl:gap-8 2xl:items-start">
         <div className="space-y-6">
           {!isStaff && daGuardare > 0 && (
             <RichiesteDeiClienti richieste={richieste} posta={posta} />
@@ -204,7 +260,9 @@ export default function Dashboard() {
             onRiprova={caricaPrenotazioni}
             onApri={(id) => navigate(`/calendario-eventi/${id}`)}
           />
+        </div>
 
+        <div className="space-y-6 mt-6 2xl:mt-0">
           <section>
             <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
               Task di oggi
@@ -233,6 +291,7 @@ export default function Dashboard() {
           >
             + Nuovo task
           </Link>
+        </div>
         </div>
       )}
     </div>
