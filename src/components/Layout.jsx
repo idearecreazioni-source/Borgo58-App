@@ -11,6 +11,11 @@ export default function Layout() {
   const { pathname } = useLocation();
   // Sulla Dashboard il ritorno alla Dashboard non serve.
   const inCasa = pathname === "/" || pathname === "/dashboard";
+  // Le Comande sono una postazione touch a sé (§3.2.1 del brief): le
+  // larghezze lì dentro sono calibrate sul tablet di sala (vedi il
+  // commento su `max-w-3xl` in Sala.jsx), non su un monitor da ufficio.
+  // Il telaio desktop qui sotto non deve toccarle.
+  const isComande = pathname === "/comande" || pathname.startsWith("/comande/");
 
   return (
     <div className="min-h-screen bg-b58-cream flex">
@@ -32,8 +37,18 @@ export default function Layout() {
           fissa, il pannello che scorre da lato, e la riga in alto col
           pulsante. Cambiarne uno solo lascia il gestionale senza modo di
           riaprire il menu — cioe' inutilizzabile sul tablet. */}
-      {/* Sidebar desktop/tablet */}
-      <aside className="hidden lg:block lg:w-64 shrink-0 border-r border-b58-charcoal/10 print:hidden">
+      {/* Sidebar desktop/tablet.
+
+          🔴 `xl:w-80` E' UN BREAKPOINT NUOVO, DIVERSO DA QUELLO SOPRA
+          (05/09/2026, segnalazione: sidebar troppo stretta su monitor
+          1920×1080). I tre `lg:` del commento sopra sono la soglia
+          mobile/tablet-vs-desktop e non si toccano. Questo è un secondo
+          gradino, solo per schermi da scrivania: **1280 punti** (`xl:`),
+          il primo breakpoint di Tailwind sopra il portatile più stretto
+          in commercio — resta invariato tutto ciò che sta sotto, tablet
+          compreso. Vedi la stessa soglia in index.css per la larghezza
+          del contenuto. */}
+      <aside className="hidden lg:block lg:w-64 xl:w-80 shrink-0 border-r border-b58-charcoal/10 print:hidden">
         <div className="sticky top-0 h-screen">
           <Sidebar />
         </div>
@@ -107,7 +122,21 @@ export default function Layout() {
           </button>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        {/* 🔴 IL TELAIO DESKTOP (05/09/2026): molte pagine restano incollate
+            a `max-w-3xl`/`4xl`/`5xl`/`6xl` anche su un monitor 1920×1080,
+            con metà schermo vuoto — e diminuire lo zoom del browser non
+            cambia la proporzione, la scala soltanto. La classe
+            `contenuto-ampio` (definita in index.css, sotto lo stesso
+            `xl:` di 1280 punti usato qui sopra per la sidebar) allarga il
+            tetto di quei `max-w-*` SOLO oltre quella soglia: sotto,
+            compreso ogni tablet, non cambia niente.
+            ⚠️ Le Comande restano fuori (`isComande`): sono calibrate sul
+            tablet di sala, non su un monitor da ufficio. */}
+        <main
+          className={`flex-1 px-4 py-6 md:px-8 md:py-8 ${
+            isComande ? "" : "contenuto-ampio"
+          }`}
+        >
           {/* Sopra ogni schermata: se una lettura e tornata a meta, chi guarda
               deve saperlo prima di leggere i numeri, non dopo. */}
           <AvvisoLettureTagliate />

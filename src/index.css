@@ -376,6 +376,56 @@ body {
   }
 }
 
+/* 🔴 IL TELAIO DESKTOP (05/09/2026, segnalazione: su un monitor 1920×1080
+   la Dashboard e molte altre pagine restano incollate a `max-w-3xl` /
+   `4xl` / `5xl` / `6xl`, con metà schermo vuoto ai due lati — e
+   diminuire lo zoom del browser non lo risolve, cambia solo la scala).
+
+   ⚠️ NON SI TOCCA OGNI PAGINA UNA PER UNA: decine di schermate condividono
+   lo stesso schema (`<div className="max-w-Nxl mx-auto">` come radice
+   restituita dalla rotta, dentro `<main>` in Layout.jsx). Una regola sola
+   qui, sul telaio, vale per tutte — e per quelle che verranno.
+
+   ⚠️ SOLO OLTRE 1280 PUNTI (`xl:`, la stessa soglia usata in Layout.jsx
+   per allargare la sidebar): sotto quella soglia, tablet compresi, non
+   cambia nulla. `main > .max-w-*` prende di mira SOLO il contenitore di
+   primo livello di ogni pagina (figlio diretto di `<main>`): i campi, i
+   pulsanti e le finestre modali con un loro `max-w-*` annidato più in
+   basso nell'albero non sono toccati.
+
+   ⚠️ L'INCREMENTO È FISSO — +16rem (256px) su ogni taglia, dalla `xl` in
+   su — non una scala diversa per ognuna: 256px è la larghezza ORIGINALE
+   della sidebar (`w-64`, prima di questa correzione), presa come unità
+   comoda e già presente nel file — non è legata alla crescita della
+   sidebar qui sopra (che è di soli 64px, `w-64`→`w-80`). Sotto `xl`
+   (moduli/form brevi: `max-w-md` e più piccoli) non si tocca: sono
+   pensati stretti, non sono il difetto segnalato.
+
+   ⚠️ LA CLASSE `contenuto-ampio` (messa su `<main>` in Layout.jsx) ESCLUDE
+   le Comande: quella postazione è calibrata sul tablet di sala (vedi il
+   commento su `max-w-3xl` in Sala.jsx) e non deve cambiare per via di un
+   monitor da ufficio. */
+@media (min-width: 1280px) {
+  main.contenuto-ampio > .max-w-xl {
+    max-width: 52rem;
+  }
+  main.contenuto-ampio > .max-w-2xl {
+    max-width: 58rem;
+  }
+  main.contenuto-ampio > .max-w-3xl {
+    max-width: 64rem;
+  }
+  main.contenuto-ampio > .max-w-4xl {
+    max-width: 72rem;
+  }
+  main.contenuto-ampio > .max-w-5xl {
+    max-width: 80rem;
+  }
+  main.contenuto-ampio > .max-w-6xl {
+    max-width: 88rem;
+  }
+}
+
 /* 🔴 LA CARTA NON HA I MILLIMETRI DI UNO SCHERMO (25/08/2026).
    Le tre misure qui sopra sono in centimetri VERI dello schermo, e sono
    giuste per questo: un testo cresce dove il punto e' piccolo. Ma in
