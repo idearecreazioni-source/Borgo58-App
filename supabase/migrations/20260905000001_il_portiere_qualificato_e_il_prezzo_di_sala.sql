@@ -295,11 +295,41 @@ begin
       from viste v
       join pg_attribute a on a.attrelid = v.oid
      where a.attnum > 0 and not a.attisdropped
-       -- Il setaccio dice DOVE GUARDARE, non cosa e' vero (26/08): una
-       -- colonna che si chiama «quantita_arrivata» finisce qui dentro ed
-       -- e' una quantita' di merce. Serve a ordinare per gravita', non a
-       -- decidere al posto di chi legge.
-       and a.attname ~* '(cost|prezz|price|import|amount|margin|ricav|utile|iva|vat|saldo|balance|entrat|uscit|takings|float|prestit|forgone|collected|_full)'
+       -- 🔴 SI GUARDA L'INIZIO DI UN SEGMENTO DEL NOME, non una lettera
+       --    qualsiasi — ed e' una correzione fatta dopo che la prima
+       --    stesura ha gridato su `shopping_list_display.quantita_arrivata`:
+       --    dentro «arr-IVA-ta» ci sono le lettere di «iva». Non e' un
+       --    caso isolato, e la misura lo dice: sui 976 nomi di colonna del
+       --    progetto la ricerca a lettera qualsiasi ne segnalava **104**,
+       --    quella ancorata ne segnala **88**, e **tutti e sedici quelli
+       --    che cadono sono falsi allarmi** — `reser-VAT-ion_date`,
+       --    `att-IVA`, `sal-VAT-o`, `tro-VAT-e`,
+       --    `giornate_con_s-COST-amenti`, `pr-IVA-cy_consent_at`.
+       --    **Nessuna colonna vera di denaro smette di essere segnalata:
+       --    zero.**
+       --
+       -- ⚠️ NON E' UN'ESENZIONE, ne' per i prezzi ne' per altro: l'elenco
+       --    delle parole e' identico: cambia dove devono cominciare. Un
+       --    setaccio che grida su una data di prenotazione si impara a
+       --    spegnere, ed e' il modo in cui una rete muore.
+       --
+       -- ⚠️ RESTA UNA RICERCA PER PREFISSO dentro il segmento, e deve
+       --    esserlo: `costo`, `prezzo`, `importi`, `ricavi`, `entrate`,
+       --    `uscite`, `margine`, `prestito` sono la stessa parola con la
+       --    coda diversa. Ancorare anche la fine taglierebbe fuori proprio
+       --    le colonne vere.
+       --
+       -- ⚠️ IL PREZZO, DICHIARATO: una parola di denaro incollata dentro un
+       --    segmento senza trattino basso — «sottocosto», «extraimporto» —
+       --    adesso non si vede. In questo schema non ce n'e' nessuna
+       --    (misurato sugli stessi 976 nomi) e la convenzione e' snake_case:
+       --    il giorno che ne nascesse una si allunga l'elenco con la sua
+       --    forma, non si torna alla ricerca a lettera qualsiasi.
+       --
+       -- ⚠️ E il setaccio dice DOVE GUARDARE, non cosa e' vero (26/08):
+       --    serve a ordinare per gravita', non a decidere al posto di chi
+       --    legge.
+       and a.attname ~* '(^|_)(cost|prezz|price|import|amount|margin|ricav|utile|iva|vat|saldo|balance|entrat|uscit|takings|float|prestit|forgone|collected|full)'
        -- 🔴 L'UNICA ECCEZIONE DICHIARATA, e sono DUE condizioni insieme.
        --    `menu_items_display.selling_price` e' il prezzo di listino che
        --    la sala legge per prendere una comanda: la vista esiste dal
@@ -335,9 +365,10 @@ comment on function public.viste_che_scavalcano_rls() is
 -- no sembrano funzionare tutti e due.
 do $verifica$
 declare
-  v_tit    uuid;
-  v_denaro text;
-  v_aperta boolean;
+  v_tit     uuid;
+  v_denaro  text;
+  v_colonne text;
+  v_aperta  boolean;
 begin
   -- (a) IL CRITERIO, prima di tutto il resto: se sbaglia lui, ogni cosa
   --     costruita sopra risponde con sicurezza una cosa falsa.
@@ -441,10 +472,22 @@ begin
   --     quella esentata deve essere segnalata lo stesso. Senza questo
   --     controllo, allargare un giorno l'esenzione a «tutti i
   --     selling_price» non farebbe diventare rosso niente.
-  execute 'create view _prova_vista_col_prezzo as select 1::numeric as selling_price';
-  if not exists (select 1 from public.viste_che_scavalcano_rls()
-                  where vista = '_prova_vista_col_prezzo' and espone_denaro) then
+  --     ⚠️ E LA STESSA VISTA FINTA PORTA IL FALSO ALLARME: una colonna
+  --        che si chiama «quantita_arrivata» e' una quantita' di merce, e
+  --        la prima stesura la segnalava perche' dentro «arrivata» ci
+  --        sono le lettere di «iva». I due casi stanno insieme apposta —
+  --        una prova che guarda solo il verso buono non dice se il
+  --        setaccio DISTINGUE, dice solo che qualcosa trova.
+  execute 'create view _prova_vista_col_prezzo as '
+       || 'select 1::numeric as selling_price, 2::numeric as quantita_arrivata';
+  select colonne_riservate into v_colonne
+    from public.viste_che_scavalcano_rls()
+   where vista = '_prova_vista_col_prezzo';
+  if v_colonne is null then
     raise exception 'L''esenzione non e'' una coppia: «selling_price» e'' diventato un nome esente ovunque.';
+  end if;
+  if v_colonne <> 'selling_price' then
+    raise exception 'Il setaccio nomina «%» invece della sola «selling_price»: o segnala una quantita'' di merce come denaro, o si e'' perso il prezzo.', v_colonne;
   end if;
   execute 'drop view _prova_vista_col_prezzo';
   if exists (select 1 from public.viste_che_scavalcano_rls() where vista = '_prova_vista_col_prezzo') then

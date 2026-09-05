@@ -508,6 +508,17 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     //    importo, si guarda la colonna — non si allarga il setaccio per
     //    farlo tacere, e non si aggiunge una seconda esenzione senza
     //    scriverne la ragione qui e nel Contratto.
+    //
+    // 🔴 ED È GIÀ SUCCESSO, il 05/09, applicando: il setaccio segnalava
+    //    `shopping_list_display.quantita_arrivata` — una quantità di
+    //    merce — perché dentro «arr-IVA-ta» ci sono le lettere di «iva».
+    //    La cura NON è stata un'esenzione: le parole cercate sono le
+    //    stesse, cambia che ora devono cominciare all'inizio di un
+    //    segmento del nome. Misurato sui 976 nomi di colonna del
+    //    progetto: cadono 16 falsi allarmi (`reser-VAT-ion_date`,
+    //    `att-IVA`, `giornate_con_s-COST-amenti`…) e **nessuna colonna
+    //    vera di denaro**. Il setaccio è provato senza database, caso per
+    //    caso, in `tests/unita/setaccio-denaro.test.js`.
     const r = await titolare.rpc("viste_che_scavalcano_rls");
     expect(r.error).toBeNull();
     // ⚠️ Il messaggio nomina le COLONNE, non solo la vista: chi legge una
