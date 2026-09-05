@@ -133,8 +133,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 74 | 31/08/2026 | le bottiglie aperte non hanno un gesto apposta |
 | 75 | 03/09/2026 | le due pulizie di Cloudflare partono da sole |
 | 76 | 04/09/2026 | produzione e orfani stanno in un lavoro solo |
+| 77 | 05/09/2026 | una vista aperta apposta non espone zero colonne economiche |
+| 78 | 05/09/2026 | il setaccio del denaro cerca le parole in qualunque punto del nome |
 
-⚠️ **Righe: 77.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 79.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2897,3 +2899,68 @@ che non viene mai salvata perché non passa da nessun deposito.
    raccoglitore, una voce nuova del menu avrebbe eseguito **la conservazione**
    al posto di quello che era stato chiesto.
    *(Proposta #21, commit `c6ae726`.)*
+
+## 77 · 05/09/2026 — «una vista aperta apposta non espone zero colonne economiche»
+
+1. **Cosa era stato deciso e quando.** Il **04/09/2026**, nel Contratto
+   architetturale: un'apertura voluta — una vista che scavalca la RLS — è
+   ammessa *solo se espone **zero colonne economiche*** e la ragione è scritta
+   nel `comment on view` o nella migrazione che la crea.
+
+2. **La ragione di allora.** Una vista che scavalca la RLS e mostra denaro allo
+   staff è un difetto, e il modo più semplice di sorvegliarlo è non ammettere
+   nessuna colonna di denaro: una regola senza eccezioni non ha buchi da
+   discutere.
+
+3. **Cosa si decide adesso.** Zero colonne economiche **riservate**, con
+   un'unica esenzione dichiarata come **coppia** vista × colonna —
+   `menu_items_display` × `selling_price`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Era scritta più larga del
+   vero, e alla lettera condannava una vista sana.** Il prezzo di listino di un
+   piatto non è un dato riservato — lo legge il cliente sul menu — e
+   `menu_items_display` esiste dal 04/08 apposta per mostrarlo alla sala:
+   senza, nessuno può prendere una comanda. Sono riservati i costi d'acquisto,
+   il food cost, i margini, i saldi, gli incassi e le imposte, e su di loro la
+   regola non si muove di un millimetro.
+   ⚠️ **L'esenzione è una COPPIA e non un nome di colonna**, ed è la parte che
+   la tiene stretta: esentare «price» o «prezzo» ovunque toglierebbe dal
+   setaccio proprio il caso per cui il setaccio esiste — una vista che mostra
+   allo staff il **prezzo d'acquisto** di un ingrediente. Una seconda colonna
+   di denaro su quella stessa vista continua a essere segnalata, e
+   `selling_price` su qualunque altra vista pure: c'è una controprova che lo
+   dimostra costruendo il caso.
+   *(Proposta #24, commit `9149a16`; migrazione `20260905000001`.)*
+
+## 78 · 05/09/2026 — «il setaccio del denaro cerca le parole in qualunque punto del nome»
+
+1. **Cosa era stato deciso e quando.** Il **05/09/2026**, poche ore prima,
+   scrivendo la rete `viste_che_scavalcano_rls()`: le parole del denaro si
+   cercano in un punto qualsiasi del nome di colonna.
+
+2. **La ragione di allora.** Una rete larga sbaglia dalla parte rumorosa, e un
+   falso allarme si legge e si chiude. Meglio guardare una colonna in più che
+   lasciarne passare una vera.
+
+3. **Cosa si decide adesso.** Le stesse identiche parole, ma devono cominciare
+   **all'inizio di un segmento** del nome.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Era giusta in astratto e
+   falsa alla misura, e il difetto è saltato fuori APPLICANDO** — cioè nel
+   posto più caro in cui potesse saltare fuori. Il setaccio segnalava
+   `shopping_list_display.quantita_arrivata`, una quantità di merce, perché
+   dentro «arr**iva**ta» ci sono le lettere di «iva». Misurato sui **976** nomi
+   di colonna del progetto: la ricerca a lettera qualsiasi ne segnalava
+   **104**, e **sedici sono falsi allarmi** — `reser**vat**ion_date`,
+   `att**iva**`, `pr**iva**cy_consent_at`, `giornate_con_s**cost**amenti`,
+   `sal**vat**o`, `tro**vat**e`. *Un guardiano che grida su una data di
+   prenotazione non è rumoroso: è un guardiano che si impara a spegnere, ed è
+   così che una rete muore.*
+   ⚠️ **Non è un'esenzione**, né per i prezzi né per altro: l'elenco delle
+   parole è identico, cambia solo dove devono cominciare. Misurato nei due
+   versi: cadono 16 nomi, tutti e sedici falsi allarmi, e **nessuna colonna
+   vera di denaro** smette di essere segnalata.
+   ⚠️ **Il prezzo che accettiamo**, dichiarato: una parola di denaro incollata
+   dentro un segmento senza trattino basso — «sottocosto» — adesso non si vede.
+   In questo schema non ce n'è nessuna, e la convenzione è snake_case.
+   *(Proposta #24, commit `8be6891`; migrazione `20260905000001`.)*
