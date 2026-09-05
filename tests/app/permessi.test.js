@@ -356,6 +356,15 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       "riepilogo_preparazioni",
     ].sort();
 
+    // ⚠️ `viste_che_scavalcano_rls` NON è in questo elenco, ed è una cosa
+    //    da sapere invece che da scoprire: il portiere ce l'ha, e RIFIUTA
+    //    — solo che è scritto `not (select public.is_titolare())`, cioè
+    //    qualificato dallo schema, ed è la forma che `pg_get_functiondef`
+    //    restituisce quando una funzione si riprende dal corpo vivo. Fino
+    //    al 05/09 la rete riconosceva solo il nome nudo e la accusava. Il
+    //    criterio vive ora in `gesto_del_portiere()`, in un posto solo,
+    //    perché questa rete e `funzioni_col_portiere()` non possano più
+    //    dire due cose diverse della stessa funzione.
     const r = await titolare.rpc("funzioni_senza_portiere");
     expect(r.error).toBeNull();
     const ora = (r.data ?? []).map((x) => x.nome).sort();
@@ -475,19 +484,71 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     expect(nomi).not.toContain("v_discounts_gifts_monthly");
   });
 
-  it("nessuna vista che scavalca espone colonne di denaro", async () => {
+  it("nessuna vista che scavalca espone colonne economiche RISERVATE", async () => {
     // 🔴 LA PROPRIETÀ CHE CONTA DAVVERO, ed è più forte dell'elenco: una
     //    vista `_display` nuova, o una colonna aggiunta a una che c'è,
     //    passerebbe il confronto dei nomi e non questo. È il modo in cui
     //    il difetto tornerebbe senza chiamarsi allo stesso modo.
+    //
+    // 🔴 LA REGOLA È CAMBIATA DI UNA PAROLA IL 05/09, e la parola è tutto:
+    //    era «zero colonne economiche», è «zero colonne economiche
+    //    **riservate**». Il prezzo di listino di un piatto non è riservato
+    //    — lo legge il cliente sul menu, e senza di esso nessuno in sala
+    //    può prendere una comanda. Sono riservati i costi d'acquisto, i
+    //    margini, il food cost, i saldi, gli incassi e le imposte.
+    //
+    // ⚠️ L'UNICA ESENZIONE è la coppia `menu_items_display` ×
+    //    `selling_price`, ed è una coppia e non un nome di colonna: la
+    //    prova qui sotto lo pretende, e la verifica della migrazione
+    //    20260905000001 lo dimostra costruendo una vista finta con quella
+    //    stessa colonna e facendola segnalare.
+    //
     // ⚠️ Il setaccio dice dove guardare, non cosa è vero (26/08): se un
     //    giorno segnalasse una colonna che è una quantità e non un
     //    importo, si guarda la colonna — non si allarga il setaccio per
-    //    farlo tacere.
+    //    farlo tacere, e non si aggiunge una seconda esenzione senza
+    //    scriverne la ragione qui e nel Contratto.
     const r = await titolare.rpc("viste_che_scavalcano_rls");
     expect(r.error).toBeNull();
-    const conDenaro = (r.data ?? []).filter((x) => x.espone_denaro).map((x) => x.vista);
-    expect(conDenaro).toEqual([]);
+    // ⚠️ Il messaggio nomina le COLONNE, non solo la vista: chi legge una
+    //    prova rossa deve poter decidere senza andare a interrogare lo
+    //    schema (regola del «rifiuto che nomina»).
+    const conDenaro = (r.data ?? [])
+      .filter((x) => x.espone_denaro)
+      .map((x) => `${x.vista} → ${x.colonne_riservate}`);
+    expect(conDenaro, conDenaro.join(" · ")).toEqual([]);
+  });
+
+  it("...e l'esenzione dichiarata ha ancora il suo caso: il prezzo che la sala legge", async () => {
+    // 🔴 TARATURA SU UN CASO DI RISPOSTA NOTA (regola del 26/08). Senza
+    //    questa prova, la precedente sarebbe soddisfatta anche da una rete
+    //    ROTTA che risponde sempre «nessuna colonna»: uno zero e un elenco
+    //    vuoto si assomigliano troppo.
+    //
+    // ⚠️ E chiude il caso opposto, che è un'esenzione RIMASTA SENZA IL SUO
+    //    CASO: se un giorno `menu_items_display` diventasse
+    //    `security_invoker`, o perdesse `selling_price`, quella riga nella
+    //    rete smetterebbe di servire e resterebbe lì a esentare qualcosa
+    //    che non esiste — cioè una porta socchiusa che nessuno guarda più.
+    const r = await titolare.rpc("viste_che_scavalcano_rls");
+    expect(r.error).toBeNull();
+    const menu = (r.data ?? []).find((x) => x.vista === "menu_items_display");
+    expect(
+      menu,
+      "menu_items_display non è più fra le viste che scavalcano la RLS: l'esenzione dentro viste_che_scavalcano_rls() non serve più e va tolta"
+    ).toBeDefined();
+    expect(menu.espone_denaro, "menu_items_display risulta esporre denaro riservato: l'esenzione non ha preso").toBe(false);
+    expect(menu.colonne_riservate).toBeNull();
+
+    // La colonna esentata esiste davvero. `head: true` non scarica nessuna
+    // riga, ma un nome di colonna sbagliato viene comunque rifiutato.
+    const colonna = await titolare
+      .from("menu_items_display")
+      .select("selling_price", { count: "exact", head: true });
+    expect(
+      colonna.error,
+      "menu_items_display non ha più selling_price: l'esenzione nella rete è rimasta senza il suo caso"
+    ).toBeNull();
   });
 
   it("la rete delle viste è riservata al titolare, e RIFIUTA invece di rispondere vuoto", async () => {
