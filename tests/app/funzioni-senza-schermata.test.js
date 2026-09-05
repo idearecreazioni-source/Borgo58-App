@@ -99,6 +99,14 @@ const ORFANE_NOTE = {
   tipi_vocali_senza_ramo: "rete: i comandi vocali che il gestionale non sa eseguire",
   vincoli_senza_frase: "rete: i rifiuti che non parlano italiano",
   funzioni_senza_chiamante: "rete: questa stessa — chi non ha un chiamante nel database",
+  // ⚠️ AGGIUNTA IL 05/09/2026 con la correzione RLS delle viste economiche.
+  //    Non e' un debito e non e' una porta che manca: e' una RETE, come le
+  //    dieci qui sopra. La interroga `tests/app/permessi.test.js` col token
+  //    del titolare, e il portiere ce l'ha — RIFIUTA chi titolare non e',
+  //    invece di rispondere un elenco vuoto. Una porta a schermo non
+  //    avrebbe senso: dice com'e' fatto il database, non cosa succede in
+  //    sala.
+  viste_che_scavalcano_rls: "rete: quali viste non applicano la RLS di chi le interroga",
 
   // Lavoro pianificato: lo chiama pg_cron, non una persona.
   send_due_task_reminders: "lavoro pianificato: i promemoria dell'Agenda",
