@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali, righeMie } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
-import { azioneAMano, chiudiAMano, confermaAzione } from "../../src/lib/api/voce";
+import { azioneAMano, chiudiAMano } from "../../src/lib/api/voce";
 import { indirizzoAMano } from "../../src/lib/calcoli/aMano";
 
 // =====================================================================
@@ -153,7 +153,13 @@ describe("ogni riga in sospeso ha la sua via d'uscita a mano", () => {
   //    schermata, una dal gestionale premendo «Sì, fallo» su una riga
   //    rimasta aperta in un'altra scheda del browser.
   it("NON si può più eseguire: la stessa spesa non entra due volte", async () => {
-    await expect(confermaAzione(azione)).rejects.toThrow(/due volte/i);
+    // 🔴 DAL 06/09/2026 LA PROTEZIONE E' PIU' FORTE DI PRIMA: non e' piu'
+    //    la funzione a rifiutare una riga gia' finita a mano — e' che
+    //    nessun utente puo' piu' chiamarla affatto. L'unita' che si
+    //    approva e' l'appunto (SPEC-0013), e una porta che esegue una
+    //    riga sola scavalcherebbe le altre che ci stanno dentro.
+    const { error } = await supabase.rpc("esegui_azione_dettata", { p_id: azione });
+    expect(error).toBeTruthy();
   });
 
   it("e nemmeno richiudere una seconda volta", async () => {

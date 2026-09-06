@@ -80,33 +80,51 @@ afterAll(async () => {
   await staff.auth.signOut({ scope: "local" });
 });
 
-describe("il criterio salva-da-sé", () => {
-  // 🔴 I QUATTRO INCROCI, e servono tutti e quattro: una funzione che
-  //    rispondesse sempre «sì» passerebbe il solo caso buono, e una che
-  //    rispondesse sempre «no» passerebbe il solo caso cattivo.
-  it("una misura sicura si salva da sé, una creazione sicura no", async () => {
-    const chiedi = async (tipo, sicuro) => {
-      const { data, error } = await titolare.rpc("azione_si_esegue_da_se", {
-        p_tipo: tipo,
-        p_sicuro: sicuro,
-      });
-      expect(error).toBeNull();
-      return data;
-    };
-
-    expect(await chiedi("giacenza", true)).toBe(true);
-    expect(await chiedi("giacenza", false)).toBe(false);
-    // ⚠️ Questo è il controllo che vale di più: sicurissimo e comunque no.
-    expect(await chiedi("movimento_cassa", true)).toBe(false);
-    expect(await chiedi("movimento_cassa", false)).toBe(false);
-  });
-
-  it("un tipo che non esiste non si salva da sé", async () => {
-    const { data } = await titolare.rpc("azione_si_esegue_da_se", {
-      p_tipo: "questo-non-esiste",
+describe("🔴 niente si salva da sé — SPEC-0013, 06/09/2026", () => {
+  // Questo blocco provava il contrario, e la ragione di allora era scritta
+  // così: *le misure sicure si salvano, le creazioni le guarda lui*. La
+  // decisione del 06/09 la supera per intero — «la comodità non giustifica
+  // una registrazione non riletta» — e il criterio non è stato spento: la
+  // funzione che lo custodiva è stata **cancellata dal database**.
+  //
+  // ⚠️ SI PROVA CHE NON C'È PIÙ, e non solo che non viene chiamata: una
+  //    funzione lasciata lì è una porta che fra sei mesi qualcuno riapre
+  //    credendo di riparare qualcosa.
+  it("il criterio che faceva salvare da sé non esiste più", async () => {
+    const { error } = await titolare.rpc("azione_si_esegue_da_se", {
+      p_tipo: "giacenza",
       p_sicuro: true,
     });
-    expect(data).toBe(false);
+    // PGRST202: PostgREST non trova la funzione. È il segno che è sparita
+    // davvero, non che risponde «no».
+    expect(error).toBeTruthy();
+    expect(error.code).toBe("PGRST202");
+  });
+
+  it("e una misura sicurissima resta comunque in attesa", async () => {
+    // 🔴 È il caso che prima si scriveva da solo: `giacenza`, natura
+    //    «misura», dichiarata sicura. Oggi aspetta come tutto il resto.
+    const { data, error } = await titolare.rpc("registra_dettatura", {
+      p_testo: "PROVA-voce: criterio, giacenza sicura",
+      p_azioni: [
+        {
+          tipo: "giacenza",
+          sicuro: true,
+          frase: "Giacenza sicurissima",
+          dati: { nome_sentito: "zzz prova criterio", quanto_ce: 3 },
+        },
+      ],
+    });
+    expect(error).toBeNull();
+    mie.segna("dettature", data.dettatura_id);
+
+    expect(data.eseguite).toBe(0);
+    expect(data.da_guardare).toBe(1);
+
+    const { data: azioni } = await titolare.rpc("azioni_della_dettatura", {
+      p_id: data.dettatura_id,
+    });
+    expect(azioni[0].stato).toBe("in_attesa");
   });
 });
 
@@ -157,7 +175,7 @@ describe("una dettatura fa quello che ha capito", () => {
   //    confondersi con la riga di adesso.
   const titoloDelPromemoria = `PROVA-voce una cosa ${crypto.randomUUID().slice(0, 8)}`;
 
-  it("le misure sicure si salvano, le creazioni aspettano — nella stessa filza", async () => {
+  it("in una filza sola, TUTTE aspettano — misure comprese", async () => {
     // ⚠️ Si portano via i residui dei giri uccisi a meta': stesso marcatore
     //    «PROVA-voce una cosa», sul database di PROVA, dove nessun impegno
     //    vero puo' chiamarsi cosi'.
@@ -196,16 +214,20 @@ describe("una dettatura fa quello che ha capito", () => {
     mie.segna("dettature", data.dettatura_id);
 
     expect(data.azioni).toBe(2);
-    expect(data.eseguite).toBe(1);
-    expect(data.da_guardare).toBe(1);
+    // 🔴 Prima erano 1 eseguita e 1 in attesa. Da SPEC-0013 aspettano
+    //    tutt'e due: il promemoria non e' meno importante del pagamento,
+    //    e' solo piu' comodo da scrivere senza guardarlo.
+    expect(data.eseguite).toBe(0);
+    expect(data.da_guardare).toBe(2);
 
     const { data: azioni } = await titolare.rpc("azioni_della_dettatura", {
       p_id: data.dettatura_id,
     });
-    expect(azioni[0].stato).toBe("eseguita");
-    // ⚠️ Il promemoria è nato DAVVERO: si va a cercarlo in Agenda invece
-    //    di fidarsi dello stato scritto sulla riga. «Eseguita» e «ha
-    //    prodotto qualcosa» sono due affermazioni diverse.
+    expect(azioni[0].stato).toBe("in_attesa");
+    // 🔴 E IN AGENDA NON C'E' NIENTE: si va a guardare invece di fidarsi
+    //    dello stato scritto sulla riga. «In attesa» e «non ha prodotto
+    //    niente» sono due affermazioni diverse, ed e' la seconda che
+    //    SPEC-0013 pretende.
     const { data: nato } = await titolare
       .from("tasks").select("id").eq("title", titoloDelPromemoria);
     // ⚠️ SI SEGNA PRIMA DI AFFERMARE, e non e' pignoleria: se
@@ -213,7 +235,7 @@ describe("una dettatura fa quello che ha capito", () => {
     //    comunque essere ripulita. Segnandola dopo, ogni fallimento
     //    lasciava un residuo che rendeva rosso anche il giro successivo.
     for (const t of nato ?? []) mie.segna("tasks", t.id);
-    expect(nato).toHaveLength(1);
+    expect(nato).toHaveLength(0);
     expect(azioni[1].stato).toBe("in_attesa");
     expect(azioni[1].natura).toBe("creazione");
   });
@@ -269,7 +291,10 @@ describe("una dettatura fa quello che ha capito", () => {
     });
     expect(error).toBeNull();
     mie.segna("dettature", data.dettatura_id);
-    expect(data.eseguite).toBe(1);
+    // 🔴 Non e' piu' un impegno subito: e' un appunto da approvare. Quello
+    //    che conta — che la frase non vada persa — regge lo stesso, ed e'
+    //    provato qui sotto guardando che in Agenda NON sia ancora comparsa.
+    expect(data.eseguite).toBe(0);
 
     const { data: task } = await titolare
       .from("tasks")
@@ -278,8 +303,8 @@ describe("una dettatura fa quello che ha capito", () => {
       // ⚠️ Solo la nota di QUESTO giro: con il modello condiviso, la nota di
       //    un'altra esecuzione faceva contare due dove la prova pretende uno.
       .like("description", `%${soloMiei("PROVA-voce quella cosa")}`);
-    expect(task).toHaveLength(1);
-    mie.segna("tasks", task[0].id);
+    expect(task).toHaveLength(0);
+    for (const t of task ?? []) mie.segna("tasks", t.id);
   });
 });
 

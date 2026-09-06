@@ -284,13 +284,37 @@ const OPERAZIONI = new Set([
   // qui, come `elimina_nota_credito`: sono le due facce dello stesso gesto
   // — Alessio guarda una cosa e dice si' o no — e separarle renderebbe
   // meta' di quel gesto invisibile nell'elenco delle scritture.
-  "esegui_azione_dettata",
-  "annulla_azione_dettata",
+  // 🔴 `esegui_azione_dettata` e `annulla_azione_dettata` NON sono piu' qui
+  // dal 06/09/2026 (SPEC-0013): eseguivano o annullavano UNA riga, e da
+  // quando l'unita' che si approva e' l'appunto quella e' una seconda
+  // porta che lo scavalca — su una lista da tre articoli avrebbe scritto
+  // il primo lasciando gli altri due dentro un appunto a meta'. Al loro
+  // posto ci sono `approva_appunto` e `scarta_appunto`, qui sotto.
   // ⚠️ Scegliere fra i candidati proposti ESEGUE, quindi è la stessa
   // scrittura di `esegui_azione_dettata` con una decisione in più davanti:
   // se uscisse da un'altra porta, metà dei gesti che scrivono a voce non
   // comparirebbe nell'elenco delle scritture.
   "scegli_per_azione_dettata",
+
+  // SPEC-0013 — gli appunti vocali.
+  // ⚠️ `approva_appunto` e' multi-tabella per costruzione: esegue TUTTI gli
+  // elementi dell'appunto e li chiude, in una transazione sola. O entrano
+  // tutti e tre gli articoli della lista, o non ne entra nessuno — a meta'
+  // sarebbe un appunto sparito con solo una parte scritta, e nessuno che
+  // sappia quale.
+  // ⚠️ Le altre due toccano meno tabelle e passano comunque di qui, per la
+  // ragione gia' scritta sopra: sono le altre facce dello stesso gesto —
+  // Alessio guarda un appunto e lo approva, lo corregge o lo butta — e
+  // farle uscire da un'altra porta renderebbe due terzi di quel gesto
+  // invisibili nell'elenco delle scritture.
+  "approva_appunto",
+  "scarta_appunto",
+  "correggi_elemento_appunto",
+  // ⚠️ `chiudi_azione_a_mano` E' ENTRATA QUI IL 06/09: prima toccava una
+  // riga sola, adesso ne tocca due — segna la riga come finita a mano e,
+  // se era l'ultima, CHIUDE l'appunto. Senza la seconda scrittura un
+  // appunto resterebbe aperto e vuoto nell'elenco, per sempre.
+  "chiudi_azione_a_mano",
 
   // ⚠️ Tengono una tabella sola e passano comunque di qui, per la stessa
   // ragione delle due righe qui sopra: la caparra entra dal corridoio

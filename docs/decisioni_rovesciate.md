@@ -135,8 +135,10 @@ rossa da sola il giorno che l'indice resta indietro.
 | 76 | 04/09/2026 | produzione e orfani stanno in un lavoro solo |
 | 77 | 05/09/2026 | una vista aperta apposta non espone zero colonne economiche |
 | 78 | 05/09/2026 | il setaccio del denaro cerca le parole in qualunque punto del nome |
+| 79 | 06/09/2026 | le misure sicure si salvano da sé |
+| 80 | 06/09/2026 | scegliere fra i candidati esegue |
 
-⚠️ **Righe: 79.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 81.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2964,3 +2966,67 @@ che non viene mai salvata perché non passa da nessun deposito.
    dentro un segmento senza trattino basso — «sottocosto» — adesso non si vede.
    In questo schema non ce n'è nessuna, e la convenzione è snake_case.
    *(Proposta #24, commit `8be6891`; migrazione `20260905000001`.)*
+
+## 79 · 06/09/2026 — «le misure sicure si salvano da sé»
+
+1. **Cosa era stato deciso e quando.** Il **25/08/2026**, coi comandi vocali: le
+   azioni dettate si dividono fra **misure** e **creazioni**, e una misura
+   dichiarata sicura — una temperatura, una giacenza, una pulizia, un
+   promemoria — **si scrive nell'istante in cui viene detta**. Il criterio
+   viveva in una funzione apposta, `azione_si_esegue_da_se()`.
+
+2. **La ragione di allora.** In cella si hanno le mani occupate e il tablet
+   lontano. Far confermare a mano anche «cella carni tre gradi» avrebbe
+   trasformato il gesto più frequente in due gesti, e una misura sbagliata si
+   corregge dal modulo dove è finita — mentre una creazione (un prodotto, una
+   ricetta, un movimento di cassa) no.
+
+3. **Cosa si decide adesso.** **Niente si salva da sé, mai.** Ogni cosa dettata
+   diventa un **appunto** che Alessio legge, corregge, approva o butta.
+   `azione_si_esegue_da_se()` non è stata spenta: è stata **cancellata dal
+   database**.
+
+4. **Perché la ragione di allora non vale più.** Le parole di Alessio, in
+   SPEC-0013: *«la comodità non giustifica una registrazione non riletta»*. La
+   ragione di allora **non è stata smentita** — in cella le mani sono ancora
+   occupate — ed è il prezzo che accettiamo: un gesto in più su ogni misura.
+   Quello che è cambiato è cosa c'era dall'altra parte della bilancia. Il
+   criterio del 25/08 dava per scontato che una misura sicura fosse *quasi
+   sempre* giusta; ma «sicuro» lo dichiara il modello, e il registro delle
+   temperature va all'ASP. *Una misura vera messa sotto il nome sbagliato non
+   produce nessun errore e resta lì per anni* — e con l'esecuzione automatica
+   nessuno l'avrebbe mai riletta.
+   ⚠️ **La decisione è dichiarata sperimentale** e va rivalutata prima
+   dell'apertura di marzo 2027: se il gesto in più risulterà insostenibile in
+   servizio, si torna qui.
+   *(SPEC-0013; migrazioni `20260906000001` e `20260906000004`.)*
+
+## 80 · 06/09/2026 — «scegliere fra i candidati esegue»
+
+1. **Cosa era stato deciso e quando.** Il **27/08/2026**, e la ragione era
+   scritta dentro la funzione: *«chi ha appena detto QUALE ha già detto anche
+   SÌ: un secondo pulsante sarebbe il difetto di prima con un passaggio in
+   più»*.
+
+2. **La ragione di allora.** Quando il gestionale trovava due candidati — due
+   oli, due tonni — proponeva i due nomi e Alessio toccava quello giusto. In
+   quel mondo si sceglieva **davanti alla riga che stava per essere scritta**,
+   quindi scegliere *era* l'ultimo gesto rimasto, e chiedere una conferma dopo
+   sarebbe stato chiedere due volte la stessa cosa.
+
+3. **Cosa si decide adesso.** Scegliere **riempie il campo e basta**: la riga
+   resta in attesa, e il sì è l'approvazione dell'appunto.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Non è stata smentita: è
+   stata soddisfatta altrove.** SPEC-0013 sposta il sì dalla riga all'appunto,
+   che può contenerne altre — quindi scegliere non è più l'ultimo gesto, è
+   *riempire un campo*. E non compare nessun «secondo pulsante»: chi sceglie
+   non deve poi confermare quella riga, deve approvare l'appunto, che è un
+   gesto che avrebbe fatto comunque per le altre righe che ci sono dentro.
+   🔴 Lasciarlo eseguire avrebbe voluto dire che **una delle tre porte scriveva
+   ancora senza approvazione** — e la più facile da premere, perché somiglia a
+   una risposta e non a un comando.
+   ⚠️ **Il controllo che conta resta intero**: si accetta solo una delle scelte
+   che il gestionale aveva proposto, altrimenti dal browser si potrebbe
+   abbinare la temperatura di un frigo a un altro.
+   *(SPEC-0013; migrazione `20260906000002`.)*

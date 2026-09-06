@@ -3,22 +3,29 @@ import { Link } from "react-router-dom";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
-  annullaAzione,
+  appuntiDaApprovare,
+  approvaAppunto,
   azioniDellaDettatura,
-  azioniInAttesa,
   chiaviVoce,
-  confermaAzione,
   creaChiaveVoce,
   mandaDettato,
   revocaChiaveVoce,
+  scartaAppunto,
   scegliPerAzione,
 } from "../../lib/api/voce";
+import {
+  certezza,
+  datiInChiaro,
+  eta,
+  quantiElementi,
+  riassunto,
+  siPuoApprovare,
+} from "../../lib/calcoli/appunti";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
 import {
   comeEAndata,
   componiDettato,
   creaRiconoscitore,
-  daQuantoAspetta,
   fraseDelMicrofono,
   perchéAspetta,
   riconoscitoreDisponibile,
@@ -74,7 +81,7 @@ export default function Detta() {
   const perche = statoDettatura();
 
   const ricarica = useCallback(() => {
-    leggi(azioniInAttesa()).then(setAttesa);
+    leggi(appuntiDaApprovare()).then(setAttesa);
     leggi(spesaAiDelMese()).then(setSpesa);
   }, []);
 
@@ -230,23 +237,23 @@ export default function Detta() {
   //    lezione del 17/08 pagata già una volta in Cassa.
   const segna = (id, esito) => setEsiti((e) => ({ ...e, [id]: esito }));
 
-  const conferma = async (azione) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
+  const conferma = async (appunto) => {
+    if (!guardia.current.prendi(appunto.id)) return;
+    setInAzione(appunto.id);
+    segna(appunto.id, { stato: "in_corso" });
     setErrore("");
     try {
-      await confermaAzione(azione.id);
-      segna(azione.id, { stato: "fatta" });
+      await approvaAppunto(appunto.id);
+      segna(appunto.id, { stato: "fatta" });
       ricarica();
       if (riscontro) {
-        const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
+        const azioni = await azioniDellaDettatura(riscontro.dettaturaId);
         if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
       }
     } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
+      segna(appunto.id, { stato: "fallita", messaggio: e.message });
     } finally {
-      guardia.current.lascia(azione.id);
+      guardia.current.lascia(appunto.id);
       setInAzione(null);
     }
   };
@@ -275,21 +282,24 @@ export default function Detta() {
     }
   };
 
-  const annulla = async (azione) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
+  const annulla = async (appunto) => {
+    if (!guardia.current.prendi(appunto.id)) return;
+    setInAzione(appunto.id);
+    segna(appunto.id, { stato: "in_corso" });
     setErrore("");
     try {
-      await annullaAzione(azione.id);
+      await scartaAppunto(appunto.id);
       ricarica();
+      // Le righe di questo appunto spariscono anche dal riquadro di sopra:
+      // altrimenti resterebbero li' come se aspettassero ancora.
+      const suoi = new Set((appunto.elementi ?? []).map((e) => e.id));
       setRiscontro((r) =>
-        r ? { ...r, daGuardare: r.daGuardare.filter((a) => a.id !== azione.id) } : r,
+        r ? { ...r, daGuardare: r.daGuardare.filter((a) => !suoi.has(a.id)) } : r,
       );
     } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
+      segna(appunto.id, { stato: "fallita", messaggio: e.message });
     } finally {
-      guardia.current.lascia(azione.id);
+      guardia.current.lascia(appunto.id);
       setInAzione(null);
     }
   };
@@ -335,7 +345,13 @@ export default function Detta() {
   //    pendenze sono «quello che aspetta da PRIMA», e una riga di dieci
   //    secondi fa non è da prima.
   const giaSopra = new Set((riscontro?.daGuardare ?? []).map((a) => a.id));
-  const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter((a) => !giaSopra.has(a.id));
+  // ⚠️ UN APPUNTO SPARISCE DA QUI SOLO SE E' TUTTO GIA' SOPRA. Con
+  //    il raggruppamento un appunto puo' contenere una riga appena detta e
+  //    due di stamattina: nasconderlo per la prima farebbe sparire anche le
+  //    altre due, che aspettano da prima e nessuno vedrebbe piu'.
+  const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter(
+    (a) => !(a.elementi ?? []).every((e) => giaSopra.has(e.id)),
+  );
   const dettato = componiDettato(frasi, parziale);
 
   return (
@@ -468,25 +484,35 @@ export default function Detta() {
             </ul>
           )}
 
+          {/* 🔴 QUI NON SI APPROVA PIU' NIENTE — SPEC-0013. Prima ogni riga
+              appena detta aveva qui il suo «Sì, fallo»; adesso il sì è uno
+              solo e vive sull'APPUNTO, qui sotto.
+              ⚠️ Non è una rifinitura: due posti da cui approvare sarebbero
+                 due gesti diversi per la stessa cosa, e quello di quassù
+                 scavalcherebbe il raggruppamento — si approverebbe una riga
+                 di una lista senza vedere le altre due che ci sono dentro.
+              ⚠️ Questo riquadro resta perché risponde a un'altra domanda:
+                 *cosa ho appena detto*. L'elenco sotto risponde a *cosa
+                 aspetta*, e una riga di dieci secondi fa non aspetta «da
+                 prima». */}
           {riscontro.daGuardare.length > 0 && (
             <div className="mt-4">
               <h3 className="testo-sala font-medium text-b58-charcoal mb-2">
-                Queste te le chiedo:
+                {riscontro.daGuardare.length === 1
+                  ? "Ne ho fatto un appunto:"
+                  : `Ne ho fatti ${riscontro.daGuardare.length} appunti:`}
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {riscontro.daGuardare.map((a) => (
-                  <RigaDaGuardare
-                    key={a.id}
-                    azione={a}
-                    occupato={inAzione === a.id}
-
-                    esito={esiti[a.id]}
-                    onConferma={() => conferma(a)}
-                    onAnnulla={() => annulla(a)}
-                    onScegli={(id) => scegli(a, id)}
-                  />
+                  <li key={a.id} className="testo-sala text-b58-charcoal">
+                    · {a.frase}
+                  </li>
                 ))}
               </ul>
+              <p className="testo-sala mt-2 text-b58-charcoal-soft">
+                Non ho scritto niente nel gestionale: li trovi qui sotto, con dentro i dati che
+                scriverei.
+              </p>
             </div>
           )}
         </div>
@@ -510,21 +536,19 @@ export default function Detta() {
           <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
             <h2 className="testo-sala-lontano font-medium text-b58-charcoal">
               {daGuardareOra.length === 1
-                ? "Una cosa detta aspetta ancora"
-                : `${daGuardareOra.length} cose dette aspettano ancora`}
+                ? "Un appunto aspetta che tu lo guardi"
+                : `${daGuardareOra.length} appunti aspettano che tu li guardi`}
             </h2>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-3">
               {daGuardareOra.map((a) => (
-                <RigaDaGuardare
+                <AppuntoDaApprovare
                   key={a.id}
-                  azione={a}
-                  quando={daQuantoAspetta(a.giorni)}
+                  appunto={a}
                   occupato={inAzione === a.id}
-
                   esito={esiti[a.id]}
-                  onConferma={() => conferma(a)}
-                  onAnnulla={() => annulla(a)}
-                  onScegli={(id) => scegli(a, id)}
+                  onApprova={() => conferma(a)}
+                  onScarta={() => annulla(a)}
+                  onScegli={(elementoId, sceltaId) => scegli({ id: elementoId }, sceltaId)}
                 />
               ))}
             </ul>
@@ -670,56 +694,166 @@ export default function Detta() {
 //    schermata: riusa la funzione che già sa cosa manca. Deciderlo qui
 //    sarebbe la seconda definizione della stessa cosa, e il giorno che le
 //    due divergono la schermata offre un pulsante che il database rifiuta.
-function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla, onScegli }) {
+// 🔴 L'UNITA' CHE SI APPROVA E' L'APPUNTO — SPEC-0013, 06/09/2026.
+//
+// Prima ogni riga detta aveva il suo «Sì, fallo». Adesso il sì e' uno solo e
+// vale per tutto l'appunto: tre articoli detti per la stessa lista in tre
+// momenti diversi si approvano insieme, due pagamenti restano due appunti e
+// si approvano uno per uno.
+//
+// ⚠️ CIO' CHE SI VEDE PRIMA DI FIRMARE E' LA COSA CHE CONTA. «Approva» e' una
+//    firma: se l'appunto riassumesse invece di mostrare, chi preme
+//    autorizzerebbe una scrittura che non ha visto. Per questo ogni elemento
+//    porta i **dati concreti** — quelli che finiranno nel gestionale — e non
+//    una frase gentile.
+function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onScegli }) {
   const inCorso = esito?.stato === "in_corso" || occupato;
-  const fatta = esito?.stato === "fatta";
-  const fallita = esito?.stato === "fallita";
-  const scelte = Array.isArray(azione.scelte) ? azione.scelte : [];
-  const chiedeQuale = azione.domanda === "scegli" && scelte.length > 0;
-  // ⚠️ `manca` è il caso in cui nemmeno il gestionale sa cosa proporre:
-  //    lì «Sì, fallo» è inutile quanto nel caso sopra, ma non c'è niente
-  //    da toccare. Resta la via d'uscita: ridire, o lasciar perdere.
-  const chiedeAltro = azione.domanda === "manca";
+  const fatto = esito?.stato === "fatta";
+  const fallito = esito?.stato === "fallita";
+  const elementi = Array.isArray(appunto.elementi) ? appunto.elementi : [];
+  const come = certezza(appunto);
+  const approvabile = siPuoApprovare(appunto);
 
   return (
     <li className="rounded-lg border border-b58-cream-dark bg-b58-cream/40 p-3">
-      <p className="testo-sala font-medium text-b58-charcoal">{azione.frase}</p>
+      {/* La riga che dice la verita' operativa: dove va e cosa ci finisce. */}
+      <p className="testo-sala font-medium text-b58-charcoal">{riassunto(appunto)}</p>
+
       <p className="testo-sala mt-1 text-b58-charcoal-soft">
-        {perchéAspetta(azione)}
-        {quando ? ` · ${quando}` : ""}
+        {quantiElementi(appunto.quanti)} · aperto{" "}
+        {eta(appunto.aperto_da_ore, appunto.aperto_da_giorni)}
       </p>
 
-      {/* ⚠️ UN RIFIUTO SENZA GESTO D'USCITA È UN VICOLO CIECO, e questo
-          progetto li tratta come un difetto a sé. Su una riga a cui manca
-          un'informazione che il gestionale non può proporre, gli unici
-          pulsanti sarebbero «Lascia perdere» — cioè buttare via quello che
-          ha detto.
-          ✅ LE USCITE SONO DUE, dal 27/08: ridirlo a voce, oppure andare
-             nella schermata giusta coi campi già compilati — decisione di
-             Alessio, e qui sotto c'è il collegamento. */}
-      {chiedeAltro && !fatta && (
-        <p className="testo-sala mt-2 text-b58-charcoal-soft">
-          Ridillo a voce aggiungendo quello che manca, oppure fallo a mano qui sotto:
-          quello che hai detto resta qui finché non fai una delle due.
+      {/* 🔴 TRE STATI, NON DUE, e si dicono con parole diverse perche' si
+          curano in modi diversi: se MEMO non e' sicuro, si guarda il dato;
+          se il gestionale non sa fare quella cosa, non c'e' niente da
+          guardare e l'appunto e' un promemoria. Un solo colore per tutt'e
+          due manderebbe a cercare un errore di ascolto che non c'e'. */}
+      {come === "senza_destinazione" && (
+        <p className="testo-sala mt-2 rounded-lg bg-b58-gold/15 px-3 py-2 text-b58-charcoal">
+          Ho capito cosa vuoi, ma <strong>il gestionale non sa ancora farlo</strong>: questo
+          appunto resta qui come promemoria finché non lo costruiamo.
+        </p>
+      )}
+      {come === "incerto" && (
+        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+          <strong>Non sono sicuro di aver capito bene.</strong> Guarda i dati qui sotto prima di
+          approvare.
         </p>
       )}
 
-      {/* 🔴 LA SECONDA USCITA — decisione di Alessio del 27/08, sue parole:
-          *«mi aspetto che un collegamento mi porti dove si segnano le spese,
-          coi campi noti già compilati, e io aggiungo solo il nome del
-          fornitore che ho omesso»*.
-          ⚠️ Il gestionale ha GIÀ CAPITO quasi tutto — l'importo, il verso,
-             che è un fornitore. Rimandarlo a un modulo vuoto butterebbe via
-             quel lavoro.
-          ⚠️ E il percorso arriva dal DATABASE (`azione_percorso`), non da una
-             mappa scritta qui: il giorno che nasce un tipo nuovo, una mappa
-             nel browser porterebbe da nessuna parte e nessuna verifica se ne
-             accorgerebbe. Quando non c'è — la nota non capita — il
-             collegamento non compare, perché non si sa dove mandare. */}
-      {azione.percorso && !fatta && (
-        <p className="testo-sala mt-2">
+      <ul className="mt-2 space-y-2">
+        {elementi.map((e) => (
+          <ElementoDellAppunto
+            key={e.id}
+            elemento={e}
+            inCorso={inCorso}
+            onScegli={(sceltaId) => onScegli(e.id, sceltaId)}
+          />
+        ))}
+      </ul>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        {approvabile ? (
+          <button
+            type="button"
+            onClick={onApprova}
+            disabled={inCorso || fatto}
+            className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
+          >
+            {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
+                qualcosa ripreme. Le parole per intero, anche se occupano. */}
+            {fatto
+              ? "✓ Fatto"
+              : inCorso
+                ? "Lo sto scrivendo…"
+                : elementi.length === 1
+                  ? "Approva"
+                  : `Approva tutte e ${elementi.length}`}
+          </button>
+        ) : (
+          <span className="testo-sala text-b58-charcoal-soft">Non c&apos;è niente da approvare</span>
+        )}
+        <button
+          type="button"
+          onClick={onScarta}
+          disabled={inCorso || fatto}
+          className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
+        >
+          Butta l&apos;appunto
+        </button>
+      </div>
+
+      {/* 🔴 L'ESITO STA QUI, SULL'APPUNTO TOCCATO, e non in cima alla pagina:
+          «un rifiuto lontano dal gesto è un rifiuto che non c'è» — lezione
+          del 17/08, già pagata una volta in Cassa. */}
+      {fallito && (
+        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+          Non si è fatta: {esito.messaggio}
+        </p>
+      )}
+    </li>
+  );
+}
+
+function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
+  const scelte = Array.isArray(elemento.scelte) ? elemento.scelte : [];
+  const chiedeQuale = elemento.domanda === "scegli" && scelte.length > 0;
+  // ⚠️ `manca` è il caso in cui nemmeno il gestionale sa cosa proporre: non
+  //    c'è niente da toccare, e resta la via d'uscita — ridire, o farlo a mano.
+  const chiedeAltro = elemento.domanda === "manca";
+  const concreti = datiInChiaro(elemento.dati);
+  const alternative = Array.isArray(elemento.alternative) ? elemento.alternative : [];
+
+  return (
+    <li className="rounded-lg bg-b58-parchment px-3 py-2">
+      <p className="testo-sala text-b58-charcoal">{elemento.frase}</p>
+
+      {/* 🔴 I DATI CHE VERREBBERO SCRITTI, non una sintesi. Se qui non ci
+          fosse niente da mostrare lo si dice: «nessun dato» è
+          un'informazione — vuol dire che approvando non si scrive nessun
+          valore, ed è una cosa che va vista PRIMA di approvare. */}
+      <p className="testo-sala mt-0.5 text-b58-charcoal-soft">
+        {concreti === "" ? "nessun dato da scrivere" : concreti}
+      </p>
+
+      {perchéAspetta(elemento) && (
+        <p className="testo-sala mt-0.5 text-b58-charcoal-soft">{perchéAspetta(elemento)}</p>
+      )}
+
+      {/* ⚠️ LE ALTRE STRADE CONSIDERATE. Senza, «non sono sicuro» è un dubbio
+          che Alessio deve sciogliere da solo; con, è una scelta fra due cose
+          che qualcuno ha già guardato. */}
+      {alternative.length > 0 && (
+        <p className="testo-sala mt-1 text-b58-charcoal-soft">
+          Avevo pensato anche a:{" "}
+          {alternative.map((a, i) => (
+            <span key={`${a.destinazione}-${i}`}>
+              {i > 0 ? "; " : ""}
+              <strong>{a.destinazione}</strong>
+              {a.perche ? ` (${a.perche})` : ""}
+            </span>
+          ))}
+        </p>
+      )}
+
+      {chiedeAltro && (
+        <p className="testo-sala mt-1 text-b58-charcoal-soft">
+          Ridillo a voce aggiungendo quello che manca, oppure fallo a mano qui sotto: quello che
+          hai detto resta qui finché non fai una delle due.
+        </p>
+      )}
+
+      {/* 🔴 LA VIA D'USCITA A MANO — decisione di Alessio del 27/08: *«mi
+          aspetto che un collegamento mi porti dove si segnano le spese, coi
+          campi noti già compilati»*. Il percorso arriva dal DATABASE
+          (`azione_percorso`), non da una mappa scritta qui: il giorno che
+          nasce un tipo nuovo, una mappa nel browser porterebbe da nessuna
+          parte e nessuna verifica se ne accorgerebbe. */}
+      {elemento.percorso && (
+        <p className="testo-sala mt-1">
           <Link
-            to={indirizzoAMano(azione.percorso, azione.id)}
+            to={indirizzoAMano(elemento.percorso, elemento.id)}
             className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
           >
             Fallo a mano, coi campi già compilati →
@@ -727,8 +861,11 @@ function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla
         </p>
       )}
 
-      {chiedeQuale && !fatta && (
-        <div className="mt-2">
+      {/* ⚠️ SCEGLIERE NON SCRIVE PIU' NIENTE (SPEC-0013): riempie il campo e
+          l'appunto resta lì. Il sì è l'approvazione dell'appunto, e arriva
+          dopo — perché nel frattempo dentro ci possono essere altre righe. */}
+      {chiedeQuale && (
+        <div className="mt-1">
           <p className="testo-sala text-b58-charcoal">Quale dei due?</p>
           <div className="mt-1 flex flex-wrap gap-2">
             {scelte.map((s) => (
@@ -744,43 +881,6 @@ function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla
             ))}
           </div>
         </div>
-      )}
-
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        {/* 🔴 «Sì, fallo» compare SOLO dove la domanda è «lo faccio o no?». */}
-        {!chiedeQuale && !chiedeAltro && (
-          <button
-            type="button"
-            onClick={onConferma}
-            disabled={inCorso || fatta}
-            className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
-          >
-            {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
-                qualcosa ripreme. Le parole per intero, anche se occupano. */}
-            {fatta ? "✓ Fatto" : inCorso ? "Lo sto facendo…" : "Sì, fallo"}
-          </button>
-        )}
-        {(chiedeQuale || chiedeAltro) && fatta && (
-          <span className="testo-sala text-b58-charcoal">✓ Fatto</span>
-        )}
-        <button
-          type="button"
-          onClick={onAnnulla}
-          disabled={inCorso || fatta}
-          className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
-        >
-          Lascia perdere
-        </button>
-      </div>
-
-      {/* 🔴 L'ESITO STA QUI, SULLA RIGA TOCCATA, e non in cima alla pagina:
-          «un rifiuto lontano dal gesto è un rifiuto che non c'è» — lezione
-          del 17/08, già pagata una volta in Cassa. La notte del 27/08
-          Alessio ha premuto due volte proprio perché non vedeva niente. */}
-      {fallita && (
-        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
-          Non si è fatta: {esito.messaggio}
-        </p>
       )}
     </li>
   );
