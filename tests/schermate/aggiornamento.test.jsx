@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,14 +16,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 //    che compare quando non c'e' niente da aggiornare e' peggio di nessun
 //    avviso — si impara a chiuderlo, e il giorno che serve nessuno lo legge.
 
-// ⚠️ Percorso dalla radice del progetto e non da `import.meta.url`: qui
-//    dentro l'ambiente finge di essere un browser, e li' `import.meta.url`
-//    e' un indirizzo http, non un file da aprire.
-const PACCHETTO = readFileSync("dist/index.html", "utf8");
+// LA FORMA VERA DELL'index.html DEL GESTIONALE.
+//
+// ⚠️ QUI NON SI COSTRUISCE, ed e' una misura e non una comodita': la
+//    prima stesura compilava in un `beforeAll`, e le prove degli altri due
+//    file di questa cartella — che girano insieme a questa — hanno
+//    cominciato a scadere. Misurato nei due versi: togliendo questo file
+//    tornavano verdi tutte e 12. *Una prova che affama le vicine le rende
+//    rosse per una ragione che non c'entra con loro*, e una prova
+//    intermittente e' peggio di una rossa, perche' insegna a rilanciare
+//    invece che a guardare.
+//
+// ⚠️ CHE QUESTA FORMA SIA ANCORA QUELLA VERA NON E' AFFIDATO ALLA
+//    MEMORIA: `tests/unita/versione.test.js` compila il gestionale davvero
+//    e pretende che l'impronta esista e nomini `/assets/index-….js`. Se un
+//    giorno Vite cambiasse la forma dei suoi tag, quella prova diventa
+//    rossa — quindi il difetto non passerebbe di qui in silenzio.
+const PACCHETTO = [
+  '<!doctype html><html lang="it"><head><meta charset="UTF-8">',
+  '<script type="module" crossorigin src="/assets/index-Bv44cuTl.js"></script>',
+  '<link rel="stylesheet" crossorigin href="/assets/index-BxrpUDdV.css">',
+  '</head><body><div id="root"></div></body></html>',
+].join("");
 
-// La stessa versione con i file rinominati: e' quello che fa una
+// La stessa versione coi file rinominati: e' quello che fa una
 // pubblicazione, perche' Vite mette l'impronta del contenuto nel nome.
-const PUBBLICATA_DOPO = PACCHETTO.replace(/\/assets\/index-[A-Za-z0-9_-]+\./g, "/assets/index-NUOVA.");
+const PUBBLICATA_DOPO = PACCHETTO.replace(new RegExp("/assets/index-[A-Za-z0-9_-]+[.]", "g"), "/assets/index-NUOVA.");
 
 const bozza = vi.hoisted(() => ({ fotografa: vi.fn() }));
 vi.mock("../../src/lib/bozza", () => ({ fotografa: bozza.fotografa }));

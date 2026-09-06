@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
-import { afterAll, describe, expect, it } from "vitest";
+import { readFileSync, rmSync } from "node:fs";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { build } from "vite";
+import { pacchettoVero } from "../pacchetto.mjs";
 import { impronta, confronta, ceUnAggiornamento } from "../../src/lib/calcoli/versione.js";
 
 // 🔴 CHE L'APP SI ACCORGA DI UNA VERSIONE PUBBLICATA — 06/09/2026.
@@ -55,11 +56,14 @@ async function costruisciIn(cartella, variabili = {}) {
 }
 
 describe("l'impronta di una versione", () => {
+  // ⚠️ Il pacchetto se lo costruisce questa prova: vedi tests/pacchetto.mjs
+  //    per il perche' non si legge `dist/`.
+  let PACCHETTO;
+  beforeAll(async () => { PACCHETTO = await pacchettoVero(); }, 180_000);
+
   it("si legge dal pacchetto vero, e nomina i file con l'impronta nel nome", () => {
-    // ⚠️ Non un HTML inventato: il `dist/` che c'e'. Se manca, questa prova
-    //    lo dice invece di passare in silenzio su niente.
-    expect(existsSync("dist/index.html"), "manca dist/index.html: lancia prima `npm run build`").toBe(true);
-    const i = impronta(readFileSync("dist/index.html", "utf8"));
+    // ⚠️ Non un HTML inventato: il gestionale compilato davvero.
+    const i = impronta(PACCHETTO);
     expect(i).toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/);
     expect(i).toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.css/);
   });
