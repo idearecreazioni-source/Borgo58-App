@@ -215,6 +215,19 @@ describe("nessuna lettura resta muta", () => {
       // cose da fare — NON hanno catch: se falliscono si vede, e la
       // schermata dice «non lo so» invece di disegnarsi vuota.
       "src/pages/magazzino/Produzioni.jsx",
+      // ⚠️ AGGIUNTO IL 06/09 con gli appunti vocali, e il silenzio sta DOPO
+      // una scrittura gia' riuscita: approvato un appunto, quello che segue
+      // e' solo rimettere a posto la schermata — ricaricare l'elenco e la
+      // riga di riscontro.
+      // 🔴 IL VERSO IN CUI SI SBAGLIA E' L'OPPOSTO DEL SOLITO, ed e' per
+      // questo che il catch c'e': senza, un guasto di rete DOPO
+      // l'approvazione faceva dire alla schermata «non e' stato scritto
+      // niente» su una cosa gia' scritta — e il pulsante invitava a
+      // riprovare, cioe' a scriverla due volte. Trovato dalla revisione
+      // del diff il 06/09.
+      // ⚠️ E quello che si perde e' un aggiornamento della vista, non un
+      // dato: l'elenco si rilegge da se' alla prossima apertura.
+      "src/pages/assistente/Detta.jsx",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)

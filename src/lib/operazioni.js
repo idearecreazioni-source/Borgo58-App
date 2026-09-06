@@ -23,6 +23,10 @@ const IN_ITALIANO = {
   allinea_giacenza: "allineare la giacenza",
   versa_in_banca: "registrare il versamento",
   registra_conteggio_cassa: "registrare il conteggio",
+  approva_appunto: "approvare quello che avevi detto",
+  scarta_appunto: "buttare l'appunto",
+  correggi_elemento_appunto: "correggere quello che avevi detto",
+  chiudi_azione_a_mano: "segnare che l'hai fatta tu",
 };
 
 const comeSiChiama = (operazione) =>

@@ -4,9 +4,24 @@
 
 * **HEAD dichiarato**: `b726fda` — il commit che sta sotto questo file.
 * **Ramo**: `spec-0013-appunti-vocali`, aperto da `89625a4` (master). Proposta #33.
-* **Migrazioni**: **nove**, `20260906000001` → `…009`. Applicate al **solo
-  progetto di prova** (378 registrate lì). In produzione, al momento di
-  scrivere, **nessuna**.
+* **Migrazioni**: **nove**, e i numeri si scrivono per intero — la forma
+  abbreviata «…001 → …009» nomina i due estremi e lascia mute quelle in
+  mezzo, ed è la rete del progetto ad averlo fatto notare fermandosi:
+
+  | versione | cosa fa |
+  |---|---|
+  | `20260906000001` | gli appunti vocali si approvano |
+  | `20260906000002` | scegliere non esegue più |
+  | `20260906000003` | ogni elemento porta le sue scelte |
+  | `20260906000004` | l'appunto lo assegna il database |
+  | `20260906000005` | «non ho capito» un gesto ce l'ha |
+  | `20260906000006` | una porta sola e niente gare |
+  | `20260906000007` | due mani insieme sullo stesso appunto |
+  | `20260906000008` | l'appunto si tiene mentre ci si scrive |
+  | `20260906000009` | il lucchetto c'era già, e ora si vede |
+
+  Applicate al **solo progetto di prova** (378 registrate lì) quando questo
+  documento è stato scritto.
 * **Prove**: 937 pure · 28 sulle schermate · 481 contro il progetto di prova ·
   lint pulito · compilazione pulita. Tutte verdi.
 * **Working tree**: pulito dopo questo commit, salvo i documenti locali di
@@ -114,3 +129,82 @@ quindi non si sarebbe eseguita nemmeno col criterio vecchio. Corrette.
 - ⚠️ **`voce_da_guardare()` risponde `0,0` a chi non è titolare** invece di
   rifiutare. Comportamento preesistente, lasciato apposta: quel numero è letto
   da una schermata che vede anche la sala. Dichiarato, non corretto.
+
+---
+
+## 5 · La coda del 06/09 sera — due difetti dal vivo
+
+🔴 **Rilasciato SPEC-0013, due difetti sono usciti al primo uso vero.**
+
+**(1) «segna il pesce spada nella spesa spicciola» diventava «Lista della
+spesa».** La spesa spicciola è la Tasca; le liste distinte sono SPEC-0012 e
+non sono implementate. L'appunto risultava **eseguibile**, quindi mostrava
+«Approva» — e un tocco per sbaglio avrebbe scritto nella lista sbagliata.
+⚠️ Non era un errore di ascolto: MEMO aveva capito, e l'aveva pure scritto
+nei dati (`note: "spesa spicciola"`). L'aveva **ricondotto**, che è
+precisamente ciò che SPEC-0013 vieta.
+
+**(2) «Approva» non scriveva niente e la schermata non lo diceva.** Causa
+vera: la funzione online `operazioni-atomiche` in produzione era a una
+versione che **non conosceva `approva_appunto`** — era stata installata solo
+sul progetto di prova. Errore di consegna mio: ho pubblicato un pulsante che
+chiama una porta che non avevo installato.
+
+### Cosa è stato fatto
+
+* La regola sta in `supabase/functions/ascolta-voce/destinazioni.ts` ed è
+  **deterministica**, non solo nel prompt: se il modello dichiara il nome di
+  una lista, il gestionale — che ne ha una sola — non offre di scriverci
+  dentro. ⚠️ Non cerca parole italiane: guarda un fatto dichiarato.
+* Il fallimento dice **prima il fatto**: «Non è stato scritto niente.
+  L'appunto è ancora qui, intero». Il motivo viene dopo, il pulsante diventa
+  «Riprova», e non compare mai «✓ Fatto» quando non è fatto.
+* **Due reti**, perché le cause possibili sono due e nessuna copre l'altra:
+  `tests/unita/corridoio-conosce-i-gesti.test.js` prende il caso in cui il
+  corridoio **nel repository** non conosce un gesto che il client chiama;
+  `scripts/funzioni-indietro.mjs` prende il caso in cui lo conosce e quello
+  **installato** è indietro — che è quello che è successo.
+
+### Collaudo sul progetto di prova, con le funzioni vere
+
+Fatto con le due funzioni installate sulla prova e il modello vero: **18
+controlli su 18**.
+
+| caso | esito |
+|---|---|
+| «spesa spicciola» → tipo `lista_spesa_spicciola`, **non** `lista_spesa` | ✅ |
+| appunto **non eseguibile**, titolo «Aggiungi a «spesa spicciola»» | ✅ |
+| approvarlo viene **rifiutato** dal database | ✅ |
+| «parmigiano alla lista della spesa» → `lista_spesa`, approvabile | ✅ |
+| dettare **non scrive** (73 → 73 righe in lista) | ✅ |
+| approvare riesce, riga `eseguita`, appunto `approvato` e chiuso | ✅ |
+| la riga compare in lista, **una sola** (73 → 74) | ✅ |
+| riapprovare è **rifiutato**, la lista non cresce | ✅ |
+
+Tutto ciò che il collaudo ha creato è stato cancellato.
+
+### Cosa il rilascio dovrà distribuire
+
+Non basta pubblicare il sito: **servono anche le due funzioni online**.
+
+| cosa | perché |
+|---|---|
+| il sito | il messaggio del fallimento e i nomi in italiano |
+| `ascolta-voce` | la regola sulla lista nominata e il prompt |
+| `operazioni-atomiche` | il rifiuto che spiega — e senza, «Approva» resta rotto |
+
+⚠️ **Limite dichiarato del controllo nuovo**: gira dove c'è un accesso a
+Supabase, cioè da una pubblicazione lanciata a mano. **Nei controlli di
+GitHub non c'è**, quindi lì non gira e lo scrive a schermo invece di tacere.
+Chiuderlo davvero vuol dire dare a quel lavoro un accesso in lettura a
+Supabase, ed è una decisione di Alessio.
+
+### Cosa NON è verificato
+
+- 🔴 **Nessuna mano ha visto le schermate corrette**: il collaudo è passato
+  dalle funzioni online e dal database, non da un dito su un tablet.
+- ⚠️ **Le correzioni non sono in produzione**: il sito e le due funzioni
+  vanno pubblicati perché servano.
+- ⚠️ **L'appunto vero del pesce spada è stato lasciato intatto** in
+  produzione, com'è stato chiesto: `in_attesa`, appunto `aperto`, nessuna
+  scrittura da nessuna parte.
