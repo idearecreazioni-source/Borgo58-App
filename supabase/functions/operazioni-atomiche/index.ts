@@ -383,7 +383,17 @@ Deno.serve(async (req) => {
   const operazione = corpo?.operazione;
   const parametri = corpo?.parametri ?? {};
   if (typeof operazione !== "string" || !OPERAZIONI.has(operazione)) {
-    return errore(404, "operazione", "Operazione non ammessa");
+    // 🔴 IL MESSAGGIO DICE COSA VUOL DIRE, dal 06/09/2026. Diceva
+    //    «Operazione non ammessa», che a chi la legge suona come un
+    //    permesso mancante — e manda a cercare nel posto sbagliato. La
+    //    causa vera e' quasi sempre un'altra: il gestionale nel browser
+    //    e' piu' avanti di questo corridoio, che non e' ancora stato
+    //    installato. Successo davvero, e a trovarlo e' stato un tocco su
+    //    «Approva» che non scriveva niente.
+    return errore(404, "operazione",
+      `Questo gestionale sa fare «${operazione}», ma la parte online non e' ancora ` +
+      `stata aggiornata e non la conosce. NON e' stato scritto niente. ` +
+      `Va installata la funzione «operazioni-atomiche».`);
   }
 
   const { data, error } = await supabase.rpc(operazione, parametri);

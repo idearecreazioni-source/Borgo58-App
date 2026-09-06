@@ -33,6 +33,7 @@
 
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { correggiDestinazioni } from "./destinazioni.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -82,7 +83,8 @@ LE COSE CHE IL GESTIONALE SA GIA' FARE
 - "temperatura": la temperatura letta su un frigo o sull'abbattitore. dati: { "frigorifero": <numero del catalogo>|null, "gradi": <numero>, "note": "..."|null }
 - "promemoria": una cosa da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null }
 - "pulizia": una pulizia già fatta. dati: { "pulizia": <numero del catalogo>, "note": "..."|null }
-- "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "nome_libero": "come l'ha detto lui, parola per parola", "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "note": "..."|null }
+- "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "nome_libero": "come l'ha detto lui, parola per parola", "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "lista": "il nome della lista che ha detto"|null, "note": "..."|null }
+  🔴 SE NOMINA UNA LISTA PRECISA — «nella spesa spicciola», «nella lista del pesce», «in quella del bar» — SCRIVILA IN "lista", parola per parola. NON ricondurla alla lista della spesa normale: sono cose diverse, e il gestionale ne ha ancora una sola. Se non nomina nessuna lista, "lista" resta null: e' il caso normale.
   🔴 QUI NON SI GUARDA IL CATALOGO, MAI. La lista della spesa è un elenco libero di cosa prendere: scrivi in "nome_libero" quello che ha detto, com'è stato detto, anche se in magazzino esiste un prodotto che si chiama quasi uguale — anzi, **soprattutto** allora. Niente numeri, e "sicuro" resta **true**: qui non c'è niente di cui essere incerti, perché non c'è niente da abbinare. L'abbinamento col magazzino si fa dopo, guardando il documento quando la merce arriva.
 - "preparazione_da_fare": vuole SEGNARSI DI FARE una preparazione («aggiungi il fondo bruno alle cose da fare», «ricordami di fare il ragù»). dati: { "preparazione": <numero del catalogo preparazioni>, "note": "..."|null }
   ⚠️ Non è una produzione già fatta: è un promemoria di cucina. Se dice che l'HA GIÀ FATTA — «ho fatto due dosi di fondo bruno» — quello non lo sai fare: fai una "nota_non_capita" col suo sentito, si registra dalla schermata delle Produzioni dove servono i due numeri (quante dosi e quanto ne è uscito).
@@ -453,7 +455,7 @@ Deno.serve(async (req) => {
   //    lo stesso codice che ritraduce, nella stessa transazione: non
   //    possono divergere nemmeno se un prodotto viene rinominato mentre
   //    qualcuno sta parlando.
-  const azioni = grezze.map((a) => {
+  let azioni = grezze.map((a) => {
     const tipo = String(a?.tipo ?? "nota_non_capita");
     const dati = { ...((a?.dati ?? {}) as Record<string, unknown>) };
     if (tipo === "nota_non_capita") dati.sentito = String(dati.sentito ?? testo);
@@ -484,6 +486,12 @@ Deno.serve(async (req) => {
       dati,
     };
   });
+
+  // 🔴 LA REGOLA DETERMINISTICA, dopo il modello e prima di scrivere: una
+  //    lista nominata che il gestionale non ha smette di essere «la lista
+  //    della spesa». Vedi destinazioni.ts per il difetto del 06/09 che
+  //    questa riga chiude — e per perche' non basta il prompt.
+  azioni = correggiDestinazioni(azioni);
 
   // ⚠️ SE NON NE È USCITA NESSUNA, NON SI RESTITUISCE IL VUOTO. Il vuoto
   //    si legge «non ho detto niente», e lui invece ha parlato. Resta la

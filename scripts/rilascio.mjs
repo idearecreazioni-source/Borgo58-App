@@ -34,6 +34,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { REF_PRODUZIONE, REF_PROVA } from "./comune.mjs";
+import { funzioniIndietro, fraseFunzioniIndietro } from "./funzioni-indietro.mjs";
 import {
   INDIRIZZI_PREDEFINITI,
   indirizziDiAccesso,
@@ -294,6 +295,53 @@ async function principale() {
   //    ancora zero — dopo, il sito e' gia' cambiato.
   const guaioIndirizzi = problemaDegliIndirizziDiAccesso("dist", ambiente);
   if (guaioIndirizzi) ferma(guaioIndirizzi);
+
+  // 🔴 E LE FUNZIONI ONLINE SONO AL PASSO? — 06/09/2026, da un guasto vero.
+  //    Il sito puo' contenere un gesto che la funzione online non conosce:
+  //    e' successo con «Approva» degli appunti vocali, e chi ha premuto ha
+  //    visto «Lo sto scrivendo…» e poi niente. Il perche' e il limite di
+  //    questo controllo stanno in scripts/funzioni-indietro.mjs.
+  // ⚠️ `npx` su Windows e' un `.cmd`: senza `shell` non parte affatto.
+  const chiesto = spawnSync(
+    "npx",
+    ["supabase", "functions", "list", "--project-ref", AMBIENTI[ambiente].supabase, "--output", "json"],
+    { encoding: "utf8", shell: true },
+  );
+  let installate = null;
+  try {
+    const letto = JSON.parse(chiesto.stdout || "null");
+    installate = Array.isArray(letto) ? letto : letto?.functions ?? null;
+  } catch {
+    installate = null;
+  }
+
+  if (Array.isArray(installate)) {
+    const guaio = fraseFunzioniIndietro(funzioniIndietro(installate));
+    if (guaio) ferma(guaio);
+    console.log("Le funzioni online sono al passo col sito che sta per uscire.");
+  } else if ((chiesto.stdout || "").trim() !== "") {
+    // 🔴 HA RISPOSTO, E LA RISPOSTA NON SI CAPISCE: qui si FERMA. Dal
+    //    06/09/2026, su rilievo della revisione — il cancello era
+    //    fail-open, cioè lasciava passare proprio il caso che deve
+    //    bloccare. *Un guardiano che davanti a una risposta storta dice
+    //    «vai» non è un guardiano.*
+    ferma(
+      "FERMO: ho chiesto quali funzioni online sono installate e la risposta " +
+      "non si capisce. Non pubblico senza sapere se il sito e' piu' avanti " +
+      "delle funzioni: e' il guasto del 06/09. Riprova, oppure installa a " +
+      "mano le funzioni e rilancia.",
+    );
+  } else {
+    // ⚠️ NON HA POTUTO NEMMENO CHIEDERE — nessun accesso a Supabase da qui.
+    //    È la strada normale nei controlli di GitHub, e per questo NON
+    //    ferma: bloccherebbe ogni pubblicazione. Ma non tace, perché
+    //    questa pubblicazione esce **senza** quel controllo, e chi legge
+    //    deve saperlo invece di crederlo fatto.
+    console.log("⚠️  NON ho potuto controllare che le funzioni online siano al passo col sito:");
+    console.log("    da qui non c'e' un accesso a Supabase. Se questa pubblicazione porta");
+    console.log("    un gesto nuovo, la funzione online va installata a mano.");
+    console.log("    Il perche' e il limite: scripts/funzioni-indietro.mjs");
+  }
 
   // ⚠️ Wrangler viene da `node_modules`, bloccato dal lockfile: la filiera di
   //    rilascio non dipende da quale versione e' uscita quel giorno.
