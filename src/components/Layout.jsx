@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 import Logo from "./Logo";
 import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 import RipresaBozza from "./RipresaBozza";
+import AvvisoAggiornamento from "./AvvisoAggiornamento";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -111,6 +112,7 @@ export default function Layout() {
           {/* Sopra ogni schermata: se una lettura e tornata a meta, chi guarda
               deve saperlo prima di leggere i numeri, non dopo. */}
           <AvvisoLettureTagliate />
+          <AvvisoAggiornamento />
           <RipresaBozza />
           <Outlet />
         </main>
