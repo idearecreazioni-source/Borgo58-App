@@ -216,15 +216,20 @@ export default function Dashboard() {
               to="/detta"
               className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-gold bg-b58-gold/10 px-4 py-3"
             >
+              {/* 🔴 SI CONTANO GLI APPUNTI, NON LE RIGHE — SPEC-0013. Tre
+                  articoli detti per la stessa lista sono un gesto solo, e
+                  scrivere «3» manderebbe a cercare tre cose da guardare dove
+                  ce n'è una. Il conteggio lo fa il database (`voce_da_guardare`)
+                  perché sia lo stesso numero che si trova aprendo l'elenco. */}
               <span className="testo-sala text-b58-charcoal">
                 <span className="font-medium">
-                  {dettate.quante === 1
-                    ? "Una cosa che hai detto"
-                    : `${dettate.quante} cose che hai detto`}
+                  {dettate.quante === 1 ? "Un appunto" : `${dettate.quante} appunti`}
                 </span>{" "}
-                {dettate.quante === 1 ? "aspetta che tu la guardi" : "aspettano che tu le guardi"}
+                {dettate.quante === 1
+                  ? "aspetta che tu lo approvi"
+                  : "aspettano che tu li approvi"}
                 {dettate.laPiuVecchia > 0 &&
-                  ` — la più vecchia ${daQuantoAspetta(dettate.laPiuVecchia)}`}
+                  ` — il più vecchio ${daQuantoAspetta(dettate.laPiuVecchia)}`}
               </span>
               <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
                 →

@@ -220,7 +220,7 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 30 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  it("solo 29 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -311,15 +311,12 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // chiama solo un trigger, che gira come proprietario e non ha
       // bisogno del permesso di nessun utente.
       "allergeni_con_origine",
-      // ⚠️ AGGIUNTA IL 26/08 coi comandi vocali, ed e dichiarata invece che
-      // corretta: risponde a UNA domanda sola — «questo tipo di azione si
-      // salva da se?» — leggendo il catalogo `tipi_azione_vocale`, che ha
-      // gia la lettura aperta a tutto lo staff. Non espone nessun dato, e
-      // non decide niente per conto proprio: chi la interroga sono
-      // `scrivi_dettatura` e le prove.
-      // ⚠️ Il portiere ce l ha dove conta: `registra_dettatura` pretende il
-      // titolare, e senza passare da li nessuno arriva a eseguire niente.
-      "azione_si_esegue_da_se",
+      // ⚠️ `azione_si_esegue_da_se` STAVA QUI, ed e' stata TOLTA dal
+      // database il 06/09 con SPEC-0013: rispondeva a «questo tipo si salva
+      // da se'?», e da quel giorno la risposta non esiste piu' perche' non si
+      // salva da se' piu' niente. Non e' stata spenta: e' stata cancellata —
+      // una porta chiusa che resta al suo posto e' una porta che qualcuno
+      // riapre credendo di riparare qualcosa.
       // ⚠️ AGGIUNTA IL 29/08 col giorno chiuso, e SENZA portiere per forza:
       // la chiama il modulo di prenotazione pubblico, dove chi legge non ha
       // e non puo' avere un accesso al gestionale. Un `is_titolare()` qui
