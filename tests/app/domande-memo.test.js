@@ -3,6 +3,7 @@ import { supabase } from "../../src/lib/supabase";
 import { clientAutenticato, credenziali, marchio, primaEntita, righeMie } from "./aiuto";
 import { letturePerDomanda, rispondiA } from "../../src/lib/api/domandeMemo";
 import { componiRisposta } from "../../src/lib/calcoli/domande";
+import { eDiOggi } from "../../src/lib/calcoli/agenda";
 import { oggiLocale } from "../../src/lib/constants";
 
 // =====================================================================
@@ -31,6 +32,7 @@ const mie = righeMie(titolare);
 let ingrediente = null;
 let ricetta = null;
 let impegnoDiOggi = null;
+let impegnoSenzaData = null;
 let entrato = false;
 
 beforeAll(async () => {
@@ -84,12 +86,72 @@ beforeAll(async () => {
     .single();
   expect(eTsk, "non sono riuscito a creare l'impegno di prova").toBeNull();
   impegnoDiOggi = mie.segna("tasks", tsk.id);
+
+  // 🔴 UN IMPEGNO SENZA SCADENZA, ed è la riga su cui si misura il difetto
+  //    del 07/09: MEMO contava fra le cose di oggi tutta la corsia
+  //    «quando capita», perché `Number(null)` vale zero. Sul progetto di
+  //    prova erano quindici, e l'Agenda ne mostrava zero.
+  const { data: quando, error: eQuando } = await titolare
+    .from("tasks")
+    .insert({
+      title: `${MARCA} valutare il secondo forno`,
+      status: "da_fare",
+      due_date: null,
+    })
+    .select("id")
+    .single();
+  expect(eQuando, "non sono riuscito a creare l'impegno senza scadenza").toBeNull();
+  impegnoSenzaData = mie.segna("tasks", quando.id);
 });
 
 afterAll(async () => {
   await mie.pulisci();
   if (entrato) await supabase.auth.signOut({ scope: "local" });
 });
+
+/**
+ * UNA FRASE DETTA DAVVERO, dalla bocca alla risposta.
+ *
+ * 🔴 PERCHE' NON BASTA `rispondiA()`: quella parte da una domanda già
+ * classificata. Qui si esercita anche il tratto che sta su Internet — il
+ * modello che capisce, la funzione online che decide, il registro che
+ * scrive — ed è il tratto dove vivono i difetti che nessuna prova pura
+ * può vedere (il 06/09 il corridoio installato solo sulla prova, il 07/09
+ * l'astice cercato fra gli impegni).
+ *
+ * ⚠️ COSTA UNA CHIAMATA AL MODELLO PER GIRO (~0,08 € sul progetto di
+ * prova, misurato il 07/09). Col credito finito o col tetto raggiunto non
+ * costa niente e la prova resta valida per la parte che pretende sempre:
+ * **zero appunti**.
+ *
+ * ⚠️ SI RIPULISCE SEMPRE, anche quando la prova sta per diventare rossa:
+ * se un appunto è nato è roba di questa prova, e si cancella per
+ * identificativo (regola del 23/08).
+ */
+async function dettaEPulisci(frase) {
+  const { data: prima } = await titolare.rpc("appunti_da_approvare");
+  const { data, error } = await titolare.functions.invoke("ascolta-voce", {
+    body: { testo: frase },
+  });
+  const { data: dopo } = await titolare.rpc("appunti_da_approvare");
+  const nati = (dopo ?? []).filter((a) => !(prima ?? []).some((b) => b.id === a.id));
+  for (const a of nati) await titolare.from("appunti_vocali").delete().eq("id", a.id);
+  const id = data?.dettatura_id ?? data?.dettatura?.dettatura_id;
+  if (id) await titolare.from("dettature").delete().eq("id", id);
+  return { data, error, nati, quantiPrima: (prima ?? []).length, quantiDopo: (dopo ?? []).length };
+}
+
+/** L'assistente ha risposto? Se no, la prova lo DICE invece di tacere. */
+function haRisposto({ data, error }) {
+  if (error || data?.esito !== "domanda") {
+    expect(
+      data?.messaggio ?? String(error),
+      "l'assistente non ha risposto: la catena non è stata provata",
+    ).toBeTruthy();
+    return false;
+  }
+  return true;
+}
 
 // ---------------------------------------------------------------------
 describe("le nove domande leggono davvero", () => {
@@ -202,18 +264,43 @@ describe("le risposte dicono quello che c'è davvero", () => {
     //    sarebbe una prova che passa per come sono ordinati.
     const { data: corsie, error } = await titolare.rpc("agenda_corsie");
     expect(error).toBeNull();
-    const oggi = (corsie ?? []).filter((t) => Number(t.giorni_alla_scadenza) === 0);
+    // 🔴 IL CRITERIO NON SI RISCRIVE QUI, e fino al 07/09/2026 era scritto
+    //    due volte: questa prova diceva `Number(giorni_alla_scadenza) === 0`
+    //    come la regola che stava provando, quindi passava mentre MEMO
+    //    annunciava di oggi quindici impegni che una scadenza non ce
+    //    l'hanno. Una prova che ripete l'errore del codice non lo vede.
+    const oggi = (corsie ?? []).filter(eDiOggi);
     expect(oggi.some((t) => t.id === impegnoDiOggi), "il mio impegno non risulta di oggi").toBe(
       true,
     );
 
     const { risposta } = await rispondiA({ chiede: "agenda_oggi" });
     expect(risposta.stato).toBe("risposta");
-    expect(risposta.frase).toContain(String(oggi.length));
+    // ⚠️ AL SINGOLARE LA FRASE NON PORTA LA CIFRA — «Oggi hai una cosa:» —
+    //    e fino al 07/09/2026 questa riga non se n'era mai accorta perché
+    //    di impegni «di oggi» ne contava sedici: quindici erano quelli
+    //    senza scadenza, che di oggi non sono. Corretto il conteggio, la
+    //    prova è diventata rossa: è la stessa cifra che nascondeva il
+    //    difetto a nascondere il difetto della prova.
+    expect(risposta.frase).toContain(oggi.length === 1 ? "una cosa" : String(oggi.length));
     expect(risposta.righe.length + risposta.troppe).toBe(oggi.length);
     // ⚠️ E ogni riga porta al suo impegno: senza il collegamento la risposta
     //    non si potrebbe controllare, che è la condizione della fase 1.
     for (const r of risposta.righe) expect(r.a).toBe(`/agenda/${r.chiave}`);
+  });
+
+  it("🔴 e un impegno SENZA scadenza non finisce fra quelli di oggi", async () => {
+    // ⚠️ La prova sui dati veri della cura del 07/09: la riga esiste, è
+    //    mia, e non deve comparire né fra le righe né nel conteggio.
+    const { data: corsie } = await titolare.rpc("agenda_corsie");
+    const mio = (corsie ?? []).find((t) => t.id === impegnoSenzaData);
+    expect(mio, "l'impegno senza scadenza non è nell'Agenda").toBeTruthy();
+    expect(mio.due_date).toBeNull();
+    expect(mio.corsia, "una riga senza scadenza sta in «quando capita»").toBe("quando_capita");
+
+    const { risposta } = await rispondiA({ chiede: "agenda_oggi" });
+    expect(risposta.righe.some((r) => r.chiave === impegnoSenzaData)).toBe(false);
+    expect(risposta.righe.length + risposta.troppe).toBe((corsie ?? []).filter(eDiOggi).length);
   });
 
   it("«quando scade X?» dice la data vera e che è oggi", async () => {
@@ -403,6 +490,178 @@ describe("🔴 «Quando scade l'astice?» risponde dal Magazzino, non dall'Agend
     //    non all'Agenda, e non dice «non ne trovo nessuno».
     expect(risposta.a).toBe("/magazzino/scadenze");
     expect(risposta.frase).not.toContain("non ne trovo");
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 due prodotti che si chiamano uno come la testa dell'altro", () => {
+  // 🔴 MISURATO sul progetto di prova il 07/09/2026: **120 coppie**, fra cui
+  //    «Sale» e «Sale marino di Trapani», «Coniglio» e «Coniglio in
+  //    agrodolce». Prima della cura «quando scade il sale?» rispondeva col
+  //    nome del primo e le date di tutt'e due.
+  it("«quando scade il sale?» chiede QUALE, sui prodotti veri", async () => {
+    const { data: prodotti } = await titolare
+      .from("ingredients")
+      .select("id,name")
+      .ilike("name", "sale%");
+    // ⚠️ Condizione dichiarata: con un prodotto solo questa prova
+    //    passerebbe senza aver provato niente.
+    expect(
+      (prodotti ?? []).length,
+      "sul progetto di prova non ci sono due prodotti che cominciano per «sale»",
+    ).toBeGreaterThan(1);
+
+    const { risposta } = await rispondiA({ chiede: "quando_scade", soggetto: "sale" });
+    expect(["scegli", "risposta"]).toContain(risposta.stato);
+    // ⚠️ Se le partite in giacenza sono di un prodotto solo la risposta è
+    //    legittima: quello che NON deve succedere è una risposta sola che
+    //    tiene dentro due prodotti diversi.
+    if (risposta.stato === "risposta") {
+      const { data: partite } = await titolare.rpc("partite_in_giacenza", { p_cerca: "sale" });
+      const prodottiConPartite = new Set(
+        (partite ?? [])
+          .filter((x) => String(x.prodotto).toLowerCase().startsWith("sale"))
+          .map((x) => x.ingrediente_id),
+      );
+      expect(
+        prodottiConPartite.size,
+        "ha risposto di uno solo mentre in cella ce ne sono due che si chiamano così",
+      ).toBeLessThan(2);
+    } else {
+      expect(risposta.candidati.length).toBeGreaterThan(1);
+      // ogni candidato porta il proprio identificativo, non il nome
+      for (const c of risposta.candidati) expect(c.chiave).toBeTruthy();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 la catena intera, un'area per volta", () => {
+  // ⚠️ Una per area, e non una per domanda: quello che questo giro
+  //    esercita è il tratto fra la bocca e la risposta, che è lo stesso
+  //    per tutte le domande di un'area. Nove chiamate al modello
+  //    costerebbero nove volte tanto per provare la stessa cosa.
+
+  it("RICETTARIO — «quali allergeni ha …?» arriva fino alla ricetta vera", async () => {
+    // ⚠️ Condizione dichiarata: senza quella ricetta la prova passerebbe
+    //    senza aver provato niente.
+    const { data: ricette } = await titolare
+      .from("recipes")
+      .select("name")
+      .ilike("name", "%astice%")
+      .limit(1);
+    const nome = (ricette ?? [])[0]?.name;
+    expect(
+      nome,
+      "sul progetto di prova non c'è nessuna ricetta con l'astice: questa prova non proverebbe niente",
+    ).toBeTruthy();
+
+    const giro = await dettaEPulisci(`Quali allergeni ha ${nome}?`);
+    expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+    if (!haRisposto(giro)) return;
+
+    expect(giro.data.domanda.chiede).toBe("allergeni");
+    const { risposta } = await rispondiA({ ...giro.data.domanda, testo: giro.data.testo });
+    expect(["risposta", "non_lo_so"]).toContain(risposta.stato);
+    // ⚠️ «non lo so» qui è una risposta legittima e voluta: se di qualche
+    //    ingrediente gli allergeni non li ha guardati nessuno, il «no» non
+    //    si dà. Quello che NON deve succedere è un elenco vuoto spacciato
+    //    per completo.
+    if (risposta.stato === "risposta") expect(risposta.a).toContain("/ricettario/ricette");
+  });
+
+  it("AGENDA — «cosa devo fare oggi?» conta quello che conta l'Agenda", async () => {
+    const giro = await dettaEPulisci("Cosa devo fare oggi?");
+    expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+    if (!haRisposto(giro)) return;
+
+    expect(giro.data.domanda.chiede).toBe("agenda_oggi");
+    const { risposta } = await rispondiA({ ...giro.data.domanda, testo: giro.data.testo });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.a).toBe("/agenda");
+
+    // 🔴 E il numero è quello dell'Agenda, non uno suo: è la cura del
+    //    07/09 provata dall'inizio della catena invece che a metà.
+    const { data: corsie } = await titolare.rpc("agenda_corsie");
+    expect(risposta.righe.length + risposta.troppe).toBe((corsie ?? []).filter(eDiOggi).length);
+    expect(risposta.righe.some((r) => r.chiave === impegnoSenzaData)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 la giornata arriva fino alla regola", () => {
+  it("«quanto ne ho?» porta con sé che giorno è, o la scadenza torna al futuro", async () => {
+    // 🔴 È IL FILO CHE SI ROMPE IN SILENZIO: se la lettura smettesse di
+    //    portare la giornata, «la prima partita è scaduta il …» tornerebbe
+    //    "scade il …" su una data passata, e nessuna prova pura potrebbe
+    //    accorgersene — quelle la giornata gliela passano a mano.
+    const letture = await letturePerDomanda({ chiede: "quanto_ho", soggetto: "astice" });
+    expect(letture.oggi).toBe(oggiLocale());
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () => {
+  // 🔴 PERCHE' TUTTE E NOVE E NON UNA: fino al 07/09 la prova che nessun
+  //    appunto nasce da una domanda guardava «quanto olio ho». Una
+  //    scrittura di troppo, il giorno che ci fosse, nascerebbe nella
+  //    lettura di un'altra domanda — e sarebbe muta, perché in lettura un
+  //    effetto collaterale non dà nessun errore.
+  //
+  // ⚠️ E NON GUARDA SOLO GLI APPUNTI: conta le righe delle tabelle che il
+  //    modulo voce tocca **e** di quelle che MEMO legge. È la forma del
+  //    guardiano dei residui del 26/08 — le lapidi non bastano, perché le
+  //    tabelle sorvegliate sono 21 su tutte quelle del gestionale.
+  const TABELLE = [
+    "dettature",
+    "azioni_dettate",
+    "appunti_vocali",
+    "tasks",
+    "ingredients",
+    "recipes",
+    "stock_lots",
+    "recipe_ingredients",
+  ];
+
+  const contaTutte = async () => {
+    const righe = {};
+    for (const t of TABELLE) {
+      const { count, error } = await titolare.from(t).select("*", { count: "exact", head: true });
+      expect(error, `non riesco a contare ${t}`).toBeNull();
+      righe[t] = count;
+    }
+    return righe;
+  };
+
+  it("le nove domande, una dietro l'altra, non muovono una riga", async () => {
+    const prima = await contaTutte();
+
+    // ⚠️ Tutte e nove con un soggetto plausibile: quello che si prova è
+    //    che LEGGERE non scriva, quindi le risposte qui non contano —
+    //    contano i conteggi di prima e di dopo.
+    for (const domanda of [
+      { chiede: "ricetta_esiste", soggetto: "astice" },
+      { chiede: "allergeni", soggetto: "astice" },
+      { chiede: "piatti_in_carta" },
+      { chiede: "quanto_ho", soggetto: "astice" },
+      { chiede: "cosa_manca" },
+      { chiede: "cosa_scade" },
+      { chiede: "agenda_oggi" },
+      { chiede: "agenda_in_ritardo" },
+      { chiede: "quando_scade", soggetto: "astice", testo: "quando scade l'astice" },
+    ]) {
+      const { risposta } = await rispondiA(domanda);
+      expect(risposta.stato, `«${domanda.chiede}» non è riuscita a leggere`).not.toBe("non_lo_so");
+    }
+
+    const dopo = await contaTutte();
+    // ⚠️ Si nominano TUTTE le tabelle che non tornano, non la prima:
+    //    dirne una per volta fa scoprire la seconda dopo aver risolto la
+    //    prima, e alla terza si smette di leggere.
+    const cambiate = TABELLE.filter((t) => prima[t] !== dopo[t]).map(
+      (t) => `${t}: ${prima[t]} → ${dopo[t]}`,
+    );
+    expect(cambiate, "rispondere a una domanda ha scritto qualcosa").toEqual([]);
   });
 });
 

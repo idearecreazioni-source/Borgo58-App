@@ -34,6 +34,8 @@ import {
   qtaConUnita,
   recipeStatusLabel,
 } from "../constants";
+import { eDiOggi } from "./agenda";
+import { sottoScorta } from "./ingredienti";
 import { nonLetto } from "./letture";
 
 // ---------------------------------------------------------------------
@@ -380,11 +382,52 @@ const rigaRicetta = (r) => ({
   a: `/ricettario/ricette/${r.id}`,
 });
 
+/**
+ * LE RICETTE CHE SI CHIAMANO COSÌ, e quelle che si sono lasciate fuori.
+ *
+ * 🔴 È LA STESSA REGOLA DEL MAGAZZINO (07/09/2026, dal collaudo a mano):
+ * **chi nomina la cosa viene prima di chi la contiene**. Là «olio» pescava
+ * «Pomodoro secco di Pachino sott'olio»; qui «pesto» pescherebbe
+ * «Busiate al pesto alla trapanese» insieme al pesto vero, e MEMO
+ * chiederebbe «di quale?» avendo davanti una risposta sola.
+ *
+ * ⚠️ VIVE IN UN POSTO SOLO PERCHÉ LA USANO IN DUE: la regola che compone
+ * la frase **e** la lettura che decide se andare a prendere gli allergeni.
+ * Se divergessero, la lettura direbbe «sono due, non li leggo» e la regola
+ * ne sceglierebbe una: MEMO risponderebbe «non lo so» su un piatto che ha
+ * appena riconosciuto.
+ *
+ * ⚠️ E LA RICERCA DENTRO IL NOME NON SI TOGLIE, si mette dopo: chi chiede
+ * «trapanese» deve continuare a trovare le busiate. Si guarda in testa;
+ * **solo se in testa non c'è nessuna** si torna a guardare dentro.
+ *
+ * ⚠️ QUELLO CHE SI LASCIA FUORI SI DICHIARA. Una scrematura silenziosa è la
+ * stessa famiglia dell'elenco tagliato senza dirlo.
+ */
+export function candidatiRicetta(ricette, soggetto) {
+  const tutte = ricette ?? [];
+  if (!soggetto) return { scelte: tutte, scremate: null };
+
+  const intestate = tutte.filter((r) => nominaLaCosa(nomeRicetta(r), soggetto));
+  const scelte = intestate.length > 0 ? intestate : tutte;
+  const fuori = tutte.filter((r) => !scelte.includes(r));
+
+  return {
+    scelte,
+    scremate: fuori.length
+      ? `Ho lasciato fuori ${
+          fuori.length === 1 ? "una ricetta che ha" : `${fuori.length} ricette che hanno`
+        } «${soggetto}» nel nome senza chiamarsi così (per esempio «${nomeRicetta(fuori[0])}»).`
+      : null,
+  };
+}
+
+
 function ricettaEsiste(soggetto, ricette) {
   if (nonLetto(ricette)) return nonLoSo("ricettario", "il Ricettario");
   if (!soggetto) return chiarimento("ricettario", DOMANDE_CHE_SO.ricetta_esiste.chiarimento);
 
-  const trovate = ricette ?? [];
+  const { scelte: trovate, scremate } = candidatiRicetta(ricette, soggetto);
   // 🔴 «NON L'HO TROVATA» SI DICE SOLO DOPO AVER CERCATO DAVVERO, ed è la
   //    ragione per cui la lettura fallita non arriva mai fin qui.
   if (trovate.length === 0) {
@@ -398,12 +441,14 @@ function ricettaEsiste(soggetto, ricette) {
     return risposta("ricettario", `Sì: «${nomeRicetta(r)}» — ${statoDellaRicetta(r)}.`, [], {
       a: `/ricettario/ricette/${r.id}`,
       apri: "Apri la ricetta",
+      limite: scremate,
     });
   }
   return risposta(
     "ricettario",
     `Sì: ne ho ${trovate.length} che contengono «${soggetto}».`,
     trovate.map(rigaRicetta),
+    { limite: scremate },
   );
 }
 
@@ -413,7 +458,10 @@ function allergeniDi(soggetto, allergeneChiesto, ricette, allergeni, scelto) {
   if (nonLetto(ricette)) return nonLoSo("ricettario", "il Ricettario");
   if (!soggetto) return chiarimento("ricettario", DOMANDE_CHE_SO.allergeni.chiarimento);
 
-  const trovate = fraICandidati(ricette, scelto, "id");
+  // ⚠️ Gli stessi candidati della lettura: se qui si scegliesse in un
+  //    altro modo, gli allergeni letti sarebbero di un'altra ricetta.
+  const { scelte, scremate } = candidatiRicetta(ricette, soggetto);
+  const trovate = fraICandidati(scelte, scelto, "id");
   if (trovate.length === 0) {
     return risposta(
       "ricettario",
@@ -425,6 +473,7 @@ function allergeniDi(soggetto, allergeneChiesto, ricette, allergeni, scelto) {
       "ricettario",
       `Ne ho ${trovate.length} che contengono «${soggetto}»: di quale?`,
       trovate.map((r) => ({ chiave: r.id, testo: nomeRicetta(r), soggetto: nomeRicetta(r) })),
+      { limite: scremate },
     );
   }
 
@@ -444,11 +493,19 @@ function allergeniDi(soggetto, allergeneChiesto, ricette, allergeni, scelto) {
   //    completo, ed è la lezione del 13/08 — un elenco vuoto si legge «non
   //    contiene allergeni», e su un'allergia quella lettura è un problema
   //    di salute prima che di software.
-  const limite = daVerificare
-    ? `Attenzione: di ${scoperti.length === 1 ? "un ingrediente" : `${scoperti.length} ingredienti`} gli allergeni non li ha guardati nessuno${
-        scoperti.length ? ` (${scoperti.join(", ")})` : ""
-      }. L'elenco può essere incompleto.`
-    : null;
+  // ⚠️ E le due avvertenze stanno insieme: quella sugli ingredienti mai
+  //    guardati e quella sulle ricette lasciate fuori rispondono a due
+  //    domande diverse, e tenerne una sola ne nasconderebbe una.
+  const limite = [
+    daVerificare
+      ? `Attenzione: di ${scoperti.length === 1 ? "un ingrediente" : `${scoperti.length} ingredienti`} gli allergeni non li ha guardati nessuno${
+          scoperti.length ? ` (${scoperti.join(", ")})` : ""
+        }. L'elenco può essere incompleto.`
+      : null,
+    scremate,
+  ]
+    .filter(Boolean)
+    .join(" ") || null;
 
   if (allergeneChiesto) {
     const cercato = normalizza(allergeneChiesto);
@@ -528,7 +585,7 @@ function piattiInCarta(ricette) {
 
 const quantoNeHo = (g) => qtaConUnita(g.current_quantity, g.unit);
 
-function quantoHo(soggetto, giacenze, scelto) {
+function quantoHo(soggetto, giacenze, scelto, oggi = null) {
   if (nonLetto(giacenze)) return nonLoSo("magazzino", "il Magazzino");
   if (!soggetto) return chiarimento("magazzino", DOMANDE_CHE_SO.quanto_ho.chiarimento);
 
@@ -606,7 +663,21 @@ function quantoHo(soggetto, giacenze, scelto) {
     });
   }
   if (g.nearest_expiry) {
-    righe.push({ chiave: "scadenza", testo: `La prima partita scade il ${formatDate(g.nearest_expiry)}.` });
+    // 🔴 UNA PARTITA GIÀ SCADUTA NON SI DICE COME UNA CHE SCADRÀ —
+    //    07/09/2026, visto guardando: «Astice: 15 kg · la prima partita
+    //    scade il 2 ago 2026» è una data passata raccontata al futuro, e
+    //    chi la legge la prende per buona.
+    // ⚠️ E lo stesso MEMO la diceva già bene da un'altra porta: «quando
+    //    scade l'astice?» rispondeva «è già scaduta». Due risposte dello
+    //    stesso gestionale sullo stesso fatto non possono raccontarlo in
+    //    due modi — è la famiglia che questo progetto insegue dal 19/08.
+    const gia = oggi && String(g.nearest_expiry) < String(oggi);
+    righe.push({
+      chiave: "scadenza",
+      testo: gia
+        ? `La prima partita è scaduta il ${formatDate(g.nearest_expiry)}.`
+        : `La prima partita scade il ${formatDate(g.nearest_expiry)}.`,
+    });
   }
 
   return risposta("magazzino", `${g.ingredient_name}: ${quantoNeHo(g)}.`, righe, {
@@ -623,9 +694,7 @@ function cosaManca(giacenze) {
   //    ci entra comunque. Contarlo qui farebbe dire a MEMO che manca una
   //    cosa che il Magazzino non segnala: due parti dello stesso gestionale
   //    che raccontano cose diverse dello stesso fatto.
-  const sotto = tutte.filter(
-    (g) => g.below_threshold === true && g.tenuto_in_magazzino !== false,
-  );
+  const sotto = tutte.filter(sottoScorta);
 
   // ⚠️ IL LIMITE È LA META' DELLA RISPOSTA. Sotto la scorta minima ci va
   //    solo chi una scorta minima ce l'ha: senza dirlo, un «non manca
@@ -697,7 +766,12 @@ const rigaImpegno = (t) => ({
 function agendaOggi(impegni) {
   if (nonLetto(impegni)) return nonLoSo("agenda", "l'Agenda");
   const tutti = impegni ?? [];
-  const oggi = tutti.filter((t) => Number(t.giorni_alla_scadenza) === 0);
+  // 🔴 LA REGOLA DI «OGGI» È QUELLA DELL'AGENDA, non una seconda scritta
+  //    qui: fino al 07/09 questa riga diceva `Number(...) === 0` e
+  //    `Number(null)` **vale zero**, quindi ogni impegno SENZA scadenza
+  //    risultava di oggi. Misurato sul progetto di prova: l'Agenda ne
+  //    contava 0, MEMO ne annunciava 15.
+  const oggi = tutti.filter(eDiOggi);
   const inRitardo = tutti.filter((t) => t.corsia === "in_ritardo").length;
 
   // ⚠️ Il ritardo si dice ANCHE quando oggi non c'è niente: «per oggi non
@@ -787,7 +861,7 @@ function scadenzaDelProdotto(nome, partite, oggi) {
  * nomini l'Agenda. E chi non trova niente nel posto scelto **guarda
  * comunque nell'altro**: la precedenza decide l'ordine, non l'esito.
  */
-function quandoScade(soggetto, letture) {
+function quandoScade(soggetto, letture, scelto) {
   const impegni = letture.impegni;
   const partite = letture.partite;
   const oggi = letture.oggi ?? null;
@@ -801,7 +875,38 @@ function quandoScade(soggetto, letture) {
   const combacianti = inMagazzino.filter((p) => combacia(p.prodotto, soggetto));
   const intestate = combacianti.filter((p) => nominaLaCosa(p.prodotto, soggetto));
   const dellaCosa = intestate.length > 0 ? intestate : combacianti;
-  const nomeProdotto = dellaCosa[0]?.prodotto ?? null;
+
+  // 🔴 LE PARTITE SI RAGGRUPPANO PER PRODOTTO, e non è una rifinitura —
+  //    misurato sul progetto di prova il 07/09/2026: **120 coppie** di
+  //    prodotti in cui uno è la testa dell'altro, fra cui «Sale» e «Sale
+  //    marino di Trapani», «Coniglio» e «Coniglio in agrodolce». Senza il
+  //    raggruppamento, «quando scade il sale?» rispondeva **col nome del
+  //    primo** e le date di tutt'e due: un numero di partite che non
+  //    esiste, sotto un nome che ne copre un altro.
+  // ⚠️ E LA CURA È QUELLA CHE IL MAGAZZINO USA GIÀ: quando i prodotti sono
+  //    più d'uno **si chiede quale**, non se ne sceglie uno in silenzio.
+  //    Due risposte dello stesso MEMO davanti alla stessa ambiguità non
+  //    possono comportarsi in due modi.
+  const perProdotto = new Map();
+  for (const riga of dellaCosa) {
+    const chiave = riga.ingrediente_id ?? riga.prodotto;
+    if (!perProdotto.has(chiave)) perProdotto.set(chiave, []);
+    perProdotto.get(chiave).push(riga);
+  }
+  const gruppi = [...perProdotto.entries()].map(([chiave, righe]) => ({
+    chiave,
+    righe,
+    prodotto: righe[0].prodotto,
+  }));
+
+  // ⚠️ IL TOCCO LO CHIUDE `fraICandidati`, LA STESSA FUNZIONE DEL RESTO DI
+  //    MEMO, e non una scelta riscritta qui: la sua regola è che una
+  //    scelta che non combacia **non fa sparire i candidati**, si torna a
+  //    chiedere. Scrivendola a mano avevo ottenuto il contrario — con un
+  //    prodotto solo e una scelta vecchia addosso, MEMO avrebbe chiesto
+  //    «ne ho 1: di quale?», che è una domanda senza risposta possibile.
+  const scelti = fraICandidati(gruppi, scelto, "chiave");
+  const gruppo = scelti.length === 1 ? scelti[0] : null;
 
   const inAgenda = nonLetto(impegni) ? [] : (impegni ?? []).filter((t) => combacia(t.title, soggetto));
 
@@ -812,15 +917,28 @@ function quandoScade(soggetto, letture) {
       ? `C'è anche ${quanti === 1 ? "una cosa" : `${quanti} cose`} che si chiama così ${dove}.`
       : null;
 
-  if (primaLAgenda && inAgenda.length > 0) {
-    return daAgenda(soggetto, inAgenda, anche("in magazzino", dellaCosa.length));
-  }
-  if (!primaLAgenda && dellaCosa.length > 0) {
-    const r = scadenzaDelProdotto(nomeProdotto, dellaCosa, oggi);
+  // ⚠️ «Ce n'è anche un'altra» conta i PRODOTTI, non le partite: tre lotti
+  //    dello stesso astice sono una cosa sola, e dire «ce ne sono anche 3»
+  //    farebbe cercare due prodotti che non esistono.
+  const dallaScadenza = () => {
+    if (!gruppo) {
+      return scegli(
+        "scadenze",
+        `Ne ho ${scelti.length} che si chiamano così: di quale?`,
+        scelti.map((g) => ({ chiave: g.chiave, testo: g.prodotto, soggetto: g.prodotto })),
+        { limite: anche("in Agenda", inAgenda.length) },
+      );
+    }
+    const r = scadenzaDelProdotto(gruppo.prodotto, gruppo.righe, oggi);
     return { ...r, limite: [r.limite, anche("in Agenda", inAgenda.length)].filter(Boolean).join(" ") || null };
+  };
+
+  if (primaLAgenda && inAgenda.length > 0) {
+    return daAgenda(soggetto, inAgenda, anche("in magazzino", gruppi.length));
   }
+  if (!primaLAgenda && gruppi.length > 0) return dallaScadenza();
   if (inAgenda.length > 0) return daAgenda(soggetto, inAgenda, null);
-  if (dellaCosa.length > 0) return scadenzaDelProdotto(nomeProdotto, dellaCosa, oggi);
+  if (gruppi.length > 0) return dallaScadenza();
 
   // 🔴 «NON LO TROVO» SI PUÒ DIRE SOLO SE SI È GUARDATO IN TUTT'E DUE I
   //    POSTI. Se una delle due letture è caduta, «non c'è» sarebbe la
@@ -911,7 +1029,7 @@ export function componiRisposta(domanda, letture = {}) {
     case "piatti_in_carta":
       return piattiInCarta(letture.ricette);
     case "quanto_ho":
-      return quantoHo(soggetto, letture.giacenze, scelto);
+      return quantoHo(soggetto, letture.giacenze, scelto, letture.oggi ?? null);
     case "cosa_manca":
       return cosaManca(letture.giacenze);
     case "cosa_scade":
@@ -921,7 +1039,7 @@ export function componiRisposta(domanda, letture = {}) {
     case "agenda_in_ritardo":
       return agendaInRitardo(letture.impegni);
     case "quando_scade":
-      return quandoScade(soggetto, letture);
+      return quandoScade(soggetto, letture, scelto);
     default:
       return nonSoFarlo(domanda?.area ?? null);
   }

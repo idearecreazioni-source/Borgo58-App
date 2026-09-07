@@ -8,6 +8,7 @@ import {
   recordStockConsumption,
 } from "../../lib/api/stock";
 import { CONSUMPTION_REASONS, formatDate, formatQta, qtaConUnita } from "../../lib/constants";
+import { sottoScorta } from "../../lib/calcoli/ingredienti";
 import { useAuth } from "../../context/AuthContext";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
@@ -75,10 +76,13 @@ export default function MagazzinoHome() {
   const [troppoPiccoli, setTroppoPiccoli] = useState([]);
 
   // I due numeri del riepilogo, contati dalle righe che si vedono sotto.
-  // `below_threshold` la calcola la vista: si legge la sua risposta invece di
-  // rifare il confronto qui — due posti che decidono «è sotto soglia?»
-  // finirebbero per dire due numeri diversi.
-  const sottoSoglia = useMemo(() => levels.filter((l) => l.below_threshold).length, [levels]);
+  // 🔴 E CON LA STESSA REGOLA DELLE RIGHE — 07/09/2026: qui si contava il
+  // solo `below_threshold`, sotto il bollino chiedeva anche
+  // `tenuto_in_magazzino`, e i due numeri erano **55 e 54**. Il commento
+  // che stava qui lo aveva previsto («due posti che decidono ‹è sotto
+  // soglia?› finirebbero per dire due numeri diversi») e non è bastato:
+  // adesso la regola è una sola, e si chiama.
+  const sottoSoglia = useMemo(() => levels.filter(sottoScorta).length, [levels]);
   const inScadenza = useMemo(
     () => levels.filter((l) => expiryUrgency(l.nearest_expiry) === "danger").length,
     [levels]
@@ -531,9 +535,11 @@ export default function MagazzinoHome() {
           titolo={(l) => l.ingredient_name}
           intestazioneTitolo="Ingrediente"
           /* Un prodotto fuori magazzino non e' mai «sotto soglia»: la sua
-             giacenza non scende, quindi il confronto non vuol dire niente. */
+             giacenza non scende, quindi il confronto non vuol dire niente.
+             La regola sta in `sottoScorta`, insieme a quella che conta il
+             numero qui sopra e a quella con cui risponde MEMO. */
           segno={(l) =>
-            l.below_threshold && l.tenuto_in_magazzino !== false ? (
+            sottoScorta(l) ? (
               <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                 sotto soglia
               </span>

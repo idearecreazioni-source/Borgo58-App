@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { NON_LETTO } from "../../src/lib/calcoli/letture";
+import { daFareAdesso, eDiOggi } from "../../src/lib/calcoli/agenda";
+import { sottoScorta } from "../../src/lib/calcoli/ingredienti";
 import {
   DOMANDE_CHE_SO,
+  candidatiRicetta,
   combacia,
   componiRisposta,
   quandoInParole,
@@ -105,6 +108,61 @@ describe("RICETTARIO — «ho la ricetta della carbonara?»", () => {
   });
 });
 
+describe("RICETTARIO — chi nomina la cosa viene prima di chi la contiene", () => {
+  // 🔴 LA STESSA REGOLA DEL MAGAZZINO, portata qui il 07/09/2026. Là
+  //    «olio» pescava «Pomodoro secco di Pachino sott'olio»; qui «pesto»
+  //    pesca le busiate insieme al pesto vero, e MEMO chiedeva «di quale?»
+  //    avendo davanti una risposta sola.
+  const pesto = ricetta("r1", "Pesto alla trapanese");
+  const busiate = ricetta("r2", "Busiate al pesto alla trapanese");
+
+  it("«pesto» risponde del pesto, e DICHIARA cosa ha lasciato fuori", () => {
+    const r = componiRisposta(
+      { chiede: "ricetta_esiste", soggetto: "pesto" },
+      { ricette: [pesto, busiate] },
+    );
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Pesto alla trapanese");
+    expect(r.a).toBe("/ricettario/ricette/r1");
+    // ⚠️ Una scrematura silenziosa è la famiglia dell'elenco tagliato
+    //    senza dirlo: chi guarda deve sapere che è stato scelto per lui.
+    expect(r.limite).toContain("Busiate al pesto alla trapanese");
+  });
+
+  it("🔴 ...e se in testa non c'è nessuna, si guarda DENTRO come prima", () => {
+    // ⚠️ È la metà che discrimina: senza questa, chiedere «trapanese» —
+    //    una parola che in testa non c'è — non troverebbe più niente, e
+    //    due ricette diventerebbero irraggiungibili.
+    const r = componiRisposta(
+      { chiede: "ricetta_esiste", soggetto: "trapanese" },
+      { ricette: [pesto, busiate] },
+    );
+    expect(r.frase).toContain("ne ho 2");
+    expect(r.limite).toBeNull();
+  });
+
+  it("gli allergeni non chiedono «di quale?» quando una si chiama così", () => {
+    // ⚠️ E la lettura deve usare gli stessi candidati: se scegliesse in
+    //    un altro modo, gli allergeni letti sarebbero di un altro piatto.
+    const r = componiRisposta(
+      { chiede: "allergeni", soggetto: "pesto" },
+      {
+        ricette: [pesto, busiate],
+        allergeni: { allergens: ["frutta_a_guscio"], tracce: [], daVerificare: false, ingredienti: [] },
+      },
+    );
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Pesto alla trapanese");
+    expect(r.limite).toContain("lasciato fuori");
+  });
+
+  it("e i candidati sono una regola sola, che si può interrogare", () => {
+    const { scelte, scremate } = candidatiRicetta([pesto, busiate], "pesto");
+    expect(scelte).toEqual([pesto]);
+    expect(scremate).toContain("Busiate");
+    expect(candidatiRicetta([pesto, busiate], "trapanese").scelte).toHaveLength(2);
+  });
+});
 describe("RICETTARIO — «la carbonara ha il sedano?»", () => {
   const chiedi = (soggetto, allergene, ricette, allergeni, scelto) =>
     componiRisposta({ chiede: "allergeni", soggetto, allergene, scelto }, { ricette, allergeni });
@@ -228,6 +286,37 @@ describe("MAGAZZINO — «quanto olio ho?»", () => {
     expect(r.stato).toBe("risposta");
     expect(r.frase).toContain("Olio extravergine");
     expect(r.frase).toContain("12,5 l");
+  });
+
+  it("🔴 una partita GIÀ SCADUTA non si racconta al futuro", () => {
+    // 🔴 VISTO GUARDANDO, il 07/09/2026: «Astice: 15 kg · la prima partita
+    //    scade il 2 ago 2026» — una data passata detta come una cosa che
+    //    deve ancora succedere. E lo stesso MEMO, alla domanda «quando
+    //    scade l'astice?», rispondeva «è già scaduta»: due risposte dello
+    //    stesso gestionale che raccontano lo stesso fatto in due modi.
+    const r = componiRisposta(
+      { chiede: "quanto_ho", soggetto: "astice" },
+      {
+        giacenze: [giacenza("i1", "Astice", 15, { unit: "kg", nearest_expiry: "2026-08-02" })],
+        oggi: "2026-09-07",
+      },
+    );
+    expect(r.righe[0].testo).toContain("è scaduta il");
+    expect(r.righe[0].testo).toContain("2 ago 2026");
+  });
+
+  it("...e una che deve ancora scadere resta al futuro", () => {
+    // ⚠️ La metà che discrimina: una cura che dicesse «scaduta» sempre
+    //    passerebbe la prova qui sopra e mentirebbe su tutto il resto.
+    const r = componiRisposta(
+      { chiede: "quanto_ho", soggetto: "astice" },
+      {
+        giacenze: [giacenza("i1", "Astice", 15, { unit: "kg", nearest_expiry: "2026-09-20" })],
+        oggi: "2026-09-07",
+      },
+    );
+    expect(r.righe[0].testo).toContain("scade il");
+    expect(r.righe[0].testo).not.toContain("scaduta");
   });
 
   it("🔴 quello che non c'è NON vale zero", () => {
@@ -401,6 +490,36 @@ describe("MAGAZZINO — «cosa mi manca?»", () => {
     expect(r.limite).toBeNull();
   });
 
+  it("🔴 e il conteggio è LA STESSA REGOLA che conta l'intestazione del Magazzino", () => {
+    // 🔴 IL DIFETTO, misurato il 07/09/2026 sul progetto di prova: la
+    //    regola era scritta in tre posti e uno era rimasto indietro —
+    //    l'intestazione del Magazzino contava **55**, il bollino sulle
+    //    righe e MEMO **54**. Adesso è una sola funzione, e questa prova
+    //    chiede a lei invece di ripetere il criterio.
+    const giacenze = [
+      giacenza("i1", "Olio", 1, { stock_minimum_threshold: 5, below_threshold: true }),
+      giacenza("i2", "Ghiaccio secco", 0, {
+        stock_minimum_threshold: 5,
+        below_threshold: true,
+        tenuto_in_magazzino: false,
+      }),
+      giacenza("i3", "Sale", 9, { stock_minimum_threshold: 2 }),
+    ];
+    const r = chiedi(giacenze);
+    expect(r.righe).toHaveLength(giacenze.filter(sottoScorta).length);
+    expect(giacenze.filter(sottoScorta)).toHaveLength(1);
+  });
+
+  it("la regola dice di sì solo a chi la scorta ce l'ha davvero", () => {
+    // ⚠️ Nei due versi, perché una regola che dice sempre no passerebbe la
+    //    prova qui sopra e svuoterebbe la lista della spesa.
+    expect(sottoScorta({ below_threshold: true, tenuto_in_magazzino: true })).toBe(true);
+    expect(sottoScorta({ below_threshold: true })).toBe(true);
+    expect(sottoScorta({ below_threshold: true, tenuto_in_magazzino: false })).toBe(false);
+    expect(sottoScorta({ below_threshold: false })).toBe(false);
+    expect(sottoScorta(null)).toBe(false);
+  });
+
   it("non letto resta non letto", () => {
     expect(chiedi(NON_LETTO).stato).toBe("non_lo_so");
   });
@@ -452,6 +571,31 @@ describe("AGENDA — «cosa devo fare oggi?»", () => {
     expect(r.righe[0].a).toBe("/agenda/t1");
   });
 
+  it("🔴 un impegno SENZA scadenza NON è di oggi", () => {
+    // 🔴 IL DIFETTO, misurato il 07/09/2026 sul progetto di prova: qui
+    //    c'era `Number(giorni_alla_scadenza) === 0`, e `Number(null)`
+    //    **vale zero**. L'Agenda contava 0 impegni di oggi e MEMO ne
+    //    annunciava 15: tutta la corsia «quando capita», che una scadenza
+    //    per costruzione non ce l'ha.
+    const r = chiedi([impegno("t1", "Valutare il secondo forno", null)]);
+    expect(r.frase).toContain("Per oggi non hai niente");
+    expect(r.righe).toHaveLength(0);
+  });
+
+  it("🔴 ...e «oggi» è LA STESSA REGOLA che conta il numero dell'Agenda", () => {
+    // ⚠️ È la prova che discrimina: non ricalcola «oggi» a modo suo — usa
+    //    la regola dell'Agenda. Il giorno che i due criteri tornassero a
+    //    separarsi, questa diventerebbe rossa da sola.
+    const righe = [
+      impegno("t1", "Portare i corrispettivi", 0),
+      impegno("t2", "Valutare il secondo forno", null),
+      impegno("t3", "F24", -5),
+    ];
+    expect(chiedi(righe).righe).toHaveLength(righe.filter(eDiOggi).length);
+    // il ritardo e quello di oggi: il «quando capita» non entra mai.
+    expect(daFareAdesso(righe)).toBe(2);
+  });
+
   it("🔴 «per oggi niente» non tace sui ritardi", () => {
     // ⚠️ Vero e fuorviante: «non hai niente» con quattordici scadute dietro
     //    è la stessa famiglia dell'elenco che sembra completo.
@@ -494,6 +638,9 @@ describe("«quando scade …?» — e la cosa che scade può stare in due posti"
   //    non lo trovava. L'astice sta in cella.
   const partita = (id, prodotto, scadenza, extra = {}) => ({
     lotto_id: id,
+    // ⚠️ Le partite si raggruppano per PRODOTTO, non per nome: due prodotti
+    //    possono chiamarsi uno come la testa dell'altro.
+    ingrediente_id: `ing-${prodotto}`,
     prodotto,
     unita: "kg",
     giacenza: 3,
@@ -502,9 +649,9 @@ describe("«quando scade …?» — e la cosa che scade può stare in due posti"
   });
   const OGGI = "2026-09-07";
 
-  const chiedi = (soggetto, impegni, partite = [], extra = {}) =>
+  const chiedi = (soggetto, impegni, partite = [], extra = {}, scelto = null) =>
     componiRisposta(
-      { chiede: "quando_scade", soggetto },
+      { chiede: "quando_scade", soggetto, scelto },
       { impegni, partite, oggi: OGGI, ...extra },
     );
 
@@ -586,6 +733,78 @@ describe("«quando scade …?» — e la cosa che scade può stare in due posti"
 
   it("non letto da tutt'e due resta non letto", () => {
     expect(chiedi("f24", NON_LETTO, NON_LETTO).stato).toBe("non_lo_so");
+  });
+
+  it("🔴 due prodotti che si chiamano così: CHIEDE quale, non ne fonde due", () => {
+    // 🔴 MISURATO sul progetto di prova il 07/09/2026: **120 coppie** in cui
+    //    un prodotto è la testa di un altro — «Sale» e «Sale marino di
+    //    Trapani», «Coniglio» e «Coniglio in agrodolce». Fondendoli, la
+    //    risposta portava il nome del primo e le date di tutt'e due: un
+    //    numero di partite che non esiste, sotto un nome che ne copre
+    //    un altro. Ed è la stessa ambiguità che «quanto ne ho?» risolve
+    //    chiedendo: due risposte dello stesso MEMO non possono comportarsi
+    //    in due modi.
+    const r = chiedi("sale", [], [
+      partita("l1", "Sale", "2026-09-20"),
+      partita("l2", "Sale marino di Trapani", "2026-09-25"),
+    ]);
+    expect(r.stato).toBe("scegli");
+    expect(r.candidati).toHaveLength(2);
+    expect(r.frase).not.toContain("20 set");
+  });
+
+  it("🔴 una scelta che non combacia NON fa sparire la risposta", () => {
+    // 🔴 Difetto mio, trovato rileggendo: avevo riscritto a mano la scelta
+    //    invece di usare `fraICandidati`, e con un prodotto solo e una
+    //    scelta vecchia addosso MEMO chiedeva «ne ho 1: di quale?» — una
+    //    domanda senza risposta possibile. La regola di questo gestionale
+    //    è che una scelta che non combacia si ignora e si torna a chiedere,
+    //    e vive in una funzione sola.
+    const r = chiedi("astice", [], [partita("l1", "Astice", "2026-09-20")], {}, "ing-Un altro");
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Astice");
+  });
+
+  it("...e il tocco chiude il giro, per identificativo", () => {
+    const due = [
+      partita("l1", "Sale", "2026-09-20"),
+      partita("l2", "Sale marino di Trapani", "2026-09-25"),
+    ];
+    const r = chiedi("Sale marino di Trapani", [], due, {}, "ing-Sale marino di Trapani");
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Sale marino di Trapani");
+    expect(r.frase).toContain("25 set");
+  });
+
+  it("🔴 ...ma PIÙ PARTITE dello stesso prodotto restano una risposta sola", () => {
+    // ⚠️ La metà che discrimina: una cura che chiedesse «di quale?» a ogni
+    //    lotto renderebbe la domanda inutilizzabile proprio sui prodotti
+    //    che di partite ne hanno tante.
+    const r = chiedi("astice", [], [
+      partita("l1", "Astice", "2026-09-20"),
+      partita("l2", "Astice", "2026-09-25"),
+      partita("l3", "Astice", "2026-10-01"),
+    ]);
+    expect(r.stato).toBe("risposta");
+    expect(r.righe).toHaveLength(3);
+  });
+
+  it("🔴 «c'è anche in magazzino» conta i PRODOTTI, non le partite", () => {
+    // ⚠️ Tre lotti dello stesso astice sono una cosa sola: «ce ne sono
+    //    anche 3» manderebbe a cercare due prodotti che non esistono.
+    const r = chiedi(
+      "astice",
+      [impegno("t1", "Ordinare l'astice", 2)],
+      [
+        partita("l1", "Astice", "2026-09-20"),
+        partita("l2", "Astice", "2026-09-25"),
+        partita("l3", "Astice", "2026-10-01"),
+      ],
+      { agendaEsplicita: true },
+    );
+    expect(r.a).toBe("/agenda/t1");
+    expect(r.limite).toContain("una cosa");
+    expect(r.limite).not.toContain("3 cose");
   });
 });
 

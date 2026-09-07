@@ -64,3 +64,25 @@ export function campiIngrediente(ing, categorie = []) {
     },
   ];
 }
+
+/**
+ * QUESTO PRODOTTO È SOTTO LA SCORTA MINIMA?
+ *
+ * 🔴 STA IN UN POSTO SOLO PERCHÉ IL 07/09/2026 ERA IN TRE, e uno dei tre
+ * diceva un altro numero. Misurato sul progetto di prova: l'intestazione
+ * del Magazzino contava **55**, il bollino sulle righe e MEMO ne dicevano
+ * **54**, e la lista della spesa ne avrebbe presi **54**.
+ *
+ * ⚠️ IL PRODOTTO DI TROPPO È UNO CHE NON SI TIENE IN MAGAZZINO: la sua
+ * giacenza non scende mai, quindi sotto soglia ci finirebbe una volta e ci
+ * resterebbe per sempre. È una decisione di Alessio, già scritta nel
+ * database (`add_below_threshold_items` lo esclude): «la lista della spesa
+ * non la chiede».
+ *
+ * ⚠️ E IL COMMENTO CHE STAVA SOPRA QUEL CONTEGGIO LO AVEVA PREVISTO —
+ * *«due posti che decidono ‹è sotto soglia?› finirebbero per dire due
+ * numeri diversi»*. Erano tre, ed è successo. Una regola scritta in un
+ * commento non è una regola in un posto solo.
+ */
+export const sottoScorta = (g) =>
+  g?.below_threshold === true && g?.tenuto_in_magazzino !== false;

@@ -68,6 +68,28 @@ export function sezioniDellAgenda(righe) {
 }
 
 /**
+ * QUESTO IMPEGNO SCADE OGGI?
+ *
+ * 🔴 STA IN UN POSTO SOLO PERCHE' IL 07/09/2026 ERA IN DUE, e i due
+ * dicevano cose diverse. Il numero accanto al titolo dell'Agenda scriveva
+ * `giorni_alla_scadenza === 0`; MEMO scriveva `Number(giorni_alla_scadenza)
+ * === 0`, e `Number(null)` **vale zero**. Misurato sul progetto di prova:
+ * l'Agenda contava **0 impegni di oggi**, MEMO ne annunciava **15** — tutti
+ * quelli della corsia «quando capita», che per costruzione una scadenza non
+ * ce l'hanno.
+ *
+ * ⚠️ NESSUNO DEI DUE DAVA ERRORE, ed è la ragione per cui è vissuto: la
+ * risposta era plausibile, e la schermata accanto diceva un altro numero.
+ * È la famiglia che questo progetto insegue dal 19/08 — due parti dello
+ * stesso gestionale che raccontano cose diverse dello stesso fatto.
+ *
+ * ⚠️ E UNA DATA CHE MANCA NON È UNA DATA DI OGGI: un impegno senza scadenza
+ * è una cosa da fare **quando capita**, e metterla in mezzo a quelle di oggi
+ * è il modo di far smettere di guardare l'elenco di oggi.
+ */
+export const eDiOggi = (t) => t?.giorni_alla_scadenza === 0;
+
+/**
  * QUANTI IMPEGNI CHIEDONO ATTENZIONE ADESSO — il numero accanto al titolo.
  *
  * ⚠️ Conta SOLO ritardo e oggi, e «quando capita» non ci entra mai: un
@@ -79,7 +101,7 @@ export function sezioniDellAgenda(righe) {
  * legge, non se è in ritardo.
  */
 export const daFareAdesso = (righe) =>
-  (righe ?? []).filter((t) => t.corsia === "in_ritardo" || t.giorni_alla_scadenza === 0).length;
+  (righe ?? []).filter((t) => t.corsia === "in_ritardo" || eDiOggi(t)).length;
 
 /**
  * I CAMPI DI UN IMPEGNO NEL QUADROTTO, scritti una volta sola.

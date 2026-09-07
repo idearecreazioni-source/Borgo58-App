@@ -24,7 +24,12 @@
 //    in uno zero. È la ragione per cui questo file non ha nessun `catch`.
 
 import { leggi, nonLetto } from "../calcoli/letture";
-import { componiRisposta, fraICandidati, nominaLAgenda } from "../calcoli/domande";
+import {
+  candidatiRicetta,
+  componiRisposta,
+  fraICandidati,
+  nominaLAgenda,
+} from "../calcoli/domande";
 import { getRecipeAllergens, listRecipes } from "./recipes";
 import { listStockLevels } from "./stock";
 import { listPartiteInGiacenza, listPartiteInScadenza } from "./scadenze";
@@ -56,7 +61,13 @@ export async function letturePerDomanda(domanda) {
       //    La stessa regola che decide «uno o più d'uno» sta in un posto
       //    solo, altrimenti si leggerebbero gli allergeni di una ricetta e
       //    se ne mostrerebbero di un'altra.
-      const ristrette = fraICandidati(ricette, domanda?.scelto ?? null, "id");
+      // ⚠️ GLI STESSI CANDIDATI DELLA REGOLA CHE COMPONE LA FRASE, e non
+      //    una seconda scelta scritta qui: se i due criteri divergessero,
+      //    questa lettura direbbe «sono due, gli allergeni non li leggo» e
+      //    la regola ne sceglierebbe una — MEMO risponderebbe «non lo so»
+      //    su un piatto che ha appena riconosciuto.
+      const { scelte } = candidatiRicetta(ricette, soggetto);
+      const ristrette = fraICandidati(scelte, domanda?.scelto ?? null, "id");
       if (ristrette.length !== 1) return { ricette };
       return { ricette, allergeni: await leggi(getRecipeAllergens(ristrette[0].id)) };
     }
@@ -64,7 +75,13 @@ export async function letturePerDomanda(domanda) {
     case "piatti_in_carta":
       return { ricette: await leggi(listRecipes({ statusFilter: "in_carta" })) };
 
+    // ⚠️ LA GIORNATA ARRIVA DA FUORI, come in «quando scade …»: serve a
+    //    dire se la prima partita è già scaduta invece di raccontarla al
+    //    futuro. Calcolarla dentro la regola vorrebbe dire un altro
+    //    orologio, e questo progetto ne ha già contati undici.
     case "quanto_ho":
+      return { giacenze: await leggi(listStockLevels()), oggi: oggiLocale() };
+
     case "cosa_manca":
       return { giacenze: await leggi(listStockLevels()) };
 
