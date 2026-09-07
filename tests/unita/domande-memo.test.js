@@ -252,6 +252,62 @@ describe("MAGAZZINO — «quanto olio ho?»", () => {
     expect(dopo.frase).toContain("Olio di semi");
   });
 
+  // ===================================================================
+  // 🔴 IL CASO VERO DEL COLLAUDO A MANO — 07/09/2026
+  // ===================================================================
+  // Alessio chiede «quanto olio ho?» e fra i candidati compare «Pomodoro
+  // secco di Pachino sott'olio». La parola «olio» nel nome ce l'ha davvero:
+  // e' la RICERCA a trattarla come se definisse il prodotto.
+  const SCAFFALE = [
+    giacenza("i1", "Olio extravergine", 12.5),
+    giacenza("i2", "Olio di semi di arachide", 2),
+    giacenza("i3", "Pomodoro secco di Pachino sott'olio", 1, { unit: "kg" }),
+  ];
+
+  it("🔴 «quanto olio ho?» NON propone il pomodoro sott'olio", () => {
+    const r = chiedi("olio", SCAFFALE);
+    expect(r.stato).toBe("scegli");
+    // ⚠️ Il chiarimento si conserva: gli oli veri sono due, e fra due si
+    //    chiede ancora quale.
+    expect(r.candidati.map((x) => x.testo)).toEqual([
+      "Olio extravergine",
+      "Olio di semi di arachide",
+    ]);
+    expect(r.candidati.map((x) => x.testo).join(" ")).not.toContain("Pomodoro");
+  });
+
+  it("...e dichiara di aver lasciato fuori qualcosa, invece di scremare in silenzio", () => {
+    // ⚠️ Una scrematura silenziosa e' la stessa famiglia dell'elenco tagliato
+    //    senza dirlo: chi guarda non saprebbe che il gestionale ha scelto.
+    const r = chiedi("olio", SCAFFALE);
+    expect(r.limite).toContain("Pomodoro secco di Pachino sott'olio");
+  });
+
+  it("🔴 con un olio solo il pomodoro resta fuori, e la risposta e' quella dell'olio", () => {
+    // ⚠️ La meta' che discrimina sul verso opposto: senza la cura qui
+    //    uscirebbe «ne ho 2: di quale?» — cioe' un chiarimento inventato su
+    //    una domanda che ha una risposta sola.
+    const r = chiedi("olio", [SCAFFALE[0], SCAFFALE[2]]);
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Olio extravergine");
+    expect(r.limite).toContain("Pomodoro");
+  });
+
+  it("🔴 e il pomodoro NON diventa irraggiungibile: chi lo nomina lo trova", () => {
+    // 🔴 E' il verso in cui la cura poteva fare piu' danno del difetto. Si
+    //    guarda in testa; solo se in testa non c'e' nessuno si torna a
+    //    guardare dentro il nome — quindi «pachino» e «sott'olio» trovano
+    //    ancora il pomodoro, e «extravergine» trova ancora l'olio.
+    expect(chiedi("pomodoro", SCAFFALE).frase).toContain("Pomodoro secco");
+    expect(chiedi("pachino", SCAFFALE).frase).toContain("Pomodoro secco");
+    expect(chiedi("extravergine", SCAFFALE).frase).toContain("Olio extravergine");
+  });
+
+  it("...e quando non si e' scremato niente non si dichiara niente", () => {
+    // Un «ho lasciato fuori» che comparisse sempre sarebbe rumore.
+    expect(chiedi("pomodoro", SCAFFALE).limite).toBeNull();
+  });
+
   it("la lettura fallita non diventa «non ce l'ho»", () => {
     const r = chiedi("olio", NON_LETTO);
     expect(r.stato).toBe("non_lo_so");

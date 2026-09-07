@@ -168,6 +168,27 @@ export function combacia(nome, cercato) {
   return normalizza(nome).includes(c);
 }
 
+/**
+ * IL NOME COMINCIA CON QUELLO CHE È STATO CHIESTO?
+ *
+ * 🔴 IL DIFETTO CHE CHIUDE, dal collaudo a mano del 07/09/2026: alla
+ * domanda «quanto olio ho?» MEMO proponeva i due oli veri **e** «Pomodoro
+ * secco di Pachino sott'olio». Quel prodotto la parola «olio» ce l'ha
+ * davvero nel nome — ma non è un olio: è un pomodoro.
+ *
+ * ⚠️ IL CRITERIO NON È UN ELENCO DI PAROLE DA IGNORARE, che invecchierebbe
+ * al primo prodotto nuovo. È una proprietà dell'italiano: **il nome della
+ * cosa sta in testa**. «Olio extravergine» e «Olio di semi» sono oli;
+ * «Pomodoro secco di Pachino sott'olio» è un pomodoro, e lo dice la prima
+ * parola. Quello che viene dopo qualifica, non definisce.
+ */
+export function nominaLaCosa(nome, cercato) {
+  const c = normalizza(cercato);
+  if (c === "") return false;
+  const n = normalizza(nome);
+  return n === c || n.startsWith(`${c} `);
+}
+
 // ---------------------------------------------------------------------
 // LE PAROLE DEL TEMPO
 // ---------------------------------------------------------------------
@@ -265,7 +286,7 @@ const chiarimento = (chiave, frase) => ({
  * ricetta di…», «quando scade…»), elencarli tutti *è* la risposta, e
  * fermarsi a chiedere sarebbe un passaggio in più per niente.
  */
-const scegli = (chiave, frase, candidati) => {
+const scegli = (chiave, frase, candidati, extra = {}) => {
   // ⚠️ ANCHE I CANDIDATI SONO UN ELENCO, e su un magazzino vero «quanto
   //    pomodoro ho?» può trovarne quindici: quindici pulsanti su un telefono
   //    tenuto in una mano non sono una domanda, sono un muro. Si taglia come
@@ -280,6 +301,7 @@ const scegli = (chiave, frase, candidati) => {
     limite: null,
     candidati: tutti.slice(0, RIGHE_MOSTRATE),
     ...dove(chiave),
+    ...extra,
   };
 };
 
@@ -481,7 +503,28 @@ function quantoHo(soggetto, giacenze, scelto) {
   if (!soggetto) return chiarimento("magazzino", DOMANDE_CHE_SO.quanto_ho.chiarimento);
 
   const combacianti = (giacenze ?? []).filter((g) => combacia(g.ingredient_name, soggetto));
-  const trovati = fraICandidati(combacianti, scelto, "ingredient_id");
+
+  // 🔴 CHI NOMINA LA COSA VIENE PRIMA DI CHI LA CONTIENE — 07/09/2026, dal
+  //    collaudo a mano di Alessio. Fra i candidati per «olio» compariva
+  //    «Pomodoro secco di Pachino sott'olio»: una parola dentro il nome
+  //    trattata come se definisse il prodotto.
+  // ⚠️ E LA RICERCA DENTRO IL NOME NON SI TOGLIE, si mette dopo: senza,
+  //    chiedere «pachino» o «extravergine» — cioè con una parola che in
+  //    testa non c'è — non troverebbe più niente, e un prodotto
+  //    diventerebbe irraggiungibile. Si guarda in testa; **solo se in testa
+  //    non c'è nessuno** si torna a guardare dentro.
+  const intestati = combacianti.filter((g) => nominaLaCosa(g.ingredient_name, soggetto));
+  const candidati = intestati.length > 0 ? intestati : combacianti;
+
+  // ⚠️ E QUELLO CHE SI LASCIA FUORI SI DICHIARA. Una scrematura silenziosa è
+  //    la stessa famiglia dell'elenco tagliato senza dirlo: chi guarda non
+  //    ha modo di sapere che il gestionale ha scelto per lui.
+  const fuori = combacianti.filter((g) => !candidati.includes(g));
+  const scremati = fuori.length
+    ? `Ho lasciato fuori ${fuori.length === 1 ? "un prodotto che ha" : `${fuori.length} prodotti che hanno`} «${soggetto}» nel nome senza esserlo (per esempio «${fuori[0].ingredient_name}»).`
+    : null;
+
+  const trovati = fraICandidati(candidati, scelto, "ingredient_id");
 
   // 🔴 «NON CE L'HO» NON È «ZERO». Uno zero si legge «l'ho finito», e non è
   //    la stessa cosa di «questa roba in magazzino non esiste proprio».
@@ -497,6 +540,7 @@ function quantoHo(soggetto, giacenze, scelto) {
         testo: g.ingredient_name,
         soggetto: g.ingredient_name,
       })),
+      { limite: scremati },
     );
   }
 
@@ -535,7 +579,9 @@ function quantoHo(soggetto, giacenze, scelto) {
     righe.push({ chiave: "scadenza", testo: `La prima partita scade il ${formatDate(g.nearest_expiry)}.` });
   }
 
-  return risposta("magazzino", `${g.ingredient_name}: ${quantoNeHo(g)}.`, righe);
+  return risposta("magazzino", `${g.ingredient_name}: ${quantoNeHo(g)}.`, righe, {
+    limite: scremati,
+  });
 }
 
 function cosaManca(giacenze) {
