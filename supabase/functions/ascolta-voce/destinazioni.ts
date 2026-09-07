@@ -1,33 +1,39 @@
 // =====================================================================
-// QUANDO IL NOME DI UNA LISTA NON È UNA LISTA CHE ESISTE
+// IN QUALE DELLE DUE LISTE VA QUESTA COSA
 // =====================================================================
-// 🔴 IL DIFETTO, dal vivo il 06/09/2026. Alessio detta *«segna il pesce
-//    spada nella spesa spicciola»*, e MEMO propone **«Aggiungi alla
-//    spesa»** — cioè la lista della spesa, che è un'altra cosa. La spesa
-//    spicciola è la Tasca (SPEC-0005, SPEC-0009); le liste distinte sono
-//    SPEC-0012, e **non è implementata**.
+// 🔴 IL GESTIONALE HA DUE LISTE, e non si somigliano:
+//    · la **Lista della spesa** nasce dalle soglie del magazzino e finisce
+//      in un ordine a un fornitore;
+//    · la **Spesa spicciola** è quello che Alessio compra di persona al
+//      supermercato: non tocca giacenze, non ordina, non scrive costi.
+//    Esistono separate nel gestionale dal 23/08/2026. Quello che mancava
+//    era che MEMO sapesse distinguerle: è SPEC-0012.
 //
-// ⚠️ NON ERA UN ERRORE DI ASCOLTO: MEMO aveva capito benissimo, e l'aveva
-//    pure scritto — nei dati c'era `note: "spesa spicciola"`. Il difetto è
-//    che l'ha **ricondotto** alla cosa più vicina che il gestionale sa
-//    fare, che è precisamente ciò che SPEC-0013 vieta.
+// 🔴 COME ERA PRIMA, e perché è stato fatto così (06/09/2026). Alessio
+//    dettava *«segna il pesce spada nella spesa spicciola»* e MEMO
+//    proponeva **«Aggiungi alla spesa»** — la lista sbagliata — con
+//    l'appunto **eseguibile**, quindi con «Approva» sotto. Un tocco per
+//    sbaglio, ed è successo, scriveva nella lista dei fornitori.
+//    La cura di quel giorno fu rendere l'appunto NON eseguibile e dirlo.
+//    Adesso quella lista esiste per la voce, e l'appunto si può approvare.
 //
-// 🔴 E LA CONSEGUENZA ERA LA PEGGIORE POSSIBILE: l'appunto risultava
-//    **eseguibile**, quindi mostrava «Approva». Un tocco per sbaglio — ed è
-//    successo — avrebbe scritto il pesce spada nella lista della spesa
-//    normale. Senza nessun errore, e con l'aria di aver fatto la cosa
-//    giusta.
+// ⚠️ LA DESTINAZIONE SI LEGGE DA UN FATTO DICHIARATO, non dalle parole del
+//    dettato: `dati.lista`, che il modello riempie col nome della lista
+//    quando ne è stata nominata una. Cercare «spicciola» dentro la frase
+//    sarebbe un elenco che invecchia al primo sinonimo — e soprattutto
+//    sarebbe una seconda interpretazione, dopo quella del modello.
 //
-// ⚠️ PERCHÉ QUI E NON SOLO NEL PROMPT. Il prompt si corregge, e va
-//    corretto — ma un modello non è una garanzia: la volta dopo può
-//    ricondurre lo stesso. Questa regola è **deterministica**: se il
-//    modello dichiara che è stata nominata una lista precisa, il gestionale
-//    sa di non averla e non offre di scriverci dentro.
+// ⚠️ E QUI, NON SOLO NEL PROMPT: il prompt va corretto e lo è, ma **un
+//    modello non è una garanzia**. Questa regola è deterministica e si
+//    prova senza chiamare nessuno.
 //
-// ⚠️ E NON SI INDOVINA DALLE PAROLE DEL DETTATO. Cercare «spicciola» nel
-//    testo sarebbe un elenco che invecchia al primo sinonimo. Si guarda un
-//    **fatto dichiarato**: `dati.lista`, che il modello riempie col nome
-//    della lista quando ne è stata nominata una.
+// 🔴 SE LA LISTA NON È STATA DETTA, NON SE NE SCEGLIE UNA. È il criterio
+//    di SPEC-0012: *«se la destinazione manca o è ambigua, MEMO la chiede
+//    o la dichiara non capita; non usa automaticamente la Lista della
+//    spesa»*. Prima di oggi il silenzio valeva «lista della spesa»: con
+//    una lista sola era una scorciatoia innocua, con due è una scelta
+//    fatta al posto suo — e la scelta sbagliata si vede solo dopo, quando
+//    la roba è nella lista che va al fornitore.
 
 export type AzioneDettata = {
   tipo: string;
@@ -48,14 +54,15 @@ export type AzioneDettata = {
 //    prove scritte quel giorno passava per la parola «spesa».
 export const PREFISSO_LISTA_NOMINATA = "lista_nominata_";
 
-// I modi di dire «quella normale»: chi li usa NON sta nominando una lista a
-// parte, sta dicendo la lista che il gestionale ha già.
+// I modi di dire «quella normale»: chi li usa sta dicendo la lista che il
+// gestionale ha sempre avuto, quella dei fornitori.
 //
-// ⚠️ È UN ELENCO DI PAROLE ITALIANE, e in questo progetto è una forma che
-//    invecchia. Regge perché sbaglia nel verso INNOCUO: un modo di dire che
-//    manca lascia l'appunto non eseguibile, cioè come se questa riga non ci
-//    fosse. Il verso pericoloso — una lista a parte che diventa quella vera
-//    — non dipende da questo elenco.
+// ⚠️ SONO ELENCHI DI PAROLE ITALIANE, e in questo progetto è una forma che
+//    invecchia. Reggono perché sbagliano nel verso INNOCUO: un modo di dire
+//    che manca non manda la roba nell'altra lista — la lascia in un appunto
+//    che non si può approvare e che dice perché. Il verso pericoloso — una
+//    lista scambiata per l'altra — non dipende da queste righe, perché
+//    ciascuna delle due è riconosciuta dalle sue.
 const SOLITE = new Set([
   "spesa",
   "la spesa",
@@ -64,6 +71,33 @@ const SOLITE = new Set([
   "lista della spesa",
   "la lista della spesa",
 ]);
+
+// I modi di dire della spesa che si fa di persona al supermercato.
+const SPICCIOLE = new Set([
+  "spicciola",
+  "la spicciola",
+  "spesa spicciola",
+  "la spesa spicciola",
+  "lista spicciola",
+  "lista della spesa spicciola",
+  "la lista della spesa spicciola",
+]);
+
+/** Il tipo d'azione della Spesa spicciola: esiste nel catalogo del database. */
+export const TIPO_SPICCIOLA = "spesa_spicciola";
+
+/** Il tipo della Lista della spesa, quella che finisce in un ordine. */
+export const TIPO_LISTA = "lista_spesa";
+
+/**
+ * QUANDO LA LISTA NON È STATA DETTA.
+ *
+ * 🔴 Non è un tipo del catalogo, quindi l'appunto **non si può approvare**:
+ * è la stessa forma con cui si trattano le liste che non esistono. La
+ * differenza è cosa c'è scritto dentro — qui manca un'informazione che
+ * Alessio ha, non una funzione che il gestionale non ha.
+ */
+export const TIPO_LISTA_NON_DETTA = "lista_non_detta";
 
 /** Minuscolo, senza accenti, con gli spazi normalizzati. */
 function senzaAccenti(testo: string): string {
@@ -76,19 +110,49 @@ function senzaAccenti(testo: string): string {
 }
 
 /**
- * Il nome della lista nominata, se ne è stata nominata una **a parte**.
+ * IL NOME DELLA LISTA CHE È STATA DETTA, così come l'ha detto lui.
  *
- * ⚠️ «la lista della spesa» non conta: è quella che il gestionale ha già, e
- * trattarla come separata bloccherebbe il gesto più frequente — il difetto
- * allo specchio, trovato dalla revisione.
+ * Vuoto se non ne ha nominata nessuna. ⚠️ Qui NON si giudica quale delle
+ * due sia: questa funzione riporta un fatto, la scelta la fa `versoLaLista`.
  */
-export function listaNominata(azione: AzioneDettata): string | null {
+export function nomeDellaLista(azione: AzioneDettata): string | null {
   const grezzo = azione?.dati?.lista;
   if (typeof grezzo !== "string") return null;
   const nome = grezzo.trim();
-  if (nome === "") return null;
-  if (SOLITE.has(senzaAccenti(nome))) return null;
+  return nome === "" ? null : nome;
+}
+
+/**
+ * Il nome di una lista **diversa dalle due che il gestionale ha**.
+ *
+ * ⚠️ Resta esportata con questo nome perché è la domanda che si fa il
+ * chiamante quando vuole sapere se c'è una lista che non sappiamo servire.
+ */
+export function listaNominata(azione: AzioneDettata): string | null {
+  const nome = nomeDellaLista(azione);
+  if (nome === null) return null;
+  const piano = senzaAccenti(nome);
+  if (SOLITE.has(piano) || SPICCIOLE.has(piano)) return null;
   return nome;
+}
+
+/** Dove porta quello che è stato detto: una delle due, un'altra, o niente. */
+export type Verso = "spesa" | "spicciola" | "altra" | "non_detta";
+
+/**
+ * IN QUALE LISTA VA, letto dal nome dichiarato.
+ *
+ * ⚠️ «non_detta» non è un difetto del modello: è che Alessio non l'ha
+ * detto. Le due cose si curano in modi diversi — la prima si aggiusta nel
+ * prompt, la seconda chiedendoglielo.
+ */
+export function versoLaLista(azione: AzioneDettata): Verso {
+  const nome = nomeDellaLista(azione);
+  if (nome === null) return "non_detta";
+  const piano = senzaAccenti(nome);
+  if (SOLITE.has(piano)) return "spesa";
+  if (SPICCIOLE.has(piano)) return "spicciola";
+  return "altra";
 }
 
 /** Da un nome in italiano a un tipo che il gestionale non conosce. */
@@ -101,44 +165,78 @@ export function tipoLibero(nome: string): string {
 }
 
 /**
- * Se è stata nominata una lista precisa, la destinazione smette di essere
- * la lista della spesa e diventa un appunto **non eseguibile**.
+ * LA DESTINAZIONE DI UNA RIGA DI LISTA, decisa dal nome dichiarato.
  *
- * ⚠️ VALE FINCHÉ SPEC-0012 NON È IMPLEMENTATA, ed è la riga da togliere quel
- * giorno: quando le liste distinte esisteranno davvero, `lista_spesa` con un
- * nome dentro sarà una cosa che il gestionale sa fare.
+ * Quattro esiti, e nessuno di loro sceglie in silenzio:
+ *  · **la spesa** → resta `lista_spesa`, come sempre;
+ *  · **la spicciola** → diventa `spesa_spicciola`, che il gestionale sa
+ *    scrivere dal 07/09/2026 (SPEC-0012);
+ *  · **un'altra** → appunto non approvabile, col nome che ha usato;
+ *  · **non detta** → appunto non approvabile che glielo CHIEDE.
  *
- * ⚠️ Quello che è stato capito NON si perde: il nome resta nei dati e nella
- * destinazione leggibile. *Un appunto che non si può eseguire è comunque un
- * promemoria; uno che ha perso il nome della lista non è niente.*
- *
- * 🔴 IL LIMITE, DICHIARATO: questa regola scatta solo se il modello ha
- * riempito `dati.lista`. Se davanti a una formulazione diversa lo lasciasse
- * vuoto, la destinazione resterebbe la lista della spesa — cioè il difetto di
- * partenza. Il prompt glielo chiede esplicitamente, ma **un prompt non è una
- * garanzia**: qui si copre il caso in cui il modello dichiara, non quello in
- * cui tace.
+ * ⚠️ VALE NEI DUE VERSI, ed è la parte che protegge di più: se il modello
+ * proponesse `spesa_spicciola` per una frase che nomina la lista della
+ * spesa, il nome dichiarato vince lo stesso. Il modello propone, il nome
+ * detto decide.
  */
-export function senzaListeCheNonEsistono(azione: AzioneDettata): AzioneDettata {
-  if (azione?.tipo !== "lista_spesa") return azione;
-  const nome = listaNominata(azione);
-  if (nome === null) return azione;
+export function destinazioneDellaLista(azione: AzioneDettata): AzioneDettata {
+  if (azione?.tipo !== TIPO_LISTA && azione?.tipo !== TIPO_SPICCIOLA) return azione;
 
-  return {
-    ...azione,
-    tipo: tipoLibero(nome),
-    destinazione: `Aggiungi a «${nome}»`,
-    // 🔴 NON è «non ero sicuro»: MEMO ha capito. È il gestionale che non ha
-    //    quella lista. Le due cose si curano in modi diversi, e dirle uguale
-    //    manderebbe a cercare un errore di ascolto che non c'è.
-    sicuro: true,
-    motivo:
-      `Hai detto «${nome}», che è una lista a parte: il gestionale ne ha ancora ` +
-      `una sola, quindi non ci posso scrivere dentro. L'appunto resta qui.`,
-  };
+  switch (versoLaLista(azione)) {
+    case "spesa":
+      return { ...azione, tipo: TIPO_LISTA, destinazione: "Aggiungi alla lista della spesa" };
+
+    case "spicciola":
+      return { ...azione, tipo: TIPO_SPICCIOLA, destinazione: "Aggiungi alla spesa spicciola" };
+
+    case "altra": {
+      const nome = nomeDellaLista(azione) as string;
+      return {
+        ...azione,
+        tipo: tipoLibero(nome),
+        destinazione: `Aggiungi a «${nome}»`,
+        // 🔴 NON è «non ero sicuro»: MEMO ha capito. È il gestionale che non
+        //    ha quella lista. Le due cose si curano in modi diversi, e dirle
+        //    uguale manderebbe a cercare un errore di ascolto che non c'è.
+        sicuro: true,
+        motivo:
+          `Hai detto «${nome}», che non è nessuna delle due liste che ho: ` +
+          `la lista della spesa e la spesa spicciola. L'appunto resta qui.`,
+      };
+    }
+
+    // 🔴 IL SILENZIO NON VALE PIÙ «LISTA DELLA SPESA» — SPEC-0012.
+    //    Con una lista sola era una scorciatoia innocua; con due è una
+    //    scelta fatta al posto suo, e quella sbagliata si scopre quando la
+    //    roba è già nella lista che va al fornitore.
+    default:
+      return {
+        ...azione,
+        tipo: TIPO_LISTA_NON_DETTA,
+        destinazione: "Quale delle due liste?",
+        sicuro: true,
+        // 🔴 LE PAROLE CONTANO, e queste sono state corrette dopo un collaudo
+        //    a mano (07/09/2026): la schermata rispondeva «il gestionale non
+        //    sa ancora farlo», ed è **falso** — le due liste le sa scrivere
+        //    tutt'e due. Quello che manca non è un gesto, è un'informazione
+        //    che ha lui: **quale**. Dirlo nell'altro modo manda a cercare una
+        //    funzione che non c'è, invece della parola che basta aggiungere.
+        motivo:
+          "Le liste sono due e non hai detto quale: so scrivere in tutt'e due, " +
+          "mi manca solo saperlo. Ridillo dicendo «alla lista della spesa» " +
+          "oppure «alla spesa spicciola».",
+      };
+  }
 }
+
+/**
+ * ⚠️ IL NOME VECCHIO, tenuto perché chi chiama non deve cambiare due volte.
+ * Fino al 07/09/2026 questa regola sapeva dire una cosa sola: «questa lista
+ * non esiste». Adesso ne sa dire quattro.
+ */
+export const senzaListeCheNonEsistono = destinazioneDellaLista;
 
 /** La stessa regola su tutta la filza. */
 export function correggiDestinazioni(azioni: AzioneDettata[]): AzioneDettata[] {
-  return (azioni ?? []).map(senzaListeCheNonEsistono);
+  return (azioni ?? []).map(destinazioneDellaLista);
 }

@@ -5,6 +5,7 @@ import {
   eta,
   quantiElementi,
   riassunto,
+  perche,
   siPuoApprovare,
 } from "../lib/calcoli/appunti";
 import { perchéAspetta } from "../lib/calcoli/voce";
@@ -51,7 +52,20 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
           se il gestionale non sa fare quella cosa, non c'e' niente da
           guardare e l'appunto e' un promemoria. Un solo colore per tutt'e
           due manderebbe a cercare un errore di ascolto che non c'e'. */}
-      {come === "senza_destinazione" && (
+      {/* 🔴 LA FRASE GENERALE SOLO SE L'APPUNTO NON NE HA UNA SUA —
+          07/09/2026, dal collaudo a mano. Qui c'era sempre «il gestionale
+          non sa ancora farlo», e su una riga di lista dettata senza dire in
+          quale delle due era **falsa**: le due liste il gestionale le sa
+          scrivere tutt'e due, quello che manca è sapere quale. Le due cose
+          si curano in modi opposti — la prima manda a cercare una funzione
+          che non c'è, la seconda si risolve con una parola in più.
+          ⚠️ NON SI AGGIUNGE UNA SECONDA FRASE: il motivo vero l'elemento lo
+          mostra già, qui sotto. Quello che si toglie è la riga che lo
+          contraddiceva. *Due spiegazioni della stessa cosa, una falsa, sono
+          peggio di una sola.*
+          ⚠️ E resta dov'era per gli appunti che un gesto davvero non ce
+          l'hanno: lì è vera, ed è l'unica cosa che si possa dire. */}
+      {come === "senza_destinazione" && !perche(appunto) && (
         <p className="testo-sala mt-2 rounded-lg bg-b58-gold/15 px-3 py-2 text-b58-charcoal">
           Ho capito cosa vuoi, ma <strong>il gestionale non sa ancora farlo</strong>: questo
           appunto resta qui come promemoria finché non lo costruiamo.
