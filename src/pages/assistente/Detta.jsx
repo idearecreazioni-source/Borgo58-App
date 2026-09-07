@@ -14,6 +14,8 @@ import {
   scegliPerAzione,
 } from "../../lib/api/voce";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
+import { rispondiA } from "../../lib/api/domandeMemo";
+import { titoloDellaDomanda } from "../../lib/calcoli/domande";
 import {
   comeEAndata,
   componiDettato,
@@ -26,6 +28,7 @@ import {
 import { formatEUR } from "../../lib/constants";
 import BarraDelPollice from "../../components/BarraDelPollice";
 import AppuntoDaApprovare from "../../components/AppuntoDaApprovare";
+import RispostaMemo from "../../components/RispostaMemo";
 import { ambienteCorrente } from "../../lib/ambiente";
 
 // =====================================================================
@@ -55,6 +58,11 @@ export default function Detta() {
   const [errore, setErrore] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const [riscontro, setRiscontro] = useState(null);
+  // 🔴 LA RISPOSTA A UNA DOMANDA — MEMO consultivo, fase 1. Vive accanto
+  //    al riscontro e mai insieme a lui: una frase è una domanda oppure
+  //    una cosa da segnare, e mostrarli tutt'e due farebbe cercare un
+  //    appunto che non c'è.
+  const [risposta, setRisposta] = useState(null);
   const [attesa, setAttesa] = useState(null);
   const [spesa, setSpesa] = useState(null);
   const [chiavi, setChiavi] = useState(null);
@@ -114,12 +122,40 @@ export default function Detta() {
       setStato("Sto capendo quello che hai detto…");
       try {
         const esito = await mandaDettato(testo);
+
+        // 🔴 ERA UNA DOMANDA: non è nato nessun appunto, e non c'è niente da
+        //    approvare. Si legge il gestionale COL PROPRIO ACCESSO e si
+        //    compone la risposta scritta.
+        //    ⚠️ Le letture stanno QUI e non nella funzione online: quella
+        //    gira con la chiave di servizio, dove la RLS non c'è, e la
+        //    risposta sarebbe quella del database invece che quella di chi
+        //    sta guardando.
+        if (esito?.esito === "domanda") {
+          setStato("Sto guardando…");
+          // ⚠️ LA FRASE DETTA VIAGGIA CON LA DOMANDA, e serve davvero: su
+          //    «quando scade …» e' la frase — non il modello — a dire se si
+          //    parla dell'Agenda o di una cosa in cella.
+          const domanda = { ...esito.domanda, testo: esito?.testo ?? testo };
+          const { risposta: r } = await rispondiA(domanda);
+          setRisposta({ domanda, titolo: titoloDellaDomanda(domanda), testo, r });
+          setRiscontro(null);
+          setFrasi([]);
+          frasiRef.current = [];
+          setStato("");
+          // ⚠️ Anche una domanda e' costata: la riga della spesa del mese si
+          //    rinfresca lo stesso, altrimenti resterebbe ferma su un numero
+          //    piu' basso del vero fino alla prossima apertura.
+          ricarica();
+          return;
+        }
+
         // ⚠️ Anche quando l'assistente non ha risposto, la dettatura è
         //    stata registrata col suo testo: si legge lo stesso, e quello
         //    che ha detto non si perde.
         const id = esito?.dettatura_id ?? esito?.dettatura?.dettatura_id;
         const azioni = id ? await azioniDellaDettatura(id) : [];
         setRiscontro({ ...comeEAndata(azioni), testo, messaggio: esito?.messaggio ?? null });
+        setRisposta(null);
         setFrasi([]);
         frasiRef.current = [];
         setStato("");
@@ -137,6 +173,7 @@ export default function Detta() {
   const accendi = () => {
     setErrore("");
     setRiscontro(null);
+    setRisposta(null);
     if (!disponibile) {
       setErrore(`${perche.frase} ${perche.cosaFare}`);
       return;
@@ -314,6 +351,32 @@ export default function Detta() {
   };
 
   // -------------------------------------------------------------------
+  // Scegliere di quale delle due cose si parlava
+  // -------------------------------------------------------------------
+  // ⚠️ NON È UNA SCELTA CHE SCRIVE: rifà la stessa domanda con il nome per
+  //    intero, cioè un'altra lettura. Il modello non viene richiamato — la
+  //    domanda l'aveva già capita — quindi non costa niente.
+  const [inRisposta, setInRisposta] = useState(false);
+
+  const scegliSoggetto = async (candidato) => {
+    if (!risposta) return;
+    setInRisposta(true);
+    setErrore("");
+    try {
+      // ⚠️ Si porta dietro l'IDENTIFICATIVO di quello che è stato toccato,
+      //    non solo il nome: due prodotti che si chiamano uguale li
+      //    distingue solo quello.
+      const domanda = { ...risposta.domanda, soggetto: candidato.soggetto, scelto: candidato.chiave };
+      const { risposta: r } = await rispondiA(domanda);
+      setRisposta((v) => ({ ...v, domanda, titolo: titoloDellaDomanda(domanda), r }));
+    } catch (e) {
+      setErrore(e.message);
+    } finally {
+      setInRisposta(false);
+    }
+  };
+
+  // -------------------------------------------------------------------
   // Le chiavi della Scorciatoia
   // -------------------------------------------------------------------
   const mostraChiavi = () => {
@@ -467,6 +530,19 @@ export default function Detta() {
           </p>
         )}
       </div>
+
+      {/* ------------------------------------------------------------
+          LA RISPOSTA A UNA DOMANDA — niente da approvare, niente scritto
+         ------------------------------------------------------------ */}
+      {risposta && (
+        <RispostaMemo
+          titolo={risposta.titolo}
+          testoDetto={risposta.testo}
+          risposta={risposta.r}
+          occupato={inRisposta}
+          onScegli={scegliSoggetto}
+        />
+      )}
 
       {/* ------------------------------------------------------------
           IL RISCONTRO — arriva ALLA FINE, e sono due elenchi
