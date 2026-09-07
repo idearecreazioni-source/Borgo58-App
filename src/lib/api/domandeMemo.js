@@ -24,11 +24,12 @@
 //    in uno zero. È la ragione per cui questo file non ha nessun `catch`.
 
 import { leggi, nonLetto } from "../calcoli/letture";
-import { componiRisposta, fraICandidati } from "../calcoli/domande";
+import { componiRisposta, fraICandidati, nominaLAgenda } from "../calcoli/domande";
 import { getRecipeAllergens, listRecipes } from "./recipes";
 import { listStockLevels } from "./stock";
-import { listPartiteInScadenza } from "./scadenze";
+import { listPartiteInGiacenza, listPartiteInScadenza } from "./scadenze";
 import { agendaCorsie } from "./tasks";
+import { oggiLocale } from "../constants";
 
 /**
  * Solo le letture che servono a QUELLA domanda.
@@ -72,8 +73,31 @@ export async function letturePerDomanda(domanda) {
 
     case "agenda_oggi":
     case "agenda_in_ritardo":
-    case "quando_scade":
       return { impegni: await leggi(agendaCorsie()) };
+
+    // 🔴 «QUANDO SCADE X» GUARDA IN DUE POSTI, e non e' un allargamento:
+    //    «scadere» vuol dire due cose — una partita in cella e un
+    //    adempimento — e sono tutte e due vere. Chiedere a un posto solo
+    //    faceva rispondere «non lo trovo» su un astice che c'e' (misurato
+    //    il 07/09).
+    // ⚠️ Le partite si filtrano nel DATABASE col nome: sul progetto di
+    //    prova ce ne sono duecento, e una lettura senza filtro tornerebbe
+    //    tagliata a mille righe senza dirlo.
+    case "quando_scade": {
+      if (!soggetto) return {};
+      const [partite, impegni] = await Promise.all([
+        leggi(listPartiteInGiacenza(soggetto)),
+        leggi(agendaCorsie()),
+      ]);
+      return {
+        partite,
+        impegni,
+        oggi: oggiLocale(),
+        // ⚠️ La precedenza si decide dalla FRASE DETTA, non da come il
+        //    modello ha classificato: cosi' non dipende da lui.
+        agendaEsplicita: nominaLAgenda(domanda?.testo ?? ""),
+      };
+    }
 
     default:
       return {};

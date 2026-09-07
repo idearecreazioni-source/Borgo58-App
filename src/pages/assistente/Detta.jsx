@@ -132,8 +132,12 @@ export default function Detta() {
         //    sta guardando.
         if (esito?.esito === "domanda") {
           setStato("Sto guardando…");
-          const { risposta: r } = await rispondiA(esito.domanda);
-          setRisposta({ domanda: esito.domanda, titolo: titoloDellaDomanda(esito.domanda), testo, r });
+          // ⚠️ LA FRASE DETTA VIAGGIA CON LA DOMANDA, e serve davvero: su
+          //    «quando scade …» e' la frase — non il modello — a dire se si
+          //    parla dell'Agenda o di una cosa in cella.
+          const domanda = { ...esito.domanda, testo: esito?.testo ?? testo };
+          const { risposta: r } = await rispondiA(domanda);
+          setRisposta({ domanda, titolo: titoloDellaDomanda(domanda), testo, r });
           setRiscontro(null);
           setFrasi([]);
           frasiRef.current = [];

@@ -113,13 +113,17 @@ export const DOMANDE_CHE_SO = {
     esempio: "Cosa sono in ritardo?",
     titolo: "Cosa sono in ritardo?",
   },
+  // 🔴 «QUANDO SCADE X» NON E' UNA DOMANDA DELLA SOLA AGENDA — 07/09/2026,
+  //    dal collaudo a mano: «quando scade l'astice?» cercava un *impegno*
+  //    chiamato astice e non lo trovava. Le cose che scadono in un'osteria
+  //    stanno in due posti diversi, e la parola e' la stessa.
   quando_scade: {
-    area: "agenda",
-    dove: "agenda",
-    esempio: "Quando scade l'F24?",
+    area: "magazzino",
+    dove: "scadenze",
+    esempio: "Quando scade l'astice?",
     titolo: "Quando scade «{x}»?",
     senzaSoggetto: "Quando scade?",
-    chiarimento: "Quale impegno?",
+    chiarimento: "Quale prodotto o quale impegno?",
   },
 };
 
@@ -187,6 +191,32 @@ export function nominaLaCosa(nome, cercato) {
   if (c === "") return false;
   const n = normalizza(nome);
   return n === c || n.startsWith(`${c} `);
+}
+
+/**
+ * LA FRASE NOMINA L'AGENDA?
+ *
+ * 🔴 SERVE PERCHE' «SCADERE» VUOL DIRE DUE COSE, e in un'osteria tutte e
+ * due sono vere: scade una partita in cella e scade un adempimento. Il
+ * gestionale guarda **prima il magazzino** — «quando scade l'astice» parla
+ * di un astice — e passa all'Agenda solo se non trova niente, oppure se la
+ * frase l'ha nominata.
+ *
+ * ⚠️ SI GUARDA LA FRASE DETTA, NON QUELLO CHE DICE IL MODELLO: cosi' la
+ * precedenza non dipende da come il modello ha classificato quel giorno.
+ * E' la stessa scelta di sembraUnaDomanda() nella funzione online.
+ *
+ * ⚠️ E SBAGLIARE NON FA PERDERE LA RISPOSTA: la precedenza decide solo
+ * DOVE si guarda per primo. Se nel posto scelto non c'e' niente, si guarda
+ * comunque nell'altro — quindi un riconoscimento mancato costa un ordine
+ * diverso, mai un «non lo trovo» su una cosa che c'e'.
+ */
+const PAROLE_DELL_AGENDA = ["impegno", "impegni", "attivita", "agenda", "adempimento", "adempimenti", "promemoria"];
+
+export function nominaLAgenda(testo) {
+  const t = normalizza(testo);
+  if (t === "") return false;
+  return PAROLE_DELL_AGENDA.some((p) => t === p || t.includes(` ${p} `) || t.startsWith(`${p} `) || t.endsWith(` ${p}`));
 }
 
 // ---------------------------------------------------------------------
@@ -703,23 +733,122 @@ function agendaInRitardo(impegni) {
   );
 }
 
-function quandoScade(soggetto, impegni) {
-  if (nonLetto(impegni)) return nonLoSo("agenda", "l'Agenda");
-  if (!soggetto) return chiarimento("agenda", DOMANDE_CHE_SO.quando_scade.chiarimento);
+/**
+ * QUANDO SCADE UNA PARTITA IN MAGAZZINO.
+ *
+ * ⚠️ La domanda e' «quando», quindi la risposta e' una DATA — e le partite
+ * sono piu' d'una: si dicono tutte, con quanto ce n'e'. Il confronto con
+ * oggi si fa su due date scritte allo stesso modo (AAAA-MM-GG), quindi e'
+ * un confronto di testo e non tocca nessun orologio.
+ */
+function scadenzaDelProdotto(nome, partite, oggi) {
+  const conScadenza = partite.filter((p) => p.scadenza);
+  const senza = partite.length - conScadenza.length;
+  const limite = senza
+    ? `${senza === 1 ? "Una partita non ha" : `${senza} partite non hanno`} una scadenza scritta.`
+    : null;
 
-  const trovati = (impegni ?? []).filter((t) => combacia(t.title, soggetto));
-  // ⚠️ L'Agenda a corsie porta i soli impegni APERTI: uno già fatto non
-  //    compare, e va detto — altrimenti «non lo trovo» si legge «non esiste».
-  const limite = "Guardo solo gli impegni ancora da fare: quelli già fatti non li vedo.";
-
-  if (trovati.length === 0) {
+  if (conScadenza.length === 0) {
     return risposta(
-      "agenda",
-      `Fra gli impegni da fare non ne trovo nessuno che si chiami «${soggetto}».`,
+      "scadenze",
+      `Di «${nome}» non c'è nessuna partita con una scadenza scritta.`,
       [],
       { limite },
     );
   }
+
+  const ordinate = [...conScadenza].sort((a, b) => String(a.scadenza).localeCompare(String(b.scadenza)));
+  const prima = ordinate[0];
+  const scaduta = oggi && String(prima.scadenza) < String(oggi);
+
+  return risposta(
+    "scadenze",
+    ordinate.length === 1
+      ? `${nome}: scade il ${formatDate(prima.scadenza)}${scaduta ? " — è già scaduta" : ""}.`
+      : `${nome}: la prima delle ${ordinate.length} partite scade il ${formatDate(prima.scadenza)}${scaduta ? " — è già scaduta" : ""}.`,
+    ordinate.map((p) => ({
+      chiave: p.lotto_id,
+      testo: `${qtaConUnita(p.giacenza, p.unita)} — ${formatDate(p.scadenza)}${
+        oggi && String(p.scadenza) < String(oggi) ? " (scaduta)" : ""
+      }`,
+    })),
+    { limite },
+  );
+}
+
+/**
+ * QUANDO SCADE — e la cosa che scade puo' stare in due posti.
+ *
+ * 🔴 IL DIFETTO CHE CHIUDE, dal collaudo a mano del 07/09/2026: «quando
+ * scade l'astice?» cercava un IMPEGNO chiamato astice, e rispondeva che non
+ * lo trovava. L'astice sta in cella.
+ *
+ * ⚠️ IL MAGAZZINO VIENE PRIMA, l'Agenda dopo — a meno che la frase non
+ * nomini l'Agenda. E chi non trova niente nel posto scelto **guarda
+ * comunque nell'altro**: la precedenza decide l'ordine, non l'esito.
+ */
+function quandoScade(soggetto, letture) {
+  const impegni = letture.impegni;
+  const partite = letture.partite;
+  const oggi = letture.oggi ?? null;
+  const primaLAgenda = letture.agendaEsplicita === true;
+
+  // ⚠️ Se ne'e' letta nessuna delle due, non si sa e basta.
+  if (nonLetto(impegni) && nonLetto(partite)) return nonLoSo("scadenze", "il Magazzino e l'Agenda");
+  if (!soggetto) return chiarimento("scadenze", DOMANDE_CHE_SO.quando_scade.chiarimento);
+
+  const inMagazzino = nonLetto(partite) ? [] : (partite ?? []);
+  const combacianti = inMagazzino.filter((p) => combacia(p.prodotto, soggetto));
+  const intestate = combacianti.filter((p) => nominaLaCosa(p.prodotto, soggetto));
+  const dellaCosa = intestate.length > 0 ? intestate : combacianti;
+  const nomeProdotto = dellaCosa[0]?.prodotto ?? null;
+
+  const inAgenda = nonLetto(impegni) ? [] : (impegni ?? []).filter((t) => combacia(t.title, soggetto));
+
+  // ⚠️ Quando la cosa sta in tutt'e due i posti non si sceglie in silenzio:
+  //    si risponde dove dice la precedenza e si DICHIARA l'altra.
+  const anche = (dove, quanti) =>
+    quanti > 0
+      ? `C'è anche ${quanti === 1 ? "una cosa" : `${quanti} cose`} che si chiama così ${dove}.`
+      : null;
+
+  if (primaLAgenda && inAgenda.length > 0) {
+    return daAgenda(soggetto, inAgenda, anche("in magazzino", dellaCosa.length));
+  }
+  if (!primaLAgenda && dellaCosa.length > 0) {
+    const r = scadenzaDelProdotto(nomeProdotto, dellaCosa, oggi);
+    return { ...r, limite: [r.limite, anche("in Agenda", inAgenda.length)].filter(Boolean).join(" ") || null };
+  }
+  if (inAgenda.length > 0) return daAgenda(soggetto, inAgenda, null);
+  if (dellaCosa.length > 0) return scadenzaDelProdotto(nomeProdotto, dellaCosa, oggi);
+
+  // 🔴 «NON LO TROVO» SI PUÒ DIRE SOLO SE SI È GUARDATO IN TUTT'E DUE I
+  //    POSTI. Se una delle due letture è caduta, «non c'è» sarebbe la
+  //    bugia peggiore: è la regola del 19/08 — assenza di informazione e
+  //    informazione di assenza sono due cose diverse.
+  if (nonLetto(partite)) return nonLoSo("scadenze", "il Magazzino");
+  if (nonLetto(impegni)) return nonLoSo("agenda", "l'Agenda");
+
+  // ⚠️ E quando le ha guardate tutte e due lo DICE: senza, «non lo trovo»
+  //    non fa capire dove è stato cercato.
+  return risposta(
+    "scadenze",
+    `Non trovo niente che si chiami «${soggetto}»: né fra le cose in magazzino, né fra gli impegni da fare.`,
+    [],
+    { limite: "Degli impegni guardo solo quelli ancora da fare, e del magazzino solo le partite ancora in casa." },
+  );
+}
+
+function daAgenda(soggetto, trovati, anche) {
+  // ⚠️ L'Agenda a corsie porta i soli impegni APERTI: uno già fatto non
+  //    compare, e va detto — altrimenti «non lo trovo» si legge «non esiste».
+  const limite = [
+    "Guardo solo gli impegni ancora da fare: quelli già fatti non li vedo.",
+    anche,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   if (trovati.length === 1) {
     const t = trovati[0];
     if (!t.due_date) {
@@ -792,7 +921,7 @@ export function componiRisposta(domanda, letture = {}) {
     case "agenda_in_ritardo":
       return agendaInRitardo(letture.impegni);
     case "quando_scade":
-      return quandoScade(soggetto, letture.impegni);
+      return quandoScade(soggetto, letture);
     default:
       return nonSoFarlo(domanda?.area ?? null);
   }

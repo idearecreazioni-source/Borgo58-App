@@ -349,6 +349,64 @@ describe("🔴 «Quanto olio ho?» non fa nascere un appunto, qualunque cosa suc
 });
 
 // ---------------------------------------------------------------------
+describe("🔴 «Quando scade l'astice?» risponde dal Magazzino, non dall'Agenda", () => {
+  // 🔴 IL CASO VERO, dal collaudo a mano del 07/09/2026: la frase veniva
+  //    classificata come scadenza dell'Agenda e cercava un IMPEGNO chiamato
+  //    astice. L'astice sta in cella.
+  //
+  // ⚠️ COSTA UNA SECONDA CHIAMATA AL MODELLO PER GIRO (~0,08 € sul progetto
+  //    di prova, dove il catalogo ha 426 prodotti). E' il prezzo per
+  //    esercitare la catena intera — modello, funzione online, letture,
+  //    frase — che nessuna prova pura puo' percorrere.
+  it("la catena intera, dalla frase alla risposta", async () => {
+    // ⚠️ Condizione dichiarata: senza un astice in cella questa prova
+    //    passerebbe senza aver provato niente.
+    const { data: partite } = await titolare.rpc("partite_in_giacenza", { p_cerca: "astice" });
+    expect(
+      (partite ?? []).length,
+      "sul progetto di prova non c'è nessuna partita di astice: questa prova non proverebbe niente",
+    ).toBeGreaterThan(0);
+
+    const { data: prima } = await titolare.rpc("appunti_da_approvare");
+
+    const { data, error } = await titolare.functions.invoke("ascolta-voce", {
+      body: { testo: "Quando scade l'astice?" },
+    });
+
+    const { data: dopo } = await titolare.rpc("appunti_da_approvare");
+    const nati = (dopo ?? []).filter((a) => !(prima ?? []).some((b) => b.id === a.id));
+    for (const a of nati) await titolare.from("appunti_vocali").delete().eq("id", a.id);
+    const id = data?.dettatura_id ?? data?.dettatura?.dettatura_id;
+    if (id) await titolare.from("dettature").delete().eq("id", id);
+
+    expect(nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+
+    // ⚠️ Se l'assistente non ha risposto (credito finito, tetto raggiunto)
+    //    la catena non si puo' provare, e la prova lo DICE invece di
+    //    passare in silenzio fingendo di aver provato qualcosa.
+    if (error || data?.esito !== "domanda") {
+      expect(
+        data?.messaggio ?? String(error),
+        "l'assistente non ha risposto: la catena non e' stata provata",
+      ).toBeTruthy();
+      return;
+    }
+
+    expect(data.domanda.chiede).toBe("quando_scade");
+    // Il soggetto e' il nome nudo della cosa: niente «impegno», niente «agenda».
+    expect(data.domanda.soggetto.toLowerCase()).toContain("astice");
+
+    const { risposta } = await rispondiA({ ...data.domanda, testo: data.testo });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.frase.toLowerCase()).toContain("astice");
+    // 🔴 La cosa che il collaudo ha trovato rotta: porta allo scadenziario,
+    //    non all'Agenda, e non dice «non ne trovo nessuno».
+    expect(risposta.a).toBe("/magazzino/scadenze");
+    expect(risposta.frase).not.toContain("non ne trovo");
+  });
+});
+
+// ---------------------------------------------------------------------
 describe("🔴 i permessi della sala", () => {
   it("dalla sala non si detta affatto: MEMO voce è del titolare", async () => {
     // ⚠️ È il fatto misurato, e va detto perché cambia il perimetro: oggi

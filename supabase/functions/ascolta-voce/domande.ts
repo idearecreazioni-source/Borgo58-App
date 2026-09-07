@@ -57,7 +57,11 @@ export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   // Agenda
   agenda_oggi: { area: "agenda", soggetto: false },
   agenda_in_ritardo: { area: "agenda", soggetto: false },
-  quando_scade: { area: "agenda", soggetto: true },
+  // 🔴 «QUANDO SCADE X» NON STA SOTTO L'AGENDA — 07/09/2026, dal collaudo a
+  //    mano: in un'osteria scadono le partite in cella e gli adempimenti, e
+  //    la parola e' la stessa. Dove guardare lo decide il gestionale
+  //    guardando la frase, non il modello.
+  quando_scade: { area: "magazzino", soggetto: true },
 };
 
 const testo = (v: unknown): string | null => {
@@ -259,6 +263,7 @@ ${righe.join("\n")}
 
 ⚠️ NON RISPONDERE TU ALLA DOMANDA. Non scrivere quantita', date, elenchi di piatti o allergeni: quelli li legge il gestionale dai dati veri e li mostra lui. Tu di' soltanto CHE COSA ha chiesto e DI CHE COSA. Un numero scritto da te sarebbe indistinguibile da un numero letto, e nessuno potrebbe controllarlo.
 ⚠️ "soggetto" va riempito con le parole sue, senza numeri di catalogo: «olio», «carbonara», «F24». Se ha fatto una domanda che ne vuole uno e non l'ha detto, lascialo null — il gestionale glielo chiedera'.
+⚠️ SU "quando_scade" IL SOGGETTO E' IL NOME NUDO DELLA COSA: da «quando scade l'astice?» esce "astice", da «quando scade l'impegno dell'F24?» esce "F24" — le parole «impegno», «attivita'» e «agenda» NON entrano nel soggetto. Quella cosa puo' essere una partita in cella o un adempimento, e a decidere dove guardare e' il gestionale: tu non devi sceglierlo.
 ⚠️ SE E' UNA DOMANDA MA NON E' NESSUNA DELLE NOVE (per esempio «quanto mi costa la carbonara?», «quanto ho incassato ieri?»), mettila lo stesso come domanda con "chiede": null: il gestionale gli dira' che quella cosa non la sa ancora fare, ed e' molto meglio di una risposta inventata o di un appunto che non c'entra.
 ⚠️ NEL DUBBIO E' UN COMANDO. Se la frase potrebbe essere tutt'e due le cose («segna che di olio ne ho due chili» e' un comando, non una domanda), trattala da comando: un appunto in piu' si butta in un tocco, mentre una cosa da segnare presa per domanda si perde e lui crede di averla detta.`;
 }

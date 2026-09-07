@@ -488,39 +488,104 @@ describe("AGENDA — «cosa sono in ritardo?»", () => {
   });
 });
 
-describe("AGENDA — «quando scade l'F24?»", () => {
-  const chiedi = (soggetto, impegni) =>
-    componiRisposta({ chiede: "quando_scade", soggetto }, { impegni });
+describe("«quando scade …?» — e la cosa che scade può stare in due posti", () => {
+  // 🔴 IL DIFETTO CHE CHIUDE, dal collaudo a mano del 07/09/2026: «quando
+  //    scade l'astice?» cercava un IMPEGNO chiamato astice e rispondeva che
+  //    non lo trovava. L'astice sta in cella.
+  const partita = (id, prodotto, scadenza, extra = {}) => ({
+    lotto_id: id,
+    prodotto,
+    unita: "kg",
+    giacenza: 3,
+    scadenza,
+    ...extra,
+  });
+  const OGGI = "2026-09-07";
+
+  const chiedi = (soggetto, impegni, partite = [], extra = {}) =>
+    componiRisposta(
+      { chiede: "quando_scade", soggetto },
+      { impegni, partite, oggi: OGGI, ...extra },
+    );
 
   it("dice la data E fra quanto, col collegamento all'impegno", () => {
-    const r = chiedi("f24", [impegno("t1", "F24 di settembre", 9)]);
+    const r = chiedi("f24", [impegno("t1", "F24 di settembre", 9)], []);
     expect(r.stato).toBe("risposta");
     expect(r.frase).toContain("fra 9 giorni");
     expect(r.a).toBe("/agenda/t1");
   });
 
-  it("🔴 «non lo trovo» DICHIARA che i fatti non li guarda", () => {
-    const r = chiedi("f24", [impegno("t1", "Ordinare il pane", 2)]);
-    expect(r.frase).toContain("non ne trovo nessuno");
-    expect(r.limite).toContain("già fatti");
+  it("🔴 «quando scade l'astice?» risponde dal MAGAZZINO, non dall'Agenda", () => {
+    // ⚠️ Prima della cura questa frase cercava un impegno chiamato «astice»
+    //    e rispondeva «non ne trovo nessuno»: la risposta era in cella.
+    const r = chiedi("astice", [impegno("t1", "Ordinare il pane", 2)], [
+      partita("l1", "Astice", "2026-08-05"),
+      partita("l2", "Astice", "2026-09-20"),
+    ]);
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("Astice");
+    expect(r.frase).toContain("5 ago 2026");
+    expect(r.frase).toContain("già scaduta");
+    expect(r.righe).toHaveLength(2);
+    // Porta allo scadenziario, non all'Agenda.
+    expect(r.a).toBe("/magazzino/scadenze");
+  });
+
+  it("🔴 ...e «quando scade l'impegno F24?» resta AGENDA", () => {
+    // ⚠️ È la metà che discrimina: una cura che mandasse tutto in magazzino
+    //    passerebbe la prova qui sopra e romperebbe gli adempimenti.
+    const r = chiedi("F24", [impegno("t1", "F24 di settembre", 9)], [], {
+      agendaEsplicita: true,
+    });
+    expect(r.stato).toBe("risposta");
+    expect(r.frase).toContain("F24 di settembre");
+    expect(r.a).toBe("/agenda/t1");
+  });
+
+  it("un impegno si trova ANCHE senza nominare l'Agenda, se in magazzino non c'è", () => {
+    // ⚠️ La precedenza decide l'ordine, non l'esito: «quando scade l'F24?»
+    //    detto nudo continua a rispondere.
+    const r = chiedi("F24", [impegno("t1", "F24 di settembre", 9)], []);
+    expect(r.a).toBe("/agenda/t1");
+  });
+
+  it("🔴 quando la cosa sta in tutt'e due i posti, l'altro si DICHIARA", () => {
+    const r = chiedi("astice", [impegno("t1", "Ordinare l'astice", 2)], [
+      partita("l1", "Astice", "2026-09-20"),
+    ]);
+    expect(r.frase).toContain("Astice");
+    expect(r.limite).toContain("in Agenda");
+  });
+
+  it("🔴 «non lo trovo» dice che ha guardato in TUTT'E DUE i posti", () => {
+    const r = chiedi("bottarga", [impegno("t1", "Ordinare il pane", 2)], []);
+    expect(r.frase).toContain("né fra le cose in magazzino");
+    expect(r.frase).toContain("né fra gli impegni");
+  });
+
+  it("🔴 e se una delle due letture è caduta NON dice «non c'è»", () => {
+    // La trappola del 19/08: assenza di informazione e informazione di
+    // assenza sono due cose diverse.
+    expect(chiedi("astice", [], NON_LETTO).stato).toBe("non_lo_so");
+    expect(chiedi("f24", NON_LETTO, []).stato).toBe("non_lo_so");
   });
 
   it("un impegno senza scadenza lo dice invece di inventarne una", () => {
-    const r = chiedi("dominio", [impegno("t1", "Intestazione del dominio", null)]);
+    const r = chiedi("dominio", [impegno("t1", "Intestazione del dominio", null)], []);
     expect(r.frase).toContain("non ha una scadenza");
   });
 
   it("più d'uno: li elenca tutti con la loro data", () => {
-    const r = chiedi("f24", [impegno("t1", "F24 giugno", -2), impegno("t2", "F24 settembre", 9)]);
+    const r = chiedi("f24", [impegno("t1", "F24 giugno", -2), impegno("t2", "F24 settembre", 9)], []);
     expect(r.righe).toHaveLength(2);
   });
 
-  it("senza soggetto chiede quale impegno", () => {
-    expect(chiedi(null, []).stato).toBe("chiarimento");
+  it("senza soggetto chiede che cosa", () => {
+    expect(chiedi(null, [], []).stato).toBe("chiarimento");
   });
 
-  it("non letto resta non letto", () => {
-    expect(chiedi("f24", NON_LETTO).stato).toBe("non_lo_so");
+  it("non letto da tutt'e due resta non letto", () => {
+    expect(chiedi("f24", NON_LETTO, NON_LETTO).stato).toBe("non_lo_so");
   });
 });
 
