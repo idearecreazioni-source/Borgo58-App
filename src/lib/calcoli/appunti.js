@@ -147,6 +147,33 @@ export function certezza(appunto) {
   return appunto?.incerto ? "incerto" : "sicuro";
 }
 
+/**
+ * PERCHE' QUESTO APPUNTO NON SI PUO' APPROVARE, con le parole di chi lo sa.
+ *
+ * 🔴 NASCE DA UN COLLAUDO A MANO (07/09/2026). Dettando una riga di lista
+ * senza dire in quale delle due, la schermata rispondeva *«il gestionale
+ * non sa ancora farlo»* — ed e' falso: le due liste il gestionale le sa
+ * scrivere tutt'e due. Quello che manca non e' un gesto, e' un'informazione
+ * che ha lui: **quale**.
+ *
+ * ⚠️ LA FRASE GIUSTA ESISTEVA GIA', e nessuno la vedeva: ogni elemento
+ * porta il suo `motivo`, scritto dove il caso si conosce, e la schermata
+ * mostrava al suo posto una frase fissa. *Un messaggio scritto bene in un
+ * posto che nessuno legge e' un messaggio che non c'e'.*
+ *
+ * ⚠️ E VALE SOLO SE TUTTI GLI ELEMENTI DICONO LA STESSA COSA: un appunto
+ * additivo puo' raccoglierne piu' d'uno, e mostrare il motivo del primo
+ * come se fosse di tutti sarebbe una frase vera per una riga e falsa per
+ * le altre. Se non concordano si torna alla frase generale, che almeno non
+ * dice niente di sbagliato.
+ */
+export function perche(appunto) {
+  const elementi = Array.isArray(appunto?.elementi) ? appunto.elementi : [];
+  const motivi = [...new Set(elementi.map((e) => (e?.motivo ?? "").trim()).filter(Boolean))];
+  if (motivi.length !== 1) return null;
+  return elementi.every((e) => (e?.motivo ?? "").trim() === motivi[0]) ? motivi[0] : null;
+}
+
 /** Se questo appunto si puo' approvare adesso. */
 export function siPuoApprovare(appunto) {
   return appunto?.eseguibile === true && Number(appunto?.quanti) > 0;

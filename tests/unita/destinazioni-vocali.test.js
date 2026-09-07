@@ -99,6 +99,33 @@ describe("🔴 se la lista non è stata detta, non se ne sceglie una", () => {
     expect(dopo.sicuro).toBe(true);
   });
 
+  it("🔴 e NON dice che il gestionale non sa farlo, perché lo sa", () => {
+    // 🔴 DAL COLLAUDO A MANO DEL 07/09/2026. La frase che si leggeva era
+    //    «il gestionale non sa ancora farlo», e su questo caso è **falsa**:
+    //    le due liste il gestionale le sa scrivere tutt'e due. Quello che
+    //    manca è un'informazione che ha lui — quale — e le due cose si
+    //    curano in modi opposti: la prima manda a cercare una funzione che
+    //    non c'è, la seconda si risolve con una parola in più.
+    const motivo = destinazioneDellaLista(listaSpesa({})).motivo;
+    expect(motivo).not.toMatch(/non sa ancora farlo|non la sa|sappia ancora fare|costruiamo/i);
+    // dice che sa scrivere in tutt'e due…
+    expect(motivo).toMatch(/tutt'e due|entrambe/i);
+    // …e dice esattamente che cosa ridire, con i due nomi fra virgolette.
+    expect(motivo).toMatch(/«alla lista della spesa»/);
+    expect(motivo).toMatch(/«alla spesa spicciola»/);
+  });
+
+  it("🔴 ...e resta comunque NON approvabile", () => {
+    // ⚠️ La metà che discrimina: cambiare le parole non deve cambiare il
+    //    comportamento. Se questo tipo diventasse uno del catalogo,
+    //    l'appunto tornerebbe approvabile e la riga entrerebbe in una lista
+    //    scelta da nessuno.
+    const dopo = destinazioneDellaLista(listaSpesa({}));
+    expect(dopo.tipo).toBe(TIPO_LISTA_NON_DETTA);
+    expect(dopo.tipo).not.toBe(TIPO_LISTA);
+    expect(dopo.tipo).not.toBe(TIPO_SPICCIOLA);
+  });
+
   it("una lista vuota o fatta di spazi conta come non detta", () => {
     expect(nomeDellaLista(listaSpesa({ lista: "" }))).toBeNull();
     expect(nomeDellaLista(listaSpesa({ lista: "   " }))).toBeNull();

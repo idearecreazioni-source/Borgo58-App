@@ -215,9 +215,16 @@ export function destinazioneDellaLista(azione: AzioneDettata): AzioneDettata {
         tipo: TIPO_LISTA_NON_DETTA,
         destinazione: "Quale delle due liste?",
         sicuro: true,
+        // 🔴 LE PAROLE CONTANO, e queste sono state corrette dopo un collaudo
+        //    a mano (07/09/2026): la schermata rispondeva «il gestionale non
+        //    sa ancora farlo», ed è **falso** — le due liste le sa scrivere
+        //    tutt'e due. Quello che manca non è un gesto, è un'informazione
+        //    che ha lui: **quale**. Dirlo nell'altro modo manda a cercare una
+        //    funzione che non c'è, invece della parola che basta aggiungere.
         motivo:
-          "Non hai detto in quale lista: dimmelo e la scrivo — «alla lista " +
-          "della spesa» oppure «alla spesa spicciola».",
+          "Le liste sono due e non hai detto quale: so scrivere in tutt'e due, " +
+          "mi manca solo saperlo. Ridillo dicendo «alla lista della spesa» " +
+          "oppure «alla spesa spicciola».",
       };
   }
 }
