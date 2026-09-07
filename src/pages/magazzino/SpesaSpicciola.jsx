@@ -9,6 +9,8 @@ import {
 } from "../../lib/api/spesaSpicciola";
 import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
 import { toccaSubito } from "../../lib/calcoli/tocco";
+import { useDaVoce } from "../../lib/daVoce";
+import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // LA SPESA SPICCIOLA (23/08/2026, blocco 8 del mandato). Richiesta di
 // Alessio: la roba che compra di persona al supermercato.
@@ -31,6 +33,20 @@ export default function SpesaSpicciola() {
   const [error, setError] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const [copiato, setCopiato] = useState(false);
+
+  // 🔴 LA VIA D'USCITA A MANO DI UNA COSA DETTA A VOCE (SPEC-0012).
+  //    Da quando MEMO conosce le due liste, «aggiungi lo shampoo alla
+  //    spesa spicciola» può finire qui coi campi già scritti — la stessa
+  //    strada che la lista della spesa ha dal 27/08. Senza questa riga
+  //    l'uscita a mano porterebbe a un modulo vuoto, cioè butterebbe via
+  //    quello che il gestionale aveva già capito.
+  // ⚠️ La NOTA non arriva, ed è dichiarato nel database: questa schermata
+  //    ha due campi soli. La nota detta resta nell'appunto e si scrive
+  //    approvandolo, che è la via normale.
+  const venuto = useDaVoce((c) => {
+    setArticolo((v) => c.nome ?? v);
+    setCategoria((v) => c.categoria ?? v);
+  });
 
   const carica = async () => {
     try {
@@ -121,6 +137,11 @@ export default function SpesaSpicciola() {
     if (!articolo.trim()) return;
     return fai(async () => {
       await aggiungiSpesaSpicciola({ articolo, categoria });
+      // 🔴 SOLO DOPO CHE È RIUSCITO: senza questo passaggio la riga
+      //    detta resterebbe in sospeso DOPO essere stata scritta, e la
+      //    volta dopo si approverebbe di nuovo — la stessa cosa due
+      //    volte in lista.
+      await venuto.chiudi();
       setArticolo("");
       // ⚠️ La categoria RESTA scritta: chi aggiunge tre cose di pulizia le
       // aggiunge una dopo l'altra, e rimetterla ogni volta è il genere di
@@ -173,13 +194,20 @@ export default function SpesaSpicciola() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Spesa spicciola</h1>
+      <div className="mb-1 mt-2 flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-semibold">Spesa spicciola</h1>
+        <StriscaDallaVoce venuto={venuto} />
+      </div>
       {/* ⚠️ Una riga sola, e dice la cosa che serve sapere: che questa non
           è l'altra lista. Senza, il primo dubbio di chiunque sarà «e
           allora la lista della spesa cos'è?». */}
       <p className="mb-4 testo-sala text-stone-600">
         Quello che compri di persona al supermercato. Non c&apos;entra col magazzino: non tocca le
-        giacenze e non diventa un ordine.
+        giacenze e non diventa un ordine. Quella dei fornitori è la{" "}
+        <Link to="/magazzino/lista-spesa" className="underline hover:text-stone-900">
+          lista della spesa
+        </Link>
+        .
       </p>
 
       <div className="mb-6 rounded border border-stone-300 bg-stone-50 p-3">

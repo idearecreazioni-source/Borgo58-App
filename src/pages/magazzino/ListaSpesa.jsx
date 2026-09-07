@@ -357,7 +357,7 @@ export default function ListaSpesa() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
-      <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-1">
         <h1 className="font-display text-2xl text-b58-charcoal">Lista della spesa</h1>
         <StriscaDallaVoce venuto={venuto} />
         <div className="flex flex-wrap gap-2">
@@ -379,6 +379,21 @@ export default function ListaSpesa() {
           )}
         </div>
       </div>
+
+      {/* ⚠️ UNA RIGA SOLA, e dice qual è delle due: dal 07/09/2026 MEMO
+          scrive in questa lista o nella spesa spicciola a seconda di come
+          si detta, e chi guarda deve sapere in quale delle due sta. È la
+          gemella della riga che la spesa spicciola ha dal 23/08 — se la
+          spiegazione sta solo su una delle due, la domanda «e allora
+          l'altra cos'è?» resta a chi apre questa. */}
+      <p className="mb-4 testo-sala text-b58-charcoal-soft">
+        Quello che si ordina ai fornitori: nasce dalle scorte minime del magazzino e finisce in
+        una bozza d&apos;ordine. Per la spesa che fai di persona al supermercato c&apos;è la{" "}
+        <Link to="/magazzino/spesa-spicciola" className="underline hover:text-b58-terracotta">
+          spesa spicciola
+        </Link>
+        .
+      </p>
 
       {!scorteGuardate && (
         <DatoNonLetto
