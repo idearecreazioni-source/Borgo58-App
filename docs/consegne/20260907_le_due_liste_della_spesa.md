@@ -2,13 +2,13 @@
 
 **07/09/2026.** Riepilogo di consegna.
 
-* **HEAD dichiarato**: `77943e7` — il commit che sta sotto questo file.
+* **HEAD dichiarato**: `4cdd5cf` — il commit che sta sotto questo file.
 * **Ramo**: `spec-0012-due-liste`, aperto da `84794ad` (master).
 * **Migrazioni**: **una**, `20260907000001_le_due_liste_si_distinguono_a_voce`.
   Applicata **solo al progetto di prova**. Nessun dato vero toccato.
 * **Funzione online**: `ascolta-voce`, installata **solo sul progetto di
-  prova** (versione 20 → 21).
-* **Prove**: **1.071 pure** · **513 contro il progetto di prova** · codice
+  prova** (versione 20 → 22).
+* **Prove**: **1.073 pure** · **48 sulle schermate** · **513 contro il progetto di prova** · codice
   pulito · compilazione pulita.
   ⚠️ **Due prove pure restano rosse, e sono PREESISTENTI su `master`**
   (`indice-richieste`, `indice-rovesciamenti`): falliscono **solo su questa
@@ -49,6 +49,34 @@ lista della spesa, la roba non cambia lista. È una regola deterministica, si
 prova senza chiamare nessuno, ed è il motivo per cui vive nel gestionale e
 non solo nel prompt: *il prompt si corregge, ma un modello non è una
 garanzia.*
+
+## La correzione dopo il collaudo a mano
+
+Alessio ha provato e ha trovato **le parole sbagliate**: dettando una riga
+senza dire in quale lista, la schermata rispondeva *«il gestionale non sa
+ancora farlo»*. È falso — le due liste il gestionale le sa scrivere tutt'e
+due; quello che manca è sapere **quale**. Le due cose si curano in modi
+opposti: la prima manda a cercare una funzione che non c'è, la seconda si
+risolve con una parola in più.
+
+Adesso l'appunto dice: *«Le liste sono due e non hai detto quale: so
+scrivere in tutt'e due, mi manca solo saperlo. Ridillo dicendo «alla lista
+della spesa» oppure «alla spesa spicciola».»*
+
+⚠️ **Non è stata aggiunta una seconda frase**: quel motivo l'elemento lo
+mostrava già lì sotto, e quello che si è tolto è la riga in cima che lo
+contraddiceva. *Due spiegazioni della stessa cosa, una falsa, sono peggio di
+una sola.* La riga generale resta per gli appunti che un gesto davvero non ce
+l'hanno: lì è vera.
+
+🔴 **Il comportamento non cambia**: l'appunto resta non approvabile e senza
+pulsante. Una cura che l'avesse reso approvabile per far sparire la frase
+sbagliata sarebbe stata molto peggio del difetto.
+
+La prova mirata sta **dove la frase si vede**
+(), monta la scheda vera, e il
+motivo non è scritto dentro la prova: lo produce la regola. Rotta apposta
+rimettendo la frase generale sempre, diventa rossa.
 
 ## Cosa abbiamo rovesciato
 
