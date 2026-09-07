@@ -34,7 +34,12 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { correggiDestinazioni } from "./destinazioni.ts";
-import { comeRispondere, istruzioniDomande } from "./domande.ts";
+import {
+  causaInItaliano,
+  comeRispondere,
+  istruzioniDomande,
+  quandoLAssistenteTace,
+} from "./domande.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -387,25 +392,23 @@ Deno.serve(async (req) => {
     //    non si perde quello che ha detto: la dettatura si registra lo
     //    stesso col suo testo, e resta lì da guardare. In cucina la rete
     //    cade, e una frase persa è una frase che lui crede di aver dato.
+    //
+    // 🔴 MA UNA DOMANDA NON DIVENTA UN APPUNTO, nemmeno qui — 07/09/2026,
+    //    dal collaudo a mano. Vedi quandoLAssistenteTace(): un comando
+    //    porta un fatto che esiste solo nella testa di chi ha parlato, una
+    //    domanda no.
+    const perche = causaInItaliano((e as Error).message);
+    const tace = quandoLAssistenteTace(testo, perche);
     const { data } = await registra({
       p_testo: testo,
-      p_azioni: [
-        {
-          tipo: "nota_non_capita",
-          sicuro: false,
-          frase: `Da riguardare: «${testo.slice(0, 120)}»`,
-          motivo: "L'assistente non ha risposto: la frase è stata messa da parte.",
-          dati: { sentito: testo },
-        },
-      ],
+      p_azioni: tace.azioni,
       p_esito: "errore",
       p_messaggio: (e as Error).message,
     });
     return new Response(
       JSON.stringify({
         esito: "errore",
-        messaggio:
-          "L'assistente non ha risposto. Quello che hai detto è stato messo da parte: lo trovi nelle cose da guardare.",
+        messaggio: tace.messaggio,
         dettatura: data ?? null,
         azioni: [],
       }),
@@ -421,24 +424,24 @@ Deno.serve(async (req) => {
     const pulita = risposta.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
     letto = JSON.parse(pulita);
   } catch (e) {
+    // 🔴 Stessa regola dell'altro punto in cui l'assistente tace: una
+    //    domanda non diventa un appunto. Qui l'assistente ha parlato, ma
+    //    quello che ha detto non si legge — per chi ha fatto la domanda è
+    //    la stessa cosa di un silenzio.
+    const tace = quandoLAssistenteTace(
+      testo,
+      "L'assistente ha risposto in un modo che non si riesce a leggere.",
+    );
     await registra({
       p_testo: testo,
-      p_azioni: [
-        {
-          tipo: "nota_non_capita",
-          sicuro: false,
-          frase: `Da riguardare: «${testo.slice(0, 120)}»`,
-          motivo: "L'assistente ha risposto in un modo che non si riesce a leggere.",
-          dati: { sentito: testo },
-        },
-      ],
+      p_azioni: tace.azioni,
       p_esito: "errore",
       p_modello: MODELLO,
       p_token_domanda: usoDomanda,
       p_token_risposta: usoRisposta,
       p_messaggio: `Risposta non leggibile: ${(e as Error).message}`,
     });
-    return errore(502, "formato", "L'assistente ha risposto in un modo che non si riesce a leggere.");
+    return errore(502, "formato", tace.messaggio);
   }
 
   // -------------------------------------------------------------------

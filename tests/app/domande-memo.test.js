@@ -296,6 +296,59 @@ describe("🔴 una domanda non scrive niente", () => {
 });
 
 // ---------------------------------------------------------------------
+describe("🔴 «Quanto olio ho?» non fa nascere un appunto, qualunque cosa succeda", () => {
+  // 🔴 IL CASO VERO, dal collaudo a mano del 07/09/2026. Alessio dice
+  //    «Quanto olio ho?», il credito dell'account AI e' finito, la chiamata
+  //    al modello viene rifiutata prima di partire — e da quella domanda
+  //    nasce un appunto «Da riguardare» da approvare o buttare.
+  //
+  // ⚠️ QUESTA PROVA CHIAMA LA FUNZIONE ONLINE VERA, ed e' l'unico modo di
+  //    esercitare il tratto fra la schermata e cio' che gira su Internet:
+  //    la regola pura sa cosa decidere, non sa se quella decisione arriva
+  //    fino al database. Il difetto del 06/09 — il corridoio installato
+  //    solo sulla prova — viveva esattamente li' in mezzo.
+  //
+  // ⚠️ COSTA UNA CHIAMATA AL MODELLO PER GIRO, quando il credito c'e':
+  //    misurato il 07/09 sul progetto di prova, ~0,08 € (il catalogo di
+  //    prova ha 426 prodotti; in produzione e' quasi vuoto e costa una
+  //    frazione). Col credito finito, o col tetto raggiunto, non costa
+  //    niente — e la prova resta valida, perche' cio' che pretende e'
+  //    **zero appunti**, che deve valere in tutti e tre i casi.
+  it("zero appunti, e una risposta o un chiarimento", async () => {
+    const { data: prima } = await titolare.rpc("appunti_da_approvare");
+    const quantiPrima = (prima ?? []).length;
+
+    const { data, error } = await titolare.functions.invoke("ascolta-voce", {
+      body: { testo: "Quanto olio ho?" },
+    });
+
+    // ⚠️ Si ripulisce SEMPRE, anche quando la prova sta per diventare
+    //    rossa: se un appunto e' nato, e' roba di questa prova e va tolta.
+    const { data: dopo } = await titolare.rpc("appunti_da_approvare");
+    const nati = (dopo ?? []).filter((a) => !(prima ?? []).some((b) => b.id === a.id));
+    for (const a of nati) await titolare.from("appunti_vocali").delete().eq("id", a.id);
+    const id = data?.dettatura_id ?? data?.dettatura?.dettatura_id;
+    if (id) await titolare.from("dettature").delete().eq("id", id);
+
+    // 🔴 LA COSA CHE SI PRETENDE: nessun appunto. Vale se il modello ha
+    //    capito la domanda, se non ha risposto, e se il tetto di spesa ha
+    //    fermato tutto prima di chiamarlo.
+    expect(
+      nati.map((a) => a.titolo),
+      "una domanda ha fatto nascere un appunto: " + nati.map((a) => a.titolo).join(", "),
+    ).toEqual([]);
+    expect((dopo ?? []).length).toBe(quantiPrima);
+
+    // ...e se l'assistente ha risposto, deve essere una domanda o un
+    // chiarimento — mai un comando.
+    if (!error && data?.esito === "domanda") {
+      expect(data.domanda?.chiede ?? "quanto_ho").toBe("quanto_ho");
+      expect(data.azioni ?? 0).toBe(0);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------
 describe("🔴 i permessi della sala", () => {
   it("dalla sala non si detta affatto: MEMO voce è del titolare", async () => {
     // ⚠️ È il fatto misurato, e va detto perché cambia il perimetro: oggi

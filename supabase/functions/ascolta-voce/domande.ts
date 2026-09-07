@@ -109,6 +109,127 @@ export function comeRispondere(
   return { tipo: "azioni", azioni: [] };
 }
 
+/** Minuscolo, senza accenti, con i segni ridotti a spazi. */
+function nudo(testo: string): string {
+  return String(testo ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * LE APERTURE CHE IN ITALIANO NON APRONO MAI UN COMANDO.
+ *
+ * ⚠️ È UN ELENCO DI PAROLE, cioè la forma che questo progetto diffida —
+ * e regge solo perché **sbaglia in un verso solo**, ed è quello innocuo:
+ *   · una domanda che l'elenco non riconosce diventa un appunto, come
+ *     prima di questa riga: rumore, si butta in un tocco;
+ *   · un comando riconosciuto per domanda si perderebbe — e per questo
+ *     dentro non c'è niente che possa aprire un imperativo.
+ * ⚠️ «Ho …» NON c'è, ed è la mancanza voluta: *«ho la ricetta della
+ * carbonara»* è una domanda, ma *«ho pagato trenta euro al fornitore»* è
+ * un comando, e le due cominciano identiche. Chi chiede «ho la ricetta…»
+ * senza punto interrogativo si ritrova un appunto da buttare: è il prezzo,
+ * ed è dalla parte giusta.
+ */
+const APERTURE_DI_DOMANDA = [
+  "quanto",
+  "quanta",
+  "quanti",
+  "quante",
+  "quale",
+  "quali",
+  "quando",
+  "cosa",
+  "che cosa",
+  "c e",
+  "ci sono",
+  "ce n e",
+];
+
+/**
+ * Questa frase sembra una domanda?
+ *
+ * ⚠️ Serve **solo** quando l'assistente non ha risposto: se ha risposto,
+ * chi decide è lui e questa regola non viene nemmeno chiamata.
+ */
+export function sembraUnaDomanda(testo: string): boolean {
+  const grezzo = String(testo ?? "").trim();
+  if (grezzo === "") return false;
+  // Il punto interrogativo vale da solo, qualunque sia l'apertura: chi
+  // detta «Ho la ricetta della carbonara?» col punto ha già dichiarato.
+  if (grezzo.endsWith("?")) return true;
+  const t = nudo(grezzo);
+  return APERTURE_DI_DOMANDA.some((a) => t === a || t.startsWith(`${a} `));
+}
+
+/**
+ * 🔴 QUANDO L'ASSISTENTE NON RISPONDE, UNA DOMANDA NON DIVENTA UN APPUNTO.
+ *
+ * Il caso vero, 07/09/2026: il credito dell'account AI è finito, la
+ * chiamata è stata rifiutata prima di partire, e da *«Quanto olio ho?»* è
+ * nato un appunto **«Da riguardare»** da approvare o buttare.
+ *
+ * 🔴 E LA RAGIONE PER CUI LE DUE COSE SI TRATTANO DIVERSAMENTE NON È IL
+ *    FASTIDIO: è che **un comando contiene un fatto che esiste solo nella
+ *    testa di chi ha parlato** — quanti chili sono arrivati, quanto ha
+ *    pagato — e perderlo perde quel fatto. Una domanda no: rifarla costa
+ *    il tempo di ridirla. Quindi davanti a un assistente muto si conserva
+ *    il comando e si lascia cadere la domanda, e mai il contrario.
+ *
+ * ⚠️ E LA FRASE NON SPARISCE COMUNQUE: la dettatura si registra col suo
+ *    testo, quindi resta nel registro. Quello che non nasce è **l'appunto**,
+ *    cioè la cosa che chiede un sì o un no su niente.
+ */
+export function quandoLAssistenteTace(
+  testo: string,
+  perche: string,
+): { azioni: Record<string, unknown>[]; messaggio: string } {
+  if (sembraUnaDomanda(testo)) {
+    return {
+      azioni: [],
+      messaggio: `${perche} Era una domanda, quindi non ho segnato niente: ridimmela quando vuoi.`,
+    };
+  }
+  return {
+    azioni: [
+      {
+        tipo: "nota_non_capita",
+        sicuro: false,
+        frase: `Da riguardare: «${testo.slice(0, 120)}»`,
+        motivo: perche,
+        dati: { sentito: testo },
+      },
+    ],
+    messaggio: `${perche} Quello che hai detto è stato messo da parte: lo trovi nelle cose da guardare.`,
+  };
+}
+
+/**
+ * PERCHÉ NON HA RISPOSTO, IN ITALIANO.
+ *
+ * ⚠️ I rifiuti dell'assistente arrivano in inglese, e uno di questi non è
+ * un guasto del gestionale: è il **credito finito**. Senza riconoscerlo,
+ * chi legge «l'assistente non ha risposto» cerca il difetto nel programma
+ * — ed è successo il 07/09. *Ogni rifiuto che ha più di una causa le
+ * elenca in ordine di frequenza.*
+ */
+export function causaInItaliano(messaggio: string): string {
+  const m = String(messaggio ?? "").toLowerCase();
+  if (m.includes("credit balance") || m.includes("insufficient_quota")) {
+    return "Il credito dell'account AI è finito: va ricaricato, e finché non lo è MEMO non capisce niente.";
+  }
+  if (m.includes("rate limit") || m.includes("429")) {
+    return "L'assistente è occupato in questo momento.";
+  }
+  if (m.includes("overloaded") || m.includes("529")) {
+    return "L'assistente è sovraccarico in questo momento.";
+  }
+  return "L'assistente non ha risposto.";
+}
+
 /**
  * Il pezzo di istruzioni che insegna a distinguere una domanda.
  *

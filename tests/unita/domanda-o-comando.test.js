@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   DOMANDE,
+  causaInItaliano,
   comeRispondere,
+  quandoLAssistenteTace,
+  sembraUnaDomanda,
   istruzioniDomande,
   leggiDomanda,
 } from "../../supabase/functions/ascolta-voce/domande.ts";
@@ -184,5 +187,106 @@ describe("una domanda non scrive niente", () => {
       (x) => !x.includes("leggi"),
     );
     expect(nude, "questa lettura non passa da leggi(): " + nude.join(", ")).toEqual([]);
+  });
+});
+
+// =====================================================================
+// 🔴 QUANDO L'ASSISTENTE NON RISPONDE — 07/09/2026, dal collaudo a mano
+// =====================================================================
+// Il credito dell'account AI e' finito, la chiamata al modello e' stata
+// rifiutata prima di partire, e da «Quanto olio ho?» e' nato un appunto
+// «Da riguardare» da approvare o buttare.
+//
+// 🔴 LA RAGIONE PER CUI LE DUE COSE SI TRATTANO DIVERSAMENTE NON E' IL
+//    FASTIDIO: un comando porta un fatto che esiste solo nella testa di chi
+//    ha parlato — quanti chili sono arrivati, quanto ha pagato — e perderlo
+//    perde quel fatto. Una domanda no: rifarla costa il tempo di ridirla.
+describe("una domanda che nessuno ha capito non diventa un appunto", () => {
+  it("🔴 la frase esatta del collaudo non produce nessuna azione", () => {
+    const t = quandoLAssistenteTace("Quanto olio ho?", "L'assistente non ha risposto.");
+    expect(t.azioni).toEqual([]);
+    expect(t.messaggio).toContain("non ho segnato niente");
+  });
+
+  it("...e vale anche senza il punto interrogativo, che la dettatura spesso non mette", () => {
+    // ⚠️ È il caso vero: dal telefono e' arrivato «Quanto olio ho», nudo.
+    expect(quandoLAssistenteTace("Quanto olio ho", "x").azioni).toEqual([]);
+  });
+
+  it("🔴 ma un COMANDO diventa un appunto, come prima", () => {
+    // ⚠️ È la meta' che discrimina, ed e' quella che protegge dal danno
+    //    peggiore: una regola che lasciasse cadere tutto passerebbe la
+    //    prova qui sopra e perderebbe ogni cosa da segnare.
+    const t = quandoLAssistenteTace("Segna due chili di astice", "L'assistente non ha risposto.");
+    expect(t.azioni).toHaveLength(1);
+    expect(t.azioni[0].tipo).toBe("nota_non_capita");
+    expect(t.azioni[0].dati.sentito).toBe("Segna due chili di astice");
+    expect(t.messaggio).toContain("messo da parte");
+  });
+
+  it("le nove domande si riconoscono tutte, anche senza punto", () => {
+    for (const frase of [
+      "Quanto olio ho",
+      "Quanti piatti ho in carta",
+      "Quali piatti ho in carta",
+      "Cosa devo fare oggi",
+      "Cosa sono in ritardo",
+      "Cosa mi manca",
+      "Cosa scade",
+      "Quando scade l'F24",
+      "Che cosa devo fare oggi",
+      "C'è olio",
+    ]) {
+      expect(sembraUnaDomanda(frase), frase).toBe(true);
+    }
+  });
+
+  it("🔴 e NESSUN comando viene scambiato per domanda", () => {
+    // 🔴 È il verso in cui sbagliare costa: una frase da segnare che si
+    //    perde. Dentro l'elenco non c'e' niente che possa aprire un
+    //    imperativo italiano.
+    for (const frase of [
+      "Segna due chili di astice",
+      "Aggiungi il deodorante alla spesa",
+      "Ho pagato trenta euro al fornitore",
+      "Sono arrivate due casse di pomodori",
+      "Chiama il fornitore del pane",
+      "Cella carni tre gradi",
+      "Mi manca il pane, segnalo",
+      "Ricordami di fare il ragù",
+    ]) {
+      expect(sembraUnaDomanda(frase), frase).toBe(false);
+    }
+  });
+
+  it("⚠️ «ho la ricetta della carbonara» senza punto resta un appunto, ed è il prezzo dichiarato", () => {
+    // «Ho …» non e' fra le aperture, e non puo' esserlo: «ho pagato trenta
+    // euro» comincia identico ed e' un comando. Col punto, invece, chi ha
+    // dettato ha gia' dichiarato.
+    expect(sembraUnaDomanda("Ho la ricetta della carbonara")).toBe(false);
+    expect(sembraUnaDomanda("Ho la ricetta della carbonara?")).toBe(true);
+  });
+
+  it("il vuoto non e' una domanda", () => {
+    expect(sembraUnaDomanda("")).toBe(false);
+    expect(sembraUnaDomanda("   ")).toBe(false);
+    expect(sembraUnaDomanda(null)).toBe(false);
+  });
+});
+
+describe("perché non ha risposto, detto in italiano", () => {
+  it("🔴 il credito finito si riconosce e si dice", () => {
+    // ⚠️ Senza questa riga chi legge «l'assistente non ha risposto» cerca
+    //    il difetto nel programma — ed e' successo il 07/09.
+    const f = causaInItaliano(
+      '400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}',
+    );
+    expect(f).toContain("credito");
+    expect(f).toContain("ricaricato");
+  });
+
+  it("e quello che non si riconosce non si inventa", () => {
+    expect(causaInItaliano("boom")).toBe("L'assistente non ha risposto.");
+    expect(causaInItaliano(null)).toBe("L'assistente non ha risposto.");
   });
 });
