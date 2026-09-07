@@ -34,6 +34,7 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { correggiDestinazioni } from "./destinazioni.ts";
+import { correggiSpese } from "./tasca.ts";
 import {
   causaInItaliano,
   comeRispondere,
@@ -105,7 +106,7 @@ LE COSE CHE IL GESTIONALE SA GIA' FARE
 - "ricetta": vuole dettare un piatto nuovo. dati: { "nome": "...", "categoria": "antipasto"|"primo"|"secondo"|"dolce"|"finger_food", "porzioni": <numero>|null, "sentito": "quello che ha detto, per intero" }
 - "prodotto_nuovo": vuole creare un prodotto che in magazzino non c'è. dati: { "nome": "...", "categoria": <una delle categorie qui sotto>, "unita": "kg"|"l"|"pz"|"mazzo"|"g", "sentito": "..." }
 - "carico_merce": è arrivata della merce da registrare. dati: { "prodotto": <numero del catalogo>, "quantita": <numero>, "fornitore": <numero>|null, "scadenza": "AAAA-MM-GG"|null, "costo_unitario": <numero>|null, "lotto": "..."|null }
-- "movimento_cassa": soldi usciti o entrati. dati: { "verso": "uscita"|"entrata", "importo": <numero>, "causale": <numero del catalogo>|null, "mezzo": "cassa"|"banca"|null, "fornitore": <numero>|null, "data": "AAAA-MM-GG"|null, "documento": "fattura"|"scontrino"|"non_documentato"|null, "descrizione": "a che serviva, in parole sue"|null }
+- "movimento_cassa": soldi usciti o entrati. dati: { "verso": "uscita"|"entrata", "importo": <numero>, "causale": <numero del catalogo>|null, "mezzo": "cassa"|"banca"|null, "fornitore": <numero>|null, "data": "AAAA-MM-GG"|null, "documento": "fattura"|"scontrino"|"non_documentato"|null, "descrizione": "a che serviva, in parole sue"|null, "soldi": "le parole con cui ha detto di chi erano i soldi"|null }
   🔴 "data" SOLO se ha detto UN GIORNO DIVERSO DA ADESSO («l'ho pagato lunedì», «era il 3»). Se sta raccontando una cosa di adesso lasciala a **null**: il gestionale ci mette la SERATA DI SERVIZIO, che dopo mezzanotte è ancora la sera prima — e una data di oggi messa da te sposterebbe l'uscita al giorno dopo senza che nessuno se ne accorga.
 - "nota_non_capita": NON HAI CAPITO cosa vuole. dati: { "sentito": "il pezzo di frase che non hai capito, com'è stato detto" }
 
@@ -137,6 +138,7 @@ ${JSON.stringify(catalogo)}
 LE QUATTRO COSE CHE CREANO
 ⚠️ Come tutto il resto, queste le guarda lui prima. I dati vanno riempiti lo stesso, e bene, perché quando lui approva vengono scritte così come le hai capite.
 - "movimento_cassa": «ho pagato trenta euro al fornitore» → verso "uscita", importo 30. «bonifico», «con la carta», «dal conto» → mezzo "banca"; «in contanti», «dal cassetto», o niente → mezzo "cassa". La CAUSALE prendila dall'elenco causali del catalogo, e SOLO una che abbia lo stesso "verso": se nessuna calza, mettila a null — un movimento senza causale si registra lo stesso e si classifica dopo, mentre una causale sbagliata finisce nella colonna sbagliata del registro. In "descrizione" metti a che serviva, con le sue parole.
+  🔴 DI CHI ERANO I SOLDI. Se dice che ha pagato lui — «di tasca mia», «con soldi miei», «l'ho anticipato», «poi mi rimborso» — SCRIVI QUELLE PAROLE IN "soldi", parola per parola. NON decidere tu se e' la sua tasca o un anticipo da rimborsare: sono due soggetti contabili diversi, e a sceglierlo e' il gestionale guardando le parole. Se non dice niente sui soldi, "soldi" resta null: e' il caso normale, la cassa dell'osteria.
 - "carico_merce": una consegna arrivata. Se nomina più prodotti sono più azioni, una ciascuna.
 - "prodotto_nuovo": SOLO se il prodotto non è nel catalogo. Categoria e unità le proponi tu se sono ovvie («pomodori» → verdura, kg); se non lo sono lasciale a null e metti "sicuro": false.
 - "ricetta": nome e categoria del piatto. In "sentito" ricopia TUTTO quello che ha detto: gli ingredienti li mette lui a mano dopo, e quel testo è l'unica traccia di quello che aveva in testa.
@@ -560,6 +562,17 @@ Deno.serve(async (req) => {
   //    della spesa». Vedi destinazioni.ts per il difetto del 06/09 che
   //    questa riga chiude — e per perche' non basta il prompt.
   azioni = correggiDestinazioni(azioni);
+
+  // 🔴 E DI CHI ERANO I SOLDI: «di tasca mia» non e' la cassa dell'osteria,
+  //    e «poi mi rimborso» non e' la tasca. Sono tre soggetti contabili
+  //    diversi, e sbagliare non da' nessun errore — la riga e' plausibile
+  //    dovunque finisca. Vedi tasca.ts per le regole decise da Alessio il
+  //    07/09/2026, compresa quella che protegge di piu': se nella stessa
+  //    frase ci sono tutt'e due, **prevale il rimborso**.
+  //    ⚠️ Il DETTATO, non il riassunto del modello: quello e' gia' una sua
+  //    interpretazione, e il 07/09 ci aveva scritto «anticipati» sopra una
+  //    spesa che Alessio aveva detto essere di tasca sua.
+  azioni = correggiSpese(azioni, testo);
 
   // ⚠️ SE NON NE È USCITA NESSUNA, NON SI RESTITUISCE IL VUOTO. Il vuoto
   //    si legge «non ho detto niente», e lui invece ha parlato. Resta la
