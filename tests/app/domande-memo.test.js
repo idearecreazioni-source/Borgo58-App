@@ -2,12 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { supabase } from "../../src/lib/supabase";
 import { clientAutenticato, credenziali, marchio, primaEntita, righeMie } from "./aiuto";
 import { letturePerDomanda, rispondiA } from "../../src/lib/api/domandeMemo";
-import { componiRisposta } from "../../src/lib/calcoli/domande";
+import { DOMANDE_CHE_SO, componiRisposta } from "../../src/lib/calcoli/domande";
 import { eDiOggi } from "../../src/lib/calcoli/agenda";
+import { NON_LETTO } from "../../src/lib/calcoli/letture";
 import { oggiLocale } from "../../src/lib/constants";
 
 // =====================================================================
-// MEMO CONSULTIVO — le nove domande contro il database vero
+// MEMO CONSULTIVO — tutte le domande contro il database vero
 // =====================================================================
 // 🔴 PERCHÉ NON BASTANO LE PROVE PURE: quelle sanno che la regola compone
 //    la frase giusta a partire dai dati. Non sanno se i dati ARRIVANO —
@@ -154,26 +155,44 @@ function haRisposto({ data, error }) {
 }
 
 // ---------------------------------------------------------------------
-describe("le nove domande leggono davvero", () => {
-  const NOVE = [
-    { chiede: "ricetta_esiste", soggetto: `${MARCA} carbonara di prova` },
-    { chiede: "allergeni", soggetto: `${MARCA} carbonara di prova` },
-    { chiede: "piatti_in_carta" },
-    { chiede: "quanto_ho", soggetto: `${MARCA} olio di prova` },
-    { chiede: "cosa_manca" },
-    { chiede: "cosa_scade" },
-    { chiede: "agenda_oggi" },
-    { chiede: "agenda_in_ritardo" },
-    { chiede: "quando_scade", soggetto: `${MARCA} portare i corrispettivi` },
-  ];
+// 🔴 L'ELENCO DELLE DOMANDE NON SI SCRIVE QUI: si costruisce dal
+//    catalogo. Fino al 07/09 era una filza di nove righe a mano, e alla
+//    prima domanda nuova avrebbe continuato a provarne nove dichiarando
+//    di provarle tutte — un guardiano che copre il passato.
+// ⚠️ Il soggetto invece è roba di questa prova, e per ogni domanda che ne
+//    vuole uno **dev'esserci**: senza, si eserciterebbe il ramo «di che
+//    cosa?» credendo di provare la lettura. La riga sotto lo pretende.
+const SOGGETTI = {
+  ricetta_esiste: `${MARCA} carbonara di prova`,
+  allergeni: `${MARCA} carbonara di prova`,
+  quanto_ho: `${MARCA} olio di prova`,
+  quando_scade: `${MARCA} portare i corrispettivi`,
+};
 
-  it("🔴 nessuna delle nove risponde «non lo so»: le fonti si leggono tutte", async () => {
+const TUTTE = Object.keys(DOMANDE_CHE_SO).map((chiede) => ({
+  chiede,
+  soggetto: SOGGETTI[chiede] ?? null,
+  testo: DOMANDE_CHE_SO[chiede].esempio,
+}));
+
+describe("tutte le domande leggono davvero", () => {
+  it("🔴 ogni domanda che vuole un soggetto ne ha uno in questa prova", () => {
+    // ⚠️ La metà che discrimina: senza questa riga, una domanda nuova che
+    //    vuole un soggetto entrerebbe nel giro qui sotto e risponderebbe
+    //    «di che cosa?» — cioè passerebbe senza aver letto niente.
+    const senza = Object.entries(DOMANDE_CHE_SO)
+      .filter(([chiede, d]) => d.chiarimento && !SOGGETTI[chiede])
+      .map(([chiede]) => chiede);
+    expect(senza, "a queste domande manca il soggetto di prova").toEqual([]);
+  });
+
+  it("🔴 nessuna risponde «non lo so»: le fonti si leggono tutte", async () => {
     // 🔴 È la prova dei permessi, e funziona proprio perché la regola pura
     //    non finge: un rifiuto del database arriva qui come «non lo so»,
     //    non come un elenco vuoto. Se domani una `grant` cadesse, questa
     //    riga diventa rossa da sola invece di far comparire uno zero.
     const storte = [];
-    for (const domanda of NOVE) {
+    for (const domanda of TUTTE) {
       const { risposta } = await rispondiA(domanda);
       if (risposta.stato === "non_lo_so") storte.push(`${domanda.chiede}: ${risposta.frase}`);
     }
@@ -183,7 +202,7 @@ describe("le nove domande leggono davvero", () => {
   });
 
   it("...e ognuna porta da qualche parte", async () => {
-    for (const domanda of NOVE) {
+    for (const domanda of TUTTE) {
       const { risposta } = await rispondiA(domanda);
       expect(risposta.a, domanda.chiede).toBeTruthy();
     }
@@ -601,7 +620,7 @@ describe("🔴 la giornata arriva fino alla regola", () => {
 });
 
 // ---------------------------------------------------------------------
-describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () => {
+describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
   // 🔴 PERCHE' TUTTE E NOVE E NON UNA: fino al 07/09 la prova che nessun
   //    appunto nasce da una domanda guardava «quanto olio ho». Una
   //    scrittura di troppo, il giorno che ci fosse, nascerebbe nella
@@ -612,6 +631,10 @@ describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () =
   //    modulo voce tocca **e** di quelle che MEMO legge. È la forma del
   //    guardiano dei residui del 26/08 — le lapidi non bastano, perché le
   //    tabelle sorvegliate sono 21 su tutte quelle del gestionale.
+  // ⚠️ L'ELENCO SEGUE LE DOMANDE: con la fase 3 MEMO legge anche le
+  //    fatture, le scadenze previste, gli ordini e le note di credito — e
+  //    sono proprio le tabelle dove una scrittura di troppo farebbe più
+  //    danno, perché sono soldi che qualcuno deve avere.
   const TABELLE = [
     "dettature",
     "azioni_dettate",
@@ -621,6 +644,13 @@ describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () =
     "recipes",
     "stock_lots",
     "recipe_ingredients",
+    // --- fase 3 ---
+    "supplier_invoices",
+    "note_credito",
+    "note_credito_utilizzi",
+    "scadenze_previste",
+    "ordini_fornitore",
+    "cash_movements",
   ];
 
   const contaTutte = async () => {
@@ -633,24 +663,14 @@ describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () =
     return righe;
   };
 
-  it("le nove domande, una dietro l'altra, non muovono una riga", async () => {
+  it("tutte le domande, una dietro l'altra, non muovono una riga", async () => {
     const prima = await contaTutte();
 
-    // ⚠️ Tutte e nove con un soggetto plausibile: quello che si prova è
-    //    che LEGGERE non scriva, quindi le risposte qui non contano —
-    //    contano i conteggi di prima e di dopo.
-    for (const domanda of [
-      { chiede: "ricetta_esiste", soggetto: "astice" },
-      { chiede: "allergeni", soggetto: "astice" },
-      { chiede: "piatti_in_carta" },
-      { chiede: "quanto_ho", soggetto: "astice" },
-      { chiede: "cosa_manca" },
-      { chiede: "cosa_scade" },
-      { chiede: "agenda_oggi" },
-      { chiede: "agenda_in_ritardo" },
-      { chiede: "quando_scade", soggetto: "astice", testo: "quando scade l'astice" },
-    ]) {
-      const { risposta } = await rispondiA(domanda);
+    // ⚠️ TUTTE, prese dal catalogo, con un soggetto plausibile: quello che
+    //    si prova è che LEGGERE non scriva, quindi le risposte qui non
+    //    contano — contano i conteggi di prima e di dopo.
+    for (const domanda of TUTTE) {
+      const { risposta } = await rispondiA({ ...domanda, soggetto: domanda.soggetto ?? "astice" });
       expect(risposta.stato, `«${domanda.chiede}» non è riuscita a leggere`).not.toBe("non_lo_so");
     }
 
@@ -698,8 +718,11 @@ describe("🔴 i permessi della sala", () => {
   });
 
   it("la giacenza che MEMO legge non porta NESSUN prezzo", async () => {
-    // ⚠️ Alle nove domande della fase 1 il denaro non serve, e non
-    //    chiederlo è più forte che chiederlo e non mostrarlo.
+    // ⚠️ Alle domande del Magazzino il denaro non serve, e non chiederlo è
+    //    più forte che chiederlo e non mostrarlo. Dalla fase 3 i soldi
+    //    entrano, ma da una porta sola — i debiti verso i fornitori — e
+    //    con davanti il portiere del database, che le prove più sotto
+    //    esercitano.
     const { data, error } = await titolare
       .from("v_stock_levels")
       .select("*")
@@ -714,6 +737,101 @@ describe("🔴 i permessi della sala", () => {
 });
 
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+describe("🔴 i soldi che devono uscire: la porta e il suo portiere", () => {
+  it("🔴 alla sala le fatture dei fornitori NON escono", async () => {
+    // 🔴 LA DOMANDA CHE CONTA NON È «MEMO NASCONDE?» MA «IL DATABASE
+    //    NASCONDE?»: MEMO legge col permesso di chi guarda, quindi la
+    //    risposta la dà la RLS sulla tabella vera.
+    const { data, error } = await staff.from("supplier_invoices").select("id").limit(1);
+    const visto = error ? 0 : (data ?? []).length;
+    expect(visto, "la sala si è letta le fatture dei fornitori").toBe(0);
+  });
+
+  it("...e un rifiuto arriva a MEMO come «non lo so», mai come uno zero", () => {
+    // ⚠️ È il pezzo che chiude il giro: quello che non si legge diventa
+    //    NON_LETTO, e la regola pura lo mostra come «non lo so». Uno zero
+    //    a schermo sarebbe un debito inventato.
+    const r = componiRisposta({ chiede: "fatture_da_pagare" }, { fatture: NON_LETTO });
+    expect(r.stato).toBe("non_lo_so");
+    expect(r.frase).not.toMatch(/\d/);
+  });
+
+  it("🔴 il «da pagare» che MEMO dice è quello CALCOLATO dal database", async () => {
+    // 🔴 Non è una formalità: `da_pagare` è una colonna calcolata (importo
+    //    meno le note di credito scalate). Se cadesse dalla stringa della
+    //    lettura, la schermata e MEMO mostrerebbero il LORDO senza nessun
+    //    errore. Qui si confronta la risposta con la colonna vera.
+    const letture = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    const aperte = letture.fatture ?? [];
+    expect(Array.isArray(aperte), "le fatture non si sono lasciate leggere").toBe(true);
+    for (const x of aperte.slice(0, 5)) {
+      expect(x.da_pagare, "da_pagare non è arrivata dal database").not.toBeUndefined();
+      expect(Number(x.da_pagare)).toBeCloseTo(
+        Number(x.amount) - Number(x.note_scalate ?? 0),
+        2,
+      );
+    }
+  });
+
+  it("...e nessuna fattura già pagata entra nell'elenco", async () => {
+    // ⚠️ Il filtro è nel database: leggerle tutte per scartarle nel
+    //    browser vuol dire una lettura che prima o poi torna tagliata
+    //    senza dirlo.
+    const letture = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    const pagate = (letture.fatture ?? []).filter((x) => x.status === "pagata");
+    expect(pagate, "fra le fatture da pagare ce n'è una già pagata").toEqual([]);
+  });
+
+  it("🔴 le scadenze previste sono quelle dell'OSTERIA, non della tasca", async () => {
+    // 🔴 Dal 30/08 «la mia tasca» è un soggetto contabile a sé: senza
+    //    scegliere il soggetto, MEMO metterebbe fra le uscite del locale
+    //    le cose personali di Alessio.
+    const { data: soggetti } = await titolare.from("entities").select("id, entity_type");
+    const srls = (soggetti ?? []).find((e) => e.entity_type === "srls");
+    const letture = await letturePerDomanda({ chiede: "scadenze_previste" });
+    const fuori = (letture.scadenze ?? []).filter((s) => s.entity_id !== srls?.id);
+    expect(fuori, "fra le scadenze lette ce n'è qualcuna di un altro soggetto").toEqual([]);
+  });
+
+  it("le scadenze già chiuse non compaiono", async () => {
+    const letture = await letturePerDomanda({ chiede: "scadenze_previste" });
+    const chiuse = (letture.scadenze ?? []).filter((s) => s.chiusa_il !== null);
+    expect(chiuse, "una scadenza già chiusa è finita nell'elenco").toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 i numeri di MEMO sono quelli delle schermate", () => {
+  // 🔴 È LA PROMESSA SU CUI POGGIA TUTTA LA FASE CONSULTIVA: quello che
+  //    MEMO dice si può andare a controllare, e se non combacia si vede.
+  //    Qui si confronta con la STESSA funzione che alimenta la schermata,
+  //    non con un conteggio rifatto a mano.
+
+  it("«quali fatture devo pagare?» conta quelle che conta la schermata", async () => {
+    const { data } = await titolare
+      .from("supplier_invoices")
+      .select("id", { count: "exact" })
+      .eq("status", "da_pagare");
+    const { risposta } = await rispondiA({ chiede: "fatture_da_pagare" });
+    expect(risposta.righe.length + risposta.troppe).toBe((data ?? []).length);
+  });
+
+  it("«cosa ho ordinato?» conta gli ordini che aspettano", async () => {
+    const { data: ordini } = await titolare.rpc("ordini_fatti", { p_dal: null, p_al: null });
+    const attesi = (ordini ?? []).filter((o) => o.stato === "inviato").length;
+    const { risposta } = await rispondiA({ chiede: "ordini_in_corso" });
+    expect(risposta.righe.length + risposta.troppe).toBe(attesi);
+  });
+
+  it("«ci sono note di credito da usare?» legge il residuo del database", async () => {
+    const entita = await primaEntita(titolare);
+    const { data: crediti } = await titolare.rpc("crediti_fornitore", { p_entity_id: entita });
+    const { risposta } = await rispondiA({ chiede: "crediti_fornitore" });
+    expect(risposta.righe.length + risposta.troppe).toBe((crediti ?? []).length);
+  });
+});
+
 describe("solo le letture che servono", () => {
   it("una domanda del Magazzino non apre il Ricettario, e viceversa", async () => {
     // ⚠️ Ogni lettura è un giro di rete in cella. Se domani qualcuno
@@ -723,5 +841,15 @@ describe("solo le letture che servono", () => {
 
     const agenda = await letturePerDomanda({ chiede: "agenda_oggi" });
     expect(Object.keys(agenda)).toEqual(["impegni"]);
+
+    // ⚠️ E una domanda sui soldi non apre il Magazzino. La giornata
+    //    viaggia insieme alle fatture perché senza di lei «scaduta da 4
+    //    giorni» tornerebbe «entro il …» su una data passata.
+    const soldi = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    expect(Object.keys(soldi).sort()).toEqual(["fatture", "oggi"]);
+    expect(soldi.oggi).toBe(oggiLocale());
+
+    const crediti = await letturePerDomanda({ chiede: "crediti_fornitore" });
+    expect(Object.keys(crediti)).toEqual(["crediti"]);
   });
 });

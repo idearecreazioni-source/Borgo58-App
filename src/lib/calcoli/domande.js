@@ -24,12 +24,13 @@
 //    risposta.
 //
 // ⚠️ E QUESTO MODULO NON PARLA COL DATABASE. Riceve i dati già letti, così
-//    tutte e nove le domande — e i casi storti, che sono quelli che
-//    contano — si provano senza rete e senza aprire una schermata.
+//    tutte le domande — e i casi storti, che sono quelli che contano —
+//    si provano senza rete e senza aprire una schermata.
 
 import {
   ALLERGENS,
   formatDate,
+  formatEUR,
   labelFor,
   qtaConUnita,
   recipeStatusLabel,
@@ -44,16 +45,48 @@ import { nonLetto } from "./letture";
 // ⚠️ Ogni risposta porta un collegamento, comprese quelle che dicono «non
 // lo so»: un rifiuto senza gesto d'uscita è un vicolo cieco, e qui il
 // gesto d'uscita è andarselo a leggere da sé.
+// ⚠️ «dentro» NON È «apri» RIGIRATO. La riga del taglio — «… e altre 14:
+// le trovi tutte …» — ricavava il posto tagliando l'articolo
+// dall'etichetta del pulsante con una sostituzione di testo. Reggeva
+// finché gli articoli erano «il», «lo» e «l'», cioè finché le destinazioni
+// erano cinque: alla prima femminile — «Apri le fatture» — avrebbe scritto
+// **«le trovi tutte in le fatture»**. Nessun errore, una frase storta a
+// schermo. *Un'etichetta è fatta per essere letta intera, non per essere
+// smontata.*
 export const DOVE = {
-  ricettario: { a: "/ricettario/ricette", apri: "Apri il Ricettario" },
-  carta: { a: "/ricettario/ricette", apri: "Apri il Ricettario" },
-  magazzino: { a: "/magazzino", apri: "Apri il Magazzino" },
-  scadenze: { a: "/magazzino/scadenze", apri: "Apri lo scadenziario" },
-  agenda: { a: "/agenda", apri: "Apri l'Agenda" },
+  ricettario: { a: "/ricettario/ricette", apri: "Apri il Ricettario", dentro: "nel Ricettario" },
+  carta: { a: "/ricettario/ricette", apri: "Apri il Ricettario", dentro: "nel Ricettario" },
+  magazzino: { a: "/magazzino", apri: "Apri il Magazzino", dentro: "in Magazzino" },
+  scadenze: { a: "/magazzino/scadenze", apri: "Apri lo scadenziario", dentro: "nello scadenziario" },
+  agenda: { a: "/agenda", apri: "Apri l'Agenda", dentro: "in Agenda" },
+
+  // --- fase 3: quello che deve uscire (08/09/2026) --------------------
+  // ⚠️ TRE DESTINAZIONI E NON UNA, e la distinzione è quella che il
+  //    gestionale fa già: le **fatture** sono un debito verso qualcuno,
+  //    le **scadenze previste** sono soldi che escono senza una fattura
+  //    (F24, affitto), gli **ordini** sono roba chiesta e non ancora
+  //    arrivata. Mandare all'una per l'altra fa cercare un numero in una
+  //    schermata che non ce l'ha.
+  fatture: {
+    a: "/fatture-fornitori",
+    apri: "Apri le fatture",
+    dentro: "nelle fatture dei fornitori",
+  },
+  previsione: {
+    a: "/cassa/previsione",
+    apri: "Apri «Ce la faccio?»",
+    dentro: "in Cassa → Ce la faccio?",
+  },
+  ordini: { a: "/magazzino/ordini", apri: "Apri gli ordini", dentro: "negli ordini" },
 };
 
 /**
- * LE NOVE DOMANDE, con come si leggono a schermo.
+ * LE DOMANDE CHE MEMO SA FARE, con come si leggono a schermo.
+ *
+ * ⚠️ QUANTE SONO NON SI SCRIVE DA NESSUNA PARTE: fino al 07/09 il numero
+ * «nove» stava a mano qui, nelle istruzioni per il modello e in tre
+ * commenti. Un conteggio scritto a mano è una frase destinata a diventare
+ * falsa, e il giorno dopo lo è diventata. Adesso lo conta chi lo deve dire.
  *
  * ⚠️ I nomi (`chiede`) sono gli stessi che la funzione online dichiara al
  * modello: là vive l'elenco per chi capisce, qui quello per chi mostra.
@@ -126,6 +159,41 @@ export const DOMANDE_CHE_SO = {
     titolo: "Quando scade «{x}»?",
     senzaSoggetto: "Quando scade?",
     chiarimento: "Quale prodotto o quale impegno?",
+  },
+
+  // ===================================================================
+  // FASE 3 — QUELLO CHE DEVE USCIRE (08/09/2026)
+  // ===================================================================
+  // 🔴 UN GRUPPO, NON QUATTRO DOMANDE SPARSE: sono le quattro facce dello
+  //    stesso fatto — quanto deve uscire, quando, a chi, e quanto si può
+  //    recuperare. È il posto dove questo progetto ha scritto che si
+  //    sbaglia: *«è la cassa di giugno che tradisce, non il totale»*.
+  // ⚠️ E NESSUNA DECIDE NIENTE DI NUOVO: quanto si deve a una fattura lo
+  //    calcola il database da agosto («da_pagare» = importo meno le note
+  //    di credito scalate), e qui si legge quel numero invece di rifarlo.
+  fatture_da_pagare: {
+    area: "fornitori",
+    dove: "fatture",
+    esempio: "Quali fatture devo pagare?",
+    titolo: "Quali fatture devo pagare?",
+  },
+  scadenze_previste: {
+    area: "cassa",
+    dove: "previsione",
+    esempio: "Quali scadenze ho da pagare?",
+    titolo: "Le scadenze da pagare",
+  },
+  ordini_in_corso: {
+    area: "fornitori",
+    dove: "ordini",
+    esempio: "Cosa ho ordinato?",
+    titolo: "Cosa ho ordinato?",
+  },
+  crediti_fornitore: {
+    area: "fornitori",
+    dove: "fatture",
+    esempio: "Ci sono note di credito da usare?",
+    titolo: "Le note di credito da usare",
   },
 };
 
@@ -338,14 +406,14 @@ const scegli = (chiave, frase, candidati, extra = {}) => {
 };
 
 /**
- * ERA UNA DOMANDA, MA NON È FRA LE NOVE.
+ * ERA UNA DOMANDA, MA NON È FRA QUELLE CHE SO.
  *
- * ⚠️ L'ELENCO DELLE NOVE NON SI TAGLIA, ed è l'unica risposta che fa
- * eccezione: le altre elencano **dati** — e lì sei righe bastano, il resto
- * si va a guardare nella sua schermata. Queste non sono dati: sono *cosa
- * MEMO sa fare*, e mostrarne sei su nove significherebbe nascondere tre
- * cose che il gestionale sa rispondere, senza nessun posto dove andarle a
- * leggere. Il taglio ha senso quando esiste un «tutte» da qualche parte.
+ * ⚠️ QUESTO ELENCO NON SI TAGLIA, ed è l'unica risposta che fa eccezione:
+ * le altre elencano **dati** — e lì sei righe bastano, il resto si va a
+ * guardare nella sua schermata. Queste non sono dati: sono *cosa MEMO sa
+ * fare*, e mostrarne sei significherebbe nascondere le altre senza nessun
+ * posto dove andarle a leggere. Il taglio ha senso quando esiste un
+ * «tutte» da qualche parte.
  *
  * ⚠️ E LA VIA D'USCITA C'È QUANDO IL MODELLO HA CAPITO L'AREA: «quanto mi
  * costa la carbonara» è una domanda di Ricettario che MEMO non sa fare, e
@@ -997,6 +1065,232 @@ function daAgenda(soggetto, trovati, anche) {
 }
 
 // =====================================================================
+// FASE 3 — QUELLO CHE DEVE USCIRE
+// =====================================================================
+// 🔴 QUI I NUMERI SONO SOLDI, E NON NE VIENE CALCOLATO NEMMENO UNO. Quanto
+//    si deve su una fattura lo dice `da_pagare`, che è una colonna
+//    **calcolata dal database** (importo meno le note di credito scalate):
+//    rifare quella sottrazione qui sarebbe la seconda definizione dello
+//    stesso numero, e il giorno che divergono MEMO e la schermata delle
+//    fatture direbbero due debiti diversi sulla stessa fattura.
+//    ⚠️ È anche il motivo per cui la lettura chiede al database la stessa
+//    stringa che chiede la schermata: se `da_pagare` cadesse, si vedrebbe
+//    il LORDO senza nessun errore da nessuna parte.
+
+const inRitardoDi = (scadenza, oggi) => {
+  if (!scadenza || !oggi) return null;
+  const giorni = Math.round(
+    (Date.parse(`${oggi}T00:00:00`) - Date.parse(`${String(scadenza)}T00:00:00`)) / 86400000,
+  );
+  return Number.isFinite(giorni) && giorni > 0 ? giorni : null;
+};
+
+const totale = (righe, campo) =>
+  (righe ?? []).reduce((s, r) => s + (Number(r?.[campo]) || 0), 0);
+
+/**
+ * QUALI FATTURE DEVO PAGARE.
+ *
+ * 🔴 IL TOTALE NON SI FILTRA MAI, ed è una decisione del 17/08 che qui
+ * torna identica: un «da pagare» che si rimpicciolisce perché si è scelto
+ * un fornitore somiglia in tutto a un debito più piccolo. MEMO elenca sei
+ * righe e **dichiara il totale di tutte**, non di quelle mostrate.
+ *
+ * ⚠️ E LE SCADUTE SI DICONO SCADUTE. Sono l'unica cosa di questo elenco
+ * che cambia quello che si fa oggi: sepolte in mezzo alle altre, in ordine
+ * di scadenza, si leggono come le prossime.
+ */
+function fattureDaPagare(fatture, oggi) {
+  if (nonLetto(fatture)) return nonLoSo("fatture", "le fatture dei fornitori");
+  const aperte = fatture ?? [];
+
+  if (aperte.length === 0) {
+    return risposta("fatture", "Non c'è nessuna fattura da pagare.");
+  }
+
+  const somma = totale(aperte, "da_pagare");
+  const scadute = aperte.filter((x) => inRitardoDi(x.due_date, oggi) !== null);
+  const scalate = aperte.filter((x) => Number(x.note_scalate) > 0).length;
+
+  // ⚠️ I TRE NUMERI, ed è la regola del 17/08: «fattura 250 · nota −40 ·
+  //    da pagare 210». Mostrare solo il terzo fa sembrare che manchino 40
+  //    euro; mostrare solo il primo fa pagare più del dovuto. Qui la riga
+  //    porta il netto, e quante fatture hanno una nota sopra si dichiara.
+  const limite =
+    [
+      scadute.length
+        ? `${scadute.length === 1 ? "Una è già scaduta" : `${scadute.length} sono già scadute`}.`
+        : null,
+      scalate
+        ? `${scalate === 1 ? "Su una" : `Su ${scalate}`} c'è una nota di credito già scalata: l'importo qui è quello NETTO.`
+        : null,
+      "Sono solo le fatture registrate nel gestionale: quelle non ancora inserite non le vedo.",
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  return risposta(
+    "fatture",
+    aperte.length === 1
+      ? `C'è una fattura da pagare, ${formatEUR(somma)} in tutto:`
+      : `Ci sono ${aperte.length} fatture da pagare, ${formatEUR(somma)} in tutto:`,
+    aperte.map((x) => {
+      const tardi = inRitardoDi(x.due_date, oggi);
+      return {
+        chiave: x.id,
+        testo:
+          `${x.supplier?.name ?? "senza fornitore"} — ${formatEUR(x.da_pagare)}` +
+          (x.due_date
+            ? `, ${tardi ? `scaduta da ${tardi} ${tardi === 1 ? "giorno" : "giorni"}` : `entro il ${formatDate(x.due_date)}`}`
+            : ", senza scadenza"),
+      };
+    }),
+    { limite },
+  );
+}
+
+/**
+ * LE SCADENZE PREVISTE — quello che esce senza una fattura.
+ *
+ * ⚠️ NON SONO LE FATTURE, e tenerle separate è quello che il gestionale fa
+ * già: qui stanno l'F24, l'affitto, le cose che Alessio si segna a mano.
+ * Sommarle alle fatture darebbe un numero che non compare in nessuna delle
+ * due schermate.
+ *
+ * ⚠️ E IL LIMITE PIÙ GROSSO SI DICHIARA: gli stipendi non ci sono, perché
+ * arrivano dal prospetto di Gianna e non passano da nessun modulo. È lo
+ * stesso avviso che «Ce la faccio?» porta dal 15/08 — senza, un elenco
+ * corto sembra una promessa.
+ */
+function scadenzePreviste(scadenze, oggi) {
+  if (nonLetto(scadenze)) return nonLoSo("previsione", "le scadenze previste");
+  const aperte = scadenze ?? [];
+  const limite =
+    "Non ci sono gli stipendi: arrivano dal prospetto di Gianna e non passano da qui. E non ci sono le fatture dei fornitori, che si contano a parte.";
+
+  if (aperte.length === 0) {
+    return risposta("previsione", "Non hai nessuna scadenza segnata.", [], { limite });
+  }
+
+  const somma = totale(aperte, "importo");
+  const scadute = aperte.filter((s) => inRitardoDi(s.scade_il, oggi) !== null).length;
+
+  return risposta(
+    "previsione",
+    aperte.length === 1
+      ? `C'è una scadenza segnata, ${formatEUR(somma)}:`
+      : `Ci sono ${aperte.length} scadenze segnate, ${formatEUR(somma)} in tutto:`,
+    aperte.map((s) => {
+      const tardi = inRitardoDi(s.scade_il, oggi);
+      return {
+        chiave: s.id,
+        testo:
+          `${s.descrizione} — ${formatEUR(s.importo)}, ` +
+          (tardi
+            ? `scaduta da ${tardi} ${tardi === 1 ? "giorno" : "giorni"}`
+            : `il ${formatDate(s.scade_il)}`) +
+          (Number(s.ogni_mesi) > 0
+            ? ` (ogni ${s.ogni_mesi === 1 ? "mese" : `${s.ogni_mesi} mesi`})`
+            : ""),
+      };
+    }),
+    {
+      limite: scadute
+        ? `${scadute === 1 ? "Una è già scaduta" : `${scadute} sono già scadute`}. ${limite}`
+        : limite,
+    },
+  );
+}
+
+/**
+ * COSA HO ORDINATO — e che cosa vuol dire «inviato».
+ *
+ * 🔴 «INVIATO» QUI VUOL DIRE «HO APERTO WHATSAPP CON QUESTO TESTO», e il
+ * gestionale non può sapere se il messaggio è partito davvero. È scritto
+ * così dal 14/08, e MEMO non può dirlo in un modo più sicuro di quanto lo
+ * sappia: la risposta lo dichiara invece di far credere che l'ordine sia
+ * arrivato al fornitore.
+ *
+ * ⚠️ E SI ELENCA SOLO QUELLO CHE ASPETTA: un ordine ricevuto o annullato
+ * non è roba che deve arrivare, e metterlo in mezzo allungherebbe l'elenco
+ * di cose già chiuse.
+ */
+function ordiniInCorso(ordini, oggi) {
+  if (nonLetto(ordini)) return nonLoSo("ordini", "gli ordini ai fornitori");
+  const tutti = ordini ?? [];
+  const inAttesa = tutti.filter((o) => o?.stato === "inviato");
+  const altri = tutti.length - inAttesa.length;
+
+  const limite =
+    [
+      altri
+        ? `${altri === 1 ? "Un altro ordine è" : `Altri ${altri} ordini sono`} già arrivato o annullato.`
+        : null,
+      "«Inviato» vuol dire che il gestionale ha aperto WhatsApp con quel testo: se il messaggio sia partito davvero non lo sa.",
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (inAttesa.length === 0) {
+    return risposta("ordini", "Non c'è nessun ordine in attesa.", [], { limite });
+  }
+
+  return risposta(
+    "ordini",
+    inAttesa.length === 1
+      ? "C'è un ordine che aspetta:"
+      : `Ci sono ${inAttesa.length} ordini che aspettano:`,
+    inAttesa.map((o) => {
+      const giorni = inRitardoDi(String(o.inviato_il ?? "").slice(0, 10), oggi);
+      return {
+        chiave: o.id,
+        testo:
+          `${o.fornitore ?? "senza fornitore"} — ${o.righe} ${Number(o.righe) === 1 ? "riga" : "righe"}` +
+          (giorni ? `, da ${giorni} ${giorni === 1 ? "giorno" : "giorni"}` : ", di oggi"),
+      };
+    }),
+    { limite },
+  );
+}
+
+/**
+ * LE NOTE DI CREDITO ANCORA DA USARE.
+ *
+ * ⚠️ È LA DOMANDA CHE FA RECUPERARE SOLDI: una nota di credito che nessuno
+ * si ricorda è uno storno del fornitore che non viene mai scalato. Il
+ * residuo lo calcola il database («credito_residuo»), qui si legge.
+ *
+ * ⚠️ E IL CREDITO È DI QUEL FORNITORE, non della cassa: non si può usare
+ * per pagare qualcun altro, e la risposta lo dice — altrimenti quel totale
+ * si legge come soldi disponibili.
+ */
+function creditiFornitore(crediti) {
+  if (nonLetto(crediti)) return nonLoSo("fatture", "le note di credito");
+  const righe = crediti ?? [];
+  if (righe.length === 0) {
+    return risposta("fatture", "Non c'è nessuna nota di credito da usare.");
+  }
+
+  const somma = totale(righe, "residuo");
+  return risposta(
+    "fatture",
+    righe.length === 1
+      ? `C'è ${formatEUR(somma)} di credito da usare:`
+      : `Ci sono ${formatEUR(somma)} di credito da usare, con ${righe.length} fornitori:`,
+    righe.map((c) => ({
+      chiave: c.supplier_id,
+      testo: `${c.fornitore} — ${formatEUR(c.residuo)}${
+        Number(c.quante) > 1 ? ` (${c.quante} note)` : ""
+      }`,
+    })),
+    {
+      limite:
+        "Ogni credito vale solo con quel fornitore: si scala dalla sua prossima fattura, non si incassa.",
+    },
+  );
+}
+
+// =====================================================================
 // L'UNICA PORTA
 // =====================================================================
 
@@ -1040,6 +1334,17 @@ export function componiRisposta(domanda, letture = {}) {
       return agendaInRitardo(letture.impegni);
     case "quando_scade":
       return quandoScade(soggetto, letture, scelto);
+
+    // --- fase 3: quello che deve uscire ---------------------------
+    case "fatture_da_pagare":
+      return fattureDaPagare(letture.fatture, letture.oggi ?? null);
+    case "scadenze_previste":
+      return scadenzePreviste(letture.scadenze, letture.oggi ?? null);
+    case "ordini_in_corso":
+      return ordiniInCorso(letture.ordini, letture.oggi ?? null);
+    case "crediti_fornitore":
+      return creditiFornitore(letture.crediti);
+
     default:
       return nonSoFarlo(domanda?.area ?? null);
   }

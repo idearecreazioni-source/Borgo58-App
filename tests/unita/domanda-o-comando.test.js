@@ -166,13 +166,42 @@ describe("una domanda non scrive niente", () => {
     ).toEqual([]);
   });
 
-  it("...e nemmeno una lettura che porti dei soldi", () => {
-    // ⚠️ Alle nove domande della fase 1 il denaro non serve, e non
-    //    chiederlo è più forte che chiederlo e non mostrarlo: un costo che
-    //    non arriva al browser non può finire a schermo per sbaglio.
-    const soldi = ["v_recipe_costs", "getRecipeCost", "listStockLots", "unit_cost", "costo"];
-    const trovati = soldi.filter((p) => sorgente.includes(p));
-    expect(trovati, "una domanda della fase 1 non legge prezzi").toEqual([]);
+  // 🔴 ROVESCIAMENTO DICHIARATO, 08/09/2026: fino al 07/09 questa prova
+  //    diceva «una domanda della fase 1 non legge prezzi» e vietava in
+  //    blocco la parola «costo». La ragione era buona — alle nove domande
+  //    di allora il denaro non serviva — ma dalla fase 3 quattro domande
+  //    parlano di quello che deve uscire, e un divieto che nessuno può
+  //    rispettare si cancella invece di diventare più preciso.
+  //    ⚠️ QUELLO CHE RESTA È UN CONFINE PIÙ STRETTO, non un divieto in
+  //    meno: i debiti verso i fornitori si leggono dalle loro funzioni,
+  //    che il database difende col portiere del titolare; i COSTI di
+  //    ricetta, di lotto e di magazzino non si leggono da nessuna
+  //    domanda, perché a nessuna servono — e quello che non arriva al
+  //    browser non può finire a schermo per sbaglio.
+  it("🔴 nessuna domanda legge un COSTO di ricetta, di lotto o di magazzino", () => {
+    const costi = [
+      "v_recipe_costs",
+      "getRecipeCost",
+      "listStockLots",
+      "unit_cost",
+      "espansione_costo_ricetta",
+      "storicoCosti",
+      "listSupplierPriceHistory",
+      "varianti_ingrediente",
+    ];
+    const trovati = costi.filter((p) => sorgente.includes(p));
+    expect(trovati, "una domanda non legge prezzi d'acquisto: " + trovati.join(", ")).toEqual([]);
+  });
+
+  it("🔴 e il «da pagare» non si ricalcola qui: si chiede al database", () => {
+    // 🔴 `da_pagare` è una colonna CALCOLATA (importo meno le note di
+    //    credito scalate). Rifare quella sottrazione nel browser sarebbe
+    //    la seconda definizione dello stesso numero — il difetto chiuso in
+    //    nove punti dal mandato di correzione. Qui si prova la forma: si
+    //    usa la funzione che porta `SELECT_FATTURA`, e non si scrive
+    //    nessuna sottrazione.
+    expect(sorgente).toContain("listSupplierInvoices");
+    expect(sorgente).not.toMatch(/amount\s*-\s*note_scalate/);
   });
 
   it("e ogni lettura passa da `leggi()`, così una che fallisce non diventa uno zero", () => {
@@ -183,8 +212,19 @@ describe("una domanda non scrive niente", () => {
     // ⚠️ E nessuna scorciatoia: un `await list…(` nudo sarebbe una lettura
     //    che, cadendo, porterebbe giù tutta la risposta invece di dire
     //    «non lo so».
-    const nude = (sorgente.match(/await (list|agenda|getRecipe)\w*\(/g) ?? []).filter(
-      (x) => !x.includes("leggi"),
+    // 🔴 IL SETACCIO NOMINAVA LE LETTURE CHE CONOSCEVA, ed è la forma che
+    //    questo progetto rifiuta: cercava `await list…`, `await agenda…` e
+    //    `await getRecipe…`, cioè i nomi che esistevano il 07/09. La fase 3
+    //    ne ha portati quattro nuovi — `getEntities`, `creditiFornitore`,
+    //    `listaOrdini`, `listScadenzePreviste` — e nessuno di quelli
+    //    sarebbe stato guardato. *Un elenco di nomi scritto a mano copre il
+    //    passato.*
+    // ⚠️ Adesso si guarda la FORMA: qualunque `await qualcosa(` che non sia
+    //    `leggi`, `Promise.all` o lo smistamento è una lettura che, cadendo,
+    //    porterebbe giù tutta la risposta invece di dire «non lo so».
+    const ammesse = ["leggi", "Promise", "letturePerDomanda", "soggettoDeiSoldi"];
+    const nude = (sorgente.match(/await\s+([A-Za-z_$][\w$.]*)\s*\(/g) ?? []).filter(
+      (x) => !ammesse.some((a) => x.includes(a)),
     );
     expect(nude, "questa lettura non passa da leggi(): " + nude.join(", ")).toEqual([]);
   });
@@ -224,7 +264,34 @@ describe("una domanda che nessuno ha capito non diventa un appunto", () => {
     expect(t.messaggio).toContain("messo da parte");
   });
 
-  it("le nove domande si riconoscono tutte, anche senza punto", () => {
+  it("🔴 gli ESEMPI che non reggono senza il punto sono un elenco CHIUSO", () => {
+    // 🔴 GLI ESEMPI SONO ISTRUZIONI, e vanno provati come tali: quando MEMO
+    //    non sa rispondere mostra le frasi di `DOMANDE_CHE_SO.esempio`, e
+    //    chi le legge le ridice al telefono — dove il punto interrogativo
+    //    quasi sempre non arriva. Un esempio che senza punto viene preso
+    //    per un comando insegna una frase che poi diventa un appunto da
+    //    buttare.
+    // ⚠️ UNO C'È, ED È VOLUTO: «ho la ricetta della carbonara» comincia
+    //    identica a «ho pagato trenta euro al fornitore», e nell'elenco
+    //    delle aperture non si può mettere «ho» senza perdere i comandi.
+    //    Il prezzo è dichiarato dal 07/09 in `APERTURE_DI_DOMANDA`.
+    // ⚠️ Questa prova impedisce che l'elenco cresca in silenzio: una
+    //    domanda nuova col verbo davanti la fa diventare rossa.
+    const fragili = Object.entries(DOMANDE_CHE_SO)
+      .filter(([, d]) => !sembraUnaDomanda(d.esempio.replace(/\?+$/, "")))
+      .map(([chiede]) => chiede);
+    expect(fragili).toEqual(["ricetta_esiste"]);
+  });
+
+  it("...e col punto le riconosce TUTTE", () => {
+    // ⚠️ La metà che discrimina: senza, un elenco di esempi tutti storti
+    //    passerebbe la prova qui sopra dichiarandoli tutti fragili.
+    for (const d of Object.values(DOMANDE_CHE_SO)) {
+      expect(sembraUnaDomanda(d.esempio), d.esempio).toBe(true);
+    }
+  });
+
+  it("le domande si riconoscono tutte, anche senza punto", () => {
     for (const frase of [
       "Quanto olio ho",
       "Quanti piatti ho in carta",

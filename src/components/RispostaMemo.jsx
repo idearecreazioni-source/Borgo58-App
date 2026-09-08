@@ -77,12 +77,16 @@ function RispostaMemo({ titolo, testoDetto, risposta, onScegli, occupato }) {
             sessantotto misurate col modello vero, no. Il numero nella frase
             resta quello vero, e qui si dice quante non si vedono e dove
             sono tutte. */}
+        {/* ⚠️ IL POSTO ARRIVA GIÀ SCRITTO (`dentro`), e non si ricava più
+            tagliando l'articolo all'etichetta del pulsante: quella
+            sostituzione conosceva «il», «lo» e «l'», e alla prima
+            destinazione femminile — «Apri le fatture» — avrebbe scritto
+            «le trovi tutte in le fatture». Nessun errore, una frase
+            storta. */}
         {risposta.troppe > 0 && (
           <p className="testo-sala mt-2 text-b58-charcoal-soft">
-            … e altre {risposta.troppe}: le trovi tutte {risposta.apri
-              ? `in ${risposta.apri.replace(/^Apri (il |lo |l')?/, "")}`
-              : "nella sua schermata"}
-            .
+            … e altre {risposta.troppe}: le trovi tutte{" "}
+            {risposta.dentro ?? "nella sua schermata"}.
           </p>
         )}
 

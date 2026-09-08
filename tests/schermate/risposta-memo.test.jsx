@@ -121,6 +121,61 @@ describe("il riquadro di una risposta", () => {
   });
 });
 
+// =====================================================================
+// FASE 3 — quello che deve uscire (08/09/2026)
+// =====================================================================
+describe("le domande sui soldi che devono uscire, a schermo", () => {
+  it("🔴 il totale si legge insieme all'elenco, e l'avvertenza pure", () => {
+    // 🔴 Regola del 17/08: i totali non si filtrano, e i tre numeri stanno
+    //    insieme. A schermo devono stare nello stesso riquadro — un avviso
+    //    staccato dal numero si legge dopo il numero, cioè quando la
+    //    conclusione è già stata tratta.
+    mostra(
+      componiRisposta(
+        { chiede: "fatture_da_pagare" },
+        {
+          oggi: "2026-09-08",
+          fatture: [
+            {
+              id: "f1",
+              supplier: { name: "Mililli" },
+              amount: 250,
+              da_pagare: 210,
+              note_scalate: 40,
+              due_date: "2026-09-04",
+            },
+          ],
+        },
+      ),
+    );
+    expect(screen.getAllByText(/210,00/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/scaduta da 4 giorni/)).toBeTruthy();
+    expect(screen.getByText(/NETTO/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Apri le fatture/ }).getAttribute("href")).toBe(
+      "/fatture-fornitori",
+    );
+  });
+
+  it("🔴 e non c'è nessun pulsante per pagare", () => {
+    // ⚠️ Qui i dati sono soldi, e un pulsante «paga» sarebbe la cosa più
+    //    facile da aggiungere per comodità. Una domanda non esegue niente.
+    mostra(
+      componiRisposta(
+        { chiede: "crediti_fornitore" },
+        { crediti: [{ supplier_id: "s1", fornitore: "Augeri", residuo: 30, quante: 1 }] },
+      ),
+    );
+    expect(screen.getAllByText(/30,00/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("una lettura caduta sulle fatture non mette nessuna cifra a schermo", () => {
+    mostra(componiRisposta({ chiede: "fatture_da_pagare" }, { fatture: NON_LETTO }));
+    expect(screen.getByText(/non lo so/i)).toBeTruthy();
+    expect(screen.queryByText(/€/)).toBeNull();
+  });
+});
+
 describe("un elenco lungo, a schermo", () => {
   it("🔴 si vede che è tagliato, e dove sono tutte", () => {
     // 🔴 Misurato col modello vero: «cosa scade?» rispondeva con 68 righe.
@@ -139,5 +194,24 @@ describe("un elenco lungo, a schermo", () => {
     expect(screen.getByText(/20 partite sono in scadenza/)).toBeTruthy();
     expect(screen.getByText(/e altre 14/)).toBeTruthy();
     expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  });
+
+  it("🔴 e dice DOVE sono tutte, con una frase che si legge", () => {
+    // 🔴 Il posto arriva già scritto (`dentro`), e non si ricava più
+    //    tagliando l'articolo all'etichetta del pulsante: quella
+    //    sostituzione conosceva «il», «lo» e «l'», e alla prima
+    //    destinazione femminile avrebbe scritto «le trovi tutte in le
+    //    fatture». Nessun errore, una frase storta a schermo.
+    const fatture = Array.from({ length: 12 }, (_, i) => ({
+      id: `f${i}`,
+      supplier: { name: "Mililli" },
+      amount: 10,
+      da_pagare: 10,
+      note_scalate: 0,
+      due_date: "2026-09-20",
+    }));
+    mostra(componiRisposta({ chiede: "fatture_da_pagare" }, { fatture, oggi: "2026-09-08" }));
+    expect(screen.getByText(/le trovi tutte nelle fatture dei fornitori/)).toBeTruthy();
+    expect(screen.queryByText(/in le /)).toBeNull();
   });
 });

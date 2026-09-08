@@ -1,5 +1,6 @@
 // =====================================================================
-// UNA DOMANDA NON È UN COMANDO — MEMO consultivo, fase 1 (07/09/2026)
+// UNA DOMANDA NON È UN COMANDO — MEMO consultivo
+// (fase 1: 07/09 · fase 3: 08/09/2026)
 // =====================================================================
 // Fino a oggi tutto quello che Alessio diceva a MEMO era una cosa da
 // SEGNARE: ne usciva un appunto, e l'appunto aspettava un sì. Da adesso
@@ -36,7 +37,13 @@ export type Domanda = {
 };
 
 /**
- * LE NOVE DOMANDE DELLA PRIMA VERSIONE.
+ * LE DOMANDE CHE IL GESTIONALE SA LEGGERE.
+ *
+ * 🔴 QUANTE SONO E DI QUALI AREE PARLANO NON SI SCRIVONO A MANO da nessuna
+ * parte: le istruzioni per il modello se li contano da qui. Fino al 07/09
+ * la frase diceva «sono NOVE» e l'elenco delle aree era una scritta fissa
+ * — cioè due numeri destinati a diventare falsi il giorno in cui questa
+ * mappa fosse cresciuta.
  *
  * ⚠️ L'elenco è **chiuso**, ed è l'opposto di quello che vale per i
  * comandi: là MEMO inventa liberamente un tipo perché l'appunto resta un
@@ -62,6 +69,14 @@ export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   //    la parola e' la stessa. Dove guardare lo decide il gestionale
   //    guardando la frase, non il modello.
   quando_scade: { area: "magazzino", soggetto: true },
+
+  // --- fase 3: quello che deve uscire (08/09/2026) ---
+  // In sola lettura, e col portiere del database davanti: chi non è
+  // titolare riceve un rifiuto, non un numero più piccolo.
+  fatture_da_pagare: { area: "fornitori", soggetto: false },
+  ordini_in_corso: { area: "fornitori", soggetto: false },
+  crediti_fornitore: { area: "fornitori", soggetto: false },
+  scadenze_previste: { area: "cassa", soggetto: false },
 };
 
 const testo = (v: unknown): string | null => {
@@ -243,6 +258,17 @@ export function causaInItaliano(messaggio: string): string {
  * — uno per il codice e uno per il modello — divergono al primo ritocco, ed
  * è la trappola che questo progetto ha già pagato tre volte.
  */
+const NUMERI = [
+  "ZERO", "UNA", "DUE", "TRE", "QUATTRO", "CINQUE", "SEI", "SETTE", "OTTO",
+  "NOVE", "DIECI", "UNDICI", "DODICI", "TREDICI", "QUATTORDICI", "QUINDICI",
+  "SEDICI", "DICIASSETTE", "DICIOTTO", "DICIANNOVE", "VENTI",
+];
+
+/** Il numero in lettere, e la cifra quando le lettere non ci sono. */
+export function inLettere(n: number): string {
+  return NUMERI[n] ?? String(n);
+}
+
 export function istruzioniDomande(): string {
   const perArea: Record<string, string[]> = {};
   for (const [chiede, nota] of Object.entries(DOMANDE)) {
@@ -251,14 +277,19 @@ export function istruzioniDomande(): string {
     );
   }
   const righe = Object.entries(perArea).map(([area, elenco]) => `- ${area}: ${elenco.join(", ")}`);
+  // 🔴 IL NUMERO E LE AREE SI CONTANO, NON SI SCRIVONO: erano due frasi
+  //    fisse dentro il testo qui sotto, ed erano diventate false nel giro
+  //    di un giorno. Il modello riceve sempre l'elenco vero.
+  const quante = inLettere(Object.keys(DOMANDE).length);
+  const aree = Object.keys(perArea).map((a) => `"${a}"`).join("|");
 
   return `
 🔴 PRIMA DI TUTTO: TI STA DICENDO UNA COSA DA SEGNARE, O TI STA FACENDO UNA DOMANDA?
-Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «la carbonara ha il sedano?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
+Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «la carbonara ha il sedano?», «quali fatture devo pagare?», «cosa ho ordinato?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
 
-{ "azioni": [], "domanda": { "area": "ricettario"|"magazzino"|"agenda", "chiede": "<una di quelle qui sotto>", "soggetto": "il nome di cui parla, come l'ha detto"|null, "allergene": "<solo se ha nominato un allergene preciso>"|null } }
+{ "azioni": [], "domanda": { "area": ${aree}, "chiede": "<una di quelle qui sotto>", "soggetto": "il nome di cui parla, come l'ha detto"|null, "allergene": "<solo se ha nominato un allergene preciso>"|null } }
 
-Le domande che il gestionale sa leggere sono NOVE, e sono queste:
+Le domande che il gestionale sa leggere sono ${quante}, e sono queste:
 ${righe.join("\n")}
 
 ⚠️ NON RISPONDERE TU ALLA DOMANDA. Non scrivere quantita', date, elenchi di piatti o allergeni: quelli li legge il gestionale dai dati veri e li mostra lui. Tu di' soltanto CHE COSA ha chiesto e DI CHE COSA. Un numero scritto da te sarebbe indistinguibile da un numero letto, e nessuno potrebbe controllarlo.
