@@ -1,6 +1,6 @@
 // =====================================================================
 // UNA DOMANDA NON È UN COMANDO — MEMO consultivo
-// (fase 1: 07/09 · fase 3: 08/09/2026)
+// (fase 1: 07/09 · fasi 2 e 3: 08/09/2026)
 // =====================================================================
 // Fino a oggi tutto quello che Alessio diceva a MEMO era una cosa da
 // SEGNARE: ne usciva un appunto, e l'appunto aspettava un sì. Da adesso
@@ -39,18 +39,18 @@ export type Domanda = {
 /**
  * LE DOMANDE CHE IL GESTIONALE SA LEGGERE.
  *
- * 🔴 QUANTE SONO E DI QUALI AREE PARLANO NON SI SCRIVONO A MANO da nessuna
- * parte: le istruzioni per il modello se li contano da qui. Fino al 07/09
- * la frase diceva «sono NOVE» e l'elenco delle aree era una scritta fissa
- * — cioè due numeri destinati a diventare falsi il giorno in cui questa
- * mappa fosse cresciuta.
- *
  * ⚠️ L'elenco è **chiuso**, ed è l'opposto di quello che vale per i
  * comandi: là MEMO inventa liberamente un tipo perché l'appunto resta un
  * promemoria anche se il gestionale non lo sa eseguire. Qui no — una
  * domanda che il gestionale non sa leggere non produce un promemoria:
  * produrrebbe una **risposta inventata**, che è la cosa peggiore che possa
  * uscire da questa schermata.
+ *
+ * 🔴 QUANTE SONO E DI QUALI AREE PARLANO NON SI SCRIVONO A MANO da
+ * nessuna parte: le istruzioni per il modello se li contano da qui. Fino
+ * al 07/09 la frase diceva «sono NOVE» e l'elenco delle aree era una
+ * scritta fissa — cioè due numeri destinati a diventare falsi il giorno in
+ * cui questa mappa fosse cresciuta. È cresciuta il giorno dopo.
  */
 export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   // Ricettario
@@ -70,6 +70,21 @@ export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   //    guardando la frase, non il modello.
   quando_scade: { area: "magazzino", soggetto: true },
 
+  // --- fase 2 (08/09/2026) ---
+  // Cassa — in sola lettura, e col portiere del database davanti: chi non
+  // è titolare riceve un rifiuto, non un numero.
+  saldo_cassa: { area: "cassa", soggetto: false },
+  ultimi_movimenti: { area: "cassa", soggetto: false },
+  // Le due liste della spesa restano due (SPEC-0012).
+  cosa_comprare: { area: "magazzino", soggetto: false },
+  cosa_spicciola: { area: "magazzino", soggetto: false },
+  preparazioni_da_fare: { area: "magazzino", soggetto: false },
+  agenda_prossime: { area: "agenda", soggetto: false },
+  ingredienti_ricetta: { area: "ricettario", soggetto: true },
+  // HACCP: si legge il registro, non ci si scrive. Una temperatura si
+  // detta già da un'altra parte, e un fuori range non si chiude a voce.
+  pulizie_oggi: { area: "haccp", soggetto: false },
+  temperature_oggi: { area: "haccp", soggetto: false },
   // --- fase 3: quello che deve uscire (08/09/2026) ---
   // In sola lettura, e col portiere del database davanti: chi non è
   // titolare riceve un rifiuto, non un numero più piccolo.
@@ -229,14 +244,43 @@ export function quandoLAssistenteTace(
 /**
  * PERCHÉ NON HA RISPOSTO, IN ITALIANO.
  *
- * ⚠️ I rifiuti dell'assistente arrivano in inglese, e uno di questi non è
- * un guasto del gestionale: è il **credito finito**. Senza riconoscerlo,
- * chi legge «l'assistente non ha risposto» cerca il difetto nel programma
- * — ed è successo il 07/09. *Ogni rifiuto che ha più di una causa le
- * elenca in ordine di frequenza.*
+ * ⚠️ I rifiuti dell'assistente arrivano in inglese, e alcuni di questi non
+ * sono un guasto del gestionale: sono i soldi. Senza riconoscerli, chi
+ * legge «l'assistente non ha risposto» cerca il difetto nel programma —
+ * ed è successo il 07/09, e di nuovo l'08/09. *Ogni rifiuto che ha più di
+ * una causa le elenca in ordine di frequenza.*
+ *
+ * 🔴 I MODI DI RESTARE SENZA SOLDI SONO DUE, E NON SI DICONO UGUALE
+ *    (08/09/2026, misurato sulle tre domande fatte col telefono):
+ *      · il **credito è finito** → si ricarica, e MEMO riparte subito;
+ *      · il **tetto di spesa dell'account è stato raggiunto** → non si
+ *        ricarica niente: o si alza il tetto, o si aspetta il mese nuovo.
+ *    Dirle con la stessa frase manda a fare la cosa sbagliata: chi legge
+ *    «ricarica» va a ricaricare un account che ha già i soldi dentro.
+ *
+ * 🔴 E IL TETTO DEL GESTIONALE NON C'ENTRA, ed è la parte che inganna di
+ *    più: `spesa_ai_del_mese` conta quello che ha speso **questo
+ *    database**, e l'08/09 sul progetto di prova diceva 2,10 € su 10 —
+ *    «sotto il tetto». Il tetto raggiunto era quello dell'**account**, che
+ *    è uno solo per tutti e due i database e per tutte le funzioni che
+ *    chiamano il modello. I due numeri rispondono a due domande diverse, e
+ *    chi guarda il primo conclude che il blocco è un guasto.
  */
 export function causaInItaliano(messaggio: string): string {
-  const m = String(messaggio ?? "").toLowerCase();
+  const testo = String(messaggio ?? "");
+  const m = testo.toLowerCase();
+
+  // ⚠️ Il tetto si guarda PRIMA del credito: il messaggio del tetto non
+  //    contiene «credit balance», ma se domani lo contenesse la frase
+  //    sbagliata vincerebbe. L'ordine è la difesa.
+  if (m.includes("usage limit") || m.includes("usage limits")) {
+    // ⚠️ LA DATA C'È DENTRO IL RIFIUTO, e si dice: «aspetta» senza dire
+    //    fino a quando è un vicolo cieco. Se non c'è, non ci si inventa un
+    //    mese — si dice che non lo si sa.
+    const quando = testo.match(/regain access on (\d{4})-(\d{2})-(\d{2})/i);
+    const fino = quando ? ` fino al ${quando[3]}/${quando[2]}/${quando[1]}` : "";
+    return `Il tetto di spesa dell'account AI è stato raggiunto: MEMO non capisce niente${fino}. Non è il credito e non è il tetto del gestionale — è il limite mensile messo sull'account, e vale per tutti e due i database insieme.`;
+  }
   if (m.includes("credit balance") || m.includes("insufficient_quota")) {
     return "Il credito dell'account AI è finito: va ricaricato, e finché non lo è MEMO non capisce niente.";
   }
@@ -285,7 +329,7 @@ export function istruzioniDomande(): string {
 
   return `
 🔴 PRIMA DI TUTTO: TI STA DICENDO UNA COSA DA SEGNARE, O TI STA FACENDO UNA DOMANDA?
-Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «la carbonara ha il sedano?», «quali fatture devo pagare?», «cosa ho ordinato?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
+Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «quanti soldi ci sono in cassa?», «cosa devo comprare?», «cosa devo pulire oggi?», «quali fatture devo pagare?», «cosa ho ordinato?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
 
 { "azioni": [], "domanda": { "area": ${aree}, "chiede": "<una di quelle qui sotto>", "soggetto": "il nome di cui parla, come l'ha detto"|null, "allergene": "<solo se ha nominato un allergene preciso>"|null } }
 

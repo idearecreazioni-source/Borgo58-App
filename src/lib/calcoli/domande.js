@@ -1,11 +1,15 @@
 // =====================================================================
-// LE RISPOSTE DI MEMO — fase 1, sola lettura (07/09/2026)
+// LE RISPOSTE DI MEMO — sola lettura (fase 1: 07/09 · fase 2: 08/09/2026)
 // =====================================================================
 // 🔴 IL MODELLO CAPISCE LA DOMANDA, IL DATABASE DÀ LA RISPOSTA, E QUESTA
 //    REGOLA COMPONE LA FRASE. Nessun numero passa mai dal modello: quello
 //    che arriva da lui è soltanto *che cosa* è stato chiesto e *di che
 //    cosa*. Tutto quello che si legge a schermo esce da qui, dai dati che
 //    il gestionale ha appena letto **col permesso di chi sta guardando**.
+//    ⚠️ E IL PERMESSO NON È UNA CORTESIA: le letture passano dal
+//    collegamento dell'app, quindi dalla RLS e dai portieri del database.
+//    Chi non è titolare, sui saldi della Cassa, non riceve un numero più
+//    piccolo — riceve un rifiuto, e MEMO dice «non lo so».
 //    ⚠️ È la differenza fra una risposta controllabile e una plausibile:
 //    quello che MEMO dice è la stessa cosa che si legge aprendo la
 //    schermata, e sotto c'è il collegamento per andarla a guardare.
@@ -45,14 +49,14 @@ import { nonLetto } from "./letture";
 // ⚠️ Ogni risposta porta un collegamento, comprese quelle che dicono «non
 // lo so»: un rifiuto senza gesto d'uscita è un vicolo cieco, e qui il
 // gesto d'uscita è andarselo a leggere da sé.
-// ⚠️ «dentro» NON È «apri» RIGIRATO. La riga del taglio — «… e altre 14:
-// le trovi tutte …» — ricavava il posto tagliando l'articolo
-// dall'etichetta del pulsante con una sostituzione di testo. Reggeva
-// finché gli articoli erano «il», «lo» e «l'», cioè finché le destinazioni
-// erano cinque: alla prima femminile — «Apri le fatture» — avrebbe scritto
-// **«le trovi tutte in le fatture»**. Nessun errore, una frase storta a
-// schermo. *Un'etichetta è fatta per essere letta intera, non per essere
-// smontata.*
+// ⚠️ «dentro» NON È «apri» RIGIRATO, ed è nato da un difetto latente: la
+// riga del taglio — «… e altre 14: le trovi tutte …» — ricavava il posto
+// tagliando l'articolo dall'etichetta del pulsante con una sostituzione di
+// testo. Reggeva finché gli articoli erano «il», «lo» e «l'», cioè finché
+// le destinazioni erano cinque. Alla prima femminile — «Apri la Cassa» —
+// avrebbe scritto **«le trovi tutte in la Cassa»**: nessun errore, una
+// frase storta a schermo. *Un'etichetta è fatta per essere letta intera,
+// non per essere smontata.*
 export const DOVE = {
   ricettario: { a: "/ricettario/ricette", apri: "Apri il Ricettario", dentro: "nel Ricettario" },
   carta: { a: "/ricettario/ricette", apri: "Apri il Ricettario", dentro: "nel Ricettario" },
@@ -60,6 +64,40 @@ export const DOVE = {
   scadenze: { a: "/magazzino/scadenze", apri: "Apri lo scadenziario", dentro: "nello scadenziario" },
   agenda: { a: "/agenda", apri: "Apri l'Agenda", dentro: "in Agenda" },
 
+  // --- fase 2 (08/09/2026) --------------------------------------------
+  // ⚠️ CASSA E PRIMA NOTA SONO DUE DESTINAZIONI, non una: «quanti soldi ci
+  //    sono» si ricontrolla in Cassa, «cosa è uscito» in Prima nota, e
+  //    mandare all'una per l'altra fa cercare un numero in una schermata
+  //    che non lo mostra.
+  cassa: { a: "/cassa", apri: "Apri la Cassa", dentro: "in Cassa" },
+  prima_nota: { a: "/cassa/prima-nota", apri: "Apri la Prima nota", dentro: "in Prima nota" },
+  // ⚠️ E le due liste della spesa restano due anche qui (SPEC-0012): due
+  //    domande, due destinazioni, nessun travaso silenzioso.
+  lista: {
+    a: "/magazzino/lista-spesa",
+    apri: "Apri la lista della spesa",
+    dentro: "nella lista della spesa",
+  },
+  spicciola: {
+    a: "/magazzino/spesa-spicciola",
+    apri: "Apri la spesa spicciola",
+    dentro: "nella spesa spicciola",
+  },
+  preparazioni: {
+    a: "/magazzino/produzioni",
+    apri: "Apri le Produzioni",
+    dentro: "in Magazzino → Produzioni",
+  },
+  pulizie: {
+    a: "/haccp/pulizia",
+    apri: "Apri le pulizie",
+    dentro: "in HACCP → Pulizia e sanificazione",
+  },
+  temperature: {
+    a: "/haccp/temperature",
+    apri: "Apri le temperature",
+    dentro: "in HACCP → Temperature",
+  },
   // --- fase 3: quello che deve uscire (08/09/2026) --------------------
   // ⚠️ TRE DESTINAZIONI E NON UNA, e la distinzione è quella che il
   //    gestionale fa già: le **fatture** sono un debito verso qualcuno,
@@ -83,10 +121,11 @@ export const DOVE = {
 /**
  * LE DOMANDE CHE MEMO SA FARE, con come si leggono a schermo.
  *
- * ⚠️ QUANTE SONO NON SI SCRIVE DA NESSUNA PARTE: fino al 07/09 il numero
- * «nove» stava a mano qui, nelle istruzioni per il modello e in tre
- * commenti. Un conteggio scritto a mano è una frase destinata a diventare
- * falsa, e il giorno dopo lo è diventata. Adesso lo conta chi lo deve dire.
+ * ⚠️ QUANTE SONO NON SI SCRIVE DA NESSUNA PARTE, ed è una lezione già
+ * pagata: fino al 07/09 il numero «nove» era scritto a mano qui, nelle
+ * istruzioni per il modello e in tre commenti. Un conteggio scritto a mano
+ * è una frase destinata a diventare falsa — e il giorno dopo lo è
+ * diventata. Adesso il numero lo conta chi lo deve dire.
  *
  * ⚠️ I nomi (`chiede`) sono gli stessi che la funzione online dichiara al
  * modello: là vive l'elenco per chi capisce, qui quello per chi mostra.
@@ -159,6 +198,70 @@ export const DOMANDE_CHE_SO = {
     titolo: "Quando scade «{x}»?",
     senzaSoggetto: "Quando scade?",
     chiarimento: "Quale prodotto o quale impegno?",
+  },
+
+  // ===================================================================
+  // FASE 2 — 08/09/2026
+  // ===================================================================
+  // 🔴 NESSUNA DI QUESTE CAMBIA NATURA RISPETTO ALLE PRIME NOVE, ed è la
+  //    condizione che le fa entrare: si leggono gli stessi dati che si
+  //    leggono aprendo la schermata, non si scrive niente, e se
+  //    l'assistente non risponde la frase non diventa un appunto.
+  saldo_cassa: {
+    area: "cassa",
+    dove: "cassa",
+    esempio: "Quanti soldi ci sono in cassa?",
+    titolo: "Quanti soldi ci sono?",
+  },
+  ultimi_movimenti: {
+    area: "cassa",
+    dove: "prima_nota",
+    esempio: "Quali sono gli ultimi movimenti di cassa?",
+    titolo: "Gli ultimi movimenti di cassa",
+  },
+  cosa_comprare: {
+    area: "magazzino",
+    dove: "lista",
+    esempio: "Cosa devo comprare?",
+    titolo: "Cosa devo comprare?",
+  },
+  cosa_spicciola: {
+    area: "magazzino",
+    dove: "spicciola",
+    esempio: "Cosa c'è nella spesa spicciola?",
+    titolo: "Cosa c'è nella spesa spicciola?",
+  },
+  agenda_prossime: {
+    area: "agenda",
+    dove: "agenda",
+    esempio: "Cosa devo fare questa settimana?",
+    titolo: "Cosa c'è questa settimana?",
+  },
+  ingredienti_ricetta: {
+    area: "ricettario",
+    dove: "ricettario",
+    esempio: "Cosa serve per la carbonara?",
+    titolo: "Cosa serve per «{x}»?",
+    senzaSoggetto: "Cosa serve per questo piatto?",
+    chiarimento: "Di quale piatto?",
+  },
+  preparazioni_da_fare: {
+    area: "magazzino",
+    dove: "preparazioni",
+    esempio: "Cosa devo preparare?",
+    titolo: "Cosa devo preparare?",
+  },
+  pulizie_oggi: {
+    area: "haccp",
+    dove: "pulizie",
+    esempio: "Cosa devo pulire oggi?",
+    titolo: "Cosa devo pulire oggi?",
+  },
+  temperature_oggi: {
+    area: "haccp",
+    dove: "temperature",
+    esempio: "Quali temperature mancano?",
+    titolo: "Le temperature di oggi",
   },
 
   // ===================================================================
@@ -414,6 +517,12 @@ const scegli = (chiave, frase, candidati, extra = {}) => {
  * fare*, e mostrarne sei significherebbe nascondere le altre senza nessun
  * posto dove andarle a leggere. Il taglio ha senso quando esiste un
  * «tutte» da qualche parte.
+ * ⚠️ IL PREZZO SI DICHIARA, perché a ogni fase cresce: su un telefono
+ * questo elenco è ormai lungo. Resta la scelta meno peggio finché non
+ * esiste una schermata che le elenchi tutte; il giorno che quella
+ * schermata ci fosse, questa risposta ne mostrerebbe sei e manderebbe lì.
+ * ⚠️ E quante righe siano non si scrive qui: sarebbe la stessa frase
+ * destinata a diventare falsa che questo file ha già tolto due volte.
  *
  * ⚠️ E LA VIA D'USCITA C'È QUANDO IL MODELLO HA CAPITO L'AREA: «quanto mi
  * costa la carbonara» è una domanda di Ricettario che MEMO non sa fare, e
@@ -1065,6 +1174,449 @@ function daAgenda(soggetto, trovati, anche) {
 }
 
 // =====================================================================
+// CASSA — fase 2
+// =====================================================================
+
+/**
+ * QUANTI SOLDI CI SONO.
+ *
+ * 🔴 L'AVVERTENZA NON SI RISCRIVE QUI, e questa è la riga che tiene in
+ * piedi la risposta: `saldo_tesoreria()` restituisce **il numero e la
+ * frase che ne dichiara il limite** — le mance che stanno nel cassetto e
+ * non sono sue, gli incassi con carta che devono ancora arrivare, la data
+ * dell'ultimo conteggio. È la regola del 15/08: *il numero e il suo limite
+ * viaggiano insieme*. Ricopiarla qui vorrebbe dire avere due versioni
+ * della stessa avvertenza, e il giorno che ne cambia una MEMO
+ * racconterebbe un limite che la Cassa non ha più.
+ *
+ * ⚠️ E I DUE SALDI NON SI SOMMANO MAI (regola del 13/08): il contante è nel
+ * cassetto, la banca è in banca, e un totale unico farebbe credere di
+ * poter pagare in contanti quello che sta sul conto.
+ */
+function saldoCassa(saldo) {
+  if (nonLetto(saldo) || !saldo) return nonLoSo("cassa", "i saldi della Cassa");
+
+  return risposta(
+    "cassa",
+    `In cassa ci sono ${formatEUR(saldo.contante_atteso)} e in banca ${formatEUR(
+      saldo.saldo_banca,
+    )}.`,
+    [],
+    { limite: saldo.avvertenza ?? null },
+  );
+}
+
+const versoInParole = (m) => (m?.direction === "entrata" ? "entrati" : "usciti");
+
+const causaleDi = (m) => m?.causale?.label ?? m?.business_purpose ?? null;
+
+/**
+ * GLI ULTIMI MOVIMENTI DI CASSA.
+ *
+ * ⚠️ «RECENTI» È UNA FINESTRA, E LA FINESTRA SI DICHIARA. Senza, la
+ * domanda leggerebbe la Prima nota intera per mostrarne sei righe — e su
+ * una tabella che cresce ogni giorno finirebbe tagliata a mille righe
+ * senza dirlo (la famiglia del 19/08). Con la finestra il conto è
+ * limitato, e chi legge sa fin dove si è guardato.
+ *
+ * ⚠️ «NON C'È NIENTE NEGLI ULTIMI GIORNI» È UNA RISPOSTA VERA, diversa da
+ * «la Prima nota è vuota»: la prima parla della finestra, la seconda del
+ * gestionale. Dirle uguali sarebbe informazione di assenza spacciata per
+ * assenza di informazione.
+ *
+ * ⚠️ E SONO I SOLDI DI BORGO 58: la tasca di Alessio è un soggetto a sé dal
+ * 30/08, e mescolarli direbbe che il locale ha speso quello che ha speso
+ * lui. La risposta lo dichiara invece di lasciarlo intendere.
+ */
+function ultimiMovimenti(movimenti, giorni) {
+  // 🔴 SENZA LA FINESTRA NON SI DÀ NESSUN NUMERO, ed è la regola del 15/08
+  //    applicata alla lettera: *il numero e il suo limite viaggiano
+  //    insieme*. Se chi legge non ha detto fin dove ha guardato, elencare
+  //    sei movimenti li farebbe leggere come «questi sono tutti» — e non
+  //    esiste una risposta onesta che si possa dare al posto suo.
+  if (nonLetto(movimenti) || !(Number(giorni) > 0)) {
+    return nonLoSo("prima_nota", "la Prima nota");
+  }
+  const tutti = movimenti ?? [];
+  const finestra = `Guardo gli ultimi ${giorni} giorni, e solo i soldi di Borgo 58: quelli della tua tasca sono un'altra cosa e stanno per conto loro.`;
+
+  if (tutti.length === 0) {
+    return risposta(
+      "prima_nota",
+      `Negli ultimi ${giorni} giorni non c'è nessun movimento di cassa.`,
+      [],
+      { limite: finestra },
+    );
+  }
+
+  return risposta(
+    "prima_nota",
+    tutti.length === 1
+      ? "C'è un movimento solo:"
+      : `Ci sono ${tutti.length} movimenti, dal più recente:`,
+    tutti.map((m) => ({
+      chiave: m.id,
+      testo: `${formatDate(m.movement_date)} — ${formatEUR(m.amount)} ${versoInParole(m)}${
+        causaleDi(m) ? `, ${causaleDi(m)}` : ""
+      }`,
+    })),
+    { limite: finestra },
+  );
+}
+
+// =====================================================================
+// LE DUE LISTE DELLA SPESA — fase 2
+// =====================================================================
+
+/**
+ * CHE COSA C'È DA COMPRARE — la lista dei fornitori.
+ *
+ * ⚠️ SOLO LE RIGHE ANCORA DA COMPRARE: quelle ordinate o già acquistate
+ * stanno nella stessa lista ma non sono cose da prendere, e contarle
+ * farebbe un elenco più lungo del vero. Quante sono si dichiara — è lo
+ * stesso patto di «cosa mi manca» coi prodotti senza scorta minima.
+ *
+ * ⚠️ E UNA RIGA RIENTRATA SI DICE, perché la lista la mostra: la merce è
+ * arrivata da un'altra parte e quella riga non serve più. Tacerlo
+ * manderebbe a comprare due volte la stessa cosa.
+ */
+function cosaComprare(righe) {
+  if (nonLetto(righe)) return nonLoSo("lista", "la lista della spesa");
+  const tutte = righe ?? [];
+  const daPrendere = tutte.filter((r) => r?.stato === "da_comprare");
+  const altre = tutte.length - daPrendere.length;
+  const rientrate = daPrendere.filter((r) => r?.rientrata === true).length;
+
+  const limite =
+    [
+      altre
+        ? `${
+            altre === 1
+              ? "Un'altra riga è già ordinata o comprata: qui non compare"
+              : `Altre ${altre} righe sono già ordinate o comprate: qui non compaiono`
+          }.`
+        : null,
+      rientrate
+        ? `${rientrate === 1 ? "Di una" : `Di ${rientrate}`} ce n'è di nuovo abbastanza in magazzino: la lista lo dice.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (daPrendere.length === 0) {
+    return risposta("lista", "Non c'è niente da comprare: la lista è vuota.", [], { limite });
+  }
+
+  return risposta(
+    "lista",
+    daPrendere.length === 1 ? "C'è una cosa da comprare:" : `Ci sono ${daPrendere.length} cose da comprare:`,
+    daPrendere.map((r) => ({
+      chiave: r.id,
+      testo: `${r.nome}${
+        r.quantita_da_comprare ? ` — ${qtaConUnita(r.quantita_da_comprare, r.unita)}` : ""
+      }${r.fornitore ? ` (${r.fornitore})` : ""}`,
+    })),
+    { limite },
+  );
+}
+
+/**
+ * CHE COSA C'È NELLA SPESA SPICCIOLA — quella del supermercato.
+ *
+ * 🔴 SONO DUE LISTE DIVERSE (SPEC-0012), E LE DUE RISPOSTE NON SI
+ * MESCOLANO: è la stessa decisione della #36 letta dal lato delle domande.
+ * Una risposta che sommasse le due direbbe un numero che non compare in
+ * nessuna delle due schermate.
+ */
+function cosaSpicciola(righe) {
+  if (nonLetto(righe)) return nonLoSo("spicciola", "la spesa spicciola");
+  const tutte = righe ?? [];
+  const daPrendere = tutte.filter((r) => r?.nel_carrello !== true);
+  const prese = tutte.length - daPrendere.length;
+  const limite = prese
+    ? `${prese === 1 ? "Una cosa è" : `${prese} cose sono`} già nel carrello.`
+    : null;
+
+  if (daPrendere.length === 0) {
+    return risposta("spicciola", "Nella spesa spicciola non c'è niente da prendere.", [], {
+      limite,
+    });
+  }
+
+  return risposta(
+    "spicciola",
+    daPrendere.length === 1
+      ? "Nella spesa spicciola c'è una cosa:"
+      : `Nella spesa spicciola ci sono ${daPrendere.length} cose:`,
+    daPrendere.map((r) => ({
+      chiave: r.id,
+      testo: `${r.articolo}${r.categoria ? ` (${r.categoria})` : ""}`,
+    })),
+    { limite },
+  );
+}
+
+// =====================================================================
+// AGENDA — quello che viene dopo oggi
+// =====================================================================
+
+/**
+ * CHE COSA C'È QUESTA SETTIMANA.
+ *
+ * 🔴 LA FINESTRA NON SE LA INVENTA QUESTA REGOLA: è la corsia «questa
+ * settimana» che l'Agenda calcola nel database, cioè la stessa con cui la
+ * schermata raggruppa. Scegliendo qui un numero di giorni, MEMO e l'Agenda
+ * direbbero due cose diverse sullo stesso fatto — che è la famiglia di
+ * difetti che questo progetto insegue.
+ *
+ * ⚠️ QUELLI DI OGGI RESTANO FUORI, e si dicono a parte: hanno la loro
+ * domanda, e ripeterli qui farebbe sembrare che ci sia più roba di quanta
+ * ce n'è. Il ritardo invece si dichiara sempre, come in «cosa devo fare
+ * oggi»: «questa settimana non hai niente» con quattordici scadute dietro
+ * è vero e fuorviante.
+ */
+function agendaProssime(impegni) {
+  if (nonLetto(impegni)) return nonLoSo("agenda", "l'Agenda");
+  const tutti = impegni ?? [];
+  const prossimi = tutti.filter((t) => t?.corsia === "questa_settimana" && !eDiOggi(t));
+  const oggi = tutti.filter(eDiOggi).length;
+  const inRitardo = tutti.filter((t) => t?.corsia === "in_ritardo").length;
+
+  const limite =
+    [
+      oggi ? `${oggi === 1 ? "C'è anche una cosa" : `Ci sono anche ${oggi} cose`} da fare oggi.` : null,
+      inRitardo
+        ? `${inRitardo === 1 ? "E un impegno è" : `E ${inRitardo} impegni sono`} in ritardo.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (prossimi.length === 0) {
+    return risposta("agenda", "Da qui a fine settimana non hai altro segnato.", [], { limite });
+  }
+  return risposta(
+    "agenda",
+    prossimi.length === 1
+      ? "Questa settimana hai un'altra cosa:"
+      : `Questa settimana hai altre ${prossimi.length} cose:`,
+    prossimi.map(rigaImpegno),
+    { limite },
+  );
+}
+
+// =====================================================================
+// RICETTARIO — che cosa ci va dentro
+// =====================================================================
+
+/**
+ * CHE COSA SERVE PER UN PIATTO.
+ *
+ * 🔴 SI LEGGE DALLA VISTA «display», QUELLA SENZA I COSTI, e non è una
+ * precauzione formale: la domanda è «cosa ci va dentro», non «quanto
+ * costa». Quella vista esiste dal primo giorno proprio per far vedere alla
+ * sala le colonne sicure di una ricetta, e una risposta parlata che si
+ * portasse dietro i prezzi d'acquisto direbbe più di quello che è stato
+ * chiesto — a chiunque tenga in mano il telefono.
+ *
+ * ⚠️ GLI STESSI CANDIDATI DELLE ALTRE DOMANDE DEL RICETTARIO: la scelta fra
+ * più ricette si comporta in un modo solo in tutto MEMO, altrimenti la
+ * stessa ambiguità darebbe due comportamenti diversi.
+ */
+function ingredientiRicetta(soggetto, ricette, ingredienti, scelto) {
+  if (nonLetto(ricette)) return nonLoSo("ricettario", "il Ricettario");
+  if (!soggetto) return chiarimento("ricettario", DOMANDE_CHE_SO.ingredienti_ricetta.chiarimento);
+
+  const { scelte, scremate } = candidatiRicetta(ricette, soggetto);
+  const trovate = fraICandidati(scelte, scelto, "id");
+  if (trovate.length === 0) {
+    return risposta("ricettario", `Non ho nessuna ricetta che si chiami «${soggetto}».`);
+  }
+  if (trovate.length > 1) {
+    return scegli(
+      "ricettario",
+      `Ne ho ${trovate.length} che contengono «${soggetto}»: di quale?`,
+      trovate.map((r) => ({ chiave: r.id, testo: nomeRicetta(r), soggetto: nomeRicetta(r) })),
+      { limite: scremate },
+    );
+  }
+
+  const r = trovate[0];
+  const apri = { a: `/ricettario/ricette/${r.id}`, apri: "Apri la ricetta" };
+  if (nonLetto(ingredienti)) return nonLoSo("ricettario", `gli ingredienti di «${nomeRicetta(r)}»`);
+
+  const righe = ingredienti ?? [];
+  // ⚠️ «NON NE HA» È UNA RISPOSTA VERA e va detta come tale: una ricetta
+  //    senza righe esiste — in produzione ce ne sono quattordici così — e
+  //    dirlo è un'altra cosa dal non aver letto.
+  if (righe.length === 0) {
+    return risposta(
+      "ricettario",
+      `«${nomeRicetta(r)}» non ha ancora nessun ingrediente scritto.`,
+      [],
+      { ...apri, limite: scremate },
+    );
+  }
+
+  return risposta(
+    "ricettario",
+    `Per «${nomeRicetta(r)}» ${righe.length === 1 ? "serve una cosa" : `servono ${righe.length} cose`}:`,
+    righe.map((i) => ({
+      chiave: i.recipe_ingredient_id ?? i.ingredient_name,
+      testo: `${i.ingredient_name}${
+        i.quantity ? ` — ${qtaConUnita(i.quantity, i.unit)}` : ""
+      }${i.is_preparation ? " (preparazione)" : ""}`,
+    })),
+    { ...apri, limite: scremate },
+  );
+}
+
+// =====================================================================
+// PREPARAZIONI, PULIZIE, TEMPERATURE — fase 2
+// =====================================================================
+
+/**
+ * CHE COSA C'È DA PREPARARE.
+ *
+ * ⚠️ L'ELENCO ESISTE GIÀ in Magazzino → Produzioni: qui si legge, e basta.
+ * Da quanti giorni una cosa è lì lo porta il database, e si dice — una
+ * lista senza età diventa un cimitero, ed è la ragione per cui quel numero
+ * è stato messo lì il 29/08.
+ */
+function preparazioniDaFare(cose) {
+  if (nonLetto(cose)) return nonLoSo("preparazioni", "le preparazioni da fare");
+  const tutte = cose ?? [];
+  if (tutte.length === 0) {
+    return risposta("preparazioni", "Non c'è niente segnato da preparare.");
+  }
+  return risposta(
+    "preparazioni",
+    tutte.length === 1
+      ? "C'è una preparazione da fare:"
+      : `Ci sono ${tutte.length} preparazioni da fare:`,
+    tutte.map((c) => ({
+      chiave: c.recipe_id,
+      // ⚠️ Il segno è girato apposta: `quandoInParole` parla di scadenze
+      //    («fra 3 giorni»), qui si parla di attesa («3 giorni fa»). E un
+      //    valore vuoto NON diventa «oggi»: `Number(null)` vale zero, ed è
+      //    esattamente il difetto che il 07/09 faceva contare quindici
+      //    impegni senza data come impegni di oggi.
+      testo: `${c.nome} — ${
+        c.giorni_in_attesa == null
+          ? "da quando non si sa"
+          : quandoInParole(-Number(c.giorni_in_attesa))
+      }`,
+      a: `/ricettario/ricette/${c.recipe_id}`,
+    })),
+  );
+}
+
+/**
+ * CHE COSA C'È DA PULIRE OGGI.
+ *
+ * 🔴 «DOVUTA» LA DECIDE IL DATABASE, non questa regola: la cadenza di ogni
+ * pulizia e l'ultima volta che è stata fatta stanno in `pulizie_di_oggi()`,
+ * che è la stessa funzione che disegna la schermata HACCP. Ricalcolare qui
+ * «ogni quanti giorni» produrrebbe una seconda definizione di dovuto, e il
+ * giorno che divergono MEMO manderebbe a pulire una cosa che il registro
+ * dà in pari.
+ *
+ * ⚠️ E LE PULIZIE SENZA CADENZA SI DICHIARANO: quelle con frequenza «altro»
+ * non sono mai dovute — non perché siano a posto, ma perché nessuno ha
+ * detto ogni quanto vanno fatte. Tacerle farebbe leggere «non c'è niente
+ * da pulire» come una fotografia del registro intero.
+ */
+function pulizieOggi(pulizie) {
+  if (nonLetto(pulizie)) return nonLoSo("pulizie", "il registro delle pulizie");
+  const tutte = pulizie ?? [];
+  const dovute = tutte.filter((p) => p?.dovuta === true);
+  const fatteOggi = tutte.filter((p) => p?.fatta_oggi === true).length;
+  const senzaCadenza = tutte.filter((p) => p?.ogni_giorni == null).length;
+
+  const limite =
+    [
+      fatteOggi ? `${fatteOggi === 1 ? "Una l'hai" : `${fatteOggi} le hai`} già fatta oggi.` : null,
+      senzaCadenza
+        ? `${senzaCadenza === 1 ? "Una pulizia non ha" : `${senzaCadenza} pulizie non hanno`} una cadenza scritta: qui non ${senzaCadenza === 1 ? "compare" : "compaiono"} mai.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (dovute.length === 0) {
+    return risposta("pulizie", "Oggi non c'è niente da pulire: è tutto in pari.", [], { limite });
+  }
+  return risposta(
+    "pulizie",
+    dovute.length === 1 ? "Oggi c'è una pulizia da fare:" : `Oggi ci sono ${dovute.length} pulizie da fare:`,
+    dovute.map((p) => ({
+      chiave: p.task_id,
+      testo: `${p.nome}${p.area ? ` (${p.area})` : ""} — ${
+        p.mai_fatta
+          ? "non è mai stata fatta"
+          : Number(p.giorni_ritardo) > 0
+            ? `in ritardo di ${p.giorni_ritardo} ${Number(p.giorni_ritardo) === 1 ? "giorno" : "giorni"}`
+            : "tocca oggi"
+      }`,
+    })),
+    { limite },
+  );
+}
+
+/**
+ * LE TEMPERATURE DI OGGI SONO STATE SEGNATE?
+ *
+ * 🔴 LA DOMANDA VERA NON È «CHE TEMPERATURA FA», È «L'HO SEGNATA»: il
+ * registro HACCP è un documento esibibile, e quello che manca a un
+ * controllo è la lettura mancante, non il grado. Per questo la risposta
+ * conta prima le attrezzature **senza lettura di oggi**.
+ *
+ * ⚠️ UN FUORI RANGE SI DICE SEMPRE, anche quando tutte le letture ci sono:
+ * è l'unica cosa di questo riquadro che chiede di alzarsi da tavola. E si
+ * dice **soltanto**, senza offrire nessun gesto: chiudere una non
+ * conformità non si fa a voce (regola del mandato vocale del 14/08).
+ */
+function temperatureOggi(letture) {
+  if (nonLetto(letture)) return nonLoSo("temperature", "il registro delle temperature");
+  const tutte = letture ?? [];
+  if (tutte.length === 0) {
+    return risposta("temperature", "Non c'è nessuna attrezzatura da controllare.");
+  }
+  const mancano = tutte.filter((t) => !(Number(t?.quante_oggi) > 0));
+  const fuori = tutte.filter((t) => t?.fuori_range === true);
+
+  const limite = fuori.length
+    ? `⚠️ ${fuori.length === 1 ? "Una lettura è fuori range" : `${fuori.length} letture sono fuori range`}: ${fuori
+        .map((t) => t.nome)
+        .join(", ")}. Guardala nel registro, non si sistema da qui.`
+    : null;
+
+  if (mancano.length === 0) {
+    return risposta(
+      "temperature",
+      tutte.length === 1
+        ? "La temperatura di oggi è segnata."
+        : `Le temperature di oggi sono segnate tutte e ${tutte.length}.`,
+      [],
+      { limite },
+    );
+  }
+  return risposta(
+    "temperature",
+    mancano.length === 1
+      ? "Manca una temperatura di oggi:"
+      : `Mancano ${mancano.length} temperature di oggi:`,
+    mancano.map((t) => ({
+      chiave: t.equipment_id,
+      testo: `${t.nome}${
+        t.ultima_serata ? ` — l'ultima è del ${formatDate(t.ultima_serata)}` : " — mai segnata"
+      }`,
+    })),
+    { limite },
+  );
+}
+
+// =====================================================================
 // FASE 3 — QUELLO CHE DEVE USCIRE
 // =====================================================================
 // 🔴 QUI I NUMERI SONO SOLDI, E NON NE VIENE CALCOLATO NEMMENO UNO. Quanto
@@ -1335,6 +1887,25 @@ export function componiRisposta(domanda, letture = {}) {
     case "quando_scade":
       return quandoScade(soggetto, letture, scelto);
 
+    // --- fase 2 ---------------------------------------------------
+    case "saldo_cassa":
+      return saldoCassa(letture.saldo);
+    case "ultimi_movimenti":
+      return ultimiMovimenti(letture.movimenti, letture.giorni ?? 0);
+    case "cosa_comprare":
+      return cosaComprare(letture.lista);
+    case "cosa_spicciola":
+      return cosaSpicciola(letture.spicciola);
+    case "agenda_prossime":
+      return agendaProssime(letture.impegni);
+    case "ingredienti_ricetta":
+      return ingredientiRicetta(soggetto, letture.ricette, letture.ingredienti, scelto);
+    case "preparazioni_da_fare":
+      return preparazioniDaFare(letture.preparazioni);
+    case "pulizie_oggi":
+      return pulizieOggi(letture.pulizie);
+    case "temperature_oggi":
+      return temperatureOggi(letture.temperature);
     // --- fase 3: quello che deve uscire ---------------------------
     case "fatture_da_pagare":
       return fattureDaPagare(letture.fatture, letture.oggi ?? null);
