@@ -54,22 +54,17 @@ export const TIPO_FATTO = "agenda_da_segnare_fatto";
 export const TIPO_SPOSTA = "agenda_da_spostare";
 export const TIPO_QUALE = "agenda_quale_impegno";
 
-// 🔴 IL COLLEGAMENTO ALL'AGENDA VIAGGIA DENTRO L'APPUNTO, e non e' un
-//    ripiego di comodo: la via d'uscita a mano del 27/08 arriva da
-//    `azione_percorso` nel database, che per un tipo fuori catalogo
-//    risponde — giustamente — niente. Aggiungercelo vorrebbe dire una
-//    migrazione, e questo lavoro non ne fa nessuna.
-//    ⚠️ MA UNA MAPPA SCRITTA NEL BROWSER SAREBBE PEGGIO, ed e' la ragione
-//    scritta accanto a quel collegamento: il giorno che nasce un tipo
-//    nuovo porterebbe da nessuna parte senza che nessuna verifica se ne
-//    accorga. Quindi il posto lo dichiara **chi decide il tipo**, cioe'
-//    questo modulo, e la schermata si limita a mostrarlo — la stessa forma
-//    del `DOVE` delle risposte consultive.
-//    ⚠️ E NON E' LA STESSA COSA di «fallo a mano coi campi gia'
-//    compilati»: li' c'e' un modulo da riempire, qui c'e' un impegno da
-//    CERCARE. Promettere campi compilati su una cosa che il gestionale non
-//    sa nemmeno trovare sarebbe una bugia.
-export const DOVE_AGENDA = { a: "/agenda", apri: "Apri l'Agenda" };
+// 🔴 IL COLLEGAMENTO ALL'AGENDA NON VIAGGIA PIU' QUI — 09/09/2026, fase 2.
+//    Fino a ieri questo modulo si portava dietro l'indirizzo dentro i dati
+//    dell'appunto, perche' `azione_percorso` — che e' il posto dove quella
+//    cosa vive dal 27/08 — per un tipo fuori catalogo rispondeva
+//    giustamente niente, e aggiungercelo voleva dire una migrazione che
+//    quel lavoro non poteva fare.
+//    ⚠️ Adesso la migrazione c'e', e tutt'e tre le destinazioni dell'Agenda
+//    hanno la loro riga nel database. Il ripiego si toglie invece di
+//    restare: due posti che dicono dove si va sono due posti che un giorno
+//    diranno cose diverse — ed e' esattamente la ragione per cui quella
+//    regola era stata scritta.
 
 const testo = (v: unknown): string | null => {
   if (typeof v !== "string") return null;
@@ -244,7 +239,7 @@ export function destinazioneAgenda(azione: AzioneDettata, dettato = ""): AzioneD
       tipo: TIPO_QUALE,
       sicuro: true,
       destinazione: "Quale impegno?",
-      dati: { ...soloIlNecessario(azione), dove: DOVE_AGENDA },
+      dati: soloIlNecessario(azione),
       motivo:
         `Ho capito che vuoi ${gesto === "fatto" ? "chiudere" : "spostare"} un impegno, ` +
         `ma non ho capito ${ELENCO(manca)}. Ridimmelo nominando l'impegno come si chiama ` +
@@ -259,11 +254,13 @@ export function destinazioneAgenda(azione: AzioneDettata, dettato = ""): AzioneD
       tipo: TIPO_FATTO,
       sicuro: true,
       destinazione: "Da segnare fatto in Agenda",
-      dati: { ...soloIlNecessario(azione), titolo, gesto: "segna fatto", dove: DOVE_AGENDA },
-      motivo:
-        `Il gestionale non sa ancora chiudere un impegno da una frase detta: ` +
-        `aprilo in Agenda e tocca «fatto». Intanto te lo tengo scritto qui, ` +
-        `così non si perde.`,
+      dati: { ...soloIlNecessario(azione), titolo, gesto: "segna fatto" },
+      // ⚠️ NESSUN MOTIVO SCRITTO QUI, dalla fase 2. Fin quando il gesto non
+      //    esisteva, questo modulo era l'unico che sapesse dirlo. Adesso
+      //    chi sa com'e' andata e' il DATABASE — ha guardato in Agenda e
+      //    sa se l'impegno e' uno, nessuno o tanti — e il motivo lo scrive
+      //    lui. Lasciarne uno qui vorrebbe dire coprire quello vero con una
+      //    frase scritta prima di aver guardato.
     };
   }
 
@@ -273,17 +270,8 @@ export function destinazioneAgenda(azione: AzioneDettata, dettato = ""): AzioneD
     tipo: TIPO_SPOSTA,
     sicuro: true,
     destinazione: "Da spostare in Agenda",
-    dati: {
-      ...soloIlNecessario(azione),
-      titolo,
-      data_nuova: quando,
-      gesto: "sposta",
-      dove: DOVE_AGENDA,
-    },
-    motivo:
-      `Il gestionale non sa ancora spostare un impegno da una frase detta: ` +
-      `aprilo in Agenda e cambia la data. Intanto te lo tengo scritto qui, ` +
-      `così non si perde.`,
+    dati: { ...soloIlNecessario(azione), titolo, data_nuova: quando, gesto: "sposta" },
+    // ⚠️ Come sopra: il motivo lo scrive il database, che ha guardato.
   };
 }
 

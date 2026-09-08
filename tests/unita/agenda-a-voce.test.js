@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DOVE_AGENDA,
   TIPO_FATTO,
   TIPO_PROMEMORIA,
   TIPO_QUALE,
@@ -118,7 +117,7 @@ describe("creare un impegno resta come prima", () => {
 
 // =====================================================================
 describe("segnare fatto un impegno", () => {
-  it("🔴 diventa un appunto che dichiara il gesto mancante", () => {
+  it("🔴 non è un promemoria: è la CHIUSURA di un impegno che esiste", () => {
     const dopo = destinazioneAgenda(
       detta(TIPO_PROMEMORIA, { titolo: "Segna come fatto il rinnovo della firma" }),
       "Segna come fatto il rinnovo della firma digitale",
@@ -126,8 +125,10 @@ describe("segnare fatto un impegno", () => {
     expect(dopo.tipo).toBe(TIPO_FATTO);
     expect(dopo.tipo).not.toBe(TIPO_PROMEMORIA);
     expect(dopo.destinazione).toBe("Da segnare fatto in Agenda");
-    expect(dopo.motivo).toMatch(/non sa ancora chiudere/i);
-    expect(dopo.motivo).toMatch(/Agenda/);
+    // ⚠️ IL MOTIVO NON LO SCRIVE PIU' QUESTO MODULO (fase 2): lo scrive il
+    //    database, che è l'unico ad aver guardato in Agenda e a sapere se
+    //    l'impegno è uno, nessuno o tanti.
+    expect(dopo.motivo).toBeUndefined();
   });
 
   it("e il titolo dell'impegno resta scritto, così non si perde", () => {
@@ -163,7 +164,7 @@ describe("spostare un impegno", () => {
     expect(dopo.destinazione).toBe("Da spostare in Agenda");
     expect(dopo.dati.titolo).toBe("ordine delle verdure");
     expect(dopo.dati.data_nuova).toBe("2026-09-11");
-    expect(dopo.motivo).toMatch(/non sa ancora spostare/i);
+    expect(dopo.motivo).toBeUndefined();
   });
 
   it("🔴 senza il giorno nuovo NON si inventa: si chiede", () => {
@@ -249,13 +250,41 @@ describe("su tutta la filza", () => {
 });
 
 // =====================================================================
-describe("il collegamento all'Agenda", () => {
-  // 🔴 SENZA COLLEGAMENTO L'APPUNTO È UN VICOLO CIECO: dice che il gesto
-  //    non c'è e lascia chi legge a cercarsi la schermata da solo. In
-  //    questo progetto un rifiuto senza via d'uscita è un difetto a sé
-  //    (16/08), e qui il rifiuto è per costruzione.
+describe("il collegamento all'Agenda lo dice il DATABASE, non questo modulo", () => {
+  // 🔴 FINO ALL'08/09 L'INDIRIZZO VIAGGIAVA DENTRO I DATI DELL'APPUNTO, ed
+  //    era un ripiego dichiarato: `azione_percorso` — il posto dove quella
+  //    cosa vive dal 27/08 — per un tipo fuori catalogo rispondeva
+  //    giustamente niente, e aggiungercelo voleva dire una migrazione che
+  //    la fase 1 non poteva fare.
+  //
+  // 🔴 CON LA FASE 2 LA MIGRAZIONE C'È, e il ripiego si TOGLIE invece di
+  //    restare accanto: due posti che dicono dove si va sono due posti che
+  //    un giorno diranno cose diverse. Queste prove tengono chiusa quella
+  //    porta — se qualcuno rimettesse l'indirizzo qui, diventerebbero rosse.
 
-  it("le due destinazioni che non si eseguono portano in Agenda", () => {
+  it("nessuna delle tre destinazioni si porta dietro un indirizzo", () => {
+    const casi = [
+      [
+        detta(TIPO_FATTO, { impegno: "rinnovo della firma digitale" }),
+        "segna come fatto il rinnovo della firma digitale",
+      ],
+      [
+        detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-11" }),
+        "sposta a venerdì l'ordine delle verdure",
+      ],
+      [detta(TIPO_SPOSTA, { impegno: "verdure" }), "sposta le verdure"],
+    ];
+    for (const [azione, dettato] of casi) {
+      expect(destinazioneAgenda(azione, dettato).dati?.dove).toBeUndefined();
+    }
+  });
+
+  it("🔴 e nemmeno un motivo, sui due che adesso il gestionale sa fare", () => {
+    // 🔴 Chi sa com'è andata è il DATABASE: ha guardato in Agenda e sa se
+    //    l'impegno è uno, nessuno o tanti. Un motivo scritto qui — prima di
+    //    aver guardato — coprirebbe quello vero, ed è la stessa forma del
+    //    difetto che la fase 1 ha chiuso: una frase decisa da chi non ha i
+    //    dati davanti.
     const fatto = destinazioneAgenda(
       detta(TIPO_FATTO, { impegno: "rinnovo della firma digitale" }),
       "segna come fatto il rinnovo della firma digitale",
@@ -264,32 +293,21 @@ describe("il collegamento all'Agenda", () => {
       detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-11" }),
       "sposta a venerdì l'ordine delle verdure",
     );
-    expect(fatto.dati.dove).toEqual(DOVE_AGENDA);
-    expect(sposta.dati.dove).toEqual(DOVE_AGENDA);
-    expect(DOVE_AGENDA.a).toBe("/agenda");
+    expect(fatto.motivo).toBeUndefined();
+    expect(sposta.motivo).toBeUndefined();
   });
 
-  it("e ci porta anche quando manca qualcosa", () => {
-    // ⚠️ È il caso in cui serve di più: il gestionale non sa quale impegno
-    //    sia, quindi l'unica cosa che può fare è mandare dove stanno tutti.
+  it("⚠️ ma «quale impegno?» il suo motivo ce l'ha ancora, e serve", () => {
+    // ⚠️ Qui la mancanza si vede dalle PAROLE — non ha detto a quando, non
+    //    ha detto quale — e il database non viene nemmeno interrogato: quel
+    //    tipo non è nel catalogo, quindi nessuno lo ritraduce. Se il motivo
+    //    sparisse anche da qui, l'appunto resterebbe muto.
     const chiede = destinazioneAgenda(
       detta(TIPO_SPOSTA, { impegno: "verdure" }),
       "sposta le verdure",
     );
     expect(chiede.tipo).toBe(TIPO_QUALE);
-    expect(chiede.dati.dove).toEqual(DOVE_AGENDA);
-  });
-
-  it("🔴 e un promemoria NON se lo porta dietro", () => {
-    // 🔴 LA METÀ CHE DISCRIMINA: il promemoria si esegue, quindi ha già la
-    //    sua via d'uscita dal database (azione_percorso → /agenda/nuovo).
-    //    Dargli anche questo metterebbe due collegamenti diversi sulla
-    //    stessa riga, e uno dei due porterebbe nel posto sbagliato.
-    const p = destinazioneAgenda(
-      detta(TIPO_PROMEMORIA, { titolo: "Chiamare Tiziana", data: "2026-09-09" }),
-      "ricordami di chiamare Tiziana domani",
-    );
-    expect(p.dati?.dove).toBeUndefined();
+    expect(chiede.motivo).toMatch(/a quando/);
   });
 });
 
@@ -308,7 +326,7 @@ describe("il nome dell'impegno si scrive UNA volta sola", () => {
       }),
       "segna come fatto il rinnovo della firma",
     );
-    expect(Object.keys(a.dati).sort()).toEqual(["dove", "gesto", "titolo"]);
+    expect(Object.keys(a.dati).sort()).toEqual(["gesto", "titolo"]);
     expect(a.dati.titolo).toBe("rinnovo della firma");
   });
 

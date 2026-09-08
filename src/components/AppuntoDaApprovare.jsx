@@ -208,24 +208,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
             to={indirizzoAMano(elemento.percorso, elemento.id)}
             className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
           >
-            Fallo a mano, coi campi già compilati →
-          </Link>
-        </p>
-      )}
-
-      {/* 🔴 E QUANDO IL GESTO NON ESISTE, IL COLLEGAMENTO PORTA DOVE SI FA.
-          Non e' la via d'uscita qui sopra — quella promette «coi campi gia'
-          compilati», e su un impegno da cercare sarebbe una bugia. Il posto
-          lo dichiara chi ha deciso il tipo (`agenda.ts`), non una mappa
-          scritta qui: cosi' un tipo nuovo o porta il suo posto, o non
-          mostra nessun collegamento — mai uno che porta altrove. */}
-      {elemento.dati?.dove?.a && (
-        <p className="testo-sala mt-1">
-          <Link
-            to={elemento.dati.dove.a}
-            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
-          >
-            {elemento.dati.dove.apri ?? "Apri"} →
+            Fallo a mano →
           </Link>
         </p>
       )}
