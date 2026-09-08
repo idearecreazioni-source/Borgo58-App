@@ -137,8 +137,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 78 | 05/09/2026 | il setaccio del denaro cerca le parole in qualunque punto del nome |
 | 79 | 06/09/2026 | le misure sicure si salvano da sé |
 | 80 | 06/09/2026 | scegliere fra i candidati esegue |
+| 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
 
-⚠️ **Righe: 81.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 82.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3030,3 +3031,32 @@ che non viene mai salvata perché non passa da nessun deposito.
    che il gestionale aveva proposto, altrimenti dal browser si potrebbe
    abbinare la temperatura di un frigo a un altro.
    *(SPEC-0013; migrazione `20260906000002`.)*
+
+## 81 · 09/09/2026 — «il collegamento a mano promette i campi già compilati»
+
+1. **Cosa era stato deciso e quando.** 27/08/2026, decisione di Alessio con le
+   sue parole: *«se ti dico segna trenta euro pagati al fornitore, mi aspetto
+   che un collegamento mi porti dove si segnano le spese, coi campi noti già
+   compilati»*. L'etichetta del collegamento lo diceva: **«Fallo a mano, coi
+   campi già compilati →»**.
+
+2. **La ragione di allora.** La promessa dei campi compilati **è** il valore
+   del gesto: senza, «fallo a mano» somiglia a «arrangiati». Dirlo sul
+   pulsante fa capire prima di premere che il lavoro già fatto non si butta.
+
+3. **Cosa si decide adesso.** L'etichetta dice **«Fallo a mano →»**. La
+   promessa esce dal pulsante e resta dove si dimostra: sulla schermata di
+   arrivo, dove la striscia mostra i campi arrivati dalla voce.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e resta
+   vera per dodici destinazioni su quindici** — ma con l'Agenda a voce ne
+   nascono tre che portano a `/agenda`, dove **non c'è nessun modulo da
+   riempire**: c'è un impegno da cercare. Su quelle il pulsante prometteva una
+   cosa che nessun pezzo del gestionale mantiene, ed è la forma che questo
+   progetto rifiuta da sempre — *una schermata non promette un valore che un
+   altro pezzo non mantiene*.
+   ⚠️ **Le strade scartate erano due, e costavano più di quello che valevano**:
+   una mappa tipo→etichetta nel browser (cioè il secondo posto che dice dove si
+   va, appena tolto), oppure far viaggiare l'etichetta dal database, che vuol
+   dire una colonna nuova e due funzioni di lettura riscritte per una parola.
+   *(Fase 2 dell'Agenda a voce; migrazione `20260909000002`.)*
