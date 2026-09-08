@@ -121,6 +121,56 @@ describe("il riquadro di una risposta", () => {
   });
 });
 
+// =====================================================================
+// FASE 2 — 08/09/2026
+// =====================================================================
+describe("le domande della fase 2, a schermo", () => {
+  it("🔴 i saldi si vedono con l'avvertenza che scrive il database", () => {
+    // 🔴 Regola del 15/08: il numero e il suo limite viaggiano insieme. A
+    //    schermo devono stare nello stesso riquadro — un avviso staccato
+    //    dal numero si legge dopo il numero, cioè quando la conclusione è
+    //    già stata tratta.
+    mostra(
+      componiRisposta(
+        { chiede: "saldo_cassa" },
+        {
+          saldo: {
+            contante_atteso: 1352.49,
+            saldo_banca: 10895.32,
+            avvertenza: "Di questo contante 199,45 euro sono mance del personale, non tuoi.",
+          },
+        },
+      ),
+    );
+    expect(screen.getByText(/1\.352,49/)).toBeTruthy();
+    expect(screen.getByText(/mance del personale/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Apri la Cassa/ }).getAttribute("href")).toBe("/cassa");
+  });
+
+  it("🔴 e nemmeno su un fuori range compare un pulsante", () => {
+    // ⚠️ Un fuori range non si chiude a voce (mandato vocale del 14/08):
+    //    la risposta lo dice e manda a guardare, e non offre nessun gesto.
+    mostra(
+      componiRisposta(
+        { chiede: "temperature_oggi" },
+        {
+          temperature: [
+            { equipment_id: "e1", nome: "Cella carni", quante_oggi: 1, fuori_range: true },
+          ],
+        },
+      ),
+    );
+    expect(screen.getByText(/fuori range/i)).toBeTruthy();
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("una lettura caduta sui soldi non mette nessuna cifra a schermo", () => {
+    mostra(componiRisposta({ chiede: "saldo_cassa" }, { saldo: NON_LETTO }));
+    expect(screen.getByText(/non lo so/i)).toBeTruthy();
+    expect(screen.queryByText(/€/)).toBeNull();
+  });
+});
+
 describe("un elenco lungo, a schermo", () => {
   it("🔴 si vede che è tagliato, e dove sono tutte", () => {
     // 🔴 Misurato col modello vero: «cosa scade?» rispondeva con 68 righe.
@@ -139,5 +189,23 @@ describe("un elenco lungo, a schermo", () => {
     expect(screen.getByText(/20 partite sono in scadenza/)).toBeTruthy();
     expect(screen.getByText(/e altre 14/)).toBeTruthy();
     expect(screen.getAllByRole("listitem")).toHaveLength(6);
+  });
+
+  it("🔴 e dice DOVE sono tutte, con una frase che si legge", () => {
+    // 🔴 Il posto arriva già scritto (`dentro`), e non si ricava più
+    //    tagliando l'articolo all'etichetta del pulsante: quella
+    //    sostituzione conosceva «il», «lo» e «l'», e alla prima
+    //    destinazione femminile avrebbe scritto «le trovi tutte in la
+    //    Cassa». Nessun errore, una frase storta a schermo.
+    const movimenti = Array.from({ length: 12 }, (_, i) => ({
+      id: `m${i}`,
+      movement_date: "2026-09-05",
+      amount: 30,
+      direction: "uscita",
+      causale: { label: "Spesa" },
+    }));
+    mostra(componiRisposta({ chiede: "ultimi_movimenti" }, { movimenti, giorni: 30 }));
+    expect(screen.getByText(/le trovi tutte in Prima nota/)).toBeTruthy();
+    expect(screen.queryByText(/in la /)).toBeNull();
   });
 });
