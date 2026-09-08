@@ -19,7 +19,11 @@
 // ne scriverebbe un altro.
 
 /** I campi che non si mostrano: sono impalcatura, non contenuto. */
-const DI_SERVIZIO = new Set(["nome_sentito", "sentito", "lista"]);
+// ⚠️ `dove` e' il collegamento che l'appunto si porta dietro (Agenda,
+//    07/09): e' impalcatura per la schermata, non una cosa che verrebbe
+//    scritta approvando — e mostrarlo fra i dati concreti direbbe a chi
+//    firma che sta autorizzando un indirizzo.
+const DI_SERVIZIO = new Set(["nome_sentito", "sentito", "lista", "dove"]);
 
 /**
  * Come si scrive un valore dentro un appunto.
