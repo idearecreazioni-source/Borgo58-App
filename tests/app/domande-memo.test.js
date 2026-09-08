@@ -2,12 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { supabase } from "../../src/lib/supabase";
 import { clientAutenticato, credenziali, marchio, primaEntita, righeMie } from "./aiuto";
 import { letturePerDomanda, rispondiA } from "../../src/lib/api/domandeMemo";
-import { componiRisposta } from "../../src/lib/calcoli/domande";
+import { DOMANDE_CHE_SO, componiRisposta } from "../../src/lib/calcoli/domande";
 import { eDiOggi } from "../../src/lib/calcoli/agenda";
+import { NON_LETTO } from "../../src/lib/calcoli/letture";
 import { oggiLocale } from "../../src/lib/constants";
 
 // =====================================================================
-// MEMO CONSULTIVO — le nove domande contro il database vero
+// MEMO CONSULTIVO — tutte le domande contro il database vero
 // =====================================================================
 // 🔴 PERCHÉ NON BASTANO LE PROVE PURE: quelle sanno che la regola compone
 //    la frase giusta a partire dai dati. Non sanno se i dati ARRIVANO —
@@ -154,26 +155,45 @@ function haRisposto({ data, error }) {
 }
 
 // ---------------------------------------------------------------------
-describe("le nove domande leggono davvero", () => {
-  const NOVE = [
-    { chiede: "ricetta_esiste", soggetto: `${MARCA} carbonara di prova` },
-    { chiede: "allergeni", soggetto: `${MARCA} carbonara di prova` },
-    { chiede: "piatti_in_carta" },
-    { chiede: "quanto_ho", soggetto: `${MARCA} olio di prova` },
-    { chiede: "cosa_manca" },
-    { chiede: "cosa_scade" },
-    { chiede: "agenda_oggi" },
-    { chiede: "agenda_in_ritardo" },
-    { chiede: "quando_scade", soggetto: `${MARCA} portare i corrispettivi` },
-  ];
+// 🔴 L'ELENCO DELLE DOMANDE NON SI SCRIVE QUI: si costruisce dal
+//    catalogo. Fino al 07/09 era una filza di nove righe a mano, e alla
+//    prima domanda nuova avrebbe continuato a provarne nove dichiarando
+//    di provarle tutte — un guardiano che copre il passato.
+// ⚠️ Il soggetto invece è roba di questa prova, e per ogni domanda che ne
+//    vuole uno **dev'esserci**: senza, si eserciterebbe il ramo «di che
+//    cosa?» credendo di provare la lettura. La riga sotto lo pretende.
+const SOGGETTI = {
+  ricetta_esiste: `${MARCA} carbonara di prova`,
+  allergeni: `${MARCA} carbonara di prova`,
+  ingredienti_ricetta: `${MARCA} carbonara di prova`,
+  quanto_ho: `${MARCA} olio di prova`,
+  quando_scade: `${MARCA} portare i corrispettivi`,
+};
 
-  it("🔴 nessuna delle nove risponde «non lo so»: le fonti si leggono tutte", async () => {
+const TUTTE = Object.keys(DOMANDE_CHE_SO).map((chiede) => ({
+  chiede,
+  soggetto: SOGGETTI[chiede] ?? null,
+  testo: `${DOMANDE_CHE_SO[chiede].esempio}`,
+}));
+
+describe("tutte le domande leggono davvero", () => {
+  it("🔴 ogni domanda che vuole un soggetto ne ha uno in questa prova", () => {
+    // ⚠️ La metà che discrimina: senza questa riga, una domanda nuova che
+    //    vuole un soggetto entrerebbe nel giro qui sotto e risponderebbe
+    //    «di che cosa?» — cioè passerebbe senza aver letto niente.
+    const senza = Object.entries(DOMANDE_CHE_SO)
+      .filter(([chiede, d]) => d.chiarimento && !SOGGETTI[chiede])
+      .map(([chiede]) => chiede);
+    expect(senza, "a queste domande manca il soggetto di prova").toEqual([]);
+  });
+
+  it("🔴 nessuna risponde «non lo so»: le fonti si leggono tutte", async () => {
     // 🔴 È la prova dei permessi, e funziona proprio perché la regola pura
     //    non finge: un rifiuto del database arriva qui come «non lo so»,
     //    non come un elenco vuoto. Se domani una `grant` cadesse, questa
     //    riga diventa rossa da sola invece di far comparire uno zero.
     const storte = [];
-    for (const domanda of NOVE) {
+    for (const domanda of TUTTE) {
       const { risposta } = await rispondiA(domanda);
       if (risposta.stato === "non_lo_so") storte.push(`${domanda.chiede}: ${risposta.frase}`);
     }
@@ -183,7 +203,7 @@ describe("le nove domande leggono davvero", () => {
   });
 
   it("...e ognuna porta da qualche parte", async () => {
-    for (const domanda of NOVE) {
+    for (const domanda of TUTTE) {
       const { risposta } = await rispondiA(domanda);
       expect(risposta.a, domanda.chiede).toBeTruthy();
     }
@@ -570,6 +590,45 @@ describe("🔴 la catena intera, un'area per volta", () => {
     if (risposta.stato === "risposta") expect(risposta.a).toContain("/ricettario/ricette");
   });
 
+  it("CASSA — «quanti soldi ci sono in cassa?» arriva ai saldi veri", async () => {
+    // 🔴 È L'AREA NUOVA CHE COSTA DI PIÙ SE SBAGLIA: qui la domanda passa
+    //    dal modello, e quello che deve NON succedere è che una frase sui
+    //    soldi diventi un movimento da approvare.
+    const giro = await dettaEPulisci("Quanti soldi ci sono in cassa?");
+    expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+    if (!haRisposto(giro)) return;
+
+    expect(giro.data.domanda.chiede).toBe("saldo_cassa");
+    const { risposta } = await rispondiA({ ...giro.data.domanda, testo: giro.data.testo });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.a).toBe("/cassa");
+    // ⚠️ E il numero arriva col suo limite attaccato, come lo scrive il
+    //    database: senza, un contante teorico si legge come contato.
+    expect(risposta.limite).toBeTruthy();
+  });
+
+  it("LA SPESA — «cosa devo comprare?» finisce nella lista giusta", async () => {
+    const giro = await dettaEPulisci("Cosa devo comprare?");
+    expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+    if (!haRisposto(giro)) return;
+
+    expect(giro.data.domanda.chiede).toBe("cosa_comprare");
+    const { risposta } = await rispondiA({ ...giro.data.domanda, testo: giro.data.testo });
+    expect(risposta.a).toBe("/magazzino/lista-spesa");
+    expect(risposta.a).not.toBe("/magazzino/spesa-spicciola");
+  });
+
+  it("HACCP — «cosa devo pulire oggi?» legge il registro e non ci scrive", async () => {
+    const giro = await dettaEPulisci("Cosa devo pulire oggi?");
+    expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
+    if (!haRisposto(giro)) return;
+
+    expect(giro.data.domanda.chiede).toBe("pulizie_oggi");
+    const { risposta } = await rispondiA({ ...giro.data.domanda, testo: giro.data.testo });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.a).toBe("/haccp/pulizia");
+  });
+
   it("AGENDA — «cosa devo fare oggi?» conta quello che conta l'Agenda", async () => {
     const giro = await dettaEPulisci("Cosa devo fare oggi?");
     expect(giro.nati.map((a) => a.titolo), "una domanda ha fatto nascere un appunto").toEqual([]);
@@ -601,17 +660,21 @@ describe("🔴 la giornata arriva fino alla regola", () => {
 });
 
 // ---------------------------------------------------------------------
-describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () => {
-  // 🔴 PERCHE' TUTTE E NOVE E NON UNA: fino al 07/09 la prova che nessun
-  //    appunto nasce da una domanda guardava «quanto olio ho». Una
-  //    scrittura di troppo, il giorno che ci fosse, nascerebbe nella
-  //    lettura di un'altra domanda — e sarebbe muta, perché in lettura un
-  //    effetto collaterale non dà nessun errore.
+describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
+  // 🔴 PERCHE' TUTTE E NON UNA: fino al 07/09 la prova che nessun appunto
+  //    nasce da una domanda guardava «quanto olio ho». Una scrittura di
+  //    troppo, il giorno che ci fosse, nascerebbe nella lettura di
+  //    un'altra domanda — e sarebbe muta, perché in lettura un effetto
+  //    collaterale non dà nessun errore.
   //
   // ⚠️ E NON GUARDA SOLO GLI APPUNTI: conta le righe delle tabelle che il
   //    modulo voce tocca **e** di quelle che MEMO legge. È la forma del
   //    guardiano dei residui del 26/08 — le lapidi non bastano, perché le
   //    tabelle sorvegliate sono 21 su tutte quelle del gestionale.
+  // ⚠️ L'ELENCO SEGUE LE DOMANDE: con la fase 2 MEMO legge anche Cassa,
+  //    le due liste della spesa, le preparazioni e i due registri HACCP —
+  //    e sono proprio le tabelle dove una scrittura di troppo farebbe più
+  //    danno (un movimento di cassa, una riga in un registro esibibile).
   const TABELLE = [
     "dettature",
     "azioni_dettate",
@@ -621,6 +684,13 @@ describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () =
     "recipes",
     "stock_lots",
     "recipe_ingredients",
+    // --- fase 2 ---
+    "cash_movements",
+    "shopping_list_items",
+    "spesa_spicciola",
+    "preparazioni_da_fare",
+    "haccp_cleaning_logs",
+    "haccp_temperature_logs",
   ];
 
   const contaTutte = async () => {
@@ -633,24 +703,14 @@ describe("🔴 NESSUNA delle nove scrive, e non solo quella che si guarda", () =
     return righe;
   };
 
-  it("le nove domande, una dietro l'altra, non muovono una riga", async () => {
+  it("tutte le domande, una dietro l'altra, non muovono una riga", async () => {
     const prima = await contaTutte();
 
-    // ⚠️ Tutte e nove con un soggetto plausibile: quello che si prova è
-    //    che LEGGERE non scriva, quindi le risposte qui non contano —
-    //    contano i conteggi di prima e di dopo.
-    for (const domanda of [
-      { chiede: "ricetta_esiste", soggetto: "astice" },
-      { chiede: "allergeni", soggetto: "astice" },
-      { chiede: "piatti_in_carta" },
-      { chiede: "quanto_ho", soggetto: "astice" },
-      { chiede: "cosa_manca" },
-      { chiede: "cosa_scade" },
-      { chiede: "agenda_oggi" },
-      { chiede: "agenda_in_ritardo" },
-      { chiede: "quando_scade", soggetto: "astice", testo: "quando scade l'astice" },
-    ]) {
-      const { risposta } = await rispondiA(domanda);
+    // ⚠️ TUTTE, prese dal catalogo, con un soggetto plausibile: quello che
+    //    si prova è che LEGGERE non scriva, quindi le risposte qui non
+    //    contano — contano i conteggi di prima e di dopo.
+    for (const domanda of TUTTE) {
+      const { risposta } = await rispondiA({ ...domanda, soggetto: domanda.soggetto ?? "astice" });
       expect(risposta.stato, `«${domanda.chiede}» non è riuscita a leggere`).not.toBe("non_lo_so");
     }
 
@@ -698,8 +758,10 @@ describe("🔴 i permessi della sala", () => {
   });
 
   it("la giacenza che MEMO legge non porta NESSUN prezzo", async () => {
-    // ⚠️ Alle nove domande della fase 1 il denaro non serve, e non
-    //    chiederlo è più forte che chiederlo e non mostrarlo.
+    // ⚠️ Alle domande del Magazzino il denaro non serve, e non chiederlo è
+    //    più forte che chiederlo e non mostrarlo. Dalla fase 2 i soldi
+    //    entrano, ma da una porta sola — la Cassa — e con davanti il
+    //    portiere del database, che la prova qui sotto esercita.
     const { data, error } = await titolare
       .from("v_stock_levels")
       .select("*")
@@ -714,6 +776,126 @@ describe("🔴 i permessi della sala", () => {
 });
 
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+describe("🔴 i soldi entrano da una porta sola, e la porta ha un portiere", () => {
+  it("🔴 alla sala i saldi della Cassa NON escono", async () => {
+    // 🔴 LA DOMANDA CHE CONTA NON È «MEMO NASCONDE?» MA «IL DATABASE
+    //    RIFIUTA?»: MEMO legge col permesso di chi guarda, quindi la
+    //    risposta la dà il portiere di «saldo_tesoreria». Qui si prova
+    //    quello, sulla funzione vera.
+    const entita = await primaEntita(titolare);
+    const { error } = await staff.rpc("saldo_tesoreria", { p_entity_id: entita });
+    expect(error, "la sala si è letta i saldi della Cassa").not.toBeNull();
+  });
+
+  it("...e un rifiuto arriva a MEMO come «non lo so», mai come uno zero", () => {
+    // ⚠️ È il pezzo che chiude il giro: il rifiuto del database diventa
+    //    NON_LETTO in «leggi()», e la regola pura lo mostra come «non lo
+    //    so». Uno zero a schermo sarebbe un saldo inventato.
+    const r = componiRisposta({ chiede: "saldo_cassa" }, { saldo: NON_LETTO });
+    expect(r.stato).toBe("non_lo_so");
+    expect(r.frase).not.toMatch(/\d/);
+  });
+
+  it("la metà che discrimina: al titolare i saldi arrivano", async () => {
+    const { risposta } = await rispondiA({ chiede: "saldo_cassa" });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.frase).toMatch(/€/);
+    // ⚠️ E l'avvertenza è quella che scrive il database, non una riscritta
+    //    da MEMO: il numero e il suo limite viaggiano insieme (15/08).
+    expect(risposta.limite, "il saldo è arrivato senza la sua avvertenza").toBeTruthy();
+  });
+
+  it("🔴 e i movimenti letti sono quelli dell'OSTERIA, non quelli della tasca", async () => {
+    // 🔴 Dal 30/08 «la mia tasca» è un soggetto contabile a sé. Se la
+    //    lettura non scegliesse il soggetto, MEMO elencherebbe fra le
+    //    uscite del locale le spese personali di Alessio — righe
+    //    plausibili, e nessun errore.
+    const { data: soggetti } = await titolare.from("entities").select("id, entity_type");
+    const tasca = (soggetti ?? []).find((e) => e.entity_type === "tasca");
+    expect(tasca, "sul progetto di prova non c'è il soggetto «tasca»").toBeTruthy();
+
+    const letture = await letturePerDomanda({ chiede: "ultimi_movimenti" });
+    const suTasca = (letture.movimenti ?? []).filter((m) => m.entity_id === tasca.id);
+    expect(suTasca, "fra i movimenti letti ce n'è qualcuno della tasca").toEqual([]);
+  });
+
+  it("gli ingredienti di una ricetta arrivano SENZA prezzi", async () => {
+    // ⚠️ La vista «_display» esiste dal primo giorno per far vedere alla
+    //    sala le colonne sicure. Qui si controlla che sia ancora così: una
+    //    colonna di denaro aggiunta lì domani uscirebbe da MEMO senza che
+    //    nessuno l'abbia chiesta.
+    const { data, error } = await titolare
+      .from("recipe_ingredients_display")
+      .select("*")
+      .limit(1);
+    expect(error).toBeNull();
+    const riga = (data ?? [])[0];
+    expect(riga, "sul progetto di prova nessuna ricetta ha ingredienti").toBeTruthy();
+    const soldi = Object.keys(riga).filter((c) => /cost|price|prezzo|costo|euro|importo/i.test(c));
+    expect(soldi, "la vista degli ingredienti ha acquistato una colonna di denaro").toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 le due liste restano due, anche contro i dati veri", () => {
+  it("quello che è nella spesa spicciola non compare fra le cose da comprare", async () => {
+    // 🔴 È la decisione della #36 (SPEC-0012) provata dal lato delle
+    //    domande: due tabelle, due letture, nessun travaso.
+    const comprare = await letturePerDomanda({ chiede: "cosa_comprare" });
+    const spicciola = await letturePerDomanda({ chiede: "cosa_spicciola" });
+    expect(Object.keys(comprare)).toEqual(["lista"]);
+    expect(Object.keys(spicciola)).toEqual(["spicciola"]);
+
+    const nomi = new Set((comprare.lista ?? []).map((r) => r.nome));
+    const articoli = (spicciola.spicciola ?? []).map((r) => r.articolo);
+    expect(articoli.filter((a) => nomi.has(a)), "un articolo compare in tutt'e due").toEqual([]);
+  });
+
+  it("...e ognuna risponde con la SUA destinazione", async () => {
+    const a = await rispondiA({ chiede: "cosa_comprare" });
+    const b = await rispondiA({ chiede: "cosa_spicciola" });
+    expect(a.risposta.a).toBe("/magazzino/lista-spesa");
+    expect(b.risposta.a).toBe("/magazzino/spesa-spicciola");
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 i numeri di MEMO sono quelli delle schermate", () => {
+  // 🔴 È LA PROMESSA SU CUI POGGIA TUTTA LA FASE CONSULTIVA: quello che
+  //    MEMO dice si può andare a controllare, e se non combacia si vede.
+  //    Qui si confronta la risposta con la STESSA funzione che disegna la
+  //    schermata, non con un conteggio rifatto a mano.
+
+  it("«cosa devo comprare?» conta quello che conta la lista della spesa", async () => {
+    const { data: lista } = await titolare.rpc("lista_spesa");
+    const attese = (lista ?? []).filter((r) => r.stato === "da_comprare").length;
+    const { risposta } = await rispondiA({ chiede: "cosa_comprare" });
+    expect(risposta.righe.length + risposta.troppe).toBe(attese);
+  });
+
+  it("«cosa devo pulire oggi?» conta quello che conta il registro HACCP", async () => {
+    const { data: pulizie } = await titolare.rpc("pulizie_di_oggi");
+    const dovute = (pulizie ?? []).filter((p) => p.dovuta).length;
+    const { risposta } = await rispondiA({ chiede: "pulizie_oggi" });
+    expect(risposta.righe.length + risposta.troppe).toBe(dovute);
+  });
+
+  it("«cosa devo preparare?» conta quello che conta Produzioni", async () => {
+    const { data: cose } = await titolare.rpc("cose_da_fare");
+    const { risposta } = await rispondiA({ chiede: "preparazioni_da_fare" });
+    expect(risposta.righe.length + risposta.troppe).toBe((cose ?? []).length);
+  });
+
+  it("«questa settimana» prende la corsia dell'Agenda, e non ci mette dentro oggi", async () => {
+    const { data: corsie } = await titolare.rpc("agenda_corsie");
+    const attesi = (corsie ?? []).filter((t) => t.corsia === "questa_settimana" && !eDiOggi(t));
+    const { risposta } = await rispondiA({ chiede: "agenda_prossime" });
+    expect(risposta.righe.length + risposta.troppe).toBe(attesi.length);
+    expect(risposta.righe.some((r) => r.chiave === impegnoDiOggi)).toBe(false);
+  });
+});
+
 describe("solo le letture che servono", () => {
   it("una domanda del Magazzino non apre il Ricettario, e viceversa", async () => {
     // ⚠️ Ogni lettura è un giro di rete in cella. Se domani qualcuno
@@ -723,5 +905,15 @@ describe("solo le letture che servono", () => {
 
     const agenda = await letturePerDomanda({ chiede: "agenda_oggi" });
     expect(Object.keys(agenda)).toEqual(["impegni"]);
+
+    // ⚠️ E una domanda della Cassa non apre il Magazzino: la finestra dei
+    //    movimenti viaggia insieme ai movimenti, perché senza di lei la
+    //    risposta non si può dare (il numero e il suo limite, 15/08).
+    const soldi = await letturePerDomanda({ chiede: "ultimi_movimenti" });
+    expect(Object.keys(soldi).sort()).toEqual(["giorni", "movimenti"]);
+    expect(soldi.giorni).toBeGreaterThan(0);
+
+    const saldo = await letturePerDomanda({ chiede: "saldo_cassa" });
+    expect(Object.keys(saldo)).toEqual(["saldo"]);
   });
 });
