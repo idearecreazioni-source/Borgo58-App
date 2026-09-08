@@ -1,6 +1,6 @@
 // =====================================================================
 // UNA DOMANDA NON È UN COMANDO — MEMO consultivo
-// (fase 1: 07/09 · fase 2: 08/09/2026)
+// (fase 1: 07/09 · fasi 2 e 3: 08/09/2026)
 // =====================================================================
 // Fino a oggi tutto quello che Alessio diceva a MEMO era una cosa da
 // SEGNARE: ne usciva un appunto, e l'appunto aspettava un sì. Da adesso
@@ -85,6 +85,13 @@ export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   // detta già da un'altra parte, e un fuori range non si chiude a voce.
   pulizie_oggi: { area: "haccp", soggetto: false },
   temperature_oggi: { area: "haccp", soggetto: false },
+  // --- fase 3: quello che deve uscire (08/09/2026) ---
+  // In sola lettura, e col portiere del database davanti: chi non è
+  // titolare riceve un rifiuto, non un numero più piccolo.
+  fatture_da_pagare: { area: "fornitori", soggetto: false },
+  ordini_in_corso: { area: "fornitori", soggetto: false },
+  crediti_fornitore: { area: "fornitori", soggetto: false },
+  scadenze_previste: { area: "cassa", soggetto: false },
 };
 
 const testo = (v: unknown): string | null => {
@@ -322,7 +329,7 @@ export function istruzioniDomande(): string {
 
   return `
 🔴 PRIMA DI TUTTO: TI STA DICENDO UNA COSA DA SEGNARE, O TI STA FACENDO UNA DOMANDA?
-Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «la carbonara ha il sedano?», «quanti soldi ci sono in cassa?», «cosa devo comprare?», «cosa serve per la carbonara?», «cosa devo pulire oggi?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
+Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «quanti soldi ci sono in cassa?», «cosa devo comprare?», «cosa devo pulire oggi?», «quali fatture devo pagare?», «cosa ho ordinato?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
 
 { "azioni": [], "domanda": { "area": ${aree}, "chiede": "<una di quelle qui sotto>", "soggetto": "il nome di cui parla, come l'ha detto"|null, "allergene": "<solo se ha nominato un allergene preciso>"|null } }
 
@@ -330,6 +337,7 @@ Le domande che il gestionale sa leggere sono ${quante}, e sono queste:
 ${righe.join("\n")}
 
 ⚠️ NON RISPONDERE TU ALLA DOMANDA. Non scrivere quantita', date, elenchi di piatti o allergeni: quelli li legge il gestionale dai dati veri e li mostra lui. Tu di' soltanto CHE COSA ha chiesto e DI CHE COSA. Un numero scritto da te sarebbe indistinguibile da un numero letto, e nessuno potrebbe controllarlo.
+⚠️ ATTENTO A NON CONFONDERE DUE COSE CHE IN ITALIANO SI DICONO UGUALE: le FATTURE dei fornitori ("fatture_da_pagare") sono i conti che manda qualcun altro; le SCADENZE PREVISTE ("scadenze_previste") sono quelle che si segna lui a mano — F24, tasse, affitto, rate. Se nomina una fattura o un fornitore e' la prima; se nomina una tassa, l'affitto, l'F24 o «le scadenze che ho segnato» e' la seconda. Se dice solo «cosa devo pagare» senza dire quale delle due, scegli "fatture_da_pagare": e' l'elenco piu' grande, e dalla schermata si arriva all'altro.
 ⚠️ "soggetto" va riempito con le parole sue, senza numeri di catalogo: «olio», «carbonara», «F24». Se ha fatto una domanda che ne vuole uno e non l'ha detto, lascialo null — il gestionale glielo chiedera'.
 ⚠️ SU "quando_scade" IL SOGGETTO E' IL NOME NUDO DELLA COSA: da «quando scade l'astice?» esce "astice", da «quando scade l'impegno dell'F24?» esce "F24" — le parole «impegno», «attivita'» e «agenda» NON entrano nel soggetto. Quella cosa puo' essere una partita in cella o un adempimento, e a decidere dove guardare e' il gestionale: tu non devi sceglierlo.
 ⚠️ SE E' UNA DOMANDA MA NON E' NESSUNA DELLE NOVE (per esempio «quanto mi costa la carbonara?», «quanto ho incassato ieri?»), mettila lo stesso come domanda con "chiede": null: il gestionale gli dira' che quella cosa non la sa ancora fare, ed e' molto meglio di una risposta inventata o di un appunto che non c'entra.

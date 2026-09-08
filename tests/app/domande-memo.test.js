@@ -691,6 +691,12 @@ describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
     "preparazioni_da_fare",
     "haccp_cleaning_logs",
     "haccp_temperature_logs",
+    // --- fase 3: sono soldi che qualcuno deve avere ---
+    "supplier_invoices",
+    "note_credito",
+    "note_credito_utilizzi",
+    "scadenze_previste",
+    "ordini_fornitore",
   ];
 
   const contaTutte = async () => {
@@ -887,12 +893,92 @@ describe("🔴 i numeri di MEMO sono quelli delle schermate", () => {
     expect(risposta.righe.length + risposta.troppe).toBe((cose ?? []).length);
   });
 
+  it("«quali fatture devo pagare?» conta quelle che conta la schermata", async () => {
+    const { data } = await titolare
+      .from("supplier_invoices")
+      .select("id")
+      .eq("status", "da_pagare");
+    const { risposta } = await rispondiA({ chiede: "fatture_da_pagare" });
+    expect(risposta.righe.length + risposta.troppe).toBe((data ?? []).length);
+  });
+
+  it("«cosa ho ordinato?» conta gli ordini che aspettano", async () => {
+    const { data: ordini } = await titolare.rpc("ordini_fatti", { p_dal: null, p_al: null });
+    const attesi = (ordini ?? []).filter((o) => o.stato === "inviato").length;
+    const { risposta } = await rispondiA({ chiede: "ordini_in_corso" });
+    expect(risposta.righe.length + risposta.troppe).toBe(attesi);
+  });
+
+  it("«ci sono note di credito da usare?» legge il residuo del database", async () => {
+    const entita = await primaEntita(titolare);
+    const { data: crediti } = await titolare.rpc("crediti_fornitore", { p_entity_id: entita });
+    const { risposta } = await rispondiA({ chiede: "crediti_fornitore" });
+    expect(risposta.righe.length + risposta.troppe).toBe((crediti ?? []).length);
+  });
+
   it("«questa settimana» prende la corsia dell'Agenda, e non ci mette dentro oggi", async () => {
     const { data: corsie } = await titolare.rpc("agenda_corsie");
     const attesi = (corsie ?? []).filter((t) => t.corsia === "questa_settimana" && !eDiOggi(t));
     const { risposta } = await rispondiA({ chiede: "agenda_prossime" });
     expect(risposta.righe.length + risposta.troppe).toBe(attesi.length);
     expect(risposta.righe.some((r) => r.chiave === impegnoDiOggi)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------
+describe("🔴 i soldi che devono uscire: la porta e il suo portiere", () => {
+  it("🔴 alla sala le fatture dei fornitori NON escono", async () => {
+    // 🔴 LA DOMANDA CHE CONTA NON È «MEMO NASCONDE?» MA «IL DATABASE
+    //    NASCONDE?»: MEMO legge col permesso di chi guarda, quindi la
+    //    risposta la dà la RLS sulla tabella vera.
+    const { data, error } = await staff.from("supplier_invoices").select("id").limit(1);
+    const visto = error ? 0 : (data ?? []).length;
+    expect(visto, "la sala si è letta le fatture dei fornitori").toBe(0);
+  });
+
+  it("...e un rifiuto arriva a MEMO come «non lo so», mai come uno zero", () => {
+    const r = componiRisposta({ chiede: "fatture_da_pagare" }, { fatture: NON_LETTO });
+    expect(r.stato).toBe("non_lo_so");
+    expect(r.frase).not.toMatch(/\d/);
+  });
+
+  it("🔴 il «da pagare» che MEMO dice è quello CALCOLATO dal database", async () => {
+    // 🔴 Non è una formalità: «da_pagare» è una colonna calcolata (importo
+    //    meno le note di credito scalate). Se cadesse dalla stringa della
+    //    lettura, la schermata e MEMO mostrerebbero il LORDO senza nessun
+    //    errore. Qui si confronta la risposta con la colonna vera.
+    const letture = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    const aperte = letture.fatture ?? [];
+    expect(Array.isArray(aperte), "le fatture non si sono lasciate leggere").toBe(true);
+    for (const x of aperte.slice(0, 5)) {
+      expect(x.da_pagare, "da_pagare non è arrivata dal database").not.toBeUndefined();
+      expect(Number(x.da_pagare)).toBeCloseTo(Number(x.amount) - Number(x.note_scalate ?? 0), 2);
+    }
+  });
+
+  it("...e nessuna fattura già pagata entra nell'elenco", async () => {
+    // ⚠️ Il filtro è nel database: leggerle tutte per scartarle nel browser
+    //    vuol dire una lettura che prima o poi torna tagliata senza dirlo.
+    const letture = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    const pagate = (letture.fatture ?? []).filter((x) => x.status === "pagata");
+    expect(pagate, "fra le fatture da pagare ce n'è una già pagata").toEqual([]);
+  });
+
+  it("🔴 le scadenze previste sono quelle dell'OSTERIA, non della tasca", async () => {
+    // 🔴 Dal 30/08 «la mia tasca» è un soggetto contabile a sé: senza
+    //    scegliere il soggetto, MEMO metterebbe fra le uscite del locale le
+    //    cose personali di Alessio.
+    const { data: soggetti } = await titolare.from("entities").select("id, entity_type");
+    const srls = (soggetti ?? []).find((e) => e.entity_type === "srls");
+    const letture = await letturePerDomanda({ chiede: "scadenze_previste" });
+    const fuori = (letture.scadenze ?? []).filter((s) => s.entity_id !== srls?.id);
+    expect(fuori, "fra le scadenze lette ce n'è qualcuna di un altro soggetto").toEqual([]);
+  });
+
+  it("le scadenze già chiuse non compaiono", async () => {
+    const letture = await letturePerDomanda({ chiede: "scadenze_previste" });
+    const chiuse = (letture.scadenze ?? []).filter((s) => s.chiusa_il !== null);
+    expect(chiuse, "una scadenza già chiusa è finita nell'elenco").toEqual([]);
   });
 });
 
@@ -915,5 +1001,14 @@ describe("solo le letture che servono", () => {
 
     const saldo = await letturePerDomanda({ chiede: "saldo_cassa" });
     expect(Object.keys(saldo)).toEqual(["saldo"]);
+
+    // ⚠️ E la giornata viaggia insieme alle fatture: senza di lei «scaduta
+    //    da 4 giorni» tornerebbe «entro il …» su una data passata.
+    const fatture = await letturePerDomanda({ chiede: "fatture_da_pagare" });
+    expect(Object.keys(fatture).sort()).toEqual(["fatture", "oggi"]);
+    expect(fatture.oggi).toBe(oggiLocale());
+
+    const crediti = await letturePerDomanda({ chiede: "crediti_fornitore" });
+    expect(Object.keys(crediti)).toEqual(["crediti"]);
   });
 });

@@ -186,6 +186,10 @@ describe("una domanda non scrive niente", () => {
       "unit_cost",
       "espansione_costo_ricetta",
       "storicoCosti",
+      // ⚠️ fase 3: i prezzi d'acquisto dei fornitori restano fuori. La
+      //    domanda è «quanto devo pagare», non «quanto costa al chilo».
+      "listSupplierPriceHistory",
+      "varianti_ingrediente",
       // ⚠️ La vista senza prezzi è `recipe_ingredients_display`: quella
       //    con dentro i costi è un'altra, e chiederla qui sarebbe il modo
       //    silenzioso di far uscire i prezzi d'acquisto.
@@ -194,6 +198,17 @@ describe("una domanda non scrive niente", () => {
     ];
     const trovati = costi.filter((p) => sorgente.includes(p));
     expect(trovati, "una domanda non legge prezzi: " + trovati.join(", ")).toEqual([]);
+  });
+
+  it("🔴 e il «da pagare» non si ricalcola qui: si chiede al database", () => {
+    // 🔴 `da_pagare` è una colonna CALCOLATA (importo meno le note di
+    //    credito scalate). Rifare quella sottrazione nel browser sarebbe la
+    //    seconda definizione dello stesso numero — il difetto chiuso in
+    //    nove punti dal mandato di correzione. Qui si prova la forma: si
+    //    usa la funzione che porta `SELECT_FATTURA`, e non si scrive
+    //    nessuna sottrazione.
+    expect(sorgente).toContain("listSupplierInvoices");
+    expect(sorgente).not.toMatch(/amount\s*-\s*note_scalate/);
   });
 
   it("...e gli ingredienti si chiedono alla vista SENZA i costi", () => {
@@ -221,7 +236,7 @@ describe("una domanda non scrive niente", () => {
     // ⚠️ `letturePerDomanda` non è una lettura: è lo smistamento, e tutto
     //    quello che chiede passa già da `leggi()` — provarlo due volte
     //    vorrebbe dire pretendere un `leggi(leggi(…))`.
-    const ammesse = ["leggi", "Promise", "letturePerDomanda"];
+    const ammesse = ["leggi", "Promise", "letturePerDomanda", "soggettoDeiSoldi"];
     const nude = (sorgente.match(/await\s+([A-Za-z_$][\w$.]*)\s*\(/g) ?? []).filter(
       (x) => !ammesse.some((a) => x.includes(a)),
     );

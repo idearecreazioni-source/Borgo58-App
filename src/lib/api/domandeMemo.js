@@ -1,6 +1,6 @@
 // =====================================================================
 // LE LETTURE CHE RISPONDONO A UNA DOMANDA DI MEMO
-// (fase 1: 07/09 · fase 2: 08/09/2026)
+// (fase 1: 07/09 · fasi 2 e 3: 08/09/2026)
 // =====================================================================
 // 🔴 QUI NON SI SCRIVE NIENTE, E NON È UNA CONVENZIONE: in questo file non
 //    compare `eseguiOperazione`, non compare nessun `insert`, `update` o
@@ -15,20 +15,25 @@
 //    gira con la chiave di servizio, avrebbe consegnato dati scavalcando il
 //    permesso.
 //
-// 🔴 I SOLDI ENTRANO DALLA FASE 2, E DA UNA PORTA SOLA — è un
+// 🔴 I SOLDI ENTRANO DALLE FASI 2 E 3, E DA UNA PORTA SOLA — è un
 //    rovesciamento dichiarato. Fino al 07/09 qui non si leggeva niente che
 //    portasse un prezzo, e la ragione era buona: alle nove domande di
 //    allora il denaro non serviva, e non chiederlo è più forte che
-//    chiederlo e non mostrarlo. Dall'08/09 due domande parlano di Cassa —
-//    «quanti soldi ci sono» e «gli ultimi movimenti» — quindi il divieto
-//    generale diventerebbe una regola che nessuno può rispettare.
+//    chiederlo e non mostrarlo. Dall'08/09 sei domande parlano di soldi —
+//    i saldi e i movimenti di Cassa, le fatture da pagare, le scadenze
+//    previste e le note di credito — quindi il divieto generale
+//    diventerebbe una regola che nessuno può rispettare.
 //    ⚠️ Al suo posto vale un confine più stretto, e sorvegliato: si legge
-//    la CASSA (`saldo_tesoreria`, `cash_movements`), che il database
-//    difende col portiere del titolare, e **non** si legge nessun costo di
-//    ricetta, di lotto o di magazzino — quelli non servono a nessuna
-//    domanda, e chi non arriva al browser non può finire a schermo per
-//    sbaglio. Gli ingredienti di una ricetta si chiedono alla vista
-//    `_display`, che i costi non ce li ha.
+//    la CASSA (`saldo_tesoreria`, `cash_movements`) e i DEBITI verso i
+//    fornitori, che il database difende col portiere del titolare, e
+//    **non** si legge nessun costo di ricetta, di lotto o di magazzino —
+//    quelli non servono a nessuna domanda, e chi non arriva al browser non
+//    può finire a schermo per sbaglio. Gli ingredienti di una ricetta si
+//    chiedono alla vista `_display`, che i costi non ce li ha.
+//    ⚠️ E il conto di quanto si deve NON si rifà qui: `da_pagare` è una
+//    colonna calcolata dal database, e si chiede con la STESSA stringa che
+//    chiede la schermata delle fatture (`SELECT_FATTURA`). Una copia qui
+//    renderebbe muta la prova che sorveglia quella stringa.
 //
 // ⚠️ OGNI LETTURA PASSA DA `leggi()`: una che fallisce torna marcata
 //    «non letta», e la regola pura la trasforma in «non lo so» invece che
@@ -47,9 +52,11 @@ import { listStockLevels } from "./stock";
 import { listPartiteInGiacenza, listPartiteInScadenza } from "./scadenze";
 import { agendaCorsie } from "./tasks";
 import { getEntities } from "./entities";
-import { getSaldoTesoreria, listCashMovements } from "./cash";
+import { listSupplierInvoices, creditiFornitore } from "./supplierInvoices";
+import { getSaldoTesoreria, listCashMovements, listScadenzePreviste } from "./cash";
 import { listaSpesa } from "./shoppingList";
 import { listSpesaSpicciola } from "./spesaSpicciola";
+import { listaOrdini } from "./ordini";
 import { coseDaFare } from "./produzioni";
 import { pulizieDiOggi, temperatureDiOggi } from "./haccp";
 import { oggiLocale, traGiorniLocale } from "../constants";
@@ -66,6 +73,21 @@ import { oggiLocale, traGiorniLocale } from "../constants";
  * è guardato**, perché la risposta lo scrive.
  */
 export const GIORNI_MOVIMENTI = 30;
+
+/**
+ * IL SOGGETTO DEI SOLDI, LETTO E NON DATO PER SCONTATO.
+ *
+ * ⚠️ Dal 30/08 i soggetti sono tre, e «la tasca» non è una società: le
+ * domande su quello che deve uscire guardano **la S.r.l.s.**, cioè
+ * l'osteria. E anche questa lettura passa da `leggi()`: se cade, non si sa
+ * di chi sarebbero quei soldi — quindi non si legge niente e si dice «non
+ * lo so», invece di sceglierne uno.
+ */
+async function soggettoDeiSoldi() {
+  const soggetti = await leggi(getEntities());
+  if (nonLetto(soggetti) || !soggetti?.srls?.id) return null;
+  return soggetti.srls.id;
+}
 
 /**
  * Solo le letture che servono a QUELLA domanda.
@@ -191,6 +213,37 @@ export async function letturePerDomanda(domanda) {
 
     case "temperature_oggi":
       return { temperature: await leggi(temperatureDiOggi()) };
+
+    // FASE 3 — QUELLO CHE DEVE USCIRE (08/09/2026)
+    // ===============================================================
+    // ⚠️ LA GIORNATA ARRIVA DA FUORI, come per «quanto ne ho»: serve a
+    //    dire «scaduta da 4 giorni» invece di raccontare al futuro una
+    //    scadenza passata. Calcolarla dentro la regola vorrebbe dire un
+    //    altro orologio, e questo progetto ne ha già contati undici.
+    case "fatture_da_pagare":
+      // ⚠️ Il filtro è nel DATABASE («status»), non qui: su un anno di
+      //    lavoro le fatture pagate sono la maggior parte, e leggerle
+      //    tutte per scartarle nel browser vuol dire una lettura che
+      //    prima o poi torna tagliata senza dirlo.
+      return {
+        oggi: oggiLocale(),
+        fatture: await leggi(listSupplierInvoices({ status: "da_pagare" })),
+      };
+
+    case "scadenze_previste": {
+      const soggetto = await soggettoDeiSoldi();
+      if (!soggetto) return { scadenze: NON_LETTO, oggi: oggiLocale() };
+      return { oggi: oggiLocale(), scadenze: await leggi(listScadenzePreviste(soggetto)) };
+    }
+
+    case "ordini_in_corso":
+      return { oggi: oggiLocale(), ordini: await leggi(listaOrdini()) };
+
+    case "crediti_fornitore": {
+      const soggetto = await soggettoDeiSoldi();
+      if (!soggetto) return { crediti: NON_LETTO };
+      return { crediti: await leggi(creditiFornitore(soggetto)) };
+    }
 
     // 🔴 «QUANDO SCADE X» GUARDA IN DUE POSTI, e non e' un allargamento:
     //    «scadere» vuol dire due cose — una partita in cella e un
