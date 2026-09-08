@@ -116,6 +116,28 @@ export const DOVE = {
     dentro: "in Cassa → Ce la faccio?",
   },
   ordini: { a: "/magazzino/ordini", apri: "Apri gli ordini", dentro: "negli ordini" },
+
+  // --- fase 4: la sala di stasera (08/09/2026) ------------------------
+  // ⚠️ TRE DESTINAZIONI, e sono quelle che il gestionale distingue già:
+  //    l'ELENCO delle prenotazioni sta in Calendario Eventi, la PIANTA è
+  //    un'altra schermata (è lì che si vede dove c'è posto), e gli ORARI
+  //    del locale sono dati suoi, in un terzo posto. Mandare all'una per
+  //    l'altra fa cercare una cosa dove non c'è.
+  calendario: {
+    a: "/calendario-eventi",
+    apri: "Apri il Calendario",
+    dentro: "in Calendario Eventi",
+  },
+  pianta: {
+    a: "/calendario-eventi/pianta",
+    apri: "Apri la pianta della sala",
+    dentro: "nella pianta della sala",
+  },
+  orari: {
+    a: "/calendario-eventi/sala-e-orari",
+    apri: "Apri «Sala e orari»",
+    dentro: "in Sala e orari",
+  },
 };
 
 /**
@@ -297,6 +319,45 @@ export const DOMANDE_CHE_SO = {
     dove: "fatture",
     esempio: "Ci sono note di credito da usare?",
     titolo: "Le note di credito da usare",
+  },
+
+  // ===================================================================
+  // FASE 4 — LA SALA DI STASERA (08/09/2026)
+  // ===================================================================
+  // 🔴 È L'AREA CHE SI GUARDA CON LE MANI OCCUPATE, ed è la ragione per
+  //    cui entra adesso: chi ha prenotato, quanto posto resta, chi
+  //    aspetta una risposta e se stasera si lavora sono le quattro cose
+  //    che in un'osteria si chiedono a voce mentre si fa altro.
+  // ⚠️ E NESSUNA DECIDE NIENTE DI NUOVO: i posti li conta
+  //    «posto_per_la_serata()» dal 18/08 — con la sua avvertenza — e i
+  //    turni li calcola «turni_del_giorno()». Qui si leggono.
+  // ⚠️ LA GIORNATA È QUELLA DEL CALENDARIO, non la serata di servizio: è
+  //    la distinzione dichiarata il 19/08 accanto a `oggiLocale()` —
+  //    prenotazioni, turni e orari stanno sul calendario, e uniformarli
+  //    alla serata sarebbe un difetto, non una pulizia.
+  chi_ha_prenotato: {
+    area: "sala",
+    dove: "calendario",
+    esempio: "Chi ha prenotato stasera?",
+    titolo: "Chi ha prenotato",
+  },
+  quanto_posto_ce: {
+    area: "sala",
+    dove: "pianta",
+    esempio: "Quanto posto c'è stasera?",
+    titolo: "Quanto posto c'è",
+  },
+  richieste_da_confermare: {
+    area: "sala",
+    dove: "calendario",
+    esempio: "Ci sono richieste da confermare?",
+    titolo: "Le richieste da confermare",
+  },
+  siamo_aperti: {
+    area: "sala",
+    dove: "orari",
+    esempio: "Quando siamo aperti oggi?",
+    titolo: "Gli orari di oggi",
   },
 };
 
@@ -1843,6 +1904,230 @@ function creditiFornitore(crediti) {
 }
 
 // =====================================================================
+// FASE 4 — LA SALA DI STASERA
+// =====================================================================
+// 🔴 QUI NON SI CONTA NIENTE, SI LEGGE. Quanti coperti stanno in sala lo
+//    decide «posto_per_la_serata()» dal 18/08, che tiene conto dei tavoli
+//    accostati e delle correzioni a mano; i turni e le fasce li calcola
+//    «turni_del_giorno()». Rifare quei conti qui vorrebbe dire una seconda
+//    sala, che il giorno che diverge racconta una serata diversa da quella
+//    che si vede sulla pianta.
+
+/** L'ora senza i secondi: «21:15:00» si dice «21:15». */
+const oraBreve = (t) => (t ? String(t).slice(0, 5) : null);
+
+/**
+ * CHI HA PRENOTATO.
+ *
+ * ⚠️ SI DICONO NOME, ORA E QUANTI SONO, e il tavolo quando c'è. Le
+ * prenotazioni **senza tavolo** si dichiarano a parte: hanno una ragione
+ * che le altre non hanno — non compaiono da nessuna parte sulla pianta, e
+ * il rischio è che restino senza (richiesta di Alessio, 18/08).
+ *
+ * ⚠️ E SI GUARDANO SOLO LE CONFERMATE: una richiesta ancora in attesa non
+ * è gente che verrà, ed è un'altra domanda. Contarle insieme farebbe
+ * apparecchiare per persone che nessuno ha ancora accettato.
+ */
+function chiHaPrenotato(prenotazioni, turni) {
+  if (nonLetto(prenotazioni)) return nonLoSo("calendario", "le prenotazioni");
+  const tutte = prenotazioni ?? [];
+  const confermate = tutte.filter((p) => p?.status === "confermata" || p?.status === "servita");
+  const inAttesa = tutte.length - confermate.length;
+
+  const perId = new Map();
+  if (!nonLetto(turni)) for (const t of turni ?? []) perId.set(t.reservation_id, t);
+
+  const senzaTavolo = confermate.filter(
+    (p) => !(perId.get(p.id)?.etichette ?? []).length,
+  ).length;
+
+  const limite =
+    [
+      senzaTavolo
+        ? `${senzaTavolo === 1 ? "Una non ha ancora un tavolo" : `${senzaTavolo} non hanno ancora un tavolo`}: sulla pianta non ${senzaTavolo === 1 ? "compare" : "compaiono"}.`
+        : null,
+      inAttesa
+        ? `${inAttesa === 1 ? "C'è anche una richiesta" : `Ci sono anche ${inAttesa} richieste`} da confermare, e qui non ${inAttesa === 1 ? "conta" : "contano"}.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (confermate.length === 0) {
+    return risposta("calendario", "Non ha prenotato nessuno.", [], { limite });
+  }
+
+  const coperti = confermate.reduce((s, p) => s + (Number(p.party_size) || 0), 0);
+  return risposta(
+    "calendario",
+    confermate.length === 1
+      ? `C'è una prenotazione, ${coperti} ${coperti === 1 ? "persona" : "persone"}:`
+      : `Ci sono ${confermate.length} prenotazioni, ${coperti} persone in tutto:`,
+    confermate.map((p) => {
+      const t = perId.get(p.id);
+      const tavoli = (t?.etichette ?? []).join("·");
+      return {
+        chiave: p.id,
+        testo:
+          `${oraBreve(p.reservation_time) ?? "senza ora"} — ${p.customer_name ?? "senza nome"}, ` +
+          `${p.party_size ?? "?"} ${Number(p.party_size) === 1 ? "persona" : "persone"}` +
+          (tavoli ? ` (${tavoli})` : " — senza tavolo"),
+      };
+    }),
+    { limite },
+  );
+}
+
+/**
+ * QUANTO POSTO C'È.
+ *
+ * 🔴 L'AVVERTENZA NON SI RISCRIVE QUI: `posto_per_la_serata()` restituisce
+ * il numero **e la frase che ne dichiara il limite** — il conteggio guarda
+ * i soli tavoli, e divani e Chef Table restano fuori perché sono un'altra
+ * formula. È la regola del 15/08: il numero e il suo limite viaggiano
+ * insieme, e ricopiarla qui darebbe due versioni della stessa avvertenza.
+ *
+ * ⚠️ E LE RICHIESTE IN ATTESA NON OCCUPANO NIENTE dal 14/08: si dicono,
+ * perché sono gente che potrebbe arrivare, ma non si tolgono dai posti
+ * restanti — il tavolo lo dà Alessio dalla pianta.
+ */
+function quantoPostoCe(posto) {
+  if (nonLetto(posto) || !posto) return nonLoSo("pianta", "i posti della sala");
+
+  const restanti = Number(posto.restanti);
+  const prenotati = Number(posto.prenotati);
+  const capienza = Number(posto.capienza);
+  const inAttesa = Number(posto.in_attesa) || 0;
+
+  const limite =
+    [
+      inAttesa
+        ? `${inAttesa === 1 ? "C'è una richiesta" : `Ci sono ${inAttesa} richieste`} ancora da confermare: non ${inAttesa === 1 ? "toglie" : "tolgono"} posto finché non ${inAttesa === 1 ? "la accetti" : "le accetti"}.`
+        : null,
+      posto.avvertenza ?? null,
+    ]
+      .filter(Boolean)
+      .join(" ") || null;
+
+  if (!Number.isFinite(restanti)) return nonLoSo("pianta", "i posti della sala");
+
+  return risposta(
+    "pianta",
+    restanti <= 0
+      ? `Non resta posto: ${prenotati} su ${capienza} sono già prenotati.`
+      : `Restano ${restanti} posti: ne sono prenotati ${prenotati} su ${capienza}.`,
+    [],
+    { limite },
+  );
+}
+
+/**
+ * LE RICHIESTE CHE ASPETTANO UNA RISPOSTA.
+ *
+ * ⚠️ È LA DOMANDA CHE FA PERDERE CLIENTI SE NESSUNO LA FA: una richiesta
+ * arrivata dal sito resta lì finché Alessio non la accetta, e finché è lì
+ * quella gente non sa se ha un tavolo. Dal 11/08 stanno in cima al
+ * Calendario proprio per questo.
+ *
+ * ⚠️ E SONO SOLO QUELLE DA OGGI IN AVANTI: una richiesta di ieri non si
+ * conferma più, e metterla in mezzo farebbe sembrare che ci sia da fare
+ * qualcosa che non si può più fare.
+ */
+function richiesteDaConfermare(richieste, oggi) {
+  if (nonLetto(richieste)) return nonLoSo("calendario", "le richieste dei clienti");
+  const tutte = richieste ?? [];
+  const limite = "Guardo solo le richieste da oggi in avanti: quelle passate non si confermano più.";
+
+  if (tutte.length === 0) {
+    return risposta("calendario", "Non c'è nessuna richiesta da confermare.", [], { limite });
+  }
+
+  const perOggi = oggi ? tutte.filter((r) => String(r.reservation_date) === String(oggi)).length : 0;
+  return risposta(
+    "calendario",
+    tutte.length === 1
+      ? "C'è una richiesta da confermare:"
+      : `Ci sono ${tutte.length} richieste da confermare:`,
+    tutte.map((r) => ({
+      chiave: r.id,
+      testo:
+        `${formatDate(r.reservation_date)} ${oraBreve(r.reservation_time) ?? ""} — ` +
+        `${r.customer_name ?? "senza nome"}, ${r.party_size ?? "?"} ` +
+        `${Number(r.party_size) === 1 ? "persona" : "persone"}`,
+    })),
+    {
+      limite: perOggi
+        ? `${perOggi === 1 ? "Una è per oggi" : `${perOggi} sono per oggi`}. ${limite}`
+        : limite,
+    },
+  );
+}
+
+/**
+ * STASERA SI LAVORA?
+ *
+ * 🔴 LE RISPOSTE SONO TRE, NON DUE, ed è la lezione del 10/08 pagata sul
+ * form pubblico: **chiuso**, **aperto con questi orari**, **pieno**. Il
+ * lunedì il sito rispondeva «non abbiamo più posto» invece di «siamo
+ * chiusi», e un cliente che ci prova due volte conclude che siamo sempre
+ * pieni. Qui valgono le stesse tre.
+ *
+ * ⚠️ E UNA CHIUSURA PORTA IL SUO MOTIVO: «siamo chiusi» senza dire perché
+ * fa riaprire il calendario per controllare.
+ */
+function siamoAperti(letture) {
+  const orari = letture.orari;
+  const chiusure = letture.chiusure;
+  const pieno = letture.pieno;
+  const oggi = letture.oggi ?? null;
+  const giorno = letture.giorno ?? null;
+
+  if (nonLetto(orari)) return nonLoSo("orari", "gli orari del locale");
+
+  // ⚠️ La chiusura viene prima di tutto: se il locale è chiuso, gli orari
+  //    di quel giorno della settimana non vogliono dire niente.
+  const chiusa = nonLetto(chiusure)
+    ? null
+    : (chiusure ?? []).find((c) => oggi && String(c.dal) <= String(oggi) && String(oggi) <= String(c.al));
+  if (chiusa) {
+    return risposta(
+      "orari",
+      `Oggi siamo chiusi${chiusa.motivo ? `: ${chiusa.motivo}` : "."}`,
+      [],
+      { limite: `La chiusura va dal ${formatDate(chiusa.dal)} al ${formatDate(chiusa.al)}.` },
+    );
+  }
+
+  const diOggi = (orari ?? []).filter((o) => o.weekday === giorno && o.attivo);
+  if (diOggi.length === 0) {
+    return risposta("orari", "Oggi è giorno di riposo: non si apre.");
+  }
+
+  const righe = diOggi.map((o) => ({
+    chiave: o.id,
+    testo:
+      `${o.servizio === "pranzo" ? "Pranzo" : "Cena"}: si prenota dalle ${oraBreve(o.apertura)} ` +
+      `alle ${oraBreve(o.ultimo_ingresso)}` +
+      (o.ora_ultimi_arrivi ? `, ultimi arrivi dalle ${oraBreve(o.ora_ultimi_arrivi)}` : ""),
+  }));
+
+  // ⚠️ «Pieno» è un fatto a sé e si dice insieme agli orari: aperti e pieni
+  //    è la situazione in cui una telefonata serve ancora, e nasconderla
+  //    dietro «siamo aperti» farebbe promettere un tavolo che non c'è.
+  const limite =
+    pieno === true
+      ? "⚠️ Oggi è segnato come pieno: dalla pianta non risulta più posto da dare."
+      : null;
+
+  return risposta(
+    "orari",
+    diOggi.length === 1 ? "Oggi si lavora:" : "Oggi si lavora, con due servizi:",
+    righe,
+    { limite },
+  );
+}
+
+// =====================================================================
 // L'UNICA PORTA
 // =====================================================================
 
@@ -1915,6 +2200,16 @@ export function componiRisposta(domanda, letture = {}) {
       return ordiniInCorso(letture.ordini, letture.oggi ?? null);
     case "crediti_fornitore":
       return creditiFornitore(letture.crediti);
+
+    // --- fase 4: la sala di stasera -------------------------------
+    case "chi_ha_prenotato":
+      return chiHaPrenotato(letture.prenotazioni, letture.turni);
+    case "quanto_posto_ce":
+      return quantoPostoCe(letture.posto);
+    case "richieste_da_confermare":
+      return richiesteDaConfermare(letture.richieste, letture.oggi ?? null);
+    case "siamo_aperti":
+      return siamoAperti(letture);
 
     default:
       return nonSoFarlo(domanda?.area ?? null);

@@ -92,6 +92,14 @@ export const DOMANDE: Record<string, { area: string; soggetto: boolean }> = {
   ordini_in_corso: { area: "fornitori", soggetto: false },
   crediti_fornitore: { area: "fornitori", soggetto: false },
   scadenze_previste: { area: "cassa", soggetto: false },
+
+  // --- fase 4: la sala di stasera (08/09/2026) ---
+  // Si legge il registro delle prenotazioni e gli orari del locale: non si
+  // prenota, non si conferma e non si annulla niente a voce.
+  chi_ha_prenotato: { area: "sala", soggetto: false },
+  quanto_posto_ce: { area: "sala", soggetto: false },
+  richieste_da_confermare: { area: "sala", soggetto: false },
+  siamo_aperti: { area: "sala", soggetto: false },
 };
 
 const testo = (v: unknown): string | null => {
@@ -176,6 +184,7 @@ const APERTURE_DI_DOMANDA = [
   "quale",
   "quali",
   "quando",
+  "chi",
   "cosa",
   "che cosa",
   "c e",
@@ -329,7 +338,7 @@ export function istruzioniDomande(): string {
 
   return `
 🔴 PRIMA DI TUTTO: TI STA DICENDO UNA COSA DA SEGNARE, O TI STA FACENDO UNA DOMANDA?
-Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «quanti soldi ci sono in cassa?», «cosa devo comprare?», «cosa devo pulire oggi?», «quali fatture devo pagare?», «cosa ho ordinato?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
+Se ti sta CHIEDENDO qualcosa che il gestionale sa gia' — «ho la ricetta della carbonara?», «quanto olio ho?», «cosa devo fare oggi?», «quanti soldi ci sono in cassa?», «cosa devo comprare?», «cosa devo pulire oggi?», «quali fatture devo pagare?», «chi ha prenotato stasera?», «quanto posto c'e'?» — allora non c'e' niente da segnare. Rispondi COSI', con "azioni" VUOTO:
 
 { "azioni": [], "domanda": { "area": ${aree}, "chiede": "<una di quelle qui sotto>", "soggetto": "il nome di cui parla, come l'ha detto"|null, "allergene": "<solo se ha nominato un allergene preciso>"|null } }
 
@@ -337,6 +346,7 @@ Le domande che il gestionale sa leggere sono ${quante}, e sono queste:
 ${righe.join("\n")}
 
 ⚠️ NON RISPONDERE TU ALLA DOMANDA. Non scrivere quantita', date, elenchi di piatti o allergeni: quelli li legge il gestionale dai dati veri e li mostra lui. Tu di' soltanto CHE COSA ha chiesto e DI CHE COSA. Un numero scritto da te sarebbe indistinguibile da un numero letto, e nessuno potrebbe controllarlo.
+⚠️ E NON CONFONDERE LA SALA COL RESTO: «chi ha prenotato», «quanto posto c'e'», «ci sono richieste da confermare» e «quando siamo aperti» parlano dei CLIENTI e della sala, non del magazzino ne' dei soldi. Se chiede quanti COPERTI o quanto POSTO c'e' e' "quanto_posto_ce"; se chiede CHI viene e' "chi_ha_prenotato".
 ⚠️ ATTENTO A NON CONFONDERE DUE COSE CHE IN ITALIANO SI DICONO UGUALE: le FATTURE dei fornitori ("fatture_da_pagare") sono i conti che manda qualcun altro; le SCADENZE PREVISTE ("scadenze_previste") sono quelle che si segna lui a mano — F24, tasse, affitto, rate. Se nomina una fattura o un fornitore e' la prima; se nomina una tassa, l'affitto, l'F24 o «le scadenze che ho segnato» e' la seconda. Se dice solo «cosa devo pagare» senza dire quale delle due, scegli "fatture_da_pagare": e' l'elenco piu' grande, e dalla schermata si arriva all'altro.
 ⚠️ "soggetto" va riempito con le parole sue, senza numeri di catalogo: «olio», «carbonara», «F24». Se ha fatto una domanda che ne vuole uno e non l'ha detto, lascialo null — il gestionale glielo chiedera'.
 ⚠️ SU "quando_scade" IL SOGGETTO E' IL NOME NUDO DELLA COSA: da «quando scade l'astice?» esce "astice", da «quando scade l'impegno dell'F24?» esce "F24" — le parole «impegno», «attivita'» e «agenda» NON entrano nel soggetto. Quella cosa puo' essere una partita in cella o un adempimento, e a decidere dove guardare e' il gestionale: tu non devi sceglierlo.

@@ -59,7 +59,22 @@ import { listSpesaSpicciola } from "./spesaSpicciola";
 import { listaOrdini } from "./ordini";
 import { coseDaFare } from "./produzioni";
 import { pulizieDiOggi, temperatureDiOggi } from "./haccp";
+import { listReservations, listRichiesteDaConfermare } from "./reservations";
+import { getPostoPerLaSerata, getTurniDelGiorno, isSoldOut, listClosures, listServiceHours } from "./sala";
 import { oggiLocale, traGiorniLocale } from "../constants";
+
+/**
+ * CHE GIORNO DELLA SETTIMANA È, per gli orari del locale.
+ *
+ * ⚠️ SI RICAVA DALLA GIORNATA DI CALENDARIO GIÀ CALCOLATA, non da un
+ * secondo orologio: `oggiLocale()` è l'unico posto che decide che giorno è
+ * per le prenotazioni, e chiedere l'ora una seconda volta è il modo in cui
+ * questo progetto si è ritrovato undici orologi.
+ */
+function giornoDellaSettimana(data) {
+  const [a, m, g] = String(data).split("-").map(Number);
+  return new Date(a, m - 1, g).getDay();
+}
 
 /**
  * QUANTI GIORNI GUARDA «GLI ULTIMI MOVIMENTI».
@@ -243,6 +258,44 @@ export async function letturePerDomanda(domanda) {
       const soggetto = await soggettoDeiSoldi();
       if (!soggetto) return { crediti: NON_LETTO };
       return { crediti: await leggi(creditiFornitore(soggetto)) };
+    }
+
+    // ===============================================================
+    // FASE 4 — LA SALA DI STASERA (08/09/2026)
+    // ===============================================================
+    // ⚠️ LA GIORNATA È QUELLA DEL CALENDARIO, e non la serata di
+    //    servizio: è la distinzione dichiarata il 19/08 accanto a
+    //    `oggiLocale()` — prenotazioni, turni e orari stanno sul
+    //    calendario, e uniformarli alla serata sarebbe un difetto.
+    case "chi_ha_prenotato": {
+      // ⚠️ Due letture e non una: i nomi stanno sulle prenotazioni, i
+      //    tavoli sui turni. Si chiedono INSIEME, perché sono due giri di
+      //    rete e chi guarda il telefono aspetta fermo.
+      const oggi = oggiLocale();
+      const [prenotazioni, turni] = await Promise.all([
+        leggi(listReservations({ date: oggi })),
+        leggi(getTurniDelGiorno(oggi)),
+      ]);
+      return { oggi, prenotazioni, turni };
+    }
+
+    case "quanto_posto_ce":
+      return { oggi: oggiLocale(), posto: await leggi(getPostoPerLaSerata(oggiLocale())) };
+
+    case "richieste_da_confermare":
+      return { oggi: oggiLocale(), richieste: await leggi(listRichiesteDaConfermare()) };
+
+    case "siamo_aperti": {
+      // ⚠️ TRE LETTURE PERCHÉ LE RISPOSTE SONO TRE: chiuso, aperto con
+      //    questi orari, pieno. Con una sola si perderebbe proprio la
+      //    distinzione che il 10/08 il form pubblico sbagliava.
+      const oggi = oggiLocale();
+      const [orari, chiusure, pieno] = await Promise.all([
+        leggi(listServiceHours()),
+        leggi(listClosures()),
+        leggi(isSoldOut(oggi)),
+      ]);
+      return { oggi, giorno: giornoDellaSettimana(oggi), orari, chiusure, pieno };
     }
 
     // 🔴 «QUANDO SCADE X» GUARDA IN DUE POSTI, e non e' un allargamento:

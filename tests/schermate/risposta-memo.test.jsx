@@ -281,3 +281,63 @@ describe("le domande sui soldi che devono uscire, a schermo", () => {
     expect(screen.queryByText(/in le /)).toBeNull();
   });
 });
+
+// =====================================================================
+// FASE 4 — la sala di stasera (08/09/2026)
+// =====================================================================
+describe("le domande della sala, a schermo", () => {
+  it("🔴 i posti si leggono col loro limite attaccato", () => {
+    // 🔴 Regola del 15/08: il numero e il suo limite viaggiano insieme.
+    //    «28 posti» senza sapere che divani e Chef Table restano fuori fa
+    //    apparecchiare per una sala che non c'è.
+    mostra(
+      componiRisposta(
+        { chiede: "quanto_posto_ce" },
+        {
+          posto: {
+            capienza: 34,
+            prenotati: 6,
+            in_attesa: 0,
+            restanti: 28,
+            avvertenza: "Il conteggio guarda i soli tavoli: divani e Chef Table restano fuori.",
+          },
+        },
+      ),
+    );
+    expect(screen.getByText(/Restano 28 posti/)).toBeTruthy();
+    expect(screen.getByText(/divani e Chef Table/)).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /Apri la pianta della sala/ }).getAttribute("href"),
+    ).toBe("/calendario-eventi/pianta");
+  });
+
+  it("🔴 e su una richiesta da confermare non c'è nessun pulsante", () => {
+    // ⚠️ Qui la tentazione è forte: confermare è a un tocco di distanza.
+    //    Una domanda non esegue niente, nemmeno la cosa più comoda.
+    mostra(
+      componiRisposta(
+        { chiede: "richieste_da_confermare" },
+        {
+          oggi: "2026-09-08",
+          richieste: [
+            {
+              id: "r1",
+              customer_name: "Pappalardo",
+              reservation_date: "2026-09-12",
+              reservation_time: "20:30:00",
+              party_size: 2,
+            },
+          ],
+        },
+      ),
+    );
+    expect(screen.getByText(/Pappalardo/)).toBeTruthy();
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("una lettura caduta sui posti non mette nessun numero a schermo", () => {
+    mostra(componiRisposta({ chiede: "quanto_posto_ce" }, { posto: NON_LETTO }));
+    expect(screen.getByText(/non lo so/i)).toBeTruthy();
+    expect(screen.queryByText(/\d+ posti/)).toBeNull();
+  });
+});
