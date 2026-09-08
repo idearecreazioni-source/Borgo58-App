@@ -697,6 +697,12 @@ describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
     "note_credito_utilizzi",
     "scadenze_previste",
     "ordini_fornitore",
+    // --- fase 4: la sala ---
+    "reservations",
+    "prenotazione_tavoli",
+    "giornate_sold_out",
+    "service_hours",
+    "service_closures",
   ];
 
   const contaTutte = async () => {
@@ -982,6 +988,70 @@ describe("🔴 i soldi che devono uscire: la porta e il suo portiere", () => {
   });
 });
 
+// ---------------------------------------------------------------------
+describe("🔴 la sala di stasera, contro i dati veri", () => {
+  it("«chi ha prenotato?» conta quello che conta il Calendario", async () => {
+    // 🔴 È LA PROMESSA DELLA FASE CONSULTIVA: il numero di MEMO è quello
+    //    che si legge aprendo la schermata. Qui si confronta con la stessa
+    //    lettura che alimenta il Calendario, non con un conteggio rifatto.
+    const oggi = oggiLocale();
+    const { data } = await titolare
+      .from("reservations")
+      .select("id, status")
+      .eq("reservation_date", oggi);
+    const attese = (data ?? []).filter(
+      (r) => r.status === "confermata" || r.status === "servita",
+    ).length;
+    const { risposta } = await rispondiA({ chiede: "chi_ha_prenotato" });
+    expect(risposta.righe.length + risposta.troppe).toBe(attese);
+  });
+
+  it("🔴 «quanto posto c'è?» legge i numeri del database, non i suoi", async () => {
+    // 🔴 I coperti li conta «posto_per_la_serata()», che tiene conto dei
+    //    tavoli accostati e delle correzioni a mano. Rifare quel conto
+    //    qui vorrebbe dire una seconda sala.
+    const { data } = await titolare.rpc("posto_per_la_serata", { p_data: oggiLocale() });
+    const vero = Array.isArray(data) ? data[0] : data;
+    expect(vero, "il database non ha risposto sui posti").toBeTruthy();
+    const { risposta } = await rispondiA({ chiede: "quanto_posto_ce" });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.frase).toContain(String(vero.restanti));
+    expect(risposta.frase).toContain(String(vero.capienza));
+    // ⚠️ E l'avvertenza è quella che scrive il database: se MEMO se la
+    //    riscrivesse, il giorno che cambia ne racconterebbe due versioni.
+    expect(risposta.limite).toContain(vero.avvertenza);
+  });
+
+  it("le richieste lette sono solo quelle ancora in attesa, e da oggi in avanti", async () => {
+    const letture = await letturePerDomanda({ chiede: "richieste_da_confermare" });
+    const fuori = (letture.richieste ?? []).filter(
+      (r) => r.status !== "richiesta_in_attesa" || String(r.reservation_date) < oggiLocale(),
+    );
+    expect(fuori, "fra le richieste da confermare ce n'è una che non c'entra").toEqual([]);
+  });
+
+  it("🔴 e nessuna di queste letture porta un recapito che non serve", async () => {
+    // 🔴 I nomi servono — «chi ha prenotato» è la domanda — ma il telefono
+    //    e la mail di un cliente sono dati personali che una risposta
+    //    parlata non ha nessun motivo di mostrare. Qui si controlla che
+    //    non finiscano nella FRASE, non che non arrivino: la lettura è
+    //    quella del Calendario, e filtrarla sarebbe una seconda vista da
+    //    tenere allineata.
+    const { risposta } = await rispondiA({ chiede: "chi_ha_prenotato" });
+    const tutto = [risposta.frase, ...risposta.righe.map((r) => r.testo)].join(" ");
+    expect(tutto).not.toMatch(/\+39|@/);
+  });
+
+  it("«quando siamo aperti?» risponde con gli orari veri del giorno", async () => {
+    const letture = await letturePerDomanda({ chiede: "siamo_aperti" });
+    expect(Array.isArray(letture.orari), "gli orari non si sono lasciati leggere").toBe(true);
+    expect(letture.giorno, "il giorno della settimana non è arrivato").toBeGreaterThanOrEqual(0);
+    const { risposta } = await rispondiA({ chiede: "siamo_aperti" });
+    expect(risposta.stato).toBe("risposta");
+    expect(risposta.a).toBe("/calendario-eventi/sala-e-orari");
+  });
+});
+
 describe("solo le letture che servono", () => {
   it("una domanda del Magazzino non apre il Ricettario, e viceversa", async () => {
     // ⚠️ Ogni lettura è un giro di rete in cella. Se domani qualcuno
@@ -1010,5 +1080,14 @@ describe("solo le letture che servono", () => {
 
     const crediti = await letturePerDomanda({ chiede: "crediti_fornitore" });
     expect(Object.keys(crediti)).toEqual(["crediti"]);
+
+    // ⚠️ La sala chiede due cose insieme (nomi e tavoli) e le chiede in
+    //    parallelo: sono due giri di rete, e chi guarda il telefono
+    //    aspetta fermo.
+    const sala = await letturePerDomanda({ chiede: "chi_ha_prenotato" });
+    expect(Object.keys(sala).sort()).toEqual(["oggi", "prenotazioni", "turni"]);
+
+    const posto = await letturePerDomanda({ chiede: "quanto_posto_ce" });
+    expect(Object.keys(posto).sort()).toEqual(["oggi", "posto"]);
   });
 });
