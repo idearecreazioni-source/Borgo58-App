@@ -715,6 +715,11 @@ describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
     return righe;
   };
 
+  // ⚠️ IL TEMPO STA QUI E NON NELLA CONFIGURAZIONE (30 s per tutte): questa
+  //    prova fa quasi ottanta giri di rete e ne farà di più a ogni fase, ed
+  //    è l'unica che li merita. Se un giorno non bastassero nemmeno questi,
+  //    la domanda da farsi è se contare le righe di tutte le tabelle sia
+  //    ancora il modo giusto — non se provare meno domande.
   it("tutte le domande, una dietro l'altra, non muovono una riga", async () => {
     const prima = await contaTutte();
 
@@ -734,7 +739,7 @@ describe("🔴 NESSUNA domanda scrive, e non solo quella che si guarda", () => {
       (t) => `${t}: ${prima[t]} → ${dopo[t]}`,
     );
     expect(cambiate, "rispondere a una domanda ha scritto qualcosa").toEqual([]);
-  });
+  }, 180000);
 });
 
 // ---------------------------------------------------------------------
