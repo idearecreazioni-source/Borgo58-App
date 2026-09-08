@@ -240,6 +240,85 @@ describe("una domanda non scrive niente", () => {
 //    FASTIDIO: un comando porta un fatto che esiste solo nella testa di chi
 //    ha parlato — quanti chili sono arrivati, quanto ha pagato — e perderlo
 //    perde quel fatto. Una domanda no: rifarla costa il tempo di ridirla.
+// =====================================================================
+// 🔴 I DUE MODI DI RESTARE SENZA SOLDI — 08/09/2026, dal telefono
+// =====================================================================
+// Tre domande fatte con le mani sul progetto di prova hanno risposto tutte
+// «L'assistente non ha risposto». Il rifiuto vero, letto nel registro
+// delle dettature:
+//
+//   400 {"type":"error","error":{"type":"invalid_request_error",
+//   "message":"You have reached your specified API usage limits.
+//   You will regain access on 2026-10-01 at 00:00 UTC."}}
+//
+// 🔴 NON È IL CREDITO, ED È LA DISTINZIONE CHE VALE: col credito finito si
+//    ricarica e MEMO riparte; col tetto raggiunto non c'è niente da
+//    ricaricare — o si alza il tetto, o si aspetta il mese nuovo. Dirle
+//    con la stessa frase manda a fare la cosa sbagliata.
+describe("perché l'assistente non ha risposto, in italiano", () => {
+  const TETTO =
+    '400 {"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-10-01 at 00:00 UTC."},"request_id":"req_011CeqRj9Df84VRzdSrmE9Et"}';
+
+  it("🔴 il tetto dell'account si riconosce, e NON si chiama «credito finito»", () => {
+    const c = causaInItaliano(TETTO);
+    expect(c).toMatch(/tetto di spesa dell'account/i);
+    expect(c).not.toMatch(/ricaricat/i);
+  });
+
+  it("🔴 e dice fino a QUANDO, perché «aspetta» senza una data è un vicolo cieco", () => {
+    expect(causaInItaliano(TETTO)).toContain("01/10/2026");
+  });
+
+  it("...ma se la data non c'è non se la inventa", () => {
+    // ⚠️ La metà che discrimina: una regola che scrivesse sempre una data
+    //    ne scriverebbe una falsa il giorno che il rifiuto non la porta.
+    const c = causaInItaliano("You have reached your specified API usage limits.");
+    expect(c).toMatch(/tetto di spesa dell'account/i);
+    expect(c).not.toMatch(/fino al/);
+  });
+
+  it("🔴 e dichiara che non è il tetto del GESTIONALE", () => {
+    // 🔴 È la parte che inganna di più: «spesa_ai_del_mese» conta quello
+    //    che ha speso QUESTO database, e l'08/09 sulla prova diceva 2,10 €
+    //    su 10 — «sotto il tetto». Chi guarda quel numero conclude che il
+    //    blocco è un guasto del programma.
+    expect(causaInItaliano(TETTO)).toMatch(/database/i);
+  });
+
+  it("il credito finito resta una cosa a sé", () => {
+    const c = causaInItaliano('{"error":{"message":"Your credit balance is too low"}}');
+    expect(c).toMatch(/credito/i);
+    expect(c).toMatch(/ricaricat/i);
+    expect(c).not.toMatch(/tetto/i);
+  });
+
+  it("occupato e sovraccarico non diventano un problema di soldi", () => {
+    expect(causaInItaliano("429 rate limit exceeded")).toMatch(/occupato/i);
+    expect(causaInItaliano("529 overloaded_error")).toMatch(/sovraccarico/i);
+  });
+
+  it("e quello che non si riconosce si dice come tale, senza indovinare", () => {
+    expect(causaInItaliano("ECONNRESET")).toBe("L'assistente non ha risposto.");
+    expect(causaInItaliano("")).toBe("L'assistente non ha risposto.");
+  });
+
+  it("🔴 col tetto raggiunto una DOMANDA non diventa comunque un appunto", () => {
+    // 🔴 È la proprietà che ha retto anche mentre il modello era muto: le
+    //    tre domande fatte col telefono l'08/09 non hanno creato niente.
+    //    Quello che era sbagliato era solo la frase.
+    const t = quandoLAssistenteTace("Quanti soldi ci sono in cassa", causaInItaliano(TETTO));
+    expect(t.azioni).toEqual([]);
+    expect(t.messaggio).toMatch(/tetto di spesa dell'account/i);
+    expect(t.messaggio).toContain("non ho segnato niente");
+  });
+
+  it("...e un COMANDO invece si conserva, tetto o non tetto", () => {
+    const t = quandoLAssistenteTace("Segna due chili di astice", causaInItaliano(TETTO));
+    expect(t.azioni).toHaveLength(1);
+    expect(t.azioni[0].dati.sentito).toBe("Segna due chili di astice");
+  });
+});
+
 describe("una domanda che nessuno ha capito non diventa un appunto", () => {
   it("🔴 la frase esatta del collaudo non produce nessuna azione", () => {
     const t = quandoLAssistenteTace("Quanto olio ho?", "L'assistente non ha risposto.");

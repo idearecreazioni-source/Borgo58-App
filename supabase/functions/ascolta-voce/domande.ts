@@ -237,14 +237,43 @@ export function quandoLAssistenteTace(
 /**
  * PERCHÉ NON HA RISPOSTO, IN ITALIANO.
  *
- * ⚠️ I rifiuti dell'assistente arrivano in inglese, e uno di questi non è
- * un guasto del gestionale: è il **credito finito**. Senza riconoscerlo,
- * chi legge «l'assistente non ha risposto» cerca il difetto nel programma
- * — ed è successo il 07/09. *Ogni rifiuto che ha più di una causa le
- * elenca in ordine di frequenza.*
+ * ⚠️ I rifiuti dell'assistente arrivano in inglese, e alcuni di questi non
+ * sono un guasto del gestionale: sono i soldi. Senza riconoscerli, chi
+ * legge «l'assistente non ha risposto» cerca il difetto nel programma —
+ * ed è successo il 07/09, e di nuovo l'08/09. *Ogni rifiuto che ha più di
+ * una causa le elenca in ordine di frequenza.*
+ *
+ * 🔴 I MODI DI RESTARE SENZA SOLDI SONO DUE, E NON SI DICONO UGUALE
+ *    (08/09/2026, misurato sulle tre domande fatte col telefono):
+ *      · il **credito è finito** → si ricarica, e MEMO riparte subito;
+ *      · il **tetto di spesa dell'account è stato raggiunto** → non si
+ *        ricarica niente: o si alza il tetto, o si aspetta il mese nuovo.
+ *    Dirle con la stessa frase manda a fare la cosa sbagliata: chi legge
+ *    «ricarica» va a ricaricare un account che ha già i soldi dentro.
+ *
+ * 🔴 E IL TETTO DEL GESTIONALE NON C'ENTRA, ed è la parte che inganna di
+ *    più: `spesa_ai_del_mese` conta quello che ha speso **questo
+ *    database**, e l'08/09 sul progetto di prova diceva 2,10 € su 10 —
+ *    «sotto il tetto». Il tetto raggiunto era quello dell'**account**, che
+ *    è uno solo per tutti e due i database e per tutte le funzioni che
+ *    chiamano il modello. I due numeri rispondono a due domande diverse, e
+ *    chi guarda il primo conclude che il blocco è un guasto.
  */
 export function causaInItaliano(messaggio: string): string {
-  const m = String(messaggio ?? "").toLowerCase();
+  const testo = String(messaggio ?? "");
+  const m = testo.toLowerCase();
+
+  // ⚠️ Il tetto si guarda PRIMA del credito: il messaggio del tetto non
+  //    contiene «credit balance», ma se domani lo contenesse la frase
+  //    sbagliata vincerebbe. L'ordine è la difesa.
+  if (m.includes("usage limit") || m.includes("usage limits")) {
+    // ⚠️ LA DATA C'È DENTRO IL RIFIUTO, e si dice: «aspetta» senza dire
+    //    fino a quando è un vicolo cieco. Se non c'è, non ci si inventa un
+    //    mese — si dice che non lo si sa.
+    const quando = testo.match(/regain access on (\d{4})-(\d{2})-(\d{2})/i);
+    const fino = quando ? ` fino al ${quando[3]}/${quando[2]}/${quando[1]}` : "";
+    return `Il tetto di spesa dell'account AI è stato raggiunto: MEMO non capisce niente${fino}. Non è il credito e non è il tetto del gestionale — è il limite mensile messo sull'account, e vale per tutti e due i database insieme.`;
+  }
   if (m.includes("credit balance") || m.includes("insufficient_quota")) {
     return "Il credito dell'account AI è finito: va ricaricato, e finché non lo è MEMO non capisce niente.";
   }
