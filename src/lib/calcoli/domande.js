@@ -283,7 +283,7 @@ export const DOMANDE_CHE_SO = {
   scadenze_previste: {
     area: "cassa",
     dove: "previsione",
-    esempio: "Quali scadenze ho da pagare?",
+    esempio: "Quali scadenze ho segnato?",
     titolo: "Le scadenze da pagare",
   },
   ordini_in_corso: {
