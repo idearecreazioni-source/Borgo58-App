@@ -374,6 +374,58 @@ describe("chiudere e spostare un impegno a voce", () => {
     miei.tasks.push(nato.id);
   });
 
+  // -------------------------------------------------------------------
+  it("gli accenti non fanno perdere l'impegno", async () => {
+    // ⚠️ La dettatura del telefono gli accenti a volte li mette e a volte
+    //    no, e i due lati del confronto arrivano da due strade diverse: il
+    //    titolo l'ha scritto Alessio in Agenda, le parole le ha trascritte
+    //    il telefono. «venerdì» e «venerdi» devono essere la stessa parola,
+    //    altrimenti un impegno che c'è non si trova.
+    const t = await impegno("ordinare il caffè lunedì");
+    const { riga, appunto } = await detta("Segna come fatto ordinare il caffe lunedi", {
+      tipo: TIPO_FATTO,
+      dati: { impegno: `${NOME} ordinare il caffe lunedi` },
+    });
+    expect(riga.tipo).toBe(TIPO_FATTO);
+    expect(riga.dati.task_id).toBe(t.id);
+    expect(appunto.eseguibile).toBe(true);
+  });
+
+  it("un impegno «in corso» è un impegno vivo, e resta fra i candidati", async () => {
+    // ⚠️ Gli stati sono tre — da fare, in corso, completato — e solo l'ultimo
+    //    è chiuso. Escludere «in corso» vorrebbe dire che una cosa cominciata
+    //    non si può più segnare fatta a voce, che è il momento in cui serve.
+    const t = await impegno("scongelare il brodo");
+    await titolare.from("tasks").update({ status: "in_corso" }).eq("id", t.id);
+
+    const { riga, appunto } = await detta("Segna come fatto scongelare il brodo", {
+      tipo: TIPO_FATTO,
+      dati: { impegno: `${NOME} scongelare il brodo` },
+    });
+    expect(riga.tipo).toBe(TIPO_FATTO);
+    expect(riga.dati.task_id).toBe(t.id);
+    expect(appunto.eseguibile).toBe(true);
+
+    const { error } = await approva(appunto.id);
+    expect(error).toBeNull();
+    expect((await leggi(t.id)).status).toBe("completato");
+  });
+
+  it("🔴 due parole non bastano a prendere mezza Agenda", async () => {
+    // 🔴 Il confronto «contiene» con un testo cortissimo prenderebbe quasi
+    //    tutto, e mezza Agenda è la stessa cosa di nessun risultato — con
+    //    l'aggravante di sembrare una ricerca. Sotto le tre lettere non si
+    //    cerca affatto, e lo si dice.
+    await impegno("ordinare la carta forno");
+    await impegno("ordinare i tovaglioli");
+    const { riga, appunto } = await detta("Segna come fatto o", {
+      tipo: TIPO_FATTO,
+      dati: { impegno: "o" },
+    });
+    expect(riga.tipo).toBe(TIPO_QUALE);
+    expect(appunto.eseguibile).toBe(false);
+  });
+
   it("e un impegno già chiuso non torna fra i candidati", async () => {
     // ⚠️ Uno fatto non si richiude e non si sposta: comparire fra i
     //    candidati lo renderebbe ambiguo per niente.
