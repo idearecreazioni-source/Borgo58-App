@@ -105,8 +105,19 @@ describe("chiudere e spostare un impegno a voce", () => {
     return data;
   };
 
+  // 🔴 SI CONTANO SOLO GLI IMPEGNI DI QUESTA PROVA — 09/09/2026.
+  //    Prima si contava TUTTA la tabella, e in mezzo c'è Alessio: se dal
+  //    telefono approva un appunto mentre il giro sta girando, nasce un
+  //    impegno che questa prova non ha creato e il confronto «prima ==
+  //    dopo» diventa rosso **per un fatto che non è un difetto**.
+  //    ⚠️ E non si perde niente: un impegno creato per sbaglio da questa
+  //    frase porterebbe il marchio della prova, perché il titolo nasce da
+  //    quello che le si è fatto dire.
   const quantiImpegni = async () => {
-    const { count } = await titolare.from("tasks").select("*", { count: "exact", head: true });
+    const { count } = await titolare
+      .from("tasks")
+      .select("*", { count: "exact", head: true })
+      .like("title", `${NOME}%`);
     return count;
   };
 

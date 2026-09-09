@@ -28,6 +28,7 @@ import path from "node:path";
 
 import { MINUTI_MASSIMI_DI_UN_GIRO } from "./tempi-prove.mjs";
 import { argomentiDiEsclusione } from "./prove-che-costano.mjs";
+import { frasePerChiAspetta, lascia, prendi } from "./un-giro-per-volta.mjs";
 
 /** Quanto si aspetta, dopo il garbato SIGTERM, prima di insistere. */
 export const SECONDI_PRIMA_DI_INSISTERE = 15;
@@ -100,6 +101,7 @@ export function avviaConTetto({
   giro.on("exit", (codice, segnale) => {
     clearTimeout(tetto);
     clearTimeout(insisti);
+    lascia();
     finito(codice ?? (segnale ? 1 : 0));
   });
 
@@ -107,6 +109,22 @@ export function avviaConTetto({
 }
 
 // Lanciato come comando: `npm run test:app`.
+//
+// 🔴 UN GIRO PER VOLTA, e il lucchetto sta QUI e non dentro `avviaConTetto`:
+//    quella funzione e' provata con uno spawn finto e un orologio finto, e
+//    non deve toccare il disco. Il divieto riguarda il COMANDO — che e' la
+//    cosa che due volte insieme fa danno.
+//    Il database di prova e' uno solo: due giri si cancellano le righe a
+//    vicenda, e il risultato sembra un disastro del codice invece che una
+//    collisione (27/08: 41 file falliti, tutte verdi al rilancio).
 if (process.argv[1] && process.argv[1].endsWith("prove-app.mjs")) {
+  const posto = prendi();
+  if (!posto.preso) {
+    console.error(frasePerChiAspetta(posto.altrui));
+    process.exit(1);
+  }
+  // ⚠️ Anche se il giro viene ucciso: senza questo il lucchetto resterebbe
+  //    fino alla scadenza, e nel frattempo nessuno potrebbe piu' lanciare.
+  for (const segnale of ["exit", "SIGINT", "SIGTERM"]) process.on(segnale, () => lascia());
   avviaConTetto({ filtri: process.argv.slice(2) });
 }

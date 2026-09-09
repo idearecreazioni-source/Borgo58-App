@@ -526,3 +526,28 @@ export function righeMie(client) {
     },
   };
 }
+
+/**
+ * COSA E' ANDATO STORTO, in una frase che si puo' leggere.
+ *
+ * 🔴 NASCE DA UN ROSSO CHE NON DICEVA NIENTE — 09/09/2026. Una prova e'
+ * fallita in CI con `expected { message: '' } to be null`: un errore col
+ * messaggio VUOTO. Non era un caso: `head: true` fa fare a postgrest una
+ * richiesta **HEAD**, e una risposta HEAD non ha corpo **per specifica**
+ * — quindi qualunque errore arriva senza testo, sempre.
+ *
+ * ⚠️ Il NUMERO DI STATO invece c'e' sempre, e distingue le cose che
+ * contano: 401/403 e' un permesso, 404 una tabella che non c'e', 5xx un
+ * intoppo del mezzo. *Un rosso che non dice perche' insegna a rilanciare
+ * invece che a guardare.*
+ */
+export function spiega(r) {
+  if (!r) return "nessuna risposta";
+  if (!r.error) return "nessun errore";
+  const testo = String(r.error.message ?? "").trim();
+  const stato = r.status ? `stato HTTP ${r.status}${r.statusText ? ` ${r.statusText}` : ""}` : "senza numero di stato";
+  const codice = r.error.code ? ` [${r.error.code}]` : "";
+  return testo === ""
+    ? `${stato}${codice} — nessun messaggio: era una richiesta HEAD, che per specifica non ha corpo`
+    : `${stato}${codice}: ${testo}`;
+}

@@ -70,20 +70,43 @@ describe("le due liste della spesa", () => {
       body: { operazione: "approva_appunto", parametri: { p_id: id } },
     });
 
-  /** Quanti elementi aspettano ancora dentro un appunto. */
+  /**
+   * Quanti elementi DI QUESTA PROVA aspettano ancora dentro un appunto.
+   *
+   * 🔴 SOLO I SUOI — 09/09/2026. La spesa spicciola è additiva: un appunto
+   * può raccogliere anche righe che Alessio ha dettato dal telefono e non
+   * ha ancora approvato. Contandole tutte, il conto «+ attese» qui sotto
+   * misurerebbe roba di un altro e diventerebbe rosso senza che niente
+   * sia rotto.
+   */
   async function quantiDentro(appuntoId) {
     const { count } = await titolare
       .from("azioni_dettate")
       .select("*", { count: "exact", head: true })
       .eq("appunto_id", appuntoId)
+      .in("dettatura_id", miei.dettature)
       .in("stato", ["in_attesa", "fallita"]);
     return count;
   }
 
-  /** Quante righe ci sono nelle due liste, adesso. */
+  /**
+   * Quante righe DI QUESTA PROVA ci sono nelle due liste, adesso.
+   *
+   * 🔴 SOLO LE SUE — 09/09/2026. Contando tutta la tabella, una riga che
+   * Alessio aggiunge dal telefono mentre il giro gira fa fallire il
+   * confronto «prima == dopo». La separazione fra le due liste — che è
+   * quello che questa prova sorveglia — si vede benissimo sulle sole
+   * righe della prova.
+   */
   async function conta() {
-    const a = await titolare.from("shopping_list_items").select("*", { count: "exact", head: true });
-    const b = await titolare.from("spesa_spicciola").select("*", { count: "exact", head: true });
+    const a = await titolare
+      .from("shopping_list_items")
+      .select("*", { count: "exact", head: true })
+      .like("custom_name", `${NOME}%`);
+    const b = await titolare
+      .from("spesa_spicciola")
+      .select("*", { count: "exact", head: true })
+      .like("articolo", `${NOME}%`);
     return { lista: a.count, spicciola: b.count };
   }
 
