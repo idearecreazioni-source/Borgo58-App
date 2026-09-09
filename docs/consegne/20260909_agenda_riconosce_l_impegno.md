@@ -13,15 +13,20 @@
   `ascolta-voce`: il riconoscimento dell'impegno vive nel database, dove
   vive già la traduzione da «come l'ha chiamato lui» a «quale riga è» per
   tutti gli altri tipi.
-* **Prove**: **1.237 pure** · **74 sulle schermate** · **527 contro il
-  progetto di prova (tutte verdi)** · lint pulito · compilazione pulita.
-  ⚠️ **Quattro restano rosse in locale e sono PREESISTENTI**: una pura
-  (`indice-richieste`, artefatto di fine riga su Windows — con LF passa) e
-  tre sulle schermate (`rotte-chiuse`, `varco-pubblico`), le stesse tre che
-  la consegna della #44 dichiara già rosse in locale e verdi in CI.
-  Misurate anche sul ramo #44 intatto: identiche.
-* **Chiamate live al modello**: **ZERO**. Vincolo del mandato, e non è una
-  dichiarazione sulla parola — vedi «La spesa che partiva da sola».
+* **Controlli su GitHub: TUTTI VERDI** (giro `34366346085`, proposta **#45**):
+  **1.238 prove pure** (86 file) · **77 sulle schermate** (8) · **527 contro il
+  progetto di prova** (73) · lint pulito · compilazione pulita · CodeQL verde.
+  I due lavori di pubblicazione sono **saltati**, come devono: non si tocca
+  niente.
+  ⚠️ **In locale su Windows quattro restano rosse, e sono un artefatto di fine
+  riga**: `indice-richieste` e le tre delle schermate (`rotte-chiuse`,
+  `varco-pubblico`). **Misurato in due modi**: sul ramo #44 intatto sono
+  identiche, e sulla CI (che gira su Linux, dove i file arrivano a LF) passano
+  tutte. Non dipendono da questo lavoro.
+* **Chiamate live al modello**: **ZERO**, e non è una dichiarazione sulla
+  parola: nel registro della CI c'è la riga *«Fuori da questo giro, perche'
+  chiamano il modello e si pagano: tests/app/domande-memo.test.js»*. Prima di
+  questo lavoro quel giro ne faceva **otto**.
 
 ## Il difetto, misurato
 
