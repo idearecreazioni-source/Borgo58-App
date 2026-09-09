@@ -140,8 +140,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
 | 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
 | 83 | 09/09/2026 | i candidati si mostrano, e non si toccano |
+| 84 | 09/09/2026 | nel riquadro di quello che hai appena detto non si approva niente |
 
-⚠️ **Righe: 84.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 85.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3122,3 +3123,33 @@ che non viene mai salvata perché non passa da nessun deposito.
    a due righe sullo schermo il gesto naturale è toccarne una, e l'unica
    strada era ripetere la frase. *Una schermata che mostra una scelta e non
    la fa fare è un vicolo cieco con le indicazioni scritte bene.*
+
+## 84 · 09/09/2026 — «nel riquadro di quello che hai appena detto non si approva niente»
+
+1. **Cosa era stato deciso e quando.** 06/09/2026, con SPEC-0013: il
+   riquadro che compare a fine dettatura elenca **le frasi** appena dette e
+   basta. Il «sì» è uno solo e vive sull'appunto, nell'elenco di sotto.
+
+2. **La ragione di allora.** Prima ogni riga appena detta aveva lì il suo
+   «Sì, fallo», e approvare una **riga** scavalcava il raggruppamento: si
+   diceva sì a una voce di una lista senza vedere le altre due che ci
+   stavano dentro. Due posti da cui approvare sono due gesti diversi per la
+   stessa cosa.
+
+3. **Cosa si decide adesso.** In quel riquadro compare **l'appunto intero**
+   — la stessa scheda dell'elenco di sotto, coi candidati da toccare e con
+   «Approva».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   proprio per questo la forma nuova la rispetta.** Il divieto era su
+   *approvare una riga*; quello che compare adesso non è una riga, è
+   l'appunto con tutti i suoi elementi sotto gli occhi. Il gesto resta uno
+   solo, e il raggruppamento non si scavalca: cambia **dove si legge**.
+   🔴 E il prezzo della decisione vecchia si è visto col telefono in mano:
+   il riquadro diceva «li trovi qui sotto» e l'elenco di sotto quell'appunto
+   lo **escludeva apposta** — per non ripetere la stessa riga in due
+   riquadri, che è una regola giusta. Per vedere la scheda bisognava uscire
+   da MEMO e rientrare. *Una schermata che dice dove guardare e non ci mette
+   niente è peggio di una che tace.*
+   ⚠️ E la regola del 27/08 **non** si rovescia: la stessa riga continua a
+   non stare in due riquadri — l'elenco di sotto non la ripete.
