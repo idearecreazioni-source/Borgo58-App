@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import {
   candidatiDellElemento,
+  impegnoScelto,
+  nonDistinguibili,
   certezza,
   datiInChiaro,
   eta,
@@ -157,7 +159,14 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
   const chiedeAltro = elemento.domanda === "manca";
   const concreti = datiInChiaro(elemento.dati);
   const alternative = Array.isArray(elemento.alternative) ? elemento.alternative : [];
-  const candidati = candidatiDellElemento(elemento);
+  // ⚠️ L'elenco di sola lettura resta come RIPIEGO, non come doppione: si
+  //    mostra soltanto quando non c'e' niente da toccare — per esempio se
+  //    tutti i candidati sono stati chiusi dopo che l'appunto era nato.
+  //    Mostrarlo insieme ai pulsanti direbbe due volte la stessa cosa, e la
+  //    seconda sembrerebbe un'altra.
+  const candidati = chiedeQuale ? [] : candidatiDellElemento(elemento);
+  const scelto = impegnoScelto(elemento);
+  const gemelli = nonDistinguibili(elemento);
 
   return (
     <li className="rounded-lg bg-b58-parchment px-3 py-2">
@@ -218,6 +227,19 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
         </div>
       )}
 
+      {/* 🔴 QUALE IMPEGNO E' STATO SCELTO, scritto per esteso — 09/09/2026.
+          Il titolo compare anche nella riga grigia dei dati concreti, in
+          mezzo agli altri campi. Ma qui si sta per firmare la chiusura di
+          una riga di Agenda, e *quale* riga non e' un campo fra gli altri:
+          e' la cosa. Compare SOLO se c'e' stata una scelta vera, perche'
+          dirlo dove nessuno ha scelto sarebbe raccontare un gesto che non
+          c'e' stato. */}
+      {scelto && (
+        <p className="testo-sala mt-1 rounded-lg bg-b58-sage/15 px-3 py-2 text-b58-charcoal">
+          Hai scelto: <strong>{scelto}</strong>
+        </p>
+      )}
+
       {chiedeAltro && (
         <p className="testo-sala mt-1 text-b58-charcoal-soft">
           Ridillo a voce aggiungendo quello che manca, oppure fallo a mano qui sotto: quello che
@@ -247,7 +269,25 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
           dopo — perché nel frattempo dentro ci possono essere altre righe. */}
       {chiedeQuale && (
         <div className="mt-1">
-          <p className="testo-sala text-b58-charcoal">Quale dei due?</p>
+          {/* ⚠️ «dei due» solo quando sono due: con tre candidati quella
+              frase conterebbe male, e chi legge si fida del numero. */}
+          <p className="testo-sala text-b58-charcoal">
+            {scelte.length === 2 ? "Quale dei due?" : "Quale di questi?"}
+          </p>
+
+          {/* 🔴 QUANDO NON SI DISTINGUONO, LO SI DICE. Due righe gemelle
+              offerte come una scelta fanno tirare a sorte credendo di
+              decidere: e' la stessa forma dell'elenco vuoto che si legge
+              «non c'e' niente». I pulsanti restano — lui puo' saperlo —
+              ma non si finge che l'elenco basti. */}
+          {gemelli && (
+            <p className="testo-sala mt-0.5 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+              <strong>Da qui non riesco a distinguerli.</strong> Hanno lo stesso nome, lo
+              stesso giorno e tutto il resto uguale: se non sei sicuro, aprili in Agenda
+              prima di scegliere.
+            </p>
+          )}
+
           <div className="mt-1 flex flex-wrap gap-2">
             {scelte.map((s) => (
               <button
@@ -255,7 +295,12 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
                 type="button"
                 onClick={() => onScegli(s.id)}
                 disabled={inCorso}
-                className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment disabled:opacity-60"
+                /* ⚠️ `tocco-scelta` mette un pavimento di 44 punti sotto la
+                   misura in centimetri veri: su un monitor 1,05 cm fanno
+                   39,7 punti, sotto la soglia del dito. `text-left` e
+                   `py-2` servono ai nomi lunghi degli impegni, che vanno a
+                   capo invece di uscire dallo schermo. */
+                className="tocco-scelta flex max-w-full items-center rounded-lg bg-b58-charcoal px-4 py-2 text-left testo-sala text-b58-parchment disabled:opacity-60"
               >
                 {s.nome}
               </button>

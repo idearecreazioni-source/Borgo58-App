@@ -29,7 +29,7 @@ import { destinazioneAgenda } from "../../supabase/functions/ascolta-voce/agenda
  * @param risolto  quello che il database aggiunge quando l'impegno l'ha
  *                 trovato. Senza, è il caso in cui non l'ha trovato.
  */
-const appuntoDa = (azione, dettato, { risolto = null, approvabile = false } = {}) => {
+const appuntoDa = (azione, dettato, { risolto = null, approvabile = false, scelte = [] } = {}) => {
   const a = destinazioneAgenda(azione, dettato);
   const dati = { ...a.dati, ...(risolto ?? {}) };
   return {
@@ -54,8 +54,8 @@ const appuntoDa = (azione, dettato, { risolto = null, approvabile = false } = {}
           motivo: a.motivo ?? null,
           alternative: [],
           stato: "in_attesa",
-          domanda: null,
-          scelte: [],
+          domanda: scelte.length > 0 ? "scegli" : null,
+          scelte,
           // 🔴 IL PERCORSO ARRIVA DAL DATABASE (`azione_percorso`), e dalla
           //    fase 2 tutte e tre le destinazioni dell'Agenda ce l'hanno.
           percorso: "/agenda",
@@ -66,16 +66,16 @@ const appuntoDa = (azione, dettato, { risolto = null, approvabile = false } = {}
   };
 };
 
-const mostra = (appunto) =>
+const mostra = (appunto, { onApprova = vi.fn(), onScegli = vi.fn() } = {}) =>
   render(
     <MemoryRouter>
       <AppuntoDaApprovare
         appunto={appunto}
         occupato={false}
         esito={null}
-        onApprova={vi.fn()}
+        onApprova={onApprova}
         onScarta={vi.fn()}
-        onScegli={vi.fn()}
+        onScegli={onScegli}
       />
     </MemoryRouter>,
   );
@@ -350,6 +350,126 @@ describe("🔴 due impegni possibili: si vedono QUALI, e restano non approvabili
     ).appunto;
     mostra(risolto);
     expect(screen.queryByText(/Potrebbero essere questi/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /^Approva/ })).toBeTruthy();
+  });
+});
+
+// =====================================================================
+describe("🔴 i candidati si toccano, e solo dopo compare Approva", () => {
+  // 🔴 IL PEZZO CHE MANCAVA (09/09/2026): la #45 li mostrava e basta, e
+  //    l'unica via d'uscita era ridire la frase più precisa. Guardando due
+  //    righe sullo schermo, il gesto naturale è toccarne una.
+  //
+  // ⚠️ E LA REGOLA CHE NON SI TOCCA: il tocco SCEGLIE e basta. Qui si prova
+  //    che il pulsante chiami chi sceglie — non chi approva.
+  const SCELTE = [
+    { id: "t-a", nome: "Andare dal commercialista — 28/08/2026" },
+    { id: "t-b", nome: "Passare dal commercialista — 28/08/2026" },
+  ];
+
+  const ambiguo = (extra = {}) =>
+    appuntoDa(
+      {
+        tipo: "agenda_da_segnare_fatto",
+        sicuro: true,
+        frase: "Segnato come fatto: commercialista",
+        dati: { impegno: "commercialista" },
+      },
+      "Segna come fatto il commercialista",
+      { approvabile: false, scelte: SCELTE, ...extra },
+    ).appunto;
+
+  it("🔴 ogni candidato è un pulsante, col titolo e col giorno", () => {
+    mostra(ambiguo());
+    for (const s of SCELTE) {
+      const b = screen.getByRole("button", { name: s.nome });
+      expect(b).toBeTruthy();
+      // ⚠️ La classe è ciò che porta il bersaglio a 44 punti anche su un
+      //    monitor, dove 1,05 cm ne fanno 39,7. In questa prova non c'è un
+      //    foglio di stile: quello che si può pretendere è che la classe ci
+      //    sia — la misura vera si fa nel browser, ed è dichiarata nel
+      //    riepilogo.
+      expect(b.className).toContain("tocco-scelta");
+    }
+  });
+
+  it("🔴 finché non si sceglie, «Approva» non c'è", () => {
+    mostra(ambiguo());
+    expect(screen.queryByRole("button", { name: /^Approva/ })).toBeNull();
+    expect(screen.getByText(/Non c'è niente da approvare/i)).toBeTruthy();
+  });
+
+  it("🔴 toccare chiama chi SCEGLIE, non chi approva", () => {
+    const onScegli = vi.fn();
+    const onApprova = vi.fn();
+    mostra(ambiguo(), { onScegli, onApprova });
+    screen.getByRole("button", { name: SCELTE[0].nome }).click();
+    expect(onScegli).toHaveBeenCalledTimes(1);
+    expect(onScegli.mock.calls[0][1]).toBe("t-a");
+    expect(onApprova).not.toHaveBeenCalled();
+  });
+
+  it("con più di due non dice «dei due»: il numero non si sbaglia", () => {
+    mostra(ambiguo({ scelte: [...SCELTE, { id: "t-c", nome: "Terzo — 01/09/2026" }] }));
+    expect(screen.getByText(/Quale di questi\?/i)).toBeTruthy();
+    expect(screen.queryByText(/Quale dei due\?/i)).toBeNull();
+  });
+
+  it("🔴 due gemelli: si dichiara che non si distinguono, e i pulsanti restano", () => {
+    mostra(ambiguo({ risolto: { indistinguibili: true } }));
+    expect(screen.getByText(/non riesco a distinguerli/i)).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /commercialista/ })).toHaveLength(2);
+  });
+
+  it("e quando si distinguono non compare nessun avviso", () => {
+    mostra(ambiguo());
+    expect(screen.queryByText(/non riesco a distinguerli/i)).toBeNull();
+  });
+
+  it("🔴 scelto il candidato: si vede QUALE, e «Approva» compare", () => {
+    const dopo = appuntoDa(
+      {
+        tipo: "agenda_da_segnare_fatto",
+        sicuro: true,
+        frase: "Segnato come fatto: commercialista",
+        dati: { impegno: "commercialista" },
+      },
+      "Segna come fatto il commercialista",
+      {
+        approvabile: true,
+        risolto: {
+          task_id: "t-a",
+          titolo: "Andare dal commercialista",
+          data_precedente: "2026-08-28",
+          scelto_a_mano: true,
+        },
+      },
+    ).appunto;
+    mostra(dopo);
+    expect(screen.getByText(/Hai scelto:/i)).toBeTruthy();
+    expect(screen.getByText("Andare dal commercialista")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Approva/ })).toBeTruthy();
+    // ⚠️ E i pulsanti dei candidati non ci sono più: la scelta è fatta.
+    expect(screen.queryByRole("button", { name: /Passare dal commercialista/ })).toBeNull();
+  });
+
+  it("🔴 sul candidato UNICO non compare «hai scelto»: nessuno ha scelto", () => {
+    // È la #45, che deve restare identica.
+    const unico = appuntoDa(
+      {
+        tipo: "agenda_da_segnare_fatto",
+        sicuro: true,
+        frase: "Segnato come fatto: ordine di verdure",
+        dati: { impegno: "ordine di verdure" },
+      },
+      "Segna come fatto l'ordine di verdure",
+      {
+        approvabile: true,
+        risolto: { task_id: "t-1", titolo: "Ordine delle verdure", data_precedente: null },
+      },
+    ).appunto;
+    mostra(unico);
+    expect(screen.queryByText(/Hai scelto:/i)).toBeNull();
     expect(screen.getByRole("button", { name: /^Approva/ })).toBeTruthy();
   });
 });

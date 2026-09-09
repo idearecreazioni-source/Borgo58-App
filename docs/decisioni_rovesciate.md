@@ -139,8 +139,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 80 | 06/09/2026 | scegliere fra i candidati esegue |
 | 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
 | 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
+| 83 | 09/09/2026 | i candidati si mostrano, e non si toccano |
 
-⚠️ **Righe: 83.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 84.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3092,3 +3093,32 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ E la disciplina non è tornata dov'era: il comando **dice sempre** quali
    prove ha lasciato fuori e come lanciarle. Un'esclusione silenziosa sarebbe
    copertura persa travestita da verde — che è peggio della copertura persa.
+
+## 83 · 09/09/2026 — «i candidati si mostrano, e non si toccano»
+
+1. **Cosa era stato deciso e quando.** 09/09/2026, poche ore prima, nella
+   #45: quando MEMO trova due impegni ugualmente plausibili l'appunto li
+   **elenca col loro giorno**, e restano una cosa da leggere. Nessun
+   pulsante. La via d'uscita era ridire la frase più precisa.
+
+2. **La ragione di allora.** Un pulsante per sceglierli renderebbe
+   approvabile un appunto che, finché i candidati sono due, non deve
+   esserlo: chiudere l'impegno di qualcun altro o spostare una scadenza che
+   nessuno voleva toccare sono errori che nessun messaggio annuncia.
+
+3. **Cosa si decide adesso.** I candidati si **toccano**. Il tocco
+   **sceglie e basta** — non scrive, non chiude, non sposta. Dopo il tocco
+   l'appunto dice quale impegno è stato scelto e compare «Approva», e solo
+   «Approva» esegue.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Era giusta sul
+   pericolo e sbagliata sul rimedio.** Il pericolo — *nessuno deve poter
+   approvare un'ambiguità* — è vero e resta chiuso. Ma quella decisione lo
+   chiudeva legando due cose che sono diverse: «non approvabile» e «non
+   toccabile». Scegliendo, l'ambiguità **smette di esistere**: resta un
+   candidato solo, e la firma è su quello. Il pericolo si chiude dove sta
+   davvero — *il tocco non scrive* — invece che togliendo il gesto.
+   ⚠️ E il prezzo della decisione vecchia si era visto in un giorno: davanti
+   a due righe sullo schermo il gesto naturale è toccarne una, e l'unica
+   strada era ripetere la frase. *Una schermata che mostra una scelta e non
+   la fa fare è un vicolo cieco con le indicazioni scritte bene.*

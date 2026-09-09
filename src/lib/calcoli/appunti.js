@@ -38,7 +38,19 @@ import { formatDate } from "../constants";
 //    questa si legge), e col discriminante del 17/08 due cose diverse
 //    vogliono due nomi. ⚠️ Riusarlo non dava un errore di nome: faceva
 //    fallire la lettura di TUTTI gli appunti insieme.
-const DI_SERVIZIO = new Set(["nome_sentito", "sentito", "lista", "dove", "impegni_possibili"]);
+// ⚠️ `indistinguibili` e `scelto_a_mano` sono due DICHIARAZIONI sul modo in
+//    cui si e' arrivati al dato, non dati da scrivere: la schermata le usa
+//    per dire la verita' su cosa e' successo, e approvando non finiscono
+//    da nessuna parte.
+const DI_SERVIZIO = new Set([
+  "nome_sentito",
+  "sentito",
+  "lista",
+  "dove",
+  "impegni_possibili",
+  "indistinguibili",
+  "scelto_a_mano",
+]);
 
 /**
  * Come si scrive un valore dentro un appunto.
@@ -232,4 +244,39 @@ export function candidatiDellElemento(elemento) {
       quando: c?.data ? formatDate(c.data) : null,
     }))
     .filter((c) => c.titolo !== "");
+}
+
+/**
+ * L'IMPEGNO CHE ALESSIO HA SCELTO COL DITO, quando c'e' stata una scelta.
+ *
+ * 🔴 SOLO QUANDO C'E' STATA DAVVERO — 09/09/2026. Il segno `scelto_a_mano`
+ * lo scrive il database nel momento in cui il dito tocca un candidato. Senza
+ * quel segno, questa frase comparirebbe anche sul caso a candidato unico,
+ * dove nessuno ha scelto niente: sarebbe una frase che dice il falso su come
+ * si e' arrivati al dato, ed e' peggio di nessuna frase.
+ *
+ * ⚠️ Torna il TITOLO DI AGENDA, non le parole dette: e' quello che verrebbe
+ * toccato approvando, ed e' l'unica cosa che chi firma deve poter leggere.
+ */
+export function impegnoScelto(elemento) {
+  const d = elemento?.dati;
+  if (!d || d.scelto_a_mano !== true) return null;
+  const titolo = typeof d.titolo === "string" ? d.titolo.trim() : "";
+  return titolo === "" ? null : titolo;
+}
+
+/**
+ * I candidati si leggono uguali, e il gestionale lo DICHIARA.
+ *
+ * 🔴 E' il caso senza scampo: stesso nome, stesso giorno, e nessun altro
+ * campo che li separi. Mostrare due righe gemelle e lasciar credere che si
+ * stia scegliendo sarebbe far tirare a sorte credendo di decidere — la
+ * forma di *«assenza di informazione scambiata per informazione»* che questo
+ * progetto insegue dal 19/08.
+ *
+ * ⚠️ I pulsanti restano lo stesso: chi guarda puo' sapere lui quale sia. Cio'
+ * che non si fa e' fingere che l'elenco basti.
+ */
+export function nonDistinguibili(elemento) {
+  return elemento?.dati?.indistinguibili === true;
 }
