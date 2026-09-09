@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import {
+  candidatiDellElemento,
   certezza,
   datiInChiaro,
   eta,
@@ -156,6 +157,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
   const chiedeAltro = elemento.domanda === "manca";
   const concreti = datiInChiaro(elemento.dati);
   const alternative = Array.isArray(elemento.alternative) ? elemento.alternative : [];
+  const candidati = candidatiDellElemento(elemento);
 
   return (
     <li className="rounded-lg bg-b58-parchment px-3 py-2">
@@ -187,6 +189,33 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
             </span>
           ))}
         </p>
+      )}
+
+      {/* 🔴 QUANDO GLI IMPEGNI POSSIBILI SONO DUE, SI DICE QUALI — 09/09/2026.
+          MEMO non ne sceglie nessuno, ed e' giusto: fra due candidati
+          altrettanto buoni non esiste nessun criterio onesto per preferirne
+          uno, e sbagliare vuol dire chiudere l'impegno di un altro o
+          spostare una scadenza che nessuno voleva toccare.
+          ⚠️ MA «quale dei 2» senza dire quali mandava a cercarli in Agenda,
+          cioe' a rifare a mano il lavoro appena fatto dal gestionale. Il
+          giorno c'e' sempre perche' e' quello che li distingue: due titoli
+          somiglianti senza data sono la stessa domanda, scritta piu' lunga.
+          ⚠️ NON SI TOCCANO, e non e' una dimenticanza: un pulsante per
+          sceglierli renderebbe approvabile un appunto che finche' i
+          candidati sono due non deve esserlo. La via d'uscita e' qui
+          sotto — ridirlo, o aprire l'Agenda. */}
+      {candidati.length > 0 && (
+        <div className="mt-1">
+          <p className="testo-sala text-b58-charcoal-soft">Potrebbero essere questi:</p>
+          <ul className="mt-0.5 space-y-0.5">
+            {candidati.map((c, i) => (
+              <li key={`${c.titolo}-${i}`} className="testo-sala text-b58-charcoal">
+                <strong>{c.titolo}</strong>
+                {c.quando ? ` — ${c.quando}` : " — senza scadenza"}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {chiedeAltro && (

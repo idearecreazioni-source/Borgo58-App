@@ -1,3 +1,5 @@
+import { formatDate } from "../constants";
+
 // =====================================================================
 // COME SI LEGGE UN APPUNTO VOCALE — SPEC-0013
 // =====================================================================
@@ -23,7 +25,20 @@
 //    07/09): e' impalcatura per la schermata, non una cosa che verrebbe
 //    scritta approvando — e mostrarlo fra i dati concreti direbbe a chi
 //    firma che sta autorizzando un indirizzo.
-const DI_SERVIZIO = new Set(["nome_sentito", "sentito", "lista", "dove"]);
+// ⚠️ `impegni_possibili` e' l'elenco degli impegni che il gestionale non ha
+//    saputo distinguere fra loro (Agenda, 09/09/2026): si mostra, ma NON qui
+//    in mezzo ai dati concreti — quelli sono «cosa verrebbe scritto
+//    approvando», e questi sono l'esatto contrario: la ragione per cui non si
+//    scrive niente. Metterli li' direbbe a chi firma che sta autorizzando due
+//    impegni invece di nessuno.
+// 🔴 E NON SI CHIAMA `candidati`, che sarebbe stato il nome ovvio: quella
+//    parola in questo sistema E' GIA' OCCUPATA — per giacenza, temperatura e
+//    pulizia vuol dire «i numeri di catalogo fra cui scegliere», e da li'
+//    nascono i pulsanti da toccare. Sono due cose diverse (quella si tocca,
+//    questa si legge), e col discriminante del 17/08 due cose diverse
+//    vogliono due nomi. ⚠️ Riusarlo non dava un errore di nome: faceva
+//    fallire la lettura di TUTTI gli appunti insieme.
+const DI_SERVIZIO = new Set(["nome_sentito", "sentito", "lista", "dove", "impegni_possibili"]);
 
 /**
  * Come si scrive un valore dentro un appunto.
@@ -181,4 +196,40 @@ export function perche(appunto) {
 /** Se questo appunto si puo' approvare adesso. */
 export function siPuoApprovare(appunto) {
   return appunto?.eseguibile === true && Number(appunto?.quanti) > 0;
+}
+
+/**
+ * GLI IMPEGNI CHE POTREBBERO ESSERE QUELLO DETTO, quando sono piu' d'uno.
+ *
+ * 🔴 NASCE DAL COLLAUDO COL TELEFONO (09/09/2026). Quando MEMO trova due
+ * impegni ugualmente plausibili non ne sceglie nessuno — e fa bene, perche'
+ * fra due candidati altrettanto buoni non esiste nessun criterio onesto per
+ * preferirne uno. Ma la frase che compariva diceva soltanto «quale dei 2»,
+ * e chi la leggeva doveva andare in Agenda a cercarli per sapere di quali
+ * due si parlasse: cioe' rifare a mano il lavoro che il gestionale aveva
+ * appena fatto.
+ *
+ * ⚠️ IL GIORNO C'E' SEMPRE, ed e' la meta' che serve: due impegni che si
+ * chiamano quasi uguale si distinguono per QUANDO scadono, quasi mai per
+ * come sono scritti. Un elenco di soli titoli somiglianti non aiuta a
+ * scegliere — sarebbe la stessa domanda, scritta piu' lunga.
+ *
+ * ⚠️ E «senza scadenza» SI SCRIVE, non si lascia vuoto: un impegno senza
+ * data e' una delle cose che lo distinguono dagli altri, e una riga muta si
+ * legge «non l'ho guardato». E' la regola del vuoto che non e' zero, sulle
+ * date.
+ *
+ * ⚠️ QUI NON SI DECIDE NIENTE: quali candidati siano, e quanti, l'ha gia'
+ * deciso il database guardando l'Agenda. Questa funzione li mette in
+ * italiano.
+ */
+export function candidatiDellElemento(elemento) {
+  const grezzi = elemento?.dati?.impegni_possibili;
+  if (!Array.isArray(grezzi)) return [];
+  return grezzi
+    .map((c) => ({
+      titolo: typeof c?.titolo === "string" ? c.titolo.trim() : "",
+      quando: c?.data ? formatDate(c.data) : null,
+    }))
+    .filter((c) => c.titolo !== "");
 }

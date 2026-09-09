@@ -138,8 +138,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 79 | 06/09/2026 | le misure sicure si salvano da sé |
 | 80 | 06/09/2026 | scegliere fra i candidati esegue |
 | 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
+| 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
 
-⚠️ **Righe: 82.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 83.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3060,3 +3061,34 @@ che non viene mai salvata perché non passa da nessun deposito.
    va, appena tolto), oppure far viaggiare l'etichetta dal database, che vuol
    dire una colonna nuova e due funzioni di lettura riscritte per una parola.
    *(Fase 2 dell'Agenda a voce; migrazione `20260909000002`.)*
+
+## 82 · 09/09/2026 — «le prove contro il database girano tutte, a ogni giro»
+
+1. **Cosa era stato deciso e quando.** 31/08/2026, costruendo i controlli su
+   GitHub: le prove contro il progetto di prova girano a **ogni** proposta.
+   Fino ad allora dipendevano dal fatto che qualcuno si ricordasse di
+   lanciarle.
+
+2. **La ragione di allora.** *Preferire l'automazione alla disciplina: la
+   disciplina si degrada, l'automazione no.* Una prova che gira solo quando
+   qualcuno se la ricorda è una prova che un giorno non gira — e il giorno
+   che non gira è quello in cui sarebbe servita.
+
+3. **Cosa si decide adesso.** Le prove che chiamano **davvero il modello**
+   restano fuori dal giro automatico. Si lanciano apposta, con
+   `npm run test:app -- --col-modello`. Quali siano non lo dice un elenco
+   scritto a mano: si ricava dal codice — quali funzioni online nominano il
+   modello nel loro sorgente, e quali prove le invocano.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   questo è il prezzo che accettiamo.** Quelle prove provano una cosa che
+   nessun'altra prova può provare — che il modello *capisce* davvero — e da
+   oggi quella cosa la sorveglia una persona invece di una macchina.
+   Il prezzo si paga perché dall'altra parte c'è una spesa che **parte da
+   sola a ogni giro**: otto richieste vere per ogni proposta e per ogni push,
+   che nessuno ha deciso e che cresce da sé. È la stessa famiglia dei
+   ritentativi senza tetto del 12/08 — *ogni cosa automatica che costa soldi
+   vuole un tetto, altrimenti è una perdita che cresce da sola*.
+   ⚠️ E la disciplina non è tornata dov'era: il comando **dice sempre** quali
+   prove ha lasciato fuori e come lanciarle. Un'esclusione silenziosa sarebbe
+   copertura persa travestita da verde — che è peggio della copertura persa.

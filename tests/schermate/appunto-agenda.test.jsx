@@ -260,3 +260,96 @@ describe("«ricordami di chiamare Tiziana domani»", () => {
     expect(azione.motivo).toBeUndefined();
   });
 });
+
+// =====================================================================
+describe("🔴 due impegni possibili: si vedono QUALI, e restano non approvabili", () => {
+  // 🔴 IL DIFETTO CHE SI CHIUDE (09/09/2026, dal collaudo col telefono).
+  //    Quando MEMO trova due impegni ugualmente plausibili non ne sceglie
+  //    nessuno — e fa bene. Ma la schermata diceva soltanto «quale dei 2»,
+  //    e chi la leggeva doveva andare in Agenda a cercarli per sapere di
+  //    quali due si parlasse: cioè rifare a mano il lavoro appena fatto dal
+  //    gestionale.
+  //
+  // ⚠️ I CANDIDATI LI DECIDE IL DATABASE, che ha guardato in Agenda: qui
+  //    arrivano dentro i dati dell'appunto, come arrivano davvero.
+  const conCandidati = (candidati) =>
+    appuntoDa(
+      {
+        tipo: "agenda_da_segnare_fatto",
+        sicuro: true,
+        frase: "Segnato come fatto: ordine delle verdure",
+        dati: { impegno: "ordine delle verdure" },
+      },
+      "Segna come fatto l'ordine delle verdure",
+      { approvabile: false, risolto: { impegni_possibili: candidati } },
+    ).appunto;
+
+  const DUE = [
+    { titolo: "Ordine verdure", data: "2027-03-03" },
+    { titolo: "Ordine delle verdure", data: "2027-03-04" },
+  ];
+
+  it("🔴 i due titoli si leggono, e non si deve andare in Agenda a cercarli", () => {
+    mostra(conCandidati(DUE));
+    expect(screen.getByText("Ordine verdure")).toBeTruthy();
+    expect(screen.getByText("Ordine delle verdure")).toBeTruthy();
+  });
+
+  it("🔴 e ognuno porta il suo giorno, che è quello che li distingue", () => {
+    // ⚠️ Due titoli somiglianti senza data sono la stessa domanda, scritta
+    //    più lunga: è il giorno a far scegliere.
+    mostra(conCandidati(DUE));
+    const righe = screen.getAllByRole("listitem").map((r) => r.textContent);
+    const conVerdure = righe.filter((t) => t.includes("Ordine"));
+    expect(conVerdure.length).toBeGreaterThanOrEqual(2);
+    expect(conVerdure.every((t) => /2027/.test(t))).toBe(true);
+  });
+
+  it("🔴 mostrarli NON li rende approvabili", () => {
+    // È la riga che non si tocca: finché i candidati sono due, «Approva»
+    // non deve esistere. Un pulsante su una cosa ambigua promette che
+    // sceglierà lui.
+    mostra(conCandidati(DUE));
+    expect(screen.queryByRole("button", { name: /^Approva/ })).toBeNull();
+    expect(screen.getByText(/Non c'è niente da approvare/i)).toBeTruthy();
+  });
+
+  it("🔴 e non si possono nemmeno toccare: non sono una scelta", () => {
+    // ⚠️ Un pulsante per sceglierli sarebbe un'altra funzionalità, e
+    //    renderebbe approvabile ciò che non deve esserlo. La via d'uscita è
+    //    ridirlo, o aprire l'Agenda.
+    mostra(conCandidati(DUE));
+    const bottoni = screen.queryAllByRole("button");
+    for (const b of bottoni) {
+      expect(b.textContent).not.toMatch(/Ordine verdure|Ordine delle verdure/);
+    }
+  });
+
+  it("un impegno senza scadenza lo DICE, invece di lasciare la riga muta", () => {
+    // Il vuoto che non è zero, sulle date: «senza scadenza» è una delle
+    // cose che distinguono un impegno dagli altri.
+    mostra(conCandidati([{ titolo: "Ordine verdure", data: null }, DUE[1]]));
+    expect(screen.getByText(/senza scadenza/i)).toBeTruthy();
+  });
+
+  it("🔴 quando l'impegno è UNO, l'elenco non compare affatto", () => {
+    // ⚠️ Un elenco di candidati accanto a un appunto già risolto direbbe
+    //    che c'è ancora un dubbio dove non ce n'è più.
+    const risolto = appuntoDa(
+      {
+        tipo: "agenda_da_segnare_fatto",
+        sicuro: true,
+        frase: "Segnato come fatto: rinnovo della firma digitale",
+        dati: { impegno: "rinnovo della firma digitale" },
+      },
+      "Segna come fatto il rinnovo della firma digitale",
+      {
+        approvabile: true,
+        risolto: { task_id: "t-1", titolo: "Rinnovo firma digitale", data_precedente: null },
+      },
+    ).appunto;
+    mostra(risolto);
+    expect(screen.queryByText(/Potrebbero essere questi/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /^Approva/ })).toBeTruthy();
+  });
+});

@@ -27,6 +27,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 
 import { MINUTI_MASSIMI_DI_UN_GIRO } from "./tempi-prove.mjs";
+import { argomentiDiEsclusione } from "./prove-che-costano.mjs";
 
 /** Quanto si aspetta, dopo il garbato SIGTERM, prima di insistere. */
 export const SECONDI_PRIMA_DI_INSISTERE = 15;
@@ -47,6 +48,28 @@ export function avviaConTetto({
   scrivi = (r) => console.error(r),
   finito = (codice) => process.exit(codice),
 } = {}) {
+  // 🔴 LE PROVE CHE CHIAMANO IL MODELLO RESTANO FUORI, se non le si chiede
+  //    apposta — 09/09/2026. Girano a ogni proposta e a ogni push, e ognuna
+  //    di quelle chiamate si paga: una spesa che parte da sola a ogni giro
+  //    non e' una scelta di nessuno, e' una perdita che cresce (stessa
+  //    famiglia dei ritentativi senza tetto del 12/08).
+  //    ⚠️ E SI DICE SEMPRE QUALI, anche quando non ne resta fuori nessuna:
+  //    un'esclusione silenziosa e' copertura persa travestita da verde.
+  const colModello = filtri.includes("--col-modello");
+  const puliti = filtri.filter((f) => f !== "--col-modello");
+  const { argomenti: esclusioni, fuori } = colModello
+    ? { argomenti: [], fuori: [] }
+    : argomentiDiEsclusione(".");
+  if (colModello) {
+    scrivi("Giro CON le prove che chiamano il modello: questo giro si paga.");
+  } else if (fuori.length > 0) {
+    scrivi(
+      "Fuori da questo giro, perche' chiamano il modello e si pagano:" +
+        fuori.map((f) => `\n  · ${f.file}  (${f.funzioni.join(", ")})`).join("") +
+        "\nPer lanciarle davvero:  npm run test:app -- --col-modello"
+    );
+  }
+
   const giro = spawnFn(process.execPath, [
     path.join("node_modules", "vitest", "vitest.mjs"),
     "run",
@@ -54,7 +77,8 @@ export function avviaConTetto({
     "--no-file-parallelism",
     "--config",
     "vitest.app.config.js",
-    ...filtri,
+    ...puliti,
+    ...esclusioni,
   ], { stdio: "inherit", env: { ...process.env, BORGO58_CON_TETTO: "1" } });
 
   let insisti;

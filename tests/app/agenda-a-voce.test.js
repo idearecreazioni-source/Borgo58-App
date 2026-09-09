@@ -189,7 +189,23 @@ describe("chiudere e spostare un impegno a voce", () => {
     expect(riga.tipo).toBe(TIPO_QUALE);
     expect(appunto.eseguibile).toBe(false);
     expect(appunto.titolo).toBe("Quale impegno?");
-    expect(riga.motivo).toMatch(/quale dei 2/);
+    // 🔴 IL NUMERO NON SI FISSA — corretto il 09/09/2026, misurando.
+    //    Questa riga diceva `/quale dei 2/`, ed è diventata rossa quando sul
+    //    progetto di prova è comparso un impegno VERO («Ordine delle
+    //    verdure») che combacia con la frase di questa prova: i candidati
+    //    sono diventati tre.
+    //    ⚠️ Misurato che NON dipende dal confronto nuovo: con la regola di
+    //    prima quei tre titoli combaciavano tutti e tre lo stesso. È il
+    //    conteggio globale a essere fragile — dipende da tutto ciò che c'è in
+    //    Agenda in quel momento, comprese le righe di Alessio.
+    //    *Un numero letto dal mondo e scritto dentro una prova è un fossile*
+    //    (regola del 16/08: un guardiano dice come DEVE essere fatto il
+    //    mondo, non com'era quando l'ho guardato).
+    expect(riga.motivo).toMatch(/quale dei \d+ impegni aperti/);
+    // La proprietà che conta: i DUE di questa prova sono fra i candidati.
+    const possibili = (riga.dati.impegni_possibili ?? []).map((c) => c.titolo);
+    expect(possibili).toContain(a.title);
+    expect(possibili).toContain(b.title);
     // ⚠️ E la via d'uscita c'è comunque: un rifiuto senza gesto d'uscita è
     //    un vicolo cieco (16/08).
     expect(riga.percorso).toBe("/agenda");
