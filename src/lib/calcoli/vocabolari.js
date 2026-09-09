@@ -63,7 +63,7 @@ import {
   SUPPLIER_CATEGORIES,
   TASK_CATEGORIES,
   TASK_PRIORITIES,
-  TASK_RICORRENZE,
+  TASK_RICORRENZA_UNITA,
   TASK_STATUSES,
   TIP_MEZZI,
   VIDEO_PLATFORMS,
@@ -159,15 +159,19 @@ export const SPECCHIATI = [
   { costante: "TASK_CATEGORIES", valori: TASK_CATEGORIES, tabella: "tasks", colonna: "category" },
   { costante: "TASK_PRIORITIES", valori: TASK_PRIORITIES, tabella: "tasks", colonna: "priority" },
   { costante: "TASK_STATUSES", valori: TASK_STATUSES, tabella: "tasks", colonna: "status" },
+  // 🔴 LA RICORRENZA HA CAMBIATO FORMA — 10/09/2026. Era una parola sola
+  // fra quattro (`tasks.ricorrenza`); adesso sono due dati, quante volte e
+  // di che cosa, e il vocabolario chiuso è il secondo.
+  // ⚠️ `ricorrenza_ogni` NON è un vocabolario: è un numero con un limite,
+  // e a sorvegliarlo c'è un vincolo che rifiuta lo zero — un elenco di
+  // valori ammessi lì dentro non avrebbe senso.
+  // ⚠️ E non c'è più nessun `ignora`: «non si ripete» adesso è le due
+  // caselle vuote, non una voce del menu.
   {
-    costante: "TASK_RICORRENZE",
-    valori: TASK_RICORRENZE,
+    costante: "TASK_RICORRENZA_UNITA",
+    valori: TASK_RICORRENZA_UNITA,
     tabella: "tasks",
-    colonna: "ricorrenza",
-    // Il valore vuoto non è un valore del database: è «non si ripete»,
-    // cioè `null`. La colonna ammette `null` per quello.
-    ignora: [""],
-    perche: "il valore vuoto del menu significa «non si ripete», che nel database è null",
+    colonna: "ricorrenza_unita",
   },
 ];
 

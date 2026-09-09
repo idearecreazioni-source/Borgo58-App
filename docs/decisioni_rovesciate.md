@@ -141,8 +141,11 @@ rossa da sola il giorno che l'indice resta indietro.
 | 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
 | 83 | 09/09/2026 | i candidati si mostrano, e non si toccano |
 | 84 | 09/09/2026 | nel riquadro di quello che hai appena detto non si approva niente |
+| 85 | 10/09/2026 | una ricorrenza si sceglie fra quattro cadenze fisse |
+| 86 | 10/09/2026 | il modulo di un impegno chiede lo stato e la categoria |
+| 87 | 10/09/2026 | nel quadrotto di un impegno si tocca il titolo |
 
-⚠️ **Righe: 85.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 88.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3153,3 +3156,81 @@ che non viene mai salvata perché non passa da nessun deposito.
    niente è peggio di una che tace.*
    ⚠️ E la regola del 27/08 **non** si rovescia: la stessa riga continua a
    non stare in due riquadri — l'elenco di sotto non la ripete.
+
+## 85 · 10/09/2026 — «una ricorrenza si sceglie fra quattro cadenze fisse»
+
+1. **Cosa era stato deciso e quando.** Il 14/08/2026, col Blocco 1 del mandato
+   cumulativo, l'Agenda ha ricevuto le ricorrenze come **elenco chiuso di
+   quattro voci**: mensile, trimestrale, semestrale, annuale.
+
+2. **La ragione di allora.** Servivano agli **adempimenti societari**, che
+   erano gli unici impegni ricorrenti esistenti: le loro cadenze sono
+   esattamente quelle, e quattro voci le coprivano tutte. Un campo libero
+   avrebbe chiesto due dati per una cosa che ne voleva uno.
+
+3. **Cosa si decide adesso.** Due dati liberi: **quante volte** e **di che
+   cosa** — «ogni N giorni / settimane / mesi / anni». Le quattro di prima
+   diventano casi particolari (ogni 1 mesi, ogni 3 mesi, ogni 6 mesi, ogni 1
+   anni), e la colonna vecchia **si toglie**, non si spegne.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **È cambiato chi le usa.**
+   Finché in Agenda c'erano solo adempimenti, quelle quattro erano l'insieme
+   completo. Da quando ci finisce la manutenzione del locale — i filtri della
+   cappa, il tecnico della cella, le analisi — sono un **sottoinsieme che non
+   contiene il caso più comune**. 🔴 E il modo di fallire era quello che questo
+   progetto teme: il menu si apriva, quattro voci, **nessun errore**. *Un
+   elenco chiuso che non contiene il caso di chi guarda non sembra incompleto:
+   sembra che quella cosa non si possa fare.*
+
+## 86 · 10/09/2026 — «il modulo di un impegno chiede lo stato e la categoria»
+
+1. **Cosa era stato deciso e quando.** Sempre il 14/08/2026: il modulo di un
+   impegno mostra una casella **Stato** e una casella **Categoria**, e
+   quest'ultima è un **elenco chiuso** al posto del testo libero di prima.
+
+2. **La ragione di allora.** La categoria nasceva da un difetto misurato: su
+   venti righe di testo libero convivevano **quattro convenzioni diverse**
+   («Adempimenti societari», «Documenti», «amministrativo», vuoto). Lo stato
+   c'era per simmetria, perché il modulo mostrava tutte le colonne.
+
+3. **Cosa si decide adesso.** Tutte e due escono dal modulo. Le colonne
+   restano, e su un impegno che si sta correggendo restano quelle che erano.
+   Un impegno scritto a mano nasce «da fare» e «altro».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Sulla categoria vale
+   ancora, e infatti il vocabolario chiuso NON è stato toccato**: quello che è
+   caduto è che valesse la pena chiederla ogni volta. La misura è la stessa che
+   l'aveva giustificata — su venti righe la risposta era «Altro» **quindici
+   volte**. L'elenco chiuso resta per chi la categoria la scrive davvero: i
+   moduli che creano impegni da soli.
+   Sullo stato invece la ragione era la simmetria, che **non è una ragione
+   d'uso**: non esiste il caso di uno che apre «Nuovo impegno» per dichiararlo
+   già completato, e chiudere si fa con la spunta nell'elenco.
+   ⚠️ **Il prezzo dichiarato**: correggendo a mano un impegno nato da un altro
+   modulo non se ne può più cambiare la categoria da qui. Nessuno l'ha mai
+   chiesto, e riscrivere all'indietro i dati storici era il rischio da evitare.
+
+## 87 · 10/09/2026 — «nel quadrotto di un impegno si tocca il titolo»
+
+1. **Cosa era stato deciso e quando.** Il 29/08/2026, costruendo
+   `ElencoAdattivo`: *«se c'è un'azione, il blocchetto non è più un pulsante —
+   un bottone dentro un bottone non è HTML valido; e se serve anche `onTocco`
+   il titolo prende il suo pulsante per conto proprio»*.
+
+2. **La ragione di allora.** È vera e non si tocca: un bottone dentro un
+   bottone finisce col tocco che va a chi capita, ed è la stessa trappola del
+   numero di telefono dentro la riga della prenotazione (19/08).
+
+3. **Cosa si decide adesso.** Il riquadro **ascolta** il tocco senza essere un
+   pulsante, e **si tira indietro** quando il tocco è arrivato a un comando
+   suo. Il titolo smette di essere un pulsante.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e la
+   forma nuova la rispetta**: non c'è nessun bottone dentro un bottone. Quello
+   che era sbagliato era la **conseguenza** che se n'era tratta — che allora il
+   bersaglio dovesse restringersi al titolo. Su un telefono quella striscia di
+   testo è alta un centimetro in mezzo a un riquadro che sembra tutto
+   premibile: si finisce quasi sempre a lato, e lì non succedeva niente.
+   ⚠️ E la protezione dei comandi **guarda il bersaglio** invece di chiedere a
+   ogni comando di difendersi: sono otto elenchi, e il nono comando scritto fra
+   sei mesi lo dimenticherebbe **senza nessun errore**.

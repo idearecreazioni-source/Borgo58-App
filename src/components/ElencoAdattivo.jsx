@@ -55,14 +55,69 @@ export default function ElencoAdattivo({
   // dentro un bottone non è HTML valido e sul telefono il tocco finisce a
   // chi capita — è la stessa trappola del numero di telefono dentro la
   // riga della prenotazione (19/08). Quindi con `azione` il riquadro
-  // diventa un `div`, e se serve anche `onTocco` il titolo prende il suo
-  // pulsante per conto proprio.
+  // diventa un `div` che ASCOLTA il tocco (vedi `apribile` qui sotto).
   azione,
   aperta,
+  // 🔴 LA NOTA IN FONDO AL QUADROTTO — 10/09/2026, Blocco 2 del mandato.
+  //
+  // Serve per la roba che non è un campo: non ha un'etichetta, non ha una
+  // colonna, e **quasi sempre non c'è**. Nell'Agenda è la provenienza di un
+  // impegno («nato dalla posta»), che come colonna diceva «scritto a mano»
+  // su quasi tutte le righe — cioè occupava una riga per non dire niente.
+  //
+  // ⚠️ Restituire `null` la fa sparire del tutto, spazio compreso: una nota
+  // che c'è sempre torna a essere una colonna, e siamo daccapo.
+  nota,
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
   const colonne = campi(righe[0]);
+
+  // 🔴 IL QUADROTTO INTERO SI APRE, E I SUOI COMANDI RESTANO INDIPENDENTI
+  //    — 10/09/2026, Blocco 2 del mandato.
+  //
+  // Prima, dove il quadrotto aveva dei comandi dentro (l'Agenda: la spunta,
+  // la stella, «rimanda»), il tocco che apre il dettaglio viveva **solo sul
+  // titolo**: una striscia di testo alta un centimetro in mezzo a un
+  // riquadro che sembrava tutto premibile. Sul telefono si finisce quasi
+  // sempre a lato, e quel tocco non faceva niente.
+  //
+  // ⚠️ E LA CURA NON PUÒ ESSERE UN PULSANTE PIÙ GRANDE: un bottone dentro
+  // un bottone non è HTML valido, e la spunta di «fatto» finirebbe per
+  // aprire la scheda invece di chiudere l'impegno. Quindi il riquadro
+  // diventa un `div` che ascolta il tocco, e **si tira indietro** quando il
+  // tocco è arrivato a un comando suo — che è la regola qui sotto.
+  //
+  // ⚠️ SI GUARDA IL BERSAGLIO, NON SI CHIEDE AI COMANDI DI DIFENDERSI. La
+  // strada alternativa era mettere uno `stopPropagation` su ognuno: sono
+  // otto schermate, e il nono comando scritto da qui a sei mesi lo
+  // dimenticherebbe **senza nessun errore** — aprirebbe la scheda e basta.
+  // Questa regola invece copre anche i comandi che non esistono ancora.
+  // ⚠️ E CIÒ CHE SI È APERTO SOTTO NON RICHIUDE IL QUADROTTO. Trovato
+  //    facendo il censimento degli elenchi: in Magazzino il tocco APRE la
+  //    riga, e dentro l'area aperta c'è un modulo. Senza questa riga un
+  //    dito appoggiato accanto a un campo — su un'etichetta, su uno spazio
+  //    vuoto — richiuderebbe la riga appena aperta, portandosi via quello
+  //    che si stava scrivendo. `[data-non-apre]` marca quell'area.
+  const daUnComando = (e) => {
+    const c = e.target.closest("button, a, input, select, textarea, label, [data-non-apre]");
+    return Boolean(c) && e.currentTarget.contains(c);
+  };
+  const apreLaRiga = (r) => (e) => {
+    if (daUnComando(e)) return;
+    onTocco(r);
+  };
+  // Con la tastiera si apre con Invio o barra spaziatrice, e **solo se il
+  // fuoco è sul riquadro**: dentro un campo di testo la barra spaziatrice
+  // deve scrivere uno spazio.
+  const apreDaTastiera = (r) => (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    onTocco(r);
+  };
+  const fuocoVisibile =
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-b58-terracotta";
 
   // 🔴 UNA COLONNA VUOTA PER TUTTI NON SI MOSTRA SUL TELEFONO (29/08/2026).
   // Nasce dai Fornitori: «Categoria» diceva «—» su tutti e undici, e su un
@@ -127,18 +182,30 @@ export default function ElencoAdattivo({
           }`;
           const gesto = azione?.(r);
           const dentroAperta = aperta?.(r);
+          const suaNota = nota?.(r);
+          const inFondo = suaNota ? (
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-2">{suaNota}</p>
+          ) : null;
           // Con un'azione il riquadro è un contenitore, non un pulsante:
-          // dentro ci sta il gesto, e sotto quello che si apre.
+          // dentro ci sta il gesto, e sotto quello che si apre. Ma se c'è
+          // qualcosa da aprire, il tocco lo ascolta il riquadro INTERO.
           if (gesto || dentroAperta) {
+            const apribile = Boolean(onTocco);
             return (
-              <div key={chiave(r)} className={stile}>
-                {onTocco ? (
-                  <button type="button" onClick={() => onTocco(r)} className="w-full text-left">
-                    {dentro}
-                  </button>
-                ) : (
-                  dentro
-                )}
+              <div
+                key={chiave(r)}
+                className={apribile ? `${stile} cursor-pointer ${fuocoVisibile}` : stile}
+                {...(apribile
+                  ? {
+                      role: "button",
+                      tabIndex: 0,
+                      onClick: apreLaRiga(r),
+                      onKeyDown: apreDaTastiera(r),
+                    }
+                  : {})}
+              >
+                {dentro}
+                {inFondo}
                 {gesto && (
                   <button
                     type="button"
@@ -149,7 +216,11 @@ export default function ElencoAdattivo({
                     {gesto.etichetta}
                   </button>
                 )}
-                {dentroAperta && <div className="mt-3">{dentroAperta}</div>}
+                {dentroAperta && (
+                  <div className="mt-3" data-non-apre>
+                    {dentroAperta}
+                  </div>
+                )}
               </div>
             );
           }
@@ -158,10 +229,12 @@ export default function ElencoAdattivo({
           return onTocco ? (
             <button key={chiave(r)} type="button" onClick={() => onTocco(r)} className={stile}>
               {dentro}
+              {inFondo}
             </button>
           ) : (
             <div key={chiave(r)} className={stile}>
               {dentro}
+              {inFondo}
             </div>
           );
         })}
@@ -191,14 +264,26 @@ export default function ElencoAdattivo({
               return (
               <Fragment key={chiave(r)}>
               <tr
-                onClick={onTocco ? () => onTocco(r) : undefined}
+                {...(onTocco
+                  ? {
+                      onClick: apreLaRiga(r),
+                      onKeyDown: apreDaTastiera(r),
+                      tabIndex: 0,
+                      role: "button",
+                    }
+                  : {})}
                 className={`border-b border-b58-charcoal/5 last:border-0 ${
-                  onTocco ? "hover:bg-b58-cream-dark/40 cursor-pointer" : ""
+                  onTocco ? `hover:bg-b58-cream-dark/40 cursor-pointer ${fuocoVisibile}` : ""
                 } ${attenuata?.(r) ? "opacity-55" : ""}`}
               >
                 <td className="px-4 py-3 text-b58-charcoal font-medium">
                   {titolo(r)}
                   {segno?.(r)}
+                  {nota?.(r) && (
+                    <span className="block testo-sala font-normal text-b58-charcoal-soft/70 mt-0.5">
+                      {nota(r)}
+                    </span>
+                  )}
                 </td>
                 {campi(r).map((c) => (
                   <td

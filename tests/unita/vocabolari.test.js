@@ -24,7 +24,13 @@ const DB = [
   { tabella: "supplier_invoices", colonna: "payment_method", valori: ["assegno", "bonifico", "carta", "contante"] },
   { tabella: "shopping_list_items", colonna: "payment_method", valori: ["bonifico", "carta", "contante"] },
   { tabella: "orders", colonna: "payment_method", valori: ["carta", "contante", "misto"] },
-  { tabella: "tasks", colonna: "ricorrenza", valori: ["annuale", "mensile", "semestrale", "trimestrale"] },
+  // ⚠️ INVENTATA APPOSTA, e dal 10/09/2026 non somiglia più a niente di
+  //    vero: qui era scritto `tasks.ricorrenza`, che quel giorno ha smesso
+  //    di esistere. Una prova che nomina una colonna vera diventa una
+  //    frase falsa il giorno che quella colonna cambia, e non serve — la
+  //    regola in esame (il valore vuoto si ignora solo dove è dichiarato)
+  //    non ha bisogno di una colonna vera per essere esercitata.
+  { tabella: "esempio", colonna: "cadenza", valori: ["annuale", "mensile", "semestrale", "trimestrale"] },
 ];
 
 const etichette = (...valori) => valori.map((v) => ({ value: v, label: v }));
@@ -112,10 +118,10 @@ describe("la rete dei vocabolari scatta quando i tre posti divergono", () => {
 
   it("ignora il valore vuoto solo dove è dichiarato che significa «niente»", () => {
     const specchio = {
-      costante: "TASK_RICORRENZE",
+      costante: "CADENZE_DI_ESEMPIO",
       valori: etichette("", "mensile", "trimestrale", "semestrale", "annuale"),
-      tabella: "tasks",
-      colonna: "ricorrenza",
+      tabella: "esempio",
+      colonna: "cadenza",
     };
     expect(problemiVocabolari([{ ...specchio, ignora: [""] }], DB)).toEqual([]);
     expect(problemiVocabolari([specchio], DB)).toHaveLength(1);
