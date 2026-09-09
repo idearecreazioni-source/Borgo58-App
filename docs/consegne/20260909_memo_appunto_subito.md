@@ -10,7 +10,16 @@
 * **Migrazioni**: **nessuna.** Il difetto è tutto nella schermata: il
   database scriveva già l'appunto, e lo scriveva giusto.
 * **Funzioni online**: **nessuna installata.**
-* **Chiamate live al modello**: **ZERO.**
+* **Controlli su GitHub: TUTTI VERDI** (giro `34404250280`, proposta **#47**):
+  **1.247 prove pure** (87 file) · **94 sulle schermate** (9) · **536 contro
+  il progetto di prova** (74) · lint pulito · compilazione pulita. I due
+  lavori di pubblicazione sono **saltati**, come devono.
+* **Chiamate live al modello**: **ZERO**, e cercando `anthropic.com` in tutto
+  il registro della coda si trovano **zero** righe.
+* **Il server di prova serve QUESTO ramo**, verificato in tre modi: il
+  processo gira dal worktree `Borgo58-App-subito`; il codice chiesto
+  all'indirizzo Tailscale contiene `appenaFatti`, `giroRef` e
+  `--barra-pollice`; e la coppia indirizzo/chiave nomina Borgo58-Prova.
 
 ## Il difetto, e perché era invisibile leggendo il codice
 
@@ -138,6 +147,29 @@ appunto e nessun impegno di Alessio. Le righe sono inventate dentro il file.
 
 ⚠️ La seconda è quella che conta: una rottura che fa scattare il primo
 guardiano non prova i controlli che vengono dopo (lezione del 26/08).
+
+## Il primo giro della coda è stato rosso, e non per questo lavoro
+
+⚠️ **Va detto invece di essere nascosto dietro un rilancio.** Il primo giro è
+fallito su `tests/app/permessi.test.js` — *«v_discounts_gifts_monthly: il
+titolare non riesce a leggerla»*.
+
+**Cosa è stato misurato**: quella prova passa **in locale** (536 su 536) e
+passa **al rilancio della coda**. E questo lavoro **non ha nessuna
+migrazione e non tocca il database**: non può aver cambiato i permessi di
+una vista.
+
+⚠️ **E il messaggio d'errore era VUOTO** (`{ message: '' }`): un permesso
+negato dice *«permission denied for…»*. Un errore senza messaggio è la firma
+di un intoppo nel mezzo, non di un rifiuto del database.
+
+🔴 **Ma è la seconda volta di fila**: anche la #46 ha avuto un primo giro
+rosso su prove che non c'entravano (un timeout a 30 secondi sugli eventi),
+verde al rilancio. **Due su due**, sempre sul progetto di prova condiviso.
+Non è dimostrato che sia contesa — nessuno ha misurato cosa altro lo stesse
+usando — ma *un controllo che ogni tanto dice rosso senza che niente sia
+rotto insegna a non guardare i rossi*, ed è la cosa che questo progetto teme
+di più. **Vale la pena guardarci, come lavoro a sé.**
 
 ## Cosa NON è verificato
 
