@@ -12,8 +12,14 @@
   In produzione non è stato applicato niente.
 * **Funzioni online**: **nessuna installata.** Questo lavoro non tocca
   `ascolta-voce`: tutto vive nel database e nella schermata.
+* **Controlli su GitHub: TUTTI VERDI** (giro `34392015470`, proposta **#46**):
+  **1.247 prove pure** (87 file) · **85 sulle schermate** (8) · **536 contro
+  il progetto di prova** (74) · lint pulito · compilazione pulita · CodeQL
+  verde. I due lavori di pubblicazione sono **saltati**, come devono.
 * **Chiamate live al modello**: **ZERO**, e la rete che le tiene fuori dai
-  controlli automatici è quella costruita nella #45.
+  controlli automatici è quella costruita nella #45. Nel registro della coda
+  c'è la riga *«Fuori da questo giro… tests/app/domande-memo.test.js»*, e
+  cercando `anthropic.com` in tutto il registro si trovano **zero** righe.
 
 ## Dov'era il vicolo cieco
 
@@ -180,6 +186,25 @@ parole cercate **in mezzo**: «marchio commercialistax» non è contenuto in
 **contigua**. Sette prove su nove sono partite rosse per un difetto dei dati,
 non del codice. *Un dato di prova costruito male somiglia in tutto a un
 difetto vero.*
+
+## Il primo giro della coda è stato rosso, e non per questo lavoro
+
+⚠️ **Va detto invece di essere nascosto dietro un rilancio.** Il primo giro
+(18:56) è fallito su `tests/app/evento-accettato.test.js` — **due prove che
+non hanno niente a che vedere con l'Agenda a voce**: una è andata in
+**timeout a 30 secondi**, l'altra è caduta subito dopo sullo stato che la
+prima aveva lasciato a metà.
+
+**Cosa è stato misurato**: quel file passa **in locale** (536 su 536, giro
+intero) e passa **al rilancio della coda** (536 su 536). Il timeout su un
+database condiviso da più giri è la spiegazione più semplice, e questo
+progetto ne ha già la regola scritta — *le prove sull'app girano in fila, il
+database è uno solo*.
+
+⚠️ **Non è però una causa dimostrata**: nessuno ha misurato cosa stesse
+usando Borgo58-Prova in quei quattordici minuti. Quello che si può
+affermare è che il rosso non tocca nessuna riga di questo lavoro e non si
+riproduce.
 
 ## Cosa NON è verificato
 
