@@ -35,6 +35,7 @@ import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { correggiDestinazioni } from "./destinazioni.ts";
 import { correggiSpese } from "./tasca.ts";
+import { correggiAgenda, istruzioniAgenda } from "./agenda.ts";
 import {
   causaInItaliano,
   comeRispondere,
@@ -76,6 +77,7 @@ Rispondi SOLO con un oggetto JSON, senza testo attorno e senza blocchi di codice
 }
 
 ${istruzioniDomande()}
+${istruzioniAgenda()}
 
 🔴 NIENTE DI QUELLO CHE CAPISCI VIENE SCRITTO SUBITO. Ogni cosa che restituisci diventa un APPUNTO che Alessio legge, corregge, approva o butta. Non esiste piu' niente che si salvi da se', nemmeno quando sei sicurissimo. Questo cambia il tuo mestiere in una cosa sola, ed e' importante: **non devi piu' proteggerlo scegliendo di non capire**. Prima, davanti a una frase che non rientrava, la cosa prudente era dire «non ho capito»; adesso la cosa prudente e' **dire cosa hai capito**, perche' tanto decide lui.
 
@@ -90,7 +92,7 @@ Se la frase poteva ragionevolmente voler dire due cose — un promemoria oppure 
 LE COSE CHE IL GESTIONALE SA GIA' FARE
 - "giacenza": quanto ce n'è davvero di un prodotto. dati: { "prodotto": <numero del catalogo>, "quanto_ce": <numero>, "note": "..."|null }
 - "temperatura": la temperatura letta su un frigo o sull'abbattitore. dati: { "frigorifero": <numero del catalogo>|null, "gradi": <numero>, "note": "..."|null }
-- "promemoria": una cosa da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null }
+- "promemoria": una cosa NUOVA da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null }
 - "pulizia": una pulizia già fatta. dati: { "pulizia": <numero del catalogo>, "note": "..."|null }
 - "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "nome_libero": "come l'ha detto lui, parola per parola", "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "lista": "il nome della lista che ha detto"|null, "note": "..."|null }
   🔴 IL GESTIONALE HA DUE LISTE, E VANNO TENUTE DISTINTE: la **lista della spesa** (quella dei fornitori, che finisce in un ordine) e la **spesa spicciola** (quella che Alessio compra di persona al supermercato). SCRIVI SEMPRE IN "lista" IL NOME CHE HA DETTO, parola per parola — «alla lista della spesa», «nella spesa spicciola», «in quella del bar». Non ricondurne una all'altra: a decidere dove va e' il nome che ha detto lui, non tu.
@@ -573,6 +575,20 @@ Deno.serve(async (req) => {
   //    interpretazione, e il 07/09 ci aveva scritto «anticipati» sopra una
   //    spesa che Alessio aveva detto essere di tasca sua.
   azioni = correggiSpese(azioni, testo);
+
+  // 🔴 E SULL'AGENDA CI SONO TRE COSE, non una: creare un impegno, chiuderne
+  //    uno che esiste, spostarne uno che esiste. Il gestionale sa fare solo
+  //    la prima — le altre due non hanno un ramo che le esegue, e
+  //    aggiungerlo vuole una migrazione.
+  //    ⚠️ SENZA QUESTA RIGA le altre due diventano la cosa piu' vicina che
+  //    il modello conosce: un promemoria. «Segna come fatto il rinnovo
+  //    della firma» farebbe nascere un impegno NUOVO con quel titolo,
+  //    approvabile, accanto a quello vero che resta aperto. Due righe per
+  //    la stessa cosa, e nessun errore da nessuna parte — la stessa forma
+  //    del difetto del 06/09 sulle due liste.
+  //    ⚠️ Il DETTATO e non il riassunto del modello, per la ragione del
+  //    07/09: un riassunto e' gia' un'interpretazione.
+  azioni = correggiAgenda(azioni, testo);
 
   // ⚠️ SE NON NE È USCITA NESSUNA, NON SI RESTITUISCE IL VUOTO. Il vuoto
   //    si legge «non ho detto niente», e lui invece ha parlato. Resta la
