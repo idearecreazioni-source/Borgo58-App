@@ -45,6 +45,54 @@ export async function leggiContenutoDocumento(documentoId, { rileggi = false } =
 }
 
 /**
+ * LEGGE UN FILE CHE L'ARCHIVIO NON HA ANCORA VISTO, e propone la scheda.
+ *
+ * 🔴 IL VERSO DEL GESTO SI È ROVESCIATO — 10/09/2026, Blocco 4 del mandato.
+ * Prima si scriveva la scheda a mano e il file era un allegato in fondo;
+ * adesso si sceglie il file, il gestionale lo legge, e la scheda arriva
+ * **già compilata**. Copiare a mano nome, tipo e data da un foglio che si
+ * ha davanti è il posto dove nascono gli errori che nessuno rilegge.
+ *
+ * 🔴 E QUI NON SI SCRIVE NIENTE, DA NESSUNA PARTE. Il file viaggia dentro
+ * la richiesta, viene letto, e finisce lì: non tocca il deposito e non
+ * tocca il database. È la stessa forma di `leggi-foto` (25/08), e rende la
+ * promessa «niente entra nell'Archivio prima del Salva» una **proprietà**
+ * invece che un controllo — non c'è nessun posto da cui togliere qualcosa.
+ */
+export async function leggiFileDaArchiviare(file) {
+  const base64 = await inBase64(file);
+  const data = await chiamaFunzione(
+    "documento-leggi",
+    { file: base64, nome_file: file.name },
+    "leggere il file"
+  );
+  return data?.risultato ?? null;
+}
+
+/**
+ * ⚠️ A PEZZI, e non `String.fromCharCode(...tutto)`: su un file di qualche
+ * megabyte quella forma passa centinaia di migliaia di argomenti a una
+ * funzione, e il browser si ferma. È un guasto che compare solo sui file
+ * grandi — cioè proprio quelli che si archiviano.
+ */
+function inBase64(file) {
+  return new Promise((risolvi, rifiuta) => {
+    const lettore = new FileReader();
+    lettore.onerror = () => rifiuta(new Error("Non riesco a leggere il file dal disco."));
+    lettore.onload = () => {
+      const byte = new Uint8Array(lettore.result);
+      let s = "";
+      const passo = 0x8000;
+      for (let i = 0; i < byte.length; i += passo) {
+        s += String.fromCharCode(...byte.subarray(i, i + passo));
+      }
+      risolvi(btoa(s));
+    };
+    lettore.readAsArrayBuffer(file);
+  });
+}
+
+/**
  * Cosa si pagava prima quel prodotto da quel fornitore, e di quanto si è
  * saliti.
  *

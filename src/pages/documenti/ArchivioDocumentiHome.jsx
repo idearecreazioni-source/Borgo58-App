@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createDocument, getDocumentUrl, listDocuments, sezioniArchivio, uploadDocumentFile } from "../../lib/api/documents";
+import {
+  createDocument,
+  getDocumentUrl,
+  listDocuments,
+  sezioniArchivio,
+  updateDocument,
+  uploadDocumentFile,
+} from "../../lib/api/documents";
 import { getEntities } from "../../lib/api/entities";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { leggiFileDaArchiviare } from "../../lib/api/assistente";
+import {
+  campiProposti,
+  cosaNonHoCapito,
+  dateDaDistinguere,
+} from "../../lib/calcoli/propostaDocumento";
 import { contaPostaInAttesa } from "../../lib/api/posta";
 import { formatDate, formatEUR } from "../../lib/constants";
 
@@ -46,6 +59,11 @@ export default function ArchivioDocumentiHome() {
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Il documento prima, i dati dopo (10/09/2026): cosa il gestionale ha
+  // letto nel file, e cosa propone di scriverci sopra.
+  const [leggendo, setLeggendo] = useState(false);
+  const [proposta, setProposta] = useState(null);
+  const [testo, setTesto] = useState(null);
 
   useEffect(() => {
     // 🔴 Due letture accessorie che tacevano. La prima riempie il menu
@@ -123,6 +141,52 @@ export default function ArchivioDocumentiHome() {
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
+  // 🔴 IL DOCUMENTO PRIMA, I DATI DOPO — 10/09/2026, Blocco 4 del mandato.
+  //
+  // Si sceglie il file, il gestionale lo legge, e la scheda arriva **già
+  // compilata**. Prima chi archiviava doveva copiare a mano nome, tipo e
+  // data da un foglio che aveva davanti — e copiare a mano è il posto dove
+  // nascono gli errori che nessuno rilegge.
+  //
+  // 🔴 E NIENTE ENTRA NELL'ARCHIVIO PRIMA DEL «SALVA». Il file viaggia
+  //    dentro la richiesta, viene letto, e finisce lì: non tocca il
+  //    deposito e non tocca il database. È una **proprietà**, non un
+  //    controllo — non c'è nessun posto da cui togliere qualcosa se poi
+  //    Alessio cambia idea.
+  const scegliFile = async (scelto) => {
+    setFile(scelto);
+    setProposta(null);
+    setTesto(null);
+    setError("");
+    if (!scelto) return;
+    setLeggendo(true);
+    try {
+      const r = await leggiFileDaArchiviare(scelto);
+      setProposta(r?.proposta ?? null);
+      setTesto(r?.testo ?? null);
+      const campi = campiProposti(r?.proposta, elencoSezioni);
+      // ⚠️ SI PROPONE SOPRA IL VUOTO, non sopra quello che c'è: se qualcuno
+      //    aveva già scritto un titolo a mano, quello vince. Una lettura
+      //    che cancella quello che una persona ha appena scritto è il
+      //    difetto del 12/08, pagato una volta.
+      setForm((f) => ({
+        ...f,
+        title: f.title || campi.title,
+        doc_type: f.doc_type || campi.doc_type,
+        document_date: f.document_date || campi.document_date,
+        counterparties: f.counterparties || campi.counterparties,
+        amount: f.amount || campi.amount,
+        expiry_date: f.expiry_date || campi.expiry_date,
+      }));
+    } catch (e) {
+      // ⚠️ Una lettura fallita NON impedisce di archiviare: la scheda si
+      //    compila a mano come si è sempre fatto, e lo si dice.
+      setError(`Non sono riuscito a leggere il file: ${e.message} — la scheda si compila a mano.`);
+    } finally {
+      setLeggendo(false);
+    }
+  };
+
   const handleAdd = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
@@ -130,7 +194,7 @@ export default function ArchivioDocumentiHome() {
     try {
       let fileInfo = {};
       if (file) fileInfo = await uploadDocumentFile(file);
-      await createDocument({
+      const nato = await createDocument({
         entity_id: form.entity_id || null,
         title: form.title.trim(),
         doc_type: form.doc_type || null,
@@ -141,8 +205,31 @@ export default function ArchivioDocumentiHome() {
         note: form.note || null,
         ...fileInfo,
       });
+      // 🔴 IL TESTO GIÀ LETTO SI CONSERVA, e non è un di più: senza, il
+      //    documento nascerebbe **cieco** — «Chiedi all'archivio»
+      //    risponderebbe «non ce l'ho» su un file appena letto, e
+      //    bisognerebbe premere «Leggi il contenuto» dalla sua scheda,
+      //    cioè pagare due volte la stessa lettura.
+      // ⚠️ Si scrive con un `update` su UNA colonna di UNA tabella, che è
+      //    la categoria A del Contratto: nessuna conseguenza altrove, la
+      //    RLS è la barriera. È lo stesso gesto che fa `documento-leggi`.
+      // ⚠️ E se non riesce NON si finge: il documento c'è, il testo no, e
+      //    lo si dice — perché chi non lo sa crederebbe di poterci fare una
+      //    domanda.
+      if (testo && nato) {
+        try {
+          await updateDocument(typeof nato === "string" ? nato : nato.id, { testo });
+        } catch (e) {
+          setError(
+            `Il documento è archiviato, ma il testo letto non si è salvato: ${e.message}. ` +
+              "Apri la sua scheda e premi «Leggi il contenuto»."
+          );
+        }
+      }
       setForm(emptyForm);
       setFile(null);
+      setProposta(null);
+      setTesto(null);
       setShowForm(false);
       await reload();
     } catch (e) {
@@ -226,7 +313,66 @@ export default function ArchivioDocumentiHome() {
 
       {showForm && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
+          {/* 🔴 IL DOCUMENTO PRIMA, I DATI DOPO — 10/09/2026.
+              Il file sta in CIMA e non più in fondo: è il primo gesto, non
+              un allegato. Sotto, quello che il gestionale ne ha ricavato. */}
+          <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4 mb-3">
+            <label className={labelClass}>1 · Il documento</label>
+            {/* ⚠️ Il pulsante «Scegli file» lo disegna il browser con una
+                misura sua: non si può ingrandire, e non è un nostro
+                bersaglio di tocco. */}
+            <input
+              type="file"
+              onChange={(e) => scegliFile(e.target.files?.[0] ?? null)}
+              className="max-w-full tocco-campo testo-sala-grande text-b58-charcoal-soft"
+            />
+            {leggendo && (
+              <p className="testo-sala-grande text-b58-charcoal-soft mt-2">
+                Sto leggendo il documento…
+              </p>
+            )}
+            {!leggendo && proposta && (
+              <div className="mt-2">
+                <p className="testo-sala-grande text-b58-olive-dark">
+                  L&apos;ho letto: qui sotto c&apos;è quello che ne ho ricavato. Correggi
+                  quello che non va — <strong>niente entra nell&apos;Archivio finché non
+                  premi Salva</strong>.
+                </p>
+                {/* 🔴 QUELLO CHE NON HO CAPITO SI DICE. Una scheda compilata
+                    a metà senza dire quale metà manca si legge come una
+                    scheda completa: i campi vuoti sembrano campi che nel
+                    documento non c'erano. */}
+                {[...cosaNonHoCapito(proposta, campiProposti(proposta, elencoSezioni)),
+                  ...(Array.isArray(proposta.non_ho_capito) ? proposta.non_ho_capito : [])]
+                  .length > 0 && (
+                  <p className="testo-sala text-b58-terracotta-dark mt-1">
+                    Non ho capito:{" "}
+                    {[...cosaNonHoCapito(proposta, campiProposti(proposta, elencoSezioni)),
+                      ...(Array.isArray(proposta.non_ho_capito) ? proposta.non_ho_capito : [])]
+                      .join(" · ")}
+                    . Riempi tu quello che manca.
+                  </p>
+                )}
+                {/* 🔴 PIÙ DI UNA DATA SI MOSTRA TUTTA. Un documento ha quasi
+                    sempre la data della firma, quella di decorrenza e quella
+                    di scadenza: sceglierne una in silenzio vuol dire
+                    archiviarlo sotto l'anno sbagliato senza che nessun
+                    errore lo dica. */}
+                {dateDaDistinguere(proposta).length > 0 && (
+                  <p className="testo-sala text-b58-charcoal-soft mt-1">
+                    Nel documento ci sono più date:{" "}
+                    {dateDaDistinguere(proposta)
+                      .map((d) => `${formatDate(d.data)} (${d.cosa})`)
+                      .join(" · ")}
+                    . Ho messo la prima — cambiala se non è quella giusta.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
+            <label className={labelClass}>2 · La scheda</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
               <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Titolo del documento" className={`${inputClass} sm:col-span-2`} />
               {/* ⚠️ Un menu, non un campo libero: e' il vocabolario chiuso che
@@ -274,18 +420,18 @@ export default function ArchivioDocumentiHome() {
             </div>
             <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (opz., es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
             <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={`${inputClass} mb-3`} />
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              {/* 🔴 SBORDAVA LA PAGINA (31/08/2026), misurato a 390 punti:
-                  il pulsante «Scegli file» lo disegna il browser con una
-                  larghezza sua, e senza `max-w-full` la riga arrivava a 401
-                  su 390 — cioe' la PAGINA scorreva di lato, che e' proprio
-                  cio' che la decisione del 21/08 vieta. Non un riquadro
-                  interno: la pagina.
-                  ⚠️ Ed era anche alto **5,29 mm** contro gli 8,5 di soglia:
-                  `tocco-campo` lo porta a norma. */}
-              <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="max-w-full tocco-campo testo-sala-grande text-b58-charcoal-soft" />
-              <button type="button" disabled={saving || !form.title.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
-                {saving ? "Carico…" : "+ Salva documento"}
+            {/* ⚠️ IL FILE NON È PIÙ QUI (10/09/2026): è salito in cima, come
+                primo gesto. Restava anche un secondo campo per sceglierlo —
+                due porte per la stessa cosa, e la seconda avrebbe scavalcato
+                la lettura senza dirlo. */}
+            <div className="flex items-center justify-end gap-3 flex-wrap">
+              <button
+                type="button"
+                disabled={saving || leggendo || !form.title.trim()}
+                onClick={handleAdd}
+                className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              >
+                {saving ? "Salvo…" : "+ Salva nell'Archivio"}
               </button>
             </div>
             <p className="testo-sala text-b58-charcoal-soft/70 mt-2">Il file è opzionale: puoi anche registrare solo i metadati. Con una scadenza, viene creato un promemoria in Agenda.</p>
