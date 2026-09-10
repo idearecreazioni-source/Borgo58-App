@@ -164,8 +164,12 @@ describe("«sposta a venerdì l'ordine delle verdure» — impegno trovato", () 
     //    anticipando o rimandando.
     mostra(appunto);
     expect(screen.getAllByText(/Ordine delle verdure/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/data precedente: 2026-09-07/)).toBeTruthy();
-    expect(screen.getByText(/data nuova: 2026-09-11/)).toBeTruthy();
+    // ⚠️ LE PAROLE SONO CAMBIATE IL 10/09/2026, e le date con loro: erano
+    //    «data precedente: 2026-09-07» e «data nuova: 2026-09-11», cioè un
+    //    nome di colonna e una data che chi legge deve tradurre a mente.
+    //    Adesso si leggono come le scrive il resto del gestionale.
+    expect(screen.getByText(/adesso è: 7 set 2026/)).toBeTruthy();
+    expect(screen.getByText(/nuovo giorno: 11 set 2026/)).toBeTruthy();
     expect(screen.getByText(/gesto: sposta/)).toBeTruthy();
   });
 
