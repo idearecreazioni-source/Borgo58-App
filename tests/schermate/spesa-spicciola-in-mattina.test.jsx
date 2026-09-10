@@ -83,6 +83,33 @@ describe("il riquadro della spesa spicciola", () => {
     expect(riquadro.textContent).toMatch(/spesa spicciola/i);
   });
 
+  it("🔴 NON conta le cose già nel carrello — lo stesso numero della pagina", async () => {
+    // 10/09/2026, dal collaudo: il riquadro contava tutte le righe, la pagina
+    // della spesa spicciola solo quelle da prendere. Col carrello vuoto i due
+    // numeri coincidevano; al primo articolo nel carrello si separavano.
+    finte.spicciola.mockResolvedValueOnce([
+      { id: "1", articolo: "shampoo", nel_carrello: false },
+      { id: "2", articolo: "carta forno", nel_carrello: true },
+      { id: "3", articolo: "pile", nel_carrello: true },
+      { id: "4", articolo: "tonno", nel_carrello: false },
+    ]);
+    mattina();
+    expect(await screen.findByText(/2 cose da comprare/i)).toBeTruthy();
+    expect(screen.queryByText(/4 cose da comprare/i)).toBeNull();
+  });
+
+  it("⚠️ col carrello pieno e niente da prendere il riquadro non c'è", async () => {
+    // «0 cose da comprare» tutte le mattine sarebbe arredamento, e un
+    // riquadro che dice «4» quando è già tutto nel carrello direbbe il falso.
+    finte.spicciola.mockResolvedValueOnce([
+      { id: "1", articolo: "shampoo", nel_carrello: true },
+      { id: "2", articolo: "pile", nel_carrello: true },
+    ]);
+    mattina();
+    await waitFor(() => expect(finte.spicciola).toHaveBeenCalled());
+    expect(screen.queryByText(/da comprare/i)).toBeNull();
+  });
+
   it("⚠️ con la lista vuota il riquadro non c'è", async () => {
     // Un riquadro che dice «niente» tutte le mattine diventa arredamento,
     // e allora smette di farsi notare il giorno che parla.

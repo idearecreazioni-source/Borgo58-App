@@ -68,6 +68,22 @@ export default function ElencoAdattivo({
   // ⚠️ Restituire `null` la fa sparire del tutto, spazio compreso: una nota
   // che c'è sempre torna a essere una colonna, e siamo daccapo.
   nota,
+  // 🔴 LA COLONNA DI SINISTRA — 10/09/2026, dal collaudo di Alessio: «il
+  //    titolo del task deve partire dalla stessa colonna degli altri
+  //    contenuti della scheda, su telefono e desktop».
+  //
+  //    Prima la spunta dell'Agenda stava DENTRO il titolo, quindi spingeva
+  //    a destra solo lui: misurato con la prova visiva, i campi, la nota e
+  //    «rimanda» partivano **34,7 punti più a sinistra** del titolo. Una
+  //    scheda con due margini diversi si legge come due cose incollate.
+  //
+  //    ⚠️ La cura non è spostare i campi a mano di 34 punti: sarebbe un
+  //    numero che vale per QUESTA spunta, a QUESTA densità, e si romperebbe
+  //    alla prima calibrazione diversa del tablet. È dare alla spunta una
+  //    colonna sua, e mettere tutto il resto nella colonna accanto: così
+  //    titolo e contenuti partono dallo stesso punto **per costruzione**,
+  //    qualunque sia la larghezza della spunta.
+  inizio,
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
@@ -119,6 +135,19 @@ export default function ElencoAdattivo({
   const fuocoVisibile =
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-b58-terracotta";
 
+  // Tutto il contenuto di una scheda nella colonna di destra, e `inizio`
+  // nella sua a sinistra. Senza `inizio` non cambia niente.
+  const conInizio = (r, contenuto) => {
+    const primo = inizio?.(r);
+    if (!primo) return contenuto;
+    return (
+      <div className="flex items-start gap-3">
+        <div className="shrink-0">{primo}</div>
+        <div className="min-w-0 flex-1">{contenuto}</div>
+      </div>
+    );
+  };
+
   // 🔴 UNA COLONNA VUOTA PER TUTTI NON SI MOSTRA SUL TELEFONO (29/08/2026).
   // Nasce dai Fornitori: «Categoria» diceva «—» su tutti e undici, e su un
   // blocchetto ogni riga inutile e' una riga in meno di quelle che servono.
@@ -154,7 +183,7 @@ export default function ElencoAdattivo({
                   che sta dappertutto non compare in nessun censimento per
                   schermate. */}
               <div className="flex flex-wrap items-baseline justify-between gap-3 mb-1">
-                <span className="min-w-0 text-b58-charcoal font-medium testo-sala-grande">
+                <span className="min-w-0 text-b58-charcoal font-medium testo-sala-grande" data-titolo>
                   {titolo(r)}
                 </span>
                 {segno?.(r)}
@@ -162,7 +191,7 @@ export default function ElencoAdattivo({
               {tutte[i]
                 .filter((c) => conQualcosa.has(c.chiave))
                 .map((c) => (
-                <p key={c.chiave} className="testo-sala-grande">
+                <p key={c.chiave} className="testo-sala-grande" data-campo>
                   <span className="text-b58-charcoal-soft">{c.etichetta}: </span>
                   {c.valore ? (
                     <span
@@ -184,16 +213,17 @@ export default function ElencoAdattivo({
           const dentroAperta = aperta?.(r);
           const suaNota = nota?.(r);
           const inFondo = suaNota ? (
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-2">{suaNota}</p>
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-2" data-nota>{suaNota}</p>
           ) : null;
           // Con un'azione il riquadro è un contenitore, non un pulsante:
           // dentro ci sta il gesto, e sotto quello che si apre. Ma se c'è
           // qualcosa da aprire, il tocco lo ascolta il riquadro INTERO.
-          if (gesto || dentroAperta) {
+          if (gesto || dentroAperta || inizio) {
             const apribile = Boolean(onTocco);
             return (
               <div
                 key={chiave(r)}
+                data-quadrotto
                 className={apribile ? `${stile} cursor-pointer ${fuocoVisibile}` : stile}
                 {...(apribile
                   ? {
@@ -204,11 +234,13 @@ export default function ElencoAdattivo({
                     }
                   : {})}
               >
+                {conInizio(r, <>
                 {dentro}
                 {inFondo}
                 {gesto && (
                   <button
                     type="button"
+                    data-gesto
                     onClick={gesto.onClick}
                     disabled={gesto.spenta}
                     className="tocco-bottone mt-2 inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala px-3 disabled:opacity-40"
@@ -221,18 +253,19 @@ export default function ElencoAdattivo({
                     {dentroAperta}
                   </div>
                 )}
+                </>)}
               </div>
             );
           }
           // Senza un gesto non si costruisce un pulsante: un riquadro che si
           // preme e non fa niente insegna che premere non serve.
           return onTocco ? (
-            <button key={chiave(r)} type="button" onClick={() => onTocco(r)} className={stile}>
+            <button key={chiave(r)} type="button" onClick={() => onTocco(r)} className={stile} data-quadrotto>
               {dentro}
               {inFondo}
             </button>
           ) : (
-            <div key={chiave(r)} className={stile}>
+            <div key={chiave(r)} className={stile} data-quadrotto>
               {dentro}
               {inFondo}
             </div>
@@ -264,6 +297,7 @@ export default function ElencoAdattivo({
               return (
               <Fragment key={chiave(r)}>
               <tr
+                data-riga
                 {...(onTocco
                   ? {
                       onClick: apreLaRiga(r),
@@ -277,13 +311,15 @@ export default function ElencoAdattivo({
                 } ${attenuata?.(r) ? "opacity-55" : ""}`}
               >
                 <td className="px-4 py-3 text-b58-charcoal font-medium">
+                  {conInizio(r, <>
                   {titolo(r)}
                   {segno?.(r)}
                   {nota?.(r) && (
-                    <span className="block testo-sala font-normal text-b58-charcoal-soft/70 mt-0.5">
+                    <span className="block testo-sala font-normal text-b58-charcoal-soft/70 mt-0.5" data-nota>
                       {nota(r)}
                     </span>
                   )}
+                  </>)}
                 </td>
                 {campi(r).map((c) => (
                   <td

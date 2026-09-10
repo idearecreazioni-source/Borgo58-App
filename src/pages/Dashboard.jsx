@@ -5,6 +5,7 @@ import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservat
 import { contaPostaInAttesa } from "../lib/api/posta";
 import { quanteAspettano } from "../lib/api/voce";
 import { listSpesaSpicciola } from "../lib/api/spesaSpicciola";
+import { daComprare } from "../lib/calcoli/spesaSpicciola";
 import { daQuantoAspetta } from "../lib/calcoli/voce";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
@@ -266,16 +267,23 @@ export default function Dashboard() {
             </p>
           )}
 
-          {!isStaff && !nonLetto(spicciola) && (spicciola?.length ?? 0) > 0 && (
+          {/* 🔴 SI CONTA SOLO QUELLO CHE RESTA DA COMPRARE — 10/09/2026, dal
+              collaudo. Prima il riquadro contava anche le cose già nel
+              carrello, mentre la pagina della spesa spicciola no: due numeri
+              per la stessa domanda, uguali solo col carrello vuoto. Adesso
+              tutti e due chiedono la stessa regola (`daComprare`).
+              ⚠️ E col carrello pieno e niente da prendere il riquadro NON
+              compare: «0 cose da comprare» tutte le mattine è arredamento. */}
+          {!isStaff && !nonLetto(spicciola) && daComprare(spicciola).length > 0 && (
             <Link
               to="/magazzino/spesa-spicciola"
               className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-olive bg-b58-olive/10 px-4 py-3"
             >
               <span className="testo-sala text-b58-charcoal">
                 <span className="font-medium">
-                  {spicciola.length === 1
+                  {daComprare(spicciola).length === 1
                     ? "Una cosa da comprare"
-                    : `${spicciola.length} cose da comprare`}
+                    : `${daComprare(spicciola).length} cose da comprare`}
                 </span>{" "}
                 di persona — spesa spicciola
               </span>

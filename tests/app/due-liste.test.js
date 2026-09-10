@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, marchio } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, righeDaTogliere } from "./aiuto";
 
 // SPEC-0012 — le due liste, contro il database vero.
 //
@@ -20,7 +20,8 @@ import { clientAutenticato, credenziali, marchio } from "./aiuto";
 //    un'operazione dimenticata nell'elenco risponde 404 senza che nessuna
 //    prova SQL se ne accorga.
 
-const NOME = marchio("TEST-AUTO due liste");
+const BASE = "TEST-AUTO due liste";
+const NOME = marchio(BASE);
 
 // ⚠️ NIENTE SENTINELLA DEL CORRIDOIO, e la rete lo pretende: quella
 //    serve a chi SALTA delle prove quando il corridoio non c'è. Qui non
@@ -129,12 +130,37 @@ describe("le due liste della spesa", () => {
     titolare = await clientAutenticato(credenziali().titolare);
   });
 
-  afterAll(async () => {
-    // ⚠️ Solo ciò che questa prova ha creato, per identificativo (regola del
-    //    23/08). Prima le figlie, poi le madri: al contrario le chiavi
-    //    esterne respingono.
+  /**
+   * Toglie le righe di questo giro dalle due liste, comprese quelle nate da
+   * un'approvazione. È la stessa funzione che usa la pulizia finale, e
+   * l'ultima prova qui sotto la mette alla prova.
+   */
+  async function pulisciLeListe() {
+    // 🔴 E ANCHE LE RIGHE NATE DA UN'APPROVAZIONE — 10/09/2026, dal
+    //    collaudo. Approvare un appunto crea una riga nella lista che
+    //    nessuno si segna: la pulizia di prima cancellava solo gli
+    //    identificativi raccolti a mano, e quelle restavano. Misurato sul
+    //    progetto di prova: **136 righe** di questa famiglia nella spesa
+    //    spicciola di Alessio, due per ogni giro, e il riquadro della
+    //    schermata iniziale diceva «137 cose da comprare» dove ce n'era una.
+    //    ⚠️ Si cerca col MARCHIO DI QUESTO GIRO (`righeDaTogliere`), che
+    //    prende le righe di questo giro e quelle dei giri abbandonati più
+    //    vecchie della grazia — mai quelle di un giro vivo, e mai un dato
+    //    vero, che il marchio non ce l'ha.
+    const lista = await righeDaTogliere(titolare, "shopping_list_items", "custom_name", BASE);
+    const spicciola = await righeDaTogliere(titolare, "spesa_spicciola", "articolo", BASE);
+    for (const id of lista) if (!miei.lista.includes(id)) miei.lista.push(id);
+    for (const id of spicciola) if (!miei.spicciola.includes(id)) miei.spicciola.push(id);
     if (miei.lista.length) await titolare.from("shopping_list_items").delete().in("id", miei.lista);
     if (miei.spicciola.length) await titolare.from("spesa_spicciola").delete().in("id", miei.spicciola);
+    miei.lista.length = 0;
+    miei.spicciola.length = 0;
+  }
+
+  afterAll(async () => {
+    // ⚠️ Solo ciò che questa prova ha creato (regola del 23/08). Prima le
+    //    figlie, poi le madri: al contrario le chiavi esterne respingono.
+    await pulisciLeListe();
     if (miei.azioni.length) await titolare.from("azioni_dettate").delete().in("id", miei.azioni);
     if (miei.appunti.length) await titolare.from("appunti_vocali").delete().in("id", miei.appunti);
     if (miei.dettature.length) await titolare.from("dettature").delete().in("id", miei.dettature);
@@ -372,5 +398,28 @@ describe("le due liste della spesa", () => {
     const { data: righeLista } = await titolare.rpc("lista_spesa");
     const nomi = (righeLista ?? []).map((r) => r.custom_name ?? r.ingredient_name ?? "");
     expect(nomi).not.toContain(`${NOME} sacchetti`);
+  });
+
+  // ⚠️ ULTIMA DI PROPOSITO: porta via le righe di questo giro, comprese
+  //    quelle delle prove sopra.
+  it("🔴 la pulizia porta via anche le righe nate da un'approvazione", async () => {
+    // Il caso preciso che lasciava i residui: si approva un appunto, la
+    // riga nasce dentro il database, e la prova NON la va a leggere — quindi
+    // non se la segna. Prima di questa correzione restava lì per sempre.
+    const righe = await detta("approvata e mai letta", [
+      riga("spesa_spicciola", "spicciola mai letta"),
+      riga("lista_spesa", "lista mai letta"),
+    ]);
+    for (const appunto of new Set(righe.map((r) => r.appunto_id))) {
+      const { error } = await approva(appunto);
+      expect(error, "l'approvazione non è riuscita").toBeNull();
+    }
+    const nate = await conta();
+    expect(nate.spicciola + nate.lista, "l'approvazione non ha creato nessuna riga").toBeGreaterThan(0);
+
+    await pulisciLeListe();
+
+    // Dopo la pulizia, di questo giro non resta niente in nessuna delle due.
+    expect(await conta()).toEqual({ lista: 0, spicciola: 0 });
   });
 });

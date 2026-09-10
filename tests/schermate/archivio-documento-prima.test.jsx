@@ -200,4 +200,43 @@ describe("solo il «Salva» fa entrare il documento", () => {
     await waitFor(() => expect(finte.updateDocument).toHaveBeenCalledTimes(1));
     expect(finte.updateDocument.mock.calls[0][1]).toEqual({ testo: "il testo letto" });
   });
+
+  it("🔴 il flusso intero: lettura → correzione a mano → salvataggio", async () => {
+    // 10/09/2026, dal collaudo: la lettura funzionava e il «Salva» si fermava
+    // (il deposito dei file rifiutava il caricamento, vedi la migrazione
+    // `20260910000003`). Qui si prova la metà che sta nella schermata: quello
+    // che una persona CORREGGE dopo la lettura è quello che entra, non quello
+    // che il modello aveva proposto.
+    finte.createDocument.mockClear();
+    finte.uploadFile.mockClear();
+    finte.updateDocument.mockClear();
+    finte.leggiFile.mockResolvedValueOnce({ proposta: PROPOSTA, testo: "il testo letto" });
+    await apri();
+    await scegli();
+    const titolo = screen.getByPlaceholderText(/titolo del documento/i);
+    await waitFor(() => expect(titolo.value).toBe("Contratto di locazione — via Roma 12"));
+
+    // La correzione: il nome giusto lo sa chi ha il foglio davanti.
+    fireEvent.change(titolo, { target: { value: "Locazione via Roma 12 — firmata" } });
+    fireEvent.click(screen.getByRole("button", { name: /salva nell'archivio/i }));
+
+    await waitFor(() => expect(finte.createDocument).toHaveBeenCalledTimes(1));
+    // ⚠️ L'ORDINE è quello del 20/08: prima il file, poi la scheda. Una
+    //    scheda che nasce prima del file, se il caricamento fallisce, resta
+    //    un documento che dichiara un allegato che non c'è.
+    expect(finte.uploadFile.mock.invocationCallOrder[0]).toBeLessThan(
+      finte.createDocument.mock.invocationCallOrder[0]
+    );
+    const scritto = finte.createDocument.mock.calls[0][0];
+    expect(scritto.title, "è entrato il nome proposto, non quello corretto").toBe(
+      "Locazione via Roma 12 — firmata"
+    );
+    // Il resto della proposta, che nessuno ha toccato, arriva com'era…
+    expect(scritto.doc_type).toBe("contratti");
+    expect(scritto.document_date).toBe("2026-08-03");
+    // …e il file caricato è quello scelto, col percorso che il deposito ha dato.
+    expect(scritto.storage_path).toBe("x");
+    await waitFor(() => expect(finte.updateDocument).toHaveBeenCalledTimes(1));
+    expect(finte.updateDocument.mock.calls[0]).toEqual(["doc-1", { testo: "il testo letto" }]);
+  });
 });
