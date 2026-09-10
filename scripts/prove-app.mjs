@@ -71,10 +71,42 @@ export function avviaConTetto({
     );
   }
 
+  // 🔴 UN FILE SOLO VUOL DIRE UN FILE SOLO — 10/09/2026, misurato. Prima
+  //    «tests/app» veniva passato SEMPRE, e per vitest i filtri si sommano:
+  //    `npm run test:app -- tests/app/deposito-documenti.test.js` ha fatto
+  //    girare tutte le 557 prove dei 77 file. Il commento in cima a questo
+  //    file prometteva il contrario.
+  //    ⚠️ Un file che non sta in tests/app si RIFIUTA: girerebbe con la
+  //    configurazione delle prove sul database senza esserlo.
+  //    ⚠️ Due casi trovati dalla revisione: il valore di un'opzione non è un
+  //    file (`-t tests/app/x.test.js` cerca le prove con quel NOME), e un
+  //    percorso scritto per intero — su Windows `C:\...\tests\app\x.test.js`
+  //    — si confronta con la cartella del progetto, non come testo.
+  const conValore = new Set([
+    "-t", "--testNamePattern", "--exclude", "--reporter", "--outputFile",
+    "--project", "--shard", "--bail", "--retry", "--root", "--dir", "--config",
+  ]);
+  const relativo = (f) => path.relative(process.cwd(), path.resolve(f)).replace(/\\/g, "/");
+  const fileChiesti = puliti.filter(
+    (f, i) =>
+      !f.startsWith("-") &&
+      !conValore.has(puliti[i - 1]) &&
+      (/\.test\.[cm]?[jt]sx?$/.test(f) || relativo(f).startsWith("tests/"))
+  );
+  const fuoriPosto = fileChiesti.filter((f) => !relativo(f).startsWith("tests/app/"));
+  if (fuoriPosto.length > 0) {
+    scrivi(
+      `Non sono prove sul database: ${fuoriPosto.join(", ")}.\n` +
+        "Con questo comando si lanciano solo i file di tests/app/."
+    );
+    finito(2);
+    return null;
+  }
+
   const giro = spawnFn(process.execPath, [
     path.join("node_modules", "vitest", "vitest.mjs"),
     "run",
-    "tests/app",
+    ...(fileChiesti.length > 0 ? [] : ["tests/app"]),
     "--no-file-parallelism",
     "--config",
     "vitest.app.config.js",

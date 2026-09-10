@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -110,6 +111,64 @@ describe("il tetto di tempo di un giro di prove", () => {
       finito: () => {},
     });
     expect(visto.env.BORGO58_CON_TETTO).toBe("1");
+  });
+});
+
+// QUALI PROVE FA GIRARE — 10/09/2026
+//
+// 🔴 Prima «tests/app» si passava sempre, e per vitest i filtri si sommano:
+//    chiedere un file faceva girare tutti i 77. Misurato: 557 prove per
+//    averne quattro. Queste prove guardano gli argomenti che arriverebbero a
+//    vitest, con uno spawn finto: non fanno girare niente.
+describe("quali prove fa girare", () => {
+  const argomenti = (filtri) => {
+    let visti = null;
+    let uscita = null;
+    vi.useFakeTimers();
+    avviaConTetto({
+      spawnFn: (_c, a) => {
+        visti = a;
+        return finto().bimbo;
+      },
+      filtri,
+      scrivi: () => {},
+      finito: (c) => (uscita = c),
+    });
+    vi.useRealTimers();
+    return { visti, uscita };
+  };
+
+  it("senza file chiesti gira tutta la cartella delle prove sul database", () => {
+    expect(argomenti([]).visti).toContain("tests/app");
+  });
+
+  it("🔴 con un file chiesto gira SOLO quel file, non tutta la cartella", () => {
+    const { visti } = argomenti(["tests/app/deposito-documenti.test.js"]);
+    expect(visti).toContain("tests/app/deposito-documenti.test.js");
+    expect(visti, "la cartella intera si somma al file chiesto").not.toContain("tests/app");
+  });
+
+  it("⚠️ un file fuori da tests/app non parte con la configurazione del database", () => {
+    const { visti, uscita } = argomenti(["tests/unita/tetto-del-giro.test.js"]);
+    expect(visti, "è partito un giro con un file che non è una prova sul database").toBeNull();
+    expect(uscita).toBe(2);
+  });
+
+  // I due casi trovati dalla revisione, 10/09/2026.
+  it("il percorso completo di un file di tests/app vale come quel file (Windows compreso)", () => {
+    const completo = path.resolve("tests", "app", "deposito-documenti.test.js");
+    const { visti, uscita } = argomenti([completo]);
+    expect(uscita, "un file di tests/app scritto per intero è stato rifiutato").toBeNull();
+    expect(visti).toContain(completo);
+    expect(visti, "la cartella intera si somma al file chiesto").not.toContain("tests/app");
+  });
+
+  it("il valore di un'opzione non è un file: «-t <nome>» lascia girare la cartella", () => {
+    // `-t` vuol dire «le prove con questo nome», non «questo file»: anche
+    // quando il nome somiglia a un percorso.
+    const { visti, uscita } = argomenti(["-t", "tests/app/deposito-documenti.test.js"]);
+    expect(uscita).toBeNull();
+    expect(visti, "il nome dopo -t è stato preso per un file").toContain("tests/app");
   });
 });
 
