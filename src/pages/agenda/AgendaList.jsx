@@ -11,7 +11,13 @@ import {
 } from "../../lib/api/tasks";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
-import { campiImpegno, daFareAdesso, sezioniDellAgenda } from "../../lib/calcoli/agenda";
+import {
+  campiImpegno,
+  daFareAdesso,
+  fraseRicorrenza,
+  provenienzaImpegno,
+  sezioniDellAgenda,
+} from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
 import { toccaSubito, togliSubito } from "../../lib/calcoli/tocco";
 
@@ -431,33 +437,46 @@ export default function AgendaList() {
                             righe={elenco}
                             chiave={(t) => t.id}
                             intestazioneTitolo="Impegno"
+                            // 🔴 LA SPUNTA A SINISTRA E GRANDE: è il gesto
+                            // più frequente e si fa col pollice.
+                            // ⚠️ `tocco-azione` (1,2 cm) e non
+                            // `tocco-bottone` (0,85): la soglia è il minimo,
+                            // non l'obiettivo, e chiudere un impegno è ciò per
+                            // cui questa schermata esiste.
+                            // 🔴 E STA IN UNA COLONNA SUA, non dentro il titolo
+                            // (10/09/2026, dal collaudo): dentro il titolo
+                            // spingeva a destra solo lui, e i campi sotto
+                            // partivano 34,7 punti più a sinistra. La prova
+                            // visiva che lo misura è `npm run test:visive`.
+                            inizio={(t) => (
+                              <label
+                                className="tocco-azione inline-flex shrink-0 items-center"
+                                title="Fatto"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={false}
+                                  onChange={() => fatto(t)}
+                                  className="spunta-grande"
+                                />
+                              </label>
+                            )}
                             titolo={(t) => (
                               <span className="flex items-start gap-3">
-                                {/* 🔴 LA SPUNTA A SINISTRA E GRANDE: è il
-                                    gesto più frequente e si fa col pollice.
-                                    ⚠️ `tocco-azione` (1,2 cm) e non
-                                    `tocco-bottone` (0,85): la soglia è il
-                                    minimo, non l'obiettivo, e chiudere un
-                                    impegno è ciò per cui questa schermata
-                                    esiste. */}
-                                <label
-                                  className="tocco-azione inline-flex shrink-0 items-center"
-                                  title="Fatto"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={false}
-                                    onChange={() => fatto(t)}
-                                    className="spunta-grande"
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => navigate(`/agenda/${t.id}`)}
-                                  className="min-w-0 flex-1 text-left"
-                                >
-                                  {t.title}
-                                </button>
+                                {/* 🔴 IL TITOLO NON È PIÙ UN PULSANTE —
+                                    10/09/2026. Ad aprire la scheda adesso è
+                                    il quadrotto INTERO (`onTocco` qui sotto):
+                                    un tocco su una striscia di testo alta un
+                                    centimetro, in mezzo a un riquadro che
+                                    sembra tutto premibile, sul telefono
+                                    finisce quasi sempre a lato — e lì non
+                                    faceva niente.
+                                    ⚠️ La spunta, la stella e «rimanda»
+                                    restano indipendenti, e non è questa
+                                    schermata a difenderli: se ne occupa
+                                    ElencoAdattivo, che si tira indietro
+                                    quando il tocco arriva a un comando. */}
+                                <span className="min-w-0 flex-1" data-testo-titolo>{t.title}</span>
                                 <button
                                   type="button"
                                   onClick={() => stella(t)}
@@ -476,6 +495,11 @@ export default function AgendaList() {
                             )}
                             segno={(t) => (t.visibile_staff === false ? <RiservatoBadge /> : null)}
                             campi={campiImpegno}
+                            onTocco={(t) => navigate(`/agenda/${t.id}`)}
+                            // La provenienza in fondo, e solo quando c'è
+                            // qualcosa da dire: come colonna diceva «scritto
+                            // a mano» su quasi tutte le righe.
+                            nota={provenienzaImpegno}
                             azione={(t) => ({
                               // ⚠️ SEMPRE NELLO STESSO POSTO, in fondo al
                               // quadrotto: è la richiesta di Alessio, e la
@@ -528,8 +552,10 @@ export default function AgendaList() {
                   <span className="testo-sala text-b58-charcoal-soft line-through flex-1 min-w-0">
                     {f.title}
                   </span>
-                  {f.ricorrenza && (
-                    <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">si ripete</span>
+                  {fraseRicorrenza(f.ricorrenza_ogni, f.ricorrenza_unita) && (
+                    <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">
+                      {fraseRicorrenza(f.ricorrenza_ogni, f.ricorrenza_unita)}
+                    </span>
                   )}
                   <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">
                     {formatDate(f.fatto_il)}

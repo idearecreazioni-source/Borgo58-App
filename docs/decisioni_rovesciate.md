@@ -137,8 +137,15 @@ rossa da sola il giorno che l'indice resta indietro.
 | 78 | 05/09/2026 | il setaccio del denaro cerca le parole in qualunque punto del nome |
 | 79 | 06/09/2026 | le misure sicure si salvano da sé |
 | 80 | 06/09/2026 | scegliere fra i candidati esegue |
+| 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
+| 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
+| 83 | 09/09/2026 | i candidati si mostrano, e non si toccano |
+| 84 | 09/09/2026 | nel riquadro di quello che hai appena detto non si approva niente |
+| 85 | 10/09/2026 | una ricorrenza si sceglie fra quattro cadenze fisse |
+| 86 | 10/09/2026 | il modulo di un impegno chiede lo stato e la categoria |
+| 87 | 10/09/2026 | nel quadrotto di un impegno si tocca il titolo |
 
-⚠️ **Righe: 81.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 88.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3030,3 +3037,200 @@ che non viene mai salvata perché non passa da nessun deposito.
    che il gestionale aveva proposto, altrimenti dal browser si potrebbe
    abbinare la temperatura di un frigo a un altro.
    *(SPEC-0013; migrazione `20260906000002`.)*
+
+## 81 · 09/09/2026 — «il collegamento a mano promette i campi già compilati»
+
+1. **Cosa era stato deciso e quando.** 27/08/2026, decisione di Alessio con le
+   sue parole: *«se ti dico segna trenta euro pagati al fornitore, mi aspetto
+   che un collegamento mi porti dove si segnano le spese, coi campi noti già
+   compilati»*. L'etichetta del collegamento lo diceva: **«Fallo a mano, coi
+   campi già compilati →»**.
+
+2. **La ragione di allora.** La promessa dei campi compilati **è** il valore
+   del gesto: senza, «fallo a mano» somiglia a «arrangiati». Dirlo sul
+   pulsante fa capire prima di premere che il lavoro già fatto non si butta.
+
+3. **Cosa si decide adesso.** L'etichetta dice **«Fallo a mano →»**. La
+   promessa esce dal pulsante e resta dove si dimostra: sulla schermata di
+   arrivo, dove la striscia mostra i campi arrivati dalla voce.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e resta
+   vera per dodici destinazioni su quindici** — ma con l'Agenda a voce ne
+   nascono tre che portano a `/agenda`, dove **non c'è nessun modulo da
+   riempire**: c'è un impegno da cercare. Su quelle il pulsante prometteva una
+   cosa che nessun pezzo del gestionale mantiene, ed è la forma che questo
+   progetto rifiuta da sempre — *una schermata non promette un valore che un
+   altro pezzo non mantiene*.
+   ⚠️ **Le strade scartate erano due, e costavano più di quello che valevano**:
+   una mappa tipo→etichetta nel browser (cioè il secondo posto che dice dove si
+   va, appena tolto), oppure far viaggiare l'etichetta dal database, che vuol
+   dire una colonna nuova e due funzioni di lettura riscritte per una parola.
+   *(Fase 2 dell'Agenda a voce; migrazione `20260909000002`.)*
+
+## 82 · 09/09/2026 — «le prove contro il database girano tutte, a ogni giro»
+
+1. **Cosa era stato deciso e quando.** 31/08/2026, costruendo i controlli su
+   GitHub: le prove contro il progetto di prova girano a **ogni** proposta.
+   Fino ad allora dipendevano dal fatto che qualcuno si ricordasse di
+   lanciarle.
+
+2. **La ragione di allora.** *Preferire l'automazione alla disciplina: la
+   disciplina si degrada, l'automazione no.* Una prova che gira solo quando
+   qualcuno se la ricorda è una prova che un giorno non gira — e il giorno
+   che non gira è quello in cui sarebbe servita.
+
+3. **Cosa si decide adesso.** Le prove che chiamano **davvero il modello**
+   restano fuori dal giro automatico. Si lanciano apposta, con
+   `npm run test:app -- --col-modello`. Quali siano non lo dice un elenco
+   scritto a mano: si ricava dal codice — quali funzioni online nominano il
+   modello nel loro sorgente, e quali prove le invocano.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   questo è il prezzo che accettiamo.** Quelle prove provano una cosa che
+   nessun'altra prova può provare — che il modello *capisce* davvero — e da
+   oggi quella cosa la sorveglia una persona invece di una macchina.
+   Il prezzo si paga perché dall'altra parte c'è una spesa che **parte da
+   sola a ogni giro**: otto richieste vere per ogni proposta e per ogni push,
+   che nessuno ha deciso e che cresce da sé. È la stessa famiglia dei
+   ritentativi senza tetto del 12/08 — *ogni cosa automatica che costa soldi
+   vuole un tetto, altrimenti è una perdita che cresce da sola*.
+   ⚠️ E la disciplina non è tornata dov'era: il comando **dice sempre** quali
+   prove ha lasciato fuori e come lanciarle. Un'esclusione silenziosa sarebbe
+   copertura persa travestita da verde — che è peggio della copertura persa.
+
+## 83 · 09/09/2026 — «i candidati si mostrano, e non si toccano»
+
+1. **Cosa era stato deciso e quando.** 09/09/2026, poche ore prima, nella
+   #45: quando MEMO trova due impegni ugualmente plausibili l'appunto li
+   **elenca col loro giorno**, e restano una cosa da leggere. Nessun
+   pulsante. La via d'uscita era ridire la frase più precisa.
+
+2. **La ragione di allora.** Un pulsante per sceglierli renderebbe
+   approvabile un appunto che, finché i candidati sono due, non deve
+   esserlo: chiudere l'impegno di qualcun altro o spostare una scadenza che
+   nessuno voleva toccare sono errori che nessun messaggio annuncia.
+
+3. **Cosa si decide adesso.** I candidati si **toccano**. Il tocco
+   **sceglie e basta** — non scrive, non chiude, non sposta. Dopo il tocco
+   l'appunto dice quale impegno è stato scelto e compare «Approva», e solo
+   «Approva» esegue.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Era giusta sul
+   pericolo e sbagliata sul rimedio.** Il pericolo — *nessuno deve poter
+   approvare un'ambiguità* — è vero e resta chiuso. Ma quella decisione lo
+   chiudeva legando due cose che sono diverse: «non approvabile» e «non
+   toccabile». Scegliendo, l'ambiguità **smette di esistere**: resta un
+   candidato solo, e la firma è su quello. Il pericolo si chiude dove sta
+   davvero — *il tocco non scrive* — invece che togliendo il gesto.
+   ⚠️ E il prezzo della decisione vecchia si era visto in un giorno: davanti
+   a due righe sullo schermo il gesto naturale è toccarne una, e l'unica
+   strada era ripetere la frase. *Una schermata che mostra una scelta e non
+   la fa fare è un vicolo cieco con le indicazioni scritte bene.*
+
+## 84 · 09/09/2026 — «nel riquadro di quello che hai appena detto non si approva niente»
+
+1. **Cosa era stato deciso e quando.** 06/09/2026, con SPEC-0013: il
+   riquadro che compare a fine dettatura elenca **le frasi** appena dette e
+   basta. Il «sì» è uno solo e vive sull'appunto, nell'elenco di sotto.
+
+2. **La ragione di allora.** Prima ogni riga appena detta aveva lì il suo
+   «Sì, fallo», e approvare una **riga** scavalcava il raggruppamento: si
+   diceva sì a una voce di una lista senza vedere le altre due che ci
+   stavano dentro. Due posti da cui approvare sono due gesti diversi per la
+   stessa cosa.
+
+3. **Cosa si decide adesso.** In quel riquadro compare **l'appunto intero**
+   — la stessa scheda dell'elenco di sotto, coi candidati da toccare e con
+   «Approva».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   proprio per questo la forma nuova la rispetta.** Il divieto era su
+   *approvare una riga*; quello che compare adesso non è una riga, è
+   l'appunto con tutti i suoi elementi sotto gli occhi. Il gesto resta uno
+   solo, e il raggruppamento non si scavalca: cambia **dove si legge**.
+   🔴 E il prezzo della decisione vecchia si è visto col telefono in mano:
+   il riquadro diceva «li trovi qui sotto» e l'elenco di sotto quell'appunto
+   lo **escludeva apposta** — per non ripetere la stessa riga in due
+   riquadri, che è una regola giusta. Per vedere la scheda bisognava uscire
+   da MEMO e rientrare. *Una schermata che dice dove guardare e non ci mette
+   niente è peggio di una che tace.*
+   ⚠️ E la regola del 27/08 **non** si rovescia: la stessa riga continua a
+   non stare in due riquadri — l'elenco di sotto non la ripete.
+
+## 85 · 10/09/2026 — «una ricorrenza si sceglie fra quattro cadenze fisse»
+
+1. **Cosa era stato deciso e quando.** Il 14/08/2026, col Blocco 1 del mandato
+   cumulativo, l'Agenda ha ricevuto le ricorrenze come **elenco chiuso di
+   quattro voci**: mensile, trimestrale, semestrale, annuale.
+
+2. **La ragione di allora.** Servivano agli **adempimenti societari**, che
+   erano gli unici impegni ricorrenti esistenti: le loro cadenze sono
+   esattamente quelle, e quattro voci le coprivano tutte. Un campo libero
+   avrebbe chiesto due dati per una cosa che ne voleva uno.
+
+3. **Cosa si decide adesso.** Due dati liberi: **quante volte** e **di che
+   cosa** — «ogni N giorni / settimane / mesi / anni». Le quattro di prima
+   diventano casi particolari (ogni 1 mesi, ogni 3 mesi, ogni 6 mesi, ogni 1
+   anni), e la colonna vecchia **si toglie**, non si spegne.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **È cambiato chi le usa.**
+   Finché in Agenda c'erano solo adempimenti, quelle quattro erano l'insieme
+   completo. Da quando ci finisce la manutenzione del locale — i filtri della
+   cappa, il tecnico della cella, le analisi — sono un **sottoinsieme che non
+   contiene il caso più comune**. 🔴 E il modo di fallire era quello che questo
+   progetto teme: il menu si apriva, quattro voci, **nessun errore**. *Un
+   elenco chiuso che non contiene il caso di chi guarda non sembra incompleto:
+   sembra che quella cosa non si possa fare.*
+
+## 86 · 10/09/2026 — «il modulo di un impegno chiede lo stato e la categoria»
+
+1. **Cosa era stato deciso e quando.** Sempre il 14/08/2026: il modulo di un
+   impegno mostra una casella **Stato** e una casella **Categoria**, e
+   quest'ultima è un **elenco chiuso** al posto del testo libero di prima.
+
+2. **La ragione di allora.** La categoria nasceva da un difetto misurato: su
+   venti righe di testo libero convivevano **quattro convenzioni diverse**
+   («Adempimenti societari», «Documenti», «amministrativo», vuoto). Lo stato
+   c'era per simmetria, perché il modulo mostrava tutte le colonne.
+
+3. **Cosa si decide adesso.** Tutte e due escono dal modulo. Le colonne
+   restano, e su un impegno che si sta correggendo restano quelle che erano.
+   Un impegno scritto a mano nasce «da fare» e «altro».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Sulla categoria vale
+   ancora, e infatti il vocabolario chiuso NON è stato toccato**: quello che è
+   caduto è che valesse la pena chiederla ogni volta. La misura è la stessa che
+   l'aveva giustificata — su venti righe la risposta era «Altro» **quindici
+   volte**. L'elenco chiuso resta per chi la categoria la scrive davvero: i
+   moduli che creano impegni da soli.
+   Sullo stato invece la ragione era la simmetria, che **non è una ragione
+   d'uso**: non esiste il caso di uno che apre «Nuovo impegno» per dichiararlo
+   già completato, e chiudere si fa con la spunta nell'elenco.
+   ⚠️ **Il prezzo dichiarato**: correggendo a mano un impegno nato da un altro
+   modulo non se ne può più cambiare la categoria da qui. Nessuno l'ha mai
+   chiesto, e riscrivere all'indietro i dati storici era il rischio da evitare.
+
+## 87 · 10/09/2026 — «nel quadrotto di un impegno si tocca il titolo»
+
+1. **Cosa era stato deciso e quando.** Il 29/08/2026, costruendo
+   `ElencoAdattivo`: *«se c'è un'azione, il blocchetto non è più un pulsante —
+   un bottone dentro un bottone non è HTML valido; e se serve anche `onTocco`
+   il titolo prende il suo pulsante per conto proprio»*.
+
+2. **La ragione di allora.** È vera e non si tocca: un bottone dentro un
+   bottone finisce col tocco che va a chi capita, ed è la stessa trappola del
+   numero di telefono dentro la riga della prenotazione (19/08).
+
+3. **Cosa si decide adesso.** Il riquadro **ascolta** il tocco senza essere un
+   pulsante, e **si tira indietro** quando il tocco è arrivato a un comando
+   suo. Il titolo smette di essere un pulsante.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e la
+   forma nuova la rispetta**: non c'è nessun bottone dentro un bottone. Quello
+   che era sbagliato era la **conseguenza** che se n'era tratta — che allora il
+   bersaglio dovesse restringersi al titolo. Su un telefono quella striscia di
+   testo è alta un centimetro in mezzo a un riquadro che sembra tutto
+   premibile: si finisce quasi sempre a lato, e lì non succedeva niente.
+   ⚠️ E la protezione dei comandi **guarda il bersaglio** invece di chiedere a
+   ogni comando di difendersi: sono otto elenchi, e il nono comando scritto fra
+   sei mesi lo dimenticherebbe **senza nessun errore**.

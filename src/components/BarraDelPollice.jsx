@@ -39,7 +39,21 @@ import { useEffect, useRef, useState } from "react";
  * @param altezza  quanto occupa la barra, in centimetri reali. Serve allo
  *                 spaziatore: deve combaciare, o resta un buco o si copre.
  */
-export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
+/**
+ * @param spaziatore  se riservare lo spazio DOVE sta la barra (vero), oppure
+ *                    lasciarlo fare a chi la usa (falso).
+ *
+ * 🔴 PERCHE' ESISTE LA SECONDA STRADA — 09/09/2026, misurato. Lo spaziatore
+ *    tiene nel flusso l'altezza della barra, e funziona finche' la barra e'
+ *    l'ULTIMA cosa della pagina. In MEMO non lo e': sta a meta', e sotto ci
+ *    sono il riscontro e l'elenco degli appunti. Misurato a 390x844:
+ *    l'ultimo comando della pagina finiva **67 punti sotto la barra** — un
+ *    pulsante che non si puo' premere, e nessuno lo dice.
+ *    ⚠️ Lo spazio non sparisce: si sposta dove serve. Chi passa  deve
+ *    metterlo in fondo, e per farlo gli serve sapere quanto: lo legge da
+ *    , che questa barra pubblica misurandosi.
+ */
+export default function BarraDelPollice({ children, altezza = "2.05cm", spaziatore = true }) {
   const barra = useRef(null);
   // 🔴 LO SPAZIATORE SI MISURA, NON SI DICHIARA. Fino al 29/08 la sua altezza
   //    era un numero passato a mano, e il commento qui sopra diceva già il
@@ -51,7 +65,13 @@ export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
   useEffect(() => {
     const el = barra.current;
     if (!el || typeof ResizeObserver === "undefined") return undefined;
-    const guarda = () => setAlto(`${el.getBoundingClientRect().height}px`);
+    const guarda = () => {
+      const h = `${el.getBoundingClientRect().height}px`;
+      setAlto(h);
+      // ⚠️ Si pubblica sempre, anche quando lo spaziatore e' qui: una misura
+      //    che esiste in un posto solo non puo' separarsi da se'.
+      document.documentElement.style.setProperty("--barra-pollice", h);
+    };
     guarda();
     const ro = new ResizeObserver(guarda);
     ro.observe(el);
@@ -61,7 +81,7 @@ export default function BarraDelPollice({ children, altezza = "2.05cm" }) {
   return (
     <>
       {/* Lo spaziatore: c'è solo dove la barra è fissa, cioè sul telefono. */}
-      <div aria-hidden="true" className="md:hidden" style={{ height: alto }} />
+      {spaziatore && <div aria-hidden="true" className="md:hidden" style={{ height: alto }} />}
 
       <div
         ref={barra}

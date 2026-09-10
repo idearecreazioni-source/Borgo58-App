@@ -15,6 +15,13 @@ import {
 } from "../../lib/api/voce";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
 import { rispondiA } from "../../lib/api/domandeMemo";
+import {
+  accendiSuoni,
+  preparaSuoni,
+  suoniAccesi,
+  suonoMicrofonoAperto,
+  suonoMicrofonoChiuso,
+} from "../../lib/suoni";
 import { titoloDellaDomanda } from "../../lib/calcoli/domande";
 import {
   comeEAndata,
@@ -70,18 +77,44 @@ export default function Detta() {
   const [nomeChiave, setNomeChiave] = useState("iPhone di Alessio");
   const [apriChiavi, setApriChiavi] = useState(false);
   const [apriGuida, setApriGuida] = useState(false);
+  // La preferenza dei suoni vive nel browser di chi detta: si legge una
+  // volta all'apertura, cosi la casella parte dallo stato vero.
+  const [conSuoni, setConSuoni] = useState(() => suoniAccesi());
 
   const recRef = useRef(null);
   const frasiRef = useRef([]);
+  // Il suono di apertura e gia suonato per questa accensione? Il
+  // riconoscimento si riapre da se dopo una pausa, e senza questa memoria
+  // il bip tornerebbe in mezzo alla dettatura.
+  const suonatoRef = useRef(false);
+  // Dove si trovano le schede appena nate, per portarci l'occhio.
+  const nuoviRef = useRef(null);
   const disponibile = riconoscitoreDisponibile();
   // ⚠️ PERCHE' manca, non solo SE manca: la fascia di prima accusava il
   //    browser anche quando il browser era giusto e a mancare era il modo in
   //    cui la pagina girava. Vedi statoDettatura() in calcoli/voce.js.
   const perche = statoDettatura();
 
+  // 🔴 UNA LETTURA IN RITARDO NON RIPORTA INDIETRO LA SCHERMATA —
+  //    09/09/2026. `ricarica()` parte all'apertura e di nuovo appena
+  //    finisce una dettatura: sono due letture in volo sulla stessa
+  //    lista. Se la prima — partita prima, quindi SENZA l'appunto appena
+  //    nato — arriva per ultima, l'appunto **sparisce dallo schermo** un
+  //    istante dopo essere comparso.
+  //    ⚠️ E sparirebbe in silenzio: nessun errore, solo una scheda che
+  //    c'era e non c'e' piu'. Il numero del giro dice chi ha l'ultima
+  //    parola — vince sempre la lettura piu' recente, non la piu'
+  //    veloce.
+  const giroRef = useRef(0);
   const ricarica = useCallback(() => {
-    leggi(appuntiDaApprovare()).then(setAttesa);
-    leggi(spesaAiDelMese()).then(setSpesa);
+    const mio = giroRef.current + 1;
+    giroRef.current = mio;
+    leggi(appuntiDaApprovare()).then((v) => {
+      if (giroRef.current === mio) setAttesa(v);
+    });
+    leggi(spesaAiDelMese()).then((v) => {
+      if (giroRef.current === mio) setSpesa(v);
+    });
   }, []);
 
   useEffect(() => {
@@ -179,13 +212,37 @@ export default function Detta() {
       return;
     }
 
+    // 🔴 L'AUDIO SI PREPARA DENTRO IL TOCCO, e non altrove: i browser
+    //    aprono l'audio solo dentro un gesto di chi guarda. Creandolo al
+    //    primo suono — che arriva da un evento del sistema, non da un dito
+    //    — il suono resterebbe muto sul telefono, e a schermo non si
+    //    vedrebbe niente.
+    preparaSuoni();
+    suonatoRef.current = false;
+
     const rec = creaRiconoscitore();
     frasiRef.current = [];
     setFrasi([]);
     setParziale("");
 
     rec.onstart = () => setStato("Ti sto ascoltando. Di' pure tutto di fila.");
-    rec.onaudiostart = () => setStato("Microfono aperto: parla pure.");
+    // 🔴 IL SUONO ARRIVA QUI E NON AL TOCCO — 10/09/2026, Blocco 5.
+    //    `onaudiostart` è il momento in cui l'audio entra DAVVERO. Un suono
+    //    al tocco direbbe «sto registrando» anche quando il permesso è
+    //    negato, il microfono è occupato da un'altra app, o la pagina non è
+    //    su un indirizzo cifrato — e in tutti quei casi si parlerebbe a
+    //    vuoto convinti del contrario.
+    // ⚠️ E UNA VOLTA SOLA PER ACCENSIONE: il riconoscimento si chiude da sé
+    //    dopo una pausa lunga e viene riaperto (vedi `onend` più sotto),
+    //    quindi senza questa guardia il suono tornerebbe **in mezzo a una
+    //    dettatura**, dove non dice niente di nuovo e interrompe.
+    rec.onaudiostart = () => {
+      setStato("Microfono aperto: parla pure.");
+      if (!suonatoRef.current) {
+        suonatoRef.current = true;
+        suonoMicrofonoAperto();
+      }
+    };
 
     rec.onresult = (e) => {
       let corrente = "";
@@ -240,6 +297,11 @@ export default function Detta() {
 
   const fermaEManda = () => {
     const testo = componiDettato(frasiRef.current, parziale);
+    // ⚠️ IL SECONDO SUONO SOLO SE IL PRIMO C'È STATO: se il microfono non
+    //    si era mai aperto, non c'è nessuna registrazione da chiudere — e
+    //    un suono di fine su una cosa che non è mai cominciata direbbe che
+    //    qualcosa è stato registrato.
+    if (suonatoRef.current) suonoMicrofonoChiuso();
     spegni();
     setStato("");
     manda(testo);
@@ -424,6 +486,39 @@ export default function Detta() {
   const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter(
     (a) => !(a.elementi ?? []).every((e) => giaSopra.has(e.id)),
   );
+
+  // 🔴 GLI APPUNTI APPENA NATI — 09/09/2026, dal collaudo col telefono.
+  //    Il riquadro diceva «li trovi qui sotto» e l'elenco di sotto li
+  //    ESCLUDEVA apposta (la riga qui sopra): per vedere la scheda
+  //    bisognava uscire da MEMO e rientrare. *Una schermata che dice
+  //    dove guardare e non ci mette niente e' peggio di una che tace.*
+  //
+  //    ⚠️ LA REGOLA DEL 27/08 NON SI ROVESCIA: la stessa riga non sta in
+  //    due riquadri. Quello che cambia e' DOVE sta — la scheda intera
+  //    viene qui, dentro «Ne ho fatto un appunto», e l'elenco di sotto
+  //    continua a non ripeterla.
+  //
+  // 🔴 E L'APPUNTO E' QUELLO DEL SERVER, non una copia messa insieme dal
+  //    browser: e' la stessa riga che arriva da `appuntiDaApprovare()`,
+  //    con dentro i candidati da toccare, l'essere approvabile e tutto
+  //    il resto. Una scheda inventata qui sarebbe una promessa su cosa
+  //    verra' scritto, fatta da chi non lo sa.
+  const appenaFatti = (Array.isArray(attesa) ? attesa : []).filter(
+    (a) => (a.elementi ?? []).length > 0 && (a.elementi ?? []).every((e) => giaSopra.has(e.id)),
+  );
+
+  // ⚠️ SI PORTA L'OCCHIO DOVE E' COMPARSA, e una volta sola: la chiave e'
+  //    l'identificativo del primo appunto nuovo, non il fatto che ce ne
+  //    siano. Senza, ogni ricarica della lista rifarebbe scorrere la
+  //    pagina sotto le mani di chi sta leggendo.
+  const primoNuovo = appenaFatti[0]?.id ?? null;
+  useEffect(() => {
+    if (!primoNuovo) return;
+    const el = nuoviRef.current;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [primoNuovo]);
   const dettato = componiDettato(frasi, parziale);
 
   return (
@@ -457,7 +552,7 @@ export default function Detta() {
                dal bordo alto** su uno schermo da 375, cioè nel terzo
                superiore — il punto più lontano dal pollice di chi tiene il
                telefono in una mano e un barattolo nell'altra. */}
-        <BarraDelPollice>
+        <BarraDelPollice spaziatore={false}>
         <button
           type="button"
           onClick={ascolto ? fermaEManda : accendi}
@@ -569,34 +664,71 @@ export default function Detta() {
             </ul>
           )}
 
-          {/* 🔴 QUI NON SI APPROVA PIU' NIENTE — SPEC-0013. Prima ogni riga
-              appena detta aveva qui il suo «Sì, fallo»; adesso il sì è uno
-              solo e vive sull'APPUNTO, qui sotto.
-              ⚠️ Non è una rifinitura: due posti da cui approvare sarebbero
-                 due gesti diversi per la stessa cosa, e quello di quassù
-                 scavalcherebbe il raggruppamento — si approverebbe una riga
-                 di una lista senza vedere le altre due che ci sono dentro.
-              ⚠️ Questo riquadro resta perché risponde a un'altra domanda:
-                 *cosa ho appena detto*. L'elenco sotto risponde a *cosa
-                 aspetta*, e una riga di dieci secondi fa non aspetta «da
-                 prima». */}
+          {/* 🔴 QUI SI APPROVA L'APPUNTO — e fino al 09/09/2026 questa riga
+              diceva il contrario. La regola di SPEC-0013 che la motivava
+              resta però intera, e va letta per quello che vietava: qui
+              c'era il «Sì, fallo» di **ogni riga**, e approvare una riga
+              scavalcava il raggruppamento — si diceva sì a una voce di una
+              lista senza vedere le altre due che ci stavano dentro.
+              ⚠️ Quello che compare adesso non è una riga: è **l'appunto
+                 intero**, la stessa scheda dell'elenco di sotto, con tutti
+                 i suoi elementi sotto gli occhi. Il gesto è uno solo, e il
+                 raggruppamento non si scavalca — cambia solo DOVE si legge.
+              🔴 E il perché è un difetto misurato: il riquadro diceva «li
+                 trovi qui sotto», e l'elenco di sotto li **escludeva**
+                 apposta. Per vedere la scheda bisognava uscire da MEMO e
+                 rientrare. *Una schermata che dice dove guardare e non ci
+                 mette niente è peggio di una che tace.*
+              ⚠️ La regola del 27/08 non si rovescia: la stessa riga NON sta
+                 in due riquadri. L'elenco di sotto continua a non
+                 ripeterla — risponde a *cosa aspetta da prima*, e una cosa
+                 detta dieci secondi fa non aspetta da prima. */}
           {riscontro.daGuardare.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4" ref={nuoviRef}>
               <h3 className="testo-sala font-medium text-b58-charcoal mb-2">
                 {riscontro.daGuardare.length === 1
                   ? "Ne ho fatto un appunto:"
                   : `Ne ho fatti ${riscontro.daGuardare.length} appunti:`}
               </h3>
-              <ul className="space-y-1">
-                {riscontro.daGuardare.map((a) => (
-                  <li key={a.id} className="testo-sala text-b58-charcoal">
-                    · {a.frase}
-                  </li>
-                ))}
-              </ul>
+
+              {/* 🔴 LA SCHEDA INTERA, SUBITO. Prima qui c'era la sola frase
+                  detta, e la scheda — coi candidati da toccare e con
+                  «Approva» — compariva solo uscendo e rientrando.
+                  ⚠️ Finche' la lista del server non e' arrivata resta la
+                  frase: e' quello che si sa in quel momento, e inventare
+                  una scheda al posto suo vorrebbe dire promettere cosa
+                  verra' scritto senza averlo letto. */}
+              {appenaFatti.length > 0 ? (
+                <ul className="space-y-3">
+                  {appenaFatti.map((a) => (
+                    <AppuntoDaApprovare
+                      key={a.id}
+                      appunto={a}
+                      occupato={inAzione === a.id}
+                      esito={esiti[a.id]}
+                      onApprova={() => conferma(a)}
+                      onScarta={() => annulla(a)}
+                      onScegli={(elementoId, sceltaId) => scegli({ id: elementoId }, sceltaId)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <>
+                  <ul className="space-y-1">
+                    {riscontro.daGuardare.map((a) => (
+                      <li key={a.id} className="testo-sala text-b58-charcoal">
+                        · {a.frase}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="testo-sala mt-2 text-b58-charcoal-soft">
+                    Sto rileggendo quello che ho scritto…
+                  </p>
+                </>
+              )}
+
               <p className="testo-sala mt-2 text-b58-charcoal-soft">
-                Non ho scritto niente nel gestionale: li trovi qui sotto, con dentro i dati che
-                scriverei.
+                Non ho scritto niente nel gestionale: qui sopra ci sono i dati che scriverei.
               </p>
             </div>
           )}
@@ -640,6 +772,28 @@ export default function Detta() {
           </div>
         )
       )}
+
+      {/* ------------------------------------------------------------
+          I DUE SUONI — 10/09/2026, Blocco 5 del mandato
+         ------------------------------------------------------------
+          🔴 SI PUÒ SPEGNERE, E LA SCELTA RESTA. Un suono che non si può
+          togliere diventa un fastidio il giorno che si detta accanto a un
+          cliente; e una preferenza che si dimentica a ogni ricarica è come
+          non averla.
+          ⚠️ La casella sta QUI e non in un pannello di impostazioni: è la
+          schermata in cui il suono si sente, ed è l'unico posto in cui a
+          qualcuno viene in mente di spegnerlo. */}
+      <label className="tocco-riga mt-4 flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+        <input
+          type="checkbox"
+          checked={conSuoni}
+          onChange={(e) => {
+            accendiSuoni(e.target.checked);
+            setConSuoni(e.target.checked);
+          }}
+        />
+        Fai un suono quando il microfono si apre e quando finisce
+      </label>
 
       {/* ------------------------------------------------------------
           LE CHIAVI DELLA SCORCIATOIA
@@ -760,6 +914,15 @@ export default function Detta() {
           </div>
         )}
       </div>
+
+      {/* 🔴 LO SPAZIO DELLA BARRA SI RISERVA QUI, IN FONDO — 09/09/2026.
+          La barra del microfono sta a meta' pagina, e il suo spaziatore
+          teneva lo spazio li', dove non serve: misurato a 390x844,
+          l'ultimo comando della pagina finiva 66 punti SOTTO la barra —
+          un pulsante che non si puo' premere, e nessuno lo dice.
+          ⚠️ L'altezza non e' scritta a mano: la pubblica la barra
+          misurandosi, cosi' le due non possono separarsi al primo ritocco. */}
+      <div aria-hidden="true" className="md:hidden" style={{ height: "var(--barra-pollice, 0px)" }} />
     </div>
   );
 }

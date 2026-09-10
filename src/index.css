@@ -162,6 +162,18 @@ body {
 }
 
 /* Riga intera tappabile (piatto del menu, tavolo): ~1 cm di altezza. */
+/* Il bersaglio di una SCELTA fra candidati (09/09/2026).
+   ⚠️ Qui, unico posto del progetto, accanto alla misura in centimetri veri
+   c'e' anche un pavimento in PUNTI. Non e' un ripensamento sulla regola
+   «mai dimensionare un target in pixel»: 1,05 cm su un monitor fanno 39,7
+   punti, cioe' sotto i 44 che le linee guida del tocco chiedono, e su un
+   telefono la stessa classe ne fa gia' 67. Il centimetro resta l'unita' del
+   disegno; il punto e' solo il fondo sotto cui non si scende. */
+.tocco-scelta {
+  min-height: max(44px, calc(var(--pxcm) * 1.05));
+  min-width: 44px;
+}
+
 .tocco-riga {
   min-height: calc(var(--pxcm) * 1.05);
 }

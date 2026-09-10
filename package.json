@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run tests/unita",
     "test:schermate": "vitest run tests/schermate --config vitest.schermate.config.js",
+    "test:visive": "node scripts/prova-visiva.mjs",
     "test:app": "node scripts/chiavi-di-prova.mjs && node scripts/prove-app.mjs",
     "backup": "node scripts/backup.mjs",
     "prova:ricostruisci": "node scripts/prova-ricostruisci.mjs",

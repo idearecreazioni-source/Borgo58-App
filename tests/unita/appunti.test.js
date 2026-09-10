@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  avvisoDellElemento,
   certezza,
   datiInChiaro,
   eta,
@@ -110,5 +111,78 @@ describe("da quanto e' aperto, e quanto contiene", () => {
     expect(quantiElementi(1)).toBe("1 cosa");
     expect(quantiElementi(3)).toBe("3 cose");
     expect(quantiElementi(0)).toBe("niente dentro");
+  });
+});
+
+// =====================================================================
+// IL PROMEMORIA CHE AVVISA — Blocco 3 del mandato notturno, 10/09/2026
+// =====================================================================
+// 🔴 «APPROVA» È UNA FIRMA, e su un promemoria con avviso quello che si
+//    firma non è un dato in tabella: è **un telefono che suonerà**. Quindi
+//    quello che queste prove sorvegliano non è che il dato ci sia — è che
+//    si LEGGA, e che le due date non si confondano fra loro.
+
+describe("le due date di un promemoria non si confondono", () => {
+  it("🔴 «data» è il giorno dell'impegno, «avviso_data» il giorno in cui suona", () => {
+    // Chiamandole «data» e «avviso data» sembrerebbero la stessa cosa
+    // scritta due volte: sono il giorno in cui la cosa succede e il giorno
+    // in cui il telefono suona, e quasi sempre non coincidono.
+    const riga = datiInChiaro({
+      titolo: "Appuntamento in banca",
+      data: "2026-09-13",
+      avviso_data: "2026-09-12",
+      avviso_ora: "15:00",
+    });
+    expect(riga).toContain("giorno: 13 set 2026");
+    expect(riga).toContain("ti avviso il: 12 set 2026");
+    expect(riga).toContain("alle: 15:00");
+  });
+
+  it("una data si scrive come la scrive il resto del gestionale", () => {
+    // Una «2026-09-13» in mezzo a una frase italiana è un dato che chi
+    // legge deve tradurre a mente — e chi traduce a mente sbaglia, su una
+    // firma.
+    expect(datiInChiaro({ data: "2026-09-13" })).toBe("giorno: 13 set 2026");
+    // E i secondi di un'ora non dicono niente di più.
+    expect(datiInChiaro({ avviso_ora: "15:00:00" })).toBe("alle: 15:00");
+  });
+
+  it("⚠️ un campo che nessuno ha battezzato compare lo stesso", () => {
+    // Sparire sarebbe il difetto peggiore: chi firma non vedrebbe una cosa
+    // che sta approvando.
+    expect(datiInChiaro({ una_cosa_nuova: "x" })).toBe("una cosa nuova: x");
+  });
+});
+
+describe("l'avviso che un appunto promette", () => {
+  const el = (dati) => ({ dati });
+
+  it("si legge in italiano, giorno e ora", () => {
+    expect(avvisoDellElemento(el({ avviso_data: "2026-09-12", avviso_ora: "15:00" }))).toEqual({
+      giorno: "12 set 2026",
+      ora: "15:00",
+    });
+  });
+
+  it("🔴 mezzo avviso non è un avviso: non si annuncia niente", () => {
+    // Annunciare «ti avviso il 12» senza l'ora prometterebbe una notifica
+    // che il gestionale non sa quando mandare — e infatti si rifiuta di
+    // scriverla. La schermata non deve prometterla al posto suo.
+    expect(avvisoDellElemento(el({ avviso_data: "2026-09-12" }))).toBeNull();
+    expect(avvisoDellElemento(el({ avviso_ora: "15:00" }))).toBeNull();
+  });
+
+  it("senza avviso non c'è niente da dire, ed è il caso normale", () => {
+    expect(avvisoDellElemento(el({ titolo: "Chiamare Tiziana" }))).toBeNull();
+    expect(avvisoDellElemento(null)).toBeNull();
+  });
+
+  it("⚠️ e una forma che non si sa leggere non si mostra come un'ora", () => {
+    // «verso sera» non è un'ora: stamparlo dentro «alle …» farebbe sembrare
+    // che il gestionale abbia capito quando.
+    expect(
+      avvisoDellElemento(el({ avviso_data: "2026-09-12", avviso_ora: "verso sera" }))
+    ).toBeNull();
+    expect(avvisoDellElemento(el({ avviso_data: "sabato", avviso_ora: "15:00" }))).toBeNull();
   });
 });

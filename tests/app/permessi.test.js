@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { almenoUnaRiga, clientAnonimo, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
+import { spiega, almenoUnaRiga, clientAnonimo, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // Il corridoio si cerca PRIMA di definire le prove: se la funzione online
 // non è installata su questo progetto, le prove che la riguardano vengono
@@ -596,18 +596,42 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     //    si vede più da nessuno. Si pretende un conteggio **positivo**: è
     //    la sola forma che distingue «la RLS morde» da «la vista è rotta».
     //
-    // ⚠️ PREZZO DICHIARATO: da qui in avanti questa prova DIPENDE DAI DATI
-    //    del progetto di prova. `v_cash_balance` regge da sé (fa un `left
-    //    join` sulle entità, quindi risponde una riga per entità anche
-    //    senza movimenti), ma `v_discounts_gifts_monthly` aggrega gli
-    //    sconti: su un progetto ricostruito da zero e mai popolato sarebbe
-    //    vuota, e questa prova diventerebbe rossa **per assenza di dati,
-    //    non per un difetto**. Chi la vede rossa guardi prima se lo stato
-    //    di partenza c'è (`npm run prova:base`).
-    for (const vista of ["v_cash_balance", "v_discounts_gifts_monthly"]) {
-      const r = await titolare.from(vista).select("*", { count: "exact", head: true });
-      expect(r.error, `${vista}: il titolare non riesce a leggerla`).toBeNull();
-      expect(r.count, `${vista}: il titolare la legge ma è vuota — vista rotta o svuotata, non protetta`).toBeGreaterThan(0);
-    }
+    // 🔴 IL PREZZO DICHIARATO È STATO PAGATO, ED È STATO TOLTO — 10/09/2026.
+    //    Fino a ieri questa prova pretendeva che le viste avessero righe, e
+    //    lo dichiarava: *«dipende dai dati del progetto di prova»*. Il 09/09
+    //    quel prezzo si è visto — un giro rosso in CI su una vista vuota o
+    //    irraggiungibile — e una prova che dipende da dati che qualcun altro
+    //    mette o toglie **non è una rete: è un allarme che suona da solo**.
+    //
+    // ⚠️ `v_cash_balance` regge da sé: fa un `left join` sulle entità, quindi
+    //    risponde una riga per entità anche senza un movimento al mondo. Lì
+    //    il «più di zero» non dipende da niente e resta.
+    const saldi = await titolare
+      .from("v_cash_balance")
+      .select("*", { count: "exact", head: true });
+    expect(saldi.error, `v_cash_balance: il titolare non riesce a leggerla — ${spiega(saldi)}`).toBeNull();
+    expect(
+      saldi.count,
+      "v_cash_balance: il titolare la legge ma è vuota — vista rotta o svuotata, non protetta",
+    ).toBeGreaterThan(0);
+
+    // 🔴 E SULL'ALTRA SI PRETENDE UN ACCORDO, non un numero. La vista
+    //    aggrega `discounts_gifts`: **è vuota se e solo se la tabella lo è**.
+    //    Questa forma non dipende da nessun dato — con zero sconti dice
+    //    «zero e zero, d'accordo» — e discrimina più di prima: prende sia la
+    //    vista svuotata da una `where` sbagliata sopra una tabella piena,
+    //    sia una vista che inventasse righe dal nulla.
+    const tabella = await titolare
+      .from("discounts_gifts")
+      .select("*", { count: "exact", head: true });
+    const vista = await titolare
+      .from("v_discounts_gifts_monthly")
+      .select("*", { count: "exact", head: true });
+    expect(tabella.error, `discounts_gifts: il titolare non riesce a leggerla — ${spiega(tabella)}`).toBeNull();
+    expect(vista.error, `v_discounts_gifts_monthly: il titolare non riesce a leggerla — ${spiega(vista)}`).toBeNull();
+    expect(
+      vista.count > 0,
+      `v_discounts_gifts_monthly: la vista ha ${vista.count} gruppi e la tabella ${tabella.count} righe — o è svuotata sopra dati veri, o inventa righe dal nulla`,
+    ).toBe(tabella.count > 0);
   });
 });

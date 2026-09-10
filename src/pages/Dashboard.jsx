@@ -4,6 +4,8 @@ import { listDashboardTasks, updateTask } from "../lib/api/tasks";
 import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservations";
 import { contaPostaInAttesa } from "../lib/api/posta";
 import { quanteAspettano } from "../lib/api/voce";
+import { listSpesaSpicciola } from "../lib/api/spesaSpicciola";
+import { daComprare } from "../lib/calcoli/spesaSpicciola";
 import { daQuantoAspetta } from "../lib/calcoli/voce";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
@@ -39,6 +41,7 @@ export default function Dashboard() {
   const [posta, setPosta] = useState(0);
   const [avvisi, setAvvisi] = useState([]);
   const [dettate, setDettate] = useState(null);
+  const [spicciola, setSpicciola] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -89,6 +92,15 @@ export default function Dashboard() {
       //    leggerebbe «non hai niente in sospeso», cioè una frase
       //    tranquilla e falsa.
       isStaff ? Promise.resolve() : leggi(quanteAspettano()).then(setDettate),
+      // 🔴 QUANTE COSE RESTANO DA COMPRARE DI PERSONA — 10/09/2026,
+      //    Blocco 5 del mandato. La spesa spicciola è l'unica lista che si
+      //    guarda **uscendo di casa**, ed era raggiungibile solo passando
+      //    dal Magazzino: chi la dettava la sera non la ritrovava la
+      //    mattina, quando serve.
+      // ⚠️ Lettura indipendente e col segno «non letto», per la stessa
+      //    ragione di quella sopra: un riquadro sparito si leggerebbe «non
+      //    c'è niente da comprare».
+      isStaff ? Promise.resolve() : leggi(listSpesaSpicciola()).then(setSpicciola),
     ]).finally(() => setLoading(false));
 
   useEffect(() => {
@@ -232,6 +244,50 @@ export default function Dashboard() {
                   ` — il più vecchio ${daQuantoAspetta(dettate.laPiuVecchia)}`}
               </span>
               <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
+                →
+              </span>
+            </Link>
+          )}
+
+          {/* ------------------------------------------------------------
+              LA SPESA SPICCIOLA — 10/09/2026, Blocco 5 del mandato
+             ------------------------------------------------------------
+              🔴 NON È LA LISTA DEI FORNITORI, e le due non vanno confuse:
+              quella nasce dalle soglie del magazzino e finisce in un
+              ordine, questa è la roba che Alessio compra di persona al
+              supermercato. Il riquadro lo dice con le parole, non solo col
+              titolo: «di persona» è la sola cosa che le distingue a colpo
+              d'occhio. */}
+          {!isStaff && nonLetto(spicciola) && (
+            <p className="testo-sala text-b58-terracotta-dark">
+              Non sono riuscito a leggere la spesa spicciola.{" "}
+              <button type="button" onClick={load} className="tocco-inline underline">
+                Riprova
+              </button>
+            </p>
+          )}
+
+          {/* 🔴 SI CONTA SOLO QUELLO CHE RESTA DA COMPRARE — 10/09/2026, dal
+              collaudo. Prima il riquadro contava anche le cose già nel
+              carrello, mentre la pagina della spesa spicciola no: due numeri
+              per la stessa domanda, uguali solo col carrello vuoto. Adesso
+              tutti e due chiedono la stessa regola (`daComprare`).
+              ⚠️ E col carrello pieno e niente da prendere il riquadro NON
+              compare: «0 cose da comprare» tutte le mattine è arredamento. */}
+          {!isStaff && !nonLetto(spicciola) && daComprare(spicciola).length > 0 && (
+            <Link
+              to="/magazzino/spesa-spicciola"
+              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-olive bg-b58-olive/10 px-4 py-3"
+            >
+              <span className="testo-sala text-b58-charcoal">
+                <span className="font-medium">
+                  {daComprare(spicciola).length === 1
+                    ? "Una cosa da comprare"
+                    : `${daComprare(spicciola).length} cose da comprare`}
+                </span>{" "}
+                di persona — spesa spicciola
+              </span>
+              <span aria-hidden="true" className="testo-sala text-b58-olive-dark shrink-0">
                 →
               </span>
             </Link>

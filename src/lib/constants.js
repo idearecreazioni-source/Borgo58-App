@@ -470,12 +470,27 @@ export const TASK_CATEGORIES = [
   { value: "altro", label: "Altro" },
 ];
 
-export const TASK_RICORRENZE = [
-  { value: "", label: "Non si ripete" },
-  { value: "mensile", label: "Ogni mese" },
-  { value: "trimestrale", label: "Ogni tre mesi" },
-  { value: "semestrale", label: "Ogni sei mesi" },
-  { value: "annuale", label: "Ogni anno" },
+// 🔴 LE QUATTRO CADENZE FISSE SONO SPARITE — 10/09/2026, deciso da Alessio.
+//
+// Erano «ogni mese / tre mesi / sei mesi / anno», cioè il calendario
+// fiscale: e infatti gli unici impegni ricorrenti mai nati sono
+// adempimenti societari. Cambiare i filtri della cappa ogni sei settimane
+// non stava in quell'elenco, e chi ci provava non trovava nessuna casella
+// — senza nessun errore, quindi sembrava che la cosa non si potesse fare
+// invece che non fosse prevista.
+//
+// Al loro posto due dati: quante volte (`ricorrenza_ogni`, un numero) e di
+// che cosa — questo elenco. Le quattro di prima sono casi particolari
+// della forma nuova (ogni 1 mesi, ogni 3 mesi, ogni 6 mesi, ogni 1 anni),
+// quindi non si è perso niente.
+//
+// ⚠️ Elenco CHIUSO come tutti gli altri: il database rifiuta le altre
+// parole, perché sono le sole quattro che qualcuno sa contare.
+export const TASK_RICORRENZA_UNITA = [
+  { value: "giorni", label: "giorni" },
+  { value: "settimane", label: "settimane" },
+  { value: "mesi", label: "mesi" },
+  { value: "anni", label: "anni" },
 ];
 
 // ⚠️ Non si usa più in Agenda: l'urgenza la dice la scadenza, non un

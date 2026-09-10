@@ -1,4 +1,4 @@
-import { TASK_CATEGORIES, formatDate, labelFor } from "../constants";
+import { formatDate } from "../constants";
 
 // COME SI LEGGE L'AGENDA — 30/08/2026, Blocco 3 del mandato.
 //
@@ -127,17 +127,6 @@ export function campiImpegno(t) {
       vuoto: "quando capita",
       forte: t.corsia === "in_ritardo",
     },
-    {
-      chiave: "categoria",
-      etichetta: "Tipo",
-      valore: labelFor(TASK_CATEGORIES, t.category),
-    },
-    {
-      chiave: "da",
-      etichetta: "Da",
-      valore: t.origine_modulo === "posta" ? "Posta" : t.origine_modulo ? "Archivio documenti" : "",
-      vuoto: "scritto a mano",
-    },
     // ⚠️ L'anzianità è ciò che impedisce a «quando capita» di diventare un
     // cimitero: senza, una voce ferma da tre mesi sembra scritta ieri.
     // Compare solo dove serve — su una riga con la scadenza il dato c'è già.
@@ -145,6 +134,52 @@ export function campiImpegno(t) {
       ? [{ chiave: "eta", etichetta: "In lista da", valore: anzianita(t.giorni_in_lista) }]
       : []),
   ];
+}
+
+// 🔴 «TIPO» E «DA» SONO USCITI DALL'ELENCO — 10/09/2026, deciso da Alessio.
+//
+// Non erano sbagliati: erano **due colonne che rispondono a una domanda che
+// nessuno fa guardando l'Agenda**. La domanda dell'Agenda è «cosa devo fare
+// adesso», e il tipo di un impegno non la cambia — su venti righe «Tipo»
+// diceva «Altro» quindici volte. È la stessa cernita delle sette
+// spiegazioni tolte il 18/08: si toglie dichiarando dove la cosa resta
+// scritta, non cancellandola.
+//
+//   · il TIPO resta nella scheda dell'impegno, che è dove si sceglie;
+//   · la PROVENIENZA resta qui sotto, come nota in fondo al quadrotto, e
+//     **solo quando c'è qualcosa da dire**.
+//
+// ⚠️ E la nota compare solo se NON è scritto a mano, che è il caso normale:
+// una riga «scritto a mano» su ogni impegno è arredamento, e un impegno
+// nato da solo dall'Archivio o dalla posta è invece la cosa che spiega
+// perché quella riga è lì senza che nessuno l'abbia scritta.
+export function provenienzaImpegno(t) {
+  if (!t?.origine_modulo) return null;
+  if (t.origine_modulo === "posta") return "nato dalla posta";
+  if (t.origine_modulo === "voce") return "nato da una cosa detta a voce";
+  return "nato dall'Archivio documenti";
+}
+
+/**
+ * COME SI LEGGE UNA CADENZA: «ogni 3 mesi», «ogni giorno».
+ *
+ * ⚠️ Sta qui e non nel database (10/09/2026): il database conserva i due
+ * dati — quante volte e di che cosa — e le parole italiane vivono dove
+ * vivono tutte le altre etichette del gestionale. Se la frase la componesse
+ * `agenda_corsie()`, questa sarebbe la sola etichetta italiana scritta in
+ * SQL, e la prossima schermata che mostra una cadenza dovrebbe chiederla al
+ * database invece di saperla.
+ *
+ * ⚠️ E l'«ogni 1» si dice al SINGOLARE. Non è una rifinitura: «ogni 1 mesi»
+ * si legge come una cosa scritta da una macchina, e quel sospetto si
+ * trasferisce al numero accanto.
+ */
+const SINGOLARE = { giorni: "giorno", settimane: "settimana", mesi: "mese", anni: "anno" };
+
+export function fraseRicorrenza(ogni, unita) {
+  if (!ogni || !unita) return null;
+  if (!(unita in SINGOLARE)) return null;
+  return ogni === 1 ? `ogni ${SINGOLARE[unita]}` : `ogni ${ogni} ${unita}`;
 }
 
 function anzianita(giorni) {

@@ -1,5 +1,9 @@
 import { Link } from "react-router-dom";
 import {
+  avvisoDellElemento,
+  candidatiDellElemento,
+  impegnoScelto,
+  nonDistinguibili,
   certezza,
   datiInChiaro,
   eta,
@@ -156,6 +160,14 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
   const chiedeAltro = elemento.domanda === "manca";
   const concreti = datiInChiaro(elemento.dati);
   const alternative = Array.isArray(elemento.alternative) ? elemento.alternative : [];
+  // ⚠️ L'elenco di sola lettura resta come RIPIEGO, non come doppione: si
+  //    mostra soltanto quando non c'e' niente da toccare — per esempio se
+  //    tutti i candidati sono stati chiusi dopo che l'appunto era nato.
+  //    Mostrarlo insieme ai pulsanti direbbe due volte la stessa cosa, e la
+  //    seconda sembrerebbe un'altra.
+  const candidati = chiedeQuale ? [] : candidatiDellElemento(elemento);
+  const scelto = impegnoScelto(elemento);
+  const gemelli = nonDistinguibili(elemento);
 
   return (
     <li className="rounded-lg bg-b58-parchment px-3 py-2">
@@ -168,6 +180,24 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
       <p className="testo-sala mt-0.5 text-b58-charcoal-soft">
         {concreti === "" ? "nessun dato da scrivere" : concreti}
       </p>
+
+      {/* 🔴 L'AVVISO SI LEGGE PER INTERO PRIMA DI FIRMARE — 10/09/2026.
+          Quello che si approva qui non è un dato in tabella: è **un
+          telefono che suonerà**. I due campi lo dicono già nella riga
+          sopra («ti avviso il … · alle …»), e questa aggiunge la sola cosa
+          che quei campi non possono dire da soli — che il messaggio parte
+          da un giro che passa ogni cinque minuti.
+          ⚠️ Non è una scusa scritta piccola: chi aspetta il Telegram alle
+          15:00 spaccate e lo riceve alle 15:04 pensa che il gestionale
+          funzioni male. Dirlo prima costa una riga; scoprirlo dopo costa
+          la fiducia in tutti gli avvisi. */}
+      {avvisoDellElemento(elemento) && (
+        <p className="testo-sala mt-0.5 text-b58-olive-dark">
+          📲 Ti mando una notifica su Telegram il{" "}
+          <strong>{avvisoDellElemento(elemento).giorno}</strong> alle{" "}
+          <strong>{avvisoDellElemento(elemento).ora}</strong> — o entro i cinque minuti dopo.
+        </p>
+      )}
 
       {perchéAspetta(elemento) && (
         <p className="testo-sala mt-0.5 text-b58-charcoal-soft">{perchéAspetta(elemento)}</p>
@@ -186,6 +216,46 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
               {a.perche ? ` (${a.perche})` : ""}
             </span>
           ))}
+        </p>
+      )}
+
+      {/* 🔴 QUANDO GLI IMPEGNI POSSIBILI SONO DUE, SI DICE QUALI — 09/09/2026.
+          MEMO non ne sceglie nessuno, ed e' giusto: fra due candidati
+          altrettanto buoni non esiste nessun criterio onesto per preferirne
+          uno, e sbagliare vuol dire chiudere l'impegno di un altro o
+          spostare una scadenza che nessuno voleva toccare.
+          ⚠️ MA «quale dei 2» senza dire quali mandava a cercarli in Agenda,
+          cioe' a rifare a mano il lavoro appena fatto dal gestionale. Il
+          giorno c'e' sempre perche' e' quello che li distingue: due titoli
+          somiglianti senza data sono la stessa domanda, scritta piu' lunga.
+          ⚠️ NON SI TOCCANO, e non e' una dimenticanza: un pulsante per
+          sceglierli renderebbe approvabile un appunto che finche' i
+          candidati sono due non deve esserlo. La via d'uscita e' qui
+          sotto — ridirlo, o aprire l'Agenda. */}
+      {candidati.length > 0 && (
+        <div className="mt-1">
+          <p className="testo-sala text-b58-charcoal-soft">Potrebbero essere questi:</p>
+          <ul className="mt-0.5 space-y-0.5">
+            {candidati.map((c, i) => (
+              <li key={`${c.titolo}-${i}`} className="testo-sala text-b58-charcoal">
+                <strong>{c.titolo}</strong>
+                {c.quando ? ` — ${c.quando}` : " — senza scadenza"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 🔴 QUALE IMPEGNO E' STATO SCELTO, scritto per esteso — 09/09/2026.
+          Il titolo compare anche nella riga grigia dei dati concreti, in
+          mezzo agli altri campi. Ma qui si sta per firmare la chiusura di
+          una riga di Agenda, e *quale* riga non e' un campo fra gli altri:
+          e' la cosa. Compare SOLO se c'e' stata una scelta vera, perche'
+          dirlo dove nessuno ha scelto sarebbe raccontare un gesto che non
+          c'e' stato. */}
+      {scelto && (
+        <p className="testo-sala mt-1 rounded-lg bg-b58-sage/15 px-3 py-2 text-b58-charcoal">
+          Hai scelto: <strong>{scelto}</strong>
         </p>
       )}
 
@@ -208,24 +278,7 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
             to={indirizzoAMano(elemento.percorso, elemento.id)}
             className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
           >
-            Fallo a mano, coi campi già compilati →
-          </Link>
-        </p>
-      )}
-
-      {/* 🔴 E QUANDO IL GESTO NON ESISTE, IL COLLEGAMENTO PORTA DOVE SI FA.
-          Non e' la via d'uscita qui sopra — quella promette «coi campi gia'
-          compilati», e su un impegno da cercare sarebbe una bugia. Il posto
-          lo dichiara chi ha deciso il tipo (`agenda.ts`), non una mappa
-          scritta qui: cosi' un tipo nuovo o porta il suo posto, o non
-          mostra nessun collegamento — mai uno che porta altrove. */}
-      {elemento.dati?.dove?.a && (
-        <p className="testo-sala mt-1">
-          <Link
-            to={elemento.dati.dove.a}
-            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
-          >
-            {elemento.dati.dove.apri ?? "Apri"} →
+            Fallo a mano →
           </Link>
         </p>
       )}
@@ -235,7 +288,25 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
           dopo — perché nel frattempo dentro ci possono essere altre righe. */}
       {chiedeQuale && (
         <div className="mt-1">
-          <p className="testo-sala text-b58-charcoal">Quale dei due?</p>
+          {/* ⚠️ «dei due» solo quando sono due: con tre candidati quella
+              frase conterebbe male, e chi legge si fida del numero. */}
+          <p className="testo-sala text-b58-charcoal">
+            {scelte.length === 2 ? "Quale dei due?" : "Quale di questi?"}
+          </p>
+
+          {/* 🔴 QUANDO NON SI DISTINGUONO, LO SI DICE. Due righe gemelle
+              offerte come una scelta fanno tirare a sorte credendo di
+              decidere: e' la stessa forma dell'elenco vuoto che si legge
+              «non c'e' niente». I pulsanti restano — lui puo' saperlo —
+              ma non si finge che l'elenco basti. */}
+          {gemelli && (
+            <p className="testo-sala mt-0.5 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
+              <strong>Da qui non riesco a distinguerli.</strong> Hanno lo stesso nome, lo
+              stesso giorno e tutto il resto uguale: se non sei sicuro, aprili in Agenda
+              prima di scegliere.
+            </p>
+          )}
+
           <div className="mt-1 flex flex-wrap gap-2">
             {scelte.map((s) => (
               <button
@@ -243,7 +314,12 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
                 type="button"
                 onClick={() => onScegli(s.id)}
                 disabled={inCorso}
-                className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment disabled:opacity-60"
+                /* ⚠️ `tocco-scelta` mette un pavimento di 44 punti sotto la
+                   misura in centimetri veri: su un monitor 1,05 cm fanno
+                   39,7 punti, sotto la soglia del dito. `text-left` e
+                   `py-2` servono ai nomi lunghi degli impegni, che vanno a
+                   capo invece di uscire dallo schermo. */
+                className="tocco-scelta flex max-w-full items-center rounded-lg bg-b58-charcoal px-4 py-2 text-left testo-sala text-b58-parchment disabled:opacity-60"
               >
                 {s.nome}
               </button>

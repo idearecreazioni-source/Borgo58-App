@@ -5,6 +5,7 @@ import {
   credenziali,
   denunciaSaltiCorridoio,
   marchio,
+  righeDaTogliere,
 } from "./aiuto";
 
 // SPEC-0013 — gli appunti vocali, contro il database vero.
@@ -27,7 +28,8 @@ import {
 //    due pagamenti che restano due. Su uno stato di partenza vuoto non
 //    proverebbero niente.
 
-const NOME = marchio("TEST-AUTO appunti");
+const BASE = "TEST-AUTO appunti";
+const NOME = marchio(BASE);
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
@@ -80,9 +82,25 @@ describe("gli appunti vocali", () => {
   });
 
   afterAll(async () => {
-    // ⚠️ Si cancella SOLO cio' che questa prova ha creato, per identificativo
-    //    (regola del 23/08). Prima le figlie, poi le madri: al contrario le
-    //    chiavi esterne respingono.
+    // ⚠️ Si cancella SOLO cio' che questa prova ha creato (regola del
+    //    23/08). Prima le figlie, poi le madri: al contrario le chiavi
+    //    esterne respingono.
+    // 🔴 E ANCHE LE RIGHE NATE DA UN'APPROVAZIONE — 10/09/2026, dal
+    //    collaudo. Approvare un appunto crea righe nella lista della spesa
+    //    e impegni in Agenda che nessuno si segna: la pulizia di prima
+    //    cancellava solo gli identificativi raccolti a mano, e quelle
+    //    restavano. Misurato sul progetto di prova: **5 righe nella lista
+    //    della spesa e 1 impegno** di questa famiglia, tutti del 06/09.
+    //    ⚠️ Si cerca col MARCHIO DI QUESTO GIRO (`righeDaTogliere`), che
+    //    prende le righe di questo giro e quelle dei giri abbandonati più
+    //    vecchie della grazia — mai quelle di un giro vivo, e mai un dato
+    //    vero, che il marchio non ce l'ha.
+    for (const id of await righeDaTogliere(titolare, "shopping_list_items", "custom_name", BASE)) {
+      if (!miei.lista.includes(id)) miei.lista.push(id);
+    }
+    for (const id of await righeDaTogliere(titolare, "tasks", "title", BASE)) {
+      if (!miei.tasks.includes(id)) miei.tasks.push(id);
+    }
     if (miei.lista.length) await titolare.from("shopping_list_items").delete().in("id", miei.lista);
     if (miei.tasks.length) await titolare.from("tasks").delete().in("id", miei.tasks);
     if (miei.azioni.length) await titolare.from("azioni_dettate").delete().in("id", miei.azioni);

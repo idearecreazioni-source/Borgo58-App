@@ -8,6 +8,7 @@ import {
   togliSpesaSpicciola,
 } from "../../lib/api/spesaSpicciola";
 import { leggi, NON_LETTO, nonLetto } from "../../lib/calcoli/letture";
+import { daComprare, nelCarrello } from "../../lib/calcoli/spesaSpicciola";
 import { toccaSubito } from "../../lib/calcoli/tocco";
 import { useDaVoce } from "../../lib/daVoce";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
@@ -68,8 +69,11 @@ export default function SpesaSpicciola() {
     carica();
   }, []);
 
-  const daPrendere = useMemo(() => (righe ?? []).filter((r) => !r.nel_carrello), [righe]);
-  const presi = useMemo(() => (righe ?? []).filter((r) => r.nel_carrello), [righe]);
+  // ⚠️ La regola vive in `calcoli/spesaSpicciola.js` e la chiede anche il
+  //    riquadro della schermata iniziale (10/09/2026): due copie della
+  //    stessa condizione hanno già dato due numeri diversi una volta.
+  const daPrendere = useMemo(() => daComprare(righe), [righe]);
+  const presi = useMemo(() => nelCarrello(righe), [righe]);
 
   // Raggruppate per categoria, come chiesto. Le righe senza categoria
   // stanno in fondo: sono le ultime scritte di fretta, non una categoria.
