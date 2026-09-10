@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // Quello che il gestionale ha già capito da un promemoria dettato.
@@ -65,6 +66,8 @@ const splitLocal = (isoString) => {
 };
 const combineToISO = (date, time) =>
   date && time ? new Date(`${date}T${time}`).toISOString() : null;
+
+const maiuscola = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 export default function TaskForm() {
   const { id } = useParams();
@@ -126,7 +129,7 @@ export default function TaskForm() {
   }
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
   const siRipete = Boolean(form.ricorrenza_unita);
@@ -139,7 +142,24 @@ export default function TaskForm() {
   //    riquadro esce dallo schermo invece di stringersi.
   //    ⚠️ È la famiglia misurata il 25/08 su HACCP, Magazzino e Comande:
   //    da un monitor non si vede, perché lo spazio c'è.
-  const duePerRiga = "grid grid-cols-2 gap-3 [&>*]:min-w-0";
+  //    🔴 11/09/2026: `min-w-0` non bastava. Stringeva la COLONNA, non la
+  //    casella: a 390 punti ogni metà ne ha 149, e una casella di data ne
+  //    chiede 175 (251 a 64 punti per centimetro) — su Safari la data si
+  //    tagliava e l'icona ci finiva sopra. Sul telefono le due caselle
+  //    vanno una sotto l'altra, affiancate da `sm` in su, dove ci stanno.
+  //    🔴 11/09/2026, SECONDO GIRO — dal collaudo su iPhone: impilate a
+  //    tutta larghezza col testo grande erano «troppo grandi». Adesso ogni
+  //    casella è larga quanto il suo contenuto, con un minimo in centimetri
+  //    veri (una casella vuota non deve stringersi fino a sparire), il testo
+  //    è quello dei campi secondari (3,2 mm) e l'altezza 0,75 cm. Giorno e
+  //    ora stanno sulla stessa riga quando ci stanno e vanno a capo quando
+  //    no: decide lo spazio vero, non una soglia di larghezza.
+  const rigaCompatta = "flex flex-wrap items-end gap-x-3 gap-y-2";
+  const contenitoreCampo = "min-w-0 max-w-full testo-sala";
+  const campoCompatto =
+    "block max-w-full rounded-lg border border-b58-charcoal/15 bg-white px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
+  const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.75)" };
+  const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
 
   // 🔴 L'ORA SI SCEGLIE A PASSI DI CINQUE MINUTI, MA UN ORARIO GIÀ SCRITTO
   //    NON SI TOCCA — 10/09/2026, ed è la parte non ovvia della richiesta.
@@ -221,19 +241,6 @@ export default function TaskForm() {
         </p>
       )}
 
-      {origineModulo && (
-        <div className="testo-sala text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
-          <p>Generato automaticamente da: {origineModulo}</p>
-          {isTitolare && (
-            <p className="mt-1">
-              {form.visibile_staff
-                ? "Visibile anche allo staff."
-                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
-            </p>
-          )}
-        </div>
-      )}
-
       <StriscaDallaVoce venuto={venuto} />
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
@@ -258,23 +265,25 @@ export default function TaskForm() {
           />
         </div>
 
-        <div className={duePerRiga}>
-          <div>
+        <div className={rigaCompatta}>
+          <div className={contenitoreCampo}>
             <label className={labelClass}>📅 Giorno</label>
             <input
               type="date"
               value={form.due_date}
               onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-              className={inputClass}
+              className={campoCompatto}
+              style={largoAlmeno(2.6)}
             />
           </div>
-          <div>
+          <div className={contenitoreCampo}>
             <label className={labelClass}>🕒 Ora</label>
             <input
               type="time"
               value={form.due_time}
               onChange={(e) => setForm((f) => ({ ...f, due_time: e.target.value }))}
-              className={inputClass}
+              className={campoCompatto}
+              style={largoAlmeno(1.6)}
               disabled={!form.due_date}
               {...passoCinqueMinuti(form.due_time)}
             />
@@ -293,7 +302,15 @@ export default function TaskForm() {
             ricorrente (criterio del 18/08). */}
         <div>
           <label className={labelClass}>Si ripete</label>
-          <div className={duePerRiga}>
+          {/* 🔴 «OGNI [n] [unità]» ERA ROTTA — 11/09/2026, collaudo su
+              iPhone. La casella del numero portava insieme `w-full` (dalla
+              classe comune) e `w-16`, e vinceva la prima: il numero
+              prendeva tutta la riga e il menu dell'unità finiva fuori
+              allineamento. Ora ogni pezzo ha la larghezza sua — il numero
+              tre cifre, il menu la parola più lunga — e se la frase non ci
+              sta accanto a «Si ripete» va a capo intera, sotto. */}
+          <div className={rigaCompatta} data-ripete>
+            <div className={contenitoreCampo}>
             <select
               value={siRipete ? "si" : "no"}
               onChange={(e) =>
@@ -305,14 +322,16 @@ export default function TaskForm() {
                     : { ...f, ricorrenza_ogni: "", ricorrenza_unita: "" }
                 )
               }
-              className={inputClass}
+              className={campoCompatto}
+              style={altezzaCompatta}
             >
               <option value="no">Non si ripete</option>
               <option value="si">Si ripete</option>
             </select>
+            </div>
             {siRipete && (
-              <div className="flex items-center gap-2">
-                <span className="testo-sala-grande text-b58-charcoal-soft shrink-0">ogni</span>
+              <div className={`${contenitoreCampo} flex flex-wrap items-center gap-2`}>
+                <span className="text-b58-charcoal-soft shrink-0">ogni</span>
                 <input
                   type="number"
                   min={1}
@@ -320,12 +339,14 @@ export default function TaskForm() {
                   required
                   value={form.ricorrenza_ogni}
                   onChange={(e) => setForm((f) => ({ ...f, ricorrenza_ogni: e.target.value }))}
-                  className={`${inputClass} w-16 shrink-0`}
+                  className={`${campoCompatto} shrink-0 text-center`}
+                  style={{ ...altezzaCompatta, width: "calc(var(--pxcm) * 1.4)" }}
                 />
                 <select
                   value={form.ricorrenza_unita}
                   onChange={(e) => setForm((f) => ({ ...f, ricorrenza_unita: e.target.value }))}
-                  className={inputClass}
+                  className={campoCompatto}
+                  style={altezzaCompatta}
                 >
                   {TASK_RICORRENZA_UNITA.map((u) => (
                     <option key={u.value} value={u.value}>{u.label}</option>
@@ -376,23 +397,25 @@ export default function TaskForm() {
               c'è scritto sopra le caselle è ingombro. Che il promemoria sia
               indipendente dalla scadenza si vede compilandolo. */}
           <label className={labelClass}>Promemoria Telegram (opzionale)</label>
-          <div className={duePerRiga}>
-            <div>
+          <div className={rigaCompatta}>
+            <div className={contenitoreCampo}>
               <label className={labelClass}>📅 Giorno</label>
               <input
                 type="date"
                 value={form.remind_date}
                 onChange={(e) => setForm((f) => ({ ...f, remind_date: e.target.value }))}
-                className={inputClass}
+                className={campoCompatto}
+                style={largoAlmeno(2.6)}
               />
             </div>
-            <div>
+            <div className={contenitoreCampo}>
               <label className={labelClass}>🕒 Ora</label>
               <input
                 type="time"
                 value={form.remind_time}
                 onChange={(e) => setForm((f) => ({ ...f, remind_time: e.target.value }))}
-                className={inputClass}
+                className={campoCompatto}
+                style={largoAlmeno(1.6)}
                 disabled={!form.remind_date}
                 {...passoCinqueMinuti(form.remind_time)}
               />
@@ -434,6 +457,25 @@ export default function TaskForm() {
           )}
         </div>
       </form>
+
+      {/* 🔴 DA DOVE VIENE, IN FONDO E IN PICCOLO — 11/09/2026, dal collaudo
+          su iPhone. Stava in un riquadro colorato in cima alla scheda,
+          prima ancora del titolo, e nell'elenco era una riga su ogni
+          impegno nato da solo. È un'informazione secondaria: si legge qui,
+          dopo tutto il resto. Per un impegno automatico dice anche chi lo
+          vede, perché lì la casella «Visibile allo staff» non c'è. */}
+      {origineModulo && (
+        <div className="mt-3 px-1 testo-sala text-b58-charcoal-soft" data-provenienza>
+          <p>{maiuscola(provenienzaImpegno({ origine_modulo: origineModulo }))}.</p>
+          {isTitolare && (
+            <p className="mt-0.5">
+              {form.visibile_staff
+                ? "Visibile anche allo staff."
+                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

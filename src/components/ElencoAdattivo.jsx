@@ -67,6 +67,9 @@ export default function ElencoAdattivo({
   //
   // ⚠️ Restituire `null` la fa sparire del tutto, spazio compreso: una nota
   // che c'è sempre torna a essere una colonna, e siamo daccapo.
+  // ⚠️ Dall'11/09/2026 l'Agenda NON la usa più: la provenienza è passata in
+  //    fondo alla scheda dell'impegno (collaudo su iPhone). La possibilità
+  //    resta, per chi ne ha bisogno.
   nota,
   // 🔴 LA COLONNA DI SINISTRA — 10/09/2026, dal collaudo di Alessio: «il
   //    titolo del task deve partire dalla stessa colonna degli altri
@@ -84,6 +87,24 @@ export default function ElencoAdattivo({
   //    titolo e contenuti partono dallo stesso punto **per costruzione**,
   //    qualunque sia la larghezza della spunta.
   inizio,
+  // 🔴 LA COLONNA DEL TITOLO LARGA UGUALE IN OGNI TABELLA — 11/09/2026,
+  //    facoltativa. Senza, la tabella sceglie le larghezze dal contenuto:
+  //    l'Agenda ha una tabella per sezione, e la colonna «Scadenza»
+  //    cominciava fra 600 e 875 punti a seconda della sezione. Chi la passa
+  //    ha colonne fisse (`table-fixed`): il titolo prende questa larghezza,
+  //    le altre colonne si dividono il resto.
+  larghezzaTitolo,
+  // 🔴 LA SCHEDA DEL TELEFONO DISEGNATA DA CHI USA L'ELENCO — 11/09/2026,
+  //    facoltativa, nata dal collaudo dell'Agenda su iPhone. Il blocchetto
+  //    di serie mette il titolo in una riga sua e i campi sotto, a tutta
+  //    larghezza: va bene per un elenco di dati, non per l'Agenda, dove
+  //    spunta, titolo, scadenza, «rimanda» e stella devono stare in una
+  //    forma sola e compatta. Chi la passa disegna il DENTRO; il riquadro,
+  //    il tocco che apre e il ritirarsi davanti ai comandi restano questi.
+  //    ⚠️ Vale solo per il telefono: la tabella del computer resta quella
+  //    costruita da `titolo` e `campi`. Chi non la passa non vede niente
+  //    di diverso.
+  schedaTelefono,
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
@@ -209,6 +230,23 @@ export default function ElencoAdattivo({
           const stile = `w-full text-left rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 ${
             attenuata?.(r) ? "opacity-55" : ""
           }`;
+          // La scheda disegnata da chi usa l'elenco (`schedaTelefono`): il
+          // riquadro e il tocco che apre restano questi, il dentro è suo.
+          if (schedaTelefono) {
+            const apribile = Boolean(onTocco);
+            return (
+              <div
+                key={chiave(r)}
+                data-quadrotto
+                className={apribile ? `${stile} cursor-pointer ${fuocoVisibile}` : stile}
+                {...(apribile
+                  ? { role: "button", tabIndex: 0, onClick: apreLaRiga(r), onKeyDown: apreDaTastiera(r) }
+                  : {})}
+              >
+                {schedaTelefono(r)}
+              </div>
+            );
+          }
           const gesto = azione?.(r);
           const dentroAperta = aperta?.(r);
           const suaNota = nota?.(r);
@@ -275,10 +313,15 @@ export default function ElencoAdattivo({
 
       {/* SUL COMPUTER E SULLA CARTA: la tabella. */}
       <div className="hidden md:block print:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent">
-        <table className="w-full testo-sala-grande">
+        <table className={`w-full testo-sala-grande ${larghezzaTitolo ? "table-fixed" : ""}`}>
           <thead>
             <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
-              <th className="px-4 py-3 font-medium">{intestazioneTitolo}</th>
+              <th
+                className="px-4 py-3 font-medium"
+                style={larghezzaTitolo ? { width: larghezzaTitolo } : undefined}
+              >
+                {intestazioneTitolo}
+              </th>
               {colonne.map((c) => (
                 <th key={c.chiave} className="px-4 py-3 font-medium">
                   {c.etichetta}

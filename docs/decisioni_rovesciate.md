@@ -144,8 +144,11 @@ rossa da sola il giorno che l'indice resta indietro.
 | 85 | 10/09/2026 | una ricorrenza si sceglie fra quattro cadenze fisse |
 | 86 | 10/09/2026 | il modulo di un impegno chiede lo stato e la categoria |
 | 87 | 10/09/2026 | nel quadrotto di un impegno si tocca il titolo |
+| 88 | 11/09/2026 | la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto |
+| 89 | 11/09/2026 | un impegno riservato porta il segno «Riservato» nell'elenco |
+| 90 | 11/09/2026 | giorno e ora stanno affiancati, in due colonne uguali |
 
-⚠️ **Righe: 88.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 91.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3234,3 +3237,73 @@ che non viene mai salvata perché non passa da nessun deposito.
    ⚠️ E la protezione dei comandi **guarda il bersaglio** invece di chiedere a
    ogni comando di difendersi: sono otto elenchi, e il nono comando scritto fra
    sei mesi lo dimenticherebbe **senza nessun errore**.
+
+## 88 · 11/09/2026 — «la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026 (`42d96cf`), togliendo
+   la colonna «Da» dall'elenco dell'Agenda: la provenienza restava come **nota
+   in fondo al quadrotto**, solo per gli impegni non scritti a mano («nato
+   dalla posta», «nato dall'Archivio documenti»).
+
+2. **La ragione di allora.** Un impegno nato da solo è quello che spiega
+   perché una riga è lì senza che nessuno l'abbia scritta; e come nota invece
+   che come colonna non occupava una riga su ogni impegno.
+
+3. **Cosa si decide adesso.** La provenienza esce dall'elenco, sul telefono e
+   sul computer, e sta **in fondo alla scheda dell'impegno**, sotto il modulo,
+   in piccolo. Deciso da Alessio nel collaudo su iPhone dell'11/09.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora a metà**:
+   l'informazione serve, e infatti non sparisce — è a un tocco. Non vale più il
+   posto: la domanda dell'elenco è «cosa devo fare adesso», e la provenienza
+   non la cambia. ⚠️ **Il prezzo**: guardando l'elenco non si distingue più a
+   colpo d'occhio un impegno nato da solo da uno scritto a mano.
+
+## 89 · 11/09/2026 — «un impegno riservato porta il segno «Riservato» nell'elenco»
+
+1. **Cosa era stato deciso e quando.** Il 04/08/2026 (`fb633ab`, §3.18:
+   i task riservati non sono più visibili allo staff), l'elenco dell'Agenda ha
+   ricevuto il segno «Riservato» accanto al titolo degli impegni che lo staff
+   non vede; poi anche l'elenco del giorno nel Calendario.
+
+2. **La ragione di allora.** Nasceva insieme alla regola, che chiudeva una
+   fuga di dati vera: il segno faceva vedere quali impegni erano stati tolti
+   allo staff.
+
+3. **Cosa si decide adesso.** Il segno esce dall'elenco e dal Calendario.
+   **Il dato e la regola non cambiano**: la visibilità si vede e si cambia
+   nella scheda dell'impegno («Visibile allo staff»; per gli impegni
+   automatici, la frase in fondo alla scheda). Deciso da Alessio nel collaudo
+   su iPhone dell'11/09.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La regola vale ancora
+   intera**, e infatti il database non è toccato: esce la spiegazione, non la
+   protezione. Il segno lo vedeva solo il titolare — allo staff quegli impegni
+   non arrivano proprio — e sul telefono spostava il resto della scheda
+   (misurato l'11/09: la stella fra 16 e 155 punti dal bordo). ⚠️ **Il
+   prezzo**: dall'elenco il titolare non sa più quali impegni lo staff non
+   vede; lo scopre aprendo la scheda.
+
+## 90 · 11/09/2026 — «giorno e ora stanno affiancati, in due colonne uguali»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026 (`42d96cf`): nella scheda
+   di un impegno giorno e ora — della scadenza e del promemoria — affiancati in
+   due colonne della stessa larghezza, con `min-w-0` perché non uscissero dallo
+   schermo.
+
+2. **La ragione di allora.** Sono una coppia e si leggono insieme; `min-w-0`
+   era la cura della famiglia misurata il 25/08 su HACCP, Magazzino e Comande.
+
+3. **Cosa si decide adesso.** Ogni casella è larga quanto il suo contenuto
+   (con un minimo in centimetri veri), testo da 3,2 mm, alta 0,75 cm;
+   affiancate quando ci stanno, a capo quando no. Ricostruita anche la riga
+   «Si ripete — ogni [n] [unità]».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La coppia resta, dove
+   ci sta.** Era sbagliata la misura: `min-w-0` stringe la colonna, non la
+   casella. Misurato l'11/09 a 390 punti: ogni metà ne ha 149, una casella di
+   data ne chiede 175 (251 a 64 punti per centimetro), e su Safari la data si
+   tagliava. Il primo rimedio — una sotto l'altra, a tutta larghezza — Alessio
+   l'ha respinto al collaudo: troppo grandi. ⚠️ **Il prezzo**: a 64 punti per
+   centimetro giorno e ora vanno a capo, perché affiancati chiederebbero 329
+   punti su 310.
