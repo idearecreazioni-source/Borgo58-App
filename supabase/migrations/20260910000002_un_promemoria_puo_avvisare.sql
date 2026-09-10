@@ -29,13 +29,31 @@
 --    approvabile **per costruzione**, senza nessun controllo da ricordare.
 --    Non e' una dimenticanza da sanare: e' la strada.
 --
--- 🔴 E IL CONTROLLO SI RIFA' AL MOMENTO DI «APPROVA», non solo quando
+-- 🔴 E IL CONTROLLO VALE AL MOMENTO DI «APPROVA», non a quello in cui
 --    l'appunto nasce. Fra la proposta e la firma possono passare ore — un
 --    appunto lasciato aperto la sera si approva la mattina dopo — e un
---    avviso che allora era futuro adesso puo' essere passato. Controllarlo
---    solo alla proposta lascerebbe scrivere un promemoria che **non
---    arrivera' mai**, e nessun errore lo direbbe. Sono due controlli e non
---    un doppione: rispondono a due domande in due momenti diversi.
+--    avviso che allora era futuro adesso puo' essere passato. Se valesse
+--    solo alla proposta si scriverebbe un promemoria che **non arrivera'
+--    mai**, e nessun errore lo direbbe.
+--
+--    ⚠️ CHI LO FA, MISURATO E NON DEDOTTO. A proteggere la strada vera e'
+--    il controllo dentro `voce_risolvi_dati`, perche' `approva_appunto`
+--    **rigira quella funzione al momento della firma** e si ferma sul suo
+--    «manca» prima di chiamare l'esecutore. Il controllo dentro
+--    `fai_azione_dettata` non e' quello che salva l'app: e' quello che
+--    rende l'esecutore **sufficiente a se stesso** — non scrive un avviso
+--    passato nemmeno se chi lo chiama non ha guardato.
+--
+--    🔴 E QUESTO SI E' MISURATO ROMPENDO, non leggendo: spegnendo il solo
+--    controllo dell'esecutore, tutte e 552 le prove contro il progetto di
+--    prova restano **verdi** — perche' dalla porta dell'app quel ramo non
+--    si raggiunge. Chi legge questo file non deve credere che sia il
+--    guardiano principale: non lo e'.
+--
+--    ⚠️ Si tiene lo stesso, per la stessa ragione per cui in questo
+--    progetto gli invarianti stanno nel database e non nelle schermate:
+--    *chi scrive non si fida di chi chiama*. Il giorno che qualcosa
+--    chiamera' `fai_azione_dettata` da un'altra porta, la riga c'e' gia'.
 --
 -- ⚠️ L'ORA E' ITALIANA. Senza il fuso, «alle 15» sarebbero le 15 di
 --    Greenwich, cioe' le 17 di qui in estate: l'avviso arriverebbe due ore
@@ -728,14 +746,19 @@ begin
         null);
 
     when 'promemoria' then
-      -- 🔴 L'AVVISO SI RICONTROLLA ADESSO, NON QUANDO L'APPUNTO E' NATO —
-      --    10/09/2026. Fra il momento in cui MEMO propone e il momento in
-      --    cui Alessio preme «Approva» possono passare ore, e un appunto
-      --    lasciato aperto la sera si approva la mattina dopo: un avviso
-      --    che allora era futuro adesso puo' essere passato. Il controllo
-      --    fatto solo al momento della proposta lascerebbe scrivere un
-      --    promemoria che **non arrivera' mai**, e nessun errore lo
-      --    direbbe.
+      -- ⚠️ CHI SCRIVE NON SI FIDA DI CHI CHIAMA — 10/09/2026.
+      --    Questi due rifiuti NON sono la rete che protegge l'app: dalla
+      --    porta vera ci si arriva passando da `approva_appunto`, che
+      --    rigira `voce_risolvi_dati` al momento della firma e si ferma
+      --    prima, sul suo «manca». **Misurato rompendo**: spegnendo i due
+      --    rifiuti qui sotto, tutte e 552 le prove contro il progetto di
+      --    prova restano verdi.
+      --    ⚠️ Si tengono lo stesso, e la ragione e' la stessa per cui in
+      --    questo progetto gli invarianti stanno nel database e non nelle
+      --    schermate: qui si SCRIVE, e chi scrive non deve dipendere dal
+      --    fatto che qualcun altro abbia guardato. Il giorno che
+      --    `fai_azione_dettata` verra' chiamata da un'altra porta, la riga
+      --    c'e' gia'.
       v_av_data := nullif(btrim(coalesce(p_dati->>'avviso_data', '')), '')::date;
       v_av_ora  := nullif(btrim(coalesce(p_dati->>'avviso_ora',  '')), '')::time;
 
@@ -1244,11 +1267,13 @@ begin
   end if;
 
   -- -------------------------------------------------------------------
-  -- 6. E IL CONTROLLO SI RIFA' AL MOMENTO DI «APPROVA»
+  -- 6. E L'ESECUTORE SI DIFENDE DA SOLO
   -- -------------------------------------------------------------------
-  -- 🔴 E' il caso vero: l'appunto e' nato ieri sera quando l'avviso era
-  --    futuro, e si approva stamattina. I dati arrivano diretti, senza
-  --    ripassare da `voce_risolvi_dati`.
+  -- ⚠️ Questa e' l'UNICA prova che raggiunge i rifiuti dentro
+  --    `fai_azione_dettata`: dalla porta dell'app non ci si arriva, perche'
+  --    `approva_appunto` si ferma prima sul «manca» di
+  --    `voce_risolvi_dati`. Qui si chiama l'esecutore direttamente, che e'
+  --    il solo modo di mettere alla prova la sua difesa.
   v_preso := false;
   begin
     perform fai_azione_dettata('promemoria', jsonb_build_object(

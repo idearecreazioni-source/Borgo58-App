@@ -221,11 +221,20 @@ describe("un promemoria dettato può portarsi dietro un avviso", () => {
     expect(riga.motivo ?? "").toMatch(/già passato/i);
   });
 
-  it("🔴 e il controllo si rifà al momento di «Approva»", async () => {
+  it("🔴 un avviso diventato passato NON si scrive, nemmeno approvando ore dopo", async () => {
     // È il caso vero: l'appunto è nato ieri sera quando l'avviso era
     // futuro, e si approva stamattina. Qui si costringe quel caso
     // scrivendo i dati direttamente nella riga, come se ci fossero
     // arrivati quando erano ancora buoni.
+    //
+    // ⚠️ QUELLO CHE QUESTA PROVA MISURA È L'ESITO, non quale rete lo
+    //    produce — e le reti sono due. **Misurato rompendo**: spegnendo
+    //    solo quella dentro `fai_azione_dettata`, questa prova resta verde,
+    //    perché `approva_appunto` rigira `voce_risolvi_dati` al momento
+    //    della firma e si ferma prima. A tenere in piedi la strada vera è
+    //    quella; l'altra esiste perché chi scrive non si fidi di chi
+    //    chiama, e la sola prova che la raggiunge è dentro la migrazione.
+    //    Rompendole tutt'e due, questa diventa rossa.
     const { appunto } = await detta("Ricordamelo domani alle 15", {
       titolo: `${NOME} approvato tardi`,
       avviso_data: iso(domani),
