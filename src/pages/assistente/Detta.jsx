@@ -15,6 +15,13 @@ import {
 } from "../../lib/api/voce";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
 import { rispondiA } from "../../lib/api/domandeMemo";
+import {
+  accendiSuoni,
+  preparaSuoni,
+  suoniAccesi,
+  suonoMicrofonoAperto,
+  suonoMicrofonoChiuso,
+} from "../../lib/suoni";
 import { titoloDellaDomanda } from "../../lib/calcoli/domande";
 import {
   comeEAndata,
@@ -70,9 +77,16 @@ export default function Detta() {
   const [nomeChiave, setNomeChiave] = useState("iPhone di Alessio");
   const [apriChiavi, setApriChiavi] = useState(false);
   const [apriGuida, setApriGuida] = useState(false);
+  // La preferenza dei suoni vive nel browser di chi detta: si legge una
+  // volta all'apertura, cosi la casella parte dallo stato vero.
+  const [conSuoni, setConSuoni] = useState(() => suoniAccesi());
 
   const recRef = useRef(null);
   const frasiRef = useRef([]);
+  // Il suono di apertura e gia suonato per questa accensione? Il
+  // riconoscimento si riapre da se dopo una pausa, e senza questa memoria
+  // il bip tornerebbe in mezzo alla dettatura.
+  const suonatoRef = useRef(false);
   // Dove si trovano le schede appena nate, per portarci l'occhio.
   const nuoviRef = useRef(null);
   const disponibile = riconoscitoreDisponibile();
@@ -198,13 +212,37 @@ export default function Detta() {
       return;
     }
 
+    // 🔴 L'AUDIO SI PREPARA DENTRO IL TOCCO, e non altrove: i browser
+    //    aprono l'audio solo dentro un gesto di chi guarda. Creandolo al
+    //    primo suono — che arriva da un evento del sistema, non da un dito
+    //    — il suono resterebbe muto sul telefono, e a schermo non si
+    //    vedrebbe niente.
+    preparaSuoni();
+    suonatoRef.current = false;
+
     const rec = creaRiconoscitore();
     frasiRef.current = [];
     setFrasi([]);
     setParziale("");
 
     rec.onstart = () => setStato("Ti sto ascoltando. Di' pure tutto di fila.");
-    rec.onaudiostart = () => setStato("Microfono aperto: parla pure.");
+    // 🔴 IL SUONO ARRIVA QUI E NON AL TOCCO — 10/09/2026, Blocco 5.
+    //    `onaudiostart` è il momento in cui l'audio entra DAVVERO. Un suono
+    //    al tocco direbbe «sto registrando» anche quando il permesso è
+    //    negato, il microfono è occupato da un'altra app, o la pagina non è
+    //    su un indirizzo cifrato — e in tutti quei casi si parlerebbe a
+    //    vuoto convinti del contrario.
+    // ⚠️ E UNA VOLTA SOLA PER ACCENSIONE: il riconoscimento si chiude da sé
+    //    dopo una pausa lunga e viene riaperto (vedi `onend` più sotto),
+    //    quindi senza questa guardia il suono tornerebbe **in mezzo a una
+    //    dettatura**, dove non dice niente di nuovo e interrompe.
+    rec.onaudiostart = () => {
+      setStato("Microfono aperto: parla pure.");
+      if (!suonatoRef.current) {
+        suonatoRef.current = true;
+        suonoMicrofonoAperto();
+      }
+    };
 
     rec.onresult = (e) => {
       let corrente = "";
@@ -259,6 +297,11 @@ export default function Detta() {
 
   const fermaEManda = () => {
     const testo = componiDettato(frasiRef.current, parziale);
+    // ⚠️ IL SECONDO SUONO SOLO SE IL PRIMO C'È STATO: se il microfono non
+    //    si era mai aperto, non c'è nessuna registrazione da chiudere — e
+    //    un suono di fine su una cosa che non è mai cominciata direbbe che
+    //    qualcosa è stato registrato.
+    if (suonatoRef.current) suonoMicrofonoChiuso();
     spegni();
     setStato("");
     manda(testo);
@@ -729,6 +772,28 @@ export default function Detta() {
           </div>
         )
       )}
+
+      {/* ------------------------------------------------------------
+          I DUE SUONI — 10/09/2026, Blocco 5 del mandato
+         ------------------------------------------------------------
+          🔴 SI PUÒ SPEGNERE, E LA SCELTA RESTA. Un suono che non si può
+          togliere diventa un fastidio il giorno che si detta accanto a un
+          cliente; e una preferenza che si dimentica a ogni ricarica è come
+          non averla.
+          ⚠️ La casella sta QUI e non in un pannello di impostazioni: è la
+          schermata in cui il suono si sente, ed è l'unico posto in cui a
+          qualcuno viene in mente di spegnerlo. */}
+      <label className="tocco-riga mt-4 flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+        <input
+          type="checkbox"
+          checked={conSuoni}
+          onChange={(e) => {
+            accendiSuoni(e.target.checked);
+            setConSuoni(e.target.checked);
+          }}
+        />
+        Fai un suono quando il microfono si apre e quando finisce
+      </label>
 
       {/* ------------------------------------------------------------
           LE CHIAVI DELLA SCORCIATOIA
