@@ -42,6 +42,7 @@
 // lavoro, non a ogni singola funzione.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { esitoVerificaUtente } from "./sessione.ts";
 
 // Elenco CHIUSO delle operazioni invocabili. Tutto ciò che non è qui
 // dentro riceve un rifiuto: il corridoio non è un passacarte generico
@@ -368,9 +369,25 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
 
+  // 🔴 «SESSIONE NON VALIDA» SOLO SE LO È — 10/09/2026. Prima qualunque
+  //    errore della verifica diventava 401, anche un servizio di accesso
+  //    che non rispondeva: misurato su una sessione valida (vedi
+  //    `sessione.ts`). Quando non è un rifiuto, si scrive nel registro della
+  //    funzione cosa è successo — nome, stato e codice, MAI il gettone —
+  //    così la prossima volta la causa si legge invece di dedurla.
   const { data: utente, error: authError } = await supabase.auth.getUser();
-  if (authError || !utente?.user) {
-    return errore(401, "auth", "Sessione non valida: rifare l'accesso");
+  const esito = esitoVerificaUtente(authError, utente?.user);
+  if (esito) {
+    if (esito.stato !== 401) {
+      console.error(JSON.stringify({
+        evento: "verifica_utente_non_riuscita",
+        nome: authError?.name ?? null,
+        stato: (authError as { status?: number } | null)?.status ?? null,
+        codice: (authError as { code?: string } | null)?.code ?? null,
+        messaggio: authError?.message ?? null,
+      }));
+    }
+    return errore(esito.stato, esito.codice, esito.messaggio);
   }
 
   let corpo;
