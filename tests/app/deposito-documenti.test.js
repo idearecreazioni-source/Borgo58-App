@@ -79,16 +79,42 @@ describe("il deposito dei documenti", () => {
     expect(error.message).toMatch(/row-level security/i);
   });
 
-  it("⚠️ il titolare toglie il suo file, e dopo non c'è più", async () => {
+  it("⚠️ il titolare toglie il suo file, e il deposito non lo conosce più", async () => {
+    // 🔴 COSA SI GUARDA, e perché non è più il download — 10/09/2026.
+    //    Questa prova scaricava il file subito dopo averlo tolto, e su
+    //    GitHub una volta lo ha ancora ricevuto. Misurato sul progetto di
+    //    prova: il download passa da una cache (Cloudflare), e la seconda
+    //    richiesta dello stesso file è servita da lì (`cf-cache-status:
+    //    HIT`), anche con «cacheNonce». La documentazione di Supabase
+    //    (Smart CDN) dice che dopo una cancellazione la cache si invalida
+    //    «fino a 60 secondi» dopo, un centro dati alla volta. Il download
+    //    misurava quella cache, non la cancellazione.
+    //    ⚠️ Lo staff NON ha mai ricevuto la copia del titolare dalla cache
+    //    (misurato: 400, non dalla cache): non è una fuga fra utenti.
+    //
+    //    Si guarda allora il deposito stesso, per due strade, PRIMA e DOPO:
+    //    il link firmato — che è come il gestionale apre un documento
+    //    (`getDocumentUrl`) — e l'elenco dei file. Misurato: prima si crea
+    //    ed è elencato, dopo «Object not found» e assente. Il PRIMA è ciò che
+    //    rende il DOPO una prova: senza, due strade rotte passerebbero.
+    const deposito = titolare.storage.from(CASSETTO);
+    const elencato = async () =>
+      ((await deposito.list("", { search: DEL_TITOLARE })).data ?? []).some((f) => f.name === DEL_TITOLARE);
+
+    const prima = await deposito.createSignedUrl(DEL_TITOLARE, 60);
+    expect(prima.error, "prima di toglierlo il link non si crea: la prova non discrimina").toBeNull();
+    expect(await elencato(), "prima di toglierlo il file non è nell'elenco").toBe(true);
+
     // ⚠️ Una cancellazione che la regola non ammette NON dà errore: torna
-    //    «riuscita» con zero file tolti (§8, 26/08). Quindi si conta quanti
-    //    ne ha tolti, e poi si prova a riaprirlo.
-    const { data: tolti, error } = await titolare.storage.from(CASSETTO).remove([DEL_TITOLARE]);
+    //    «riuscita» con zero file tolti (§8, 26/08). Quindi si conta.
+    const { data: tolti, error } = await deposito.remove([DEL_TITOLARE]);
     expect(error).toBeNull();
     expect(tolti, "la cancellazione non ha tolto il file").toHaveLength(1);
     caricati.splice(caricati.indexOf(DEL_TITOLARE), 1);
 
-    const { data } = await titolare.storage.from(CASSETTO).download(DEL_TITOLARE);
-    expect(data, "il file tolto si riapre ancora").toBeNull();
+    const dopo = await deposito.createSignedUrl(DEL_TITOLARE, 60);
+    expect(dopo.data, "dopo la cancellazione si crea ancora un link al file").toBeNull();
+    expect(dopo.error?.message ?? "").toMatch(/not found/i);
+    expect(await elencato(), "dopo la cancellazione il file è ancora nell'elenco").toBe(false);
   });
 });

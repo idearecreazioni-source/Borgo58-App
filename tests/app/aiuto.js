@@ -385,6 +385,17 @@ export async function corridoioInstallato(client) {
   return corpo?.errore?.codice === "operazione";
 }
 
+// 🔴 OGNI SESSIONE APERTA DA UNA PROVA SI CHIUDE — 10/09/2026, misurato.
+//    Sul progetto di prova c'erano 8.333 sessioni del titolare di prova e
+//    4.713 dello staff, 726 nate in un giorno solo, e nessuna chiusa: quasi
+//    tutti i file aprono un accesso e non lo chiudono. Un giro dei quattro
+//    file del collaudo ne lasciava 7.
+//    ⚠️ Si chiudono in un posto solo e non file per file: `chiudiSessioniAperte`
+//    gira dopo ogni file (`tests/app/chiusura-sessioni.js`), anche quando il
+//    file è fallito. Chiudere a mano in settanta file vuol dire dimenticarne
+//    uno al primo file nuovo.
+const sessioniAperte = [];
+
 export async function clientAutenticato({ email, password }) {
   const c = clientAnonimo();
   const { error } = await c.auth.signInWithPassword({ email, password });
@@ -394,7 +405,21 @@ export async function clientAutenticato({ email, password }) {
         "Gli utenti di prova esistono nella dashboard e hanno il ruolo in user_roles? (tests/app/LEGGIMI.md)"
     );
   }
+  sessioniAperte.push(c);
   return c;
+}
+
+/**
+ * Chiude le sessioni aperte da questo file di prova. Solo la PROPRIA
+ * sessione di ciascun client (`scope: "local"`): quella globale butterebbe
+ * fuori anche gli altri giri (§8).
+ * Una sessione già chiusa dal file stesso risponde con un errore, e va
+ * bene: si ignora.
+ */
+export async function chiudiSessioniAperte() {
+  const da = sessioniAperte.splice(0);
+  await Promise.all(da.map((c) => c.auth.signOut({ scope: "local" }).catch(() => null)));
+  return da.length;
 }
 
 // ---------------------------------------------------------------------
