@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import {
+  avvisoDellElemento,
   candidatiDellElemento,
   impegnoScelto,
   nonDistinguibili,
@@ -179,6 +180,24 @@ function ElementoDellAppunto({ elemento, inCorso, onScegli }) {
       <p className="testo-sala mt-0.5 text-b58-charcoal-soft">
         {concreti === "" ? "nessun dato da scrivere" : concreti}
       </p>
+
+      {/* 🔴 L'AVVISO SI LEGGE PER INTERO PRIMA DI FIRMARE — 10/09/2026.
+          Quello che si approva qui non è un dato in tabella: è **un
+          telefono che suonerà**. I due campi lo dicono già nella riga
+          sopra («ti avviso il … · alle …»), e questa aggiunge la sola cosa
+          che quei campi non possono dire da soli — che il messaggio parte
+          da un giro che passa ogni cinque minuti.
+          ⚠️ Non è una scusa scritta piccola: chi aspetta il Telegram alle
+          15:00 spaccate e lo riceve alle 15:04 pensa che il gestionale
+          funzioni male. Dirlo prima costa una riga; scoprirlo dopo costa
+          la fiducia in tutti gli avvisi. */}
+      {avvisoDellElemento(elemento) && (
+        <p className="testo-sala mt-0.5 text-b58-olive-dark">
+          📲 Ti mando una notifica su Telegram il{" "}
+          <strong>{avvisoDellElemento(elemento).giorno}</strong> alle{" "}
+          <strong>{avvisoDellElemento(elemento).ora}</strong> — o entro i cinque minuti dopo.
+        </p>
+      )}
 
       {perchéAspetta(elemento) && (
         <p className="testo-sala mt-0.5 text-b58-charcoal-soft">{perchéAspetta(elemento)}</p>

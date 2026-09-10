@@ -76,6 +76,40 @@ function valore(v) {
   return null;
 }
 
+// 🔴 COME SI CHIAMANO IN ITALIANO I CAMPI CHE NON SI SPIEGANO DA SOLI —
+//    10/09/2026, Blocco 3 del mandato.
+//
+// Il nome del campo con gli underscore tolti funziona quasi sempre
+// («quanto ce», «nome libero»), e su due cose no: il promemoria che avvisa
+// ha **due date**, e chiamarle «data» e «avviso data» le fa sembrare la
+// stessa cosa scritta due volte. Sono l'una il giorno in cui la cosa
+// succede e l'altra il giorno in cui il telefono suona.
+//
+// ⚠️ Qui non si decide niente: si mettono in italiano dei dati che il
+// database ha gia' deciso. Un campo che non e' in questo elenco continua a
+// comparire col suo nome — non sparisce, che sarebbe il difetto peggiore.
+const ETICHETTE = {
+  data: "giorno",
+  avviso_data: "ti avviso il",
+  avviso_ora: "alle",
+  data_nuova: "nuovo giorno",
+  data_precedente: "adesso è",
+};
+
+// ⚠️ E UNA DATA SI SCRIVE COME LA SCRIVE IL RESTO DEL GESTIONALE. Una
+//    «2026-09-13» in mezzo a una frase italiana e' un dato che chi legge
+//    deve tradurre, e chi traduce a mente sbaglia — su una firma.
+const SOLO_DATA = /^\d{4}-\d{2}-\d{2}$/;
+const SOLO_ORA = /^\d{2}:\d{2}(:\d{2})?$/;
+
+function inChiaro(v) {
+  if (SOLO_DATA.test(v)) return formatDate(v);
+  // Un'ora arriva a volte coi secondi: «15:00:00» si legge peggio di
+  // «15:00» e non dice niente di piu'.
+  if (SOLO_ORA.test(v)) return v.slice(0, 5);
+  return v;
+}
+
 /**
  * I dati concreti di un elemento, in una riga leggibile.
  *
@@ -90,9 +124,33 @@ export function datiInChiaro(dati) {
     if (DI_SERVIZIO.has(chiave)) continue;
     const v = valore(grezzo);
     if (v === null) continue;
-    pezzi.push(`${chiave.replaceAll("_", " ")}: ${v}`);
+    pezzi.push(`${ETICHETTE[chiave] ?? chiave.replaceAll("_", " ")}: ${inChiaro(v)}`);
   }
   return pezzi.join(" · ");
+}
+
+/**
+ * L'AVVISO CHE UN APPUNTO PROMETTE, se ne promette uno.
+ *
+ * 🔴 SERVE PERCHE' «APPROVA» E' UNA FIRMA, e quello che si firma qui non e'
+ * un dato in tabella: e' **un telefono che suonera'**. Chi preme deve
+ * vedere quando, scritto per intero, prima di premere.
+ *
+ * ⚠️ E CI SI METTE ANCHE IL LIMITE: il lavoro che manda le notifiche gira
+ * ogni cinque minuti, quindi il messaggio arriva all'ora scelta **o entro i
+ * cinque minuti dopo**. Non e' un difetto da correggere — e' un fatto, e un
+ * fatto che chi aspetta un avviso alle 15:00 spaccate deve sapere.
+ *
+ * ⚠️ Restituisce `null` quando non c'e' nessun avviso, che e' il caso
+ * normale: un impegno senza notifica e' la maggioranza.
+ */
+export function avvisoDellElemento(elemento) {
+  const dati = elemento?.dati ?? {};
+  const giorno = valore(dati.avviso_data);
+  const ora = valore(dati.avviso_ora);
+  if (!giorno || !ora) return null;
+  if (!SOLO_DATA.test(giorno) || !SOLO_ORA.test(ora)) return null;
+  return { giorno: formatDate(giorno), ora: ora.slice(0, 5) };
 }
 
 /**
