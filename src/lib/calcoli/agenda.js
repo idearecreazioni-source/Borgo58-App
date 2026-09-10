@@ -146,17 +146,23 @@ export function campiImpegno(t) {
 // scritta, non cancellandola.
 //
 //   · il TIPO resta nella scheda dell'impegno, che è dove si sceglie;
-//   · la PROVENIENZA resta qui sotto, come nota in fondo al quadrotto, e
-//     **solo quando c'è qualcosa da dire**.
+//   · la PROVENIENZA ~~resta qui sotto, come nota in fondo al quadrotto~~ —
+//     🔴 11/09/2026, dal collaudo su iPhone: è uscita anche dall'elenco, e
+//     sta in fondo alla scheda dell'impegno, in piccolo. Questa funzione
+//     scrive la frase che si legge lì.
 //
-// ⚠️ E la nota compare solo se NON è scritto a mano, che è il caso normale:
-// una riga «scritto a mano» su ogni impegno è arredamento, e un impegno
-// nato da solo dall'Archivio o dalla posta è invece la cosa che spiega
-// perché quella riga è lì senza che nessuno l'abbia scritta.
+// ⚠️ E la frase c'è solo se NON è scritto a mano, che è il caso normale:
+// «scritto a mano» su ogni impegno è arredamento, e un impegno nato da solo
+// dall'Archivio o dalla posta è invece la cosa che spiega perché è lì
+// senza che nessuno l'abbia scritto.
+// ⚠️ `fatture_fornitori` ha la frase sua (11/09): lo scrive la migrazione
+//    `20260817000004` sul promemoria di una fattura da pagare, e prima
+//    finiva sotto «Archivio documenti», che per quell'impegno è falso.
 export function provenienzaImpegno(t) {
   if (!t?.origine_modulo) return null;
   if (t.origine_modulo === "posta") return "nato dalla posta";
   if (t.origine_modulo === "voce") return "nato da una cosa detta a voce";
+  if (t.origine_modulo === "fatture_fornitori") return "nato dalle Fatture fornitori";
   return "nato dall'Archivio documenti";
 }
 

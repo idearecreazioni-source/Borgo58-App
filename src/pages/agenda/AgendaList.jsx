@@ -15,7 +15,6 @@ import {
   campiImpegno,
   daFareAdesso,
   fraseRicorrenza,
-  provenienzaImpegno,
   sezioniDellAgenda,
 } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
@@ -138,14 +137,112 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
 // Solo il titolare vede i task riservati (la RLS li filtra per lo staff,
 // §3.18) — per lui è utile sapere a colpo d'occhio quali lo sono, altrimenti
 // non ha modo di distinguerli da quelli che lo staff sta leggendo davvero.
-function RiservatoBadge() {
+// 🔴 LA SPUNTA E LA STELLA DI UN IMPEGNO — 11/09/2026, dal collaudo su
+//    iPhone. Sono le stesse nella scheda del telefono e nella riga del
+//    computer, quindi vivono una volta sola.
+//
+//    ⚠️ IL BERSAGLIO RESTA 1,2 cm, IL SEGNO SI ALLINEA ALLA PRIMA RIGA DEL
+//    TITOLO. Un pulsante alto 1,2 cm centra quello che ha dentro, e il segno
+//    finiva a metà altezza, sotto il titolo. Qui sta in alto: la stella con
+//    la stessa altezza di riga del titolo; il quadratino (0,6 cm) salito di
+//    mezzo millimetro, così il suo centro cade sul centro della prima riga
+//    (una riga del titolo è alta 0,5 cm). La prova visiva lo misura.
+function Spunta({ onFatto }) {
   return (
-    <span
-      title="Riservato: lo staff non vede questo task"
-      className="shrink-0 inline-flex items-center rounded-full bg-b58-charcoal/10 text-b58-charcoal-soft testo-sala font-medium px-2 py-0.5"
+    <label className="tocco-azione inline-flex shrink-0 items-start" title="Fatto">
+      <input
+        type="checkbox"
+        checked={false}
+        onChange={onFatto}
+        className="spunta-grande"
+        style={{ marginTop: "calc(var(--pxcm) * -0.05)" }}
+      />
+    </label>
+  );
+}
+
+function Stella({ accesa, onStella }) {
+  return (
+    <button
+      type="button"
+      onClick={onStella}
+      // Largo quanto un dito, con la ★ spinta contro il bordo destro: il
+      // bersaglio cresce verso il titolo, il segno resta al bordo.
+      className="tocco-azione shrink-0 flex items-start justify-end testo-sala-grande"
+      style={{ minWidth: "calc(var(--pxcm) * 0.8)" }}
+      title={accesa ? "Togli dalla testa" : "Portalo in testa"}
     >
-      Riservato
-    </span>
+      <span data-stella className={accesa ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>
+        ★
+      </span>
+    </button>
+  );
+}
+
+function CasellaRimanda({ giorno, onGiorno }) {
+  return (
+    <input
+      type="date"
+      defaultValue={giorno ?? ""}
+      onChange={(e) => onGiorno(e.target.value)}
+      className="tocco-campo max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+    />
+  );
+}
+
+// 🔴 LA SCHEDA DI UN IMPEGNO SUL TELEFONO — 11/09/2026, ridisegnata dopo il
+//    collaudo su iPhone («non limitarti a spostare elementi»).
+//    · Spunta, titolo e stella partono dalla stessa riga, in alto.
+//    · Titolo, scadenza e «rimanda» sono UNA colonna, allineata a sinistra;
+//      «rimanda» sta sempre sotto, nello stesso punto — un comando che si
+//      sposta si cerca ogni volta.
+//    · Spunta e stella sono alte 1,2 cm per il dito, ma stanno ACCANTO alla
+//      colonna e non sopra la scadenza: prima la loro altezza scavava un
+//      vuoto fra il titolo e la data su ogni impegno di una riga sola.
+//    · La scadenza è testo, non un blocco: più piccola del titolo e larga
+//      quanto le sue parole.
+//    ⚠️ «Riservato» e la provenienza NON ci sono, apposta (stesso collaudo).
+//       Il dato non è toccato: la visibilità si vede e si cambia nella
+//       scheda dell'impegno, e la provenienza è scritta in fondo alla scheda.
+function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, onRimanda, onGiorno }) {
+  // La scadenza vuota si dice («quando capita») se nello stesso gruppo c'è
+  // qualcuno che una data ce l'ha: è la regola del blocchetto di serie, e
+  // senza, in «Per me conta» un impegno senza data accanto a uno datato non
+  // direbbe niente. In «Quando capita» invece lo dice già il titolo.
+  const campi = campiImpegno(t).filter((c) => c.valore || (c.chiave === "scadenza" && scadenzaSempre));
+  return (
+    <div className="flex items-start gap-3">
+      <Spunta onFatto={onFatto} />
+      <div className="min-w-0 flex-1">
+        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words">
+          {t.title}
+        </p>
+        {campi.map((c) => (
+          <p key={c.chiave} data-campo className="w-fit mt-1 testo-sala text-b58-charcoal-soft">
+            {c.etichetta}:{" "}
+            {c.valore ? (
+              <span className={c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal"}>{c.valore}</span>
+            ) : (
+              <span className="italic text-b58-charcoal-soft/70">{c.vuoto}</span>
+            )}
+          </p>
+        ))}
+        <button
+          type="button"
+          data-gesto
+          onClick={onRimanda}
+          className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+        >
+          {t.due_date ? "rimanda" : "dagli una data"}
+        </button>
+        {rimandaAperta && (
+          <div className="mt-1" data-non-apre>
+            <CasellaRimanda giorno={t.due_date} onGiorno={onGiorno} />
+          </div>
+        )}
+      </div>
+      <Stella accesa={t.preferito} onStella={onStella} />
+    </div>
   );
 }
 
@@ -437,6 +534,10 @@ export default function AgendaList() {
                             righe={elenco}
                             chiave={(t) => t.id}
                             intestazioneTitolo="Impegno"
+                            // Una tabella per sezione: senza una larghezza
+                            // fissa «Scadenza» cominciava in un punto diverso
+                            // in ognuna (da 600 a 875 punti, misurato).
+                            larghezzaTitolo="50%"
                             // 🔴 LA SPUNTA A SINISTRA E GRANDE: è il gesto
                             // più frequente e si fa col pollice.
                             // ⚠️ `tocco-azione` (1,2 cm) e non
@@ -448,19 +549,7 @@ export default function AgendaList() {
                             // spingeva a destra solo lui, e i campi sotto
                             // partivano 34,7 punti più a sinistra. La prova
                             // visiva che lo misura è `npm run test:visive`.
-                            inizio={(t) => (
-                              <label
-                                className="tocco-azione inline-flex shrink-0 items-center"
-                                title="Fatto"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={false}
-                                  onChange={() => fatto(t)}
-                                  className="spunta-grande"
-                                />
-                              </label>
-                            )}
+                            inizio={(t) => <Spunta onFatto={() => fatto(t)} />}
                             titolo={(t) => (
                               <span className="flex items-start gap-3">
                                 {/* 🔴 IL TITOLO NON È PIÙ UN PULSANTE —
@@ -476,30 +565,34 @@ export default function AgendaList() {
                                     schermata a difenderli: se ne occupa
                                     ElencoAdattivo, che si tira indietro
                                     quando il tocco arriva a un comando. */}
-                                <span className="min-w-0 flex-1" data-testo-titolo>{t.title}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => stella(t)}
-                                  className="tocco-azione shrink-0 leading-none testo-sala-grande"
-                                  title={t.preferito ? "Togli dalla testa" : "Portalo in testa"}
-                                >
-                                  <span
-                                    className={
-                                      t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"
-                                    }
-                                  >
-                                    ★
-                                  </span>
-                                </button>
+                                {/* «Riservato» non c'è più, nemmeno qui:
+                                    tolto dall'elenco nel collaudo dell'11/09
+                                    (vedi `SchedaImpegno`). */}
+                                <span className="min-w-0 flex-1" data-testo-titolo>
+                                  {t.title}
+                                </span>
+                                <Stella accesa={t.preferito} onStella={() => stella(t)} />
                               </span>
                             )}
-                            segno={(t) => (t.visibile_staff === false ? <RiservatoBadge /> : null)}
                             campi={campiImpegno}
                             onTocco={(t) => navigate(`/agenda/${t.id}`)}
-                            // La provenienza in fondo, e solo quando c'è
-                            // qualcosa da dire: come colonna diceva «scritto
-                            // a mano» su quasi tutte le righe.
-                            nota={provenienzaImpegno}
+                            // 🔴 LA PROVENIENZA È USCITA DALL'ELENCO — 11/09,
+                            // dal collaudo su iPhone: sta in fondo alla scheda
+                            // dell'impegno, come informazione secondaria.
+                            schedaTelefono={(t) => (
+                              <SchedaImpegno
+                                t={t}
+                                scadenzaSempre={elenco.some((x) => x.due_date)}
+                                rimandaAperta={Boolean(rimanda[t.id])}
+                                onFatto={() => fatto(t)}
+                                onStella={() => stella(t)}
+                                onRimanda={() => setRimanda((r) => ({ ...r, [t.id]: !r[t.id] }))}
+                                onGiorno={(g) => {
+                                  sposta(t, g);
+                                  setRimanda((r) => ({ ...r, [t.id]: false }));
+                                }}
+                              />
+                            )}
                             azione={(t) => ({
                               // ⚠️ SEMPRE NELLO STESSO POSTO, in fondo al
                               // quadrotto: è la richiesta di Alessio, e la
@@ -510,14 +603,12 @@ export default function AgendaList() {
                             })}
                             aperta={(t) =>
                               rimanda[t.id] ? (
-                                <input
-                                  type="date"
-                                  defaultValue={t.due_date ?? ""}
-                                  onChange={(e) => {
-                                    sposta(t, e.target.value);
+                                <CasellaRimanda
+                                  giorno={t.due_date}
+                                  onGiorno={(g) => {
+                                    sposta(t, g);
                                     setRimanda((r) => ({ ...r, [t.id]: false }));
                                   }}
-                                  className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
                                 />
                               ) : null
                             }
@@ -602,8 +693,15 @@ export default function AgendaList() {
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
-                      <span className="text-b58-charcoal flex-1">{t.title}</span>
-                      {t.visibile_staff === false && <RiservatoBadge />}
+                      {/* Il nome come nelle corsie — 11/09/2026: stessa
+                          misura e stesso peso, così lo stesso impegno non
+                          cambia faccia passando dall'elenco al calendario. */}
+                      <span className="min-w-0 flex-1 testo-sala-grande font-medium text-b58-charcoal">
+                        {t.title}
+                      </span>
+                      {/* «Riservato» non c'è più nemmeno qui (11/09, dal
+                          collaudo su iPhone): la visibilità si vede e si
+                          cambia nella scheda dell'impegno. */}
                     </button>
                   ))}
                 </div>
