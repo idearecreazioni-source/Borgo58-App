@@ -46,6 +46,18 @@
 //     sovrappone, i menu larghi quanto la loro parola, il numero stretto;
 //   · la provenienza sta sotto il modulo, più piccola del titolo (11/09);
 //   · la pagina non scorre di lato.
+//   SETTIMANA (11/09, mandato notturno), iPhone 390 e 440, 64 punti per
+//   cm, computer 1280 e 1600 — nella settimana di oggi, in quella dopo
+//   (vuota), tornando a questa e in quella prima:
+//   · i sette giorni giusti, da lunedì a domenica, ognuno con nome e data,
+//     oggi segnato, «Torna a questa settimana» solo fuori da questa;
+//   · dentro un giorno gli impegni in ordine (senza ora in cima), con l'ora
+//     scritta; il fatto barrato;
+//   · niente fuori dal riquadro, niente che si sovrappone, nessun testo
+//     tagliato e nessuna parola spezzata a metà, la pagina non scorre di lato;
+//   · un giorno vuoto su una riga sola, più basso di uno con un impegno;
+//   · sul telefono mai sette colonne; sul computer, se ci sono, larghe
+//     almeno 3 cm; i bersagli di almeno 0,85 cm.
 //
 // ⚠️ IL LIMITE, dichiarato: è Chrome. Safari dell'iPhone disegna le caselle
 //    di data e ora a modo suo (niente icona, testo centrato, larghezza sua).
@@ -60,7 +72,13 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import os from "node:os";
 import path from "node:path";
 import { createServer } from "vite";
-import { QUANTE_SCHEDE } from "../tests/visive/finti/tasks.js";
+import { QUANTE_SCHEDE, SETTIMANA } from "../tests/visive/finti/tasks.js";
+import {
+  etichettaSettimana,
+  giorniDellaSettimana,
+  nomeDelGiorno,
+  spostaSettimana,
+} from "../src/lib/calcoli/settimana.js";
 
 const RADICE = process.cwd();
 const TOLLERANZA_PX = 1;
@@ -86,6 +104,24 @@ const FORME = [
   { nome: "telefono a 64 punti per cm", larghezza: 390, altezza: 844, scala: 3, mobile: true, pxcm: 64 },
   { nome: "computer", larghezza: 1280, altezza: 900, scala: 1, mobile: false },
 ];
+
+// LA SETTIMANA (11/09/2026) si misura in forme sue: il mandato chiede anche
+// l'iPhone largo (440 punti), e sul computer due larghezze — a 1280, con la
+// barra laterale, il riquadro è sotto la soglia delle sette colonne e la
+// settimana resta a righe; a 1600 le colonne ci sono. Così si guardano
+// tutti e due i modi in cui si dispone.
+const FORME_SETTIMANA = [
+  { nome: "iPhone 390", larghezza: 390, altezza: 844, scala: 3, mobile: true },
+  { nome: "iPhone largo 440", larghezza: 440, altezza: 956, scala: 3, mobile: true },
+  { nome: "iPhone 390 a 64 punti per cm", larghezza: 390, altezza: 844, scala: 3, mobile: true, pxcm: 64 },
+  { nome: "computer 1280", larghezza: 1280, altezza: 900, scala: 1, mobile: false },
+  { nome: "computer 1600", larghezza: 1600, altezza: 1000, scala: 1, mobile: false },
+];
+const TOCCO_CM = 0.85; // `tocco-bottone`
+const GIORNO_VUOTO_CM = 0.8; // a righe: il nome del giorno e «niente», una riga
+const COLONNA_VUOTA_CM = 1.4; // in colonna: al massimo due righe
+const COLONNA_LARGA_CM = 3; // sotto, una colonna è microscopica
+const TITOLO_ELENCO_CM = 0.4; // `testo-sala-grande`, come nell'elenco
 
 // --- Chrome ------------------------------------------------------------
 function doveChrome() {
@@ -547,6 +583,269 @@ function controllaScheda(forma, m, difetti) {
   }
 }
 
+// --- La settimana -------------------------------------------------------
+// ⚠️ UNA PAROLA CHE NON CI STA SI SPEZZA A METÀ senza far scorrere niente
+//    (il titolo ha `break-words`): nessuna misura di larghezza se ne
+//    accorge. Per questo si misura la parola più lunga col carattere vero
+//    dell'elemento e la si confronta con lo spazio che ha.
+const MISURA_SETTIMANA = `(() => {
+  ${AIUTI}
+  const s = document.querySelector("[data-settimana]");
+  if (!s) return null;
+  const scatola = (e) => { const q = e.getBoundingClientRect(); return { sinistra: q.left, destra: q.right, alto: q.top, basso: q.bottom, larga: q.width, alta: q.height }; };
+  const tela = document.createElement("canvas").getContext("2d");
+  const testo = (e) => {
+    const st = getComputedStyle(e);
+    tela.font = st.fontStyle + " " + st.fontWeight + " " + st.fontSize + " " + st.fontFamily;
+    const parole = e.innerText.split(/\\s+/).filter(Boolean);
+    return {
+      ...scatola(e),
+      testo: e.innerText.replace(/\\s+/g, " ").trim(),
+      righeBox: righeDiTesto(e),
+      parola: parole.length ? Math.max(...parole.map((p) => tela.measureText(p).width)) : 0,
+      utile: e.clientWidth,
+      scorre: e.scrollWidth,
+      carattere: parseFloat(st.fontSize),
+      barrato: st.textDecorationLine.includes("line-through"),
+    };
+  };
+  const rs = s.getBoundingClientRect();
+  const ss = getComputedStyle(s);
+  const opz = (sel) => { const e = s.querySelector(sel); return e ? scatola(e) : null; };
+  const t = s.querySelector("[data-titolo-settimana]");
+  return {
+    pxcm: densita(),
+    finestra: innerWidth,
+    paginaLarga: document.documentElement.scrollWidth,
+    caricando: s.hasAttribute("data-caricando"),
+    riquadro: scatola(s),
+    dentro: { sinistra: rs.left + parseFloat(ss.paddingLeft), destra: rs.right - parseFloat(ss.paddingRight) },
+    titolo: t ? testo(t) : null,
+    prima: opz("[data-settimana-prima]"),
+    dopo: opz("[data-settimana-dopo]"),
+    questa: opz("[data-settimana-questa]"),
+    elenco: opz("ol"),
+    giorni: [...s.querySelectorAll("[data-giorno]")].map((g) => ({
+      giorno: g.dataset.giorno,
+      oggi: g.hasAttribute("data-oggi"),
+      ...scatola(g),
+      intestazione: testo(g.querySelector("[data-intestazione]")),
+      vuoto: Boolean(g.querySelector("[data-vuoto]")),
+      impegni: [...g.querySelectorAll("[data-impegno]")].map((b) => {
+        const o = b.querySelector("[data-ora]");
+        const ti = b.querySelector("[data-titolo]");
+        return {
+          id: b.dataset.impegno,
+          ...scatola(b),
+          ora: o.innerText.trim(),
+          oraBox: o.innerText.trim() ? righeDiTesto(o)[0] ?? null : null,
+          titoloTesto: ti.innerText.trim().slice(0, 30),
+          titolo: testo(ti),
+        };
+      }),
+    })),
+    selettore: [...document.querySelectorAll("[data-vista]")].map((b) => ({
+      vista: b.dataset.vista,
+      testo: b.innerText.trim(),
+      premuto: b.getAttribute("aria-pressed") === "true",
+      ...scatola(b),
+    })),
+  };
+})()`;
+
+const clicca = (sel) =>
+  `(() => { const b = document.querySelector(${JSON.stringify(sel)}); if (b) b.click(); return Boolean(b); })()`;
+
+// Due rettangoli di testo (left/right/top/bottom) che si toccano.
+const siToccano = (a, b) =>
+  a.right > b.left + TOLLERANZA_PX &&
+  b.right > a.left + TOLLERANZA_PX &&
+  a.bottom > b.top + TOLLERANZA_PX &&
+  b.bottom > a.top + TOLLERANZA_PX;
+
+function controllaSettimana(forma, m, attesa, telefono, difetti) {
+  if (!m) {
+    difetti.push(`${forma}: la settimana non si è disegnata.`);
+    return null;
+  }
+  const T = TOLLERANZA_PX;
+  const cm = (v) => v * m.pxcm;
+
+  // --- cosa c'è: i sette giorni giusti, col loro nome, e gli impegni ---
+  const attesi = giorniDellaSettimana(attesa.lunedi);
+  const visti = m.giorni.map((g) => g.giorno);
+  if (visti.join() !== attesi.join()) {
+    difetti.push(`${forma}: i giorni disegnati sono [${visti.join(", ")}] invece di ${attesi[0]} → ${attesi[6]}.`);
+  }
+  if (m.titolo?.testo !== etichettaSettimana(attesa.lunedi)) {
+    difetti.push(`${forma}: il titolo dice «${m.titolo?.testo}» invece di «${etichettaSettimana(attesa.lunedi)}».`);
+  }
+  for (const g of m.giorni) {
+    const n = nomeDelGiorno(g.giorno);
+    const t = g.intestazione.testo;
+    if (!t.includes(n.corto) || !new RegExp(`(^|\\D)${n.numero}(\\D|$)`).test(t)) {
+      difetti.push(`${forma}: il ${g.giorno} è scritto «${t}» — mancano il nome o la data.`);
+    }
+    if (g.vuoto !== (g.impegni.length === 0)) {
+      difetti.push(`${forma}: il ${g.giorno} ${g.vuoto ? "dice «niente» e ha impegni" : "è vuoto e non lo dice"}.`);
+    }
+  }
+  const oggi = m.giorni.filter((g) => g.oggi);
+  if (attesa.oggi && (oggi.length !== 1 || !/oggi/.test(oggi[0].intestazione.testo))) {
+    difetti.push(`${forma}: il giorno di oggi non è segnato (giorni segnati: ${oggi.length}).`);
+  }
+  if (!attesa.oggi && oggi.length) difetti.push(`${forma}: è segnato «oggi» in una settimana che non lo contiene.`);
+  if (attesa.ritorno && !m.questa) difetti.push(`${forma}: fuori dalla settimana di oggi manca «Torna a questa settimana».`);
+  if (!attesa.ritorno && m.questa) difetti.push(`${forma}: sulla settimana di oggi c'è «Torna a questa settimana», che non fa niente.`);
+
+  const tutti = m.giorni.flatMap((g) => g.impegni.map((i) => ({ ...i, giorno: g.giorno })));
+  if (tutti.length !== attesa.impegni) {
+    difetti.push(`${forma}: disegnati ${tutti.length} impegni invece di ${attesa.impegni}.`);
+  }
+  for (const [id, giorno] of Object.entries(attesa.dove ?? {})) {
+    const x = tutti.find((i) => i.id === id);
+    if (!x || x.giorno !== giorno) difetti.push(`${forma}: «${id}» non sta nel ${giorno} (sta nel ${x?.giorno ?? "nessun giorno"}).`);
+  }
+  if (attesa.ordine) {
+    const lun = m.giorni.find((g) => g.giorno === attesa.lunedi);
+    const ids = lun?.impegni.map((i) => i.id) ?? [];
+    const ore = lun?.impegni.map((i) => i.ora) ?? [];
+    if (ids.join() !== attesa.ordine.join()) {
+      difetti.push(`${forma}: il lunedì li mette in quest'ordine: ${ids.join(", ")} — atteso ${attesa.ordine.join(", ")}.`);
+    }
+    if (ore.join("|") !== attesa.ore.join("|")) {
+      difetti.push(`${forma}: le ore del lunedì sono [${ore.join(", ")}] invece di [${attesa.ore.join(", ")}].`);
+    }
+  }
+  if (attesa.fatto) {
+    const f = tutti.find((i) => i.id === attesa.fatto);
+    if (!f?.titolo.barrato) difetti.push(`${forma}: l'impegno già fatto non è barrato.`);
+  }
+
+  // --- come sta: niente fuori, niente sopra, niente tagliato ---
+  if (m.paginaLarga > m.finestra + T) difetti.push(`${forma}: la pagina scorre di lato di ${m.paginaLarga - m.finestra} punti.`);
+  const colonne = m.giorni.length === 7 && new Set(m.giorni.map((g) => Math.round(g.alto))).size === 1;
+  if (telefono && colonne) difetti.push(`${forma}: sul telefono la settimana è a sette colonne — una griglia microscopica.`);
+
+  const esce = (b, cosa, bordo) => {
+    if (b.sinistra < bordo.sinistra - T || b.destra > bordo.destra + T) {
+      difetti.push(
+        `${forma}: ${cosa} esce dal riquadro della settimana (da ${b.sinistra.toFixed(0)} a ${b.destra.toFixed(0)}, riquadro da ${bordo.sinistra.toFixed(0)} a ${bordo.destra.toFixed(0)}).`
+      );
+    }
+  };
+  const testoIntero = (t, cosa) => {
+    // I testi stanno dentro la parte utile del riquadro; le scatole (un
+    // giorno, un pulsante) dentro il suo bordo.
+    for (const r of t.righeBox) esce({ sinistra: r.left, destra: r.right }, cosa, m.dentro);
+    if (t.scorre > t.utile + T) difetti.push(`${forma}: ${cosa} è tagliato — chiede ${t.scorre} punti e ne ha ${t.utile}.`);
+    if (t.parola > t.utile + T) {
+      difetti.push(`${forma}: in ${cosa} una parola larga ${t.parola.toFixed(0)} punti non ci sta in ${t.utile} e si spezza a metà.`);
+    }
+  };
+
+  for (const g of m.giorni) {
+    esce(g, `il ${g.giorno}`, m.riquadro);
+    testoIntero(g.intestazione, `il nome del ${g.giorno}`);
+    for (const i of g.impegni) {
+      const cosa = `«${i.titoloTesto}»`;
+      esce(i, `il pulsante di ${cosa}`, m.riquadro);
+      testoIntero(i.titolo, cosa);
+      if (i.alta < cm(TOCCO_CM) - T) {
+        difetti.push(`${forma}: ${cosa} si tocca su ${mm(i.alta, m.pxcm)} mm (il minimo è ${TOCCO_CM * 10}).`);
+      }
+      if (i.titolo.carattere < cm(TITOLO_ELENCO_CM) - 0.5) {
+        difetti.push(`${forma}: ${cosa} è scritto a ${mm(i.titolo.carattere, m.pxcm)} mm, più piccolo che nell'elenco.`);
+      }
+      if (i.oraBox && i.titolo.righeBox.some((r) => siToccano(i.oraBox, r))) {
+        difetti.push(`${forma}: in ${cosa} l'ora si sovrappone al titolo.`);
+      }
+    }
+    const pila = [g.intestazione, ...g.impegni];
+    for (let k = 1; k < pila.length; k++) {
+      if (pila[k].alto < pila[k - 1].basso - T) {
+        difetti.push(`${forma}: nel ${g.giorno} due righe si sovrappongono di ${(pila[k - 1].basso - pila[k].alto).toFixed(1)} punti.`);
+      }
+    }
+  }
+  for (let k = 1; k < m.giorni.length; k++) {
+    const [a, b] = [m.giorni[k - 1], m.giorni[k]];
+    const sovrapposti = colonne ? a.destra - b.sinistra : a.basso - b.alto;
+    if (sovrapposti > T) difetti.push(`${forma}: il ${a.giorno} e il ${b.giorno} si sovrappongono di ${sovrapposti.toFixed(1)} punti.`);
+  }
+
+  // --- i giorni vuoti non sprecano spazio; le colonne non sono minuscole ---
+  const vuoti = m.giorni.filter((g) => g.vuoto);
+  const pieni = m.giorni.filter((g) => !g.vuoto);
+  const tettoCm = colonne ? COLONNA_VUOTA_CM : GIORNO_VUOTO_CM;
+  const pienoMin = pieni.length ? Math.min(...pieni.map((g) => g.alta)) : null;
+  for (const g of vuoti) {
+    if (g.alta > cm(tettoCm) + T) {
+      difetti.push(`${forma}: il ${g.giorno}, vuoto, è alto ${mm(g.alta, m.pxcm)} mm (il massimo è ${tettoCm * 10}).`);
+    }
+    if (!colonne && pienoMin != null && g.alta >= pienoMin - T) {
+      difetti.push(`${forma}: il ${g.giorno}, vuoto, è alto quanto un giorno con un impegno.`);
+    }
+  }
+  if (colonne) {
+    for (const g of m.giorni) {
+      if (g.larga < cm(COLONNA_LARGA_CM)) difetti.push(`${forma}: la colonna del ${g.giorno} è larga ${mm(g.larga, m.pxcm)} mm — microscopica.`);
+    }
+  }
+
+  // --- la navigazione ---
+  for (const [cosa, b] of [["«←»", m.prima], ["«→»", m.dopo]]) {
+    if (!b) {
+      difetti.push(`${forma}: manca ${cosa}.`);
+      continue;
+    }
+    if (b.alta < cm(TOCCO_CM) - T || b.larga < cm(TOCCO_CM) - T) {
+      difetti.push(`${forma}: ${cosa} misura ${mm(b.larga, m.pxcm)} × ${mm(b.alta, m.pxcm)} mm (il minimo è ${TOCCO_CM * 10}).`);
+    }
+    esce(b, cosa, m.riquadro);
+  }
+  if (m.questa && m.questa.alta < cm(TOCCO_CM) - T) {
+    difetti.push(`${forma}: «Torna a questa settimana» si tocca su ${mm(m.questa.alta, m.pxcm)} mm.`);
+  }
+  if (m.prima && m.dopo && m.titolo) {
+    for (const r of m.titolo.righeBox) {
+      if (r.left < m.prima.destra - T || r.right > m.dopo.sinistra + T) {
+        difetti.push(`${forma}: il titolo della settimana passa sotto le frecce.`);
+      }
+    }
+    testoIntero(m.titolo, "il titolo della settimana");
+  }
+
+  // --- il selettore ---
+  const sel = m.selettore;
+  if (sel.map((s) => s.vista).join() !== "lista,settimana,mese") {
+    difetti.push(`${forma}: il selettore dice ${sel.map((s) => s.testo).join(" · ")} invece di Lista · Settimana · Mese.`);
+  }
+  if (!sel.find((s) => s.vista === "settimana")?.premuto) difetti.push(`${forma}: nel selettore «Settimana» non risulta scelto.`);
+  nonSiToccano(sel.map((s) => ({ ...s, tipo: `«${s.testo}»` })), "nel selettore", forma, difetti);
+  for (const s of sel) {
+    if (s.destra > m.finestra + T) difetti.push(`${forma}: nel selettore «${s.testo}» esce dallo schermo.`);
+  }
+
+  return {
+    colonne,
+    vuotoAlto: vuoti.length ? Math.max(...vuoti.map((g) => g.alta)) : null,
+    pienoMin,
+    elencoAlto: m.elenco ? m.elenco.alta : null,
+    colonnaLarga: colonne ? Math.min(...m.giorni.map((g) => g.larga)) : null,
+  };
+}
+
+async function aspettaSettimana(manda, etichetta) {
+  let m = null;
+  for (let i = 0; i < 80; i++) {
+    m = await valuta(manda, MISURA_SETTIMANA);
+    if (m && !m.caricando && m.giorni.length === 7 && m.titolo?.testo === etichetta) return m;
+    await aspetta(150);
+  }
+  return m;
+}
+
 // --- Il giro ------------------------------------------------------------
 const server = await createServer({
   root: RADICE,
@@ -570,6 +869,7 @@ mkdirSync(cartellaFoto, { recursive: true });
 
 const difetti = [];
 let misurati = 0;
+let statiSettimana = 0;
 
 async function apriPagina(forma, pagina) {
   const { ws, manda } = await apriScheda(porta);
@@ -663,6 +963,66 @@ try {
       ws.close();
     }
   }
+
+  // --- la settimana: questa, quella dopo (vuota), di nuovo questa, quella prima ---
+  const L0 = SETTIMANA.lunedi;
+  const L1 = spostaSettimana(L0, 1);
+  const Lm1 = spostaSettimana(L0, -1);
+  for (const forma of FORME_SETTIMANA) {
+    const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html?telaio");
+    for (let i = 0; i < 80 && !(await valuta(manda, clicca("[data-vista=settimana]"))); i++) await aspetta(250);
+    const giri = [
+      {
+        stato: "questa",
+        prima: null,
+        lunedi: L0,
+        attesa: {
+          impegni: 5,
+          oggi: true,
+          ritorno: false,
+          ordine: ["s-giornata", "s-mattina", "s-sera"],
+          ore: ["", "09:00", "18:30"],
+          fatto: "s-fatto",
+          dove: { "s-martedi": giorniDellaSettimana(L0)[1], "s-fatto": giorniDellaSettimana(L0)[2] },
+        },
+      },
+      { stato: "dopo-vuota", prima: "[data-settimana-dopo]", lunedi: L1, attesa: { impegni: 0, oggi: false, ritorno: true } },
+      { stato: "ritorno", prima: "[data-settimana-questa]", lunedi: L0, attesa: { impegni: 5, oggi: true, ritorno: false } },
+      {
+        stato: "prima",
+        prima: "[data-settimana-prima]",
+        lunedi: Lm1,
+        attesa: { impegni: 1, oggi: false, ritorno: true, dove: { "s-prima": giorniDellaSettimana(Lm1)[3] } },
+      },
+    ];
+    for (const g of giri) {
+      if (g.prima && !(await valuta(manda, clicca(g.prima)))) {
+        difetti.push(`settimana · ${forma.nome} · ${g.stato}: non trovo il pulsante per arrivarci (${g.prima}).`);
+        continue;
+      }
+      const m = await aspettaSettimana(manda, etichettaSettimana(g.lunedi));
+      const nome = `settimana · ${forma.nome} · ${g.stato}`;
+      const esito = controllaSettimana(nome, m, { lunedi: g.lunedi, ...g.attesa }, forma.mobile, difetti);
+      statiSettimana += 1;
+      // ⚠️ La fotografia aspetta che i colori abbiano finito di cambiare
+      //    (`transition-colors`, 150 ms): scattata subito dopo il tocco,
+      //    il selettore sembrava sbiadito. La misura non ne dipende.
+      if (g.stato !== "ritorno") {
+        await aspetta(400);
+        await fotografa(manda, `settimana-${nomeFile(forma.nome)}-${g.stato}`);
+      }
+      if (esito && m) {
+        const parti = [
+          esito.colonne ? `sette colonne (la più stretta ${mm(esito.colonnaLarga, m.pxcm)} mm)` : "a righe",
+          esito.vuotoAlto != null ? `giorno vuoto ${mm(esito.vuotoAlto, m.pxcm)} mm` : null,
+          esito.pienoMin != null ? `giorno con impegni da ${mm(esito.pienoMin, m.pxcm)} mm` : null,
+          esito.elencoAlto != null ? `settimana alta ${mm(esito.elencoAlto, m.pxcm)} mm` : null,
+        ].filter(Boolean);
+        console.log(`${nome}: ${parti.join(", ")} (${m.pxcm} punti per cm)`);
+      }
+    }
+    ws.close();
+  }
 } finally {
   chrome.kill();
   await server.close();
@@ -678,4 +1038,7 @@ if (difetti.length) {
   for (const d of difetti) console.error(`  · ${d}`);
   process.exit(1);
 }
-console.log(`\nPROVA VISIVA VERDE — ${misurati} schede dell'Agenda e la scheda di un impegno, in ${FORME.length} forme.`);
+console.log(
+  `\nPROVA VISIVA VERDE — ${misurati} schede dell'Agenda e la scheda di un impegno, in ${FORME.length} forme;` +
+    ` la settimana in ${FORME_SETTIMANA.length} forme (${statiSettimana} settimane misurate).`
+);

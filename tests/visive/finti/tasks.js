@@ -95,6 +95,43 @@ export const deleteTask = async () => null;
 export const agendaCorsie = async () => RIGHE;
 export const agendaFatti = async () => [];
 export const listTasksForMonth = async () => [];
+
+// --- LA SETTIMANA (11/09/2026) --------------------------------------------
+// ⚠️ I CASI DEL MANDATO, uno per giorno: il lunedì di QUESTA settimana ha
+//    tre impegni — uno senza ora e con un titolo lungo, due con l'ora ma
+//    scritti fuori ordine (prima la sera, poi la mattina); il martedì uno
+//    solo; il mercoledì uno già fatto; gli altri giorni niente. La settimana
+//    DOPO è tutta vuota; quella PRIMA ha un impegno il giovedì.
+const lunediQuesta = (() => {
+  const d = new Date(`${iso(oggi)}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d;
+})();
+const dalLunedi = (n) => {
+  const d = new Date(lunediQuesta);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const impegno = (id, extra) => ({ ...riga(id, extra), corsia: undefined, giorni_alla_scadenza: undefined });
+
+export const SETTIMANA = {
+  lunedi: dalLunedi(0),
+  righe: [
+    impegno("s-sera", { title: "Riunione col commercialista", due_date: dalLunedi(0), due_time: "18:30:00" }),
+    impegno("s-mattina", { title: "Dentista", due_date: dalLunedi(0), due_time: "09:00:00" }),
+    impegno("s-giornata", {
+      title: "Portare i corrispettivi di luglio al commercialista e farsi firmare la ricevuta",
+      due_date: dalLunedi(0),
+      due_time: null,
+    }),
+    impegno("s-martedi", { title: "Ritirare le tovaglie", due_date: dalLunedi(1), due_time: "10:15:00" }),
+    impegno("s-fatto", { title: "Sanificare la cappa", due_date: dalLunedi(2), status: "completato" }),
+    impegno("s-prima", { title: "Chiamare il tecnico della cella", due_date: dalLunedi(-4), due_time: "11:00:00" }),
+  ],
+};
+
+export const listTasksBetween = async (dal, al) =>
+  SETTIMANA.righe.filter((t) => t.due_date >= dal && t.due_date <= al);
 export const completaTask = async () => null;
 export const riapriTask = async () => ({});
 export const spostaTask = async () => null;
