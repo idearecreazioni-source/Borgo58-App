@@ -84,6 +84,33 @@ const emptyForm = {
   va_in_carta: false,
 };
 
+// I nomi in italiano delle tabelle dove un ingrediente può comparire, per la
+// frase «Non si può eliminare: compare in …» (11/09/2026). Prima uscivano i
+// nomi tecnici — «stock_lots (3), recipe_ingredients (2)».
+// ⚠️ È IL GEMELLO di `nome_leggibile()` nel database (migrazione
+//    20260824000020), che scrive il rifiuto quando si prova a cancellare:
+//    stesse tabelle, stesse parole — se uno dei due cambia, va cambiato
+//    anche l'altro. UNA SOLA DIFFERENZA, voluta: qui «società» ha l'accento,
+//    il database scrive «societa'» con l'apostrofo (rilievo della revisione
+//    Codex, 11/09/2026). Copiare l'apostrofo a schermo sarebbe il difetto
+//    «e' … piu'» già segnalato altrove. Una tabella che non è qui resta col
+//    suo nome tecnico — si vede, e si aggiunge.
+const NOMI_TABELLE = {
+  recipe_ingredients: "ricette",
+  stock_lots: "partite in magazzino",
+  stock_consumptions: "scarichi di magazzino",
+  price_history: "storico prezzi",
+  articoli_fornitore: "diciture dei fornitori",
+  shopping_list_items: "lista della spesa",
+  ordini_fornitore_righe: "ordini ai fornitori",
+  produzioni: "produzioni",
+  anomalie_scarico: "anomalie di scarico",
+  rettifiche_giacenza: "rettifiche di giacenza",
+  crops: "colture dell'orto",
+  foraged_items: "raccolta propria",
+  intercompany_cessions: "cessioni fra le due società",
+};
+
 export default function IngredienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -1492,7 +1519,7 @@ export default function IngredienteForm() {
                 ) : (
                   <span className="testo-sala-grande text-b58-charcoal-soft">
                     Non si può eliminare: compare in{" "}
-                    {usi.map((u) => `${u.dove} (${u.quante})`).join(", ")}.
+                    {usi.map((u) => `${NOMI_TABELLE[u.dove] ?? u.dove} (${u.quante})`).join(", ")}.
                   </span>
                 )}
               </div>
@@ -1689,7 +1716,17 @@ export default function IngredienteForm() {
                     <tr key={h.id} className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="py-2 text-b58-charcoal-soft">{formatDate(h.recorded_at)}</td>
                       <td className="py-2 text-right text-b58-charcoal">{formatEUR(h.price)}</td>
-                      <td className="py-2 text-b58-charcoal-soft">{h.source}</td>
+                      {/* La parola, non il codice del database: prima si
+                          leggeva «cessione_interna». Un valore sconosciuto
+                          resta com'è invece di sparire. */}
+                      <td className="py-2 text-b58-charcoal-soft">
+                        {{
+                          manuale: "a mano",
+                          fattura: "fattura",
+                          preventivo: "preventivo",
+                          cessione_interna: "cessione interna",
+                        }[h.source] ?? h.source}
+                      </td>
                       <td className="py-2 text-b58-charcoal-soft">{h.note ?? "—"}</td>
                     </tr>
                   ))}
