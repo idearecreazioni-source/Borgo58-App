@@ -188,7 +188,11 @@ export default function FornitoreDetail() {
             onChange={(e) =>
               handleChange("regime_esonero", e.target.value === "" ? null : e.target.value === "true")
             }
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
+            // ⚠️ `max-w-full` (11/09/2026, censimento delle schermate): senza,
+            //    il menu era largo quanto la sua voce più lunga, e coi
+            //    caratteri grandi del tablet usciva dal riquadro e faceva
+            //    scorrere di lato tutta la pagina (470 punti su 390).
+            className="tocco-campo max-w-full min-w-0 rounded-lg border border-b58-charcoal/15 bg-white px-3 testo-sala-grande text-b58-charcoal"
           >
             <option value="">Non gliel&apos;ho ancora chiesto</option>
             <option value="true">Sì: l&apos;autofattura la faccio io</option>
@@ -376,11 +380,15 @@ export default function FornitoreDetail() {
         ) : (
           <ul className="space-y-1.5">
             {deliveries.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 testo-sala-grande">
-                <span className="text-b58-charcoal">
+              // ⚠️ `flex-wrap` e niente `shrink-0` (11/09/2026, censimento):
+              //    data e prezzo non potevano stringersi né andare a capo, e
+              //    coi caratteri grandi uscivano dal riquadro. Adesso, se non
+              //    ci stanno accanto al nome, vanno sulla riga sotto.
+              <li key={d.id} className="flex flex-wrap items-baseline justify-between gap-x-3 testo-sala-grande">
+                <span className="min-w-0 text-b58-charcoal">
                   {d.ingredient?.name} <span className="text-b58-charcoal-soft">· {formatQta(d.quantity_received)} {d.ingredient?.unit}</span>
                 </span>
-                <span className="text-b58-charcoal-soft shrink-0">
+                <span className="min-w-0 text-b58-charcoal-soft">
                   {formatDate(d.received_at)}
                   {d.unit_cost != null && ` · ${formatEUR(d.unit_cost)}/${d.ingredient?.unit}`}
                 </span>
@@ -397,9 +405,10 @@ export default function FornitoreDetail() {
         ) : (
           <ul className="space-y-1.5">
             {prices.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 testo-sala-grande">
-                <span className="text-b58-charcoal">{p.ingredient?.name}</span>
-                <span className="text-b58-charcoal-soft shrink-0">
+              // Stessa cura delle consegne qui sopra.
+              <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-x-3 testo-sala-grande">
+                <span className="min-w-0 text-b58-charcoal">{p.ingredient?.name}</span>
+                <span className="min-w-0 text-b58-charcoal-soft">
                   {formatEUR(p.price)}/{p.ingredient?.unit} · {formatDate(p.recorded_at)}
                 </span>
               </li>
