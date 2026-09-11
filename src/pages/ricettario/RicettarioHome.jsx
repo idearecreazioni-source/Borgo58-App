@@ -78,7 +78,9 @@ export default function RicettarioHome() {
             </div>
             <h3 className="font-display testo-sala-grande text-b58-charcoal">Menu</h3>
             <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
-              Struttura 4-4-4-2, prezzi di vendita, margini, simulatore what-if.
+              {/* «Struttura 4-4-4-2» tolta l'11/09/2026: nel menu non c'è più
+                  da quando è stata tolta la regola (vedi MenuDetail). */}
+              Prezzi di vendita, margini, simulatore what-if.
             </p>
           </Link>
         )}
