@@ -326,10 +326,10 @@ export default function Dashboard() {
         <div className="space-y-6 mt-6 2xl:mt-0">
           <section>
             <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
-              Task di oggi
+              Impegni di oggi
             </h2>
             {today.length === 0 ? (
-              <p className="testo-sala text-b58-charcoal-soft/60">Nessun task con scadenza oggi.</p>
+              <p className="testo-sala text-b58-charcoal-soft/60">Nessun impegno con scadenza oggi.</p>
             ) : (
               <TaskGroup tasks={today} onComplete={toggleComplete} />
             )}
@@ -350,7 +350,7 @@ export default function Dashboard() {
             to="/agenda/nuovo"
             className="tocco-riga inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
           >
-            + Nuovo task
+            + Nuovo impegno
           </Link>
         </div>
         </div>
