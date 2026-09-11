@@ -46,7 +46,11 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
         Nota di credito su questa fattura
         {fattura.invoice_number ? ` (#${fattura.invoice_number})` : ""}.
       </p>
-      <div className="flex flex-wrap gap-2 items-end">
+      {/* 🔴 SPEC-0010, 11/09/2026 — la data stava in una cella fissa da 160
+          punti e ne chiedeva 181 sul telefono (217 a 64 punti per cm, 161
+          sul computer): si tagliava dappertutto. Ora ha la sua larghezza, e
+          i due pulsanti sul telefono vanno su una riga loro. */}
+      <div className="riga-campi">
         <div className="w-36">
           <label className={labelClass}>N. della nota</label>
           <input
@@ -56,9 +60,9 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
             className={inputClass}
           />
         </div>
-        <div className="w-40">
+        <div>
           <label className={labelClass}>Data della nota</label>
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={inputClass} />
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={`${inputClass} campo-data`} />
         </div>
         <div className="w-32">
           <label className={labelClass}>Importo €</label>
@@ -71,7 +75,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
             className={inputClass}
           />
         </div>
-        <div className="flex-1 min-w-[160px]">
+        <div className="cella-larga">
           <label className={labelClass}>Nota (opz.)</label>
           <input
             value={note}
@@ -80,21 +84,23 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
             className={inputClass}
           />
         </div>
-        <button
-          type="button"
-          disabled={salvando || !(valore > 0) || !data}
-          onClick={salva}
-          className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
-        >
-          {salvando ? "Registro…" : "Registra la nota"}
-        </button>
-        <button
-          type="button"
-          onClick={onAnnulla}
-          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal pb-2"
-        >
-          Annulla
-        </button>
+        <div className="riga-campi-gesti">
+          <button
+            type="button"
+            disabled={salvando || !(valore > 0) || !data}
+            onClick={salva}
+            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+          >
+            {salvando ? "Registro…" : "Registra la nota"}
+          </button>
+          <button
+            type="button"
+            onClick={onAnnulla}
+            className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-charcoal"
+          >
+            Annulla
+          </button>
+        </div>
       </div>
 
       {/* Cosa succederà: detto prima, non scoperto dopo. */}

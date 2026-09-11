@@ -21,9 +21,13 @@ export default function CampoGiornata({
   frase = "Stai lavorando sulla serata di",
   labelClass,
   inputClass,
+  // Il riquadro del campo. In una `riga-campi` si passa `w-min` (11/09/2026):
+  // la cella resta larga quanto la sua data, e la frase qui sotto va a capo
+  // dentro — senza, la frase allargava la cella a tutta riga.
+  className = "",
 }) {
   return (
-    <div>
+    <div className={className}>
       <label className={labelClass}>{label}</label>
       <input
         type="date"
