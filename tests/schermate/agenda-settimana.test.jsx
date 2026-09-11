@@ -37,6 +37,9 @@ const RIGHE = [
   t("giornata", "2026-09-07"),
   t("fatto", "2026-09-09", null, { status: "completato" }),
   t("prima", "2026-09-03", "11:00:00"),
+  // Nella settimana del 21: la lettura vecchia, se vincesse, la farebbe
+  // sparire (vedi «due tocchi veloci»).
+  t("dopo2", "2026-09-22", "12:00:00"),
 ];
 
 function Scheda() {
@@ -156,14 +159,34 @@ describe("🔴 la settimana", () => {
         }),
     );
     await tocca(screen.getByRole("button", { name: "Settimana successiva" }));
-    // …e intanto si va avanti ancora di una.
+    // …e intanto si va avanti ancora di una, dove c'è un impegno.
     await tocca(screen.getByRole("button", { name: "Settimana successiva" }));
     await waitFor(() => expect(screen.getByText("21 – 27 settembre 2026")).toBeTruthy());
-    await waitFor(() => expect(document.querySelectorAll("[data-vuoto]")).toHaveLength(7));
+    await waitFor(() => expect(document.querySelector("[data-impegno='dopo2']")).toBeTruthy());
     await act(async () => {
       sblocca();
     });
+    // ⚠️ Il caso che conta NON è «la vecchia compare» — divisa sui giorni di
+    //    questa settimana non ci starebbe comunque — ma che la risposta
+    //    vecchia si porti via quella giusta: senza la guardia, «dopo2»
+    //    sparirebbe e il martedì direbbe «niente». Rompendo la guardia, la
+    //    prima stesura di questa prova restava verde.
+    expect(document.querySelector("[data-impegno='dopo2']")).toBeTruthy();
     expect(document.querySelector("[data-impegno='vecchia']")).toBeNull();
+  });
+
+  it("🔴 se la lettura fallisce lo dice, non disegna sette «niente», e si riprova", async () => {
+    mostra();
+    finte.tra.mockImplementationOnce(() => Promise.reject(new Error("rete assente")));
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(document.querySelector("[data-errore-settimana]")).toBeTruthy());
+    expect(screen.getByText(/rete assente/)).toBeTruthy();
+    expect(giorni()).toHaveLength(0);
+    expect(document.querySelectorAll("[data-vuoto]")).toHaveLength(0);
+    await tocca(screen.getByRole("button", { name: "Riprova" }));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+    expect(document.querySelector("[data-errore-settimana]")).toBeNull();
+    expect(screen.queryByText(/rete assente/)).toBeNull();
   });
 
   it("🔴 toccare un impegno apre la sua scheda", async () => {

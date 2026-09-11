@@ -38,6 +38,8 @@ export default function SettimanaAgenda({
   oggiISO,
   impegni,
   caricando,
+  errore,
+  onRiprova,
   onPrima,
   onDopo,
   onQuesta,
@@ -92,6 +94,22 @@ export default function SettimanaAgenda({
 
       {caricando ? (
         <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>
+      ) : errore ? (
+        // 🔴 NON VUOL DIRE CHE È VUOTA: VUOL DIRE CHE NON LO SO (§6). Se la
+        //    lettura fallisce non si disegnano sette «niente»: si dice che
+        //    non si è letto, con la via d'uscita per riprovare.
+        <div data-errore-settimana className="py-2">
+          <p className="testo-sala text-b58-terracotta-dark">
+            Non riesco a leggere gli impegni di questa settimana: {errore}
+          </p>
+          <button
+            type="button"
+            onClick={onRiprova}
+            className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+          >
+            Riprova
+          </button>
+        </div>
       ) : (
         <ol className="divide-y divide-b58-charcoal/10 @5xl:divide-y-0 @5xl:grid @5xl:grid-cols-7 @5xl:gap-2 @5xl:items-start">
           {giorni.map(({ giorno, impegni: delGiorno }) => {

@@ -277,10 +277,17 @@ export default function AgendaList() {
   const [lunedi, setLunedi] = useState(() => lunediDi(oggiISO));
   const [settimana, setSettimana] = useState([]);
   const [settimanaCaricando, setSettimanaCaricando] = useState(true);
+  // ⚠️ Una lettura fallita resta DENTRO la settimana, col suo «Riprova», e
+  //    si toglie alla lettura dopo: un errore globale restava in cima anche
+  //    sopra la settimana letta bene (rilievo della revisione, 11/09).
+  const [erroreSettimana, setErroreSettimana] = useState("");
+  const [riprovaSettimana, setRiprovaSettimana] = useState(0);
   // ⚠️ Vince la lettura PIÙ RECENTE, non la più veloce: toccando «→» due
   //    volte di fila partono due letture, e se la prima tornasse per ultima
-  //    la settimana mostrerebbe gli impegni di quella prima sotto il titolo
-  //    di quella dopo — plausibile e falso.
+  //    sostituirebbe gli impegni della settimana giusta con quelli di
+  //    un'altra — che, divisi sui giorni di questa, non ci stanno: la
+  //    schermata direbbe «niente» su giorni che hanno impegni. Plausibile e
+  //    falso (misurato rompendo la guardia, 11/09).
   const giroSettimana = useRef(0);
 
   const ricarica = async () => {
@@ -323,17 +330,18 @@ export default function AgendaList() {
     const mio = giroSettimana.current + 1;
     giroSettimana.current = mio;
     setSettimanaCaricando(true);
+    setErroreSettimana("");
     listTasksBetween(lunedi, spostaGiorni(lunedi, 6))
       .then((righe) => {
         if (giroSettimana.current === mio) setSettimana(righe ?? []);
       })
       .catch((e) => {
-        if (giroSettimana.current === mio) setError(e.message);
+        if (giroSettimana.current === mio) setErroreSettimana(e.message);
       })
       .finally(() => {
         if (giroSettimana.current === mio) setSettimanaCaricando(false);
       });
-  }, [view, lunedi]);
+  }, [view, lunedi, riprovaSettimana]);
 
   useEffect(() => {
     if (view !== "mese") return;
@@ -710,6 +718,8 @@ export default function AgendaList() {
           oggiISO={oggiISO}
           impegni={settimana}
           caricando={settimanaCaricando}
+          errore={erroreSettimana}
+          onRiprova={() => setRiprovaSettimana((n) => n + 1)}
           onPrima={() => setLunedi((l) => spostaSettimana(l, -1))}
           onDopo={() => setLunedi((l) => spostaSettimana(l, 1))}
           onQuesta={() => setLunedi(lunediDi(oggiISO))}
