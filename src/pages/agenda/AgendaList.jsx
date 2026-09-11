@@ -1,14 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   agendaCorsie,
   agendaFatti,
   completaTask,
   riapriTask,
+  listTasksBetween,
   listTasksForMonth,
   spostaTask,
   stellaTask,
 } from "../../lib/api/tasks";
+import SettimanaAgenda from "./SettimanaAgenda";
+import {
+  inOrdineDelGiorno,
+  lunediDi,
+  oraBreve,
+  spostaGiorni,
+  spostaSettimana,
+} from "../../lib/calcoli/settimana";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import {
@@ -85,11 +94,13 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={onPrev} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
+        {/* Il nome delle frecce (11/09/2026): senza, per la lettura dello
+            schermo erano «←» e «→». Stessi nomi della Settimana. */}
+        <button onClick={onPrev} aria-label="Mese precedente" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
         <h3 className="font-display testo-sala-grande text-b58-charcoal">
           {MONTH_NAMES[month - 1]} {year}
         </h3>
-        <button onClick={onNext} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
+        <button onClick={onNext} aria-label="Mese successivo" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
       </div>
 
       {loading ? (
@@ -270,6 +281,23 @@ export default function AgendaList() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [notice, setNotice] = useState("");
 
+  // La settimana (11/09/2026): il suo lunedì, e gli impegni di quei 7 giorni.
+  const [lunedi, setLunedi] = useState(() => lunediDi(oggiISO));
+  const [settimana, setSettimana] = useState([]);
+  const [settimanaCaricando, setSettimanaCaricando] = useState(true);
+  // ⚠️ Una lettura fallita resta DENTRO la settimana, col suo «Riprova», e
+  //    si toglie alla lettura dopo: un errore globale restava in cima anche
+  //    sopra la settimana letta bene (rilievo della revisione, 11/09).
+  const [erroreSettimana, setErroreSettimana] = useState("");
+  const [riprovaSettimana, setRiprovaSettimana] = useState(0);
+  // ⚠️ Vince la lettura PIÙ RECENTE, non la più veloce: toccando «→» due
+  //    volte di fila partono due letture, e se la prima tornasse per ultima
+  //    sostituirebbe gli impegni della settimana giusta con quelli di
+  //    un'altra — che, divisi sui giorni di questa, non ci stanno: la
+  //    schermata direbbe «niente» su giorni che hanno impegni. Plausibile e
+  //    falso (misurato rompendo la guardia, 11/09).
+  const giroSettimana = useRef(0);
+
   const ricarica = async () => {
     const [c, f] = await Promise.all([agendaCorsie(), agendaFatti(30)]);
     setCorsie(c);
@@ -306,7 +334,25 @@ export default function AgendaList() {
   }, []);
 
   useEffect(() => {
-    if (view !== "calendario") return;
+    if (view !== "settimana") return;
+    const mio = giroSettimana.current + 1;
+    giroSettimana.current = mio;
+    setSettimanaCaricando(true);
+    setErroreSettimana("");
+    listTasksBetween(lunedi, spostaGiorni(lunedi, 6))
+      .then((righe) => {
+        if (giroSettimana.current === mio) setSettimana(righe ?? []);
+      })
+      .catch((e) => {
+        if (giroSettimana.current === mio) setErroreSettimana(e.message);
+      })
+      .finally(() => {
+        if (giroSettimana.current === mio) setSettimanaCaricando(false);
+      });
+  }, [view, lunedi, riprovaSettimana]);
+
+  useEffect(() => {
+    if (view !== "mese") return;
     setMonthLoading(true);
     listTasksForMonth(year, month)
       .then(setMonthTasks)
@@ -384,7 +430,11 @@ export default function AgendaList() {
   const quanti = daFareAdesso(corsie);
   const sezioni = sezioniDellAgenda(corsie);
 
-  const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
+  // ⚠️ Il giorno scelto nel Mese si legge come nella Settimana (11/09/2026):
+  //    stesso ordine, l'ora accanto, il fatto barrato. Prima arrivavano
+  //    nell'ordine del database, senza ora, e un impegno già fatto era
+  //    uguale a uno da fare — la lettura del mese li comprende tutti.
+  const dayTasks = selectedDay ? inOrdineDelGiorno(monthTasks.filter((t) => t.due_date === selectedDay)) : [];
 
   return (
     <div className="testo-sala max-w-4xl mx-auto">
@@ -425,13 +475,22 @@ export default function AgendaList() {
         <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
 
-      <div className="flex gap-2 mb-4">
+      {/* 🔴 LISTA · SETTIMANA · MESE — 11/09/2026, mandato notturno: «un
+          selettore chiaro fra Mese e Settimana». Tre voci allo stesso
+          livello invece di un secondo selettore dentro «Calendario»: due
+          file di pulsanti uno sotto l'altro si confondono. «Mese» è la vista
+          che fino a oggi si chiamava «Calendario», identica. È una scelta
+          dichiarata nel riepilogo, e cambiarla è questa riga. */}
+      <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Come vedere l'Agenda">
         {[
           { value: "lista", label: "Lista" },
-          { value: "calendario", label: "Calendario" },
+          { value: "settimana", label: "Settimana" },
+          { value: "mese", label: "Mese" },
         ].map((v) => (
           <button
             key={v.value}
+            data-vista={v.value}
+            aria-pressed={view === v.value}
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
@@ -665,7 +724,22 @@ export default function AgendaList() {
         </div>
       )}
 
-      {view === "calendario" ? (
+      {view === "settimana" && (
+        <SettimanaAgenda
+          lunedi={lunedi}
+          oggiISO={oggiISO}
+          impegni={settimana}
+          caricando={settimanaCaricando}
+          errore={erroreSettimana}
+          onRiprova={() => setRiprovaSettimana((n) => n + 1)}
+          onPrima={() => setLunedi((l) => spostaSettimana(l, -1))}
+          onDopo={() => setLunedi((l) => spostaSettimana(l, 1))}
+          onQuesta={() => setLunedi(lunediDi(oggiISO))}
+          onApri={(t) => navigate(`/agenda/${t.id}`)}
+        />
+      )}
+
+      {view === "mese" ? (
         <>
           <CalendarView
             tasks={monthTasks}
@@ -687,17 +761,37 @@ export default function AgendaList() {
                   {dayTasks.map((t) => (
                     <button
                       key={t.id}
+                      data-impegno={t.id}
                       onClick={() => navigate(`/agenda/${t.id}`)}
                       className="tocco-bottone w-full text-left flex items-center gap-2 testo-sala"
                     >
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
-                      {/* Il nome come nelle corsie — 11/09/2026: stessa
-                          misura e stesso peso, così lo stesso impegno non
-                          cambia faccia passando dall'elenco al calendario. */}
-                      <span className="min-w-0 flex-1 testo-sala-grande font-medium text-b58-charcoal">
-                        {t.title}
+                      {/* ⚠️ Ora e titolo sulla stessa riga di base, e la
+                          colonna dell'ora c'è anche vuota se nel giorno
+                          qualcuno un'ora ce l'ha: nella prima fotografia il
+                          titolo senza ora partiva più a sinistra degli
+                          altri, e «18:30» stava a metà di un titolo su due
+                          righe. Come nella Settimana. */}
+                      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                        {dayTasks.some((x) => oraBreve(x)) && (
+                          <span data-ora className="w-[3.2em] shrink-0 tabular-nums text-b58-charcoal-soft">
+                            {oraBreve(t) ?? ""}
+                          </span>
+                        )}
+                        {/* Il nome come nelle corsie — 11/09/2026: stessa
+                            misura e stesso peso, così lo stesso impegno non
+                            cambia faccia passando dall'elenco al calendario. */}
+                        <span
+                          data-titolo
+                          title={t.status === "completato" ? "Fatto" : undefined}
+                          className={`min-w-0 flex-1 break-words testo-sala-grande font-medium ${
+                            t.status === "completato" ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
+                          }`}
+                        >
+                          {t.title}
+                        </span>
                       </span>
                       {/* «Riservato» non c'è più nemmeno qui (11/09, dal
                           collaudo su iPhone): la visibilità si vede e si

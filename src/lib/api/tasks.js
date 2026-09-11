@@ -110,6 +110,23 @@ export async function listTasksForMonth(year, month) {
   return data;
 }
 
+// Gli impegni con scadenza fra due giorni compresi — la vista Settimana
+// dell'Agenda (11/09/2026).
+// ⚠️ LA STESSA LETTURA DEL MESE, qui sopra: stessa tabella, stessi filtri
+//    (nessuno: anche i fatti, che la settimana mostra barrati). La settimana
+//    è un'altra vista sugli stessi impegni, e se leggesse con altri filtri
+//    le due viste direbbero cose diverse dello stesso giorno.
+export async function listTasksBetween(dal, al) {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .gte("due_date", dal)
+    .lte("due_date", al)
+    .order("due_date", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
 export async function getTask(id) {
   const { data, error } = await supabase.from("tasks").select("*").eq("id", id).single();
   if (error) throw error;
