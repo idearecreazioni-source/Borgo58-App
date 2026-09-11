@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   agendaCorsie,
   agendaFatti,
   completaTask,
   riapriTask,
+  listTasksBetween,
   listTasksForMonth,
   spostaTask,
   stellaTask,
 } from "../../lib/api/tasks";
+import SettimanaAgenda from "./SettimanaAgenda";
+import { lunediDi, spostaGiorni, spostaSettimana } from "../../lib/calcoli/settimana";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import {
@@ -270,6 +273,16 @@ export default function AgendaList() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [notice, setNotice] = useState("");
 
+  // La settimana (11/09/2026): il suo lunedì, e gli impegni di quei 7 giorni.
+  const [lunedi, setLunedi] = useState(() => lunediDi(oggiISO));
+  const [settimana, setSettimana] = useState([]);
+  const [settimanaCaricando, setSettimanaCaricando] = useState(true);
+  // ⚠️ Vince la lettura PIÙ RECENTE, non la più veloce: toccando «→» due
+  //    volte di fila partono due letture, e se la prima tornasse per ultima
+  //    la settimana mostrerebbe gli impegni di quella prima sotto il titolo
+  //    di quella dopo — plausibile e falso.
+  const giroSettimana = useRef(0);
+
   const ricarica = async () => {
     const [c, f] = await Promise.all([agendaCorsie(), agendaFatti(30)]);
     setCorsie(c);
@@ -306,7 +319,24 @@ export default function AgendaList() {
   }, []);
 
   useEffect(() => {
-    if (view !== "calendario") return;
+    if (view !== "settimana") return;
+    const mio = giroSettimana.current + 1;
+    giroSettimana.current = mio;
+    setSettimanaCaricando(true);
+    listTasksBetween(lunedi, spostaGiorni(lunedi, 6))
+      .then((righe) => {
+        if (giroSettimana.current === mio) setSettimana(righe ?? []);
+      })
+      .catch((e) => {
+        if (giroSettimana.current === mio) setError(e.message);
+      })
+      .finally(() => {
+        if (giroSettimana.current === mio) setSettimanaCaricando(false);
+      });
+  }, [view, lunedi]);
+
+  useEffect(() => {
+    if (view !== "mese") return;
     setMonthLoading(true);
     listTasksForMonth(year, month)
       .then(setMonthTasks)
@@ -425,13 +455,22 @@ export default function AgendaList() {
         <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
 
-      <div className="flex gap-2 mb-4">
+      {/* 🔴 LISTA · SETTIMANA · MESE — 11/09/2026, mandato notturno: «un
+          selettore chiaro fra Mese e Settimana». Tre voci allo stesso
+          livello invece di un secondo selettore dentro «Calendario»: due
+          file di pulsanti uno sotto l'altro si confondono. «Mese» è la vista
+          che fino a oggi si chiamava «Calendario», identica. È una scelta
+          dichiarata nel riepilogo, e cambiarla è questa riga. */}
+      <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Come vedere l'Agenda">
         {[
           { value: "lista", label: "Lista" },
-          { value: "calendario", label: "Calendario" },
+          { value: "settimana", label: "Settimana" },
+          { value: "mese", label: "Mese" },
         ].map((v) => (
           <button
             key={v.value}
+            data-vista={v.value}
+            aria-pressed={view === v.value}
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
@@ -665,7 +704,20 @@ export default function AgendaList() {
         </div>
       )}
 
-      {view === "calendario" ? (
+      {view === "settimana" && (
+        <SettimanaAgenda
+          lunedi={lunedi}
+          oggiISO={oggiISO}
+          impegni={settimana}
+          caricando={settimanaCaricando}
+          onPrima={() => setLunedi((l) => spostaSettimana(l, -1))}
+          onDopo={() => setLunedi((l) => spostaSettimana(l, 1))}
+          onQuesta={() => setLunedi(lunediDi(oggiISO))}
+          onApri={(t) => navigate(`/agenda/${t.id}`)}
+        />
+      )}
+
+      {view === "mese" ? (
         <>
           <CalendarView
             tasks={monthTasks}
