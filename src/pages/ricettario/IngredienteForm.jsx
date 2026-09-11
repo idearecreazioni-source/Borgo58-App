@@ -84,6 +84,29 @@ const emptyForm = {
   va_in_carta: false,
 };
 
+// I nomi in italiano delle tabelle dove un ingrediente può comparire, per la
+// frase «Non si può eliminare: compare in …» (11/09/2026). Prima uscivano i
+// nomi tecnici — «stock_lots (3), recipe_ingredients (2)».
+// ⚠️ È LO STESSO ELENCO di `nome_leggibile()` nel database (migrazione
+//    20260824000020), che scrive il rifiuto quando si prova a cancellare:
+//    se uno dei due cambia, va cambiato anche l'altro. Una tabella che non è
+//    qui resta col suo nome tecnico — si vede, e si aggiunge.
+const NOMI_TABELLE = {
+  recipe_ingredients: "ricette",
+  stock_lots: "partite in magazzino",
+  stock_consumptions: "scarichi di magazzino",
+  price_history: "storico prezzi",
+  articoli_fornitore: "diciture dei fornitori",
+  shopping_list_items: "lista della spesa",
+  ordini_fornitore_righe: "ordini ai fornitori",
+  produzioni: "produzioni",
+  anomalie_scarico: "anomalie di scarico",
+  rettifiche_giacenza: "rettifiche di giacenza",
+  crops: "colture dell'orto",
+  foraged_items: "raccolta propria",
+  intercompany_cessions: "cessioni fra le due società",
+};
+
 export default function IngredienteForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -1492,7 +1515,7 @@ export default function IngredienteForm() {
                 ) : (
                   <span className="testo-sala-grande text-b58-charcoal-soft">
                     Non si può eliminare: compare in{" "}
-                    {usi.map((u) => `${u.dove} (${u.quante})`).join(", ")}.
+                    {usi.map((u) => `${NOMI_TABELLE[u.dove] ?? u.dove} (${u.quante})`).join(", ")}.
                   </span>
                 )}
               </div>

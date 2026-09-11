@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listMenus, listMenuItemsFull } from "../../lib/api/menus";
 import { listAllergensForRecipes } from "../../lib/api/dailyMenu";
-import { ALLERGENS, formatEUR, labelFor } from "../../lib/constants";
+import { ALLERGENS, RECIPE_CATEGORIES, formatEUR, labelFor } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 import Didascalia from "../../components/Didascalia";
 
@@ -297,7 +297,12 @@ export default function EditorMenuHome() {
                   >
                     {i.recipe?.name}{" "}
                     <span className="testo-sala text-b58-charcoal-soft/60">
-                      ({labelFor(CATEGORY_ORDER, i.category)})
+                      {/* ⚠️ CATEGORY_ORDER ha solo le quattro sezioni della
+                          stampa: per ogni altra categoria qui usciva il codice
+                          («finger_food»). Il nome si prende allora dall'elenco
+                          di tutte le categorie delle ricette (11/09/2026). */}
+                      ({CATEGORY_ORDER.find((c) => c.value === i.category)?.label ??
+                        labelFor(RECIPE_CATEGORIES, i.category)})
                     </span>
                   </span>
                   <button
