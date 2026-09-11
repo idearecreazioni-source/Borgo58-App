@@ -23,7 +23,8 @@ const PAROLE_ORIGINE = {
   dedotto: "dedotto da MEMO",
   alessio: "verificato da te",
 };
-import { nonLetto } from "../lib/calcoli/letture";
+import { NON_LETTO, nonLetto } from "../lib/calcoli/letture";
+import DatoNonLetto from "./DatoNonLetto";
 
 // GLI ALLERGENI DI UN PIATTO — la scheda dove si decide (24/08/2026,
 // blocco 1 del mandato del collaudo).
@@ -89,8 +90,14 @@ export default function AllergeniDelPiatto({
       // ⚠️ «Non lo so» non è «non ce ne sono»: un elenco vuoto qui si
       // leggerebbe «questo piatto non ha allergeni», che è la frase più
       // pericolosa che questo gestionale possa scrivere.
-      setErrore(e.message);
-      setRighe([]);
+      // 🔴 11/09/2026: qui c'era `setRighe([])`, e sotto la schermata
+      //    scriveva proprio «Nessun allergene risulta dagli ingredienti di
+      //    questo piatto» — il contrario di questo commento. Ora è il segno
+      //    di «non letto», e al posto dell'elenco compare la riga che lo
+      //    dice, con Riprova (lo stesso segno di tutto il gestionale).
+      void e;
+      setErrore("");
+      setRighe(NON_LETTO);
       // ⚠️ E la catena si svuota con loro: una provenienza rimasta a schermo
       //    accanto a un elenco che non si è riusciti a leggere direbbe di
       //    un piatto che non è quello che si sta guardando.
@@ -161,6 +168,12 @@ export default function AllergeniDelPiatto({
              dietro un gesto vorrebbe dire cercarla con qualcuno che aspetta. */}
       {righe === null ? (
         <p className="testo-sala-grande text-b58-charcoal-soft/60">Leggo gli allergeni…</p>
+      ) : nonLetto(righe) ? (
+        <DatoNonLetto
+          cosa="gli allergeni di questo piatto"
+          nonVuolDire="Non vuol dire che non ne ha: vuol dire che non lo so."
+          onRiprova={ricarica}
+        />
       ) : righe.length === 0 ? (
         <p className="testo-sala-grande text-b58-charcoal-soft/60">
           Nessun allergene risulta dagli ingredienti di questo piatto.

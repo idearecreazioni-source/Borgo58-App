@@ -54,6 +54,22 @@ export async function leggi(promessa) {
 //
 // ⚠️ Il punto di tutto il modulo è che le prime due NON si possono più
 // confondere: prima erano lo stesso `[]`.
+// LA FRASE DOPO «NON RIESCO A LEGGERE …» — 11/09/2026.
+//
+// 🔴 Una schermata può scriverne una sua (`nonVuolDire`), e lo fa in due
+// modi: una frase intera («Non vuol dire che è vuota: vuol dire che non lo
+// so.») oppure solo il pezzo che cambia («che non ce ne siano»). Il pezzo,
+// stampato da solo, diventava una frase a metà a schermo — «che questo
+// documento non abbia una sezione» nella scheda di un documento — e la
+// forma breve di `DatoNonLetto` ignorava del tutto la frase della
+// schermata. Qui il pezzo si completa, e la frase intera resta com'è.
+export function fraseNonVuolDire(nonVuolDire, predefinita) {
+  const t = String(nonVuolDire ?? "").trim();
+  if (!t) return predefinita;
+  if (/^che\b/i.test(t)) return `Non vuol dire ${t}: vuol dire che non lo so.`;
+  return t;
+}
+
 export function statoLettura(valore) {
   if (nonLetto(valore)) return "non_letto";
   if (valore == null) return "vuoto";
