@@ -20,6 +20,9 @@
 // valore)`, `campoDi(etichetta)`, `campoEsatto(etichetta)`, e restituisce
 // `true` oppure la ragione per cui non ha potuto.
 // `id` dice da quale tabella prendere un identificativo per le rotte `:id`.
+// `verifica` è codice della pagina che restituisce un elenco di difetti in
+// più, propri di quella schermata; `formeInPiu` aggiunge forme di schermo
+// solo per lei.
 
 const FILTRI_DAL_AL = `
   const dal = campoEsatto("Dal") || campoDi("Dal");
@@ -109,7 +112,73 @@ export const ROTTE = [
   },
   { rotta: "/fiscale/andamento", nome: "Andamento mensile" },
   // --- Personale ---
-  { rotta: "/personale/mance", nome: "Mance" },
+  {
+    rotta: "/personale/mance",
+    nome: "Mance",
+    // 🔴 DAL COLLAUDO SU IPHONE DELL'11/09: in «Distribuzione mensile» il
+    //    campo Mese e il menu «Paghi con» si sovrapponevano. Chrome disegna
+    //    il mese dentro la sua casella, Safari più largo: per questo la
+    //    misura generale dava la schermata per corretta. La verifica qui
+    //    sotto non guarda quanto è largo il mese — che da qui non si sa
+    //    misurare per Safari — ma la REGOLA: sul telefono i due vanno a
+    //    capo sempre, compatti, e non si toccano mai.
+    // ⚠️ Col telefono largo (440 punti) in più: lì il vecchio codice li
+    //    teneva affiancati anche in Chrome, cioè il caso delle fotografie.
+    formeInPiu: [{ nome: "iPhone largo 440", larghezza: 440, altezza: 956, scala: 3, mobile: true }],
+    verifica: `
+      const titolo = [...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === "Distribuzione mensile");
+      if (!titolo) return ["non trovo «Distribuzione mensile»"];
+      const box = titolo.parentElement;
+      const mese = box.querySelector("input[type=month]");
+      const etichettaPaghi = [...box.querySelectorAll("label")].find((l) => l.textContent.trim() === "Paghi con");
+      const paghi = etichettaPaghi && etichettaPaghi.parentElement.querySelector("select");
+      if (!mese || !paghi) return ["non trovo Mese e «Paghi con» (sulla prova servono dipendenti attivi)"];
+      const d = [];
+      const riga = mese.closest(".riga-campi");
+      if (!riga || riga !== paghi.closest(".riga-campi")) {
+        d.push("Mese e «Paghi con» non stanno nella stessa riga della regola comune (riga-campi)");
+      }
+      const pxcm = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm"));
+      const finestra = document.documentElement.clientWidth;
+      const a = mese.getBoundingClientRect();
+      const b = paghi.getBoundingClientRect();
+      const incrocio = (p, q) =>
+        Math.min(p.bottom, q.bottom) - Math.max(p.top, q.top) > 1 && Math.min(p.right, q.right) - Math.max(p.left, q.left) > 1;
+      if (incrocio(a, b)) d.push("Mese e «Paghi con» si sovrappongono");
+      const aCapo = b.top >= a.bottom - 1;
+      if (finestra < 640 && !aCapo) {
+        d.push("sul telefono Mese e «Paghi con» stanno affiancati: il mese che Safari disegna più largo finisce sopra «Paghi con»");
+      }
+      if (!aCapo && b.left - a.right < 0.2 * pxcm) d.push("affiancati, ma senza spazio fra Mese e «Paghi con»");
+      // ⚠️ COMPATTI vuol dire «larghi quanto il loro contenuto», non «sotto
+      //    una percentuale della riga»: a 64 punti per cm il mese occupa
+      //    256 punti su 310 perché è quanto chiede «settembre 2026» a quel
+      //    testo — la prima stesura di questo controllo lo segnalava, e
+      //    avrebbe spinto a tagliarlo. Stirato è un campo molto più largo del
+      //    suo contenuto (misurato su una copia lasciata libera).
+      const contenuto = (e) => {
+        const c = e.cloneNode(true);
+        if ("value" in e) c.value = e.value;
+        c.style.cssText += ";position:absolute;visibility:hidden;width:auto;min-width:0;max-width:none";
+        e.parentNode.appendChild(c);
+        const w = c.getBoundingClientRect().width;
+        c.remove();
+        return w;
+      };
+      for (const [nome, el, r] of [["Mese", mese, a], ["Paghi con", paghi, b]]) {
+        const serve = contenuto(el);
+        if (r.width > serve + pxcm) {
+          d.push("«" + nome + "» è stirato: " + r.width.toFixed(0) + " punti, il contenuto ne chiede " + serve.toFixed(0));
+        }
+      }
+      if (aCapo) {
+        const vuoto = etichettaPaghi.getBoundingClientRect().top - a.bottom;
+        if (vuoto > 0.6 * pxcm) d.push("fra Mese e «Paghi con» resta un vuoto di " + vuoto.toFixed(0) + " punti");
+        if (Math.abs(a.left - b.left) > 1) d.push("a capo, «Paghi con» non parte dallo stesso bordo di Mese");
+      }
+      return d;
+    `,
+  },
   { rotta: "/personale/:id", nome: "Dipendente — scheda", id: "employees" },
   // --- Documenti ---
   {

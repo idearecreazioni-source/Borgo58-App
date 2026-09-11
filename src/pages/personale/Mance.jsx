@@ -337,23 +337,36 @@ export default function Mance() {
               <p className="testo-sala text-b58-charcoal-soft/60">Aggiungi dei dipendenti attivi per distribuire le mance.</p>
             ) : (
               <>
-                <div className="flex flex-wrap gap-2 items-end mb-4">
+                {/* 🔴 MESE E «PAGHI CON» — 11/09/2026, dal collaudo su iPhone.
+                    Stavano in una fila semplice con due larghezze fisse (11 e
+                    9 rem): Chrome disegna il mese dentro la sua casella,
+                    Safari più largo, e sul telefono il mese finiva sopra
+                    «Paghi con». Ora è la regola comune (SPEC-0010): il mese ha
+                    la larghezza dei mesi, «Paghi con» resta compatto, e sul
+                    telefono va SEMPRE a capo sotto il mese
+                    (`riga-campi-a-capo`) — non solo quando la casella non ci
+                    sta: quanto è largo il mese su Safari da qui non si
+                    misura, e un a capo lasciato al caso era il difetto.
+                    «Dividi equamente» sta su una riga sua. */}
+                <div className="riga-campi mb-4">
                   <div>
                     <label className="block testo-sala text-b58-charcoal-soft mb-1">Mese</label>
-                    <input type="month" value={distMonth} onChange={(e) => setDistMonth(e.target.value)} className={inputClass + " w-44"} />
+                    <input type="month" value={distMonth} onChange={(e) => setDistMonth(e.target.value)} className={inputClass + " campo-mese"} />
                   </div>
-                  <div>
+                  <div className="riga-campi-a-capo">
                     {/* Con che soldi paghi: il gestionale non lo indovina,
                         perché un'ipotesi qui sposterebbe il saldo del
                         cassetto senza che nessuno l'abbia deciso. */}
                     <label className="block testo-sala text-b58-charcoal-soft mb-1">Paghi con</label>
-                    <select value={distMezzo} onChange={(e) => setDistMezzo(e.target.value)} className={inputClass + " w-36"}>
+                    <select value={distMezzo} onChange={(e) => setDistMezzo(e.target.value)} className={inputClass + " campo-contenuto"}>
                       {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
                     </select>
                   </div>
-                  <button type="button" onClick={distributeEqually} className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala px-4">
-                    Dividi equamente il monte
-                  </button>
+                  <div className="riga-campi-gesti">
+                    <button type="button" onClick={distributeEqually} className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark text-b58-charcoal testo-sala px-4">
+                      Dividi equamente il monte
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 mb-4">

@@ -350,7 +350,7 @@ const esiti = [];
 
 try {
   for (const r of rotte) {
-    for (const forma of FORME) {
+    for (const forma of [...FORME, ...(r.formeInPiu ?? [])]) {
       const esito = { rotta: r.rotta, nome: r.nome, forma: forma.nome, difetti: [], nota: null };
       const id = r.id ? await unId(r.id) : null;
       if (r.id && !id) {
@@ -373,6 +373,12 @@ try {
           }
           const m = await valuta(manda, MISURA);
           esito.difetti = controlla(m);
+          // I controlli propri di una schermata (per ora Mance, dal collaudo
+          // su iPhone dell'11/09): si sommano a quelli generali.
+          if (r.verifica) {
+            const propri = await valuta(manda, `(() => { ${r.verifica} })()`);
+            esito.difetti.push(...(Array.isArray(propri) ? propri : [`verifica non riuscita: ${propri}`]));
+          }
           esito.inTabelleCheScorrono = m.campi.filter((c) => c.scorre && c.destra > c.destraUtile + TOLLERANZA_PX).length;
           esito.campi = m.campi.filter((c) => c.dataOra).map((c) => `${c.tipo} ${c.larga.toFixed(0)}×${c.alta.toFixed(0)}`);
           esito.foto = await fotografa(manda, path.join(cartella, `${nomeFile(r.nome)}--${nomeFile(forma.nome)}.png`));
@@ -394,6 +400,8 @@ try {
 
 writeFileSync(path.join(cartella, "esito.json"), JSON.stringify(esiti, null, 2));
 const conProblemi = esiti.filter((e) => e.difetti.length || e.nota);
-console.log(`\nMisurate ${esiti.length} viste (${rotte.length} schermate × ${FORME.length} forme); con problemi o non misurate: ${conProblemi.length}.`);
+// ⚠️ Le viste si contano, non si moltiplicano: una schermata può avere
+//    forme in più (`formeInPiu`), e «schermate × forme» diceva 3 dove erano 4.
+console.log(`\nMisurate ${esiti.length} viste (${rotte.length} schermate); con problemi o non misurate: ${conProblemi.length}.`);
 console.log(`Esito completo: ${path.join(cartella, "esito.json")}`);
 process.exit(conProblemi.length ? 1 : 0);

@@ -305,6 +305,15 @@ body {
   width: 12.5em;
   max-width: 100%;
 }
+/* Un menu corto («Contanti», «Carta»): largo quanto la voce che mostra, non
+   quanto la riga (11/09/2026, Mance). ⚠️ Serve perché lo stile dei campi
+   delle schermate porta `w-full`: in una cella che sul telefono prende la
+   riga intera il menu si stirava a 310 punti per mostrare otto lettere.
+   Questa classe sta fuori dai livelli di Tailwind, quindi vince. */
+.campo-contenuto {
+  width: auto;
+  max-width: 100%;
+}
 /* I gesti di una riga di filtri («Togli i filtri», «Azzera»): sul
    telefono su una riga loro, allineati a sinistra coi campi; da 640 punti
    in su in fondo alla riga, alla base dei campi. ⚠️ Sul telefono non
@@ -317,6 +326,17 @@ body {
 }
 @media (max-width: 639px) {
   .riga-campi > .riga-campi-gesti {
+    flex-basis: 100%;
+  }
+}
+/* Una cella che sul telefono va SEMPRE a capo, anche quando la sua casella
+   ci starebbe (11/09/2026, Mance, dal collaudo su iPhone). Serve dove il
+   campo accanto è un mese o una data: Safari lo disegna più largo di quanto
+   si misura da qui, e affiancati il suo contenuto finiva sopra il vicino.
+   ⚠️ La cella prende la riga intera, il campo dentro resta largo quanto è:
+   a capo, non a tutta larghezza. Da 640 punti in su si torna affiancati. */
+@media (max-width: 639px) {
+  .riga-campi > .riga-campi-a-capo {
     flex-basis: 100%;
   }
 }
