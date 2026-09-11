@@ -55,12 +55,19 @@
 // Uso: `npm run test:visive`  (esce con 1 se qualcosa non torna)
 // =====================================================================
 
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createServer } from "vite";
 import { QUANTE_SCHEDE } from "../tests/visive/finti/tasks.js";
+import {
+  apriPagina as apriPaginaChrome,
+  aspetta,
+  avviaChrome,
+  fotografa as fotografaChrome,
+  nomeFile,
+  valuta,
+} from "./chrome-senza-schermo.mjs";
 
 const RADICE = process.cwd();
 const TOLLERANZA_PX = 1;
@@ -86,88 +93,6 @@ const FORME = [
   { nome: "telefono a 64 punti per cm", larghezza: 390, altezza: 844, scala: 3, mobile: true, pxcm: 64 },
   { nome: "computer", larghezza: 1280, altezza: 900, scala: 1, mobile: false },
 ];
-
-// --- Chrome ------------------------------------------------------------
-function doveChrome() {
-  const candidati = [
-    process.env.CHROME,
-    "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  ].filter(Boolean);
-  const trovato = candidati.find((c) => existsSync(c));
-  if (!trovato) {
-    console.error("Non trovo Chrome su questo computer: la prova visiva ne ha bisogno (variabile CHROME).");
-    process.exit(2);
-  }
-  return trovato;
-}
-
-const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function avviaChrome() {
-  const porta = 9400 + Math.floor(Math.random() * 400);
-  const profilo = mkdtempSync(path.join(os.tmpdir(), "b58-visiva-"));
-  const chrome = spawn(
-    doveChrome(),
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--hide-scrollbars",
-      `--remote-debugging-port=${porta}`,
-      `--user-data-dir=${profilo}`,
-      "about:blank",
-    ],
-    { stdio: "ignore" }
-  );
-  for (let i = 0; i < 60; i++) {
-    try {
-      const r = await fetch(`http://127.0.0.1:${porta}/json/version`);
-      if (r.ok) return { chrome, porta, profilo };
-    } catch {
-      /* non ancora pronto */
-    }
-    await aspetta(250);
-  }
-  chrome.kill();
-  throw new Error("Chrome non ha aperto il canale di controllo entro 15 secondi.");
-}
-
-async function apriScheda(porta) {
-  const r = await fetch(`http://127.0.0.1:${porta}/json/new?about:blank`, { method: "PUT" });
-  const bersaglio = await r.json();
-  const ws = new WebSocket(bersaglio.webSocketDebuggerUrl);
-  await new Promise((ok, ko) => {
-    ws.onopen = ok;
-    ws.onerror = ko;
-  });
-  let id = 0;
-  const attese = new Map();
-  ws.onmessage = (m) => {
-    const d = JSON.parse(m.data);
-    if (d.id && attese.has(d.id)) {
-      const { ok, ko } = attese.get(d.id);
-      attese.delete(d.id);
-      if (d.error) ko(new Error(d.error.message));
-      else ok(d.result);
-    }
-  };
-  const manda = (method, params = {}) =>
-    new Promise((ok, ko) => {
-      const mio = ++id;
-      attese.set(mio, { ok, ko });
-      ws.send(JSON.stringify({ id: mio, method, params }));
-    });
-  return { ws, manda };
-}
-
-const valuta = async (manda, espressione) =>
-  (await manda("Runtime.evaluate", { expression: espressione, returnByValue: true })).result.value;
 
 // --- Le misure, eseguite DENTRO la pagina -------------------------------
 // ⚠️ Si misura il TESTO disegnato, non il bordo dell'elemento: un elemento
@@ -320,7 +245,7 @@ const MISURA_SCHEDA = `(() => {
     dentroLarga: dentroDestra - dentroSinistra,
     fondoModulo: rf.bottom,
     paginaLarga: document.documentElement.scrollWidth,
-    finestra: innerWidth,
+    finestra: document.documentElement.clientWidth,
     caselle,
     pezziRipete,
     carattereTitolo: titolo ? parseFloat(getComputedStyle(titolo).fontSize) : null,
@@ -547,6 +472,152 @@ function controllaScheda(forma, m, difetti) {
   }
 }
 
+// --- Il segno «?» (Didascalia), coi gesti veri ----------------------------
+// ⚠️ GESTI VERI, NON CLIC SINTETICI: il tocco passa dal protocollo di Chrome
+//    (`Input.dispatchTouchEvent`), che genera la sequenza di un dito vero —
+//    pointerdown, pointerup, poi il clic — e il trascinamento che fa
+//    scorrere la pagina. Un `element.click()` salterebbe proprio i passi in
+//    cui questo segno si è rotto due volte (23 e 24/08).
+const SEGNO = (caso) => `[data-caso="${caso}"] button[aria-label]`;
+const APERTA = (caso) => `[data-caso="${caso}"] [role=tooltip]`;
+const punto = (manda, selettore) =>
+  valuta(
+    manda,
+    `(() => { const e = document.querySelector(${JSON.stringify(selettore)}); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`
+  );
+const aperta = (manda, caso) => valuta(manda, `Boolean(document.querySelector(${JSON.stringify(APERTA(caso))}))`);
+const quanteAperte = (manda) => valuta(manda, `document.querySelectorAll("[role=tooltip]").length`);
+
+async function tocca(manda, p) {
+  await manda("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: p.x, y: p.y }] });
+  await aspetta(50);
+  await manda("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await aspetta(400);
+}
+
+async function trascina(manda, da, a) {
+  await manda("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: da.x, y: da.y }] });
+  for (let k = 1; k <= 10; k++) {
+    const x = da.x + ((a.x - da.x) * k) / 10;
+    const y = da.y + ((a.y - da.y) * k) / 10;
+    await manda("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y }] });
+    await aspetta(16);
+  }
+  await manda("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await aspetta(500);
+}
+
+async function gestiDelDito(manda) {
+  const esiti = [];
+  const verifica = (cosa, ok) => esiti.push({ cosa, ok: Boolean(ok) });
+  const segno = await punto(manda, SEGNO("titolo"));
+  const vuoto = await punto(manda, "main p");
+  const pulsante = await punto(manda, '[data-bersaglio="pulsante"]');
+  const bordo = await punto(manda, SEGNO("bordo"));
+  const etichetta = await punto(manda, SEGNO("etichetta"));
+  if (!segno || !vuoto || !pulsante || !bordo || !etichetta) {
+    return [{ cosa: "la pagina di prova non si è disegnata", ok: false }];
+  }
+  const spuntata = () => valuta(manda, `document.querySelector("[data-casella]").checked`);
+
+  await tocca(manda, segno);
+  verifica("il primo tocco sul «?» lo apre", await aperta(manda, "titolo"));
+  await tocca(manda, segno);
+  verifica("il secondo tocco sullo stesso «?» lo chiude", !(await aperta(manda, "titolo")));
+  await tocca(manda, segno);
+  await tocca(manda, vuoto);
+  verifica("un tocco fuori lo chiude", !(await aperta(manda, "titolo")));
+
+  // Il «?» dentro l'etichetta di una casella (scheda di un ingrediente).
+  await tocca(manda, etichetta);
+  verifica("il «?» dentro l'etichetta di una casella si apre", await aperta(manda, "etichetta"));
+  verifica("… e la casella NON si spunta", !(await spuntata()));
+  await tocca(manda, etichetta);
+  verifica("… il secondo tocco lo chiude e la casella resta com'era", !(await aperta(manda, "etichetta")) && !(await spuntata()));
+
+  await tocca(manda, segno);
+  await valuta(manda, "window.__premuto = 0");
+  await tocca(manda, pulsante);
+  verifica("toccando un pulsante mentre è aperto, si chiude", !(await aperta(manda, "titolo")));
+  verifica("… e il pulsante riceve il suo tocco", (await valuta(manda, "window.__premuto")) === 1);
+
+  await tocca(manda, segno);
+  await tocca(manda, bordo);
+  verifica("toccando un altro «?» si chiude il primo", !(await aperta(manda, "titolo")));
+  verifica("… e si apre il secondo", await aperta(manda, "bordo"));
+  const b = await valuta(
+    manda,
+    `(() => { const t = document.querySelector(${JSON.stringify(APERTA("bordo"))}); if (!t) return null; const r = t.getBoundingClientRect(); return { sinistra: r.left, destra: r.right, finestra: document.documentElement.clientWidth, pagina: document.documentElement.scrollWidth }; })()`
+  );
+  verifica(
+    `la spiegazione accanto al bordo resta nello schermo (${b ? `da ${b.sinistra.toFixed(0)} a ${b.destra.toFixed(0)} su ${b.finestra}, pagina larga ${b.pagina}` : "non aperta"})`,
+    b && b.sinistra >= 0 && b.destra <= b.finestra + TOLLERANZA_PX && b.pagina <= b.finestra + TOLLERANZA_PX
+  );
+  await tocca(manda, vuoto);
+
+  await valuta(manda, "window.scrollTo(0, 0)");
+  await aspetta(200);
+  await trascina(manda, { x: vuoto.x, y: 650 }, { x: vuoto.x, y: 250 });
+  const scorsa = await valuta(manda, "scrollY");
+  verifica(`trascinando col dito la pagina scorre (${Math.round(scorsa)} punti)`, scorsa > 50);
+  verifica("… e non si apre nessun «?»", (await quanteAperte(manda)) === 0);
+
+  await valuta(manda, "window.scrollTo(0, 0)");
+  await aspetta(200);
+  const da = await punto(manda, SEGNO("titolo"));
+  await trascina(manda, da, { x: da.x, y: da.y + 300 });
+  verifica("un trascinamento che parte dal «?» non lo apre", (await quanteAperte(manda)) === 0);
+  return esiti;
+}
+
+async function gestiDelMouse(manda) {
+  const esiti = [];
+  const verifica = (cosa, ok) => esiti.push({ cosa, ok: Boolean(ok) });
+  const segno = await punto(manda, SEGNO("titolo"));
+  if (!segno) return [{ cosa: "la pagina di prova non si è disegnata", ok: false }];
+  const lontano = { x: 3, y: 3 };
+  const muovi = (p) => manda("Input.dispatchMouseEvent", { type: "mouseMoved", x: p.x, y: p.y });
+  const clic = async (p) => {
+    await manda("Input.dispatchMouseEvent", { type: "mousePressed", x: p.x, y: p.y, button: "left", clickCount: 1 });
+    await manda("Input.dispatchMouseEvent", { type: "mouseReleased", x: p.x, y: p.y, button: "left", clickCount: 1 });
+    await aspetta(200);
+  };
+  const tasto = async (key, code, windowsVirtualKeyCode) => {
+    await manda("Input.dispatchKeyEvent", { type: "keyDown", key, code, windowsVirtualKeyCode });
+    await manda("Input.dispatchKeyEvent", { type: "keyUp", key, code, windowsVirtualKeyCode });
+    await aspetta(200);
+  };
+
+  await muovi(lontano);
+  await aspetta(100);
+  await muovi(segno);
+  await aspetta(200);
+  verifica("col mouse, passarci sopra lo apre", await aperta(manda, "titolo"));
+  await clic(segno);
+  verifica("… il clic non lo richiude", await aperta(manda, "titolo"));
+  await muovi(lontano);
+  await aspetta(200);
+  verifica("… e uscendo col mouse si chiude", !(await aperta(manda, "titolo")));
+
+  const etichetta = await punto(manda, SEGNO("etichetta"));
+  await clic(etichetta);
+  verifica(
+    "un clic sul «?» dentro l'etichetta di una casella non la spunta",
+    !(await valuta(manda, `document.querySelector("[data-casella]").checked`))
+  );
+  await muovi(lontano);
+  await aspetta(200);
+
+  // Il punto da cui parte il Tab è l'angolo in alto: il primo segno che si
+  // incontra è quello del titolo.
+  await clic(lontano);
+  await tasto("Tab", "Tab", 9);
+  verifica("con la tastiera, arrivandoci col Tab si apre", await aperta(manda, "titolo"));
+  await tasto("Escape", "Escape", 27);
+  verifica("… ed Escape lo chiude", !(await aperta(manda, "titolo")));
+  return esiti;
+}
+
 // --- Il giro ------------------------------------------------------------
 const server = await createServer({
   root: RADICE,
@@ -564,55 +635,19 @@ const server = await createServer({
 await server.listen();
 const base = server.resolvedUrls.local[0];
 
-const { chrome, porta, profilo } = await avviaChrome();
+const { porta, chiudi } = await avviaChrome();
 const cartellaFoto = path.join(os.tmpdir(), "b58-prova-visiva");
 mkdirSync(cartellaFoto, { recursive: true });
 
 const difetti = [];
 let misurati = 0;
 
-async function apriPagina(forma, pagina) {
-  const { ws, manda } = await apriScheda(porta);
-  await manda("Page.enable");
-  await manda("Runtime.enable");
-  await manda("Emulation.setDeviceMetricsOverride", {
-    width: forma.larghezza,
-    height: forma.altezza,
-    deviceScaleFactor: forma.scala,
-    mobile: forma.mobile,
-  });
-  // La calibrazione dei centimetri sta nella memoria del browser: si scrive
-  // PRIMA che la pagina parta, come la troverebbe su un telefono calibrato.
-  // ⚠️ E SI TOGLIE quando la forma non ne ha una: la memoria è condivisa fra
-  //    le schede dello stesso Chrome, e la prima stesura di questa prova ha
-  //    fatto girare il «computer» a 64 punti per cm senza dirlo.
-  await manda("Page.addScriptToEvaluateOnNewDocument", {
-    source: forma.pxcm
-      ? `localStorage.setItem("b58_pxcm", "${forma.pxcm}");`
-      : `localStorage.removeItem("b58_pxcm");`,
-  });
-  await manda("Page.navigate", { url: `${base}${pagina}` });
-  return { ws, manda };
-}
+const apriPagina = (forma, pagina) => apriPaginaChrome(porta, forma, `${base}${pagina}`);
 
 async function fotografa(manda, nome) {
-  // La fotografia è un di più: se non arriva, la misura resta valida.
-  try {
-    const foto = await Promise.race([
-      manda("Page.captureScreenshot", { format: "png", captureBeyondViewport: true }),
-      aspetta(15000).then(() => null),
-    ]);
-    if (foto?.data) {
-      const dove = path.join(cartellaFoto, `${nome}.png`);
-      writeFileSync(dove, Buffer.from(foto.data, "base64"));
-      console.log(`   fotografia: ${dove}`);
-    }
-  } catch {
-    /* niente fotografia: la misura resta quella */
-  }
+  const dove = await fotografaChrome(manda, path.join(cartellaFoto, `${nome}.png`));
+  if (dove) console.log(`   fotografia: ${dove}`);
 }
-
-const nomeFile = (s) => s.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 
 try {
   for (const forma of FORME) {
@@ -662,15 +697,23 @@ try {
       }
       ws.close();
     }
+    // --- il segno «?» ---
+    {
+      const { ws, manda } = await apriPagina(forma, "tests/visive/didascalia/index.html");
+      for (let i = 0; i < 40; i++) {
+        if ((await valuta(manda, `document.querySelectorAll("button[aria-label]").length`)) >= 2) break;
+        await aspetta(250);
+      }
+      const gesti = forma.mobile ? await gestiDelDito(manda) : await gestiDelMouse(manda);
+      for (const g of gesti) if (!g.ok) difetti.push(`segno «?» · ${forma.nome}: ${g.cosa} — NO.`);
+      console.log(`segno «?» · ${forma.nome}: ${gesti.filter((g) => g.ok).length} gesti su ${gesti.length} come previsto`);
+      for (const g of gesti) console.log(`   ${g.ok ? "✓" : "✗"} ${g.cosa}`);
+      ws.close();
+    }
   }
 } finally {
-  chrome.kill();
+  chiudi();
   await server.close();
-  try {
-    rmSync(profilo, { recursive: true, force: true });
-  } catch {
-    /* Chrome può tenere il profilo per un istante */
-  }
 }
 
 if (difetti.length) {

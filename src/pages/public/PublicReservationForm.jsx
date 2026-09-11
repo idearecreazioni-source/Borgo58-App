@@ -256,8 +256,13 @@ export default function PublicReservationForm() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 min-w-0">
+          {/* 🔴 SPEC-0010, 11/09/2026 — `min-w-0` qui sopra teneva la data
+              DENTRO la sua colonna, ma a 64 punti per cm la colonna era più
+              stretta della data (192 punti contro 260) e la data si tagliava.
+              Ora la data ha la sua larghezza e le persone si allargano nello
+              spazio che resta, o vanno sotto. */}
+          <div className="riga-campi">
+            <div>
               <label className={labelClass} htmlFor="prenota-data">Data</label>
               <input
                 id="prenota-data"
@@ -266,10 +271,10 @@ export default function PublicReservationForm() {
                 min={primoGiornoUtile}
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                className={inputClass}
+                className={`${inputClass} campo-data`}
               />
             </div>
-            <div className="min-w-0">
+            <div className="cella-media">
               <label className={labelClass} htmlFor="prenota-persone">Persone</label>
               <input
                 id="prenota-persone"

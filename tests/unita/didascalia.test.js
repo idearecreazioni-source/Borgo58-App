@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dopoIlGesto } from "../../src/lib/calcoli/didascalia.js";
+import { dopoIlGesto, puntatoreDelClic, spostamentoNelloSchermo } from "../../src/lib/calcoli/didascalia.js";
 
 const MOUSE = { puntatore: "mouse", daTastiera: false };
 const DITO = { puntatore: "touch", daTastiera: false };
@@ -86,5 +86,49 @@ describe("le tre sequenze intere, come capitano davvero", () => {
     expect(gira([["fuoco", TASTIERA]])).toBe(true);
     expect(gira([["fuoco", TASTIERA], ["esc", TASTIERA]])).toBe(false);
     expect(gira([["fuoco", TASTIERA], ["fuocoVia", TASTIERA]])).toBe(false);
+  });
+});
+
+describe("con cosa è arrivato il clic (11/09/2026)", () => {
+  const gira = (passi) => passi.reduce((stato, [g, c]) => dopoIlGesto(g, c, stato), false);
+  const clicDopo = (premuto, delClic) => ({ puntatore: puntatoreDelClic(premuto, delClic), daTastiera: false });
+
+  it("vale la pressione, quando c'è", () => {
+    expect(puntatoreDelClic("touch", "mouse")).toBe("touch");
+    expect(puntatoreDelClic("mouse", undefined)).toBe("mouse");
+    expect(puntatoreDelClic("touch", "")).toBe("touch");
+  });
+
+  it("senza pressione (tastiera) vale quello che dice il clic", () => {
+    expect(puntatoreDelClic(undefined, "touch")).toBe("touch");
+    expect(puntatoreDelClic(undefined, "")).toBeUndefined();
+  });
+
+  it("🔴 un dito resta un dito anche se il clic si dichiara «mouse»", () => {
+    // Tocco, ritocco: apre e chiude, qualunque cosa dica il clic.
+    expect(gira([["entra", DITO], ["clic", clicDopo("touch", "mouse")]])).toBe(true);
+    expect(gira([["entra", DITO], ["clic", clicDopo("touch", "mouse")], ["clic", clicDopo("touch", "mouse")]])).toBe(false);
+  });
+
+  it("🔴 un mouse resta un mouse anche se il clic arriva senza tipo", () => {
+    // È il difetto del 24/08 da un'altra porta: un clic senza tipo sarebbe
+    // preso per un dito e richiuderebbe quello che il passaggio ha aperto.
+    expect(gira([["entra", MOUSE], ["clic", clicDopo("mouse", undefined)]])).toBe(true);
+  });
+});
+
+describe("la spiegazione resta dentro lo schermo (11/09/2026)", () => {
+  it("se esce a destra, torna indietro di quanto serve", () => {
+    // Il caso misurato: da 342 a 598 su 390 → indietro di 598 − 382 = 216.
+    expect(spostamentoNelloSchermo({ sinistra: 342, destra: 598 }, 390)).toBe(-216);
+  });
+
+  it("se ci sta, non si muove", () => {
+    expect(spostamentoNelloSchermo({ sinistra: 16, destra: 272 }, 390)).toBe(0);
+  });
+
+  it("e non va mai oltre il margine sinistro, anche se è più larga dello schermo", () => {
+    const dx = spostamentoNelloSchermo({ sinistra: 100, destra: 600 }, 390);
+    expect(100 + dx).toBe(8);
   });
 });

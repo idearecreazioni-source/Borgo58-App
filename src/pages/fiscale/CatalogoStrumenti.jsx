@@ -160,8 +160,10 @@ export default function CatalogoStrumenti() {
               rows={2}
               className={`${inputClass} mb-3`}
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-              <div>
+            {/* SPEC-0010, 11/09/2026: le due date in mezza riga (132 punti)
+                si tagliavano — chiedevano 181, 260 a 64 punti per cm. */}
+            <div className="riga-campi mb-3">
+              <div className="cella-larga">
                 <label className={labelClass}>Stato</label>
                 <select
                   value={form.status}
@@ -179,7 +181,7 @@ export default function CatalogoStrumenti() {
                   type="date"
                   value={form.last_verified_date}
                   onChange={(e) => setForm((f) => ({ ...f, last_verified_date: e.target.value }))}
-                  className={inputClass}
+                  className={`${inputClass} campo-data`}
                 />
               </div>
               <div>
@@ -188,10 +190,10 @@ export default function CatalogoStrumenti() {
                   type="date"
                   value={form.deadline}
                   onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-                  className={inputClass}
+                  className={`${inputClass} campo-data`}
                 />
               </div>
-              <div>
+              <div className="cella-larga">
                 <label className={labelClass}>Rif. normativo</label>
                 <input
                   value={form.normative_reference}

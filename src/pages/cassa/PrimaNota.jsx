@@ -491,8 +491,11 @@ export default function PrimaNota() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <div>
+          {/* 🔴 SPEC-0010, 11/09/2026 — misurato col telefono: la giornata
+              stava in mezza riga (132 punti) e la data ne chiedeva 181 (217 a
+              64 punti per cm). Regola comune in index.css. */}
+          <div className="riga-campi mb-3">
+            <div className="cella-media">
               <label className={labelClass}>Importo €</label>
               <input
                 type="number"
@@ -510,9 +513,10 @@ export default function PrimaNota() {
               oraFineSerata={oraFineSerata}
               frase="Questo movimento va sulla serata di"
               labelClass={labelClass}
-              inputClass={inputClass}
+              inputClass={`${inputClass} campo-data`}
+              className="w-min"
             />
-            <div>
+            <div className="cella-larga">
               <label className={labelClass}>Causale</label>
               {/* 🔴 SULLA TASCA LA CAUSALE NON SI SCEGLIE (SPEC-0005,
                   06/09/2026). Qui c'era il menu delle causali di uscita, e
@@ -544,7 +548,7 @@ export default function PrimaNota() {
                 </select>
               )}
             </div>
-            <div>
+            <div className="cella-larga">
               <label className={labelClass}>Tipo documento</label>
               <select
                 value={form.tipo_documento}
@@ -666,23 +670,28 @@ export default function PrimaNota() {
       {/* Elenco + filtri */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6">
         <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
-          <div className="flex items-end gap-2 flex-wrap">
+          {/* SPEC-0010, 11/09/2026: la stessa regola della barra di Fatture
+              Fornitori — date con la loro larghezza, «Azzera» sul telefono su
+              una riga sua. */}
+          <div className="riga-campi">
             <div>
               <label className={labelClass}>Dal</label>
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputClass} />
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={`${inputClass} campo-data`} />
             </div>
             <div>
               <label className={labelClass}>Al</label>
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={inputClass} />
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={`${inputClass} campo-data`} />
             </div>
             {(from || to) && (
-              <button
-                type="button"
-                onClick={() => { setFrom(""); setTo(""); }}
-                className="tocco-bottone rounded-lg border border-b58-charcoal/15 px-3  testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark"
-              >
-                Azzera
-              </button>
+              <div className="riga-campi-gesti">
+                <button
+                  type="button"
+                  onClick={() => { setFrom(""); setTo(""); }}
+                  className="tocco-bottone rounded-lg border border-b58-charcoal/15 px-3  testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark"
+                >
+                  Azzera
+                </button>
+              </div>
             )}
           </div>
           <button

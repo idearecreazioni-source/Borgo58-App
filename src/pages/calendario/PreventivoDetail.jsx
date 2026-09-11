@@ -296,14 +296,18 @@ export default function PreventivoDetail() {
           onBlur={(e) => salva({ cliente_nome: e.target.value })}
           className="font-display text-2xl text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none w-full"
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+        {/* 🔴 SPEC-0010, 11/09/2026 — misurato col telefono: le due date in
+            mezza riga (149 punti) chiedevano 181 (260 a 64 punti per cm), e
+            a 64 anche l'ora si tagliava. Date e ora hanno la loro larghezza;
+            persone e telefono si dividono lo spazio che resta. */}
+        <div className="riga-campi mt-4">
           <div>
             <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Data</label>
             <input
               type="date"
               value={prev.data_evento ?? ""}
               onChange={(e) => salva({ data_evento: e.target.value })}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
           <div>
@@ -316,10 +320,10 @@ export default function PreventivoDetail() {
               type="time"
               value={(prev.ora_evento ?? "").slice(0, 5)}
               onChange={(e) => salva({ ora_evento: e.target.value || null })}
-              className={inputClass}
+              className={`${inputClass} campo-ora`}
             />
           </div>
-          <div>
+          <div className="cella-media">
             <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Persone</label>
             <input
               type="number"
@@ -341,10 +345,10 @@ export default function PreventivoDetail() {
               type="date"
               value={prev.valido_fino_al ?? ""}
               onChange={(e) => salva({ valido_fino_al: e.target.value || null })}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
-          <div>
+          <div className="cella-larga">
             <label className="block testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-1">Telefono</label>
             <input
               value={prev.cliente_telefono ?? ""}

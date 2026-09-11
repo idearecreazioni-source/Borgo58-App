@@ -311,23 +311,25 @@ export default function AndamentoMensile() {
             ))}
           </ul>
         )}
-        <div className="flex flex-wrap gap-2 items-end">
+        {/* SPEC-0010, 11/09/2026: a 64 punti per cm la fila andava a capo
+            dove capitava e «perché» usciva dal riquadro. Regola comune. */}
+        <div className="riga-campi">
           <input
             type="date"
             value={nuovoPeriodo.dal}
             onChange={(e) => setNuovoPeriodo((p) => ({ ...p, dal: e.target.value }))}
-            className={inputClass}
+            className={`${inputClass} campo-data`}
           />
           <input
             type="date"
             value={nuovoPeriodo.al}
             onChange={(e) => setNuovoPeriodo((p) => ({ ...p, al: e.target.value }))}
-            className={inputClass}
+            className={`${inputClass} campo-data`}
           />
           <select
             value={nuovoPeriodo.tipo}
             onChange={(e) => setNuovoPeriodo((p) => ({ ...p, tipo: e.target.value }))}
-            className={inputClass}
+            className={`${inputClass} cella-media`}
           >
             <option value="apertura">apertura</option>
             <option value="chiusura">chiusura</option>
@@ -338,16 +340,18 @@ export default function AndamentoMensile() {
             value={nuovoPeriodo.nota}
             onChange={(e) => setNuovoPeriodo((p) => ({ ...p, nota: e.target.value }))}
             placeholder="perché (opz.)"
-            className={inputClass}
+            className={`${inputClass} cella-larga`}
           />
-          <button
-            type="button"
-            disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
-            onClick={aggiungiPeriodo}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
-          >
-            + Segna
-          </button>
+          <div className="riga-campi-gesti">
+            <button
+              type="button"
+              disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
+              onClick={aggiungiPeriodo}
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            >
+              + Segna
+            </button>
+          </div>
         </div>
       </details>
 

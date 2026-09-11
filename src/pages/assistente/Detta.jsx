@@ -527,7 +527,13 @@ export default function Detta() {
         {/* 🔴 SI CHIAMA MEMO (27/08). Il titolo prende il nome, il pulsante
             «Premi e parla» no: quello è il gesto. */}
         <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">MEMO voce</h1>
-        <Didascalia testo="Premi una volta per accendere il microfono, di' tutto quello che ti serve di fila, poi ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo chiede." />
+        {/* ⚠️ Il testo va DENTRO il segno (11/09/2026): come `testo="…"`
+            il componente non lo leggeva, e la spiegazione si apriva vuota. */}
+        <Didascalia>
+          Premi una volta per accendere il microfono, di&apos; tutto quello che ti serve di fila, poi
+          ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo
+          chiede.
+        </Didascalia>
       </div>
 
       {errore && (

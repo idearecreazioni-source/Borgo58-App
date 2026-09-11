@@ -160,8 +160,10 @@ export default function RegistraCarico() {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        {/* SPEC-0010, 11/09/2026: la scadenza in mezza riga (147 punti) si
+            tagliava — chiedeva 181, 217 a 64 punti per cm. */}
+        <div className="riga-campi">
+          <div className="cella-media">
             <label className={labelClass}>Quantità{selectedIngredient ? ` (${selectedIngredient.unit})` : ""}</label>
             <input
               required
@@ -179,7 +181,7 @@ export default function RegistraCarico() {
               type="date"
               value={form.expiry_date}
               onChange={(e) => setForm((f) => ({ ...f, expiry_date: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
         </div>
