@@ -6,6 +6,7 @@ import Logo from "./Logo";
 import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
 import RipresaBozza from "./RipresaBozza";
 import AvvisoAggiornamento from "./AvvisoAggiornamento";
+import ApriMemo from "./ApriMemo";
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -112,15 +113,26 @@ export default function Layout() {
               ⚠️ E compare **solo sugli schermi stretti** (`lg:hidden`) —
               cioè esattamente sul tablet e sul telefono, dove si tocca col
               dito. Sul computer non c'è. */}
-          <button
-            aria-label="Apri menu"
-            onClick={() => setMobileOpen(true)}
-            className="tocco-bottone inline-flex items-center justify-center rounded-lg text-b58-charcoal hover:bg-b58-cream-dark"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* 🔴 MEMO VOCE DA QUALUNQUE MODULO — 11/09/2026. Qui, e non in
+              un pulsante che galleggia sopra la schermata: la testata sta
+              FUORI dal contenuto, quindi non copre nessun gesto della
+              pagina. Sul computer la stessa porta è la voce «MEMO voce» in
+              cima alla barra laterale, che è sempre aperta — e porta con
+              sé la stessa partenza (vedi `statoVersoMemo`).
+              ⚠️ Lo stacco dal menu è in centimetri veri, come i bersagli:
+                 due gesti diversi attaccati si prendono l'uno per l'altro. */}
+          <div className="flex items-center" style={{ gap: "calc(var(--pxcm) * 0.3)" }}>
+            <ApriMemo />
+            <button
+              aria-label="Apri menu"
+              onClick={() => setMobileOpen(true)}
+              className="tocco-bottone inline-flex items-center justify-center rounded-lg text-b58-charcoal hover:bg-b58-cream-dark"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </header>
 
         {/* 🔴 IL TELAIO DESKTOP (05/09/2026): molte pagine restano incollate

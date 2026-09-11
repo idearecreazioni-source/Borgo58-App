@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
   appuntiDaApprovare,
-  approvaAppunto,
   azioniDellaDettatura,
   chiaviVoce,
   creaChiaveVoce,
   mandaDettato,
   revocaChiaveVoce,
-  scartaAppunto,
-  scegliPerAzione,
 } from "../../lib/api/voce";
+import { useGestiAppunti } from "../../lib/useGestiAppunti";
+import { ritornoDaMemo } from "../../lib/calcoli/ritornoMemo";
+import { MODULES } from "../../data/modules";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
 import { rispondiA } from "../../lib/api/domandeMemo";
 import {
@@ -30,7 +30,6 @@ import {
   fraseDelMicrofono,
   riconoscitoreDisponibile,
   statoDettatura,
-  unaVoltaSola,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
 import BarraDelPollice from "../../components/BarraDelPollice";
@@ -94,6 +93,16 @@ export default function Detta() {
   //    browser anche quando il browser era giusto e a mancare era il modo in
   //    cui la pagina girava. Vedi statoDettatura() in calcoli/voce.js.
   const perche = statoDettatura();
+
+  // 🔴 DA DOVE SI È ARRIVATI — 11/09/2026, mandato «MEMO affidabile».
+  //    Il pulsante MEMO in testata (e la voce del menu) portano qui
+  //    l'indirizzo della schermata di partenza; da qui si torna lì con un
+  //    tocco, che si sia finito o che si sia cambiato idea.
+  //    ⚠️ Arrivando da un indirizzo scritto a mano o dalla Scorciatoia non
+  //    c'è nessuna partenza, e allora non compare niente: un «torna» che
+  //    non sa dove andare è un pulsante che mente.
+  const location = useLocation();
+  const ritorno = ritornoDaMemo(location.state?.da, MODULES);
 
   // 🔴 UNA LETTURA IN RITARDO NON RIPORTA INDIETRO LA SCHERMATA —
   //    09/09/2026. `ricarica()` parte all'apertura e di nuovo appena
@@ -187,7 +196,18 @@ export default function Detta() {
         //    che ha detto non si perde.
         const id = esito?.dettatura_id ?? esito?.dettatura?.dettatura_id;
         const azioni = id ? await azioniDellaDettatura(id) : [];
-        setRiscontro({ ...comeEAndata(azioni), testo, messaggio: esito?.messaggio ?? null });
+        // ⚠️ IL NUMERO DELLA DETTATURA SI SEGNA (11/09/2026). Fino a oggi
+        //    il riscontro non lo teneva, e la rilettura dopo un «Approva» o
+        //    una scelta partiva col numero vuoto: il database rispondeva che
+        //    la funzione senza numero non esiste. Dopo un «Approva» lo
+        //    nascondeva il silenzio; dopo una scelta RIUSCITA la schermata
+        //    diceva «Non è stato scritto niente — riprova».
+        setRiscontro({
+          ...comeEAndata(azioni),
+          testo,
+          messaggio: esito?.messaggio ?? null,
+          dettaturaId: id ?? null,
+        });
         setRisposta(null);
         setFrasi([]);
         frasiRef.current = [];
@@ -318,85 +338,52 @@ export default function Detta() {
   //    ⚠️ Il database ha comunque l'ultima parola (una cosa già eseguita
   //       viene respinta sotto blocco): qui si toglie il secondo giro di
   //       rete e il secondo messaggio, che è ciò che confonde chi guarda.
-  const [inAzione, setInAzione] = useState(null);
-  const [esiti, setEsiti] = useState({});
-  const guardia = useRef(unaVoltaSola());
-
+  // ⚠️ LA GUARDIA E L'ESITO VIVONO IN `useGestiAppunti` DALL'11/09/2026:
+  //    gli stessi gesti si fanno anche dalla Dashboard, e due copie della
+  //    stessa guardia divergerebbero al primo ritocco. Le regole sono
+  //    quelle di prima, spostate e non riscritte — compresa quella del
+  //    06/09: **solo la scrittura decide se è andata**, e la rilettura che
+  //    viene dopo non può trasformare un sì riuscito in «non è stato
+  //    scritto niente» (che inviterebbe a riprovare, cioè a scrivere due
+  //    volte).
   // ⚠️ L'esito sta SULLA RIGA che è stata toccata, non in cima alla pagina:
   //    «un rifiuto lontano dal gesto è un rifiuto che non c'è», ed è la
   //    lezione del 17/08 pagata già una volta in Cassa.
-  const segna = (id, esito) => setEsiti((e) => ({ ...e, [id]: esito }));
+  const { inAzione, esiti, approva, butta, scegli: scegliElemento } = useGestiAppunti();
 
-  const conferma = async (appunto) => {
-    if (!guardia.current.prendi(appunto.id)) return;
-    setInAzione(appunto.id);
-    segna(appunto.id, { stato: "in_corso" });
-    setErrore("");
-    try {
-      // 🔴 SOLO QUESTA RIGA DECIDE SE È ANDATA — 06/09/2026, dalla revisione.
-      //    Prima il `try` avvolgeva anche le letture che vengono dopo: se
-      //    l'approvazione riusciva e poi cadeva la rete rileggendo, il
-      //    `catch` marcava **fallita** una scrittura già avvenuta, e la
-      //    schermata diceva «non è stato scritto niente» mentre era scritto.
-      //    ⚠️ E il danno non era solo una frase sbagliata: il pulsante
-      //    invitava a **Riprova**, cioè a scrivere una seconda volta.
-      await approvaAppunto(appunto.id);
-    } catch (e) {
-      segna(appunto.id, { stato: "fallita", messaggio: e.message });
-      return;
-    } finally {
-      guardia.current.lascia(appunto.id);
-      setInAzione(null);
-    }
-
-    // Da qui in poi la scrittura c'è già: quello che segue è solo rimettere
-    // a posto la schermata, e se non riesce non cambia com'è andata.
-    segna(appunto.id, { stato: "fatta" });
-    try {
-      ricarica();
-      if (riscontro) {
-        const azioni = await azioniDellaDettatura(riscontro.dettaturaId);
-        if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
-      }
-    } catch {
-      // ⚠️ SILENZIO MOTIVATO: la cosa è riuscita, e questo era solo il
-      //    rinfresco di ciò che si vede. Dirlo come un guasto farebbe
-      //    credere che l'approvazione non sia andata — che è il difetto
-      //    appena chiuso, al contrario.
+  /**
+   * Rimette a posto la schermata dopo un gesto RIUSCITO.
+   *
+   * 🔴 LA RILETTURA SI APPLICA SOLO ALLA DETTATURA CHE L'HA CHIESTA — trovato
+   *    dalla revisione del diff, 11/09/2026. Mentre torna, si può già aver
+   *    dettato un'altra cosa: senza il confronto sul numero, la lista della
+   *    dettatura di prima prenderebbe il posto del riscontro nuovo.
+   */
+  const rileggiRiscontro = async () => {
+    ricarica();
+    const id = riscontro?.dettaturaId;
+    if (!id) return;
+    const azioni = await azioniDellaDettatura(id);
+    if (azioni.length) {
+      setRiscontro((r) => (r && r.dettaturaId === id ? { ...r, ...comeEAndata(azioni) } : r));
     }
   };
 
-  // ⚠️ Stessa guardia sincrona di «Sì, fallo», e con la STESSA chiave:
-  //    i due pulsanti fanno la stessa scrittura, quindi non devono poter
-  //    partire tutt'e due sulla stessa riga.
-  const scegli = async (azione, sceltaId) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
+  const conferma = (appunto) => {
     setErrore("");
-    try {
-      await scegliPerAzione(azione.id, sceltaId);
-      segna(azione.id, { stato: "fatta" });
-      ricarica();
-      if (riscontro) {
-        const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
-        if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
-      }
-    } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
-    } finally {
-      guardia.current.lascia(azione.id);
-      setInAzione(null);
-    }
+    return approva(appunto, rileggiRiscontro);
   };
 
-  const annulla = async (appunto) => {
-    if (!guardia.current.prendi(appunto.id)) return;
-    setInAzione(appunto.id);
-    segna(appunto.id, { stato: "in_corso" });
+  // ⚠️ Stessa guardia sincrona dell'approvazione, con la chiave dell'APPUNTO
+  //    che contiene l'elemento: è lì che la scheda legge l'esito.
+  const scegli = (appunto, elementoId, sceltaId) => {
     setErrore("");
-    try {
-      await scartaAppunto(appunto.id);
+    return scegliElemento(appunto, elementoId, sceltaId, rileggiRiscontro);
+  };
+
+  const annulla = (appunto) => {
+    setErrore("");
+    return butta(appunto, () => {
       ricarica();
       // Le righe di questo appunto spariscono anche dal riquadro di sopra:
       // altrimenti resterebbero li' come se aspettassero ancora.
@@ -404,12 +391,7 @@ export default function Detta() {
       setRiscontro((r) =>
         r ? { ...r, daGuardare: r.daGuardare.filter((a) => !suoi.has(a.id)) } : r,
       );
-    } catch (e) {
-      segna(appunto.id, { stato: "fallita", messaggio: e.message });
-    } finally {
-      guardia.current.lascia(appunto.id);
-      setInAzione(null);
-    }
+    });
   };
 
   // -------------------------------------------------------------------
@@ -523,6 +505,19 @@ export default function Detta() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* 🔴 IL RITORNO DOVE SI ERA — 11/09/2026. In cima, perché è la prima
+          cosa che serve a chi ha cambiato idea; e mentre il microfono è
+          acceso dice «Annulla»: toccarlo in quel momento spegne tutto e
+          NON manda niente — quello che si era detto non diventa un
+          appunto. */}
+      {ritorno && (
+        <Link
+          to={ritorno.da}
+          className="tocco-riga mb-2 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta hover:underline"
+        >
+          ← {ascolto ? ritorno.annulla : ritorno.frase}
+        </Link>
+      )}
       <div className="mb-6">
         {/* 🔴 SI CHIAMA MEMO (27/08). Il titolo prende il nome, il pulsante
             «Premi e parla» no: quello è il gesto. */}
@@ -708,7 +703,7 @@ export default function Detta() {
                       esito={esiti[a.id]}
                       onApprova={() => conferma(a)}
                       onScarta={() => annulla(a)}
-                      onScegli={(elementoId, sceltaId) => scegli({ id: elementoId }, sceltaId)}
+                      onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
                     />
                   ))}
                 </ul>
@@ -731,6 +726,28 @@ export default function Detta() {
                 Non ho scritto niente nel gestionale: qui sopra ci sono i dati che scriverei.
               </p>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* 🔴 FINITO, SI TORNA CON UN TOCCO — 11/09/2026. Non da solo: il
+          riscontro ALLA FINE è una decisione di Alessio del 25/08, e
+          tornare indietro in automatico lo farebbe sparire proprio quando
+          c'è da leggerlo.
+          ⚠️ E si dice che gli appunti restano: tornare non è approvare, e
+          chi torna nel modulo non deve credere di aver già scritto. */}
+      {ritorno && (riscontro || risposta) && !ascolto && (
+        <div className="mt-4">
+          <Link
+            to={ritorno.da}
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-charcoal px-4 testo-sala text-white hover:bg-b58-charcoal-soft"
+          >
+            ← {ritorno.frase}
+          </Link>
+          {riscontro?.daGuardare?.length > 0 && (
+            <p className="testo-sala mt-1 text-b58-charcoal-soft">
+              Gli appunti restano da approvare: li ritrovi qui e in Dashboard.
+            </p>
           )}
         </div>
       )}
@@ -765,7 +782,7 @@ export default function Detta() {
                   esito={esiti[a.id]}
                   onApprova={() => conferma(a)}
                   onScarta={() => annulla(a)}
-                  onScegli={(elementoId, sceltaId) => scegli({ id: elementoId }, sceltaId)}
+                  onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
                 />
               ))}
             </ul>

@@ -342,6 +342,75 @@ describe("il nome dell'impegno si scrive UNA volta sola", () => {
 });
 
 // =====================================================================
+// =====================================================================
+// TRE APPUNTAMENTI NUOVI NELLA STESSA DETTATURA — 11/09/2026
+// =====================================================================
+// 🔴 Mandato «MEMO affidabile». Una frase unica con più impegni nuovi deve
+//    restare più impegni: nessuno perso, nessuno fuso, nessuno trasformato.
+//
+// ⚠️ I DUE `it.fails` QUI SOTTO SONO LA DIAGNOSI, NON UNA DIMENTICANZA.
+//    Descrivono il comportamento GIUSTO e oggi falliscono — cioè `vitest`
+//    li conta verdi finché il difetto c'è. Il giorno che la regola viene
+//    corretta diventano rossi da soli, e vanno trasformati in `it`
+//    normali. Il difetto è dichiarato nel riepilogo del mandato, con la
+//    proposta: la correzione tocca la funzione online e aspetta una
+//    decisione di Alessio.
+describe("🔴 tre appuntamenti nuovi detti insieme", () => {
+  const tre = () => [
+    detta(TIPO_PROMEMORIA, {
+      titolo: "Dentista",
+      data: "2026-09-14",
+      avviso_data: "2026-09-13",
+      avviso_ora: "18:00",
+    }),
+    detta(TIPO_PROMEMORIA, { titolo: "Riunione col commercialista", data: "2026-09-15" }),
+    detta(TIPO_PROMEMORIA, { titolo: "Ritirare le tovaglie", data: "2026-09-16" }),
+  ];
+
+  it("restano TRE promemoria, nell'ordine detto, ognuno coi SUOI dati", () => {
+    const prima = tre();
+    const dopo = correggiAgenda(
+      prima,
+      "Ricordami il dentista lunedì e avvisami domenica alle 18, poi la riunione col " +
+        "commercialista martedì e ritirare le tovaglie mercoledì",
+    );
+    expect(dopo).toHaveLength(3);
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_PROMEMORIA, TIPO_PROMEMORIA, TIPO_PROMEMORIA]);
+    expect(dopo.map((a) => a.dati)).toEqual(prima.map((a) => a.dati));
+  });
+
+  // 🔴 DIFETTO NOTO. La regola guarda la frase INTERA, non il pezzo che
+  //    riguarda ogni azione: basta che nella stessa dettatura ci sia uno
+  //    spostamento vero perché TUTTI gli impegni nuovi diventino «da
+  //    spostare». E dal 09/09 lo spostamento si esegue: approvandone uno,
+  //    se in Agenda c'è già un impegno con quel nome, si sposta QUELLO —
+  //    e l'appuntamento nuovo non nasce.
+  it.fails("DIFETTO NOTO — uno spostamento detto per UN'ALTRA cosa li trasforma tutti", () => {
+    const dopo = correggiAgenda(
+      [...tre(), detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-18" })],
+      "Ricordami il dentista lunedì, la riunione col commercialista martedì, ritirare le " +
+        "tovaglie mercoledì, e sposta a venerdì l'ordine delle verdure",
+    );
+    expect(dopo.map((a) => a.tipo)).toEqual([
+      TIPO_PROMEMORIA,
+      TIPO_PROMEMORIA,
+      TIPO_PROMEMORIA,
+      TIPO_SPOSTA,
+    ]);
+  });
+
+  // 🔴 DIFETTO NOTO, stessa famiglia e più piccolo: le parole si cercano
+  //    DENTRO le altre. «Spuntature» contiene «spunta», che è una parola
+  //    per chiudere un impegno.
+  it.fails("DIFETTO NOTO — «le spuntature» contiene «spunta»", () => {
+    const dopo = correggiAgenda(
+      [detta(TIPO_PROMEMORIA, { titolo: "Ordinare le spuntature di maiale", data: "2026-09-19" })],
+      "ricordami di ordinare le spuntature di maiale per sabato",
+    );
+    expect(dopo[0].tipo).toBe(TIPO_PROMEMORIA);
+  });
+});
+
 describe("le istruzioni per il modello", () => {
 
   it("nominano tutti e tre i tipi", () => {
