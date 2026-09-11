@@ -14,7 +14,7 @@
 //    Node. Niente Playwright, niente browser scaricati.
 // =====================================================================
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -61,6 +61,14 @@ export async function avviaChrome() {
       const r = await fetch(`http://127.0.0.1:${porta}/json/version`);
       if (r.ok) {
         const chiudi = () => {
+          // 🔴 SU WINDOWS `kill()` CHIUDE SOLO IL PROCESSO PRINCIPALE — 11/09,
+          //    misurato: dopo una notte di prove erano rimasti 96 processi di
+          //    Chrome per quasi 13 GB, e il sistema ha fermato il censimento
+          //    per mancanza di memoria. I figli (le schede, la grafica) si
+          //    chiudono solo chiudendo l'albero intero.
+          if (process.platform === "win32") {
+            spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+          }
           chrome.kill();
           try {
             rmSync(profilo, { recursive: true, force: true });

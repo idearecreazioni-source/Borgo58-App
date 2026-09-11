@@ -262,8 +262,11 @@ function controlla(m) {
     }
     for (const l of linee) {
       const campi = l.filter((c) => !c.gesti);
+      // ⚠️ Tre punti di tolleranza: un campo senza etichetta si appoggia in
+      //    fondo (`self-end`), e menu e date nativi differiscono di 2–3 punti
+      //    d'altezza — misurato su Agricolo al computer.
       const alti = campi.map((c) => c.campoAlto);
-      if (alti.length > 1 && Math.max(...alti) - Math.min(...alti) > 2) {
+      if (alti.length > 1 && Math.max(...alti) - Math.min(...alti) > 3) {
         d.push(`riga di campi: ${campi.map((c) => `«${c.nome}»`).join(", ")} non cominciano alla stessa altezza (scarto ${(Math.max(...alti) - Math.min(...alti)).toFixed(0)} punti)`);
       }
       const gesti = l.filter((c) => c.gesti);
