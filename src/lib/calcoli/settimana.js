@@ -95,6 +95,13 @@ function ordine(a, b) {
 }
 
 /**
+ * Gli impegni di UN giorno in quell'ordine — una copia, l'elenco ricevuto
+ * non si tocca. La usa anche il giorno scelto nel Mese: lo stesso giorno
+ * non si legge in due ordini diversi passando da una vista all'altra.
+ */
+export const inOrdineDelGiorno = (righe) => [...(righe ?? [])].sort(ordine);
+
+/**
  * Gli impegni divisi nei sette giorni, ognuno in ordine.
  *
  * ⚠️ Un giorno senza impegni c'è lo stesso, con l'elenco vuoto: la
@@ -106,5 +113,5 @@ export function impegniDellaSettimana(righe, giorni) {
   for (const t of righe ?? []) {
     if (t?.due_date && per[t.due_date]) per[t.due_date].push(t);
   }
-  return giorni.map((g) => ({ giorno: g, impegni: [...per[g]].sort(ordine) }));
+  return giorni.map((g) => ({ giorno: g, impegni: inOrdineDelGiorno(per[g]) }));
 }

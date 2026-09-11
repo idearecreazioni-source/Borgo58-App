@@ -94,7 +94,6 @@ export const deleteTask = async () => null;
 
 export const agendaCorsie = async () => RIGHE;
 export const agendaFatti = async () => [];
-export const listTasksForMonth = async () => [];
 
 // --- LA SETTIMANA (11/09/2026) --------------------------------------------
 // ⚠️ I CASI DEL MANDATO, uno per giorno: il lunedì di QUESTA settimana ha
@@ -132,6 +131,11 @@ export const SETTIMANA = {
 
 export const listTasksBetween = async (dal, al) =>
   SETTIMANA.righe.filter((t) => t.due_date >= dal && t.due_date <= al);
+
+// Il Mese legge gli stessi impegni: così il giorno scelto nel calendario
+// si può misurare con le stesse righe della settimana.
+export const listTasksForMonth = async (anno, mese) =>
+  SETTIMANA.righe.filter((t) => t.due_date.startsWith(`${anno}-${String(mese).padStart(2, "0")}-`));
 export const completaTask = async () => null;
 export const riapriTask = async () => ({});
 export const spostaTask = async () => null;

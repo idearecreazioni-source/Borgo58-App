@@ -91,6 +91,30 @@ describe("🔴 il selettore", () => {
   });
 });
 
+describe("🔴 il mese: lo stesso giorno si legge come nella settimana", () => {
+  it("in ordine (senza ora in cima), con l'ora, il fatto barrato; le frecce hanno un nome", async () => {
+    finte.mese.mockResolvedValue([
+      t("sera", "2026-09-07", "18:30:00"),
+      t("mattina", "2026-09-07", "09:00:00"),
+      t("giornata", "2026-09-07"),
+      t("fatto7", "2026-09-07", null, { status: "completato" }),
+    ]);
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Mese" }));
+    expect(screen.getByRole("button", { name: "Mese precedente" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mese successivo" })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("button", { name: "7" })).toBeTruthy());
+    await tocca(screen.getByRole("button", { name: "7" }));
+    const ids = [...document.querySelectorAll("[data-impegno]")].map((b) => b.dataset.impegno);
+    // Senza ora prima, a pari ora per titolo: «Impegno fatto7» < «Impegno giornata».
+    expect(ids).toEqual(["fatto7", "giornata", "mattina", "sera"]);
+    expect(document.querySelector("[data-impegno='mattina'] [data-ora]").textContent).toBe("09:00");
+    expect(document.querySelector("[data-impegno='giornata'] [data-ora]")).toBeNull();
+    expect(document.querySelector("[data-impegno='fatto7'] [data-titolo]").className).toMatch(/line-through/);
+    expect(document.querySelector("[data-impegno='sera'] [data-titolo]").className).not.toMatch(/line-through/);
+  });
+});
+
 describe("🔴 la settimana", () => {
   it("legge da lunedì 7 a domenica 13, e mostra i sette giorni", async () => {
     mostra();

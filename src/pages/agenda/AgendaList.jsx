@@ -11,7 +11,13 @@ import {
   stellaTask,
 } from "../../lib/api/tasks";
 import SettimanaAgenda from "./SettimanaAgenda";
-import { lunediDi, spostaGiorni, spostaSettimana } from "../../lib/calcoli/settimana";
+import {
+  inOrdineDelGiorno,
+  lunediDi,
+  oraBreve,
+  spostaGiorni,
+  spostaSettimana,
+} from "../../lib/calcoli/settimana";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import {
@@ -88,11 +94,13 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={onPrev} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
+        {/* Il nome delle frecce (11/09/2026): senza, per la lettura dello
+            schermo erano «←» e «→». Stessi nomi della Settimana. */}
+        <button onClick={onPrev} aria-label="Mese precedente" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
         <h3 className="font-display testo-sala-grande text-b58-charcoal">
           {MONTH_NAMES[month - 1]} {year}
         </h3>
-        <button onClick={onNext} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
+        <button onClick={onNext} aria-label="Mese successivo" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
       </div>
 
       {loading ? (
@@ -422,7 +430,11 @@ export default function AgendaList() {
   const quanti = daFareAdesso(corsie);
   const sezioni = sezioniDellAgenda(corsie);
 
-  const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
+  // ⚠️ Il giorno scelto nel Mese si legge come nella Settimana (11/09/2026):
+  //    stesso ordine, l'ora accanto, il fatto barrato. Prima arrivavano
+  //    nell'ordine del database, senza ora, e un impegno già fatto era
+  //    uguale a uno da fare — la lettura del mese li comprende tutti.
+  const dayTasks = selectedDay ? inOrdineDelGiorno(monthTasks.filter((t) => t.due_date === selectedDay)) : [];
 
   return (
     <div className="testo-sala max-w-4xl mx-auto">
@@ -749,16 +761,28 @@ export default function AgendaList() {
                   {dayTasks.map((t) => (
                     <button
                       key={t.id}
+                      data-impegno={t.id}
                       onClick={() => navigate(`/agenda/${t.id}`)}
                       className="tocco-bottone w-full text-left flex items-center gap-2 testo-sala"
                     >
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
+                      {oraBreve(t) && (
+                        <span data-ora className="shrink-0 tabular-nums text-b58-charcoal-soft">
+                          {oraBreve(t)}
+                        </span>
+                      )}
                       {/* Il nome come nelle corsie — 11/09/2026: stessa
                           misura e stesso peso, così lo stesso impegno non
                           cambia faccia passando dall'elenco al calendario. */}
-                      <span className="min-w-0 flex-1 testo-sala-grande font-medium text-b58-charcoal">
+                      <span
+                        data-titolo
+                        title={t.status === "completato" ? "Fatto" : undefined}
+                        className={`min-w-0 flex-1 break-words testo-sala-grande font-medium ${
+                          t.status === "completato" ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
+                        }`}
+                      >
                         {t.title}
                       </span>
                       {/* «Riservato» non c'è più nemmeno qui (11/09, dal

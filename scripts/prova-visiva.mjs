@@ -1021,6 +1021,59 @@ try {
         console.log(`${nome}: ${parti.join(", ")} (${m.pxcm} punti per cm)`);
       }
     }
+
+    // --- il giorno scelto nel Mese si legge come nella settimana (11/09) ---
+    // ⚠️ Si sceglie il lunedì di questa settimana. Se cade nel mese prima
+    //    (settimana a cavallo), il Mese si apre su quello di oggi e quel
+    //    giorno non c'è: si dice e si salta, invece di misurare altro.
+    const nomeMese = `mese · ${forma.nome}`;
+    if (Number(L0.slice(5, 7)) !== new Date().getMonth() + 1) {
+      console.log(`${nomeMese}: il lunedì di questa settimana è nel mese prima — non misurato.`);
+    } else {
+      await valuta(manda, clicca("[data-vista=mese]"));
+      const giorno = String(Number(L0.slice(8, 10)));
+      const toccaGiorno = `(() => { const b = [...document.querySelectorAll(".grid-cols-7 > button")].find((x) => x.innerText.trim() === ${JSON.stringify(giorno)}); if (b) b.click(); return Boolean(b); })()`;
+      let trovato = false;
+      for (let i = 0; i < 40 && !trovato; i++) {
+        trovato = await valuta(manda, toccaGiorno);
+        if (!trovato) await aspetta(150);
+      }
+      const MISURA_MESE = `(() => {
+        const b = [...document.querySelectorAll("[data-impegno]")];
+        return {
+          finestra: innerWidth,
+          paginaLarga: document.documentElement.scrollWidth,
+          ids: b.map((x) => x.dataset.impegno),
+          ore: b.map((x) => (x.querySelector("[data-ora]") ? x.querySelector("[data-ora]").innerText.trim() : "")),
+          fuori: b.filter((x) => x.getBoundingClientRect().right > innerWidth + 1).map((x) => x.dataset.impegno),
+        };
+      })()`;
+      let mese = null;
+      for (let i = 0; i < 40; i++) {
+        mese = await valuta(manda, MISURA_MESE);
+        if (mese.ids.length) break;
+        await aspetta(150);
+      }
+      const attesi = ["s-giornata", "s-mattina", "s-sera"];
+      const oreAttese = ["", "09:00", "18:30"];
+      if (!trovato) {
+        difetti.push(`${nomeMese}: non trovo il giorno ${giorno} nel calendario.`);
+      } else {
+        if (mese.ids.join() !== attesi.join()) {
+          difetti.push(`${nomeMese}: il ${L0} li mette in quest'ordine: ${mese.ids.join(", ")} — atteso ${attesi.join(", ")}.`);
+        }
+        if (mese.ore.join("|") !== oreAttese.join("|")) {
+          difetti.push(`${nomeMese}: le ore sono [${mese.ore.join(", ")}] invece di [${oreAttese.join(", ")}].`);
+        }
+        if (mese.paginaLarga > mese.finestra + TOLLERANZA_PX) {
+          difetti.push(`${nomeMese}: la pagina scorre di lato di ${mese.paginaLarga - mese.finestra} punti.`);
+        }
+        if (mese.fuori.length) difetti.push(`${nomeMese}: escono dallo schermo ${mese.fuori.join(", ")}.`);
+      }
+      await aspetta(400);
+      await fotografa(manda, `mese-${nomeFile(forma.nome)}`);
+      console.log(`${nomeMese}: ${mese?.ids.length ?? 0} impegni nel ${L0}, ore [${mese?.ore.join(" · ") ?? ""}]`);
+    }
     ws.close();
   }
 } finally {
