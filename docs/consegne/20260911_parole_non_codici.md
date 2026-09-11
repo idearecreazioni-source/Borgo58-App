@@ -22,12 +22,19 @@ progetto di prova) e verificati sul codice di master.
 | Menu, piatto fuori stagione | «(stagione: tutto_anno…)» | i nomi di `SEASONS`, in minuscolo |
 
 Due dettagli:
-- `NOMI_TABELLE` in `IngredienteForm.jsx` è **lo stesso elenco** di
+- `NOMI_TABELLE` in `IngredienteForm.jsx` è il **gemello** di
   `nome_leggibile()` nel database (migrazione `20260824000020`), che scrive il
-  rifiuto quando si prova a cancellare. `usi_dell_ingrediente` restituisce i
-  nomi tecnici e cambiarla vorrebbe dire una migrazione, fuori dal mandato. È
-  quindi un secondo posto, dichiarato gemello nel commento. Una tabella che
-  manca resta col suo nome: si vede, e si aggiunge.
+  rifiuto quando si prova a cancellare: stesse tabelle, stesse parole.
+  `usi_dell_ingrediente` restituisce i nomi tecnici, e cambiarla vorrebbe
+  dire una migrazione, fuori dal mandato: è quindi un secondo posto,
+  dichiarato gemello nel commento. Una tabella che manca resta col suo nome:
+  si vede, e si aggiunge.
+  - ⚠️ **Una differenza, voluta** (rilievo della revisione Codex, basso).
+    Qui «cessioni fra le due **società**», con l'accento; il database scrive
+    «societa'», con l'apostrofo. Copiare l'apostrofo a schermo sarebbe il
+    difetto «e' … piu'» già segnalato altrove. La prima stesura di questo
+    riepilogo diceva «lo stesso elenco» senza dirlo: corretta, insieme al
+    commento nel codice.
 - Nessun elenco nuovo in `constants.js`, quindi la rete dei vocabolari non
   cambia. Le parole stanno accanto alla schermata che le usa, e ogni valore
   sconosciuto resta leggibile invece di sparire.
@@ -71,6 +78,6 @@ Niente.
 
 ---
 
-**Hash di HEAD dichiarato**: `396283f` sul ramo `parole-non-codici`, cioè il
+**Hash di HEAD dichiarato**: `dab29f7` sul ramo `parole-non-codici`, cioè il
 commit immediatamente sotto questo documento.
 **Stato del working tree al momento della consegna**: pulito.
