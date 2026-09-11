@@ -1,18 +1,19 @@
 # MEMO affidabile — 11/09/2026
 
-Mandato notturno «MEMO affidabile», due obiettivi: **(A)** MEMO voce raggiungibile
-da ogni modulo, con ritorno al punto di partenza; **(B)** una dettatura con più
-appuntamenti, ognuno una proposta a sé.
+Mandato notturno «MEMO affidabile», più la seconda parte decisa da Alessio
+lo stesso giorno. Tre obiettivi:
+- **(A)** MEMO voce raggiungibile da ogni modulo, col ritorno al punto di
+  partenza;
+- **(B)** una dettatura con più appuntamenti, ognuno una proposta a sé;
+- **(B2)** la protezione dell'Agenda con la **variante (a)**, e l'**ora**
+  nel vero campo Ora dell'Agenda.
 
-**Migrazioni**: nessuna. **Funzioni online**: nessuna (`ascolta-voce` non è
-toccata). **Database**: non toccato; le prove contro Borgo58-Prova scrivono solo
-righe proprie e le tolgono per identificativo. **HEAD dichiarato**: vedi l'ultima
-riga.
-
-🔴 **B è fermo alla diagnosi per la parte che tocca il contratto vocale**, come
-chiedeva il mandato: due difetti misurati, e la cura sta nella funzione online
-(e per l'ora anche in una migrazione). Proposte e domande in fondo. Quello che
-**non** dipende dal contratto — schede, gesti, Dashboard — è fatto e provato.
+**Migrazioni**: `20260911000001` (`l_ora_e_le_frasi_miste`) e
+`20260911000002` (`l_ora_va_da_zero_a_ventitre`), applicate **solo al
+progetto di prova**. **In produzione: niente.**
+**Funzioni online**: `ascolta-voce` installata **solo sulla prova**
+(versione 32 → 33 → 34). **In produzione: niente.**
+**HEAD dichiarato**: vedi l'ultima riga.
 
 ---
 
@@ -23,31 +24,24 @@ chiedeva il mandato: due difetti misurati, e la cura sta nella funzione online
   telefono e tablet (`Layout.jsx`, accanto al menu, stacco 0,3 cm veri). Solo il
   titolare (la rotta è `RequireTitolare`), assente in MEMO stesso.
 - **Apre, non registra**: «Premi e parla» resta uno solo, in MEMO. Il browser
-  apre il microfono solo dentro un tocco sulla pagina che lo usa, quindi un
-  pulsante qui che promettesse di accenderlo arriverebbe a microfono spento.
-- **Sul computer** la testata non c'è: la porta è la voce «MEMO voce» in cima
-  alla barra laterale, che ora porta con sé la stessa partenza (`Sidebar.jsx`).
-- La partenza viaggia nello **stato della cronologia** (`history.state.usr.da`),
-  non nell'indirizzo. `src/lib/calcoli/ritornoMemo.js` (nuovo, puro):
-  `origineValida` accetta solo percorsi interni — mai `//…`, schemi, `\`,
-  `/detta`, `/login`; `statoVersoMemo` riconsegna la partenza se si ritocca
-  «MEMO voce» da dentro MEMO; `ritornoDaMemo` dà le parole, col nome del modulo
-  preso da `MODULES` (rotta più lunga che combacia).
-- `Detta.jsx`: in cima «← Torna in {modulo}»; **a microfono acceso** diventa
-  «← Annulla e torna in {modulo}» — il tocco smonta la pagina, il riconoscitore
-  si ferma e **niente viene mandato**. Dopo il riscontro (o la risposta a una
-  domanda) un pulsante «← Torna in {modulo}» con la frase «Gli appunti restano da
-  approvare: li ritrovi qui e in Dashboard».
-- ⚠️ **Nessun ritorno automatico**: il riscontro alla fine è una decisione del
-  25/08, e tornare da soli lo farebbe sparire quando c'è da leggerlo.
-- ⚠️ **Del modulo di partenza si porta solo l'indirizzo**, nessun contesto verso
-  la voce: con un contesto, la stessa frase detta dall'Agenda o dalla Cassa
-  potrebbe diventare due cose diverse. Una prova pura lo congela (lo stato ha la
-  sola chiave `da`).
+  apre il microfono solo dentro un tocco sulla pagina che lo usa.
+- **Sul computer** la porta è la voce «MEMO voce» in cima alla barra laterale,
+  che porta con sé la stessa partenza (`Sidebar.jsx`).
+- La partenza viaggia nello **stato della cronologia** (`history.state.usr.da`).
+  `src/lib/calcoli/ritornoMemo.js` (nuovo, puro): `origineValida` accetta solo
+  percorsi interni — mai `//…`, schemi, `\`, `/detta`, `/login`;
+  `statoVersoMemo` riconsegna la partenza se si ritocca «MEMO voce» da dentro
+  MEMO; `ritornoDaMemo` dà le parole col nome del modulo preso da `MODULES`.
+- `Detta.jsx`: in cima «← Torna in {modulo}»; **a microfono acceso** «← Annulla
+  e torna in {modulo}», che smonta la pagina, ferma il riconoscitore e **non
+  manda niente**. Dopo il riscontro, un pulsante di ritorno con la frase «Gli
+  appunti restano da approvare».
+- ⚠️ **Nessun ritorno automatico** (il riscontro alla fine è una decisione del
+  25/08) e **nessun contesto del modulo verso la voce** (la stessa frase non
+  deve cambiare significato a seconda di dove si è premuto).
 
 **Misure dal vivo** (Chrome senza schermo, gestionale di questo ramo collegato a
-Borgo58-Prova, titolare di collaudo), partenza da Cassa → Prima nota, Agenda,
-Magazzino, Dashboard:
+Borgo58-Prova), partenza da Cassa → Prima nota, Agenda, Magazzino, Dashboard:
 
 | forma | pulsante alto | largo | stacco dal menu | testata/pagina scorrono | ritorno giusto (anche dopo ricarica) |
 |---|---|---|---|---|---|
@@ -55,173 +49,208 @@ Magazzino, Dashboard:
 | iPhone 64 p/cm | 8,50 mm | 16,2–16,5 mm | 3,00 mm | no / no | 4/4 |
 | computer (barra laterale) | 8,50 mm | — | — | — / no | 4/4 |
 
-In tutti i 12 casi in MEMO: «Premi e parla» compare **una volta**, il pulsante
-MEMO della testata **non** compare, e dopo il tocco su «Torna» l'indirizzo è
-**esattamente** quello di partenza, domanda compresa. Fotografie guardate:
-MEMO aperto dall'Agenda a 390 e la testata dell'Agenda a 390 e a 64 p/cm.
-
 ## B. Più appuntamenti nella stessa dettatura
 
-### Cosa regge già, verificato
-- **Il contratto è un elenco di azioni** (`ascolta-voce/index.ts:71-77`), con la
-  regola «UNA FRASE SOLA, PIÙ AZIONI … Non fonderle mai» (`:122-123`);
-  `scrivi_dettatura` scrive **una riga per azione**; `promemoria` non è
-  additivo, quindi **un appunto per impegno**, approvabile e scartabile da solo.
-- **Dal vivo col modello vero** (Borgo58-Prova, `claude-sonnet-5`, 43.559 + 1.394
-  token), frase: *«Lunedì prossimo alle 10 ho il dentista, avvisami domenica
-  alle 18. Martedì alle 15 c'è la riunione col commercialista. Mercoledì mattina
-  devo ritirare le tovaglie in lavanderia.»* → **3 azioni, 3 appunti**:
+- **Il contratto è un elenco di azioni** (`ascolta-voce/index.ts`, «UNA FRASE
+  SOLA, PIÙ AZIONI … Non fonderle mai»); `scrivi_dettatura` scrive una riga per
+  azione; `promemoria` non è additivo → **un appunto per impegno**.
+- **Dashboard**: la riga «N appunti aspettano…» si apre e mostra le stesse
+  schede di MEMO (`AppuntiInDashboard.jsx`): Approva, Fallo a mano (=
+  correggere), Butta. `src/lib/useGestiAppunti.js` porta guardia ed esito,
+  condivisi con MEMO; buttato non è fatto.
+- **Corretto**: il riscontro non teneva il numero della dettatura (rilettura
+  senza numero → `PGRST202`), e una scelta riuscita si diceva fallita.
 
-  | titolo | giorno | avviso | descrizione |
-  |---|---|---|---|
-  | Dentista | 14/09 | 13/09 18:00 | «Alle 10» |
-  | Riunione con il commercialista | 15/09 | — | «Alle 15» |
-  | Ritirare le tovaglie in lavanderia | 16/09 | — | «Al mattino» |
+## B2. La protezione dell'Agenda (variante a) e l'ora
 
-- **Contro il database** (`tests/app/tre-appuntamenti.test.js`, 5/5): una
-  dettatura con tre promemoria → tre appunti distinti coi loro dati; **zero
-  impegni prima dell'approvazione**; approvarne uno scrive solo quello e lascia
-  gli altri due `aperto` con i dati **identici**; «Fallo a mano» (`azione_a_mano`
-  → il modulo salva → `chiudi_azione_a_mano`) chiude solo quello e non scrive un
-  doppione; buttarne uno butta solo quello.
+### Il difetto, misurato prima
+- La rete (`correggiAgenda`, dall'08/09, `066f263`) passava **la frase intera** a
+  ogni azione. Dal vivo: tre appuntamenti + «e sposta a venerdì l'ordine delle
+  verdure» → i tre appuntamenti nuovi diventavano `agenda_quale_impegno`.
+- **Il caso peggiore, misurato** sulla prova con righe proprie: se in Agenda
+  c'era un impegno omonimo, l'appunto trasformato era approvabile e
+  approvandolo l'impegno esistente passava dal 21/10 al 28/10 — il nuovo non
+  nasceva.
+- L'ora dell'impegno non era nel contratto: il modello la metteva nella
+  **descrizione** («Alle 10»), e `fai_azione_dettata` scriveva solo `due_date`.
 
-### Cosa cambia nell'interfaccia
-- **Dashboard**: la riga «N appunti aspettano…» ora **si apre** e mostra le
-  stesse schede di MEMO (`AppuntiInDashboard.jsx`, nuovo): Approva, Fallo a mano
-  (= correggere: il modulo coi campi già scritti), Butta; più «Apri MEMO voce →»
-  con la partenza. Chiusa è la riga di prima; l'elenco si legge all'apertura;
-  dopo un gesto riuscito si rilegge l'elenco e **solo il conteggio**. Dal vivo
-  sulla Dashboard vera: tre appunti, approvato il secondo (è nato solo
-  «commercialista»), buttato il terzo, il primo ancora approvabile.
-- `src/lib/useGestiAppunti.js` (nuovo): la guardia sincrona contro il doppio
-  tocco e la regola del 06/09 («solo la scrittura decide com'è andata») escono da
-  `Detta.jsx` e le usano MEMO e Dashboard. Spostate, non riscritte.
-- ⚠️ **Buttato non è fatto**: l'esito di uno scarto è `scartata`, e la scheda
-  non mostra più «✓ Fatto» per l'istante prima della rilettura.
-- 🔴 **Difetto corretto, trovato scrivendo la prova**: il riscontro non si
-  segnava il numero della dettatura, quindi la rilettura dopo un «Approva» o una
-  scelta partiva **senza numero**. Sonda sul database di prova: *«PGRST202 —
-  Could not find the function public.azioni_della_dettatura without parameters»*.
-  Dopo «Approva» lo nascondeva il silenzio (e il riscontro non si aggiornava
-  mai); dopo una **scelta riuscita** fra due impegni la scheda diceva «Non è
-  stato scritto niente — riprova». La prova `memo-tre-appuntamenti` è **rossa
-  sul codice di partenza** su quel caso e verde dopo.
+### La regola nuova (`ascolta-voce/agenda.ts`, `correggiAgenda`)
+- Al modello si chiede, per **ogni** azione, un `pezzo`: le parole della frase
+  che riguardano solo quella cosa, **copiate**. Non si scrive nel database:
+  serve a decidere.
+- `pezziSeparati`: la separazione è **certa** solo se ogni azione ha un pezzo
+  detto davvero (parole intere e di seguito nella frase normalizzata, **una
+  volta sola**), i pezzi non si sovrappongono, e con più cose nessun pezzo è la
+  frase intera. Si guardano **tutte** le azioni, anche quelle non d'Agenda: la
+  parola «sposta» deve poter essere attribuita a qualcuno prima di decidere del
+  dentista.
+- Senza parole di spostamento o chiusura nella frase non si decide niente (il
+  caso dei tre appuntamenti). Con una sola cosa detta, le parole sono il suo
+  pezzo o la frase intera (come prima). Con più cose e separazione certa, ogni
+  azione si decide **sulle sue parole**.
+- 🔴 **Altrimenti ogni azione d'Agenda diventa `agenda_da_chiarire`**: fuori dal
+  catalogo, quindi **non approvabile per costruzione**, con il motivo scritto e
+  «Fallo a mano →» verso l'Agenda.
+- 🔴 **Uno spostamento o una chiusura restano approvabili solo se le parole
+  dette per quella cosa li dicono**, in **qualunque** frase, mista o no
+  (rilievo della seconda revisione). Se il modello li dichiara e le parole no,
+  diventano «da chiarire», col motivo che dice di ridirlo con «sposta» o
+  «segna fatto». È la forma esatta in cui un appuntamento nuovo diventerebbe
+  lo spostamento di uno vecchio. Un «quale impegno?» dato dal modello resta
+  fermo allo stesso modo.
+- ⚠️ **Non si usa `agenda_quale_impegno`**: quello, quando porta un gesto, il
+  database lo ritraduce cercando in Agenda e con un candidato solo lo rende
+  approvabile.
+- Le parole della rete si cercano **intere**: «le spuntature di maiale» non è
+  più «spunta».
 
-### Diagnosi: dove il contratto non regge — FERMATO QUI
-1. 🔴 **La rete dell'Agenda guarda la frase intera, non l'azione.**
-   `correggiAgenda(azioni, testo)` passa il dettato intero a ogni azione
-   (`agenda.ts:218-233`, `:279-281`): basta una parola di spostamento o di
-   chiusura in un punto qualunque della frase perché **ogni** promemoria diventi
-   «da spostare» o «da segnare fatto».
-   - **Dal vivo**, la stessa frase di sopra più *«E sposta a venerdì l'ordine
-     delle verdure»*: 4 azioni, e i **tre appuntamenti nuovi sono diventati
-     `agenda_quale_impegno`** (non approvabili: «non l'ho trovato fra quelli
-     aperti in Agenda»), più lo spostamento vero.
-   - **Il caso peggiore, misurato** sul database di prova con righe proprie: se
-     in Agenda c'è già un impegno con quel nome, l'appunto trasformato è
-     **approvabile**; approvandolo l'impegno esistente è passato dal 21/10 al
-     28/10 (il giorno del nuovo) e **il nuovo appuntamento non è nato**. La
-     trasformazione è provata da `agenda-a-voce.test.js` (vedi sotto), la metà
-     del database da questa misura; il modello qui non è stato chiamato.
-   - Stessa famiglia, più piccola: le parole si cercano **dentro** le altre —
-     «ordinare le **spunta**ture di maiale» diventa «da segnare fatto».
-2. 🔴 **L'ora dell'appuntamento non è nel contratto.** `promemoria` ha titolo,
-   descrizione, giorno e avviso (`index.ts:95`), non l'ora; il ramo che approva
-   scrive `due_date` e mai `due_time` (`20260910000002…sql:771`), e il modulo a
-   mano lo dichiara (`TaskForm.jsx:13`). Dal vivo il modello ha messo l'ora
-   **nella descrizione** («Alle 10»): arriva in Agenda come testo, se il modello
-   decide di scriverla, e non come ora dell'impegno.
-3. ⚠️ **Le date relative le risolve il modello, e non sempre allo stesso modo.**
-   Due giri della stessa frase (il secondo con lo spostamento in coda) hanno
-   dato **14/15/16** e **15/16/17 settembre** per gli stessi tre appuntamenti.
-   La data si vede sulla scheda prima di approvare; non è corretto qui.
-
-I due `it.fails` in `tests/unita/agenda-a-voce.test.js` descrivono il
-comportamento **giusto** per il punto 1 e oggi falliscono: il giorno che la rete
-viene corretta diventano rossi e vanno trasformati in `it`.
-
-### Proposte (nessuna costruita)
-- **P1 — la rete per azione.** (a) al modello si chiede per ogni azione anche il
-  pezzo di frase che la riguarda, e la rete guarda quello; oppure (b) la rete
-  guarda il dettato intero **solo se nella filza c'è una sola azione
-  d'Agenda**, altrimenti vale il tipo dichiarato dal modello. (a) conserva la
-  rete anche nelle frasi lunghe ma dipende da come il modello taglia la frase;
-  (b) è deterministica ma, in una frase con più cose, lascia passare un «segna
-  fatto X» capito male come impegno nuovo (un doppione visibile, che si butta
-  con un tocco). In entrambi i casi più il confine di parola («spuntature»).
-  Tocca solo la funzione online.
-- **P2 — l'ora.** Un campo `ora` nel promemoria, con la stessa regola di
-  `avviso_ora` (mai inventata); il ramo che approva scrive `due_time`; la
-  scheda la mostra. Tocca funzione online **e** una migrazione.
+### L'ora (`20260911000001`, dai corpi vivi della prova)
+- `voce_risolvi_dati`: `ora` si normalizza a `HH:MM` («9:30» → «09:30»); quella
+  che non si legge («verso sera», «25:00») esce da `ora` e resta visibile come
+  `ora_non_capita` — non si scrive, e l'appunto resta approvabile.
+- `fai_azione_dettata`: scrive `tasks.due_time`; un'ora illeggibile si rifiuta
+  **prima** di scrivere (chi scrive non si fida di chi chiama).
+- `azione_campi`: l'ora arriva al modulo di «Fallo a mano»; `TaskForm` la mette
+  in `due_time`.
+- `azione_percorso`: `agenda_da_chiarire` → `/agenda`.
+- Prompt: `ora` solo se è stata detta un'ora precisa («mattina» non è un'ora), e
+  non ripetuta nella descrizione.
+- La scheda mostra «ora: 10:00» accanto al giorno, e «ora non capita (non la
+  scrivo)» quando serve.
+- ⚠️ **Come è stata costruita la migrazione**: uno script prende i quattro corpi
+  vivi della prova (allineata al repository: ultima `20260910000003`) e fa **solo
+  sostituzioni esatte, contate**. Il confronto riga per riga col corpo vivo
+  mostra soltanto le righe dell'ora e di «da chiarire». Nessun `grant`
+  riscritto: `create or replace` con la stessa firma li conserva.
+- 🔴 **Un difetto dello script, preso dal suo stesso controllo**: in una
+  sostituzione JavaScript `$'` vuol dire «il resto del testo», e l'espressione
+  dell'ora finisce con `?$'`. Il conteggio delle occorrenze l'ha fermato sul
+  secondo punto; sul primo avrebbe **incollato di nuovo tutto il resto** di
+  `voce_risolvi_dati` senza nessun errore. Corretto sostituendo con una
+  funzione, e con un controllo sulla lunghezza.
 
 ## Come è stato verificato
 
-- **Prove pure**: nuove `ritorno-memo.test.js` (15) e 3 casi in
-  `agenda-a-voce.test.js` (1 verde, 2 `it.fails`). Giro completo: **1311 verdi,
-  2 errori attesi, 2 rosse** — `indice-richieste` e `indice-rovesciamenti`,
-  fine riga di Windows, **le stesse due** misurate su master in questa copia
-  prima di cominciare; verdi su GitHub.
-- **Prove schermata**: nuove `memo-lanciatore` (12: quattro partenze, barra
-  laterale, un solo microfono, staff, annullare e concludere),
-  `dashboard-appunti` (7), `memo-tre-appuntamenti` (7). Con le 6 già esistenti
-  su MEMO e sugli appunti: **88/88**. Giro completo sul codice finale:
-  **155/158**; le 3 rosse sono `rotte-chiuse` ×1 e `varco-pubblico` ×2, «Test
-  timed out in 5000ms», e sono **identiche su master `59f4d2d`** fatto girare
-  nelle stesse condizioni in una copia temporanea (129/132, poi tolta);
-  rilanciate da sole, 12/12 verdi.
-- **Contro Borgo58-Prova**: `npm run test:app -- tests/app/tre-appuntamenti.test.js`
-  5/5; due dettature al modello vero; il pulsante dal vivo 12/12; la Dashboard
-  dal vivo; la misura del caso peggiore. Pulizia verificata dopo ognuna
-  (dettature, appunti, azioni e impegni propri rimasti: zero). Nessun processo
-  di Chrome rimasto.
+- **Prove pure**: giro completo **1334 verdi, 1 rossa** — `indice-richieste`,
+  fine riga di Windows, la stessa misurata su master prima di cominciare
+  (`indice-rovesciamenti`, rossa su master qui, passa dopo aver rigenerato
+  l'indice). Nella rete dell'Agenda **50 prove**, **rotte due volte apposta**:
+  con la regola dell'08/09, **14 rosse**; con quella di prima della seconda
+  revisione, **4 rosse** (le quattro dello spostamento dichiarato senza
+  parole). Rimessa la regola finale, 50/50. Nuove anche `ritorno-memo` (15).
+- **Prove schermata**: **156/159**; le 3 rosse sono `rotte-chiuse` ×1 e
+  `varco-pubblico` ×2, «Test timed out in 5000ms», **identiche su master
+  `59f4d2d`** fatto girare nelle stesse condizioni; da sole 12/12. Nuove:
+  `memo-lanciatore` (12), `dashboard-appunti` (7), `memo-tre-appuntamenti` (8:
+  tre schede con ore diverse, approvazione e scarto indipendenti, la scheda da
+  chiarire senza «Approva», le quattro gare fra scrittura e rilettura).
+- **Migrazioni**: la verifica di ciascuna, lanciata **da sola sulla prova
+  prima di applicare**, si è fermata al primo controllo («9:30» non diventa
+  «09:30»; «24:00» resta come ora); applicate, passano. Il progetto di prova
+  ha 389 migrazioni registrate.
+- **Contro Borgo58-Prova, senza modello** — 10 file, **97/97**: i nuovi
+  `tre-appuntamenti` (ore 10:00, 15:30 e nessuna; l'ora nel campo `due_time`;
+  «Fallo a mano» porta l'ora; approvare, correggere e buttare uno non tocca gli
+  altri) e `frase-mista` (l'appuntamento nuovo crea un impegno **nuovo** e
+  l'omonimo che c'era **non si muove**; lo spostamento sposta solo il suo; «da
+  chiarire» non si approva, non muove niente, e resta aperto), più tutti quelli
+  già esistenti su voce e Agenda.
+- **Col modello vero** (`tests/app/memo-dal-vivo.test.js`, esclusa da sola dal
+  giro di ogni proposta perché si paga; lanciata apposta con `--col-modello`):
+  **2/2, due volte** (funzione v33 e v34) — tre appuntamenti → tre promemoria
+  con ora `10:00`, `15:30` e **nessuna** («mattina»); frase mista → i due
+  appuntamenti nuovi restano promemoria con la loro ora, lo spostamento resta
+  a sé.
+- **Dal vivo nel browser**: pulsante e ritorno 12/12, Dashboard con tre appunti.
 - **Lint** pulito, **compilazione** riuscita.
-- **Revisione Codex del diff** (una, come da regola): tre rilievi, tutti fra una
-  scrittura riuscita e la rilettura che viene dopo, **tutti veri** e curati;
-  guardandoli ne è saltato fuori un quarto, preesistente. Per ognuno una prova
-  scritta **prima** della cura e fatta girare sul codice non curato: **4 rosse
-  su 4**, poi verdi.
-  1. La guardia contro il doppio tocco si liberava prima che la rilettura
-     tornasse: fra una scelta e la rilettura partiva un secondo tocco su un
-     altro candidato. Nel codice di partenza, per la scelta, la guardia restava
-     chiusa fino alla fine: lo spostamento in `useGestiAppunti` l'aveva
-     accorciata. Ora si libera solo a rilettura tornata.
-  2. Nella Dashboard, aprire-chiudere-riaprire metteva in volo due letture e
-     la più vecchia poteva tornare per ultima, riportando schede già chiuse.
-     Ora vince la più recente, con la stessa guardia di `ricarica()` in MEMO.
-  3. In MEMO una rilettura rimasta indietro poteva prendere il posto del
-     riscontro di una dettatura nuova. Quel codice prima non girava mai
-     (mancava il numero della dettatura): correggendolo l'avevo acceso. Ora si
-     applica solo se il riscontro è ancora della stessa dettatura.
-  4. (preesistente) La scelta segnava l'esito sotto l'**elemento**, mentre la
-     scheda lo legge sotto l'**appunto**: una scelta rifiutata non diceva
-     niente sulla scheda. Ora la chiave è l'appunto, come per l'approvazione.
+- **Revisione Codex del diff**: vedi la sezione qui sotto.
+
+## Revisione Codex
+
+**Prima parte** (una revisione): tre rilievi, tutti curati, più un quarto
+preesistente; per ognuno una prova scritta **prima** della cura, **4 rosse su 4**
+sul codice non curato, poi verdi:
+1. la guardia contro il doppio tocco si liberava prima che la rilettura
+   tornasse;
+2. in Dashboard una lettura vecchia poteva riportare schede già chiuse;
+3. in MEMO una rilettura rimasta indietro poteva sovrascrivere il riscontro di
+   una dettatura nuova;
+4. (preesistente) l'esito di una scelta finiva sotto l'elemento, dove la scheda
+   non guarda.
+
+**Seconda parte** (una revisione): due rilievi, **tutti e due veri** e curati.
+1. 🔴 **Critico, e preesistente**: in una frase **senza** nessuna parola di
+   spostamento o chiusura, lo spostamento **dichiarato** dal modello passava
+   così com'era. «Ricordami il dentista lunedì» capito come lo spostamento di
+   un impegno «dentista» sarebbe diventato, con un omonimo in Agenda, uno
+   spostamento approvabile. Ora uno spostamento o una chiusura restano
+   approvabili **solo se le parole dette per quella cosa li dicono**, in
+   qualunque frase; altrimenti diventano «da chiarire» con un motivo che dice
+   quali parole usare. Anche un «quale impegno?» dato dal modello resta fermo.
+   Prova: `agenda-a-voce.test.js`, «su tutta la filza» (cinque casi nuovi).
+2. **Medio**: «24:00» passava il controllo della forma e PostgreSQL la
+   accetta come ora. Curato con una migrazione **nuova** (`20260911000002`,
+   ore 00-23 e minuti 00-59 scritti), perché una migrazione applicata non si
+   riscrive — anche se era andata solo sulla prova. La sua verifica, lanciata
+   da sola prima di applicare, si è fermata su «24:00»; applicata, passa.
+   ⚠️ Il controllo dell'**avviso** (`avviso_ora`, dal 10/09) ha la stessa forma
+   e non è toccato: non era nel perimetro.
 
 ## Cosa NON è verificato
 
-- **Safari e un iPhone vero**: niente è stato aperto da un telefono. Le misure
-  sono di Chrome senza schermo.
-- **La dettatura vera dal browser**: il microfono non esiste senza schermo; il
-  giro «parlo → appunti → torno» è provato con un riconoscitore finto nelle prove
-  schermata, e il modello è stato chiamato direttamente.
-- **«Fallo a mano» dalla Dashboard**: provato l'indirizzo (prova schermata) e il
-  giro sul database (`azione_a_mano` → `chiudi_azione_a_mano`), non cliccato nel
-  browser vero.
-- **La partenza dopo una ricarica** è misurata in Chrome; Safari conserva lo
-  stato della cronologia allo stesso modo per specifica, ma non l'ho visto.
+- **In produzione non c'è niente** di questa consegna: la migrazione e la
+  funzione vanno applicate dopo il merge, nell'ordine di sempre (push →
+  `npm run migra -- --conferma` → `npm run funzione ascolta-voce -- --conferma`),
+  con i numeri veri scritti nel riepilogo di quel giorno.
+- **Safari e un iPhone vero**: niente è stato aperto da un telefono.
+- **Il modello è stato chiamato poche volte** (2 giri della prova + 2 dettature
+  la mattina): è un modello, e due giri della stessa frase la mattina avevano
+  dato giorni diversi (14/15/16 e 15/16/17 settembre). La data e l'ora si vedono
+  sulla scheda prima di approvare.
+- **Il caso «da chiarire» non si è potuto far nascere dal modello vero**: si
+  prova sulla regola (prove pure) e sul database (`frase-mista`), non su una
+  frase detta.
+- **Un'avvertenza di sicurezza**: durante il lavoro un errore di avvio di `psql`
+  ha stampato nel registro della sessione la stringa di collegamento del
+  database **di prova**, password compresa. Riguarda solo Borgo58-Prova; lo
+  script è stato corretto (il collegamento passa solo nell'ambiente, gli errori
+  si stampano per messaggio). Si cambia dal pannello Supabase del progetto di
+  prova → Database → reimposta la password, aggiornando poi `DB_URL_PROVA` in
+  `.env`.
+
+## Limiti che restano, dichiarati
+
+- **Più attrito dove prima c'era un rischio**: se in una frase mista il modello
+  non restituisce i pezzi, **tutte** le cose d'Agenda restano da chiarire, anche
+  quelle che avrebbe capito bene. È il verso scelto da Alessio: si ridice o si fa
+  a mano, non si sposta mai un impegno per sbaglio.
+- **Due spostamenti che condividono un verbo** («sposta a venerdì il dentista e
+  la riunione»): il secondo pezzo non contiene «sposta», quindi resta da
+  chiarire.
+- Le parole di spostamento e chiusura sono un elenco: un verbo che non c'è
+  («anticipa a giovedì la riunione») **non basta più da solo** — resta da
+  chiarire, e si ridice con «sposta» o si fa a mano. Prima lasciava decidere
+  il modello; è il prezzo della regola «mai spostare al posto di creare».
 
 ## Cosa abbiamo rovesciato
 
-**Nessuna decisione registrata.** Due cose da dichiarare lo stesso:
-- La riga della Dashboard **era un collegamento a MEMO** (SPEC-0013, 06/09) e ora
-  **si apre**. Non c'era una decisione «si approva solo in MEMO»: la ragione
-  scritta accanto a quella riga — contare gli appunti e non le righe, con lo
-  stesso numero di MEMO — **vale ancora** ed è conservata (`voce_da_guardare`).
-  MEMO resta a un tocco, dentro il riquadro.
-- La regola del 06/09 («solo la scrittura decide com'è andata») si allarga
-  alla **scelta** fra due candidati, che fino a oggi non la rispettava.
+- **n. 92** — «la rete dell'Agenda guarda la frase detta intera» (08/09,
+  `066f263`). *La ragione di allora vale ancora* — il modello riconduce una
+  chiusura o uno spostamento alla cosa più vicina che conosce — e la rete resta;
+  cambia **su quali parole** decide. Per esteso in
+  [`decisioni_rovesciate.md`](../decisioni_rovesciate.md). Il numero è 92 e non
+  91 perché il 91 è nella PR #57, non ancora unita.
+- **Non rovesciato**: la regola del 07/09 «si guardano le parole dette, non un
+  riassunto del modello». Il pezzo vale solo se è una **copia esatta** della
+  frase detta; al modello si chiede soltanto dove tagliare.
+- **Non rovesciata**: «l'ora non si inventa» (`TaskForm.jsx`, dal 27/08). Resta
+  intera: l'ora entra solo quando è stata detta.
+- La riga della Dashboard **era un collegamento a MEMO** e ora **si apre**. Non
+  c'era una decisione «si approva solo in MEMO»; la ragione accanto a quella
+  riga — contare gli appunti e non le righe — vale ed è conservata.
 
 ---
 
-**Hash di HEAD dichiarato**: `e7ed23e` sul ramo `memo-affidabile`, cioè il
+**Hash di HEAD dichiarato**: `9518e7f` sul ramo `memo-affidabile`, cioè il
 commit immediatamente sotto questo documento.
 **Stato del working tree al momento della consegna**: pulito.
