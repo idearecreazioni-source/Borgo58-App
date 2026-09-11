@@ -87,10 +87,14 @@ const emptyForm = {
 // I nomi in italiano delle tabelle dove un ingrediente può comparire, per la
 // frase «Non si può eliminare: compare in …» (11/09/2026). Prima uscivano i
 // nomi tecnici — «stock_lots (3), recipe_ingredients (2)».
-// ⚠️ È LO STESSO ELENCO di `nome_leggibile()` nel database (migrazione
+// ⚠️ È IL GEMELLO di `nome_leggibile()` nel database (migrazione
 //    20260824000020), che scrive il rifiuto quando si prova a cancellare:
-//    se uno dei due cambia, va cambiato anche l'altro. Una tabella che non è
-//    qui resta col suo nome tecnico — si vede, e si aggiunge.
+//    stesse tabelle, stesse parole — se uno dei due cambia, va cambiato
+//    anche l'altro. UNA SOLA DIFFERENZA, voluta: qui «società» ha l'accento,
+//    il database scrive «societa'» con l'apostrofo (rilievo della revisione
+//    Codex, 11/09/2026). Copiare l'apostrofo a schermo sarebbe il difetto
+//    «e' … piu'» già segnalato altrove. Una tabella che non è qui resta col
+//    suo nome tecnico — si vede, e si aggiunge.
 const NOMI_TABELLE = {
   recipe_ingredients: "ricette",
   stock_lots: "partite in magazzino",
