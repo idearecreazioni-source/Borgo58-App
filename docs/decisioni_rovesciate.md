@@ -147,8 +147,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 88 | 11/09/2026 | la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto |
 | 89 | 11/09/2026 | un impegno riservato porta il segno «Riservato» nell'elenco |
 | 90 | 11/09/2026 | giorno e ora stanno affiancati, in due colonne uguali |
+| 91 | 11/09/2026 | `min-w-0` tiene la data dentro la sua colonna |
 
-⚠️ **Righe: 91.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 92.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3307,3 +3308,32 @@ che non viene mai salvata perché non passa da nessun deposito.
    l'ha respinto al collaudo: troppo grandi. ⚠️ **Il prezzo**: a 64 punti per
    centimetro giorno e ora vanno a capo, perché affiancati chiederebbero 329
    punti su 310.
+
+## 91 · 11/09/2026 — «`min-w-0` tiene la data dentro la sua colonna»
+
+1. **Cosa era stato deciso e quando.** Il 12/08/2026 (`f93ecca`, «Il campo
+   data non si stringe da solo, e schiaccia quello accanto»), nella
+   prenotazione pubblica: una data affiancata ad altri campi sta in una
+   colonna di griglia con `min-w-0`, così comanda la colonna e la data si
+   stringe. Lo stesso schema è stato ripreso poi in altre schermate.
+
+2. **La ragione di allora.** Una casella di data ha una larghezza minima
+   decisa dal browser: senza `min-w-0` usciva dalla colonna e finiva sopra
+   il campo accanto — sui telefoni stretti, sempre.
+
+3. **Cosa si decide adesso.** Date e ore hanno una larghezza **dichiarata**
+   sul loro testo (`campo-data` 11,5 em, `campo-ora` 7,5 em) e i campi
+   stanno in una riga che va a capo (`riga-campi`, in `index.css`): quando
+   due non entrano, il secondo passa sotto. SPEC-0010, mandato «telefono
+   ordinato».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La ragione vale
+   ancora** — la data non deve uscire né coprire il vicino — e la forma
+   nuova la rispetta. Era sbagliata la cura: `min-w-0` impedisce alla data
+   di uscire **stringendola sotto il suo contenuto**, e una data stretta si
+   taglia (Chrome) o esce lo stesso (Safari). Misurato l'11/09 col
+   censimento del telefono (`npm run misura:telefono`): in 16 schermate le
+   date avevano fra 132 e 192 punti e ne chiedevano 181, fino a 260 a 64
+   punti per centimetro. ⚠️ **Il prezzo**: sul telefono due date non stanno
+   più affiancate (chiederebbero più dei 326 punti di una riga) e vanno una
+   sotto l'altra — ognuna larga quanto la sua data, non tutta la riga.
