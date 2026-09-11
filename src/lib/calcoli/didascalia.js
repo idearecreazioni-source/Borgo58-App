@@ -31,6 +31,44 @@
 //     arriva da un clic o da un tocco.
 
 /**
+ * Con cosa è arrivato un clic.
+ *
+ * 🔴 SI PRENDE DALLA PRESSIONE (`pointerdown`), NON DAL CLIC — 11/09/2026.
+ * La pressione dichiara sempre il suo tipo — mouse, dito, penna — in ogni
+ * browser. Il clic invece lo porta solo dove il browser lo manda come
+ * evento del puntatore, e non tutti lo fanno: dove arriva senza tipo, un
+ * clic col mouse verrebbe preso per un dito e richiuderebbe ciò che il
+ * passaggio ha appena aperto — il difetto del 24/08, rientrato da un'altra
+ * porta. Senza pressione (Invio o barra spaziatrice dalla tastiera) resta
+ * quello che dice il clic.
+ *
+ * @param {string|undefined} premuto  il tipo della pressione che l'ha preceduto
+ * @param {string|undefined} delClic  il tipo che dichiara il clic stesso
+ */
+export function puntatoreDelClic(premuto, delClic) {
+  return premuto || delClic || undefined;
+}
+
+/**
+ * Di quanto spostare la spiegazione perché resti dentro lo schermo.
+ *
+ * 🔴 11/09/2026, misurato sul telefono: un «?» vicino al bordo destro apriva
+ * una spiegazione larga 256 punti che andava da 342 a 598 su uno schermo da
+ * 390 — la pagina si allargava e scorreva di lato. Si sposta verso sinistra
+ * quanto serve, e mai oltre il margine sinistro.
+ *
+ * @param {{sinistra: number, destra: number}} riquadro  dove cade adesso
+ * @param {number} larghezza  larghezza dello schermo
+ * @param {number} margine    spazio da lasciare ai due lati
+ */
+export function spostamentoNelloSchermo({ sinistra, destra }, larghezza, margine = 8) {
+  let dx = 0;
+  if (destra > larghezza - margine) dx = larghezza - margine - destra;
+  if (sinistra + dx < margine) dx = margine - sinistra;
+  return dx;
+}
+
+/**
  * @param {string} gesto  "clic" | "entra" | "esce" | "fuoco" | "fuocoVia" | "esc"
  * @param {object} come   { puntatore: "mouse"|"touch"|"pen", daTastiera: boolean }
  * @param {boolean} aperta  com'è adesso

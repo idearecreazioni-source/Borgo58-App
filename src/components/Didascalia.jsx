@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { dopoIlGesto } from "../lib/calcoli/didascalia";
+import { dopoIlGesto, puntatoreDelClic, spostamentoNelloSchermo } from "../lib/calcoli/didascalia";
 
 // La spiegazione che si apre da un segno, accanto al titolo.
 //
@@ -35,7 +35,29 @@ import { dopoIlGesto } from "../lib/calcoli/didascalia";
 export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
   const [aperta, setAperta] = useState(false);
   const contenitore = useRef(null);
+  // Il tipo dell'ultima pressione sul segno: vedi `puntatoreDelClic`.
+  const ultimaPressione = useRef(undefined);
+  // Di quanto sta a sinistra la spiegazione rispetto al segno.
+  const [spostamento, setSpostamento] = useState(0);
   const id = useId();
+
+  // 🔴 LA SPIEGAZIONE RESTA DENTRO LO SCHERMO — 11/09/2026, misurato sul
+  //    telefono: accanto al bordo destro andava da 342 a 598 punti su uno
+  //    schermo da 390, e la pagina si allargava e scorreva di lato.
+  // ⚠️ La posizione si decide PRIMA di disegnarla, al gesto: spostarla
+  //    dopo averla disegnata (prima stesura) la rimetteva a posto, ma il
+  //    telefono aveva già allargato la pagina per quel primo disegno fuori
+  //    e non la stringeva più — misurato: spiegazione dentro, pagina a 598.
+  //    La larghezza è quella che la classe `w-64` le dà (16 rem, e mai più
+  //    dell'80% dello schermo).
+  const decidiPosizione = () => {
+    const r = contenitore.current?.getBoundingClientRect();
+    if (!r) return;
+    const schermo = document.documentElement.clientWidth;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const larga = Math.min(16 * rem, schermo * 0.8);
+    setSpostamento(spostamentoNelloSchermo({ sinistra: r.left, destra: r.left + larga }, schermo));
+  };
 
   // Toccando altrove si chiude. ⚠️ Senza, sul tablet resterebbe aperta
   // finché non si ritocca il segno — e chi l'ha aperta per sbaglio si
@@ -64,7 +86,12 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
   // sempre perché i tre modi di arrivarci producono sequenze diverse.
   const reagisci = (gesto, e) => {
     const daTastiera = gesto === "fuoco" && e.target.matches(":focus-visible");
-    const puntatore = e.pointerType ?? e.nativeEvent?.pointerType;
+    let puntatore = e.pointerType ?? e.nativeEvent?.pointerType;
+    if (gesto === "clic") {
+      puntatore = puntatoreDelClic(ultimaPressione.current, puntatore);
+      ultimaPressione.current = undefined;
+    }
+    decidiPosizione();
     setAperta((v) => dopoIlGesto(gesto, { puntatore, daTastiera }, v));
   };
 
@@ -93,6 +120,9 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         // ⚠️ E col mouse non si perde niente: la didascalia si chiude
         // spostando il cursore, che è il gesto naturale. Il toggle resta
         // per il dito e per la tastiera, dove non esiste un «uscire».
+        onPointerDown={(e) => {
+          ultimaPressione.current = e.pointerType;
+        }}
         onClick={(e) => reagisci("clic", e)}
         // ⚠️ `pointerType === "mouse"` e non `onMouseEnter`: sui browser
         // dei tablet il tocco emette ANCHE gli eventi del mouse, quindi
@@ -139,7 +169,8 @@ export default function Didascalia({ children, etichetta = "Cosa vuol dire" }) {
         <span
           id={id}
           role="tooltip"
-          className="absolute left-0 top-full z-30 mt-1 w-64 max-w-[80vw] rounded-lg bg-b58-charcoal px-3 py-2 testo-sala font-normal normal-case tracking-normal text-b58-parchment shadow-lg"
+          style={{ left: spostamento }}
+          className="absolute top-full z-30 mt-1 w-64 max-w-[80vw] rounded-lg bg-b58-charcoal px-3 py-2 testo-sala font-normal normal-case tracking-normal text-b58-parchment shadow-lg"
         >
           {children}
         </span>
