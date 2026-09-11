@@ -356,7 +356,18 @@ export default function Cantina() {
               titolo={(r) => r.prodotto}
               intestazioneTitolo="Prodotto"
               campi={(r) => [
-                { chiave: "mondo", etichetta: "Mondo", valore: r.mondo ?? "" },
+                // 🔴 IL NOME, NON IL CODICE (11/09/2026): qui compariva
+                //    «vini», «liquori» — il codice che il database usa — mentre
+                //    il menu qui sopra dice «Liquori e distillati». Il nome si
+                //    prende dagli stessi prodotti che il menu mostra; se non
+                //    ci sono, almeno la parola con la maiuscola.
+                {
+                  chiave: "mondo",
+                  etichetta: "Mondo",
+                  valore:
+                    (!nonLetto(prodotti) && prodotti.find((p) => p.mondo === r.mondo)?.mondo_nome) ||
+                    (r.mondo ? r.mondo[0].toUpperCase() + r.mondo.slice(1) : ""),
+                },
                 {
                   chiave: "unita",
                   etichetta: "Differenza",

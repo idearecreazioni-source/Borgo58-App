@@ -12,7 +12,7 @@ import {
   updateMenuItemPrice,
 } from "../../lib/api/menus";
 import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
-import { foodCostLevel, formatEUR } from "../../lib/constants";
+import { SEASONS, foodCostLevel, formatEUR, labelFor } from "../../lib/constants";
 import { senzaFoodCostInBreve, senzaFoodCost } from "../../lib/calcoli/inCarta";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 
@@ -900,7 +900,9 @@ function nomeDelPiatto(item, menuId, menu) {
       </Link>
       {isOutOfSeason(item.recipe.seasonality) && (
         <span className="testo-sala text-b58-charcoal-soft ml-1.5">
-          (stagione: {item.recipe.seasonality.join(", ")})
+          {/* I nomi delle stagioni, non i codici («tutto_anno»): stesso
+              elenco della scheda della ricetta. */}
+          (stagione: {item.recipe.seasonality.map((s) => labelFor(SEASONS, s).toLowerCase()).join(", ")})
         </span>
       )}
     </>

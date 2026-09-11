@@ -1689,7 +1689,17 @@ export default function IngredienteForm() {
                     <tr key={h.id} className="border-b border-b58-charcoal/5 last:border-0">
                       <td className="py-2 text-b58-charcoal-soft">{formatDate(h.recorded_at)}</td>
                       <td className="py-2 text-right text-b58-charcoal">{formatEUR(h.price)}</td>
-                      <td className="py-2 text-b58-charcoal-soft">{h.source}</td>
+                      {/* La parola, non il codice del database: prima si
+                          leggeva «cessione_interna». Un valore sconosciuto
+                          resta com'è invece di sparire. */}
+                      <td className="py-2 text-b58-charcoal-soft">
+                        {{
+                          manuale: "a mano",
+                          fattura: "fattura",
+                          preventivo: "preventivo",
+                          cessione_interna: "cessione interna",
+                        }[h.source] ?? h.source}
+                      </td>
                       <td className="py-2 text-b58-charcoal-soft">{h.note ?? "—"}</td>
                     </tr>
                   ))}
