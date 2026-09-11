@@ -232,7 +232,7 @@ export default function TaskForm() {
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        {isEdit ? "Modifica task" : "Nuovo task"}
+        {isEdit ? "Modifica impegno" : "Nuovo impegno"}
       </h1>
 
       {error && (
@@ -443,7 +443,7 @@ export default function TaskForm() {
             disabled={saving}
             className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
-            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
+            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea impegno"}
           </button>
           {isEdit && isTitolare && (
             <button
@@ -471,7 +471,7 @@ export default function TaskForm() {
             <p className="mt-0.5">
               {form.visibile_staff
                 ? "Visibile anche allo staff."
-                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
+                : "Riservato a te: lo staff non vede questo impegno in Agenda. La visibilità degli impegni automatici dipende dal modulo di origine e non è modificabile da qui."}
             </p>
           )}
         </div>
