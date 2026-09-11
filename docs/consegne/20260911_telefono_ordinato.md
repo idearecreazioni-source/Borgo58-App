@@ -95,7 +95,7 @@ da mostrare.
 | Sala e orari — chiusure | a 64 un menu fuori di 14 | corretta |
 | Cassa (cassetto), Incassato e scontrinato, Prestiti, Prenotazioni (elenco), Pianta, Allineamento, Cantina, Manuale HACCP, Raccolta propria, Menu nuovo, Piatti del giorno, Simulatore, Deducibilità, Documento | nessun difetto misurato | **già corrette, non toccate** |
 | Agenda — nuovo impegno | nessun difetto (collaudata su iPhone l'11/09) | non toccata |
-| Mance | le date sono corrette; a 64 punti per cm il pulsante «Rimuovi» dell'elenco delle raccolte si leggeva «Rimuc» | **corretta** (autorizzata da Alessio dopo il primo resoconto) |
+| Mance | a 64 punti per cm il pulsante «Rimuovi» si leggeva «Rimuc»; al collaudo su iPhone Mese e «Paghi con» di «Distribuzione mensile» si sovrapponevano | **corretta due volte** (tutt'e due autorizzate da Alessio) |
 | Produzioni, Fermi | sul progetto di prova non c'è una preparazione né una partita | **non misurate** |
 
 **Il secondo censimento, dopo le correzioni** — tutte le 37 schermate nelle
@@ -116,6 +116,33 @@ una fila quel minimo prende il posto di quello naturale, e il testo accanto lo
 schiacciava sotto la sua parola — l'elenco scorre in verticale e tagliava il
 resto («Rimuc»). Il testo si stringe e va a capo (`min-w-0 flex-1`), il
 pulsante no (`shrink-0`). Rimisurata nelle tre forme: corretta.
+
+**Mance, seconda correzione: dal collaudo su iPhone** (autorizzata da
+Alessio). In «Distribuzione mensile» Mese e «Paghi con» si sovrapponevano. La
+riga era una fila semplice con due larghezze fisse (`w-44`, `w-36`): Chrome
+disegna il mese dentro la sua casella, Safari più largo — per questo il
+censimento, che è Chrome, la dava per corretta. E su un telefono largo
+(440 punti) le due caselle stavano affiancate anche in Chrome.
+- La riga passa alla regola comune: il Mese prende `campo-mese`, «Paghi con»
+  la classe nuova **`campo-contenuto`** (largo quanto la sua voce: lo stile dei
+  campi di Mance porta `w-full`, e nella riga a capo il menu si stirava a 310
+  punti per otto lettere), «Dividi equamente il monte» `riga-campi-gesti`.
+- **Sul telefono «Paghi con» va SEMPRE a capo** sotto il Mese, allo stesso
+  bordo: classe nuova **`riga-campi-a-capo`**, sotto i 640 punti — la soglia
+  dei gesti. ⚠️ Non «quando non ci sta»: quanto è largo il mese su Safari da
+  qui non si misura, e un a capo lasciato al caso era il difetto. Sul
+  computer i due tornano affiancati.
+- **La verifica è nella prova visiva di Mance** (`misura-telefono-rotte.mjs`:
+  `verifica` e `formeInPiu`, iPhone largo 440): stessa `riga-campi`, nessuna
+  sovrapposizione, a capo sul telefono, stesso bordo, nessun vuoto oltre 0,6
+  cm, e nessun campo **stirato** oltre il suo contenuto più 1 cm. ⚠️ La prima
+  stesura giudicava «a tutta larghezza» un campo oltre il 75% della riga, e
+  segnalava il mese a 64 punti per cm (256 su 310) — che è la sua misura, non
+  uno stiramento: corretta prima di consegnare.
+- Misure: Mese 200×38 punti a 390 e a 440, 256×54 a 64 punti per cm, 151×34
+  al computer. **Rossa sul codice di prima** (quattro forme); verde dopo;
+  **rotta apposta due volte** — menu stirato («310 punti, il contenuto ne
+  chiede 110»), niente a capo (rossa a 440) — rossa per il motivo giusto.
 
 ⚠️ **Fuori perimetro, contate a parte**: campi e pulsanti dentro **tabelle
 che scorrono di lato** nel loro riquadro (Deduzioni, Deducibilità, Agricolo,
@@ -191,6 +218,12 @@ Sala, Cucina; Cucina → Sala, Bar; Scontrini → Sala. Sono coerenti.
 - Prove sulle schermate **129/132**: le tre rosse (`rotte-chiuse` ×1,
   `varco-pubblico` ×2) sono **le stesse su master**, misurato nello stesso
   modo.
+- **Dopo la seconda correzione di Mance**: `npm run misura:telefono` completo
+  — **112 viste di 37 schermate, nessun problema**, 6 non misurabili
+  (Produzioni e Fermi, senza dati); lint pulito; compilazione riuscita (in una
+  cartella fuori dalla copia, per non disturbare il server del collaudo sulla
+  5173); prove sulle schermate 129/132, le stesse tre rosse; prove pure
+  **1292/1293** senza `versione.test.js` — la rossa è `indice-richieste`.
 
 ## Cosa NON è verificato
 
@@ -205,6 +238,13 @@ Sala, Cucina; Cucina → Sala, Bar; Scontrini → Sala. Sono coerenti.
 - **La vista Sala diversa da Cassa**: non riprodotta.
 - Le etichette esplicite proposte da SPEC-0010 («Scadenza: data», «Avvisami
   il») non erano nel mandato e non sono state toccate.
+- **La seconda correzione di Mance su Safari**: le fotografie del collaudo
+  non sono arrivate a questa sessione, e l'effetto su iPhone lo vede solo il
+  collaudo. Quello che è misurato è la regola: sul telefono i due campi non
+  possono più stare affiancati.
+- **`tests/unita/versione.test.js` non è girata** nell'ultimo giro locale: si
+  costruisce dentro la cartella della copia e l'11/09 aveva fatto cadere il
+  server del collaudo. Gira sui controlli di GitHub.
 
 ## Cosa abbiamo rovesciato
 
@@ -215,7 +255,11 @@ Sala, Cucina; Cucina → Sala, Bar; Scontrini → Sala. Sono coerenti.
 
 ---
 
-**Hash di HEAD dichiarato**: `3b2e825` sul ramo `telefono-ordinato`, cioè il
+**Hash di HEAD dichiarato**: `de27a0b` sul ramo `telefono-ordinato`, cioè il
 commit immediatamente sotto questo aggiornamento del documento (la prima
-stesura dichiarava `7bce7e4`; dopo è arrivata la correzione di Mance).
+stesura dichiarava `7bce7e4`, la seconda `3b2e825`; dopo sono arrivate le due
+correzioni di Mance).
+**Cosa abbiamo rovesciato, per la seconda correzione**: niente. La regola
+comune (SPEC-0010) non cambia; si aggiungono due classi (`riga-campi-a-capo`,
+`campo-contenuto`) e Mance la segue.
 **Stato del working tree al momento della consegna**: pulito.
