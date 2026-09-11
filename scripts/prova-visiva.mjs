@@ -761,6 +761,11 @@ function controllaSettimana(forma, m, attesa, telefono, difetti) {
         difetti.push(`${forma}: in ${cosa} l'ora si sovrappone al titolo.`);
       }
     }
+    // I titoli di uno stesso giorno partono dallo stesso punto, con o senza ora.
+    const sp = sparpaglio(g.impegni.map((i) => (i.titolo.righeBox[0] ? i.titolo.righeBox[0].left : null)));
+    if (sp && sp.max - sp.min > T) {
+      difetti.push(`${forma}: nel ${g.giorno} i titoli non partono dallo stesso punto — da ${sp.min.toFixed(1)} a ${sp.max.toFixed(1)}.`);
+    }
     const pila = [g.intestazione, ...g.impegni];
     for (let k = 1; k < pila.length; k++) {
       if (pila[k].alto < pila[k - 1].basso - T) {
@@ -1046,6 +1051,7 @@ try {
           ids: b.map((x) => x.dataset.impegno),
           ore: b.map((x) => (x.querySelector("[data-ora]") ? x.querySelector("[data-ora]").innerText.trim() : "")),
           fuori: b.filter((x) => x.getBoundingClientRect().right > innerWidth + 1).map((x) => x.dataset.impegno),
+          sinistre: b.map((x) => x.querySelector("[data-titolo]").getBoundingClientRect().left),
         };
       })()`;
       let mese = null;
@@ -1069,6 +1075,12 @@ try {
           difetti.push(`${nomeMese}: la pagina scorre di lato di ${mese.paginaLarga - mese.finestra} punti.`);
         }
         if (mese.fuori.length) difetti.push(`${nomeMese}: escono dallo schermo ${mese.fuori.join(", ")}.`);
+        // I titoli di uno stesso giorno partono dallo stesso punto, con o
+        // senza ora (trovato guardando la prima fotografia del Mese).
+        const sp = sparpaglio(mese.sinistre);
+        if (sp && sp.max - sp.min > TOLLERANZA_PX) {
+          difetti.push(`${nomeMese}: i titoli del giorno non partono dallo stesso punto — da ${sp.min.toFixed(1)} a ${sp.max.toFixed(1)}.`);
+        }
       }
       await aspetta(400);
       await fotografa(manda, `mese-${nomeFile(forma.nome)}`);

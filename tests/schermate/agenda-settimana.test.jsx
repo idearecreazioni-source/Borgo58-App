@@ -109,7 +109,8 @@ describe("🔴 il mese: lo stesso giorno si legge come nella settimana", () => {
     // Senza ora prima, a pari ora per titolo: «Impegno fatto7» < «Impegno giornata».
     expect(ids).toEqual(["fatto7", "giornata", "mattina", "sera"]);
     expect(document.querySelector("[data-impegno='mattina'] [data-ora]").textContent).toBe("09:00");
-    expect(document.querySelector("[data-impegno='giornata'] [data-ora]")).toBeNull();
+    // La colonna dell'ora c'è anche vuota: i titoli partono tutti dallo stesso punto.
+    expect(document.querySelector("[data-impegno='giornata'] [data-ora]").textContent).toBe("");
     expect(document.querySelector("[data-impegno='fatto7'] [data-titolo]").className).toMatch(/line-through/);
     expect(document.querySelector("[data-impegno='sera'] [data-titolo]").className).not.toMatch(/line-through/);
   });

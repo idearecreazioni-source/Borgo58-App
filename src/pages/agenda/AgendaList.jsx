@@ -768,22 +768,30 @@ export default function AgendaList() {
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
-                      {oraBreve(t) && (
-                        <span data-ora className="shrink-0 tabular-nums text-b58-charcoal-soft">
-                          {oraBreve(t)}
+                      {/* ⚠️ Ora e titolo sulla stessa riga di base, e la
+                          colonna dell'ora c'è anche vuota se nel giorno
+                          qualcuno un'ora ce l'ha: nella prima fotografia il
+                          titolo senza ora partiva più a sinistra degli
+                          altri, e «18:30» stava a metà di un titolo su due
+                          righe. Come nella Settimana. */}
+                      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                        {dayTasks.some((x) => oraBreve(x)) && (
+                          <span data-ora className="w-[3.2em] shrink-0 tabular-nums text-b58-charcoal-soft">
+                            {oraBreve(t) ?? ""}
+                          </span>
+                        )}
+                        {/* Il nome come nelle corsie — 11/09/2026: stessa
+                            misura e stesso peso, così lo stesso impegno non
+                            cambia faccia passando dall'elenco al calendario. */}
+                        <span
+                          data-titolo
+                          title={t.status === "completato" ? "Fatto" : undefined}
+                          className={`min-w-0 flex-1 break-words testo-sala-grande font-medium ${
+                            t.status === "completato" ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
+                          }`}
+                        >
+                          {t.title}
                         </span>
-                      )}
-                      {/* Il nome come nelle corsie — 11/09/2026: stessa
-                          misura e stesso peso, così lo stesso impegno non
-                          cambia faccia passando dall'elenco al calendario. */}
-                      <span
-                        data-titolo
-                        title={t.status === "completato" ? "Fatto" : undefined}
-                        className={`min-w-0 flex-1 break-words testo-sala-grande font-medium ${
-                          t.status === "completato" ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
-                        }`}
-                      >
-                        {t.title}
                       </span>
                       {/* «Riservato» non c'è più nemmeno qui (11/09, dal
                           collaudo su iPhone): la visibilità si vede e si
