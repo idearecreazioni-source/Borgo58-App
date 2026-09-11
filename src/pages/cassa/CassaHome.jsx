@@ -353,10 +353,13 @@ export default function CassaHome() {
           )}
 
           {/* Navigazione sezioni */}
+          {/* 🔴 «COMANDE» NON STA PIÙ QUI — 11/09/2026, mandato «telefono
+              ordinato». Era un residuo: nato il 04/08 come `/cassa/comande`,
+              quando le Comande erano una pagina dentro Cassa; il 05/08 sono
+              diventate uno schermo a sé con la loro voce nel menu, e questo
+              pulsante è stato solo ripuntato a `/comande`. Si arriva alle
+              Comande dal menu laterale, che non è toccato. */}
           <div className="flex flex-wrap gap-2 mb-6">
-            <Link to="/comande" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
-              Comande
-            </Link>
             <Link to="/cassa/prima-nota" className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
               Prima nota
             </Link>
