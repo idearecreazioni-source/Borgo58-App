@@ -288,8 +288,15 @@ export default function Mance() {
               <ul className="testo-sala max-h-40 overflow-y-auto" style={{ display: "grid", gap: "calc(var(--pxcm) * 0.5)", marginTop: "calc(var(--pxcm) * 0.5)" }}>
                 {collected.slice(0, 20).map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 text-b58-charcoal-soft">
-                    <span>{formatDate(c.collected_date)} · {formatEUR(c.amount)}{c.note ? ` · ${c.note}` : ""}</span>
+                    {/* 🔴 11/09/2026 — misurato a 64 punti per cm: «Rimuovi» si
+                        leggeva «Rimuc». Il pulsante fissa una larghezza minima
+                        (`tocco-bottone`) che in una fila prende il posto di
+                        quella naturale, e il testo accanto lo schiacciava sotto
+                        la sua parola; l'elenco scorre, e tagliava il resto. Il
+                        testo si stringe e va a capo, il pulsante no. */}
+                    <span className="min-w-0 flex-1">{formatDate(c.collected_date)} · {formatEUR(c.amount)}{c.note ? ` · ${c.note}` : ""}</span>
                     <ConfermaDistruttiva
+                      className="shrink-0"
                       etichetta="Rimuovi"
                       cosaSparisce={`la raccolta del ${formatDate(c.collected_date)} da ${formatEUR(c.amount)}`}
                       onConferma={() => handleDeleteCollected(c.id)}
@@ -411,8 +418,10 @@ export default function Mance() {
               <ul style={{ display: "grid", gap: "calc(var(--pxcm) * 0.5)" }}>
                 {distributions.map((d) => (
                   <li key={d.id} className="flex items-center justify-between gap-2 testo-sala text-b58-charcoal-soft">
-                    <span className="capitalize">{monthLabel(d.period_month)} · {formatEUR(d.total_amount)} · {d.lines?.length ?? 0} dipendenti</span>
+                    {/* Stessa cura della riga delle raccolte, qui sopra. */}
+                    <span className="min-w-0 flex-1 capitalize">{monthLabel(d.period_month)} · {formatEUR(d.total_amount)} · {d.lines?.length ?? 0} dipendenti</span>
                     <ConfermaDistruttiva
+                      className="shrink-0"
                       etichetta="Rimuovi"
                       cosaSparisce={`la distribuzione di ${monthLabel(d.period_month)} da ${formatEUR(d.total_amount)}, con le sue righe per dipendente`}
                       onConferma={() => handleDeleteDistribution(d.id)}
