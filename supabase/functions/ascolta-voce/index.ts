@@ -71,10 +71,15 @@ Rispondi SOLO con un oggetto JSON, senza testo attorno e senza blocchi di codice
 {
   "azioni": [
     { "tipo": "...", "destinazione": "..."|null, "sicuro": true|false, "frase": "...", "motivo": "..."|null,
+      "pezzo": "le parole che ha detto per QUESTA cosa, copiate esattamente"|null,
       "alternative": [ { "destinazione": "...", "perche": "..." } ]|null,
       "dati": { ..., "nome_sentito": "come lui l ha chiamato" } }
   ]
 }
+
+🔴 "pezzo" — LE SUE PAROLE PER QUELLA COSA, COPIATE, NON RIASSUNTE
+In ogni azione metti in "pezzo" il tratto della frase che riguarda SOLO quella cosa, copiato parola per parola e di seguito, cosi' come e' stato detto: niente parole tue, niente correzioni, niente pezzi presi da punti diversi della frase. Due azioni non possono avere le stesse parole nel loro pezzo. Se una frase parla di una cosa sola, il pezzo e' tutta la frase.
+⚠️ Serve al gestionale per non confondere le cose dette insieme: e' con il pezzo che capisce se «sposta» o «segna fatto» riguardano questa cosa o un'altra. Se non riesci a dividere la frase con certezza, metti "pezzo": null — non inventare un taglio. Un pezzo sbagliato e' peggio di un pezzo mancante.
 
 ${istruzioniDomande()}
 ${istruzioniAgenda()}
@@ -92,7 +97,8 @@ Se la frase poteva ragionevolmente voler dire due cose — un promemoria oppure 
 LE COSE CHE IL GESTIONALE SA GIA' FARE
 - "giacenza": quanto ce n'è davvero di un prodotto. dati: { "prodotto": <numero del catalogo>, "quanto_ce": <numero>, "note": "..."|null }
 - "temperatura": la temperatura letta su un frigo o sull'abbattitore. dati: { "frigorifero": <numero del catalogo>|null, "gradi": <numero>, "note": "..."|null }
-- "promemoria": una cosa NUOVA da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null }
+- "promemoria": una cosa NUOVA da ricordare, che finisce in Agenda. dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null }
+  🔴 "ora" E' L'ORA DELL'IMPEGNO — a che ora succede la cosa: «alle 10 ho il dentista» → "ora": "10:00", «alle tre e mezza del pomeriggio» → "15:30". Mettila SOLO se ha detto un'ora precisa; «di mattina», «in serata», «verso pranzo» NON sono un'ora: "ora" resta null. Non e' l'ora dell'avviso, che va in "avviso_ora". E NON RIPETERLA nella "descrizione": finisce nel campo Ora dell'Agenda, e scritta anche nella descrizione sarebbe detta due volte.
   🔴 "data" è IL GIORNO DELL'IMPEGNO — quando la cosa succede. "avviso_data" e "avviso_ora" sono QUANDO VUOLE ESSERE AVVISATO, che è un'altra cosa e quasi sempre un altro giorno. «Segna che ho appuntamento in banca sabato 13 e ricordamelo con una notifica il giorno prima alle 15» → "data": il 13, "avviso_data": il 12, "avviso_ora": "15:00".
   🔴 E NON SI INVENTANO NÉ IL GIORNO NÉ L'ORA DELL'AVVISO. Se non ha chiesto nessuna notifica, restano tutt'e due **null**: un impegno senza avviso è la cosa normale. Se ha detto il giorno e non l'ora, o l'ora e non il giorno, scrivi solo quello che ha detto: **un'ora plausibile messa al posto di una detta è indistinguibile da un'ora detta**, e l'avviso arriverebbe a un'ora che non ha scelto nessuno.
   ⚠️ "avviso_ora" è l'ora italiana in ventiquattr'ore: «alle tre del pomeriggio» → "15:00", «alle otto di mattina» → "08:00".
@@ -558,6 +564,11 @@ Deno.serve(async (req) => {
       sicuro: a?.sicuro === true,
       motivo: typeof a?.motivo === "string" ? a.motivo : null,
       frase: typeof a?.frase === "string" ? a.frase : "",
+      // ⚠️ IL PEZZO DI FRASE PASSA DI QUI (11/09/2026): senza, la rete
+      //    dell'Agenda non avrebbe niente con cui separare le cose dette
+      //    insieme, e ogni frase mista resterebbe tutta da chiarire. Non
+      //    si scrive nel database: serve solo a decidere, qui.
+      pezzo: typeof a?.pezzo === "string" ? a.pezzo : null,
       alternative: alternative.length > 0 ? alternative : null,
       dati,
     };

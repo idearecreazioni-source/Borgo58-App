@@ -84,6 +84,9 @@ describe("🔴 tre appuntamenti detti insieme, contro il database vero", () => {
         dati: {
           titolo: titoli[0],
           data: giorni[0],
+          // ⚠️ «10» e non «10:00»: come la scrive a volte il modello. Il
+          //    database la normalizza, e si controlla che lo faccia.
+          ora: "10:00",
           avviso_data: iso(new Date(base - 86400000)),
           avviso_ora: "18:00",
           avviso_chiesto: true,
@@ -93,7 +96,7 @@ describe("🔴 tre appuntamenti detti insieme, contro il database vero", () => {
         tipo: "promemoria",
         sicuro: true,
         frase: `${NOME} — riunione`,
-        dati: { titolo: titoli[1], data: giorni[1], avviso_chiesto: false },
+        dati: { titolo: titoli[1], data: giorni[1], ora: "15:30", avviso_chiesto: false },
       },
       {
         tipo: "promemoria",
@@ -150,6 +153,8 @@ describe("🔴 tre appuntamenti detti insieme, contro il database vero", () => {
     expect(String(righe[0].dati.avviso_ora)).toMatch(/^18:00/);
     expect(righe[1].dati.avviso_ora ?? null).toBeNull();
     expect(righe[2].dati.avviso_ora ?? null).toBeNull();
+    // 🔴 E ognuno la SUA ora (11/09/2026): due diverse e una che non c'è.
+    expect(righe.map((r) => r.dati.ora ?? null)).toEqual(["10:00", "15:30", null]);
 
     // Come li vede la schermata (MEMO e Dashboard leggono da qui).
     const { data: aperti, error } = await titolare.rpc("appunti_da_approvare");
@@ -174,6 +179,8 @@ describe("🔴 tre appuntamenti detti insieme, contro il database vero", () => {
     const nati = await impegniMiei();
     expect(nati.map((t) => t.title)).toEqual([titoli[1]]);
     expect(nati[0].due_date).toBe(giorni[1]);
+    // 🔴 L'ora finisce nel VERO campo Ora dell'Agenda, non nella descrizione.
+    expect(String(nati[0].due_time)).toMatch(/^15:30/);
 
     const dopo = await stato();
     expect(dopo.ap[righe[1].appunto_id]).toBe("approvato");
@@ -190,14 +197,16 @@ describe("🔴 tre appuntamenti detti insieme, contro il database vero", () => {
     expect(error).toBeNull();
     expect(aMano.percorso).toBe("/agenda/nuovo");
     expect(aMano.campi?.titolo).toBe(titoli[0]);
+    // ⚠️ Dall'11/09 l'ora arriva anche al modulo: non va riscritta a mano.
+    expect(aMano.campi?.ora).toBe("10:00");
 
-    // …si corregge (qui si aggiunge l'ORA, che la voce non porta) e si salva…
+    // …si corregge (qui si sposta l'ora di mezz'ora) e si salva…
     const { data: t, error: e2 } = await titolare
       .from("tasks")
       .insert({
         title: titoli[0],
         due_date: giorni[0],
-        due_time: "10:00",
+        due_time: "10:30",
         priority: "media",
         status: "da_fare",
         category: "altro",

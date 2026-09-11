@@ -10,12 +10,16 @@ import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // Quello che il gestionale ha già capito da un promemoria dettato.
-// ⚠️ L'ora (`due_time`) non c'è: la voce dà il giorno, non l'ora, e
-//    inventarla metterebbe una scadenza precisa che nessuno ha detto.
+// ⚠️ L'ORA C'È DALL'11/09/2026, e SOLO QUANDO È STATA DETTA E CAPITA: il
+//    database la normalizza a «HH:MM» e toglie quella che non sa leggere.
+//    La regola di prima resta intera — un'ora inventata metterebbe una
+//    scadenza precisa che nessuno ha detto — ma adesso un'ora detta non si
+//    perde più nella descrizione.
 const DA_VOCE = {
   titolo: "title",
   descrizione: "description",
   scadenza: "due_date",
+  ora: "due_time",
   priorita: "priority",
   categoria: "category",
 };

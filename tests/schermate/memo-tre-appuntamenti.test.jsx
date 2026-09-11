@@ -98,12 +98,13 @@ const DENTISTA = appunto("A1", [
   impegno("A1", {
     titolo: "Dentista",
     data: "2026-09-14",
+    ora: "10:00",
     avviso_data: "2026-09-13",
     avviso_ora: "18:00",
   }),
 ]);
 const RIUNIONE = appunto("A2", [
-  impegno("A2", { titolo: "Riunione col commercialista", data: "2026-09-15" }),
+  impegno("A2", { titolo: "Riunione col commercialista", data: "2026-09-15", ora: "15:30" }),
 ]);
 const TOVAGLIE = appunto("A3", [
   impegno("A3", { titolo: "Ritirare le tovaglie", data: "2026-09-16" }),
@@ -183,9 +184,44 @@ describe("🔴 tre appuntamenti detti insieme restano tre", () => {
     expect(within(dentista).getByText(/Ti mando una notifica su Telegram/)).toBeTruthy();
     expect(within(schedaDi("commercialista")).queryByText(/Ti mando una notifica/)).toBeNull();
     expect(within(schedaDi("tovaglie")).queryByText(/Ti mando una notifica/)).toBeNull();
+    // 🔴 Ognuno la SUA ora, prima di firmare; chi non l'ha detta non ne ha.
+    expect(within(dentista).getByText(/ora: 10:00/)).toBeTruthy();
+    expect(within(schedaDi("commercialista")).getByText(/ora: 15:30/)).toBeTruthy();
+    expect(within(schedaDi("tovaglie")).queryByText(/ora: /)).toBeNull();
     // 🔴 E niente è stato scritto: si è solo parlato.
     expect(finte.approva).not.toHaveBeenCalled();
     expect(finte.scarta).not.toHaveBeenCalled();
+  });
+
+  it("🔴 una frase mista che non si separa: la scheda DA CHIARIRE non si approva e dice perché", async () => {
+    const CHIARIRE = appunto(
+      "C1",
+      [
+        {
+          ...impegno("C1", { titolo: "Dentista", data: "2026-09-14", ora: "10:00" }),
+          motivo:
+            "In questa frase c'erano insieme cose nuove da segnare e un impegno da spostare o da " +
+            "chiudere, e non sono riuscito a capire con certezza quale parte va con quale.",
+          percorso: "/agenda",
+        },
+      ],
+      { destinazione: "agenda_da_chiarire", titolo: "Da chiarire in Agenda", eseguibile: false },
+    );
+    azioniDi(inAttesa(CHIARIRE));
+    finte.appunti.mockResolvedValueOnce([]).mockResolvedValue([CHIARIRE]);
+    mostra();
+    await waitFor(() => expect(finte.appunti).toHaveBeenCalledTimes(1));
+    await parla("ricordami il dentista lunedì alle 10 e sposta la riunione");
+    await waitFor(() => expect(schede()).toHaveLength(1));
+
+    const s = schedaDi("Dentista");
+    expect(within(s).queryByRole("button", { name: /^Approva/ })).toBeNull();
+    expect(within(s).getAllByText(/non sono riuscito a capire con certezza/).length).toBeGreaterThan(0);
+    // ⚠️ E l'uscita è l'Agenda, dove si decide guardando gli impegni veri.
+    expect(within(s).getByRole("link", { name: /Fallo a mano/ }).getAttribute("href")).toBe(
+      "/agenda?daVoce=el-C1",
+    );
+    expect(finte.approva).not.toHaveBeenCalled();
   });
 
   it("🔴 approvarne UNO non tocca gli altri due, e buttarne un altro nemmeno", async () => {
