@@ -95,12 +95,12 @@ da mostrare.
 | Sala e orari — chiusure | a 64 un menu fuori di 14 | corretta |
 | Cassa (cassetto), Incassato e scontrinato, Prestiti, Prenotazioni (elenco), Pianta, Allineamento, Cantina, Manuale HACCP, Raccolta propria, Menu nuovo, Piatti del giorno, Simulatore, Deducibilità, Documento | nessun difetto misurato | **già corrette, non toccate** |
 | Agenda — nuovo impegno | nessun difetto (collaudata su iPhone l'11/09) | non toccata |
-| Mance | le date sono corrette; a 64 punti per cm il pulsante «Rimuovi» dell'elenco delle raccolte esce a destra (si legge «Rimuc») | **fuori perimetro, non toccata** — da decidere |
+| Mance | le date sono corrette; a 64 punti per cm il pulsante «Rimuovi» dell'elenco delle raccolte si leggeva «Rimuc» | **corretta** (autorizzata da Alessio dopo il primo resoconto) |
 | Produzioni, Fermi | sul progetto di prova non c'è una preparazione né una partita | **non misurate** |
 
 **Il secondo censimento, dopo le correzioni** — tutte le 37 schermate nelle
 tre forme, in più giri perché il primo è stato fermato per memoria (vedi
-sopra): **ogni schermata misurabile è corretta**, tranne Mance (sopra). Due
+sopra): **ogni schermata misurabile è corretta**. Due
 correzioni sono nate proprio da questo giro:
 - il **mese** delle buste paga (scheda Dipendente) chiede circa 12 volte il
   suo testo, non 11,3 come una data: 196 punti su 184 al telefono, 239 su 236
@@ -109,6 +109,13 @@ correzioni sono nate proprio da questo giro:
 - il menu **«In cucina si lavora?»** di Sala e orari restava largo quanto «No,
   nemmeno in cucina» — lì la classe dei campi non porta `w-full` — e a 64
   usciva ancora di 14 punti.
+
+**Mance, corretta dopo il primo resoconto** (autorizzata da Alessio). Il
+pulsante «Rimuovi» porta `tocco-bottone`, che fissa una larghezza minima: in
+una fila quel minimo prende il posto di quello naturale, e il testo accanto lo
+schiacciava sotto la sua parola — l'elenco scorre in verticale e tagliava il
+resto («Rimuc»). Il testo si stringe e va a capo (`min-w-0 flex-1`), il
+pulsante no (`shrink-0`). Rimisurata nelle tre forme: corretta.
 
 ⚠️ **Fuori perimetro, contate a parte**: campi e pulsanti dentro **tabelle
 che scorrono di lato** nel loro riquadro (Deduzioni, Deducibilità, Agricolo,
@@ -208,6 +215,7 @@ Sala, Cucina; Cucina → Sala, Bar; Scontrini → Sala. Sono coerenti.
 
 ---
 
-**Hash di HEAD dichiarato**: `7bce7e4` sul ramo `telefono-ordinato`, cioè il
-commit immediatamente sotto questo documento.
+**Hash di HEAD dichiarato**: `3b2e825` sul ramo `telefono-ordinato`, cioè il
+commit immediatamente sotto questo aggiornamento del documento (la prima
+stesura dichiarava `7bce7e4`; dopo è arrivata la correzione di Mance).
 **Stato del working tree al momento della consegna**: pulito.
