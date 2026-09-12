@@ -141,12 +141,43 @@ export default function SettimanaAgenda({
                   )}
                 </div>
                 {!vuoto && (
-                  <ul className="mt-0.5 space-y-0.5">
-                    {delGiorno.map((t) => {
+                  <ul className="mt-0.5">
+                    {delGiorno.map((t, i) => {
                       const ora = oraBreve(t);
                       const fatto = t.status === "completato";
                       return (
-                        <li key={t.id}>
+                        // 🔴 OGNI IMPEGNO È UN'UNITÀ A SÉ — 12/09/2026, dal
+                        //    collaudo sull'iPhone: con più impegni in un
+                        //    giorno, i titoli che vanno a capo si leggevano
+                        //    come un testo solo. Una linea FRA l'uno e
+                        //    l'altro: sopra ognuno tranne il primo, quindi mai
+                        //    prima del primo né dopo l'ultimo.
+                        //    🔴 E NON SI CONFONDE CON QUELLA FRA I GIORNI
+                        //    (secondo collaudo del 12/09): la linea fra i
+                        //    giorni è LUNGA e discreta (tutto il riquadro,
+                        //    /10); quella fra gli impegni è CORTA — parte
+                        //    dove comincia il titolo, cioè dopo la colonna
+                        //    dell'ora, e arriva al bordo del testo — e
+                        //    chiaramente più scura (/30). In colonna, dove
+                        //    l'ora sta sopra il titolo, parte dal bordo del
+                        //    testo.
+                        //    ⚠️ ERA /15 (secondo collaudo), e sull'iPhone non
+                        //    si distingueva da /10: misurato, si staccava
+                        //    dallo sfondo solo 1,5 volte la linea fra giorni.
+                        //    La prova ora pretende almeno il doppio.
+                        //    ⚠️ Stessa altezza di prima (un punto), stessi
+                        //    spazi: niente riquadro per impegno. La misura
+                        //    che distingue le due linee è in
+                        //    `tests/visive/agenda/linee.js`.
+                        <li key={t.id} {...(i > 0 ? { "data-separato": "" } : {})}>
+                          {i > 0 && (
+                            // Stesso rientro del pulsante qui sotto: la stessa
+                            // colonna dell'ora (vuota) e lo stesso stacco.
+                            <div aria-hidden="true" data-separatore-impegno="" className="flex h-px gap-2 px-1 -mx-1">
+                              <span className="w-[3.2em] shrink-0 testo-sala @5xl:hidden" />
+                              <span className="flex-1 bg-b58-charcoal/30" />
+                            </div>
+                          )}
                           {/* ⚠️ IL TESTO STA AL CENTRO DEL BERSAGLIO, non in
                               alto: il pulsante è alto almeno 0,85 cm, e con
                               la riga in cima un impegno di una riga sola

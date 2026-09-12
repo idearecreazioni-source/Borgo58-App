@@ -141,6 +141,36 @@ describe("🔴 la settimana", () => {
     expect(lun.map((b) => b.querySelector("[data-ora]").textContent)).toEqual(["", "09:00", "18:30"]);
   });
 
+  // 🔴 SEPARARE GLI IMPEGNI — 12/09/2026, mandato notturno, blocco B (dal
+  //    collaudo sull'iPhone): in un giorno con più impegni ognuno dev'essere
+  //    un'unità distinta, con una linea leggera FRA l'uno e l'altro — mai
+  //    prima del primo né dopo l'ultimo — e ora e titolo insieme nello stesso
+  //    bersaglio. Sul codice di prima nessun impegno porta la linea: rossa.
+  it("🔴 fra un impegno e l'altro dello stesso giorno c'è una linea; né prima del primo né dopo l'ultimo", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+    const righe = [...giorno("2026-09-07").querySelectorAll("[data-impegno]")].map((b) => b.parentElement);
+    // Ognuno è una riga a sé della lista del giorno…
+    expect(righe.every((li) => li.tagName === "LI")).toBe(true);
+    // …la linea sta sopra il secondo e il terzo, non sopra il primo…
+    expect(righe.map((li) => li.hasAttribute("data-separato"))).toEqual([false, true, true]);
+    // …ed è il segmento corto, dentro la riga e prima del pulsante (la forma
+    // la misura la prova visiva: `tests/visive/agenda/linee.js`).
+    expect(righe.map((li) => li.querySelectorAll(":scope > [data-separatore-impegno]").length)).toEqual([0, 1, 1]);
+    expect(righe[1].firstElementChild.hasAttribute("data-separatore-impegno")).toBe(true);
+    // …e non ce n'è una in fondo: dopo l'ultimo non viene niente.
+    expect(righe[2].nextElementSibling).toBeNull();
+    // Ora e titolo stanno nello stesso pulsante, cioè si toccano insieme.
+    for (const li of righe) {
+      const b = li.querySelector("[data-impegno]");
+      expect(b.querySelector("[data-ora]") && b.querySelector("[data-titolo]")).toBeTruthy();
+    }
+    // Un giorno con un impegno solo non ha linee; uno vuoto non ha elenco.
+    expect(giorno("2026-09-09").querySelectorAll("[data-separato]")).toHaveLength(0);
+    expect(giorno("2026-09-08").querySelectorAll("li")).toHaveLength(0);
+  });
+
   it("un giorno vuoto dice «niente», e il fatto resta, barrato", async () => {
     mostra();
     await tocca(screen.getByRole("button", { name: "Settimana" }));
