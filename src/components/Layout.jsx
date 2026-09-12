@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { lasciaPerdereRegistrazione, registrazioneInCorso } from "../lib/registrazioneInCorso";
 import Sidebar from "./Sidebar";
 import Logo from "./Logo";
 import AvvisoLettureTagliate from "./AvvisoLettureTagliate";
@@ -18,6 +20,64 @@ export default function Layout() {
   // commento su `max-w-3xl` in Sala.jsx), non su un monitor da ufficio.
   // Il telaio desktop qui sotto non deve toccarle.
   const isComande = pathname === "/comande" || pathname.startsWith("/comande/");
+
+  // 🔴 A MICROFONO ACCESO IL MENU CHIEDE PRIMA DI CAMBIARE PAGINA — 12/09/2026,
+  //    mandato notturno, blocco C (dal collaudo sull'iPhone). Cambiare pagina
+  //    chiude MEMO, e quello che si era detto spariva in silenzio: né mandato
+  //    né conservato. Adesso il tocco su una voce del menu (o su «Esci») si
+  //    ferma e chiede — «Continua a registrare» oppure «Lascia perdere e
+  //    vai». Il menu NON annulla e NON manda niente da solo.
+  //    ⚠️ Si controlla AL TOCCO e non prima: a microfono spento il menu
+  //       funziona esattamente come sempre, senza nessuna domanda.
+  //    ⚠️ Sta nella fase di cattura: la voce del menu non riceve il tocco,
+  //       quindi non naviga e non chiude il menu.
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [sospeso, setSospeso] = useState(null); // { verso } oppure { esci: true }
+  const trattieni = (e) => {
+    if (!registrazioneInCorso()) return;
+    const el = e.target.closest?.("a[href], [data-esci]");
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSospeso(el.matches("[data-esci]") ? { esci: true } : { verso: el.getAttribute("href") });
+  };
+  const continua = () => {
+    setSospeso(null);
+    setMobileOpen(false);
+  };
+  const lasciaEVai = () => {
+    const s = sospeso;
+    setSospeso(null);
+    setMobileOpen(false);
+    lasciaPerdereRegistrazione();
+    if (s?.esci) logout();
+    else if (s?.verso) navigate(s.verso);
+  };
+  const avviso = sospeso && (
+    <div role="alertdialog" aria-label="Stai registrando" className="mx-3 mb-3 rounded-lg bg-b58-terracotta/10 ring-1 ring-b58-terracotta/30 px-3 py-2">
+      <p className="testo-sala text-b58-charcoal">
+        <strong>Stai registrando.</strong> Se cambi pagina, quello che hai detto finora non viene
+        mandato.
+      </p>
+      <div className="mt-2 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={continua}
+          className="tocco-bottone rounded-lg bg-b58-charcoal text-b58-parchment testo-sala font-medium px-3"
+        >
+          Continua a registrare
+        </button>
+        <button
+          type="button"
+          onClick={lasciaEVai}
+          className="tocco-bottone rounded-lg border border-b58-charcoal/20 text-b58-charcoal testo-sala px-3"
+        >
+          Lascia perdere e vai
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-b58-cream flex">
@@ -51,21 +111,33 @@ export default function Layout() {
           compreso. Vedi la stessa soglia in index.css per la larghezza
           del contenuto. */}
       <aside className="hidden lg:block lg:w-64 xl:w-80 shrink-0 border-r border-b58-charcoal/10 print:hidden">
-        <div className="sticky top-0 h-screen">
-          <Sidebar />
+        <div className="sticky top-0 h-screen" onClickCapture={trattieni}>
+          {/* L'avviso compare dove si è toccato: qui solo se il menu del
+              telefono non è aperto. */}
+          <Sidebar sopra={mobileOpen ? null : avviso} />
         </div>
       </aside>
 
-      {/* Sidebar mobile (overlay) */}
+      {/* Sidebar mobile (overlay)
+
+          🔴 `z-50` E NON `z-40` — 12/09/2026, dal collaudo sull'iPhone. La
+          barra fissa di «Premi e parla» (`BarraDelPollice`) è `z-40` e sta
+          DOPO nella pagina: a pari livello vince chi viene dopo, quindi da
+          MEMO voce la barra passava sopra il menu e ne copriva le ultime
+          voci. Il menu aperto deve coprire tutto; chiuso, la barra torna
+          com'era. */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="w-72 h-full shadow-xl">
-            <Sidebar onNavigate={() => setMobileOpen(false)} />
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="w-72 h-full shadow-xl" onClickCapture={trattieni}>
+            <Sidebar onNavigate={() => setMobileOpen(false)} sopra={avviso} />
           </div>
           <button
             aria-label="Chiudi menu"
             className="flex-1 bg-b58-charcoal/40"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => {
+              setSospeso(null);
+              setMobileOpen(false);
+            }}
           />
         </div>
       )}

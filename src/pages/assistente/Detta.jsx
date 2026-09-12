@@ -36,6 +36,7 @@ import BarraDelPollice from "../../components/BarraDelPollice";
 import AppuntoDaApprovare from "../../components/AppuntoDaApprovare";
 import RispostaMemo from "../../components/RispostaMemo";
 import { ambienteCorrente } from "../../lib/ambiente";
+import { segnaRegistrazione } from "../../lib/registrazioneInCorso";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -152,6 +153,19 @@ export default function Detta() {
     setAscolto(false);
     setParziale("");
   }, []);
+
+  // 🔴 A MICROFONO ACCESO IL MENU CHIEDE PRIMA DI CAMBIARE PAGINA
+  //    (12/09/2026, mandato notturno, blocco C). Qui si dice al telaio che
+  //    si sta registrando, e come lasciar perdere: spegnere SENZA mandare.
+  //    Cambiare pagina chiude MEMO, e quello che si è detto sparirebbe in
+  //    silenzio; così lo sceglie chi tocca. Vedi `registrazioneInCorso.js`.
+  useEffect(() => {
+    if (!ascolto) return undefined;
+    return segnaRegistrazione(() => {
+      frasiRef.current = [];
+      spegni();
+    });
+  }, [ascolto, spegni]);
 
   const manda = useCallback(
     async (testo) => {

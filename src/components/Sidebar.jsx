@@ -5,7 +5,10 @@ import { MODULES } from "../data/modules";
 import { useAuth } from "../context/AuthContext";
 import { INDIRIZZO_MEMO, statoVersoMemo } from "../lib/calcoli/ritornoMemo";
 
-export default function Sidebar({ onNavigate }) {
+// `sopra`: un avviso da mostrare in cima al menu, sotto il logo (12/09/2026:
+// «stai registrando», quando si tocca una voce a microfono acceso). Sta
+// dentro il menu e non sopra la pagina, perché riguarda il tocco appena fatto.
+export default function Sidebar({ onNavigate, sopra = null }) {
   const { logout, isTitolare } = useAuth();
   const location = useLocation();
 
@@ -39,6 +42,8 @@ export default function Sidebar({ onNavigate }) {
       <div className="px-4 pt-6 pb-4">
         <Logo />
       </div>
+
+      {sopra}
 
       <nav className="flex-1 overflow-y-auto px-3 space-y-1">
         <NavLink to="/dashboard" end onClick={onNavigate} className={linkClasses}>
@@ -94,7 +99,10 @@ export default function Sidebar({ onNavigate }) {
       </nav>
 
       <div className="px-3 py-4 border-t border-b58-charcoal/10">
+        {/* `data-esci`: anche uscire chiude MEMO, quindi a microfono acceso
+            il telaio chiede prima (12/09/2026). */}
         <button
+          data-esci=""
           onClick={logout}
           className="tocco-bottone w-full text-left flex items-center gap-3 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:bg-b58-cream-dark transition-colors"
         >
