@@ -5,6 +5,7 @@ import {
   getReservationOptions,
   submitPublicReservation,
 } from "../../src/lib/api/publicReservations";
+import { momentoPrenotabile } from "./momentoPrenotabile.js";
 
 // Il form pubblico deve funzionare ANCHE da un browser in cui il
 // gestionale è aperto.
@@ -34,20 +35,12 @@ const NOME = marchio("PROVA AUTOMATICA form pubblico");
 // Alessio dalle impostazioni. Una data scritta a mano qui dentro
 // funzionerebbe finché non sposta un giorno di riposo, e poi fallirebbe
 // dando la colpa al form.
-async function quandoSiPuoPrenotare(persone = 2) {
-  const oggi = new Date();
-  for (let i = 1; i <= 30; i++) {
-    const d = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + i);
-    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const opzioni = await getReservationOptions({ date, partySize: persone });
-    // Interruttore spento: vale qualunque data futura, decide il titolare.
-    if (!opzioni?.attivo) return { date, time: "20:00" };
-    if (opzioni.orari?.length) return { date, time: opzioni.orari[0] };
-  }
-  throw new Error(
-    "Nessun orario prenotabile nei prossimi 30 giorni: controllare orari e capienza in Sala e orari."
-  );
-}
+// 🔴 E NEMMENO «DOMANI» È UNA DATA SICURA (12/09/2026): con le prenotazioni
+//    online spente la scelta rispondeva sempre domani alle 20:00, e il 13/09
+//    il progetto di prova è chiuso. La scelta ora salta i giorni che
+//    `public_reservation_options` dice chiusi; vive in `momentoPrenotabile.js`
+//    ed è provata senza database.
+const quandoSiPuoPrenotare = (persone = 2) => momentoPrenotabile(getReservationOptions, { persone });
 
 describe("form pubblico /prenota", () => {
   let titolare;
