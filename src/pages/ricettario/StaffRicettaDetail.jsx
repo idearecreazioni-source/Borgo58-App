@@ -12,7 +12,6 @@ import {
   SEASONS,
   STEP_PHASES,
   VIDEO_PLATFORMS,
-  eComponente,
   labelFor,
 } from "../../lib/constants";
 import { stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
@@ -90,10 +89,10 @@ export default function StaffRicettaDetail() {
         <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
           {labelFor(RECIPE_CATEGORIES, recipe.category)}
           {recipe.subcategory ? ` · ${recipe.subcategory}` : ""}
-          {/* ⚠️ Una preparazione o un finger non si fanno a porzioni ma a
-              dosi, con una resa: «1 porzioni» era la parola del piatto su una
-              cosa che non lo è (12/09/2026). */}
-          {eComponente(recipe.recipe_type) ? "" : ` · ${recipe.portions_yield} porzioni`}
+          {/* ⚠️ Una preparazione non si fa a porzioni ma a dosi, con una
+              resa: «1 porzioni» era la parola del piatto su una cosa che non
+              lo è (12/09/2026). Finger e selezioni restano come prima. */}
+          {recipe.recipe_type === "preparazione" ? "" : ` · ${recipe.portions_yield} porzioni`}
         </p>
         {/* Con «Tutto l'anno» e una stagione insieme (dati di prima) vince
             «Tutto l'anno», come sulla scheda che si modifica. */}

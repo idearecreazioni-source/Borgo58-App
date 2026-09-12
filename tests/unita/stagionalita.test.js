@@ -43,6 +43,19 @@ describe("le stagioni di una ricetta", () => {
     expect(stagioniDopoIlTocco([TUTTO_ANNO, "estate"], "inverno")).toEqual(["inverno"]);
   });
 
+  it("le quattro stagioni sono «Tutto l'anno», a schermo e quando si salva", () => {
+    // Decisione di Alessio del 12/09/2026, come i dodici mesi dal 29/08.
+    const quattro = ["primavera", "estate", "autunno", "inverno"];
+    expect(stagioniNormalizzate(quattro)).toEqual([TUTTO_ANNO]);
+    // Tre restano tre: è il caso che dimostra che la regola discrimina.
+    expect(stagioniNormalizzate(["primavera", "estate", "autunno"])).toEqual(["primavera", "estate", "autunno"]);
+    // Dati di prima con le quattro scritte una per una: si vede «Tutto l'anno».
+    expect(stagioneAccesa(quattro, TUTTO_ANNO)).toBe(true);
+    expect(stagioneAccesa(quattro, "estate")).toBe(false);
+    // Accendendo la quarta si arriva a «Tutto l'anno».
+    expect(stagioniDopoIlTocco(["primavera", "estate", "autunno"], "inverno")).toEqual([TUTTO_ANNO]);
+  });
+
   it("vuoto resta vuoto, e un valore che non si conosce non si butta via", () => {
     expect(stagioniNormalizzate([])).toEqual([]);
     expect(stagioniNormalizzate(null)).toEqual([]);

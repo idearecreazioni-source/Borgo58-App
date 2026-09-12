@@ -28,7 +28,14 @@ import {
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
 import { percorsoEntrando, ritornoIndietro } from "../../lib/calcoli/percorso";
-import { doveFinisce, eSelezione, parolaTipo, portaDi } from "../../lib/calcoli/tipoRicetta";
+import {
+  costoPerUnitaDiResa,
+  doveFinisce,
+  ePreparazione,
+  eSelezione,
+  parolaTipo,
+  portaDi,
+} from "../../lib/calcoli/tipoRicetta";
 import { perchePuoNonAndareInCarta, senzaFoodCost } from "../../lib/calcoli/inCarta";
 import { percheNonEntraNelMenu } from "../../lib/calcoli/sezioniMenu";
 import { useAuth } from "../../context/AuthContext";
@@ -400,6 +407,10 @@ export default function RicettaDetail() {
   // Il prezzo a pezzo invece è solo dei finger: su un piatto sarebbe un
   // secondo prezzo accanto a quello della carta, e il database lo rifiuta.
   const isFinger = recipe.recipe_type === "finger";
+  // 🔴 SOLO LA PREPARAZIONE non va in carta (decisione di Alessio del
+  // 12/09/2026): i suoi stati, la nota interna e il costo per unità di resa
+  // sono suoi. Finger e selezioni si vendono, e restano da piatto.
+  const isPreparazione = ePreparazione(recipe);
 
   // 🔴 UN PIATTO DI FINGER FOOD NON È UNA RICETTA NORMALE (24/08/2026,
   // blocco 3 del mandato del collaudo): *«la sua scheda deve smettere di
@@ -569,14 +580,14 @@ export default function RicettaDetail() {
         };
       return { stato, aiuto: "Mettila nel menu in servizio, qui sotto." };
     }
-    // ⚠️ Una preparazione o un finger rimasti in un menu da prima del
-    //    20/08: il database non lascia togliere «pronta» né ritirare finché
-    //    la voce sta nel menu. La frase non dice «in carta», che per un
-    //    componente sarebbe la parola sbagliata.
+    // ⚠️ Una preparazione rimasta in un menu da prima del 20/08: il
+    //    database non lascia togliere «pronta» né ritirare finché la voce
+    //    sta nel menu. La frase non dice «in carta», che per una
+    //    preparazione sarebbe la parola sbagliata.
     //    ⚠️ La spiegazione sta tutta qui, nel riquadro «Bloccato apposta»,
     //    e non in una seconda nota sotto: due frasi per lo stesso fatto si
     //    leggono come due problemi.
-    if (eComponente(r.recipe_type) && r.in_carta && stato !== "pronta") {
+    if (r.recipe_type === "preparazione" && r.in_carta && stato !== "pronta") {
       return {
         stato,
         impedito: `${questo.replace(/^./, (c) => c.toUpperCase())} risulta ancora dentro un menu, dove non può stare: è una voce rimasta da prima che il gestionale lo vietasse. Prima va tolta da quel menu.`,
@@ -862,13 +873,36 @@ export default function RicettaDetail() {
             className="font-display text-2xl text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none flex-1 min-w-[240px]"
           />
           <div className="text-right">
+            {/* 🔴 UNA PREPARAZIONE SI COSTA PER UNITÀ DI RESA — €/kg, €/l —
+                e non «a porzione» (decisione di Alessio del 12/09/2026): le
+                sue porzioni sono sempre 1, quindi «/ porzione» ripeteva il
+                totale con la parola del piatto. Il totale resta sotto.
+                ⚠️ Senza resa non c'è un numero: «—», mai zero. */}
             <div className="text-2xl text-b58-charcoal font-medium">
-              {cost ? formatEUR(cost.food_cost_portion) : "—"}
-              <span className="testo-sala-grande text-b58-charcoal-soft"> / porzione</span>
+              {isPreparazione ? (
+                <>
+                  {(() => {
+                    const perUnita = costoPerUnitaDiResa(cost?.food_cost_base, recipe.yield_quantity);
+                    return perUnita != null ? formatEUR(perUnita) : "—";
+                  })()}
+                  <span className="testo-sala-grande text-b58-charcoal-soft">
+                    {` / ${recipe.yield_unit || "unità di resa"}`}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {cost ? formatEUR(cost.food_cost_portion) : "—"}
+                  <span className="testo-sala-grande text-b58-charcoal-soft"> / porzione</span>
+                </>
+              )}
             </div>
             <div className="testo-sala text-b58-charcoal-soft">
               {cost ? formatEUR(cost.food_cost_base) : "—"}{" "}
-              {isSelezione ? "in tutto: è la somma dei finger dentro" : "totale ricetta base"}
+              {isSelezione
+                ? "in tutto: è la somma dei finger dentro"
+                : isPreparazione
+                  ? "totale della preparazione"
+                  : "totale ricetta base"}
             </div>
             {/* 🔴 IL PREZZO DI VENDITA DI UNA SELEZIONE NON SI CALCOLA —
                 30/08, decisione esplicita di Alessio: *«un tagliere di
@@ -1085,10 +1119,11 @@ export default function RicettaDetail() {
             </span>
           </label>
           {/* 🔴 GLI STATI SONO QUELLI DEL TIPO (12/09/2026, collaudo iPhone):
-              una preparazione e un finger non vanno in carta — il database
-              li rifiuta in un menu dal 20/08 — quindi hanno tre stati suoi:
-              In sviluppo · Pronta per l'uso · Ritirata. Stesse colonne del
-              piatto, parole diverse: niente si riscrive. */}
+              una preparazione non va in carta — il database la rifiuta in
+              un menu dal 20/08 — quindi ha tre stati suoi: In sviluppo ·
+              Pronta per l'uso · Ritirata. Stesse colonne del piatto, parole
+              diverse: niente si riscrive. Finger e selezioni restano coi
+              quattro stati del piatto (decisione di Alessio). */}
           <div className="flex flex-wrap items-center gap-2">
             {statiPerTipo(recipe.recipe_type).map((s) => {
               const attuale = statoPerTipo(
@@ -1263,16 +1298,16 @@ export default function RicettaDetail() {
         )}
 
         {/* 🔴 SU UNA PREPARAZIONE NON È UNA DESCRIZIONE PER IL MENU
-            (12/09/2026, collaudo iPhone): una preparazione e un finger in un
-            menu non entrano, quindi quel testo non finisce su nessuna carta.
+            (12/09/2026, collaudo iPhone): una preparazione in un menu non
+            entra, quindi quel testo non finisce su nessuna carta. Finger e
+            selezioni si vendono, e tengono «Descrizione per il menu».
             ⚠️ STESSO CAMPO, NOME DIVERSO, e nessun dato perso: è
                `menu_description` come prima, e quello che c'era scritto
                resta e si salva uguale. Il foglio del menu la stampa solo
-               per i piatti (le voci di un menu sono piatti), quindi su un
-               componente è già oggi una nota che legge solo chi apre la
-               scheda — ora lo dice. */}
+               per le voci di un menu, quindi su una preparazione è già oggi
+               una nota che legge solo chi apre la scheda — ora lo dice. */}
         <div className="mb-4">
-          <label className={labelClass}>{isComponente ? "Nota interna" : "Descrizione per il menu"}</label>
+          <label className={labelClass}>{isPreparazione ? "Nota interna" : "Descrizione per il menu"}</label>
           <textarea
             value={recipe.menu_description ?? ""}
             onChange={(e) => handleHeaderChange("menu_description", e.target.value)}
@@ -1282,11 +1317,11 @@ export default function RicettaDetail() {
                scorrere — quello che non ci sta si perde, e chi legge vede una
                frase mozza che sembra un guasto. Ora dice la cosa breve, e
                l'esempio sta sotto, dove può andare a capo. */
-            placeholder={isComponente ? "Per la cucina" : "Come appare sul menu"}
+            placeholder={isPreparazione ? "Per la cucina" : "Come appare sul menu"}
             className={inputClass}
           />
           <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-            {isComponente
+            {isPreparazione
               ? "Non compare su nessun menu: la legge solo chi apre questa scheda."
               : "Es. «Fusilloni al ragù di polpo e polvere di prezzemolo»."}
           </p>

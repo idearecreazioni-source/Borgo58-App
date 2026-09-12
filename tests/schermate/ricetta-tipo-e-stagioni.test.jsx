@@ -34,7 +34,7 @@ vi.mock("../../src/lib/api/recipes", () => ({
   duplicaRicetta: vi.fn(),
   getRecipe: (...a) => f.getRecipe(...a),
   getRecipeAllergens: () => Promise.resolve({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] }),
-  getRecipeCost: () => Promise.resolve({ food_cost_portion: 3.2 }),
+  getRecipeCost: () => Promise.resolve({ food_cost_portion: 3.2, food_cost_base: 6.4 }),
   listPreparationUsage: vuoto,
   listPreparations: vuoto,
   listRecipeAllergensFor: () => Promise.resolve({}),
@@ -129,24 +129,31 @@ beforeEach(() => {
 });
 
 describe("🔴 gli stati dicono che cosa è la scheda", () => {
-  for (const [tipo, nome] of [
-    ["preparazione", "Brodo di pesce"],
-    ["finger", "Bocconcino di tonno"],
-  ]) {
-    it(`${tipo}: niente «Pronta per la carta» né «In carta», e i suoi tre stati`, async () => {
-      f.getRecipe.mockResolvedValue(ricetta({ recipe_type: tipo, name: nome }));
-      apri();
-      await screen.findByText(/^Stato:/);
-      expect(stato("Pronta per la carta")).toBeNull();
-      expect(stato("In carta")).toBeNull();
-      expect(stato("In sviluppo")).toBeTruthy();
-      expect(stato("Pronta per l'uso")).toBeTruthy();
-      expect(stato("Ritirata")).toBeTruthy();
-      // L'etichetta dice lo stato con parole sue, e nessuna parola di carta.
-      expect(screen.getByText(/^Stato:/).textContent).toMatch(/In sviluppo/);
-      expect(screen.getByText(/^Stato:/).textContent).not.toMatch(/carta/i);
-    });
-  }
+  it("preparazione: niente «Pronta per la carta» né «In carta», e i suoi tre stati", async () => {
+    f.getRecipe.mockResolvedValue(ricetta());
+    apri();
+    await screen.findByText(/^Stato:/);
+    expect(stato("Pronta per la carta")).toBeNull();
+    expect(stato("In carta")).toBeNull();
+    expect(stato("In sviluppo")).toBeTruthy();
+    expect(stato("Pronta per l'uso")).toBeTruthy();
+    expect(stato("Ritirata")).toBeTruthy();
+    // L'etichetta dice lo stato con parole sue, e nessuna parola di carta.
+    expect(screen.getByText(/^Stato:/).textContent).toMatch(/In sviluppo/);
+    expect(screen.getByText(/^Stato:/).textContent).not.toMatch(/carta/i);
+  });
+
+  it("un finger resta da piatto (decisione di Alessio, 12/09): quattro stati, «In carta» compreso", async () => {
+    f.getRecipe.mockResolvedValue(
+      ricetta({ recipe_type: "finger", name: "Bocconcino di tonno", pronta_per_carta: true }),
+    );
+    apri();
+    await screen.findByText(/^Stato:/);
+    expect(stato("Pronta per la carta")).toBeTruthy();
+    expect(stato("In carta")).toBeTruthy();
+    expect(stato("Pronta per l'uso")).toBeNull();
+    expect(screen.getByText(/^Stato:/).textContent).toMatch(/Pronta per la carta/);
+  });
 
   it("una preparazione segnata pronta si legge «Pronta per l'uso»", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ pronta_per_carta: true }));
@@ -189,6 +196,28 @@ describe("🔴 gli stati dicono che cosa è la scheda", () => {
   });
 });
 
+describe("🔴 il costo di una preparazione si legge per unità di resa", () => {
+  it("preparazione: € al litro (totale ÷ resa), mai «/ porzione», e il totale resta", async () => {
+    // Totale 6,40 € per 2 litri: 3,20 €/l. Il finto dà 3,20 anche come costo
+    // a porzione, quindi il numero da solo non basta: conta l'unità.
+    f.getRecipe.mockResolvedValue(ricetta({ yield_quantity: 2, yield_unit: "l" }));
+    apri();
+    await screen.findByText(/^Stato:/);
+    await waitFor(() => expect(screen.getByText(/totale della preparazione/)).toBeTruthy());
+    expect(screen.queryByText(/\/ porzione/)).toBeNull();
+    expect(screen.getByText("/ l")).toBeTruthy();
+    expect(document.body.textContent).toMatch(/3,20\s*€\s*\/ l/);
+    expect(document.body.textContent).toMatch(/6,40\s*€\s*totale della preparazione/);
+  });
+
+  it("un piatto resta a porzione", async () => {
+    f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "piatto_finito", yield_quantity: null, yield_unit: null }));
+    apri();
+    await screen.findByText(/^Stato:/);
+    await waitFor(() => expect(screen.getByText(/\/ porzione/)).toBeTruthy());
+  });
+});
+
 describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
   it("su una preparazione diventa una nota interna, e il testo che c'era resta", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ menu_description: "Si tiene in frigo due giorni" }));
@@ -207,6 +236,14 @@ describe("🔴 la descrizione per il menu sta solo dove c'è un menu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Salva modifiche" }));
     await waitFor(() => expect(f.updateRecipe).toHaveBeenCalled());
     expect(f.updateRecipe.mock.calls[0][1].menu_description).toBe("Si tiene in frigo due giorni");
+  });
+
+  it("su un finger resta «Descrizione per il menu»: si vende", async () => {
+    f.getRecipe.mockResolvedValue(ricetta({ recipe_type: "finger", name: "Bocconcino di tonno" }));
+    apri();
+    await screen.findByText(/^Stato:/);
+    expect(screen.getByText("Descrizione per il menu")).toBeTruthy();
+    expect(screen.queryByText("Nota interna")).toBeNull();
   });
 
   it("su un piatto resta «Descrizione per il menu»", async () => {
@@ -238,6 +275,27 @@ describe("🔴 «Tutto l'anno» è l'alternativa alle quattro stagioni", () => {
       expect(accesa("Estate")).toBe(false);
     });
   }
+
+  it("quattro stagioni accese si vedono come «Tutto l'anno», e così si salvano", async () => {
+    f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["primavera", "estate", "autunno"] }));
+    apri();
+    await screen.findByText(/^Stato:/);
+    fireEvent.click(screen.getByRole("button", { name: "Inverno" }));
+    expect(accesa("Tutto l'anno")).toBe(true);
+    expect(accesa("Inverno")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Salva modifiche" }));
+    await waitFor(() => expect(f.updateRecipe).toHaveBeenCalled());
+    expect(f.updateRecipe.mock.calls[0][1].seasonality).toEqual(["tutto_anno"]);
+  });
+
+  it("dati di prima con le quattro stagioni scritte una per una: si vede «Tutto l'anno»", async () => {
+    f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["primavera", "estate", "autunno", "inverno"] }));
+    apri();
+    await screen.findByText(/^Stato:/);
+    expect(accesa("Tutto l'anno")).toBe(true);
+    expect(accesa("Estate")).toBe(false);
+    expect(f.updateRecipe).not.toHaveBeenCalled();
+  });
 
   it("dati di prima con le due forme insieme: a schermo vince «Tutto l'anno», e il database non si tocca finché non si salva", async () => {
     f.getRecipe.mockResolvedValue(ricetta({ seasonality: ["tutto_anno", "estate"] }));

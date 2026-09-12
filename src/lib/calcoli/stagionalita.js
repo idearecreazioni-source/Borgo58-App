@@ -123,6 +123,10 @@ export function stagioniNormalizzate(scelte) {
   const tutte = Array.from(new Set(scelte ?? []));
   if (tutte.includes(TUTTO_ANNO)) return [TUTTO_ANNO];
   const note = STAGIONI.filter((s) => tutte.includes(s));
+  // 🔴 LE QUATTRO STAGIONI SONO «TUTTO L'ANNO» (decisione di Alessio del
+  //    12/09/2026), come i dodici mesi di un ingrediente dal 29/08: si
+  //    mostrano e si salvano come «Tutto l'anno».
+  if (note.length === STAGIONI.length) return [TUTTO_ANNO];
   const altre = tutte.filter((s) => !STAGIONI.includes(s));
   return [...note, ...altre];
 }
@@ -142,9 +146,13 @@ export function stagioniDopoIlTocco(scelte, toccata) {
   return stagioniNormalizzate(dopo);
 }
 
-/** Se un pulsante si deve vedere acceso: con «Tutto l'anno», solo lui. */
+/**
+ * Se un pulsante si deve vedere acceso: con «Tutto l'anno», solo lui — anche
+ * quando nel database ci sono ancora le quattro stagioni scritte una per una.
+ */
 export function stagioneAccesa(scelte, valore) {
-  const tutto = (scelte ?? []).includes(TUTTO_ANNO);
+  const viste = stagioniNormalizzate(scelte);
+  const tutto = viste.includes(TUTTO_ANNO);
   if (valore === TUTTO_ANNO) return tutto;
-  return !tutto && (scelte ?? []).includes(valore);
+  return !tutto && viste.includes(valore);
 }
