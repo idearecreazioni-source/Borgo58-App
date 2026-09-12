@@ -128,14 +128,33 @@ finger food non si inserisce in un menu.*
 
 ## Cosa abbiamo rovesciato
 
-Niente di deciso prima. Il pannello «Nei menu» della scheda ricetta (24/08)
-offriva ogni menu a ogni piatto finito: ora non lo offre a un finger food,
-per decisione di Alessio del 12/09. La ragione del 24/08 — scegliere da
-una scheda in quale menu va un piatto — vale ancora per le quattro portate.
+- **Cosa era stato deciso, e quando**: 24/08. Il finger food diventa una
+  categoria accanto ad antipasti, primi, secondi e dolci; una selezione di
+  finger si ordina in sala dal menu attivo, e da lì parte il bis. Lo stesso
+  giorno il pannello «Nei menu» della scheda ricetta offre ogni menu a ogni
+  piatto finito.
+- **La ragione di allora**: vendere una selezione di finger come un piatto,
+  e scegliere dalla scheda in quale menu va.
+- **Cosa si decide adesso** (Alessio, 12/09): finché non sceglie lui una
+  sezione, un finger food non entra in un menu.
+- **Perché**: la ragione di allora **vale ancora**. Senza una sezione, però,
+  la voce si salva e sparisce dalla scheda del menu e dal foglio stampato.
+  **Il prezzo che si accetta**: finché non c'è la sezione, un finger food
+  nuovo non si ordina dal menu in sala, e il bis non ha da dove partire.
+
+⚠️ **La riga in `docs/decisioni_rovesciate.md` non è stata aggiunta.** Quel
+file lo cambiano sia la #57 sia la #58, nell'indice e in fondo, cioè proprio
+dove andrebbe la riga nuova: aggiungerla adesso creerebbe un conflitto con
+tutte e due, e il mandato lo vieta. Va aggiunta dopo le loro unioni. Testo
+pronto: *«12/09/2026 — Un finger food non entra in un menu finché non ha una
+sezione (rovescia in parte il 24/08: selezioni ordinate dal menu, bis). PR
+#69.»*
 
 ---
 
-**Hash di HEAD dichiarato**: `ecae9d8` sul ramo `finger-food-non-spariscono`,
-cioè il commit immediatamente sotto questo documento.
+**Hash di HEAD dichiarato**: `161ae6a` sul ramo `finger-food-non-spariscono`,
+cioè il commit immediatamente sotto questo documento: è la prima stesura di
+questo stesso riepilogo, che dichiarava l'ultimo commit di codice, `ecae9d8`.
+Questa seconda stesura cambia solo la sezione dei rovesciamenti.
 **Stato del working tree al momento della consegna**: pulito (la cartella
 della prova visiva locale è esclusa da git e non è committata).
