@@ -265,6 +265,27 @@ begin
         array['Check-up caldaia'], array['Check-up caldaia']),
       ('trattino_detto_staccato', 'check up',
         array['Check-up caldaia'], array['Check-up caldaia']),
+      -- ⚠️ SIGLE COI PUNTI E CODICI: un pezzo tenuto insieme da punti o
+      --    trattini resta uno, quindi non si spezza in lettere e non combacia
+      --    con un codice diverso che ne e' solo l'inizio.
+      ('srl_detta_con_i_punti', 'assemblea della S.r.l.',
+        array['Assemblea S.r.l.', 'Assemblea condominio'], array['Assemblea S.r.l.']),
+      ('srl_dentro_una_frase', 'pagare il notaio per la S.r.l.',
+        array['Notaio S.r.l.'], array['Notaio S.r.l.']),
+      ('una_lettera_dentro_una_sigla_coi_punti', 'pagare la S.r.l.',
+        array['R'], array[]::text[]),
+      ('f24_detto_uguale', 'F24',
+        array['F24'], array['F24']),
+      ('f24_in_una_frase', 'pagare l''F24 di giugno',
+        array['F24', 'F24-bis'], array['F24']),
+      ('codice_col_trattino_detto_intero', 'F24-bis',
+        array['F24', 'F24-bis'], array['F24-bis']),
+      ('codice_col_trattino_in_una_frase', 'pagare F24-bis entro venerdì',
+        array['F24-bis', 'F24'], array['F24-bis']),
+      ('codice_dentro_un_codice_col_punto', 'modello 730.1 integrativo',
+        array['730'], array[]::text[]),
+      ('codice_col_punto_detto_intero', 'modello 730.1',
+        array['730', 'Modello 730.1'], array['Modello 730.1']),
       -- ⚠️ IL PREZZO DICHIARATO, scritto come caso perche' non sia una frase:
       --    un frammento di un pezzo col trattino non combacia piu'.
       ('prezzo_frammento_di_un_pezzo_col_trattino', 'up caldaia',
