@@ -33,14 +33,18 @@ export default function Layout() {
   //       quindi non naviga e non chiude il menu.
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [sospeso, setSospeso] = useState(null); // { verso } oppure { esci: true }
-  const trattieni = (e) => {
+  // `da` dice dove si è toccato — il menu del telefono, la barra del
+  // computer o la testata (il logo) — perché la domanda compaia lì.
+  // ⚠️ IL LOGO CHIEDE ANCHE LUI (decisione di Alessio del 12/09/2026): porta
+  //    alla Dashboard, quindi chiude MEMO come una voce del menu.
+  const [sospeso, setSospeso] = useState(null); // { da, verso } oppure { da, esci: true }
+  const trattieni = (da) => (e) => {
     if (!registrazioneInCorso()) return;
     const el = e.target.closest?.("a[href], [data-esci]");
     if (!el) return;
     e.preventDefault();
     e.stopPropagation();
-    setSospeso(el.matches("[data-esci]") ? { esci: true } : { verso: el.getAttribute("href") });
+    setSospeso(el.matches("[data-esci]") ? { da, esci: true } : { da, verso: el.getAttribute("href") });
   };
   const continua = () => {
     setSospeso(null);
@@ -111,10 +115,9 @@ export default function Layout() {
           compreso. Vedi la stessa soglia in index.css per la larghezza
           del contenuto. */}
       <aside className="hidden lg:block lg:w-64 xl:w-80 shrink-0 border-r border-b58-charcoal/10 print:hidden">
-        <div className="sticky top-0 h-screen" onClickCapture={trattieni}>
-          {/* L'avviso compare dove si è toccato: qui solo se il menu del
-              telefono non è aperto. */}
-          <Sidebar sopra={mobileOpen ? null : avviso} />
+        <div className="sticky top-0 h-screen" onClickCapture={trattieni("barra")}>
+          {/* L'avviso compare dove si è toccato. */}
+          <Sidebar sopra={sospeso?.da === "barra" ? avviso : null} />
         </div>
       </aside>
 
@@ -128,8 +131,11 @@ export default function Layout() {
           com'era. */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="w-72 h-full shadow-xl" onClickCapture={trattieni}>
-            <Sidebar onNavigate={() => setMobileOpen(false)} sopra={avviso} />
+          <div className="w-72 h-full shadow-xl" onClickCapture={trattieni("menu")}>
+            <Sidebar
+              onNavigate={() => setMobileOpen(false)}
+              sopra={sospeso?.da === "menu" ? avviso : null}
+            />
           </div>
           <button
             aria-label="Chiudi menu"
@@ -144,7 +150,10 @@ export default function Layout() {
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Topbar mobile */}
-        <header className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment">
+        <header
+          onClickCapture={trattieni("testata")}
+          className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b border-b58-charcoal/10 bg-b58-parchment"
+        >
           {/* 🔴 DALLA DASHBOARD NON SI TORNAVA INDIETRO (27/08, visto da
               Alessio col telefono): si tocca una sezione, si arriva nel
               modulo, e in alto a sinistra non c'è niente che riporti a casa.
@@ -206,6 +215,12 @@ export default function Layout() {
             </button>
           </div>
         </header>
+
+        {/* La domanda del logo compare subito sotto la testata, dove si è
+            appena toccato: il menu in quel momento è chiuso. */}
+        {sospeso?.da === "testata" && (
+          <div className="lg:hidden print:hidden pt-3">{avviso}</div>
+        )}
 
         {/* 🔴 IL TELAIO DESKTOP (05/09/2026): molte pagine restano incollate
             a `max-w-3xl`/`4xl`/`5xl`/`6xl` anche su un monitor 1920×1080,

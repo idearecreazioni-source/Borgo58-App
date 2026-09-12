@@ -85,6 +85,7 @@ const mostra = () =>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/agenda" element={<Qui nome="Agenda" />} />
+          <Route path="/dashboard" element={<Qui nome="Dashboard" />} />
           <Route path="/detta" element={<Detta />} />
         </Route>
       </Routes>
@@ -184,6 +185,36 @@ describe("🔴 a microfono acceso il menu non butta via quello che si è detto",
     await tocca(screen.getAllByRole("button", { name: "Esci" }).at(-1));
     expect(finte.auth.logout).not.toHaveBeenCalled();
     expect(screen.getByText(/Stai registrando/)).toBeTruthy();
+  });
+
+  // 🔴 IL LOGO IN ALTO — decisione di Alessio del 12/09/2026: anche lui
+  //    porta via da MEMO, quindi anche lui chiede.
+  it("il logo a microfono acceso chiede, e «Continua» resta in MEMO col microfono acceso", async () => {
+    mostra();
+    await accendiEParla("ricordami il dentista lunedì");
+    await tocca(screen.getByRole("link", { name: "Torna alla schermata iniziale" }));
+    expect(dove()).toBe("(in MEMO)");
+    expect(screen.getByText(/Stai registrando/)).toBeTruthy();
+    await tocca(screen.getByRole("button", { name: "Continua a registrare" }));
+    expect(screen.queryByText(/Stai registrando/)).toBeNull();
+    expect(finto.stop).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Ferma e manda/i })).toBeTruthy();
+  });
+
+  it("il logo, «Lascia perdere e vai»: spegne senza mandare e porta alla Dashboard", async () => {
+    mostra();
+    await accendiEParla("ricordami il dentista lunedì");
+    await tocca(screen.getByRole("link", { name: "Torna alla schermata iniziale" }));
+    await tocca(screen.getByRole("button", { name: "Lascia perdere e vai" }));
+    expect(dove()).toBe("Dashboard — /dashboard");
+    expect(finto.stop).toHaveBeenCalled();
+    expect(finte.manda).not.toHaveBeenCalled();
+  });
+
+  it("il logo a microfono spento porta alla Dashboard, senza chiedere", async () => {
+    mostra();
+    await tocca(screen.getByRole("link", { name: "Torna alla schermata iniziale" }));
+    expect(dove()).toBe("Dashboard — /dashboard");
   });
 
   it("a microfono spento il menu porta dove si tocca, senza chiedere niente", async () => {
