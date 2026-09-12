@@ -238,7 +238,7 @@ export default function DocumentoDetail() {
 
         {doc.task_id && doc.expiry_date && (
           <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-            Promemoria di scadenza attivo in Agenda per il {formatDate(doc.expiry_date)}.
+            Impegno in Agenda attivo per la scadenza del {formatDate(doc.expiry_date)}.
           </p>
         )}
 

@@ -261,7 +261,7 @@ export default function ArchivioDocumentiHome() {
             Archivio Documenti
             <Didascalia>
               Contratti, licenze, assicurazioni, atti. Quelli con una scadenza generano
-              da soli un promemoria in Agenda. I file sono conservati in modo privato su
+              da soli un impegno in Agenda. I file sono conservati in modo privato su
               server europei, solo per te.
             </Didascalia>
           </h1>

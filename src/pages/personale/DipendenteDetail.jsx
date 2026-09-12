@@ -335,7 +335,7 @@ export default function DipendenteDetail() {
                 </div>
                 <ConfermaDistruttiva
                   etichetta="Rimuovi"
-                  cosaSparisce={`il documento «${labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}» e il suo promemoria in Agenda`}
+                  cosaSparisce={`il documento «${labelFor(COMPLIANCE_DOC_TYPES, d.doc_type)}» e il suo impegno in Agenda`}
                   className="shrink-0 print:hidden"
                   onConferma={() => removeDocument(d)}
                 />
@@ -359,7 +359,7 @@ export default function DipendenteDetail() {
               + Aggiungi documento
             </button>
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-2 print:hidden">Con una scadenza, viene creato un promemoria in Agenda.</p>
+          <p className="testo-sala text-b58-charcoal-soft/70 mt-2 print:hidden">Con una scadenza, viene creato un impegno in Agenda.</p>
         </div>
       </div>
 

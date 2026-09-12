@@ -718,7 +718,7 @@ export default function FattureFornitoriHome() {
             />
           </div>
           <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
-            Con una scadenza, viene creato automaticamente un promemoria in Agenda.
+            Con una scadenza, viene creato automaticamente un impegno in Agenda.
           </p>
           <div className="flex justify-end">
             <button
@@ -1180,7 +1180,7 @@ export default function FattureFornitoriHome() {
           <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
             Una fattura pagata non si può rimuovere: in prima nota c&apos;è l&apos;uscita che
             la registra. Annullando il pagamento l&apos;uscita sparisce, la fattura torna
-            fra quelle da pagare e il promemoria si riapre — e i crediti che avevi usato su di lei
+            fra quelle da pagare e l&apos;impegno in Agenda si riapre — e i crediti che avevi usato su di lei
             tornano disponibili.
           </p>
         </div>
