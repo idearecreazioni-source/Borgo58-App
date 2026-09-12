@@ -256,7 +256,7 @@ export default function TaskForm() {
         </div>
 
         <div>
-          <label className={labelClass}>Descrizione (opzionale)</label>
+          <label className={labelClass}>Descrizione (facoltativa)</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -396,7 +396,7 @@ export default function TaskForm() {
               chiamano «Giorno» e «Ora», e una frase che ripete quello che
               c'è scritto sopra le caselle è ingombro. Che il promemoria sia
               indipendente dalla scadenza si vede compilandolo. */}
-          <label className={labelClass}>Promemoria Telegram (opzionale)</label>
+          <label className={labelClass}>Promemoria Telegram (facoltativo)</label>
           <div className={rigaCompatta}>
             <div className={contenitoreCampo}>
               <label className={labelClass}>📅 Giorno</label>

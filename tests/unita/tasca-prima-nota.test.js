@@ -38,7 +38,7 @@ describe("il campo che descrive la spesa", () => {
   it("sugli altri soggetti NON cambia niente", () => {
     const c = campoDescrizione(false);
     expect(c.etichetta).toBe("Finalità aziendale");
-    expect(c.segnaposto).toBe("Finalità aziendale (opz., utile in verifica)");
+    expect(c.segnaposto).toBe("Finalità aziendale (facoltativa, utile in verifica)");
     // Altrove il campo non prende un titolo: resta com'era, dentro il grigio.
     expect(c.conEtichetta).toBe(false);
   });

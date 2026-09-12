@@ -183,7 +183,7 @@ export default function RicevimentoMerci() {
             step="0.1"
             value={form.temperature_c}
             onChange={(e) => setForm((f) => ({ ...f, temperature_c: e.target.value }))}
-            placeholder="Temp. °C (opz.)"
+            placeholder="Temp. °C (facoltativa)"
             className={inputClass}
           />
         </div>
@@ -227,7 +227,7 @@ export default function RicevimentoMerci() {
           <input
             value={form.note}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            placeholder="Nota (opzionale)"
+            placeholder="Nota (facoltativa)"
             className={`${inputClass} flex-1`}
           />
           <button

@@ -112,7 +112,7 @@ export default function FornitoriList() {
             <input
               value={newSupplier.contactPhone}
               onChange={(e) => setNewSupplier((s) => ({ ...s, contactPhone: e.target.value }))}
-              placeholder="Telefono (opz.)"
+              placeholder="Telefono (facoltativo)"
               className={inputClass}
             />
           </div>

@@ -385,7 +385,7 @@ export default function SezionePersonale() {
                   <input
                     value={form.nota}
                     onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))}
-                    placeholder="Nota (opz.)"
+                    placeholder="Nota (facoltativa)"
                     className={`${inputClass} flex-1`}
                   />
                   <button

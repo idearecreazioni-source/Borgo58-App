@@ -56,7 +56,7 @@ export default function MenuForm() {
           />
         </div>
         <div>
-          <label className={labelClass}>In vigore dal (opzionale)</label>
+          <label className={labelClass}>In vigore dal (facoltativo)</label>
           <input
             type="date"
             value={validFrom}

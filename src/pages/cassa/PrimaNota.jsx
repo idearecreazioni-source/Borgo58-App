@@ -608,7 +608,7 @@ export default function PrimaNota() {
               <input
                 value={form.document_reference}
                 onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
-                placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (opz.)"}
+                placeholder={isForager ? "Rif. F24 codice tributo 1853" : "Rif. documento (facoltativo)"}
                 className={inputClass}
               />
             </div>
@@ -647,7 +647,7 @@ export default function PrimaNota() {
               <input
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-                placeholder="Nota (opz.)"
+                placeholder="Nota (facoltativa)"
                 className={`${inputClass} w-48`}
               />
             </div>
