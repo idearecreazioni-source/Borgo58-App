@@ -112,7 +112,7 @@ export default function Cessioni() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Cessioni intercompany</h1>
       <p className="testo-sala text-b58-charcoal-soft/80 mb-4">
         L'azienda agricola cede il raccolto alla S.r.l.s. con fattura. Il prezzo di trasferimento diventa il
-        costo dell'ingrediente a produzione interna. <strong>Da validare con Laura</strong>: il sistema non
+        costo dell'ingrediente a produzione interna. <strong>Da validare con la commercialista</strong>: il sistema non
         emette il documento fiscale, ne registra i dati.
       </p>
 

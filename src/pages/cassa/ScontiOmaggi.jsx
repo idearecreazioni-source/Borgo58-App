@@ -201,7 +201,7 @@ export default function ScontiOmaggi() {
       </h1>
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         ⚠️ Se gli omaggi sistematici facciano scattare l&apos;autofattura TD27 dipende da
-        volume e frequenza: <strong>da verificare con Laura</strong>, non è automatico.
+        volume e frequenza: <strong>da verificare con la commercialista</strong>, non è automatico.
       </p>
 
       {error && (
@@ -255,7 +255,7 @@ export default function ScontiOmaggi() {
             Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
             <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
             al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
-            secondo è quello che serve a Laura per l&apos;autofattura sugli omaggi (da confermare
+            secondo è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
             con lei, domanda L1).
           </p>
         </div>
