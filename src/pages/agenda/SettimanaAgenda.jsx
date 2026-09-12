@@ -141,12 +141,27 @@ export default function SettimanaAgenda({
                   )}
                 </div>
                 {!vuoto && (
-                  <ul className="mt-0.5 space-y-0.5">
-                    {delGiorno.map((t) => {
+                  <ul className="mt-0.5">
+                    {delGiorno.map((t, i) => {
                       const ora = oraBreve(t);
                       const fatto = t.status === "completato";
                       return (
-                        <li key={t.id}>
+                        // 🔴 OGNI IMPEGNO È UN'UNITÀ A SÉ — 12/09/2026, dal
+                        //    collaudo sull'iPhone: con più impegni in un
+                        //    giorno, i titoli che vanno a capo si leggevano
+                        //    come un testo solo. Una linea leggera FRA l'uno e
+                        //    l'altro: sopra ognuno tranne il primo, quindi mai
+                        //    prima del primo né dopo l'ultimo.
+                        //    ⚠️ Più chiara di quella fra i giorni (/10), così
+                        //    le due non si confondono: il giorno resta la
+                        //    divisione forte, l'impegno quella leggera.
+                        //    ⚠️ Niente riquadro per impegno: l'elenco resta
+                        //    compatto, la linea non aggiunge altezza.
+                        <li
+                          key={t.id}
+                          {...(i > 0 ? { "data-separato": "" } : {})}
+                          className={i > 0 ? "border-t border-b58-charcoal/[0.08]" : undefined}
+                        >
                           {/* ⚠️ IL TESTO STA AL CENTRO DEL BERSAGLIO, non in
                               alto: il pulsante è alto almeno 0,85 cm, e con
                               la riga in cima un impegno di una riga sola
