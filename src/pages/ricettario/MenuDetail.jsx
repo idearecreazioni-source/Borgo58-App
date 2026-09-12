@@ -15,6 +15,7 @@ import { listRecipes, listAllRecipeCosts } from "../../lib/api/recipes";
 import { foodCostLevel, formatEUR } from "../../lib/constants";
 import { senzaFoodCostInBreve, senzaFoodCost } from "../../lib/calcoli/inCarta";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import { fuoriDalleSezioni, percheNonEntraNelMenu } from "../../lib/calcoli/sezioniMenu";
 
 const SECTIONS = [
   { category: "antipasto", label: "Antipasti" },
@@ -94,7 +95,11 @@ export default function MenuDetail() {
     const r = allRecipes.find((x) => x.id === daAggiungere);
     if (r) {
       const gia = items.some((i) => i.recipe_id === r.id);
+      // ⚠️ Senza questa riga un finger food finiva in un modulo che nessuna
+      //    sezione disegna: nessun errore, e nessun modulo (12/09/2026).
+      const senzaPosto = percheNonEntraNelMenu(r.category);
       if (gia) setError(`«${r.name}» è già in questo menu.`);
+      else if (senzaPosto) setError(`«${r.name}»: ${senzaPosto}`);
       else setAddForms((f) => ({ ...f, [r.category]: { recipe_id: r.id, selling_price: "" } }));
     } else {
       setError("Quel piatto non risulta fra le ricette.");
@@ -414,6 +419,31 @@ export default function MenuDetail() {
               {summary.overThreshold.map((i) => i.recipe.name).join(", ")}
             </p>
           )}
+        </div>
+      )}
+
+      {/* 🔴 LE VOCI CHE NESSUNA SEZIONE MOSTRA (12/09/2026). Un finger food
+          messo in questo menu prima del divieto c'è, e qui sotto non
+          compariva da nessuna parte: si dichiara, non si tocca. */}
+      {fuoriDalleSezioni(items).length > 0 && (
+        <div className="rounded-xl bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 px-4 py-3 mb-6">
+          <p className="testo-sala-grande text-b58-charcoal">
+            <strong>Non compaiono in questa scheda né nel foglio stampato:</strong>{" "}
+            {fuoriDalleSezioni(items).map((i, n) => (
+              <span key={i.id}>
+                {n > 0 && ", "}
+                <Link to={`/ricettario/ricette/${i.recipe_id}`} className="tocco-inline underline">
+                  {i.recipe?.name}
+                </Link>
+              </span>
+            ))}
+            .
+          </p>
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            Sono finger food, e il menu non ha ancora un posto per loro.
+            {menu.is_active && " In sala si ordinano lo stesso."} Si tolgono dalla loro scheda, in
+            «Nei menu».
+          </p>
         </div>
       )}
 

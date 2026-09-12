@@ -1,5 +1,6 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { percheNonEntraNelMenu } from "../calcoli/sezioniMenu";
 
 export async function listMenus() {
   const { data, error } = await supabase
@@ -50,7 +51,13 @@ export async function listMenuItemsFull(menuId) {
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
+// 🔴 UNA PORTATA SENZA POSTO NEL MENU NON ENTRA (12/09/2026): si salverebbe
+//    e sparirebbe, dalla scheda del menu e dal foglio stampato. Il divieto sta
+//    qui perché è il punto da cui passano tutte le schermate che scrivono una
+//    voce di menu; la ragione è in `src/lib/calcoli/sezioniMenu.js`.
 export async function addMenuItem(menuId, payload) {
+  const senzaPosto = percheNonEntraNelMenu(payload?.category);
+  if (senzaPosto) throw new Error(senzaPosto);
   const { data, error } = await supabase
     .from("menu_items")
     .insert({ menu_id: menuId, ...payload })

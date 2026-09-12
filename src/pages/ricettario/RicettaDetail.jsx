@@ -30,6 +30,7 @@ import { listIngredients } from "../../lib/api/ingredients";
 import { percorsoEntrando, ritornoIndietro } from "../../lib/calcoli/percorso";
 import { doveFinisce, eSelezione, parolaTipo, portaDi } from "../../lib/calcoli/tipoRicetta";
 import { perchePuoNonAndareInCarta, senzaFoodCost } from "../../lib/calcoli/inCarta";
+import { percheNonEntraNelMenu } from "../../lib/calcoli/sezioniMenu";
 import { useAuth } from "../../context/AuthContext";
 import { addMenuItem, listMenus, menuDellaRicetta, removeMenuItem } from "../../lib/api/menus";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
@@ -543,6 +544,10 @@ export default function RicettaDetail() {
   // via d'uscita è un vicolo cieco (difetto n. 8 del mandato di correzione).
   const motivoStato = (stato, r, menuInServizio) => {
     if (stato === "in_carta") {
+      // 🔴 UN FINGER FOOD NON HA ANCORA UN POSTO NEL MENU (12/09/2026): viene
+      // prima di tutto il resto, perché nessun altro gesto lo sblocca.
+      const senzaPosto = percheNonEntraNelMenu(r.category);
+      if (senzaPosto) return { stato, impedito: senzaPosto };
       // 🔴 IL FOOD COST MANCANTE MORDE QUI E NON PRIMA — 30/08, decisione di
       // Alessio. Sulla scheda di un piatto appena inventato l'avviso resta e
       // non è rosso; è al passo del menu che diventa un impedimento, perché
@@ -1194,7 +1199,11 @@ export default function RicettaDetail() {
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {menuDentro.map((m) => (
+                {/* ⚠️ Un finger food non si offre in nessun menu (12/09/2026):
+                    si mostrano solo quelli dove sta già, per poterlo togliere.
+                    Offrire «+» e poi rifiutare è un pulsante che si preme per
+                    sentirsi dire di no. */}
+                {menuDentro.filter((m) => m.voce || !percheNonEntraNelMenu(recipe.category)).map((m) => (
                   <button
                     key={m.id}
                     type="button"
@@ -1216,6 +1225,11 @@ export default function RicettaDetail() {
                   </button>
                 ))}
               </div>
+            )}
+            {!erroreMenu && percheNonEntraNelMenu(recipe.category) && (
+              <p className="testo-sala text-b58-charcoal-soft mt-1.5">
+                {percheNonEntraNelMenu(recipe.category)}
+              </p>
             )}
             {erroreMenu && (
               <p className="testo-sala text-b58-terracotta-dark mt-1.5">{erroreMenu}</p>
