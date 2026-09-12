@@ -3,7 +3,25 @@
 Sola interfaccia. **Migrazioni**: nessuna. **Funzioni online**: nessuna.
 **Database**: né letto né scritto. **Dipende dalla #59** (`agenda-settimana`,
 `e8e57bc`) e non la modifica. **Ramo solo locale**, mai spinto. **HEAD
-dichiarato**: `b7a31a7`, il commit sotto questo riepilogo.
+dichiarato**: `48388ca`, il commit sotto questo riepilogo.
+
+⚠️ **Terza stesura, dal terzo collaudo sull'iPhone (12/09)**: al 15% la linea
+fra impegni non si distingueva da quella fra giorni (10%). Adesso è al **30%**
+(`48388ca`); lunghezze, spessore e spazi sono quelli della seconda stesura. E la
+prova non guarda più l'opacità scritta nel codice: **misura il contrasto che si
+vede**, sovrapponendo il colore di ogni linea allo sfondo che ha davvero sotto.
+
+| stato | contrasto fra impegni | contrasto fra giorni | quante volte si stacca di più | esito |
+|---|---|---|---|---|
+| 15% (seconda stesura) | 1,333 | 1,220 | 1,51 | rosso: «non si distingue» |
+| **30% (adesso)** | **1,864** | 1,220 | **3,93** | verde, su tutte e cinque le forme |
+| 60% (controprova) | 3,993 | 1,220 | 13,58 | rosso: «è pesante» |
+| linea fra giorni al 30% (controprova) | — | 1,86 | — | rosso: «deve restare discreta» |
+
+Regole: la linea fra impegni si stacca dallo sfondo (contrasto − 1) **almeno 2 e
+al massimo 4,5 volte** la linea fra giorni; la linea fra giorni resta sotto
+contrasto 1,25. Le righe qui sotto sono della seconda stesura, e per le misure
+di lunghezza valgono ancora (287 contro 334 punti a 390).
 
 ⚠️ **Seconda stesura, dal secondo collaudo sull'iPhone (12/09)**: la linea fra
 impegni della prima (`5c8e192`, un bordo su tutta la riga, più chiaro) si
