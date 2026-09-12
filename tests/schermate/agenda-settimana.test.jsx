@@ -155,6 +155,10 @@ describe("🔴 la settimana", () => {
     expect(righe.every((li) => li.tagName === "LI")).toBe(true);
     // …la linea sta sopra il secondo e il terzo, non sopra il primo…
     expect(righe.map((li) => li.hasAttribute("data-separato"))).toEqual([false, true, true]);
+    // …ed è il segmento corto, dentro la riga e prima del pulsante (la forma
+    // la misura la prova visiva: `tests/visive/agenda/linee.js`).
+    expect(righe.map((li) => li.querySelectorAll(":scope > [data-separatore-impegno]").length)).toEqual([0, 1, 1]);
+    expect(righe[1].firstElementChild.hasAttribute("data-separatore-impegno")).toBe(true);
     // …e non ce n'è una in fondo: dopo l'ultimo non viene niente.
     expect(righe[2].nextElementSibling).toBeNull();
     // Ora e titolo stanno nello stesso pulsante, cioè si toccano insieme.

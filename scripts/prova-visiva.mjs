@@ -73,6 +73,7 @@ import os from "node:os";
 import path from "node:path";
 import { createServer } from "vite";
 import { QUANTE_SCHEDE, SETTIMANA } from "../tests/visive/finti/tasks.js";
+import { MISURA_LINEE, difettiDelleLinee } from "../tests/visive/agenda/linee.js";
 import {
   etichettaSettimana,
   giorniDellaSettimana,
@@ -1008,6 +1009,10 @@ try {
       const m = await aspettaSettimana(manda, etichettaSettimana(g.lunedi));
       const nome = `settimana · ${forma.nome} · ${g.stato}`;
       const esito = controllaSettimana(nome, m, { lunedi: g.lunedi, ...g.attesa }, forma.mobile, difetti);
+      // 🔴 LE DUE LINEE (12/09/2026, secondo collaudo): fra giorni lunga e
+      //    discreta, fra impegni corta e un poco più scura. La misura sta in
+      //    `tests/visive/agenda/linee.js`.
+      if (g.attesa.impegni > 0) difetti.push(...difettiDelleLinee(nome, await valuta(manda, MISURA_LINEE)));
       statiSettimana += 1;
       // ⚠️ La fotografia aspetta che i colori abbiano finito di cambiare
       //    (`transition-colors`, 150 ms): scattata subito dopo il tocco,
