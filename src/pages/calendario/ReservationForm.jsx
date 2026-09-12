@@ -600,7 +600,7 @@ export default function ReservationForm() {
               disabled={loadingNeeds}
               className="rounded-lg bg-b58-charcoal text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
-              {loadingNeeds ? "Calcolo…" : "Calcola per " + form.party_size + " ospiti"}
+              {loadingNeeds ? "Calcolo…" : "Calcola per " + form.party_size + " persone"}
             </button>
           </div>
           {/* 🔴 ERA DIVENTATA FALSA (24/08/2026, trovata dal censimento delle
@@ -614,7 +614,7 @@ export default function ReservationForm() {
             ⚠️ È il fabbisogno teorico: quanto servirebbe se ognuno mangiasse ogni piatto.
             Non è un controllo di quello che c&apos;è in cella.
             <Didascalia etichetta="Come è calcolato">
-              Le quantità delle ricette del menu scelto, scalate sul numero di ospiti e
+              Le quantità delle ricette del menu scelto, scalate sul numero di persone e
               con lo scarto compreso — lo stesso conto che il magazzino usa per scaricare
               quando il piatto viene servito.
             </Didascalia>

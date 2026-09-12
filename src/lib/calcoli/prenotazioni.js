@@ -26,7 +26,7 @@ export function campiPrenotazione(r) {
     { chiave: "data", etichetta: "Data", valore: formatDate(r.reservation_date), forte: true },
     { chiave: "ora", etichetta: "Ora", valore: r.reservation_time?.slice(0, 5) ?? "" },
     { chiave: "cliente", etichetta: "Cliente", valore: r.customer_name ?? "", forte: true },
-    { chiave: "coperti", etichetta: "Coperti", valore: String(r.party_size ?? "") },
+    { chiave: "coperti", etichetta: "Persone", valore: String(r.party_size ?? "") },
     {
       chiave: "tavolo",
       etichetta: "Tavolo",
