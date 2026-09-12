@@ -409,7 +409,7 @@ function PannelloAllergene({
             onSalvaScelta(riga.stato === "eliminabile", nota);
           }
         }}
-        placeholder="nota (facoltativa) — es. «la panatura non si può togliere»"
+        placeholder="nota (facoltativo) — es. «la panatura non si può togliere»"
         className={`${inputClass} w-full`}
       />
 

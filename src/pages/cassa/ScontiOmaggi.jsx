@@ -337,7 +337,7 @@ export default function ScontiOmaggi() {
               onChange={(e) => setForm((f) => ({ ...f, customer_id: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Cliente (opz.)</option>
+              <option value="">Cliente (facoltativo)</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>{c.name || c.phone}</option>
               ))}
@@ -347,7 +347,7 @@ export default function ScontiOmaggi() {
               onChange={(e) => setForm((f) => ({ ...f, device_id: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Device (opz.)</option>
+              <option value="">Device (facoltativo)</option>
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
@@ -355,7 +355,7 @@ export default function ScontiOmaggi() {
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (opz.)"
+              placeholder="Nota (facoltativo)"
               className={inputClass}
             />
           </div>

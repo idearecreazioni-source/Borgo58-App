@@ -640,7 +640,7 @@ export default function MagazzinoHome() {
                   <input
                     value={consumptionForm.note}
                     onChange={(e) => setConsumptionForm((f) => ({ ...f, note: e.target.value }))}
-                    placeholder="Nota (opzionale)"
+                    placeholder="Nota (facoltativo)"
                     className={inputClass}
                   />
                 </div>

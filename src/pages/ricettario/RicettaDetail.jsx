@@ -1871,7 +1871,7 @@ export default function RicettaDetail() {
               onChange={(e) => setStepForm((f) => ({ ...f, technique: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Tecnica (opzionale)</option>
+              <option value="">Tecnica (facoltativo)</option>
               {COOKING_TECHNIQUES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
@@ -2006,7 +2006,7 @@ export default function RicettaDetail() {
           <input
             value={videoNote}
             onChange={(e) => setVideoNote(e.target.value)}
-            placeholder="Nota (opzionale)"
+            placeholder="Nota (facoltativo)"
             className={`${inputClass} flex-1 min-w-[160px]`}
           />
           <button

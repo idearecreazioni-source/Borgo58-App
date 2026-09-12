@@ -109,15 +109,15 @@ export default function RaccoltaPropria() {
             <input value={form.forager_name} onChange={(e) => setForm((f) => ({ ...f, forager_name: e.target.value }))} placeholder="Chi ha raccolto" className={inputClass} />
           </div>
           <input value={form.identification_method} onChange={(e) => setForm((f) => ({ ...f, identification_method: e.target.value }))} placeholder="Metodo di verifica dell'identificazione" className={`${inputClass} mb-3`} />
-          <input value={form.contamination_risk_note} onChange={(e) => setForm((f) => ({ ...f, contamination_risk_note: e.target.value }))} placeholder="Nota sul rischio di contaminazione (opz.)" className={`${inputClass} mb-3`} />
+          <input value={form.contamination_risk_note} onChange={(e) => setForm((f) => ({ ...f, contamination_risk_note: e.target.value }))} placeholder="Nota sul rischio di contaminazione (facoltativo)" className={`${inputClass} mb-3`} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <select value={form.ingredient_id} onChange={(e) => setForm((f) => ({ ...f, ingredient_id: e.target.value }))} className={inputClass}>
-              <option value="">Ingrediente collegato (opz.)</option>
+              <option value="">Ingrediente collegato (facoltativo)</option>
               {ingredients.map((i) => (
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}
             </select>
-            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={inputClass} />
+            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativo)" className={inputClass} />
           </div>
           <div className="flex justify-end">
             <button type="button" disabled={saving || !form.species.trim()} onClick={handleAdd} className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60">

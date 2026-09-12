@@ -106,7 +106,7 @@ export default function PersonaleHome() {
           <input
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-            placeholder="Mansione (opz.)"
+            placeholder="Mansione (facoltativo)"
             className={`${inputClass} flex-1 min-w-[120px]`}
           />
           <select

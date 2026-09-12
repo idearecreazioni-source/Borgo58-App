@@ -231,7 +231,7 @@ export default function TemperatureLog() {
                 onChange={(e) => setEquipmentForm((f) => ({ ...f, storageType: e.target.value }))}
                 className={inputClass}
               >
-                <option value="">Tipo (opzionale)</option>
+                <option value="">Tipo (facoltativo)</option>
                 {STORAGE_TYPES.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
@@ -467,7 +467,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 <input
                   value={form.note}
                   onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-                  placeholder="Nota (opzionale)"
+                  placeholder="Nota (facoltativo)"
                   className={inputClass}
                 />
               </div>
