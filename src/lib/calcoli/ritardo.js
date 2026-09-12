@@ -265,7 +265,7 @@ export const SEGNI_IN_ORDINE = [
   {
     chiave: "presto",
     nome: "Primo giro",
-    dice: "arrivano entro l'ora del primo turno, quindi il tavolo può servire una seconda volta.",
+    dice: "arrivano entro l'ora del primo giro, quindi il tavolo può servire una seconda volta.",
   },
   {
     chiave: "pieno",
@@ -274,13 +274,13 @@ export const SEGNI_IN_ORDINE = [
   },
   {
     chiave: "tardi",
-    nome: "Ultimo turno",
+    nome: "Ultimo giro",
     dice: "arrivano dopo l'ora degli ultimi arrivi. Non chiude niente: colora il tavolo e basta.",
   },
   {
     chiave: "misto",
     nome: "Più di una fascia",
-    dice: "sullo stesso tavolo ci sono orari di fasce diverse — tipicamente un primo giro e un ultimo turno.",
+    dice: "sullo stesso tavolo ci sono orari di fasce diverse — tipicamente un primo giro e un ultimo giro.",
   },
   {
     chiave: "ignota",

@@ -1548,7 +1548,7 @@ export default function PiantaGiornata() {
               {turnoDi(aperta.id)?.liberare_entro && (
                 <p className="rounded-lg bg-b58-gold/20 ring-1 ring-b58-gold px-3 py-2 testo-sala mb-4">
                   <strong>Da liberare entro le {turnoDi(aperta.id).liberare_entro.slice(0, 5)}</strong> —
-                  su questo tavolo c'è un altro turno dopo.
+                  su questo tavolo c'è un altro giro dopo.
                 </p>
               )}
 
