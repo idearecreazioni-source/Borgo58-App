@@ -157,9 +157,14 @@ export default function SettimanaAgenda({
                         //    giorni è LUNGA e discreta (tutto il riquadro,
                         //    /10); quella fra gli impegni è CORTA — parte
                         //    dove comincia il titolo, cioè dopo la colonna
-                        //    dell'ora, e arriva al bordo del testo — e un
-                        //    poco più scura (/15). In colonna, dove l'ora sta
-                        //    sopra il titolo, parte dal bordo del testo.
+                        //    dell'ora, e arriva al bordo del testo — e
+                        //    chiaramente più scura (/30). In colonna, dove
+                        //    l'ora sta sopra il titolo, parte dal bordo del
+                        //    testo.
+                        //    ⚠️ ERA /15 (secondo collaudo), e sull'iPhone non
+                        //    si distingueva da /10: misurato, si staccava
+                        //    dallo sfondo solo 1,5 volte la linea fra giorni.
+                        //    La prova ora pretende almeno il doppio.
                         //    ⚠️ Stessa altezza di prima (un punto), stessi
                         //    spazi: niente riquadro per impegno. La misura
                         //    che distingue le due linee è in
@@ -170,7 +175,7 @@ export default function SettimanaAgenda({
                             // colonna dell'ora (vuota) e lo stesso stacco.
                             <div aria-hidden="true" data-separatore-impegno="" className="flex h-px gap-2 px-1 -mx-1">
                               <span className="w-[3.2em] shrink-0 testo-sala @5xl:hidden" />
-                              <span className="flex-1 bg-b58-charcoal/15" />
+                              <span className="flex-1 bg-b58-charcoal/30" />
                             </div>
                           )}
                           {/* ⚠️ IL TESTO STA AL CENTRO DEL BERSAGLIO, non in
