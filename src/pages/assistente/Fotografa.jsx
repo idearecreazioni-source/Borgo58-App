@@ -153,7 +153,7 @@ export default function Fotografa() {
         {spesa === nonLetto ? (
           <DatoNonLetto cosa="la spesa di MEMO" onRiprova={ricarica} />
         ) : spesa === null ? (
-          <p className="testo-sala text-b58-charcoal-soft">Sto guardando…</p>
+          <p className="testo-sala text-b58-charcoal-soft">Sto leggendo la spesa di MEMO…</p>
         ) : (
           <div className="rounded-lg bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
             <p className="testo-sala-grande font-semibold text-b58-charcoal">

@@ -164,7 +164,7 @@ export default function Detta() {
         //    risposta sarebbe quella del database invece che quella di chi
         //    sta guardando.
         if (esito?.esito === "domanda") {
-          setStato("Sto guardando…");
+          setStato("Sto leggendo il gestionale…");
           // ⚠️ LA FRASE DETTA VIAGGIA CON LA DOMANDA, e serve davvero: su
           //    «quando scade …» e' la frase — non il modello — a dire se si
           //    parla dell'Agenda o di una cosa in cella.

@@ -290,7 +290,7 @@ export default function Scadenze() {
       </Link>
 
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</p>}
-      {loading && <p>Carico…</p>}
+      {loading && <p>Caricamento…</p>}
 
       {!loading && (
         <>

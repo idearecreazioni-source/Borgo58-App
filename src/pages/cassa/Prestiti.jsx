@@ -237,7 +237,7 @@ export default function Prestiti() {
         </div>
       )}
 
-      {prestiti === null && !errore && <p className="text-b58-charcoal-soft">Sto guardando…</p>}
+      {prestiti === null && !errore && <p className="text-b58-charcoal-soft">Caricamento…</p>}
 
       {aperti.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/10 mb-6">

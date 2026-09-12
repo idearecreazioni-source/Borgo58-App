@@ -242,7 +242,7 @@ export default function PreventivoDetail() {
       </div>
     );
   }
-  if (!prev) return <p className="testo-sala-grande text-b58-charcoal-soft">Sto guardando…</p>;
+  if (!prev) return <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>;
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";

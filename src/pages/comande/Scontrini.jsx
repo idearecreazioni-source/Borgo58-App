@@ -106,7 +106,7 @@ export default function Scontrini() {
         <p className="testo-sala text-b58-charcoal bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{esito}</p>
       )}
 
-      {conti === null && !errore && <p className="testo-sala text-b58-charcoal-soft">Sto guardando…</p>}
+      {conti === null && !errore && <p className="testo-sala text-b58-charcoal-soft">Caricamento…</p>}
       {/* ⚠️ LA VIA D'USCITA PER CHI NON PUÒ RETTIFICARE. Senza questa
           riga la schermata sarebbe muta proprio con chi ha il foglio bianco
           in mano: vedrebbe «Scontrino n. 14» accanto a un conto per cui non
