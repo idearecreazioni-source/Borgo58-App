@@ -368,7 +368,7 @@ export default function DeduzioniFiscali() {
             <input
               value={form.business_purpose}
               onChange={(e) => setForm((f) => ({ ...f, business_purpose: e.target.value }))}
-              placeholder="Finalità aziendale (facoltativo, utile in verifica)"
+              placeholder="Finalità aziendale (facoltativa, utile in verifica)"
               className={`${inputClass} flex-1`}
             />
             <button

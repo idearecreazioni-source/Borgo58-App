@@ -256,7 +256,7 @@ export default function TaskForm() {
         </div>
 
         <div>
-          <label className={labelClass}>Descrizione (facoltativo)</label>
+          <label className={labelClass}>Descrizione (facoltativa)</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}

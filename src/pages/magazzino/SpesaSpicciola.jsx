@@ -232,7 +232,7 @@ export default function SpesaSpicciola() {
               modi — che è l'unico difetto vero del testo libero. */}
           <input
             className={campo}
-            placeholder="Categoria (facoltativo)"
+            placeholder="Categoria (facoltativa)"
             list="categorie-spesa"
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}

@@ -167,7 +167,7 @@ export default function NonConformita() {
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (facoltativo)"
+              placeholder="Nota (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button

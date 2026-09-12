@@ -174,7 +174,7 @@ export default function RegistraCarico() {
             />
           </div>
           <div>
-            <label className={labelClass}>Scadenza (facoltativo)</label>
+            <label className={labelClass}>Scadenza (facoltativa)</label>
             <input
               type="date"
               value={form.expiry_date}
@@ -214,7 +214,7 @@ export default function RegistraCarico() {
         )}
 
         <div>
-          <label className={labelClass}>Nota (facoltativo)</label>
+          <label className={labelClass}>Nota (facoltativa)</label>
           <input
             value={form.note}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}

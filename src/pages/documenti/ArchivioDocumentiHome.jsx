@@ -418,8 +418,8 @@ export default function ArchivioDocumentiHome() {
                 </div>
               )}
             </div>
-            <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (facoltativo, es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
-            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativo)" className={`${inputClass} mb-3`} />
+            <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (facoltative, es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
+            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativa)" className={`${inputClass} mb-3`} />
             {/* ⚠️ IL FILE NON È PIÙ QUI (10/09/2026): è salito in cima, come
                 primo gesto. Restava anche un secondo campo per sceglierlo —
                 due porte per la stessa cosa, e la seconda avrebbe scavalcato

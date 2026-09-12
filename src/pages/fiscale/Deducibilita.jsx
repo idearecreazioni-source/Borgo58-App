@@ -367,7 +367,7 @@ export default function Deducibilita() {
             <input
               value={form.nota}
               onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))}
-              placeholder="Nota — a cosa serve ricordarsi che si applica (facoltativo)"
+              placeholder="Nota — a cosa serve ricordarsi che si applica (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button

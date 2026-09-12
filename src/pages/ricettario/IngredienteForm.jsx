@@ -1101,7 +1101,7 @@ export default function IngredienteForm() {
                     }
                     className={inputClass}
                   >
-                    <option value="">Categoria (facoltativo)</option>
+                    <option value="">Categoria (facoltativa)</option>
                     {SUPPLIER_CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
@@ -1653,7 +1653,7 @@ export default function IngredienteForm() {
               />
             </div>
             <div className="flex-1 min-w-[160px]">
-              <label className={labelClass}>Nota (facoltativo)</label>
+              <label className={labelClass}>Nota (facoltativa)</label>
               <input
                 value={priceNote}
                 onChange={(e) => setPriceNote(e.target.value)}

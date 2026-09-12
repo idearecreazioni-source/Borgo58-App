@@ -231,7 +231,7 @@ export default function RicettaForm() {
 
           {!eSelezione && (
             <div>
-              <label className={labelClass}>Sottocategoria (facoltativo)</label>
+              <label className={labelClass}>Sottocategoria (facoltativa)</label>
               <input
                 value={form.subcategory}
                 onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}

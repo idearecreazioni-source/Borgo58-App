@@ -818,7 +818,7 @@ export default function ListaSpesa() {
             <input
               value={addForm.note}
               onChange={(e) => setAddForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (facoltativo)"
+              placeholder="Nota (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button

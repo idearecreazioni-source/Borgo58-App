@@ -355,7 +355,7 @@ export default function ScontiOmaggi() {
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (facoltativo)"
+              placeholder="Nota (facoltativa)"
               className={inputClass}
             />
           </div>

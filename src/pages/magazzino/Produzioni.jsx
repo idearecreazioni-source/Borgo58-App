@@ -419,7 +419,7 @@ export default function Produzioni() {
               />
             </div>
             <div>
-              <label className={label}>Nota (facoltativo)</label>
+              <label className={label}>Nota (facoltativa)</label>
               <input value={note} onChange={(e) => setNote(e.target.value)} className={input} />
             </div>
           </div>
