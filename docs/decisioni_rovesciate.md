@@ -147,9 +147,8 @@ rossa da sola il giorno che l'indice resta indietro.
 | 88 | 11/09/2026 | la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto |
 | 89 | 11/09/2026 | un impegno riservato porta il segno «Riservato» nell'elenco |
 | 90 | 11/09/2026 | giorno e ora stanno affiancati, in due colonne uguali |
-| 91 | 12/09/2026 | togliendo un mese da «tutto l'anno» restano undici mesi accesi |
 
-⚠️ **Righe: 92.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 91.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3308,30 +3307,3 @@ che non viene mai salvata perché non passa da nessun deposito.
    l'ha respinto al collaudo: troppo grandi. ⚠️ **Il prezzo**: a 64 punti per
    centimetro giorno e ora vanno a capo, perché affiancati chiederebbero 329
    punti su 310.
-
-## 91 · 12/09/2026 — «togliendo un mese da «tutto l'anno» restano undici mesi accesi»
-
-1. **Cosa era stato deciso e quando.** Il 29/08/2026, decisione di Alessio
-   sulla stagionalità di un ingrediente: dodici mesi accesi diventano «tutto
-   l'anno», e **togliendo un mese da «tutto l'anno» restano undici mesi
-   accesi**. A schermo, con «tutto l'anno» scritto, si vedevano accesi anche i
-   dodici mesi.
-
-2. **La ragione di allora.** «Tutto l'anno meno agosto» si faceva con un tocco,
-   e quali undici mesi lo sapeva solo chi aveva toccato.
-
-3. **Cosa si decide adesso.** «Tutto l'anno» è l'**alternativa** ai mesi: acceso
-   lui, i mesi si vedono spenti; toccando un mese resta quel mese solo. Dati di
-   prima con le due forme insieme: a schermo vince «tutto l'anno», e il database
-   non si tocca finché qualcuno non salva. Mandato notturno del 12/09 dal
-   collaudo sull'iPhone: *«applica la stessa regola a ingredienti, preparazioni
-   e piatti»*. **La prima metà resta**: dodici mesi diventano «tutto l'anno»,
-   ed è anche il trigger del database.
-
-4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e questo è
-   il prezzo che accettiamo**: «tutto l'anno meno agosto» adesso si fa
-   accendendo gli undici mesi uno per uno. In cambio la scheda non dice più due
-   cose insieme — tredici caselle accese per un'informazione sola. ⚠️ Sta in
-   un commit a sé (blocco A del mandato notturno) perché si possa togliere da
-   solo se Alessio preferisce il verso di prima: ingredienti e ricette hanno
-   due funzioni diverse (`meseAcceso` e `stagioneAccesa`).

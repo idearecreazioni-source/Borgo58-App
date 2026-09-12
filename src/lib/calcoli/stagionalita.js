@@ -1,20 +1,8 @@
-// LA STAGIONALITÀ DI UN PRODOTTO — 29/08/2026, secondo verso cambiato il
-// 12/09/2026.
+// LA STAGIONALITÀ DI UN PRODOTTO — 29/08/2026.
 //
-// Decisione di Alessio del 29/08:
-//   · dodici mesi accesi diventano «tutto l'anno» — VALE ANCORA (è anche
-//     il trigger del database, che da qui non si tocca);
-//   · ~~togliendo un mese da «tutto l'anno», restano undici mesi accesi~~.
-//
-// 🔴 IL SECONDO VERSO È CAMBIATO il 12/09/2026, col mandato notturno del
-//    collaudo sull'iPhone: *«“Tutto l'anno” è alternativo; selezionare una
-//    stagione deseleziona “Tutto l'anno”; … applica la stessa regola a
-//    ingredienti, preparazioni e piatti»*. Quindi con «Tutto l'anno» acceso
-//    i mesi si vedono SPENTI, e toccarne uno lascia quel mese solo.
-//    ⚠️ Il prezzo, dichiarato: «tutto l'anno meno agosto» non si fa più con
-//    un tocco, si fa accendendo gli undici mesi. Rovesciamento scritto in
-//    `docs/decisioni_rovesciate.md`, e in un commit a sé perché si possa
-//    togliere da solo se Alessio preferisce il verso di prima.
+// Decisione di Alessio, e vale nei due versi:
+//   · dodici mesi accesi diventano «tutto l'anno»;
+//   · togliendo un mese da «tutto l'anno», restano undici mesi accesi.
 //
 // ⚠️ **METÀ DELLA REGOLA VIVE NEL DATABASE E METÀ QUI, e non è un
 // doppione.** Sono due domande diverse, e il discriminante è il 17/08:
@@ -68,9 +56,11 @@ export function stagionalitaNormalizzata(mesi) {
 /**
  * Cosa diventa la stagionalità quando si tocca una casella.
  *
- * ⚠️ DAL 12/09/2026 «TUTTO L'ANNO» È L'ALTERNATIVA AI MESI: toccando un
- * mese con «tutto l'anno» acceso resta QUEL mese solo — non undici. Fino
- * all'11/09 l'elenco si apriva nei dodici mesi e ne toglieva uno.
+ * ⚠️ È QUI CHE VIVE IL VERSO CHE IL DATABASE NON PUÒ FARE: partendo da
+ * «tutto l'anno» e spegnendo agosto, l'elenco si apre nei dodici mesi e
+ * poi ne toglie uno — undici. Senza questo passaggio, togliere un mese da
+ * «tutto l'anno» non toglierebbe niente, perché «tutto l'anno» il mese
+ * non ce l'ha dentro.
  */
 export function stagionalitaDopoIlTocco(mesi, toccato) {
   const scelti = Array.from(new Set(mesi ?? []));
@@ -82,9 +72,7 @@ export function stagionalitaDopoIlTocco(mesi, toccato) {
     return scelti.includes(TUTTO_ANNO) ? [] : [TUTTO_ANNO];
   }
 
-  // Da «tutto l'anno» un mese riparte da sé solo: le due forme sono
-  // alternative (12/09/2026).
-  const base = scelti.includes(TUTTO_ANNO) ? [] : inOrdine(scelti);
+  const base = scelti.includes(TUTTO_ANNO) ? [...MESI_DELL_ANNO] : inOrdine(scelti);
   const dopo = base.includes(toccato)
     ? base.filter((m) => m !== toccato)
     : [...base, toccato];
@@ -94,16 +82,14 @@ export function stagionalitaDopoIlTocco(mesi, toccato) {
 
 /**
  * Se una casella si deve vedere accesa.
- * ⚠️ Dal 12/09/2026 con «tutto l'anno» si vede acceso SOLO lui: i dodici
- * mesi accesi insieme a «Tutto l'anno» erano le due forme a schermo nello
- * stesso momento, cioè quello che il collaudo sull'iPhone ha segnalato.
- * Anche con dati di prima che le contengono tutte e due, vince «Tutto
- * l'anno» — e il database non si tocca finché qualcuno non salva.
+ * Con «tutto l'anno» scritto nel database, i dodici mesi si vedono accesi
+ * lo stesso: a schermo la risposta è la stessa, ed è quello che uno si
+ * aspetta guardando.
  */
 export function meseAcceso(mesi, valore) {
   const scelti = mesi ?? [];
   if (valore === TUTTO_ANNO) return scelti.includes(TUTTO_ANNO);
-  return !scelti.includes(TUTTO_ANNO) && scelti.includes(valore);
+  return scelti.includes(valore) || scelti.includes(TUTTO_ANNO);
 }
 
 // =====================================================================

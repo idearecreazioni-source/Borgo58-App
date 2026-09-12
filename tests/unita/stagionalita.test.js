@@ -66,15 +66,14 @@ describe("la stagionalità di un prodotto", () => {
     expect(stagionalitaNormalizzata(undici)).toEqual(undici);
   });
 
-  it("toccando un mese con «tutto l'anno» acceso resta quel mese solo (12/09/2026)", () => {
-    // ⚠️ Fino all'11/09 restavano undici mesi: il verso è stato cambiato dal
-    //    mandato notturno del 12/09 — «Tutto l'anno» è l'alternativa ai mesi.
-    //    Uno e undici si distinguono: la prova discrimina.
-    expect(stagionalitaDopoIlTocco([TUTTO_ANNO], "ago")).toEqual(["ago"]);
-  });
-
-  it("l'ordine dei mesi è quello del calendario, non quello dell'alfabeto", () => {
-    expect(stagionalitaDopoIlTocco(["dic", "gen"], "ago")).toEqual(["gen", "ago", "dic"]);
+  it("togliendo un mese da «tutto l'anno» restano undici mesi, non zero", () => {
+    const dopo = stagionalitaDopoIlTocco([TUTTO_ANNO], "ago");
+    expect(dopo).toHaveLength(11);
+    expect(dopo).not.toContain("ago");
+    expect(dopo).not.toContain(TUTTO_ANNO);
+    // L'ordine è quello del calendario, non quello dell'alfabeto.
+    expect(dopo[0]).toBe("gen");
+    expect(dopo[dopo.length - 1]).toBe("dic");
   });
 
   it("accendendo l'ultimo mese mancante si arriva a «tutto l'anno»", () => {
@@ -108,12 +107,9 @@ describe("la stagionalità di un prodotto", () => {
     expect(stagionalitaNormalizzata(null)).toEqual([]);
   });
 
-  it("con «tutto l'anno» scritto, a schermo si vede acceso solo lui (12/09/2026)", () => {
-    expect(meseAcceso([TUTTO_ANNO], "ago")).toBe(false);
+  it("con «tutto l'anno» scritto, a schermo i dodici mesi si vedono accesi", () => {
+    expect(meseAcceso([TUTTO_ANNO], "ago")).toBe(true);
     expect(meseAcceso([TUTTO_ANNO], TUTTO_ANNO)).toBe(true);
-    // Dati di prima con le due forme insieme: vince «tutto l'anno».
-    expect(meseAcceso([TUTTO_ANNO, "ago"], "ago")).toBe(false);
-    expect(meseAcceso(["gen"], "gen")).toBe(true);
     expect(meseAcceso(["gen"], "ago")).toBe(false);
     expect(meseAcceso(["gen"], TUTTO_ANNO)).toBe(false);
   });
