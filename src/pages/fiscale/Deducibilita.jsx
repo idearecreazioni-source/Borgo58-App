@@ -237,7 +237,7 @@ export default function Deducibilita() {
           <strong>nessuna è stata confermata dalla commercialista</strong> — quando lo saranno, scrivi la
           data e l&apos;avviso sparisce da tutte le schermate insieme.
           {nonConfermate > 0 && (
-            <> Oggi ne mancano <strong>{nonConfermate}</strong> (domande L4 e L9 per Laura).</>
+            <> Oggi ne mancano <strong>{nonConfermate}</strong> (domande L4 e L9 per la commercialista).</>
           )}
         </p>
 

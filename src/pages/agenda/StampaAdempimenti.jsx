@@ -46,7 +46,7 @@ export default function StampaAdempimenti() {
         Un foglio da stampare o salvare in PDF.
         <Didascalia etichetta="Cosa c'è dentro">
           Tutte le scadenze della categoria «Fisco e scadenze», in ordine di data — da
-          portare a Laura o da tenere appeso. Si aggiorna da sé: mostra quello che c&apos;è
+          portare alla commercialista o da tenere appeso. Si aggiorna da sé: mostra quello che c&apos;è
           in Agenda adesso, non una fotografia di ieri.
         </Didascalia>
       </p>
