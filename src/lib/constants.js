@@ -220,6 +220,50 @@ export const recipeStatusLabel = (prontaPerCarta, inCarta, ritirataIl) => {
   return RECIPE_STATI.find((s) => s.value === stato);
 };
 
+// 🔴 UNA PREPARAZIONE NON È UN PIATTO — 12/09/2026, dal collaudo
+// sull'iPhone. Una preparazione o un finger mostravano «Pronta per la
+// carta» e «In carta», ma in un menu non possono entrare: il database li
+// rifiuta dal 20/08 (`20260820000002_in_menu_solo_i_piatti`). Un gesto
+// offerto su una cosa che non può succedere è una promessa falsa.
+//
+// ⚠️ STESSE COLONNE, PAROLE DIVERSE, e nessuna riscrittura: «pronta per
+//    l'uso» è `pronta_per_carta` vero, come per un piatto. Non si crea una
+//    colonna nuova e non si trasforma niente: una preparazione già segnata
+//    pronta si legge «Pronta per l'uso» il giorno dopo, senza che nessuno
+//    tocchi il database. «In carta» non c'è, perché è il riflesso di un
+//    menu (16/08) e un componente in un menu non ci sta.
+export const STATI_COMPONENTE = [
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "pronta", label: "Pronta per l'uso", colorClass: "bg-b58-gold" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+];
+
+// ⚠️ UN TIPO CHE NON SI CONOSCE SI LEGGE COME UN PIATTO, cioè come prima.
+//    `eComponente(undefined)` è vero, ed è giusto per la resa (si chiede
+//    invece di lasciar passare); qui il verso prudente è l'opposto: una riga
+//    letta senza il tipo — uno storico, una risposta di MEMO — non deve
+//    cambiare parole in silenzio.
+const eComponenteNoto = (recipeType) => recipeType != null && eComponente(recipeType);
+
+export const statiPerTipo = (recipeType) =>
+  eComponenteNoto(recipeType) ? STATI_COMPONENTE : RECIPE_STATI;
+
+// ⚠️ UN COMPONENTE CON `in_carta` VERO si legge «pronta», mai «in carta»:
+//    può esserci soltanto una riga di prima del 20/08, e `in_carta` richiede
+//    `pronta_per_carta` (vincolo del database) — quindi era stato segnato
+//    pronto. La scheda lo dice a parte, e non riscrive niente.
+export const statoPerTipo = (recipeType, prontaPerCarta, inCarta, ritirataIl) => {
+  if (!eComponenteNoto(recipeType)) return statoRicetta(prontaPerCarta, inCarta, ritirataIl);
+  if (ritirataIl) return "ritirata";
+  if (prontaPerCarta || inCarta) return "pronta";
+  return "in_sviluppo";
+};
+
+export const etichettaStato = (recipeType, prontaPerCarta, inCarta, ritirataIl) => {
+  const stato = statoPerTipo(recipeType, prontaPerCarta, inCarta, ritirataIl);
+  return statiPerTipo(recipeType).find((s) => s.value === stato);
+};
+
 export const VIDEO_PLATFORMS = [
   { value: "instagram", label: "Instagram" },
   { value: "tiktok", label: "TikTok" },

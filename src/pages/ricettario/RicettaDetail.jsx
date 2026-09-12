@@ -43,9 +43,8 @@ import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
-  RECIPE_STATI,
   eComponente,
-  statoRicetta,
+  etichettaStato,
   SEASONS,
   STEP_PHASES,
   VIDEO_PLATFORMS,
@@ -53,9 +52,11 @@ import {
   formatEUR,
   formatPercento,
   labelFor,
-  recipeStatusLabel,
+  statiPerTipo,
+  statoPerTipo,
 } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
+import { stagioneAccesa, stagioniDopoIlTocco, stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
 
 const emptyIngredientForm = {
   ingredient_id: "",
@@ -421,13 +422,10 @@ export default function RicettaDetail() {
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 
+  // ⚠️ «Tutto l'anno» è l'alternativa alle quattro stagioni (12/09/2026):
+  //    la regola sta in `stagionalita.js`, qui c'è solo il gesto.
   const toggleSeasonality = (value) => {
-    setRecipe((r) => ({
-      ...r,
-      seasonality: r.seasonality.includes(value)
-        ? r.seasonality.filter((v) => v !== value)
-        : [...r.seasonality, value],
-    }));
+    setRecipe((r) => ({ ...r, seasonality: stagioniDopoIlTocco(r.seasonality, value) }));
   };
 
   const saveHeader = async () => {
@@ -456,7 +454,10 @@ export default function RicettaDetail() {
         name: recipe.name,
         category: recipe.category,
         subcategory: recipe.subcategory,
-        seasonality: recipe.seasonality,
+        // ⚠️ Si salva quello che si vede: dati di prima con «Tutto l'anno»
+        //    e una stagione insieme diventano «Tutto l'anno» solo adesso,
+        //    quando qualcuno salva — non all'apertura della scheda.
+        seasonality: stagioniNormalizzate(recipe.seasonality),
         portions_yield: isComponente ? 1 : porzioni,
         yield_quantity: isComponente ? resa : null,
         yield_unit: isComponente ? recipe.yield_unit : null,
@@ -567,6 +568,19 @@ export default function RicettaDetail() {
           impedito: "Non c'è nessun menu in servizio: per andare in carta serve prima un menu acceso.",
         };
       return { stato, aiuto: "Mettila nel menu in servizio, qui sotto." };
+    }
+    // ⚠️ Una preparazione o un finger rimasti in un menu da prima del
+    //    20/08: il database non lascia togliere «pronta» né ritirare finché
+    //    la voce sta nel menu. La frase non dice «in carta», che per un
+    //    componente sarebbe la parola sbagliata.
+    //    ⚠️ La spiegazione sta tutta qui, nel riquadro «Bloccato apposta»,
+    //    e non in una seconda nota sotto: due frasi per lo stesso fatto si
+    //    leggono come due problemi.
+    if (eComponente(r.recipe_type) && r.in_carta && stato !== "pronta") {
+      return {
+        stato,
+        impedito: `${questo.replace(/^./, (c) => c.toUpperCase())} risulta ancora dentro un menu, dove non può stare: è una voce rimasta da prima che il gestionale lo vietasse. Prima va tolta da quel menu.`,
+      };
     }
     if (stato === "ritirata" && r.in_carta) {
       return { stato, impedito: "È in carta: toglila prima dal menu in servizio, poi si ritira." };
@@ -1062,13 +1076,23 @@ export default function RicettaDetail() {
           <label className={labelClass}>
             Stato:{" "}
             <span className="font-semibold normal-case tracking-normal text-b58-charcoal">
-              {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta, recipe.ritirata_il)
-                ?.label ?? "—"}
+              {etichettaStato(
+                recipe.recipe_type,
+                recipe.pronta_per_carta,
+                recipe.in_carta,
+                recipe.ritirata_il
+              )?.label ?? "—"}
             </span>
           </label>
+          {/* 🔴 GLI STATI SONO QUELLI DEL TIPO (12/09/2026, collaudo iPhone):
+              una preparazione e un finger non vanno in carta — il database
+              li rifiuta in un menu dal 20/08 — quindi hanno tre stati suoi:
+              In sviluppo · Pronta per l'uso · Ritirata. Stesse colonne del
+              piatto, parole diverse: niente si riscrive. */}
           <div className="flex flex-wrap items-center gap-2">
-            {RECIPE_STATI.map((s) => {
-              const attuale = statoRicetta(
+            {statiPerTipo(recipe.recipe_type).map((s) => {
+              const attuale = statoPerTipo(
+                recipe.recipe_type,
                 recipe.pronta_per_carta,
                 recipe.in_carta,
                 recipe.ritirata_il
@@ -1122,12 +1146,14 @@ export default function RicettaDetail() {
               servizio» e lasciava cercare quale — il pannello dei menu è
               trecento punti più in basso e non nomina il blocco. */}
           {(() => {
-            const attuale = statoRicetta(
+            const attuale = statoPerTipo(
+              recipe.recipe_type,
               recipe.pronta_per_carta,
               recipe.in_carta,
               recipe.ritirata_il
             );
-            const bloccati = RECIPE_STATI.map((s) => motivoStato(s.value, recipe, menuAttivo))
+            const bloccati = statiPerTipo(recipe.recipe_type)
+              .map((s) => motivoStato(s.value, recipe, menuAttivo))
               .filter((i) => i.impedito && i.stato !== attuale)
               .map((i) => i.impedito);
             if (bloccati.length === 0) return null;
@@ -1164,13 +1190,12 @@ export default function RicettaDetail() {
               stata cancellata.
             </p>
           )}
-
           {showHistory && (
             <ul className="mt-2 space-y-1 testo-sala text-b58-charcoal-soft">
               {statusHistory.map((h) => (
                 <li key={h.id}>
                   {formatDate(h.changed_at)} —{" "}
-                  {recipeStatusLabel(h.pronta_per_carta, h.in_carta, null).label}
+                  {etichettaStato(recipe.recipe_type, h.pronta_per_carta, h.in_carta, null).label}
                 </li>
               ))}
             </ul>
@@ -1237,8 +1262,17 @@ export default function RicettaDetail() {
           </div>
         )}
 
+        {/* 🔴 SU UNA PREPARAZIONE NON È UNA DESCRIZIONE PER IL MENU
+            (12/09/2026, collaudo iPhone): una preparazione e un finger in un
+            menu non entrano, quindi quel testo non finisce su nessuna carta.
+            ⚠️ STESSO CAMPO, NOME DIVERSO, e nessun dato perso: è
+               `menu_description` come prima, e quello che c'era scritto
+               resta e si salva uguale. Il foglio del menu la stampa solo
+               per i piatti (le voci di un menu sono piatti), quindi su un
+               componente è già oggi una nota che legge solo chi apre la
+               scheda — ora lo dice. */}
         <div className="mb-4">
-          <label className={labelClass}>Descrizione per il menu</label>
+          <label className={labelClass}>{isComponente ? "Nota interna" : "Descrizione per il menu"}</label>
           <textarea
             value={recipe.menu_description ?? ""}
             onChange={(e) => handleHeaderChange("menu_description", e.target.value)}
@@ -1248,11 +1282,13 @@ export default function RicettaDetail() {
                scorrere — quello che non ci sta si perde, e chi legge vede una
                frase mozza che sembra un guasto. Ora dice la cosa breve, e
                l'esempio sta sotto, dove può andare a capo. */
-            placeholder="Come appare sul menu"
+            placeholder={isComponente ? "Per la cucina" : "Come appare sul menu"}
             className={inputClass}
           />
           <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-            Es. «Fusilloni al ragù di polpo e polvere di prezzemolo».
+            {isComponente
+              ? "Non compare su nessun menu: la legge solo chi apre questa scheda."
+              : "Es. «Fusilloni al ragù di polpo e polvere di prezzemolo»."}
           </p>
         </div>
 
@@ -1268,9 +1304,10 @@ export default function RicettaDetail() {
                 <button
                   key={s.value}
                   type="button"
+                  aria-pressed={stagioneAccesa(recipe.seasonality, s.value)}
                   onClick={() => toggleSeasonality(s.value)}
                   className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
-                    recipe.seasonality.includes(s.value)
+                    stagioneAccesa(recipe.seasonality, s.value)
                       ? "bg-b58-olive text-b58-parchment border-b58-olive"
                       : "border-b58-charcoal/15 text-b58-charcoal-soft"
                   }`}

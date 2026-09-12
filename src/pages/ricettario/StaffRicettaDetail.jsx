@@ -12,8 +12,10 @@ import {
   SEASONS,
   STEP_PHASES,
   VIDEO_PLATFORMS,
+  eComponente,
   labelFor,
 } from "../../lib/constants";
+import { stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
 
 // Scheda ricetta in SOLA LETTURA per lo staff (§3.5): ingredienti, quantità,
 // fasi, HACCP, allergeni — nessun prezzo né food cost. Gli ingredienti arrivano
@@ -87,11 +89,17 @@ export default function StaffRicettaDetail() {
         <h1 className="font-display text-2xl text-b58-charcoal">{recipe.name}</h1>
         <p className="testo-sala-grande text-b58-charcoal-soft mt-1">
           {labelFor(RECIPE_CATEGORIES, recipe.category)}
-          {recipe.subcategory ? ` · ${recipe.subcategory}` : ""} · {recipe.portions_yield} porzioni
+          {recipe.subcategory ? ` · ${recipe.subcategory}` : ""}
+          {/* ⚠️ Una preparazione o un finger non si fanno a porzioni ma a
+              dosi, con una resa: «1 porzioni» era la parola del piatto su una
+              cosa che non lo è (12/09/2026). */}
+          {eComponente(recipe.recipe_type) ? "" : ` · ${recipe.portions_yield} porzioni`}
         </p>
+        {/* Con «Tutto l'anno» e una stagione insieme (dati di prima) vince
+            «Tutto l'anno», come sulla scheda che si modifica. */}
         {recipe.seasonality?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            {recipe.seasonality.map((s) => (
+            {stagioniNormalizzate(recipe.seasonality).map((s) => (
               <span key={s} className="testo-sala bg-b58-olive/10 text-b58-olive-dark rounded-full px-2.5 py-1">
                 {labelFor(SEASONS, s)}
               </span>
