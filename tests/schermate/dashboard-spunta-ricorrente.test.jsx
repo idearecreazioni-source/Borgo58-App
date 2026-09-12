@@ -195,6 +195,9 @@ describe("🔴 un impegno ricorrente spuntato dalla Dashboard", () => {
       fireEvent.click(casella);
     });
     await waitFor(() => expect(screen.getByText(/risulta già fatto/)).toBeTruthy());
+    // Il messaggio nomina l'impegno, non «la riga» (12/09/2026).
+    expect(screen.getByText(/risulta già fatto/).textContent).toContain(`«${RICORRENTE.title}» non si è salvato`);
+    expect(screen.getByText(/risulta già fatto/).textContent).not.toContain("la riga");
     expect(await casellaDi(RICORRENTE.title)).toBeTruthy();
     expect(finte.updateTask).not.toHaveBeenCalled();
     expect(screen.queryByText(NATO)).toBeNull();
