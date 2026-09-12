@@ -4,9 +4,9 @@ import { listRecipes, listAllRecipeCosts, listAllRecipeAllergens } from "../../l
 import {
   ALLERGENS,
   RECIPE_CATEGORIES,
-  RECIPE_STATI,
   SEASONS,
-  recipeStatusLabel,
+  etichettaStato,
+  statiPerTipo,
 } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 import { campiRicetta } from "../../lib/calcoli/ricette";
@@ -81,8 +81,23 @@ export default function RicetteList() {
   // Dove si sta guardando, e cosa si crea premendo il pulsante: una sola
   // risposta per tutt'e due, così non possono dire due cose diverse.
   const dove = suiFinger ? modo : porta;
+  // 🔴 GLI STATI DEL FILTRO SONO QUELLI DI CIÒ CHE SI GUARDA (12/09/2026):
+  //    fra le preparazioni non c'è «In carta» — non ci possono andare.
+  const tipoGuardato = suSelezioni ? "piatto_finito" : porta.value;
+
+  // ⚠️ Cambiando porta, uno stato che lì non esiste si toglie dal filtro:
+  //    lasciato «In carta» passando alle Preparazioni, il menu a tendina
+  //    mostrerebbe «Tutti gli stati» mentre l'elenco filtra ancora — un
+  //    elenco vuoto senza nessun motivo visibile (§8, il valore fuori
+  //    vocabolario in un menu a tendina).
+  const tieniStatoSeEsiste = (tipo) => {
+    if (statusFilter && !statiPerTipo(tipo).some((s) => s.value === statusFilter)) {
+      setStatusFilter("");
+    }
+  };
 
   const cambiaPorta = (valore) => {
+    tieniStatoSeEsiste(valore === "finger" ? (modo.value === "selezioni" ? "piatto_finito" : "finger") : valore);
     const nuovi = new URLSearchParams(params);
     nuovi.set("tipo", valore);
     // ⚠️ Uscendo dai finger il sotto-modo si toglie dall'indirizzo: lasciato
@@ -92,6 +107,7 @@ export default function RicetteList() {
     setParams(nuovi, { replace: true });
   };
   const cambiaModo = (valore) => {
+    tieniStatoSeEsiste(valore === "selezioni" ? "piatto_finito" : "finger");
     const nuovi = new URLSearchParams(params);
     nuovi.set("modo", valore);
     setParams(nuovi, { replace: true });
@@ -264,7 +280,7 @@ export default function RicetteList() {
           className={selectClass}
         >
           <option value="">Tutti gli stati</option>
-          {RECIPE_STATI.map((s) => (
+          {statiPerTipo(tipoGuardato).map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
@@ -315,7 +331,7 @@ export default function RicetteList() {
               Ricettario si guarda in cucina, col telefono appoggiato. */}
           <div className="md:hidden space-y-3">
             {filtrate.map((r) => {
-              const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta, r.ritirata_il);
+              const statusInfo = etichettaStato(r.recipe_type, r.pronta_per_carta, r.in_carta, r.ritirata_il);
               return (
                 <button
                   key={r.id}
@@ -367,7 +383,7 @@ export default function RicetteList() {
               </thead>
               <tbody>
                 {filtrate.map((r) => {
-                  const statusInfo = recipeStatusLabel(r.pronta_per_carta, r.in_carta, r.ritirata_il);
+                  const statusInfo = etichettaStato(r.recipe_type, r.pronta_per_carta, r.in_carta, r.ritirata_il);
                   return (
                     <tr
                       key={r.id}

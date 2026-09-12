@@ -91,3 +91,68 @@ export function meseAcceso(mesi, valore) {
   if (valore === TUTTO_ANNO) return scelti.includes(TUTTO_ANNO);
   return scelti.includes(valore) || scelti.includes(TUTTO_ANNO);
 }
+
+// =====================================================================
+// LE STAGIONI DI UNA RICETTA — 12/09/2026, mandato notturno, blocco A
+// =====================================================================
+// 🔴 DAL COLLAUDO SULL'IPHONE: su un piatto o una preparazione «Tutto
+//    l'anno» si accendeva insieme a Primavera, Estate, Autunno e Inverno —
+//    ogni pulsante era un interruttore a sé, e la scheda poteva dire
+//    «tutto l'anno, e d'estate» nello stesso momento.
+//
+// ⚠️ LA REGOLA DI ALESSIO: «Tutto l'anno» è l'ALTERNATIVA alle quattro
+//    stagioni. Accenderlo spegne le stagioni; accendere una stagione lo
+//    spegne. Una sola regola per piatti, preparazioni e finger, e vive qui
+//    perché la chiedono la scheda (il gesto) e la scheda dello staff (quello
+//    che si mostra).
+//
+// ⚠️ DATI DI PRIMA CON LE DUE FORME INSIEME: a schermo vince «Tutto
+//    l'anno», e il database non si tocca finché qualcuno non salva la
+//    scheda — allora si salva quello che si vede (`stagioniNormalizzate`).
+
+export const STAGIONI = ["primavera", "estate", "autunno", "inverno"];
+
+/**
+ * Le stagioni come vanno SCRITTE: «Tutto l'anno» da solo, oppure le
+ * stagioni nell'ordine dell'anno.
+ * ⚠️ Un valore che non si conosce NON si butta via: salvare la scheda per
+ *    correggere il nome non deve cancellare in silenzio quello che il
+ *    gestionale non sa leggere. Resta, in fondo.
+ */
+export function stagioniNormalizzate(scelte) {
+  const tutte = Array.from(new Set(scelte ?? []));
+  if (tutte.includes(TUTTO_ANNO)) return [TUTTO_ANNO];
+  const note = STAGIONI.filter((s) => tutte.includes(s));
+  // 🔴 LE QUATTRO STAGIONI SONO «TUTTO L'ANNO» (decisione di Alessio del
+  //    12/09/2026), come i dodici mesi di un ingrediente dal 29/08: si
+  //    mostrano e si salvano come «Tutto l'anno».
+  if (note.length === STAGIONI.length) return [TUTTO_ANNO];
+  const altre = tutte.filter((s) => !STAGIONI.includes(s));
+  return [...note, ...altre];
+}
+
+/** Cosa diventano le stagioni quando si tocca un pulsante. */
+export function stagioniDopoIlTocco(scelte, toccata) {
+  const tutto = (scelte ?? []).includes(TUTTO_ANNO);
+  // «Tutto l'anno» è un interruttore: spegnendolo resta VUOTO, che vuol
+  // dire «non l'ha ancora detto nessuno», non «mai».
+  if (toccata === TUTTO_ANNO) return tutto ? [] : [TUTTO_ANNO];
+  // ⚠️ Da «Tutto l'anno» una stagione riparte da sé sola: non si apre
+  //    nelle quattro come fanno i mesi di un ingrediente. Le due forme sono
+  //    alternative, e un'eventuale stagione rimasta sotto da prima non
+  //    torna a galla.
+  const base = tutto ? [] : stagioniNormalizzate(scelte);
+  const dopo = base.includes(toccata) ? base.filter((s) => s !== toccata) : [...base, toccata];
+  return stagioniNormalizzate(dopo);
+}
+
+/**
+ * Se un pulsante si deve vedere acceso: con «Tutto l'anno», solo lui — anche
+ * quando nel database ci sono ancora le quattro stagioni scritte una per una.
+ */
+export function stagioneAccesa(scelte, valore) {
+  const viste = stagioniNormalizzate(scelte);
+  const tutto = viste.includes(TUTTO_ANNO);
+  if (valore === TUTTO_ANNO) return tutto;
+  return !tutto && viste.includes(valore);
+}

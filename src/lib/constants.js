@@ -220,6 +220,52 @@ export const recipeStatusLabel = (prontaPerCarta, inCarta, ritirataIl) => {
   return RECIPE_STATI.find((s) => s.value === stato);
 };
 
+// 🔴 UNA PREPARAZIONE NON È UN PIATTO — 12/09/2026, dal collaudo
+// sull'iPhone. Una preparazione mostrava «Pronta per la carta» e «In
+// carta», ma in un menu non può entrare: il database la rifiuta dal 20/08
+// (`20260820000002_in_menu_solo_i_piatti`). Un gesto offerto su una cosa
+// che non può succedere è una promessa falsa.
+//
+// ⚠️ SOLO LA PREPARAZIONE, decisione di Alessio del 12/09/2026: finger e
+//    selezioni di finger si vendono e possono stare in carta, quindi tengono
+//    i quattro stati e le regole del piatto. La prima stesura della notte li
+//    aveva messi insieme alla preparazione, ed era sbagliato.
+//
+// ⚠️ STESSE COLONNE, PAROLE DIVERSE, e nessuna riscrittura: «pronta per
+//    l'uso» è `pronta_per_carta` vero, come per un piatto. Non si crea una
+//    colonna nuova e non si trasforma niente: una preparazione già segnata
+//    pronta si legge «Pronta per l'uso» il giorno dopo, senza che nessuno
+//    tocchi il database. «In carta» non c'è, perché è il riflesso di un
+//    menu (16/08) e una preparazione in un menu non ci sta.
+export const STATI_PREPARAZIONE = [
+  { value: "in_sviluppo", label: "In sviluppo", colorClass: "bg-b58-charcoal-soft" },
+  { value: "pronta", label: "Pronta per l'uso", colorClass: "bg-b58-gold" },
+  { value: "ritirata", label: "Ritirata", colorClass: "bg-b58-charcoal-soft/60" },
+];
+
+// Un tipo che non si conosce (una riga letta senza il tipo: uno storico,
+// una risposta di MEMO) si legge come un piatto, cioè come prima.
+const ePreparazioneTipo = (recipeType) => recipeType === "preparazione";
+
+export const statiPerTipo = (recipeType) =>
+  ePreparazioneTipo(recipeType) ? STATI_PREPARAZIONE : RECIPE_STATI;
+
+// ⚠️ UNA PREPARAZIONE CON `in_carta` VERO si legge «pronta», mai «in
+//    carta»: può esserci soltanto una riga di prima del 20/08, e `in_carta`
+//    richiede `pronta_per_carta` (vincolo del database) — quindi era stata
+//    segnata pronta. La scheda lo dice a parte, e non riscrive niente.
+export const statoPerTipo = (recipeType, prontaPerCarta, inCarta, ritirataIl) => {
+  if (!ePreparazioneTipo(recipeType)) return statoRicetta(prontaPerCarta, inCarta, ritirataIl);
+  if (ritirataIl) return "ritirata";
+  if (prontaPerCarta || inCarta) return "pronta";
+  return "in_sviluppo";
+};
+
+export const etichettaStato = (recipeType, prontaPerCarta, inCarta, ritirataIl) => {
+  const stato = statoPerTipo(recipeType, prontaPerCarta, inCarta, ritirataIl);
+  return statiPerTipo(recipeType).find((s) => s.value === stato);
+};
+
 export const VIDEO_PLATFORMS = [
   { value: "instagram", label: "Instagram" },
   { value: "tiktok", label: "TikTok" },
