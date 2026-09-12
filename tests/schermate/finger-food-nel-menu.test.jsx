@@ -193,7 +193,10 @@ describe("🔴 la scheda del menu", () => {
     ]);
     apriMenu();
     const avviso = await screen.findByText(/Non compaiono in questa scheda né nel foglio stampato/);
-    expect(avviso.closest("p").textContent).toMatch(/Selezione di mare/);
+    const riquadro = avviso.closest("div");
+    expect(riquadro.textContent).toMatch(/Selezione di mare/);
+    // Il primo, che ha la sua sezione, non è nell'avviso.
+    expect(riquadro.textContent).not.toMatch(/Tagliolini al limone/);
   });
 
   it("arrivando per mettere in carta un finger food, lo dice invece di non fare niente", async () => {

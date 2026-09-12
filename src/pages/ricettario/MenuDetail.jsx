@@ -428,17 +428,23 @@ export default function MenuDetail() {
       {fuoriDalleSezioni(items).length > 0 && (
         <div className="rounded-xl bg-b58-gold/15 ring-1 ring-b58-gold-dark/30 px-4 py-3 mb-6">
           <p className="testo-sala-grande text-b58-charcoal">
-            <strong>Non compaiono in questa scheda né nel foglio stampato:</strong>{" "}
-            {fuoriDalleSezioni(items).map((i, n) => (
-              <span key={i.id}>
-                {n > 0 && ", "}
-                <Link to={`/ricettario/ricette/${i.recipe_id}`} className="tocco-inline underline">
+            <strong>Non compaiono in questa scheda né nel foglio stampato:</strong>
+          </p>
+          {/* ⚠️ Uno per riga: affiancati nella frase, i bersagli di due nomi
+              su righe vicine si toccavano (misurato a 390 punti), e un dito
+              fra le due righe apriva il piatto accanto. */}
+          <ul>
+            {fuoriDalleSezioni(items).map((i) => (
+              <li key={i.id}>
+                <Link
+                  to={`/ricettario/ricette/${i.recipe_id}`}
+                  className="tocco-riga inline-flex items-center testo-sala-grande text-b58-charcoal underline"
+                >
                   {i.recipe?.name}
                 </Link>
-              </span>
+              </li>
             ))}
-            .
-          </p>
+          </ul>
           <p className="testo-sala text-b58-charcoal-soft mt-1">
             Sono finger food, e il menu non ha ancora un posto per loro.
             {menu.is_active && " In sala si ordinano lo stesso."} Si tolgono dalla loro scheda, in
