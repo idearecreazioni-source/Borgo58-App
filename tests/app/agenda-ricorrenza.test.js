@@ -1,5 +1,17 @@
+import { appendFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali, marchio, spiega } from "./aiuto";
+
+// LE DATE ATTESE E OTTENUTE, SCRITTE (richiesta di Alessio, 12/09/2026).
+// ⚠️ In una stampa sola non bastano: nel giro lanciato da `npm run test:app`
+//    le stampe della prova non arrivano al registro (misurato due volte, anche
+//    con `--silent=false`). Se `B58_DATE_RICORRENZA` nomina un file, ogni riga
+//    ci viene aggiunta; senza, resta solo la stampa e nei controlli non cambia
+//    niente.
+function scriviDate(riga) {
+  console.info(riga);
+  if (process.env.B58_DATE_RICORRENZA) appendFileSync(process.env.B58_DATE_RICORRENZA, `${riga}\n`);
+}
 
 // =====================================================================
 // «OGNI N GIORNI/SETTIMANE/MESI/ANNI» — contro il database vero
@@ -82,6 +94,10 @@ describe("un impegno che si ripete ogni N giorni, settimane, mesi o anni", () =>
         .select("due_date, status, ricorrenza_ogni, ricorrenza_unita, generato_da")
         .eq("id", nuovoId)
         .single();
+      // Si scrive quello che il database ha risposto, accanto a quello che
+      // si aspettava: una prova verde dice che coincidono, ma chi la legge
+      // deve poter vedere le due date (richiesta di Alessio, 12/09/2026).
+      scriviDate(`[${NOME}] ogni ${c.ogni} ${c.unita} dal ${PARTENZA}: attesa ${c.attesa}, ottenuta ${nuovo.due_date}`);
       expect(nuovo.due_date, `«ogni ${c.ogni} ${c.unita}» dal ${PARTENZA}`).toBe(c.attesa);
       expect(nuovo.status).toBe("da_fare");
       expect(nuovo.generato_da).toBe(t.id);
@@ -110,6 +126,7 @@ describe("un impegno che si ripete ogni N giorni, settimane, mesi o anni", () =>
     const { data: nuovoId } = await titolare.rpc("completa_task", { p_id: t.id });
     miei.push(nuovoId);
     const { data: nuovo } = await titolare.from("tasks").select("due_date").eq("id", nuovoId).single();
+    scriviDate(`[${NOME}] ogni 1 anni, chiuso in ritardo, dal ${PARTENZA}: attesa 2027-03-01, ottenuta ${nuovo.due_date}`);
     expect(nuovo.due_date).toBe("2027-03-01");
   });
 

@@ -152,7 +152,10 @@ export async function togliSubito({ righe, id, mostra, salva, avvisa }) {
 // ⚠️ IL MESSAGGIO NOMINA LA RIGA. Un «non salvato» generico, su un elenco
 // dove si tocca una cosa dopo l'altra camminando, non dice quale è tornata
 // indietro — e chi legge deve ricontrollarle tutte.
+// ⚠️ E ANCHE `title` (12/09/2026, richiesta di Alessio): gli impegni si
+// chiamano così nel database, e in Agenda e in Dashboard il messaggio diceva
+// «la riga» invece del loro titolo.
 function messaggio(riga, e) {
-  const cosa = riga?.articolo ?? riga?.titolo ?? riga?.nome ?? "la riga";
+  const cosa = riga?.articolo ?? riga?.titolo ?? riga?.nome ?? riga?.title ?? "la riga";
   return `«${cosa}» non si è salvato: ${e?.message ?? "errore sconosciuto"}. È tornato com'era.`;
 }

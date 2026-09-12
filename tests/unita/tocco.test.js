@@ -32,6 +32,30 @@ function schermata(iniziali) {
   };
 }
 
+// 🔴 IL MESSAGGIO NOMINA L'IMPEGNO — 12/09/2026, richiesta di Alessio. Gli
+//    impegni hanno `title`, e il messaggio cercava solo `articolo`,
+//    `titolo` e `nome`: in Agenda e in Dashboard diceva «la riga».
+describe("il messaggio nomina la cosa toccata", () => {
+  it("un impegno: il suo titolo, non «la riga»", async () => {
+    const s = schermata([{ id: "t1", title: "Versare l'IVA del trimestre" }]);
+    const esito = await togliSubito({
+      righe: s.righe, id: "t1",
+      mostra: s.mostra, avvisa: s.avvisa,
+      salva: () => Promise.reject(new Error("Questo impegno risulta già fatto")),
+    });
+    expect(esito.ok).toBe(false);
+    expect(s.avviso).toBe(
+      "«Versare l'IVA del trimestre» non si è salvato: Questo impegno risulta già fatto. È tornato com'era.",
+    );
+  });
+
+  it("le altre righe come prima: articolo, poi titolo, poi nome", async () => {
+    const s = schermata([{ id: "a", articolo: "Scottex", title: "non questo" }]);
+    await togliSubito({ righe: s.righe, id: "a", mostra: s.mostra, avvisa: s.avvisa, salva: () => Promise.reject(new Error("x")) });
+    expect(s.avviso).toContain("«Scottex»");
+  });
+});
+
 describe("toccaSubito", () => {
   it("cambia la riga PRIMA che il salvataggio sia finito", async () => {
     const s = schermata(RIGHE);
