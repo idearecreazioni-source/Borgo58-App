@@ -1382,12 +1382,13 @@ export default function IngredienteForm() {
               vocabolario dal primo giorno. A schermo i due casi si vedono
               uguali; nel database no, e il giorno che si vorrà sapere cosa
               è davvero stagionale non si distinguono.
-              ⚠️ La regola vale NEI DUE VERSI, e il secondo è quello che il
-              database non può fare: togliendo agosto da «tutto l'anno»
-              restano **undici** mesi, e quali undici lo sa solo chi ha
-              toccato. Sta in `src/lib/calcoli/stagionalita.js`; la
-              normalizzazione, che deve valere anche per MEMO e per le
-              fatture, è un trigger. */}
+              🔴 DAL 12/09/2026 «TUTTO L'ANNO» È L'ALTERNATIVA AI MESI
+              (mandato notturno, collaudo iPhone): acceso lui, i mesi si
+              vedono spenti; toccando un mese resta quel mese solo. Prima,
+              togliendo agosto da «tutto l'anno» restavano undici mesi.
+              La regola sta in `src/lib/calcoli/stagionalita.js`; la
+              normalizzazione dei dodici mesi, che deve valere anche per
+              MEMO e per le fatture, è un trigger e non cambia. */}
           <label className={labelClass}>Stagionalità{segnoMacchina("stagionalita")}</label>
           <div className="flex flex-wrap gap-2">
             {MONTHS.map((m) => (
