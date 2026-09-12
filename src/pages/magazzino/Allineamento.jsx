@@ -127,7 +127,7 @@ export default function Allineamento() {
         />
       ) : elenco.length === 0 ? (
         <p className="testo-sala text-b58-charcoal-soft">
-          Non c&apos;è niente in dispensa da allineare: nessun prodotto ha una scorta o una soglia.
+          Non c&apos;è niente in dispensa da allineare: nessun prodotto ha una giacenza o una scorta minima.
         </p>
       ) : (
         <>
