@@ -139,7 +139,7 @@ export default function ReservationsList() {
                   <span className="text-b58-charcoal-soft">{r.reservation_time?.slice(0, 5)}</span>
                   <span className="text-b58-charcoal">{r.customer_name}</span>
                   <span className="text-b58-charcoal-soft">
-                    {r.party_size} coperti
+                    {r.party_size} {r.party_size === 1 ? "persona" : "persone"}
                     {r.customer_phone ? ` · ${r.customer_phone}` : ""}
                   </span>
                 </button>

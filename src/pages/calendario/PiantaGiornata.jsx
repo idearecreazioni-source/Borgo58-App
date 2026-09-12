@@ -1103,7 +1103,7 @@ export default function PiantaGiornata() {
             <>
               <strong className="text-b58-charcoal">{prenotazioni.length}</strong> prenotazion
               {prenotazioni.length === 1 ? "e" : "i"} ·{" "}
-              <strong className="text-b58-charcoal">{copertiDelGiorno}</strong> persone
+              <strong className="text-b58-charcoal">{copertiDelGiorno}</strong> coperti
             </>
           )}
         </span>
