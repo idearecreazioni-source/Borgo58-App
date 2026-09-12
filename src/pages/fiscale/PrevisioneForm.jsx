@@ -475,7 +475,7 @@ export default function PrevisioneForm() {
         sotto={
           modifica
             ? "Tutto ciò che paghi anche a sala vuota."
-            : "Tutto ciò che paghi anche a sala vuota. Le voci qui sotto sono un promemoria: riempi quelle che hai, lascia in bianco quelle che non ti riguardano — le vuote non finiscono nella previsione. Puoi aggiungerne altre."
+            : "Tutto ciò che paghi anche a sala vuota. Le voci qui sotto sono un elenco per non dimenticarne nessuna: riempi quelle che hai, lascia in bianco quelle che non ti riguardano — le vuote non finiscono nella previsione. Puoi aggiungerne altre."
         }
         righe={fissi}
         aggiungi={() => setFissi([...fissi, { voce: "", euroMese: "" }])}
