@@ -2,8 +2,39 @@
 
 Sola interfaccia. **Migrazioni**: nessuna. **Funzioni online**: nessuna.
 **Database**: né letto né scritto. **Dipende dalla #59** (`agenda-settimana`,
-`e8e57bc`) e non la modifica. **HEAD dichiarato**: `5c8e192`, il commit sotto
-questo riepilogo.
+`e8e57bc`) e non la modifica. **Ramo solo locale**, mai spinto. **HEAD
+dichiarato**: `b7a31a7`, il commit sotto questo riepilogo.
+
+⚠️ **Seconda stesura, dal secondo collaudo sull'iPhone (12/09)**: la linea fra
+impegni della prima (`5c8e192`, un bordo su tutta la riga, più chiaro) si
+confondeva con quella fra giorni. Adesso è un **segmento corto** che comincia
+dove comincia il titolo (dopo la colonna dell'ora) e arriva al bordo del
+testo, **un poco più scuro** (15% contro il 10% della linea fra giorni); in
+colonna parte dal bordo del testo. Stessa altezza, stessi spazi, stesso tocco.
+
+## La misura delle due linee (`b7a31a7`)
+
+`tests/visive/agenda/linee.js`: `MISURA_LINEE` si valuta nella pagina,
+`difettiDelleLinee` è pura. Pretende: linea fra giorni **lunga** (≥ 90% del
+riquadro) e discreta; linea fra impegni **più corta** di almeno 0,4 cm,
+**rientrata sul titolo**, **più opaca** ma non oltre 2,5 volte, **mai prima
+del primo né dopo l'ultimo**, e **senza spazio in più**. La usa anche
+`scripts/prova-visiva.mjs` ⚠️ — che qui **non è stata lanciata**, perché apre un
+server su 127.0.0.1: la misura è girata con uno strumento di sessione senza
+porte.
+
+| forma | linea fra giorni | linea fra impegni | difetti |
+|---|---|---|---|
+| iPhone 390 | 334 pt, 10% | 287 pt, 15% | 0 |
+| iPhone 440 | 384 pt, 10% | 337 pt, 15% | 0 |
+| iPhone 390 a 64 punti per cm | 334 pt, 10% | 260 pt, 15% | 0 |
+| computer 1280 (a righe) | 864 pt, 10% | 817 pt, 15% | 0 |
+| computer 1600 (sette colonne) | nessuna (colonne) | 137 pt, 15% | 0 |
+
+**Controprove** (iPhone 390, una regola rotta alla volta e poi il file rimesso
+identico, misura di nuovo a 0): senza rientro → 10 difetti; troppo chiara → 5;
+troppo scura → 5; linea sopra il primo → 3; spazio in più → 5; linea fra giorni
+accorciata → 6; linea fra giorni più scura → 5. Ognuna col suo motivo.
 
 ---
 
