@@ -2,8 +2,11 @@
 
 Sola interfaccia. **Migrazioni**: nessuna. **Funzioni online**: nessuna.
 **Database**: né letto né scritto. **Dipende dalla #58** (`memo-affidabile`,
-`23ca405`) e non la modifica. **HEAD dichiarato**: `e604aae`, il commit sotto
-questo riepilogo.
+`23ca405`) e non la modifica. **Ramo solo locale**, mai spinto. **HEAD
+dichiarato**: `aff75ae`, il commit sotto questo riepilogo.
+
+⚠️ **Seconda stesura**: la prima (HEAD `e604aae`) lasciava fuori il logo in
+testata. Alessio ha chiesto che chieda anche lui: commit `aff75ae`.
 
 ---
 
@@ -40,6 +43,11 @@ spento, niente mandato).
    com'era.
 5. `Sidebar.jsx`: una proprietà `sopra` per l'avviso sotto il logo;
    `data-esci` su «Esci».
+6. **Il logo in testata** (decisione di Alessio del 12/09): porta alla
+   Dashboard, quindi a microfono acceso chiede anche lui. `trattieni(da)`
+   ricorda dove si è toccato — menu del telefono, barra del computer, testata —
+   e la domanda compare lì (per il logo, subito sotto la testata). A microfono
+   spento il logo funziona come prima.
 
 ## Come è stato verificato
 
@@ -64,9 +72,10 @@ spento, niente mandato).
 
 - Safari e il microfono veri: il riconoscimento della voce è finto nelle
   prove, e la prova visiva è Chrome.
-- **Stessa famiglia, fuori dal mandato e non toccata**: in testata, il logo che
-  riporta alla Dashboard porta via da MEMO anche a microfono acceso, senza
-  chiedere. Non passa dal menu.
+- I tre casi del logo sono provati su schermata (jsdom) e nella prova visiva
+  sui tre telefoni; **controprova**: girati sulla versione di stanotte
+  (`e604aae`, in una copia temporanea già tolta) i due casi a microfono acceso
+  sono rossi, sul codice corretto verdi.
 
 ## Cosa abbiamo rovesciato
 
