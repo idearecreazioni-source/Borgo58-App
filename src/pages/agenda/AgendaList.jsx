@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FRASE_NATO_IL_SUCCESSIVO, chiudiImpegno } from "../../lib/chiudiImpegno";
 import {
   agendaCorsie,
   agendaFatti,
-  completaTask,
   riapriTask,
   listTasksForMonth,
   spostaTask,
@@ -18,7 +18,7 @@ import {
   sezioniDellAgenda,
 } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
-import { toccaSubito, togliSubito } from "../../lib/calcoli/tocco";
+import { toccaSubito } from "../../lib/calcoli/tocco";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -338,17 +338,21 @@ export default function AgendaList() {
   // l'impegno successivo di una ricorrenza, e quello lo sa solo il
   // database. La riga sparisce subito; l'impegno nuovo compare quando
   // arriva, insieme alla frase che lo annuncia.
+  //
+  // ⚠️ DAL 12/09/2026 LA CHIUSURA STA IN `chiudiImpegno`, la stessa che usa
+  //    la Dashboard: prima la Dashboard chiudeva per un'altra strada e il
+  //    successivo di un ricorrente non nasceva. Qui il comportamento è
+  //    quello di prima, più la guardia sul secondo tocco.
   const fatto = async (task) => {
     setNotice("");
-    const { ok, esito } = await togliSubito({
+    const { ok, esito } = await chiudiImpegno({
       righe: corsie,
       id: task.id,
       mostra: setCorsie,
       avvisa: setError,
-      salva: () => completaTask(task.id),
     });
     if (!ok) return; // `togliSubito` l'ha già rimessa al suo posto e l'ha detto
-    if (esito) setNotice("Fatto. Ne è già nato uno nuovo alla prossima scadenza.");
+    if (esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
     await ricarica();
   };
 

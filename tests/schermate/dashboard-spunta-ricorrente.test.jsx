@@ -85,22 +85,118 @@ const spuntaDallaDashboard = async () => {
   });
 };
 
+// La frase dell'Agenda quando nasce il successivo: la stessa, parola per parola.
+const NATO = "Fatto. Ne è già nato uno nuovo alla prossima scadenza.";
+
+const impegno = (id, title, ogni, unita) => ({
+  id,
+  title,
+  due_date: oggiLocale(),
+  priority: "media",
+  category: "altro",
+  status: "da_fare",
+  ricorrenza_ogni: ogni,
+  ricorrenza_unita: unita,
+});
+
+const mostraDashboard = () =>
+  render(
+    <MemoryRouter>
+      <Dashboard />
+    </MemoryRouter>,
+  );
+const casellaDi = (title) => screen.findByRole("checkbox", { name: `Segna fatto: ${title}` });
+
 beforeEach(() => {
   finte.compiti.mockReset().mockResolvedValue([RICORRENTE]);
   finte.updateTask.mockClear();
-  finte.completaTask.mockClear();
+  // Come la funzione del database: restituisce il successivo se l'impegno
+  // si ripete, niente se non si ripete.
+  finte.completaTask.mockReset().mockImplementation((id) => Promise.resolve(id.startsWith("n") ? null : `${id}-successivo`));
 });
 
 describe("🔴 un impegno ricorrente spuntato dalla Dashboard", () => {
-  it.fails("[ATTESO ROSSO finché non si corregge] passa da completaTask, come l'Agenda, e non scrive lo stato a mano", async () => {
+  // ⚠️ Era `it.fails` nella #68 («atteso rosso finché non si corregge»):
+  //    con la correzione passa, quindi diventa `it`. Il secondo caso della
+  //    #68, la «fotografia di oggi» con `updateTask`, è tolto come la #68
+  //    stessa chiedeva.
+  it("passa da completaTask, come l'Agenda, e non scrive lo stato a mano", async () => {
     await spuntaDallaDashboard();
     await waitFor(() => expect(finte.completaTask).toHaveBeenCalledWith("t1"), { timeout: 500 });
     expect(finte.updateTask).not.toHaveBeenCalled();
   });
 
-  it("[FOTOGRAFIA DI OGGI, da togliere con la correzione] scrive status «completato» con updateTask, e completaTask non viene chiamata", async () => {
-    await spuntaDallaDashboard();
-    await waitFor(() => expect(finte.updateTask).toHaveBeenCalledWith("t1", { status: "completato" }));
-    expect(finte.completaTask).not.toHaveBeenCalled();
+  // 🔴 GIORNALIERA, SETTIMANALE, MENSILE (mandato del 12/09): la Dashboard
+  //    non calcola niente — manda l'identificativo e basta, e il successivo
+  //    lo crea la funzione del database con le stesse proprietà. Quindi si
+  //    prova che la chiamata è quella dell'Agenda, SENZA nient'altro dentro:
+  //    niente data, ora, promemoria, staff o visibilità decisi qui.
+  for (const [id, title, ogni, unita] of [
+    ["g1", "Sanificare la cappa", 1, "giorni"],
+    ["s1", "Pulire la cella", 1, "settimane"],
+    ["m1", "Controllare gli estintori", 1, "mesi"],
+  ]) {
+    it(`ricorrenza ${unita}: una chiamata sola a completaTask col solo identificativo, la riga sparisce, e la frase dell'Agenda`, async () => {
+      finte.compiti.mockResolvedValue([impegno(id, title, ogni, unita)]);
+      mostraDashboard();
+      const casella = await casellaDi(title);
+      await act(async () => {
+        fireEvent.click(casella);
+      });
+      await waitFor(() => expect(screen.getByText(NATO)).toBeTruthy());
+      expect(finte.completaTask).toHaveBeenCalledTimes(1);
+      expect(finte.completaTask.mock.calls[0]).toEqual([id]);
+      expect(finte.updateTask).not.toHaveBeenCalled();
+      expect(screen.queryByRole("checkbox", { name: `Segna fatto: ${title}` })).toBeNull();
+    });
+  }
+
+  it("un impegno che NON si ripete: si chiude dalla stessa strada, e nessuna frase su un successivo", async () => {
+    finte.compiti.mockResolvedValue([impegno("n1", "Ritirare le tovaglie", null, null)]);
+    mostraDashboard();
+    const casella = await casellaDi("Ritirare le tovaglie");
+    await act(async () => {
+      fireEvent.click(casella);
+    });
+    await waitFor(() => expect(finte.completaTask).toHaveBeenCalledWith("n1"));
+    expect(finte.updateTask).not.toHaveBeenCalled();
+    expect(screen.queryByText(NATO)).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Segna fatto: Ritirare le tovaglie" })).toBeNull();
+  });
+
+  // ⚠️ DOPPIO TOCCO — COSA PROVA QUESTO CASO, E COSA NO. Qui un secondo
+  //    `click` sulla stessa casella non arriva al codice (misurato: tolta la
+  //    guardia di `chiudiImpegno`, la prima stesura di questo caso restava
+  //    verde). Quindi si prova la difesa che si VEDE: la casella sparisce al
+  //    primo tocco, PRIMA della risposta, e non ce n'è una seconda da
+  //    premere. La guardia sul secondo tocco la prova
+  //    `tests/unita/chiudi-impegno.test.js`, che senza guardia diventa rossa.
+  it("⚠️ doppio tocco: la casella sparisce al primo tocco, prima della risposta, e parte una richiesta sola", async () => {
+    let risolvi = () => {};
+    finte.completaTask.mockImplementationOnce(() => new Promise((r) => (risolvi = r)));
+    mostraDashboard();
+    const casella = await casellaDi(RICORRENTE.title);
+    await act(async () => {
+      fireEvent.click(casella);
+    });
+    // La richiesta è ancora in volo e la casella non c'è già più.
+    expect(screen.queryByRole("checkbox", { name: `Segna fatto: ${RICORRENTE.title}` })).toBeNull();
+    expect(finte.completaTask).toHaveBeenCalledTimes(1);
+    await act(async () => risolvi("t1-successivo"));
+    expect(finte.completaTask).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByText(NATO)).toHaveLength(1);
+  });
+
+  it("⚠️ richiesta ripetuta e respinta (già fatto da un'altra parte): la riga torna e lo dice, niente scritto a mano", async () => {
+    finte.completaTask.mockImplementationOnce(() => Promise.reject(new Error("Questo impegno risulta già fatto")));
+    mostraDashboard();
+    const casella = await casellaDi(RICORRENTE.title);
+    await act(async () => {
+      fireEvent.click(casella);
+    });
+    await waitFor(() => expect(screen.getByText(/risulta già fatto/)).toBeTruthy());
+    expect(await casellaDi(RICORRENTE.title)).toBeTruthy();
+    expect(finte.updateTask).not.toHaveBeenCalled();
+    expect(screen.queryByText(NATO)).toBeNull();
   });
 });
