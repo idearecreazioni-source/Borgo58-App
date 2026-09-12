@@ -5,6 +5,8 @@ import { listAllergensForRecipes } from "../../lib/api/dailyMenu";
 import { ALLERGENS, formatEUR, labelFor } from "../../lib/constants";
 import PrintButton from "../../components/PrintButton";
 import Didascalia from "../../components/Didascalia";
+import DatoNonLetto from "../../components/DatoNonLetto";
+import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Intestazioni al plurale per il menu stampato.
 const CATEGORY_ORDER = [
@@ -49,6 +51,15 @@ function Masthead({ header, subheader }) {
   );
 }
 
+// 🔴 GLI ALLERGENI SI LEGGONO COL SEGNO «NON LETTO» (12/09/2026, mandato
+//    esteso, priorità 1). Prima una lettura fallita finiva nel `catch` dei
+//    piatti: l'errore compariva in cima, e l'anteprima continuava a
+//    disegnare la copia «con gli allergeni» senza nessun allergene e senza
+//    asterischi — cioè un foglio che dice «questi piatti non ne hanno».
+//    ⚠️ La carta SENZA allergeni non ne ha bisogno, e resta stampabile.
+const leggiAllergeni = (piatti) =>
+  leggi(listAllergensForRecipes(piatti.map((i) => i.recipe_id).filter(Boolean)));
+
 export default function EditorMenuHome() {
   const [menus, setMenus] = useState([]);
   const [menuId, setMenuId] = useState("");
@@ -86,8 +97,7 @@ export default function EditorMenuHome() {
     listMenuItemsFull(menuId)
       .then(async (its) => {
         setItems(its);
-        const ids = its.map((i) => i.recipe_id).filter(Boolean);
-        setAllergensByRecipe(await listAllergensForRecipes(ids));
+        setAllergensByRecipe(await leggiAllergeni(its));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -116,6 +126,9 @@ export default function EditorMenuHome() {
       items.filter((i) => !excluded[i.id] && allergensByRecipe[i.recipe_id]?.daVerificare).length,
     [items, excluded, allergensByRecipe]
   );
+
+  const allergeniNonLetti = nonLetto(allergensByRecipe);
+  const riprovaAllergeni = async () => setAllergensByRecipe(await leggiAllergeni(items));
 
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
@@ -209,6 +222,7 @@ export default function EditorMenuHome() {
             semplicemente non riportano l'elenco allergeni. */}
         {!loading &&
           showAllergens &&
+          !allergeniNonLetti &&
           (() => {
             const nonVerificati = [
               ...new Set(
@@ -220,13 +234,24 @@ export default function EditorMenuHome() {
             if (nonVerificati.length === 0) return null;
             return (
               <div className="print:hidden rounded-xl bg-red-50 ring-1 ring-red-300 p-4 mb-6">
+                {/* 🔴 QUESTA FRASE DICEVA DUE COSE FALSE fino al 12/09/2026:
+                    «allergeni solo stimati» e «finché non li confermi».
+                    Dal 25/08 un allergene dedotto (`stimati`) vale come
+                    confermato — decisione di Alessio — e la vista
+                    `v_recipe_allergens` lo applica: blocca SOLO un prodotto
+                    con l'origine vuota, cioè che non ha guardato nessuno.
+                    Non c'è niente da confermare. Era la stessa regola già
+                    tolta dalle schede prodotti e dalla scheda ricetta il
+                    27/08: qui era rimasta. Le parole sono quelle della
+                    scheda ricetta, perché lo stesso fatto si dice uguale. */}
                 <p className="testo-sala-grande font-medium text-red-800">
-                  Attenzione: allergeni non confermati
+                  Attenzione: allergeni che nessuno ha guardato
                 </p>
                 <p className="testo-sala-grande text-red-800 mt-1">
-                  Questi ingredienti hanno allergeni solo stimati, o mai guardati da nessuno:{" "}
-                  <strong>{nonVerificati.join(", ")}</strong>. I piatti che li contengono{" "}
-                  <strong>non stampano l&apos;elenco allergeni</strong> finché non li confermi in{" "}
+                  Su questi prodotti gli allergeni non li ha ancora visti né una persona né MEMO:{" "}
+                  <strong>{nonVerificati.join(", ")}</strong>. Finché è così, i piatti che li
+                  contengono <strong>non stampano l&apos;elenco allergeni</strong>, ma un asterisco.
+                  Si sistemano da{" "}
                   <Link to="/ricettario/schede" className="tocco-inline underline">
                     Ricettario → Schede dei prodotti
                   </Link>
@@ -320,6 +345,14 @@ export default function EditorMenuHome() {
         <p className="testo-sala-grande text-b58-charcoal-soft/60 print:hidden">
           Questo menu non ha piatti. Aggiungili dal Ricettario → Menu.
         </p>
+      ) : showAllergens && allergeniNonLetti ? (
+        // ⚠️ Al posto della copia con gli allergeni, non accanto: quella
+        //    copia senza gli allergeni letti direbbe «non ne hanno».
+        <DatoNonLetto
+          cosa="gli allergeni dei piatti"
+          nonVuolDire="Non vuol dire che i piatti non ne hanno: vuol dire che non lo so. Per stampare la carta senza allergeni, togli «Mostra allergeni»."
+          onRiprova={riprovaAllergeni}
+        />
       ) : (
         /* Anteprima menu — è ciò che viene stampato */
         <div
