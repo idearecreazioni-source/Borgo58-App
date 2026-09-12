@@ -1,15 +1,17 @@
 # MEMO: un titolo breve non combacia per caso — 13/09/2026
 
 Mandato «MEMO: evitare falsi abbinamenti con titoli brevi», dopo il caso
-«Test» del 12/09 (commento sulla #58), e seconda autorizzazione di Alessio
-del 13/09: casi «S.r.l.» e codici, poi i tre passi sul solo Borgo58-Prova.
+«Test» del 12/09 (commento sulla #58); seconda autorizzazione di Alessio del
+13/09 (casi «S.r.l.» e codici, poi i tre passi sul solo Borgo58-Prova);
+terza autorizzazione (riconoscimento al femminile in MEMO, §4).
 
 **Ramo solo locale** `memo-titoli-brevi`, sopra la #58 (`23ca405`), che non è
 toccata. **Migrazione**: `20260913000001_un_titolo_breve_non_combacia_per_caso`,
 **applicata SOLO a Borgo58-Prova** il 13/09 (390 migrazioni registrate).
-**In produzione: niente.** **Funzioni online**: nessuna. **GitHub**: nessun
-push, nessuna PR.
-**HEAD dichiarato**: `43df4a5`, il commit sotto questo riepilogo.
+**Funzioni online**: `ascolta-voce` **v35 installata SOLO su Borgo58-Prova**
+(dal commit `60cad5e`). **In produzione: niente.** **GitHub**: nessun push,
+nessuna PR.
+**HEAD dichiarato**: `60cad5e`, il commit sotto questo riepilogo.
 
 ---
 
@@ -76,10 +78,12 @@ toccati.
 
 - `supabase/migrations/20260913000001_un_titolo_breve_non_combacia_per_caso.sql` (nuovo)
 - `docs/decisioni_rovesciate.md`: voce **93** (riga d'indice e sezione)
+- `supabase/functions/ascolta-voce/agenda.ts`: due frasi in `PAROLE_FATTO` (§4)
+- `tests/unita/agenda-a-voce.test.js`: le prove del femminile (§4)
 - questo riepilogo
 
 Commit: `1f057e0` (migrazione e rovesciamento), `43df4a5` (casi «S.r.l.» e
-codici), e questo.
+codici), `60cad5e` (il femminile), e questo.
 
 ## 1. La migrazione
 
@@ -95,10 +99,10 @@ cinque funzioni sia eseguibile da `anon` o `authenticated`. Si registra in
 
 - **Database temporaneo**: PGlite 0.5.8 (PostgreSQL 18.3 in WebAssembly),
   **in memoria**, dentro un processo Node, **nessuna porta e nessun server**,
-  in `…\scratchpad\pg-temp` della sessione. Usato in due giri (il secondo coi
-  casi nuovi) e **cancellato** entrambe le volte, verificato inesistente, senza
-  collegamenti ad altre cartelle. ⚠️ Il PostgreSQL 17 installato sul computer
-  ha solo gli strumenti a riga di comando (`initdb`: manca `postgres.bki`).
+  in `…\scratchpad\pg-temp` della sessione. Usato in due giri e **cancellato**
+  entrambe le volte, verificato inesistente, senza collegamenti ad altre
+  cartelle. ⚠️ Il PostgreSQL 17 installato sul computer ha solo gli strumenti
+  a riga di comando (`initdb`: manca `postgres.bki`).
 - Schema minimo (`tasks`, `applied_migrations`, ruoli `anon`/`authenticated`),
   **solo impegni finti**; funzioni di partenza prese dai file
   (`voce_titolo_nudo` da `…002`, `voce_titolo_essenziale` e
@@ -179,16 +183,74 @@ durano 1,5-7,4 s. Non c'erano altre prove in corso (verificato sull'elenco dei
 processi di Windows). Fuori dal giro, per scelta dello strumento: `domande-memo`
 e `memo-dal-vivo`, che chiamano il modello e si pagano.
 
-**Residui dopo tutto**: impegni aperti 55, zero col marchio `TEST-AUTO`, zero
-creati o toccati il 13/09.
+**Collaudo end-to-end col modello, sulla v34** (9 impegni finti col marchio,
+13 chiamate, 1,74 €): «Test» mai candidato; «F24», «F24-bis», «730», «Modello
+730.1» riconosciuti ognuno col proprio codice; «L'IVA è fatta», «L'assemblea
+della S.r.l. è fatta», «Segna come fatto il 730» approvati, chiuso solo il
+finto giusto; «Segna come fatta l'IVA» e «segnala come fatta» rimasti «da
+chiarire» — da qui il §4. Impegni esistenti identici, pulizia verificata.
+
+## 4. Il riconoscimento al femminile (13/09, terza autorizzazione)
+
+**Causa**: `PAROLE_FATTO` in `supabase/functions/ascolta-voce/agenda.ts` (#58)
+conosceva «segna come fatto» e «segnala come fatto», non il femminile: «segna
+come fatta l'IVA» era una chiusura dichiarata dal modello senza parole di
+chiusura per la rete, quindi `agenda_da_chiarire` (`MOTIVO_GESTO_NON_DETTO`).
+**Modifica**: due frasi intere in più, «segna come fatta» e «segnala come
+fatta» — non la parola «fatta»: le parole si cercano intere. Nessun'altra riga
+del codice cambia; il testo per il modello non è toccato.
+
+**Prove pure** (`tests/unita/agenda-a-voce.test.js`): 56 su 56. Col
+`agenda.ts` di prima **3 rosse** — le tre sul femminile — e le altre verdi:
+maschile, trappole («segna come fattura…», «va fatta domani», «la spesa fatta
+al mercato» restano «altro») e prudenze. Il femminile dà **gli stessi esiti del
+maschile** su cinque scenari, compresi la frase mista senza pezzi (resta da
+chiarire), lo spostamento dichiarato con parole di chiusura (resta da chiarire)
+e la chiusura senza parole di chiusura (resta da chiarire). Lint zero,
+compilazione riuscita, 1339 su 1341 (le 2 di sempre).
+
+**Nessuna regressione dei titoli brevi**: la verifica di `20260913000001`
+lanciata in sola lettura sul database di prova, 35 casi come attesi; le tre
+prove vocali Agenda sul progetto di prova, 32 su 32.
+
+**Funzione di prova**: prima v34 (impronta `b691e3f1a1ee9d20`, identica alla
+#58, ricontrollata in sola lettura); installata con
+`npm run funzione ascolta-voce -- --prova --conferma` → **v35** (impronta
+`967e0ea45c045c95`), verifica del token ancora spenta come prima; i 5 file
+installati, riscaricati, sono identici al ramo.
+
+**Collaudo end-to-end** (8 impegni finti col marchio, **6 chiamate** al
+modello — il massimo autorizzato — 283.290 + 1.309 token, **0,80 €**):
+
+| frase | esito |
+|---|---|
+| «Segna come fatta l'IVA.» | «IVA», approvabile, approvata: chiusa solo lei |
+| «Segnala come fatta l'IVA.» | «IVA», approvabile (non riapprovata) |
+| «Segna come fatto il 730.» | «730» e non «Modello 730.1», approvata |
+| «Segna come fatta la TEST-AUTO collaudo.» | «Quale dei due?» fra i due «TEST-AUTO collaudo», non approvabile, «Fallo a mano» |
+| «Segna come fatto l'F24-bis.» | «F24-bis» e non «F24», approvata |
+| «Segna come fatto il TEST-AUTO di stamattina.» | «Quale dei due?» fra i due «TEST-AUTO collaudo», non approvabile, «Fallo a mano»; «Test» mai candidato |
+
+⚠️ L'ultima frase, nel collaudo sulla v34, aveva dato **nessun candidato**;
+questa volta i due «TEST-AUTO collaudo», che contengono davvero il pezzo
+«TEST-AUTO». Le parole che il modello ha estratto non le ho stampate, quindi
+la ragione della differenza **non è misurata**. Le tre proprietà che contano
+sono uguali nei due giri: «Test» non entra, non si approva, c'è la via a mano.
+
+Impegni esistenti identici alla fotografia prima e dopo le approvazioni; dopo
+la pulizia impegni, dettature, appunti e azioni identici a prima, residui zero.
 
 ## Cosa NON è verificato
 
-- La produzione: niente di questa consegna ci è andato.
-- Nessuna schermata aperta: «Quale impegno?» e «Fallo a mano →» con zero
-  candidati sono letti dal codice della #58, non guardati.
-- Perché quella prova abbia superato i 30 secondi una volta: non misurato.
+- La produzione: niente di questa consegna ci è andato (lì `ascolta-voce` è
+  alla v10, letto il 12/09).
+- Nessuna schermata aperta: «Quale impegno?», «Quale dei due?» e «Fallo a
+  mano →» sono letti dai dati e dal codice della #58, non guardati.
+- Perché una prova abbia superato i 30 secondi una volta: non misurato.
 - Le due prove col modello (`domande-memo`, `memo-dal-vivo`) non girate.
+- Il costo delle dettature di collaudo (1,74 € + 0,80 €) non resta nel
+  contatore mensile del progetto di prova, perché le dettature sono state
+  cancellate; la spesa sull'account AI è avvenuta.
 
 ## Casi ancora ambigui
 
@@ -201,13 +263,16 @@ creati o toccati il 13/09.
   come prima.
 - L'elenco dei separatori è finito: un simbolo non elencato (per esempio «·» o
   «+») tiene insieme due pezzi.
+- Al femminile entrano solo le due frasi chieste: «segna fatta» e «segnalo come
+  fatta» restano «da chiarire».
 
 ## Cosa resta per la produzione
 
 Dopo il merge della #58 e di questo ramo, e con la sua autorizzazione:
 `npm run migra -- --conferma` applica `20260913000001` insieme alle due della
-#58. Prima, il confronto del corpo vivo di `impegni_compatibili` in
-produzione.
+#58, e `npm run funzione ascolta-voce -- --conferma` installa la funzione con
+le forme al femminile. Prima, il confronto del corpo vivo di
+`impegni_compatibili` in produzione.
 
 ## Il commento sulla #58
 
@@ -229,5 +294,7 @@ difetto resta vero per quella PR.
    combaciano più al terzo gradino.
 
 Registrato come voce **93** in [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md).
+Il §4 non rovescia niente: l'elenco cresce di due frasi, e la regola dell'11/09
+(«le parole di quella cosa devono dire il gesto») resta intera.
 
-HEAD dichiarato: `43df4a5`.
+HEAD dichiarato: `60cad5e`.
