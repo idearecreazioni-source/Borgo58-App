@@ -420,7 +420,7 @@ export default function BevandeVini() {
       </label>
 
       {loading ? (
-        <p className="testo-sala-grande text-b58-charcoal-soft">Carico…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         sezioni.map((s) => (
           <div key={s.section} className="mb-8">
