@@ -1,11 +1,13 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import Logo from "./Logo";
 import Icon from "./Icon";
 import { MODULES } from "../data/modules";
 import { useAuth } from "../context/AuthContext";
+import { INDIRIZZO_MEMO, statoVersoMemo } from "../lib/calcoli/ritornoMemo";
 
 export default function Sidebar({ onNavigate }) {
   const { logout, isTitolare } = useAuth();
+  const location = useLocation();
 
   // Lo staff vede solo i moduli a lui consentiti — le voci riservate non
   // compaiono affatto (§3.5), non sono solo bloccate.
@@ -58,8 +60,17 @@ export default function Sidebar({ onNavigate }) {
             parte da qualunque punto — di solito in cella, con le mani
             occupate — e dove finisce quello che si dice lo decide
             l'assistente. Solo il titolare, come la foto. */}
+        {/* ⚠️ E PORTA CON SÉ DA DOVE SI PARTE (11/09/2026): è la stessa
+            porta del pulsante in testata, e sul computer è l'unica — la
+            testata lì non c'è. Due porte per lo stesso posto che si
+            comportassero in due modi sarebbero due gesti da imparare. */}
         {isTitolare && (
-          <NavLink to="/detta" onClick={onNavigate} className={linkClasses}>
+          <NavLink
+            to={INDIRIZZO_MEMO}
+            state={statoVersoMemo(location)}
+            onClick={onNavigate}
+            className={linkClasses}
+          >
             <Icon name="box" className="w-4 h-4" />
             MEMO voce
           </NavLink>

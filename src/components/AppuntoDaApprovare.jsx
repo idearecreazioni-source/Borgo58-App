@@ -37,6 +37,9 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
   const inCorso = esito?.stato === "in_corso" || occupato;
   const fatto = esito?.stato === "fatta";
   const fallito = esito?.stato === "fallita";
+  // ⚠️ Buttato non è fatto: finché la lista non si rilegge la scheda resta
+  //    un istante a schermo, e deve dire la cosa giusta (11/09/2026).
+  const buttato = esito?.stato === "scartata";
   const elementi = Array.isArray(appunto.elementi) ? appunto.elementi : [];
   const come = certezza(appunto);
   const approvabile = siPuoApprovare(appunto);
@@ -98,7 +101,7 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
           <button
             type="button"
             onClick={onApprova}
-            disabled={inCorso || fatto}
+            disabled={inCorso || fatto || buttato}
             className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
           >
             {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
@@ -119,10 +122,10 @@ function AppuntoDaApprovare({ appunto, occupato, esito, onApprova, onScarta, onS
         <button
           type="button"
           onClick={onScarta}
-          disabled={inCorso || fatto}
+          disabled={inCorso || fatto || buttato}
           className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
         >
-          Butta l&apos;appunto
+          {buttato ? "Buttato" : "Butta l'appunto"}
         </button>
       </div>
 

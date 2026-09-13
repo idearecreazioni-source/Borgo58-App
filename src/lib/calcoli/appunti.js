@@ -90,6 +90,12 @@ function valore(v) {
 // comparire col suo nome — non sparisce, che sarebbe il difetto peggiore.
 const ETICHETTE = {
   data: "giorno",
+  // ⚠️ L'ora dell'impegno (11/09/2026) e l'ora dell'avviso sono due cose:
+  //    la prima dice quando succede, la seconda quando suona il telefono.
+  ora: "ora",
+  // Un'ora detta e non capita si MOSTRA, non si butta: chi firma deve
+  // sapere che l'impegno nascerà senza ora, e perché.
+  ora_non_capita: "ora non capita (non la scrivo)",
   avviso_data: "ti avviso il",
   avviso_ora: "alle",
   data_nuova: "nuovo giorno",

@@ -227,7 +227,12 @@ describe("nessuna lettura resta muta", () => {
       // del diff il 06/09.
       // ⚠️ E quello che si perde e' un aggiornamento della vista, non un
       // dato: l'elenco si rilegge da se' alla prossima apertura.
-      "src/pages/assistente/Detta.jsx",
+      // ⚠️ DALL'11/09/2026 VIVE IN `useGestiAppunti.js` e non piu' in
+      //    `Detta.jsx`: gli stessi gesti si fanno anche dalla Dashboard, e
+      //    il silenzio si e' spostato INSIEME alla regola, non duplicato.
+      //    E ora copre anche la scelta fra due candidati, che fino a oggi
+      //    raccontava come fallita una scelta riuscita.
+      "src/lib/useGestiAppunti.js",
     ].sort();
 
     const trovati = tuttiIFile(RADICE)
