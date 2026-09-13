@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listDashboardTasks, updateTask } from "../lib/api/tasks";
+import { listDashboardTasks } from "../lib/api/tasks";
+import { FRASE_NATO_IL_SUCCESSIVO, chiudiImpegno } from "../lib/chiudiImpegno";
 import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservations";
 import { contaPostaInAttesa } from "../lib/api/posta";
 import { quanteAspettano } from "../lib/api/voce";
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [spicciola, setSpicciola] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const oggi = oggiLocale();
 
@@ -108,13 +110,26 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 🔴 «FATTO» DALLA DASHBOARD FA NASCERE IL SUCCESSIVO, COME DALL'AGENDA —
+  //    12/09/2026. Qui c'era `updateTask(id, { status: "completato" })`,
+  //    cioè lo stato scritto dritto nella tabella: un impegno che si ripete
+  //    si chiudeva e non tornava più, perché il successivo lo crea solo
+  //    `completa_task` nel database (analisi nella #68). Adesso la strada è
+  //    la stessa dell'Agenda, in un posto solo (`chiudiImpegno`): la riga
+  //    sparisce subito, torna se il salvataggio fallisce, e il secondo tocco
+  //    mentre il primo è in volo non parte.
+  //    ⚠️ Il successivo qui non compare: la Dashboard mostra gli impegni di
+  //       oggi e quelli senza data, e il successivo cade sempre dopo oggi.
+  //       Per questo lo si dice con la frase dell'Agenda.
   const toggleComplete = async (task) => {
-    try {
-      await updateTask(task.id, { status: "completato" });
-      setTasks((ts) => ts.filter((t) => t.id !== task.id));
-    } catch (e) {
-      setError(e.message);
-    }
+    setNotice("");
+    const { ok, esito } = await chiudiImpegno({
+      righe: tasks,
+      id: task.id,
+      mostra: setTasks,
+      avvisa: setError,
+    });
+    if (ok && esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
   };
 
   const today = tasks.filter((t) => t.due_date);
@@ -177,6 +192,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {notice && (
+        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+      )}
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {loading ? (
