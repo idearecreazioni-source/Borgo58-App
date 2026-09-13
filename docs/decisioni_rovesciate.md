@@ -148,8 +148,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 89 | 11/09/2026 | un impegno riservato porta il segno «Riservato» nell'elenco |
 | 90 | 11/09/2026 | giorno e ora stanno affiancati, in due colonne uguali |
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
+| 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
 
-⚠️ **Righe: 92.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 93.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3344,3 +3345,32 @@ quando questa sezione è stata scritta.
    capite bene; due spostamenti che condividono lo stesso verbo lasciano da
    chiarire il secondo; e un verbo che l'elenco non conosce («anticipa»)
    non basta più da solo a spostare un impegno.
+
+## 93 · 13/09/2026 — «al terzo gradino basta che uno contenga l'altro»
+
+⚠️ Il numero è 93: il 91 sta nella PR #57 e il 92 nella #58, non ancora unite
+quando questa sezione è stata scritta.
+
+1. **Cosa era stato deciso e quando.** Il 09/09/2026
+   (`20260909000003_agenda_riconosce_l_impegno.sql`): il terzo gradino di
+   `impegni_compatibili` — «uno contiene l'altro» — confronta i due testi
+   ridotti all'osso con `like '%…%'`, e conserva il confronto vecchio accanto
+   a quello senza articoli.
+
+2. **La ragione di allora.** Non perdere nessun impegno che prima si trovava:
+   *«togliendo il vecchio, qualcosa che prima si trovava smetterebbe di
+   trovarsi»*.
+
+3. **Cosa si decide adesso.** Chiesto da Alessio il 13/09, dopo il caso
+   «Test»: il terzo gradino contiene solo **parole e pezzi interi**, e un
+   pezzo tenuto insieme da trattino, cancelletto, barra o punto
+   («TEST-AUTO», «F24-bis») resta uno solo (`20260913000001`). Nessuna
+   soglia di lunghezza nuova. I gradini 1 e 2 non cambiano.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora per le
+   parole intere**, che continuano a trovarsi tutte; cade per i pezzi di
+   parola, che trovavano cose sbagliate: il 12/09 «Test» è diventato
+   candidato dentro «TEST-AUTO…» e nove prove vocali sono diventate rosse.
+   ⚠️ **Il prezzo**: un frammento di un pezzo col trattino («up caldaia» per
+   «Check-up caldaia») e una parola detta a metà non combaciano più al terzo
+   gradino — si ridice, o si usa «Fallo a mano».

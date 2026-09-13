@@ -83,6 +83,79 @@ describe("che cosa vuole fare, guardando la frase detta", () => {
     expect(cosaVuoleFare("")).toBe("altro");
     expect(cosaVuoleFare(null)).toBe("altro");
   });
+
+  // 🔴 13/09/2026, dal collaudo su Borgo58-Prova: con un nome femminile la
+  //    frase che viene da sé è «segna come fatta l'IVA», e restava da chiarire.
+  it("🔴 anche al femminile: «segna come fatta …» e «segnala come fatta …»", () => {
+    for (const frase of [
+      "Segna come fatta l'IVA",
+      "Segnala come fatta l'IVA",
+      "segna come fatta l'assemblea della S.r.l.",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("fatto");
+    }
+  });
+
+  it("...e il maschile e le forme che c'erano già restano come prima", () => {
+    for (const frase of [
+      "Segna come fatto il 730",
+      "Segnalo come fatto l'F24",
+      "segnala come fatto l'F24-bis",
+      "L'IVA è fatta",
+      "l'ho fatta, l'assemblea della S.r.l.",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("fatto");
+    }
+  });
+
+  it("🔴 ma «fatta» dentro un'altra frase non diventa una chiusura", () => {
+    // ⚠️ La metà che discrimina: si aggiungono due frasi intere, non la parola
+    //    «fatta», e le parole si cercano intere.
+    for (const frase of [
+      "Segna come fattura del fornitore il documento arrivato",
+      "Ricordami che la torta va fatta domani",
+      "segnami la spesa fatta al mercato",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("altro");
+    }
+  });
+});
+
+// =====================================================================
+describe("al femminile si comporta ESATTAMENTE come al maschile", () => {
+  // 🔴 Non si prova solo che il femminile passa: si prova che su ogni
+  //    scenario dà lo stesso esito del maschile — anche quando l'esito
+  //    prudente è «da chiarire». Così la correzione non può allargare niente
+  //    oltre il genere della parola.
+  const scenari = (fatt) => [
+    [[detta(TIPO_FATTO, { impegno: "IVA" })], `Segna come ${fatt} l'IVA`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" })], `Segnala come ${fatt} l'IVA`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" }, { pezzo: `segna come ${fatt} l'IVA` }),
+      detta(TIPO_PROMEMORIA, { titolo: "Dentista", data: "2026-09-14" }, { pezzo: "ricordami il dentista lunedì" })],
+      `segna come ${fatt} l'IVA e ricordami il dentista lunedì`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" }), detta(TIPO_PROMEMORIA, { titolo: "Dentista", data: "2026-09-14" })],
+      `segna come ${fatt} l'IVA e ricordami il dentista lunedì`],
+    [[detta(TIPO_SPOSTA, { impegno: "IVA", data_nuova: "2026-09-18" })], `Segna come ${fatt} l'IVA`],
+  ];
+  const tipi = (fatt) => scenari(fatt).map(([az, frase]) => correggiAgenda(az, frase).map((a) => a.tipo));
+
+  it("🔴 «segna/segnala come fatta» chiude come «segna/segnala come fatto»", () => {
+    expect(tipi("fatta")[0]).toEqual([TIPO_FATTO]);
+    expect(tipi("fatta")[1]).toEqual([TIPO_FATTO]);
+  });
+
+  it("🔴 e su tutti gli scenari, prudenti compresi, gli esiti sono identici", () => {
+    expect(tipi("fatta")).toEqual(tipi("fatto"));
+    // ⚠️ Due prudenze che devono restare: senza pezzi la frase mista non si
+    //    separa, e uno spostamento dichiarato con parole di chiusura non passa.
+    expect(tipi("fatta")[3]).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE]);
+    expect(tipi("fatta")[4]).toEqual([TIPO_CHIARIRE]);
+  });
+
+  it("una chiusura dichiarata senza parole di chiusura resta da chiarire, al femminile come prima", () => {
+    const [a] = correggiAgenda([detta(TIPO_FATTO, { impegno: "IVA" })], "l'IVA di settembre è pagata");
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
+  });
 });
 
 // =====================================================================

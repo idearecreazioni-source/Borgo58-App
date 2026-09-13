@@ -115,6 +115,14 @@ const PAROLE_FATTO = [
   "segna fatto",
   "segnalo come fatto",
   "segnala come fatto",
+  // 🔴 LE DUE FORME AL FEMMINILE — 13/09/2026, dal collaudo su Borgo58-Prova:
+  //    «segna come fatta l'IVA» e «segnala come fatta l'IVA» restavano «da
+  //    chiarire» perché qui c'era solo il maschile, e con un nome femminile
+  //    (l'IVA, l'assemblea) è la frase che viene da sé. ⚠️ Solo queste due:
+  //    «segnalo come fatta» non concorda, e «segna fatta» nessuno l'ha
+  //    chiesta — l'elenco cresce con le frasi vere, non per simmetria.
+  "segna come fatta",
+  "segnala come fatta",
   "l ho fatto",
   "l ho fatta",
   "e fatto",
