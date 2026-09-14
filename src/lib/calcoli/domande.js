@@ -36,8 +36,8 @@ import {
   formatDate,
   formatEUR,
   labelFor,
+  etichettaStato,
   qtaConUnita,
-  recipeStatusLabel,
 } from "../constants";
 import { eDiOggi } from "./agenda";
 import { sottoScorta } from "./ingredienti";
@@ -612,7 +612,10 @@ const nonSoFarlo = (area) => ({
 const nomeRicetta = (r) => r?.name ?? "senza nome";
 
 const statoDellaRicetta = (r) =>
-  recipeStatusLabel(r?.pronta_per_carta, r?.in_carta, r?.ritirata_il)?.label ?? "in sviluppo";
+  // ⚠️ Con il tipo (12/09/2026): una preparazione pronta si dice «pronta
+  //    per l'uso», non «per la carta». Senza tipo si legge come prima.
+  etichettaStato(r?.recipe_type, r?.pronta_per_carta, r?.in_carta, r?.ritirata_il)?.label ??
+  "in sviluppo";
 
 const rigaRicetta = (r) => ({
   chiave: r.id,

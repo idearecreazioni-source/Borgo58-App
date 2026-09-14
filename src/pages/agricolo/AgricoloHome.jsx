@@ -161,17 +161,19 @@ export default function AgricoloHome() {
             <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder='Coltura, es. "Aglione della Valdichiana"' className={`${inputClass} sm:col-span-2`} />
             <input value={form.variety} onChange={(e) => setForm((f) => ({ ...f, variety: e.target.value }))} placeholder="Varietà (opz.)" className={inputClass} />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          {/* SPEC-0010, 11/09/2026: le due date in mezza riga (156 punti)
+              si tagliavano — chiedevano 181, 260 a 64 punti per cm. */}
+          <div className="riga-campi mb-3">
             <div>
               <label className={labelClass}>Semina</label>
-              <input type="date" value={form.sowing_date} onChange={(e) => setForm((f) => ({ ...f, sowing_date: e.target.value }))} className={inputClass} />
+              <input type="date" value={form.sowing_date} onChange={(e) => setForm((f) => ({ ...f, sowing_date: e.target.value }))} className={`${inputClass} campo-data`} />
             </div>
             <div>
               <label className={labelClass}>Raccolto previsto</label>
-              <input type="date" value={form.expected_harvest_date} onChange={(e) => setForm((f) => ({ ...f, expected_harvest_date: e.target.value }))} className={inputClass} />
+              <input type="date" value={form.expected_harvest_date} onChange={(e) => setForm((f) => ({ ...f, expected_harvest_date: e.target.value }))} className={`${inputClass} campo-data`} />
             </div>
-            <input value={form.plot} onChange={(e) => setForm((f) => ({ ...f, plot: e.target.value }))} placeholder="Appezzamento (opz.)" className={`${inputClass} self-end`} />
-            <select value={form.ingredient_id} onChange={(e) => setForm((f) => ({ ...f, ingredient_id: e.target.value }))} className={`${inputClass} self-end`}>
+            <input value={form.plot} onChange={(e) => setForm((f) => ({ ...f, plot: e.target.value }))} placeholder="Appezzamento (opz.)" className={`${inputClass} cella-larga self-end`} />
+            <select value={form.ingredient_id} onChange={(e) => setForm((f) => ({ ...f, ingredient_id: e.target.value }))} className={`${inputClass} cella-larga self-end`}>
               <option value="">Ingrediente collegato (opz.)</option>
               {ingredients.map((i) => (
                 <option key={i.id} value={i.id}>{i.name}</option>

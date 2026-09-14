@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  TIPO_CHIARIRE,
   TIPO_FATTO,
   TIPO_PROMEMORIA,
   TIPO_QUALE,
   TIPO_SPOSTA,
   correggiAgenda,
+  pezziSeparati,
   cosaManca,
   cosaVuoleFare,
   dataNuova,
@@ -80,6 +82,79 @@ describe("che cosa vuole fare, guardando la frase detta", () => {
   it("una frase vuota non vuole fare niente", () => {
     expect(cosaVuoleFare("")).toBe("altro");
     expect(cosaVuoleFare(null)).toBe("altro");
+  });
+
+  // 🔴 13/09/2026, dal collaudo su Borgo58-Prova: con un nome femminile la
+  //    frase che viene da sé è «segna come fatta l'IVA», e restava da chiarire.
+  it("🔴 anche al femminile: «segna come fatta …» e «segnala come fatta …»", () => {
+    for (const frase of [
+      "Segna come fatta l'IVA",
+      "Segnala come fatta l'IVA",
+      "segna come fatta l'assemblea della S.r.l.",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("fatto");
+    }
+  });
+
+  it("...e il maschile e le forme che c'erano già restano come prima", () => {
+    for (const frase of [
+      "Segna come fatto il 730",
+      "Segnalo come fatto l'F24",
+      "segnala come fatto l'F24-bis",
+      "L'IVA è fatta",
+      "l'ho fatta, l'assemblea della S.r.l.",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("fatto");
+    }
+  });
+
+  it("🔴 ma «fatta» dentro un'altra frase non diventa una chiusura", () => {
+    // ⚠️ La metà che discrimina: si aggiungono due frasi intere, non la parola
+    //    «fatta», e le parole si cercano intere.
+    for (const frase of [
+      "Segna come fattura del fornitore il documento arrivato",
+      "Ricordami che la torta va fatta domani",
+      "segnami la spesa fatta al mercato",
+    ]) {
+      expect(cosaVuoleFare(frase), frase).toBe("altro");
+    }
+  });
+});
+
+// =====================================================================
+describe("al femminile si comporta ESATTAMENTE come al maschile", () => {
+  // 🔴 Non si prova solo che il femminile passa: si prova che su ogni
+  //    scenario dà lo stesso esito del maschile — anche quando l'esito
+  //    prudente è «da chiarire». Così la correzione non può allargare niente
+  //    oltre il genere della parola.
+  const scenari = (fatt) => [
+    [[detta(TIPO_FATTO, { impegno: "IVA" })], `Segna come ${fatt} l'IVA`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" })], `Segnala come ${fatt} l'IVA`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" }, { pezzo: `segna come ${fatt} l'IVA` }),
+      detta(TIPO_PROMEMORIA, { titolo: "Dentista", data: "2026-09-14" }, { pezzo: "ricordami il dentista lunedì" })],
+      `segna come ${fatt} l'IVA e ricordami il dentista lunedì`],
+    [[detta(TIPO_FATTO, { impegno: "IVA" }), detta(TIPO_PROMEMORIA, { titolo: "Dentista", data: "2026-09-14" })],
+      `segna come ${fatt} l'IVA e ricordami il dentista lunedì`],
+    [[detta(TIPO_SPOSTA, { impegno: "IVA", data_nuova: "2026-09-18" })], `Segna come ${fatt} l'IVA`],
+  ];
+  const tipi = (fatt) => scenari(fatt).map(([az, frase]) => correggiAgenda(az, frase).map((a) => a.tipo));
+
+  it("🔴 «segna/segnala come fatta» chiude come «segna/segnala come fatto»", () => {
+    expect(tipi("fatta")[0]).toEqual([TIPO_FATTO]);
+    expect(tipi("fatta")[1]).toEqual([TIPO_FATTO]);
+  });
+
+  it("🔴 e su tutti gli scenari, prudenti compresi, gli esiti sono identici", () => {
+    expect(tipi("fatta")).toEqual(tipi("fatto"));
+    // ⚠️ Due prudenze che devono restare: senza pezzi la frase mista non si
+    //    separa, e uno spostamento dichiarato con parole di chiusura non passa.
+    expect(tipi("fatta")[3]).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE]);
+    expect(tipi("fatta")[4]).toEqual([TIPO_CHIARIRE]);
+  });
+
+  it("una chiusura dichiarata senza parole di chiusura resta da chiarire, al femminile come prima", () => {
+    const [a] = correggiAgenda([detta(TIPO_FATTO, { impegno: "IVA" })], "l'IVA di settembre è pagata");
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
   });
 });
 
@@ -228,12 +303,12 @@ describe("su tutta la filza", () => {
   it("converte solo quello che va convertito", () => {
     const dopo = correggiAgenda(
       [
-        detta(TIPO_PROMEMORIA, { titolo: "Chiamare Tiziana", data: "2026-09-09" }),
-        detta(TIPO_SPOSTA, { impegno: "verdure", data_nuova: "2026-09-11" }),
-        detta(TIPO_FATTO, { impegno: "firma" }),
-        detta("temperatura", { gradi: 3 }),
+        detta(TIPO_PROMEMORIA, { titolo: "Chiamare Tiziana", data: "2026-09-09" }, { pezzo: "ricordami di chiamare Tiziana" }),
+        detta(TIPO_SPOSTA, { impegno: "verdure", data_nuova: "2026-09-11" }, { pezzo: "sposta le verdure a venerdì" }),
+        detta(TIPO_FATTO, { impegno: "firma" }, { pezzo: "segna fatto la firma" }),
+        detta("temperatura", { gradi: 3 }, { pezzo: "cella tre gradi" }),
       ],
-      "una frase qualunque",
+      "ricordami di chiamare Tiziana, sposta le verdure a venerdì, segna fatto la firma, cella tre gradi",
     );
     expect(dopo.map((a) => a.tipo)).toEqual([
       TIPO_PROMEMORIA,
@@ -241,6 +316,50 @@ describe("su tutta la filza", () => {
       TIPO_FATTO,
       "temperatura",
     ]);
+  });
+
+  // 🔴 DALLA REVISIONE DEL DIFF (11/09/2026): fino a oggi, in una frase
+  //    senza nessuna parola di spostamento, lo spostamento DICHIARATO dal
+  //    modello passava così com'era. Qui sotto il caso che faceva danno.
+  it("🔴 uno spostamento dichiarato in una frase che non parla di spostare resta da chiarire", () => {
+    const [a] = correggiAgenda(
+      [detta(TIPO_SPOSTA, { impegno: "dentista", data_nuova: "2026-09-14" })],
+      "ricordami il dentista lunedì",
+    );
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
+    expect(a.motivo).toMatch(/potrebbe essere un appuntamento nuovo/);
+  });
+
+  it("...e anche una chiusura dichiarata senza parole di chiusura", () => {
+    const [a] = correggiAgenda(
+      [detta(TIPO_FATTO, { impegno: "firma" })],
+      "la firma digitale di venerdì",
+    );
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
+  });
+
+  it("⚠️ il prezzo, dichiarato: un verbo che l'elenco non conosce non basta da solo", () => {
+    const [a] = correggiAgenda(
+      [detta(TIPO_SPOSTA, { impegno: "riunione", data_nuova: "2026-09-17" })],
+      "anticipa a giovedì la riunione",
+    );
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
+  });
+
+  it("uno spostamento DETTO come tale resta uno spostamento", () => {
+    const [a] = correggiAgenda(
+      [detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-18" })],
+      "sposta a venerdì l'ordine delle verdure",
+    );
+    expect(a.tipo).toBe(TIPO_SPOSTA);
+  });
+
+  it("⚠️ un «quale impegno?» dato dal modello resta fermo: il database non lo ritraduce", () => {
+    const [a] = correggiAgenda(
+      [detta(TIPO_QUALE, { impegno: "dentista", gesto: "sposta" })],
+      "sposta il dentista",
+    );
+    expect(a.tipo).toBe(TIPO_CHIARIRE);
   });
 
   it("una filza vuota non esplode", () => {
@@ -342,6 +461,220 @@ describe("il nome dell'impegno si scrive UNA volta sola", () => {
 });
 
 // =====================================================================
+// =====================================================================
+// TRE APPUNTAMENTI NUOVI NELLA STESSA DETTATURA — 11/09/2026
+// =====================================================================
+// 🔴 Mandato «MEMO affidabile». Una frase unica con più impegni nuovi deve
+//    restare più impegni: nessuno perso, nessuno fuso, nessuno trasformato.
+//
+// ⚠️ FINO A STAMATTINA QUI C'ERANO DUE `it.fails`: la diagnosi del difetto,
+//    scritta come comportamento giusto che falliva. Con la variante (a)
+//    decisa da Alessio sono diventate prove normali — e sono quelle qui
+//    sotto, più i casi che la cura apre.
+const DENTISTA = { titolo: "Dentista", data: "2026-09-14", ora: "10:00", avviso_data: "2026-09-13", avviso_ora: "18:00" };
+const RIUNIONE = { titolo: "Riunione col commercialista", data: "2026-09-15", ora: "15:30" };
+const TOVAGLIE = { titolo: "Ritirare le tovaglie", data: "2026-09-16" };
+
+describe("🔴 tre appuntamenti nuovi detti insieme, con ore diverse", () => {
+  it("restano TRE promemoria, nell'ordine detto, ognuno coi SUOI dati — ore comprese", () => {
+    const prima = [
+      detta(TIPO_PROMEMORIA, DENTISTA, { pezzo: "alle 10 ho il dentista lunedì, avvisami domenica alle 18" }),
+      detta(TIPO_PROMEMORIA, RIUNIONE, { pezzo: "martedì alle 15 e 30 la riunione col commercialista" }),
+      detta(TIPO_PROMEMORIA, TOVAGLIE, { pezzo: "mercoledì mattina ritirare le tovaglie" }),
+    ];
+    const dopo = correggiAgenda(
+      prima,
+      "alle 10 ho il dentista lunedì, avvisami domenica alle 18, martedì alle 15 e 30 la " +
+        "riunione col commercialista, mercoledì mattina ritirare le tovaglie",
+    );
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_PROMEMORIA, TIPO_PROMEMORIA, TIPO_PROMEMORIA]);
+    expect(dopo.map((a) => a.dati)).toEqual(prima.map((a) => a.dati));
+    expect(dopo.map((a) => a.dati.ora ?? null)).toEqual(["10:00", "15:30", null]);
+  });
+
+  it("...e senza nessun pezzo di frase restano lo stesso: senza spostamenti non c'è niente da decidere", () => {
+    const dopo = correggiAgenda(
+      [detta(TIPO_PROMEMORIA, DENTISTA), detta(TIPO_PROMEMORIA, RIUNIONE), detta(TIPO_PROMEMORIA, TOVAGLIE)],
+      "ricordami il dentista lunedì alle 10, la riunione martedì alle 15 e 30 e le tovaglie mercoledì",
+    );
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_PROMEMORIA, TIPO_PROMEMORIA, TIPO_PROMEMORIA]);
+  });
+
+  it("🔴 «le spuntature» non contiene più «spunta»: le parole si cercano intere", () => {
+    const dopo = correggiAgenda(
+      [detta(TIPO_PROMEMORIA, { titolo: "Ordinare le spuntature di maiale", data: "2026-09-19" })],
+      "ricordami di ordinare le spuntature di maiale per sabato",
+    );
+    expect(dopo[0].tipo).toBe(TIPO_PROMEMORIA);
+    // ⚠️ E il confine di parola non spegne le chiusure vere.
+    expect(cosaVuoleFare("spunta la chiamata al commercialista")).toBe("fatto");
+    expect(cosaVuoleFare("il pesce fatto in casa")).toBe("altro");
+  });
+});
+
+// =====================================================================
+// FRASE MISTA: APPUNTAMENTI NUOVI E UNO SPOSTAMENTO — variante (a)
+// =====================================================================
+// 🔴 Il difetto misurato dal vivo: tre appuntamenti più «e sposta a venerdì
+//    l'ordine delle verdure» diventavano tutti «da spostare» o «quale
+//    impegno?». Con i pezzi di frase ognuno si decide sulle sue parole.
+const MISTA =
+  "Ricordami il dentista lunedì alle 10, la riunione col commercialista martedì alle 15 e 30, " +
+  "e sposta a venerdì l'ordine delle verdure";
+
+describe("🔴 frase mista con appuntamenti nuovi e uno spostamento", () => {
+  const filza = () => [
+    detta(TIPO_PROMEMORIA, DENTISTA, { pezzo: "Ricordami il dentista lunedì alle 10" }),
+    detta(TIPO_PROMEMORIA, RIUNIONE, { pezzo: "la riunione col commercialista martedì alle 15 e 30" }),
+    detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-18" }, {
+      pezzo: "e sposta a venerdì l'ordine delle verdure",
+    }),
+  ];
+
+  it("con i pezzi certi, gli appuntamenti restano NUOVI e lo spostamento resta uno spostamento", () => {
+    const dopo = correggiAgenda(filza(), MISTA);
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_PROMEMORIA, TIPO_PROMEMORIA, TIPO_SPOSTA]);
+    expect(dopo[0].dati).toEqual(DENTISTA);
+    expect(dopo[1].dati).toEqual(RIUNIONE);
+    expect(dopo[2].dati.titolo).toBe("ordine delle verdure");
+  });
+
+  it("🔴 il pezzo si riconosce anche con accenti e punteggiatura diversi", () => {
+    const f = filza();
+    f[0].pezzo = "ricordami il DENTISTA lunedi alle 10";
+    expect(correggiAgenda(f, MISTA).map((a) => a.tipo)).toEqual([
+      TIPO_PROMEMORIA,
+      TIPO_PROMEMORIA,
+      TIPO_SPOSTA,
+    ]);
+  });
+
+  it("uno spostamento capito dal modello come promemoria si corregge, sulle SUE parole", () => {
+    const f = filza();
+    f[2] = detta(TIPO_PROMEMORIA, { titolo: "ordine delle verdure", data: "2026-09-18" }, {
+      pezzo: "e sposta a venerdì l'ordine delle verdure",
+    });
+    const dopo = correggiAgenda(f, MISTA);
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_PROMEMORIA, TIPO_PROMEMORIA, TIPO_SPOSTA]);
+  });
+
+  it("⚠️ «sposta» detto per una cosa del magazzino non tocca il dentista", () => {
+    const dopo = correggiAgenda(
+      [
+        detta("giacenza", { prodotto: 3, quanto_ce: 2 }, { pezzo: "sposta i pomodori in cella" }),
+        detta(TIPO_PROMEMORIA, { titolo: "Dentista", data: "2026-09-14" }, { pezzo: "ricordami il dentista lunedì" }),
+      ],
+      "sposta i pomodori in cella e ricordami il dentista lunedì",
+    );
+    expect(dopo.map((a) => a.tipo)).toEqual(["giacenza", TIPO_PROMEMORIA]);
+  });
+});
+
+// =====================================================================
+// IL CASO AMBIGUO — resta DA CHIARIRE, e non si approva
+// =====================================================================
+// 🔴 La regola di Alessio: *«se una frase mista contiene nuovi appuntamenti
+//    e uno spostamento/chiusura, ma MEMO non riesce a separare con certezza
+//    le parti, gli elementi ambigui devono restare appunti non approvabili e
+//    spiegare il motivo»*.
+describe("🔴 frase mista che non si separa con certezza", () => {
+  const nuovi = (pezzi = [null, null, null]) => [
+    detta(TIPO_PROMEMORIA, DENTISTA, { pezzo: pezzi[0] }),
+    detta(TIPO_PROMEMORIA, RIUNIONE, { pezzo: pezzi[1] }),
+    detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-18" }, { pezzo: pezzi[2] }),
+  ];
+  const tipi = (azioni) => correggiAgenda(azioni, MISTA).map((a) => a.tipo);
+
+  it("senza pezzi di frase: TUTTE quelle dell'Agenda restano da chiarire", () => {
+    expect(tipi(nuovi())).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE, TIPO_CHIARIRE]);
+  });
+
+  it("basta UN pezzo mancante: la separazione non è certa", () => {
+    expect(
+      tipi(nuovi(["Ricordami il dentista lunedì alle 10", null, "e sposta a venerdì l'ordine delle verdure"])),
+    ).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE, TIPO_CHIARIRE]);
+  });
+
+  it("un pezzo che non è stato detto (parole del modello) non vale", () => {
+    expect(
+      tipi(
+        nuovi([
+          "appuntamento dal dentista",
+          "la riunione col commercialista martedì alle 15 e 30",
+          "e sposta a venerdì l'ordine delle verdure",
+        ]),
+      ),
+    ).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE, TIPO_CHIARIRE]);
+  });
+
+  it("due pezzi che si prendono le stesse parole non valgono", () => {
+    expect(
+      tipi(
+        nuovi([
+          "Ricordami il dentista lunedì alle 10, la riunione",
+          "la riunione col commercialista martedì alle 15 e 30",
+          "e sposta a venerdì l'ordine delle verdure",
+        ]),
+      ),
+    ).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE, TIPO_CHIARIRE]);
+  });
+
+  it("con più cose, un pezzo che è la frase intera non è un taglio", () => {
+    expect(tipi(nuovi([MISTA, MISTA, MISTA]))).toEqual([TIPO_CHIARIRE, TIPO_CHIARIRE, TIPO_CHIARIRE]);
+  });
+
+  it("🔴 uno spostamento dichiarato che le SUE parole non dicono resta da chiarire", () => {
+    // È la forma esatta del danno: un appuntamento nuovo dichiarato «da
+    // spostare», che approvando sposterebbe l'impegno omonimo che c'è già.
+    const dopo = correggiAgenda(
+      [
+        detta(TIPO_SPOSTA, { impegno: "dentista", data_nuova: "2026-09-14" }, { pezzo: "Ricordami il dentista lunedì alle 10" }),
+        detta(TIPO_PROMEMORIA, RIUNIONE, { pezzo: "la riunione col commercialista martedì alle 15 e 30" }),
+        detta(TIPO_SPOSTA, { impegno: "ordine delle verdure", data_nuova: "2026-09-18" }, {
+          pezzo: "e sposta a venerdì l'ordine delle verdure",
+        }),
+      ],
+      MISTA,
+    );
+    expect(dopo.map((a) => a.tipo)).toEqual([TIPO_CHIARIRE, TIPO_PROMEMORIA, TIPO_SPOSTA]);
+  });
+
+  it("il motivo lo dice, e quello che si era capito resta: titolo, giorno, ora", () => {
+    const [a] = correggiAgenda(nuovi(), MISTA);
+    expect(a.destinazione).toBe("Da chiarire in Agenda");
+    expect(a.motivo).toMatch(/non sono riuscito a capire con certezza/);
+    expect(a.motivo).toMatch(/non si può approvare/);
+    expect(a.dati).toMatchObject({ titolo: "Dentista", data: "2026-09-14", ora: "10:00" });
+  });
+
+  it("⚠️ il tipo da chiarire non è nessuno di quelli che il gestionale esegue", () => {
+    for (const t of [TIPO_PROMEMORIA, TIPO_FATTO, TIPO_SPOSTA, TIPO_QUALE]) expect(TIPO_CHIARIRE).not.toBe(t);
+  });
+
+  it("quello che non è Agenda non cambia, anche quando il resto è da chiarire", () => {
+    const dopo = correggiAgenda([...nuovi(), detta("temperatura", { gradi: 3 })], MISTA);
+    expect(dopo[3].tipo).toBe("temperatura");
+  });
+});
+
+describe("i pezzi di frase", () => {
+  it("un pezzo detto due volte non dice quale dei due è il suo", () => {
+    const d = "ricordami il dentista e poi ricordami il dentista";
+    expect(
+      pezziSeparati([detta(TIPO_PROMEMORIA, {}, { pezzo: "ricordami il dentista" }), detta("x", {}, { pezzo: "e poi" })], d),
+    ).toBeNull();
+  });
+
+  it("pezzi detti, distinti e in fila: la separazione è certa", () => {
+    expect(
+      pezziSeparati(
+        [detta(TIPO_PROMEMORIA, {}, { pezzo: "Ricordami il dentista" }), detta(TIPO_SPOSTA, {}, { pezzo: "sposta le verdure" })],
+        "Ricordami il dentista, e sposta le verdure!",
+      ),
+    ).toEqual(["ricordami il dentista", "sposta le verdure"]);
+  });
+});
+
 describe("le istruzioni per il modello", () => {
 
   it("nominano tutti e tre i tipi", () => {
