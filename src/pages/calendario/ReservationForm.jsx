@@ -432,7 +432,11 @@ export default function ReservationForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {/* 🔴 SPEC-0010, 11/09/2026 — misurato col telefono: nella griglia a
+            due colonne la data aveva 147 punti e ne chiedeva 181 (260 a 64
+            punti per cm, e lì anche l'ora si tagliava). Data e ora hanno la
+            loro larghezza; i coperti si allargano nello spazio che resta. */}
+        <div className="riga-campi">
           <div>
             <label className={labelClass}>Data</label>
             <input
@@ -440,7 +444,7 @@ export default function ReservationForm() {
               type="date"
               value={form.reservation_date}
               onChange={(e) => setForm((f) => ({ ...f, reservation_date: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
           <div>
@@ -450,10 +454,10 @@ export default function ReservationForm() {
               type="time"
               value={form.reservation_time}
               onChange={(e) => setForm((f) => ({ ...f, reservation_time: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-ora`}
             />
           </div>
-          <div>
+          <div className="cella-media">
             <label className={labelClass}>Coperti</label>
             <input
               required

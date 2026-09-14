@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listDashboardTasks, updateTask } from "../lib/api/tasks";
+import { listDashboardTasks } from "../lib/api/tasks";
+import { FRASE_NATO_IL_SUCCESSIVO, chiudiImpegno } from "../lib/chiudiImpegno";
 import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservations";
 import { contaPostaInAttesa } from "../lib/api/posta";
 import { quanteAspettano } from "../lib/api/voce";
 import { listSpesaSpicciola } from "../lib/api/spesaSpicciola";
 import { daComprare } from "../lib/calcoli/spesaSpicciola";
-import { daQuantoAspetta } from "../lib/calcoli/voce";
+import AppuntiInDashboard from "../components/AppuntiInDashboard";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
 import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [spicciola, setSpicciola] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const oggi = oggiLocale();
 
@@ -108,13 +110,26 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 🔴 «FATTO» DALLA DASHBOARD FA NASCERE IL SUCCESSIVO, COME DALL'AGENDA —
+  //    12/09/2026. Qui c'era `updateTask(id, { status: "completato" })`,
+  //    cioè lo stato scritto dritto nella tabella: un impegno che si ripete
+  //    si chiudeva e non tornava più, perché il successivo lo crea solo
+  //    `completa_task` nel database (analisi nella #68). Adesso la strada è
+  //    la stessa dell'Agenda, in un posto solo (`chiudiImpegno`): la riga
+  //    sparisce subito, torna se il salvataggio fallisce, e il secondo tocco
+  //    mentre il primo è in volo non parte.
+  //    ⚠️ Il successivo qui non compare: la Dashboard mostra gli impegni di
+  //       oggi e quelli senza data, e il successivo cade sempre dopo oggi.
+  //       Per questo lo si dice con la frase dell'Agenda.
   const toggleComplete = async (task) => {
-    try {
-      await updateTask(task.id, { status: "completato" });
-      setTasks((ts) => ts.filter((t) => t.id !== task.id));
-    } catch (e) {
-      setError(e.message);
-    }
+    setNotice("");
+    const { ok, esito } = await chiudiImpegno({
+      righe: tasks,
+      id: task.id,
+      mostra: setTasks,
+      avvisa: setError,
+    });
+    if (ok && esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
   };
 
   const today = tasks.filter((t) => t.due_date);
@@ -177,6 +192,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {notice && (
+        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+      )}
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {loading ? (
@@ -223,30 +241,18 @@ export default function Dashboard() {
             </p>
           )}
 
+          {/* 🔴 DALL'11/09/2026 SI APPROVA ANCHE DA QUI (mandato «MEMO
+              affidabile»): la riga si apre e mostra le stesse schede di
+              MEMO. Prima era un collegamento e basta.
+              ⚠️ Dopo ogni gesto si rilegge SOLO il conteggio: rileggere
+              tutta la mattina rimetterebbe in giro sette letture per un
+              numero, e il riquadro sparirebbe sotto le mani di chi sta
+              approvando l'ultimo. */}
           {!isStaff && !nonLetto(dettate) && dettate?.quante > 0 && (
-            <Link
-              to="/detta"
-              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-gold bg-b58-gold/10 px-4 py-3"
-            >
-              {/* 🔴 SI CONTANO GLI APPUNTI, NON LE RIGHE — SPEC-0013. Tre
-                  articoli detti per la stessa lista sono un gesto solo, e
-                  scrivere «3» manderebbe a cercare tre cose da guardare dove
-                  ce n'è una. Il conteggio lo fa il database (`voce_da_guardare`)
-                  perché sia lo stesso numero che si trova aprendo l'elenco. */}
-              <span className="testo-sala text-b58-charcoal">
-                <span className="font-medium">
-                  {dettate.quante === 1 ? "Un appunto" : `${dettate.quante} appunti`}
-                </span>{" "}
-                {dettate.quante === 1
-                  ? "aspetta che tu lo approvi"
-                  : "aspettano che tu li approvi"}
-                {dettate.laPiuVecchia > 0 &&
-                  ` — il più vecchio ${daQuantoAspetta(dettate.laPiuVecchia)}`}
-              </span>
-              <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
-                →
-              </span>
-            </Link>
+            <AppuntiInDashboard
+              dettate={dettate}
+              onCambiato={() => leggi(quanteAspettano()).then(setDettate)}
+            />
           )}
 
           {/* ------------------------------------------------------------
