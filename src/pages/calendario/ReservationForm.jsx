@@ -59,6 +59,12 @@ const STATUS_ACTIONS = {
   // dalla pianta: annullando erano stati liberati davvero, e qualcun
   // altro può averli presi nel frattempo.
   annullata: [{ to: "confermata", label: "Riprendi la prenotazione", cls: "bg-b58-olive" }],
+  // 🔴 «SERVITA» NON AVEVA LA SUA VOCE, e aprire una prenotazione servita
+  //    dava una PAGINA BIANCA (11/09/2026, trovato dal censimento delle
+  //    schermate): `STATUS_ACTIONS[status].map` su `undefined`. Nessun
+  //    pulsante, ed è voluto: la scrive il database quando il conto si
+  //    chiude, e a mano non si cambia (vedi RESERVATION_STATUSES).
+  servita: [],
 };
 
 export default function ReservationForm() {
@@ -331,7 +337,9 @@ export default function ReservationForm() {
             </Link>
           </span>
           <div className="flex flex-wrap gap-2">
-            {STATUS_ACTIONS[status].map((a) => (
+            {/* ⚠️ `?? []`: uno stato nuovo senza la sua voce non deve più
+                svuotare la pagina — al massimo non offre pulsanti. */}
+            {(STATUS_ACTIONS[status] ?? []).map((a) => (
               <button
                 key={a.to}
                 onClick={() => handleStatusChange(a.to)}
