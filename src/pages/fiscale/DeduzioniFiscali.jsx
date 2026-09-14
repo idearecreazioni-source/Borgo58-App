@@ -253,8 +253,10 @@ export default function DeduzioniFiscali() {
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6 print:hidden">
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Nuova spesa</h2>
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <div>
+          {/* SPEC-0010, 11/09/2026: la data in mezza riga (132 punti) si
+              tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+          <div className="riga-campi mb-3">
+            <div className="cella-larga">
               <label className={labelClass}>Regola</label>
               <select
                 value={form.regola_deducibilita_id}
@@ -269,7 +271,7 @@ export default function DeduzioniFiscali() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="cella-media">
               <label className={labelClass}>Importo €</label>
               <input
                 type="number"
@@ -286,10 +288,10 @@ export default function DeduzioniFiscali() {
                 type="date"
                 value={form.expense_date}
                 onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
-                className={inputClass}
+                className={`${inputClass} campo-data`}
               />
             </div>
-            <div>
+            <div className="cella-larga">
               <label className={labelClass}>Pagamento</label>
               <select
                 value={form.payment_method}
