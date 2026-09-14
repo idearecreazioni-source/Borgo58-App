@@ -230,6 +230,22 @@ describe("un elenco che non rispecchia nessuna colonna si dichiara", () => {
       expect(e.perche.length).toBeGreaterThan(40);
     }
   });
+
+  it("gli elenchi VERI di `constants.js` sono tutti dichiarati — anche senza il database", async () => {
+    // ⚠️ Nata il 14/09/2026 da un rosso vero: la #82 ha aggiunto
+    //    `STATI_PREPARAZIONE` senza dichiararlo, e se n'è accorta solo la
+    //    prova sul database (`tests/app/vocabolari.test.js`), dieci minuti
+    //    dopo la spinta. Questo controllo però il database non lo usa: legge
+    //    `constants.js` e le due liste di `vocabolari.js`. Qui gira fra le
+    //    prove pure, quindi scatta in locale e nel primo lavoro su GitHub.
+    const costanti = await import("../../src/lib/constants");
+    const { SPECCHIATI } = await import("../../src/lib/calcoli/vocabolari");
+    expect(
+      specchiNonDichiarati(costanti, SPECCHIATI),
+      "elenchi di etichette non dichiarati in src/lib/calcoli/vocabolari.js: vanno agganciati " +
+        "alla loro colonna in SPECCHIATI, oppure dichiarati in SPECCHI_ESENTI con la ragione"
+    ).toEqual([]);
+  });
 });
 
 // ============================================================================
