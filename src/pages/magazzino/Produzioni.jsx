@@ -549,7 +549,7 @@ export default function Produzioni() {
                     )}
                     {p.costo_ultimo != null && p.costo_stato == null && (
                       <span className="block testo-sala text-b58-charcoal-soft/70 mt-1">
-                        registrata prima che il gestionale contasse i lotti senza prezzo: non so se
+                        registrata prima che il gestionale contasse le partite senza prezzo: non so se
                         quel costo è intero
                       </span>
                     )}
