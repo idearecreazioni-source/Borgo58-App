@@ -10,12 +10,16 @@ import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // Quello che il gestionale ha già capito da un promemoria dettato.
-// ⚠️ L'ora (`due_time`) non c'è: la voce dà il giorno, non l'ora, e
-//    inventarla metterebbe una scadenza precisa che nessuno ha detto.
+// ⚠️ L'ORA C'È DALL'11/09/2026, e SOLO QUANDO È STATA DETTA E CAPITA: il
+//    database la normalizza a «HH:MM» e toglie quella che non sa leggere.
+//    La regola di prima resta intera — un'ora inventata metterebbe una
+//    scadenza precisa che nessuno ha detto — ma adesso un'ora detta non si
+//    perde più nella descrizione.
 const DA_VOCE = {
   titolo: "title",
   descrizione: "description",
   scadenza: "due_date",
+  ora: "due_time",
   priorita: "priority",
   categoria: "category",
 };
@@ -232,7 +236,7 @@ export default function TaskForm() {
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        {isEdit ? "Modifica task" : "Nuovo task"}
+        {isEdit ? "Modifica impegno" : "Nuovo impegno"}
       </h1>
 
       {error && (
@@ -443,7 +447,7 @@ export default function TaskForm() {
             disabled={saving}
             className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
-            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
+            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea impegno"}
           </button>
           {isEdit && isTitolare && (
             <button
@@ -471,7 +475,7 @@ export default function TaskForm() {
             <p className="mt-0.5">
               {form.visibile_staff
                 ? "Visibile anche allo staff."
-                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
+                : "Riservato a te: lo staff non vede questo impegno in Agenda. La visibilità degli impegni automatici dipende dal modulo di origine e non è modificabile da qui."}
             </p>
           )}
         </div>
