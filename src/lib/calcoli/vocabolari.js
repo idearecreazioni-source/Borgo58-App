@@ -196,6 +196,11 @@ export const SPECCHI_ESENTI = [
     perche:
       "non è un vocabolario del database: i quattro stati di una ricetta si DERIVANO da tre cose diverse — `pronta_per_carta` (booleano), `in_carta` (un riflesso scritto da un trigger) e `ritirata_il` (una data). Non esiste nessuna colonna «stato» con cui possano divergere, e crearne una distruggerebbe il riflesso, cioè l'unica ragione per cui oggi «in carta» non può mentire (16/08)",
   },
+  {
+    costante: "STATI_PREPARAZIONE",
+    perche:
+      "stessa ragione di `RECIPE_STATI`, di cui è la versione per le preparazioni (la sceglie `statiPerTipo`): i tre stati si DERIVANO dalle stesse colonne — `pronta_per_carta`, `in_carta`, `ritirata_il` — in `statoPerTipo`, e per una preparazione cambiano solo le parole. Nessuna colonna «stato» con cui possano divergere (14/09/2026, nata dal rosso della prova sul database della #82)",
+  },
 ];
 
 // Le funzioni che ridicono un elenco chiuso SENZA che debba combaciare con
