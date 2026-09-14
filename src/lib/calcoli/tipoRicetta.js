@@ -82,6 +82,25 @@ export function doveFinisce(recipe) {
 }
 
 /**
+ * IL COSTO DI UNA PREPARAZIONE PER UNITÀ DI RESA — €/kg, €/l, €/pz
+ * (decisione di Alessio del 12/09/2026: su una preparazione il costo non si
+ * legge «a porzione»).
+ *
+ * ⚠️ È LA STESSA DIVISIONE CHE FA IL DATABASE quando la preparazione entra in
+ *    un'altra ricetta (`quantity / nullif(yield_quantity, 0)` nel calcolo dei
+ *    costi, `20260829000023`): totale di una dose diviso quanto ne viene. La
+ *    vista dei costi non la espone, quindi la si fa qui, una volta sola.
+ * ⚠️ Senza resa (vuota o zero) non c'è un numero: si restituisce `null`, non
+ *    zero — zero direbbe «non costa niente».
+ */
+export function costoPerUnitaDiResa(totale, resa) {
+  const t = Number(totale);
+  const q = Number(resa);
+  if (totale == null || !Number.isFinite(t) || !Number.isFinite(q) || q <= 0) return null;
+  return t / q;
+}
+
+/**
  * QUALE PORTA APRE QUESTA RICETTA — serve al ritorno indietro e al modulo
  * di creazione, che dal 30/08 non chiede più il tipo: lo eredita dal posto
  * da cui si entra.
