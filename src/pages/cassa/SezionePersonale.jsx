@@ -229,8 +229,8 @@ export default function SezionePersonale() {
                 Da dire alla commercialista ({daComunicare.length})
               </h2>
               <p className="testo-sala text-b58-charcoal-soft/80 mb-3">
-                Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta un
-                promemoria; quello che sopravvive al mese diventa formale.</strong>
+                Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta una
+                nota; quello che sopravvive al mese diventa formale.</strong>
               </p>
               <ul className="space-y-2">
                 {daComunicare.map((d) => (
@@ -281,8 +281,10 @@ export default function SezionePersonale() {
               </div>
             ) : (
               <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <div>
+                {/* SPEC-0010, 11/09/2026: «Quando» in mezza riga (132 punti)
+                    si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+                <div className="riga-campi mb-3">
+                  <div className="cella-media">
                     <label className={labelClass}>Importo €</label>
                     <input
                       type="number"
@@ -299,10 +301,10 @@ export default function SezionePersonale() {
                       type="date"
                       value={form.pagataIl}
                       onChange={(e) => setForm((f) => ({ ...f, pagataIl: e.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} campo-data`}
                     />
                   </div>
-                  <div>
+                  <div className="cella-larga">
                     <label className={labelClass}>Motivo</label>
                     <select
                       value={form.tagId}
@@ -314,7 +316,7 @@ export default function SezionePersonale() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="cella-larga">
                     <label className={labelClass}>Con che soldi</label>
                     <select
                       value={form.fondi}
@@ -385,7 +387,7 @@ export default function SezionePersonale() {
                   <input
                     value={form.nota}
                     onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))}
-                    placeholder="Nota (opz.)"
+                    placeholder="Nota (facoltativa)"
                     className={`${inputClass} flex-1`}
                   />
                   <button

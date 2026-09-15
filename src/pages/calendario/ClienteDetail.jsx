@@ -403,7 +403,7 @@ export default function ClienteDetail() {
                   className="testo-sala-grande text-b58-charcoal hover:text-b58-terracotta flex items-center justify-between"
                 >
                   <span>
-                    {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)} · {r.party_size} coperti
+                    {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)} · {r.party_size} {r.party_size === 1 ? "persona" : "persone"}
                   </span>
                   <span className="testo-sala text-b58-charcoal-soft">{labelFor(RESERVATION_STATUSES, r.status)}</span>
                 </Link>

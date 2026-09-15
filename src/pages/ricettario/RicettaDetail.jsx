@@ -28,8 +28,16 @@ import {
 } from "../../lib/api/recipeSteps";
 import { listIngredients } from "../../lib/api/ingredients";
 import { percorsoEntrando, ritornoIndietro } from "../../lib/calcoli/percorso";
-import { doveFinisce, eSelezione, parolaTipo, portaDi } from "../../lib/calcoli/tipoRicetta";
+import {
+  costoPerUnitaDiResa,
+  doveFinisce,
+  ePreparazione,
+  eSelezione,
+  parolaTipo,
+  portaDi,
+} from "../../lib/calcoli/tipoRicetta";
 import { perchePuoNonAndareInCarta, senzaFoodCost } from "../../lib/calcoli/inCarta";
+import { percheNonEntraNelMenu } from "../../lib/calcoli/sezioniMenu";
 import { useAuth } from "../../context/AuthContext";
 import { addMenuItem, listMenus, menuDellaRicetta, removeMenuItem } from "../../lib/api/menus";
 import { addRecipeVideo, listRecipeVideos, removeRecipeVideo } from "../../lib/api/recipeVideos";
@@ -42,9 +50,8 @@ import {
   ALLERGENS,
   COOKING_TECHNIQUES,
   RECIPE_CATEGORIES,
-  RECIPE_STATI,
   eComponente,
-  statoRicetta,
+  etichettaStato,
   SEASONS,
   STEP_PHASES,
   VIDEO_PLATFORMS,
@@ -52,9 +59,11 @@ import {
   formatEUR,
   formatPercento,
   labelFor,
-  recipeStatusLabel,
+  statiPerTipo,
+  statoPerTipo,
 } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
+import { stagioneAccesa, stagioniDopoIlTocco, stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
 
 const emptyIngredientForm = {
   ingredient_id: "",
@@ -398,6 +407,10 @@ export default function RicettaDetail() {
   // Il prezzo a pezzo invece è solo dei finger: su un piatto sarebbe un
   // secondo prezzo accanto a quello della carta, e il database lo rifiuta.
   const isFinger = recipe.recipe_type === "finger";
+  // 🔴 SOLO LA PREPARAZIONE non va in carta (decisione di Alessio del
+  // 12/09/2026): i suoi stati, la nota interna e il costo per unità di resa
+  // sono suoi. Finger e selezioni si vendono, e restano da piatto.
+  const isPreparazione = ePreparazione(recipe);
 
   // 🔴 UN PIATTO DI FINGER FOOD NON È UNA RICETTA NORMALE (24/08/2026,
   // blocco 3 del mandato del collaudo): *«la sua scheda deve smettere di
@@ -420,13 +433,10 @@ export default function RicettaDetail() {
 
   const handleHeaderChange = (field, value) => setRecipe((r) => ({ ...r, [field]: value }));
 
+  // ⚠️ «Tutto l'anno» è l'alternativa alle quattro stagioni (12/09/2026):
+  //    la regola sta in `stagionalita.js`, qui c'è solo il gesto.
   const toggleSeasonality = (value) => {
-    setRecipe((r) => ({
-      ...r,
-      seasonality: r.seasonality.includes(value)
-        ? r.seasonality.filter((v) => v !== value)
-        : [...r.seasonality, value],
-    }));
+    setRecipe((r) => ({ ...r, seasonality: stagioniDopoIlTocco(r.seasonality, value) }));
   };
 
   const saveHeader = async () => {
@@ -455,7 +465,10 @@ export default function RicettaDetail() {
         name: recipe.name,
         category: recipe.category,
         subcategory: recipe.subcategory,
-        seasonality: recipe.seasonality,
+        // ⚠️ Si salva quello che si vede: dati di prima con «Tutto l'anno»
+        //    e una stagione insieme diventano «Tutto l'anno» solo adesso,
+        //    quando qualcuno salva — non all'apertura della scheda.
+        seasonality: stagioniNormalizzate(recipe.seasonality),
         portions_yield: isComponente ? 1 : porzioni,
         yield_quantity: isComponente ? resa : null,
         yield_unit: isComponente ? recipe.yield_unit : null,
@@ -543,6 +556,10 @@ export default function RicettaDetail() {
   // via d'uscita è un vicolo cieco (difetto n. 8 del mandato di correzione).
   const motivoStato = (stato, r, menuInServizio) => {
     if (stato === "in_carta") {
+      // 🔴 UN FINGER FOOD NON HA ANCORA UN POSTO NEL MENU (12/09/2026): viene
+      // prima di tutto il resto, perché nessun altro gesto lo sblocca.
+      const senzaPosto = percheNonEntraNelMenu(r.category);
+      if (senzaPosto) return { stato, impedito: senzaPosto };
       // 🔴 IL FOOD COST MANCANTE MORDE QUI E NON PRIMA — 30/08, decisione di
       // Alessio. Sulla scheda di un piatto appena inventato l'avviso resta e
       // non è rosso; è al passo del menu che diventa un impedimento, perché
@@ -562,6 +579,19 @@ export default function RicettaDetail() {
           impedito: "Non c'è nessun menu in servizio: per andare in carta serve prima un menu acceso.",
         };
       return { stato, aiuto: "Mettila nel menu in servizio, qui sotto." };
+    }
+    // ⚠️ Una preparazione rimasta in un menu da prima del 20/08: il
+    //    database non lascia togliere «pronta» né ritirare finché la voce
+    //    sta nel menu. La frase non dice «in carta», che per una
+    //    preparazione sarebbe la parola sbagliata.
+    //    ⚠️ La spiegazione sta tutta qui, nel riquadro «Bloccato apposta»,
+    //    e non in una seconda nota sotto: due frasi per lo stesso fatto si
+    //    leggono come due problemi.
+    if (r.recipe_type === "preparazione" && r.in_carta && stato !== "pronta") {
+      return {
+        stato,
+        impedito: `${questo.replace(/^./, (c) => c.toUpperCase())} risulta ancora dentro un menu, dove non può stare: è una voce rimasta da prima che il gestionale lo vietasse. Prima va tolta da quel menu.`,
+      };
     }
     if (stato === "ritirata" && r.in_carta) {
       return { stato, impedito: "È in carta: toglila prima dal menu in servizio, poi si ritira." };
@@ -843,13 +873,36 @@ export default function RicettaDetail() {
             className="font-display text-2xl text-b58-charcoal bg-transparent border-b border-transparent hover:border-b58-charcoal/20 focus:border-b58-terracotta focus:outline-none flex-1 min-w-[240px]"
           />
           <div className="text-right">
+            {/* 🔴 UNA PREPARAZIONE SI COSTA PER UNITÀ DI RESA — €/kg, €/l —
+                e non «a porzione» (decisione di Alessio del 12/09/2026): le
+                sue porzioni sono sempre 1, quindi «/ porzione» ripeteva il
+                totale con la parola del piatto. Il totale resta sotto.
+                ⚠️ Senza resa non c'è un numero: «—», mai zero. */}
             <div className="text-2xl text-b58-charcoal font-medium">
-              {cost ? formatEUR(cost.food_cost_portion) : "—"}
-              <span className="testo-sala-grande text-b58-charcoal-soft"> / porzione</span>
+              {isPreparazione ? (
+                <>
+                  {(() => {
+                    const perUnita = costoPerUnitaDiResa(cost?.food_cost_base, recipe.yield_quantity);
+                    return perUnita != null ? formatEUR(perUnita) : "—";
+                  })()}
+                  <span className="testo-sala-grande text-b58-charcoal-soft">
+                    {` / ${recipe.yield_unit || "unità di resa"}`}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {cost ? formatEUR(cost.food_cost_portion) : "—"}
+                  <span className="testo-sala-grande text-b58-charcoal-soft"> / porzione</span>
+                </>
+              )}
             </div>
             <div className="testo-sala text-b58-charcoal-soft">
               {cost ? formatEUR(cost.food_cost_base) : "—"}{" "}
-              {isSelezione ? "in tutto: è la somma dei finger dentro" : "totale ricetta base"}
+              {isSelezione
+                ? "in tutto: è la somma dei finger dentro"
+                : isPreparazione
+                  ? "totale della preparazione"
+                  : "totale ricetta base"}
             </div>
             {/* 🔴 IL PREZZO DI VENDITA DI UNA SELEZIONE NON SI CALCOLA —
                 30/08, decisione esplicita di Alessio: *«un tagliere di
@@ -1057,13 +1110,24 @@ export default function RicettaDetail() {
           <label className={labelClass}>
             Stato:{" "}
             <span className="font-semibold normal-case tracking-normal text-b58-charcoal">
-              {recipeStatusLabel(recipe.pronta_per_carta, recipe.in_carta, recipe.ritirata_il)
-                ?.label ?? "—"}
+              {etichettaStato(
+                recipe.recipe_type,
+                recipe.pronta_per_carta,
+                recipe.in_carta,
+                recipe.ritirata_il
+              )?.label ?? "—"}
             </span>
           </label>
+          {/* 🔴 GLI STATI SONO QUELLI DEL TIPO (12/09/2026, collaudo iPhone):
+              una preparazione non va in carta — il database la rifiuta in
+              un menu dal 20/08 — quindi ha tre stati suoi: In sviluppo ·
+              Pronta per l'uso · Ritirata. Stesse colonne del piatto, parole
+              diverse: niente si riscrive. Finger e selezioni restano coi
+              quattro stati del piatto (decisione di Alessio). */}
           <div className="flex flex-wrap items-center gap-2">
-            {RECIPE_STATI.map((s) => {
-              const attuale = statoRicetta(
+            {statiPerTipo(recipe.recipe_type).map((s) => {
+              const attuale = statoPerTipo(
+                recipe.recipe_type,
                 recipe.pronta_per_carta,
                 recipe.in_carta,
                 recipe.ritirata_il
@@ -1117,12 +1181,14 @@ export default function RicettaDetail() {
               servizio» e lasciava cercare quale — il pannello dei menu è
               trecento punti più in basso e non nomina il blocco. */}
           {(() => {
-            const attuale = statoRicetta(
+            const attuale = statoPerTipo(
+              recipe.recipe_type,
               recipe.pronta_per_carta,
               recipe.in_carta,
               recipe.ritirata_il
             );
-            const bloccati = RECIPE_STATI.map((s) => motivoStato(s.value, recipe, menuAttivo))
+            const bloccati = statiPerTipo(recipe.recipe_type)
+              .map((s) => motivoStato(s.value, recipe, menuAttivo))
               .filter((i) => i.impedito && i.stato !== attuale)
               .map((i) => i.impedito);
             if (bloccati.length === 0) return null;
@@ -1159,13 +1225,12 @@ export default function RicettaDetail() {
               stata cancellata.
             </p>
           )}
-
           {showHistory && (
             <ul className="mt-2 space-y-1 testo-sala text-b58-charcoal-soft">
               {statusHistory.map((h) => (
                 <li key={h.id}>
                   {formatDate(h.changed_at)} —{" "}
-                  {recipeStatusLabel(h.pronta_per_carta, h.in_carta, null).label}
+                  {etichettaStato(recipe.recipe_type, h.pronta_per_carta, h.in_carta, null).label}
                 </li>
               ))}
             </ul>
@@ -1194,7 +1259,11 @@ export default function RicettaDetail() {
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {menuDentro.map((m) => (
+                {/* ⚠️ Un finger food non si offre in nessun menu (12/09/2026):
+                    si mostrano solo quelli dove sta già, per poterlo togliere.
+                    Offrire «+» e poi rifiutare è un pulsante che si preme per
+                    sentirsi dire di no. */}
+                {menuDentro.filter((m) => m.voce || !percheNonEntraNelMenu(recipe.category)).map((m) => (
                   <button
                     key={m.id}
                     type="button"
@@ -1217,14 +1286,28 @@ export default function RicettaDetail() {
                 ))}
               </div>
             )}
+            {!erroreMenu && percheNonEntraNelMenu(recipe.category) && (
+              <p className="testo-sala text-b58-charcoal-soft mt-1.5">
+                {percheNonEntraNelMenu(recipe.category)}
+              </p>
+            )}
             {erroreMenu && (
               <p className="testo-sala text-b58-terracotta-dark mt-1.5">{erroreMenu}</p>
             )}
           </div>
         )}
 
+        {/* 🔴 SU UNA PREPARAZIONE NON È UNA DESCRIZIONE PER IL MENU
+            (12/09/2026, collaudo iPhone): una preparazione in un menu non
+            entra, quindi quel testo non finisce su nessuna carta. Finger e
+            selezioni si vendono, e tengono «Descrizione per il menu».
+            ⚠️ STESSO CAMPO, NOME DIVERSO, e nessun dato perso: è
+               `menu_description` come prima, e quello che c'era scritto
+               resta e si salva uguale. Il foglio del menu la stampa solo
+               per le voci di un menu, quindi su una preparazione è già oggi
+               una nota che legge solo chi apre la scheda — ora lo dice. */}
         <div className="mb-4">
-          <label className={labelClass}>Descrizione per il menu</label>
+          <label className={labelClass}>{isPreparazione ? "Nota interna" : "Descrizione per il menu"}</label>
           <textarea
             value={recipe.menu_description ?? ""}
             onChange={(e) => handleHeaderChange("menu_description", e.target.value)}
@@ -1234,11 +1317,13 @@ export default function RicettaDetail() {
                scorrere — quello che non ci sta si perde, e chi legge vede una
                frase mozza che sembra un guasto. Ora dice la cosa breve, e
                l'esempio sta sotto, dove può andare a capo. */
-            placeholder="Come appare sul menu"
+            placeholder={isPreparazione ? "Per la cucina" : "Come appare sul menu"}
             className={inputClass}
           />
           <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-            Es. «Fusilloni al ragù di polpo e polvere di prezzemolo».
+            {isPreparazione
+              ? "Non compare su nessun menu: la legge solo chi apre questa scheda."
+              : "Es. «Fusilloni al ragù di polpo e polvere di prezzemolo»."}
           </p>
         </div>
 
@@ -1254,9 +1339,10 @@ export default function RicettaDetail() {
                 <button
                   key={s.value}
                   type="button"
+                  aria-pressed={stagioneAccesa(recipe.seasonality, s.value)}
                   onClick={() => toggleSeasonality(s.value)}
                   className={`rounded-full testo-sala px-3 py-1.5 border transition-colors ${
-                    recipe.seasonality.includes(s.value)
+                    stagioneAccesa(recipe.seasonality, s.value)
                       ? "bg-b58-olive text-b58-parchment border-b58-olive"
                       : "border-b58-charcoal/15 text-b58-charcoal-soft"
                   }`}
@@ -1871,7 +1957,7 @@ export default function RicettaDetail() {
               onChange={(e) => setStepForm((f) => ({ ...f, technique: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Tecnica (opzionale)</option>
+              <option value="">Tecnica (facoltativa)</option>
               {COOKING_TECHNIQUES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
@@ -2006,7 +2092,7 @@ export default function RicettaDetail() {
           <input
             value={videoNote}
             onChange={(e) => setVideoNote(e.target.value)}
-            placeholder="Nota (opzionale)"
+            placeholder="Nota (facoltativa)"
             className={`${inputClass} flex-1 min-w-[160px]`}
           />
           <button
