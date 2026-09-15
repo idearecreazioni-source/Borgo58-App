@@ -439,8 +439,10 @@ export default function PrevisioneForm() {
         }
         sotto2={
           <>
+            {/* «qui sopra» (11/09/2026): la casella delle ore sta sopra questa
+                frase — `extra` viene prima di `sotto2`. Diceva «qui sotto». */}
             Scrivi il netto all&apos;ora <em>oppure</em> quello al giorno: l&apos;altro lo calcola il
-            gestionale con le ore qui sotto, e comanda sempre l&apos;ultimo che hai toccato.
+            gestionale con le ore qui sopra, e comanda sempre l&apos;ultimo che hai toccato.
             {discordi.length > 0 && (
               <span className="block mt-1 text-b58-terracotta-dark">
                 {discordi.length === 1 ? "Una riga non torna" : `${discordi.length} righe non tornano`} con le

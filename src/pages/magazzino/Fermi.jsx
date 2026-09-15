@@ -311,7 +311,7 @@ export default function Fermi() {
         </button>
       )}
 
-      {partite === null && !error && <p>Carico…</p>}
+      {partite === null && !error && <p>Caricamento…</p>}
 
       {partite !== null && partite.length === 0 && (
         <p className="text-stone-600">
