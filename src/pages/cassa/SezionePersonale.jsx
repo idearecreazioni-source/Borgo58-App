@@ -229,8 +229,8 @@ export default function SezionePersonale() {
                 Da dire alla commercialista ({daComunicare.length})
               </h2>
               <p className="testo-sala text-b58-charcoal-soft/80 mb-3">
-                Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta un
-                promemoria; quello che sopravvive al mese diventa formale.</strong>
+                Entrano qui da sole. <strong>Quello che si chiude dentro il mese resta una
+                nota; quello che sopravvive al mese diventa formale.</strong>
               </p>
               <ul className="space-y-2">
                 {daComunicare.map((d) => (
