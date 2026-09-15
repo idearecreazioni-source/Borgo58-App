@@ -182,7 +182,7 @@ export default function ListaSpesa() {
     try {
       const count = await addBelowThresholdItems();
       await loadAll();
-      if (count === 0) setError("Nessun ingrediente sotto soglia da aggiungere.");
+      if (count === 0) setError("Nessun ingrediente sotto scorta minima da aggiungere.");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -455,7 +455,7 @@ export default function ListaSpesa() {
                         )}
                         {item.source === "soglia_minima" && (
                           <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
-                            sotto soglia
+                            sotto scorta minima
                           </span>
                         )}
                         {item.status === "ordinata" && (

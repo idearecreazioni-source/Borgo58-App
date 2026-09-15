@@ -41,7 +41,7 @@ export const MODULES = [
     id: "magazzino",
     number: 4,
     name: "Magazzino",
-    description: "Carico/scarico, lista della spesa, soglie minime, scadenze.",
+    description: "Carico/scarico, lista della spesa, scorte minime, scadenze.",
     phase: 1,
     icon: "box",
     route: "/magazzino",
