@@ -41,7 +41,10 @@ export default function ProiezioneFiscaleHome() {
       to: "/fiscale/previsioni",
       icon: "chart",
       title: "Le previsioni",
-      desc: "Il tuo piano caricato dal foglio, chiuso e non più ritoccabile. Le riproiezioni si confrontano con la prima.",
+      // ⚠️ Diceva «caricato dal foglio, chiuso e non più ritoccabile»: dal
+      //    15/08 una previsione si scrive anche a mano, campo per campo, e
+      //    resta modificabile finché non la si chiude (11/09/2026).
+      desc: "Il tuo piano, scritto a mano o caricato dal foglio. Una volta chiuso non si ritocca più: le riproiezioni si confrontano con la prima.",
       stat: null,
     },
     {

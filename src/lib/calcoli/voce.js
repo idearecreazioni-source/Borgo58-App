@@ -159,12 +159,12 @@ export function titoloDelRiscontro(fatte, daGuardare) {
     return `Fatto: ${plurale(fatte, "una cosa", "N cose")}.`;
   }
   if (fatte === 0) {
-    return `${plurale(daGuardare, "Una cosa", "N cose")} da guardare prima di scriverla.`;
+    return `${plurale(daGuardare, "Un appunto", "N appunti")} da guardare prima di ${daGuardare === 1 ? "scriverlo" : "scriverli"}.`;
   }
   return `Fatte ${plurale(fatte, "una cosa", "N cose")}. ${plurale(
     daGuardare,
-    "Una",
-    "N",
+    "Un appunto",
+    "N appunti",
   )} da guardare.`;
 }
 

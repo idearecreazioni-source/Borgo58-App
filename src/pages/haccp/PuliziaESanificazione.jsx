@@ -218,7 +218,7 @@ export default function PuliziaESanificazione() {
               <input
                 value={taskForm.area}
                 onChange={(e) => setTaskForm((f) => ({ ...f, area: e.target.value }))}
-                placeholder="Area (opzionale)"
+                placeholder="Area (facoltativa)"
                 className={inputClass}
               />
               <select
@@ -360,7 +360,7 @@ export default function PuliziaESanificazione() {
             <input
               value={pestForm.findings}
               onChange={(e) => setPestForm((f) => ({ ...f, findings: e.target.value }))}
-              placeholder="Esito (opzionale)"
+              placeholder="Esito (facoltativo)"
               className={inputClass}
             />
           </div>
@@ -368,7 +368,7 @@ export default function PuliziaESanificazione() {
             <input
               value={pestForm.note}
               onChange={(e) => setPestForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (opzionale)"
+              placeholder="Nota (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button
@@ -451,7 +451,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
             <input
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              placeholder="Nota (opzionale)"
+              placeholder="Nota (facoltativa)"
               className="w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta"
             />
           </div>
