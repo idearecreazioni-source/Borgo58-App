@@ -388,7 +388,7 @@ export default function SalaEOrari() {
             </p>
           </div>
           <div>
-            <label className={labelClass}>Minuti fra un turno e l'altro</label>
+            <label className={labelClass}>Minuti fra un giro e l'altro</label>
             <CampoAutosalvato
               type="number"
               value={regole?.minuti_fra_turni ?? ""}
