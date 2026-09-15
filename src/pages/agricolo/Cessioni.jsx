@@ -153,13 +153,15 @@ export default function Cessioni() {
                 <input type="number" step="0.1" value={form.vat_rate} onChange={(e) => setForm((f) => ({ ...f, vat_rate: e.target.value }))} className={inputClass} />
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            {/* SPEC-0010, 11/09/2026: la data in mezza riga (140 punti) si
+                tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+            <div className="riga-campi mb-3">
               <div>
                 <label className={labelClass}>Data cessione</label>
-                <input type="date" value={form.cession_date} onChange={(e) => setForm((f) => ({ ...f, cession_date: e.target.value }))} className={inputClass} />
+                <input type="date" value={form.cession_date} onChange={(e) => setForm((f) => ({ ...f, cession_date: e.target.value }))} className={`${inputClass} campo-data`} />
               </div>
-              <input value={form.fiscal_document_type} onChange={(e) => setForm((f) => ({ ...f, fiscal_document_type: e.target.value }))} placeholder='Tipo doc. (es. "TD01")' className={`${inputClass} self-end`} />
-              <input value={form.invoice_reference} onChange={(e) => setForm((f) => ({ ...f, invoice_reference: e.target.value }))} placeholder="Rif. fattura (opz.)" className={`${inputClass} self-end`} />
+              <input value={form.fiscal_document_type} onChange={(e) => setForm((f) => ({ ...f, fiscal_document_type: e.target.value }))} placeholder='Tipo doc. (es. "TD01")' className={`${inputClass} cella-larga self-end`} />
+              <input value={form.invoice_reference} onChange={(e) => setForm((f) => ({ ...f, invoice_reference: e.target.value }))} placeholder="Rif. fattura (opz.)" className={`${inputClass} cella-larga self-end`} />
             </div>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="testo-sala-grande text-b58-charcoal">Imponibile: <span className="font-medium">{formatEUR(total)}</span></div>

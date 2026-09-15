@@ -59,6 +59,12 @@ const STATUS_ACTIONS = {
   // dalla pianta: annullando erano stati liberati davvero, e qualcun
   // altro può averli presi nel frattempo.
   annullata: [{ to: "confermata", label: "Riprendi la prenotazione", cls: "bg-b58-olive" }],
+  // 🔴 «SERVITA» NON AVEVA LA SUA VOCE, e aprire una prenotazione servita
+  //    dava una PAGINA BIANCA (11/09/2026, trovato dal censimento delle
+  //    schermate): `STATUS_ACTIONS[status].map` su `undefined`. Nessun
+  //    pulsante, ed è voluto: la scrive il database quando il conto si
+  //    chiude, e a mano non si cambia (vedi RESERVATION_STATUSES).
+  servita: [],
 };
 
 export default function ReservationForm() {
@@ -331,7 +337,9 @@ export default function ReservationForm() {
             </Link>
           </span>
           <div className="flex flex-wrap gap-2">
-            {STATUS_ACTIONS[status].map((a) => (
+            {/* ⚠️ `?? []`: uno stato nuovo senza la sua voce non deve più
+                svuotare la pagina — al massimo non offre pulsanti. */}
+            {(STATUS_ACTIONS[status] ?? []).map((a) => (
               <button
                 key={a.to}
                 onClick={() => handleStatusChange(a.to)}
@@ -432,7 +440,11 @@ export default function ReservationForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {/* 🔴 SPEC-0010, 11/09/2026 — misurato col telefono: nella griglia a
+            due colonne la data aveva 147 punti e ne chiedeva 181 (260 a 64
+            punti per cm, e lì anche l'ora si tagliava). Data e ora hanno la
+            loro larghezza; i coperti si allargano nello spazio che resta. */}
+        <div className="riga-campi">
           <div>
             <label className={labelClass}>Data</label>
             <input
@@ -440,7 +452,7 @@ export default function ReservationForm() {
               type="date"
               value={form.reservation_date}
               onChange={(e) => setForm((f) => ({ ...f, reservation_date: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
           <div>
@@ -450,10 +462,10 @@ export default function ReservationForm() {
               type="time"
               value={form.reservation_time}
               onChange={(e) => setForm((f) => ({ ...f, reservation_time: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-ora`}
             />
           </div>
-          <div>
+          <div className="cella-media">
             <label className={labelClass}>Coperti</label>
             <input
               required

@@ -282,8 +282,11 @@ export default function ScontiOmaggi() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <div>
+          {/* SPEC-0010, 11/09/2026: la giornata in mezza riga (132 punti) si
+              tagliava — chiedeva 181, 260 a 64 punti per cm. Regola comune in
+              index.css. */}
+          <div className="riga-campi mb-3">
+            <div className="cella-media">
               <label className={labelClass}>Valore a listino €</label>
               <input
                 type="number"
@@ -295,7 +298,7 @@ export default function ScontiOmaggi() {
               />
             </div>
             {!isOmaggio && (
-              <div>
+              <div className="cella-media">
                 <label className={labelClass}>Incassato €</label>
                 <input
                   type="number"
@@ -314,9 +317,10 @@ export default function ScontiOmaggi() {
               oraFineSerata={oraFineSerata}
               frase={`Questo ${form.type === "omaggio" ? "omaggio" : "sconto"} va sulla serata di`}
               labelClass={labelClass}
-              inputClass={inputClass}
+              inputClass={`${inputClass} campo-data`}
+              className="w-min"
             />
-            <div>
+            <div className="cella-larga">
               <label className={labelClass}>Causale (obbligatoria)</label>
               <select
                 value={form.causale_id}
