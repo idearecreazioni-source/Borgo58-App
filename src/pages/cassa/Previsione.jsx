@@ -415,8 +415,10 @@ export default function Previsione() {
             )}
 
             <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                <div className="sm:col-span-2">
+              {/* SPEC-0010, 11/09/2026: «Scade il» in mezza riga (132 punti)
+                  si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+              <div className="riga-campi mb-3">
+                <div className="cella-larga">
                   <label className={labelClass}>Cosa</label>
                   <input
                     value={form.descrizione}
@@ -425,7 +427,7 @@ export default function Previsione() {
                     className={inputClass}
                   />
                 </div>
-                <div>
+                <div className="cella-media">
                   <label className={labelClass}>Importo €</label>
                   <input
                     type="number"
@@ -442,7 +444,7 @@ export default function Previsione() {
                     type="date"
                     value={form.scadeIl}
                     onChange={(e) => setForm((f) => ({ ...f, scadeIl: e.target.value }))}
-                    className={inputClass}
+                    className={`${inputClass} campo-data`}
                   />
                 </div>
               </div>
