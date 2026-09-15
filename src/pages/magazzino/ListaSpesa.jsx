@@ -672,7 +672,7 @@ export default function ListaSpesa() {
                                   onChange={(e) =>
                                     setCloseForm((f) => ({ ...f, document_reference: e.target.value }))
                                   }
-                                  placeholder="Rif. documento (opz.)"
+                                  placeholder="Rif. documento (facoltativo)"
                                   className={inputClass}
                                 />
                               </div>
@@ -821,7 +821,7 @@ export default function ListaSpesa() {
             <input
               value={addForm.note}
               onChange={(e) => setAddForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (opzionale)"
+              placeholder="Nota (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button

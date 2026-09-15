@@ -176,7 +176,7 @@ export default function RegistraCarico() {
             />
           </div>
           <div>
-            <label className={labelClass}>Scadenza (opzionale)</label>
+            <label className={labelClass}>Scadenza (facoltativa)</label>
             <input
               type="date"
               value={form.expiry_date}
@@ -187,7 +187,7 @@ export default function RegistraCarico() {
         </div>
 
         <div>
-          <label className={labelClass}>Fornitore (opzionale)</label>
+          <label className={labelClass}>Fornitore (facoltativo)</label>
           <select
             value={form.supplier_id}
             onChange={(e) => setForm((f) => ({ ...f, supplier_id: e.target.value }))}
@@ -202,7 +202,7 @@ export default function RegistraCarico() {
 
         {isTitolare && (
           <div>
-            <label className={labelClass}>Costo unitario, IVA esclusa (opzionale)</label>
+            <label className={labelClass}>Costo unitario, IVA esclusa (facoltativo)</label>
             <input
               type="number"
               step="0.0001"
@@ -216,7 +216,7 @@ export default function RegistraCarico() {
         )}
 
         <div>
-          <label className={labelClass}>Nota (opzionale)</label>
+          <label className={labelClass}>Nota (facoltativa)</label>
           <input
             value={form.note}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}

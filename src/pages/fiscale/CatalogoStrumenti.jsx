@@ -185,7 +185,7 @@ export default function CatalogoStrumenti() {
                 />
               </div>
               <div>
-                <label className={labelClass}>Scadenza (opz.)</label>
+                <label className={labelClass}>Scadenza (facoltativa)</label>
                 <input
                   type="date"
                   value={form.deadline}
