@@ -97,7 +97,7 @@ export default function PreventiviList() {
         </div>
       )}
 
-      {preventivi === null && !errore && <p className="testo-sala-grande text-b58-charcoal-soft">Sto guardando…</p>}
+      {preventivi === null && !errore && <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>}
       {preventivi?.length === 0 && (
         <p className="testo-sala-grande text-b58-charcoal-soft">Nessun preventivo, per ora.</p>
       )}

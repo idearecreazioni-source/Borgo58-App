@@ -237,7 +237,7 @@ export default function Prestiti() {
         </div>
       )}
 
-      {prestiti === null && !errore && <p className="text-b58-charcoal-soft">Sto guardando…</p>}
+      {prestiti === null && !errore && <p className="text-b58-charcoal-soft">Caricamento…</p>}
 
       {aperti.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 divide-y divide-b58-charcoal/10 mb-6">
@@ -247,7 +247,10 @@ export default function Prestiti() {
                 <div className="min-w-0">
                   <div className="text-b58-charcoal">{p.da_chi}</div>
                   <div className="testo-sala text-b58-charcoal-soft">
-                    {formatEUR(p.importo)} il {formatDate(p.ricevuto_il)} · {p.mezzo}
+                    {/* Il nome del modulo qui sotto, non il codice: prima
+                        compariva «cassa» dove il modulo dice «Contanti». */}
+                    {formatEUR(p.importo)} il {formatDate(p.ricevuto_il)} ·{" "}
+                    {p.mezzo === "cassa" ? "contanti" : p.mezzo}
                     {Number(p.restituito) > 0 && <> · restituiti {formatEUR(p.restituito)}</>}
                   </div>
                 </div>

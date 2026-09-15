@@ -391,16 +391,18 @@ export default function ArchivioDocumentiHome() {
               </select>
               )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            {/* SPEC-0010, 11/09/2026: le due date in mezza riga (132 punti)
+                si tagliavano — chiedevano 181, 260 a 64 punti per cm. */}
+            <div className="riga-campi mb-3">
               <div>
                 <label className={labelClass}>Data documento</label>
-                <input type="date" value={form.document_date} onChange={(e) => setForm((f) => ({ ...f, document_date: e.target.value }))} className={inputClass} />
+                <input type="date" value={form.document_date} onChange={(e) => setForm((f) => ({ ...f, document_date: e.target.value }))} className={`${inputClass} campo-data`} />
               </div>
               <div>
                 <label className={labelClass}>Scadenza</label>
-                <input type="date" value={form.expiry_date} onChange={(e) => setForm((f) => ({ ...f, expiry_date: e.target.value }))} className={inputClass} />
+                <input type="date" value={form.expiry_date} onChange={(e) => setForm((f) => ({ ...f, expiry_date: e.target.value }))} className={`${inputClass} campo-data`} />
               </div>
-              <div>
+              <div className="cella-media">
                 <label className={labelClass}>Importo €</label>
                 <input type="number" step="0.01" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputClass} />
               </div>
@@ -408,7 +410,7 @@ export default function ArchivioDocumentiHome() {
                 <DatoNonLetto cosa="le società" className="self-end pb-2" />
               )}
               {!nonLetto(entities) && entities && (
-                <div>
+                <div className="cella-larga">
                   <label className={labelClass}>Entità</label>
                   <select value={form.entity_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, entity_id: e.target.value }))} className={inputClass}>
                     <option value="">—</option>
@@ -418,8 +420,8 @@ export default function ArchivioDocumentiHome() {
                 </div>
               )}
             </div>
-            <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (opz., es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
-            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (opz.)" className={`${inputClass} mb-3`} />
+            <input value={form.counterparties} onChange={(e) => setForm((f) => ({ ...f, counterparties: e.target.value }))} placeholder="Controparti (facoltative, es. locatore, assicurazione)" className={`${inputClass} mb-3`} />
+            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativa)" className={`${inputClass} mb-3`} />
             {/* ⚠️ IL FILE NON È PIÙ QUI (10/09/2026): è salito in cima, come
                 primo gesto. Restava anche un secondo campo per sceglierlo —
                 due porte per la stessa cosa, e la seconda avrebbe scavalcato
@@ -434,7 +436,7 @@ export default function ArchivioDocumentiHome() {
                 {saving ? "Salvo…" : "+ Salva nell'Archivio"}
               </button>
             </div>
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-2">Il file è opzionale: puoi anche registrare solo i metadati. Con una scadenza, viene creato un promemoria in Agenda.</p>
+            <p className="testo-sala text-b58-charcoal-soft/70 mt-2">Il file è facoltativo: puoi anche registrare solo i metadati. Con una scadenza, viene creato un promemoria in Agenda.</p>
           </div>
         </div>
       )}

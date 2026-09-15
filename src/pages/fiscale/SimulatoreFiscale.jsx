@@ -129,7 +129,7 @@ export default function SimulatoreFiscale() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-1">Simulatore fiscale</h1>
       <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 my-4">
         Stima trasparente basata sugli importi che inserisci tu — non un dato certo estratto dalla contabilità.
-        Serve a farsi un'idea degli ordini di grandezza. I numeri veri li determina Laura sulla contabilità
+        Serve a farsi un'idea degli ordini di grandezza. I numeri veri li determina la commercialista sulla contabilità
         reale.
       </p>
 
@@ -190,7 +190,7 @@ export default function SimulatoreFiscale() {
             </label>
             <p className="testo-sala text-b58-charcoal-soft/70 mt-1">
               Nasce spenta: un&apos;agevolazione applicata da sola abbassa le imposte stimate sempre nella
-              stessa direzione. Accendila dopo Laura.
+              stessa direzione. Accendila dopo il parere della commercialista.
             </p>
           </div>
           <div>
@@ -204,7 +204,7 @@ export default function SimulatoreFiscale() {
             />
           </div>
           <div>
-            <label className={labelClass}>Confermati da Laura il</label>
+            <label className={labelClass}>Confermati dalla commercialista il</label>
             <input
               type="date"
               value={settings.parametri_confermati_da_laura || ""}

@@ -344,15 +344,17 @@ export default function DipendenteDetail() {
           </ul>
         )}
         <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <select value={docForm.doc_type} onChange={(e) => setDocForm((f) => ({ ...f, doc_type: e.target.value }))} className={inputClass}>
+          {/* SPEC-0010, 11/09/2026: la scadenza in mezza riga (138 punti) si
+              tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+          <div className="riga-campi">
+            <select value={docForm.doc_type} onChange={(e) => setDocForm((f) => ({ ...f, doc_type: e.target.value }))} className={`${inputClass} cella-larga`}>
               {COMPLIANCE_DOC_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <input value={docForm.description} onChange={(e) => setDocForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrizione (opz.)" className={inputClass} />
-            <input type="date" value={docForm.expiry_date} onChange={(e) => setDocForm((f) => ({ ...f, expiry_date: e.target.value }))} className={inputClass} />
-            <input value={docForm.document_reference} onChange={(e) => setDocForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass} />
+            <input value={docForm.description} onChange={(e) => setDocForm((f) => ({ ...f, description: e.target.value }))} placeholder="Descrizione (opz.)" className={`${inputClass} cella-larga`} />
+            <input type="date" value={docForm.expiry_date} onChange={(e) => setDocForm((f) => ({ ...f, expiry_date: e.target.value }))} className={`${inputClass} campo-data`} />
+            <input value={docForm.document_reference} onChange={(e) => setDocForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={`${inputClass} cella-larga`} />
           </div>
           <div className="flex justify-end mt-2">
             <button type="button" disabled={busy} onClick={addDocument} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
@@ -440,14 +442,23 @@ export default function DipendenteDetail() {
             </table>
           </div>
         )}
-        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden flex flex-wrap gap-2 items-end">
-          <input type="month" value={payForm.period_month} onChange={(e) => setPayForm((f) => ({ ...f, period_month: e.target.value }))} className={inputClass + " w-44"} />
-          <input type="number" step="0.01" value={payForm.gross_amount} onChange={(e) => setPayForm((f) => ({ ...f, gross_amount: e.target.value }))} placeholder="Lordo €" className={inputClass + " w-28"} />
-          <input type="number" step="0.01" value={payForm.net_amount} onChange={(e) => setPayForm((f) => ({ ...f, net_amount: e.target.value }))} placeholder="Netto €" className={inputClass + " w-28"} />
-          <input value={payForm.document_reference} onChange={(e) => setPayForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass + " flex-1 min-w-[120px]"} />
-          <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
-            + Aggiungi
-          </button>
+        {/* SPEC-0010, 11/09/2026: a 64 punti per cm il mese chiedeva 289
+            punti e il riquadro ne ha 284 — si tagliava «settembre 2026». La
+            riga prende la misura dei campi secondari (`testo-sala`): sul
+            telefono i campi leggono la taglia dal loro contenitore (il
+            pavimento anti-zoom, index.css), sul computer non cambia niente.
+            Il mese ha la sua larghezza (`campo-mese`): «settembre 2026»
+            chiede più di una data. */}
+        <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 print:hidden riga-campi testo-sala">
+          <input type="month" value={payForm.period_month} onChange={(e) => setPayForm((f) => ({ ...f, period_month: e.target.value }))} className={inputClass + " campo-mese"} />
+          <input type="number" step="0.01" value={payForm.gross_amount} onChange={(e) => setPayForm((f) => ({ ...f, gross_amount: e.target.value }))} placeholder="Lordo €" className={inputClass + " cella-media"} />
+          <input type="number" step="0.01" value={payForm.net_amount} onChange={(e) => setPayForm((f) => ({ ...f, net_amount: e.target.value }))} placeholder="Netto €" className={inputClass + " cella-media"} />
+          <input value={payForm.document_reference} onChange={(e) => setPayForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass + " cella-larga"} />
+          <div className="riga-campi-gesti">
+            <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+              + Aggiungi
+            </button>
+          </div>
         </div>
       </div>
     </div>
