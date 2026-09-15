@@ -147,8 +147,8 @@ export default function SalaEOrari() {
         <p className="testo-sala-grande text-b58-charcoal-soft mt-3">
           Oggi la sala ha <strong>{sagomeAttive.length} posizioni</strong>, con{" "}
           <strong>{serviziAperti}</strong>{" "}
-          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quante
-          persone entrano lo decidi tu guardando la sala:{" "}
+          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quanti
+          coperti entrano lo decidi tu guardando la sala:{" "}
           <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             apri la pianta
           </Link>

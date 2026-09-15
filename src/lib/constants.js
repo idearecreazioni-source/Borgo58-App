@@ -113,7 +113,7 @@ export const LINEE_PREVISIONE = [
 // quella linea si vende, e serve al pareggio (che in coperti conta solo
 // ciò che è a coperto) e domani al confronto col reale.
 export const FORME_LINEA = [
-  { value: "a_coperto", label: "a coperto (persone × scontrino)" },
+  { value: "a_coperto", label: "a coperto (coperti × scontrino)" },
   { value: "a_forfait", label: "a forfait (quanti × incasso medio)" },
   { value: "a_pezzo", label: "a pezzo (quanti pezzi × prezzo)" },
 ];
