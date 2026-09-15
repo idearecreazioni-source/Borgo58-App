@@ -5,9 +5,18 @@ import { useAuth } from "../../context/AuthContext";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 import { campiPrenotazione } from "../../lib/calcoli/prenotazioni";
 
+// 🔴 «SERVITA» E «NON SI È PRESENTATO» NON AVEVANO UNO SFONDO (11/09/2026,
+//    censimento delle schermate): l'etichetta usciva con la classe
+//    «undefined», cioè testo chiaro su fondo chiaro — illeggibile. Sono i
+//    due stati nati il 21 e il 22/08, dopo questo elenco.
+// ⚠️ E uno stato che un giorno arriverà senza la sua voce prende il colore
+//    neutro (`SFONDO_NEUTRO`) invece di sparire.
+const SFONDO_NEUTRO = "bg-b58-charcoal-soft";
 const STATUS_BADGE = {
   richiesta_in_attesa: "bg-b58-gold",
   confermata: "bg-b58-olive",
+  servita: SFONDO_NEUTRO,
+  non_presentata: "bg-b58-terracotta-dark",
   rifiutata: "bg-b58-terracotta",
   annullata: "bg-b58-charcoal-soft/50",
 };
@@ -246,7 +255,7 @@ export default function ReservationsList() {
                     {formatDate(r.reservation_date)} · {r.reservation_time?.slice(0, 5)}
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
+                    className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-parchment testo-sala font-medium px-2.5 py-1 shrink-0`}
                   >
                     {labelFor(RESERVATION_STATUSES, r.status)}
                   </span>
@@ -302,7 +311,7 @@ export default function ReservationsList() {
                     ))}
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status]} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
+                        className={`inline-flex items-center rounded-full ${STATUS_BADGE[r.status] ?? SFONDO_NEUTRO} text-b58-parchment testo-sala font-medium px-2.5 py-1`}
                       >
                         {labelFor(RESERVATION_STATUSES, r.status)}
                       </span>

@@ -178,7 +178,7 @@ export default function MagazzinoHome() {
               di non averlo visto. */}
           <p className="text-b58-charcoal-soft mt-1">
             {levels.length === 0 ? (
-              "Giacenze, soglie minime, scadenze."
+              "Giacenze, scorte minime, scadenze."
             ) : (
               <>
                 {sottoSoglia > 0 ? (
@@ -541,7 +541,7 @@ export default function MagazzinoHome() {
           segno={(l) =>
             sottoScorta(l) ? (
               <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
-                sotto soglia
+                sotto scorta minima
               </span>
             ) : null
           }
@@ -566,7 +566,7 @@ export default function MagazzinoHome() {
             },
             {
               chiave: "soglia",
-              etichetta: "Soglia minima",
+              etichetta: "Scorta minima",
               /* Su un prodotto fuori magazzino la soglia non fa niente — non
                  entra in lista della spesa — e mostrarla sarebbe una
                  promessa che nessuno mantiene. */

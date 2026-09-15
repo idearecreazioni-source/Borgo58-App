@@ -685,14 +685,19 @@ export default function FattureFornitoriHome() {
               className={inputClass}
             />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+          {/* 🔴 SPEC-0010, 11/09/2026 — misurato col telefono: nella griglia a
+              due colonne ogni data aveva 138 punti e ne chiedeva 181 (217 a
+              64 punti per cm). Adesso le date hanno la loro larghezza
+              (`campo-data`) e vanno a capo intere; i due campi di testo si
+              dividono lo spazio che resta. Regola in index.css. */}
+          <div className="riga-campi mb-2">
             <div>
               <label className="block testo-sala text-b58-charcoal-soft mb-1">Data fattura</label>
               <input
                 type="date"
                 value={form.invoice_date}
                 onChange={(e) => setForm((f) => ({ ...f, invoice_date: e.target.value }))}
-                className={inputClass}
+                className={`${inputClass} campo-data`}
               />
             </div>
             <div>
@@ -701,20 +706,20 @@ export default function FattureFornitoriHome() {
                 type="date"
                 value={form.due_date}
                 onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-                className={inputClass}
+                className={`${inputClass} campo-data`}
               />
             </div>
             <input
               value={form.document_reference}
               onChange={(e) => setForm((f) => ({ ...f, document_reference: e.target.value }))}
               placeholder="Rif. documento (opz.)"
-              className={`${inputClass} self-end`}
+              className={`${inputClass} cella-larga self-end`}
             />
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
               placeholder="Nota (opz.)"
-              className={`${inputClass} self-end`}
+              className={`${inputClass} cella-larga self-end`}
             />
           </div>
           <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
@@ -739,8 +744,14 @@ export default function FattureFornitoriHome() {
           perché cercare «le fatture di Mililli di marzo» non ha niente a
           che vedere con se sono già state pagate.
           ⚠️ Non toccano i totali qui sopra: vedi `ricarica`. */}
-      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 mb-4 flex flex-wrap gap-3 items-end">
-        <div className="min-w-[180px]">
+      {/* 🔴 SPEC-0010, 11/09/2026 — la barra andava a capo «dove capita»:
+          misurato sul telefono, «Dal» da solo su una riga e «Al» con «Togli i
+          filtri» accanto; a 64 punti per cm tutto uno sotto l'altro. Ora il
+          fornitore prende la riga, le due date hanno la loro larghezza, e
+          «Togli i filtri» sul telefono sta su una riga sua, allineato ai
+          campi; da 640 punti in su resta in fondo alla riga. */}
+      <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-4 mb-4 riga-campi">
+        <div className="cella-larga">
           <label className={labelClass}>Fornitore</label>
           <select
             value={filtri.supplierId}
@@ -759,7 +770,7 @@ export default function FattureFornitoriHome() {
             type="date"
             value={filtri.dal}
             onChange={(e) => cambiaFiltro({ dal: e.target.value })}
-            className={inputClass}
+            className={`${inputClass} campo-data`}
           />
         </div>
         <div>
@@ -768,17 +779,19 @@ export default function FattureFornitoriHome() {
             type="date"
             value={filtri.al}
             onChange={(e) => cambiaFiltro({ al: e.target.value })}
-            className={inputClass}
+            className={`${inputClass} campo-data`}
           />
         </div>
         {filtroAttivo && (
-          <button
-            type="button"
-            onClick={() => cambiaFiltro({ supplierId: "", dal: "", al: "" })}
-            className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark pb-2"
-          >
-            Togli i filtri
-          </button>
+          <div className="riga-campi-gesti">
+            <button
+              type="button"
+              onClick={() => cambiaFiltro({ supplierId: "", dal: "", al: "" })}
+              className="tocco-campo inline-flex items-center testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+            >
+              Togli i filtri
+            </button>
+          </div>
         )}
       </div>
 
