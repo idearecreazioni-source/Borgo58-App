@@ -4,9 +4,10 @@ Ramo `lapidi-delle-verifiche`, da master `e2e76b2422b10a10b6ccf344406dfbe81dc255
 Commit del codice sotto questo riepilogo: **`b39b11222deec91f25ee2ca2b949b94e536cec77`**
 (i commit successivi toccano solo questo file); copia di lavoro pulita al momento della scrittura.
 
-> ⚠️ **Migrazione `20260915000001`: applicata SOLO sul progetto di prova** (15/09, 12:41:49 UTC,
-> autorizzazione di Alessio). **NON in produzione**: quella resta un passo separato, dopo il merge,
-> con una sua autorizzazione.
+> ⚠️ **Migrazioni `20260915000001` e `20260915000002`: applicate SOLO sul progetto di prova**
+> (15/09, 12:41:49 e 13:24:45 UTC, autorizzazioni di Alessio). **NON in produzione**: quella resta un
+> passo separato, dopo il merge, con una sua autorizzazione. Il commit della 002 sta sopra quello del
+> codice indicato qui sotto.
 
 ## Perché
 
@@ -66,6 +67,34 @@ Nessuna schermata, nessun codice dell'app, nessuna funzione online.
   `authenticated`; nessuna lapide della verifica rimasta nel registro.
 - **Tempo**: `lapidi_delle_verifiche()` chiamata coi claims del titolare risponde **0 righe in
   0,93 s** (contro i 5,28 s della domanda larga).
+
+## Il primo giro dei controlli (commit `dd85a7c`) e la correzione `20260915000002`
+
+- **Esito del primo giro: rosso su una prova sola, 566 / 567.** `registri-esibibili` è passata
+  (la prova delle lapidi in **3,19 s**, era 8,26 s e interrotta). È diventata rossa
+  `funzioni-senza-schermata`: «Queste hanno una porta adesso: toglile da ORFANE_NOTE» →
+  `['lapidi_di_prova']`.
+- **Causa, misurata in sola lettura sul progetto di prova:** il corpo di `lapidi_delle_verifiche()`
+  nominava `lapidi_di_prova` **in un commento**, e `funzioni_senza_chiamante()` cerca il nome a
+  parola intera (`~ '\m<nome>\M'`) nel testo delle funzioni, commenti compresi. Difetto della 001.
+- **Correzione: `20260915000002_un_nome_in_un_commento_non_e_una_chiamata.sql`.** Ricrea la
+  funzione dal corpo vivo del progetto di prova cambiando solo quel commento (la 001, già applicata,
+  non si riscrive). Nessun `grant` riscritto: `create or replace` non tocca i permessi, e la
+  verifica li controlla. La verifica pretende con **lo stesso criterio della rete** che nessun altro
+  corpo nomini `lapidi_di_prova`, che `funzioni_senza_chiamante()` la veda di nuovo orfana (e veda
+  orfana anche la nuova), e che il comportamento non cambi (due lapidi apposta, accordo con
+  `lapidi_di_prova()`, rifiuto allo staff, nessun residuo).
+- 🔴 **Il primo tentativo della 002 si è fermato sulla sua stessa verifica** (13:21 UTC): cercava il
+  nome con `like`, dove `_` vale «un carattere qualunque», e le parole «lapidi di prova» del commento
+  nuovo combaciavano. **Annullato per intero** (`npm run prova:migra` usa una transazione sola):
+  misurato dopo dal catalogo, corpo ancora quello della 001, 002 non registrata, nessuna lapide
+  rimasta. Il file è stato corretto — non era mai stato registrato né spinto — con il criterio della
+  rete.
+- **Secondo tentativo (15/09, 13:24:42–13:25:03 UTC), solo sul progetto di prova**, con lo stesso
+  metodo della 001 (collegamento controllato, `.env` temporaneo con la sola `DB_URL_PROVA` e
+  cancellato subito dopo, 392 sul disco e 391 sul progetto, l'unica mancante per nome):
+  `NOTICE: Verifica passata: nessun altro corpo nomina lapidi_di_prova, che torna fra le orfane;
+  il comportamento non cambia.` — **392** migrazioni registrate. **Non in produzione.**
 
 ## Verifiche fatte (locali)
 
