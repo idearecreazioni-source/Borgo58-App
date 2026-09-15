@@ -1,11 +1,12 @@
 # 15/09/2026 — Le verifiche nel registro, senza scaricarlo tutto
 
 Ramo `lapidi-delle-verifiche`, da master `e2e76b2422b10a10b6ccf344406dfbe81dc255dc`.
-Commit sotto questo riepilogo: **`b39b11222deec91f25ee2ca2b949b94e536cec77`**; copia di lavoro
-pulita al momento della scrittura.
+Commit del codice sotto questo riepilogo: **`b39b11222deec91f25ee2ca2b949b94e536cec77`**
+(i commit successivi toccano solo questo file); copia di lavoro pulita al momento della scrittura.
 
-> ⚠️ **Migrazione `20260915000001` SCRITTA E NON APPLICATA** — né sul progetto di prova né in
-> produzione. Deciso da Alessio il 15/09: l'applicazione richiede una sua autorizzazione separata.
+> ⚠️ **Migrazione `20260915000001`: applicata SOLO sul progetto di prova** (15/09, 12:41:49 UTC,
+> autorizzazione di Alessio). **NON in produzione**: quella resta un passo separato, dopo il merge,
+> con una sua autorizzazione.
 
 ## Perché
 
@@ -50,40 +51,50 @@ La #76 non c'entra: tocca `ritardo.js`, `PiantaGiornata.jsx`, `SalaEOrari.jsx`.
 
 Nessuna schermata, nessun codice dell'app, nessuna funzione online.
 
-## Verifiche fatte (locali, nessun database)
+## L'applicazione sul progetto di prova (15/09, 12:41 UTC)
+
+- **Collegamento controllato prima**: `DB_URL_PROVA` nomina `bnwqgpuyzmzujxfbtyvs` e non
+  `oudjuqbqszisdtwzbxdo`; messo in un `.env` **temporaneo** della copia, con quella sola riga,
+  ignorato da git e **cancellato subito dopo**.
+- **Una sola migrazione, per nome**: `npm run prova:migra -- 20260915000001`. Prima di applicare,
+  in sola lettura: 391 migrazioni sul disco, 390 sul progetto di prova, l'unica mancante era questa.
+- **Esito**: `NOTICE: Verifica passata: la domanda stretta vede la verifica, non la prova, e conta
+  come lapidi_di_prova.` — il blocco di verifica è arrivato in fondo, quindi anche
+  `pretendi_nessun_residuo`. Il progetto di prova ha **391** migrazioni registrate.
+- **Dopo, in sola lettura**: `20260915000001` registrata alle 12:41:49 UTC; la funzione è
+  `security_definer = false`, `search_path=public`, **non** eseguibile da `anon`, eseguibile da
+  `authenticated`; nessuna lapide della verifica rimasta nel registro.
+- **Tempo**: `lapidi_delle_verifiche()` chiamata coi claims del titolare risponde **0 righe in
+  0,93 s** (contro i 5,28 s della domanda larga).
+
+## Verifiche fatte (locali)
 
 - `npm run lint`: 0 avvisi · `npm run build`: riuscita.
 - `npm run test`: **1391 / 1393**. Le 2 rosse — `indice-richieste`, `indice-rovesciamenti` —
   leggono documenti di `docs/` che questa consegna non tocca, e che in questa copia hanno i fine riga
   di Windows; nell'ultima copia a fine riga Unix (audit del 15/09 notte) erano 1393 / 1393.
-- Progetto di prova, sola lettura, dopo il commit: `20260915000001` assente da `applied_migrations`,
-  `lapidi_delle_verifiche` assente dal catalogo.
 
 ## Cosa NON è verificato
 
-- **Il blocco di verifica della migrazione non è mai stato eseguito**: nessun database a
-  disposizione. Applicare sul progetto di prova è vietato fino all'autorizzazione, e
-  `npm run ricostruzione:verifica` crea il suo database sullo **stesso motore** del progetto di
-  prova, quindi escluso anch'esso.
-- **Le tre prove toccate non sono mai girate.** Finché la migrazione non è sul progetto di prova sono
-  **rosse per costruzione** (la funzione non esiste; `funzioni-senza-schermata` la troverebbe
-  dichiarata e assente). Per questo i due commit portano `[skip ci]` e i controlli di GitHub non
-  sono partiti.
-- Il tempo della funzione nuova **chiamata col token del titolare** non è misurato: misurato solo il
-  filtro equivalente, come `postgres`.
+- **Le prove sul database**: partono con il commit di questo riepilogo (i due precedenti erano
+  `[skip ci]`, perché senza la funzione sul progetto di prova sarebbero state rosse per costruzione).
+  L'esito sta nella proposta, non qui.
+- Il tempo **attraverso PostgREST, col token vero** del titolare: misurato solo coi claims, come
+  `postgres`.
 - **Il tetto si sposta, non sparisce**: il costo resta proporzionale al registro (una parola invece
   di sei, nessuna riga da spedire). Quando si riavvicinerà agli 8 s **non è misurato**. Toglierlo
   davvero vuol dire decidere del registro del progetto di prova (una pulizia, cioè una scrittura), e
   quella decisione è di Alessio.
 - Revisione Codex del diff: non fatta.
 - Il rosso della notte precedente (`tesoreria.test.js`, corridoio dato per assente) resta non
-  spiegato: questa consegna non lo tocca.
+  spiegato: questa consegna non lo tocca, e può ripresentarsi.
 
-## Ordine, quando Alessio autorizzerà
+## Cosa manca per il merge
 
-Commit → push (fatto) → `npm run prova:migra` → controlli di GitHub verdi (rilanciati togliendo
-`[skip ci]`) → merge → `npm run migra -- --conferma` in produzione, secondo §2. Nessuno di questi
-passi è stato fatto.
+Controlli di GitHub verdi sulla testa della proposta → ok di Alessio al merge → **il merge pubblica
+da solo** (la pubblicazione automatica è accesa: insieme alla #87 va online anche la #76) →
+`npm run migra -- --conferma` in produzione, con un'autorizzazione separata, secondo §2. La funzione
+nuova la usa solo una prova, quindi il sito pubblicato non dipende dalla migrazione in produzione.
 
 ## Cosa abbiamo rovesciato
 
