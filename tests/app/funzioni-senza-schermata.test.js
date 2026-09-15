@@ -96,6 +96,9 @@ const ORFANE_NOTE = {
   funzioni_con_data_utc: "rete: le date chieste a Greenwich",
   funzioni_multi_tabella: "rete: le scritture che devono passare dal corridoio",
   lapidi_di_prova: "rete: le tracce finte nel registro",
+  // ⚠️ AGGIUNTA IL 15/09/2026: la domanda stretta di registri-esibibili, che
+  //    chiede solo le verifiche invece di scaricare tutto il registro.
+  lapidi_delle_verifiche: "rete: le sole tracce delle verifiche nel registro",
   tipi_vocali_senza_ramo: "rete: i comandi vocali che il gestionale non sa eseguire",
   vincoli_senza_frase: "rete: i rifiuti che non parlano italiano",
   funzioni_senza_chiamante: "rete: questa stessa — chi non ha un chiamante nel database",
