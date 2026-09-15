@@ -242,6 +242,105 @@ body {
   min-height: calc(var(--pxcm) * 0.85);
 }
 
+/* 🔴 CAMPI AFFIANCATI CHE VANNO A CAPO DI PROPOSITO — 11/09/2026, SPEC-0010
+   e mandato «telefono ordinato».
+
+   IL DIFETTO, misurato (`npm run misura:telefono`): nelle griglie a due
+   colonne del telefono una casella di data ha 132–160 punti e il suo
+   contenuto ne chiede 181 (217–260 a 64 punti per centimetro). Chrome la
+   stringe e taglia la data; Safari la tiene larga e la fa uscire. E nelle
+   barre di filtri che vanno a capo «dove capita» la stessa barra prende una
+   forma diversa su ogni telefono (Fatture Fornitori: «Dal» da solo, «Al»
+   col pulsante accanto).
+
+   ⚠️ LA CURA È UNA LARGHEZZA DICHIARATA, NON QUELLA DEL BROWSER. Una data
+   chiede circa 10–11,3 volte la grandezza del suo testo (misurato: 181
+   punti a 16, 217 a 19,2, 260 a 23), un'ora circa 6. Quindi la casella è
+   larga 11,5 `em` — `em` del SUO testo, cioè dopo il pavimento anti-zoom
+   di Safari che su telefono lo porta almeno a 16 punti — e l'ora 7,5.
+   La riga mette le celle in fila e manda a capo quella che non ci sta:
+   dove, lo decidono larghezze scritte qui, non il caso.
+
+   ⚠️ NON DIVENTANO ENORMI: sul telefono una data resta larga quanto la sua
+   data (≈184 punti su 326), non tutta la riga. Si allarga solo la cella
+   col testo libero (`cella-larga`), che ha qualcosa da mostrare. */
+/* ⚠️ LE CELLE SI ALLINEANO IN ALTO, e i campi di conseguenza: ogni cella
+   ha l'etichetta sopra il suo campo, quindi etichette sulla stessa linea
+   vuol dire campi sulla stessa linea — anche quando una cella ha una frase
+   SOTTO il campo (la «Giornata»), che allineando in fondo farebbe scendere
+   i campi vicini più in basso del suo. In fondo si appoggiano solo i gesti
+   e i campi senza etichetta (`self-end`). */
+.riga-campi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: calc(var(--pxcm) * 0.25) calc(var(--pxcm) * 0.35);
+}
+.riga-campi > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.riga-campi > .cella-larga {
+  flex: 1 1 14rem;
+}
+/* Una cifra (importo, coperti, persone): due stanno affiancate anche su un
+   telefono, come nelle griglie di prima, e crescono insieme. */
+.riga-campi > .cella-media {
+  flex: 1 1 9rem;
+}
+.campo-data {
+  width: 11.5em;
+  max-width: 100%;
+}
+/* ⚠️ 7,5 e non 6,5 (11/09, rimisurato): coi campi normali (margine interno
+   di 12 punti) un'ora chiede 113 punti a 16 e 103 a 15,1 — circa 7 volte il
+   testo. Il 6,5 veniva dalla scheda dell'Agenda, che ha margini più stretti. */
+.campo-ora {
+  width: 7.5em;
+  max-width: 100%;
+}
+/* Un mese («settembre 2026») chiede più di una data: misurato 196 punti a
+   16, 239 a 20,5, 180 a 15,1 — circa 12 volte il testo. */
+.campo-mese {
+  width: 12.5em;
+  max-width: 100%;
+}
+/* Un menu corto («Contanti», «Carta»): largo quanto la voce che mostra, non
+   quanto la riga (11/09/2026, Mance). ⚠️ Serve perché lo stile dei campi
+   delle schermate porta `w-full`: in una cella che sul telefono prende la
+   riga intera il menu si stirava a 310 punti per mostrare otto lettere.
+   Questa classe sta fuori dai livelli di Tailwind, quindi vince. */
+.campo-contenuto {
+  width: auto;
+  max-width: 100%;
+}
+/* I gesti di una riga di filtri («Togli i filtri», «Azzera»): sul
+   telefono su una riga loro, allineati a sinistra coi campi; da 640 punti
+   in su in fondo alla riga, alla base dei campi. ⚠️ Sul telefono non
+   finiscono più accanto all'ultimo campo che capita. */
+.riga-campi > .riga-campi-gesti {
+  display: flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: calc(var(--pxcm) * 0.35);
+}
+@media (max-width: 639px) {
+  .riga-campi > .riga-campi-gesti {
+    flex-basis: 100%;
+  }
+}
+/* Una cella che sul telefono va SEMPRE a capo, anche quando la sua casella
+   ci starebbe (11/09/2026, Mance, dal collaudo su iPhone). Serve dove il
+   campo accanto è un mese o una data: Safari lo disegna più largo di quanto
+   si misura da qui, e affiancati il suo contenuto finiva sopra il vicino.
+   ⚠️ La cella prende la riga intera, il campo dentro resta largo quanto è:
+   a capo, non a tutta larghezza. Da 640 punti in su si torna affiancati. */
+@media (max-width: 639px) {
+  .riga-campi > .riga-campi-a-capo {
+    flex-basis: 100%;
+  }
+}
+
 /* 🔴 UN COLLEGAMENTO DENTRO UNA FRASE (26/08/2026, coda dello stesso
    censimento). L'ultima famiglia rimasta, e la sola che NON si può curare
    come le altre: «vai in Cassa → Causali» sta in mezzo a un periodo, e

@@ -281,8 +281,10 @@ export default function SezionePersonale() {
               </div>
             ) : (
               <div className="bg-white rounded-lg border border-b58-charcoal/10 p-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <div>
+                {/* SPEC-0010, 11/09/2026: «Quando» in mezza riga (132 punti)
+                    si tagliava — chiedeva 181, 260 a 64 punti per cm. */}
+                <div className="riga-campi mb-3">
+                  <div className="cella-media">
                     <label className={labelClass}>Importo €</label>
                     <input
                       type="number"
@@ -299,10 +301,10 @@ export default function SezionePersonale() {
                       type="date"
                       value={form.pagataIl}
                       onChange={(e) => setForm((f) => ({ ...f, pagataIl: e.target.value }))}
-                      className={inputClass}
+                      className={`${inputClass} campo-data`}
                     />
                   </div>
-                  <div>
+                  <div className="cella-larga">
                     <label className={labelClass}>Motivo</label>
                     <select
                       value={form.tagId}
@@ -314,7 +316,7 @@ export default function SezionePersonale() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="cella-larga">
                     <label className={labelClass}>Con che soldi</label>
                     <select
                       value={form.fondi}

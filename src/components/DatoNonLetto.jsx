@@ -1,3 +1,5 @@
+import { fraseNonVuolDire } from "../lib/calcoli/letture";
+
 // LA RIGA CHE DICE «NON LO SO» — 20/08/2026.
 //
 // Una forma sola per tutte le schermate, perché *un segno che cambia faccia
@@ -17,6 +19,10 @@
 //   · senza → una riga sottile, per un menu o un accessorio. Un riquadro
 //     con pulsante ripetuto quindici volte diventa arredamento, e
 //     l'arredamento non lo legge nessuno.
+//
+// ⚠️ LA FRASE DELLA SCHERMATA VALE IN TUTTE E DUE LE FORME (11/09/2026):
+// prima la forma breve la ignorava, e la lunga stampava un pezzo di frase
+// così com'era arrivato. Vedi `fraseNonVuolDire`.
 export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className = "" }) {
   if (onRiprova) {
     return (
@@ -25,7 +31,7 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
       >
         <p className="text-b58-charcoal font-medium mb-1">Non riesco a leggere {cosa}.</p>
         <p className="testo-sala text-b58-charcoal-soft mb-3">
-          {nonVuolDire ?? "Non vuol dire che non c'è niente: vuol dire che non lo so."}
+          {fraseNonVuolDire(nonVuolDire, "Non vuol dire che non c'è niente: vuol dire che non lo so.")}
         </p>
         <button
           type="button"
@@ -40,7 +46,13 @@ export default function DatoNonLetto({ cosa, nonVuolDire, onRiprova, className =
 
   return (
     <p className={`testo-sala text-b58-terracotta-dark ${className}`}>
-      Non riesco a leggere {cosa}: non vuol dire che non ce n&apos;è, vuol dire che non lo so.
+      {nonVuolDire ? (
+        <>
+          Non riesco a leggere {cosa}. {fraseNonVuolDire(nonVuolDire)}
+        </>
+      ) : (
+        <>Non riesco a leggere {cosa}: non vuol dire che non ce n&apos;è, vuol dire che non lo so.</>
+      )}
     </p>
   );
 }
