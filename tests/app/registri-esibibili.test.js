@@ -161,12 +161,30 @@ describe("i registri che si esibiscono non accettano righe che mentono", () => {
   // 🔴 Pretendere zero anche su quelle renderebbe questa prova rossa per
   // gesti legittimi — cioè un guardiano che grida sempre, e quelli si
   // imparano a spegnere.
+  //
+  // 🔴 E DAL 15/09 LA DOMANDA E' PIU' STRETTA, perché la vecchia era
+  // diventata troppo lenta. Chiedeva `lapidi_di_prova()` — tutte e tre le
+  // categorie — e ne teneva una sola. Misurato sul progetto di prova il
+  // 15/09: 68.891 lapidi, 65.818 restituite, 11 MB di risposta, 5,3 secondi
+  // a database tranquillo; il limite di `authenticated` è 8 secondi, e alle
+  // 07:54 di quel giorno la prova ne ha impiegati 8,26 ed è stata interrotta
+  // dal database (57014). Le righe che le servivano erano ZERO.
+  // ⚠️ Il registro del progetto di prova lo riempiono le prove stesse, quindi
+  // la vecchia domanda rallentava a ogni giro. `lapidi_delle_verifiche()`
+  // chiede solo la prima categoria, con lo stesso filtro: circa un secondo e
+  // nessuna riga da spedire. Il costo resta proporzionale al registro — il
+  // tetto si sposta, non sparisce (riepilogo del 15/09).
   it("il registro delle cancellazioni non conserva le righe delle verifiche", async () => {
-    const { data, error } = await titolare.rpc("lapidi_di_prova");
+    const { data, error } = await titolare.rpc("lapidi_delle_verifiche");
     expect(error).toBeNull();
-    const finte = (data ?? [])
-      .filter((r) => r.perche === "verifica di una migrazione")
-      .map((r) => `${r.tabella}: ${r.firma}`);
+    const finte = (data ?? []).map((r) => `${r.tabella}: ${r.firma}`);
     expect(finte, "lapidi lasciate da una verifica").toEqual([]);
+  });
+
+  // ⚠️ Chi titolare non è riceve un RIFIUTO, non un elenco vuoto: vuoto si
+  // leggerebbe «nessuna verifica ha lasciato tracce» (regola del 13/08).
+  it("e quella domanda la può fare solo il titolare", async () => {
+    const { error } = await staff.rpc("lapidi_delle_verifiche");
+    expect(error, "lo staff ha letto il registro delle cancellazioni").toBeTruthy();
   });
 });

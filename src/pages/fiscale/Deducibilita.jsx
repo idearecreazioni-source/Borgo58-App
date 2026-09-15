@@ -237,7 +237,7 @@ export default function Deducibilita() {
           <strong>nessuna è stata confermata dalla commercialista</strong> — quando lo saranno, scrivi la
           data e l&apos;avviso sparisce da tutte le schermate insieme.
           {nonConfermate > 0 && (
-            <> Oggi ne mancano <strong>{nonConfermate}</strong> (domande L4 e L9 per Laura).</>
+            <> Oggi ne mancano <strong>{nonConfermate}</strong> (domande L4 e L9 per la commercialista).</>
           )}
         </p>
 
@@ -335,7 +335,7 @@ export default function Deducibilita() {
               />
             </div>
             <div>
-              <label className={labelClass}>Riferimento (opz.)</label>
+              <label className={labelClass}>Riferimento (facoltativo)</label>
               <input
                 value={form.riferimento_normativo}
                 onChange={(e) => setForm((f) => ({ ...f, riferimento_normativo: e.target.value }))}
@@ -367,7 +367,7 @@ export default function Deducibilita() {
             <input
               value={form.nota}
               onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))}
-              placeholder="Nota — a cosa serve ricordarsi che si applica (opz.)"
+              placeholder="Nota — a cosa serve ricordarsi che si applica (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button

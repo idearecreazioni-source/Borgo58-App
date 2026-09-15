@@ -147,8 +147,8 @@ export default function SalaEOrari() {
         <p className="testo-sala-grande text-b58-charcoal-soft mt-3">
           Oggi la sala ha <strong>{sagomeAttive.length} posizioni</strong>, con{" "}
           <strong>{serviziAperti}</strong>{" "}
-          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quante
-          persone entrano lo decidi tu guardando la sala:{" "}
+          {serviziAperti === 1 ? "servizio acceso" : "servizi accesi"} nella settimana. Quanti
+          coperti entrano lo decidi tu guardando la sala:{" "}
           <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
             apri la pianta
           </Link>
@@ -388,7 +388,7 @@ export default function SalaEOrari() {
             </p>
           </div>
           <div>
-            <label className={labelClass}>Minuti fra un turno e l'altro</label>
+            <label className={labelClass}>Minuti fra un giro e l'altro</label>
             <CampoAutosalvato
               type="number"
               value={regole?.minuti_fra_turni ?? ""}
@@ -533,7 +533,9 @@ export default function SalaEOrari() {
           </Link>
           , e nello storico resta una cosa diversa.
         </p>
-        <div className="flex flex-wrap gap-2 items-end mb-4">
+        {/* SPEC-0010, 11/09/2026: a 64 punti per cm la fila andava a capo
+            dove capitava e il menu usciva dal riquadro di 14 punti. */}
+        <div className="riga-campi mb-4">
           <div>
             <label className={labelClass}>Dal</label>
             <input
@@ -541,7 +543,7 @@ export default function SalaEOrari() {
               min={oggiLocale()}
               value={nuovaChiusura.dal}
               onChange={(e) => setNuovaChiusura((c) => ({ ...c, dal: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
           <div>
@@ -551,10 +553,10 @@ export default function SalaEOrari() {
               min={nuovaChiusura.dal || oggiLocale()}
               value={nuovaChiusura.al}
               onChange={(e) => setNuovaChiusura((c) => ({ ...c, al: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
-          <div className="flex-1 min-w-[180px]">
+          <div className="cella-larga">
             <label className={labelClass}>Motivo (lo legge il cliente)</label>
             <input
               value={nuovaChiusura.motivo}
@@ -568,7 +570,7 @@ export default function SalaEOrari() {
               settimane di ferie probabilmente non si cucina, ma e' lui a
               doverlo dire — e il giorno di chiusura tecnica con dentro le
               preparazioni lunghe e' proprio il caso per cui esiste. */}
-          <div>
+          <div className="cella-larga">
             <label className={labelClass}>In cucina si lavora?</label>
             <select
               value={nuovaChiusura.siLavoraInCucina === null ? "" : String(nuovaChiusura.siLavoraInCucina)}
@@ -578,21 +580,26 @@ export default function SalaEOrari() {
                   siLavoraInCucina: e.target.value === "" ? null : e.target.value === "true",
                 }))
               }
-              className={inputClass}
+              // ⚠️ `w-full` (11/09): qui la classe dei campi non lo porta, e
+              // senza il menu restava largo quanto «No, nemmeno in cucina» —
+              // a 64 punti per cm usciva dal riquadro di 14 punti.
+              className={`${inputClass} w-full`}
             >
               <option value="">Come al solito</option>
               <option value="true">Sì, si lavora</option>
               <option value="false">No, nemmeno in cucina</option>
             </select>
           </div>
-          <button
-            type="button"
-            onClick={aggiungiChiusura}
-            disabled={!nuovaChiusura.dal}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
-          >
-            + Aggiungi
-          </button>
+          <div className="riga-campi-gesti">
+            <button
+              type="button"
+              onClick={aggiungiChiusura}
+              disabled={!nuovaChiusura.dal}
+              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            >
+              + Aggiungi
+            </button>
+          </div>
         </div>
         <ul className="space-y-1">
           {chiusure.map((c) => (
