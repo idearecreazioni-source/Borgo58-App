@@ -21,7 +21,7 @@ export const MODULES = [
     id: "agenda",
     number: 2,
     name: "Agenda",
-    description: "Task, priorità, calendario, adempimenti societari.",
+    description: "Impegni, priorità, calendario, adempimenti societari.",
     phase: 1,
     icon: "calendar",
     route: "/agenda",

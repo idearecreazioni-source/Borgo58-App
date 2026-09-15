@@ -577,10 +577,13 @@ export default function ListaSpesa() {
                         </div>
 
                         {closeForm.esito === "non_presa" ? (
+                          // Il nome vero del pulsante (vedi ESITI in cima al
+                          // file): la frase diceva «Avuta gratis», che non c'è
+                          // (11/09/2026).
                           <p className="testo-sala text-b58-charcoal-soft mb-2">
                             La riga sparisce. Niente costo e <strong>niente merce in
                             magazzino</strong>: se invece te l&apos;hanno regalata, scegli
-                            «Avuta gratis».
+                            «Me l&apos;hanno regalato».
                           </p>
                         ) : (
                           <div className="flex flex-wrap gap-2 items-end">
