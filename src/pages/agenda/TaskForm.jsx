@@ -15,6 +15,19 @@ import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 //    La regola di prima resta intera — un'ora inventata metterebbe una
 //    scadenza precisa che nessuno ha detto — ma adesso un'ora detta non si
 //    perde più nella descrizione.
+// 🔴 E L'AVVISO TELEGRAM ARRIVA ANCHE LUI — 16/09/2026, difetto visto usando
+//    MEMO. Un appunto vocale che aveva capito *quando avvisare* («ricordamelo
+//    il giorno prima alle 15») apriva il modulo con titolo, giorno e ora
+//    dell'impegno e i campi del Promemoria Telegram **vuoti**. Poi «Fallo a
+//    mano» chiude l'appunto lo stesso: la notifica spariva senza un errore,
+//    senza una riga rossa, senza niente — e chi salvava credeva di averla.
+//    ⚠️ Le due date NON si confondono: `scadenza`/`ora` sono QUANDO SUCCEDE
+//       la cosa, `avviso_data`/`avviso_ora` QUANDO AVVISARE, che è quasi
+//       sempre un altro giorno. Sono quattro campi distinti e restano tali.
+//    ⚠️ Se l'avviso non era stato chiesto, le due chiavi non arrivano proprio
+//       (il database le toglie) e `conCampi` non scrive mai valori vuoti:
+//       nessun avviso chiesto = campi vuoti = nessun promemoria. La regola
+//       resta intera senza una riga in più.
 const DA_VOCE = {
   titolo: "title",
   descrizione: "description",
@@ -22,6 +35,8 @@ const DA_VOCE = {
   ora: "due_time",
   priorita: "priority",
   categoria: "category",
+  avviso_data: "remind_date",
+  avviso_ora: "remind_time",
 };
 
 const emptyForm = {
