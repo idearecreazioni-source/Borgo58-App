@@ -124,12 +124,30 @@ const FORME_SETTIMANA = [
   { nome: "iPhone 390 a 64 punti per cm", larghezza: 390, altezza: 844, scala: 3, mobile: true, pxcm: 64 },
   { nome: "computer 1280", larghezza: 1280, altezza: 900, scala: 1, mobile: false },
   { nome: "computer 1600", larghezza: 1600, altezza: 1000, scala: 1, mobile: false },
+  // 🔴 IL MONITOR VERO DI ALESSIO — 16/09/2026, difetto segnalato dal
+  //    gestionale in uso: 1920×1080 con la barra laterale aperta. Mancava, e
+  //    quindi il caso peggiore non era misurato da nessuno: a questa
+  //    larghezza il contenuto NON cresce quanto lo schermo (`contenuto-ampio`
+  //    gli mette un tetto), quindi le sette colonne nascono strette lo stesso
+  //    — ed è la larghezza da cui si guarda la demo.
+  { nome: "computer 1920", larghezza: 1920, altezza: 1080, scala: 1, mobile: false },
 ];
 const TOCCO_CM = 0.85; // `tocco-bottone`
 const GIORNO_VUOTO_CM = 0.8; // a righe: il nome del giorno e «niente», una riga
 const COLONNA_VUOTA_CM = 1.4; // in colonna: al massimo due righe
 const COLONNA_LARGA_CM = 3; // sotto, una colonna è microscopica
 const TITOLO_ELENCO_CM = 0.4; // `testo-sala-grande`, come nell'elenco
+// 🔴 UN TITOLO NON SI SBRICIOLA — 16/09/2026, e questa rete mancava.
+//    La regola accanto chiede «una PAROLA sta nella sua riga?»; questa chiede
+//    «quante righe serve per leggere un TITOLO?». Sono due difetti diversi, e
+//    il secondo passava inosservato: a 1920 nessuna parola si spezzava e un
+//    titolo occupava SEI righe in una colonna da 129 punti.
+// ⚠️ TARATA SU CASI DI RISPOSTA NOTA (regola del 26/08), misurati prima di
+//    fissare il numero: a righe il titolo lungo del campione fa 1 riga sul
+//    computer, 2 sull'iPhone, **4** sull'iPhone a 64 punti per centimetro —
+//    tutte forme sane, e quella a 64 non va peggiorata. In sette colonne ne
+//    faceva 6. Quindi il confine sano/rotto sta fra 4 e 6: si prende 4.
+const TITOLO_RIGHE_MASSIME = 4;
 
 // --- Le misure, eseguite DENTRO la pagina -------------------------------
 // ⚠️ Si misura il TESTO disegnato, non il bordo dell'elemento: un elemento
@@ -529,6 +547,12 @@ const MISURA_SETTIMANA = `(() => {
       testo: e.innerText.replace(/\\s+/g, " ").trim(),
       righeBox: righeDiTesto(e),
       parola: parole.length ? Math.max(...parole.map((p) => tela.measureText(p).width)) : 0,
+      // 🔴 QUANTO CHIEDEREBBE TUTTO INTERO SU UNA RIGA — 16/09/2026. La
+      //    parola più larga dice se una parola si spezza; questo dice se il
+      //    TITOLO si sbriciola. Sono due difetti diversi, e il secondo non
+      //    era misurato da nessuno: a 1920 nessuna parola si spezzava e un
+      //    titolo occupava sei righe in una colonna.
+      rigaUnica: tela.measureText(e.innerText.replace(/\\s+/g, " ").trim()).width,
       utile: e.clientWidth,
       scorre: e.scrollWidth,
       carattere: parseFloat(st.fontSize),
@@ -677,6 +701,15 @@ function controllaSettimana(forma, m, attesa, telefono, difetti) {
       const cosa = `«${i.titoloTesto}»`;
       esce(i, `il pulsante di ${cosa}`, m.riquadro);
       testoIntero(i.titolo, cosa);
+      // 🔴 E NON BASTA CHE LE PAROLE CI STIANO: un titolo spezzato su sei
+      //    righe è illeggibile anche se ogni parola è intera. È il difetto
+      //    che il 16/09 Alessio ha visto sul monitor vero mentre questa
+      //    prova era verde.
+      if (i.titolo.righeBox.length > TITOLO_RIGHE_MASSIME) {
+        difetti.push(
+          `${forma}: ${cosa} si sbriciola su ${i.titolo.righeBox.length} righe (il massimo è ${TITOLO_RIGHE_MASSIME}): chiede ${i.titolo.rigaUnica.toFixed(0)} punti su una riga e ne ha ${i.titolo.utile.toFixed(0)}.`
+        );
+      }
       if (i.alta < cm(TOCCO_CM) - T) {
         difetti.push(`${forma}: ${cosa} si tocca su ${mm(i.alta, m.pxcm)} mm (il minimo è ${TOCCO_CM * 10}).`);
       }
@@ -1070,11 +1103,23 @@ try {
         await fotografa(manda, `settimana-${nomeFile(forma.nome)}-${g.stato}`);
       }
       if (esito && m) {
+        // 🔴 IL TITOLO PEGGIORE, in righe e in punti — 16/09/2026. Si stampa
+        //    e basta: la soglia si fissa DOPO aver visto i numeri di tutte le
+        //    forme, non a occhio. Una regola tarata a occhio renderebbe rossa
+        //    una forma sana (il telefono a 64 punti per cm va a capo più
+        //    spesso) — è la regola del 26/08 sui misuratori nuovi.
+        const titoli = m.giorni.flatMap((g) => g.impegni.map((i) => i.titolo));
+        const peggio = titoli.length
+          ? titoli.reduce((a, b) => (b.righeBox.length > a.righeBox.length ? b : a))
+          : null;
         const parti = [
           esito.colonne ? `sette colonne (la più stretta ${mm(esito.colonnaLarga, m.pxcm)} mm)` : "a righe",
           esito.vuotoAlto != null ? `giorno vuoto ${mm(esito.vuotoAlto, m.pxcm)} mm` : null,
           esito.pienoMin != null ? `giorno con impegni da ${mm(esito.pienoMin, m.pxcm)} mm` : null,
           esito.elencoAlto != null ? `settimana alta ${mm(esito.elencoAlto, m.pxcm)} mm` : null,
+          peggio
+            ? `titolo peggiore ${peggio.righeBox.length} righe (chiede ${peggio.rigaUnica.toFixed(0)} punti su una riga, ne ha ${peggio.utile.toFixed(0)})`
+            : null,
         ].filter(Boolean);
         console.log(`${nome}: ${parti.join(", ")} (${m.pxcm} punti per cm)`);
       }

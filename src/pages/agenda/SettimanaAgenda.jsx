@@ -22,11 +22,34 @@ import {
 //    come «commercialista» si spezzava a metà. Un giorno vuoto resta su una
 //    riga sola — «Mar 8 niente» — e non prende lo spazio di uno pieno.
 //
-// ⚠️ LE SETTE COLONNE LE DECIDE LA LARGHEZZA DEL RIQUADRO, NON QUELLA DELLO
-//    SCHERMO (`@container` + `@5xl:`, cioè 64rem = 1024 punti dentro il
-//    riquadro): la stessa finestra da 1280 punti è larga o stretta a seconda
-//    che la barra laterale ci sia. Sotto la soglia la settimana resta a
-//    righe; sopra, ogni colonna ha almeno ~140 punti.
+// 🔴 LE SETTE COLONNE SONO STATE TOLTE — 16/09/2026, difetto visto da Alessio
+//    sul monitor vero (1920×1080, barra laterale aperta) e poi MISURATO.
+//    Non è una preferenza: a nessuna larghezza raggiungibile ci stavano.
+//
+//    Il titolo lungo del campione chiede **501 punti** su una riga sola.
+//    Misurato, alle sei larghezze della prova visiva:
+//      · computer 1280, a righe ....... 1 riga, 809 punti disponibili
+//      · iPhone 390/440, a righe ...... 2 righe, 279/329 punti
+//      · iPhone a 64 punti per cm ..... 4 righe, 252 punti
+//      · computer 1600 e 1920, colonne  **6 righe, 129 punti**
+//
+//    ⚠️ E 1600 e 1920 danno lo STESSO numero, che è il punto: la pagina ha
+//       un tetto di larghezza (`max-w-4xl`, che oltre i 1280 punti diventa
+//       72rem = 1152), quindi allargare il monitor NON allarga il riquadro.
+//       Perché un titolo stesse in due righe servirebbero colonne da ~250
+//       punti, cioè un riquadro da ~1800: irraggiungibile. La soglia vecchia
+//       (1024 punti di riquadro) diceva «ci stanno sette colonne» quando ci
+//       stavano solo per modo di dire.
+//
+//    ⚠️ E LA RETE NON SE NE ACCORGEVA, ed è la lezione più utile: chiedeva
+//       «una PAROLA sta nella sua colonna?» — e da stamattina la risposta era
+//       sì. La domanda che conta per chi guarda è «quante righe serve per
+//       leggere un titolo?». Ora `prova-visiva.mjs` la fa (massimo 4 righe,
+//       tarato sui numeri qui sopra).
+//
+//    La settimana è quindi a righe DAPPERTUTTO: i sette giorni uno sotto
+//    l'altro, come già facevano il telefono e il computer a 1280 — che è la
+//    disposizione dove quel titolo sta in una riga sola.
 //
 // ⚠️ IL TITOLO DI UN IMPEGNO HA LA STESSA MISURA DELL'ELENCO (decisione
 //    dell'11/09 sul giorno del calendario: lo stesso impegno non cambia
@@ -68,7 +91,7 @@ export default function SettimanaAgenda({
     <div
       data-settimana
       {...(caricando ? { "data-caricando": "" } : {})}
-      className="@container rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3 md:p-4"
+      className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-3 md:p-4"
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <button
@@ -127,42 +150,31 @@ export default function SettimanaAgenda({
           </button>
         </div>
       ) : (
-        <ol className="divide-y divide-b58-charcoal/10 @5xl:divide-y-0 @5xl:grid @5xl:grid-cols-7 @5xl:gap-2 @5xl:items-start">
+        <ol className="divide-y divide-b58-charcoal/10">
           {giorni.map(({ giorno, impegni: delGiorno }) => {
             const n = nomeDelGiorno(giorno);
             const oggi = giorno === oggiISO;
             const vuoto = delGiorno.length === 0;
             return (
-              // ⚠️ `min-w-0` sulle celle: senza, una parola lunga allarga la
-              //    sua colonna (le griglie danno `min-width: auto` ai figli) e
-              //    le sette colonne smettono di essere equilibrate — una
-              //    larga il doppio e le altre strette.
               <li
                 key={giorno}
                 data-giorno={giorno}
                 {...(oggi ? { "data-oggi": "" } : {})}
-                className={`py-1.5 @5xl:min-w-0 @5xl:rounded-lg @5xl:px-2 ${
-                  oggi ? "bg-b58-olive/10 rounded-lg px-2 -mx-2 @5xl:mx-0" : "@5xl:bg-white/50"
-                }`}
+                className={`py-1.5 ${oggi ? "bg-b58-olive/10 rounded-lg px-2 -mx-2" : ""}`}
               >
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <p data-intestazione className="testo-sala font-medium text-b58-charcoal-soft">
-                    {/* Sul telefono il nome corto, in colonna quello intero. */}
-                    <span className="@5xl:hidden">{n.corto}</span>
-                    <span className="hidden @5xl:inline">{n.nome}</span> {n.numero}
+                    {/* Il nome corto: è quello che si vedeva già sul telefono e
+                        sul computer a 1280, e resta identico ora che la
+                        settimana è a righe dappertutto. */}
+                    {n.corto} {n.numero}
                     {oggi && <span className="text-b58-olive-dark"> · oggi</span>}
                   </p>
                   {/* ⚠️ Discreto e sulla stessa riga del giorno: un giorno
-                      libero si dice, ma non si prende lo spazio di uno pieno.
-                      ⚠️ DUE PAROLE PER LO STESSO FATTO, ed è voluto: sul
-                         telefono «niente» sta sulla riga del giorno e la resa
-                         non cambia di un punto (richiesta del 16/09: il
-                         telefono resta com'è); in colonna c'è lo spazio per
-                         dirlo per esteso, «Nessun impegno». */}
+                      libero si dice, ma non si prende lo spazio di uno pieno. */}
                   {vuoto && (
                     <p data-vuoto className="testo-sala text-b58-charcoal-soft/60">
-                      <span className="@5xl:hidden">niente</span>
-                      <span className="hidden @5xl:inline">Nessun impegno</span>
+                      niente
                     </p>
                   )}
                 </div>
@@ -197,23 +209,12 @@ export default function SettimanaAgenda({
                           {i > 0 && (
                             // Stesso rientro del pulsante qui sotto: la stessa
                             // colonna dell'ora (vuota) e lo stesso stacco.
-                            // ⚠️ Dal 16/09 la colonna dell'ora c'è anche in
-                            //    colonna, quindi il rientro la segue in tutte
-                            //    e due le forme: `linee.js` pretende che la
-                            //    linea cominci dove comincia il titolo.
-                            // ⚠️ IN COLONNA IL RIENTRO SPARISCE, e segue una
-                            //    misura e non un gusto: `linee.js` pretende che
-                            //    la linea cominci dove comincia il titolo, e in
-                            //    colonna il titolo è largo quanto la colonna
-                            //    (l'ora gli galleggia sopra), quindi comincia
-                            //    al bordo. Col rientro del telefono la linea
-                            //    partiva a 457,1 e il titolo a 408.
                             <div
                               aria-hidden="true"
                               data-separatore-impegno=""
-                              className="flex h-px gap-2 px-1 -mx-1 @5xl:gap-0"
+                              className="flex h-px gap-2 px-1 -mx-1"
                             >
-                              <span className="w-[3.2em] shrink-0 testo-sala @5xl:w-0" />
+                              <span className="w-[3.2em] shrink-0 testo-sala" />
                               <span className="flex-1 bg-b58-charcoal/30" />
                             </div>
                           )}
@@ -229,95 +230,41 @@ export default function SettimanaAgenda({
                             type="button"
                             data-impegno={t.id}
                             onClick={() => onApri(t)}
-                            className="tocco-bottone flex w-full items-center rounded-lg px-1 -mx-1 text-left hover:bg-b58-cream-dark @5xl:py-0.5"
+                            className="tocco-bottone flex w-full items-center rounded-lg px-1 -mx-1 text-left hover:bg-b58-cream-dark"
                           >
-                            {/* 🔴 IN COLONNA L'ORA GALLEGGIA, NON OCCUPA UNA
-                                COLONNA SUA — 16/09/2026, e l'ha trovato la
-                                prova visiva a 1600: con l'ora in una cella
-                                fissa accanto, al titolo restavano **80 punti**
-                                e «commercialista» ne chiede **103**, quindi si
-                                spezzava a metà parola. Non si può rimpicciolire
-                                il titolo (sotto 4 mm scatta un altro rosso) né
-                                stringere la cella quanto basta: si guadagnavano
-                                15 punti su 23, e il primo titolo più lungo
-                                avrebbe rotto di nuovo.
-                                ⚠️ Con `float`, il titolo è largo quanto la
-                                   colonna e il testo gira **attorno** all'ora:
-                                   la prima riga comincia dopo di lei — quindi i
-                                   titoli dello stesso giorno partono ancora
-                                   tutti dallo stesso punto — e la parola lunga
-                                   scende sotto, dove c'è tutta la larghezza.
-                                ⚠️ Resta UNA riga sola, non un cartellino:
-                                   l'ora è accanto al titolo, non sopra. */}
-                            <span className="flex min-w-0 flex-1 items-baseline gap-2 @5xl:block">
-                              {/* ⚠️ La colonna dell'ora c'è anche vuota, sul
-                                  telefono e in colonna: i titoli dello stesso
-                                  giorno partono dallo stesso punto, con o
-                                  senza ora.
-                                  🔴 E IL PUNTINO STA ACCANTO ALL'ORA, NON
-                                     DENTRO (16/09): `[data-ora]` deve contenere
-                                     l'ora e basta — una prova del 12/09 legge
-                                     proprio quel testo, e il telefono non deve
-                                     cambiare di un punto. Messo dentro, quella
-                                     prova diventava rossa: ha ragione lei.
-                                  ⚠️ La cella è larga abbastanza da tenerli
-                                     tutti e due in colonna: alla misura di
-                                     prima il puntino sarebbe finito sopra il
-                                     titolo, che è il contrario di separarli. */}
-                              {/* ⚠️ La cella c'è anche vuota, e in colonna
-                                  galleggia: lo stacco dal titolo non può più
-                                  venire dal `gap` (lì il contenitore non è più
-                                  una riga flessibile), quindi se lo porta
-                                  addosso — `@5xl:mr-2`. Senza, il titolo
-                                  partirebbe attaccato all'ora. */}
+                            {/* ⚠️ UNA RIGA SOLA: l'ora accanto al titolo, mai
+                                sopra. Il galleggiamento che serviva in colonna
+                                (16/09) è sparito con le colonne: a righe il
+                                titolo ha 809 punti e ci sta per intero, quindi
+                                non serve fargli girare il testo attorno
+                                all'ora. */}
+                            <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                              {/* ⚠️ La colonna dell'ora c'è ANCHE VUOTA: i
+                                  titoli dello stesso giorno partono tutti dallo
+                                  stesso punto, con o senza ora — lo misura
+                                  `prova-visiva.mjs`, ed è anche il punto in cui
+                                  comincia la linea fra un impegno e l'altro.
+                                  ⚠️ `[data-ora]` contiene l'ora e basta: una
+                                     prova del 12/09 legge proprio quel testo. */}
                               <span
                                 data-cella-ora
-                                className="flex w-[3.2em] shrink-0 items-baseline testo-sala text-b58-charcoal-soft @5xl:float-left @5xl:mr-2 @5xl:w-[3.4em]"
+                                className="flex w-[3.2em] shrink-0 items-baseline testo-sala text-b58-charcoal-soft"
                               >
                                 <span data-ora className="tabular-nums">
                                   {ora ?? ""}
                                 </span>
-                                {ora ? (
-                                  <span aria-hidden="true" className="hidden @5xl:inline">
-                                    &nbsp;·
-                                  </span>
-                                ) : (
-                                  // 🔴 UN GALLEGGIANTE ALTO ZERO NON SPOSTA
-                                  //    NIENTE — 16/09/2026, misurato dalla
-                                  //    prova visiva a 1600: senza ora la cella
-                                  //    resta senza testo, quindi alta zero, e
-                                  //    il titolo di quell'impegno cominciava al
-                                  //    bordo della colonna mentre gli altri
-                                  //    cominciavano dopo l'ora (408 contro
-                                  //    457,1). Nello stesso giorno i titoli
-                                  //    devono partire tutti dallo stesso punto:
-                                  //    lo pretende `prova-visiva.mjs`, ed è
-                                  //    anche dove comincia la linea fra un
-                                  //    impegno e l'altro.
-                                  // ⚠️ Lo spazio sta QUI e non dentro
-                                  //    `[data-ora]`: quello deve restare vuoto
-                                  //    davvero — una prova del 12/09 legge
-                                  //    proprio quel testo per dire che la
-                                  //    colonna dell'ora c'è anche senza ora.
-                                  <span aria-hidden="true">&nbsp;</span>
-                                )}
                               </span>
                               {/* ⚠️ `hyphens-auto` con la pagina in italiano:
                                   in una colonna stretta una parola lunga va a
                                   capo dove si divide una parola italiana,
                                   invece che a metà sillaba. `break-words`
                                   resta come ultima rete, per le parole che non
-                                  ci starebbero comunque.
-                                  ⚠️ E IN COLONNA È LARGO QUANTO LA COLONNA
-                                     (`@5xl:w-full`), non quello che avanza
-                                     accanto all'ora: è questo che dà alla
-                                     parola lunga una riga intera sotto l'ora
-                                     invece di spezzarla a metà. */}
+                                  ci starebbero comunque. */}
                               <span
                                 data-titolo
                                 lang="it"
                                 title={fatto ? "Fatto" : undefined}
-                                className={`min-w-0 flex-1 hyphens-auto break-words testo-sala-grande font-medium @5xl:block @5xl:w-full ${
+                                className={`min-w-0 flex-1 hyphens-auto break-words testo-sala-grande font-medium ${
                                   fatto ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
                                 }`}
                               >
