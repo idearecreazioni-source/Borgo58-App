@@ -83,14 +83,43 @@ l'ora, quindi le espressioni relative non avevano un punto di partenza.
 
 ## Cosa non cambia
 
-- **La produzione non ha ancora ricevuto né la migrazione né la funzione
-  online.** Il codice è in master; il database vero e `ascolta-voce` in
-  produzione sono invariati.
-- Finché la migrazione non è applicata, in produzione «Fallo a mano»
-  continua a non portare l'avviso; finché la funzione online non è
-  pubblicata, «fra cinque minuti» resta senza riferimento orario.
 - Nessun dato è stato toccato, né in produzione né altrove: la migrazione non
   scrive righe e la verifica lavora su valori inventati.
+- Nessun Telegram è mai partito, in nessuno dei due progetti.
+
+## In produzione — 17/09/2026
+
+⚠️ Fino a poche ore prima questa sezione diceva *«la produzione non ha ancora
+ricevuto né la migrazione né la funzione online»*, ed era vera quando è stata
+scritta. Non si riscrive la storia: quella frase è **diventata falsa** nella
+notte fra il 16 e il 17, ed ecco cosa è successo.
+
+- **Migrazione `20260916000002` applicata**: una sola, com'era in elenco, e
+  nessun'altra. Registrata il **17/09/2026 alle 00:45**; totale in produzione
+  **394**. Il blocco di verifica interno è passato.
+- **Confronto prima di applicare**: il corpo VIVO di `azione_campi` in
+  produzione era interamente compreso nella migrazione — 60 righe
+  significative contro 62 — e ciò che la migrazione aggiunge sono **soltanto**
+  le due righe dell'avviso. Stesso esito del confronto fatto su Prova.
+- **I tre casi, interrogati sul database vero**: con avviso arrivano
+  `avviso_data` e `avviso_ora` senza confondersi con giorno e ora
+  dell'impegno; **senza avviso quei campi non compaiono affatto**; con avviso
+  parziale arriva solo il pezzo detto, e nessuna ora viene inventata.
+- **Funzione online `ascolta-voce` pubblicata in produzione**: versione
+  **11 → 12**. ⚠️ Il numero è stato riletto **chiedendolo al progetto**, non
+  fidandosi della riga stampata dal comando che l'ha installata: risulta
+  `ACTIVE`, versione 12.
+- **I due siti rispondono** (200) e servono lo stesso pacchetto, che punta
+  **solo** al progetto di produzione e con la chiave dello stesso progetto —
+  indirizzo e chiave sono una coppia coerente, che è la trappola dell'01/09.
+- **Nessuna dettatura, nessun appunto, nessun impegno e nessun Telegram in
+  produzione.** Le verifiche sono tutte letture.
+- La copia di sicurezza completa — documenti dell'Archivio compresi — è stata
+  fatta **prima** e portata fuori dal computer.
+
+⚠️ E da adesso la correzione è accesa per chi usa il gestionale: «Fallo a
+mano» porta l'avviso già capito, e «fra cinque minuti» ha un riferimento
+orario vero.
 
 ## Cosa abbiamo rovesciato
 
@@ -101,6 +130,12 @@ chiesto non compare.
 
 ## Passo successivo
 
-Controllo del diff e della proposta. Soltanto dopo un ok separato si potrà
-applicare `20260916000002` in produzione e, come passo distinto, pubblicare
-lì la funzione online.
+Il rilascio è chiuso: migrazione applicata e funzione online pubblicata, con
+le verifiche qui sopra.
+
+Resta una cosa che nessuna misura di questa consegna copre: **il giro vero in
+produzione non è stato provato da una mano**. Su Borgo58-Prova sì — dettatura
+reale, appunto con data e ora assolute, «Fallo a mano» coi campi pieni — ma in
+produzione non è stata fatta nessuna dettatura di collaudo, per non lasciare
+righe nel gestionale vero e per non rischiare un Telegram. La prima frase
+detta da Alessio sarà anche la prima prova sul campo.
