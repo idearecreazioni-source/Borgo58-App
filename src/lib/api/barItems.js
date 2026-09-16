@@ -101,3 +101,39 @@ export async function proposteAbbinamento() {
   if (error) throw error;
   return data ?? [];
 }
+
+// LO STATO DELLA CARTA STAMPATA — 16/09/2026.
+//
+// 🔴 LE DUE FUNZIONI ESISTONO DAL 31/08 (migrazione `20260831000003`) E NON
+//    LE CHIAMAVA NESSUNO: il gestionale sapeva rispondere e mancava la porta
+//    per chiedere. Erano dichiarate «senza schermata» in
+//    `tests/app/funzioni-senza-schermata.test.js`. Qui si apre la porta,
+//    senza migrazioni nuove.
+//
+// ⚠️ `carta_da_ristampare()` NON dice SE ristampare: dice da quanto è ferma
+//    ogni carta, quante voci sono entrate e uscite da allora, e quante ce ne
+//    sono adesso. La decisione resta di Alessio — una soglia inventata qui
+//    sarebbe una regola scritta da noi sulle sue cose (commento della
+//    migrazione).
+// ⚠️ Solo il titolare: la funzione RIFIUTA agli altri invece di rispondere un
+//    elenco vuoto, che si leggerebbe «non c'è nessuna carta».
+export async function cartaDaRistampare() {
+  const { data, error } = await supabase.rpc("carta_da_ristampare");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ⚠️ NON STAMPA NIENTE: registra che una stampa è già avvenuta, fotografando
+//    quante voci aveva la carta in quel momento. Il numero si fotografa e non
+//    si ricalcola: ricalcolandolo, «quante voci aveva allora» cambierebbe da
+//    solo a ogni bottiglia aggiunta.
+// ⚠️ Scrive una riga sola (`stampe_carta`), quindi non passa dal corridoio:
+//    quello è per le scritture multi-tabella «tutto o niente» (regola B4).
+export async function segnaCartaStampata(sezione, nota = null) {
+  const { data, error } = await supabase.rpc("segna_carta_stampata", {
+    p_sezione: sezione,
+    p_nota: nota?.trim() ? nota.trim() : null,
+  });
+  if (error) throw error;
+  return data;
+}

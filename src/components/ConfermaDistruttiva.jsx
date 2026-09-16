@@ -33,6 +33,11 @@ export default function ConfermaDistruttiva({
   onConferma,
   disabilitato = false,
   className = "",
+  // ⚠️ Attributi da appendere al pulsante VERO (16/09/2026): senza, per
+  //    marcarlo bisognerebbe avvolgerlo in un contenitore, e un contenitore
+  //    non si preme — una prova che tocca l'involucro non tocca il pulsante,
+  //    e passerebbe senza aver provato niente.
+  attributi = {},
 }) {
   const [chiesto, setChiesto] = useState(false);
   const [inCorso, setInCorso] = useState(false);
@@ -57,6 +62,7 @@ export default function ConfermaDistruttiva({
         type="button"
         disabled={disabilitato}
         onClick={() => setChiesto(true)}
+        {...attributi}
         className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
       >
         {etichetta}

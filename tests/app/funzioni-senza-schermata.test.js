@@ -20,6 +20,16 @@ const titolare = await clientAutenticato(credenziali().titolare);
 //   · 31/08 notte — `carta_da_ristampare()` e `segna_carta_stampata()`:
 //     costruite e dichiarate «senza schermata» in un riepilogo, cioe' un
 //     debito scritto invece che un difetto trovato.
+//     ✅ PAGATO IL 16/09/2026: la schermata c'e' — Editor Menu → Bevande e
+//     vini, «La carta stampata» — e le due righe sono uscite dall'elenco
+//     qui sotto. Il fatto del 31/08 resta scritto, perche' e' la storia di
+//     come sono nate; quello che non resta e' la loro riga fra i debiti
+//     aperti, che racconterebbe una cosa non piu' vera.
+//     ⚠️ E A DIRLO E' STATA QUESTA RETE, non una rilettura: aggiunta la
+//     schermata, la prova e' diventata rossa da sola sul controllo della
+//     proposta n. 89 — «toglile da ORFANE_NOTE, o l'elenco racconta un
+//     debito che e' gia' stato pagato». Ha funzionato nel verso difficile,
+//     quello che nessuno va a guardare.
 //
 // 🔴 E LA COSA CHE CONTA: le prime tre le ha trovate **Alessio con gli
 // occhi**, non io rileggendo. Tre volte non e' distrazione — e' che il
@@ -117,11 +127,12 @@ const ORFANE_NOTE = {
   // Interrogata da uno script a riga di comando.
   numeri_sospetti: "interrogata da `npm run numeri`",
 
-  // ⚠️ RIMANDATE DA ALESSIO il 31/08: l allerta della carta vecchia si
-  //    costruisce quando ci saranno etichette vere — su una carta vuota
-  //    direbbe sempre la stessa cosa. Il debito e SCRITTO, non nascosto.
-  carta_da_ristampare: "DEBITO rimandato da Alessio: la schermata si fa con etichette vere",
-  segna_carta_stampata: "DEBITO rimandato da Alessio: la schermata si fa con etichette vere",
+  // ⚠️ QUI STAVANO `carta_da_ristampare` e `segna_carta_stampata`, rimandate
+  //    da Alessio il 31/08 in attesa di etichette vere. Il 16/09 la schermata
+  //    e' stata costruita e le due righe sono uscite: toglierle e' il gesto
+  //    che dichiara pagato il debito, e lasciarle sarebbe stato l'errore
+  //    contrario — un elenco che racconta un debito che non c'e' piu'. La
+  //    storia sta nel commento in cima al file, dove serve a chi legge.
 
   // 🔴 DEBITI VERI, e sono quelli per cui questa rete esiste. Ognuno e' una
   //    cosa che il gestionale sa fare e che nessuno puo' chiedergli.

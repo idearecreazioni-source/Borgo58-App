@@ -180,6 +180,106 @@ describe("🔴 la settimana", () => {
     expect(fatto.className).toMatch(/line-through/);
   });
 
+  // 🔴 IL COMPUTER: UNA RIGA PER IMPEGNO — 16/09/2026, richiesta di Alessio.
+  //    Nelle sette colonne l'ora stava SOPRA il titolo: due righe per ogni
+  //    impegno, cioè un cartellino verticale. Ora è «09:30 · Titolo».
+  //
+  // ⚠️ QUI SI PROVA LA STRUTTURA, NON I PUNTI SULLO SCHERMO: in queste prove
+  //    non c'è un motore di stile, quindi le regole «@5xl:» non si applicano e
+  //    nessuna misura sarebbe vera. La forma vera (sette colonne larghe
+  //    uguale, niente parole spezzate, una riga sola) la misura la prova
+  //    visiva in un browser, a 1600 e a 390 punti.
+  describe("🔴 sul computer, e senza cambiare il telefono", () => {
+    it("ora e titolo sono UNA riga sola: nessuno dei due è nascosto in colonna", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+      const b = giorno("2026-09-07").querySelector("[data-impegno='mattina']");
+      const riga = b.querySelector("[data-cella-ora]").parentElement;
+      // Ora e titolo stanno nella stessa riga, e quella riga non diventa una
+      // colonna sul computer: è questa la differenza col cartellino verticale
+      // di prima.
+      expect(riga.contains(b.querySelector("[data-titolo]"))).toBe(true);
+      expect(riga.className).toMatch(/items-baseline/);
+      expect(riga.className).not.toMatch(/@5xl:flex-col/);
+      // 🔴 E IN COLONNA L'ORA GALLEGGIA: il titolo resta largo quanto la
+      //    colonna e il testo le gira attorno. Con l'ora in una cella fissa
+      //    accanto, al titolo restavano 80 punti e «commercialista» ne chiede
+      //    103 — la prova visiva a 1600 diventava rossa per parola spezzata.
+      //    Qui si congela la forma; la larghezza vera la misura il browser.
+      expect(b.querySelector("[data-cella-ora]").className).toMatch(/@5xl:float-left/);
+      expect(b.querySelector("[data-titolo]").className).toMatch(/@5xl:block/);
+      expect(b.querySelector("[data-titolo]").className).toMatch(/@5xl:w-full/);
+      // 🔴 IL PUNTINO STA ACCANTO ALL'ORA, NON DENTRO: `[data-ora]` continua a
+      //    contenere l'ora e basta — è quello che legge la prova del 12/09 qui
+      //    sopra, e il telefono non deve cambiare. Il puntino vive nella stessa
+      //    cella, così esiste solo dove c'è un'ora e non sposta i titoli degli
+      //    impegni che l'ora non ce l'hanno.
+      expect(b.querySelector("[data-ora]").textContent).toBe("09:00");
+      expect(b.querySelector("[data-cella-ora]").textContent.replace(/\s+/g, " ").trim()).toBe("09:00 ·");
+      // Su un impegno senza ora la cella c'è, e il puntino no.
+      const senzOra = giorno("2026-09-07").querySelector("[data-impegno='giornata'] [data-cella-ora]");
+      expect(senzOra.textContent.trim()).toBe("");
+    });
+
+    it("la colonna dell'ora resta larghezza fissa: i titoli partono dallo stesso punto anche in colonna", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+      const celle = [...giorno("2026-09-07").querySelectorAll("[data-cella-ora]")];
+      // Una larghezza per il telefono e una per la colonna, e nessuna delle
+      // due è «auto»: con l'ora in fila libera, «Dentista» partirebbe più a
+      // sinistra di «09:00 · Riunione» (lo misura `prova-visiva.mjs`).
+      // ⚠️ In colonna è PIÙ LARGA del telefono, e non per estetica: lì dentro
+      //    ci sta anche il puntino, e alla misura di prima sarebbe finito
+      //    sopra la prima lettera del titolo.
+      for (const c of celle) {
+        expect(c.className).toMatch(/w-\[3\.2em\]/);
+        expect(c.className).toMatch(/@5xl:w-\[3\.4em\]/);
+        expect(c.className).not.toMatch(/@5xl:w-auto/);
+      }
+      // Il rientro della linea fra impegni segue il titolo, e il titolo
+      // comincia in due posti diversi nelle due forme: sul telefono dopo la
+      // colonna dell'ora, in colonna al bordo (lì l'ora galleggia sopra il
+      // titolo, che resta largo quanto la colonna). Lo pretende
+      // `tests/visive/agenda/linee.js`, che misura il riquadro del titolo.
+      const spazio = giorno("2026-09-07").querySelector("[data-separatore-impegno] span");
+      expect(spazio.className).toMatch(/w-\[3\.2em\]/);
+      expect(spazio.className).toMatch(/@5xl:w-0/);
+    });
+
+    it("sette colonne equilibrate: nessuna cella può allargarsi più delle altre", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorni()).toHaveLength(7));
+      const elenco = document.querySelector("[data-settimana] ol");
+      expect(elenco.className).toMatch(/@5xl:grid-cols-7/);
+      // `min-w-0` su ogni giorno: senza, una parola lunga allarga la sua
+      // colonna e le sette smettono di essere equilibrate.
+      for (const g of giorni()) expect(g.className).toMatch(/@5xl:min-w-0/);
+      // I titoli vanno a capo come parole italiane, non spezzati a caso.
+      const titolo = giorno("2026-09-07").querySelector("[data-titolo]");
+      expect(titolo.getAttribute("lang")).toBe("it");
+      expect(titolo.className).toMatch(/hyphens-auto/);
+    });
+
+    it("il telefono non cambia: «niente» resta, e in colonna si legge «Nessun impegno»", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorni()).toHaveLength(7));
+      const vuoto = giorno("2026-09-08").querySelector("[data-vuoto]");
+      // Le due parole convivono: una si vede sul telefono, l'altra in colonna.
+      const corto = vuoto.querySelector(".\\@5xl\\:hidden");
+      const lungo = vuoto.querySelector(".hidden");
+      expect(corto.textContent).toBe("niente");
+      expect(lungo.textContent).toBe("Nessun impegno");
+      expect(lungo.className).toMatch(/@5xl:inline/);
+      // E l'intestazione del giorno resta quella di prima: corta sul telefono.
+      const intestazione = giorno("2026-09-08").querySelector("[data-intestazione]");
+      expect(intestazione.textContent).toMatch(/Mar/);
+    });
+  });
+
   it("→ la settimana dopo, ← quella prima, e «Torna a questa settimana»", async () => {
     mostra();
     await tocca(screen.getByRole("button", { name: "Settimana" }));
