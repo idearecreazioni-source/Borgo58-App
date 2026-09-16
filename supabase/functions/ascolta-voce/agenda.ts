@@ -467,7 +467,8 @@ export function correggiAgenda(azioni: AzioneDettata[], dettato = ""): AzioneDet
 export function istruzioniAgenda(): string {
   return `
 🔴 SULL'AGENDA CI SONO TRE COSE DIVERSE, E VANNO TENUTE DISTINTE.
-- "promemoria": una cosa NUOVA da ricordare. «Ricordami di chiamare Tiziana domani», «aggiungi il rinnovo della firma digitale per venerdi'». dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null }
+- "promemoria": una cosa NUOVA da ricordare. «Ricordami di chiamare Tiziana domani», «aggiungi il rinnovo della firma digitale per venerdi'». dati: { "titolo": "...", "descrizione": "..."|null, "data": "AAAA-MM-GG"|null, "ora": "HH:MM"|null, "avviso_data": "AAAA-MM-GG"|null, "avviso_ora": "HH:MM"|null, "avviso_chiesto": true|false }
+  ⚠️ I CAMPI DELL'AVVISO CI SONO ANCHE QUI, e non è una ripetizione per bellezza: questo elenco e quello generale descrivono lo STESSO tipo, e finché uno dei due li ometteva il modello poteva leggere quello corto e lasciare cadere l'avviso che aveva capito. Le regole per riempirli sono scritte per intero nell'elenco generale.
 - "${TIPO_FATTO}": un impegno che GIA' ESISTE e che e' stato fatto. «Segna come fatto il rinnovo della firma digitale», «l'ho fatto», «spunta l'ordine delle verdure». dati: { "impegno": "il nome dell'impegno come l'ha detto lui" }
 - "${TIPO_SPOSTA}": un impegno che GIA' ESISTE e va spostato a un altro giorno. «Sposta a venerdi' l'ordine delle verdure», «rimanda a lunedi' la chiamata al commercialista». dati: { "impegno": "il nome come l'ha detto lui", "data_nuova": "AAAA-MM-GG" }
 

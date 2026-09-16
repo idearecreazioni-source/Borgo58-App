@@ -36,6 +36,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { correggiDestinazioni } from "./destinazioni.ts";
 import { correggiSpese } from "./tasca.ts";
 import { correggiAgenda, istruzioniAgenda } from "./agenda.ts";
+// Il giorno E l'ora di adesso, nel fuso del locale (16/09/2026): senza
+// l'ora, «fra cinque minuti» non ha un punto di partenza.
+import { fraseDiAdesso } from "./adesso.ts";
 import {
   causaInItaliano,
   comeRispondere,
@@ -102,6 +105,8 @@ LE COSE CHE IL GESTIONALE SA GIA' FARE
   🔴 "data" è IL GIORNO DELL'IMPEGNO — quando la cosa succede. "avviso_data" e "avviso_ora" sono QUANDO VUOLE ESSERE AVVISATO, che è un'altra cosa e quasi sempre un altro giorno. «Segna che ho appuntamento in banca sabato 13 e ricordamelo con una notifica il giorno prima alle 15» → "data": il 13, "avviso_data": il 12, "avviso_ora": "15:00".
   🔴 E NON SI INVENTANO NÉ IL GIORNO NÉ L'ORA DELL'AVVISO. Se non ha chiesto nessuna notifica, restano tutt'e due **null**: un impegno senza avviso è la cosa normale. Se ha detto il giorno e non l'ora, o l'ora e non il giorno, scrivi solo quello che ha detto: **un'ora plausibile messa al posto di una detta è indistinguibile da un'ora detta**, e l'avviso arriverebbe a un'ora che non ha scelto nessuno.
   ⚠️ "avviso_ora" è l'ora italiana in ventiquattr'ore: «alle tre del pomeriggio» → "15:00", «alle otto di mattina» → "08:00".
+  🔴 «FRA CINQUE MINUTI», «FRA MEZZ'ORA», «FRA DUE ORE» SI CONTANO DA ADESSO. All'inizio del messaggio ti vengono detti il giorno E l'ora di questo momento in Italia: usali. «Mandami una notifica fra cinque minuti» alle 14:20 → "avviso_data": oggi, "avviso_ora": "14:25". Non rispondere mai che non sai che ore sono: l'ora ce l'hai.
+  🔴 E SE SCAVALCA LA MEZZANOTTE, CAMBIA ANCHE IL GIORNO: alle 23:58 «fra cinque minuti» è le "00:03" del GIORNO DOPO, non di oggi. Un avviso datato oggi alle 00:03 sarebbe già passato, e il gestionale lo rifiuterebbe: la notifica non arriverebbe mai.
   🔴 C'È UN TERZO CAMPO, "avviso_chiesto": true/false. Vale **true** quando ha chiesto di essere avvisato, ANCHE SE non ha detto quando — «ricordamelo», «mandami una notifica», «avvisami». Serve a distinguere due casi che senza di lui si leggerebbero uguali: *non voleva nessun avviso* (false, e l'impegno nasce e basta) e *lo voleva e non ha detto quando* (true, e il gestionale glielo chiede). Se non ha nominato nessun avviso, metti **false**.
 - "pulizia": una pulizia già fatta. dati: { "pulizia": <numero del catalogo>, "note": "..."|null }
 - "lista_spesa": aggiungere qualcosa alla lista della spesa. dati: { "nome_libero": "come l'ha detto lui, parola per parola", "quantita": <numero>|null, "unita": "kg"|"l"|"pz"|"mazzo"|"g"|null, "lista": "il nome della lista che ha detto"|null, "note": "..."|null }
@@ -354,14 +359,16 @@ Deno.serve(async (req) => {
   //    lunedì» non può diventare una data e il promemoria nasce senza
   //    scadenza — cioè invisibile, che è il difetto che l'Agenda a corsie
   //    ha appena finito di chiudere.
-  const oggi = new Date().toLocaleDateString("it-IT", {
-    timeZone: "Europe/Rome",
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const isoOggi = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
+  //
+  // 🔴 E DAL 16/09/2026 SI DICE ANCHE L'ORA. Prima si passava solo il
+  //    giorno, quindi «mandami una notifica fra cinque minuti» non aveva un
+  //    punto di partenza e il modello rispondeva — correttamente — che non
+  //    conosceva l'ora attuale. Il conto lo fa lui; qui si dà il riferimento,
+  //    nel fuso del locale e non in quello del server (che è a Greenwich:
+  //    d'estate sarebbe due ore indietro, e l'avviso nascerebbe già passato).
+  //    La funzione è a sé e provata con istanti fissati, mezzanotte e ora
+  //    legale compresi: `adesso.ts`.
+  const adesso = fraseDiAdesso(new Date());
 
   const anthropic = new Anthropic({ apiKey: chiaveAI });
   let risposta = "";
@@ -376,7 +383,7 @@ Deno.serve(async (req) => {
       messages: [
         {
           role: "user",
-          content: `Oggi è ${oggi} (${isoOggi}). Alessio ha detto:\n\n${testo}`,
+          content: `${adesso} Alessio ha detto:\n\n${testo}`,
         },
       ],
     });
