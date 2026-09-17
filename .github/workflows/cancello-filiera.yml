@@ -16,8 +16,25 @@
 #    che cambia non si puo' mettere fra i controlli richiesti.
 name: Cancello della filiera
 
+# 🔴 `pull_request_target` E NON `pull_request` — 18/09/2026, e non e' un
+#    dettaglio: e' la differenza fra un cancello e la sua imitazione.
+#
+#    Con `pull_request`, GitHub prende i file del workflow dalla FUSIONE fra
+#    la proposta e la sua base: cioe' **dalla proposta stessa**. Chiunque
+#    apra un ramo puo' riscrivere QUESTO file perche' dica sempre di si', e
+#    il controllo obbligatorio — che si riconosce dal NOME — risulterebbe
+#    soddisfatto. Un cancello che accetta la chiave fabbricata da chi bussa.
+#
+#    Con `pull_request_target` il workflow si legge dalla BASE: da `master`
+#    per le proposte verso master, da `slave` per quelle verso slave. La
+#    proposta non puo' toccarlo.
+#
+# ⚠️ IL PREZZO DI `pull_request_target`, dichiarato: gira col token del
+#    repository. Per questo qui dentro NON si fa `checkout` della proposta e
+#    non si esegue NIENTE che venga dal ramo proposto — si leggono solo
+#    metadati. I permessi sono di sola lettura, dichiarati sul lavoro.
 on:
-  pull_request:
+  pull_request_target:
     branches: [master, slave]
 
 permissions:
@@ -118,5 +135,18 @@ jobs:
           fi
           echo "Il commit candidato e' uscito su Borgo58-Prova, ed e' riuscito."
 
+      # ⚠️ UN ESITO POSITIVO ESPLICITO, e non il semplice silenzio di un
+      #    lavoro che non ha detto niente: chi legge deve poter distinguere
+      #    «e' passato» da «non e' mai partito».
       - name: Riepilogo
-        run: echo "Cancello della filiera superato."
+        env:
+          BASE: ${{ github.base_ref }}
+          TESTA: ${{ github.head_ref }}
+        run: |
+          echo "CANCELLO SUPERATO: $TESTA -> $BASE, definizione letta dalla base."
+          {
+            echo "### Cancello della filiera: superato"
+            echo ""
+            echo "- proposta: `$TESTA` verso `$BASE`"
+            echo "- definizione del controllo: letta dalla base, non dalla proposta"
+          } >> "$GITHUB_STEP_SUMMARY"
