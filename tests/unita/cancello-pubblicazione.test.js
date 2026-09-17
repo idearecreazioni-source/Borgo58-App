@@ -67,7 +67,7 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     //    ⚠️ Rimettere QUALUNQUE condizione su quella variabile qui fa tornare
     //    l'aut-aut, e questa riga e' l'unica cosa che se ne accorgerebbe.
     expect(lavoroProva).not.toMatch(/PUBBLICAZIONE_DA_GITHUB/);
-    expect(lavoroProva).toMatch(/if: github\.ref == 'refs\/heads\/master'\s*$/m);
+    expect(lavoroProva).toMatch(/if: github\.ref == 'refs\/heads\/slave'\s*$/m);
   });
 
   it("🔴 l'interruttore e' letto in `if:`, quindi NON puo' vivere nell'ambiente", () => {
@@ -290,7 +290,12 @@ describe("il confronto fra due fotografie di Cloudflare", () => {
 //    si prova che la riga che lo impone c'e' e non e' stata tolta.
 describe("🔴 in produzione ci si arriva DOPO Borgo58-Prova", () => {
   it("la produzione dipende dalla pubblicazione su Prova", () => {
-    expect(lavoroPubblica).toMatch(/needs:\s*\[[^\]]*\bprova_di_rilascio\b[^\]]*\]/);
+    // 🔴 DAL 18/09/2026 IL LEGAME NON E' PIU' `needs:`: Prova nasce da
+    //    `slave`, cioe' da un GIRO DIVERSO, e `needs:` non attraversa i
+    //    giri. Il fatto si legge dove GitHub lo registra — un rilascio
+    //    riuscito sull'ambiente `anteprima` con lo stesso commit.
+    expect(lavoroPubblica).toMatch(/environment=anteprima&sha=\$GITHUB_SHA/);
+    expect(lavoroPubblica).toMatch(/--ambiente produzione --stesso-commit/);
   });
 
   it("🔴 e non si scavalca con `always()`: un lavoro saltato deve FERMARE, non passare", () => {
@@ -321,7 +326,7 @@ describe("🔴 in produzione ci si arriva DOPO Borgo58-Prova", () => {
 
   it("e la produzione lo confronta col proprio, prima di spendere un minuto", () => {
     expect(lavoroPubblica).toMatch(
-      /COMMIT_DI_PROVA: \$\{\{ needs\.prova_di_rilascio\.outputs\.commit \}\}/,
+      /COMMIT_DI_PROVA: \$\{\{ env\.COMMIT_DI_PROVA \}\}/,
     );
     expect(lavoroPubblica).toMatch(/--ambiente produzione --stesso-commit/);
 
