@@ -21,7 +21,17 @@ import { ORFANE_PIANIFICATE, ORFANE_SEMPRE, orfaneAttese } from "../app/orfane";
 //    La decisione riceve l'elenco delle versioni invece di andarselo a
 //    prendere, ed e' esattamente cio' che la rende provabile.
 
-const VERSIONE = ORFANE_PIANIFICATE.raccogli_esiti_promemoria.versione;
+// 🔴 UN ELENCO INVENTATO, NON QUELLO VERO — 18/09/2026. Prima questa riga
+//    leggeva `ORFANE_PIANIFICATE.raccogli_esiti_promemoria`: il giorno in cui
+//    quella voce e' uscita dall'elenco (perche' il database ha dimostrato che
+//    una porta ce l'ha) questo file e' morto in fase di import, e con lui otto
+//    prove che non c'entravano niente. *Una prova che dipende dal contenuto
+//    che sorveglia si rompe quando il contenuto cambia — ed e' proprio quando
+//    serve.*
+const VERSIONE = "29990101000001";
+const PIANIFICATE_FINTE = {
+  raccogli_esiti_promemoria: { versione: VERSIONE, perche: "lavoro pianificato: finto, per la prova" },
+};
 
 /** Come e' il registro delle migrazioni PRIMA che la 20260917000001 entri. */
 const PRIMA = ["20260915000001", "20260916000001", "20260916000002"];
@@ -33,12 +43,12 @@ describe("🔴 una funzione pianificata si aspetta solo dove la sua migrazione e
     // È lo stato di Borgo58-Prova e della produzione finché la migrazione non
     // viene applicata: quella funzione lì dentro NON esiste, e pretenderla
     // farebbe gridare la rete su un debito che non c'è ancora.
-    const attese = orfaneAttese(PRIMA);
+    const attese = orfaneAttese(PRIMA, PIANIFICATE_FINTE);
     expect("raccogli_esiti_promemoria" in attese).toBe(false);
   });
 
   it("versione PRESENTE → la funzione pianificata e' attesa, col suo perche'", () => {
-    const attese = orfaneAttese(DOPO);
+    const attese = orfaneAttese(DOPO, PIANIFICATE_FINTE);
     expect("raccogli_esiti_promemoria" in attese).toBe(true);
     expect(attese.raccogli_esiti_promemoria).toMatch(/lavoro pianificato/);
   });
@@ -47,14 +57,14 @@ describe("🔴 una funzione pianificata si aspetta solo dove la sua migrazione e
   //    decisione rotta che restituisse sempre lo stesso elenco passerebbe
   //    tutte e due le prove qui sopra senza distinguere niente.
   it("⚠️ e i due elenchi sono DAVVERO diversi, non la stessa cosa due volte", () => {
-    const a = Object.keys(orfaneAttese(PRIMA)).sort();
-    const b = Object.keys(orfaneAttese(DOPO)).sort();
+    const a = Object.keys(orfaneAttese(PRIMA, PIANIFICATE_FINTE)).sort();
+    const b = Object.keys(orfaneAttese(DOPO, PIANIFICATE_FINTE)).sort();
     expect(b.length).toBe(a.length + 1);
     expect(b.filter((n) => !a.includes(n))).toEqual(["raccogli_esiti_promemoria"]);
   });
 
   it("le orfane di sempre ci sono in tutti e due i casi", () => {
-    for (const elenco of [orfaneAttese(PRIMA), orfaneAttese(DOPO)]) {
+    for (const elenco of [orfaneAttese(PRIMA, PIANIFICATE_FINTE), orfaneAttese(DOPO, PIANIFICATE_FINTE)]) {
       for (const nome of Object.keys(ORFANE_SEMPRE)) {
         expect(nome in elenco, `«${nome}» è sparita dall'elenco`).toBe(true);
       }
@@ -74,6 +84,8 @@ describe("🔴 una funzione pianificata si aspetta solo dove la sua migrazione e
   it("🔴 nessuna funzione sta in tutti e due gli elenchi", () => {
     // Sarebbero due risposte alla stessa domanda, e il giorno che divergono
     // vincerebbe quella scritta piu' in basso — senza che nessuno lo sappia.
+    // ⚠️ Regge anche con l'elenco vuoto: e' una proprieta' dell'elenco vero,
+    //    non del fatto che contenga qualcosa.
     const doppie = Object.keys(ORFANE_PIANIFICATE).filter((n) => n in ORFANE_SEMPRE);
     expect(doppie).toEqual([]);
   });
