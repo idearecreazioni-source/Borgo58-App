@@ -57,7 +57,9 @@ export function problemaNelChiudere(w) {
     return `ha ${w.nonInMaster} commit che non stanno in master. Prima si uniscono o si spingono.`;
   if (diUnAltroStrumento(w.percorso))
     return "sta nella cartella di un altro strumento: potrebbe essere in uso proprio adesso, e «pulito» non vuol dire «libero». Chiudilo da li'.";
-  if (!existsSync(w.percorso)) return "la cartella non c'e' piu': serve una potatura, non una chiusura.";
+  // ⚠️ SI GUARDA IL DATO GIA' RACCOLTO DAL CENSIMENTO, non il disco: cosi'
+  //    questa regola si puo' provare su casi inventati senza doverli creare.
+  if (w.esiste === false) return "la cartella non c'e' piu': serve una potatura, non una chiusura.";
   return null;
 }
 
