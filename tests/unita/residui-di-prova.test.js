@@ -40,8 +40,11 @@ describe("che cosa si cancella", () => {
     for (const r of RESIDUI_NOTI) {
       expect(r.tabella).toBeTruthy();
       expect(r.colonna).toBeTruthy();
-      expect(r.valore).toBeTruthy();
-      expect(r.valore).not.toMatch(/[%*]/);
+      // 🔴 O un nome esatto O un inizio dichiarato: mai tutti e due, mai
+      //    nessuno dei due — e mai un jolly nascosto dentro la stringa.
+      const quanti = [r.valore, r.prefisso].filter(Boolean).length;
+      expect(quanti, `«${r.tabella}.${r.colonna}» deve dire valore OPPURE prefisso`).toBe(1);
+      expect(r.valore ?? r.prefisso).not.toMatch(/[%*_]/);
     }
   });
 });
