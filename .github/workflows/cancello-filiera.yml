@@ -33,7 +33,19 @@ name: Cancello della filiera
 #    repository. Per questo qui dentro NON si fa `checkout` della proposta e
 #    non si esegue NIENTE che venga dal ramo proposto — si leggono solo
 #    metadati. I permessi sono di sola lettura, dichiarati sul lavoro.
+# ⚠️ PERCHE' IN QUESTO MOMENTO CI SONO TUTTI E DUE I TRIGGER. Il file che
+#    GitHub legge per `pull_request` sta nella PROPOSTA; quello che legge per
+#    `pull_request_target` sta nella BASE. Passando dall'uno all'altro in una
+#    sola mossa, la proposta che fa il cambio non troverebbe NESSUNO dei due
+#    — la sua versione non ha piu' il primo, la base non ha ancora il secondo
+#    — e il controllo obbligatorio non riporterebbe mai: tutto bloccato.
+#    🔴 Finche' durano tutti e due, il cancello NON si indebolisce: entrambi
+#    i giri portano lo stesso nome e devono essere verdi tutti e due, e
+#    quello letto dalla base non e' falsificabile. `pull_request` si toglie
+#    con la proposta successiva, quando la base avra' gia' il secondo.
 on:
+  pull_request:
+    branches: [master, slave]
   pull_request_target:
     branches: [master, slave]
 
