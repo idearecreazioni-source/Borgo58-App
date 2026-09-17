@@ -45,7 +45,8 @@
     "cloudflare": "node scripts/cloudflare.mjs",
     "cloudflare:verifica": "node scripts/cloudflare-verifica.mjs",
     "peso": "node scripts/peso-pacchetto.mjs",
-    "copertura": "node scripts/copertura.mjs"
+    "copertura": "node scripts/copertura.mjs",
+    "worktree": "node scripts/worktree.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
