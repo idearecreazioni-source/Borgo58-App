@@ -123,6 +123,12 @@ const ORFANE_NOTE = {
 
   // Lavoro pianificato: lo chiama pg_cron, non una persona.
   send_due_task_reminders: "lavoro pianificato: i promemoria dell'Agenda",
+  // ⚠️ AGGIUNTA IL 17/09/2026 col giro che guarda com'e' finito un invio.
+  //    Stessa natura della riga qui sopra e stessa coppia: una accoda, l'altra
+  //    va a vedere se e' arrivato. Una porta a schermo non avrebbe senso —
+  //    quello che si guarda a schermo e' il REGISTRO degli invii, non il giro
+  //    che lo riempie.
+  raccogli_esiti_promemoria: "lavoro pianificato: l'esito dei promemoria dell'Agenda",
 
   // Interrogata da uno script a riga di comando.
   numeri_sospetti: "interrogata da `npm run numeri`",

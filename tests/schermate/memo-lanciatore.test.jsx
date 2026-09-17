@@ -167,6 +167,29 @@ describe("🔴 un pulsante in più, non un microfono in più", () => {
     expect(finte.manda).not.toHaveBeenCalled();
   });
 
+  // 🔴 DOVE STA IL PULSANTE, e non solo che c'è — 17/09/2026.
+  //    Che lo veda il titolare e non lo staff era già provato qui sotto; che
+  //    stia NELLA TESTATA DEL TELEFONO non lo era. È la metà che manca,
+  //    perché un pulsante che scivola dentro la pagina continuerebbe a far
+  //    passare tutte le prove di sopra — si aprirebbe, si tornerebbe
+  //    indietro, lo staff non lo vedrebbe — e sarebbe un'altra cosa.
+  it("🔴 il pulsante sta nella TESTATA DEL TELEFONO, non in mezzo alla pagina", () => {
+    mostra("/agenda");
+    const link = screen.getByRole("link", { name: "Apri MEMO voce" });
+    const testata = link.closest("header");
+    // ⚠️ QUI IL CSS NON C'È, quindi non si guarda che cosa si VEDE: si guarda
+    //    DOVE STA, che è un fatto dell'albero della pagina e non un colore.
+    //    La testata è quella che esiste solo sugli schermi stretti
+    //    (`lg:hidden`) — tablet e telefono. Sul computer la porta equivalente
+    //    è la voce della barra laterale, provata qui sopra.
+    expect(testata, "il pulsante MEMO non è dentro nessuna testata").toBeTruthy();
+    expect(testata.className).toMatch(/lg:hidden/);
+    // 🔴 E NON GALLEGGIA SOPRA IL CONTENUTO: la testata sta FUORI dalla
+    //    pagina, quindi non copre nessun gesto. Un pulsante flottante sopra
+    //    l'Agenda coprirebbe proprio le righe che si toccano.
+    expect(testata.contains(document.querySelector("[data-qui]"))).toBe(false);
+  });
+
   it("⚠️ lo staff non lo vede (MEMO voce è solo del titolare)", () => {
     finte.auth = { isTitolare: false, isStaff: true, logout: vi.fn() };
     mostra("/agenda");
