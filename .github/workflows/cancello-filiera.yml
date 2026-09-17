@@ -32,8 +32,12 @@ jobs:
     name: Cancello della filiera
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # ⚠️ `deployments: read` NON e' un di piu': senza, la domanda «questo
+    #    commit e' uscito su Prova?» torna 403 e il cancello fallirebbe sul
+    #    percorso LECITO — cioe' bloccherebbe tutto invece del solo abuso.
     permissions:
       contents: read
+      deployments: read
     steps:
       # -------------------------------------------------------------
       # 1. DA DOVE ARRIVA
