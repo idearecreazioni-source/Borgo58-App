@@ -44,7 +44,7 @@
 //
 // ⚠️ E LE PRENOTAZIONI E GLI ALLARMI NON CAMBIANO DI UNA RIGA: arrivano
 //    senza chiave, e per loro la strada e' quella di sempre.
-import { chiaveDiConsegna, consegnaUnaVoltaSola } from "./consegna.ts";
+import { consegnaUnaVoltaSola, stradaDellaConsegna } from "./consegna.ts";
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
@@ -253,17 +253,12 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
 
-  // 🔴 LA CHIAVE ARRIVA CON LA RICHIESTA, e se non c'e' si ricompone dai
-  //    dati dell'impegno: cosi' una richiesta partita da un database ancora
-  //    indietro non resta scoperta.
-  const chiave =
-    payload.type === "task_reminder"
-      ? (typeof payload.chiave_consegna === "string" && payload.chiave_consegna.trim()
-          ? payload.chiave_consegna.trim()
-          : chiaveDiConsegna(payload.task))
-      : null;
+  // 🔴 LA CHIAVE SI PRENDE SOLO SE ARRIVA SCRITTA, e non si ricompone MAI da
+  //    altri campi. Il perche' — l'ordine del rilascio — sta in `consegna.ts`,
+  //    accanto alla regola, e non qui dove verrebbe letto una volta sola.
+  const strada = stradaDellaConsegna(payload);
 
-  if (chiave) {
+  if (strada.dedup) {
     // 🔴 SENZA MEMORIA NON SI MANDA, e si dice perche'. Mandare comunque
     //    sarebbe esattamente il difetto: un avviso che parte due volte perche'
     //    nessuno ha potuto ricordarsi del primo. Si fallisce CHIUSI e
@@ -282,7 +277,7 @@ Deno.serve(async (req) => {
 
     return rispondi(
       await consegnaUnaVoltaSola({
-        chiave,
+        chiave: strada.chiave,
         prendi: (c) => rpc("prendi_consegna", { p_chiave: c }) as Promise<never>,
         conferma: async (c) => {
           await rpc("conferma_consegna", { p_chiave: c });

@@ -72,6 +72,33 @@
 --    risponde **200 con `{"skipped": true}`** quando non manda niente e
 --    **200 con `{"ok": true}`** quando ha mandato davvero — lo stesso codice
 --    per «mandato» e «non mandato». Il discriminante è il CORPO.
+--
+-- ---------------------------------------------------------------------
+-- 🔴 L'ORDINE DEL RILASCIO — PRIMA LA FUNZIONE ONLINE, POI QUESTA
+-- ---------------------------------------------------------------------
+-- Non è una preferenza: è l'unico ordine in cui nessuna delle due metà
+-- trova l'altra impreparata.
+--
+--   1. **PRIMA** si pubblica `notify-telegram-reservation`. Il database è
+--      ancora quello vecchio e non manda nessuna chiave, quindi la funzione
+--      nuova prende la strada diretta e si comporta **esattamente come
+--      prima**. Pubblicarla da sola non cambia niente e non rompe niente.
+--   2. **POI** si applica questa migrazione. Da quel momento il database
+--      manda la chiave con ogni richiesta, e la deduplicazione entra in
+--      funzione da sé.
+--
+-- ⚠️ AL CONTRARIO NON SI PUÒ, e il modo di fallire è muto: con questa
+--    migrazione applicata e la funzione ancora vecchia, il database
+--    manderebbe la chiave a qualcuno che non sa leggerla. Nessuna
+--    deduplicazione, nessun errore, e il doppione tornerebbe possibile —
+--    cioè esattamente il difetto da cui è nato tutto questo lavoro.
+--
+-- 🔴 E LA FINESTRA FRA I DUE PASSI È SICURA **SOLO** PERCHÉ LA FUNZIONE NON
+--    RICOMPONE LA CHIAVE. La prima stesura, se la chiave non c'era, se la
+--    ricostruiva dai campi dell'impegno e tentava di deduplicare lo stesso:
+--    ma in quella finestra il registro delle consegne non esiste ancora, la
+--    chiamata solleva, e **nessun promemoria partirebbe più**. *Una
+--    prudenza in più rendeva pericoloso proprio l'ordine giusto.*
 -- =====================================================================
 
 -- ---------------------------------------------------------------------

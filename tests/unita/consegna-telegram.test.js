@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  chiaveDiConsegna,
   consegnaUnaVoltaSola,
+  stradaDellaConsegna,
 } from "../../supabase/functions/notify-telegram-reservation/consegna";
 
 // =====================================================================
@@ -85,48 +86,126 @@ const giro = (m, chiave, manda) =>
 const vaBene = () => ({ riuscito: true });
 const CHIAVE = "promemoria:00000000-0000-0000-0000-0000000000ff:2026-09-20T15:00:00.000Z";
 
-describe("🔴 la chiave di consegna, e il punto di giunzione coi due lati", () => {
-  // 🔴 LA STESSA STRINGA CHE PRETENDE LA VERIFICA DELLA MIGRAZIONE. È così
-  //    che si dimostra, senza un database acceso, che il database e la
-  //    funzione online compongono la STESSA chiave. Se divergessero, il
-  //    riconoscimento non avverrebbe mai e ogni ritentativo manderebbe un
-  //    secondo Telegram — in silenzio, che è il modo peggiore.
-  it("ha la forma esatta che il database si aspetta", () => {
-    expect(
-      chiaveDiConsegna({
-        id: "00000000-0000-0000-0000-0000000000ff",
-        remind_at: "2026-09-20T15:00:00Z",
-      }),
-    ).toBe(CHIAVE);
+/** Un promemoria come lo manda il database NUOVO: con la chiave scritta. */
+const daNuovo = {
+  type: "task_reminder",
+  chiave_consegna: CHIAVE,
+  task: { id: "00000000-0000-0000-0000-0000000000ff", remind_at: "2026-09-20T15:00:00Z" },
+};
+
+/** Lo stesso promemoria come lo manda il database VECCHIO: senza chiave. */
+const daVecchio = {
+  type: "task_reminder",
+  task: { id: "00000000-0000-0000-0000-0000000000ff", remind_at: "2026-09-20T15:00:00Z" },
+};
+
+describe("🔴 le due strade: si deduplica SOLO se la chiave arriva scritta", () => {
+  it("col database nuovo la chiave c'è, e si passa dalla deduplicazione", () => {
+    const s = stradaDellaConsegna(daNuovo);
+    expect(s.dedup).toBe(true);
+    expect(s.chiave).toBe(CHIAVE);
   });
 
-  it("⚠️ lo stesso istante scritto in due fusi dà UNA chiave sola", () => {
-    // Due scritture diverse dello stesso momento darebbero due chiavi, cioè
-    // due Telegram: il caso si presenta da sé, perché il database scrive in
-    // UTC e chi legge può ricevere l'ora locale.
-    expect(
-      chiaveDiConsegna({
-        id: "00000000-0000-0000-0000-0000000000ff",
-        remind_at: "2026-09-20T17:00:00+02:00",
-      }),
-    ).toBe(CHIAVE);
+  // 🔴 QUESTA È LA PROVA CHE LA CHIAVE NON SI RICOMPONE, ed è il cuore della
+  //    correzione. Il payload qui sotto porta TUTTO quello che servirebbe a
+  //    fabbricarla — l'impegno e il momento dell'avviso — e la risposta deve
+  //    essere lo stesso «strada diretta». Se un giorno qualcuno rimettesse la
+  //    ricomposizione «per non lasciare scoperto niente», questa riga è
+  //    l'unica cosa che se ne accorgerebbe.
+  it("🔴 col database vecchio NON si ricompone da id e remind_at: strada diretta", () => {
+    const s = stradaDellaConsegna(daVecchio);
+    expect(s.dedup).toBe(false);
+    expect(s.chiave).toBeUndefined();
   });
 
-  it("🔴 ma spostando l'avviso la chiave CAMBIA", () => {
-    // Senza questo, un secondo avviso — legittimo e diverso — verrebbe
-    // scambiato per un doppione del primo e non partirebbe mai.
-    expect(
-      chiaveDiConsegna({
-        id: "00000000-0000-0000-0000-0000000000ff",
-        remind_at: "2026-09-21T15:00:00Z",
-      }),
-    ).not.toBe(CHIAVE);
+  it("una chiave vuota, di soli spazi o che non è testo non è una chiave", () => {
+    expect(stradaDellaConsegna({ ...daVecchio, chiave_consegna: "" }).dedup).toBe(false);
+    expect(stradaDellaConsegna({ ...daVecchio, chiave_consegna: "   " }).dedup).toBe(false);
+    expect(stradaDellaConsegna({ ...daVecchio, chiave_consegna: 42 }).dedup).toBe(false);
+    expect(stradaDellaConsegna({ ...daVecchio, chiave_consegna: null }).dedup).toBe(false);
   });
 
-  it("senza i suoi due ingredienti non si compone", () => {
-    expect(chiaveDiConsegna({ id: "x" })).toBeNull();
-    expect(chiaveDiConsegna({ remind_at: "2026-09-20T15:00:00Z" })).toBeNull();
-    expect(chiaveDiConsegna(null)).toBeNull();
+  it("gli spazi intorno si tolgono: la chiave è quella, non la sua battitura", () => {
+    expect(stradaDellaConsegna({ ...daVecchio, chiave_consegna: ` ${CHIAVE}\n` }).chiave).toBe(CHIAVE);
+  });
+
+  it("⚠️ prenotazioni e allarmi non hanno chiave, e restano sulla strada di sempre", () => {
+    // Nascono da un fatto che avviene una volta sola e che nessuno ritenta:
+    // per loro la deduplicazione non servirebbe a niente.
+    expect(stradaDellaConsegna({ record: { source: "form_pubblico" } }).dedup).toBe(false);
+    expect(stradaDellaConsegna({ type: "allarme", allarme: { tipo: "x" } }).dedup).toBe(false);
+    expect(stradaDellaConsegna(null).dedup).toBe(false);
+    expect(stradaDellaConsegna(undefined).dedup).toBe(false);
+  });
+});
+
+describe("🔴 l'ordine del rilascio: prima la funzione online, poi la migrazione", () => {
+  // 🔴 PERCHÉ QUESTO ORDINE E NON L'ALTRO.
+  //    · Funzione prima: il database è ancora quello vecchio, non manda
+  //      nessuna chiave, quindi la funzione nuova prende la strada diretta e
+  //      si comporta esattamente come prima. Pubblicarla da sola non cambia
+  //      niente.
+  //    · Migrazione prima: il database manderebbe la chiave a una funzione
+  //      che non sa leggerla — nessuna deduplicazione, nessun errore, e il
+  //      doppione tornerebbe possibile IN SILENZIO.
+  //
+  // ⚠️ E LA FINESTRA FRA I DUE PASSI REGGE SOLO PERCHÉ IL REGISTRO DELLE
+  //    CONSEGNE NON VIENE TOCCATO quando la chiave manca: in quella finestra
+  //    quel registro **non esiste ancora**, e chiamarlo farebbe fallire ogni
+  //    promemoria. È il pericolo che la prima stesura aveva introdotto
+  //    ricomponendo la chiave.
+  //
+  // ⚠️ LA PROPRIETÀ SI PROVA IN DUE PEZZI, e non ricopiando qui la scelta
+  //    della strada — due posti che dicono la stessa cosa divergono, ed è il
+  //    difetto che questo progetto rifiuta per regola. Primo pezzo: la
+  //    decisione, che è pura ed è provata qui sopra. Secondo pezzo: che il
+  //    registro stia DENTRO quel ramo, che si legge dalla funzione stessa.
+  const funzione = readFileSync(
+    "supabase/functions/notify-telegram-reservation/index.ts",
+    "utf8",
+  );
+
+  it("🔴 il registro delle consegne si tocca SOLO dentro il ramo della chiave", () => {
+    const ramo = funzione.indexOf("if (strada.dedup)");
+    expect(ramo, "il ramo della deduplicazione non c'è più con questo nome").toBeGreaterThan(-1);
+
+    // Le tre chiamate al registro vivono tutte dopo l'inizio di quel ramo.
+    for (const nome of ["prendi_consegna", "conferma_consegna", "rilascia_consegna"]) {
+      const dove = funzione.indexOf(nome);
+      expect(dove, `${nome} non è nominata nella funzione`).toBeGreaterThan(-1);
+      expect(dove, `${nome} può essere chiamata fuori dal ramo della chiave`).toBeGreaterThan(ramo);
+    }
+  });
+
+  it("⚠️ e quel controllo sa dire di NO: tarato su un caso di risposta nota", () => {
+    // 🔴 SENZA QUESTA RIGA, IL CONTROLLO QUI SOPRA POTREBBE NON PROVARE
+    //    NIENTE. È un confronto fra posizioni, e un confronto fra posizioni
+    //    che non sappia riconoscere il caso storto dice «a posto» su
+    //    qualunque file — in questo progetto è già costato due volte (22/08
+    //    sui gesti pericolosi, 17/09 sull'ordine dei passi del workflow, dove
+    //    la parola cercata stava dentro un commento).
+    //    Qui si prova su una funzione FINTA in cui il registro viene toccato
+    //    PRIMA del ramo, che è esattamente il difetto che deve prendere.
+    const storta = 'await rpc("prendi_consegna", {});\nif (strada.dedup) {\n}\n';
+    const ramo = storta.indexOf("if (strada.dedup)");
+    expect(ramo).toBeGreaterThan(-1);
+    expect(
+      storta.indexOf("prendi_consegna"),
+      "il controllo non si accorge di una chiamata al registro fuori dal ramo",
+    ).toBeLessThan(ramo);
+  });
+
+  it("⚠️ e la funzione non sa più comporre una chiave: non può fabbricarne una", () => {
+    // Se sapesse comporla, il ripiego potrebbe tornare senza che nessuno lo
+    // decida — ed è precisamente come era tornato la prima volta.
+    expect(funzione).not.toMatch(/chiaveDiConsegna/);
+    expect(funzione).not.toMatch(/promemoria:\$\{/);
+  });
+
+  it("la strada diretta è ancora lì, e serve solo alla finestra del rilascio", () => {
+    // Toglierla vorrebbe dire che pubblicare la funzione prima della
+    // migrazione spegne tutti i promemoria: cioè nessun ordine sarebbe sicuro.
+    expect(funzione).toMatch(/const telegramRes = await sendTelegram\(message\);/);
   });
 });
 

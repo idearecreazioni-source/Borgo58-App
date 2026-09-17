@@ -39,27 +39,44 @@ export type EsitoPresa =
 
 export type Risposta = { stato: number; corpo: Record<string, unknown> };
 
+/** Che strada prende questa notifica. */
+export type Strada = { dedup: true; chiave: string } | { dedup: false };
+
 /**
- * La chiave di una consegna di promemoria.
+ * 🔴 SI DEDUPLICA SOLO SE LA CHIAVE ARRIVA SCRITTA NEL PAYLOAD, e non si
+ *    ricompone MAI da altri campi. Sembra una prudenza in meno ed e' il
+ *    contrario: e' cio' che rende sicuro l'ordine del rilascio.
  *
- * 🔴 DUE INGREDIENTI E NON UNO: l'impegno **e** il momento in cui va dato
- *    l'avviso. Col solo impegno, spostando l'avviso a un'altra data il
- *    secondo avviso — che e' legittimo e diverso — verrebbe scambiato per un
- *    doppione del primo e non partirebbe mai.
- * ⚠️ E' una funzione PURA di due valori che il database possiede gia': non
- *    si genera a caso, altrimenti non sarebbe stabile fra i tentativi — che
- *    e' l'unica proprieta' che conta.
+ * ⚠️ IL PERICOLO CHE TOGLIE, e l'avevo messo io. La prima stesura, quando la
+ *    chiave non c'era, se la ricostruiva dai campi dell'impegno e tentava di
+ *    deduplicare lo stesso. Ma fra la pubblicazione di questa funzione e
+ *    l'applicazione della migrazione c'e' una finestra in cui il database e'
+ *    ancora quello vecchio: il registro delle consegne **non esiste**, la
+ *    chiamata solleva, e in quella finestra **nessun promemoria partirebbe
+ *    piu'**. Cioe' la ricomposizione rendeva pericoloso proprio l'ordine
+ *    giusto.
+ *
+ * 🔴 L'ORDINE DEL RILASCIO, E PERCHE' E' QUESTO:
+ *      1. PRIMA la funzione online. Il database vecchio non manda nessuna
+ *         chiave, quindi questa funzione prende la strada diretta e si
+ *         comporta **esattamente come prima**: pubblicarla da sola non
+ *         cambia niente e non rompe niente.
+ *      2. POI la migrazione. Da quel momento il database manda la chiave, e
+ *         la deduplicazione entra in funzione da se'.
+ *    ⚠️ AL CONTRARIO NON SI PUO': con la migrazione applicata e la funzione
+ *    vecchia, il database manderebbe la chiave a qualcuno che non sa
+ *    leggerla — nessuna deduplicazione, e il doppione tornerebbe possibile
+ *    **in silenzio**, che e' il difetto da cui e' nato tutto questo.
+ *
+ * ⚠️ E LA STRADA DIRETTA SERVE SOLO ALLA FINESTRA DEL RILASCIO. Chiusa
+ *    quella, un promemoria senza chiave non esiste piu': lo mandano soltanto
+ *    le prenotazioni e gli allarmi, che nascono da un fatto che avviene una
+ *    volta sola e che nessuno ritenta.
  */
-export function chiaveDiConsegna(task: Record<string, unknown> | null | undefined): string | null {
-  const id = typeof task?.id === "string" ? task.id.trim() : "";
-  const quando = typeof task?.remind_at === "string" ? task.remind_at.trim() : "";
-  if (!id || !quando) return null;
-  // L'istante si normalizza: `2026-09-20T15:00:00+00:00` e
-  // `2026-09-20T15:00:00Z` sono lo stesso momento, e due scritture diverse
-  // dello stesso momento darebbero due chiavi — cioe' due Telegram.
-  const t = Date.parse(quando);
-  const normale = Number.isNaN(t) ? quando : new Date(t).toISOString();
-  return `promemoria:${id}:${normale}`;
+export function stradaDellaConsegna(payload: Record<string, unknown> | null | undefined): Strada {
+  const grezza = payload?.chiave_consegna;
+  const chiave = typeof grezza === "string" ? grezza.trim() : "";
+  return chiave ? { dedup: true, chiave } : { dedup: false };
 }
 
 /**
