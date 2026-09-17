@@ -1,0 +1,164 @@
+# =====================================================================
+# IL CANCELLO DELLA FILIERA — 17/09/2026
+# =====================================================================
+#
+# PERCHE' ESISTE. I ruleset di GitHub sanno dire «serve una proposta» e
+# «i controlli devono essere verdi». NON sanno dire «questa proposta deve
+# arrivare esattamente da slave»: quella condizione non esiste fra le
+# regole. Finche' vive dentro un `if:` del lavoro che pubblica, non e' un
+# vincolo — e' una cortesia, e si scioglie con una riga.
+#
+# ⚠️ Per essere un vincolo vero, il nome di questo controllo
+#    (`Cancello della filiera`) deve stare fra i controlli RICHIESTI del
+#    ruleset di `master` e di `slave`. Il file da solo non impedisce niente.
+#
+# 🔴 IL NOME DEL LAVORO E' STABILE E NON DIPENDE DA UNA MATRICE: un nome
+#    che cambia non si puo' mettere fra i controlli richiesti.
+name: Cancello della filiera
+
+# 🔴 `pull_request_target` E NON `pull_request` — 18/09/2026, e non e' un
+#    dettaglio: e' la differenza fra un cancello e la sua imitazione.
+#
+#    Con `pull_request`, GitHub prende i file del workflow dalla FUSIONE fra
+#    la proposta e la sua base: cioe' **dalla proposta stessa**. Chiunque
+#    apra un ramo puo' riscrivere QUESTO file perche' dica sempre di si', e
+#    il controllo obbligatorio — che si riconosce dal NOME — risulterebbe
+#    soddisfatto. Un cancello che accetta la chiave fabbricata da chi bussa.
+#
+#    Con `pull_request_target` il workflow si legge dalla BASE: da `master`
+#    per le proposte verso master, da `slave` per quelle verso slave. La
+#    proposta non puo' toccarlo.
+#
+# ⚠️ IL PREZZO DI `pull_request_target`, dichiarato: gira col token del
+#    repository. Per questo qui dentro NON si fa `checkout` della proposta e
+#    non si esegue NIENTE che venga dal ramo proposto — si leggono solo
+#    metadati. I permessi sono di sola lettura, dichiarati sul lavoro.
+# ⚠️ PERCHE' IN QUESTO MOMENTO CI SONO TUTTI E DUE I TRIGGER. Il file che
+#    GitHub legge per `pull_request` sta nella PROPOSTA; quello che legge per
+#    `pull_request_target` sta nella BASE. Passando dall'uno all'altro in una
+#    sola mossa, la proposta che fa il cambio non troverebbe NESSUNO dei due
+#    — la sua versione non ha piu' il primo, la base non ha ancora il secondo
+#    — e il controllo obbligatorio non riporterebbe mai: tutto bloccato.
+#    🔴 Finche' durano tutti e due, il cancello NON si indebolisce: entrambi
+#    i giri portano lo stesso nome e devono essere verdi tutti e due, e
+#    quello letto dalla base non e' falsificabile. `pull_request` si toglie
+#    con la proposta successiva, quando la base avra' gia' il secondo.
+on:
+  pull_request:
+    branches: [master, slave]
+  pull_request_target:
+    branches: [master, slave]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cancello-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cancello:
+    name: Cancello della filiera
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ⚠️ `deployments: read` NON e' un di piu': senza, la domanda «questo
+    #    commit e' uscito su Prova?» torna 403 e il cancello fallirebbe sul
+    #    percorso LECITO — cioe' bloccherebbe tutto invece del solo abuso.
+    permissions:
+      contents: read
+      deployments: read
+    steps:
+      # -------------------------------------------------------------
+      # 1. DA DOVE ARRIVA
+      # -------------------------------------------------------------
+      - name: La provenienza e' quella prevista?
+        env:
+          BASE: ${{ github.base_ref }}
+          TESTA: ${{ github.head_ref }}
+          STESSO_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          echo "base=$BASE  testa=$TESTA  stesso-repository=$STESSO_REPO"
+          if [ "$STESSO_REPO" != "true" ]; then
+            echo "::error::Una proposta che arriva da un fork non entra: la filiera non la copre."
+            exit 1
+          fi
+          if [ "$BASE" = "master" ]; then
+            if [ "$TESTA" != "slave" ]; then
+              echo "::error::Verso master si entra SOLO da slave. Questa parte da «$TESTA»: apri invece una proposta verso slave."
+              exit 1
+            fi
+            echo "Verso master, da slave: provenienza corretta."
+          elif [ "$TESTA" = "master" ]; then
+            echo "Rientro di master dentro slave: consentito, e' l'invariante dopo un rilascio."
+          else
+            echo "Verso slave, da un ramo provvisorio: e' la strada prevista."
+          fi
+
+      # -------------------------------------------------------------
+      # 2. SLAVE CONTIENE PER INTERO MASTER
+      # -------------------------------------------------------------
+      # ⚠️ L'invariante dell'utente: non deve esistere niente in master che
+      #    manchi da slave. Se `master...slave` dice che slave e' indietro,
+      #    la produzione conterrebbe qualcosa che il collaudo non ha mai visto.
+      - name: slave contiene per intero master?
+        if: github.base_ref == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          indietro=$(gh api "repos/$REPO/compare/master...slave" --jq '.behind_by')
+          avanti=$(gh api "repos/$REPO/compare/master...slave" --jq '.ahead_by')
+          echo "slave rispetto a master: avanti=$avanti indietro=$indietro"
+          if [ "$indietro" != "0" ]; then
+            echo "::error::slave e' indietro di $indietro commit rispetto a master: c'e' lavoro in produzione che slave non ha. Riporta prima master dentro slave."
+            exit 1
+          fi
+          echo "Nessuna modifica vive solo in master: invariante rispettata."
+
+      # -------------------------------------------------------------
+      # 3. IL COMMIT CANDIDATO E' PASSATO DA BORGO58-PROVA
+      # -------------------------------------------------------------
+      # ⚠️ Si guarda il REGISTRO DEI RILASCI di GitHub, non una promessa del
+      #    workflow: un deployment sull'ambiente `anteprima` con questo
+      #    identico commit, andato a buon fine. Se non c'e', il commit non e'
+      #    mai stato su Prova e non puo' andare in produzione.
+      - name: Questo commit e' stato distribuito su Borgo58-Prova?
+        if: github.base_ref == 'master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "commit candidato: ${SHA:0:7}"
+          elenco=$(gh api "repos/$REPO/deployments?environment=anteprima&sha=$SHA&per_page=20" --jq '.[].id')
+          if [ -z "$elenco" ]; then
+            echo "::error::Nessun rilascio su Borgo58-Prova per il commit ${SHA:0:7}. Prima Prova, poi la produzione."
+            exit 1
+          fi
+          riuscito=no
+          for id in $elenco; do
+            stato=$(gh api "repos/$REPO/deployments/$id/statuses?per_page=100" --jq '[.[].state] | join(",")')
+            echo "  rilascio $id: $stato"
+            case "$stato" in *success*) riuscito=si;; esac
+          done
+          if [ "$riuscito" != "si" ]; then
+            echo "::error::Il commit ${SHA:0:7} risulta su Prova ma nessun rilascio e' riuscito."
+            exit 1
+          fi
+          echo "Il commit candidato e' uscito su Borgo58-Prova, ed e' riuscito."
+
+      # ⚠️ UN ESITO POSITIVO ESPLICITO, e non il semplice silenzio di un
+      #    lavoro che non ha detto niente: chi legge deve poter distinguere
+      #    «e' passato» da «non e' mai partito».
+      - name: Riepilogo
+        env:
+          BASE: ${{ github.base_ref }}
+          TESTA: ${{ github.head_ref }}
+        run: |
+          echo "CANCELLO SUPERATO: $TESTA -> $BASE, definizione letta dalla base."
+          {
+            echo "### Cancello della filiera: superato"
+            echo ""
+            echo "- proposta: `$TESTA` verso `$BASE`"
+            echo "- definizione del controllo: letta dalla base, non dalla proposta"
+          } >> "$GITHUB_STEP_SUMMARY"
