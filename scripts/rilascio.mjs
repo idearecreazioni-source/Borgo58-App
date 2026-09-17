@@ -107,6 +107,42 @@ export function problemaDiCoerenza({ ambiente, tipoRef, ramoGitHub, ramoCloudfla
 }
 
 // ---------------------------------------------------------------------
+// LO STESSO COMMIT — 17/09/2026
+// ---------------------------------------------------------------------
+// 🔴 PERCHE' NON BASTA `needs:`. Due lavori dello stesso giro girano sullo
+//    stesso commit per costruzione, quindi il legame c'e' gia'. Ma e' un
+//    legame che nessuno puo' LEGGERE: vive nella forma del file, e si
+//    scioglie con una riga sola — `if: always()` sulla produzione, e quel
+//    lavoro parte anche quando Prova e' fallita o e' stata saltata,
+//    **restando verde**. Un cancello che cade in silenzio e' la forma
+//    peggiore, ed e' la stessa famiglia del guasto del 01/09.
+//
+// ⚠️ QUINDI IL LEGAME SI DICE AD ALTA VOCE: la pubblicazione su Prova
+//    dichiara quale commit ha messo online, la produzione lo confronta col
+//    proprio, e se non coincidono si ferma. Il giorno che `needs:` venisse
+//    allargato per sbaglio, questo confronto resta in piedi da solo.
+//
+// 🔴 E UN VALORE VUOTO E' UN RIFIUTO, NON UN PASSAGGIO — ed e' il caso che
+//    conta davvero. Quando un lavoro viene saltato GitHub non lascia un
+//    errore: lascia una **stringa vuota**. Leggerla come «non ho niente da
+//    confrontare, vado avanti» vorrebbe dire aprire il cancello proprio nel
+//    caso in cui Prova non e' mai girata. Si fallisce chiusi, come ovunque
+//    in questo file.
+export function problemaDelloStessoCommit(dallaProva, diAdesso) {
+  const a = (dallaProva ?? "").trim();
+  const b = (diAdesso ?? "").trim();
+  if (!b) return "Non so su quale commit sto girando: non pubblico.";
+  if (!a)
+    return (
+      "La pubblicazione su Borgo58-Prova non ha dichiarato nessun commit: o non e' girata, " +
+      "o e' stata saltata. In produzione ci si arriva DOPO Prova, quindi qui ci si ferma."
+    );
+  if (a !== b)
+    return `Su Prova e' uscito il commit «${a}», qui si pubblicherebbe «${b}»: non sono lo stesso. Non si pubblica.`;
+  return null;
+}
+
+// ---------------------------------------------------------------------
 // IL PACCHETTO — si guarda il RISULTATO, non le intenzioni. Le variabili
 // dicono cosa volevamo passare; il pacchetto e' quello che il browser usera'.
 //
@@ -244,6 +280,19 @@ async function principale() {
   //    e' configurazione che nessuno ha scelto.
   const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
   const progetto = process.env.CLOUDFLARE_PROJECT ?? "";
+
+  // ⚠️ NON CHIEDE NIENTE A CLOUDFLARE e non ha bisogno di `npm ci`: e' un
+  //    confronto fra due dati che il giro ha gia' in mano. Sta qui, e non in
+  //    una riga di shell dentro il workflow, per la ragione di sempre — la
+  //    filiera e' UNA, e una regola scritta in un passo di workflow non si
+  //    puo' provare al contrario. Le prove stanno in
+  //    `tests/unita/cancello-pubblicazione.test.js`.
+  if (argomenti.includes("--stesso-commit")) {
+    const guaio = problemaDelloStessoCommit(process.env.COMMIT_DI_PROVA, process.env.GITHUB_SHA);
+    if (guaio) ferma(guaio);
+    console.log("Borgo58-Prova ha pubblicato questo stesso commit: si prosegue.");
+    return;
+  }
 
   const cartella = valore("--controlla-pacchetto");
   if (cartella) {

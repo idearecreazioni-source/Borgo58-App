@@ -313,7 +313,7 @@ jobs:
         run: npm run test:app
 
   # -------------------------------------------------------------------
-  # 3. LA PROVA GENERALE — la filiera intera, senza il sito in gioco
+  # 3. BORGO58-PROVA — il passaggio obbligato prima della produzione
   # -------------------------------------------------------------------
   #
   # ⚠️ COSA DIMOSTRA, DETTO PER QUELLO CHE E'. Dimostra **dal vivo la filiera
@@ -329,15 +329,42 @@ jobs:
   #    VERA NON SI PROVA MAI PRIMA. Qui la filiera gira intera — compila,
   #    controlla il pacchetto, carica con Wrangler — ma con la coppia del
   #    progetto di PROVA e su un ramo di anteprima.
+  #
+  # 🔴 NON E' PIU' UN'ALTERNATIVA ALLA PRODUZIONE — 17/09/2026, e questa e'
+  #    la correzione. Fino a ieri i due lavori si ESCLUDEVANO a vicenda:
+  #    `PUBBLICAZIONE_DA_GITHUB` valeva `prova` **oppure** `si`, e i due
+  #    `if:` erano l'uno il contrario dell'altro. Le conseguenze erano due, e
+  #    nessuna delle due si vedeva guardando un giro verde:
+  #      1. non esisteva NESSUN legame che imponesse a Prova di precedere la
+  #         produzione — erano due strade parallele, non due passi;
+  #      2. con l'interruttore su `si`, l'anteprima **non veniva piu'
+  #         ricostruita**: Borgo58-Prova restava ferma al giorno in cui
+  #         qualcuno aveva girato l'interruttore, mentre la produzione
+  #         andava avanti. Un ambiente di collaudo indietro rispetto alla
+  #         produzione non e' un collaudo: e' una cosa che rassicura.
+  #
+  # ⚠️ ADESSO GIRA SU OGNI COMMIT DI MASTER che ha passato codice e database,
+  #    senza interruttore. La produzione viene dopo, e `needs:` la tiene
+  #    ferma se questo lavoro fallisce **o viene saltato** — che e' il
+  #    comportamento predefinito di GitHub e non una condizione che scriviamo
+  #    noi, quindi non una condizione che possiamo sbagliare.
   prova_di_rilascio:
-    name: Prova generale del rilascio — nessuna produzione toccata
+    name: Pubblica su Borgo58-Prova — il passaggio prima della produzione
     needs: [codice, database]
-    if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'prova'
+    if: github.ref == 'refs/heads/master'
     environment: anteprima
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
+    # 🔴 QUALE COMMIT E' USCITO SU PROVA, detto ad alta voce — 17/09/2026.
+    #    `needs:` lega gia' i due lavori allo stesso giro, quindi allo stesso
+    #    commit; ma quel legame vive nella FORMA del file e si scioglie con
+    #    una riga (`if: always()` sulla produzione) **restando verde**. Questa
+    #    uscita lo rende un dato che la produzione puo' confrontare, e che se
+    #    manca la ferma.
+    outputs:
+      commit: ${{ steps.uscito.outputs.commit }}
     # 🔴 IL BERSAGLIO SU CLOUDFLARE E' DICHIARATO UNA VOLTA, IN CIMA, e lo
     #    leggono sia il controllo sia il caricamento. Passandolo al solo
     #    caricamento, il controllo approverebbe un bersaglio e Wrangler ne
@@ -380,6 +407,14 @@ jobs:
           CLOUDFLARE_PROJECT: borgo58-app
         run: node scripts/rilascio.mjs --ambiente anteprima --conferma
 
+      # ⚠️ DOPO il caricamento, e non prima: quello che si dichiara qui e'
+      #    «su Prova e' uscito QUESTO», non «stavo per farlo». Se Wrangler
+      #    fallisce, il passo non arriva mai e la produzione non trova nessun
+      #    commit da confrontare — cioe' si ferma, che e' il verso giusto.
+      - name: Dichiara quale commit e' uscito su Prova
+        id: uscito
+        run: echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
   # -------------------------------------------------------------------
   # 4. LA PUBBLICAZIONE VERA
   # -------------------------------------------------------------------
@@ -390,10 +425,17 @@ jobs:
   #    **rossi**. Non e' che la pubblicazione arrivava prima dei controlli:
   #    arrivava anche quando erano rossi.
   #
-  # ⚠️ TRE BARRIERE, E LA TERZA E' UNA PERSONA:
-  #    1. `needs:` — GitHub non fa partire un lavoro che dipende da due lavori
-  #       se uno dei due fallisce. Non e' una nostra condizione, quindi non e'
-  #       una condizione che possiamo sbagliare.
+  # ⚠️ QUATTRO BARRIERE, E L'ULTIMA E' UNA PERSONA:
+  #    1. `needs:` — GitHub non fa partire un lavoro che dipende da altri
+  #       lavori se uno di quelli fallisce **o viene saltato**. Non e' una
+  #       nostra condizione, quindi non e' una condizione che possiamo
+  #       sbagliare. 🔴 Dal 17/09 fra quei lavori c'e' anche la pubblicazione
+  #       su Borgo58-Prova: **se Prova non e' uscita, qui non si parte.**
+  #    1-bis. lo STESSO COMMIT, detto ad alta voce — primo passo qui sotto.
+  #       `needs:` lo garantisce gia' per costruzione, ma lo garantisce nella
+  #       forma del file, dove basta un `if: always()` per scioglierlo
+  #       restando verdi. Il confronto lo rende un fatto leggibile, e un
+  #       commit vuoto e' un rifiuto e non un passaggio.
   #    2. l'interruttore, che e' una **Variable del REPOSITORY** e non
   #       dell'ambiente. 🔴 Non e' un dettaglio: GitHub valuta `if:` PRIMA di
   #       assegnare l'ambiente, quindi una variabile d'ambiente qui dentro
@@ -404,8 +446,8 @@ jobs:
   #       ferma e aspetta. E' la barriera che regge anche se le prime due
   #       venissero allargate per sbaglio.
   pubblica:
-    name: Manda in produzione — due lavori verdi e un'approvazione
-    needs: [codice, database]
+    name: Manda in produzione — dopo Prova, e con un'approvazione
+    needs: [codice, database, prova_di_rilascio]
     if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'si'
     environment: produzione
     runs-on: ubuntu-latest
@@ -418,6 +460,16 @@ jobs:
         with:
           node-version: '22.16.0'
           cache: npm
+      # 🔴 LA PRIMA DOMANDA, E COSTA ZERO: e' lo stesso commit che e' uscito
+      #    su Borgo58-Prova? Sta PRIMA di `npm ci` perche' non ha bisogno di
+      #    nessuna libreria — e fermarsi qui costa zero invece di un minuto.
+      # ⚠️ Se `prova_di_rilascio` non e' girata, questa variabile arriva
+      #    VUOTA, non assente: il comando la tratta come un rifiuto.
+      - name: Su Prova e' uscito QUESTO commit?
+        env:
+          COMMIT_DI_PROVA: ${{ needs.prova_di_rilascio.outputs.commit }}
+        run: node scripts/rilascio.mjs --ambiente produzione --stesso-commit
+
       - run: npm ci
 
       # ⚠️ ANCHE QUI, E NON PERCHE' `if:` NON BASTI: `if:` guarda il ramo di

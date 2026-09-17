@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali } from "./aiuto";
+import { orfaneAttese } from "./orfane";
 
 const titolare = await clientAutenticato(credenziali().titolare);
 
@@ -83,66 +84,25 @@ function testoDi(dir, filtro) {
 
 const nomina = (nome, testo) => new RegExp(`\\b${nome}\\b`).test(testo);
 
-// 🔴 LO STATO DI PARTENZA, misurato il 31/08/2026 e congelato.
+// 🔴 L'ELENCO NON VIVE PIU' QUI, E NON E' PIU' UNO SOLO — 17/09/2026,
+//    difetto misurato sul controllo della proposta #94.
 //
-// ⚠️ QUESTE NON SONO ASSOLTE: sono **fotografate**. Una riga si toglie da qui
-// quando la funzione riceve la sua porta — e toglierla e' il gesto che
-// dichiara che il debito e' stato pagato.
-const ORFANE_NOTE = {
-  // Vivono in una funzione online: la porta c'e', passa da un'altra strada.
-  archivia_posta: "chiamata da posta-leggi",
-  documenti_per_domanda: "chiamata da assistente-archivio",
-  registra_dettatura: "chiamata da ascolta-voce",
-  registra_dettatura_da_chiave: "chiamata da ascolta-voce (la Scorciatoia)",
-  registra_lettura_foto: "chiamata da leggi-foto",
-  voce_apri_sessione: "chiamata da ascolta-voce",
-
-  // Sono RETI: esistono per essere interrogate da una prova, non da una
-  // schermata. Una porta a schermo non avrebbe senso.
-  colonne_unita_non_classificate: "rete: il censimento delle unita'",
-  confronti_storti: "rete: i confronti di data col fuso sbagliato",
-  funzioni_aperte_ad_anon: "rete: chi puo' bussare da fuori",
-  funzioni_col_portiere: "rete: chi controlla chi chiama",
-  funzioni_con_data_utc: "rete: le date chieste a Greenwich",
-  funzioni_multi_tabella: "rete: le scritture che devono passare dal corridoio",
-  lapidi_di_prova: "rete: le tracce finte nel registro",
-  // ⚠️ AGGIUNTA IL 15/09/2026: la domanda stretta di registri-esibibili, che
-  //    chiede solo le verifiche invece di scaricare tutto il registro.
-  lapidi_delle_verifiche: "rete: le sole tracce delle verifiche nel registro",
-  tipi_vocali_senza_ramo: "rete: i comandi vocali che il gestionale non sa eseguire",
-  vincoli_senza_frase: "rete: i rifiuti che non parlano italiano",
-  funzioni_senza_chiamante: "rete: questa stessa — chi non ha un chiamante nel database",
-  // ⚠️ AGGIUNTA IL 05/09/2026 con la correzione RLS delle viste economiche.
-  //    Non e' un debito e non e' una porta che manca: e' una RETE, come le
-  //    dieci qui sopra. La interroga `tests/app/permessi.test.js` col token
-  //    del titolare, e il portiere ce l'ha — RIFIUTA chi titolare non e',
-  //    invece di rispondere un elenco vuoto. Una porta a schermo non
-  //    avrebbe senso: dice com'e' fatto il database, non cosa succede in
-  //    sala.
-  viste_che_scavalcano_rls: "rete: quali viste non applicano la RLS di chi le interroga",
-
-  // Lavoro pianificato: lo chiama pg_cron, non una persona.
-  send_due_task_reminders: "lavoro pianificato: i promemoria dell'Agenda",
-
-  // Interrogata da uno script a riga di comando.
-  numeri_sospetti: "interrogata da `npm run numeri`",
-
-  // ⚠️ QUI STAVANO `carta_da_ristampare` e `segna_carta_stampata`, rimandate
-  //    da Alessio il 31/08 in attesa di etichette vere. Il 16/09 la schermata
-  //    e' stata costruita e le due righe sono uscite: toglierle e' il gesto
-  //    che dichiara pagato il debito, e lasciarle sarebbe stato l'errore
-  //    contrario — un elenco che racconta un debito che non c'e' piu'. La
-  //    storia sta nel commento in cima al file, dove serve a chi legge.
-
-  // 🔴 DEBITI VERI, e sono quelli per cui questa rete esiste. Ognuno e' una
-  //    cosa che il gestionale sa fare e che nessuno puo' chiedergli.
-  conti_senza_quadratura: "DEBITO: nessuna schermata mostra i conti che non quadrano",
-  coperti_per_linea: "DEBITO: i coperti divisi per linea di ricavo non si vedono",
-  numeri_fuori_intervallo: "DEBITO: i numeri fuori scala non hanno una schermata",
-  scale_che_non_tornano: "DEBITO: le scale incoerenti non hanno una schermata",
-  sprechi_e_resi: "DEBITO: sprechi e resi non hanno una schermata che li elenchi",
-  tipi_vocali_senza_uscita: "DEBITO: nessuna schermata mostra i comandi vocali senza via d'uscita",
-};
+//    Rispondeva a **due domande diverse** con una risposta sola: cosa c'e'
+//    nel database ADESSO, e cosa ci sara' dopo la prossima migrazione. Fra i
+//    due momenti non possono essere d'accordo, per costruzione — iscrivendo
+//    subito una funzione che la migrazione non ha ancora portato, la rete
+//    grida «questa ha una porta adesso, toglila»; non iscrivendola, grida il
+//    giorno dopo l'applicazione.
+//
+// ⚠️ Adesso sono due elenchi in `tests/app/orfane.js` — quelle che ci sono
+//    sempre e quelle che entrano con una migrazione — e quale valga lo
+//    decide il REGISTRO DELLE MIGRAZIONI di questo database, non una data
+//    scritta a mano. La decisione e' pura e si prova senza database:
+//    `tests/unita/orfane-attese.test.js`.
+//
+// ⚠️ E QUI NON SE NE TIENE UNA COPIA: due elenchi che dicono la stessa cosa
+//    prima o poi divergono, e a vincere sarebbe quello scritto piu' in
+//    basso, senza che nessuno lo sappia.
 
 describe("nessuna funzione del database resta senza una porta", () => {
   it("le funzioni orfane sono quelle congelate, e non una di più", async () => {
@@ -165,24 +125,63 @@ describe("nessuna funzione del database resta senza una porta", () => {
       .filter((n) => !nomina(n, codice.src))
       .sort();
 
-    const nuove = orfane.filter((n) => !(n in ORFANE_NOTE));
+    // 🔴 QUALE ELENCO VALE LO DECIDE QUESTO DATABASE, non una data scritta a
+    //    mano: si chiede quali migrazioni ha applicato. Una funzione che
+    //    arriva con la 20260917000001 si aspetta SOLO dove quella migrazione
+    //    e' gia' entrata.
+    // ⚠️ Si legge SOLTANTO `version`: nient'altro di quel registro serve a
+    //    rispondere a questa domanda, e chiedere di piu' vorrebbe dire
+    //    portarsi dietro dati che non c'entrano.
+    const { data: registro, error: erroreRegistro } = await titolare
+      .from("applied_migrations")
+      .select("version");
+
+    // ⚠️ DUE MODI DI FALLIRE, E SI SOMIGLIANO. Il primo e' rumoroso.
+    expect(
+      erroreRegistro,
+      "Non ho potuto leggere il registro delle migrazioni, quindi non so in " +
+        "quale dei due momenti si trova questo database. NON tiro a indovinare."
+    ).toBeNull();
+
+    // 🔴 E IL SECONDO E' MUTO, ed e' quello pericoloso: quando una lettura non
+    //    e' permessa, PostgREST non risponde con un errore — risponde con
+    //    ZERO RIGHE. Zero righe si leggerebbe «nessuna migrazione applicata»,
+    //    cioe' «non aspettarti la funzione nuova»: plausibile e falso. In un
+    //    database vero quel registro ne ha centinaia, quindi zero non e' un
+    //    dato — e' il segno che non si e' potuto guardare.
+    //    *Vuoto non e' zero*, ed e' la regola del 19/08.
+    expect(
+      (registro ?? []).length,
+      "Il registro delle migrazioni e' tornato VUOTO. In un database vero non " +
+        "puo' esserlo: vuol dire che non si e' potuto leggere. Mi fermo invece " +
+        "di dedurre che nessuna migrazione sia stata applicata."
+    ).toBeGreaterThan(0);
+
+    const ATTESE = orfaneAttese(registro.map((r) => r.version));
+
+    const nuove = orfane.filter((n) => !(n in ATTESE));
     expect(
       nuove,
       "Queste funzioni esistono nel database e NESSUNA schermata ci arriva.\n" +
-        "O si costruisce la porta, oppure si aggiunge la riga in ORFANE_NOTE\n" +
-        "dicendo da dove passa (una funzione online, una rete, un lavoro\n" +
-        "pianificato) — e se e' un debito, si scrive DEBITO e perché."
+        "O si costruisce la porta, oppure si aggiunge la riga in\n" +
+        "`tests/app/orfane.js` dicendo da dove passa (una funzione online, una\n" +
+        "rete, un lavoro pianificato) — e se e' un debito, si scrive DEBITO e\n" +
+        "perché. Se arriva con una migrazione non ancora applicata, va fra le\n" +
+        "PIANIFICATE, con la sua versione."
     ).toEqual([]);
 
     // ⚠️ E ALLO SPECCHIO: una riga che resta nell'elenco dopo che la porta e'
     //    stata costruita fa credere che il debito ci sia ancora. E' lo stesso
     //    difetto dell'elenco delle schermate larghe, che il 31/08 e' diventato
     //    rosso proprio per questo.
-    const sistemate = Object.keys(ORFANE_NOTE).filter((n) => !orfane.includes(n));
+    const sistemate = Object.keys(ATTESE).filter((n) => !orfane.includes(n));
     expect(
       sistemate,
-      "Queste hanno una porta adesso: toglile da ORFANE_NOTE, o l'elenco\n" +
-        "racconta un debito che è già stato pagato."
+      "Queste hanno una porta adesso: toglile da `tests/app/orfane.js`, o\n" +
+        "l'elenco racconta un debito che è già stato pagato.\n" +
+        "⚠️ Se invece la funzione non c'è ANCORA perché la sua migrazione non\n" +
+        "è stata applicata qui, non va tolta: va spostata fra le PIANIFICATE,\n" +
+        "con la versione che la porta."
     ).toEqual([]);
   });
 });

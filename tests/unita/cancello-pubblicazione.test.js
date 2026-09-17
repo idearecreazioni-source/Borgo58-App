@@ -27,6 +27,7 @@ import { problemaDellAccount, FORMA_ACCOUNT, differenze } from "../../scripts/cl
 import {
   problemaDiCoerenza,
   problemaDelPacchetto,
+  problemaDelloStessoCommit,
   RAMO_PROVA_DI_RILASCIO,
   AMBIENTI,
 } from "../../scripts/rilascio.mjs";
@@ -46,7 +47,7 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     // Non basta `needs: codice`: le 459 prove contro il database stanno nel
     // secondo, ed e' quello che il 31/08 era rosso mentre il sito andava
     // online lo stesso.
-    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
+    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*,/);
     expect(lavoroProva).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
   });
 
@@ -54,11 +55,19 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     expect(lavoroPubblica).toMatch(/github\.ref == 'refs\/heads\/master'/);
   });
 
-  it("resta spento finche' qualcuno non lo accende apposta", () => {
-    // 🔴 E' cio' che rende sicuro unire questo lavoro: appena unito non cambia
-    //    niente, perche' la variabile non esiste.
+  it("🔴 la PRODUZIONE resta spenta finche' qualcuno non l'accende apposta — e Prova NO", () => {
+    // La produzione conserva il suo interruttore: e' una delle barriere, e
+    // toglierlo vorrebbe dire pubblicare sul sito vero a ogni unione.
     expect(lavoroPubblica).toMatch(/vars\.PUBBLICAZIONE_DA_GITHUB == 'si'/);
-    expect(lavoroProva).toMatch(/vars\.PUBBLICAZIONE_DA_GITHUB == 'prova'/);
+    // 🔴 MA PROVA NON NE HA PIU' NESSUNO — 17/09/2026, ed e' la correzione.
+    //    Finche' i due valori si escludevano (`prova` **oppure** `si`), con
+    //    l'interruttore su `si` l'anteprima non veniva piu' ricostruita: Prova
+    //    restava indietro mentre la produzione andava avanti. Un ambiente di
+    //    collaudo piu' vecchio della produzione non e' un collaudo.
+    //    ⚠️ Rimettere QUALUNQUE condizione su quella variabile qui fa tornare
+    //    l'aut-aut, e questa riga e' l'unica cosa che se ne accorgerebbe.
+    expect(lavoroProva).not.toMatch(/PUBBLICAZIONE_DA_GITHUB/);
+    expect(lavoroProva).toMatch(/if: github\.ref == 'refs\/heads\/master'\s*$/m);
   });
 
   it("🔴 l'interruttore e' letto in `if:`, quindi NON puo' vivere nell'ambiente", () => {
@@ -261,4 +270,134 @@ describe("il confronto fra due fotografie di Cloudflare", () => {
   });
   it("un campo sparito e' un cambiamento, non un silenzio", () =>
     expect(differenze({ a: 1, b: 2 }, { a: 1 }).cambiati.map((c) => c.campo)).toEqual(["b"]));
+});
+
+// =====================================================================
+// LA FILIERA: PROVA VIENE PRIMA, SULLO STESSO COMMIT — 17/09/2026
+// =====================================================================
+// 🔴 IL DIFETTO CHE QUESTE PROVE CHIUDONO, e che nessun giro verde mostrava:
+//    i due lavori di pubblicazione avevano lo STESSO `needs:` e due `if:` che
+//    si escludevano a vicenda — `PUBBLICAZIONE_DA_GITHUB` uguale a `prova`
+//    **oppure** a `si`. Quindi Prova e produzione erano due strade PARALLELE,
+//    non due passi: niente imponeva alla prima di precedere la seconda, e con
+//    l'interruttore su `si` l'anteprima **non veniva piu' ricostruita**.
+//    Borgo58-Prova restava ferma al giorno dell'ultimo giro con `prova`,
+//    mentre il sito vero andava avanti.
+//
+// ⚠️ COSA QUESTE PROVE NON DIMOSTRANO, ed e' lo stesso limite dichiarato in
+//    cima a questo file: che un Prova rosso fermi davvero la produzione lo fa
+//    rispettare GitHub con `needs:`, e **nessuno l'ha visto succedere**. Qui
+//    si prova che la riga che lo impone c'e' e non e' stata tolta.
+describe("🔴 in produzione ci si arriva DOPO Borgo58-Prova", () => {
+  it("la produzione dipende dalla pubblicazione su Prova", () => {
+    expect(lavoroPubblica).toMatch(/needs:\s*\[[^\]]*\bprova_di_rilascio\b[^\]]*\]/);
+  });
+
+  it("🔴 e non si scavalca con `always()`: un lavoro saltato deve FERMARE, non passare", () => {
+    // 🔴 E' IL MODO ESATTO IN CUI QUESTO CANCELLO CADREBBE RESTANDO VERDE, ed
+    //    e' il motivo per cui questa prova esiste. Senza `always()` — o
+    //    `!cancelled()`, o `!failure()` — GitHub salta un lavoro quando un suo
+    //    `needs:` fallisce **o viene saltato**: e' il comportamento
+    //    predefinito, e non e' una condizione che scriviamo noi.
+    // ⚠️ Con `always()` la produzione ripartirebbe anche senza che Prova sia
+    //    mai girata, e il giro resterebbe verde. Una riga sola, che qualcuno
+    //    aggiunge per «vedere comunque l'esito».
+    expect(lavoroPubblica).not.toMatch(/always\(\)/);
+    expect(lavoroPubblica).not.toMatch(/!\s*cancelled\(\)/);
+    expect(lavoroPubblica).not.toMatch(/!\s*failure\(\)/);
+  });
+
+  it("Prova dichiara quale commit ha pubblicato, e lo dichiara DOPO averlo pubblicato", () => {
+    expect(lavoroProva).toMatch(/outputs:\s*\n\s+commit: \$\{\{ steps\.uscito\.outputs\.commit \}\}/);
+    expect(lavoroProva).toMatch(/id: uscito/);
+    // ⚠️ L'ORDINE E' LA SOSTANZA: dichiarato PRIMA del caricamento direbbe
+    //    «stavo per farlo» invece di «e' uscito». Messo dopo, se Wrangler
+    //    fallisce quel passo non si raggiunge, la produzione non trova nessun
+    //    commit da confrontare — e si ferma, che e' il verso giusto.
+    expect(lavoroProva.indexOf("--ambiente anteprima --conferma")).toBeLessThan(
+      lavoroProva.indexOf("id: uscito"),
+    );
+  });
+
+  it("e la produzione lo confronta col proprio, prima di spendere un minuto", () => {
+    expect(lavoroPubblica).toMatch(
+      /COMMIT_DI_PROVA: \$\{\{ needs\.prova_di_rilascio\.outputs\.commit \}\}/,
+    );
+    expect(lavoroPubblica).toMatch(/--ambiente produzione --stesso-commit/);
+
+    // 🔴 SI CERCA IL PASSO, NON LE PAROLE — e questa riga e' NATA ROSSA
+    //    proprio cosi'. La prima stesura faceva `indexOf("npm ci")`, e quello
+    //    che trovava era la menzione di `npm ci` dentro il COMMENTO del passo
+    //    qui sopra — non il comando. Diceva «il controllo viene dopo» mentre
+    //    viene prima.
+    // ⚠️ E' la trappola del setaccio che riconosce una FORMA NEL TESTO invece
+    //    di un fatto: 22/08 sui gesti pericolosi, 27/08 sui comandi appesi,
+    //    oggi qui. *Un misuratore si prova su un caso di cui si conosce gia'
+    //    la risposta* — e a prenderlo e' stata l'esecuzione, non la rilettura.
+    const passo = (r) => {
+      const i = lavoroPubblica.search(r);
+      // ⚠️ `search` risponde -1 quando non trova, e -1 e' minore di
+      //    qualunque cosa: senza questa riga la prova passerebbe proprio
+      //    quando il passo che sorveglia e' sparito.
+      expect(i, `passo non trovato nel lavoro «pubblica»: ${r}`).toBeGreaterThan(-1);
+      return i;
+    };
+    const controllo = /^[ \t]*run: node scripts\/rilascio\.mjs --ambiente produzione --stesso-commit[ \t]*$/m;
+
+    // Prima di `npm ci` e prima della compilazione: fermarsi qui costa zero
+    // invece di un minuto.
+    expect(passo(controllo)).toBeLessThan(passo(/^[ \t]*- run: npm ci[ \t]*$/m));
+    expect(passo(controllo)).toBeLessThan(passo(/^[ \t]*run: npm run build[ \t]*$/m));
+  });
+});
+
+describe("🔴 le due configurazioni non si mescolano", () => {
+  // ⚠️ LA SEPARAZIONE VERA NON E' CHE I DUE LAVORI LEGGANO NOMI DIVERSI:
+  //    leggono gli stessi (`vars.SUPABASE_URL`, `secrets.SUPABASE_ANON_KEY`),
+  //    ed e' l'ambiente di GitHub a rimapparli. Detto cosi', la separazione
+  //    poggerebbe su un'impostazione del pannello e non sul file.
+  // 🔴 CIO' CHE REGGE E' CHE CIASCUN LAVORO CONTROLLI IL PACCHETTO COMPILATO
+  //    contro il progetto che si aspetta: una coppia sbagliata viene respinta
+  //    PRIMA di Wrangler, qualunque cosa dica il pannello. E' la trappola
+  //    dell'01/09 — indirizzo di un progetto, chiave di un altro — letta al
+  //    contrario.
+  it("Prova guarda il pacchetto contro il progetto di prova, e non nomina mai la produzione", () => {
+    expect(lavoroProva).toMatch(/--ambiente anteprima --controlla-pacchetto dist/);
+    expect(lavoroProva).not.toMatch(/--ambiente produzione/);
+  });
+
+  it("la produzione contro il gestionale vero, e non nomina mai l'anteprima", () => {
+    expect(lavoroPubblica).toMatch(/--ambiente produzione --controlla-pacchetto dist/);
+    expect(lavoroPubblica).not.toMatch(/--ambiente anteprima/);
+  });
+
+  it("ciascun lavoro compila UNA volta sola", () => {
+    // Due compilazioni dentro lo stesso lavoro vorrebbero dire due coppie
+    // diverse, e il controllo del pacchetto ne guarderebbe una sola: l'altra
+    // uscirebbe senza che niente l'abbia mai vista.
+    expect(lavoroProva.match(/npm run build/g)).toHaveLength(1);
+    expect(lavoroPubblica.match(/npm run build/g)).toHaveLength(1);
+  });
+});
+
+describe("lo stesso commit — e un commit VUOTO e' un rifiuto", () => {
+  it("due commit uguali passano", () =>
+    expect(problemaDelloStessoCommit("abc123", "abc123")).toBeNull());
+  it("gli spazi intorno non contano", () =>
+    expect(problemaDelloStessoCommit(" abc123\n", "abc123")).toBeNull());
+  it("due commit diversi sono respinti", () =>
+    expect(problemaDelloStessoCommit("abc123", "def456")).toMatch(/non sono lo stesso/));
+
+  // 🔴 IL CASO CHE CONTA DAVVERO: un lavoro saltato non lascia un errore,
+  //    lascia una STRINGA VUOTA. Leggerla come «non ho niente da confrontare,
+  //    vado avanti» aprirebbe il cancello proprio quando Prova non e' mai
+  //    girata — cioe' nel solo caso per cui questo controllo esiste.
+  it("🔴 nessun commit da Prova: si RIFIUTA, non si passa", () =>
+    expect(problemaDelloStessoCommit("", "abc123")).toMatch(/non e' girata|saltata/));
+  it("🔴 e vale anche per il valore assente, non solo per la stringa vuota", () => {
+    expect(problemaDelloStessoCommit(undefined, "abc123")).toBeTruthy();
+    expect(problemaDelloStessoCommit(null, "abc123")).toBeTruthy();
+  });
+  it("senza sapere su quale commit si gira, non si pubblica", () =>
+    expect(problemaDelloStessoCommit("abc123", "")).toMatch(/su quale commit/));
 });
