@@ -57,6 +57,11 @@ export const AMBIENTI = {
 // quindi il nome permesso e' uno solo, ed e' scritto qui.
 export const RAMO_PROVA_DI_RILASCIO = "prova-di-rilascio";
 
+// 🔴 IL RAMO DA CUI NASCE BORGO58-PROVA — 18/09/2026. Prima era `master`:
+//    Prova si costruiva dallo stesso ramo che va in produzione, e il
+//    «collaudo» guardava esattamente cio' che era gia' stato deciso.
+export const RAMO_DI_COLLAUDO = "slave";
+
 // ⚠️ Vietati SEMPRE a un'anteprima, oltre al ramo che Cloudflare dichiara di
 //    produzione: se un giorno il progetto venisse ricollegato a `main`, il
 //    nome vecchio resterebbe pericoloso e questo elenco lo copre lo stesso.
@@ -101,6 +106,14 @@ export function problemaDiCoerenza({ ambiente, tipoRef, ramoGitHub, ramoCloudfla
     return cf === RAMO_PROVA_DI_RILASCIO
       ? null
       : `Dal ramo di produzione l'unica anteprima permessa e' «${RAMO_PROVA_DI_RILASCIO}», non «${ramoCloudflare}».`;
+  // 🔴 DA `slave` L'UNICA ANTEPRIMA PERMESSA E' BORGO58-PROVA, e non il
+  //    ramo omonimo. E' la stessa regola che vale dal ramo di produzione,
+  //    applicata al ramo che adesso ALIMENTA il collaudo: l'indirizzo di
+  //    Prova non deve spostarsi solo perche' cambia chi lo costruisce.
+  if (gh === RAMO_DI_COLLAUDO)
+    return cf === RAMO_PROVA_DI_RILASCIO
+      ? null
+      : `Da «${RAMO_DI_COLLAUDO}» l'unica anteprima permessa e' «${RAMO_PROVA_DI_RILASCIO}», non «${ramoCloudflare}».`;
   if (cf !== gh)
     return `Giro su «${ramoGitHub}» e scriverei su «${ramoCloudflare}»: l'anteprima di un ramo si costruisce su quel ramo.`;
   return null;
