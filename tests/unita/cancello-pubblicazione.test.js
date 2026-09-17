@@ -29,6 +29,7 @@ import {
   problemaDelPacchetto,
   problemaDelloStessoCommit,
   RAMO_PROVA_DI_RILASCIO,
+  RAMO_DI_COLLAUDO,
   AMBIENTI,
 } from "../../scripts/rilascio.mjs";
 import { REF_PROVA, REF_PRODUZIONE } from "../../scripts/comune.mjs";
@@ -162,6 +163,16 @@ describe("ambiente, ramo di GitHub e ramo di Cloudflare devono dire la stessa st
     expect(c({ ambiente: "anteprima", ramoGitHub: "claude/x", ramoCloudflare: "claude/y" })).toMatch(
       /si costruisce su quel ramo/,
     ));
+  it("🔴 da slave si costruisce Borgo58-Prova, non un ramo omonimo", () => {
+    expect(c({ ambiente: "anteprima", ramoGitHub: RAMO_DI_COLLAUDO, ramoCloudflare: RAMO_PROVA_DI_RILASCIO })).toBeNull();
+  });
+
+  it("🔴 da slave, un'anteprima verso un ramo QUALUNQUE e' respinta", () => {
+    expect(c({ ambiente: "anteprima", ramoGitHub: RAMO_DI_COLLAUDO, ramoCloudflare: "slave" })).toMatch(
+      /unica anteprima permessa/,
+    );
+  });
+
   it("un'anteprima verso `production` e' respinta anche se non e' IL ramo di produzione", () =>
     expect(c({ ambiente: "anteprima", ramoGitHub: "claude/x", ramoCloudflare: "production" })).toMatch(
       /ramo di produzione/,
