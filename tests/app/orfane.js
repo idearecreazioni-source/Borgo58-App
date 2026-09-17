@@ -95,12 +95,18 @@ export const ORFANE_SEMPRE = {
  *    quali versioni ha e' l'unico modo di sapere in quale dei due momenti si
  *    trova — e sapere e' il contrario di indovinare.
  */
-export const ORFANE_PIANIFICATE = {
-  raccogli_esiti_promemoria: {
-    versione: "20260917000001",
-    perche: "lavoro pianificato: l'esito dei promemoria dell'Agenda",
-  },
-};
+// 🔴 OGGI E' VUOTO, E IL PERCHE' VA LETTO — 18/09/2026.
+//    Qui dentro stava `raccogli_esiti_promemoria`, iscritta il 17/09 come
+//    orfana attesa a partire dalla 20260917000001. **La previsione era
+//    sbagliata, e a dirlo e' stato il database**: applicata la migrazione su
+//    Borgo58-Prova, quella funzione NON risulta senza chiamante, perche' la
+//    migrazione le da' una porta — il lavoro di `pg_cron` che la chiama ogni
+//    cinque minuti. La rete ha gridato «questa ha una porta adesso», che e'
+//    esattamente il verso in cui doveva gridare.
+// ⚠️ Resta vuoto e non sparisce: e' il posto dove iscrivere la PROSSIMA
+//    funzione che entrera' davvero senza chiamante, e la prova qui accanto
+//    continua a sorvegliarne la forma su un elenco inventato.
+export const ORFANE_PIANIFICATE = {};
 
 /**
  * L'elenco delle orfane attese in UN database, viste le sue migrazioni.
@@ -108,9 +114,13 @@ export const ORFANE_PIANIFICATE = {
  * ⚠️ Riceve le versioni invece di andarsele a prendere: e' cio' che la rende
  *    provabile su elenchi inventati, senza un database acceso.
  */
-export function orfaneAttese(versioniApplicate) {
+// ⚠️ IL SECONDO ARGOMENTO ESISTE PER LE PROVE, e non e' un'opzione da usare
+//    altrove: senza, la decisione si potrebbe provare solo finche' l'elenco
+//    vero contiene qualcosa — cioe' la prova morirebbe il giorno in cui
+//    l'elenco si svuota. E' successo il 18/09.
+export function orfaneAttese(versioniApplicate, pianificate = ORFANE_PIANIFICATE) {
   const viste = new Set(versioniApplicate ?? []);
-  const entrate = Object.entries(ORFANE_PIANIFICATE)
+  const entrate = Object.entries(pianificate)
     .filter(([, v]) => viste.has(v.versione))
     .map(([nome, v]) => [nome, v.perche]);
   return { ...ORFANE_SEMPRE, ...Object.fromEntries(entrate) };
