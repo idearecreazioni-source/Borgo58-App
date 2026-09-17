@@ -1,0 +1,70 @@
+# =====================================================================
+# MANUTENZIONE DEL PROGETTO DI PROVA — 18/09/2026
+# =====================================================================
+#
+# PERCHE' ESISTE. Quando un giro di prove viene ucciso a meta' — limite di
+# tempo, coda, annullamento — la pulizia che le prove fanno da se' non parte,
+# e una riga di collaudo resta in magazzino. Il giro dopo la trova e si
+# ferma, giustamente. Fino a oggi l'unico modo di toglierla era aprire il
+# pannello a mano: cioe' disciplina, e in questo progetto vale la regola
+# opposta.
+#
+# ⚠️ NON TOCCA LA PRODUZIONE, e non e' una promessa scritta qui: il programma
+#    si rifiuta di partire se l'indirizzo non e' quello del progetto di prova
+#    conosciuto (`problemaDelBersaglio`, provato in tests/unita).
+#
+# ⚠️ GIRA A COMANDO O SU UN RAMO DI MANUTENZIONE, mai da se': una pulizia che
+#    parte quando le prove stanno girando toglierebbe la riga a chi la sta
+#    usando.
+name: Manutenzione di Prova
+
+on:
+  push:
+    branches: ['manutenzione/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # 🔴 LA STESSA SERRATURA DELLE PROVE: pulire mentre le prove scrivono
+  #    toglierebbe la riga a chi la sta usando, e il guasto sembrerebbe un
+  #    difetto del codice.
+  group: prove-sul-database-di-prova
+  cancel-in-progress: false
+
+jobs:
+  residui:
+    name: Residui delle prove su Borgo58-Prova
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      - run: npm ci
+
+      - name: Le chiavi del progetto di prova ci sono?
+        env:
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: node scripts/chiavi-di-prova.mjs
+
+      - name: Che residui ci sono?
+        env:
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: node scripts/residui-di-prova.mjs || true
+
+      - name: Toglili
+        env:
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PROVA_SUPABASE_ANON_KEY }}
+          TEST_TITOLARE_PASSWORD: ${{ secrets.TEST_TITOLARE_PASSWORD }}
+          TEST_STAFF_PASSWORD: ${{ secrets.TEST_STAFF_PASSWORD }}
+        run: node scripts/residui-di-prova.mjs --conferma

@@ -29,6 +29,7 @@ import {
   problemaDelPacchetto,
   problemaDelloStessoCommit,
   RAMO_PROVA_DI_RILASCIO,
+  RAMO_DI_COLLAUDO,
   AMBIENTI,
 } from "../../scripts/rilascio.mjs";
 import { REF_PROVA, REF_PRODUZIONE } from "../../scripts/comune.mjs";
@@ -47,7 +48,7 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     // Non basta `needs: codice`: le 459 prove contro il database stanno nel
     // secondo, ed e' quello che il 31/08 era rosso mentre il sito andava
     // online lo stesso.
-    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*,/);
+    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
     expect(lavoroProva).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
   });
 
@@ -67,7 +68,7 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     //    ⚠️ Rimettere QUALUNQUE condizione su quella variabile qui fa tornare
     //    l'aut-aut, e questa riga e' l'unica cosa che se ne accorgerebbe.
     expect(lavoroProva).not.toMatch(/PUBBLICAZIONE_DA_GITHUB/);
-    expect(lavoroProva).toMatch(/if: github\.ref == 'refs\/heads\/master'\s*$/m);
+    expect(lavoroProva).toMatch(/if: github\.ref == 'refs\/heads\/slave'\s*$/m);
   });
 
   it("🔴 l'interruttore e' letto in `if:`, quindi NON puo' vivere nell'ambiente", () => {
@@ -162,6 +163,16 @@ describe("ambiente, ramo di GitHub e ramo di Cloudflare devono dire la stessa st
     expect(c({ ambiente: "anteprima", ramoGitHub: "claude/x", ramoCloudflare: "claude/y" })).toMatch(
       /si costruisce su quel ramo/,
     ));
+  it("🔴 da slave si costruisce Borgo58-Prova, non un ramo omonimo", () => {
+    expect(c({ ambiente: "anteprima", ramoGitHub: RAMO_DI_COLLAUDO, ramoCloudflare: RAMO_PROVA_DI_RILASCIO })).toBeNull();
+  });
+
+  it("🔴 da slave, un'anteprima verso un ramo QUALUNQUE e' respinta", () => {
+    expect(c({ ambiente: "anteprima", ramoGitHub: RAMO_DI_COLLAUDO, ramoCloudflare: "slave" })).toMatch(
+      /unica anteprima permessa/,
+    );
+  });
+
   it("un'anteprima verso `production` e' respinta anche se non e' IL ramo di produzione", () =>
     expect(c({ ambiente: "anteprima", ramoGitHub: "claude/x", ramoCloudflare: "production" })).toMatch(
       /ramo di produzione/,
@@ -290,7 +301,12 @@ describe("il confronto fra due fotografie di Cloudflare", () => {
 //    si prova che la riga che lo impone c'e' e non e' stata tolta.
 describe("🔴 in produzione ci si arriva DOPO Borgo58-Prova", () => {
   it("la produzione dipende dalla pubblicazione su Prova", () => {
-    expect(lavoroPubblica).toMatch(/needs:\s*\[[^\]]*\bprova_di_rilascio\b[^\]]*\]/);
+    // 🔴 DAL 18/09/2026 IL LEGAME NON E' PIU' `needs:`: Prova nasce da
+    //    `slave`, cioe' da un GIRO DIVERSO, e `needs:` non attraversa i
+    //    giri. Il fatto si legge dove GitHub lo registra — un rilascio
+    //    riuscito sull'ambiente `anteprima` con lo stesso commit.
+    expect(lavoroPubblica).toMatch(/environment=anteprima&sha=\$GITHUB_SHA/);
+    expect(lavoroPubblica).toMatch(/--ambiente produzione --stesso-commit/);
   });
 
   it("🔴 e non si scavalca con `always()`: un lavoro saltato deve FERMARE, non passare", () => {
@@ -321,7 +337,7 @@ describe("🔴 in produzione ci si arriva DOPO Borgo58-Prova", () => {
 
   it("e la produzione lo confronta col proprio, prima di spendere un minuto", () => {
     expect(lavoroPubblica).toMatch(
-      /COMMIT_DI_PROVA: \$\{\{ needs\.prova_di_rilascio\.outputs\.commit \}\}/,
+      /COMMIT_DI_PROVA: \$\{\{ env\.COMMIT_DI_PROVA \}\}/,
     );
     expect(lavoroPubblica).toMatch(/--ambiente produzione --stesso-commit/);
 

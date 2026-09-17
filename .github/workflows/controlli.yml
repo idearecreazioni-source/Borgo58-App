@@ -66,9 +66,9 @@ name: Controlli
 #    quei rami non li guarderebbe piu' nessuno.
 on:
   push:
-    branches: [master]
+    branches: [master, slave]
   pull_request:
-    branches: [master]
+    branches: [master, slave]
 
 # 🔴 UNA CODA PER RAMO — corretto il 31/08/2026, misurando un giro ANNULLATO.
 #
@@ -351,7 +351,7 @@ jobs:
   prova_di_rilascio:
     name: Pubblica su Borgo58-Prova — il passaggio prima della produzione
     needs: [codice, database]
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/slave'
     environment: anteprima
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -447,13 +447,16 @@ jobs:
   #       venissero allargate per sbaglio.
   pubblica:
     name: Manda in produzione — dopo Prova, e con un'approvazione
-    needs: [codice, database, prova_di_rilascio]
+    needs: [codice, database]
     if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'si'
     environment: produzione
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # ⚠️ Serve anche `deployments: read`: il passo qui sotto interroga il
+    #    registro dei rilasci per sapere se il commit e' uscito su Prova.
     permissions:
       contents: read
+      deployments: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -465,9 +468,29 @@ jobs:
       #    nessuna libreria — e fermarsi qui costa zero invece di un minuto.
       # ⚠️ Se `prova_di_rilascio` non e' girata, questa variabile arriva
       #    VUOTA, non assente: il comando la tratta come un rifiuto.
+      # 🔴 IL LEGAME CON PROVA NON PASSA PIU' DA `needs:` — 18/09/2026.
+      #    Da quando Borgo58-Prova si costruisce dal ramo `slave`, i due
+      #    lavori vivono in GIRI DIVERSI: `needs:` non attraversa i giri, e
+      #    lasciarlo li' avrebbe dato un valore sempre VUOTO — cioe' un
+      #    cancello chiuso per sempre, e chiuso in silenzio.
+      # ⚠️ Adesso il fatto si legge dove GitHub lo REGISTRA: un rilascio
+      #    sull'ambiente `anteprima` con QUESTO identico commit, riuscito.
+      #    Non e' una promessa scritta nel workflow: e' il registro.
+      - name: Questo commit e' uscito su Borgo58-Prova?
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          trovato=""
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=anteprima&sha=$GITHUB_SHA&per_page=20" --jq '.[].id'); do
+            stati=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=100" --jq '[.[].state] | join(",")')
+            echo "  rilascio $id su Prova: $stati"
+            case "$stati" in *success*) trovato="$GITHUB_SHA";; esac
+          done
+          echo "COMMIT_DI_PROVA=$trovato" >> "$GITHUB_ENV"
+
       - name: Su Prova e' uscito QUESTO commit?
         env:
-          COMMIT_DI_PROVA: ${{ needs.prova_di_rilascio.outputs.commit }}
+          COMMIT_DI_PROVA: ${{ env.COMMIT_DI_PROVA }}
         run: node scripts/rilascio.mjs --ambiente produzione --stesso-commit
 
       - run: npm ci
