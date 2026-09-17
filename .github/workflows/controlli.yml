@@ -452,8 +452,11 @@ jobs:
     environment: produzione
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # ⚠️ Serve anche `deployments: read`: il passo qui sotto interroga il
+    #    registro dei rilasci per sapere se il commit e' uscito su Prova.
     permissions:
       contents: read
+      deployments: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
