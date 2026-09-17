@@ -28,9 +28,19 @@ import { createClient } from "@supabase/supabase-js";
 import { leggiChiaviDiProva } from "./chiavi.mjs";
 import { REF_PROVA, REF_PRODUZIONE } from "./comune.mjs";
 
-/** I residui conosciuti: tabella, colonna e nome esatto. Niente jolly. */
+/**
+ * I residui conosciuti. Ogni voce dice la tabella, la colonna e — in modo
+ * esplicito — se cerca un nome ESATTO (`valore`) o un INIZIO (`prefisso`).
+ *
+ * ⚠️ Il prefisso si dichiara come campo, non si scrive dentro il valore con
+ *    un `%`: un jolly nascosto in una stringa e' la strada per cancellare
+ *    piu' di quanto si voleva, e non si vede leggendo.
+ */
 export const RESIDUI_NOTI = [
   { tabella: "ingredients", colonna: "name", valore: "ZZZ-PROVA-voce" },
+  // ⚠️ Le righe figlie se ne vanno da se': chi riferisce `dettature` lo fa
+  //    con `on delete cascade`.
+  { tabella: "dettature", colonna: "testo", prefisso: "PROVA-voce" },
 ];
 
 const conferma = process.argv.includes("--conferma");
@@ -75,19 +85,20 @@ async function principale() {
 
   let totale = 0;
   for (const r of RESIDUI_NOTI) {
-    const { data, error } = await client
-      .from(r.tabella)
-      .select("id")
-      .eq(r.colonna, r.valore);
+    const cerca = () =>
+      r.prefisso
+        ? client.from(r.tabella).select("id").like(r.colonna, `${r.prefisso}%`)
+        : client.from(r.tabella).select("id").eq(r.colonna, r.valore);
+    const { data, error } = await cerca();
     if (error) ferma(`Non riesco a leggere ${r.tabella}: ${error.message}`);
-    console.log(`  ${r.tabella}.${r.colonna} = «${r.valore}»: ${data.length} riga/e`);
+    const come = r.prefisso ? `inizia per «${r.prefisso}»` : `= «${r.valore}»`;
+    console.log(`  ${r.tabella}.${r.colonna} ${come}: ${data.length} riga/e`);
     totale += data.length;
     if (data.length === 0) continue;
     if (!conferma) continue;
-    const { error: errCanc } = await client
-      .from(r.tabella)
-      .delete()
-      .eq(r.colonna, r.valore);
+    const { error: errCanc } = r.prefisso
+      ? await client.from(r.tabella).delete().like(r.colonna, `${r.prefisso}%`)
+      : await client.from(r.tabella).delete().eq(r.colonna, r.valore);
     if (errCanc) ferma(`Non riesco a togliere da ${r.tabella}: ${errCanc.message}`);
     console.log(`    tolte ${data.length}`);
   }
@@ -101,7 +112,9 @@ async function principale() {
     // ⚠️ SI RIGUARDA, invece di credere a cio' che si e' appena fatto.
     let rimasti = 0;
     for (const r of RESIDUI_NOTI) {
-      const { data } = await client.from(r.tabella).select("id").eq(r.colonna, r.valore);
+      const { data } = r.prefisso
+        ? await client.from(r.tabella).select("id").like(r.colonna, `${r.prefisso}%`)
+        : await client.from(r.tabella).select("id").eq(r.colonna, r.valore);
       rimasti += data?.length ?? 0;
     }
     console.log(`\nDopo la pulizia restano ${rimasti} residui.`);
