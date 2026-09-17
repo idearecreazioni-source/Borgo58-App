@@ -47,7 +47,7 @@ describe("la pubblicazione non parte se i controlli sono rossi", () => {
     // Non basta `needs: codice`: le 459 prove contro il database stanno nel
     // secondo, ed e' quello che il 31/08 era rosso mentre il sito andava
     // online lo stesso.
-    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*,/);
+    expect(lavoroPubblica).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
     expect(lavoroProva).toMatch(/needs:\s*\[\s*codice\s*,\s*database\s*\]/);
   });
 
