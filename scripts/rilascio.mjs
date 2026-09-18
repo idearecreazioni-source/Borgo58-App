@@ -120,7 +120,7 @@ export function problemaDiCoerenza({ ambiente, tipoRef, ramoGitHub, ramoCloudfla
 }
 
 // ---------------------------------------------------------------------
-// LO STESSO COMMIT — 17/09/2026
+// IL COMMIT COLLAUDATO — 17/09/2026, corretto il 18/09/2026
 // ---------------------------------------------------------------------
 // 🔴 PERCHE' NON BASTA `needs:`. Due lavori dello stesso giro girano sullo
 //    stesso commit per costruzione, quindi il legame c'e' gia'. Ma e' un
@@ -130,10 +130,24 @@ export function problemaDiCoerenza({ ambiente, tipoRef, ramoGitHub, ramoCloudfla
 //    **restando verde**. Un cancello che cade in silenzio e' la forma
 //    peggiore, ed e' la stessa famiglia del guasto del 01/09.
 //
-// ⚠️ QUINDI IL LEGAME SI DICE AD ALTA VOCE: la pubblicazione su Prova
-//    dichiara quale commit ha messo online, la produzione lo confronta col
-//    proprio, e se non coincidono si ferma. Il giorno che `needs:` venisse
-//    allargato per sbaglio, questo confronto resta in piedi da solo.
+// 🔴 IL DIFETTO CHE HA FATTO CORREGGERE LA VERSIONE DEL 17/09. Si chiedeva a
+//    GitHub un rilascio su Prova con l'IDENTICO commit che gira in produzione.
+//    Ma la filiera e' `slave -> master` con una proposta, e GitHub crea un
+//    commit di FUSIONE nuovo, che su Prova non e' mai uscito: quel cancello
+//    era impossibile da soddisfare per la strada lecita, cioe' chiuso per
+//    sempre. La scorciatoia — togliere il controllo — l'avrebbe aperto per
+//    sempre. Serve una terza cosa: dimostrare che il CONTENUTO e' lo stesso.
+//
+// ⚠️ COSA SI DIMOSTRA ADESSO. Un commit e' pubblicabile se esiste un commit
+//    «collaudato» (lui stesso, oppure il secondo genitore di una fusione nella
+//    sua storia diretta) tale che:
+//      1. il registro dei rilasci di GitHub ha un rilascio RIUSCITO
+//         sull'ambiente `anteprima`, per QUEL commit, dal ramo `slave`;
+//      2. fra il commit collaudato e quello che sta per uscire non cambia
+//         nessun file, tranne un elenco ESPLICITO e corto di file di
+//         infrastruttura (PERCORSI_DI_INFRASTRUTTURA). Non conta il messaggio
+//         della fusione ne' il nome della proposta: contano gli alberi.
+//    Qualunque dato mancante, vuoto, malformato o ambiguo e' un rifiuto.
 //
 // 🔴 E UN VALORE VUOTO E' UN RIFIUTO, NON UN PASSAGGIO — ed e' il caso che
 //    conta davvero. Quando un lavoro viene saltato GitHub non lascia un
@@ -141,18 +155,190 @@ export function problemaDiCoerenza({ ambiente, tipoRef, ramoGitHub, ramoCloudfla
 //    confrontare, vado avanti» vorrebbe dire aprire il cancello proprio nel
 //    caso in cui Prova non e' mai girata. Si fallisce chiusi, come ovunque
 //    in questo file.
-export function problemaDelloStessoCommit(dallaProva, diAdesso) {
-  const a = (dallaProva ?? "").trim();
-  const b = (diAdesso ?? "").trim();
-  if (!b) return "Non so su quale commit sto girando: non pubblico.";
-  if (!a)
-    return (
-      "La pubblicazione su Borgo58-Prova non ha dichiarato nessun commit: o non e' girata, " +
-      "o e' stata saltata. In produzione ci si arriva DOPO Prova, quindi qui ci si ferma."
-    );
-  if (a !== b)
-    return `Su Prova e' uscito il commit «${a}», qui si pubblicherebbe «${b}»: non sono lo stesso. Non si pubblica.`;
-  return null;
+//
+// ⚠️ IL LIMITE DELL'ELENCO DI INFRASTRUTTURA. Sono i file che LEGGONO il
+//    rilascio, non quelli che finiscono nel sito: il workflow, questo script,
+//    la sua prova e la guida. Nessun file dell'applicazione, del database, del
+//    pacchetto (`package.json`, `package-lock.json`) o di configurazione della
+//    compilazione ne fa parte. Aggiungerne uno e' una decisione, e la prova
+//    dell'elenco in `tests/unita/cancello-pubblicazione.test.js` la rende
+//    visibile.
+export const AMBIENTE_GITHUB_DI_PROVA = "anteprima";
+
+// Quanti commit della storia diretta si guardano per trovare un collaudato, e
+// quindi quanta storia deve portare il `checkout` (vedi il workflow).
+export const ANTENATI_DA_GUARDARE = 20;
+
+export const PERCORSI_DI_INFRASTRUTTURA = Object.freeze([
+  ".github/workflows/controlli.yml",
+  "scripts/rilascio.mjs",
+  "tests/unita/cancello-pubblicazione.test.js",
+  "docs/CLOUDFLARE.md",
+]);
+
+const FORMA_SHA = /^[0-9a-f]{40}$/;
+const RAMI_DEL_COLLAUDO = new Set([RAMO_DI_COLLAUDO, `refs/heads/${RAMO_DI_COLLAUDO}`]);
+const corto = (sha) => sha.slice(0, 7);
+
+/**
+ * Da `git rev-list --first-parent --parents -n N <commit>` ai commit da
+ * verificare: il commit stesso, e il secondo genitore di ogni fusione a due
+ * genitori nella sua storia diretta. Le fusioni con altri numeri di genitori
+ * non sono «una fusione da slave» e non generano candidati.
+ */
+export function candidatiDelCollaudo(righe, sha) {
+  if (!FORMA_SHA.test(sha ?? "")) return { errore: "Non so su quale commit sto girando: non pubblico." };
+  const linee = String(righe ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (linee.length === 0) return { errore: "La storia del commit non si legge: non pubblico." };
+
+  const candidati = [{ sha, come: "questo stesso commit" }];
+  for (const [i, linea] of linee.entries()) {
+    const pezzi = linea.split(/\s+/);
+    if (!pezzi.every((p) => FORMA_SHA.test(p)))
+      return { errore: "La storia del commit ha una riga che non si capisce: non pubblico." };
+    if (i === 0 && pezzi[0] !== sha)
+      return { errore: "La storia letta non parte dal commit su cui sto girando: non pubblico." };
+    if (pezzi.length === 3 && !candidati.some((c) => c.sha === pezzi[2]))
+      candidati.push({ sha: pezzi[2], come: `secondo genitore della fusione ${corto(pezzi[0])}` });
+  }
+  return { candidati };
+}
+
+/** Le differenze fra due alberi: solo file di infrastruttura, altrimenti rifiuto. */
+export function problemaDelleDifferenze(percorsi) {
+  if (!Array.isArray(percorsi)) return "L'elenco delle differenze non si legge: non pubblico.";
+  const fuori = percorsi.filter((p) => typeof p !== "string" || !PERCORSI_DI_INFRASTRUTTURA.includes(p));
+  if (fuori.length === 0) return null;
+  const nomi = fuori.slice(0, 5).map((p) => (typeof p === "string" ? p : "?"));
+  return (
+    `il contenuto e' diverso da quello collaudato in ${fuori.length} file che non sono di infrastruttura ` +
+    `(${nomi.join(", ")}${fuori.length > 5 ? ", …" : ""})`
+  );
+}
+
+/**
+ * Il registro dei rilasci, letto per UN commit: c'e' un rilascio sull'ambiente
+ * di Prova, dal ramo di collaudo, per quel commit esatto, riuscito e mai
+ * fallito? `rilasci` e' `[{ sha, ref, environment, stati: ["success", …] }]`.
+ * Un elemento che non ha la forma attesa non conta, non viene indovinato.
+ */
+export function problemaDelRilascioDiProva(rilasci, sha) {
+  if (!Array.isArray(rilasci)) return "la risposta del registro dei rilasci non e' valida";
+  const dellaProva = rilasci.filter(
+    (r) =>
+      r &&
+      typeof r === "object" &&
+      r.sha === sha &&
+      r.environment === AMBIENTE_GITHUB_DI_PROVA &&
+      RAMI_DEL_COLLAUDO.has(r.ref),
+  );
+  if (dellaProva.length === 0)
+    return `nessun rilascio su «${AMBIENTE_GITHUB_DI_PROVA}» dal ramo «${RAMO_DI_COLLAUDO}» per questo commit`;
+  const riuscito = dellaProva.some(
+    (r) =>
+      Array.isArray(r.stati) &&
+      r.stati.includes("success") &&
+      !r.stati.some((s) => s === "failure" || s === "error"),
+  );
+  return riuscito ? null : "nessun rilascio riuscito: manca lo stato «success», o c'e' un fallimento";
+}
+
+/**
+ * Il cancello. `eseguiGit(args)` restituisce l'uscita di git o solleva;
+ * `chiediRilasci(sha)` restituisce i rilasci di quel commit o solleva.
+ * Ritorna `null` se si puo' procedere, altrimenti la frase del rifiuto.
+ */
+export async function problemaDelCollaudo({ sha, eseguiGit, chiediRilasci }) {
+  if (!FORMA_SHA.test(sha ?? "")) return "Non so su quale commit sto girando: non pubblico.";
+
+  let righe;
+  try {
+    righe = eseguiGit(["rev-list", "--first-parent", "--parents", `-n${ANTENATI_DA_GUARDARE}`, sha]);
+  } catch {
+    return "Non riesco a leggere la storia del commit: non pubblico.";
+  }
+  const { candidati, errore } = candidatiDelCollaudo(righe, sha);
+  if (errore) return errore;
+
+  const motivi = [];
+  for (const candidato of candidati) {
+    const nome = `${corto(candidato.sha)} (${candidato.come})`;
+
+    if (candidato.sha !== sha) {
+      let uscita;
+      try {
+        uscita = eseguiGit(["diff", "--name-only", "-z", "--no-renames", candidato.sha, sha]);
+      } catch {
+        motivi.push(`${nome}: non riesco a confrontare i contenuti`);
+        continue;
+      }
+      // 🔴 Un'uscita che non e' un testo NON e' «nessuna differenza»: e' un
+      //    confronto che non e' avvenuto.
+      if (typeof uscita !== "string") {
+        motivi.push(`${nome}: il confronto dei contenuti non ha dato un risultato leggibile`);
+        continue;
+      }
+      const guaioDifferenze = problemaDelleDifferenze(uscita.split("\0").filter(Boolean));
+      if (guaioDifferenze) {
+        motivi.push(`${nome}: ${guaioDifferenze}`);
+        continue;
+      }
+    }
+
+    let rilasci;
+    try {
+      rilasci = await chiediRilasci(candidato.sha);
+    } catch (e) {
+      motivi.push(`${nome}: non riesco a leggere il registro dei rilasci (${e?.message ?? "errore"})`);
+      continue;
+    }
+    const guaioRilascio = problemaDelRilascioDiProva(rilasci, candidato.sha);
+    if (guaioRilascio) {
+      motivi.push(`${nome}: ${guaioRilascio}`);
+      continue;
+    }
+    return null;
+  }
+
+  return (
+    `Nessun commit collaudato su Borgo58-Prova corrisponde a «${corto(sha)}»: o Prova non e' girata, ` +
+    `o il contenuto non e' quello collaudato. In produzione ci si arriva DOPO Prova, quindi qui ci si ferma.\n` +
+    motivi.map((m) => `  - ${m}`).join("\n")
+  );
+}
+
+/** Il registro dei rilasci di GitHub, in sola lettura, per un commit. */
+export async function rilasciDiProvaDaGitHub({ repo, sha, token, fetchFn = fetch }) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo ?? "")) throw new Error("repository non riconosciuto");
+  if (!FORMA_SHA.test(sha ?? "")) throw new Error("commit non valido");
+  if (!token) throw new Error("manca il permesso di leggere il registro");
+
+  const chiedi = async (percorso) => {
+    const r = await fetchFn(`https://api.github.com/repos/${repo}/${percorso}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (!r.ok) throw new Error(`il registro ha risposto ${r.status}`);
+    const j = await r.json().catch(() => null);
+    if (!Array.isArray(j)) throw new Error("risposta non valida");
+    if (j.length >= 100) throw new Error("troppi elementi per leggerli tutti");
+    return j;
+  };
+
+  const elenco = await chiedi(`deployments?environment=${AMBIENTE_GITHUB_DI_PROVA}&sha=${sha}&per_page=100`);
+  const rilasci = [];
+  for (const d of elenco) {
+    if (!d || typeof d !== "object" || !Number.isInteger(d.id)) throw new Error("un rilascio non ha un id leggibile");
+    const stati = await chiedi(`deployments/${d.id}/statuses?per_page=100`);
+    rilasci.push({ sha: d.sha, ref: d.ref, environment: d.environment, stati: stati.map((s) => s?.state) });
+  }
+  return rilasci;
 }
 
 // ---------------------------------------------------------------------
@@ -294,16 +480,31 @@ async function principale() {
   const account = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
   const progetto = process.env.CLOUDFLARE_PROJECT ?? "";
 
-  // ⚠️ NON CHIEDE NIENTE A CLOUDFLARE e non ha bisogno di `npm ci`: e' un
-  //    confronto fra due dati che il giro ha gia' in mano. Sta qui, e non in
-  //    una riga di shell dentro il workflow, per la ragione di sempre — la
-  //    filiera e' UNA, e una regola scritta in un passo di workflow non si
-  //    puo' provare al contrario. Le prove stanno in
+  // ⚠️ NON CHIEDE NIENTE A CLOUDFLARE e non ha bisogno di `npm ci`: legge la
+  //    storia di git e il registro dei rilasci di GitHub, in sola lettura. Sta
+  //    qui, e non in una riga di shell dentro il workflow, per la ragione di
+  //    sempre — la filiera e' UNA, e una regola scritta in un passo di
+  //    workflow non si puo' provare al contrario. Le prove stanno in
   //    `tests/unita/cancello-pubblicazione.test.js`.
-  if (argomenti.includes("--stesso-commit")) {
-    const guaio = problemaDelloStessoCommit(process.env.COMMIT_DI_PROVA, process.env.GITHUB_SHA);
+  if (argomenti.includes("--collaudato-su-prova")) {
+    if (ambiente !== "produzione") ferma("Il controllo del collaudo esiste solo per la produzione.");
+    const eseguiGit = (args) => {
+      const r = spawnSync("git", args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+      if (r.status !== 0) throw new Error(`git ${args[0]} non e' riuscito`);
+      return r.stdout;
+    };
+    const guaio = await problemaDelCollaudo({
+      sha: (process.env.GITHUB_SHA ?? "").trim(),
+      eseguiGit,
+      chiediRilasci: (sha) =>
+        rilasciDiProvaDaGitHub({
+          repo: process.env.GITHUB_REPOSITORY ?? "",
+          sha,
+          token: process.env.GH_TOKEN ?? "",
+        }),
+    });
     if (guaio) ferma(guaio);
-    console.log("Borgo58-Prova ha pubblicato questo stesso commit: si prosegue.");
+    console.log("Il contenuto di questo commit e' stato collaudato su Borgo58-Prova: si prosegue.");
     return;
   }
 

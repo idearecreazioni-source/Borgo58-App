@@ -431,11 +431,12 @@ jobs:
   #       nostra condizione, quindi non e' una condizione che possiamo
   #       sbagliare. 🔴 Dal 17/09 fra quei lavori c'e' anche la pubblicazione
   #       su Borgo58-Prova: **se Prova non e' uscita, qui non si parte.**
-  #    1-bis. lo STESSO COMMIT, detto ad alta voce — primo passo qui sotto.
-  #       `needs:` lo garantisce gia' per costruzione, ma lo garantisce nella
-  #       forma del file, dove basta un `if: always()` per scioglierlo
-  #       restando verdi. Il confronto lo rende un fatto leggibile, e un
-  #       commit vuoto e' un rifiuto e non un passaggio.
+  #    1-bis. il CONTENUTO COLLAUDATO, detto ad alta voce — primo passo qui
+  #       sotto. `needs:` non attraversa i giri, e il registro dei rilasci di
+  #       GitHub dice se il commit collaudato e' uscito su Prova dal ramo
+  #       `slave`; il confronto degli alberi dice che il contenuto di questo
+  #       commit e' lo stesso, a meno di pochi file di infrastruttura. Un dato
+  #       vuoto o illeggibile e' un rifiuto e non un passaggio.
   #    2. l'interruttore, che e' una **Variable del REPOSITORY** e non
   #       dell'ambiente. 🔴 Non e' un dettaglio: GitHub valuta `if:` PRIMA di
   #       assegnare l'ambiente, quindi una variabile d'ambiente qui dentro
@@ -458,40 +459,43 @@ jobs:
       contents: read
       deployments: read
     steps:
+      # 🔴 LA STORIA SERVE, E DEVE ESSERE ABBASTANZA: il controllo del collaudo
+      #    confronta il contenuto di questo commit con quello del commit che e'
+      #    uscito su Prova, che sta nella storia (secondo genitore della
+      #    fusione). Con la storia di un solo commit non c'e' niente da
+      #    confrontare, e il controllo si fermerebbe — nella direzione sicura, ma
+      #    chiudendo anche il percorso lecito. La prova del workflow lega questo
+      #    numero a `ANTENATI_DA_GUARDARE`.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
       - uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
           cache: npm
-      # 🔴 LA PRIMA DOMANDA, E COSTA ZERO: e' lo stesso commit che e' uscito
-      #    su Borgo58-Prova? Sta PRIMA di `npm ci` perche' non ha bisogno di
-      #    nessuna libreria — e fermarsi qui costa zero invece di un minuto.
-      # ⚠️ Se `prova_di_rilascio` non e' girata, questa variabile arriva
-      #    VUOTA, non assente: il comando la tratta come un rifiuto.
+      # 🔴 LA PRIMA DOMANDA, E COSTA ZERO: il CONTENUTO di questo commit e' quello
+      #    che e' uscito su Borgo58-Prova? Sta PRIMA di `npm ci` perche' non ha
+      #    bisogno di nessuna libreria — e fermarsi qui costa zero invece di un
+      #    minuto.
+      # ⚠️ Se Prova non e' mai girata, o e' fallita, o il contenuto e' diverso, o
+      #    un dato non si legge, il comando si ferma: un valore mancante e' un
+      #    rifiuto, mai un passaggio.
       # 🔴 IL LEGAME CON PROVA NON PASSA PIU' DA `needs:` — 18/09/2026.
       #    Da quando Borgo58-Prova si costruisce dal ramo `slave`, i due
       #    lavori vivono in GIRI DIVERSI: `needs:` non attraversa i giri, e
       #    lasciarlo li' avrebbe dato un valore sempre VUOTO — cioe' un
       #    cancello chiuso per sempre, e chiuso in silenzio.
-      # ⚠️ Adesso il fatto si legge dove GitHub lo REGISTRA: un rilascio
-      #    sull'ambiente `anteprima` con QUESTO identico commit, riuscito.
-      #    Non e' una promessa scritta nel workflow: e' il registro.
-      - name: Questo commit e' uscito su Borgo58-Prova?
+      # 🔴 E NON PASSA NEMMENO DALL'IDENTICO COMMIT — 18/09/2026. La proposta
+      #    da `slave` a `master` produce una FUSIONE nuova, che su Prova non e'
+      #    mai uscita: cercarla nel registro chiudeva il cancello per sempre.
+      #    Il fatto si legge dove GitHub lo REGISTRA (un rilascio riuscito
+      #    sull'ambiente `anteprima`, dal ramo `slave`, per il commit collaudato)
+      #    e si accompagna alla prova che il CONTENUTO non e' cambiato. Il
+      #    perche' e i limiti stanno in `scripts/rilascio.mjs`.
+      - name: Il contenuto di questo commit e' stato collaudato su Borgo58-Prova?
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          trovato=""
-          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=anteprima&sha=$GITHUB_SHA&per_page=20" --jq '.[].id'); do
-            stati=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=100" --jq '[.[].state] | join(",")')
-            echo "  rilascio $id su Prova: $stati"
-            case "$stati" in *success*) trovato="$GITHUB_SHA";; esac
-          done
-          echo "COMMIT_DI_PROVA=$trovato" >> "$GITHUB_ENV"
-
-      - name: Su Prova e' uscito QUESTO commit?
-        env:
-          COMMIT_DI_PROVA: ${{ env.COMMIT_DI_PROVA }}
-        run: node scripts/rilascio.mjs --ambiente produzione --stesso-commit
+        run: node scripts/rilascio.mjs --ambiente produzione --collaudato-su-prova
 
       - run: npm ci
 
