@@ -1,0 +1,400 @@
+name: Manifest di produzione (temporaneo)
+
+on:
+  push:
+    branches: ['misura/baseline-01']
+
+permissions: {}
+
+concurrency:
+  group: manifest-produzione
+  cancel-in-progress: false
+
+jobs:
+  manifest:
+    name: Manifest di produzione
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    environment:
+      name: misura-produzione
+      deployment: false
+    env:
+      RAMO_ATTESO: misura/baseline-01
+      AMBIENTE_ATTESO: misura-produzione
+      # 🔴 IL NOME DEL PROGETTO E' FISSATO QUI, non preso da una variabile.
+      #    Il token si limita all'ACCOUNT, non al singolo progetto Pages: se
+      #    il bersaglio arrivasse da una variabile, cambiarla basterebbe a
+      #    puntare un altro progetto dello stesso account con lo stesso
+      #    token. Scritto qui, cambiarlo si vede nel diff.
+      PROGETTO_ATTESO: borgo58-app
+    steps:
+      # =============================================================
+      # PREFLIGHT — si verifica; nessun dato applicativo viene letto
+      # =============================================================
+      - name: 0a. Ramo e ambiente attesi
+        env:
+          RAMO: ${{ github.ref_name }}
+          AMBIENTE_DICHIARATO: ${{ vars.MANIFEST_AMBIENTE }}
+        run: |
+          set -euo pipefail
+          [ "$RAMO" = "$RAMO_ATTESO" ] || { echo "::error::Ramo inatteso."; exit 1; }
+          [ "${AMBIENTE_DICHIARATO:-}" = "$AMBIENTE_ATTESO" ] || { echo "::error::Ambiente atteso non applicato."; exit 1; }
+          echo "ramo atteso: SI"
+          echo "ambiente atteso: SI"
+
+      - name: 0b. Credenziali esclusive presenti
+        env:
+          DB: ${{ secrets.MANIFEST_DB_PRODUZIONE_READONLY }}
+          CF: ${{ secrets.MANIFEST_CLOUDFLARE_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          m=0
+          [ -n "${DB:-}" ] || { echo "::error::MANIFEST_DB_PRODUZIONE_READONLY assente."; m=1; }
+          [ -n "${CF:-}" ] || { echo "::error::MANIFEST_CLOUDFLARE_READ_TOKEN assente."; m=1; }
+          [ "$m" = "0" ] || { echo "::error::Nessun ripiego previsto: il giro si ferma."; exit 1; }
+          echo "credenziali esclusive presenti: SI"
+
+      - name: 0c. Il ruolo del database non ha scritture raggiungibili
+        env:
+          DB: ${{ secrets.MANIFEST_DB_PRODUZIONE_READONLY }}
+        run: |
+          set -euo pipefail
+          # ⚠️ INTERROGAZIONI MINIME PER VERIFICARE IL RUOLO: solo cataloghi
+          #    dei privilegi, nessun dato applicativo. Se una risposta non e'
+          #    quella attesa, il giro finisce qui e il Manifest non inizia.
+          # 🔴 DECISIONE CONSAPEVOLE: PROTEZIONE LIMITATA AL WORKFLOW. PostgreSQL non ha
+          #    una negazione per singolo ruolo: cio' che e' concesso a PUBLIC vale anche
+          #    per questo ruolo. Il ruolo eredita cosi' tre oggetti tecnici di pg_net,
+          #    scrivibili da chiunque abbia le credenziali. Il workflow accetta QUESTA
+          #    eccezione e nessun'altra:
+          #      - net._http_response             (relazione)  DELETE,INSERT,TRUNCATE,UPDATE
+          #      - net.http_request_queue         (relazione)  DELETE,INSERT,TRUNCATE,UPDATE
+          #      - net.http_request_queue_id_seq  (sequenza)   UPDATE,USAGE
+          #    Il confronto e' con una FIRMA esatta (nome, tipo, privilegi effettivi,
+          #    appartenenza all'estensione pg_net), non con un conteggio: un oggetto in
+          #    piu' o in meno, un privilegio diverso o un oggetto fuori dall'estensione
+          #    fermano il giro. Restano bloccanti: attributi amministrativi, appartenenze,
+          #    concessioni dirette di scrittura, CREATE su database e schemi, transazione
+          #    non read-only.
+          # ⚠️ LIMITE, DA NON DIMENTICARE. La sola lettura e' garantita per l'ESECUZIONE
+          #    DI QUESTO WORKFLOW: ogni psql apre una transazione READ ONLY prima di
+          #    leggere. NON e' garantita per un uso improprio della credenziale fuori dal
+          #    workflow: chi la possiede puo' annullare READ ONLY con SET e scrivere negli
+          #    oggetti dell'eccezione. READONLY nel nome del secret vuol dire "usato dal
+          #    workflow in sola lettura", non "credenziale incapace di scrivere". Le
+          #    funzioni SECURITY DEFINER volatili eseguibili dal ruolo scrivono con i
+          #    privilegi del proprietario: sono contate e stampate, non escluse.
+          esito=$(psql "$DB" -X -A -t -q -v ON_ERROR_STOP=1 2>/dev/null <<'SQL'
+          begin transaction read only;
+          select '  attributi amministrativi: ' || count(*)
+            from pg_roles
+           where rolname = current_user
+             and (rolsuper or rolcreatedb or rolcreaterole or rolreplication or rolbypassrls);
+          select '  appartenenze ad altri ruoli: ' || count(*)
+            from pg_auth_members m
+           where m.member = (select oid from pg_roles where rolname = current_user);
+          with me as (
+            select oid as rid from pg_roles where rolname = current_user
+          ),
+          rel as (
+            select c.oid, c.relkind, c.relowner, c.relacl,
+                   n.nspname || '.' || c.relname as nome,
+                   has_schema_privilege(current_user, n.oid, 'USAGE') as raggiungibile,
+                   exists (select 1 from pg_depend d
+                            where d.classid = 'pg_class'::regclass
+                              and d.objid = c.oid
+                              and d.refclassid = 'pg_extension'::regclass
+                              and d.deptype = 'e'
+                              and d.refobjid = (select e.oid from pg_extension e where e.extname = 'pg_net')) as in_pg_net
+              from pg_class c
+              join pg_namespace n on n.oid = c.relnamespace
+             where c.relkind in ('r', 'p', 'v', 'f', 'S')
+               and n.nspname !~ '^pg_'
+               and n.nspname <> 'information_schema'
+          ),
+          eff as (
+            select r.nome, r.relkind, r.raggiungibile, r.in_pg_net,
+                   case when r.relkind = 'S'
+                        then array_remove(array[
+                               case when has_sequence_privilege(current_user, r.oid, 'UPDATE') then 'UPDATE' end,
+                               case when has_sequence_privilege(current_user, r.oid, 'USAGE') then 'USAGE' end], null)
+                        else array_remove(array[
+                               case when has_table_privilege(current_user, r.oid, 'DELETE') then 'DELETE' end,
+                               case when has_any_column_privilege(current_user, r.oid, 'INSERT') then 'INSERT' end,
+                               case when has_table_privilege(current_user, r.oid, 'TRUNCATE') then 'TRUNCATE' end,
+                               case when has_any_column_privilege(current_user, r.oid, 'UPDATE') then 'UPDATE' end], null)
+                   end as privs,
+                   (   r.relowner = (select rid from me)
+                    or exists (select 1 from aclexplode(r.relacl) a
+                                where a.grantee = (select rid from me)
+                                  and a.privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'USAGE'))
+                    or exists (select 1 from pg_attribute t, aclexplode(t.attacl) a
+                                where t.attrelid = r.oid
+                                  and a.grantee = (select rid from me)
+                                  and a.privilege_type in ('INSERT', 'UPDATE'))
+                   ) as da_ruolo
+              from rel r
+          ),
+          rag as (
+            select count(*) as n,
+                   string_agg(nome || '|' || relkind::text || '|' || array_to_string(privs, ',') || '|'
+                              || case when in_pg_net then 'pg_net' else 'FUORI_ESTENSIONE' end,
+                              ' ; ' order by nome collate "C") as firma
+              from eff
+             where cardinality(privs) > 0 and not da_ruolo and raggiungibile
+          ),
+          attesa as (
+            select 'net._http_response|r|DELETE,INSERT,TRUNCATE,UPDATE|pg_net ; net.http_request_queue|r|DELETE,INSERT,TRUNCATE,UPDATE|pg_net ; net.http_request_queue_id_seq|S|UPDATE,USAGE|pg_net'::text as firma
+          )
+          select '  scritture per concessione diretta al ruolo: ' || count(*) filter (where cardinality(privs) > 0 and da_ruolo) from eff
+          union all
+          select '  scritture ereditate raggiungibili, oggetti: ' || n from rag
+          union all
+          select '  eccezione accettata coincide esattamente: ' || case when coalesce(r.firma, '') = a.firma then 'SI' else 'NO' end from rag r, attesa a
+          union all
+          select '  firma eccezione trovata (md5 abbreviato): ' || left(md5(coalesce(firma, '')), 12) from rag
+          union all
+          select '  firma eccezione attesa (md5 abbreviato): ' || left(md5(firma), 12) from attesa
+          union all
+          select '  scritture estranee non raggiungibili (schema senza USAGE): ' || count(*) filter (where cardinality(privs) > 0 and not da_ruolo and not raggiungibile) from eff;
+          select '  funzioni SECURITY DEFINER volatili eseguibili: ' || count(*)
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname !~ '^pg_'
+             and n.nspname <> 'information_schema'
+             and p.prosecdef
+             and p.provolatile = 'v'
+             and has_schema_privilege(current_user, n.oid, 'USAGE')
+             and has_function_privilege(current_user, p.oid, 'EXECUTE');
+          select '  puo'' creare nel database: ' || case when has_database_privilege(current_user, current_database(), 'CREATE') then 'SI' else 'NO' end;
+          select '  schemi su cui potrebbe creare: ' || count(*)
+            from information_schema.schemata s
+           where s.schema_name not in ('pg_catalog', 'information_schema')
+             and has_schema_privilege(current_user, s.schema_name, 'CREATE');
+          select '  transazione dichiarata di sola lettura: ' || case when current_setting('transaction_read_only') = 'on' then 'SI' else 'NO' end;
+          rollback;
+          SQL
+          ) || { echo "::error::Database · fase: verifica dei privilegi"; exit 1; }
+          echo "$esito"
+          n_admin=$(printf '%s\n' "$esito" | sed -n 's/.*attributi amministrativi: //p')
+          n_membri=$(printf '%s\n' "$esito" | sed -n 's/.*appartenenze ad altri ruoli: //p')
+          n_dirette=$(printf '%s\n' "$esito" | sed -n 's/.*scritture per concessione diretta al ruolo: //p')
+          n_ereditate=$(printf '%s\n' "$esito" | sed -n 's/.*scritture ereditate raggiungibili, oggetti: //p')
+          coincide=$(printf '%s\n' "$esito" | sed -n 's/.*eccezione accettata coincide esattamente: //p')
+          crea_db=$(printf '%s\n' "$esito" | sed -n 's/.*creare nel database: //p')
+          n_schemi=$(printf '%s\n' "$esito" | sed -n 's/.*schemi su cui potrebbe creare: //p')
+          solo_lettura=$(printf '%s\n' "$esito" | sed -n 's/.*transazione dichiarata di sola lettura: //p')
+          if [ "$n_admin" != "0" ] || [ "$n_membri" != "0" ] || [ "$n_dirette" != "0" ] \
+             || [ "$n_ereditate" != "3" ] || [ "$coincide" != "SI" ] || [ "$crea_db" != "NO" ] \
+             || [ "$n_schemi" != "0" ] || [ "$solo_lettura" != "SI" ]; then
+            echo "::error::Il ruolo ha privilegi amministrativi, scritture dirette o un'eccezione diversa da quella accettata. Non leggo niente."
+            exit 1
+          fi
+          echo "unica eccezione ereditata da PUBLIC: tre oggetti tecnici di pg_net, firma esatta: SI"
+          echo "sola lettura garantita per l'esecuzione di questo workflow; NON per un uso improprio della credenziale fuori dal workflow"
+
+      - name: 0d. Il token Cloudflare apre il progetto atteso, e solo quello
+        env:
+          CF: ${{ secrets.MANIFEST_CLOUDFLARE_READ_TOKEN }}
+          CF_ACCOUNT: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          # ⚠️ VERIFICA, NON LETTURA: si guarda solo che la chiamata riesca e
+          #    che il progetto aperto sia quello atteso. Nessun dato di
+          #    configurazione viene stampato in questo passo.
+          codice=$(curl -sS -o v.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CF" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROGETTO_ATTESO" || echo "000")
+          if [ "$codice" != "200" ]; then
+            rm -f v.json; echo "::error::Cloudflare · HTTP $codice · fase: verifica del token"; exit 1
+          fi
+          nome=$(jq -r '.result.name // ""' v.json)
+          rm -f v.json
+          if [ "$nome" != "$PROGETTO_ATTESO" ]; then
+            echo "::error::Cloudflare · fase: il progetto aperto non e' quello atteso"
+            exit 1
+          fi
+          echo "token valido e progetto atteso: SI"
+
+      # =============================================================
+      # MANIFEST — si legge solo se tutti i preflight sono passati
+      # =============================================================
+      - name: 1. Cloudflare — configurazione e ultimo rilascio di produzione
+        env:
+          CF: ${{ secrets.MANIFEST_CLOUDFLARE_READ_TOKEN }}
+          CF_ACCOUNT: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          codice=$(curl -sS -o p.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CF" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROGETTO_ATTESO" || echo "000")
+          if [ "$codice" != "200" ]; then
+            rm -f p.json; echo "::error::Cloudflare · HTTP $codice · fase: lettura del progetto"; exit 1
+          fi
+          echo "ramo di produzione e' «master»: $(jq -r 'if (.result.production_branch // "") == "master" then "SI" else "NO" end' p.json)"
+          echo "integrazione Git collegata: $(jq -r 'if .result.source == null then "NO" else "SI" end' p.json)"
+          echo "  costruzioni dal Git abilitate:            $(jq -r '.result.source.config.deployments_enabled // "-"' p.json)"
+          echo "  costruzioni di produzione dal Git:        $(jq -r '.result.source.config.production_deployments_enabled // "-"' p.json)"
+          echo "  anteprime automatiche:                    $(jq -r '.result.source.config.preview_deployment_setting // "-"' p.json)"
+          echo "  ramo di produzione dal Git e' «master»:   $(jq -r 'if (.result.source.config.production_branch // "") == "master" then "SI" else "NO" end' p.json)"
+          echo "comando di compilazione impostato: $(jq -r 'if (.result.build_config.build_command // "") == "" then "NO" else "SI" end' p.json)"
+          echo "quante variabili in produzione: $(jq -r '.result.deployment_configs.production.env_vars // {} | length' p.json)"
+          echo "quante variabili in anteprima:  $(jq -r '.result.deployment_configs.preview.env_vars // {} | length' p.json)"
+          # ⚠️ L'identificativo abbreviato si RICAVA da `.id`, che c'e' sempre,
+          #    invece di presumere `.short_id`, che potrebbe non esserci.
+          echo "ultimo rilascio di produzione:"
+          jq -r '.result.latest_deployment | "  id=\((.id // "--------")[0:8]) commit=\((.deployment_trigger.metadata.commit_hash // "-------")[0:7]) da-master=\(if (.deployment_trigger.metadata.branch // "") == "master" then "SI" else "NO" end) esito=\(.latest_stage.status // "-")"' p.json
+          rm -f p.json
+
+      - name: 2. Cloudflare — tutti i rilasci di produzione, aggregati
+        env:
+          CF: ${{ secrets.MANIFEST_CLOUDFLARE_READ_TOKEN }}
+          CF_ACCOUNT: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          # 🔴 SI PAGINA SU `result_info.total_pages`, non sul numero di righe
+          #    tornate: una pagina piena e' un indizio, non una risposta, e
+          #    fermarsi li' darebbe un elenco piu' corto con l'aria di essere
+          #    intero — cioe' un rilascio fuori filiera che non si vede mai.
+          # ⚠️ E resta un tetto difensivo: se il servizio dichiarasse un
+          #    numero assurdo, ci si ferma invece di girare per sempre.
+          LIMITE_PAGINE=50
+          pagina=1
+          totale_pagine=1
+          totale=0
+          non_master=0
+          : > tipi.txt
+          while [ "$pagina" -le "$totale_pagine" ]; do
+            if [ "$pagina" -gt "$LIMITE_PAGINE" ]; then
+              rm -f d.json tipi.txt
+              echo "::error::Cloudflare · fase: superato il tetto difensivo di $LIMITE_PAGINE pagine"
+              exit 1
+            fi
+            codice=$(curl -sS -o d.json -w '%{http_code}' \
+              -H "Authorization: Bearer $CF" \
+              "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROGETTO_ATTESO/deployments?env=production&page=$pagina&per_page=100" || echo "000")
+            if [ "$codice" != "200" ]; then
+              rm -f d.json tipi.txt
+              echo "::error::Cloudflare · HTTP $codice · fase: elenco dei rilasci (pagina $pagina)"
+              exit 1
+            fi
+            if [ "$pagina" = "1" ]; then
+              totale_pagine=$(jq -r '.result_info.total_pages // 1' d.json)
+              case "$totale_pagine" in
+                ''|*[!0-9]*)
+                  rm -f d.json tipi.txt
+                  echo "::error::Cloudflare · fase: numero di pagine non leggibile"
+                  exit 1 ;;
+              esac
+              if [ "$totale_pagine" -gt "$LIMITE_PAGINE" ]; then
+                rm -f d.json tipi.txt
+                echo "::error::Cloudflare · fase: il servizio dichiara $totale_pagine pagine, oltre il tetto difensivo"
+                exit 1
+              fi
+            fi
+            totale=$((totale + $(jq -r '.result | length' d.json)))
+            jq -r '.result[].deployment_trigger.type' d.json >> tipi.txt
+            non_master=$((non_master + $(jq -r '[.result[] | select((.deployment_trigger.metadata.branch // "") != "master")] | length' d.json)))
+            pagina=$((pagina + 1))
+          done
+          rm -f d.json
+          echo "pagine lette: $totale_pagine"
+          echo "rilasci di produzione esaminati (tutti): $totale"
+          echo "per tipo di innesco:"
+          sort tipi.txt | uniq -c | awk '{print "  " $2 ": " $1}'
+          echo "rilasci di produzione NON provenienti da master: $non_master"
+          rm -f tipi.txt
+
+      - name: 3. Produzione — migrazioni e impianto, in numeri
+        env:
+          DB: ${{ secrets.MANIFEST_DB_PRODUZIONE_READONLY }}
+        run: |
+          set -euo pipefail
+          psql "$DB" -X -A -t -q -v ON_ERROR_STOP=1 2>/dev/null <<'SQL' || { echo "::error::Database · fase: lettura del manifest"; exit 1; }
+          begin transaction read only;
+
+          do $guardia$
+          begin
+            if current_setting('transaction_read_only') <> 'on' then
+              raise exception 'FERMO: la transazione non e'' di sola lettura.';
+            end if;
+          end
+          $guardia$;
+
+          select '  quante migrazioni registrate: ' || count(*) from public.applied_migrations;
+
+          select '  ' || v || ' applicata: ' ||
+                 case when exists (select 1 from public.applied_migrations a where a.version = v) then 'SI' else 'NO' end
+            from (values ('20260916000001'), ('20260916000002'), ('20260917000001'), ('20260918000001')) t(v);
+
+          select '  tabelle attese: 6 · trovate: ' || count(*) || ' · mancanti: ' || (6 - count(*))
+            from information_schema.tables
+           where table_schema = 'public'
+             and table_name in ('invii_promemoria','consegne_telegram','invii_allarmi','allarmi','lavori_sorvegliati','stato_lavori');
+
+          -- ⚠️ `distinct`: una funzione con piu' firme conterebbe piu' volte, e un
+          --    conteggio gonfiato direbbe «ci sono tutte» mentre ne manca una.
+          select '  funzioni attese: 12 · trovate: ' || count(distinct p.proname) || ' · mancanti: ' || (12 - count(distinct p.proname))
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public'
+             and p.proname in ('url_delle_funzioni','chiave_di_consegna','prendi_consegna','conferma_consegna',
+                               'rilascia_consegna','esito_di_un_invio','raccogli_esiti_promemoria','raccogli_esiti_allarmi',
+                               'send_due_task_reminders','segnala_allarme','notify_reservation_telegram','chiave_di_allarme');
+
+          -- ⚠️ `pg_get_functiondef` non decompila tutto cio' che sta in `pg_proc`: su
+          --    aggregati e altri record di tipo diverso da funzione/procedura
+          --    (`prokind` diverso da 'f'/'p') l'errore fermerebbe l'intera lettura.
+          --    Un filtro `prokind` nello stesso WHERE non basta: PostgreSQL puo'
+          --    riordinare i predicati e valutare `pg_get_functiondef` prima del
+          --    filtro. Il `CASE` protegge davvero, perche' la sua valutazione e'
+          --    ordinata per definizione: il ramo con `pg_get_functiondef` viene
+          --    raggiunto solo quando `prokind` e' gia' compatibile.
+          select '  funzioni con un indirizzo /functions/v1 nel corpo: ' || count(distinct p.proname)
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public'
+             and case when p.prokind in ('f', 'p')
+                      then pg_get_functiondef(p.oid) like '%/functions/v1%'
+                      else false end;
+
+          select '  di cui SENZA lettura dal Vault: ' || count(distinct p.proname)
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public'
+             and case when p.prokind in ('f', 'p')
+                      then pg_get_functiondef(p.oid) like '%/functions/v1%'
+                           and pg_get_functiondef(p.oid) not like '%url_funzioni%'
+                      else false end;
+
+          select '  segnala_allarme marca notificato sull''accodamento: ' ||
+                 case when pg_get_functiondef('segnala_allarme(text,text,jsonb,text)'::regprocedure) like '%notificato = true%'
+                      then 'SI' else 'NO' end;
+
+          select '  iscritti alla sentinella: ' || count(*) from public.lavori_sorvegliati;
+
+          rollback;
+          SQL
+
+      - name: 4. Che cosa questo giro NON ha letto
+        run: |
+          {
+            echo "### Manifest di produzione — misura in sola lettura"
+            echo ""
+            echo "Letti: numero di migrazioni e presenza di quattro versioni attese; conteggi"
+            echo "di tabelle e funzioni attese; anomalie aggregate; numero di iscritti alla"
+            echo "sentinella; configurazione del progetto Cloudflare Pages e rilasci di"
+            echo "produzione in forma aggregata."
+            echo ""
+            echo "**Non** letti: prenotazioni, clienti, tavoli, conti, fatture, magazzino,"
+            echo "documenti, posta, dettature, impegni, allergeni, personale, prima nota."
+            echo "**Non** letti: \`cron.job\` e \`vault.secrets\`, perche' leggerli avrebbe"
+            echo "richiesto privilegi piu' ampi della sola SELECT sugli oggetti esatti."
+            echo ""
+            echo "**Limite** della garanzia: la sola lettura vale per l'esecuzione di questo"
+            echo "workflow (transazioni READ ONLY), non per un uso improprio della credenziale"
+            echo "fuori dal workflow. Per scelta consapevole il ruolo eredita da PUBLIC tre"
+            echo "oggetti tecnici di pg_net scrivibili, accettati solo se la firma coincide"
+            echo "esattamente; le funzioni SECURITY DEFINER volatili eseguibili non sono escluse."
+            echo ""
+            echo "**Non** stampati: nomi di ruoli, tabelle, funzioni, variabili, segreti o"
+            echo "privilegi; elenchi di migrazioni; messaggi di commit; indirizzi, domini,"
+            echo "alias; risposte API grezze; messaggi del database."
+          } >> "$GITHUB_STEP_SUMMARY"
