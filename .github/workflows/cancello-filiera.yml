@@ -33,27 +33,26 @@ name: Cancello della filiera
 #    repository. Per questo qui dentro NON si fa `checkout` della proposta e
 #    non si esegue NIENTE che venga dal ramo proposto — si leggono solo
 #    metadati. I permessi sono di sola lettura, dichiarati sul lavoro.
-# ⚠️ PERCHE' IN QUESTO MOMENTO CI SONO TUTTI E DUE I TRIGGER. Il file che
-#    GitHub legge per `pull_request` sta nella PROPOSTA; quello che legge per
-#    `pull_request_target` sta nella BASE. Passando dall'uno all'altro in una
-#    sola mossa, la proposta che fa il cambio non troverebbe NESSUNO dei due
-#    — la sua versione non ha piu' il primo, la base non ha ancora il secondo
-#    — e il controllo obbligatorio non riporterebbe mai: tutto bloccato.
-#    🔴 Finche' durano tutti e due, il cancello NON si indebolisce: entrambi
-#    i giri portano lo stesso nome e devono essere verdi tutti e due, e
-#    quello letto dalla base non e' falsificabile. `pull_request` si toglie
-#    con la proposta successiva, quando la base avra' gia' il secondo.
+# ⚠️ LA TRANSIZIONE E' FINITA — 18/09/2026. Per una proposta sola i due
+#    trigger sono convissuti, perche' cambiandoli in una mossa la proposta
+#    che faceva il cambio non avrebbe trovato NESSUNO dei due: la sua
+#    versione non aveva piu' il primo, la base non aveva ancora il secondo.
+#    Adesso la base ha `pull_request_target`, e `pull_request` se ne va:
+#    lasciarlo vorrebbe dire tenere aperta la porta che si voleva chiudere.
 on:
-  pull_request:
-    branches: [master, slave]
   pull_request_target:
     branches: [master, slave]
 
 permissions:
   contents: read
 
+# 🔴 LA CODA E' PER EVENTO, non solo per proposta — 18/09/2026. Con una
+#    coda sola, un giro innescato da `pull_request` (che una proposta puo'
+#    fabbricarsi) ANNULLAVA quello fidato letto dalla base. Misurato il
+#    18/09 sulla proposta di collaudo #100: i due giri si sono annullati a
+#    vicenda, e a vincere e' stata la corsa, non la regola.
 concurrency:
-  group: cancello-${{ github.event.pull_request.number }}
+  group: cancello-${{ github.event.pull_request.number }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
