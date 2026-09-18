@@ -9,17 +9,28 @@
 //    bussa. `pull_request_target` e' cio' che lo impedisce, e queste prove
 //    sono l'unica cosa che se ne accorgerebbe se qualcuno lo togliesse.
 //
-// ⚠️ LIMITE DICHIARATO, e non lo copre nessuna prova. GitHub sa fissare il
-//    workflow fidato con la regola «Required workflows» dei ruleset, che
-//    punta a un file e a un ref precisi: su questo repository la chiamata
-//    viene RIFIUTATA (misurato il 18/09: HTTP 422), perche' e' una funzione
-//    di organizzazione e qui il proprietario e' un utente. Finche' e' cosi',
-//    un ramo che aggiungesse `pull_request` a questo file produrrebbe un
-//    secondo giro con lo STESSO nome, e fra due giri omonimi vince l'ultimo
-//    che finisce. Oggi l'unico account con accesso in scrittura e' uno solo
-//    — cioe' chi potrebbe comunque cambiare le regole — quindi l'esposizione
-//    e' nulla in pratica; il giorno che entrasse una seconda persona questo
-//    torna un buco vero. *Si scrive invece di far finta che sia chiuso.*
+// ⚠️ LIMITE DICHIARATO, e nessuna prova qui dentro lo copre. Le due regole
+//    di GitHub che chiuderebbero il caso davvero sono state PROVATE e
+//    RIFIUTATE su questo repository il 18/09/2026, tutte e due con HTTP 422:
+//      · «Required workflows» — fissa il workflow fidato a un file e a un ref;
+//      · «Restrict file paths» — vieta a una proposta di toccare
+//        `.github/workflows/**`.
+//    Sono funzioni di ORGANIZZAZIONE, e qui il proprietario e' un utente.
+//
+//    COSA RESTA POSSIBILE, detto per intero: chi ha accesso in scrittura puo'
+//    aggiungere `pull_request` alla PROPRIA copia di questo file e produrre un
+//    secondo giro con lo STESSO nome. Fra due giri omonimi GitHub guarda
+//    l'ultimo che finisce. Il 18/09, sulla proposta di collaudo #100, i due si
+//    sono ANNULLATI a vicenda perche' condividevano la coda: a decidere e'
+//    stata la corsa, non la regola. Da qui la coda per EVENTO — il giro fidato
+//    non puo' piu' essere annullato da uno fabbricato — ma l'ordine di arrivo
+//    resta fuori dal nostro controllo.
+//
+//    ⚠️ Oggi l'unico account con accesso in scrittura e' uno solo, cioe' chi
+//    potrebbe comunque cambiare i ruleset: l'esposizione pratica e' NULLA. Il
+//    giorno che entrasse una seconda persona questo torna un buco vero, e la
+//    risposta non e' un'altra prova: e' spostare il repository dentro
+//    un'organizzazione. *Si scrive invece di far finta che sia chiuso.*
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -36,6 +47,12 @@ describe("la definizione del cancello si legge dalla base", () => {
     // proposta sola, perche' altrimenti quella che faceva il cambio non
     // avrebbe trovato nessun controllo. Finita la transizione, resta uno.
     expect(cancello).not.toMatch(/^\s*pull_request:/m);
+  });
+
+  it("🔴 la coda e' per EVENTO: un giro fabbricato non annulla quello fidato", () => {
+    // Misurato sulla proposta #100: con una coda sola i due giri omonimi si
+    // annullavano a vicenda, e a vincere era la corsa.
+    expect(cancello).toMatch(/group: cancello-.*github\.event_name/);
   });
 
   it("copre le proposte verso master e verso slave", () => {
