@@ -242,8 +242,16 @@ jobs:
           echo "quante variabili in anteprima:  $(jq -r '.result.deployment_configs.preview.env_vars // {} | length' p.json)"
           # ⚠️ L'identificativo abbreviato si RICAVA da `.id`, che c'e' sempre,
           #    invece di presumere `.short_id`, che potrebbe non esserci.
-          echo "ultimo rilascio di produzione:"
-          jq -r '.result.latest_deployment | "  id=\((.id // "--------")[0:8]) commit=\((.deployment_trigger.metadata.commit_hash // "-------")[0:7]) da-master=\(if (.deployment_trigger.metadata.branch // "") == "master" then "SI" else "NO" end) esito=\(.latest_stage.status // "-")"' p.json
+          # 🔴 `latest_deployment` e' il rilascio PIU' RECENTE DEL PROGETTO, anche di
+          #    anteprima o tecnico: NON e' l'ultimo di produzione. Quello e'
+          #    `canonical_deployment`, che deve esistere, essere di produzione e
+          #    provenire da master: altrimenti il giro si ferma.
+          canonico=$(jq -r 'if .result.canonical_deployment == null then "assente" elif (.result.canonical_deployment.environment // "") != "production" then "non_produzione" elif (.result.canonical_deployment.deployment_trigger.metadata.branch // "") != "master" then "non_master" else "ok" end' p.json)
+          if [ "$canonico" != "ok" ]; then
+            rm -f p.json; echo "::error::Cloudflare · fase: il rilascio di produzione canonico non e' valido ($canonico)"; exit 1
+          fi
+          echo "ultimo rilascio di produzione (canonico):"
+          jq -r '.result.canonical_deployment | "  id=\((.id // "--------")[0:8]) commit=\((.deployment_trigger.metadata.commit_hash // "-------")[0:7]) da-master=\(if (.deployment_trigger.metadata.branch // "") == "master" then "SI" else "NO" end) esito=\(.latest_stage.status // "-")"' p.json
           rm -f p.json
 
       - name: 2. Cloudflare — tutti i rilasci di produzione, aggregati
@@ -304,6 +312,10 @@ jobs:
           sort tipi.txt | uniq -c | awk '{print "  " $2 ": " $1}'
           echo "rilasci di produzione NON provenienti da master: $non_master"
           rm -f tipi.txt
+          if [ "$non_master" != "0" ]; then
+            echo "::error::Cloudflare · fase: esistono rilasci di produzione non provenienti da master"
+            exit 1
+          fi
 
       - name: 3. Produzione — migrazioni e impianto, in numeri
         env:
