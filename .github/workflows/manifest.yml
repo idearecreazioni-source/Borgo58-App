@@ -272,7 +272,7 @@ jobs:
             fi
             codice=$(curl -sS -o d.json -w '%{http_code}' \
               -H "Authorization: Bearer $CF" \
-              "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROGETTO_ATTESO/deployments?env=production&page=$pagina&per_page=100" || echo "000")
+              "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/$PROGETTO_ATTESO/deployments?env=production&page=$pagina" || echo "000")
             if [ "$codice" != "200" ]; then
               rm -f d.json tipi.txt
               echo "::error::Cloudflare · HTTP $codice · fase: elenco dei rilasci (pagina $pagina)"
