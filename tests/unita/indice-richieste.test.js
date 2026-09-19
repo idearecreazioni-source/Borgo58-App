@@ -46,6 +46,15 @@ describe("il conteggio delle richieste è allineato alle righe", () => {
     expect(generaConteggio(testo)).toBe(testo);
   });
 
+  it("il fine riga del file non conta: LF e CRLF danno lo stesso esito", () => {
+    // ⚠️ Su Windows con core.autocrlf il documento arriva con CRLF: questa
+    //    prova era rossa solo lì. Si provano tutti e due i versi.
+    const lf = testo.replace(/\r\n/g, "\n");
+    const crlf = lf.replace(/\n/g, "\r\n");
+    expect(generaConteggio(lf)).toBe(lf);
+    expect(generaConteggio(crlf)).toBe(crlf);
+  });
+
   it("la somma dei quattro gruppi fa il numero delle righe", () => {
     // ⚠️ È la proprietà che il difetto del 30/08 violava, e si controlla da
     //    sé — non si legge dal testo del conteggio, si ricalcola.
