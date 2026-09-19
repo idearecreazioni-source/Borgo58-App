@@ -106,7 +106,23 @@ export const ORFANE_SEMPRE = {
 // ⚠️ Resta vuoto e non sparisce: e' il posto dove iscrivere la PROSSIMA
 //    funzione che entrera' davvero senza chiamante, e la prova qui accanto
 //    continua a sorvegliarne la forma su un elenco inventato.
-export const ORFANE_PIANIFICATE = {};
+export const ORFANE_PIANIFICATE = {
+  // ⚠️ Le chiama il passo iniziale delle prove sul database
+  //    (`tests/app/silenzio-globale.js`), non una schermata: aprono e chiudono
+  //    il silenzio Telegram di Prova mentre girano i controlli automatici.
+  //    Una porta a schermo non avrebbe senso — Alessio non zittisce niente a
+  //    mano, e fuori da Borgo58-Prova il database le rifiuta comunque.
+  // ⚠️ PIANIFICATE e non SEMPRE: la 20260919000001 e' applicata su Prova e non
+  //    in produzione, e la rete deve aspettarsele solo dove la migrazione c'e'.
+  apri_silenzio_notifiche: {
+    versione: "20260919000001",
+    perche: "la chiama l'avvio delle prove sul database: apre il silenzio Telegram di Prova",
+  },
+  chiudi_silenzio_notifiche: {
+    versione: "20260919000001",
+    perche: "la chiama la fine delle prove sul database: chiude il proprio silenzio",
+  },
+};
 
 /**
  * L'elenco delle orfane attese in UN database, viste le sue migrazioni.
