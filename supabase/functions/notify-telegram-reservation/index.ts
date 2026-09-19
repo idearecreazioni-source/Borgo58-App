@@ -48,6 +48,7 @@ import { consegnaUnaVoltaSola, stradaDellaConsegna } from "./consegna.ts";
 // ⚠️ Da Prova ogni messaggio comincia con «TEST PROVA»: il perche' sta in
 //    `ambiente.ts`, e l'unico punto che lo applica e' `sendTelegram` qui sotto.
 import { testoPerIlProgetto } from "./ambiente.ts";
+import { deveTacere } from "./silenzio.ts";
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
@@ -250,7 +251,22 @@ Deno.serve(async (req) => {
     });
   }
 
-  const rispondi = (r: { stato: number; corpo: Record<string, unknown> }) =>
+  // ⚠️ Su Prova, durante un giro di prove automatiche, allarmi e prenotazioni
+  //    non squillano (migrazione 20260919000001, regola in `silenzio.ts`).
+  //    I promemoria non passano mai da qui.
+  const tacere = await deveTacere({
+    payload,
+    supabaseUrl: SUPABASE_URL,
+    zittite: async () => Boolean(await rpc("notifiche_zittite", {})),
+  });
+  if (tacere) {
+    return new Response(JSON.stringify({ skipped: true, muto: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rispondi =(r: { stato: number; corpo: Record<string, unknown> }) =>
     new Response(JSON.stringify(r.corpo), {
       status: r.stato,
       headers: { "Content-Type": "application/json" },
