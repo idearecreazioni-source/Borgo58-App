@@ -136,7 +136,12 @@ export function generaConteggio(testo) {
       `In ${FILE} manca il blocco del conteggio. Deve stare fra «${INIZIO}» e «${FINE}».`
     );
   }
-  return testo.slice(0, i) + blocco(voci) + testo.slice(j + FINE.length);
+  // ⚠️ IL FINE RIGA SI PRENDE DAL FILE, non si impone (19/09/2026): su
+  //    Windows, con core.autocrlf, il documento arriva con CRLF e il blocco
+  //    generato con LF — la prova diventava rossa solo lì, e il comando
+  //    avrebbe scritto un file a fine riga misti.
+  const nl = testo.includes("\r\n") ? "\r\n" : "\n";
+  return testo.slice(0, i) + blocco(voci).replace(/\r?\n/g, nl) + testo.slice(j + FINE.length);
 }
 
 // ---------------------------------------------------------------------
