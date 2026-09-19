@@ -45,6 +45,9 @@
 // ⚠️ E LE PRENOTAZIONI E GLI ALLARMI NON CAMBIANO DI UNA RIGA: arrivano
 //    senza chiave, e per loro la strada e' quella di sempre.
 import { consegnaUnaVoltaSola, stradaDellaConsegna } from "./consegna.ts";
+// ⚠️ Da Prova ogni messaggio comincia con «TEST PROVA»: il perche' sta in
+//    `ambiente.ts`, e l'unico punto che lo applica e' `sendTelegram` qui sotto.
+import { testoPerIlProgetto } from "./ambiente.ts";
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
@@ -190,7 +193,7 @@ async function sendTelegram(text: string) {
   return fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
+    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: testoPerIlProgetto(text, SUPABASE_URL) }),
   });
 }
 
