@@ -66,10 +66,10 @@ const apri = async () => {
 
 /** Le caselle del Promemoria Telegram, prese dal loro riquadro.
  *
- * ⚠️ L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026: i minuti
- *    sono un menu di quattro voci (00, 15, 30, 45), perche' `step` diceva
- *    quali valori erano validi e non quali offrire. Qui si continua a
- *    leggere «che ora c'e' scritto», ricomponendola dai due menu. */
+ * ⚠️ L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026: sono due
+ *    ruote (fascia, ore, minuti a scaglioni di cinque), perche' `step`
+ *    diceva quali valori erano validi e non quali offrire. Qui si continua a
+ *    leggere «che ora c'e' scritto», ricomponendola dalle due ruote. */
 const caselleAvviso = () => {
   const riquadro = screen.getByText(/Promemoria Telegram/i).parentElement;
   const ore = riquadro.querySelector('[data-campo="avviso-ore"]');
@@ -79,16 +79,17 @@ const caselleAvviso = () => {
     ore,
     minuti,
     get ora() {
-      return { value: ore && ore.value ? `${ore.value}:${minuti.value}` : "" };
+      const h = ore?.dataset.valore || "";
+      return { value: h ? `${h}:${minuti.dataset.valore}` : "" };
     },
   };
 };
 
 /** L'ora dell'impegno, dai suoi due menu. */
 const oraDellImpegno = () => {
-  const ore = document.querySelector('[data-campo="scadenza-ore"]');
-  const minuti = document.querySelector('[data-campo="scadenza-minuti"]');
-  return ore && ore.value ? `${ore.value}:${minuti.value}` : "";
+  const ore = document.querySelector('[data-campo="scadenza-ore"]')?.dataset.valore;
+  const minuti = document.querySelector('[data-campo="scadenza-minuti"]')?.dataset.valore;
+  return ore ? `${ore}:${minuti}` : "";
 };
 
 beforeEach(() => {
@@ -142,10 +143,10 @@ describe("🔴 «Fallo a mano» su un promemoria dettato", () => {
     expect(avviso.ora.value).toBe("");
     // Niente promemoria da rimuovere, perché non ce n'è nessuno.
     expect(screen.queryByRole("button", { name: /Rimuovi promemoria/i })).toBeNull();
-    // ⚠️ E i menu dell'ora sono spenti finché non c'è un giorno: un'ora
-    //    senza giorno non è un avviso.
-    expect(avviso.ore.disabled).toBe(true);
-    expect(avviso.minuti.disabled).toBe(true);
+    // ⚠️ Le ruote sono spente finché non c'è un giorno: un'ora senza giorno
+    //    non è un avviso.
+    expect(avviso.ore.getAttribute("aria-disabled")).toBe("true");
+    expect(avviso.minuti.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("⚠️ mezzo avviso: arriva il pezzo detto, l'altro resta vuoto — nessuna ora inventata", async () => {

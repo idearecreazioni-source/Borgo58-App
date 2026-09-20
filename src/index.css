@@ -808,3 +808,14 @@ body {
     box-shadow: none;
   }
 }
+
+/* 🔴 LE RUOTE DELL'ORA — 20/09/2026. L'altezza è in centimetri veri, come
+   ogni bersaglio di questo gestionale: tre voci alla volta (tre volte il
+   bersaglio da 0,85 cm più i bordi). ⚠️ Un elenco alto quanto tutte e dodici
+   le voci non sarebbe una ruota — sarebbe un menu aperto che si porta via
+   mezza schermata sul telefono. */
+.ruota-ora {
+  max-height: calc(var(--pxcm) * 2.8);
+  min-width: calc(var(--pxcm) * 1.5);
+  scroll-behavior: smooth;
+}

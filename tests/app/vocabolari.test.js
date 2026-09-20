@@ -43,6 +43,7 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
   let titolare;
   let vocabolari;
   let guardie;
+  let versioni = [];
 
   beforeAll(async () => {
     titolare = await clientAutenticato(credenziali().titolare);
@@ -58,6 +59,12 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
     }
     vocabolari = v.data;
     guardie = g.data;
+
+    const m = await titolare.from("applied_migrations").select("version");
+    if (m.error) {
+      throw new Error(`Non riesco a leggere il registro delle migrazioni: ${m.error.message}`);
+    }
+    versioni = m.data.map((r) => r.version);
   });
 
   afterAll(async () => {
@@ -81,7 +88,13 @@ describe("i vocabolari chiusi dicono la stessa cosa in tutti i posti dove vivono
   });
 
   it("ogni elenco di etichette combacia col vocabolario del database", () => {
-    expect(problemiVocabolari(SPECCHIATI, vocabolari)).toEqual([]);
+    // ⚠️ SI PASSANO LE VERSIONI APPLICATE QUI, e serve: un elenco che
+    //    rispecchia una colonna portata da una migrazione ancora da
+    //    applicare non ha niente con cui combaciare, e griderebbe su un
+    //    lavoro giusto. Quale dei due momenti sia lo dice il registro di
+    //    questo database.
+    expect(versioni.length, "il registro delle migrazioni è vuoto: non si è potuto leggere").toBeGreaterThan(0);
+    expect(problemiVocabolari(SPECCHIATI, vocabolari, versioni)).toEqual([]);
   });
 
   it("ogni guardia di una funzione dice esattamente quello che dice il database", () => {

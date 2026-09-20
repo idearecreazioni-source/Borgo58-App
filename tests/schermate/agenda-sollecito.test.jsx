@@ -109,8 +109,8 @@ describe("🔴 il sollecito è spento, e non si può nemmeno chiedere senza prom
   });
 });
 
-describe("🔴 acceso, usa le stesse parole della ricorrenza", () => {
-  it("«ogni N unità», e le unità sono le quattro di sempre", async () => {
+describe("🔴 acceso, usa le parole della ricorrenza più minuti e ore", () => {
+  it("«ogni N unità», e le unità sono sei", async () => {
     finte.getTask.mockResolvedValue(taskBase({ remind_at: "2026-09-20T08:00:00Z" }));
     mostra("/agenda/t-1");
     await waitFor(() => expect(menuSollecito()).toBeTruthy());
@@ -119,7 +119,11 @@ describe("🔴 acceso, usa le stesse parole della ricorrenza", () => {
     const quanti = screen.getByLabelText("Ogni quanto sollecitare");
     const unita = screen.getByLabelText("Unità del sollecito");
     expect(quanti.value).toBe("1");
+    // 🔴 Minuti e ore valgono SOLO per il sollecito: un impegno che si
+    //    ripete ogni dieci minuti non esiste, un sollecito sì.
     expect([...unita.options].map((o) => o.value)).toEqual([
+      "minuti",
+      "ore",
       "giorni",
       "settimane",
       "mesi",
@@ -127,7 +131,34 @@ describe("🔴 acceso, usa le stesse parole della ricorrenza", () => {
     ]);
     // ⚠️ La proposta si vede e si corregge: non è una risposta data al posto
     //    suo, è la prima cosa su cui cade l'occhio.
-    expect(unita.value).toBe("giorni");
+    expect(unita.value).toBe("ore");
+  });
+
+  it("🔴 scegliendo i minuti il numero sale a cinque, e sotto non si può scendere", async () => {
+    // Il limite sta nel database; qui si alza PRIMA, perché «ogni 1 minuto»
+    // non è una richiesta ragionevole da lasciar scrivere per poi
+    // respingerla al salvataggio.
+    finte.getTask.mockResolvedValue(taskBase({ remind_at: "2026-09-20T08:00:00Z" }));
+    mostra("/agenda/t-1");
+    await waitFor(() => expect(menuSollecito()).toBeTruthy());
+
+    await scegli(menuSollecito(), "si");
+    await scegli(screen.getByLabelText("Unità del sollecito"), "minuti");
+    const quanti = screen.getByLabelText("Ogni quanto sollecitare");
+    expect(quanti.value).toBe("5");
+    expect(quanti.getAttribute("min")).toBe("5");
+    expect(quanti.getAttribute("step")).toBe("5");
+  });
+
+  it("⚠️ e tornando alle ore il minimo torna uno", async () => {
+    finte.getTask.mockResolvedValue(taskBase({ remind_at: "2026-09-20T08:00:00Z" }));
+    mostra("/agenda/t-1");
+    await waitFor(() => expect(menuSollecito()).toBeTruthy());
+
+    await scegli(menuSollecito(), "si");
+    await scegli(screen.getByLabelText("Unità del sollecito"), "minuti");
+    await scegli(screen.getByLabelText("Unità del sollecito"), "ore");
+    expect(screen.getByLabelText("Ogni quanto sollecitare").getAttribute("min")).toBe("1");
   });
 });
 
