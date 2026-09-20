@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { REF_PROVA } from "../../scripts/comune.mjs";
+import { readFileSync } from "node:fs";
 import {
   daGuardare,
   differenza,
+  esitoDelloScarico,
   leggiArgomenti,
 } from "../../scripts/funzioni-allinea.mjs";
 
@@ -81,6 +83,44 @@ describe("che differenza c'è fra la cartella e ciò che gira", () => {
     const d = differenza(locale, {});
     expect(d.stato).toBe("non installata");
     expect(d.file).toEqual(["aiuto.ts", "index.ts"]);
+  });
+});
+
+describe("com'è andato lo scarico", () => {
+  it("riuscito: scaricata", () => {
+    expect(esitoDelloScarico(true, "")).toBe("scaricata");
+  });
+
+  it("«non esiste» detto dal server: non installata", () => {
+    expect(esitoDelloScarico(false, "Error: Function not found")).toBe("non installata");
+    expect(esitoDelloScarico(false, "404 page not found")).toBe("non installata");
+  });
+
+  it("qualunque altro guasto NON diventa «non installata»", () => {
+    // 🔴 È il difetto del 20/09: il comando rispose «non installata» per
+    //    dodici funzioni su dodici, e dieci erano installate. Un confronto
+    //    falso di quel verso porta a installare in blocco roba che va bene.
+    for (const guasto of ["dial tcp: lookup api.supabase.com: no such host", "Access token not provided", ""]) {
+      expect(esitoDelloScarico(false, guasto)).toBe("guasto");
+    }
+  });
+});
+
+describe("dove scarica e dove installa", () => {
+  const sorgente = readFileSync(
+    new URL("../../scripts/funzioni-allinea.mjs", import.meta.url),
+    "utf8",
+  );
+
+  it("lo scarico passa una cartella di lavoro, e non è quella del repository", () => {
+    // 🔴 Il 20/09 lo scarico è avvenuto DENTRO il repository, sovrascrivendo
+    //    cinque file: chi lo lanciava non passava la cartella di lavoro.
+    expect(sorgente).toMatch(/"download",[\s\S]{0,120}\n\s*tmp,?\n/);
+    expect(sorgente).not.toMatch(/esegui\(/);
+  });
+
+  it("l'installazione invece parte dalla cartella del repository", () => {
+    expect(sorgente).toMatch(/"deploy",[\s\S]{0,120}process\.cwd\(\)/);
   });
 });
 
