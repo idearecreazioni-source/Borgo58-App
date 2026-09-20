@@ -22,7 +22,14 @@ async function rpc(nome: string, corpo: Record<string, unknown>): Promise<unknow
     body: JSON.stringify(corpo),
   });
   if (!r.ok) throw new Error(`${nome}: ${r.status}`);
-  return await r.json();
+  // 🔴 Stesso difetto chiuso in `notify-telegram-reservation` il 20/09/2026:
+  //    le due scritture della consegna non restituiscono niente, il
+  //    database risponde 204 senza corpo, e leggerlo come JSON solleva DOPO
+  //    che il messaggio e' gia' partito. Qui non ha mai morso — questa
+  //    funzione non e' installata da nessuna parte — ma il codice e' lo
+  //    stesso, e lasciarlo rotto vuol dire ritrovarselo il giorno che serve.
+  const testo = await r.text();
+  return testo.trim() === "" ? null : JSON.parse(testo);
 }
 
 Deno.serve(async (req) => {

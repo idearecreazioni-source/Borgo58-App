@@ -78,9 +78,21 @@ export async function eseguiLaProva(opz: {
     return { stato: 502, corpo: { ok: false, esito: "ignoto", error: "Invio interrotto a meta'" } };
   }
   if (!esito.riuscito) {
-    await opz.rilascia(CHIAVE_DELLA_PROVA);
+    try {
+      await opz.rilascia(CHIAVE_DELLA_PROVA);
+    } catch {
+      /* il rifiuto di Telegram resta il fatto principale */
+    }
     return no(502, "Invio Telegram fallito");
   }
-  await opz.conferma(CHIAVE_DELLA_PROVA);
+  // ⚠️ Come in `notify-telegram-reservation/consegna.ts` (20/09/2026): il
+  //    messaggio e' gia' partito, quindi un guaio nella conferma non lo
+  //    trasforma in un fallimento — si dice che e' partito e che la conferma
+  //    non si e' potuta scrivere.
+  try {
+    await opz.conferma(CHIAVE_DELLA_PROVA);
+  } catch (e) {
+    return { stato: 200, corpo: { ok: true, conferma_non_scritta: true, detail: String(e) } };
+  }
   return { stato: 200, corpo: { ok: true } };
 }
