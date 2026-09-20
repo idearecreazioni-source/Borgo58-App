@@ -63,8 +63,21 @@ export const ORFANE_SEMPRE = {
   //    sala.
   viste_che_scavalcano_rls: "rete: quali viste non applicano la RLS di chi le interroga",
 
-  // Lavoro pianificato: lo chiama pg_cron, non una persona.
-  send_due_task_reminders: "lavoro pianificato: i promemoria dell'Agenda",
+  // 🔴 QUI STAVA `send_due_task_reminders`, ed è uscita il 20/09/2026 —
+  //    non perché qualcuno le abbia costruito una schermata, ma perché
+  //    adesso **dall'app non la può chiamare nessuno**: la 20260920000004 la
+  //    chiude con un `revoke` verso `authenticated`, e questa rete guarda
+  //    solo ciò che un utente del gestionale può eseguire.
+  //    ⚠️ La riga vecchia diceva «lavoro pianificato: lo chiama pg_cron», ed
+  //    era vera: la chiama ancora pg_cron ogni cinque minuti. Quello che è
+  //    cambiato è che PRIMA la poteva chiamare anche chi aveva fatto il
+  //    login — cioè un gesto che nessuna schermata offriva, ed era proprio
+  //    ciò che la faceva comparire fra le orfane. Adesso quella porta non
+  //    c'è più, e il debito è pagato: lasciarla iscritta racconterebbe un
+  //    debito che non esiste (è la regola dichiarata in cima a questa prova).
+  // Misurato su Prova il 20/09, chiedendolo al database come titolare:
+  //   has_function_privilege('authenticated', …) = false
+  //   funzioni_senza_chiamante() → 212 righe, e lei non c'è più.
 
   // Interrogata da uno script a riga di comando.
   numeri_sospetti: "interrogata da `npm run numeri`",
