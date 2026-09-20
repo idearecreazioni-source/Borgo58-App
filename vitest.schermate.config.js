@@ -44,6 +44,16 @@ export default defineConfig({
     environment: "jsdom",
     env: { TZ: "Europe/Rome" },
     globals: false,
+    // 🔴 IL TETTO DI TEMPO E' UNA MISURA, non una prudenza — 20/09/2026.
+    //    Con 33 file che montano schermate insieme, il predefinito di 5
+    //    secondi non bastava più: `varco-pubblico` scadeva **solo nel giro
+    //    completo** e passava da sola, due volte su due. Non era un difetto
+    //    della schermata — era la macchina occupata.
+    // ⚠️ Una prova che cade a seconda di quante altre ne girano insegna a
+    //    rilanciare invece che a guardare, ed è il modo in cui un rosso vero
+    //    passa inosservato. Il tetto sale una volta; se tornasse a scadere,
+    //    la domanda da farsi è cosa è diventato lento, non di quanto alzarlo.
+    testTimeout: 20000,
     setupFiles: ["./tests/schermate/preparazione.js"],
   },
 });

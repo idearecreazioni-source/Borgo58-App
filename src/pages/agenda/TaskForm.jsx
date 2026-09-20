@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import CampoOraQuarti from "../../components/CampoOraQuarti";
 import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
@@ -65,6 +66,10 @@ const emptyForm = {
   ricorrenza_unita: "",
   remind_date: "",
   remind_time: "",
+  // ⚠️ Il sollecito nasce SPENTO, e non c'è nessun valore proposto: un
+  //    predefinito qui vorrebbe dire mandare messaggi che nessuno ha chiesto.
+  sollecito_ogni: "",
+  sollecito_unita: "",
   // §3.18: l'Agenda è condivisa, quindi un task nasce visibile. Il titolare
   // può riservarne uno singolo; per i task automatici decide il DB (trigger
   // trg_task_visibility), qualunque cosa mandi questo form.
@@ -124,6 +129,8 @@ export default function TaskForm() {
           preferito: t.preferito ?? false,
           ricorrenza_ogni: t.ricorrenza_ogni ?? "",
           ricorrenza_unita: t.ricorrenza_unita ?? "",
+          sollecito_ogni: t.sollecito_ogni ?? "",
+          sollecito_unita: t.sollecito_unita ?? "",
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
@@ -151,7 +158,11 @@ export default function TaskForm() {
     "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
-  const siRipete = Boolean(form.ricorrenza_unita);
+  const siRipete = Boolean(form.ricorrenza_unita);
+  // Il sollecito si può chiedere solo dove c'è un promemoria: è la stessa
+  // regola del database, detta prima di arrivarci.
+  const haPromemoria = Boolean(form.remind_date);
+  const sollecita = haPromemoria && Boolean(form.sollecito_ogni);
 
   // 🔴 LE DUE CASELLE DI UNA DATA STANNO IN UNA GRIGLIA CHE NON SBORDA —
   //    10/09/2026. Erano già affiancate, e sul telefono non ci stavano lo
@@ -180,21 +191,14 @@ export default function TaskForm() {
   const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.75)" };
   const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
 
-  // 🔴 L'ORA SI SCEGLIE A QUARTI D'ORA, MA UN ORARIO GIÀ SCRITTO NON SI
-  //    TOCCA — passo portato da 5 minuti a 15 il 20/09/2026, su richiesta.
-  //    La parte non ovvia è la seconda, ed è del 10/09.
-  //
-  //    `step={900}` non è solo un comodo per il selettore: rende **non
-  //    valido** un orario fuori griglia, e un promemoria già salvato alle
-  //    20:07 non si potrebbe più salvare — il modulo si rifiuterebbe di
-  //    partire, su una cosa che nessuno aveva chiesto di cambiare.
-  //    ⚠️ E adesso la griglia è più larga, quindi il caso non è più raro:
-  //    con i quarti d'ora restano fuori anche le 20:05 e le 9:50, che
-  //    prima erano dentro. Chi le ha scritte le rilegge, le modifica e le
-  //    salva come sempre; il passo compare solo dove non fa danno —
-  //    casella vuota, o orario già su un quarto d'ora.
-  const passoQuartoDOra = (v) =>
-    !v || Number(v.slice(3, 5)) % 15 === 0 ? { step: 900 } : {};
+  // 🔴 L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026, dopo
+  //    averlo guardato. Il passo (`step={900}`) dice al browser quali
+  //    valori sono VALIDI, non quali OFFRIRE: la rotella dei minuti
+  //    continuava a girare su tutti e sessanta, e chi sceglieva le 20:07 lo
+  //    scopriva solo quando il modulo si rifiutava di partire.
+  //    Adesso i minuti sono un menu di quattro voci (`CampoOraQuarti`), e
+  //    quello che non compare non si può scegliere. Un orario già scritto
+  //    fuori quarto resta, marcato, finché non lo si cambia.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -216,6 +220,12 @@ export default function TaskForm() {
         //    giusto — un numero senza unità non dice ogni quanto.
         ricorrenza_ogni: siRipete ? Number(form.ricorrenza_ogni) : null,
         ricorrenza_unita: siRipete ? form.ricorrenza_unita : null,
+        // 🔴 IL SOLLECITO SE NE VA CON IL PROMEMORIA. Senza avviso il
+        //    database lo rifiuta (vincolo `sollecito_vuole_un_avviso`), e
+        //    lasciarlo scritto qui vorrebbe dire far fallire il salvataggio
+        //    di chi ha soltanto tolto il promemoria.
+        sollecito_ogni: sollecita && newRemindAt ? Number(form.sollecito_ogni) : null,
+        sollecito_unita: sollecita && newRemindAt ? form.sollecito_unita : null,
         remind_at: newRemindAt,
         visibile_staff: form.visibile_staff,
         // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
@@ -300,14 +310,15 @@ export default function TaskForm() {
           </div>
           <div className={contenitoreCampo}>
             <label className={labelClass}>🕒 Ora</label>
-            <input
-              type="time"
+            <CampoOraQuarti
+              data-campo="scadenza"
+              etichettaOre="Ora della scadenza"
+              etichettaMinuti="Minuti della scadenza"
               value={form.due_time}
-              onChange={(e) => setForm((f) => ({ ...f, due_time: e.target.value }))}
+              onChange={(v) => setForm((f) => ({ ...f, due_time: v }))}
               className={campoCompatto}
-              style={largoAlmeno(1.6)}
+              style={altezzaCompatta}
               disabled={!form.due_date}
-              {...passoQuartoDOra(form.due_time)}
             />
           </div>
         </div>
@@ -432,21 +443,89 @@ export default function TaskForm() {
             </div>
             <div className={contenitoreCampo}>
               <label className={labelClass}>🕒 Ora</label>
-              <input
-                type="time"
+              <CampoOraQuarti
+                data-campo="avviso"
+                etichettaOre="Ora dell'avviso"
+                etichettaMinuti="Minuti dell'avviso"
                 value={form.remind_time}
-                onChange={(e) => setForm((f) => ({ ...f, remind_time: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, remind_time: v }))}
                 className={campoCompatto}
-                style={largoAlmeno(1.6)}
+                style={altezzaCompatta}
                 disabled={!form.remind_date}
-                {...passoQuartoDOra(form.remind_time)}
               />
             </div>
           </div>
+          {/* 🔴 IL SOLLECITO — 20/09/2026. Compare SOLO dove c'è un
+              promemoria: senza, non avrebbe un istante da cui contare, e il
+              database lo rifiuta. Stessa forma della ricorrenza — «ogni N
+              unità», stesse quattro parole — perché un secondo modello
+              sarebbe un secondo vocabolario da tenere d'accordo. */}
+          {haPromemoria && (
+            <div className="mt-2" data-sollecito>
+              <label className={labelClass}>Se non lo faccio</label>
+              <div className={rigaCompatta}>
+                <div className={contenitoreCampo}>
+                  <select
+                    aria-label="Sollecito"
+                    value={sollecita ? "si" : "no"}
+                    onChange={(e) =>
+                      setForm((f) =>
+                        e.target.value === "si"
+                          ? { ...f, sollecito_ogni: f.sollecito_ogni || 1, sollecito_unita: "giorni" }
+                          : { ...f, sollecito_ogni: "", sollecito_unita: "" }
+                      )
+                    }
+                    className={campoCompatto}
+                    style={altezzaCompatta}
+                  >
+                    <option value="no">Avvisami una volta sola</option>
+                    <option value="si">Insisti finché non lo chiudo</option>
+                  </select>
+                </div>
+                {sollecita && (
+                  <div className={`${contenitoreCampo} flex flex-wrap items-center gap-2`}>
+                    <span className="text-b58-charcoal-soft shrink-0">ogni</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      required
+                      aria-label="Ogni quanto sollecitare"
+                      value={form.sollecito_ogni}
+                      onChange={(e) => setForm((f) => ({ ...f, sollecito_ogni: e.target.value }))}
+                      className={`${campoCompatto} shrink-0 text-center`}
+                      style={{ ...altezzaCompatta, width: "calc(var(--pxcm) * 1.4)" }}
+                    />
+                    <select
+                      aria-label="Unità del sollecito"
+                      value={form.sollecito_unita}
+                      onChange={(e) => setForm((f) => ({ ...f, sollecito_unita: e.target.value }))}
+                      className={campoCompatto}
+                      style={altezzaCompatta}
+                    >
+                      {TASK_RICORRENZA_UNITA.map((u) => (
+                        <option key={u.value} value={u.value}>{u.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {form.remind_date && (
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, remind_date: "", remind_time: "" }))}
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  remind_date: "",
+                  remind_time: "",
+                  // ⚠️ Tolto il promemoria se ne va anche il sollecito: il
+                  //    database non ammette l'uno senza l'altro.
+                  sollecito_ogni: "",
+                  sollecito_unita: "",
+                }))
+              }
               className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
             >
               Rimuovi promemoria
