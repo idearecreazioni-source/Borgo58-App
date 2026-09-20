@@ -300,7 +300,7 @@ export default function Prestiti() {
                         type="date"
                         value={restituzione.data}
                         onChange={(e) => setRestituzione((r) => ({ ...r, data: e.target.value }))}
-                        className={inputClass}
+                        className={`${inputClass} campo-data`}
                       />
                     </div>
                   </div>
@@ -369,7 +369,7 @@ export default function Prestiti() {
               type="date"
               value={form.ricevutoIl}
               onChange={(e) => setForm((f) => ({ ...f, ricevutoIl: e.target.value }))}
-              className={inputClass}
+              className={`${inputClass} campo-data`}
             />
           </div>
         </div>

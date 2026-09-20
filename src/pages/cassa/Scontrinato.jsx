@@ -135,8 +135,12 @@ export default function Scontrinato() {
               {entities.agricola && <option value={entities.agricola.id}>{entities.agricola.name}</option>}
             </select>
           )}
-          <input type="date" value={dal} onChange={(e) => setDal(e.target.value)} className={inputClass} />
-          <input type="date" value={al} onChange={(e) => setAl(e.target.value)} className={inputClass} />
+          {/* ⚠️ Queste due caselle non hanno un'etichetta a schermo: il «dal»
+              e l'«al» si capiscono dalla posizione guardando, ma chi legge
+              con la voce sente due date senza nome. Il nome c'e', e non
+              occupa spazio. */}
+          <input type="date" aria-label="Dal giorno" value={dal} onChange={(e) => setDal(e.target.value)} className={`${inputClass} campo-data`} />
+          <input type="date" aria-label="Al giorno" value={al} onChange={(e) => setAl(e.target.value)} className={`${inputClass} campo-data`} />
         </div>
       </div>
 

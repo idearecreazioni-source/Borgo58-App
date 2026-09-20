@@ -5,7 +5,13 @@ import LegendaDellaSala from "../../components/LegendaDellaSala";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import { serataDiServizio } from "../../lib/calcoli/serata";
 import { insiemiPerTavolo, ritardiDellaSerata, segniDellaSala } from "../../lib/calcoli/ritardo";
-import { ZONE_FONDALE, pannelloNellaPianta } from "../../lib/calcoli/sala";
+import {
+  ELENCO_PRENOTAZIONI_PX,
+  VUOTO_FRA_LE_COLONNE_PX,
+  ZONE_FONDALE,
+  pannelloNellaPianta,
+  salaAffiancata,
+} from "../../lib/calcoli/sala";
 import { listContiPerPrenotazioni } from "../../lib/api/orders";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -33,6 +39,7 @@ import {
   updateReservation,
 } from "../../lib/api/reservations";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 
 // LA SALA — la schermata in cui si prepara una serata, e in cui si prende
 // una prenotazione al telefono.
@@ -147,7 +154,7 @@ function CampiPrenotazione({ valori, cambia, stretto }) {
           type="time"
           value={valori.ora}
           onChange={(e) => cambia({ ...valori, ora: e.target.value })}
-          className={`${campo} appearance-none`}
+          className={`${campo} campo-ora appearance-none`}
         />
       </div>
       <div className="col-span-2 min-w-0">
@@ -335,6 +342,37 @@ export default function PiantaGiornata() {
   // Il modulo della prenotazione: sta sotto la pianta, e sul telefono dopo un
   // tocco resta fuori schermo. Stessa ragione degli altri due appigli.
   const moduloRef = useRef(null);
+
+  // 🔴 LE DUE COLONNE SU SCHERMO LARGO — 21/09/2026. La sala e l'elenco delle
+  //    prenotazioni si affiancano SOLO se, togliendo la colonna dell'elenco,
+  //    alla pianta restano abbastanza punti per stare sdraiata: la regola e'
+  //    `salaAffiancata()`, e usa la STESSA costante che decide il verso della
+  //    sala, quindi le due cose non possono contraddirsi. Sul telefono e sui
+  //    computer piu' stretti resta tutto in colonna, com'era.
+  //
+  // ⚠️ Si MISURA il contenitore, non si guarda la larghezza della finestra:
+  //    fra le due c'e' la barra laterale, che a 1280 punti e' larga 320 e a
+  //    1024 ne vale 256 — dedurre il contenuto dalla finestra vorrebbe dire
+  //    riscrivere qui il telaio, e sbagliarlo il giorno che il telaio cambia.
+  // ⚠️ L'appiglio e' uno STATO e non un `useRef`: il riquadro nasce solo
+  //    quando la sala e' stata letta, quindi con un `useRef` la misura
+  //    girerebbe una volta sola — quando l'elemento non c'e' ancora — e poi
+  //    mai piu'. Cosi' invece la comparsa del riquadro fa ripartire la misura.
+  const [colonne, setColonne] = useState(null);
+  const [affiancata, setAffiancata] = useState(false);
+  useEffect(() => {
+    if (!colonne || typeof ResizeObserver === "undefined") return undefined;
+    const misura = () => {
+      const pxcm =
+        parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pxcm")) ||
+        37.79528;
+      setAffiancata(salaAffiancata(colonne.clientWidth, pxcm));
+    };
+    misura();
+    const os = new ResizeObserver(misura);
+    os.observe(colonne);
+    return () => os.disconnect();
+  }, [colonne]);
 
   const ricarica = useCallback(async () => {
     const [p, r, a, s, g, po, tu, reg, ch] = await Promise.all([
@@ -1090,7 +1128,8 @@ export default function PiantaGiornata() {
           type="date"
           value={data}
           onChange={(e) => setData(e.target.value)}
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
+          aria-label="Giorno della sala"
+          className="tocco-campo campo-data rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal"
         />
         <button type="button" onClick={() => setData(oggiLocale())} className={BOTTONE}>
           Oggi
@@ -1182,6 +1221,28 @@ export default function PiantaGiornata() {
         />
       ) : (
         <>
+          {/* 🔴 LE DUE COLONNE — 21/09/2026. Su uno schermo abbastanza largo
+              la sala sta a sinistra e l'elenco delle prenotazioni a destra:
+              si guarda il tavolo e si legge chi ci va senza scorrere. La
+              soglia non e' un breakpoint scritto a mano ma la stessa misura
+              che decide il verso della sala (vedi `salaAffiancata`), cosi'
+              affiancare non puo' far girare la pianta.
+              ⚠️ Sotto quella soglia — telefono, tablet, computer stretti —
+              non cambia niente: e' la colonna unica di sempre. */}
+          <div
+            data-colonne-sala
+            ref={setColonne}
+            className={affiancata ? "grid items-start" : undefined}
+            style={
+              affiancata
+                ? {
+                    gridTemplateColumns: `minmax(0, 1fr) ${ELENCO_PRENOTAZIONI_PX}px`,
+                    gap: `${VUOTO_FRA_LE_COLONNE_PX}px`,
+                  }
+                : undefined
+            }
+          >
+          <div className="min-w-0">
 
           {/* «C'È POSTO?» — la domanda del telefono, prima della pianta.
               ⚠️ AVVISA, NON IMPEDISCE: qui non c'è niente che si spenga o
@@ -1238,6 +1299,13 @@ export default function PiantaGiornata() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70">
               La sala del {formatDate(data)}
+              {/* ⚠️ Il dubbio qui e' UNO: uno spostamento vale per oggi o per
+                  sempre? Il pulsante verde accanto risponde solo se compare —
+                  e compare solo dopo aver spostato qualcosa. */}{" "}
+              <Didascalia etichetta="Per oggi o per sempre">
+                Quello che sposti vale per questo giorno. «Questa diventa la sala di sempre» lo rende la
+                disposizione di partenza, da domani in poi.
+              </Didascalia>
             </p>
             {isTitolare && scostamenti > 0 && (
               <button
@@ -1253,7 +1321,7 @@ export default function PiantaGiornata() {
                     return;
                   esegui(() => promuoviDisposizione(data));
                 }}
-                className="rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-4 py-2"
+                className="tocco-bottone rounded-lg bg-b58-olive hover:bg-b58-olive-dark transition-colors text-b58-parchment testo-sala font-medium px-4 py-2"
               >
                 Questa diventa la sala di sempre
               </button>
@@ -1615,7 +1683,18 @@ export default function PiantaGiornata() {
             </div>
           )}
 
-          {/* Le prenotazioni del giorno */}
+          </div>
+
+          {/* ⚠️ L'ELENCO NON CRESCE OLTRE LO SCHERMO: affiancato, scorre
+              dentro di se' e resta appeso in alto mentre si guarda la sala —
+              senza, una serata da venti prenotazioni renderebbe la colonna
+              piu' alta della pianta e il riquadro del tavolo finirebbe fuori
+              vista, che e' il difetto che le due colonne devono togliere. */}
+          <div
+            data-colonna-prenotazioni
+            className={affiancata ? "min-w-0 sticky top-4 overflow-y-auto" : "min-w-0"}
+            style={affiancata ? { maxHeight: "calc(100vh - 2rem)" } : undefined}
+          >
           <p className="testo-sala uppercase tracking-wide font-semibold text-b58-charcoal-soft/70 mb-2">
             Prenotazioni del giorno
           </p>
@@ -1768,6 +1847,8 @@ export default function PiantaGiornata() {
               })}
             </ul>
           )}
+          </div>
+          </div>
         </>
       )}
     </div>

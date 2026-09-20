@@ -317,7 +317,7 @@ export default function ScontiOmaggi() {
               oraFineSerata={oraFineSerata}
               frase={`Questo ${form.type === "omaggio" ? "omaggio" : "sconto"} va sulla serata di`}
               labelClass={labelClass}
-              inputClass={`${inputClass} campo-data`}
+              inputClass={inputClass}
               className="w-min"
             />
             <div className="cella-larga">

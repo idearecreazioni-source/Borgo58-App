@@ -209,6 +209,48 @@ export const SOGLIA_IN_PIEDI_CM_REALI = (SALA_LARGHEZZA_CM / 90) * TOCCO_TAVOLO_
  */
 export const BERSAGLIO_PROVATO_CM = 0.53;
 
+// =====================================================================
+// LE DUE COLONNE DELLA SALA — 21/09/2026
+// =====================================================================
+// 🔴 PERCHE' LA SOGLIA NON E' UN BREAKPOINT. Su uno schermo largo la sala e
+// l'elenco delle prenotazioni stanno meglio affiancati: si guarda il tavolo e
+// si legge chi ci va senza scorrere. Ma affiancare TOGLIE larghezza alla
+// pianta, e sotto `SOGLIA_IN_PIEDI_CM_REALI` la pianta **si mette in piedi**:
+// una sala profonda 1030 e larga 2070 girata dentro una colonna di 540 punti
+// diventa alta 1080 punti, cioe' peggio di prima.
+//
+// ⚠️ MISURATO, non dedotto (a 37,8 punti per centimetro):
+//     soglia del verso ......... 24,15 cm reali = 913 punti
+//     colonna di destra ........ 320 punti (20rem)
+//     vuoto fra le colonne ..... 24 punti (gap-6)
+//     quindi servono ........... 1257 punti di contenuto
+//   Col telaio del computer (barra laterale 320, margini 64) vuol dire uno
+//   schermo da **1641 punti**; il tetto della pagina e' 80rem = 1280, quindi
+//   da 1664 in su la colonna di sinistra resta a 936 e la sala resta sdraiata.
+//
+// 🔴 E LA DECISIONE NON PUO' CONTRADDIRE IL DISEGNO, perche' usa LA STESSA
+// costante che decide il verso: se un domani la soglia del verso cambiasse,
+// le due colonne la seguirebbero da sole. Scritta come media query in CSS,
+// invece, avrebbe congelato il numero di oggi — che e' il modo in cui il
+// 22/08 la pianta e' sbordata dallo schermo di Alessio.
+//
+// ⚠️ E DIPENDE DALLA CALIBRAZIONE, com'e' giusto: su un dispositivo dove un
+// centimetro vale piu' punti la soglia sale, e le due colonne si spengono
+// prima. E' lo stesso motivo per cui il 21/08 le due colonne delle Comande
+// erano state disegnate col numero sbagliato.
+export const ELENCO_PRENOTAZIONI_PX = 320;
+export const VUOTO_FRA_LE_COLONNE_PX = 24;
+
+/**
+ * La sala e l'elenco delle prenotazioni stanno affiancati, in un contenuto
+ * larga `larghezzaPx` punti con questa calibrazione?
+ */
+export function salaAffiancata(larghezzaPx, pxcm) {
+  if (!larghezzaPx || !pxcm) return false;
+  const sinistra = larghezzaPx - ELENCO_PRENOTAZIONI_PX - VUOTO_FRA_LE_COLONNE_PX;
+  return sinistra / pxcm >= SOGLIA_IN_PIEDI_CM_REALI;
+}
+
 /**
  * Quanto misura, in centimetri REALI, il lato del tavolo più piccolo
  * (90 cm) quando la pianta è larga `puntiUtili` punti.

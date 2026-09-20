@@ -513,7 +513,7 @@ export default function PrimaNota() {
               oraFineSerata={oraFineSerata}
               frase="Questo movimento va sulla serata di"
               labelClass={labelClass}
-              inputClass={`${inputClass} campo-data`}
+              inputClass={inputClass}
               className="w-min"
             />
             <div className="cella-larga">
