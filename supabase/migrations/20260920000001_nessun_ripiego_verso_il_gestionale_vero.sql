@@ -29,6 +29,25 @@
 --    dirlo (`raise warning`), e dove l'invio E' il gesto — mandare un
 --    preventivo per mail — il rifiuto resta un errore vero.
 --
+-- ---------------------------------------------------------------------
+-- CHE COSA SI TOGLIE APPOSTA, E PERCHE' — per la rete delle guardie
+-- ---------------------------------------------------------------------
+-- 🔴 LA RETE HA RAGIONE A CHIEDERLO, ed e' nata da quattro casi veri in
+--    cui una riscrittura aveva annullato in silenzio qualcosa aggiunto dopo.
+--    Qui ogni funzione perde due cose, e sono esattamente le due che questa
+--    migrazione esiste per cambiare:
+--      1. la vecchia frase di rifiuto — diceva solo «manca la parola
+--         d'ordine», e adesso deve dire anche «manca l'indirizzo»;
+--      2. la lettura diretta del segreto, che ora passa da
+--         url_funzioni_configurato() — l'unico posto dove si decide che
+--         senza indirizzo non si chiama nessuno.
+-- ⚠️ Niente altro cambia: il resto dei corpi e' identico, riga per riga.
+-- rete-guardie: chiedi_lettura_posta — frase di rifiuto piu' completa, e l'indirizzo lo da' url_funzioni_configurato()
+-- rete-guardie: invia_email_conferma — frase di rifiuto piu' completa, e l'indirizzo lo da' url_funzioni_configurato()
+-- rete-guardie: invia_preventivo_per_email — come sopra, e qui il rifiuto resta un errore vero perche' l'invio e' il gesto
+-- rete-guardie: segnala_allarme — come sopra: l'allarme si scrive comunque, non si manda e si dice perche'
+-- rete-guardie: notify_reservation_telegram — l'indirizzo era scritto fisso, ora viene dal Vault di questo database
+
 -- ⚠️ I CORPI SONO STATI RIPRESI DAL DATABASE, non dai file che li avevano
 --    creati (regola del 18/08), e l'unica cosa cambiata e' da dove viene
 --    l'indirizzo. Tutto il resto e' identico, riga per riga.

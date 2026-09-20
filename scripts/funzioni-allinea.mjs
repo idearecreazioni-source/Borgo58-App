@@ -31,11 +31,29 @@
 //   npm run funzioni:allinea -- posta-leggi leggi-foto --conferma
 //                                            → solo quelle nominate
 
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
 
-import { REF_PROVA, esegui, fermati, titolo } from "./comune.mjs";
+import { REF_PROVA, fermati, titolo } from "./comune.mjs";
+
+// 🔴 PERCHE' NON SI USA `esegui` DI `comune.mjs` (20/09/2026, difetto pagato).
+//    Quella funzione **non passa la cartella di lavoro**, e lo scarico di una
+//    funzione online scrive in `<cartella corrente>/supabase/functions/<nome>`:
+//    il primo giro di questo comando ha quindi scaricato DENTRO IL REPOSITORY,
+//    sovrascrivendo cinque file con le versioni vecchie che girano online.
+// ⚠️ Non si e' allargato `esegui` — lo usano una ventina di comandi e una sua
+//    modifica si paga altrove: qui serve una cosa sola, e sta in sei righe.
+function eseguiIn(programma, argomenti, cwd) {
+  const r = spawnSync(programma, argomenti, {
+    cwd,
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  });
+  return { ok: r.status === 0, uscita: (r.stdout || "") + (r.stderr || "") };
+}
 
 export const CARTELLA = path.join("supabase", "functions");
 
@@ -100,6 +118,28 @@ export function differenza(locale, remoto) {
   return { stato: diversi.length === 0 ? "uguale" : "diversa", file: diversi };
 }
 
+/**
+ * Lo scarico com'è andato: scaricata, non installata, oppure un guasto.
+ *
+ * 🔴 «NON INSTALLATA» NON E' LA RISPOSTA A TUTTO CIO' CHE NON RIESCE
+ *    (20/09/2026, difetto misurato). Il primo giro di questo comando ha
+ *    risposto «non installata» per **dodici** funzioni su dodici, e dieci
+ *    erano installate: lo scarico falliva per un'altra ragione e la risposta
+ *    lo nascondeva. E' la famiglia del 19/08 — *una risposta più corta che ha
+ *    l'aria di essere intera* — e qui costava un'installazione in blocco
+ *    decisa su un confronto falso.
+ * ⚠️ Quindi: si riconosce «non c'e'» SOLO dalle parole con cui il server lo
+ *    dice; tutto il resto è un guasto, e si grida.
+ */
+export function esitoDelloScarico(ok, uscita) {
+  if (ok) return "scaricata";
+  const t = String(uscita ?? "").toLowerCase();
+  if (t.includes("not found") || t.includes("does not exist") || t.includes("404")) {
+    return "non installata";
+  }
+  return "guasto";
+}
+
 /** L'elenco delle funzioni da guardare: quelle nominate, o tutte. */
 export function daGuardare(nomiChiesti, presenti) {
   if (nomiChiesti.length === 0) return { nomi: presenti };
@@ -125,17 +165,26 @@ function principale() {
 
   titolo(`Funzioni online — PROGETTO DI PROVA (${REF_PROVA})`);
 
-  const conShell = { shell: process.platform === "win32" };
   const tmp = mkdtempSync(path.join(tmpdir(), "borgo58-funzioni-"));
   const esiti = [];
   try {
     for (const nome of scelte.nomi) {
-      const scarico = esegui(
+      const scarico = eseguiIn(
         "npx",
         ["supabase", "functions", "download", nome, "--project-ref", REF_PROVA, "--use-api"],
-        { ...conShell, cwd: tmp, silenzioso: true }
+        tmp
       );
-      const remoto = scarico.ok ? fileDellaCartella(path.join(tmp, CARTELLA, nome)) : {};
+      const esito = esitoDelloScarico(scarico.ok, scarico.uscita);
+      if (esito === "guasto") {
+        // ⚠️ Si grida invece di dire «non installata»: su una risposta falsa
+        //    qualcuno installerebbe in blocco roba che non va toccata.
+        fermati(
+          `Non riesco a leggere «${nome}» dal progetto di prova, e non e' perche' non c'e'.`,
+          "Nessuna funzione e' stata toccata. Ecco cosa ha risposto:",
+          ...String(scarico.uscita).trim().split(/\r?\n/).slice(-6).map((r) => `  ${r}`)
+        );
+      }
+      const remoto = esito === "scaricata" ? fileDellaCartella(path.join(tmp, CARTELLA, nome)) : {};
       const d = differenza(fileDellaCartella(path.join(CARTELLA, nome)), remoto);
       esiti.push({ nome, ...d });
       const segno = d.stato === "uguale" ? "=" : d.stato === "diversa" ? "≠" : "·";
@@ -154,20 +203,45 @@ function principale() {
     return;
   }
 
+  // 🔴 «DIVERSA» E «MAI INSTALLATA» NON SI PROPONGONO INSIEME (20/09/2026).
+  //    Aggiornare una funzione che gia' gira e' un allineamento; installarne
+  //    una che non e' mai stata installata e' una DECISIONE — e in questo
+  //    progetto ce ne sono due che aspettano apposta (`telegram-prova-test`,
+  //    `posta-in-arrivo`). Un comando suggerito che le mette in fila con le
+  //    altre le fa installare per inerzia.
+  const diverse = daFare.filter((e) => e.stato === "diversa");
+  const mai = daFare.filter((e) => e.stato === "non installata");
+
   if (!letti.conferma) {
-    console.log(`  ${daFare.length} da allineare. Nessuna modifica fatta: questa e' la sola lettura.`);
-    console.log(`  Per installarle davvero: npm run funzioni:allinea -- ${daFare.map((e) => e.nome).join(" ")} --conferma`);
+    if (diverse.length > 0) {
+      console.log(`  ${diverse.length} da allineare. Nessuna modifica fatta: questa e' la sola lettura.`);
+      console.log(`  Per installarle davvero: npm run funzioni:allinea -- ${diverse.map((e) => e.nome).join(" ")} --conferma`);
+    } else {
+      console.log("  Nessuna di quelle installate e' rimasta indietro.");
+    }
+    if (mai.length > 0) {
+      console.log("");
+      console.log(`  Mai installate su Prova: ${mai.map((e) => e.nome).join(", ")}.`);
+      console.log("  Non sono un ritardo: sono una decisione. Si installano nominandole una per una.");
+    }
     console.log("");
     return;
   }
 
   for (const e of daFare) {
     console.log(`→ installo ${e.nome}`);
-    const r = esegui(
+    // ⚠️ L'installazione parte dalla cartella del repository: è lì che stanno
+    //    i file da mandare. Lo scarico, al contrario, va fuori.
+    const r = eseguiIn(
       "npx",
       ["supabase", "functions", "deploy", e.nome, "--project-ref", REF_PROVA],
-      conShell
+      process.cwd()
     );
+    if (r.uscita) {
+      console.log(
+        r.uscita.trim().split(/\r?\n/).slice(-2).map((x) => `      ${x}`).join("\n")
+      );
+    }
     if (!r.ok) fermati(`L'installazione di ${e.nome} non e' riuscita. Le altre non sono state toccate.`);
   }
   console.log("");
