@@ -507,11 +507,45 @@ begin
        is distinct from v_avviso + interval '3 days' then
     raise exception 'VERIFICA: il sollecito dovuto non e'' l''ultimo compiuto.';
   end if;
-  -- ⚠️ E i mesi contano per salti veri, non a trenta giorni.
+  -- ⚠️ E i mesi contano per salti veri, non a trenta giorni: dal 31 gennaio
+  --    si cade il 28 febbraio, perché febbraio finisce lì.
+  -- 🔴 L'ISTANTE ATTESO SI SCRIVE COME LO CALCOLA LA FUNZIONE, cioè
+  --    sommando l'intervallo all'avviso. La prima stesura lo scriveva
+  --    all'indietro da marzo («31 marzo meno un mese») e quella sottrazione
+  --    attraversa il CAMBIO DELL'ORA LEGALE: l'atteso finiva un'ora più in
+  --    là del vero, e la migrazione si fermava su un calcolo giusto.
+  --    ⚠️ È la stessa famiglia di difetto che questo lavoro stava chiudendo —
+  --    un istante composto male attorno al cambio d'ora — ricomparsa nella
+  --    riga scritta per sorvegliarlo.
+  -- ⚠️ E PERCHÉ NON DIVENTA UNA TAUTOLOGIA: il confronto qui sopra dice che
+  --    di passi se n'è fatto ESATTAMENTE UNO (non zero, non due); il giorno
+  --    del calendario lo si controlla a parte, in chiaro, subito sotto —
+  --    ed è lì che si vede lo scavallamento di fine mese.
   if istante_sollecito(timestamptz '2026-01-31 09:00+01', 1::smallint, 'mesi',
                        timestamptz '2026-03-05 09:00+01')
-       is distinct from timestamptz '2026-03-31 09:00+02' - interval '1 month' then
-    raise exception 'VERIFICA: il sollecito mensile non cade dove cade il mese.';
+       is distinct from timestamptz '2026-01-31 09:00+01' + interval '1 month' then
+    raise exception 'VERIFICA: il sollecito mensile non ha fatto esattamente un salto.';
+  end if;
+  if (istante_sollecito(timestamptz '2026-01-31 09:00+01', 1::smallint, 'mesi',
+                        timestamptz '2026-03-05 09:00+01') at time zone 'Europe/Rome')::date
+       is distinct from date '2026-02-28' then
+    raise exception 'VERIFICA: il sollecito mensile dal 31 gennaio non cade il 28 febbraio, ma il %.',
+      (istante_sollecito(timestamptz '2026-01-31 09:00+01', 1::smallint, 'mesi',
+                         timestamptz '2026-03-05 09:00+01') at time zone 'Europe/Rome')::date;
+  end if;
+
+  -- 🔴 E IL CASO CHE ATTRAVERSA IL CAMBIO D'ORA, che è quello su cui la
+  --    verifica stessa si era rotta. Dal 20 marzo (ora solare) al 25 aprile
+  --    (ora legale): un salto solo, e il giorno del calendario è il 20.
+  if istante_sollecito(timestamptz '2026-03-20 09:00+01', 1::smallint, 'mesi',
+                       timestamptz '2026-04-25 09:00+02')
+       is distinct from timestamptz '2026-03-20 09:00+01' + interval '1 month' then
+    raise exception 'VERIFICA: attraversando il cambio d''ora il sollecito mensile non fa un salto solo.';
+  end if;
+  if (istante_sollecito(timestamptz '2026-03-20 09:00+01', 1::smallint, 'mesi',
+                        timestamptz '2026-04-25 09:00+02') at time zone 'Europe/Rome')::date
+       is distinct from date '2026-04-20' then
+    raise exception 'VERIFICA: attraversando il cambio d''ora il sollecito mensile non cade il 20 aprile.';
   end if;
   -- Un'unita' che nessuno sa calcolare non produce niente.
   if istante_sollecito(v_avviso, 1::smallint, 'lune piene', now()) is not null then
