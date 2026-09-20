@@ -27,6 +27,7 @@
     "collaudo:documenti": "node scripts/documenti-finti.mjs",
     "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai",
     "funzione:viva": "node scripts/funzione-viva.mjs",
+    "funzioni:allinea": "node scripts/funzioni-allinea.mjs",
     "collaudo:stato": "node scripts/collaudo-stato.mjs",
     "deposito:orfani": "node scripts/deposito-orfani.mjs",
     "prova:copia": "node scripts/prova-copia.mjs",
