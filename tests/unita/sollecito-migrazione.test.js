@@ -161,6 +161,44 @@ describe("🔴 durante le prove automatiche i solleciti restano muti", () => {
   });
 });
 
+describe("🔴 la verifica del caso mensile non si rompe sul cambio d'ora", () => {
+  // 🔴 SUCCESSO DAVVERO, il 20/09: applicando su Prova la migrazione si è
+  //    fermata su questo controllo. Il calcolo era giusto; era l'ATTESO a
+  //    essere sbagliato, perché scritto all'indietro («31 marzo meno un
+  //    mese»), e quella sottrazione attraversa il cambio dell'ora legale.
+  //    È la stessa famiglia di difetto che la migrazione stava chiudendo,
+  //    ricomparsa nella riga scritta per sorvegliarlo.
+  const verifica = () => sql.slice(sql.indexOf("do $verifica$"));
+
+  it("l'istante atteso si compone in avanti, come fa la funzione", () => {
+    expect(verifica()).toMatch(
+      /timestamptz '2026-01-31 09:00\+01' \+ interval '1 month'/,
+    );
+  });
+
+  it("⚠️ e non si scrive più all'indietro da una data successiva", () => {
+    // Il verso che ha rotto: una sottrazione che attraversa il cambio d'ora.
+    expect(verifica()).not.toMatch(/'2026-03-31 09:00\+02' - interval '1 month'/);
+  });
+
+  it("🔴 lo scavallamento di fine mese si controlla IN CHIARO, sul giorno", () => {
+    // Senza questa riga il confronto qui sopra sarebbe quasi una tautologia:
+    // direbbe «un salto solo» e non «il 28 febbraio».
+    expect(verifica()).toMatch(/is distinct from date '2026-02-28'/);
+  });
+
+  it("⚠️ e c'è il caso che attraversa il cambio d'ora, col giorno atteso", () => {
+    expect(verifica()).toMatch(/2026-03-20 09:00\+01/);
+    expect(verifica()).toMatch(/is distinct from date '2026-04-20'/);
+  });
+
+  it("⚠️ i giorni si confrontano a Roma, non a Greenwich", () => {
+    // Un giorno chiesto a Greenwich su un istante delle 09:00 italiane è lo
+    // stesso giorno quasi sempre — e quel «quasi» è esattamente la trappola.
+    expect(verifica()).toMatch(/at time zone 'Europe\/Rome'\)::date/);
+  });
+});
+
 describe("⚠️ la migrazione si rifiuta invece di indovinare", () => {
   it("si ferma se i corpi vivi non sono quelli attesi, o se è già applicata", () => {
     expect(sql).toMatch(/GUARDIA: il giro che manda non è quello del 20260920000002/);
