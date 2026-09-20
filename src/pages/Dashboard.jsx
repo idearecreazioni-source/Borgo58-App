@@ -12,6 +12,7 @@ import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
 import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
+import Didascalia from "../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -179,7 +180,17 @@ export default function Dashboard() {
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
             {isStaff ? "Benvenuto." : "Bentornato, Alessio."}
           </h1>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">Oggi, {todayLabel}</p>
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            Oggi, {todayLabel}{" "}
+            {/* ⚠️ Il dubbio di questa schermata e' perche' un riquadro un
+                giorno c'e' e un altro no: i riquadri vuoti non si disegnano,
+                per scelta — «0 cose da comprare» ogni mattina e' arredamento.
+                Senza dirlo, chi non lo sa lo legge come qualcosa che manca. */}
+            <Didascalia etichetta="Cosa vedi qui">
+              Compare solo quello che aspetta una tua risposta: i riquadri vuoti non si disegnano.
+              «Agenda completa» apre tutti gli impegni, anche quelli senza scadenza.
+            </Didascalia>
+          </p>
         </div>
         {/* ⚠️ MISURATO, non stimato: come link nudo questo faceva 5,3 mm di
             altezza — sotto la soglia degli 8,5. Il testo resta uguale, il

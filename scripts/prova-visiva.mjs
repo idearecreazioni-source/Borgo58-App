@@ -104,6 +104,17 @@ const PEZZI_RIPETE = 3;
 const VUOTO_MASSIMO_CM = 0.35; // fra titolo, scadenza e «rimanda»
 const STELLA_DAL_BORDO_CM = 0.15; // oltre il margine della scheda
 const CASELLA_ALTA_CM = 0.8;
+// 🔴 LA RUOTA DELL'ORA SI GIUDICA CON LA SUA REGOLA — 21/09/2026, misurato.
+// Le due caselle di data della scheda sono alte 7,5 mm: e' la variante
+// compatta decisa l'11/09 per il telefono, e il tetto di 8 mm la sorveglia.
+// La ruota non e' un campo in cui si scrive, e' un PULSANTE che apre un
+// pannello, quindi porta il pavimento del tocco di questo progetto —
+// `tocco-campo`, 8,5 mm. Misurata: 8,5 esatti, cioe' il pavimento, non un
+// millimetro di troppo.
+// ⚠️ NON SI ALZA IL TETTO DELLE ALTRE: un pavimento e un tetto sono due
+// regole diverse, e allentare la seconda per far passare la prima
+// toglierebbe la sorveglianza a tutt'e due. Ognuna col suo numero.
+const RUOTA_ALTA_CM = 0.85;
 const CASELLA_LARGA_QUOTA = 0.7; // della larghezza utile del modulo
 const NUMERO_LARGO_CM = 2;
 
@@ -282,14 +293,23 @@ const MISURA_SCHEDA = `(() => {
   const misura = (e) => {
     const r = e.getBoundingClientRect();
     return {
-      tipo: e.tagName === "SELECT" ? "menu" : e.type,
+      tipo: e.tagName === "SELECT" ? "menu" : e.hasAttribute("data-apri-ora") ? "ora a ruota" : e.type,
       sinistra: r.left, destra: r.right, alto: r.top, basso: r.bottom,
       larga: r.width, alta: r.height,
       vorrebbe: libera(e),
       carattere: parseFloat(getComputedStyle(e).fontSize),
     };
   };
-  const caselle = [...f.querySelectorAll("input[type=date], input[type=time]")].map(misura);
+  // 🔴 DUE DELLE QUATTRO CASELLE NON SONO PIU' UN CAMPO DEL BROWSER —
+  //    21/09/2026. Dal 20/09 l'ora si sceglie con la ruota (SceltaOra), che
+  //    e' un pulsante e apre un pannello: cercando solo input[type=time]
+  //    questa prova ne trovava **2 su 4** e si dichiarava rossa da tre
+  //    giorni, su una schermata che invece era stata misurata e provata.
+  //    ⚠️ Una prova che resta rossa per una ragione nota si smette di
+  //    guardare, e quel giorno non protegge piu' niente.
+  const caselle = [...f.querySelectorAll("input[type=date], input[type=time], [data-apri-ora]")].map(
+    misura,
+  );
   const ripete = f.querySelector("[data-ripete]");
   const pezziRipete = ripete ? [...ripete.querySelectorAll("select, input")].map(misura) : [];
   const titolo = f.querySelector("input:not([type])");
@@ -489,8 +509,9 @@ function controllaScheda(forma, m, difetti) {
       difetti.push(`${forma}: ${cosa} ha ${c.larga.toFixed(0)} punti e il suo contenuto ne chiede ${c.vorrebbe.toFixed(0)} — si taglia.`);
     }
     dentro(c, cosa);
-    if (c.alta > cm(CASELLA_ALTA_CM) + TOLLERANZA_PX) {
-      difetti.push(`${forma}: ${cosa} è alta ${c.alta.toFixed(0)} punti (${mm(c.alta, m.pxcm)} mm; il massimo è ${CASELLA_ALTA_CM * 10}).`);
+    const tetto = c.tipo === "ora a ruota" ? RUOTA_ALTA_CM : CASELLA_ALTA_CM;
+    if (c.alta > cm(tetto) + TOLLERANZA_PX) {
+      difetti.push(`${forma}: ${cosa} è alta ${c.alta.toFixed(0)} punti (${mm(c.alta, m.pxcm)} mm; il massimo è ${tetto * 10}).`);
     }
     if (c.larga > m.dentroLarga * CASELLA_LARGA_QUOTA) {
       difetti.push(`${forma}: ${cosa} è larga ${c.larga.toFixed(0)} punti su ${m.dentroLarga.toFixed(0)} — è a tutta larghezza.`);

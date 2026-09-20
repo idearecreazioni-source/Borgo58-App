@@ -28,6 +28,7 @@ import {
 } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
 import { toccaSubito } from "../../lib/calcoli/tocco";
+import Didascalia from "../../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -196,7 +197,7 @@ function CasellaRimanda({ giorno, onGiorno }) {
       type="date"
       defaultValue={giorno ?? ""}
       onChange={(e) => onGiorno(e.target.value)}
-      className="tocco-campo max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+      className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
     />
   );
 }
@@ -505,6 +506,16 @@ export default function AgendaList() {
             {v.label}
           </button>
         ))}
+        {/* 🔴 IL «?» STA DOVE STA IL DUBBIO — 21/09/2026. I tre nomi dicono
+            la forma e non cosa ci trovi dentro: la Lista e' l'unica in ordine
+            di urgenza, e l'unica che mostra gli impegni **senza data**.
+            ⚠️ Dietro un «?» e non sopra la schermata: una spiegazione sempre
+            visibile la si legge il primo giorno e poi diventa arredamento —
+            in due giorni d'agosto Alessio ne ha tolte sette. */}
+        <Didascalia etichetta="Cosa cambia fra le tre viste">
+          Lista: cosa c'è da fare, in ordine di urgenza, compreso quello senza data. Settimana: i sette
+          giorni con gli orari. Mese: il calendario.
+        </Didascalia>
       </div>
 
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
