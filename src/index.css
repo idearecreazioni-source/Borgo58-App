@@ -809,13 +809,49 @@ body {
   }
 }
 
-/* 🔴 LE RUOTE DELL'ORA — 20/09/2026. L'altezza è in centimetri veri, come
-   ogni bersaglio di questo gestionale: tre voci alla volta (tre volte il
-   bersaglio da 0,85 cm più i bordi). ⚠️ Un elenco alto quanto tutte e dodici
-   le voci non sarebbe una ruota — sarebbe un menu aperto che si porta via
-   mezza schermata sul telefono. */
+/* 🔴 LE RUOTE DELL'ORA — 20/09/2026. Le misure sono in centimetri veri,
+   come ogni bersaglio di questo gestionale: la ruota mostra cinque righe e
+   quella di mezzo è la scelta. ⚠️ Il vuoto sopra e sotto serve: senza, la
+   prima e l'ultima voce non potrebbero mai arrivare in mezzo, e la riga
+   evidenziata mentirebbe proprio ai due capi. */
+.ruote-ora {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: calc(var(--pxcm) * 0.1);
+}
+
+.ruote-ora .riga-centrale {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: calc(var(--pxcm) * 0.85);
+  transform: translateY(-50%);
+  border-top: 1px solid var(--color-b58-sand);
+  border-bottom: 1px solid var(--color-b58-sand);
+  background: var(--color-b58-sand-light);
+  pointer-events: none;
+}
+
 .ruota-ora {
-  max-height: calc(var(--pxcm) * 2.8);
+  position: relative;
+  height: calc(var(--pxcm) * 4.25);
   min-width: calc(var(--pxcm) * 1.5);
+  overflow-y: auto;
   scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ruota-ora .ruota-voce {
+  display: block;
+  width: 100%;
+  height: calc(var(--pxcm) * 0.85);
+  scroll-snap-align: center;
+  text-align: center;
+}
+
+.ruota-ora .ruota-vuoto {
+  height: calc(var(--pxcm) * 1.7);
 }
