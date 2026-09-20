@@ -180,18 +180,21 @@ export default function TaskForm() {
   const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.75)" };
   const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
 
-  // 🔴 L'ORA SI SCEGLIE A PASSI DI CINQUE MINUTI, MA UN ORARIO GIÀ SCRITTO
-  //    NON SI TOCCA — 10/09/2026, ed è la parte non ovvia della richiesta.
+  // 🔴 L'ORA SI SCEGLIE A QUARTI D'ORA, MA UN ORARIO GIÀ SCRITTO NON SI
+  //    TOCCA — passo portato da 5 minuti a 15 il 20/09/2026, su richiesta.
+  //    La parte non ovvia è la seconda, ed è del 10/09.
   //
-  //    `step={300}` non è solo un comodo per il selettore: rende **non
+  //    `step={900}` non è solo un comodo per il selettore: rende **non
   //    valido** un orario fuori griglia, e un promemoria già salvato alle
   //    20:07 non si potrebbe più salvare — il modulo si rifiuterebbe di
   //    partire, su una cosa che nessuno aveva chiesto di cambiare.
-  //    Quindi il passo si mette solo dove non fa danno: casella vuota, o
-  //    orario già sui cinque minuti. Chi ha un 20:07 se lo tiene finché
-  //    non lo cambia lui.
-  const passoCinqueMinuti = (v) =>
-    !v || Number(v.slice(3, 5)) % 5 === 0 ? { step: 300 } : {};
+  //    ⚠️ E adesso la griglia è più larga, quindi il caso non è più raro:
+  //    con i quarti d'ora restano fuori anche le 20:05 e le 9:50, che
+  //    prima erano dentro. Chi le ha scritte le rilegge, le modifica e le
+  //    salva come sempre; il passo compare solo dove non fa danno —
+  //    casella vuota, o orario già su un quarto d'ora.
+  const passoQuartoDOra = (v) =>
+    !v || Number(v.slice(3, 5)) % 15 === 0 ? { step: 900 } : {};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -251,7 +254,7 @@ export default function TaskForm() {
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        {isEdit ? "Modifica impegno" : "Nuovo impegno"}
+        {isEdit ? "Modifica task" : "Nuovo task"}
       </h1>
 
       {error && (
@@ -304,7 +307,7 @@ export default function TaskForm() {
               className={campoCompatto}
               style={largoAlmeno(1.6)}
               disabled={!form.due_date}
-              {...passoCinqueMinuti(form.due_time)}
+              {...passoQuartoDOra(form.due_time)}
             />
           </div>
         </div>
@@ -436,7 +439,7 @@ export default function TaskForm() {
                 className={campoCompatto}
                 style={largoAlmeno(1.6)}
                 disabled={!form.remind_date}
-                {...passoCinqueMinuti(form.remind_time)}
+                {...passoQuartoDOra(form.remind_time)}
               />
             </div>
           </div>
@@ -462,7 +465,7 @@ export default function TaskForm() {
             disabled={saving}
             className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
-            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea impegno"}
+            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
           {isEdit && isTitolare && (
             <button
@@ -490,7 +493,7 @@ export default function TaskForm() {
             <p className="mt-0.5">
               {form.visibile_staff
                 ? "Visibile anche allo staff."
-                : "Riservato a te: lo staff non vede questo impegno in Agenda. La visibilità degli impegni automatici dipende dal modulo di origine e non è modificabile da qui."}
+                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
             </p>
           )}
         </div>

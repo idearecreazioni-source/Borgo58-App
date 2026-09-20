@@ -470,7 +470,7 @@ export default function AgendaList() {
             to="/agenda/nuovo"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
           >
-            + Nuovo impegno
+            + Nuovo task
           </Link>
         </div>
       </div>
@@ -596,7 +596,7 @@ export default function AgendaList() {
                           <ElencoAdattivo
                             righe={elenco}
                             chiave={(t) => t.id}
-                            intestazioneTitolo="Impegno"
+                            intestazioneTitolo="Task"
                             // Una tabella per sezione: senza una larghezza
                             // fissa «Scadenza» cominciava in un punto diverso
                             // in ognuna (da 600 a 875 punti, misurato).
@@ -759,7 +759,7 @@ export default function AgendaList() {
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mt-4">
               <h3 className="testo-sala font-medium text-b58-charcoal mb-2">{formatDate(selectedDay)}</h3>
               {dayTasks.length === 0 ? (
-                <p className="testo-sala text-b58-charcoal-soft">Nessun impegno in questo giorno.</p>
+                <p className="testo-sala text-b58-charcoal-soft">Nessun task in questo giorno.</p>
               ) : (
                 <div className="space-y-2">
                   {dayTasks.map((t) => (
