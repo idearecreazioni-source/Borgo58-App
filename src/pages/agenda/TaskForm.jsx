@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_RICORRENZA_UNITA } from "../../lib/constants";
+import { TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
-import CampoOraQuarti from "../../components/CampoOraQuarti";
+import SceltaOra from "../../components/SceltaOra";
 import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
@@ -163,6 +163,8 @@ export default function TaskForm() {
   // regola del database, detta prima di arrivarci.
   const haPromemoria = Boolean(form.remind_date);
   const sollecita = haPromemoria && Boolean(form.sollecito_ogni);
+  // Il minimo dipende dall'unità: cinque minuti, oppure uno.
+  const minimoSollecito = form.sollecito_unita === "minuti" ? 5 : 1;
 
   // 🔴 LE DUE CASELLE DI UNA DATA STANNO IN UNA GRIGLIA CHE NON SBORDA —
   //    10/09/2026. Erano già affiancate, e sul telefono non ci stavano lo
@@ -191,14 +193,14 @@ export default function TaskForm() {
   const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.75)" };
   const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
 
-  // 🔴 L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026, dopo
-  //    averlo guardato. Il passo (`step={900}`) dice al browser quali
-  //    valori sono VALIDI, non quali OFFRIRE: la rotella dei minuti
-  //    continuava a girare su tutti e sessanta, e chi sceglieva le 20:07 lo
-  //    scopriva solo quando il modulo si rifiutava di partire.
-  //    Adesso i minuti sono un menu di quattro voci (`CampoOraQuarti`), e
-  //    quello che non compare non si può scegliere. Un orario già scritto
-  //    fuori quarto resta, marcato, finché non lo si cambia.
+  // 🔴 L'ORA SI SCEGLIE A RUOTA — 20/09/2026, seconda correzione dello
+  //    stesso giorno. Prima era il campo orario del browser (offriva tutti e
+  //    sessanta i minuti e rifiutava al salvataggio), poi due menu a tendina
+  //    (giusti, ma due elenchi lunghi da aprire col dito in servizio).
+  //    Adesso: fascia — mattina o pomeriggio — e due ruote da dodici voci,
+  //    che girano col dito, con la rotella e con le frecce (`SceltaOra`).
+  //    Un orario già scritto fuori griglia resta, marcato, finché non lo si
+  //    cambia: non si arrotonda niente alle spalle di chi l'ha scritto.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -310,14 +312,11 @@ export default function TaskForm() {
           </div>
           <div className={contenitoreCampo}>
             <label className={labelClass}>🕒 Ora</label>
-            <CampoOraQuarti
+            <SceltaOra
               data-campo="scadenza"
-              etichettaOre="Ora della scadenza"
-              etichettaMinuti="Minuti della scadenza"
+              nome="scadenza"
               value={form.due_time}
               onChange={(v) => setForm((f) => ({ ...f, due_time: v }))}
-              className={campoCompatto}
-              style={altezzaCompatta}
               disabled={!form.due_date}
             />
           </div>
@@ -443,14 +442,11 @@ export default function TaskForm() {
             </div>
             <div className={contenitoreCampo}>
               <label className={labelClass}>🕒 Ora</label>
-              <CampoOraQuarti
+              <SceltaOra
                 data-campo="avviso"
-                etichettaOre="Ora dell'avviso"
-                etichettaMinuti="Minuti dell'avviso"
+                nome="avviso"
                 value={form.remind_time}
                 onChange={(v) => setForm((f) => ({ ...f, remind_time: v }))}
-                className={campoCompatto}
-                style={altezzaCompatta}
                 disabled={!form.remind_date}
               />
             </div>
@@ -471,7 +467,7 @@ export default function TaskForm() {
                     onChange={(e) =>
                       setForm((f) =>
                         e.target.value === "si"
-                          ? { ...f, sollecito_ogni: f.sollecito_ogni || 1, sollecito_unita: "giorni" }
+                          ? { ...f, sollecito_ogni: f.sollecito_ogni || 1, sollecito_unita: "ore" }
                           : { ...f, sollecito_ogni: "", sollecito_unita: "" }
                       )
                     }
@@ -487,8 +483,9 @@ export default function TaskForm() {
                     <span className="text-b58-charcoal-soft shrink-0">ogni</span>
                     <input
                       type="number"
-                      min={1}
+                      min={minimoSollecito}
                       max={999}
+                      step={form.sollecito_unita === "minuti" ? 5 : 1}
                       required
                       aria-label="Ogni quanto sollecitare"
                       value={form.sollecito_ogni}
@@ -499,11 +496,25 @@ export default function TaskForm() {
                     <select
                       aria-label="Unità del sollecito"
                       value={form.sollecito_unita}
-                      onChange={(e) => setForm((f) => ({ ...f, sollecito_unita: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          sollecito_unita: e.target.value,
+                          // 🔴 SOTTO I CINQUE MINUTI NON SI SOLLECITA, e il
+                          //    numero si alza QUI invece di essere rifiutato
+                          //    dopo: «ogni 1 minuto» non è una richiesta
+                          //    ragionevole da lasciar scrivere per poi
+                          //    respingerla al salvataggio.
+                          sollecito_ogni:
+                            e.target.value === "minuti" && Number(f.sollecito_ogni) < 5
+                              ? 5
+                              : f.sollecito_ogni,
+                        }))
+                      }
                       className={campoCompatto}
                       style={altezzaCompatta}
                     >
-                      {TASK_RICORRENZA_UNITA.map((u) => (
+                      {TASK_SOLLECITO_UNITA.map((u) => (
                         <option key={u.value} value={u.value}>{u.label}</option>
                       ))}
                     </select>

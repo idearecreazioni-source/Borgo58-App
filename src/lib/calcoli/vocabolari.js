@@ -64,6 +64,7 @@ import {
   TASK_CATEGORIES,
   TASK_PRIORITIES,
   TASK_RICORRENZA_UNITA,
+  TASK_SOLLECITO_UNITA,
   TASK_STATUSES,
   TIP_MEZZI,
   VIDEO_PLATFORMS,
@@ -172,6 +173,17 @@ export const SPECCHIATI = [
     valori: TASK_RICORRENZA_UNITA,
     tabella: "tasks",
     colonna: "ricorrenza_unita",
+  },
+  // 🔴 DUE ELENCHI SIMILI E NON UGUALI, ed è voluto: il sollecito ha in più
+  //    minuti e ore. Un impegno che si ripete ogni dieci minuti non esiste;
+  //    un sollecito sì. Sono due colonne diverse, quindi due specchi diversi
+  //    — e la rete confronta ognuno col SUO vincolo, che è il modo in cui
+  //    questa differenza resta voluta invece di diventare una divergenza.
+  {
+    costante: "TASK_SOLLECITO_UNITA",
+    valori: TASK_SOLLECITO_UNITA,
+    tabella: "tasks",
+    colonna: "sollecito_unita",
   },
 ];
 
