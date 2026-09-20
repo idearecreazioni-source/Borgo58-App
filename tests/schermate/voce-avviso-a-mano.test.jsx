@@ -66,31 +66,27 @@ const apri = async () => {
 
 /** Le caselle del Promemoria Telegram, prese dal loro riquadro.
  *
- * ⚠️ L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026: sono due
- *    ruote (fascia, ore, minuti a scaglioni di cinque), perche' `step`
- *    diceva quali valori erano validi e non quali offrire. Qui si continua a
- *    leggere «che ora c'e' scritto», ricomponendola dalle due ruote. */
+ * ⚠️ L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026: e' un
+ *    riquadro con due ruote e i pulsanti Annulla e Conferma, perche' `step`
+ *    diceva quali valori erano validi e non quali offrire. Qui l'ora scritta
+ *    si legge dal campo, senza aprire il pannello: e' quello che una persona
+ *    vede prima di toccare. */
 const caselleAvviso = () => {
   const riquadro = screen.getByText(/Promemoria Telegram/i).parentElement;
-  const ore = riquadro.querySelector('[data-campo="avviso-ore"]');
-  const minuti = riquadro.querySelector('[data-campo="avviso-minuti"]');
+  const campoOra = riquadro.querySelector('[data-scelta-ora="avviso"]');
   return {
     giorno: riquadro.querySelector("input[type=date]"),
-    ore,
-    minuti,
+    campoOra,
+    apri: campoOra?.querySelector("[data-apri-ora]"),
     get ora() {
-      const h = ore?.dataset.valore || "";
-      return { value: h ? `${h}:${minuti.dataset.valore}` : "" };
+      return { value: campoOra?.dataset.valore || "" };
     },
   };
 };
 
 /** L'ora dell'impegno, dai suoi due menu. */
-const oraDellImpegno = () => {
-  const ore = document.querySelector('[data-campo="scadenza-ore"]')?.dataset.valore;
-  const minuti = document.querySelector('[data-campo="scadenza-minuti"]')?.dataset.valore;
-  return ore ? `${ore}:${minuti}` : "";
-};
+const oraDellImpegno = () =>
+  document.querySelector('[data-scelta-ora="scadenza"]')?.dataset.valore || "";
 
 beforeEach(() => {
   finte.aMano.mockReset();
@@ -143,10 +139,9 @@ describe("🔴 «Fallo a mano» su un promemoria dettato", () => {
     expect(avviso.ora.value).toBe("");
     // Niente promemoria da rimuovere, perché non ce n'è nessuno.
     expect(screen.queryByRole("button", { name: /Rimuovi promemoria/i })).toBeNull();
-    // ⚠️ Le ruote sono spente finché non c'è un giorno: un'ora senza giorno
-    //    non è un avviso.
-    expect(avviso.ore.getAttribute("aria-disabled")).toBe("true");
-    expect(avviso.minuti.getAttribute("aria-disabled")).toBe("true");
+    // ⚠️ Il pannello non si apre nemmeno finché non c'è un giorno: un'ora
+    //    senza giorno non è un avviso.
+    expect(avviso.apri.disabled).toBe(true);
   });
 
   it("⚠️ mezzo avviso: arriva il pezzo detto, l'altro resta vuoto — nessuna ora inventata", async () => {
