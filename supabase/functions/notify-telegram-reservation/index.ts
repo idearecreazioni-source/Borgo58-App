@@ -70,7 +70,20 @@ async function rpc(nome: string, corpo: Record<string, unknown>): Promise<unknow
     body: JSON.stringify(corpo),
   });
   if (!r.ok) throw new Error(`${nome}: ${r.status} ${await r.text()}`);
-  return await r.json();
+  // 🔴 «NESSUN CONTENUTO» E' UNA RISPOSTA GIUSTA, NON UN GUASTO — 20/09/2026,
+  //    misurato su Prova. Le due scritture della consegna — quella che la
+  //    conferma e quella che la rilascia — non restituiscono niente (i nomi
+  //    non si scrivono qui: una prova controlla che compaiano solo dentro il
+  //    ramo della chiave, e in un commento sarebbero un falso allarme),
+  //    quindi il database risponde **204 senza corpo**:
+  //    leggerlo come JSON solleva, e l'eccezione usciva dalla funzione
+  //    trasformando un promemoria GIA' CONSEGNATO in un «500 Internal Server
+  //    Error». Chi manda lo leggeva come «non arrivato» — allarme falso alle
+  //    15:25 e un tentativo buttato.
+  // ⚠️ Si guarda il CORPO, non solo il codice: una risposta vuota con 200 si
+  //    comporta allo stesso modo.
+  const testo = await r.text();
+  return testo.trim() === "" ? null : JSON.parse(testo);
 }
 
 function formatReservationMessage(record: Record<string, unknown>): string {

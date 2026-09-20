@@ -354,4 +354,67 @@ describe("🔴 e quando non si può sapere, non si manda più", () => {
     expect(primo.corpo.ok).toBe(false);
     expect(primo.corpo.ok).not.toBe(true);
   });
+
+  it("🔴 un messaggio GIÀ PARTITO non diventa un errore se la conferma non si scrive", async () => {
+    // Misurato su Prova il 20/09 alle 15:20: il promemoria è arrivato, la
+    // conferma è stata scritta, e la funzione ha risposto lo stesso 500 —
+    // l'errore nasceva DOPO l'invio, leggendo la risposta della conferma.
+    // Chi manda l'ha letto come «non arrivato»: allarme falso alle 15:25 e
+    // un tentativo dei tre buttato.
+    const m = magazzino();
+    const esito = await consegnaUnaVoltaSola({
+      chiave: CHIAVE,
+      prendi: m.prendi,
+      conferma: async () => {
+        throw new Error("Unexpected end of JSON input");
+      },
+      rilascia: m.rilascia,
+      manda: async () => {
+        m.partiti += 1;
+        return { riuscito: true };
+      },
+    });
+    expect(esito.stato).toBe(200);
+    expect(esito.corpo.ok).toBe(true);
+    // ⚠️ E lo DICE: la memoria di questa consegna è monca, e chi legge i
+    //    registri deve poterlo sapere.
+    expect(esito.corpo.conferma_non_scritta).toBe(true);
+    expect(m.partiti).toBe(1);
+  });
+
+  it("⚠️ ma un rifiuto di Telegram resta un fallimento, anche se il rilascio inciampa", async () => {
+    // Il verso opposto, e conta: se questa rete fosse troppo larga, un
+    // messaggio MAI partito risulterebbe partito — cioè l'avviso sparirebbe
+    // in silenzio, che è peggio dell'allarme falso che si sta togliendo.
+    const m = magazzino();
+    const esito = await consegnaUnaVoltaSola({
+      chiave: CHIAVE,
+      prendi: m.prendi,
+      conferma: m.conferma,
+      rilascia: async () => {
+        throw new Error("Unexpected end of JSON input");
+      },
+      manda: async () => {
+        m.partiti += 1;
+        return { riuscito: false, dettaglio: "chat not found" };
+      },
+    });
+    expect(esito.stato).toBe(502);
+    expect(esito.corpo.ok).toBe(false);
+  });
+
+  it("🔴 nessuna delle due funzioni legge un contenuto che può non esserci", () => {
+    // La causa vera del 20/09: le due scritture della consegna non
+    // restituiscono niente, quindi il database risponde 204 SENZA CORPO, e
+    // leggerlo come JSON solleva DOPO che il messaggio è partito.
+    for (const percorso of [
+      "../../supabase/functions/notify-telegram-reservation/index.ts",
+      "../../supabase/functions/telegram-prova-test/index.ts",
+    ]) {
+      const sorgente = readFileSync(new URL(percorso, import.meta.url), "utf8");
+      expect(sorgente, percorso).not.toMatch(/return await r\.json\(\)/);
+      expect(sorgente, percorso).toMatch(/await r\.text\(\)/);
+      expect(sorgente, percorso).toMatch(/testo\.trim\(\) === ""/);
+    }
+  });
 });
