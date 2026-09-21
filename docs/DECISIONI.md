@@ -947,7 +947,7 @@ quali soldi.
 niente di permanente attorno — nessun lavoro pianificato, nessuna scadenza,
 nessuna tabella nuova. Dopo l'apertura basta smettere di usarla.
 
-* 🔄 **IN LAVORAZIONE dal 21/09/2026 — migrazione `20260921000003`, richiesta C11, proposta #121 aperta verso `slave` e non ancora unita.** ⚠️ Nessuna parte di quello che segue è installata da nessuna parte: quando lo sarà, lo dirà un mandato suo.
+* ✅ **COSTRUITA il 21-22/09/2026 — migrazione `20260921000003`, richiesta C11, proposta #121 unita in `slave`.** ⚠️ **Applicata al solo progetto di prova**: sul gestionale vero non c'è ancora niente di tutto questo, e dove sia arrivata quella migrazione lo dice `npm run migra`, non questa riga. ⚠️ **E nessuna mano l'ha provata**: quello che è verificato lo è dalla verifica della migrazione e dalle prove automatiche — nessun movimento, nessuna nota e nessuna fattura sono stati creati per guardare.
   `cash_movements.e_investimento`, booleano che nasce spento su ogni riga.
   ⚠️ **Nessuna classificazione automatica**: non si deduce da data, causale,
   importo, fattura né dalle parole della descrizione. Etichetta a mano
