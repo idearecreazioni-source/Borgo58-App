@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -591,5 +591,82 @@ describe("la vista mostra la seconda fonte", () => {
     const { container } = await apriCosto();
     expect(container.textContent).not.toMatch(/conto_personale/);
     expect(container.textContent).not.toMatch(/prima_nota/);
+  });
+});
+
+// =====================================================================
+// 🔴 L'AIUTO SEGUE LA SOCIETÀ SCELTA — 21/09/2026
+// =====================================================================
+// IL DIFETTO CHE CHIUDE: in questa schermata il soggetto si sceglie da un
+// menu — Borgo 58 **oppure** Orto Borgo 58 — e l'aiuto dell'etichetta diceva
+// sempre «entra sotto Borgo 58». Su una nota dell'orto era **falso**: quella
+// spesa finisce sotto l'orto, e l'orto sta FUORI dal totale del progetto.
+//
+// ⚠️ La regola di CALCOLO era già giusta (si raggruppa per soggetto): a
+//    essere sbagliata era la spiegazione. Due parti dello stesso programma
+//    che dicono cose diverse dello stesso fatto — la famiglia di difetti che
+//    questo progetto insegue da agosto.
+//
+// ⚠️ E LA PROVA PURA NON BASTA: `tests/unita/investimento.test.js` prova che
+//    la REGOLA risponde giusto; questa prova che la schermata la CHIAMA, e
+//    che le parole a schermo cambiano davvero.
+describe("🔴 l'aiuto dell'etichetta dice la società giusta", () => {
+  const AIUTO = "Cosa vuol dire «investimento per il progetto»";
+
+  const apriAiuto = async () => {
+    const q = await waitFor(() => screen.getByRole("button", { name: AIUTO }));
+    await act(async () => {
+      q.click();
+    });
+    return screen.getByRole("tooltip");
+  };
+
+  const scegli = async (container, id) => {
+    const menu = container.querySelector("select");
+    await act(async () => {
+      fireEvent.change(menu, { target: { value: id } });
+    });
+    // Cambiando società la schermata rilegge: si aspetta che il modulo torni.
+    await waitFor(() => expect(screen.getByText("Ancora da rimborsare")).toBeTruthy());
+  };
+
+  it("su Borgo 58 nomina Borgo 58, e dice che conta nel totale", async () => {
+    await apriAnticipazioni();
+    const spiega = await apriAiuto();
+    expect(spiega.textContent).toMatch(/sotto Borgo 58/);
+    expect(spiega.textContent).toMatch(/nel totale del progetto/);
+    expect(spiega.textContent).not.toMatch(/fuori dal totale/);
+    expect(spiega.textContent).not.toMatch(/Orto/);
+  });
+
+  it("🔴 sull'orto nomina l'ORTO, e dice che resta FUORI dal totale", async () => {
+    const { container } = await apriAnticipazioni();
+    await scegli(container, AGRICOLA.id);
+    const spiega = await apriAiuto();
+    expect(spiega.textContent).toMatch(/sotto Orto Borgo 58/);
+    expect(spiega.textContent).toMatch(/fuori dal totale del progetto/);
+    // 🔴 LA RIGA CHE IMPEDISCE IL RITORNO DEL TESTO SBAGLIATO: con l'orto
+    //    selezionato, «sotto Borgo 58» non deve più comparire.
+    expect(spiega.textContent).not.toMatch(/sotto Borgo 58/);
+    // ⚠️ E non deve nemmeno promettere che conta: «non conta nel totale» e
+    //    «conta nel totale» differiscono di una parola, e una prova che
+    //    cercasse solo «nel totale» passerebbe su tutt'e due.
+    expect(spiega.textContent).not.toMatch(/conta nel totale del progetto/);
+  });
+
+  it("⚠️ e non sparisce: la nota dell'orto si vede lo stesso, dichiarata a parte", async () => {
+    const { container } = await apriAnticipazioni();
+    await scegli(container, AGRICOLA.id);
+    const spiega = await apriAiuto();
+    expect(spiega.textContent).toMatch(/non sparisce/);
+  });
+
+  it("la frase sul rimborso vale per tutt'e due", async () => {
+    // Il rimborso non è una spesa nuova: è un debito che si chiude. Vale
+    // sotto qualunque società, e non deve sparire cambiando menu.
+    const { container } = await apriAnticipazioni();
+    expect((await apriAiuto()).textContent).toMatch(/dopo che ti sei rimborsato/);
+    await scegli(container, AGRICOLA.id);
+    expect((await apriAiuto()).textContent).toMatch(/dopo che ti sei rimborsato/);
   });
 });

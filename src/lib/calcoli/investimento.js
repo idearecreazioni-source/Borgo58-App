@@ -361,3 +361,37 @@ export function daDove(riga) {
 export function inCosa(riga) {
   return [riga?.causale, riga?.descrizione, riga?.nota].filter(Boolean).join(" · ");
 }
+
+// ---------------------------------------------------------------------
+// 7. DOVE FINISCE QUESTA SPESA — la frase cambia col soggetto scelto
+// ---------------------------------------------------------------------
+/**
+ * Dove va a finire una spesa marcata, per il soggetto che si ha davanti.
+ *
+ * 🔴 PERCHE' ESISTE (21/09/2026). In «Anticipo io, poi mi rimborso» il
+ *    soggetto si sceglie da un menu — Borgo 58 **oppure** Orto Borgo 58 — e
+ *    l'aiuto dell'etichetta diceva sempre «entra sotto Borgo 58». Su una nota
+ *    dell'orto era **falso**: quella spesa finisce sotto l'orto, e l'orto sta
+ *    **fuori** dal totale del progetto.
+ *
+ * ⚠️ Non e' una svista di parole, e' la famiglia delle frasi diventate false:
+ *    la regola di calcolo era gia' giusta — si raggruppa per soggetto — e la
+ *    spiegazione ne raccontava una diversa. *Due parti dello stesso programma
+ *    che dicono cose diverse dello stesso fatto.*
+ *
+ * ⚠️ E LA REGOLA DI CALCOLO NON CAMBIA: qui si decide solo **cosa dire**, e
+ *    lo si decide chiedendolo a `nelCostoDelProgetto()` — la stessa funzione
+ *    che decide i totali. Se un giorno cambiasse chi entra, la frase
+ *    cambierebbe da sola invece di restare indietro.
+ *
+ * @param soggetto  la riga di `entities` scelta nel menu.
+ * @returns { nome, dentro } — `dentro` vero se quel soggetto entra nel
+ *          «Totale progetto»; `nome` e' `null` quando non si sa chi sia, e
+ *          allora chi scrive la frase non deve nominare nessuno.
+ */
+export function doveEntraLaSpesa(soggetto) {
+  return {
+    nome: soggetto?.name || null,
+    dentro: nelCostoDelProgetto(soggetto?.entity_type),
+  };
+}

@@ -20,6 +20,7 @@ import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import { doveEntraLaSpesa } from "../../lib/calcoli/investimento";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 
 // La sezione personale del titolare (Blocco 7).
@@ -194,6 +195,16 @@ export default function SezionePersonale() {
       setError(e.message);
     }
   };
+
+  // 🔴 DOVE FINISCE UNA SPESA MARCATA, per la società scelta qui sopra.
+  //    La regola vive in `src/lib/calcoli/investimento.js`, dove si prova
+  //    senza montare la schermata, e la chiede alla STESSA funzione che
+  //    decide i totali: la spiegazione non può più raccontare un ordine
+  //    diverso da quello che il gestionale fa.
+  const soggetto = entities
+    ? [entities.srls, entities.agricola, entities.tasca].find((e) => e?.id === entityId)
+    : null;
+  const dove = doveEntraLaSpesa(soggetto);
 
   const aperte = note.filter((n) => !n.pareggiata_il);
   const chiuse = note.filter((n) => n.pareggiata_il).slice(0, 10);
@@ -432,19 +443,57 @@ export default function SezionePersonale() {
                     onChange={(e) => setForm((f) => ({ ...f, eInvestimento: e.target.checked }))}
                   />
                   <span>Investimento per il progetto</span>
+                  {/* 🔴 LA SPIEGAZIONE SEGUE LA SOCIETÀ SCELTA — 21/09/2026.
+                      Qui sopra il menu offre Borgo 58 **oppure** l'orto, e
+                      questa didascalia diceva sempre «entra sotto Borgo 58»:
+                      su una nota dell'orto era falso, perché quella spesa
+                      finisce sotto l'orto e l'orto sta FUORI dal totale del
+                      progetto.
+                      ⚠️ Non era una svista di parole: la regola di calcolo
+                      era già giusta — si raggruppa per soggetto — e la
+                      spiegazione ne raccontava una diversa. Due parti dello
+                      stesso programma che dicono cose diverse dello stesso
+                      fatto.
+                      ⚠️ E la regola NON cambia: chi entra lo decide
+                      `doveEntraLaSpesa`, che lo chiede alla stessa funzione
+                      dei totali. Se un giorno cambiasse chi entra, la frase
+                      cambierebbe da sola invece di restare indietro. */}
                   <Didascalia etichetta="Cosa vuol dire «investimento per il progetto»">
-                    Spunta questa casella quando quello che hai anticipato serve a{" "}
-                    <strong>mettere in piedi il locale</strong> — arredi, attrezzature, lavori,
-                    pratiche — e non alla gestione di tutti i giorni.
-                    <br />
-                    <br />
-                    Entra in <em>Cassa → Quanto è costato il progetto</em> sotto{" "}
-                    <strong>Borgo 58</strong>, perché è una spesa fatta per conto della società, e
-                    ci resta <strong>uguale anche dopo che ti sei rimborsato</strong>: il rimborso
-                    non è una spesa nuova, è un debito che si chiude.
-                    <br />
-                    <br />
-                    Non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
+                    <span data-prova="aiuto-investimento-nota">
+                      Spunta questa casella quando quello che hai anticipato serve a{" "}
+                      <strong>mettere in piedi il locale</strong> — arredi, attrezzature, lavori,
+                      pratiche — e non alla gestione di tutti i giorni.
+                      <br />
+                      <br />
+                      {dove.nome === null ? (
+                        // ⚠️ Se non si sa quale società è selezionata non si
+                        //    nomina nessuno: meglio dire meno che dire una
+                        //    cosa che potrebbe essere falsa.
+                        <>
+                          Entra in <em>Cassa → Quanto è costato il progetto</em>, sotto la
+                          società che hai scelto qui sopra.
+                        </>
+                      ) : dove.dentro ? (
+                        <>
+                          Entra in <em>Cassa → Quanto è costato il progetto</em> sotto{" "}
+                          <strong>{dove.nome}</strong>, perché è una spesa fatta per conto della
+                          società, e conta <strong>nel totale del progetto</strong>.
+                        </>
+                      ) : (
+                        <>
+                          Entra in <em>Cassa → Quanto è costato il progetto</em> sotto{" "}
+                          <strong>{dove.nome}</strong>, ma{" "}
+                          <strong>fuori dal totale del progetto</strong>: l'orto è un'altra
+                          impresa, e una spesa per l'orto non è una spesa per aprire l'osteria.
+                          La vedi lì lo stesso, dichiarata a parte col suo importo — non sparisce.
+                        </>
+                      )}{" "}
+                      E ci resta <strong>uguale anche dopo che ti sei rimborsato</strong>: il
+                      rimborso non è una spesa nuova, è un debito che si chiude.
+                      <br />
+                      <br />
+                      Non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
+                    </span>
                   </Didascalia>
                 </label>
 

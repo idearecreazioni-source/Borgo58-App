@@ -10,6 +10,7 @@ import {
   chiHaAnticipato,
   daDove,
   dettaglioCompleto,
+  doveEntraLaSpesa,
   dettaglioDelProgetto,
   eUnAnticipo,
   etichettaFonte,
@@ -616,6 +617,60 @@ describe("3-bis · i campi di una nota arrivano al database", () => {
   it("e nessun valore storto diventa un «sì»", () => {
     for (const storto of ["si", 1, "true", {}, null, undefined]) {
       expect(payloadAnticipazione({ ...base, eInvestimento: storto }).e_investimento).toBe(false);
+    }
+  });
+});
+
+// =====================================================================
+// DOVE FINISCE QUESTA SPESA — la frase segue il soggetto (21/09/2026)
+// =====================================================================
+// 🔴 IL DIFETTO CHE CHIUDE: in «Anticipo io, poi mi rimborso» il soggetto si
+//    sceglie da un menu (Borgo 58 **oppure** Orto Borgo 58), e l'aiuto
+//    dell'etichetta diceva sempre «entra sotto Borgo 58». Su una nota
+//    dell'orto era **falso**: quella spesa finisce sotto l'orto, e l'orto sta
+//    fuori dal totale del progetto.
+//
+// ⚠️ La regola di CALCOLO era gia' giusta — si raggruppa per soggetto — ed e'
+//    la spiegazione che ne raccontava una diversa. Due parti dello stesso
+//    programma che dicono cose diverse dello stesso fatto.
+describe("dove finisce una spesa marcata, per il soggetto scelto", () => {
+  it("su Borgo 58 si nomina Borgo 58, e conta nel totale", () => {
+    expect(doveEntraLaSpesa({ entity_type: "srls", name: "Borgo 58" })).toEqual({
+      nome: "Borgo 58",
+      dentro: true,
+    });
+  });
+
+  it("🔴 sull'orto si nomina l'ORTO, e NON conta nel totale", () => {
+    expect(doveEntraLaSpesa({ entity_type: "azienda_agricola", name: "Orto Borgo 58" })).toEqual({
+      nome: "Orto Borgo 58",
+      dentro: false,
+    });
+  });
+
+  it("⚠️ si guarda il TIPO, non il nome: un soggetto rinominato non cambia la regola", () => {
+    // Il nome e' testo che Alessio puo' riscrivere da una schermata.
+    expect(doveEntraLaSpesa({ entity_type: "srls", name: "Osteria Borgo 58 S.r.l.s." }).dentro).toBe(true);
+    expect(doveEntraLaSpesa({ entity_type: "azienda_agricola", name: "Borgo 58" }).dentro).toBe(false);
+  });
+
+  it("senza soggetto non si nomina nessuno", () => {
+    // ⚠️ Meglio dire meno che dire una cosa che potrebbe essere falsa: e'
+    //    l'errore che questa regola chiude.
+    for (const niente of [null, undefined, {}]) {
+      expect(doveEntraLaSpesa(niente).nome).toBeNull();
+    }
+    expect(doveEntraLaSpesa(null).dentro).toBe(false);
+  });
+
+  it("🔴 e la frase NON ha una regola sua: la chiede a quella dei totali", () => {
+    // Se un giorno cambiasse chi entra nel totale, la spiegazione cambierebbe
+    // da sola invece di restare indietro — che e' esattamente il modo in cui
+    // era diventata falsa.
+    for (const tipo of ["srls", "tasca", "azienda_agricola", "societa_futura"]) {
+      expect(doveEntraLaSpesa({ entity_type: tipo, name: "x" }).dentro).toBe(
+        nelCostoDelProgetto(tipo)
+      );
     }
   });
 });
