@@ -489,6 +489,21 @@ describe("7 · una nota gia' scritta si marca e si smarca", () => {
     await waitFor(() => expect(spie.segnaNota).toEqual(["n1", true]));
   });
 
+  it("🔴 e l'elenco si aggiorna SOLO sulla riga toccata", async () => {
+    // 🔴 QUESTA PROVA NASCE DA UNA ROTTURA CHE NON HA ROTTO NIENTE
+    //    (21/09): sostituendo l'aggiornamento della sola riga con una
+    //    ricarica completa, nessuna prova diventava rossa. Una ricarica
+    //    butterebbe via quello che si sta scrivendo nel modulo sopra — e'
+    //    la trappola del 12/08, pagata una volta.
+    const api = await import("../../src/lib/api/anticipazioni");
+    finto.note = [notaAperta()];
+    const { container } = await apriAnticipazioni();
+    const letturePrima = api.listAnticipazioni.mock.calls.length;
+    fireEvent.click(tutti(container, '[data-prova="investimento-nota"] input')[0]);
+    await waitFor(() => expect(spie.segnaNota).toBeTruthy());
+    expect(api.listAnticipazioni.mock.calls.length).toBe(letturePrima);
+  });
+
   it("🔴 e anche su una nota GIA' RIMBORSATA", async () => {
     // Il costo del progetto e' lo stesso prima e dopo il rimborso: il
     // rimborso chiude un debito, non annulla una spesa.

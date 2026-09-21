@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { payloadAnticipazione } from "../../src/lib/api/anticipazioni";
 import { describe, expect, it } from "vitest";
 import {
   ANTICIPAZIONE,
@@ -559,5 +560,62 @@ describe("14-bis · la migrazione porta l'etichetta anche dove la spesa vive", (
     expect(somma, "manca costo_del_progetto").toBeTruthy();
     expect(somma).toMatch(/from anticipazioni_socio a/);
     expect(somma).not.toMatch(/pareggiata_il/);
+  });
+});
+
+// =====================================================================
+// 3-bis · IL CAMPO ARRIVA DAVVERO AL DATABASE
+// =====================================================================
+// 🔴 QUESTA PROVA NASCE DA UNA ROTTURA CHE NON HA ROTTO NIENTE — 21/09/2026.
+//    Togliendo apposta la riga di `e_investimento` da `createAnticipazione`,
+//    **nessuna prova diventava rossa**: quelle di schermata fingono il modulo
+//    dell'api, quindi provano che la schermata **passa** il campo, non che il
+//    campo diventa una **colonna**. E' esattamente il difetto del 16/08 sulle
+//    mance — il menu c'era, si sceglieva, e `mezzo` non arrivava mai — con la
+//    differenza che stavolta e' stato trovato rompendo invece che dal vivo.
+//
+// ⚠️ La cura e' la stessa di allora: l'elenco dei campi vive in una funzione
+//    pura (`payloadAnticipazione`, come `payloadMancia`) e si confronta per
+//    INTERO. Confrontare un campo per volta lascerebbe passare quello che
+//    nessuno si ricorda di aggiungere.
+describe("3-bis · i campi di una nota arrivano al database", () => {
+  const base = {
+    entityId: "e1",
+    importo: "300",
+    pagataIl: "2026-09-01",
+    tagId: "t1",
+    fondi: "conto_personale",
+    supplierInvoiceId: "",
+    documento: "  DOC-1  ",
+    nota: "  acconto  ",
+  };
+
+  it("l'elenco dei campi si confronta per intero", () => {
+    expect(payloadAnticipazione({ ...base, eInvestimento: true })).toEqual({
+      entity_id: "e1",
+      importo: 300,
+      pagata_il: "2026-09-01",
+      tag_id: "t1",
+      fondi: "conto_personale",
+      supplier_invoice_id: null,
+      documento_riferimento: "DOC-1",
+      e_investimento: true,
+      nota: "acconto",
+    });
+  });
+
+  it("🔴 senza scegliere, l'etichetta arriva SPENTA — non assente", () => {
+    // ⚠️ Un campo assente si appoggerebbe al predefinito del database: lo
+    //    stesso valore, ma per un'altra ragione — ed e' il modo in cui il
+    //    difetto del 16/08 restava invisibile.
+    const p = payloadAnticipazione(base);
+    expect(p.e_investimento).toBe(false);
+    expect("e_investimento" in p).toBe(true);
+  });
+
+  it("e nessun valore storto diventa un «sì»", () => {
+    for (const storto of ["si", 1, "true", {}, null, undefined]) {
+      expect(payloadAnticipazione({ ...base, eInvestimento: storto }).e_investimento).toBe(false);
+    }
   });
 });
