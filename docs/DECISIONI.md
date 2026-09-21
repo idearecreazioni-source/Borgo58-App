@@ -540,9 +540,23 @@ ingredienti, preparazioni, piatti — più una schermata generale sull'andamento
 complessivo.
 * 25/08 — Il costo di un piatto si muove da solo quando cambia il prezzo; il
 PREZZO DI VENDITA no, lo ritocca Alessio vedendo il margine assottigliarsi.
-* 25/08 — Il campo % SCARTO STANDARD RESTA. Serve per l'ingrediente che va solo
+* 25/08 — ~~Il campo % SCARTO STANDARD RESTA. Serve per l'ingrediente che va solo
 pulito senza altre lavorazioni, quindi senza una preparazione da cui ricavare
-la resa.
+la resa.~~ 🔴 **ROVESCIATA il 22/09/2026 con R12 — e questa voce va letta prima
+di unire quella proposta, perché è una decisione di Alessio che sto rovesciando
+e la conferma è sua.** La ragione di allora era un **caso vero**: il carciofo che
+si pulisce e basta non ha nessuna preparazione da cui ricavare la resa, quindi
+il numero doveva stare da qualche parte — e l'unico posto era la scheda del
+prodotto. ⚠️ **Quel caso adesso ha una casa nuova**: la resa si scrive sulla
+RIGA DI RICETTA in lordo → netto (1 kg di carciofi → 300 g), che copre il solo
+pulito esattamente come copre il mollusco ricavato dalle cozze — senza bisogno
+di nessuna preparazione. ⚠️ **E il prezzo è vero e va detto**: quel numero si
+scrive su OGNI ricetta che usa i carciofi invece che una volta sola sulla
+scheda. Si paga perché un numero solo, sulla scheda, non può descrivere due
+lavorazioni diverse dello stesso prodotto — ed è la ragione del 14/08.
+⚠️ **E la colonna non è stata cancellata**: resta spenta, non letta e non
+scritta, perché toglierla è un lavoro con dentro un'altra decisione. Vedi il
+rovesciamento n. 95 in [`decisioni_rovesciate.md`](decisioni_rovesciate.md).
 * 23/08 — La percentuale di scarto non sostituisce la resa vera, che emerge dalla
 PREPARAZIONE annessa all'ingrediente: lo stesso ingrediente ha rese diverse in
 preparazioni diverse.

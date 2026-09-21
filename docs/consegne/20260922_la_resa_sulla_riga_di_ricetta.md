@@ -29,6 +29,50 @@ E si scrive **in lordo → netto**, non in percentuale: *«1,5 kg di cozze danno
 
 ---
 
+## 0-bis · 🔴 QUESTA CONSEGNA ROVESCIA UNA DECISIONE DEL 25/08, E LA CONFERMA È DI ALESSIO
+
+**Trovato leggendo [`DECISIONI.md`](../DECISIONI.md) prima di chiudere, non
+dopo.** C'è una voce, datata **25/08/2026** — cioè **undici giorni dopo** il
+mandato che questa consegna esegue:
+
+> *«Il campo % SCARTO STANDARD **RESTA**. Serve per l'ingrediente che va solo
+> pulito senza altre lavorazioni, quindi senza una preparazione da cui ricavare
+> la resa.»*
+
+🔴 **È posteriore al mandato, e dice l'opposto di quello che ho fatto.** Non è
+un dettaglio di cronologia: vuol dire che Alessio ha guardato quel campo
+**dopo** aver deciso che lo scarto appartiene alla coppia, e ha deciso di
+tenerlo lo stesso. ⚠️ *Chi esegue un mandato vecchio senza leggere le decisioni
+prese dopo rovescia in silenzio* — ed è precisamente la forma di deriva che la
+sezione «cosa abbiamo rovesciato» esiste per prendere.
+
+**La ragione di allora era un caso vero, non una comodità**: il carciofo che si
+pulisce e basta non ha nessuna preparazione da cui ricavare la resa, e il 23/08
+era già stato deciso che la percentuale *«non sostituisce la resa vera, che
+emerge dalla preparazione»*. Per quell'ingrediente restava un buco, e il campo
+lo riempiva.
+
+⚠️ **Quel caso adesso ha una casa nuova, ed è l'argomento per cui ho proceduto
+invece di fermarmi**: il 25/08 le case possibili erano due — la scheda, o una
+preparazione che per il carciofo pulito non esiste — e fra quelle due la scheda
+era la risposta giusta. R12 ne aggiunge una terza che allora non c'era: **la
+riga di ricetta**. Lì «1 kg di carciofi → 300 g» si scrive senza nessuna
+preparazione, e copre il solo-pulito esattamente come copre il mollusco.
+
+⚠️ **E il prezzo è vero e non lo nascondo**: quel numero va scritto su **ogni**
+ricetta che usa i carciofi, invece che una volta sola sulla scheda.
+
+🔴 **Quindi questa proposta NON va unita senza che Alessio abbia letto questa
+sezione.** Se per lui la voce del 25/08 vale ancora, la via c'è ed è stretta: si
+tiene il campo sulla scheda **e** lo si fa leggere come valore di partenza della
+riga nuova — ma allora torna a esistere un numero unico per lavorazioni diverse,
+che è il difetto del 14/08. Le due cose non stanno insieme, e la scelta è sua.
+
+La voce in `DECISIONI.md` è **barrata e marcata rovesciata**, non cancellata, col
+rimando al rovesciamento **n. 95**.
+
+---
+
 ## 1 · Il censimento — dove viveva lo scarto, misurato
 
 Letto dal repository, non ricordato:
@@ -264,8 +308,10 @@ risposta nota (regola del 26/08).
 ## 10 · Cosa abbiamo rovesciato
 
 Uno, registrato come **n. 95** in
-[`decisioni_rovesciate.md`](../decisioni_rovesciate.md): *«lo scarto è una
-proprietà dell'ingrediente e sta sulla sua scheda»*.
+[`decisioni_rovesciate.md`](../decisioni_rovesciate.md): *«il campo % scarto
+standard RESTA sulla scheda del prodotto»* — la decisione di Alessio del
+**25/08/2026**, che è **posteriore** al mandato che questa consegna esegue.
+🔴 **Vedi §0-bis: è la cosa da leggere prima di unire questa proposta.**
 
 ---
 

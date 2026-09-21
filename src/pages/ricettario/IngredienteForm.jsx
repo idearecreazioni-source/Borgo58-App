@@ -1210,6 +1210,20 @@ export default function IngredienteForm() {
               ⚠️ Adesso si scrive **sulla riga della ricetta**, in lordo e
               netto: «1,5 kg di cozze danno 400 g».
 
+              🔴 E QUESTO ROVESCIA UNA DECISIONE DEL 25/08, non del 13/08:
+              `DECISIONI.md` diceva *«il campo % scarto standard RESTA: serve
+              per l'ingrediente che va solo pulito, senza una preparazione da
+              cui ricavare la resa»* — ed era **posteriore** al mandato che
+              toglie il campo. La ragione di allora era un caso vero: il
+              carciofo pulito e basta non ha nessuna preparazione, quindi il
+              numero doveva stare da qualche parte, e l'unico posto era qui.
+              ⚠️ Adesso ne ha un altro — la riga di ricetta, «1 kg di carciofi
+              → 300 g» — che copre il solo-pulito senza bisogno di nessuna
+              preparazione. Il prezzo: quel numero si scrive su OGNI ricetta
+              che usa i carciofi invece che una volta sola. Registrato come
+              rovesciamento n. 95, perché **una decisione rovesciata senza
+              dirlo è la deriva che nessun controllo automatico prende**.
+
               🔴 IL DATO NON È STATO CANCELLATO, MA DA OGGI NON LO SCRIVE PIÙ
               NESSUNO — e va detto per intero, perché la frase comoda sarebbe
               «resta come proposta» ed è falsa. Misurato nella migrazione

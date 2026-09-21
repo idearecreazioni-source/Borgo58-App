@@ -151,7 +151,7 @@ rossa da sola il giorno che l'indice resta indietro.
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
 | 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
-| 95 | 22/09/2026 | lo scarto è una proprietà dell'ingrediente e sta sulla sua scheda |
+| 95 | 22/09/2026 | il campo % scarto standard RESTA sulla scheda del prodotto |
 
 ⚠️ **Righe: 96.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
@@ -3444,47 +3444,59 @@ quando questa sezione è stata scritta.
    due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
    una spesa può vivere, e non si paga con una terza tabella.
 
-## 95 · 22/09/2026 — «lo scarto è una proprietà dell'ingrediente e sta sulla sua scheda»
+## 95 · 22/09/2026 — «il campo % scarto standard RESTA sulla scheda del prodotto»
 
-1. **Cosa era stato deciso e quando.** Il **13/08/2026**, con le schede dei
-   prodotti: `ingredients.waste_percentage_default` — *«la percentuale di
-   scarto proposta: è quanto di ciò che si compra finisce nel bidone, e serve
-   al costo del piatto»*. L'assistente la compilava leggendo l'etichetta, e
-   ogni riga di ricetta la ereditava col `coalesce`.
+1. **Cosa era stato deciso e quando.** Due volte, e la seconda è quella che
+   conta. Il **13/08/2026**, con le schede dei prodotti, nasce
+   `ingredients.waste_percentage_default`: *«la percentuale di scarto
+   proposta»*, compilata dall'assistente e ereditata da ogni riga di ricetta.
+   Poi il **25/08/2026**, in [`DECISIONI.md`](DECISIONI.md), Alessio scrive
+   esplicitamente: *«il campo % SCARTO STANDARD **RESTA**. Serve per
+   l'ingrediente che va solo pulito senza altre lavorazioni, quindi senza una
+   preparazione da cui ricavare la resa.»*
 
-2. **La ragione di allora.** Era giusta e resta scritta: *«con lo scarto a
-   zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
-   l'errore è enorme»*. Un campo che nessuno compila a mano produce food cost
-   sbagliati **sempre nella stessa direzione**, e le percentuali standard di
-   cucina il modello le sa.
+   🔴 **La seconda è POSTERIORE al mandato che la rovescia** (14/08, Blocco 5
+   del mandato cumulativo). Non è un dettaglio cronologico: vuol dire che
+   Alessio ha guardato quel campo **dopo** aver deciso che lo scarto appartiene
+   alla coppia, e ha deciso di tenerlo lo stesso. ⚠️ *Chi esegue un mandato
+   vecchio senza leggere le decisioni prese dopo rovescia in silenzio.*
 
-3. **Cosa si decide adesso.** Decisione di Alessio del **14/08/2026** (Blocco
-   5 del mandato cumulativo), eseguita oggi: **lo scarto appartiene alla
-   coppia ingrediente × ricetta**, vive sulla **riga di ricetta**, e si scrive
-   in **lordo → netto** («1,5 kg di cozze danno 400 g») e non in percentuale.
-   La percentuale diventa un **riflesso** che scrive solo un trigger. Il campo
-   sparisce dalla scheda del prodotto.
+2. **La ragione di allora.** Era un **caso vero**, non una comodità: il
+   carciofo che si pulisce e basta **non ha nessuna preparazione** da cui
+   ricavare la resa. Il 23/08 era già stato deciso che *«la percentuale di
+   scarto non sostituisce la resa vera, che emerge dalla preparazione»* — e
+   quindi per l'ingrediente senza preparazione restava scoperto un buco, che
+   quel campo riempiva. Senza, un piatto di carciofi sarebbe costato meno del
+   vero.
 
-4. **Perché la ragione di allora non vale più.** 🔴 **Perché il numero
-   proposto non era approssimato: era la risposta a una domanda diversa.** Le
-   stesse cozze scartano pochissimo per un'impepata e moltissimo se se ne
-   ricava il mollusco — un valore solo non descrive nessuno dei due casi, e
-   **ne precompila uno sbagliato**. ⚠️ Il difetto non è che il numero fosse
-   impreciso: è che era **plausibile**, e nessuno l'avrebbe messo in dubbio.
-   ⚠️ **E la ragione di allora è già decaduta da sola il 23/08**, prima che
-   questo rovesciamento la toccasse: quel giorno Alessio decise che *«lo
-   scarto non lo propone più nessuno, si scrive a mano quando si sa»*, e
-   `applica_scheda_prodotto` smise di scriverlo (migrazione
-   `20260823000007`). Da allora la proposta automatica — che era **tutto** il
-   valore di quella colonna — non esisteva più: restava un campo da compilare
-   a mano con un numero che vale per una ricetta sola.
-   ⚠️ **Il prezzo, dichiarato**: due numeri da scrivere invece di uno su ogni
-   riga di ricetta, e chi cercava lo scarto nella scheda del prodotto adesso
-   non lo trova. Per questo il riquadro resta a schermo a dire dov'è andato,
-   invece di sparire.
-   ⚠️ **E la colonna resta spenta**: se si tiene o si butta è una decisione di
-   Alessio, perché toglierla tocca `create_ingredient`,
-   `applica_scheda_prodotto`, `prodotti_troppo_piccoli`, `numeri_sospetti`, il
-   censimento delle unità e un vincolo. *Una colonna spenta, fra tre mesi,
-   qualcuno la riaccende credendo di riparare qualcosa* — ed è scritto in tre
-   posti apposta.
+3. **Cosa si decide adesso.** Il campo **sparisce** dalla scheda del prodotto.
+   La resa vive sulla **riga di ricetta**, in **lordo → netto** («1,5 kg di
+   cozze danno 400 g»), la percentuale diventa un **riflesso** scritto solo da
+   un trigger, e `waste_percentage_default` resta **spenta**: non letta da
+   nessun calcolo e non scritta da nessuno.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché il caso che la
+   reggeva ha una casa nuova, e migliore.** Il 25/08 le case possibili erano
+   due — la scheda del prodotto, o una preparazione che per il carciofo pulito
+   non esiste — e fra quelle due la scheda era la risposta giusta. R12 ne
+   aggiunge una terza che il 25/08 non c'era: **la riga di ricetta**. Lì «1 kg
+   di carciofi → 300 g» si scrive senza bisogno di nessuna preparazione, e
+   copre il solo-pulito **esattamente** come copre il mollusco ricavato dalle
+   cozze.
+   ⚠️ **E il prezzo è vero, non va nascosto**: quel numero si scrive su OGNI
+   ricetta che usa i carciofi, invece che una volta sola sulla scheda. Si paga
+   perché un numero solo, sulla scheda, **non può descrivere due lavorazioni
+   diverse dello stesso prodotto** — che è la ragione del 14/08, e non è
+   cambiata.
+   ⚠️ **La ragione del 13/08 invece era già decaduta da sola il 23/08**, prima
+   che questo rovesciamento la toccasse: quel giorno Alessio decise che *«lo
+   scarto non lo propone più nessuno, si scrive a mano quando si sa»* e
+   `applica_scheda_prodotto` smise di scriverlo (`20260823000007`). Da allora
+   la proposta automatica — che era **tutto** il valore di quella colonna — non
+   esisteva più: restava un campo da compilare a mano con un numero che vale
+   per una ricetta sola.
+   ⚠️ **E la colonna resta spenta invece di sparire**: toglierla tocca
+   `create_ingredient`, `applica_scheda_prodotto`, `prodotti_troppo_piccoli`,
+   `numeri_sospetti`, il censimento delle unità e un vincolo — un lavoro con
+   dentro un'altra decisione. *Una colonna spenta, fra tre mesi, qualcuno la
+   riaccende credendo di riparare qualcosa*, ed è scritto in tre posti apposta.
