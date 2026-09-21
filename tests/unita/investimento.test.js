@@ -330,22 +330,32 @@ describe("14 · la migrazione si annulla e non lascia dati di prova", () => {
   });
 
   it("e lo dimostra col registro delle cancellazioni acceso", () => {
-    expect(SQL).toContain("foto_righe()");
-    expect(SQL).toContain("pretendi_nessun_residuo(");
+    // 🔴 LE RIGHE SI CERCANO NON COMMENTATE, ed e' una lezione pagata su
+    //    questa stessa prova: rompendo apposta la migrazione — commentando
+    //    la chiamata a `pretendi_nessun_residuo` — la prova restava VERDE,
+    //    perche' una riga commentata contiene ancora la parola. *Un setaccio
+    //    che cerca una forma nel testo trova anche chi la nomina per
+    //    spiegarla* (27/08). Si guarda il codice, non il file.
+    const codice = SQL.replace(/--[^\n]*/g, "");
+    expect(codice).toMatch(/\bfoto_righe\(\)/);
+    expect(codice).toMatch(/\bperform pretendi_nessun_residuo\(/);
     // 🔴 Non si spegne il registro per poter ripulire (decisione del 30/08):
     //    per mezzo secondo, nel database vero, le cancellazioni non
     //    verrebbero registrate.
-    expect(SQL).not.toContain("disable trigger trg_log_delete");
+    expect(codice).not.toContain("disable trigger trg_log_delete");
   });
 
   it("il vincolo nuovo parla italiano", () => {
     // Senza la frase, il rifiuto arriva in inglese — «violates check
     // constraint» — che in sala non e' un rifiuto, e' un guasto (rete 25/08).
-    expect(SQL).toMatch(/comment on constraint investimento_solo_su_uscita on cash_movements is/);
+    const codice = SQL.replace(/--[^\n]*/g, "");
+    expect(codice).toMatch(/comment on constraint investimento_solo_su_uscita on cash_movements is/);
+    expect(codice).toMatch(/add constraint investimento_solo_su_uscita/);
   });
 
   it("2 · la colonna nasce spenta e non ammette un terzo stato", () => {
-    expect(SQL).toMatch(/add column if not exists e_investimento boolean not null default false/);
+    const codice = SQL.replace(/--[^\n]*/g, "");
+    expect(codice).toMatch(/add column if not exists e_investimento boolean not null default false/);
   });
 
   it("🔴 il trigger guarda ogni update, non solo quello che nomina la colonna", () => {
