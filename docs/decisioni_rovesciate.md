@@ -151,8 +151,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
 | 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
+| 95 | 22/09/2026 | lo scarto è una proprietà dell'ingrediente e sta sulla sua scheda |
 
-⚠️ **Righe: 95.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 96.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3442,3 +3443,48 @@ quando questa sezione è stata scritta.
    ⚠️ **Il prezzo, dichiarato**: due colonne `e_investimento` invece di una, e
    due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
    una spesa può vivere, e non si paga con una terza tabella.
+
+## 95 · 22/09/2026 — «lo scarto è una proprietà dell'ingrediente e sta sulla sua scheda»
+
+1. **Cosa era stato deciso e quando.** Il **13/08/2026**, con le schede dei
+   prodotti: `ingredients.waste_percentage_default` — *«la percentuale di
+   scarto proposta: è quanto di ciò che si compra finisce nel bidone, e serve
+   al costo del piatto»*. L'assistente la compilava leggendo l'etichetta, e
+   ogni riga di ricetta la ereditava col `coalesce`.
+
+2. **La ragione di allora.** Era giusta e resta scritta: *«con lo scarto a
+   zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
+   l'errore è enorme»*. Un campo che nessuno compila a mano produce food cost
+   sbagliati **sempre nella stessa direzione**, e le percentuali standard di
+   cucina il modello le sa.
+
+3. **Cosa si decide adesso.** Decisione di Alessio del **14/08/2026** (Blocco
+   5 del mandato cumulativo), eseguita oggi: **lo scarto appartiene alla
+   coppia ingrediente × ricetta**, vive sulla **riga di ricetta**, e si scrive
+   in **lordo → netto** («1,5 kg di cozze danno 400 g») e non in percentuale.
+   La percentuale diventa un **riflesso** che scrive solo un trigger. Il campo
+   sparisce dalla scheda del prodotto.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché il numero
+   proposto non era approssimato: era la risposta a una domanda diversa.** Le
+   stesse cozze scartano pochissimo per un'impepata e moltissimo se se ne
+   ricava il mollusco — un valore solo non descrive nessuno dei due casi, e
+   **ne precompila uno sbagliato**. ⚠️ Il difetto non è che il numero fosse
+   impreciso: è che era **plausibile**, e nessuno l'avrebbe messo in dubbio.
+   ⚠️ **E la ragione di allora è già decaduta da sola il 23/08**, prima che
+   questo rovesciamento la toccasse: quel giorno Alessio decise che *«lo
+   scarto non lo propone più nessuno, si scrive a mano quando si sa»*, e
+   `applica_scheda_prodotto` smise di scriverlo (migrazione
+   `20260823000007`). Da allora la proposta automatica — che era **tutto** il
+   valore di quella colonna — non esisteva più: restava un campo da compilare
+   a mano con un numero che vale per una ricetta sola.
+   ⚠️ **Il prezzo, dichiarato**: due numeri da scrivere invece di uno su ogni
+   riga di ricetta, e chi cercava lo scarto nella scheda del prodotto adesso
+   non lo trova. Per questo il riquadro resta a schermo a dire dov'è andato,
+   invece di sparire.
+   ⚠️ **E la colonna resta spenta**: se si tiene o si butta è una decisione di
+   Alessio, perché toglierla tocca `create_ingredient`,
+   `applica_scheda_prodotto`, `prodotti_troppo_piccoli`, `numeri_sospetti`, il
+   censimento delle unità e un vincolo. *Una colonna spenta, fra tre mesi,
+   qualcuno la riaccende credendo di riparare qualcosa* — ed è scritto in tre
+   posti apposta.
