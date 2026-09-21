@@ -1,6 +1,7 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
 import { oggiLocale } from "../constants";
+import { leggiAPagine } from "../calcoli/investimento";
 
 // --- Causali (editabili dal titolare, §3.4) ---
 //
@@ -59,7 +60,13 @@ export async function setCausaleNeiFissi(id, valore) {
 }
 
 // --- Movimenti di cassa (prima nota) ---
-const MOVEMENT_SELECT = "*, causale:causale_id(id, label)";
+// ⚠️ `di_sistema` NON e' decorativo: e' la caratteristica strutturale con
+// cui la schermata sa se a quella riga si puo' offrire l'etichetta
+// «investimento» (C11, 21/09/2026). Senza, `idoneoAInvestimento()`
+// leggerebbe sempre `undefined` e offrirebbe il gesto anche su un rimborso
+// al titolare — che il database rifiuta. *Un pulsante premibile per essere
+// respinto e' un vicolo cieco.*
+const MOVEMENT_SELECT = "*, causale:causale_id(id, label, di_sistema)";
 
 // ⚠️ NIENTE `.limit()` qui: alimenta anche l'export CSV della prima nota
 // (PrimaNota.jsx usa lo stesso array per la tabella e per il file), quindi
@@ -559,4 +566,89 @@ export async function setContoAttivo(id, attivo) {
 export async function setContoPredefinito(id) {
   const { error } = await supabase.rpc("imposta_conto_predefinito", { p_conto_id: id });
   if (error) throw error;
+}
+
+// =====================================================================
+// L'ETICHETTA «INVESTIMENTO» E IL COSTO DEL PROGETTO — C11, 21/09/2026
+// =====================================================================
+// Le regole di che cosa entra nei tre numeri stanno in
+// `src/lib/calcoli/investimento.js`, dove si provano senza database. Qui
+// c'è soltanto il modo di chiederli.
+
+/**
+ * Mette o toglie l'etichetta a un movimento che esiste già.
+ *
+ * ⚠️ SCRITTURA DIRETTA SU UNA TABELLA SOLA, ed è la categoria A del
+ *    Contratto: nessuna conseguenza altrove, nessuna seconda tabella da
+ *    tenere allineata. Il corridoio `operazioni-atomiche` esiste per le
+ *    scritture «tutto o niente» su più tabelle, e usarlo qui non
+ *    aggiungerebbe nessuna garanzia.
+ *
+ * ⚠️ E LE PROTEZIONI SONO QUELLE DI SEMPRE, non una scorciatoia:
+ *      · la RLS — `cash_movements` è titolare-only per ogni operazione,
+ *        quindi lo staff riceve un rifiuto dal database e non da una riga
+ *        di JavaScript;
+ *      · i due divieti della migrazione `20260921000003` (un'entrata non
+ *        si marca, una riga scritta dal gestionale nemmeno), che valgono
+ *        anche da qui;
+ *      · `trg_cash_movements_updated_at`, che registra quando è cambiata.
+ *
+ * 🔴 SI MANDA UN CAMPO SOLO. Rileggere la riga e rimandarla intera
+ *    sovrascriverebbe con dati vecchi qualunque cosa fosse cambiata nel
+ *    frattempo — ed è la famiglia del 12/08, la schermata che ricarica e
+ *    butta via quello che l'utente stava scrivendo.
+ */
+export async function segnaInvestimento(id, valore) {
+  const { data, error } = await supabase
+    .from("cash_movements")
+    .update({ e_investimento: valore })
+    .eq("id", id)
+    .select(MOVEMENT_SELECT)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * I totali per soggetto: una riga per soggetto che ha uscite marcate.
+ *
+ * 🔴 IL TOTALE NON PUO' ESSERE TAGLIATO, per costruzione: il database
+ *    **aggrega** e consegna al massimo una riga per soggetto. Chiedere
+ *    l'elenco e sommarlo qui darebbe invece un numero credibile e falso
+ *    appena i movimenti marcati passano il migliaio — il tetto delle mille
+ *    righe misurato il 19/08, che non sta nel nostro codice e non si vede
+ *    leggendolo.
+ */
+export async function costoDelProgetto(dal, al) {
+  const { data, error } = await supabase.rpc("costo_del_progetto", {
+    p_dal: dal || null,
+    p_al: al || null,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Il dettaglio riga per riga, letto per intero anche oltre le mille righe.
+ *
+ * 🔴 PERCHE' UNA PAGINAZIONE E NON UNA LETTURA SOLA. Il segnale delle
+ *    letture tagliate vive nel punto unico da cui passano le letture di
+ *    elenco (`src/lib/supabase.js`) e legge `Content-Range`: funziona sulle
+ *    `GET` verso PostgREST. Questa è una **chiamata a funzione** (`POST`), e
+ *    di lì non passa — quindi una risposta ferma a mille righe non si
+ *    denuncerebbe da sola. Si chiede una pagina per volta e ci si ferma
+ *    quando ne torna una più corta della pagina.
+ *
+ * ⚠️ L'ordine lo decide il database ed è determinato fino all'`id`: con un
+ *    ordinamento ambiguo, nel taglio fra una pagina e l'altra una riga
+ *    sparirebbe e un'altra comparirebbe due volte.
+ */
+export async function righeCostoDelProgetto(dal, al) {
+  return leggiAPagine(async (da, a) => {
+    const { data, error } = await supabase
+      .rpc("righe_costo_del_progetto", { p_dal: dal || null, p_al: al || null })
+      .range(da, a);
+    if (error) throw error;
+    return data ?? [];
+  });
 }

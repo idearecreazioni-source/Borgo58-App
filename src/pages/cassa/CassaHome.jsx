@@ -370,6 +370,19 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/scontrinato">
               Incassato e scontrinato
             </Scorciatoia>
+            {/* 🔴 LA PORTA DEL COSTO DEL PROGETTO — C11, 21/09/2026, e la
+                porta non e' un dettaglio: il 20/08 i Preventivi restarono
+                irraggiungibili per giorni perche' la rotta c'era e nessun
+                collegamento ci portava.
+                ⚠️ Sta QUI, dentro «Cassa, Banca e Prima Nota», e non fra i
+                moduli principali: legge la Prima nota e basta, e un modulo a
+                sé farebbe credere che ci sia un secondo archivio delle
+                spese. ⚠️ E serve fino a marzo 2027: una voce nel menu
+                principale sarebbe una cosa permanente per una domanda che
+                scade. */}
+            <Scorciatoia to="/cassa/costo-progetto">
+              Quanto e' costato il progetto
+            </Scorciatoia>
             {/* ⚠️ QUESTA NON E' LA TASCA, e i due si somigliano abbastanza da
                 scambiarsi: qui si registra una spesa fatta **per conto della
                 società**, che la società poi ti pareggia — misurato il
