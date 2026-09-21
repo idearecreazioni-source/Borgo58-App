@@ -2,350 +2,347 @@
 
 | | |
 |---|---|
-| **Mandato** | C11 — l'etichetta «investimento» e il costo del progetto |
+| **Mandato** | C11 — l'etichetta «investimento» e il costo del progetto, più la correzione «anticipazioni contate una volta» |
 | **Ramo** | `claude/etichetta-investimento-c11`, aperto da `slave` a `f956ae8` |
-| **Migrazioni** | `20260921000003` — **NON applicata da nessuna parte** (né prova né produzione) |
-| **Prove** | 30 pure nuove · 21 di schermata nuove · 1653 pure e 322 di schermata tutte verdi |
-| **Stato** | proposta aperta verso `slave`, **non unita** |
+| **Proposta** | **#121 verso `slave`, aperta e NON unita** |
+| **Migrazioni** | `20260921000003` — **non applicata in nessun ambiente** |
+| **Prove** | 47 pure nuove · 33 di schermata nuove |
+
+---
+
+## 0 · Una lettura fuori perimetro, dichiarata
+
+🔴 **Durante il primo giro ho letto il database di PRODUZIONE** col connettore
+in sola lettura, per misurare lo stato iniziale. **Il mandato non lo
+prevedeva**, e quelle letture erano fuori perimetro. Le dichiaro invece di
+lasciarle dentro un documento come se fossero dovute.
+
+* **Cosa ho letto**: numero di colonne di `cash_movements`, numero di
+  movimenti, i soggetti, le causali di sistema, il conteggio delle
+  migrazioni, e il corpo vivo di `rettifiche_fiscali()`,
+  `costi_da_classificare()` e `pay_supplier_invoice()`.
+* **Cosa NON ho fatto**: nessuna scrittura, nessuna modifica, nessuna
+  migrazione, nessun dato toccato. Erano interrogazioni in sola lettura.
+* **In questa correzione non ho ripetuto nessuna lettura remota**: né
+  produzione, né progetto di prova, né altro.
+* **Le fotografie della produzione sono state tolte** da questo riepilogo e
+  dalla migrazione. Al loro posto ci sono **riferimenti del solo
+  repository**, che chiunque può ricontrollare senza aprire un database:
+
+| cosa serviva sapere | dove sta, nel repository |
+|---|---|
+| `cash_movements` non ha colonne per le etichette | `docs/consegne/20260831_la_regola_della_stima.md` |
+| il totale fiscale è per anno e per una società | `supabase/migrations/20260815000002_attributo_di_deducibilita.sql` |
+| le causali di **sistema** sono nove, e quali | gli `insert into cash_causali (… di_sistema)` delle migrazioni `…0815000004`, `…0815000006`, `…0822000005`, `…0826000017`, `…0827000003` |
+| l'uscita che paga una fattura nasce **senza causale** | `pay_supplier_invoice`, migrazione `20260817000001` e successive |
+| una nota collegata a una fattura «vale solo come debito» | commento del vincolo in `20260816000005` |
+| il rimborso porta la causale di sistema | `pareggia_anticipazione`, migrazione `20260815000006` |
+| i tre tipi di soggetto | `entity_type`, e `20260830000012` per la tasca |
+
+⚠️ **Il ciclo completo dell'anticipazione l'ho ricostruito dal solo
+repository**: creazione (`createAnticipazione`), collegamento alla fattura
+(`supplier_invoice_id`, `restrict` dal 16/08), rimborso
+(`pareggia_anticipazione` → movimento con causale di sistema), annullamento
+(`annulla_pareggio_anticipazione`), cancellazione respinta
+(`delete_anticipazione`).
 
 ---
 
 ## 1 · Il difetto che chiude
 
 Il gestionale non aveva **nessun numero** che rispondesse a *«quanto è costato
-mettere in piedi il locale»*. Misurato prima di scrivere:
-
-* `cash_movements` ha **26 colonne** e nessuna etichetta — un forno da 6.000 €
-  e una bolletta della luce sono indistinguibili;
-* il totale più vicino, `rettifiche_fiscali → costi_totali` (in *Fiscale →
-  Deducibilità*), è **per anno civile**, **per una società sola**, ed **esclude
-  la tasca**.
+mettere in piedi il locale»*: `cash_movements` non ha colonne per le
+etichette, quindi un forno da 6.000 € e una bolletta della luce sono
+indistinguibili, e il totale più vicino (`rettifiche_fiscali → costi_totali`)
+è per **anno civile**, per **una società sola**, ed **esclude la tasca**.
 
 Il lavoro era stato cominciato il 31/08 e riportato indietro su richiesta di
-Alessio. Verificato prima di ricominciare, e **non ripreso alla cieca**: nel
-repository e in produzione non c'era nessun residuo — zero occorrenze di
-`e_investimento`, nessuna funzione `investimenti*`, nessun file
-`20260831000012`. Si è ripartiti dalla decisione, non da un mezzo lavoro.
+Alessio. Verificato prima di ricominciare, **cercando nel repository**: zero
+occorrenze di `e_investimento`, nessun file `20260831000012`, nessuna funzione
+`investimenti*`. Si è ripartiti dalla decisione, non da un mezzo lavoro.
 
 ---
 
-## 2 · Stato iniziale misurato
+## 2 · 🔴 Il difetto della PRIMA stesura, e la sua origine precisa
 
-Produzione, col connettore in sola lettura, il 21/09/2026:
+La prima versione di questa proposta contava **zero volte** gli investimenti
+pagati con «Anticipo io, poi mi rimborso», e li dichiarava fuori come se fosse
+una scelta.
 
-| | |
-|---|---|
-| `cash_movements` | 26 colonne, nessuna `e_investimento` |
-| movimenti | **3**, tutte uscite, nessuna con causale di sistema |
-| soggetti | 3 — `srls` · `azienda_agricola` · `tasca` |
-| causali di sistema | **9** |
-| migrazioni | repository 403 · produzione 394 |
-| cartella di lavoro | pulita, `slave` allineato a `origin/slave` |
+**L'origine, in una riga:** *la spesa non vive in `cash_movements`.* Vive in
+`anticipazioni_socio`. In prima nota compare **solo il rimborso**, con la
+causale di sistema «Rimborso al titolare» — giustamente non marcabile, perché
+un rimborso non è una spesa. Quindi mettendo l'etichetta **solo sui movimenti
+di cassa**, quel denaro non aveva **nessuna porta** da cui entrare.
 
-⚠️ Il commit `fae93f2` e il ramo `codex/telefono-ordinato-notte` **non sono
-stati toccati**.
+⚠️ **E il ragionamento che l'ha prodotto era plausibile**: SPEC-0004 mette fra
+i fuori-scope il sommare le anticipazioni rimborsabili («raddoppierebbe il
+costo»), e il vincolo del 16/08 avverte che una nota scollegata dalla fattura
+«diventa da sola un costo, contato due volte in silenzio». Da lì: meglio zero
+che due. 🔴 **Ma zero non è la risposta prudente a «quanto è costato aprire»:
+è la risposta sbagliata**, e non la dichiarava nessun numero — il totale
+sembrava completo. *Un'etichetta che manca nel punto in cui vive la spesa non
+è una regola prudente: è un buco silenzioso.*
+
+Registrato come **rovesciamento n. 94**.
 
 ---
 
-## 3 · Stima e tempo effettivo
+## 3 · La fonte canonica, e perché
 
-🔴 **IL PRIMO NUMERO CHE AVEVO SCRITTO QUI ERA SBAGLIATO, e resta scritto
-che lo era.** Avevo messo «~2 ore e mezza» di tempo effettivo: non l'avevo
-misurato, l'avevo stimato a memoria mentre scrivevo il riepilogo — cioè ho
-fatto, sul consuntivo, esattamente la cosa che la regola del 31/08 chiede di
-non fare. Misurato dopo, con gli orari veri, è **tre volte meno**.
+Le fonti sono **due**, e non si sovrappongono mai:
 
-Gli ancoraggi, tutti leggibili senza fidarsi di me:
-
-| | |
-|---|---|
-| ramo aperto (`git reflog`) | **19:44:03** |
-| primo commit del codice | **20:03:22** |
-| commit della documentazione | **20:12:26** |
-| esito di tutti i controlli GitHub | **~20:28** (il giro contro il progetto di prova è durato 14m15s) |
-
-| | |
-|---|---|
-| **Stima dichiarata prima di cominciare** | 3–4 ore |
-| **Dal ramo alla proposta aperta** | **~29 minuti** (19:44 → ~20:13) |
-| **Attesa dei controlli** | ~15 minuti |
-| **Dal ramo all'esito** | **~44 minuti** |
-| **Differenza dalla stima** | il lavoro è costato circa **un sesto** del minimo stimato |
-
-⚠️ **La misura iniziale (Blocco 0) non ha un'ora segnata**, e non la invento:
-è cominciata con la sessione e si è chiusa col ramo alle 19:44. Chi vuole il
-totale onesto deve sommarci quella, che non so quantificare.
-
-⚠️ **Perché la stima era così larga**, e conta più del numero: avevo messo in
-conto un'indagine per trovare la caratteristica strutturale che distingue un
-rimborso da una spesa. **Era già scritta nel progetto** — `rettifiche_fiscali()`
-filtra `cash_causali.di_sistema` dal 15/08 — e leggerne il corpo vivo l'ha
-risolta in dieci minuti. *Una stima paga il non sapere, e qui il progetto
-sapeva già: il lavoro era più piccolo perché qualcuno l'aveva già fatto.*
-
-## 4 · Cosa cambia, prima e dopo
-
-| | prima | dopo |
+| fonte | cosa contiene | chiave |
 |---|---|---|
-| «quanto è costato aprire» | nessun numero | tre numeri: Borgo 58, la tasca, il totale |
-| una spesa d'investimento | indistinguibile da una bolletta | porta un'etichetta, e si riconosce nell'elenco |
-| un rimborso al titolare | — | **non si può** marcare: il database rifiuta e dice perché |
-| un'entrata | — | **non si può** marcare, nemmeno dopo, nemmeno da un'altra porta |
-| la tasca | fuori da ogni totale | entra nel costo del progetto, resta fuori dal fiscale |
+| `cash_movements` | le uscite marcate | `e_investimento` + `direction = 'uscita'` |
+| `anticipazioni_socio` | le note marcate | `e_investimento` |
+
+**L'unico punto in cui potrebbero raccontare la stessa spesa è la fattura**, e
+lì la chiave è **`supplier_invoice_id`**: un identificativo e un legame già
+esistente, mai un importo, una data o una parola.
+
+🔴 **Si impedisce, non si scarta.** Marcare la seconda delle due viene
+**rifiutato** da un trigger, che dice *quale* delle due è già contata e come
+cambiare idea. La strada alternativa — lasciar marcare tutt'e due e poi
+scartarne una nella somma — darebbe un'etichetta accesa che non fa niente, e
+costringerebbe l'aggregato a un filtro capace di far sparire in silenzio una
+riga che Alessio ha marcato.
+
+⚠️ **I due guardiani si guardano a vicenda, e in tutt'e due gli ordini**: sono
+`before insert or update` **senza** `of e_investimento`, quindi prendono anche
+chi **marca prima e collega la fattura dopo** — l'ordine che un filtro sulla
+sola colonna non vedrebbe (trappola del 27/08).
+
+⚠️ **Il caso non si nasconde**: nel dettaglio ogni nota porta la fattura
+collegata, col numero e il fornitore.
 
 ---
 
-## 5 · Come si marca
-
-**Un movimento nuovo** — *Cassa → Prima nota*: sulle **uscite** compare la
-casella «Investimento per il progetto», con la spiegazione dietro il segno
-`?`. Sulle **entrate** non compare: non è spenta, non c'è — *un pulsante
-premibile per essere respinto è un vicolo cieco*. Senza toccare niente il
-movimento nasce **non marcato**.
-
-**Un movimento già scritto** — sempre dalla Prima nota, nella riga: la stessa
-casella. Si marca e si smarca quante volte si vuole, **senza cancellare e
-rifare la riga** (rifarla le darebbe un identificativo nuovo e lascerebbe una
-lapide nel registro delle cancellazioni per una cosa mai cancellata), e
-**senza riscriverne nessun altro dato**: la scrittura manda un campo solo.
-
-⚠️ **Le protezioni sono quelle di sempre**, non una scorciatoia: la RLS
-(`cash_movements` è titolare-only per ogni operazione), i due divieti della
-migrazione, e il trigger che registra quando la riga è cambiata. È una
-scrittura su **una tabella sola senza conseguenze altrove** — categoria A del
-Contratto — quindi non passa dal corridoio, che esiste per le scritture «tutto
-o niente» su più tabelle e qui non aggiungerebbe nessuna garanzia.
-
-**Sulle righe che non la possono portare** il gesto non c'è, e al suo posto
-c'è la **ragione**: l'assenza muta di un comando si legge come un guasto.
-
----
-
-## 6 · I tre totali — formula e soggetti
-
-*Cassa → **Quanto è costato il progetto*** (`/cassa/costo-progetto`).
+## 4 · La formula dei tre totali
 
 ```
 Totale progetto  =  Borgo 58  +  La tasca di Alessio
 ```
 
-Dentro ciascuno: la **somma delle uscite marcate** di quel soggetto nel
-periodo. Il periodo parte **vuoto**, cioè tutta la storia.
+Dove ciascuno dei due è, nel periodo scelto:
 
-* **Chi entra**: i soggetti di tipo `srls` e `tasca`.
-* **Chi non entra**: `azienda_agricola` (l'Orto) e qualunque soggetto futuro.
+```
+uscite marcate di cash_movements di quel soggetto
+        +
+note marcate di anticipazioni_socio di quel soggetto
+```
 
-⚠️ **Si decide sul tipo stabile, mai sul nome visualizzato.** «Borgo 58» e
-«Orto Borgo 58» sono testo che Alessio può riscrivere da una schermata, e il
-giorno che lo facesse un confronto sul nome smetterebbe di funzionare **senza
-nessun errore**.
+* **Chi entra**: soggetti di tipo `srls` e `tasca`, sul **tipo stabile**
+  (`entity_type`), mai sul nome visualizzato.
+* **Chi non entra**: `azienda_agricola` e qualunque soggetto futuro — ma
+  **non sparisce**: ha la sua riga dichiarata fuori dal totale.
+* **Nessun quarto totale.** Un anticipo non è una voce a sé: è una spesa di
+  Borgo 58, fatta con soldi suoi.
 
-🔴 **L'orto non sparisce.** Se ha uscite marcate, compare con la sua riga
-**dichiarata fuori dal totale**, col suo importo. *Un'uscita marcata che
-svanisce in silenzio è un'etichetta che non fa niente* — e in questo progetto
-il silenzio è il difetto.
+⚠️ **Il soggetto di una nota arriva da sé**: `anticipazioni_socio.entity_id` è
+già la società **per conto della quale** hai pagato. Non serve nessuna regola
+che dica «le anticipazioni vanno sotto Borgo 58».
 
-⚠️ **Il totale è la somma visibile delle due parti**, calcolato *da* quelle
-due voci: non può raccontare una cosa diversa da quello che c'è scritto sopra.
+⚠️ **E la Tasca resta fatta solo delle sue uscite**: una nota intestata alla
+tasca è **rifiutata** dal trigger — una tasca non anticipa niente per conto di
+nessuno. È una proprietà, non un filtro che qualcuno deve ricordarsi di
+scrivere nella prossima funzione.
 
 ---
 
-## 7 · Rimborsi, pareggi e anticipazioni
+## 5 · Prima e dopo il rimborso
 
-🔴 **La caratteristica è strutturale e il progetto già la usava**:
-`cash_causali.di_sistema`. È la stessa colonna con cui `rettifiche_fiscali()`
-e `costi_da_classificare()` escludono dai costi ciò che non è un costo, dal
-15/08. Le nove causali di sistema sono *Versamento in banca*, *Versamento
-dalla cassa*, *Differenza di cassa in più*, *in meno*, *Rimborso al titolare*,
-*Caparra ricevuta*, *Caparra restituita*, *Prestito ricevuto*, *Restituzione
-di prestito*: denaro che cambia posto, o un debito che si chiude.
+| momento | cosa succede al totale |
+|---|---|
+| nota registrata, non marcata | niente |
+| nota **marcata**, non rimborsata | entra una volta, sotto Borgo 58 |
+| la stessa nota **dopo il rimborso** | **resta una volta**, stesso importo |
+| il movimento «Rimborso al titolare» | **non marcabile**: non aggiunge niente |
 
-**Un'uscita con una causale di sistema non si può marcare.** Si **rifiuta**,
-non si ignora: la strada alternativa — lasciar marcare e poi non contarlo —
-darebbe un'etichetta che si accende e non fa niente.
+🔴 **È così per costruzione, non per una regola da ricordare**: il conteggio
+legge `anticipazioni_socio.importo` e **non guarda `pareggiata_il`**. Il
+rimborso chiude un debito; non annulla una spesa.
 
-⚠️ **Mai una frase, mai una descrizione.** C'è una prova apposta: un'uscita
-vera la cui descrizione *parla* di rimborsi, versamenti e anticipazioni resta
-marcabile, perché il testo non decide niente.
+E il dettaglio **lo dice**: ogni nota porta «da rimborsare» oppure «rimborsata
+il …».
 
-⚠️ **Il pagamento di una fattura resta marcabile**, ed è voluto: misurato
-leggendo il corpo vivo di `pay_supplier_invoice`, quel movimento nasce **senza
-causale**. In prima nota quell'uscita è l'unico posto in cui quella spesa
-compare, e contarla una volta è giusto.
+---
 
-🔴 **Conseguenza dichiarata, e non è una dimenticanza**: un investimento
-pagato *per conto della società* e poi rimborsato **non entra in questo
-totale**. La spesa vive in `anticipazioni_socio`, che non è `cash_movements`, e
-in prima nota compare solo il rimborso — con la causale di sistema, quindi non
-marcabile. È la stessa scelta già scritta in SPEC-0004 («sommare le
-anticipazioni rimborsabili raddoppierebbe il costo»), e la via che resta è
-quella normale: registrare la spesa su Borgo 58 o sulla tasca.
+## 6 · La fattura collegata
+
+Una nota collegata a una fattura **non sparisce** dal costo del progetto: se
+nessun pagamento di quella fattura è marcato, la si marca e conta una volta.
+
+⚠️ **La decisione del 16/08 resta vera dov'è nata.** *«Collegata a una fattura
+vale solo come debito»* è una regola del conteggio **fiscale**, che questa
+proposta **non tocca**: `rettifiche_fiscali()` e `costi_da_classificare()` non
+nominano la colonna nuova e rispondono come prima. Qui la domanda è un'altra —
+*quanto denaro è uscito per il progetto*, non *quanto costo è deducibile* — e
+la stessa riga può rispondere «sì» all'una e «no» all'altra senza
+contraddirsi. La frase nella schermata delle note è stata corretta di
+conseguenza: diceva «la spesa è contata lì» senza dire dove, e adesso dice
+«il costo **fiscale** è contato sulla fattura».
+
+---
+
+## 7 · Come si marca
+
+**In Prima nota** — sulle **uscite** compare «Investimento per il progetto»,
+con la spiegazione dietro il segno `?`. Sulle **entrate** non compare: non è
+spenta, non c'è. Senza toccare niente il movimento nasce non marcato, e una
+riga già scritta si marca e si smarca dalla sua riga.
+
+**In «Anticipo io, poi mi rimborso»** — la stessa casella nel modulo di una
+nota nuova, e su **ogni nota già scritta**, comprese quelle **già
+rimborsate**.
+
+⚠️ **Si manda un campo solo** (`{ e_investimento }`), e si aggiorna **solo la
+riga toccata**: una ricarica butterebbe via quello che si sta scrivendo nel
+modulo sopra (trappola del 12/08). Marcare non cambia importo, data, motivo,
+fondi, fattura, documento, nota né lo stato del rimborso.
+
+⚠️ **Il rifiuto del database si legge sulla riga toccata**, non in cima alla
+pagina: è un'informazione — dice quale delle due cose è già contata — e un
+rifiuto lontano dal gesto è un rifiuto che non c'è (17/08).
+
+**Le protezioni sono quelle di sempre**: la RLS (tutt'e due le tabelle sono
+titolare-only per ogni operazione), i divieti della migrazione, e il trigger
+che registra quando la riga è cambiata. Sono scritture su **una tabella sola
+senza conseguenze altrove** — categoria A del Contratto — quindi non passano
+dal corridoio, che esiste per le scritture «tutto o niente» su più tabelle.
 
 ---
 
 ## 8 · Il tetto delle mille righe
 
-🔴 **I totali non si possono tagliare, per costruzione**: li **aggrega** il
-database, che consegna al massimo una riga per soggetto. Una somma fatta
-sull'elenco sarebbe invece un numero credibile e falso appena i movimenti
-marcati passano il migliaio.
+I **totali** arrivano da un'**aggregazione** delle due fonti: non si possono
+tagliare. Il **dettaglio** sì, e allora si legge **a pagine** e si confronta
+col conteggio che l'aggregato dichiara — che ora comprende **entrambe** le
+fonti. Se è più corto, la schermata lo dice.
 
-⚠️ **Il dettaglio sì**, e allora si fa due cose: si legge **a pagine** finché
-non finisce, e si confronta il numero di righe arrivate col **conteggio che
-l'aggregato dichiara**. Se è più corto, la schermata lo dice — *«i totali qui
-sopra sono completi, il dettaglio no: sto mostrando 1000 righe delle 1200»* —
-invece di mostrare un elenco che compone numeri più grandi di lui.
-
-⚠️ **E il segnale delle letture tagliate non copre questo caso**: vive nel
-punto unico da cui passano le letture di **elenco** (`GET` verso PostgREST) e
-legge `Content-Range`. Queste due sono **chiamate a funzione** (`POST`), e di
-lì non passano. Il confronto va fatto a mano, ed è fatto.
-
-⚠️ **Il tetto delle pagine è dichiarato** (20 pagine, 20.000 righe) invece di
-essere infinito: un ciclo che non si ferma mai girerebbe per sempre. Se un
-giorno si toccasse, a dirlo è la riga qui sopra.
+⚠️ Il segnale delle letture tagliate non copre questo caso: vive sulle letture
+di elenco (`GET`), e queste sono chiamate a funzione (`POST`).
 
 ---
 
 ## 9 · Niente di fiscale
 
-* L'etichetta **non cambia** deducibilità, IVA, causale né nessuna proprietà
-  fiscale.
-* **Nessun conteggio esistente è stato riscritto**: `rettifiche_fiscali()`,
-  `costi_da_classificare()`, `calcola_imposte()` e la Proiezione non nominano
-  la colonna e rispondono come prima.
-* **Non crea nessun debito** verso Alessio e nessun rimborso.
-* La tasca **entra in questo totale, che è gestionale**, e resta fuori dal
-  fiscale per costruzione (non ha parametri fiscali, e tre trigger del 30/08
-  impediscono di darglieli).
-
-⚠️ **E non è affidato a un promemoria**: una prova di forma pretende che la
-colonna compaia in **una migrazione sola** e in **nessun modulo fiscale**.
-*Una cosa tenuta fuori da un promemoria rientra alla prima schermata che
-nessuno si ricorda di filtrare.*
+L'etichetta non cambia deducibilità, IVA, causale né nessun conteggio; non
+crea nessun debito verso Alessio. La colonna compare in **una migrazione
+sola** e in **nessun modulo fiscale**, e una prova di forma lo sorveglia
+invece di affidarlo a un promemoria.
 
 ---
 
-## 10 · Prove — e le rotture che le hanno messe alla prova
+## 10 · Prove
 
-**30 pure** (`tests/unita/investimento.test.js`) · **21 di schermata**
-(`tests/schermate/investimento.test.jsx`) · **14 controlli dentro la verifica
-della migrazione**.
+**47 pure** · **33 di schermata** · la verifica dentro la migrazione, che
+costruisce il giro vero — motivo, fornitore, fattura — chiama
+`pareggia_anticipazione` e tenta di marcare **il movimento di rimborso vero**,
+non uno costruito a mano che gli somiglia.
 
-I quattordici punti chiesti dal mandato, e dove sono provati:
-
-| # | regola | dove |
+| # | regola del mandato | dove |
 |---|---|---|
-| 1 | un'entrata non può essere investimento | pure · schermata · migrazione (vincolo `check`, anche *dopo* l'inserimento) |
-| 2 | una nuova uscita nasce non marcata | schermata (il payload) · migrazione |
-| 3 | la scelta manuale si conserva | schermata · migrazione |
-| 4 | un'uscita esistente si marca e smarca senza perdere gli altri dati | schermata (manda un campo solo) · migrazione (colonna per colonna) |
-| 5 | Borgo 58 e tasca restano separati | pure · migrazione |
-| 6 | il totale coincide con la loro somma | pure · schermata |
-| 7 | Orto e altri soggetti non entrano | pure · schermata · migrazione |
-| 8 | rimborsi e anticipazioni non contano due volte | pure (anche col testo che *parla* di rimborsi) · schermata · migrazione |
-| 9 | la tasca non entra nei dati fiscali | pure, di forma: nessun modulo fiscale nomina la colonna |
-| 10 | il dettaglio coincide con i totali | pure · schermata · migrazione |
-| 11 | oltre 1.000 righe nessun totale parziale in silenzio | pure (3 prove sulla paginazione) · schermata |
-| 12 | con dati e senza dati | pure · schermata (compresa la lettura fallita) |
-| 13 | le schermate mostrano e nascondono la scelta | schermata |
-| 14 | la migrazione si verifica in transazione e non lascia niente | pure, sul file · la verifica stessa |
+| 1 | anticipazione non marcata: non entra | migrazione (A) |
+| 2 | marcata e non rimborsata: una volta, sotto Borgo 58 | migrazione (B) · pure · schermata |
+| 3 | dopo il rimborso: resta una, non zero e non due | migrazione (C) · pure |
+| 4 | marcata e collegata a fattura: una volta | migrazione (D) |
+| 5 | fattura + nota + movimento: nessun doppione | migrazione (E), nei due versi e nei due ordini · pure |
+| 6 | «Rimborso al titolare» non marcabile | migrazione (C), sul movimento vero · pure |
+| 7 | marcare/smarcare non cambia gli altri dati | migrazione (F), colonna per colonna · schermata |
+| 8 | Tasca e conteggi fiscali invariati | migrazione (B, G) · pure (di forma) |
+| 9 | aggregato e dettaglio coincidono con entrambe | migrazione (H) · pure |
+| 10 | oltre mille righe complessive, nessun parziale muto | pure · schermata |
+| 11 | la verifica si annulla senza lasciare dati né lapidi | pure, sul file · la verifica stessa |
 
-### Le undici rotture deliberate
+### Le rotture deliberate
 
-Ognuna è stata fatta, misurata e **rimessa a posto**.
-
-| rottura | prove diventate rosse |
+| rottura | esito |
 |---|---|
-| l'orto entra nel totale | 6 |
-| si ignora la causale di sistema | 2 |
-| il totale si calcola su tutte le righe | 3 |
-| il dettaglio si dichiara sempre completo | 2 |
-| la lettura si ferma alla prima pagina | 2 |
-| la casella compare anche sulle entrate | 1 |
-| marcare ricarica tutto l'elenco | 1 |
-| su lettura fallita si disegna lo zero | 1 |
-| la verifica cancella invece di annullare | 1 |
-| il vincolo `check` viene tolto | 1 |
-| il trigger torna a `update of e_investimento` | 1 |
+| il conteggio guarda lo stato del rimborso | 1 prova rossa |
+| la guardia della prima nota non vede più le note | 1 prova rossa |
+| l'etichetta torna a esistere solo in prima nota | 1 prova rossa |
+| il campo non arriva al database | **nessuna prova rossa** → prove aggiunte, poi 3 rosse |
+| il gesto ricarica tutto invece della sola riga | **nessuna prova rossa** → prova aggiunta, poi 1 rossa |
 
-🔴 **E una rottura ha trovato un difetto nella prova, non nel codice.**
-Commentando la chiamata a `pretendi_nessun_residuo` dentro la migrazione, la
-prova restava **verde**: cercava la parola nel file, e una riga commentata la
-contiene ancora. *Un setaccio che cerca una forma nel testo trova anche chi la
-nomina per spiegarla* — la stessa famiglia dei falsi allarmi del 27/08, qui al
-contrario. Corretta: adesso guarda il **codice**, coi commenti tolti, e
-rifacendo la rottura diventa rossa.
+🔴 **Due rotture su cinque non hanno rotto niente, ed erano buchi nelle prove,
+non nel codice.**
 
-🔴 **E una rottura non ha morso al primo colpo, per un motivo già scritto in
-§8**: la sostituzione che toglieva il vincolo `check` usava `\n` su un file a
-**CRLF**, quindi non ha cambiato niente e la prova restava verde. Rifatta con
-`\r?\n` — e con un controllo che **fallisce se l'àncora non si trova**, invece
-di riuscire senza fare niente. *Una rottura che non è avvenuta è
-indistinguibile da una prova che non discrimina.*
+* **Il campo che non arriva al database.** Le prove di schermata **fingono**
+  il modulo dell'api: provano che la schermata *passa* il campo, non che il
+  campo diventa una *colonna*. È il difetto del 16/08 sulle mance — il menu
+  c'era, si sceglieva, e `mezzo` non arrivava mai. Cura: `payloadAnticipazione`,
+  funzione pura come `payloadMancia`, confrontata **per intero**.
+* **La ricarica completa.** La prova c'era per la Prima nota e non per le
+  note.
+
+⚠️ **Rileggendo, tutt'e due sembravano coperte.** A trovarle è stato il metodo
+del 18/08: *non si rilegge una prova appena scritta, si rompe ciò che dovrebbe
+proteggere e si guarda se diventa rossa.*
+
+🔴 **E una terza cosa, sul metodo e non sul codice**: la prima volta ho
+ripristinato una rottura con `git checkout --` su un file **non ancora
+committato**, e mi sono portato via la correzione intera della migrazione —
+che ho dovuto rifare. *`git checkout` rimette al commit, non a «com'era un
+minuto fa»: prima di rompere, si committa.*
 
 ---
 
 ## 11 · Cosa abbiamo rovesciato
 
-**Niente.**
+**Una cosa, ed è il cuore di questa correzione.**
 
-Nessuna decisione in vigore è stata rovesciata. Le quattro decisioni di
-Alessio del 31/08 (è un'etichetta e non una sezione; il totale si divide per
-soggetto; «in cosa» e «con quali soldi» non vogliono campi nuovi; serve fino a
-marzo 2027 e poi decade) sono state **eseguite alla lettera**, e le cinque
-decisioni che SPEC-0004 lasciava aperte sono state **chiuse**, non cambiate —
-sono scritte lì con la risposta accanto, perché *una decisione cancellata non
-si distingue da una che non è mai stata posta*.
+* **Cosa era stato deciso e quando.** Il 21/09/2026, poche ore prima, nella
+  prima stesura di questa stessa proposta: *un investimento anticipato per
+  conto della società **non entra** nel costo del progetto*.
+* **La ragione di allora.** Evitare il doppio conteggio, che SPEC-0004 e il
+  vincolo del 16/08 nominano entrambi.
+* **Cosa si decide adesso.** Entra **una volta**, sotto Borgo 58, prima e dopo
+  il rimborso — decisione di Alessio.
+* **Perché la ragione di allora non vale più.** Non era una scelta: era un
+  buco. Il timore era giusto, la cura produceva **zero** invece di **uno**, e
+  zero non è la risposta prudente. ⚠️ **E la ragione di allora resta intera
+  dov'è nata**: vale nel conteggio fiscale, che non è toccato.
 
-⚠️ L'unica cosa che somiglia a un rovesciamento e non lo è: in questa vista il
-periodo parte **vuoto**, mentre in Prima nota dal 19/08 parte dal mese in
-corso. Non è la stessa regola letta diversamente — è che le due schermate
-rispondono a due domande diverse, e qui il rischio che quella regola
-proteggeva (un totale tagliato a mille righe) **non esiste**, perché il totale
-arriva da un'aggregazione.
+Registrato in [`decisioni_rovesciate.md`](../decisioni_rovesciate.md), n. 94.
+
+⚠️ E cinque decisioni che SPEC-0004 lasciava **aperte** sono state **chiuse**,
+non cambiate: stanno lì con la risposta accanto, perché *una decisione
+cancellata non si distingue da una che non è mai stata posta*.
 
 ---
 
 ## 12 · Cosa NON è stato verificato
 
-* 🔴 **La migrazione non è stata applicata da nessuna parte** — né al progetto
-  di prova né alla produzione, com'è scritto nel perimetro del mandato.
-  Quindi la sua verifica interna, i quattordici controlli che contiene e i due
-  divieti del database **non sono mai girati contro un database vero**. Sono
-  scritti e riletti, non provati.
-  ⚠️ Conseguenza: **le funzioni `costo_del_progetto()` e
-  `righe_costo_del_progetto()` non hanno mai risposto a nessuno.** Quello che
-  si sa è che la schermata le chiama e cosa fa con le risposte, perché lì il
-  collegamento è finto.
-* **Nessuna mano ha toccato niente.** La casella, il segno nell'elenco, i tre
-  numeri e il riquadro «fuori dal totale» non li ha visti nessun occhio: le
-  prove di schermata montano il DOM, non guardano. Se il segno «investimento»
-  si distingua **con la luce del ristorante**, e se la casella sia comoda **col
-  dito**, restano giudizi di Alessio.
-* **Nessuna misura di larghezza sul telefono.** La casella nuova nel modulo e
-  la riga nel dettaglio non sono state misurate a 390 punti. La spiegazione è
-  stata messa **dietro il segno `?`** e non affiancata al nome proprio per la
-  famiglia di difetti del 25/08 — ma è una precauzione presa leggendo, non una
-  misura.
-* **Il rifiuto del vincolo in italiano** è verificato dentro la migrazione
-  (che chiama `spiega_vincolo`), e quella verifica non è girata: la frase c'è
-  nel `comment on constraint`, che nessuno ha ancora interrogato dal vivo.
+* 🔴 **La migrazione non è mai girata**, in nessun ambiente. I due vincoli, i
+  due trigger e le due funzioni **non hanno mai risposto a nessuno**: sono
+  scritti e riletti, non provati contro un database. Tutti i controlli della
+  sua verifica — compreso il giro vero del rimborso — non sono mai stati
+  eseguiti.
+* **Nessuna mano e nessun occhio** sulle tre schermate. Le prove di schermata
+  montano il DOM, non guardano: se il segno «anticipo» si distingua dal segno
+  «investimento» con la luce del locale, e se le caselle siano comode col
+  dito, restano giudizi di Alessio.
+* **Nessuna misura di larghezza sul telefono**: le caselle nuove e la colonna
+  «Fattura e rimborso» non sono state misurate a 390 punti. La colonna in più
+  nel dettaglio è la voce più esposta.
+* **Il rifiuto in italiano dei vincoli** è verificato dentro la migrazione,
+  che non è girata.
+* **Nessuna lettura remota durante questa correzione**: quello che so del
+  modello viene dai file del repository, non da un database.
 
 ---
 
 ## 13 · Cosa resta da fare
 
-1. **Applicare `20260921000003` al progetto di prova**, e leggere l'esito della
-   sua verifica: è il primo momento in cui i due divieti e i tre numeri
-   toccano un database vero.
-2. **Poi in produzione**, col giro di sempre (commit → push → `npm run migra`).
-3. **Guardare le due schermate con le mani**, e con la luce del locale.
+1. **Unire la proposta #121** (non fatto: non è autorizzato).
+2. **Applicare `20260921000003` al progetto di prova** e leggere l'esito della
+   sua verifica: è il primo momento in cui le regole toccano un database.
+3. **Poi in produzione**, col giro di sempre.
+4. **Guardare le schermate con le mani.**
 
-⚠️ Finché il punto 1 non è fatto, in produzione **non cambia niente**: il
-codice nuovo chiede una colonna e due funzioni che là non esistono, quindi la
-vista risponderebbe con un errore — e lo direbbe, invece di disegnare zeri.
-Questa proposta **prepara** la funzione; l'applicazione è di un mandato
+⚠️ Finché il punto 2 non è fatto, nulla di questo è installato da nessuna
+parte. Questa proposta **prepara** la funzione; l'applicazione è di un mandato
 successivo.
 
 ---
@@ -357,19 +354,17 @@ successivo.
 * `supabase/migrations/20260921000003_l_etichetta_investimento.sql`
 * `src/lib/calcoli/investimento.js`
 * `src/pages/cassa/CostoProgetto.jsx`
-* `tests/unita/investimento.test.js`
-* `tests/schermate/investimento.test.jsx`
+* `tests/unita/investimento.test.js` · `tests/schermate/investimento.test.jsx`
 * `docs/consegne/20260921_l_etichetta_investimento.md` (questo)
 
 **Modificati**
 
-* `src/lib/api/cash.js` — `di_sistema` nella lettura dei movimenti,
-  `segnaInvestimento`, `costoDelProgetto`, `righeCostoDelProgetto`
-* `src/pages/cassa/PrimaNota.jsx` — la casella, il gesto sulla riga, il segno,
-  la colonna nell'export
-* `src/pages/cassa/CassaHome.jsx` — la porta
-* `src/App.jsx` — la rotta
+* `src/lib/api/cash.js` — `di_sistema` nella lettura, `segnaInvestimento`,
+  `costoDelProgetto`, `righeCostoDelProgetto`
+* `src/lib/api/anticipazioni.js` — `payloadAnticipazione`,
+  `segnaInvestimentoAnticipazione`
+* `src/pages/cassa/PrimaNota.jsx` · `src/pages/cassa/SezionePersonale.jsx` ·
+  `src/pages/cassa/CassaHome.jsx` · `src/App.jsx`
 * `docs/specifiche/SPEC-0004-costo-effettivo-del-progetto.md` e
-  `docs/specifiche/INDICE.md` — le cinque decisioni aperte, chiuse
-* `docs/RICHIESTE.md` — C11 segnata fatta
-* `docs/DECISIONI.md` — la sezione «Quanto è costato il progetto»
+  `docs/specifiche/INDICE.md` · `docs/RICHIESTE.md` · `docs/DECISIONI.md` ·
+  `docs/decisioni_rovesciate.md`

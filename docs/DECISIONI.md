@@ -947,7 +947,7 @@ quali soldi.
 niente di permanente attorno — nessun lavoro pianificato, nessuna scadenza,
 nessuna tabella nuova. Dopo l'apertura basta smettere di usarla.
 
-* ✅ **COSTRUITA il 21/09/2026 — migrazione `20260921000003`, richiesta C11.**
+* 🔄 **IN LAVORAZIONE dal 21/09/2026 — migrazione `20260921000003`, richiesta C11, proposta #121 aperta verso `slave` e non ancora unita.** ⚠️ Nessuna parte di quello che segue è installata da nessuna parte: quando lo sarà, lo dirà un mandato suo.
   `cash_movements.e_investimento`, booleano che nasce spento su ogni riga.
   ⚠️ **Nessuna classificazione automatica**: non si deduce da data, causale,
   importo, fattura né dalle parole della descrizione. Etichetta a mano
@@ -961,10 +961,45 @@ nessuna tabella nuova. Dopo l'apertura basta smettere di usarla.
   volte**: il riconoscimento è `cash_causali.di_sistema` — una colonna, mai
   una frase letta in una descrizione — cioè la stessa condizione con cui
   `rettifiche_fiscali()` esclude dai costi ciò che non è un costo dal 15/08.
-  ⚠️ **Conseguenza dichiarata**: un investimento pagato per conto della
-  società e poi rimborsato **non entra** in questo totale. La spesa vive in
-  `anticipazioni_socio` e in prima nota compare solo il rimborso; la via
-  normale è registrarla su Borgo 58 o sulla tasca, dove l'etichetta c'è.
+* 🔴 21/09 — **UN INVESTIMENTO ANTICIPATO PER CONTO DELLA SOCIETÀ ENTRA NEL
+COSTO: una volta sola, sotto Borgo 58, e uguale prima e dopo il rimborso.**
+Decisione di Alessio, e **rovescia** quello che la prima stesura aveva
+dichiarato poche ore prima («non entra»).
+  🔴 **La ragione per cui non entrava era un buco, non una scelta**: la
+  spesa non vive in `cash_movements` ma in `anticipazioni_socio`, e in prima
+  nota compare solo il **rimborso**, con causale di sistema — giustamente
+  non marcabile. Con l'etichetta solo sui movimenti di cassa, quel denaro
+  non aveva **nessuna porta** da cui entrare. ⚠️ *Un'etichetta che manca nel
+  punto in cui vive la spesa non è una regola prudente: è un buco
+  silenzioso.*
+  ⚠️ **L'etichetta sta anche su `anticipazioni_socio`**, e **non** su
+  `tag_anticipazioni`: quello dice *perché* hai anticipato, non *se* la
+  spesa appartiene all'investimento iniziale.
+  ⚠️ **Il soggetto arriva da sé**: `entity_id` è già la società per conto
+  della quale hai pagato, quindi basta raggruppare per soggetto — nessuna
+  regola che dica «le anticipazioni vanno sotto Borgo 58». E una nota
+  intestata alla **tasca** è rifiutata, così il totale della tasca resta per
+  costruzione fatto delle sole uscite della tasca.
+  ⚠️ **Prima e dopo il rimborso è lo stesso numero, per costruzione**: il
+  conteggio legge l'importo e non guarda `pareggiata_il`. Il rimborso chiude
+  un debito, non annulla una spesa.
+
+* 🔴 21/09 — **FATTURA, ANTICIPAZIONE E RIMBORSO NON FANNO TRE COPIE DELLO
+STESSO COSTO, e il doppione si IMPEDISCE invece di scartarlo in silenzio.**
+  Il modello permette davvero, per la stessa fattura, sia una nota sia il
+  movimento che la paga. La chiave è `supplier_invoice_id` — un
+  **identificativo**, mai un importo, una data o una parola — e marcare la
+  seconda viene **rifiutato**, dicendo quale delle due è già contata e come
+  cambiare idea.
+  ⚠️ **I due guardiani si guardano a vicenda e in tutt'e due gli ordini**:
+  sono `before insert or update` senza filtro di colonna, quindi prendono
+  anche chi marca prima e collega la fattura dopo.
+  ⚠️ **E una nota collegata a una fattura non sparisce**: se nessun
+  pagamento di quella fattura è marcato, la si marca e conta. La decisione
+  del 16/08 — *«collegata vale solo come debito»* — **resta vera dov'è
+  nata**, nel conteggio **fiscale**, che non è toccato. Qui la domanda è
+  un'altra: *quanto denaro è uscito per il progetto*, non *quanto costo è
+  deducibile*.
   ⚠️ **Il pagamento di una fattura resta marcabile**, ed è voluto: quel
   movimento nasce **senza causale**, e in prima nota è l'unico posto in cui
   quella spesa compare.

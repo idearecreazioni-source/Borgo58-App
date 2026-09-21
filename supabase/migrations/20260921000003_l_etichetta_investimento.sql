@@ -3,11 +3,14 @@
 -- =====================================================================
 --
 -- 🔴 A CHE DOMANDA RISPONDE, e finora non rispondeva niente: *quanto e'
--- costato mettere in piedi il locale.* `cash_movements` ha 26 colonne e
--- nessuna etichetta, quindi un forno da 6.000 euro e una bolletta della luce
--- sono indistinguibili; e il totale piu' vicino — `rettifiche_fiscali →
--- costi_totali`, in *Fiscale → Deducibilita'* — e' per **anno civile**, per
--- **una societa' sola**, ed **esclude la tasca**.
+-- costato mettere in piedi il locale.* `cash_movements` non aveva **nessuna
+-- colonna per le etichette** (misurato il 31/08 e scritto nel riepilogo
+-- `docs/consegne/20260831_la_regola_della_stima.md`), quindi un forno da
+-- 6.000 euro e una bolletta della luce sono indistinguibili; e il totale
+-- piu' vicino — `rettifiche_fiscali → costi_totali`, in *Fiscale →
+-- Deducibilita'* — e' per **anno civile**, per **una societa' sola**, ed
+-- **esclude la tasca** (si legge nel corpo della funzione, migrazione
+-- `20260815000002` e successive).
 --
 -- 🔴 E' UN'ETICHETTA SU UN'USCITA, NON UN SECONDO ARCHIVIO (decisione di
 -- Alessio, 31/08). Una sezione separata creerebbe due verita' sulla stessa
@@ -38,9 +41,14 @@
 -- scelto in un altro modo** — c'erano nove scostamenti che dicevano il
 -- contrario. Qui non esiste nessuna scelta precedente da contraddire:
 -- `false` vuol dire *«nessuno l'ha ancora marcata»*, che e' la verita' su
--- ogni riga scritta prima di oggi. **Non c'e' nessun terzo stato**: o e'
--- marcata o non lo e'. Misurato prima di scriverlo: in produzione i
--- movimenti sono **tre**, tutte uscite.
+-- ogni riga scritta prima di oggi, perche' prima di oggi non c'era nessun
+-- posto dove dire il contrario. **Non c'e' nessun terzo stato**: o e'
+-- marcata o non lo e'.
+--
+-- ⚠️ E il controllo non si fida di questo ragionamento: il blocco di
+-- verifica pretende **zero righe gia' marcate** alla prima applicazione, e
+-- lo pretende su tutt'e due le tabelle. Se il ragionamento fosse sbagliato,
+-- la migrazione si fermerebbe invece di passare.
 --
 -- ⚠️ E IL QUESITO L19 RESTA APERTO (gli acquisti con fattura fatti prima
 -- della partita IVA sono recuperabili, e come vanno intestati). Questa

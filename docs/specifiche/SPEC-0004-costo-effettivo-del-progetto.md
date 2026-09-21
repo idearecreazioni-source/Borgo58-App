@@ -2,7 +2,7 @@
 
 | Campo | Valore |
 |---|---|
-| Stato | Confermata — costruita il 21/09/2026, migrazione da applicare |
+| Stato | In corso — proposta #121 aperta, migrazione non applicata |
 | Priorità | Alta — serve fino all'apertura di marzo 2027, poi decade |
 | Origine | Domanda di Alessio sulla registrazione delle spese, 05/09/2026 |
 | Richieste correlate | [`C11`](../RICHIESTE.md) — l'etichetta «investimento» · [`C10`](../RICHIESTE.md) — la Tasca |
@@ -61,7 +61,7 @@ non si distingue da una che non è mai stata posta.*
    credere che esista un secondo archivio delle spese. ⚠️ E serve fino a marzo
    2027: una voce nel menu principale sarebbe una cosa permanente per una
    domanda che scade.
-5. **Priorità: fatta il 21/09/2026**, col mandato C11.
+5. **Priorità: in lavorazione dal 21/09/2026**, col mandato C11.
 
 ## Come si etichetta
 

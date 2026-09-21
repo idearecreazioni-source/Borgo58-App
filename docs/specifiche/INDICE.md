@@ -24,7 +24,7 @@ di progettazione. Non è un mandato esecutivo e non sostituisce:
 | [SPEC-0001](SPEC-0001-posta-unificata-e-memo.md) | Posta Borgo 58 unificata e trattata da MEMO | Da definire | In definizione | Posta dei clienti, consenso e comunicazioni |
 | [SPEC-0002](SPEC-0002-caricamento-documenti-assistito-da-memo.md) | Caricamento documenti assistito da MEMO | Da definire | Bozza — in attesa di conferma | MEMO e Archivio Documenti |
 | [SPEC-0003](SPEC-0003-scheda-materiali-resta-in-magazzino.md) | La scheda dei materiali resta in Magazzino | Da definire | Bozza — in attesa di conferma | Materiali di consumo |
-| [SPEC-0004](SPEC-0004-costo-effettivo-del-progetto.md) | Costo effettivo del progetto, società e tasca affiancate | Alta | Confermata — costruita il 21/09/2026 | La tasca di Alessio |
+| [SPEC-0004](SPEC-0004-costo-effettivo-del-progetto.md) | Costo effettivo del progetto, società e tasca affiancate | Alta | In corso — proposta #121 aperta | La tasca di Alessio |
 | [SPEC-0005](SPEC-0005-spesa-da-tasca-descritta-e-non-classificabile.md) | Spesa dalla Tasca descritta e non classificabile | Da definire | Fatta il 06/09/2026 | La tasca di Alessio |
 | [SPEC-0006](SPEC-0006-prima-nota-prima-il-motivo.md) | Prima nota: prima il motivo, poi il movimento | Da definire | Bozza — in attesa di conferma | Cassa e tesoreria |
 | [SPEC-0007](SPEC-0007-anticipo-collegabile-alla-fattura-dopo.md) | Anticipo collegabile alla fattura quando arriva | Da definire | Bozza — in attesa di conferma | Cassa, fatture e anticipazioni |
