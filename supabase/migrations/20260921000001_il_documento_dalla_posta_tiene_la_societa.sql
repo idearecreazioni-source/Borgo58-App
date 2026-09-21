@@ -111,7 +111,16 @@ begin
      and pg_get_function_identity_arguments(p.oid) = 'uuid, jsonb';
 
   if v_corpo is null then
-    raise exception 'esegui_azione_posta(uuid, jsonb) non esiste: questa migrazione la sostituisce, non la crea.';
+    -- ⚠️ IL NOME SI SCRIVE SENZA PARENTESI, e non è una finezza di stile:
+    --    la rete `tests/app/migrazioni-senza-portieri.test.js` riconosce una
+    --    chiamata dal ritratto «nome(», e questo blocco NON ha i claims —
+    --    giustamente, perché non chiama niente, legge solo il catalogo.
+    --    Scritto «esegui_azione_posta(uuid, jsonb)» il guardiano vedeva una
+    --    chiamata dentro una frase e si fermava. ⚠️ La cura giusta è questa,
+    --    non una dichiarazione `rete-portieri:`: quella zittirebbe la coppia
+    --    file↔funzione **anche** per la chiamata vera che sta più sotto, e
+    --    nasconderebbe un errore futuro in questo stesso file.
+    raise exception 'La funzione esegui_azione_posta, nella forma uuid + jsonb, non esiste: questa migrazione la sostituisce, non la crea.';
   end if;
 
   -- Gia' applicata: il nostro marcatore c'e'. Si riscrive lo stesso corpo.
