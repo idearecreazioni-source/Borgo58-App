@@ -49,21 +49,39 @@ stati toccati**.
 
 ## 3 · Stima e tempo effettivo
 
+🔴 **IL PRIMO NUMERO CHE AVEVO SCRITTO QUI ERA SBAGLIATO, e resta scritto
+che lo era.** Avevo messo «~2 ore e mezza» di tempo effettivo: non l'avevo
+misurato, l'avevo stimato a memoria mentre scrivevo il riepilogo — cioè ho
+fatto, sul consuntivo, esattamente la cosa che la regola del 31/08 chiede di
+non fare. Misurato dopo, con gli orari veri, è **tre volte meno**.
+
+Gli ancoraggi, tutti leggibili senza fidarsi di me:
+
+| | |
+|---|---|
+| ramo aperto (`git reflog`) | **19:44:03** |
+| primo commit del codice | **20:03:22** |
+| commit della documentazione | **20:12:26** |
+| esito di tutti i controlli GitHub | **~20:28** (il giro contro il progetto di prova è durato 14m15s) |
+
 | | |
 |---|---|
 | **Stima dichiarata prima di cominciare** | 3–4 ore |
-| **Tempo effettivo** | ~2 ore e mezza |
-| **Differenza** | ~1 ora in meno del minimo stimato |
+| **Dal ramo alla proposta aperta** | **~29 minuti** (19:44 → ~20:13) |
+| **Attesa dei controlli** | ~15 minuti |
+| **Dal ramo all'esito** | **~44 minuti** |
+| **Differenza dalla stima** | il lavoro è costato circa **un sesto** del minimo stimato |
 
-⚠️ **Perché è andata più svelta di quanto avevo detto**, e conta più del
-numero: la parte che temevo — trovare la caratteristica strutturale che
-distingue un rimborso da una spesa — **era già scritta nel progetto**.
-`rettifiche_fiscali()` filtra `cash_causali.di_sistema` dal 15/08, e leggerne
-il corpo vivo ha risolto in dieci minuti quello per cui avevo messo in conto
-un'ora di indagine. *Una stima paga il non sapere, e qui il progetto sapeva
-già.*
+⚠️ **La misura iniziale (Blocco 0) non ha un'ora segnata**, e non la invento:
+è cominciata con la sessione e si è chiusa col ramo alle 19:44. Chi vuole il
+totale onesto deve sommarci quella, che non so quantificare.
 
----
+⚠️ **Perché la stima era così larga**, e conta più del numero: avevo messo in
+conto un'indagine per trovare la caratteristica strutturale che distingue un
+rimborso da una spesa. **Era già scritta nel progetto** — `rettifiche_fiscali()`
+filtra `cash_causali.di_sistema` dal 15/08 — e leggerne il corpo vivo l'ha
+risolta in dieci minuti. *Una stima paga il non sapere, e qui il progetto
+sapeva già: il lavoro era più piccolo perché qualcuno l'aveva già fatto.*
 
 ## 4 · Cosa cambia, prima e dopo
 
