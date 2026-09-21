@@ -150,8 +150,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 91 | 11/09/2026 | `min-w-0` tiene la data dentro la sua colonna |
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
 | 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
+| 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
 
-⚠️ **Righe: 94.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 95.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3404,3 +3405,40 @@ quando questa sezione è stata scritta.
    ⚠️ **Il prezzo**: un frammento di un pezzo col trattino («up caldaia» per
    «Check-up caldaia») e una parola detta a metà non combaciano più al terzo
    gradino — si ridice, o si usa «Fallo a mano».
+
+## 94 · 21/09/2026 — «un investimento anticipato per conto della società entra nel costo»
+
+1. **Cosa era stato deciso e quando.** Il **21/09/2026**, poche ore prima,
+   nella prima stesura di questa stessa proposta (#121): *«un investimento
+   pagato per conto della società e poi rimborsato **non entra** in questo
+   totale»*. Scritto come una conseguenza dichiarata, nel riepilogo, nella
+   migrazione e in `DECISIONI.md`.
+
+2. **La ragione di allora.** SPEC-0004 dice, fra i fuori-scope, che sommare
+   le anticipazioni rimborsabili *«raddoppierebbe il costo»*; e il commento
+   del vincolo del 16/08 dice che una nota collegata a una fattura *«smette
+   di essere solo un debito e diventa da sola un costo — la spesa
+   risulterebbe contata due volte, in silenzio»*. Da lì: meglio zero che due.
+
+3. **Cosa si decide adesso.** Decisione di Alessio: entra **una volta**,
+   sotto **Borgo 58**, **indipendentemente dal rimborso**. L'etichetta si
+   mette anche su `anticipazioni_socio`, cioè nel punto in cui la spesa vive;
+   il movimento «Rimborso al titolare» resta non marcabile; e il doppione
+   fattura+nota viene **impedito** da due trigger che si guardano a vicenda
+   sullo stesso `supplier_invoice_id`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Non era una scelta: era
+   un buco.** Il timore del doppio conteggio era giusto, ma la cura scelta
+   produceva **zero**, non uno — e zero non è la risposta prudente a
+   «quanto è costato aprire»: è la risposta sbagliata. ⚠️ *Un'etichetta che
+   manca nel punto in cui vive la spesa non è una regola prudente: è un buco
+   silenzioso*, e non lo dichiarava nessun numero — il totale sembrava
+   completo.
+   ⚠️ **E la ragione di allora resta intera dov'è nata**: la regola del 16/08
+   vale nel conteggio **fiscale**, che non è toccato. Qui la domanda è
+   un'altra — *quanto denaro è uscito per il progetto*, non *quanto costo è
+   deducibile* — e la stessa riga può rispondere «sì» all'una e «no»
+   all'altra senza contraddirsi.
+   ⚠️ **Il prezzo, dichiarato**: due colonne `e_investimento` invece di una, e
+   due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
+   una spesa può vivere, e non si paga con una terza tabella.

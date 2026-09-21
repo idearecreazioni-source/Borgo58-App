@@ -63,6 +63,7 @@ import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
+import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
 import Scontrini from "./pages/comande/Scontrini";
@@ -267,6 +268,7 @@ function AppRoutes() {
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
+        <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
             gliene deve ancora è un fatto suo e di quelle persone. */}
