@@ -107,8 +107,11 @@ risposta.*
   browser.** Entrarci vuol dire fare l'accesso, e l'accesso vuol dire aprire
   le credenziali del progetto di prova, che questo mandato vieta. Al posto suo
   c'è la prova che *la causa dell'errore di schema è sparita*: le due funzioni
-  esistono, sono eseguibili da `authenticated`, e la suite che entra dal
-  collegamento vero dell'app contro il progetto di prova gira verde.
+  esistono, sono eseguibili da `authenticated`, e **la suite che entra dal
+  collegamento vero dell'app** contro il progetto di prova — quella che si
+  autentica col ruolo del titolare e parla col database come parla una
+  schermata — è stata rilanciata **dopo** l'applicazione ed è tutta verde
+  (81 file, 571 prove, il 22/09; è una fotografia, e il numero invecchia).
   ⚠️ **Non è la stessa cosa che vederla**: se quella pagina sia leggibile, e
   se il segno «anticipo» si distingua da quello «investimento» con la luce del
   locale, resta un giudizio di Alessio.
