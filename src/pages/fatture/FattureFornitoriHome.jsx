@@ -19,6 +19,7 @@ import { listDocuments } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { PAYMENT_METHODS, formatDate, formatEUR, labelFor, oggiLocale } from "../../lib/constants";
+import { documentiCollegabili, senzaSocieta } from "../../lib/calcoli/documentiCollegabili";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import FormNotaCredito from "../../components/FormNotaCredito";
@@ -482,7 +483,12 @@ export default function FattureFornitoriHome() {
   };
 
   const RigaDocumenti = ({ inv }) => {
-    const liberi = documenti.filter((d) => !d.supplier_invoice_id && d.entity_id === inv.entity_id);
+    // 🔴 LA REGOLA STA IN UN POSTO SOLO — 21/09/2026. Era questa riga, e da
+    //    qui non la poteva provare nessuna prova: decide se un DDT si possa
+    //    agganciare alla fattura che documenta, e sbagliava **in silenzio**
+    //    (un elenco vuoto, non un errore). Vedi `documentiCollegabili.js`.
+    const liberi = documentiCollegabili(documenti, inv);
+    const muti = senzaSocieta(documenti);
     return (
       <div className="mt-2 pt-2 border-t border-b58-charcoal/10">
         {(inv.documenti ?? []).length > 0 ? (
@@ -495,9 +501,23 @@ export default function FattureFornitoriHome() {
         {docPerId === inv.id && (
           <div className="mt-2">
             {liberi.length === 0 ? (
+              /* ⚠️ «Non ce n'è nessuno» e «ce ne sono, ma non si sa di chi»
+                 sono due fatti diversi, e il secondo ha un rimedio. Prima
+                 dicevano la stessa frase, e chi la leggeva andava a
+                 archiviare un documento che nell'Archivio c'era già. */
               <p className="testo-sala text-b58-charcoal-soft/70">
                 Nessun documento libero di questa società nell&apos;Archivio: il DDT va prima
                 archiviato lì.
+                {muti > 0 && (
+                  <>
+                    {" "}
+                    <span data-documenti-muti className="text-b58-charcoal-soft">
+                      Nell&apos;Archivio ce ne {muti === 1 ? "è 1 libero" : `sono ${muti} liberi`} senza
+                      società: apri{muti === 1 ? "lo" : "li"} e scegli la società per poter
+                      collegare.
+                    </span>
+                  </>
+                )}
               </p>
             ) : (
               <select
