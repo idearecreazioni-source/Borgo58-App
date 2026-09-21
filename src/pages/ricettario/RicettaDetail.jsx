@@ -64,13 +64,25 @@ import {
 } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
 import { stagioneAccesa, stagioniDopoIlTocco, stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
+import {
+  comeSiLegge,
+  lordoDaSalvare,
+  ragioneNonSalvabile,
+  resaPercento,
+} from "../../lib/calcoli/resa";
 
 const emptyIngredientForm = {
   ingredient_id: "",
   component_recipe_id: "",
   quantity: "",
   unit: "",
-  waste_percentage: "",
+  // 🔴 LA RESA SI SCRIVE IN LORDO E NETTO (R12, 22/09/2026): «1,5 kg di
+  //    cozze danno 400 g». Lo scarto in percentuale non si scrive piu' —
+  //    nel database e' un riflesso dei due numeri, e scriverlo viene
+  //    rifiutato.
+  // ⚠️ Nasce VUOTO, e vuoto non e' zero: vuol dire «non ho detto che c'e'
+  //    scarto», e allora il lordo e' il netto.
+  quantita_lorda: "",
   prep_note: "",
 };
 
@@ -653,9 +665,12 @@ export default function RicettaDetail() {
         component_recipe_id: componentMode ? ingredientForm.component_recipe_id : null,
         quantity: quanti,
         unit: unita,
-        waste_percentage: ingredientForm.waste_percentage
-          ? Number(ingredientForm.waste_percentage)
-          : null,
+        // 🔴 SI MANDA IL LORDO, NON LO SCARTO. Il database rifiuta lo
+        //    scarto scritto a mano: e' il riflesso dei due numeri.
+        // ⚠️ E se nessuno ha detto il lordo, si manda il netto — la stessa
+        //    regola del trigger, da questa parte, cosi' il modulo non manda
+        //    un vuoto e poi rilegge un numero diverso da quello mostrato.
+        quantita_lorda: lordoDaSalvare(ingredientForm.quantita_lorda, quanti),
         prep_note: ingredientForm.prep_note || null,
       });
       setIngredientForm(emptyIngredientForm);
@@ -1620,7 +1635,11 @@ export default function RicettaDetail() {
                     etichetta: "Scarto",
                     valore: ri.component
                       ? ""
-                      : `${ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0}%`,
+                      // 🔴 «1,5 kg → 0,4 kg netti (27%)» al posto di «275%»:
+                      //    la percentuale da sola non dice niente a chi
+                      //    cucina, e lo scarto in quella forma e' il numero
+                      //    piu' difficile da leggere dei due.
+                      : (comeSiLegge(ri) ?? "—"),
                     vuoto: "—",
                   });
                 }
@@ -1750,6 +1769,8 @@ export default function RicettaDetail() {
                 step="0.01"
                 min="0"
                 value={ingredientForm.quantity}
+                aria-label="Quanto ne resta, netto"
+                data-prova="riga-netto"
                 onChange={(e) => setIngredientForm((f) => ({ ...f, quantity: e.target.value }))}
                 placeholder="Quantità"
                 className={inputClass}
@@ -1767,32 +1788,65 @@ export default function RicettaDetail() {
                 ))}
               </select>
             )}
+            {/* 🔴 «QUANTO NE PRENDI» AL POSTO DELLA PERCENTUALE — R12.
+                Prima qui c'era «% scarto», che e' un numero che nessuno
+                calcola a mente: un cuoco sa che da un chilo e mezzo di
+                cozze escono quattro etti, non che lo scarto e' il 275%.
+                ⚠️ Su una preparazione non compare: lo scarto di una
+                preparazione vive dentro di lei. */}
             {modoRighe === "preparation" ? (
               <div />
             ) : (
               <input
                 type="number"
-                step="0.1"
+                step="0.0001"
                 min="0"
-                max="100"
-                value={ingredientForm.waste_percentage}
-                onChange={(e) => setIngredientForm((f) => ({ ...f, waste_percentage: e.target.value }))}
-                placeholder="% scarto (default ingrediente)"
+                value={ingredientForm.quantita_lorda}
+                onChange={(e) =>
+                  setIngredientForm((f) => ({ ...f, quantita_lorda: e.target.value }))
+                }
+                placeholder="quanto ne prendi (lordo)"
+                aria-label="Quanto ne prendi, lordo"
+                data-prova="riga-lordo"
                 className={inputClass}
               />
             )}
           </div>
+          {/* 🔴 LA RESA SI VEDE MENTRE SI SCRIVE, e il rifiuto sta DOVE
+              sta il dubbio — non in cima alla pagina (lezione del 17/08). */}
+          {modoRighe !== "preparation" && ingredientForm.quantity ? (
+            ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity) ? (
+              <p
+                data-prova="riga-resa-rifiuto"
+                className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2"
+              >
+                {ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity)}
+              </p>
+            ) : ingredientForm.quantita_lorda ? (
+              <p data-prova="riga-resa" className="testo-sala text-b58-charcoal-soft mb-2">
+                Da {ingredientForm.quantita_lorda} {ingredientForm.unit} ne restano{" "}
+                {ingredientForm.quantity} {ingredientForm.unit}:{" "}
+                <strong>
+                  resa {resaPercento(ingredientForm.quantita_lorda, ingredientForm.quantity)}%
+                </strong>
+              </p>
+            ) : null
+          ) : null}
+
           <div className="flex items-center justify-end">
             <button
               type="button"
               disabled={
                 addingIngredient ||
+                (modoRighe !== "preparation" &&
+                  Boolean(ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity))) ||
                 (!isSelezione && !ingredientForm.quantity) ||
                 (modoRighe === "preparation"
                   ? !ingredientForm.component_recipe_id
                   : !ingredientForm.ingredient_id)
               }
               onClick={handleAddIngredient}
+              data-prova="riga-aggiungi"
               className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}

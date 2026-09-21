@@ -1199,26 +1199,29 @@ export default function IngredienteForm() {
               ))}
             </select>
           </div>
-          <div className={eAlimento ? undefined : "hidden"}>
-            {/* 🔴 LO SCARTO NON LO PROPONE PIÙ NESSUNO (23/08/2026,
-                decisione di Alessio): il dato vero emerge dalla
-                preparazione — un chilo di alici che diventa un chilo di
-                sugo — e lo stesso ingrediente ha rese diverse a seconda di
-                dove finisce. Un numero inventato entra nel costo di ogni
-                piatto e nessuno lo verifica mai. */}
-            <label className={labelClass}>% scarto standard{segnoMacchina("scarto")}</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={form.waste_percentage_default}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, waste_percentage_default: e.target.value }))
-              }
-              className={inputClass}
-            />
-          </div>
+          {/* 🔴 LO «SCARTO STANDARD» NON STA PIÙ QUI — R12, 22/09/2026.
+              La decisione è di Alessio, del 14/08: *lo scarto non appartiene
+              all'ingrediente, appartiene alla coppia ingrediente × ricetta.*
+              Le stesse cozze scartano pochissimo per un'impepata e
+              moltissimo se se ne ricava il mollusco, e un numero unico qui
+              non descrive nessuno dei due casi — ne precompila uno
+              sbagliato, che entra nel costo di ogni piatto.
+
+              ⚠️ Adesso si scrive **sulla riga della ricetta**, in lordo e
+              netto: «1,5 kg di cozze danno 400 g».
+
+              ⚠️ IL DATO NON È STATO CANCELLATO, è uscito da qui: la colonna
+              `waste_percentage_default` resta e continua a essere compilata
+              dall'assistente quando legge una scheda prodotto (13/08), ma
+              ha cambiato mestiere — da ingresso di un calcolo a **proposta**
+              per la riga nuova. Toglierla vorrebbe dire riscrivere
+              `create_ingredient`, `applica_scheda_prodotto` e il censimento
+              delle unità, per un campo che qualcuno compila già.
+
+              ⚠️ E il prezzo di questa riga è dichiarato: chi cercava lo
+              scarto qui adesso non lo trova, e deve saperlo. È il motivo per
+              cui questo riquadro resta scritto invece di sparire dal
+              sorgente. */}
           {/* La scorta minima è quello che fa nascere una riga nella lista
               della spesa. Volutamente VUOTA di partenza e mai proposta dal
               sistema: senza mesi di consumi veri un numero inventato
