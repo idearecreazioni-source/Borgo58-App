@@ -274,3 +274,90 @@ export async function leggiAPagine(leggiPagina, { perPagina = PER_PAGINA, pagine
   }
   return tutte;
 }
+
+// ---------------------------------------------------------------------
+// 6. LE DUE FONTI: LA PRIMA NOTA E «ANTICIPO IO, POI MI RIMBORSO»
+// ---------------------------------------------------------------------
+// 🔴 PERCHE' SONO DUE. Un investimento pagato di tasca propria **per conto
+//    della societa'** non passa da `cash_movements`: vive in
+//    `anticipazioni_socio`. In prima nota compare solo il **rimborso**, con
+//    una causale di sistema — giustamente non marcabile, perche' un rimborso
+//    non e' una spesa. Con una fonte sola quel denaro non aveva **nessuna
+//    porta** da cui entrare nel costo del progetto, e risultava zero.
+//
+// ⚠️ E NON SI SOVRAPPONGONO: sono due tabelle diverse, e l'unico punto in
+//    cui potrebbero raccontare la stessa spesa — la **fattura** — e' chiuso
+//    dal database, che rifiuta la seconda marcatura sullo stesso
+//    `supplier_invoice_id`. Qui non c'e' nessuno scarto da fare, e non deve
+//    essercene: uno scarto in questo punto farebbe sparire in silenzio una
+//    riga che Alessio ha marcato.
+
+export const PRIMA_NOTA = "prima_nota";
+export const ANTICIPAZIONE = "anticipazione";
+
+export function eUnAnticipo(riga) {
+  return riga?.fonte === ANTICIPAZIONE;
+}
+
+/**
+ * Il segno che distingue un anticipo da un'uscita di cassa.
+ *
+ * ⚠️ «Anticipo rimborsabile» e non «tasca»: sono due cose diverse e
+ *    confonderle sarebbe il difetto peggiore di questa schermata. La tasca
+ *    e' denaro suo che **non torna indietro**; un anticipo e' denaro suo che
+ *    la societa' gli **deve**. Il totale li tiene gia' separati — l'anticipo
+ *    sta sotto Borgo 58, la tasca sotto la tasca — e la parola lo deve dire.
+ */
+export function etichettaFonte(riga) {
+  return eUnAnticipo(riga) ? "Anticipo rimborsabile" : null;
+}
+
+const FONDI_IN_ITALIANO = {
+  contanti: "in contanti suoi",
+  conto_personale: "dal suo conto personale",
+};
+
+/**
+ * Chi ha materialmente anticipato, con le parole del modulo.
+ *
+ * ⚠️ IL GESTIONALE NON REGISTRA UNA PERSONA: `anticipazioni_socio` e', per
+ *    definizione, «cio' che **il titolare** paga con fondi propri per conto
+ *    della societa'» (15/08). Quello che registra in piu' e' `fondi`, cioe'
+ *    **con quali dei suoi soldi**. Si dice quello che si sa, e non si
+ *    inventa un nome.
+ *
+ * ⚠️ E `fondi` NON e' `mezzo`: `cassa`/`banca` dice da dove escono i soldi
+ *    **della societa'**, `contanti`/`conto_personale` dice con quali soldi
+ *    **suoi** ha anticipato. Sono due vocabolari, e infilare gli uni negli
+ *    altri ne produrrebbe uno finto (lezione del 17/08).
+ */
+export function chiHaAnticipato(riga) {
+  if (!eUnAnticipo(riga)) return null;
+  const come = FONDI_IN_ITALIANO[riga?.fondi];
+  return come ? `il titolare, ${come}` : "il titolare";
+}
+
+/**
+ * La colonna «Da dove» del dettaglio, per tutt'e due le fonti.
+ *
+ * ⚠️ Le parole del modulo, mai i codici del database (regola dell'11/09):
+ *    «Contante» e non `cassa`, «in contanti suoi» e non `contanti`.
+ */
+export function daDove(riga) {
+  if (eUnAnticipo(riga)) {
+    return [etichettaFonte(riga), chiHaAnticipato(riga)].filter(Boolean).join(" · ");
+  }
+  return riga?.mezzo === "banca" ? "Banca" : "Contante";
+}
+
+/**
+ * «In cosa», per tutt'e due le fonti, coi campi che esistono gia'.
+ *
+ * ⚠️ Nessun campo nuovo (decisione del 31/08): sulla prima nota lo dicono la
+ *    causale, la finalita' e la nota; su un anticipo il **motivo** (il tag) e
+ *    la nota. Un campo «in cosa» sarebbe una seconda risposta alla stessa
+ *    domanda.
+ */
+export function inCosa(riga) {
+  return [riga?.causale, riga?.descrizione, riga?.nota].filter(Boolean).join(" · ");
+}

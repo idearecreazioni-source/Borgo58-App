@@ -63,6 +63,12 @@ export async function createAnticipazione(payload) {
       fondi: payload.fondi ?? "contanti",
       supplier_invoice_id: payload.supplierInvoiceId || null,
       documento_riferimento: payload.documento?.trim() || null,
+      // 🔴 L'ETICHETTA «INVESTIMENTO» NEL PUNTO IN CUI VIVE LA SPESA (C11,
+      //    21/09/2026). Qui e non sul rimborso: il rimborso non e' una
+      //    spesa, e marcarlo farebbe crescere il costo due volte.
+      // ⚠️ Nasce SPENTA: se Alessio non sceglie, non e' un investimento.
+      //    Nessuna regola la deduce dal tag, dall'importo o dal testo.
+      e_investimento: payload.eInvestimento === true,
       nota: payload.nota?.trim() || null,
     })
     .select()
@@ -95,6 +101,30 @@ export async function pareggiaAnticipazione(id, data) {
     p_anticipazione_id: id,
     p_data: data ?? null,
   });
+}
+
+// 🔴 SI MARCA E SI SMARCA UNA NOTA GIA' SCRITTA, e si manda UN CAMPO SOLO.
+//
+// ⚠️ Scrittura diretta su una tabella sola senza conseguenze altrove —
+//    categoria A del Contratto. Le protezioni sono quelle di sempre: la RLS
+//    (`anticipazioni_socio` e' titolare-only per ogni operazione) e i due
+//    divieti della migrazione `20260921000003`, che valgono anche da qui —
+//    una nota della tasca non si marca, e la stessa fattura non si conta
+//    due volte.
+//
+// ⚠️ Rileggere la riga e rimandarla intera sovrascriverebbe con dati vecchi
+//    quello che fosse cambiato nel frattempo, ed e' la famiglia del 12/08.
+//    Marcare NON tocca importo, data, motivo, fondi, fattura, documento,
+//    nota ne' lo stato del rimborso.
+export async function segnaInvestimentoAnticipazione(id, valore) {
+  const { data, error } = await supabase
+    .from("anticipazioni_socio")
+    .update({ e_investimento: valore })
+    .eq("id", id)
+    .select("*, tag:tag_anticipazioni(etichetta)")
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // --- Le letture ------------------------------------------------------

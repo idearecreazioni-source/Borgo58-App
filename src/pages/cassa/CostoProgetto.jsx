@@ -6,8 +6,11 @@ import ElencoAdattivo from "../../components/ElencoAdattivo";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import {
+  daDove,
   dettaglioCompleto,
   dettaglioDelProgetto,
+  etichettaFonte,
+  inCosa,
   sommaRighe,
   totaliDelProgetto,
 } from "../../lib/calcoli/investimento";
@@ -256,22 +259,50 @@ export default function CostoProgetto() {
                 titolo={(r) => formatDate(r.data)}
                 intestazioneTitolo="Data"
                 attenuata={(r) => spaccato.fuori.some((f) => f.id === r.id)}
+                // 🔴 UN ANTICIPO SI RICONOSCE A COLPO D'OCCHIO, e non è un
+                //    vezzo: è denaro che la società TI DEVE, mentre le altre
+                //    righe sono soldi già usciti. Confonderlo con la tasca —
+                //    che invece non torna indietro — sarebbe il difetto
+                //    peggiore di questa schermata.
+                segno={(r) =>
+                  etichettaFonte(r) ? (
+                    <span
+                      data-prova="segno-anticipo"
+                      className="rounded-full bg-b58-olive/20 text-b58-olive-dark px-2 testo-sala"
+                    >
+                      anticipo
+                    </span>
+                  ) : null
+                }
                 campi={(r) => [
                   { chiave: "soggetto", etichetta: "Chi ha pagato", valore: r.soggetto },
                   {
                     chiave: "cosa",
                     etichetta: "In cosa",
                     // ⚠️ «In cosa» non ha un campo suo (decisione del 31/08):
-                    //    lo dicono la causale, la descrizione e la nota, che
-                    //    esistono gia'. Un campo nuovo sarebbe una seconda
-                    //    risposta alla stessa domanda.
-                    valore: [r.causale, r.descrizione, r.nota].filter(Boolean).join(" · "),
+                    //    lo dicono la causale (o il motivo, su un anticipo),
+                    //    la descrizione e la nota, che esistono gia'. Un campo
+                    //    nuovo sarebbe una seconda risposta alla stessa
+                    //    domanda.
+                    valore: inCosa(r),
                   },
                   {
                     chiave: "mezzo",
                     etichetta: "Da dove",
-                    // Le parole del modulo, non i codici del database.
-                    valore: r.mezzo === "banca" ? "Banca" : "Contante",
+                    // Le parole del modulo, non i codici del database: su un
+                    // anticipo dice «Anticipo rimborsabile · il titolare, in
+                    // contanti suoi», e non `contanti`.
+                    valore: daDove(r),
+                  },
+                  {
+                    chiave: "stato",
+                    etichetta: "Fattura e rimborso",
+                    // ⚠️ Coi dati che esistono gia': il numero della fattura
+                    //    collegata e se la nota e' stata rimborsata. La
+                    //    fattura si MOSTRA invece di nascondere il caso — e'
+                    //    li' che due conteggi potrebbero sovrapporsi, e il
+                    //    database lo impedisce a monte.
+                    valore: [r.fattura, r.rimborso].filter(Boolean).join(" · "),
                   },
                   { chiave: "importo", etichetta: "Importo", forte: true, valore: formatEUR(r.importo) },
                 ]}

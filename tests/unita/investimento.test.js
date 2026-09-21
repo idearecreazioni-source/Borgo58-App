@@ -1,12 +1,19 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  ANTICIPAZIONE,
   NOMI_PREDEFINITI,
   PER_PAGINA,
+  PRIMA_NOTA,
   SOGGETTI_DEL_COSTO,
+  chiHaAnticipato,
+  daDove,
   dettaglioCompleto,
   dettaglioDelProgetto,
+  eUnAnticipo,
+  etichettaFonte,
   idoneoAInvestimento,
+  inCosa,
   leggiAPagine,
   nelCostoDelProgetto,
   ragioneNonIdoneo,
@@ -371,5 +378,186 @@ describe("14 · la migrazione si annulla e non lascia dati di prova", () => {
     expect(istruzione, "manca il trigger trg_guardia_investimento").toBeTruthy();
     expect(istruzione).toMatch(/before insert or update on cash_movements/);
     expect(istruzione).not.toMatch(/\bupdate of\b/);
+  });
+});
+
+// =====================================================================
+// «ANTICIPO IO, POI MI RIMBORSO» — LA SECONDA FONTE (21/09/2026)
+// =====================================================================
+// 🔴 IL DIFETTO CHE CHIUDE. La prima stesura contava queste spese **zero
+//    volte**: la spesa non vive in `cash_movements` ma in
+//    `anticipazioni_socio`, e in prima nota compare solo il rimborso, con
+//    una causale di sistema giustamente non marcabile. Con una fonte sola
+//    quel denaro non aveva **nessuna porta** per entrare.
+describe("le due fonti si distinguono, e si dicono in italiano", () => {
+  const anticipo = {
+    id: "a1",
+    fonte: ANTICIPAZIONE,
+    tipo: "srls",
+    causale: "Fornitore urgente",
+    fondi: "contanti",
+    mezzo: null,
+    nota: "acconto al fabbro",
+    fattura: "Fattura 12 — Ferramenta Rossi",
+    rimborso: "da rimborsare",
+    importo: "300.00",
+  };
+  const uscitaDiCassa = {
+    id: "m1",
+    fonte: PRIMA_NOTA,
+    tipo: "srls",
+    causale: "Attrezzature",
+    mezzo: "banca",
+    fondi: null,
+    descrizione: "Forno",
+    importo: "6000.00",
+  };
+
+  it("un anticipo si riconosce dalla FONTE, non da un importo o da una parola", () => {
+    expect(eUnAnticipo(anticipo)).toBe(true);
+    expect(eUnAnticipo(uscitaDiCassa)).toBe(false);
+    expect(eUnAnticipo(null)).toBe(false);
+  });
+
+  it("🔴 si chiama «Anticipo rimborsabile», mai «tasca»", () => {
+    // Sono due cose opposte: la tasca e' denaro suo che NON torna indietro,
+    // un anticipo e' denaro suo che la societa' gli DEVE.
+    expect(etichettaFonte(anticipo)).toBe("Anticipo rimborsabile");
+    expect(etichettaFonte(anticipo)).not.toMatch(/tasca/i);
+    expect(etichettaFonte(uscitaDiCassa)).toBeNull();
+  });
+
+  it("dice chi ha anticipato, coi dati che esistono", () => {
+    // Il gestionale non registra una persona: registra che e' il titolare, e
+    // con quali dei suoi soldi. Si dice quello che si sa.
+    expect(chiHaAnticipato(anticipo)).toBe("il titolare, in contanti suoi");
+    expect(chiHaAnticipato({ ...anticipo, fondi: "conto_personale" })).toBe(
+      "il titolare, dal suo conto personale"
+    );
+    // Un valore che non conosciamo non fa sparire la riga e non inventa nulla.
+    expect(chiHaAnticipato({ ...anticipo, fondi: "boh" })).toBe("il titolare");
+    expect(chiHaAnticipato(uscitaDiCassa)).toBeNull();
+  });
+
+  it("🔴 `fondi` e `mezzo` restano due vocabolari, non uno finto", () => {
+    // `cassa`/`banca` dice da dove escono i soldi DELLA SOCIETA';
+    // `contanti`/`conto_personale` con quali soldi SUOI ha anticipato.
+    expect(daDove(uscitaDiCassa)).toBe("Banca");
+    expect(daDove({ ...uscitaDiCassa, mezzo: "cassa" })).toBe("Contante");
+    expect(daDove(anticipo)).toBe("Anticipo rimborsabile · il titolare, in contanti suoi");
+    // Nessun codice nudo del database esce a schermo.
+    expect(daDove(uscitaDiCassa)).not.toMatch(/banca/);
+    expect(daDove({ ...uscitaDiCassa, mezzo: "cassa" })).not.toMatch(/cassa/);
+  });
+
+  it("«in cosa» si compone dai campi che esistono, per tutt'e due", () => {
+    expect(inCosa(uscitaDiCassa)).toBe("Attrezzature · Forno");
+    expect(inCosa(anticipo)).toBe("Fornitore urgente · acconto al fabbro");
+    expect(inCosa({ fonte: PRIMA_NOTA })).toBe("");
+  });
+});
+
+describe("2-3-4 · un anticipo entra UNA volta, e il rimborso non cambia niente", () => {
+  // I numeri arrivano gia' aggregati dal database, che somma le due fonti per
+  // soggetto. Qui si prova che la regola di lettura non li sdoppia e non li
+  // sposta di soggetto.
+  const conAnticipo = [
+    { tipo: "srls", soggetto: "Borgo 58", quante: 2, totale: "6300.00" },
+    { tipo: "tasca", soggetto: "La tasca di Alessio", quante: 1, totale: "250.50" },
+  ];
+
+  it("l'anticipo sta sotto Borgo 58, non sotto la tasca", () => {
+    const t = totaliDelProgetto(conAnticipo);
+    expect(t.dentro.find((r) => r.tipo === "srls").totale).toBe(6300);
+    expect(t.dentro.find((r) => r.tipo === "tasca").totale).toBe(250.5);
+    expect(t.totale).toBe(6550.5);
+  });
+
+  it("🔴 il rimborso non e' marcabile, quindi non entra da nessuna parte", () => {
+    // E' cosi' che «prima e dopo il rimborso» e' lo stesso numero: il
+    // movimento del rimborso porta una causale di SISTEMA, e non e' idoneo.
+    const rimborso = {
+      direction: "uscita",
+      causale: { label: "Rimborso al titolare", di_sistema: true },
+    };
+    expect(idoneoAInvestimento(rimborso)).toBe(false);
+    expect(ragioneNonIdoneo(rimborso)).toMatch(/due volte/i);
+  });
+
+  it("9-10 · aggregato e dettaglio coincidono con le due fonti mescolate", () => {
+    const righe = [
+      { id: "m1", fonte: PRIMA_NOTA, tipo: "srls", importo: "6000.00" },
+      { id: "a1", fonte: ANTICIPAZIONE, tipo: "srls", importo: "300.00" },
+      { id: "t1", fonte: PRIMA_NOTA, tipo: "tasca", importo: "250.50" },
+    ];
+    const t = totaliDelProgetto(conAnticipo);
+    const s = dettaglioDelProgetto(righe);
+    expect(sommaRighe(s.dentro)).toBe(t.totale);
+    expect(dettaglioCompleto(t, righe)).toEqual({ attese: 3, mostrate: 3, completo: true });
+  });
+
+  it("11 · oltre mille righe COMPLESSIVE il dettaglio si dichiara parziale", () => {
+    // ⚠️ Il conteggio atteso viene dall'aggregato, che somma le DUE fonti: se
+    //    contasse solo la prima nota, un dettaglio tagliato passerebbe per
+    //    intero proprio quando le anticipazioni sono tante.
+    const t = totaliDelProgetto([
+      { tipo: "srls", soggetto: "Borgo 58", quante: 1200, totale: "40000.00" },
+      { tipo: "tasca", soggetto: "La tasca di Alessio", quante: 5, totale: "100.00" },
+    ]);
+    const mille = Array.from({ length: 1000 }, (_, i) => ({
+      id: `r${i}`,
+      fonte: PRIMA_NOTA,
+      tipo: "srls",
+    }));
+    const esito = dettaglioCompleto(t, mille);
+    expect(esito.attese).toBe(1205);
+    expect(esito.completo).toBe(false);
+    expect(t.totale).toBe(40100);
+  });
+});
+
+describe("14-bis · la migrazione porta l'etichetta anche dove la spesa vive", () => {
+  const SQL = readFileSync("supabase/migrations/20260921000003_l_etichetta_investimento.sql", "utf8");
+  const codice = SQL.replace(/--[^\n]*/g, "");
+
+  it("la colonna nasce spenta anche sulle anticipazioni", () => {
+    expect(codice).toMatch(
+      /alter table anticipazioni_socio\s+add column if not exists e_investimento boolean not null default false/
+    );
+  });
+
+  it("🔴 il guardiano c'e' su TUTT'E DUE le tabelle", () => {
+    expect(codice).toMatch(/create trigger trg_guardia_investimento\b/);
+    expect(codice).toMatch(/create trigger trg_guardia_investimento_anticipazione\b/);
+  });
+
+  it("🔴 e nessuno dei due guarda la sola colonna", () => {
+    // `update of colonna` guarda cio' che e' stato NOMINATO, non cio' che e'
+    // cambiato: chi marca prima e collega la fattura dopo passerebbe.
+    for (const nome of ["trg_guardia_investimento", "trg_guardia_investimento_anticipazione"]) {
+      const istruzione = codice.match(new RegExp("create trigger " + nome + "\\b[\\s\\S]*?;"))?.[0];
+      expect(istruzione, "manca il trigger " + nome).toBeTruthy();
+      expect(istruzione).toMatch(/before insert or update on/);
+      expect(istruzione).not.toMatch(/\bupdate of\b/);
+    }
+  });
+
+  it("🔴 la deduplicazione usa l'IDENTIFICATIVO della fattura, non un importo", () => {
+    // Le due guardie si guardano a vicenda sullo stesso `supplier_invoice_id`.
+    expect(codice).toMatch(
+      /from anticipazioni_socio a\s+where a\.supplier_invoice_id = new\.supplier_invoice_id/
+    );
+    expect(codice).toMatch(
+      /from cash_movements m\s+where m\.supplier_invoice_id = new\.supplier_invoice_id/
+    );
+  });
+
+  it("⚠️ e il conteggio NON guarda lo stato del rimborso", () => {
+    // `pareggiata_il` non deve comparire nella somma: e' cosi' che «prima e
+    // dopo il rimborso» e' lo stesso numero per costruzione.
+    const somma = codice.match(/create or replace function costo_del_progetto[\s\S]*?\$fn\$;/)?.[0];
+    expect(somma, "manca costo_del_progetto").toBeTruthy();
+    expect(somma).toMatch(/from anticipazioni_socio a/);
+    expect(somma).not.toMatch(/pareggiata_il/);
   });
 });

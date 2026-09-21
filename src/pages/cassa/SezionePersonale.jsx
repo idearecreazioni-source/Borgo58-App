@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   annullaPareggioAnticipazione,
   createAnticipazione,
+  segnaInvestimentoAnticipazione,
   createTagAnticipazione,
   deleteAnticipazione,
   getSaldoAnticipazioni,
@@ -42,6 +43,10 @@ const formaVuota = {
   supplierInvoiceId: "",
   documento: "",
   nota: "",
+  // 🔴 NASCE SPENTA (C11, 21/09/2026): se Alessio non sceglie, questa
+  //    nota non e' un investimento. Nessuna regola lo deduce dal motivo,
+  //    dall'importo o dal testo.
+  eInvestimento: false,
 };
 
 export default function SezionePersonale() {
@@ -58,6 +63,11 @@ export default function SezionePersonale() {
   const [form, setForm] = useState(formaVuota);
   const [nuovoTag, setNuovoTag] = useState("");
   const [saving, setSaving] = useState(false);
+  // 🔴 L'ESITO VA SULLA RIGA TOCCATA, non in cima alla pagina: un rifiuto
+  //    lontano dal gesto e' un rifiuto che non c'e' (lezione del 17/08,
+  //    pagata una volta proprio in Cassa).
+  const [marcando, setMarcando] = useState(null);
+  const [erroreRiga, setErroreRiga] = useState({});
 
   useEffect(() => {
     getEntities()
@@ -128,6 +138,27 @@ export default function SezionePersonale() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // 🔴 MARCARE E SMARCARE UNA NOTA GIA' SCRITTA, senza ricrearla.
+  //
+  // ⚠️ Il rifiuto del database e' un'INFORMAZIONE e va letto dove si e'
+  //    premuto: dice quale delle due cose e' gia' contata — questa nota o
+  //    l'uscita che paga la stessa fattura — e come cambiare idea.
+  const segnaInvestimento = async (n, valore) => {
+    setMarcando(n.id);
+    setErroreRiga((e) => ({ ...e, [n.id]: "" }));
+    try {
+      const aggiornata = await segnaInvestimentoAnticipazione(n.id, valore);
+      // ⚠️ Si aggiorna SOLO la riga toccata: una ricarica completa
+      //    butterebbe via quello che si sta scrivendo nel modulo sopra
+      //    (trappola del 12/08).
+      setNote((righe) => righe.map((r) => (r.id === n.id ? { ...r, ...aggiornata } : r)));
+    } catch (e) {
+      setErroreRiga((err) => ({ ...err, [n.id]: e.message }));
+    } finally {
+      setMarcando(null);
     }
   };
 
@@ -383,6 +414,40 @@ export default function SezionePersonale() {
                   </p>
                 )}
 
+                {/* 🔴 «INVESTIMENTO PER IL PROGETTO» ANCHE QUI — C11,
+                    21/09/2026, decisione di Alessio. È il punto in cui la
+                    spesa VIVE: quello che anticipi per conto della società
+                    non passa dalla Prima nota, e senza questa casella non
+                    avrebbe nessuna porta per entrare nel costo del progetto.
+                    ⚠️ La spiegazione sta dietro il segno e non accanto al
+                    nome: una nota affiancata a una spunta toglie spazio
+                    proprio al nome che spiega (misurato il 25/08). */}
+                <label
+                  data-prova="investimento-nota-nuova"
+                  className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft mb-3"
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.eInvestimento}
+                    onChange={(e) => setForm((f) => ({ ...f, eInvestimento: e.target.checked }))}
+                  />
+                  <span>Investimento per il progetto</span>
+                  <Didascalia etichetta="Cosa vuol dire «investimento per il progetto»">
+                    Spunta questa casella quando quello che hai anticipato serve a{" "}
+                    <strong>mettere in piedi il locale</strong> — arredi, attrezzature, lavori,
+                    pratiche — e non alla gestione di tutti i giorni.
+                    <br />
+                    <br />
+                    Entra in <em>Cassa → Quanto è costato il progetto</em> sotto{" "}
+                    <strong>Borgo 58</strong>, perché è una spesa fatta per conto della società, e
+                    ci resta <strong>uguale anche dopo che ti sei rimborsato</strong>: il rimborso
+                    non è una spesa nuova, è un debito che si chiude.
+                    <br />
+                    <br />
+                    Non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
+                  </Didascalia>
+                </label>
+
                 <div className="flex items-center gap-3">
                   <input
                     value={form.nota}
@@ -438,10 +503,42 @@ export default function SezionePersonale() {
                       <span className="text-b58-charcoal-soft"> · {formatDate(n.pagata_il)} · {n.tag?.etichetta}</span>
                       <div className="testo-sala text-b58-charcoal-soft">
                         {n.fondi === "conto_personale" ? "dal tuo conto" : "contanti tuoi"}
-                        {n.supplier_invoice_id && " · collegata a una fattura (la spesa è contata lì)"}
+                        {/* ⚠️ LA FRASE DICE DI QUALE CONTEGGIO PARLA — C11,
+                            21/09/2026. Prima diceva «la spesa è contata lì»
+                            senza dire dove, e da oggi non è più vero in
+                            generale: per il FISCO il costo resta sulla
+                            fattura (regola del 16/08, non toccata), ma nel
+                            costo del progetto questa nota può entrare — è
+                            denaro uscito per il locale. Una frase che vale
+                            per un conteggio e non per l'altro va detta
+                            intera, o diventa falsa senza cambiare. */}
+                        {n.supplier_invoice_id && " · collegata a una fattura (il costo fiscale è contato sulla fattura)"}
                         {!n.documento_riferimento && " · senza documento"}
                         {n.nota && ` · ${n.nota}`}
                       </div>
+                      <label
+                        data-prova="investimento-nota"
+                        className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(n.e_investimento)}
+                          disabled={marcando === n.id}
+                          onChange={(e) => segnaInvestimento(n, e.target.checked)}
+                        />
+                        <span>
+                          Investimento per il progetto
+                          {marcando === n.id ? " — salvo…" : ""}
+                        </span>
+                      </label>
+                      {erroreRiga[n.id] && (
+                        <p
+                          data-prova="investimento-nota-errore"
+                          className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1"
+                        >
+                          {erroreRiga[n.id]}
+                        </p>
+                      )}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
                       <button
@@ -499,6 +596,30 @@ export default function SezionePersonale() {
                   <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 testo-sala-grande">
                     <span className="text-b58-charcoal-soft">
                       {formatDate(n.pagata_il)} · {n.tag?.etichetta}
+                      {/* 🔴 SI MARCA ANCHE UNA NOTA GIA' RIMBORSATA, ed è la
+                          decisione di Alessio del 21/09: il costo del
+                          progetto è lo stesso prima e dopo il rimborso. Il
+                          rimborso chiude un debito, non annulla una spesa. */}
+                      <label
+                        data-prova="investimento-nota-chiusa"
+                        className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(n.e_investimento)}
+                          disabled={marcando === n.id}
+                          onChange={(e) => segnaInvestimento(n, e.target.checked)}
+                        />
+                        <span>
+                          Investimento per il progetto
+                          {marcando === n.id ? " — salvo…" : ""}
+                        </span>
+                      </label>
+                      {erroreRiga[n.id] && (
+                        <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mt-1">
+                          {erroreRiga[n.id]}
+                        </p>
+                      )}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
                       <span className="text-b58-charcoal-soft">

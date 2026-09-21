@@ -31,11 +31,15 @@ const finto = vi.hoisted(() => ({
   totali: [],
   righe: [],
   rompiTotali: false,
+  note: [],
+  rifiutoNota: null,
 }));
 
 const spie = vi.hoisted(() => ({
   crea: null,
   segna: null,
+  creaNota: null,
+  segnaNota: null,
 }));
 
 vi.mock("../../src/lib/api/entities", () => ({
@@ -118,8 +122,12 @@ beforeEach(() => {
   finto.totali = [];
   finto.righe = [];
   finto.rompiTotali = false;
+  finto.note = [];
+  finto.rifiutoNota = null;
   spie.crea = null;
   spie.segna = null;
+  spie.creaNota = null;
+  spie.segnaNota = null;
   vi.clearAllMocks();
 });
 
@@ -371,5 +379,202 @@ describe("6-7-10 · la vista «quanto e' costato il progetto»", () => {
     const api = await import("../../src/lib/api/cash");
     await apriCosto();
     expect(api.costoDelProgetto).toHaveBeenCalledWith("", "");
+  });
+});
+
+// =====================================================================
+// «ANTICIPO IO, POI MI RIMBORSO» — LA SECONDA FONTE, DALLE SCHERMATE
+// =====================================================================
+// 🔴 Il difetto che chiude: la prima stesura contava queste spese **zero
+//    volte**, perche' l'etichetta esisteva solo sui movimenti di cassa e la
+//    spesa vive altrove. Qui si prova che la casella c'e' dove la spesa vive,
+//    che quello che si spunta ARRIVA, e che il rifiuto del database si legge
+//    sulla riga toccata invece che in cima alla pagina.
+
+const TAG = { id: "t1", etichetta: "Fornitore urgente", attivo: true };
+
+const notaAperta = (extra) => ({
+  id: "n1",
+  importo: "300.00",
+  pagata_il: "2026-09-01",
+  tag: { etichetta: TAG.etichetta },
+  tag_id: TAG.id,
+  fondi: "contanti",
+  supplier_invoice_id: null,
+  documento_riferimento: "DOC-1",
+  nota: null,
+  pareggiata_il: null,
+  e_investimento: false,
+  ...extra,
+});
+
+const notaChiusa = (extra) =>
+  notaAperta({ id: "n2", pareggiata_il: "2026-09-10", ...extra });
+
+vi.mock("../../src/lib/api/supplierInvoices", () => ({
+  listSupplierInvoices: vi.fn(async () => []),
+}));
+
+vi.mock("../../src/lib/api/anticipazioni", () => ({
+  annullaPareggioAnticipazione: vi.fn(async () => ({})),
+  createAnticipazione: vi.fn(async (p) => {
+    spie.creaNota = p;
+    return { id: "nuova" };
+  }),
+  createTagAnticipazione: vi.fn(async () => TAG),
+  deleteAnticipazione: vi.fn(async () => ({})),
+  getSaldoAnticipazioni: vi.fn(async () => ({
+    ti_deve: 300,
+    note_aperte: 1,
+    piu_vecchia_il: "2026-09-01",
+    totale_anno: 300,
+    avvertenza: "",
+  })),
+  listAnticipazioni: vi.fn(async () => finto.note),
+  listAnticipazioniPerTag: vi.fn(async () => []),
+  listDaComunicare: vi.fn(async () => []),
+  listTagAnticipazioni: vi.fn(async () => [TAG]),
+  pareggiaAnticipazione: vi.fn(async () => ({})),
+  segnaInvestimentoAnticipazione: vi.fn(async (id, valore) => {
+    spie.segnaNota = [id, valore];
+    if (finto.rifiutoNota) throw new Error(finto.rifiutoNota);
+    const n = finto.note.find((x) => x.id === id);
+    return { ...n, e_investimento: valore };
+  }),
+}));
+
+async function apriAnticipazioni() {
+  const { default: SezionePersonale } = await import("../../src/pages/cassa/SezionePersonale.jsx");
+  const vista = render(
+    <MemoryRouter initialEntries={["/cassa/personale"]}>
+      <SezionePersonale />
+    </MemoryRouter>
+  );
+  await waitFor(() => expect(screen.getByText("Ancora da rimborsare")).toBeTruthy());
+  return vista;
+}
+
+describe("13-bis · l'etichetta c'e' dove la spesa vive", () => {
+  it("nel modulo di una nota nuova la casella c'e'", async () => {
+    const { container } = await apriAnticipazioni();
+    expect(container.querySelector('[data-prova="investimento-nota-nuova"]')).toBeTruthy();
+  });
+
+  it("2 · senza toccare niente la nota nasce NON marcata", async () => {
+    const { container } = await apriAnticipazioni();
+    const importo = container.querySelector('input[type="number"]');
+    fireEvent.change(importo, { target: { value: "300" } });
+    fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
+    await waitFor(() => expect(spie.creaNota).toBeTruthy());
+    expect(spie.creaNota.eInvestimento).toBe(false);
+  });
+
+  it("3 · spuntata, arriva al salvataggio", async () => {
+    const { container } = await apriAnticipazioni();
+    fireEvent.change(container.querySelector('input[type="number"]'), { target: { value: "300" } });
+    fireEvent.click(container.querySelector('[data-prova="investimento-nota-nuova"] input'));
+    fireEvent.click(screen.getByRole("button", { name: /Registra/ }));
+    await waitFor(() => expect(spie.creaNota).toBeTruthy());
+    expect(spie.creaNota.eInvestimento).toBe(true);
+  });
+});
+
+describe("7 · una nota gia' scritta si marca e si smarca", () => {
+  it("il gesto c'e' sulla nota aperta, e manda SOLO l'etichetta", async () => {
+    finto.note = [notaAperta()];
+    const { container } = await apriAnticipazioni();
+    const caselle = tutti(container, '[data-prova="investimento-nota"] input');
+    expect(caselle.length).toBeGreaterThan(0);
+    fireEvent.click(caselle[0]);
+    await waitFor(() => expect(spie.segnaNota).toEqual(["n1", true]));
+  });
+
+  it("🔴 e anche su una nota GIA' RIMBORSATA", async () => {
+    // Il costo del progetto e' lo stesso prima e dopo il rimborso: il
+    // rimborso chiude un debito, non annulla una spesa.
+    finto.note = [notaChiusa({ e_investimento: true })];
+    const { container } = await apriAnticipazioni();
+    const caselle = tutti(container, '[data-prova="investimento-nota-chiusa"] input');
+    expect(caselle.length).toBeGreaterThan(0);
+    expect(caselle[0].checked).toBe(true);
+    fireEvent.click(caselle[0]);
+    await waitFor(() => expect(spie.segnaNota).toEqual(["n2", false]));
+  });
+
+  it("🔴 il rifiuto del database si legge SULLA RIGA TOCCATA", async () => {
+    // Un rifiuto in cima alla pagina e' un rifiuto che non c'e': lo si e'
+    // gia' pagato una volta in Cassa, il 17/08.
+    finto.note = [notaAperta({ supplier_invoice_id: "f1" })];
+    finto.rifiutoNota = "La fattura ZZ-1 e' gia' contata nel costo del progetto.";
+    const { container } = await apriAnticipazioni();
+    fireEvent.click(tutti(container, '[data-prova="investimento-nota"] input')[0]);
+    await waitFor(() =>
+      expect(container.querySelector('[data-prova="investimento-nota-errore"]')).toBeTruthy()
+    );
+    expect(
+      container.querySelector('[data-prova="investimento-nota-errore"]').textContent
+    ).toMatch(/gia' contata/);
+  });
+
+  it("⚠️ la frase sulla fattura dice DI QUALE conteggio parla", async () => {
+    // Prima diceva «la spesa e' contata li'» senza dire dove: da oggi e'
+    // vero per il fisco e non per il costo del progetto, e una frase che
+    // vale per un conteggio e non per l'altro va detta intera.
+    finto.note = [notaAperta({ supplier_invoice_id: "f1" })];
+    const { container } = await apriAnticipazioni();
+    expect(container.textContent).toMatch(/il costo fiscale è contato sulla fattura/);
+  });
+});
+
+describe("la vista mostra la seconda fonte", () => {
+  const conAnticipo = () => {
+    finto.totali = [
+      { entity_id: "id-srls", tipo: "srls", soggetto: "Borgo 58", quante: 2, totale: "6300.00" },
+      { entity_id: "id-tasca", tipo: "tasca", soggetto: "La tasca di Alessio", quante: 0, totale: "0" },
+    ];
+    finto.righe = [
+      {
+        id: "m1", fonte: "prima_nota", data: "2026-09-02", tipo: "srls", soggetto: "Borgo 58",
+        causale: "Attrezzature", mezzo: "banca", fondi: null, descrizione: "Forno", nota: null,
+        fattura: null, rimborso: null, importo: "6000.00",
+      },
+      {
+        id: "a1", fonte: "anticipazione", data: "2026-09-01", tipo: "srls", soggetto: "Borgo 58",
+        causale: "Fornitore urgente", mezzo: null, fondi: "conto_personale", descrizione: null,
+        nota: "acconto al fabbro", fattura: "Fattura 12 — Ferramenta Rossi",
+        rimborso: "rimborsata il 10/09/2026", importo: "300.00",
+      },
+    ];
+  };
+
+  it("l'anticipo si riconosce, e non si chiama «tasca»", async () => {
+    conAnticipo();
+    const { container } = await apriCosto();
+    expect(tutti(container, '[data-prova="segno-anticipo"]').length).toBeGreaterThan(0);
+    expect(container.textContent).toMatch(/Anticipo rimborsabile/);
+    expect(container.textContent).toMatch(/il titolare, dal suo conto personale/);
+  });
+
+  it("dice la fattura collegata e lo stato del rimborso", async () => {
+    conAnticipo();
+    const { container } = await apriCosto();
+    expect(container.textContent).toMatch(/Fattura 12 — Ferramenta Rossi/);
+    expect(container.textContent).toMatch(/rimborsata il 10\/09\/2026/);
+  });
+
+  it("🔴 entra nel totale di Borgo 58, non in quello della tasca", async () => {
+    conAnticipo();
+    const { container } = await apriCosto();
+    expect(container.querySelector('[data-prova="totale-srls"]').textContent).toMatch(/6\.300,00/);
+    expect(container.querySelector('[data-prova="totale-tasca"]').textContent).toMatch(/0,00/);
+    expect(container.querySelector('[data-prova="totale-progetto"]').textContent).toMatch(/6\.300,00/);
+    expect(container.querySelector('[data-prova="dettaglio-parziale"]')).toBeNull();
+  });
+
+  it("⚠️ e i codici del database non escono a schermo", async () => {
+    conAnticipo();
+    const { container } = await apriCosto();
+    expect(container.textContent).not.toMatch(/conto_personale/);
+    expect(container.textContent).not.toMatch(/prima_nota/);
   });
 });
