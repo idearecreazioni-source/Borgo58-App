@@ -222,6 +222,14 @@ describe("15 · la migrazione si verifica da sé e non lascia residui", () => {
     const dovSanatoria = codice.indexOf("do $sanatoria$");
     expect(dovFoto).toBeGreaterThan(0);
     expect(dovFoto).toBeLessThan(dovSanatoria);
+    // 🔴 E NON BASTA CHE LA TABELLA ESISTA: dev'essere RIEMPITA dal calcolo
+    //    vero. Rompendo apposta la migrazione — lasciando la fotografia
+    //    vuota — questa prova restava VERDE, e il confronto sarebbe passato
+    //    senza aver guardato niente: la trappola del caso vuoto, stavolta
+    //    sul guardiano invece che sui dati.
+    expect(codice).toMatch(
+      /create temp table zz_food_cost_prima as\s+select [^;]*from v_recipe_costs;/
+    );
     // E il confronto c'è, riga per ricetta e non su un totale.
     expect(codice).toMatch(/from zz_food_cost_prima p\s+join v_recipe_costs d/);
     expect(codice).toMatch(/il food cost di % ricette si e'' mosso/);

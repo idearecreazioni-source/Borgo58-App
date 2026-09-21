@@ -1210,13 +1210,25 @@ export default function IngredienteForm() {
               ⚠️ Adesso si scrive **sulla riga della ricetta**, in lordo e
               netto: «1,5 kg di cozze danno 400 g».
 
-              ⚠️ IL DATO NON È STATO CANCELLATO, è uscito da qui: la colonna
-              `waste_percentage_default` resta e continua a essere compilata
-              dall'assistente quando legge una scheda prodotto (13/08), ma
-              ha cambiato mestiere — da ingresso di un calcolo a **proposta**
-              per la riga nuova. Toglierla vorrebbe dire riscrivere
-              `create_ingredient`, `applica_scheda_prodotto` e il censimento
-              delle unità, per un campo che qualcuno compila già.
+              🔴 IL DATO NON È STATO CANCELLATO, MA DA OGGI NON LO SCRIVE PIÙ
+              NESSUNO — e va detto per intero, perché la frase comoda sarebbe
+              «resta come proposta» ed è falsa. Misurato nella migrazione
+              `20260823000007`: il 23/08 Alessio decise che *lo scarto non lo
+              propone più nessuno, si scrive a mano quando si sa*, e quel
+              giorno `applica_scheda_prodotto` **smise di scriverlo** anche
+              se il modello l'avesse rimandato. L'unica porta rimasta era
+              questo campo, e R12 la chiude.
+
+              ⚠️ Quindi `ingredients.waste_percentage_default` adesso non è
+              letta da nessun calcolo (la sanatoria ha scritto lo scarto
+              esplicito su ogni riga) e non è scritta da nessuna parte. Se si
+              tiene o si butta è una decisione di ALESSIO, non mia: toglierla
+              vuol dire riscrivere `create_ingredient` (che la prende come
+              parametro), `applica_scheda_prodotto`, `prodotti_troppo_piccoli`,
+              `numeri_sospetti`, il censimento delle unità e il vincolo
+              `ingredients_scarto_sotto_cento`. ⚠️ E tenerla ha il prezzo che
+              questo progetto conosce: *una colonna spenta, fra tre mesi,
+              qualcuno la riaccende credendo di riparare qualcosa.*
 
               ⚠️ E il prezzo di questa riga è dichiarato: chi cercava lo
               scarto qui adesso non lo trova, e deve saperlo. È il motivo per

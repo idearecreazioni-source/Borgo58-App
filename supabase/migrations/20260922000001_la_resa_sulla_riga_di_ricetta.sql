@@ -93,12 +93,33 @@
 --   5. solo adesso la funzione, il trigger e il vincolo;
 --   6. il confronto col food cost della fotografia — che è la prova vera.
 --
--- ⚠️ **`ingredients.waste_percentage_default` NON si tocca e NON si legge
--- più nei calcoli**: dopo la sanatoria ogni riga ha il proprio scarto
--- esplicito, e il `coalesce(..., i.waste_percentage_default, 0)` non arriva
--- mai al secondo argomento. La colonna resta dov'è perché **la scrive
--- l'assistente** dalle schede prodotto (13/08). Cambia il suo mestiere: da
--- ingresso di un calcolo a **proposta** per la riga nuova.
+-- ---------------------------------------------------------------------
+-- 🔴 UNA DECISIONE CHE RESTA AD ALESSIO, E NON LA PRENDO IO
+-- ---------------------------------------------------------------------
+-- `ingredients.waste_percentage_default` **non si tocca**, e dopo questa
+-- migrazione **non si legge più in nessun calcolo**: la sanatoria scrive lo
+-- scarto esplicito su ogni riga, quindi il
+-- `coalesce(..., i.waste_percentage_default, 0)` non arriva mai al secondo
+-- argomento.
+--
+-- ⚠️ E **nemmeno lo scrive più nessuno.** Misurato leggendo la migrazione
+-- `20260823000007`: quel giorno Alessio decise che *«lo scarto non lo
+-- propone più nessuno, si scrive a mano quando si sa»*, e la migrazione fece
+-- due cose — tolse lo scarto dai campi mancanti di `prodotti_da_compilare`,
+-- e fece **smettere `applica_scheda_prodotto` di scriverlo** anche se il
+-- modello lo rimandasse. L'unica porta rimasta era il campo nella scheda del
+-- prodotto, che R12 toglie.
+--
+-- 🔴 **Quindi da oggi quella colonna non è letta da niente e non è scritta
+-- da nessuno**, e la domanda «si tiene o si butta?» è una decisione di
+-- prodotto che **non prendo io**. Toglierla vorrebbe dire riscrivere
+-- `create_ingredient` (che la prende come parametro),
+-- `applica_scheda_prodotto`, `prodotti_troppo_piccoli`, `numeri_sospetti`,
+-- il censimento delle unità e il vincolo `ingredients_scarto_sotto_cento`:
+-- un lavoro suo, con una decisione dentro. ⚠️ E lasciarla dov'è ha il prezzo
+-- che questo progetto conosce — *una colonna spenta, fra tre mesi, qualcuno
+-- la riaccende credendo di riparare qualcosa* — che è precisamente il motivo
+-- per cui è scritto qui invece di essere lasciato scoprire.
 --
 -- ⚠️ **La resa misurata continua a vincere dove esiste**: `rese_preparazione`
 -- confronta quanto esce DAVVERO da una dose con quanto dice la ricetta, ed è
@@ -302,10 +323,10 @@ comment on column recipe_ingredients.waste_percentage is
 --    ed è innocuo. Quello che si toglie è la ragione sbagliata che
 --    dichiarava, e che mandava fuori strada chi la leggeva.
 comment on constraint ingredients_scarto_sotto_cento on ingredients is
-  'Lo scarto e'' una percentuale in PUNTI (35 = 35%): il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100). ⚠️ Dal 22/09/2026 questo numero non entra piu'' in nessun calcolo: la resa vive sulla riga di ricetta, in lordo e netto. Qui resta come PROPOSTA per la riga nuova — e'' il valore che l''assistente compila leggendo una scheda prodotto. Il limite sotto 100 e'' una prudenza, non un''aritmetica: uno scarto che piu'' che raddoppia la spesa merita di essere scritto sulla riga, dove si vede.';
+  'Lo scarto e'' una percentuale in PUNTI (35 = 35%): il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100). ⚠️ Dal 22/09/2026 questo numero non entra piu'' in nessun calcolo: la resa vive sulla riga di ricetta, in lordo e netto. Qui non resta come proposta: dal 23/08/2026 non lo propone piu'' nessuno (`applica_scheda_prodotto` smise di scriverlo) e dal 22/09 non lo scrive piu'' nemmeno la scheda del prodotto. Il limite sotto 100 e'' una prudenza, non un''aritmetica: uno scarto che piu'' che raddoppia la spesa merita di essere scritto sulla riga, dove si vede.';
 
 comment on column ingredients.waste_percentage_default is
-  'Lo scarto tipico di questo prodotto, PROPOSTO quando lo si aggiunge a una ricetta. ⚠️ Dal 22/09/2026 (R12) non e'' piu'' l''ingresso di nessun calcolo: il food cost e il fabbisogno leggono il lordo della RIGA di ricetta, perche'' lo scarto e'' una proprieta'' della coppia ingrediente × ricetta e non dell''ingrediente — le stesse cozze scartano pochissimo per un''impepata e moltissimo se se ne ricava il mollusco.';
+  'Lo scarto tipico di questo prodotto. 🔴 DA OGGI NESSUNO LO SCRIVE E NESSUNO LO LEGGE, e non e'' una proposta: dal 23/08/2026 `applica_scheda_prodotto` ha smesso di scriverlo (decisione di Alessio: «lo scarto non lo propone piu'' nessuno»), e dal 22/09/2026 (R12) e'' sparito anche il campo nella scheda del prodotto, che era l''ultima porta. ⚠️ Dal 22/09/2026 non e'' piu'' nemmeno l''ingresso di nessun calcolo: il food cost e il fabbisogno leggono il lordo della RIGA di ricetta, perche'' lo scarto e'' una proprieta'' della coppia ingrediente × ricetta e non dell''ingrediente — le stesse cozze scartano pochissimo per un''impepata e moltissimo se se ne ricava il mollusco. ⚠️ Se questa colonna si tiene o si butta e'' una decisione di Alessio: toglierla vuol dire riscrivere create_ingredient, applica_scheda_prodotto, prodotti_troppo_piccoli, numeri_sospetti, il censimento delle unita'' e il vincolo ingredients_scarto_sotto_cento.';
 
 -- ---------------------------------------------------------------------
 -- 8. LA COPIA DI UNA RICETTA PORTA IL LORDO
