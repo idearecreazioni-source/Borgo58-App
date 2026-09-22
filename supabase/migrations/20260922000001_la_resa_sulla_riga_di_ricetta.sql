@@ -570,7 +570,32 @@ create or replace view recipe_ingredients_display as
     --    una riga senza scarto prendeva quello della scheda del prodotto, a
     --    ogni lettura. Adesso `waste_percentage` e' `not null` e la riga
     --    risponde per se'.
-    ri.waste_percentage,
+    --
+    -- 🔴 E IL `::numeric` NON E' UN VEZZO: SENZA, LA MIGRAZIONE SI FERMA.
+    --    Misurato applicandola su Prova il 22/09:
+    --        ERROR: cannot change data type of view column
+    --               "waste_percentage" from numeric to numeric(5,2)
+    --    La definizione precedente era
+    --    `coalesce(ri.waste_percentage, i.waste_percentage_default, 0::numeric)`,
+    --    e quel `0::numeric` senza precisione faceva uscire la colonna come
+    --    `numeric` NON VINCOLATO. Togliendo il coalesce — che e' il punto di
+    --    R12 — resta `ri.waste_percentage`, che e' `numeric(5,2)`: il tipo
+    --    si STRINGE, e `create or replace view` non sa cambiare il tipo di
+    --    una colonna che esiste gia'.
+    -- ⚠️ E' la stessa famiglia della regola gia' scritta («in una vista si
+    --    aggiungono colonne solo in fondo, mai in mezzo — 42P16»), nella
+    --    variante TIPO: la forma cambia, il divieto e' lo stesso.
+    -- ⚠️ Il cast conserva il tipo che la vista ha sempre esposto, quindi per
+    --    chi la legge non cambia NIENTE — e non riporta l'eredita' dal
+    --    prodotto, che e' cio' che il coalesce faceva.
+    -- ⚠️ E IL NOME SI SCRIVE, non si lascia dedurre. Senza `as`, come si
+    --    chiami la colonna che esce da un cast lo decide una regola di
+    --    PostgreSQL: qui il nome DEVE restare `waste_percentage`, perche'
+    --    `create or replace view` non sa nemmeno rinominare una colonna
+    --    esistente — e un nome diverso romperebbe ogni schermata che legge
+    --    questa vista. *Una cosa da cui dipende il resto non si affida a
+    --    una regola che non si e' potuta misurare.*
+    ri.waste_percentage::numeric as waste_percentage,
     ri.prep_note,
     coalesce(i.allergens, '{}'::allergen[]) as allergens,
     ri.component_recipe_id is not null as is_preparation,

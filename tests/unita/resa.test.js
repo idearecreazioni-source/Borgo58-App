@@ -706,3 +706,101 @@ describe("18 · il limite del diagnostico è applicato PRIMA dell'aggregazione",
     expect(codiceR12).toMatch(/least\(v_storte, 10\)/);
   });
 });
+
+// =====================================================================
+// 19 · LA VISTA NON PUO' STRINGERE IL TIPO DI UNA COLONNA CHE ESISTE GIA'
+// =====================================================================
+// 🔴 PERCHE' ESISTE QUESTO GRUPPO. Il 22/09 la migrazione, ormai corretta a
+//    `numeric(18,8)`, ha superato le 25 righe che l'avevano fermata la prima
+//    volta — e si e' fermata PIU' AVANTI, su un difetto che il primo
+//    arresto teneva nascosto:
+//
+//      ERROR: cannot change data type of view column "waste_percentage"
+//             from numeric to numeric(5,2)
+//
+//    La definizione precedente era
+//    `coalesce(ri.waste_percentage, i.waste_percentage_default, 0::numeric)`:
+//    quel `0::numeric` senza precisione faceva uscire la colonna come
+//    `numeric` NON VINCOLATO. Togliendo il coalesce — che e' il punto di
+//    R12 — resta `ri.waste_percentage`, che e' `numeric(5,2)`, e il tipo si
+//    STRINGE.
+//
+// ⚠️ E' la stessa famiglia della regola gia' scritta in `CLAUDE.md` — «in
+//    una vista si aggiungono colonne solo in fondo, mai in mezzo (42P16)» —
+//    nella variante TIPO. Il divieto e' lo stesso, la forma no, e per questo
+//    nessuno l'aveva visto.
+//
+// ⚠️ *UN FALLIMENTO NE HA MASCHERATO UN ALTRO*: questo difetto c'era anche
+//    al primo tentativo, e nessun elenco di «cosa non e' verificato» poteva
+//    nominarlo, perche' quella riga non era mai stata eseguita.
+describe("19 · il tipo della colonna della vista non si stringe", () => {
+  const vista = codiceR12
+    .split("create or replace view recipe_ingredients_display as")[1]
+    ?.split(/;\s*\n/)[0];
+
+  it("c'è una sola vista `recipe_ingredients_display` nella migrazione", () => {
+    expect(vista, "non trovo la vista").toBeTruthy();
+  });
+
+  it("🔴 `waste_percentage` esce CASTATA a numeric senza precisione", () => {
+    // Senza il cast la colonna sarebbe `numeric(5,2)` e la migrazione si
+    // fermerebbe: e' successo, ed e' misurato.
+    expect(vista, "manca il cast: la vista proverebbe a stringere il tipo").toMatch(
+      /ri\.waste_percentage::numeric\b/,
+    );
+    // ⚠️ E il cast dev'essere a `numeric` NUDO: `::numeric(5,2)` sarebbe
+    //    scrivere a mano lo stesso restringimento che si sta evitando.
+    expect(vista).not.toMatch(/ri\.waste_percentage::numeric\s*\(/);
+  });
+
+  it("⚠️ e il NOME della colonna è scritto, non dedotto", () => {
+    // Come si chiami la colonna che esce da un cast senza `as` lo decide una
+    // regola di PostgreSQL. Qui il nome DEVE restare `waste_percentage`:
+    // `create or replace view` non sa nemmeno rinominare una colonna
+    // esistente, e un nome diverso romperebbe ogni schermata che la legge.
+    expect(vista).toMatch(/ri\.waste_percentage::numeric\s+as\s+waste_percentage\b/);
+  });
+
+  it("🔴 e il cast NON riporta l'eredità viva dal prodotto", () => {
+    // È la cura sbagliata che stava a portata di mano: rimettere il
+    // `coalesce` farebbe tornare il tipo giusto **e** l'eredità — cioè
+    // curerebbe l'arresto annullando il senso di R12.
+    expect(vista, "la vista è tornata a pescare il valore del prodotto").not.toContain(
+      "waste_percentage_default",
+    );
+  });
+
+  it("⚠️ e la vista non si butta via per ricrearla", () => {
+    // `drop view … cascade` risolverebbe il tipo, e rifarebbe i permessi a
+    // memoria: è la trappola del 24/08 — *un `grant` ricopiato è una
+    // riscrittura come le altre*, e apre una porta che non c'era.
+    expect(codiceR12).not.toMatch(/drop\s+view/i);
+    expect(codiceR12).not.toMatch(/\bcascade\b/i);
+  });
+
+  it("le colonne preesistenti restano nello stesso ordine, le nuove vanno in fondo", () => {
+    // 42P16: in una vista si aggiunge solo in coda.
+    const dove = (nome) => vista.indexOf(nome);
+    const preesistenti = [
+      "recipe_ingredient_id",
+      "ri.recipe_id",
+      "ingredient_name",
+      "ingredient_category",
+      "ri.quantity",
+      "ri.unit",
+      "waste_percentage",
+      "ri.prep_note",
+      "allergens",
+      "is_preparation",
+    ].map(dove);
+    for (let i = 1; i < preesistenti.length; i++) {
+      expect(preesistenti[i], `colonna ${i + 1} fuori posto`).toBeGreaterThan(preesistenti[i - 1]);
+    }
+    // E le tre nuove vengono dopo tutte quelle di prima.
+    for (const nuova of ["ri.quantita_lorda", "resa_percento", "origine_resa"]) {
+      expect(dove(nuova), `${nuova} non è in fondo`).toBeGreaterThan(
+        preesistenti[preesistenti.length - 1],
+      );
+    }
+  });
+});
