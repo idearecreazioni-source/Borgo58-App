@@ -85,6 +85,75 @@ export function lordoDaComprare(netto, lordoRiga, nettoRiga) {
 }
 
 // ---------------------------------------------------------------------
+// IL VALORE STANDARD DEL PRODOTTO — precompila una volta, poi tace
+// ---------------------------------------------------------------------
+// 🔴 DECISIONE DI ALESSIO, 22/09/2026, che conferma quella del 25/08: il
+//    campo sulla scheda del prodotto RESTA, facoltativo, e serve **solo a
+//    precompilare** lordo e netto quando nasce una riga. Dopo, la riga è
+//    autonoma e comanda lei.
+//
+// ⚠️ SOTTO RESTA UNO SCARTO, SOPRA SI LEGGE UNA RESA. Il database conserva
+//    `waste_percentage_default` in punti di scarto, perché è la forma che i
+//    cinque calcoli usano da sempre. La schermata invece chiede e mostra la
+//    **resa** — «da 1 kg ne restano 300 g» — perché una resa si capisce e
+//    uno scarto del 275% no. La conversione vive **qui e in nessun altro
+//    posto**: due formule per lo stesso numero prima o poi dicono due cose
+//    diverse.
+
+/**
+ * Da scarto (punti, come sta nel database) a resa (percentuale).
+ *
+ * ⚠️ Vuoto resta vuoto: *«non lo so»* non è *«non se ne butta niente»*.
+ */
+export function resaDaScarto(scarto) {
+  const s = numero(scarto);
+  if (s === null || s < 0) return null;
+  return Math.round((100 / (1 + s / 100)) * 10) / 10;
+}
+
+/**
+ * Da resa (quello che si scrive) a scarto (quello che si conserva).
+ *
+ * ⚠️ Una resa dev'essere maggiore di zero e non può superare il 100%: da un
+ *    chilo non ne escono due. Fuori da lì torna `null`, e chi chiama non
+ *    salva — non si salva un numero che il vincolo respingerebbe.
+ */
+export function scartoDaResa(resa) {
+  const r = numero(resa);
+  if (r === null || r <= 0 || r > 100) return null;
+  return Math.round((100 / r - 1) * 10000) / 100;
+}
+
+/**
+ * Il lordo da PRECOMPILARE su una riga nuova, dato il netto e lo scarto
+ * standard del prodotto.
+ *
+ * 🔴 Si chiama una volta sola, quando la riga nasce: non è un'eredità. Se
+ *    poi Alessio cambia il numero sulla scheda del prodotto, questa riga non
+ *    si muove — lo garantisce il database (`waste_percentage` è `not null`,
+ *    quindi nessun calcolo torna a pescare il valore del prodotto).
+ *
+ * ⚠️ Torna `null` quando non c'è niente da proporre, e `null` **non è zero**:
+ *    un lordo pari al netto sarebbe la proposta «non si butta niente», che è
+ *    una risposta, non un'assenza di risposta.
+ */
+export function lordoPrecompilato(netto, scartoStandard) {
+  const n = numero(netto);
+  const s = numero(scartoStandard);
+  if (n === null || n <= 0 || s === null || s <= 0) return null;
+  return Math.round(n * (1 + s / 100) * 10000) / 10000;
+}
+
+/** Come si legge un valore standard: «da 1 kg ne restano 300 g». */
+export function comeSiLeggeLoStandard(scartoStandard, unita) {
+  const resa = resaDaScarto(scartoStandard);
+  if (resa === null) return null;
+  const u = unita || "kg";
+  const per = Math.round(resa * 10) / 1000;
+  return `da 1 ${u} ne restano ${per} ${u} (resa ${resa}%)`;
+}
+
+// ---------------------------------------------------------------------
 // COSA SI PUO' SCRIVERE
 // ---------------------------------------------------------------------
 /**

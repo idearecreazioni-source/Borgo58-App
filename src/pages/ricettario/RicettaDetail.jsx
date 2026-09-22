@@ -67,6 +67,7 @@ import { stagioneAccesa, stagioniDopoIlTocco, stagioniNormalizzate } from "../..
 import {
   comeSiLegge,
   lordoDaSalvare,
+  lordoPrecompilato,
   ragioneNonSalvabile,
   resaPercento,
 } from "../../lib/calcoli/resa";
@@ -83,6 +84,11 @@ const emptyIngredientForm = {
   // ⚠️ Nasce VUOTO, e vuoto non e' zero: vuol dire «non ho detto che c'e'
   //    scarto», e allora il lordo e' il netto.
   quantita_lorda: "",
+  // 🔴 «PRECOMPILA UNA VOLTA» HA BISOGNO DI SAPERE SE QUALCUNO HA GIA'
+  //    SCRITTO. Senza questo segno, la proposta ricalcolata a ogni
+  //    cambio del netto sovrascriverebbe il numero appena digitato —
+  //    cioe' il gestionale butterebbe via una scelta senza dirlo.
+  lordoToccato: false,
   prep_note: "",
 };
 
@@ -1747,6 +1753,17 @@ export default function RicettaDetail() {
                       ...f,
                       ingredient_id: e.target.value,
                       unit: chosen?.unit ?? f.unit,
+                      // 🔴 LA RESA STANDARD DEL PRODOTTO PRECOMPILA, E BASTA
+                      //    (decisione di Alessio, 22/09). Non è un'eredità:
+                      //    il numero entra nel campo e da lì in poi è della
+                      //    riga. Cambiando domani la scheda del prodotto,
+                      //    questa riga non si muove.
+                      // ⚠️ E si ferma appena qualcuno scrive nel campo: una
+                      //    proposta che sovrascrive una scelta non è una
+                      //    proposta.
+                      quantita_lorda: f.lordoToccato
+                        ? f.quantita_lorda
+                        : (lordoPrecompilato(f.quantity, chosen?.waste_percentage_default) ?? ""),
                     }));
                   }}
                   className={`${inputClass} mt-2`}
@@ -1771,7 +1788,23 @@ export default function RicettaDetail() {
                 value={ingredientForm.quantity}
                 aria-label="Quanto ne resta, netto"
                 data-prova="riga-netto"
-                onChange={(e) => setIngredientForm((f) => ({ ...f, quantity: e.target.value }))}
+                onChange={(e) =>
+                  setIngredientForm((f) => {
+                    // ⚠️ La proposta segue il netto finché nessuno ha scritto
+                    //    il lordo: scrivendo prima la quantità e poi
+                    //    scegliendo l'ingrediente — o viceversa — il numero
+                    //    proposto dev'essere lo stesso.
+                    const scelto = allIngredients.find((i) => i.id === f.ingredient_id);
+                    return {
+                      ...f,
+                      quantity: e.target.value,
+                      quantita_lorda: f.lordoToccato
+                        ? f.quantita_lorda
+                        : (lordoPrecompilato(e.target.value, scelto?.waste_percentage_default) ??
+                          ""),
+                    };
+                  })
+                }
                 placeholder="Quantità"
                 className={inputClass}
               />
@@ -1803,7 +1836,11 @@ export default function RicettaDetail() {
                 min="0"
                 value={ingredientForm.quantita_lorda}
                 onChange={(e) =>
-                  setIngredientForm((f) => ({ ...f, quantita_lorda: e.target.value }))
+                  setIngredientForm((f) => ({
+                    ...f,
+                    quantita_lorda: e.target.value,
+                    lordoToccato: true,
+                  }))
                 }
                 placeholder="quanto ne prendi (lordo)"
                 aria-label="Quanto ne prendi, lordo"
@@ -1829,6 +1866,16 @@ export default function RicettaDetail() {
                 <strong>
                   resa {resaPercento(ingredientForm.quantita_lorda, ingredientForm.quantity)}%
                 </strong>
+                {/* 🔴 UN NUMERO PROPOSTO SI DICE PROPOSTO. Precompilato e
+                    basta somiglia in tutto a un numero digitato da qualcuno
+                    — ed è la forma di difetto che questo progetto insegue:
+                    non un errore che grida, un numero plausibile. */}
+                {!ingredientForm.lordoToccato && (
+                  <span data-prova="riga-lordo-proposto" className="block">
+                    Proposto dalla resa standard del prodotto: correggilo se
+                    per questa ricetta è diverso.
+                  </span>
+                )}
               </p>
             ) : null
           ) : null}

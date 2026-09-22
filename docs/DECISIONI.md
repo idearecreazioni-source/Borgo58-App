@@ -540,23 +540,33 @@ ingredienti, preparazioni, piatti — più una schermata generale sull'andamento
 complessivo.
 * 25/08 — Il costo di un piatto si muove da solo quando cambia il prezzo; il
 PREZZO DI VENDITA no, lo ritocca Alessio vedendo il margine assottigliarsi.
-* 25/08 — ~~Il campo % SCARTO STANDARD RESTA. Serve per l'ingrediente che va solo
-pulito senza altre lavorazioni, quindi senza una preparazione da cui ricavare
-la resa.~~ 🔴 **ROVESCIATA il 22/09/2026 con R12 — e questa voce va letta prima
-di unire quella proposta, perché è una decisione di Alessio che sto rovesciando
-e la conferma è sua.** La ragione di allora era un **caso vero**: il carciofo che
-si pulisce e basta non ha nessuna preparazione da cui ricavare la resa, quindi
-il numero doveva stare da qualche parte — e l'unico posto era la scheda del
-prodotto. ⚠️ **Quel caso adesso ha una casa nuova**: la resa si scrive sulla
-RIGA DI RICETTA in lordo → netto (1 kg di carciofi → 300 g), che copre il solo
-pulito esattamente come copre il mollusco ricavato dalle cozze — senza bisogno
-di nessuna preparazione. ⚠️ **E il prezzo è vero e va detto**: quel numero si
-scrive su OGNI ricetta che usa i carciofi invece che una volta sola sulla
-scheda. Si paga perché un numero solo, sulla scheda, non può descrivere due
-lavorazioni diverse dello stesso prodotto — ed è la ragione del 14/08.
-⚠️ **E la colonna non è stata cancellata**: resta spenta, non letta e non
-scritta, perché toglierla è un lavoro con dentro un'altra decisione. Vedi il
-rovesciamento n. 95 in [`decisioni_rovesciate.md`](decisioni_rovesciate.md).
+* 25/08 — **Il campo % SCARTO STANDARD RESTA.** Serve per l'ingrediente che va
+solo pulito senza altre lavorazioni, quindi senza una preparazione da cui
+ricavare la resa. ✅ **CONFERMATA da Alessio il 22/09/2026** contro una mia
+proposta che lo toglieva: il caso del carciofo è vero, e senza quel campo lo
+stesso numero andrebbe riscritto da zero su ogni ricetta che usa il prodotto.
+* 🔴 **22/09/2026 — MA IL CAMPO PRECOMPILA, NON EREDITA**, ed è la forma che
+alla voce qui sopra mancava. Il valore standard è **facoltativo** e serve
+**solo a precompilare una volta** lordo e netto quando **nasce** una riga di
+ricetta; dopo, la riga è **autonoma e autorevole**.
+  * ⚠️ **Prima non precompilava niente: si sostituiva al volo a ogni calcolo**
+    (`coalesce(riga, prodotto, 0)` in cinque punti). Conseguenza misurata:
+    cambiando il numero sulla scheda del prodotto **si spostava il food cost
+    di ogni ricetta che lo usa**, comprese quelle scritte mesi prima da chi
+    quel numero non l'aveva scelto. *Un valore che continua a valere per
+    righe già scritte non è un valore standard: è una decisione presa al
+    posto di chi le ha scritte.*
+  * ⚠️ **Si scrive e si legge come RESA** — «da 1 kg ne restano 300 g» —
+    perché una resa si capisce e uno scarto del 275% no. Sotto, nel
+    database, resta lo scarto: è la forma che i cinque calcoli usano da
+    sempre.
+  * ⚠️ **Vuoto non è zero**: vuoto vuol dire che per quel prodotto non lo sa
+    ancora nessuno, e allora la riga nuova non viene precompilata.
+  * 🔴 **E il limite «sotto 100» è stato TOLTO**: veniva da una formula
+    sbagliata scritta il 24/08, e **rifiutava un caso vero** — un sugo di
+    cozze (1,5 kg → 400 g) ha uno scarto del 275%. Resta la sola regola
+    vera: non può essere negativo.
+  * Rovesciamento n. 95 in [`decisioni_rovesciate.md`](decisioni_rovesciate.md).
 * 23/08 — La percentuale di scarto non sostituisce la resa vera, che emerge dalla
 PREPARAZIONE annessa all'ingrediente: lo stesso ingrediente ha rese diverse in
 preparazioni diverse.

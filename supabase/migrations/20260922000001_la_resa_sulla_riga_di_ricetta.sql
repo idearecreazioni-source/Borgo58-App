@@ -6,11 +6,16 @@
 -- cumulativo): **lo scarto non appartiene all'ingrediente, appartiene alla
 -- coppia ingrediente × ricetta.** Le stesse cozze scartano pochissimo per
 -- un'impepata e moltissimo se se ne ricava il mollusco: un numero unico
--- sulla scheda del prodotto non descrive nessuno dei due casi e ne
--- precompila uno sbagliato.
+-- sulla scheda del prodotto non può descrivere tutt'e due i casi.
 --
 -- E la resa si scrive **in lordo → netto** — «1,5 kg di cozze danno 400 g» —
 -- non in percentuale: è come ragiona un cuoco, ed è leggibile fra sei mesi.
+--
+-- ⚠️ **QUESTO NON TOGLIE IL NUMERO DALLA SCHEDA DEL PRODOTTO**, e la
+-- differenza è tutta qui: quel numero resta, facoltativo, e **precompila una
+-- volta** i due della riga nuova. Quello che smette di fare è **decidere al
+-- posto di righe già scritte** — vedi «precompila una volta» più sotto, che
+-- è la decisione di Alessio del 22/09.
 --
 -- ---------------------------------------------------------------------
 -- 🔴 DUE COSE MISURATE PRIMA DI SCRIVERE, e la seconda cambia il lavoro
@@ -94,32 +99,58 @@
 --   6. il confronto col food cost della fotografia — che è la prova vera.
 --
 -- ---------------------------------------------------------------------
--- 🔴 UNA DECISIONE CHE RESTA AD ALESSIO, E NON LA PRENDO IO
+-- 🔴 IL VALORE STANDARD DEL PRODOTTO RESTA, E CAMBIA MESTIERE
 -- ---------------------------------------------------------------------
--- `ingredients.waste_percentage_default` **non si tocca**, e dopo questa
--- migrazione **non si legge più in nessun calcolo**: la sanatoria scrive lo
--- scarto esplicito su ogni riga, quindi il
--- `coalesce(..., i.waste_percentage_default, 0)` non arriva mai al secondo
--- argomento.
+-- 🔴 **DECISIONE DI ALESSIO, 22/09/2026**, che conferma quella del 25/08 —
+-- *«il campo % scarto standard RESTA: serve per l'ingrediente che va solo
+-- pulito, senza una preparazione da cui ricavare la resa»* — e le dà la
+-- forma che le mancava:
 --
--- ⚠️ E **nemmeno lo scrive più nessuno.** Misurato leggendo la migrazione
--- `20260823000007`: quel giorno Alessio decise che *«lo scarto non lo
--- propone più nessuno, si scrive a mano quando si sa»*, e la migrazione fece
--- due cose — tolse lo scarto dai campi mancanti di `prodotti_da_compilare`,
--- e fece **smettere `applica_scheda_prodotto` di scriverlo** anche se il
--- modello lo rimandasse. L'unica porta rimasta era il campo nella scheda del
--- prodotto, che R12 toglie.
+--     il valore standard del prodotto resta, FACOLTATIVO, e serve soltanto
+--     a PRECOMPILARE UNA VOLTA lordo e netto quando nasce una riga di
+--     ricetta. Dopo la creazione la riga è autonoma e autorevole: nessuna
+--     eredità viva dal prodotto.
 --
--- 🔴 **Quindi da oggi quella colonna non è letta da niente e non è scritta
--- da nessuno**, e la domanda «si tiene o si butta?» è una decisione di
--- prodotto che **non prendo io**. Toglierla vorrebbe dire riscrivere
--- `create_ingredient` (che la prende come parametro),
--- `applica_scheda_prodotto`, `prodotti_troppo_piccoli`, `numeri_sospetti`,
--- il censimento delle unità e il vincolo `ingredients_scarto_sotto_cento`:
--- un lavoro suo, con una decisione dentro. ⚠️ E lasciarla dov'è ha il prezzo
--- che questo progetto conosce — *una colonna spenta, fra tre mesi, qualcuno
--- la riaccende credendo di riparare qualcosa* — che è precisamente il motivo
--- per cui è scritto qui invece di essere lasciato scoprire.
+-- ⚠️ **La prima stesura di questa migrazione toglieva il campo**, e sarebbe
+-- stato un rovesciamento di quella decisione fatto dentro un commento. Non
+-- confermato: il caso del carciofo che si pulisce e basta è vero, e togliere
+-- il campo avrebbe obbligato a riscrivere lo stesso numero su ogni ricetta
+-- che usa quel prodotto — partendo da zero ogni volta.
+--
+-- ---------------------------------------------------------------------
+-- 🔴 «PRECOMPILA UNA VOLTA» E «EREDITA PER SEMPRE» SONO DUE COSE DIVERSE
+-- ---------------------------------------------------------------------
+-- Ed è **questa** la cosa che la migrazione cambia davvero. Fino a oggi il
+-- valore del prodotto non precompilava niente: **si sostituiva al volo** a
+-- ogni calcolo, con `coalesce(riga.waste_percentage, prodotto.default, 0)`.
+-- Conseguenza misurabile: **cambiando il numero sulla scheda del prodotto si
+-- spostava il food cost di ogni ricetta che lo usa**, comprese quelle
+-- scritte mesi prima da chi quel numero non l'aveva scelto.
+--
+-- ⚠️ *Un valore che continua a valere per righe già scritte non è un
+-- valore standard: è una decisione presa al posto di chi le ha scritte.*
+--
+-- Da qui in avanti:
+--   · la sanatoria **materializza** su ogni riga lo scarto che quella riga
+--     aveva davvero — suo, oppure ereditato in quel momento dal prodotto;
+--   · `recipe_ingredients.waste_percentage` diventa **`not null`**, quindi
+--     il secondo argomento di quei `coalesce` **non è più raggiungibile**;
+--   · e i **cinque** punti che lo nominavano vengono riscritti dal loro
+--     corpo vivo, perché un `coalesce` morto che sembra vivo è la cosa che
+--     qualcuno riaccende fra tre mesi credendo di riparare qualcosa.
+--
+-- 🔴 **E IL LIMITE «SOTTO 100» SE NE VA**, che è la seconda metà della
+-- decisione del 22/09. Non era una prudenza: era la conseguenza della frase
+-- falsa qui sopra. Con la formula vera uno scarto del **275%** è la realtà
+-- di un sugo di cozze (1,5 kg → 400 g), e il vincolo lo **rifiutava**. Al
+-- suo posto resta la sola cosa vera: **non può essere negativo**.
+--
+-- ⚠️ **La colonna resta `waste_percentage_default`, cioè uno SCARTO**, e non
+-- diventa una resa nel database: i cinque calcoli leggono quella forma da
+-- sempre, e cambiarla vorrebbe dire toccarli tutti per un guadagno che è di
+-- **lettura**, non di sostanza. La resa è come il numero si **scrive e si
+-- legge** in schermata (`src/lib/calcoli/resa.js`, un posto solo) — «da 1 kg
+-- ne restano 300 g» — mentre sotto resta lo scarto che i conti usano.
 --
 -- ⚠️ **La resa misurata continua a vincere dove esiste**: `rese_preparazione`
 -- confronta quanto esce DAVVERO da una dose con quanto dice la ricetta, ed è
@@ -250,6 +281,18 @@ end $sanatoria$;
 
 alter table recipe_ingredients alter column quantita_lorda set not null;
 
+-- 🔴 E QUESTA RIGA E' QUELLA CHE SPEGNE L'EREDITA' VIVA, per costruzione e
+--    non per promessa. Finche' `waste_percentage` poteva essere vuota, il
+--    `coalesce(ri.waste_percentage, i.waste_percentage_default, 0)` dei
+--    cinque calcoli aveva un secondo argomento **raggiungibile**: bastava
+--    una riga senza scarto perche' il numero della scheda del prodotto
+--    tornasse a decidere al posto suo. Adesso non e' piu' raggiungibile da
+--    nessuna riga, presente o futura — e il riflesso la riempie sempre.
+-- ⚠️ La sanatoria l'ha appena riempita su TUTTE le righe: se questa
+--    istruzione fallisse, vorrebbe dire che la sanatoria ne ha saltata una,
+--    ed e' giusto che si fermi qui invece di lasciare un buco.
+alter table recipe_ingredients alter column waste_percentage set not null;
+
 -- ---------------------------------------------------------------------
 -- 5. IL NETTO NON PUO' SUPERARE IL LORDO
 -- ---------------------------------------------------------------------
@@ -317,16 +360,39 @@ comment on column recipe_ingredients.waste_percentage is
   'RIFLESSO di quantita_lorda e quantity, scritto solo dal trigger `trg_riflette_lo_scarto` (R12, 22/09/2026). Non si scrive e non si corregge a mano: si cambiano i due numeri. ⚠️ E'' lo SCARTO in punti nella forma che il calcolo del costo usa da sempre — il lordo e'' il netto per (1 + scarto/100) — non la resa, che e'' netto/lordo e si mostra soltanto.';
 
 -- ---------------------------------------------------------------------
--- 7. LE DUE FRASI DIVENTATE FALSE, CORRETTE
+-- 7. IL VALORE STANDARD DEL PRODOTTO: IL LIMITE FALSO E IL MESTIERE NUOVO
 -- ---------------------------------------------------------------------
--- ⚠️ Si corregge il COMMENTO, non il vincolo: il limite «< 100» resta dov'è
---    ed è innocuo. Quello che si toglie è la ragione sbagliata che
---    dichiarava, e che mandava fuori strada chi la leggeva.
-comment on constraint ingredients_scarto_sotto_cento on ingredients is
-  'Lo scarto e'' una percentuale in PUNTI (35 = 35%): il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100). ⚠️ Dal 22/09/2026 questo numero non entra piu'' in nessun calcolo: la resa vive sulla riga di ricetta, in lordo e netto. Qui non resta come proposta: dal 23/08/2026 non lo propone piu'' nessuno (`applica_scheda_prodotto` smise di scriverlo) e dal 22/09 non lo scrive piu'' nemmeno la scheda del prodotto. Il limite sotto 100 e'' una prudenza, non un''aritmetica: uno scarto che piu'' che raddoppia la spesa merita di essere scritto sulla riga, dove si vede.';
+-- 🔴 IL LIMITE «SOTTO 100» SE NE VA, ed e' una decisione di Alessio del
+--    22/09. Non era una prudenza: era la conseguenza di una frase nata
+--    falsa il 24/08 — «il lordo si ricava dividendo per (1 - scarto/100),
+--    quindi a 100 e' una divisione per zero». Nessun calcolo di questo
+--    progetto ha mai fatto quella divisione: misurati sui corpi vivi,
+--    **cinque moltiplicano e zero dividono**.
+-- ⚠️ E il limite non era innocuo, perche' RIFIUTAVA ANCHE I CASI BUONI:
+--    con la formula vera un sugo di cozze (1,5 kg → 400 g) ha uno scarto
+--    del **275%**, e quel vincolo lo respingeva. Al suo posto resta la
+--    sola cosa che e' davvero vera: non puo' essere negativo.
+-- ⚠️ IL NOME CAMBIA INSIEME ALLA REGOLA. Lasciarlo
+--    `ingredients_scarto_sotto_cento` su un vincolo che non guarda piu'
+--    il cento sarebbe una frase falsa scritta nel posto che questo
+--    progetto mostra all'utente quando rifiuta.
+alter table ingredients drop constraint if exists ingredients_scarto_sotto_cento;
+alter table ingredients drop constraint if exists ingredients_scarto_standard_sensato;
+alter table ingredients
+  add constraint ingredients_scarto_standard_sensato
+  check (waste_percentage_default is null or waste_percentage_default >= 0);
 
+comment on constraint ingredients_scarto_standard_sensato on ingredients is
+  'Lo scarto standard e'' una percentuale in PUNTI (35 = 35%) e non puo'' essere negativo: il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100), quindi un numero sotto zero vorrebbe dire che comprando meno se ne ottiene di piu''. ⚠️ Sopra 100 e'' AMMESSO ed e'' normale: da 1,5 kg di cozze escono 400 g di mollusco, cioe'' uno scarto del 275%. Il vecchio limite «sotto 100» e'' stato tolto il 22/09/2026 — veniva da una formula sbagliata scritta in questo stesso commento il 24/08, e rifiutava casi veri. ⚠️ Puo'' restare VUOTO, e vuoto non vuol dire zero: vuol dire che per questo prodotto non lo sa ancora nessuno.';
+
+-- 🔴 E LA COLONNA CAMBIA MESTIERE, che e' l'altra meta' della decisione.
 comment on column ingredients.waste_percentage_default is
-  'Lo scarto tipico di questo prodotto. 🔴 DA OGGI NESSUNO LO SCRIVE E NESSUNO LO LEGGE, e non e'' una proposta: dal 23/08/2026 `applica_scheda_prodotto` ha smesso di scriverlo (decisione di Alessio: «lo scarto non lo propone piu'' nessuno»), e dal 22/09/2026 (R12) e'' sparito anche il campo nella scheda del prodotto, che era l''ultima porta. ⚠️ Dal 22/09/2026 non e'' piu'' nemmeno l''ingresso di nessun calcolo: il food cost e il fabbisogno leggono il lordo della RIGA di ricetta, perche'' lo scarto e'' una proprieta'' della coppia ingrediente × ricetta e non dell''ingrediente — le stesse cozze scartano pochissimo per un''impepata e moltissimo se se ne ricava il mollusco. ⚠️ Se questa colonna si tiene o si butta e'' una decisione di Alessio: toglierla vuol dire riscrivere create_ingredient, applica_scheda_prodotto, prodotti_troppo_piccoli, numeri_sospetti, il censimento delle unita'' e il vincolo ingredients_scarto_sotto_cento.';
+  'Lo scarto tipico di questo prodotto — quanto se ne butta pulendolo. FACOLTATIVO, e vuoto non e'' zero: vuol dire che nessuno l''ha ancora detto. 🔴 DAL 22/09/2026 (R12) SERVE SOLO A PRECOMPILARE UNA VOLTA lordo e netto quando NASCE una riga di ricetta: dopo, la riga e'' autonoma e comanda lei. Prima invece si sostituiva al volo a ogni calcolo, quindi cambiando questo numero si spostava il food cost di ricette scritte mesi prima da chi quel numero non l''aveva scelto. ⚠️ Non e'' piu'' raggiungibile da nessun calcolo: recipe_ingredients.waste_percentage e'' `not null`, e i cinque punti che lo nominavano sono stati riscritti. ⚠️ In schermata si scrive e si legge come RESA — «da 1 kg ne restano 300 g» — perche'' una resa si capisce e uno scarto del 275% no; qui sotto resta lo scarto, che e'' la forma che i conti usano da sempre.';
+
+-- ⚠️ E LA DECISIONE DEL 25/08 RESTA SCRITTA DOVE VIVE: il campo serve per
+--    l'ingrediente che va solo pulito, senza una preparazione da cui
+--    ricavare la resa. Quello che cambia non e' se esiste: e' fin dove
+--    arriva.
 
 -- ---------------------------------------------------------------------
 -- 8. LA COPIA DI UNA RICETTA PORTA IL LORDO
@@ -418,7 +484,11 @@ create or replace view recipe_ingredients_display as
     i.category as ingredient_category,
     ri.quantity,
     ri.unit,
-    coalesce(ri.waste_percentage, i.waste_percentage_default, 0::numeric) as waste_percentage,
+    -- 🔴 QUI SPARISCE L'EREDITA' VIVA, ed era uno dei cinque punti: prima
+    --    una riga senza scarto prendeva quello della scheda del prodotto, a
+    --    ogni lettura. Adesso `waste_percentage` e' `not null` e la riga
+    --    risponde per se'.
+    ri.waste_percentage,
     ri.prep_note,
     coalesce(i.allergens, '{}'::allergen[]) as allergens,
     ri.component_recipe_id is not null as is_preparation,
@@ -437,6 +507,299 @@ create or replace view recipe_ingredients_display as
    from recipe_ingredients ri
      left join ingredients i on i.id = ri.ingredient_id
      left join recipes comp on comp.id = ri.component_recipe_id;
+
+-- ---------------------------------------------------------------------
+-- 9-bis. GLI ALTRI QUATTRO PUNTI CHE EREDITAVANO DAL PRODOTTO
+-- ---------------------------------------------------------------------
+-- 🔴 I punti dove il valore della scheda del prodotto si sostituiva a
+--    quello della riga erano CINQUE, misurati sui corpi vivi del
+--    progetto di prova e non ricordati: `recipe_ingredients_display`
+--    (appena riscritta qui sopra), `v_recipe_row_costs`,
+--    `fabbisogno_conto`, `fabbisogno_preparazione` e
+--    `simula_prezzo_ingrediente`.
+--
+-- ⚠️ DOPO IL `not null` QUEL RAMO E' GIA' IRRAGGIUNGIBILE, e si potrebbe
+--    lasciarlo scritto. Non si fa, ed e' una regola di questo progetto:
+--    *un `coalesce` morto che sembra vivo e' la cosa che qualcuno
+--    riaccende fra tre mesi credendo di riparare qualcosa.* La riga che
+--    resta dice il vero: la riga di ricetta risponde per se'.
+--
+-- ⚠️ TUTTI E QUATTRO PRESI DAL CORPO VIVO (regola del 18/08), da un
+--    programma che FALLISCE se non trova l'ancora — non ricopiati a mano:
+--    fra la migrazione che ha creato una funzione e il suo corpo di oggi
+--    ci stanno tutte le migrazioni che l'hanno toccata nel mezzo.
+
+-- ⚠️ In `v_recipe_row_costs` lo zero RESTA, e non e' l'eredita' che si sta
+--    togliendo: serve al LEFT JOIN, per la riga che non ha nessuna
+--    espansione sotto di se'.
+
+-- ⚠️ In `simula_prezzo_ingrediente` il default arrivava per un'altra
+--    strada — letto in una variabile e usato come secondo argomento — e
+--    se ne va anche la VARIABILE: lasciarla dichiarata e mai usata
+--    sarebbe la stessa cosa che lasciare il coalesce.
+
+CREATE OR REPLACE FUNCTION public.fabbisogno_conto(p_order_id uuid)
+ RETURNS TABLE(order_item_id uuid, ingredient_id uuid, quantita numeric)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  with recursive porzioni_evento as (
+    select pe.recipe_id, pe.porzioni_per_persona
+      from porzioni_evento_del_conto(p_order_id) pe
+  ),
+  righe as (
+    select oi.id,
+           oi.recipe_id,
+           -- 🔴 LE PORZIONI DELL'EVENTO, DOVE CI SONO (22/08). `coalesce`
+           -- a 1 e non a zero: un piatto ordinato quella sera ma **non**
+           -- previsto dal preventivo si scarica come in carta — e' un
+           -- fuori-menu, non un piatto da non scaricare.
+           oi.quantity::numeric * coalesce(pev.porzioni_per_persona, 1) as porzioni,
+           -- 🔴 L'ISTANTE DEL CONTO, portato dentro la ricorsione invece
+           -- che riletto: un conto aperto vive adesso, un conto chiuso
+           -- vive nella sera in cui e' stato chiuso e non si muove piu'.
+           coalesce(o.closed_at, now()) as istante
+      from order_items oi
+      join orders o on o.id = oi.order_id
+      left join porzioni_evento pev on pev.recipe_id = oi.recipe_id
+     where oi.order_id = p_order_id
+       and oi.voided_at is null
+       -- ⚠️ Mai inviata = mai cucinata: dalla cella non e' uscito niente.
+       and oi.sent_at is not null
+       and oi.recipe_id is not null
+  ),
+  espansione as (
+    select r.id as order_item_id,
+           ri.ingredient_id,
+           ri.component_recipe_id,
+           r.porzioni * ri.quantity / nullif(rec.portions_yield, 0) as multiplier,
+           ri.waste_percentage,
+           r.istante,
+           1 as depth
+      from righe r
+      join recipes rec on rec.id = r.recipe_id
+      join recipe_ingredients ri on ri.recipe_id = r.recipe_id
+
+    union all
+
+    select e.order_item_id,
+           ri2.ingredient_id,
+           ri2.component_recipe_id,
+           e.multiplier * ri2.quantity / nullif(comp.yield_quantity, 0),
+           ri2.waste_percentage,
+           e.istante,
+           e.depth + 1
+      from espansione e
+      join recipes comp on comp.id = e.component_recipe_id
+      join recipe_ingredients ri2 on ri2.recipe_id = e.component_recipe_id
+     where e.component_recipe_id is not null
+       and e.depth < 10
+       -- L'interruttore del 14/08: una preparazione CHE HA LOTTI non si
+       -- esplode piu', si consuma (sotto). Senza, servire un piatto
+       -- scaricherebbe due volte le stesse verdure.
+       and preparazione_in_cella(e.component_recipe_id, e.istante) is null
+  ),
+  -- a) la materia prima
+  --    🔴 LA SOSTITUZIONE (24/08): dove il cameriere ha tolto un allergene
+  --       da questa riga, dal magazzino esce il SOSTITUTO. E dove il
+  --       sostituto non c'e' — «si toglie e basta» — non esce niente.
+  materia as (
+    select e.order_item_id,
+           coalesce(s.sostituto_id, e.ingredient_id) as ingredient_id,
+           sum(e.multiplier * (1 + e.waste_percentage / 100.0)) as quantita
+      from espansione e
+      join ingredients i on i.id = e.ingredient_id
+      left join order_item_sostituzioni s
+             on s.order_item_id = e.order_item_id
+            and s.ingrediente_id = e.ingredient_id
+     where e.ingredient_id is not null
+       and not (s.id is not null and s.sostituto_id is null)
+     group by e.order_item_id, coalesce(s.sostituto_id, e.ingredient_id)
+  ),
+  -- b) i semilavorati che c'erano davvero quella sera, presi come sono
+  --    ⚠️ Nessuno scarto: un semilavorato in cella e' gia' pulito e gia'
+  --       pesato — lo scarto e' stato pagato quando l'hanno prodotto.
+  --       Stessa scelta di `fabbisogno_preparazione`.
+  semilavorati as (
+    select e.order_item_id,
+           coalesce(s.sostituto_id, prep.id) as ingredient_id,
+           sum(e.multiplier) as quantita
+      from espansione e
+      join lateral (
+        select preparazione_in_cella(e.component_recipe_id, e.istante) as id
+      ) prep on prep.id is not null
+      left join order_item_sostituzioni s
+             on s.order_item_id = e.order_item_id
+            and s.ingrediente_id = prep.id
+     where e.component_recipe_id is not null
+       and e.multiplier is not null
+       and not (s.id is not null and s.sostituto_id is null)
+     group by e.order_item_id, coalesce(s.sostituto_id, prep.id)
+  ),
+  -- c) 🔴 LE BEVANDE (30/08). Una voce della carta collegata a un prodotto
+  --    del magazzino esce dalla cantina come tutto il resto.
+  --    ⚠️ `sent_at is not null` come le altre due: una riga mai mandata al
+  --       bar e' una bottiglia mai stappata. Stessa regola, stesso motivo.
+  --    ⚠️ La divisione e' la resa: sei calici da una bottiglia scaricano un
+  --       sesto per calice. Vuoto = si vende intera, quindi si divide per 1.
+  --    ⚠️ NIENTE SCARTO: da una bottiglia non si butta niente. E niente
+  --       sostituzioni: un allergene non si toglie da un bicchiere di vino.
+  bevande as (
+    select oi.id as order_item_id,
+           b.ingredient_id,
+           sum(oi.quantity::numeric / coalesce(b.porzioni_per_unita, 1)) as quantita
+      from order_items oi
+      join bar_items b on b.id = oi.bar_item_id
+     where oi.order_id = p_order_id
+       and oi.voided_at is null
+       and oi.sent_at is not null
+       and b.ingredient_id is not null
+     group by oi.id, b.ingredient_id
+  )
+  select t.order_item_id, t.ingredient_id, sum(t.quantita)
+    from (select * from materia
+          union all select * from semilavorati
+          union all select * from bevande) t
+   group by t.order_item_id, t.ingredient_id;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fabbisogno_preparazione(p_recipe_id uuid, p_dosi numeric)
+ RETURNS TABLE(ingredient_id uuid, quantita numeric)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  with recursive esplosione as (
+    select ri.ingredient_id,
+           ri.component_recipe_id,
+           (p_dosi * ri.quantity)::numeric as qta,
+           ri.waste_percentage,
+           1 as depth
+      from recipe_ingredients ri
+     where ri.recipe_id = p_recipe_id
+    union all
+    select ri2.ingredient_id,
+           ri2.component_recipe_id,
+           (e.qta * ri2.quantity / nullif(comp.yield_quantity, 0)),
+           ri2.waste_percentage,
+           e.depth + 1
+      from esplosione e
+      join recipes comp           on comp.id = e.component_recipe_id
+      join recipe_ingredients ri2 on ri2.recipe_id = e.component_recipe_id
+     where e.component_recipe_id is not null
+       and e.depth < 10
+       -- L'INTERRUTTORE: si esplode solo se quel semilavorato non esiste
+       -- in cella. Se esiste, lo si consuma (sotto), col costo di quel
+       -- giorno.
+       and not exists (
+         select 1
+           from ingredients pi
+           join stock_lots sl on sl.ingredient_id = pi.id
+          where pi.preparazione_id = e.component_recipe_id
+            and sl.quantity_remaining > 0
+       )
+  ),
+  -- a) la materia prima
+  materia as (
+    select e.ingredient_id,
+           sum(e.qta * (1 + e.waste_percentage / 100.0)) as quantita
+      from esplosione e
+      join ingredients i on i.id = e.ingredient_id
+     where e.ingredient_id is not null
+       and e.qta is not null
+     group by e.ingredient_id
+  ),
+  -- b) i semilavorati che ci sono davvero, presi come sono
+  semilavorati as (
+    select pi.id as ingredient_id, sum(e.qta) as quantita
+      from esplosione e
+      join ingredients pi on pi.preparazione_id = e.component_recipe_id
+     where e.component_recipe_id is not null
+       and e.qta is not null
+       and exists (
+         select 1 from stock_lots sl
+          where sl.ingredient_id = pi.id and sl.quantity_remaining > 0
+       )
+     group by pi.id
+  )
+  select ingredient_id, sum(quantita)::numeric(14,4)
+    from (select * from materia union all select * from semilavorati) tutto
+   group by ingredient_id
+  having sum(quantita) > 0;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.simula_prezzo_ingrediente(p_menu_id uuid, p_ingredient_id uuid, p_variazione_pct numeric)
+ RETURNS TABLE(menu_item_id uuid, piatto text, prezzo_vendita numeric, food_cost_attuale numeric, food_cost_simulato numeric, pct_attuale numeric, pct_simulata numeric, via_preparazione boolean)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_prezzo numeric;
+  v_delta  numeric;
+begin
+  -- ⚠️ security definer: il controllo va rimesso dentro, altrimenti la
+  -- funzione gira senza RLS e i prezzi d'acquisto escono da qui.
+  if not is_titolare() then
+    raise exception 'Il simulatore del menu e'' riservato al titolare.';
+  end if;
+  if p_variazione_pct is null then
+    raise exception 'Serve di quanto cambia il prezzo.';
+  end if;
+
+  select i.current_price
+    into v_prezzo
+    from ingredients i where i.id = p_ingredient_id;
+  if v_prezzo is null then
+    raise exception 'Ingrediente non trovato.';
+  end if;
+
+  v_delta := v_prezzo * p_variazione_pct / 100.0;
+
+  return query
+  with peso as (
+    -- Quanto di questo ingrediente entra in una porzione del piatto,
+    -- scarto compreso. E' la sola cosa che serve sapere in piu'.
+    select
+      mi.id as menu_item_id,
+      sum(e.multiplier * (1 + e.waste_percentage / 100.0)) as quantita,
+      bool_or(e.profondita > 1) as via_prep
+    from menu_items mi
+    cross join lateral espansione_costo_ricetta(mi.recipe_id) e
+    where mi.menu_id = p_menu_id
+      and e.ingredient_id = p_ingredient_id
+    group by mi.id
+  )
+  select
+    p.menu_item_id,
+    r.name,
+    mi.selling_price,
+    ec.food_cost_portion,
+    (ec.food_cost_portion
+      + v_delta * p.quantita / nullif(r.portions_yield, 0))::numeric(14,4),
+    ec.food_cost_pct,
+    case when mi.selling_price > 0 then
+      round(100 * (ec.food_cost_portion
+        + v_delta * p.quantita / nullif(r.portions_yield, 0)) / mi.selling_price, 2)
+    end,
+    p.via_prep
+  from peso p
+  join menu_items mi on mi.id = p.menu_item_id
+  join recipes r on r.id = mi.recipe_id
+  join v_menu_item_economics ec on ec.menu_item_id = mi.id
+  order by p.via_prep desc, r.name;
+end;
+$function$;
+
+create or replace view v_recipe_row_costs as
+SELECT ri.id AS recipe_ingredient_id,
+    ri.recipe_id,
+    COALESCE(sum(e.multiplier * i.current_price * (1::numeric + COALESCE(e.waste_percentage, 0::numeric) / 100.0)), 0::numeric)::numeric(14,4) AS costo
+   FROM recipe_ingredients ri
+     LEFT JOIN LATERAL espansione_costo_ricetta(ri.recipe_id) e(riga_id, ingredient_id, multiplier, waste_percentage, profondita) ON e.riga_id = ri.id
+     LEFT JOIN ingredients i ON i.id = e.ingredient_id
+  GROUP BY ri.id, ri.recipe_id;;
 
 -- ---------------------------------------------------------------------
 -- 10. IL CONFRONTO CHE VALE: IL FOOD COST DI OGNI RICETTA
@@ -660,6 +1023,59 @@ begin
     select food_cost_base into v_num from v_recipe_costs where recipe_id = v_r2;
     if round(v_num, 2) is distinct from 15.00 then
       raise exception 'Il food cost del sugo doveva essere 15,00 (1,5 kg a 10 euro): e'' %.', v_num;
+    end if;
+
+    -- -------------------------------------------------------------
+    -- (10) 🔴 IL CUORE DELLA DECISIONE DEL 22/09: IL NUMERO DELLA SCHEDA
+    --      DEL PRODOTTO NON MUOVE PIU' UNA RIGA GIA' SCRITTA.
+    -- -------------------------------------------------------------
+    -- ⚠️ E' il controllo per cui questa migrazione esiste nella forma che
+    --    ha. Prima, `coalesce(riga, prodotto, 0)` faceva si' che cambiare
+    --    questo numero spostasse il food cost di OGNI ricetta che usa
+    --    quell'ingrediente — anche scritte mesi prima da chi quel numero
+    --    non l'aveva scelto. Adesso precompila e basta.
+    update ingredients set waste_percentage_default = 900 where id = v_ing;
+
+    select waste_percentage into v_num from recipe_ingredients where id = v_riga;
+    if v_num is distinct from 275.00 then
+      raise exception 'Lo scarto della riga si e'' mosso col numero del prodotto: e'' %, doveva restare 275.', v_num;
+    end if;
+
+    select food_cost_base into v_num from v_recipe_costs where recipe_id = v_r2;
+    if round(v_num, 2) is distinct from 15.00 then
+      raise exception 'Il food cost si e'' mosso cambiando il numero sulla scheda del prodotto: e'' %, doveva restare 15,00.', v_num;
+    end if;
+
+    -- ⚠️ E ALLO SPECCHIO: il fabbisogno di magazzino legge lo stesso numero
+    --    da un'altra strada (`fabbisogno_*`), quindi si guarda anche quello
+    --    — due letture che si comportassero diversamente sarebbero la
+    --    forma peggiore, perche' ognuna delle due sembra plausibile.
+    select round(quantita, 4) into v_num
+      from fabbisogno_preparazione(v_r2, 1)
+     where ingredient_id = v_ing;
+    if v_num is distinct from 1.5000 then
+      raise exception 'Il fabbisogno si e'' mosso col numero del prodotto: e'' %, doveva restare 1,5.', v_num;
+    end if;
+
+    update ingredients set waste_percentage_default = 25 where id = v_ing;
+
+    -- -------------------------------------------------------------
+    -- (11) SOPRA 100 SI ACCETTA, E SOTTO ZERO NO.
+    -- -------------------------------------------------------------
+    -- 🔴 Il vecchio vincolo «sotto 100» rifiutava un caso VERO: il sugo di
+    --    cozze qui sopra ha uno scarto del 275%. Si prova nei due versi,
+    --    perche' un limite che rifiuta anche i casi buoni e' peggio di
+    --    nessun limite (regola del 24/08).
+    update ingredients set waste_percentage_default = 275 where id = v_ing;
+    update ingredients set waste_percentage_default = null where id = v_ing;
+
+    v_preso := false;
+    begin
+      update ingredients set waste_percentage_default = -1 where id = v_ing;
+    exception when check_violation then v_preso := true;
+    end;
+    if not v_preso then
+      raise exception 'Uno scarto standard negativo doveva essere respinto.';
     end if;
 
     raise exception 'ZZ_ANNULLA';  -- <<< qui la sotto-transazione rientra

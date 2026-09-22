@@ -29,70 +29,95 @@ E si scrive **in lordo → netto**, non in percentuale: *«1,5 kg di cozze danno
 
 ---
 
-## 0-bis · 🔴 QUESTA CONSEGNA ROVESCIA UNA DECISIONE DEL 25/08, E LA CONFERMA È DI ALESSIO
+## 0-bis · 🔴 La decisione di Alessio, e la proposta che NON ha confermato
 
-**Trovato leggendo [`DECISIONI.md`](../DECISIONI.md) prima di chiudere, non
-dopo.** C'è una voce, datata **25/08/2026** — cioè **undici giorni dopo** il
-mandato che questa consegna esegue:
+**La prima stesura di questa consegna toglieva il campo «% scarto standard»
+dalla scheda del prodotto.** Era un rovesciamento di una sua decisione del
+**25/08** — *«il campo RESTA: serve per l'ingrediente che va solo pulito,
+senza una preparazione da cui ricavare la resa»* — fatto dentro un commento
+di migrazione, con la ragione scritta bene.
 
-> *«Il campo % SCARTO STANDARD **RESTA**. Serve per l'ingrediente che va solo
-> pulito senza altre lavorazioni, quindi senza una preparazione da cui ricavare
-> la resa.»*
+**Posta a lui, non è stata confermata.** ⚠️ *Un rovesciamento ben
+argomentato resta un rovesciamento, e va posto a chi ha preso la decisione
+invece che eseguito.*
 
-🔴 **È posteriore al mandato, e dice l'opposto di quello che ho fatto.** Non è
-un dettaglio di cronologia: vuol dire che Alessio ha guardato quel campo
-**dopo** aver deciso che lo scarto appartiene alla coppia, e ha deciso di
-tenerlo lo stesso. ⚠️ *Chi esegue un mandato vecchio senza leggere le decisioni
-prese dopo rovescia in silenzio* — ed è precisamente la forma di deriva che la
-sezione «cosa abbiamo rovesciato» esiste per prendere.
+### La decisione, del 22/09
 
-**La ragione di allora era un caso vero, non una comodità**: il carciofo che si
-pulisce e basta non ha nessuna preparazione da cui ricavare la resa, e il 23/08
-era già stato deciso che la percentuale *«non sostituisce la resa vera, che
-emerge dalla preparazione»*. Per quell'ingrediente restava un buco, e il campo
-lo riempiva.
+> Il valore standard del prodotto **resta**, **facoltativo**, e serve
+> **soltanto a precompilare una volta** lordo e netto quando **nasce** una
+> riga di ricetta. Dopo la creazione la riga è **autonoma e autorevole**:
+> nessuna eredità viva dal prodotto. Si rappresenta come **resa
+> comprensibile**, il limite artificiale sotto 100 se ne va, i food cost
+> esistenti restano invariati.
 
-⚠️ **Quel caso adesso ha una casa nuova, ed è l'argomento per cui ho proceduto
-invece di fermarmi**: il 25/08 le case possibili erano due — la scheda, o una
-preparazione che per il carciofo pulito non esiste — e fra quelle due la scheda
-era la risposta giusta. R12 ne aggiunge una terza che allora non c'era: **la
-riga di ricetta**. Lì «1 kg di carciofi → 300 g» si scrive senza nessuna
-preparazione, e copre il solo-pulito esattamente come copre il mollusco.
+### 🔴 «Precompila una volta» e «eredita per sempre» non sono la stessa cosa
 
-⚠️ **E il prezzo è vero e non lo nascondo**: quel numero va scritto su **ogni**
-ricetta che usa i carciofi, invece che una volta sola sulla scheda.
+Ed è qui che stava il difetto vero, che nessuno aveva nominato. **Fino a
+oggi quel numero non precompilava niente**: si sostituiva al volo a ogni
+calcolo, con `coalesce(riga.waste_percentage, prodotto.default, 0)` in
+**cinque** punti.
 
-🔴 **Quindi questa proposta NON va unita senza che Alessio abbia letto questa
-sezione.** Se per lui la voce del 25/08 vale ancora, la via c'è ed è stretta: si
-tiene il campo sulla scheda **e** lo si fa leggere come valore di partenza della
-riga nuova — ma allora torna a esistere un numero unico per lavorazioni diverse,
-che è il difetto del 14/08. Le due cose non stanno insieme, e la scelta è sua.
+**Conseguenza misurabile**: cambiando lo scarto sulla scheda di un prodotto
+**si spostava il food cost di ogni ricetta che lo usa** — comprese quelle
+scritte mesi prima da chi quel numero non l'aveva scelto. E nessun errore lo
+diceva, perché il numero nuovo è plausibile quanto il vecchio.
 
-La voce in `DECISIONI.md` è **barrata e marcata rovesciata**, non cancellata, col
-rimando al rovesciamento **n. 95**.
+⚠️ *Un valore che continua a valere per righe già scritte non è un valore
+standard: è una decisione presa al posto di chi le ha scritte.*
+
+**La garanzia non è una promessa, è un vincolo:**
+
+1. la sanatoria **materializza** su ogni riga lo scarto che quella riga
+   aveva davvero in quel momento — suo, o ereditato;
+2. `recipe_ingredients.waste_percentage` diventa **`not null`**, quindi il
+   secondo argomento di quei `coalesce` **non è più raggiungibile da nessuna
+   riga**, presente o futura;
+3. e i **cinque** punti che lo nominavano sono **riscritti dal loro corpo
+   vivo** — perché *un `coalesce` morto che sembra vivo è la cosa che
+   qualcuno riaccende fra tre mesi credendo di riparare qualcosa.*
+
+⚠️ **E la ragione del 13/08 è servita intera**: la riga senza scarto non
+resta scoperta. Cambia **quando** il numero arriva, non **se**.
+
+⚠️ **Il prezzo, dichiarato**: correggere lo scarto standard di un prodotto
+non sistema più da sé le ricette già scritte. Si paga volentieri, perché il
+verso opposto — sistemarle tutte in silenzio — è il difetto.
+
+### La verifica che lo dimostra, e non lo afferma
+
+Dentro la migrazione: si scrive il sugo (1,5 → 0,4 kg, scarto 275%), poi si
+porta lo scarto standard del prodotto a **900**, e si pretende che **non si
+muova niente** — lo scarto della riga, il food cost della ricetta, **e il
+fabbisogno di magazzino**, che legge lo stesso numero da un'altra strada.
+⚠️ *Due letture che si comportassero diversamente sarebbero la forma
+peggiore, perché ognuna delle due sembra plausibile.*
 
 ---
-
 ## 1 · Il censimento — dove viveva lo scarto, misurato
 
-Letto dal repository, non ricordato:
+Letto dai **corpi vivi** del progetto di prova e dal repository, non
+ricordato:
 
 | dove | cosa c'era | dopo R12 |
 |---|---|---|
-| `ingredients.waste_percentage_default` | lo scarto «standard» del prodotto | resta la colonna, **non letta e non scritta** (§7) |
-| `recipe_ingredients.waste_percentage` | quasi sempre vuota; il `coalesce` andava a pescare il default | **riflesso**, scritta solo dal trigger |
+| `ingredients.waste_percentage_default` | lo scarto «standard», che si **sostituiva al volo** in ogni calcolo | resta, **facoltativo**, e **precompila una volta** (§7) |
+| `recipe_ingredients.waste_percentage` | quasi sempre vuota; il `coalesce` andava a pescare il default | **riflesso `not null`**, scritto solo dal trigger |
 | `recipe_ingredients.quantita_lorda` | non esisteva | **è il dato**, insieme a `quantity` |
-| il codice dell'app (`src/`) | `waste_percentage` di riga: **0 occorrenze** dopo R12 | — |
+| i punti che **ereditavano** dal prodotto | **cinque**: `fabbisogno_conto`, `fabbisogno_preparazione`, `simula_prezzo_ingrediente`, `v_recipe_row_costs`, `recipe_ingredients_display` | **zero**: tutti riscritti dal corpo vivo |
+| il codice dell'app (`src/`) | `waste_percentage` di riga | **0 occorrenze** |
 | le migrazioni | **12 file** moltiplicano per «1 + scarto/100»; **0** dividono per «1 − scarto/100» | invariato: la formula non cambia |
 
-⚠️ **La formula NON è stata toccata.** `fabbisogno_conto`,
-`fabbisogno_preparazione`, `simula_prezzo_ingrediente`, `v_recipe_row_costs` e
-`recipe_ingredients_display` continuano a fare esattamente quello che facevano:
-cambia **da dove viene il numero** che moltiplicano, non l'aritmetica. È la
-ragione per cui il food cost può restare identico al millesimo (§3).
+⚠️ **La formula NON è stata toccata.** I cinque continuano a fare
+esattamente quello che facevano: cambia **da dove viene il numero** che
+moltiplicano, non l'aritmetica. È la ragione per cui il food cost può
+restare identico al millesimo (§3).
+
+⚠️ **E i cinque sono stati presi dal corpo vivo con un programma che
+FALLISCE se non trova l'àncora**, non ricopiati a mano: fra la migrazione
+che ha creato una funzione e il suo corpo di oggi ci stanno tutte le
+migrazioni che l'hanno toccata nel mezzo (regola del 18/08).
 
 ---
-
 ## 2 · 🔴 Una frase del 24/08 era nata falsa, ed era ESIBITA
 
 Misurata leggendo `20260824000010_i_limiti_del_magazzino.sql:66`, verbatim:
@@ -208,83 +233,97 @@ può dire: uno zero lì si leggerebbe *«non ne resta niente»*.
 
 ---
 
-## 7 · 🔴 Una colonna che da oggi NESSUNO scrive — e la decisione che NON prendo io
+## 7 · Il campo resta, e si scrive come una resa
 
-Avevo scritto, in tre posti, che `ingredients.waste_percentage_default` *«resta
-come PROPOSTA per la riga nuova — è il valore che l'assistente compila leggendo
-una scheda prodotto (13/08)»*.
+Sulla scheda del prodotto non c'è più «% scarto standard»: c'è **«Resa
+standard (facoltativa)»**, e si legge «da 1 kg ne restano 300 g — resa 30%».
 
-**Era falso, e l'ho misurato invece di ricordarmelo.** La migrazione
-`20260823000007` del **23/08** fece due cose, con la ragione scritta accanto:
-tolse lo scarto dai campi mancanti di `prodotti_da_compilare`, e fece
-**smettere `applica_scheda_prodotto` di scriverlo** anche se il modello l'avesse
-rimandato. Parole di Alessio quel giorno: *«lo scarto non lo propone più
-nessuno, si scrive a mano quando si sa»*.
+⚠️ **Sotto resta uno scarto.** Il database conserva `waste_percentage_default`
+in punti di scarto, perché è la forma che i cinque calcoli usano da sempre;
+cambiarla vorrebbe dire toccarli tutti per un guadagno che è di **lettura**.
+La conversione vive in **un posto solo** (`src/lib/calcoli/resa.js`), e una
+prova pura controlla il **giro d'andata e ritorno**: quello che si scrive si
+rilegge identico. Senza, una delle due conversioni potrebbe cambiare e
+l'altra no — e il numero salvato sarebbe diverso da quello mostrato, senza
+nessun errore.
 
-L'unica porta rimasta era il campo nella scheda del prodotto, **e R12 la
-chiude**. Quindi da oggi quella colonna **non è letta da nessun calcolo** (la
-sanatoria ha scritto lo scarto esplicito su ogni riga) e **non è scritta da
-nessuno**.
+⚠️ **E il campo nasce VUOTO, non a zero.** Vuoto vuol dire che per quel
+prodotto non lo sa ancora nessuno; zero vorrebbe dire «non si butta
+niente», che è una risposta. Una prova di schermata controlla che il vuoto
+**arrivi al salvataggio come vuoto** — è la lezione del 16/08 pagata col
+mezzo di pagamento delle mance: il campo si vedeva, si sceglieva, e al
+database non arrivava mai.
 
-🔴 **Se si tiene o si butta è una decisione di ALESSIO, e non la prendo io.**
-Toglierla vuol dire riscrivere `create_ingredient` (che la prende come
-parametro), `applica_scheda_prodotto`, `prodotti_troppo_piccoli`,
-`numeri_sospetti`, il censimento delle unità e il vincolo
-`ingredients_scarto_sotto_cento`: un lavoro con dentro una decisione.
+### 🔴 Il limite «sotto 100» se n'è andato
 
-⚠️ **E il prezzo del tenerla è dichiarato**, perché è quello che questo progetto
-conosce: *una colonna spenta, fra tre mesi, qualcuno la riaccende credendo di
-riparare qualcosa.* È scritto in tre posti apposta — il commento della colonna,
-il commento del vincolo, e il riquadro nella scheda del prodotto — invece di
-essere lasciato scoprire.
+Non era una prudenza: era la **conseguenza della frase falsa** del §2. Con
+la formula vera uno scarto del **275%** è la realtà di un sugo di cozze, e
+quel vincolo lo **rifiutava**. Era un limite che **rifiutava anche i casi
+buoni**, che è il difetto peggiore dei due (regola del 24/08).
 
-⚠️ **Scrivere «resta come proposta» avrebbe rovesciato una decisione di Alessio
-di un mese fa dentro un commento**, cioè nel posto dove nessuna prova sarebbe
-diventata rossa.
+Al suo posto resta la sola cosa vera: **non può essere negativo**. Il nome
+cambia con la regola — `ingredients_scarto_standard_sensato` — perché
+lasciare «sotto_cento» su un vincolo che non guarda più il cento sarebbe una
+frase falsa scritta nel posto che il gestionale mostra all'utente quando
+rifiuta. Provato nei due versi dentro la migrazione: 275 passa, −1 viene
+respinto.
 
 ---
-
 ## 8 · La schermata
 
-* Nella riga di ricetta ci sono **due campi**: «quanto ne prendi» (lordo) e
-  «quanto ne resta» (netto). Il campo dello **scarto è sparito**.
-* **La resa si vede mentre si scrive**: «da 1.5 ne restano 0.4 — resa 26.7%».
-* ⚠️ **Il rifiuto sta dove sta il dubbio**, sotto i due campi, e il pulsante è
-  **spento con la ragione accanto** — non premibile per essere respinto
+**Nella riga di ricetta** ci sono **due campi**: «quanto ne prendi» (lordo) e
+«quanto ne resta» (netto). Il campo dello **scarto è sparito**, e la resa si
+vede mentre si scrive: «da 1.5 ne restano 0.4 — resa 26.7%».
+
+* ⚠️ **Il rifiuto sta dove sta il dubbio**, sotto i due campi, e il pulsante
+  è **spento con la ragione accanto** — non premibile per essere respinto
   (regola del 17/08).
-* Nella scheda del prodotto il campo «% scarto standard» è sostituito da un
-  riquadro che dice **dove è andato a finire** e perché. *Chi cercava lo scarto
-  lì adesso non lo trova, e deve saperlo.*
-* ⚠️ **`duplica_ricetta` porta i due numeri**, non lo scarto: riscritta **dal
-  corpo vivo** (regola del 18/08), non dalla migrazione che l'aveva creata.
-  Copiare `waste_percentage` verrebbe adesso **rifiutato dal riflesso**, quindi
-  duplicare una ricetta si sarebbe rotto al primo tentativo.
-* ⚠️ **`recipe_ingredients_display`** riscritta dal corpo vivo, con le colonne
-  nuove **aggiunte in fondo** (`ERROR 42P16`: in una vista si aggiunge solo in
-  coda).
+* 🔴 **Scegliendo il prodotto, il lordo si riempie da sé** dalla resa
+  standard — ed è il gesto che la decisione del 22/09 chiedeva.
+* 🔴 **E il numero proposto DICE di essere proposto.** Un numero
+  precompilato e basta somiglia in tutto a un numero digitato da qualcuno:
+  è la forma di difetto che questo progetto insegue — non un errore che
+  grida, un numero plausibile.
+* 🔴 **Appena si scrive il lordo, la proposta si ferma.** È quello che
+  separa «precompila» da «eredita»: cambiando il netto dopo, il numero
+  scritto a mano **non viene sovrascritto**. *Una proposta che butta via una
+  scelta non è una proposta.*
+* ⚠️ **`duplica_ricetta` porta i due numeri**, non lo scarto: riscritta dal
+  corpo vivo. Copiare `waste_percentage` verrebbe adesso **rifiutato dal
+  riflesso**, quindi duplicare una ricetta si sarebbe rotto al primo
+  tentativo.
+* ⚠️ **`recipe_ingredients_display`** riscritta dal corpo vivo, con le
+  colonne nuove **aggiunte in fondo** (`ERROR 42P16`).
 
 ---
+## 9 · Prove — e le quindici rotture
 
-## 9 · Prove — e le nove rotture
+**59 prove nuove**: 48 pure (`tests/unita/resa.test.js`) + 11 di schermata
+(`tests/schermate/resa-ricetta.test.jsx` e `resa-standard-prodotto.test.jsx`).
+Suite intera verde: **lint pulito**, **1723 prove pure**, **355 di
+schermata**, **build**.
 
-**43 prove nuove**: 36 pure (`tests/unita/resa.test.js`) + 7 di schermata
-(`tests/schermate/resa-ricetta.test.jsx`). Suite intera verde: **lint pulito**,
-**1711 prove pure**, **345 di schermata**, **build**.
+Dentro la migrazione, **11 gruppi di controlli** in una sotto-transazione
+annullata (con `foto_righe()` e `pretendi_nessun_residuo()`): lo stesso
+ingrediente con **due rese diverse in due ricette**, lordo uguale al netto,
+netto maggiore del lordo respinto, zero e negativi respinti, chi non dice il
+lordo, lo scarto scritto a mano respinto, i numeri che cambiano e lo scarto
+che si sposta da sé, la copia di una ricetta, il food cost che legge il
+lordo, **il numero del prodotto che non muove una riga già scritta** (da due
+strade diverse), e **sopra 100 accettato / sotto zero respinto**.
 
-Dentro la migrazione, **9 gruppi di controlli** in una sotto-transazione
-annullata (regola del 30/08, con `foto_righe()` e `pretendi_nessun_residuo()`):
-lo stesso ingrediente con **due rese diverse in due ricette** (che è la ragione
-del blocco), lordo uguale al netto, netto maggiore del lordo respinto, zero e
-negativi respinti, chi non dice il lordo, lo scarto scritto a mano respinto, i
-numeri che cambiano e lo scarto che si sposta da sé, la copia di una ricetta, e
-**il food cost che legge il lordo e fa il numero giusto**.
+**Le quindici rotture volontarie, tutte discriminanti.** Le nove del primo
+giro: il trigger creato prima della sanatoria · la fotografia del food cost
+che nasce vuota · il filtro `of quantita_lorda` rimesso · la copia che torna
+a portare lo scarto · la resa scambiata con lo scarto · il netto maggiore
+del lordo ammesso · il vuoto che torna a valere zero · la schermata che
+manda lo scarto · il campo del lordo tolto.
 
-**Le nove rotture volontarie, tutte discriminanti**: il trigger creato prima
-della sanatoria · la fotografia del food cost che nasce vuota · il filtro
-`of quantita_lorda` rimesso · la copia che torna a portare lo scarto · la resa
-scambiata con lo scarto · il netto maggiore del lordo ammesso · il vuoto che
-torna a valere zero · la schermata che manda lo scarto · il campo del lordo
-tolto.
+E le **sei del giro nuovo**, che guardano la decisione del 22/09: il vuoto
+dello standard che torna a valere zero · la resa mandata al posto dello
+scarto · la proposta che torna a sovrascrivere quello che uno ha scritto ·
+il `not null` tolto · l'eredità rimessa in uno dei cinque · il limite «sotto
+100» rimesso.
 
 🔴 **Due non mordevano, e sono due buchi veri chiusi:**
 1. la rottura «ordine» era un **inserimento di commento**, cioè non rompeva
@@ -295,74 +334,86 @@ tolto.
    tabella nasca `as select … from v_recipe_costs`.
 
 ⚠️ **Ogni rottura FALLISCE se non trova la sua àncora** — una rottura non
-avvenuta è indistinguibile da una prova che non discrimina. È la lezione pagata
-il 21/09 con un fine-riga sbagliato su un file a CRLF.
+avvenuta è indistinguibile da una prova che non discrimina.
 
-🔴 **E un setaccio mio mentiva**: cercando `pareggiata_il` nel testo di una
-funzione lo trovavo **dentro il commento che spiega perché non c'è**.
-Rimisurato togliendo i commenti, e il metro provato prima su due casi di
-risposta nota (regola del 26/08).
+⚠️ **E un controllo ha dovuto essere ristretto due volte**: quello che
+pretende che nessuno dei cinque nomini più il default guardava prima tutto
+il file (dove il default c'è, e **deve** esserci: lo nominano la sanatoria e
+il vincolo), poi il pezzo fino a fine file — che si portava dentro la
+verifica. *Un perimetro più largo del vero è un falso allarme che si impara
+a spegnere.*
 
 ---
-
 ## 10 · Cosa abbiamo rovesciato
 
 Uno, registrato come **n. 95** in
-[`decisioni_rovesciate.md`](../decisioni_rovesciate.md): *«il campo % scarto
-standard RESTA sulla scheda del prodotto»* — la decisione di Alessio del
-**25/08/2026**, che è **posteriore** al mandato che questa consegna esegue.
-🔴 **Vedi §0-bis: è la cosa da leggere prima di unire questa proposta.**
+[`decisioni_rovesciate.md`](../decisioni_rovesciate.md): *«lo scarto del
+prodotto vale per ogni riga, a ogni calcolo»* — il modo in cui il campo era
+stato costruito il **13/08**, cioè una sostituzione al volo dentro il
+calcolo invece di una precompilazione.
+
+⚠️ **E uno NON rovesciato, scritto lì dentro perché non si perda**: la
+decisione di Alessio del **25/08** («il campo RESTA») è **confermata**. La
+prima stesura la rovesciava; posta a lui, non è passata.
 
 ---
-
 ## 11 · Cosa NON è stato verificato
 
 1. 🔴 **La migrazione non è mai stata eseguita**, da nessuna parte — è una
-   condizione del mandato. Quindi i 9 gruppi di controlli sono **scritti e mai
-   girati**, e il confronto del food cost prima/dopo **non ha mai guardato
-   nessuna ricetta vera**. È la cosa più importante di questo elenco.
-2. ⚠️ **La sanatoria non ha mai toccato una riga.** In produzione ci sono
+   condizione del mandato. Quindi gli **11 gruppi di controlli** sono
+   **scritti e mai girati**, il confronto del food cost prima/dopo **non ha
+   mai guardato nessuna ricetta vera**, e il controllo che dimostra che il
+   numero del prodotto non muove una riga già scritta — cioè il cuore della
+   decisione del 22/09 — **non è mai scattato**. È la cosa più importante di
+   questo elenco.
+2. 🔴 **E i cinque oggetti riscritti non sono mai stati creati.** Sono stati
+   presi dal corpo vivo e modificati da un programma, ma **nessuno li ha
+   mai ricreati in un database**: *«un corpo che si crea non è un corpo che
+   funziona»* (17/08), e qui non si è fatto nemmeno il primo dei due. Se
+   uno di loro non compilasse, si scoprirebbe applicando.
+3. ⚠️ **La sanatoria non ha mai toccato una riga.** In produzione ci sono
    **14 ricette con 0 righe di ingrediente** (§12 di `CLAUDE.md`, misura del
-   04/09), quindi l'unico posto dove la sanatoria ha qualcosa da fare è il
-   progetto di prova, e nemmeno lì è stata provata. ⚠️ *Il caso da provare è
-   quello che ha qualcosa da fare* (17/08): questo resta **scoperto**.
-3. ⚠️ **Nessun occhio ha guardato la schermata.** Le prove di schermata
-   misurano il DOM; **se i due campi stiano comodi sul telefono, e se «resa
-   26.7%» si legga con le mani occupate, resta un giudizio di Alessio.**
-4. ⚠️ **Nessuna misura di larghezza a 390 punti** su quella riga: sono due
-   campi dove prima ce n'erano due (quantità + scarto), quindi il conto non
-   cambia — **ma non è stato misurato**, è dedotto.
-5. ⚠️ **La lista della spesa non è stata toccata né riprovata.**
+   04/09), quindi l'unico posto dove ha qualcosa da fare è il progetto di
+   prova, e nemmeno lì è stata provata. ⚠️ *Il caso da provare è quello che
+   ha qualcosa da fare* (17/08): questo resta **scoperto**.
+4. ⚠️ **Nessun occhio ha guardato la schermata.** Le prove di schermata
+   misurano il DOM; **se i due campi stiano comodi sul telefono, se la riga
+   «Proposto dalla resa standard» si noti davvero, e se «resa 26.7%» si
+   legga con le mani occupate, resta un giudizio di Alessio.**
+5. ⚠️ **Nessuna misura di larghezza a 390 punti**, né sulla riga di ricetta
+   né sul campo nuovo della scheda prodotto: dedotto, non misurato.
+6. ⚠️ **La lista della spesa non è stata toccata né riprovata.**
    `lordoDaComprare()` esiste ed è provata pura, ma **nessuna schermata la
    chiama ancora**: quanto ordinare continua a leggersi come prima.
-6. ⚠️ **Il conteggio «12 file moltiplicano, 0 dividono»** è misurato sulle
-   migrazioni del repository, non sui corpi vivi del database.
+7. ⚠️ **Il conteggio «12 file moltiplicano, 0 dividono»** è misurato sulle
+   migrazioni del repository; quello dei **cinque punti che ereditavano** è
+   misurato sui corpi vivi del **progetto di prova**, non della produzione.
 
 ---
-
 ## 12 · Cosa resta da fare
 
 * **Applicare la migrazione sul progetto di prova** e guardare cosa fa la
-  sanatoria su righe vere — è il passo che chiude il punto 2 di §11.
-* **La decisione di Alessio su `waste_percentage_default`** (§7): si tiene
-  spenta o si toglie.
+  sanatoria su righe vere — è il passo che chiude i punti 1, 2 e 3 di §11.
 * **La lista della spesa**: far leggere a chi ordina il lordo della riga
   (`lordoDaComprare`) invece della vecchia resa dichiarata.
-* ⚠️ **Dove c'è una produzione registrata, la resa misurata dovrebbe vincere su
-  quella dichiarata** — è nel mandato del 14/08 e **non è in questo blocco**.
+* ⚠️ **Dove c'è una produzione registrata, la resa misurata dovrebbe vincere
+  su quella dichiarata** — è nel mandato del 14/08 e **non è in questo
+  blocco**.
+* ⚠️ **Guardare le due schermate a 390 punti**, con gli occhi e col righello.
 
 ---
-
 ## 13 · File toccati
 
 | file | cosa |
 |---|---|
-| `supabase/migrations/20260922000001_la_resa_sulla_riga_di_ricetta.sql` | **nuovo**, non applicato |
-| `src/lib/calcoli/resa.js` | **nuovo** — la regola in un posto solo |
-| `src/pages/ricettario/RicettaDetail.jsx` | i due campi, la resa, il rifiuto, l'elenco |
-| `src/pages/ricettario/IngredienteForm.jsx` | via il campo dello scarto, con la ragione scritta |
-| `tests/unita/resa.test.js` | **nuovo** — 36 |
-| `tests/schermate/resa-ricetta.test.jsx` | **nuovo** — 7 |
+| `supabase/migrations/20260922000001_la_resa_sulla_riga_di_ricetta.sql` | **nuova**, non applicata |
+| `src/lib/calcoli/resa.js` | **nuovo** — la regola e le due conversioni in un posto solo |
+| `src/pages/ricettario/RicettaDetail.jsx` | i due campi, la resa, il rifiuto, la precompilazione, l'elenco |
+| `src/pages/ricettario/IngredienteForm.jsx` | «% scarto standard» → **«Resa standard (facoltativa)»** |
+| `tests/unita/resa.test.js` | **nuovo** — 48 |
+| `tests/schermate/resa-ricetta.test.jsx` | **nuovo** — 11 |
+| `tests/schermate/resa-standard-prodotto.test.jsx` | **nuovo** — 6 |
 | `docs/RICHIESTE.md` | R12 → `in corso` |
+| `docs/DECISIONI.md` | la voce del 25/08 confermata, più il «precompila, non eredita» |
 | `docs/decisioni_rovesciate.md` | rovesciamento n. 95 |
 | `docs/consegne/20260922_la_resa_sulla_riga_di_ricetta.md` | questo |

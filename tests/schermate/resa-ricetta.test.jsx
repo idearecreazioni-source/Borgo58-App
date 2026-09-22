@@ -232,3 +232,64 @@ describe("🔴 nell'elenco si legge la resa, non la percentuale di scarto", () =
     expect(container.textContent).not.toMatch(/→/);
   });
 });
+
+// =====================================================================
+// 🔴 IL VALORE STANDARD PRECOMPILA UNA VOLTA — decisione del 22/09/2026
+// =====================================================================
+// ⚠️ PERCHE' QUESTE PROVE NON SONO UN DI PIU'. «Precompila una volta» e
+//    «eredita per sempre» si vedono uguali su una schermata: in tutt'e due
+//    i casi nel campo compare un numero. La differenza e' che qui il numero
+//    entra nel campo e da li' e' della riga — e si vede provando a
+//    scriverci sopra.
+describe("🔴 il valore standard del prodotto precompila, e poi tace", () => {
+  const scegliCozze = (container) => {
+    const scelta = [...container.querySelectorAll("select")].find((s) =>
+      [...s.options].some((o) => o.textContent === "Cozze"),
+    );
+    expect(scelta, "il menu degli ingredienti non c'e'").toBeTruthy();
+    fireEvent.change(scelta, { target: { value: "i1" } });
+  };
+
+  it("scegliendo il prodotto, il lordo si riempie da se'", async () => {
+    // Le cozze finte hanno uno scarto standard del 25%: da 1 kg netto se ne
+    // prendono 1,25.
+    const { container } = await apri();
+    fireEvent.change(campo(container, "riga-netto"), { target: { value: "1" } });
+    scegliCozze(container);
+    await waitFor(() => expect(campo(container, "riga-lordo").value).toBe("1.25"));
+  });
+
+  it("🔴 e il numero proposto DICE di essere proposto", async () => {
+    // Un numero precompilato e basta somiglia in tutto a un numero digitato
+    // da qualcuno: e' la forma di difetto che questo progetto insegue.
+    const { container } = await apri();
+    fireEvent.change(campo(container, "riga-netto"), { target: { value: "1" } });
+    scegliCozze(container);
+    await waitFor(() => expect(campo(container, "riga-lordo-proposto")).toBeTruthy());
+    expect(campo(container, "riga-lordo-proposto").textContent).toMatch(/Proposto dalla resa/);
+  });
+
+  it("🔴 appena si scrive il lordo, la proposta SI FERMA", async () => {
+    // ⚠️ E' la prova che separa «precompila» da «eredita»: cambiando il
+    //    netto dopo, il numero scritto a mano NON viene sovrascritto — una
+    //    proposta che butta via una scelta non e' una proposta.
+    const { container } = await apri();
+    fireEvent.change(campo(container, "riga-netto"), { target: { value: "1" } });
+    scegliCozze(container);
+    await waitFor(() => expect(campo(container, "riga-lordo").value).toBe("1.25"));
+
+    fireEvent.change(campo(container, "riga-lordo"), { target: { value: "3" } });
+    fireEvent.change(campo(container, "riga-netto"), { target: { value: "2" } });
+    await waitFor(() => expect(campo(container, "riga-netto").value).toBe("2"));
+    expect(campo(container, "riga-lordo").value).toBe("3");
+    // E sparisce anche la riga che diceva «proposto»: adesso non lo e' piu'.
+    expect(campo(container, "riga-lordo-proposto")).toBeNull();
+  });
+
+  it("finche' nessuno ha scritto il lordo, la proposta segue il netto", async () => {
+    const { container } = await apri();
+    scegliCozze(container);
+    fireEvent.change(campo(container, "riga-netto"), { target: { value: "2" } });
+    await waitFor(() => expect(campo(container, "riga-lordo").value).toBe("2.5"));
+  });
+});
