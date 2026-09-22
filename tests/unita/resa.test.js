@@ -804,3 +804,85 @@ describe("19 · il tipo della colonna della vista non si stringe", () => {
     }
   });
 });
+
+// =====================================================================
+// 20 · IL TETTO «SOTTO 100» SE NE VA ANCHE DALLA RIGA DI RICETTA
+// =====================================================================
+// 🔴 IL GEMELLO CHE NON AVEVO VISTO. Il 24/08 il limite era stato messo in
+//    DUE posti: sull'anagrafica del prodotto — tolto — e sulla RIGA di
+//    ricetta, dove il suo commento dichiarava di stare «per la stessa
+//    ragione aritmetica dell'anagrafica». Quella ragione non esiste: il
+//    lordo si ottiene MOLTIPLICANDO.
+//
+// ⚠️ E si e' scoperto solo il 22/09, APPLICANDO: la migrazione si e' fermata
+//    sul primo inserimento del proprio blocco di verifica — il sugo di
+//    cozze, 1,5 kg che danno 400 g, scarto 275%. Nessun tentativo era mai
+//    arrivato fin li': *un arresto ne mascherava un altro*, tre volte.
+describe("20 · sulla riga di ricetta uno scarto sopra 100 è ammesso", () => {
+  const vincolo = codiceR12.match(
+    /add constraint recipe_ingredienti_numeri_sensati\s+check \(([\s\S]*?)\);/,
+  )?.[1];
+
+  it("il vincolo storico viene riscritto nella migrazione", () => {
+    expect(vincolo, "non trovo il vincolo riscritto").toBeTruthy();
+  });
+
+  it("🔴 il limite `< 100` NON può tornare", () => {
+    // È il numero che ha fermato la migrazione. Se ricomparisse, il sugo di
+    // cozze tornerebbe a essere rifiutato.
+    expect(vincolo).not.toMatch(/<\s*100/);
+    expect(vincolo).not.toContain("100");
+  });
+
+  it("restano il netto positivo e lo scarto non negativo", () => {
+    // ⚠️ Una riga con quantità zero non è un ingrediente; uno scarto
+    //    negativo vorrebbe dire che prendendone meno se ne ottiene di più.
+    expect(vincolo).toMatch(/quantity\s*>\s*0/);
+    expect(vincolo).toMatch(/waste_percentage\s*>=\s*0/);
+  });
+
+  it("⚠️ e NON si copia la cura dell'anagrafica: qui la colonna è `not null`", () => {
+    // Là il campo è facoltativo (vuoto = «non lo sa nessuno») e il vincolo
+    // porta un `is null or`. Qui `waste_percentage` è appena diventata
+    // `not null` ed è un RIFLESSO: quel ramo non può più accadere, e
+    // scriverlo racconterebbe uno stato che lo schema ha reso impossibile.
+    expect(vincolo).not.toMatch(/waste_percentage\s+is\s+null/);
+    expect(codiceR12).toMatch(
+      /alter table recipe_ingredients alter column waste_percentage set not null/,
+    );
+  });
+
+  it("🔴 e il commento italiano non rimanda più a una ragione che non esiste", () => {
+    const frase = codiceR12.match(
+      /comment on constraint recipe_ingredienti_numeri_sensati on recipe_ingredients is\s+'([\s\S]*?)';/,
+    )?.[1];
+    expect(frase, "il vincolo è muto").toBeTruthy();
+    // La frase vecchia diceva «lo scarto sta sotto 100 per la stessa ragione
+    // aritmetica dell'anagrafica» — cioè rimandava alla formula sbagliata.
+    expect(frase).not.toMatch(/sotto 100 per la stessa ragione/);
+    expect(frase).toMatch(/MOLTIPLICANDO/);
+    expect(frase).toMatch(/275/);
+  });
+
+  it("⚠️ e gli altri due vincoli NON vengono toccati", () => {
+    // `riga_lordo_e_netto_coerenti` è di R12 e ha una regola sua; quello
+    // dell'anagrafica era già stato corretto in §7.
+    expect(codiceR12).toMatch(/add constraint riga_lordo_e_netto_coerenti\s+check \(quantity > 0/);
+    expect(codiceR12).toMatch(/add constraint ingredients_scarto_standard_sensato/);
+  });
+
+  it("🔴 e la verifica della migrazione usa il caso reale 1,5 kg → 400 g", () => {
+    // Non una riga di prova in più: è l'inserimento su cui la migrazione si
+    // è fermata davvero. Se il tetto tornasse, tornerebbe a fallire lì.
+    expect(codiceR12).toMatch(/values \(v_r2, v_ing, 0\.4000, 1\.5000, 'kg'\)/);
+    expect(codiceR12).toMatch(/doveva riflettere uno scarto del 275/);
+  });
+
+  it("una quantità non positiva e un lordo negativo restano rifiutati", () => {
+    // Provati dentro la verifica, ognuno col proprio inserimento.
+    expect(codiceR12).toMatch(/values \(v_r1, v_ing, 0, 1, 'kg'\)/);
+    expect(codiceR12).toMatch(/Una riga col netto a zero e'' passata/);
+    expect(codiceR12).toMatch(/values \(v_r1, v_ing, 1, -1, 'kg'\)/);
+    expect(codiceR12).toMatch(/Una riga col lordo negativo e'' passata/);
+  });
+});

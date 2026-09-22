@@ -354,6 +354,43 @@ comment on constraint riga_lordo_e_netto_coerenti on recipe_ingredients is
   'La resa si scrive lordo e netto: «1,5 kg di cozze danno 400 g». Tutti e due maggiori di zero, e il netto non puo'' superare il lordo — da un chilo di cozze non escono due chili di mollusco. Se ti serve dire che una cosa cresce cuocendo (il riso che assorbe l''acqua), quella non e'' una resa: e'' la quantita'' della ricetta, e si scrive li''.';
 
 -- ---------------------------------------------------------------------
+-- 5-bis. IL TETTO «SOTTO 100» SE NE VA ANCHE DALLA RIGA DI RICETTA
+-- ---------------------------------------------------------------------
+-- 🔴 IL GEMELLO CHE NON AVEVO VISTO. Il 24/08 il limite «scarto sotto 100»
+--    era stato messo in DUE posti: sull'anagrafica del prodotto — tolto in
+--    §7, perche' nasceva da una formula sbagliata — e qui, sulla riga di
+--    ricetta. Il suo commento lo dichiara: «lo scarto sta sotto 100 PER LA
+--    STESSA RAGIONE ARITMETICA DELL'ANAGRAFICA».
+--
+--    Quella ragione non esiste: il lordo si ottiene MOLTIPLICANDO il netto
+--    per (1 + scarto/100), non dividendo per (1 - scarto/100). Sotto la
+--    formula vera un sugo di cozze — 1,5 kg che danno 400 g — ha uno scarto
+--    del 275%, ed e' un caso normale che questo vincolo RIFIUTAVA.
+--
+-- ⚠️ E si e' scoperto solo il 22/09, applicando: la migrazione si e' fermata
+--    sul PRIMO inserimento del proprio blocco di verifica, che e' proprio il
+--    sugo di cozze. Nessun tentativo precedente era mai arrivato fin li' —
+--    *un arresto ne mascherava un altro*, tre volte di fila.
+--
+-- ⚠️ E NON SI COPIA LA CURA DELL'ANAGRAFICA: la' il campo e' FACOLTATIVO
+--    (vuoto = «non lo sa nessuno»), qui `waste_percentage` e' appena
+--    diventata `not null` ed e' un RIFLESSO — la scrive solo il trigger. Il
+--    `is null or` di la' sarebbe un ramo che non puo' piu' accadere, cioe'
+--    una riga che racconta uno stato che lo schema ha appena reso
+--    impossibile.
+--
+-- ⚠️ Resta tutto il resto: `quantity > 0` (una riga con quantita' zero non
+--    e' un ingrediente) e `waste_percentage >= 0` (uno scarto negativo
+--    vorrebbe dire che prendendone meno se ne ottiene di piu').
+alter table recipe_ingredients drop constraint if exists recipe_ingredienti_numeri_sensati;
+alter table recipe_ingredients
+  add constraint recipe_ingredienti_numeri_sensati
+  check (quantity > 0 and waste_percentage >= 0);
+
+comment on constraint recipe_ingredienti_numeri_sensati on recipe_ingredients is
+  'Una riga di ricetta con quantita'' zero non e'' un ingrediente, e uno scarto negativo vorrebbe dire che prendendone meno se ne ottiene di piu''. 🔴 SOPRA 100 E'' AMMESSO ed e'' normale: da 1,5 kg di cozze escono 400 g di mollusco, cioe'' uno scarto del 275%. Il vecchio tetto «sotto 100» e'' stato tolto il 22/09/2026 — veniva da una formula sbagliata scritta il 24/08 («il lordo si ricava dividendo per 1 - scarto/100»), e RIFIUTAVA casi veri: il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100). ⚠️ E lo scarto non si scrive a mano: e'' il riflesso di quanto ne prendi e quanto ne resta.';
+
+-- ---------------------------------------------------------------------
 -- 6. IL RIFLESSO — e solo adesso, non prima della sanatoria
 -- ---------------------------------------------------------------------
 -- 🔴 PERIODO DI PASSAGGIO (R12, aggiunto il 22/09/2026 per il rilascio in
@@ -977,6 +1014,13 @@ begin
     -- -------------------------------------------------------------
     -- È la ragione per cui questo blocco esiste: sulla scheda del prodotto
     -- un numero solo non descrive nessuno dei due casi.
+    --
+    -- 🔴 E LA SECONDA RIGA E' ANCHE LA PROVA DEL VINCOLO DI §5-bis: 1,5 kg
+    --    che danno 400 g fanno uno scarto del 275%, e il vecchio tetto
+    --    «sotto 100» la RIFIUTAVA. Il 22/09 la migrazione si e' fermata
+    --    esattamente qui. Se quel tetto tornasse, questo inserimento
+    --    fallirebbe di nuovo — quindi la prova del vincolo non e' una riga
+    --    in piu': e' il caso vero, messo dove serve.
     insert into recipe_ingredients (recipe_id, ingredient_id, quantity, quantita_lorda, unit)
     values (v_r1, v_ing, 1.0000, 1.1000, 'kg');          -- impepata: scarta poco
     insert into recipe_ingredients (recipe_id, ingredient_id, quantity, quantita_lorda, unit)
