@@ -449,3 +449,36 @@ a un lordo che non torna, e che lo standard del prodotto cambiato dopo non
 muove né il lordo né il costo di una riga già scritta — ma la migrazione non
 è mai stata applicata, quindi queste prove non sono mai girate contro un
 database.
+
+🔴 **E ADESSO LO DICHIARANO, invece di fallire.** Prima della correzione del
+22/09 quelle cinque prove giravano comunque e diventavano **rosse** — non
+perché una regola fosse rotta, ma perché su Prova `quantita_lorda` non
+esiste ancora. ⚠️ *È la differenza fra una prova rossa e una prova che non si
+può ancora fare*, e confonderle ha un costo preciso: **cinque rossi
+permanenti in fondo alla suite sono cinque rossi che si impara a
+scavalcare**, e il giorno che uno diventa rosso davvero nessuno se ne
+accorge.
+
+Quindi il file chiede al **registro delle migrazioni** se la versione
+`20260922000001` è applicata, e:
+
+* **non è applicata** → stampa un avviso esplicito e **salta** il gruppo
+  (`describe.skipIf`), senza eseguire `beforeAll`, senza creare righe e senza
+  errori di schema;
+* **è applicata** → le cinque prove partono **identiche**, e se una regola
+  non regge diventano rosse.
+
+⚠️ **Si salta, non si addolcisce**: nessuna delle cinque è stata resa
+permissiva né trasformata in una lettura del file della migrazione. Si
+riaccendono **da sole**.
+
+⚠️ **E i due modi di non sapere sono distinti, perché si somigliano**: un
+**errore** nel leggere il registro **ferma tutto rumorosamente** (dedurre
+«migrazione assente» da un errore spegnerebbe le prove proprio quando
+servono), e un registro che torna **vuoto** fa lo stesso — *vuoto non è
+zero*: in un database vero quel registro ha centinaia di righe, quindi zero
+vuol dire «non si è potuto leggere». Più una terza guardia: se la versione
+scritta nel file non corrispondesse a nessuna migrazione del repository, il
+gruppo resterebbe saltato **per sempre e in silenzio** — quindi quel caso si
+ferma subito. *Un interruttore che non si può più riaccendere non è un
+interruttore.*

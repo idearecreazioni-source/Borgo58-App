@@ -1,3 +1,4 @@
+import { readdirSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 
@@ -11,13 +12,86 @@ import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
 //    esiste — se il trigger lo rifiutasse, ogni salvataggio del sito
 //    vecchio si romperebbe nell'intervallo fra le due pubblicazioni.
 //
-// ⚠️ NON VERIFICATO CONTRO UN DATABASE: la migrazione `20260922000001`
-//    non e' mai stata applicata da nessuna parte (nemmeno sul progetto di
-//    prova), per mandato — la sua stessa migrazione lo dichiara in cima.
-//    Questo file gira solo dopo l'applicazione.
+// ---------------------------------------------------------------------
+// 🔴 QUESTE PROVE GIRANO SOLO DOVE R12 E' APPLICATA, E LO DICHIARANO
+// ---------------------------------------------------------------------
+// La migrazione `20260922000001` non e' ancora applicata su Prova (per
+// mandato). Senza questa guardia le cinque prove qui sotto girerebbero su
+// un database che non ha `recipe_ingredients.quantita_lorda`, e
+// fallirebbero — ma **per il motivo sbagliato**: non perche' una regola sia
+// rotta, perche' la regola non esiste ancora.
+//
+// ⚠️ E' la differenza fra una prova ROSSA e una prova che NON SI PUO'
+//    ANCORA FARE. Confonderle ha un costo preciso: cinque rossi permanenti
+//    in fondo alla suite sono cinque rossi che si impara a scavalcare, e il
+//    giorno che uno di loro diventa rosso DAVVERO nessuno se ne accorge.
+//
+// ⚠️ SI SALTA, NON SI ADDOLCISCE. Le cinque prove restano identiche e
+//    discriminanti: nessuna e' stata resa permissiva, nessuna e' diventata
+//    una lettura del file della migrazione. Si riaccendono **da sole** il
+//    giorno che la versione compare nel registro — e allora, se una regola
+//    non regge, diventano rosse.
+//
+// Il modello e' quello di `silenzio-notifiche.test.js`; la lettura del
+// registro e' quella di `vocabolari.test.js`.
+const VERSIONE = "20260922000001";
 const MARCA = marchio("TEST-AUTO resa vecchio client");
 
-describe("R12: il vecchio formato e il nuovo, discriminati", () => {
+// 🔴 PRIMA DI TUTTO: LA VERSIONE ESISTE DAVVERO COME MIGRAZIONE?
+//    Una versione scritta male qui non darebbe nessun errore: darebbe
+//    «migrazione assente» per sempre, cioe' cinque prove spente in
+//    silenzio — che e' precisamente il difetto che questo file esiste per
+//    non creare. *Un interruttore che non si puo' piu' riaccendere non e'
+//    un interruttore.*
+const MIGRAZIONI = readdirSync("supabase/migrations").filter((f) => f.startsWith(VERSIONE));
+if (MIGRAZIONI.length !== 1) {
+  throw new Error(
+    `Non trovo UNA migrazione ${VERSIONE} in supabase/migrations (ne ho trovate ` +
+      `${MIGRAZIONI.length}). Finche' questa versione non corrisponde a un file, ` +
+      `le prove di R12 resterebbero saltate per sempre senza che nessuno lo sappia.`
+  );
+}
+
+// La sonda: un client autenticato che LEGGE e basta — nessuna riga scritta,
+// nessuna tabella toccata, e la sessione si chiude subito.
+const sonda = await clientAutenticato(credenziali().titolare);
+const registro = await sonda.from("applied_migrations").select("version");
+await sonda.auth.signOut({ scope: "local" });
+
+// ⚠️ DUE MODI DI FALLIRE, E SI SOMIGLIANO. Il primo e' rumoroso.
+if (registro.error) {
+  throw new Error(
+    `Non riesco a leggere il registro delle migrazioni: ${registro.error.message}. ` +
+      `Non so in quale dei due momenti si trova questo database, e NON tiro a indovinare: ` +
+      `dedurre «migrazione assente» da un errore di lettura spegnerebbe le prove di R12 ` +
+      `proprio quando servono.`
+  );
+}
+
+// 🔴 E IL SECONDO E' MUTO, ed e' quello pericoloso: quando una lettura non
+//    e' permessa, PostgREST non risponde con un errore — risponde con ZERO
+//    RIGHE. Zero righe si leggerebbe «nessuna migrazione applicata», cioe'
+//    «salta tutto»: plausibile e falso. In un database vero quel registro ne
+//    ha centinaia. *Vuoto non e' zero* (19/08).
+if ((registro.data ?? []).length === 0) {
+  throw new Error(
+    "Il registro delle migrazioni e' tornato VUOTO. In un database vero non puo' " +
+      "esserlo: vuol dire che non si e' potuto leggere. Mi fermo invece di dedurre " +
+      "che R12 non sia applicata."
+  );
+}
+
+const APPLICATA = registro.data.some((r) => r.version === VERSIONE);
+if (!APPLICATA) {
+  console.warn(
+    `⚠️  resa-vecchio-client: la migrazione ${VERSIONE} (R12) non è applicata su ` +
+      `questo database, le 5 prove sono SALTATE. Non è un difetto: la colonna ` +
+      `quantita_lorda e il trigger del riflesso non esistono ancora. Si riaccendono ` +
+      `da sole quando la migrazione viene applicata.`
+  );
+}
+
+describe.skipIf(!APPLICATA)("R12: il vecchio formato e il nuovo, discriminati", () => {
   let titolare;
   let ente;
   let ids = {};
