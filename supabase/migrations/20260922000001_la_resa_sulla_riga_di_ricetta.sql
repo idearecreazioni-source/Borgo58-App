@@ -179,11 +179,31 @@
 -- ---------------------------------------------------------------------
 -- 1. LA COLONNA NUOVA, ANCORA VUOTA
 -- ---------------------------------------------------------------------
+-- 🔴 OTTO DECIMALI, E IL NUMERO NON E' SCELTO A OCCHIO: ESCE DAI TIPI CHE
+--    CI SONO GIA'. Il primo tentativo su Prova l'aveva dichiarata
+--    `numeric(12,4)`, e la migrazione **si e' fermata da sola** su 25
+--    righe vere — quantita' minuscole (spezie e sale, fino a 0,0002 kg) su
+--    cui quattro decimali non bastano a far tornare il rapporto.
+--
+--    L'aritmetica, invece dell'esperienza:
+--      · `quantity`          e' `numeric(12,4)`  → 4 decimali
+--      · `waste_percentage`  e' `numeric(5,2)`   → 2 decimali, quindi
+--        `1 + w/100` ne ha 4
+--      · il prodotto dei due ne ha quindi **fino a 8**, e a 8 e' ESATTO.
+--    Il caso estremo si scrive: `quantity` 0,0001 con scarto 0,01% da un
+--    lordo di 0,00010001 — otto decimali, nessuno di piu'.
+--
+-- ⚠️ E LA PARTE INTERA NON SI RESTRINGE, che e' l'altra meta'. Il massimo
+--    lordo ottenibile dai tipi di oggi e' 99.999.999,9999 × (1 + 999,99/100)
+--    ≈ 1,1 miliardi: **dieci cifre intere**. `numeric(18,8)` ne lascia
+--    esattamente 18 − 8 = 10. ⚠️ `numeric(12,6)` sarebbe stato il tranello
+--    comodo: aggiunge decimali **togliendo** cifre intere (6 invece di 8),
+--    cioe' cura il caso trovato e ne apre uno nuovo che nessuno cercava.
 alter table recipe_ingredients
-  add column if not exists quantita_lorda numeric(12,4);
+  add column if not exists quantita_lorda numeric(18,8);
 
 comment on column recipe_ingredients.quantita_lorda is
-  'Quanto se ne prende per ottenere il netto di `quantity`: «1,5 kg di cozze danno 400 g» sono 1,5 qui e 0,4 li''. Stessa unita'' della riga. E'' il dato che si scrive; lo scarto in percentuale e'' il suo riflesso, non il contrario. Uguale al netto quando non c''e'' scarto.';
+  'Quanto se ne prende per ottenere il netto di `quantity`: «1,5 kg di cozze danno 400 g» sono 1,5 qui e 0,4 li''. Stessa unita'' della riga. E'' il dato che si scrive; lo scarto in percentuale e'' il suo riflesso, non il contrario. Uguale al netto quando non c''e'' scarto. ⚠️ OTTO DECIMALI perche'' il prodotto di `quantity` (4 decimali) per `1 + waste_percentage/100` (4 decimali) ne ha fino a 8: a meno di 8 il rapporto non riproduce lo scarto e il food cost si sposterebbe in silenzio. E DIECI CIFRE INTERE perche'' il massimo lordo ottenibile dai tipi di oggi sfiora 1,1 miliardi.';
 
 -- ---------------------------------------------------------------------
 -- 2. LA REGOLA, IN UN POSTO SOLO
@@ -245,9 +265,12 @@ begin
   else
     update recipe_ingredients ri
        set waste_percentage = coalesce(ri.waste_percentage, i.waste_percentage_default, 0),
+           -- 8 e non 4: e' il numero di decimali che il prodotto puo'
+           -- avere davvero (vedi §1). A 4 il rapporto non riproduceva lo
+           -- scarto su 25 righe vere, e la migrazione si fermava.
            quantita_lorda = round(
              ri.quantity * (1 + coalesce(ri.waste_percentage, i.waste_percentage_default, 0) / 100.0),
-             4)
+             8)
       from ingredients i
      where i.id = ri.ingredient_id
        and ri.quantita_lorda is null;
@@ -258,33 +281,49 @@ begin
     -- cui ereditare, e lo scarto della preparazione vive dentro di lei.
     update recipe_ingredients ri
        set waste_percentage = coalesce(ri.waste_percentage, 0),
-           quantita_lorda = round(ri.quantity * (1 + coalesce(ri.waste_percentage, 0) / 100.0), 4)
+           quantita_lorda = round(ri.quantity * (1 + coalesce(ri.waste_percentage, 0) / 100.0), 8)
      where ri.quantita_lorda is null;
     get diagnostics v_fatte = row_count;
     raise notice 'Resa scritta su % righe che puntano a una preparazione.', v_fatte;
   end if;
 
   -- 🔴 IL CONTROLLO CHE FERMA TUTTO SE IL GIRO NON TORNA ESATTO.
-  --    `quantita_lorda` ha quattro decimali; `quantity` ne ha quattro e lo
-  --    scarto due, quindi il prodotto può averne fino a otto. Dove
-  --    l'arrotondamento morde, il rapporto fra i due numeri non riproduce
-  --    più lo scarto di prima — e quel piatto costerebbe un millesimo in
-  --    più o in meno. ⚠️ Non si aggiusta la soglia: ci si ferma, e si dice
-  --    quali righe.
+  --    `quantity` ha quattro decimali e lo scarto due, quindi il prodotto
+  --    puo' averne fino a otto: con meno di otto sul lordo il rapporto fra
+  --    i due numeri non riproduce lo scarto di prima, e quel piatto
+  --    costerebbe un millesimo in piu' o in meno. ⚠️ Non si aggiusta la
+  --    soglia: ci si ferma, e si dice quali righe.
+  -- ✅ E IL 22/09 SI E' FERMATO DAVVERO, su Prova: 25 righe con quattro
+  --    decimali. Non e' un controllo teorico — e' quello che ha impedito a
+  --    25 ricette di cambiare costo nella notte.
   select count(*) into v_storte
     from recipe_ingredients ri
    where scarto_della_riga(ri.quantita_lorda, ri.quantity)
          is distinct from coalesce(ri.waste_percentage, 0);
   if v_storte > 0 then
-    raise exception 'FERMO: su % righe il lordo a quattro decimali non riproduce lo scarto che avevano. Il food cost di quei piatti si sposterebbe di nascosto. Servono piu'' decimali sul lordo, oppure quelle righe vanno guardate a mano: %',
+    -- ⚠️ IL LIMITE VA PRIMA DELL'AGGREGAZIONE, e la prima stesura lo
+    --    metteva dopo: `limit 10` accanto a `string_agg` limita le righe
+    --    del RISULTATO — che sono una — non gli elementi che finiscono
+    --    dentro la frase. Il 22/09 il messaggio prometteva «i primi dieci»
+    --    e ne ha elencate venticinque, in una riga sola.
+    --    *Un messaggio che promette un numero e ne dice un altro insegna a
+    --    non fidarsi dei numeri che dice.*
+    -- ⚠️ E l'ordine e' DETERMINISTICO (`order by ri.id`): senza, due
+    --    esecuzioni sugli stessi dati nominerebbero dieci righe diverse, e
+    --    chi confronta due messaggi crederebbe che siano cambiati i dati.
+    raise exception 'FERMO: su % righe il lordo non riproduce lo scarto che avevano. Il food cost di quei piatti si sposterebbe di nascosto. Servono piu'' decimali sul lordo, oppure quelle righe vanno guardate a mano. Ecco i primi % casi (su %): %',
       v_storte,
-      (select string_agg(ri.id::text || ' (netto ' || ri.quantity || ', lordo ' || ri.quantita_lorda
-                         || ', scarto ' || coalesce(ri.waste_percentage, 0) || ' contro '
-                         || scarto_della_riga(ri.quantita_lorda, ri.quantity) || ')', ' · ')
-         from recipe_ingredients ri
-        where scarto_della_riga(ri.quantita_lorda, ri.quantity)
-              is distinct from coalesce(ri.waste_percentage, 0)
-        limit 10);
+      least(v_storte, 10),
+      v_storte,
+      (select string_agg(d.riga, ' · ')
+         from (select ri.id::text || ' (netto ' || ri.quantity || ', lordo ' || ri.quantita_lorda
+                      || ', scarto ' || coalesce(ri.waste_percentage, 0) || ' contro '
+                      || scarto_della_riga(ri.quantita_lorda, ri.quantity) || ')' as riga
+                 from recipe_ingredients ri
+                where scarto_della_riga(ri.quantita_lorda, ri.quantity)
+                      is distinct from coalesce(ri.waste_percentage, 0)
+                order by ri.id
+                limit 10) d);
   end if;
   raise notice 'Il giro lordo → scarto torna esatto su tutte le righe.';
 end $sanatoria$;
@@ -344,7 +383,7 @@ begin
       -- Il vecchio client: c'e'' uno scarto dichiarato e nessun lordo.
       -- Si ricava il lordo da quello che ha detto, non da un'ipotesi di
       -- scarto zero.
-      new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 4);
+      new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 8);
       v_vecchio_client := true;
     else
       -- Ne' lordo ne'' scarto: chi non dice il lordo non sta dichiarando
@@ -358,7 +397,7 @@ begin
     -- Lo stesso caso, in aggiornamento: il vecchio client corregge lo
     -- scarto senza toccare il lordo (che non conosce). Si ricalcola il
     -- lordo dal nuovo scarto invece di rifiutare la modifica.
-    new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 4);
+    new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 8);
     v_vecchio_client := true;
   end if;
 

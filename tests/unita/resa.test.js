@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  DECIMALI_LORDO,
   comeSiLegge,
   comeSiLeggeLoStandard,
   lordoDaComprare,
@@ -13,6 +14,13 @@ import {
   scartoPercento,
   unitaCoerenti,
 } from "../../src/lib/calcoli/resa";
+
+// Il testo della migrazione R12, coi commenti tolti: un setaccio che cerca
+// una forma nel testo trova anche chi la nomina per spiegarla (27/08).
+const codiceR12 = readFileSync(
+  "supabase/migrations/20260922000001_la_resa_sulla_riga_di_ricetta.sql",
+  "utf8",
+).replace(/--[^\n]*/g, "");
 
 // =====================================================================
 // LA RESA SULLA RIGA DI RICETTA — R12, 22/09/2026
@@ -206,8 +214,68 @@ describe("15 · la migrazione si verifica da sé e non lascia residui", () => {
   const codice = SQL.replace(/--[^\n]*/g, "");
 
   it("la colonna nuova nasce vuota e poi diventa obbligatoria", () => {
-    expect(codice).toMatch(/add column if not exists quantita_lorda numeric\(12,4\)/);
+    expect(codice).toMatch(/add column if not exists quantita_lorda numeric\(18,8\)/);
     expect(codice).toMatch(/alter column quantita_lorda set not null/);
+  });
+
+  it("🔴 OTTO DECIMALI, e il numero esce dai tipi che ci sono già", () => {
+    // 🔴 La prima stesura diceva `numeric(12,4)` e la migrazione si è
+    //    FERMATA su 25 righe vere di Prova: quantità minuscole (spezie,
+    //    sale) su cui quattro decimali non fanno tornare il rapporto.
+    // ⚠️ Otto non è un margine di sicurezza: è il numero ESATTO di
+    //    decimali che il prodotto può avere. `quantity` ne ha 4,
+    //    `1 + waste_percentage/100` ne ha 4, il prodotto fino a 8.
+    const tipo = codice.match(/quantita_lorda numeric\((\d+),(\d+)\)/);
+    expect(tipo, "la colonna non dichiara un numeric con precisione").toBeTruthy();
+    const [, cifre, decimali] = tipo.map(Number);
+    expect(decimali, "meno di 8 decimali non riproduce lo scarto").toBeGreaterThanOrEqual(8);
+
+    // 🔴 E LA PARTE INTERA NON SI RESTRINGE. È il tranello di
+    //    `numeric(12,6)`, che aggiunge decimali TOGLIENDO cifre intere:
+    //    curerebbe il caso trovato e ne aprirebbe uno che nessuno cerca.
+    //    Il massimo lordo ottenibile dai tipi di oggi è
+    //    99.999.999,9999 × (1 + 999,99/100) ≈ 1,1 miliardi → 10 cifre.
+    const INTERE_DI_QUANTITY = 12 - 4; // `quantity` è numeric(12,4)
+    const MOLTIPLICATORE_MAX = 1 + 999.99 / 100; // `waste_percentage` è numeric(5,2)
+    const lordoMax = (10 ** INTERE_DI_QUANTITY - 1) * MOLTIPLICATORE_MAX;
+    const intereNecessarie = String(Math.floor(lordoMax)).length;
+    expect(intereNecessarie).toBe(10);
+    expect(
+      cifre - decimali,
+      `Servono ${intereNecessarie} cifre intere: il lordo massimo che i tipi ` +
+        `di oggi permettono è ${Math.floor(lordoMax)}. Un tipo che ne lascia ` +
+        `meno restringe l'intervallo di prima.`,
+    ).toBeGreaterThanOrEqual(intereNecessarie);
+  });
+
+  it("🔴 e OGNI punto che costruisce il lordo arrotonda a otto, non a quattro", () => {
+    // ⚠️ Sono quattro: le due sanatorie e i due rami del vecchio client.
+    //    Uno solo rimasto a 4 rimetterebbe il difetto in quel ramo — e il
+    //    ramo del vecchio client è proprio quello che nessuna schermata
+    //    esercita, quindi si scoprirebbe in produzione.
+    // ⚠️ Il pezzo si prende fino alla FINE DELL'ISTRUZIONE, non con una
+    //    ricerca pigra: dentro c'è `coalesce(…, 0)`, e una lazy si
+    //    fermerebbe lì dicendo «arrotonda a zero». Primo setaccio scritto
+    //    così, e sbagliava — la trappola del 26/08 sul metro che mente.
+    const pezzi = codice
+      .split(/quantita_lorda\s*:?=\s*round\(/)
+      .slice(1)
+      .map((p) => p.split(/;|\n\s*(?:where|from)\b/)[0]);
+    expect(pezzi.length, "mi aspetto 4 punti che costruiscono il lordo").toBe(4);
+    for (const p of pezzi) {
+      expect(p, `arrotonda ancora a 4: …${p.slice(-60)}`).not.toMatch(/,\s*4\)/);
+      expect(p, `non arrotonda a 8: …${p.slice(-60)}`).toMatch(/,\s*\n?\s*8\)/);
+    }
+  });
+
+  it("⚠️ ma gli arrotondamenti che NON sono il lordo restano dov'erano", () => {
+    // 🔴 La cura sbagliata era sostituire ogni `round(…, 4)`. Questi tre
+    //    rispondono ad altre regole: lo scarto ha 2 decimali perché
+    //    `waste_percentage` è `numeric(5,2)`, la resa mostrata ne ha 1
+    //    perché si legge, il food cost 2 perché sono euro.
+    expect(codice).toMatch(/round\(\(coalesce\(p_lorda, p_netta\) \/ p_netta - 1\) \* 100, 2\)/);
+    expect(codice).toMatch(/round\(ri\.quantity \/ ri\.quantita_lorda \* 100, 1\)/);
+    expect(codice).toMatch(/round\(v_num, 2\)/);
   });
 
   it("🔴 il trigger arriva DOPO la sanatoria, e l'ordine è il punto", () => {
@@ -247,8 +315,14 @@ describe("15 · la migrazione si verifica da sé e non lascia residui", () => {
 
   it("🔴 la sanatoria si ferma se il giro lordo → scarto non torna esatto", () => {
     // Non si aggiusta la soglia: ci si ferma, e si dice quali righe.
-    expect(codice).toMatch(/FERMO: su % righe il lordo a quattro decimali/);
+    // ✅ E il 22/09 si è fermata davvero, su Prova: 25 righe con quattro
+    //    decimali. Non è un controllo teorico.
+    expect(codice).toMatch(/FERMO: su % righe il lordo non riproduce lo scarto che avevano/);
     expect(codice).toMatch(/string_agg/);
+    // ⚠️ Il messaggio non nomina più «quattro decimali»: quel numero era la
+    //    causa di quel giorno, non la regola. Scritto dentro il messaggio,
+    //    sarebbe diventato falso nel momento stesso in cui si è corretto.
+    expect(codice).not.toMatch(/FERMO: su % righe il lordo a quattro decimali/);
   });
 
   it("la sanatoria si applica una volta sola, guardata dal registro", () => {
@@ -509,5 +583,126 @@ describe("16 · il valore standard precompila una volta, e non eredita", () => {
     expect(comeSiLeggeLoStandard(233.33, "kg")).toMatch(/da 1 kg ne restano 0\.3 kg/);
     expect(comeSiLeggeLoStandard(233.33, "kg")).toMatch(/resa 30%/);
     expect(comeSiLeggeLoStandard(null, "kg")).toBeNull();
+  });
+});
+
+// =====================================================================
+// 17 · LA PRECISIONE DEL LORDO — misurata sui tipi, non scelta a occhio
+// =====================================================================
+// 🔴 PERCHE' QUESTO GRUPPO ESISTE. Il 22/09 la migrazione e' stata applicata
+//    su Prova e **si e' fermata da sola**: con `quantita_lorda` a quattro
+//    decimali, su 25 righe vere il rapporto lordo/netto non riproduceva lo
+//    scarto di prima, e il food cost di quei piatti si sarebbe spostato in
+//    silenzio. Il guardiano ha fatto il suo lavoro; qui si congela la cura.
+//
+// ⚠️ E SEI DECIMALI NON SAREBBERO UNA GARANZIA: chiudono le 25 righe di
+//    quel giorno, non l'insieme dei valori che i tipi permettono. Il numero
+//    giusto si ricava, non si prova per tentativi.
+describe("17 · otto decimali sul lordo, ricavati dai tipi", () => {
+  // Gli unici due ingressi: `quantity` e' numeric(12,4), `waste_percentage`
+  // e' numeric(5,2). Da qui esce tutto il resto.
+  const arrotonda = (x, d) => Math.round(x * 10 ** d) / 10 ** d;
+  const scartoRiletto = (lordo, netto) => Math.round((lordo / netto - 1) * 10000) / 100;
+
+  it("🔴 il caso estremo dei tipi: 0,0001 con scarto 0,01% → 0,00010001", () => {
+    // E' il valore piu' piccolo che `quantity` ammette, con lo scarto piu'
+    // piccolo che `waste_percentage` ammette: il lordo esatto ha otto
+    // decimali, e nessuno di piu'.
+    const netto = 0.0001;
+    const scarto = 0.01;
+    const esatto = netto * (1 + scarto / 100);
+    expect(arrotonda(esatto, 8)).toBe(0.00010001);
+    // 🔴 A otto decimali lo scarto si rilegge identico...
+    expect(scartoRiletto(arrotonda(esatto, 8), netto)).toBe(scarto);
+    // ...e a quattro sparisce del tutto, diventando zero.
+    expect(arrotonda(esatto, 4)).toBe(0.0001);
+    expect(scartoRiletto(arrotonda(esatto, 4), netto)).toBe(0);
+  });
+
+  it("🔴 il caso reale che ha fermato la migrazione: 0,0080 con scarto 3% → 0,00824", () => {
+    const netto = 0.008;
+    const scarto = 3;
+    const esatto = netto * (1 + scarto / 100);
+    expect(arrotonda(esatto, 8)).toBe(0.00824);
+    expect(scartoRiletto(arrotonda(esatto, 8), netto)).toBe(3);
+    // ⚠️ A quattro decimali diventava 0,0082, che riletto da' 2,50 — ed e'
+    //    esattamente la riga che il guardiano ha nominato su Prova.
+    expect(arrotonda(esatto, 4)).toBe(0.0082);
+    expect(scartoRiletto(arrotonda(esatto, 4), netto)).toBe(2.5);
+  });
+
+  it("⚠️ e sei decimali non bastano: chiudono le 25 righe di quel giorno, non i tipi", () => {
+    // *Una misura descrive uno stato; qui serviva una proprieta'* — la
+    // lezione del 18/08 sulla sagoma che cresce.
+    const netto = 0.0001;
+    const scarto = 0.01;
+    const esatto = netto * (1 + scarto / 100);
+    expect(scartoRiletto(arrotonda(esatto, 6), netto)).not.toBe(scarto);
+    expect(scartoRiletto(arrotonda(esatto, 8), netto)).toBe(scarto);
+  });
+
+  it("la precompilazione della schermata usa la STESSA precisione della colonna", () => {
+    // 🔴 Se qui si arrotondasse a meno, la schermata proporrebbe un numero
+    //    diverso da quello che il database scriverebbe: lo scarto riletto
+    //    non tornerebbe e il riflesso RIFIUTEREBBE una riga che l'utente
+    //    vede scritta bene.
+    expect(DECIMALI_LORDO).toBe(8);
+    expect(lordoPrecompilato(0.0001, 0.01)).toBe(0.00010001);
+    expect(lordoPrecompilato(0.008, 3)).toBe(0.00824);
+    // E il giro d'andata e ritorno torna: e' la proprieta', non il valore.
+    for (const [netto, scarto] of [[0.0001, 0.01], [0.008, 3], [0.4, 275], [1, 35]]) {
+      expect(scartoRiletto(lordoPrecompilato(netto, scarto), netto)).toBe(scarto);
+    }
+  });
+
+  it("🔴 uno scarto sopra il 100% resta ammesso: il vecchio limite non torna", () => {
+    // Il sugo di cozze: 1,5 kg → 0,4 kg netti, scarto 275%.
+    expect(lordoPrecompilato(0.4, 275)).toBe(1.5);
+    expect(scartoDaResa(26.7)).toBeGreaterThan(100);
+    expect(codiceR12).not.toMatch(/waste_percentage_default\s*<\s*100/);
+  });
+});
+
+// =====================================================================
+// 18 · IL DIAGNOSTICO DELLE RIGHE STORTE
+// =====================================================================
+// 🔴 Il 22/09 il messaggio prometteva «al massimo dieci righe» e ne ha
+//    elencate VENTICINQUE, in una riga sola. Il `limit 10` stava accanto a
+//    `string_agg`, dove limita le righe del RISULTATO — che sono una — non
+//    gli elementi che finiscono dentro la frase.
+//    *Un messaggio che promette un numero e ne dice un altro insegna a non
+//    fidarsi dei numeri che dice.*
+describe("18 · il limite del diagnostico è applicato PRIMA dell'aggregazione", () => {
+  it("🔴 il `limit 10` sta dentro la sottoquery, non accanto a string_agg", () => {
+    const blocco = codiceR12.match(/raise exception 'FERMO: su %[\s\S]*?\);/)?.[0];
+    expect(blocco, "non trovo il diagnostico delle righe storte").toBeTruthy();
+
+    // La forma sana: `limit 10` chiude una sottoquery, e string_agg legge
+    // quella. La forma malata: `limit 10` subito dopo il `where` della
+    // stessa query che aggrega.
+    const dovAgg = blocco.indexOf("string_agg");
+    const dovLimite = blocco.indexOf("limit 10");
+    expect(dovLimite, "manca il limite").toBeGreaterThan(0);
+
+    // Fra `string_agg` e `limit 10` deve esserci l'apertura della
+    // sottoquery: se il limite fosse allo stesso livello, non ci sarebbe.
+    const inMezzo = blocco.slice(dovAgg, dovLimite);
+    expect(
+      inMezzo,
+      "il limite è allo stesso livello di string_agg: limiterebbe la riga " +
+        "aggregata (una sola), non gli elementi elencati",
+    ).toMatch(/from\s*\(\s*select/);
+  });
+
+  it("⚠️ e l'ordine è deterministico: due giri sugli stessi dati dicono le stesse righe", () => {
+    // Senza, due messaggi diversi sugli stessi dati farebbero credere che
+    // siano cambiati i dati.
+    const blocco = codiceR12.match(/raise exception 'FERMO: su %[\s\S]*?\);/)?.[0];
+    expect(blocco).toMatch(/order by ri\.id\s*\n?\s*limit 10/);
+  });
+
+  it("il messaggio DICHIARA che sono i primi dieci, e su quanti", () => {
+    expect(codiceR12).toMatch(/Ecco i primi % casi \(su %\)/);
+    expect(codiceR12).toMatch(/least\(v_storte, 10\)/);
   });
 });

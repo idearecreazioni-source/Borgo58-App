@@ -482,3 +482,101 @@ scritta nel file non corrispondesse a nessuna migrazione del repository, il
 gruppo resterebbe saltato **per sempre e in silenzio** — quindi quel caso si
 ferma subito. *Un interruttore che non si può più riaccendere non è un
 interruttore.*
+
+---
+
+## 15 · 🔴 Il primo tentativo su Prova si è fermato, e ha avuto ragione
+
+Il **22/09** la migrazione è stata applicata sul progetto di prova. **Non è
+passata**, e non per un guasto: si è fermata da sola nel proprio blocco di
+sanatoria, dopo aver scritto la resa su **226 righe con un ingrediente** e
+**94 che puntano a una preparazione**.
+
+> FERMO: su **25 righe** il lordo a quattro decimali non riproduce lo scarto
+> che avevano. Il food cost di quei piatti si sposterebbe di nascosto.
+
+🔴 **È il guardiano che ha fatto il suo lavoro.** Il mandato del 14/08
+vietava esplicitamente che il food cost dei piatti già inseriti *«cambiasse
+da solo, in silenzio, nella notte»*: su venticinque ricette vere stava per
+succedere, e il controllo ha fermato tutto invece di lasciarle spostare.
+
+⚠️ **La transazione si è annullata per intero**, e lo si è verificato invece
+di dedurlo: il file non contiene `alter type … add value`, quindi
+`argomentiMigrazione()` gli mette `--single-transaction`. Controprova sul
+database: la suite contro Prova è rimasta **571 passate · 5 saltate (576)**,
+identica a prima, e la sonda continua a saltare le cinque prove R12. Nessun
+residuo.
+
+### Perché quattro decimali non bastavano — e perché sei non sarebbero una garanzia
+
+Le righe colpite sono quantità minuscole: spezie e sale, **fino a 0,0002 kg**.
+Su di esse l'arrotondamento del lordo a quattro decimali distrugge il
+rapporto — 0,0080 con scarto 3% dà lordo 0,0082, che riletto vale **2,50**
+invece di 3,00.
+
+**Sei decimali chiudono quelle venticinque righe. Non chiudono il problema.**
+⚠️ *Una misura descrive uno stato; qui serviva una proprietà* — è la lezione
+del 18/08 sulla sagoma che cresce. Il caso che sei decimali lasciano fuori si
+costruisce dai tipi, non si aspetta che capiti:
+
+| ingresso | tipo | decimali |
+|---|---|---|
+| `quantity` | `numeric(12,4)` | 4 |
+| `waste_percentage` | `numeric(5,2)` → `1 + w/100` | 4 |
+| **il prodotto dei due** | | **fino a 8** |
+
+Il caso estremo si scrive per intero: `quantity` **0,0001** con scarto
+**0,01%** dà un lordo esatto di **0,00010001** — otto decimali, e nessuno di
+più. A sei, quel numero torna 0,0001 e lo scarto riletto è **zero**.
+
+### E la parte intera non si restringe
+
+⚠️ `numeric(12,6)` era il tranello comodo: aggiunge decimali **togliendo**
+cifre intere (sei invece di otto). Curerebbe il caso trovato e ne aprirebbe
+uno che nessuno sta cercando.
+
+Il massimo lordo ottenibile dai tipi di oggi è
+99.999.999,9999 × (1 + 999,99/100) ≈ **1,1 miliardi**: **dieci cifre intere**.
+`numeric(18,8)` ne lascia esattamente 18 − 8 = 10. Una prova pura ricalcola
+quel numero dai tipi e **rifiuta qualunque tipo che riduca l'intervallo di
+prima**.
+
+### Cosa è stato portato a otto, e cosa no
+
+**Sono quattro punti, tutti e soli quelli che costruiscono il lordo**: le due
+sanatorie (righe con ingrediente, righe con preparazione) e i due rami di
+compatibilità col vecchio client (INSERT e UPDATE).
+
+⚠️ **Non si è sostituito ogni `round(…, 4)`**, ed era la cura sbagliata a
+portata di mano: lo scarto resta a **2** decimali perché `waste_percentage` è
+`numeric(5,2)`, la resa mostrata resta a **1** perché si legge, il food cost
+a **2** perché sono euro. Ognuno risponde a una regola sua.
+
+⚠️ **E `lordoPrecompilato` è passata a otto insieme alla colonna.**
+Arrotondando a quattro, la schermata avrebbe proposto un numero **diverso da
+quello che il database scrive**: su quantità piccole lo scarto riletto non
+sarebbe tornato, e il riflesso avrebbe **rifiutato una riga che l'utente vede
+scritta bene**.
+
+### Il diagnostico prometteva dieci righe e ne elencava venticinque
+
+🔴 Il `limit 10` stava accanto a `string_agg`, dove limita le righe del
+**risultato** — che sono una — non gli elementi che finiscono nella frase.
+*Un messaggio che promette un numero e ne dice un altro insegna a non fidarsi
+dei numeri che dice.*
+
+Ora il limite è **dentro la sottoquery**, l'ordine è **deterministico**
+(`order by ri.id`) — senza, due giri sugli stessi dati nominerebbero righe
+diverse e chi confronta crederebbe che siano cambiati i dati — e il messaggio
+dichiara *«i primi N casi (su M)»*.
+
+### ⚠️ Cosa resta non verificato
+
+🔴 **La migrazione non è stata riapplicata**, e questo mandato non lo
+autorizza. Quindi: il tipo `numeric(18,8)`, i quattro arrotondamenti a otto e
+il diagnostico corretto **non sono mai girati contro un database**. Quello
+che è dimostrato è l'**aritmetica dei tipi**, provata a parte, e che le prove
+diventano rosse tornando indietro.
+
+Le cinque prove di `tests/app/resa-vecchio-client.test.js` restano
+**condizionate e saltate**, come prima.

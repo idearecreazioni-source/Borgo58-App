@@ -136,12 +136,24 @@ export function scartoDaResa(resa) {
  * ⚠️ Torna `null` quando non c'è niente da proporre, e `null` **non è zero**:
  *    un lordo pari al netto sarebbe la proposta «non si butta niente», che è
  *    una risposta, non un'assenza di risposta.
+ *
+ * 🔴 OTTO DECIMALI, GLI STESSI DELLA COLONNA — e non è pignoleria. Il
+ *    database conserva `quantita_lorda` come `numeric(18,8)` perché il
+ *    prodotto di una quantità a 4 decimali per uno scarto a 2 ne può avere
+ *    fino a 8. Arrotondando qui a 4, come faceva la prima stesura, la
+ *    schermata proporrebbe un numero **diverso da quello che il database
+ *    scriverebbe**: su quantità piccole — spezie, sale — lo scarto riletto
+ *    non tornerebbe, e il riflesso rifiuterebbe una riga che l'utente vede
+ *    scritta bene.
  */
+export const DECIMALI_LORDO = 8;
+
 export function lordoPrecompilato(netto, scartoStandard) {
   const n = numero(netto);
   const s = numero(scartoStandard);
   if (n === null || n <= 0 || s === null || s <= 0) return null;
-  return Math.round(n * (1 + s / 100) * 10000) / 10000;
+  const f = 10 ** DECIMALI_LORDO;
+  return Math.round(n * (1 + s / 100) * f) / f;
 }
 
 /** Come si legge un valore standard: «da 1 kg ne restano 300 g». */
