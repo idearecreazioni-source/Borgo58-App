@@ -165,6 +165,16 @@
 -- Il mandato che l'ha prodotta lo vieta. I suoi controlli — compreso quello
 -- che confronta il food cost di ogni ricetta prima e dopo — non sono mai
 -- girati contro un database.
+--
+-- 🔴 RILASCIO IN DUE FASI (aggiunto il 22/09/2026): questa migrazione da
+--    sola deve poter andare in produzione PRIMA del sito nuovo, senza un
+--    intervallo in cui il sito vecchio smette di salvare. Per questo il
+--    trigger (blocco 6) accetta ancora — e converte — lo scarto scritto
+--    da solo, senza lordo, invece di rifiutarlo. La chiusura di questa
+--    tolleranza (`waste_percentage` obbligatorio insieme al lordo) e'' un
+--    lavoro SEPARATO, da fare in una migrazione propria e solo dopo che il
+--    sito nuovo e'' pubblicato e verificato: unirla qui ricreerebbe lo
+--    stesso intervallo incompatibile che questa fase vuole evitare.
 
 -- ---------------------------------------------------------------------
 -- 1. LA COLONNA NUOVA, ANCORA VUOTA
@@ -307,6 +317,18 @@ comment on constraint riga_lordo_e_netto_coerenti on recipe_ingredients is
 -- ---------------------------------------------------------------------
 -- 6. IL RIFLESSO — e solo adesso, non prima della sanatoria
 -- ---------------------------------------------------------------------
+-- 🔴 PERIODO DI PASSAGGIO (R12, aggiunto il 22/09/2026 per il rilascio in
+--    due fasi): il sito vecchio scrive ancora `waste_percentage` da solo,
+--    senza sapere che `quantita_lorda` esiste. Se questa migrazione lo
+--    rifiutasse, pubblicare il database prima del sito romperebbe ogni
+--    salvataggio del sito vecchio ancora in giro. Finche'' i due non sono
+--    scritti insieme, chi manda SOLO lo scarto viene preso in parola: il
+--    lordo si RICAVA da quanto dichiara, invece di essere rifiutato o
+--    sostituito da un lordo pari al netto (che avrebbe cancellato lo
+--    scarto dichiarato in silenzio). ⚠️ QUESTO RAMO E'' TEMPORANEO: si
+--    chiude con una migrazione separata, solo dopo che il sito nuovo e''
+--    pubblicato e verificato, che rendera'' di nuovo obbligatorio il
+--    lordo e togliera'' questa tolleranza.
 create or replace function riflette_lo_scarto()
 returns trigger
 language plpgsql
@@ -315,12 +337,29 @@ set search_path = public
 as $fn$
 declare
   v_atteso numeric;
+  v_vecchio_client boolean := false;
 begin
-  -- Chi non dice il lordo non sta dichiarando uno scarto: il lordo e'' il
-  -- netto. E'' la risposta vera — «nessuno ha detto che c'e'' scarto» — non
-  -- un valore inventato.
   if new.quantita_lorda is null then
-    new.quantita_lorda := new.quantity;
+    if new.waste_percentage is not null then
+      -- Il vecchio client: c'e'' uno scarto dichiarato e nessun lordo.
+      -- Si ricava il lordo da quello che ha detto, non da un'ipotesi di
+      -- scarto zero.
+      new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 4);
+      v_vecchio_client := true;
+    else
+      -- Ne' lordo ne'' scarto: chi non dice il lordo non sta dichiarando
+      -- uno scarto, il lordo e'' il netto. E'' la risposta vera —
+      -- «nessuno ha detto che c'e'' scarto» — non un valore inventato.
+      new.quantita_lorda := new.quantity;
+    end if;
+  elsif tg_op = 'UPDATE'
+        and new.quantita_lorda is not distinct from old.quantita_lorda
+        and new.waste_percentage is distinct from old.waste_percentage then
+    -- Lo stesso caso, in aggiornamento: il vecchio client corregge lo
+    -- scarto senza toccare il lordo (che non conosce). Si ricalcola il
+    -- lordo dal nuovo scarto invece di rifiutare la modifica.
+    new.quantita_lorda := round(new.quantity * (1 + new.waste_percentage / 100.0), 4);
+    v_vecchio_client := true;
   end if;
 
   v_atteso := scarto_della_riga(new.quantita_lorda, new.quantity);
@@ -328,16 +367,20 @@ begin
   -- 🔴 LO SCARTO NON SI SCRIVE: si riflette. Chi lo nomina con un valore
   --    diverso da quello che i due numeri dicono viene RIFIUTATO — e non
   --    sovrascritto in silenzio, che farebbe passare per accettata una
-  --    scelta buttata via (regola del 30/08 sulla tasca).
-  if tg_op = 'INSERT' then
-    if new.waste_percentage is not null and new.waste_percentage is distinct from v_atteso then
-      raise exception 'Lo scarto non si scrive piu'' a mano: si scrive quanto ne prendi e quanto ne resta, e la percentuale la calcola il gestionale. Questa riga dice scarto %, ma da % ne restano % e lo scarto e'' %. Togli lo scarto e scrivi la quantita'' lorda.',
-        new.waste_percentage, new.quantita_lorda, new.quantity, v_atteso;
+  --    scelta buttata via (regola del 30/08 sulla tasca). ⚠️ Non vale per
+  --    il vecchio client: li'' il lordo appena ricavato riproduce lo
+  --    scarto dichiarato per costruzione, e non c'e'' niente da rifiutare.
+  if not v_vecchio_client then
+    if tg_op = 'INSERT' then
+      if new.waste_percentage is not null and new.waste_percentage is distinct from v_atteso then
+        raise exception 'Lo scarto non si scrive piu'' a mano: si scrive quanto ne prendi e quanto ne resta, e la percentuale la calcola il gestionale. Questa riga dice scarto %, ma da % ne restano % e lo scarto e'' %. Togli lo scarto e scrivi la quantita'' lorda.',
+          new.waste_percentage, new.quantita_lorda, new.quantity, v_atteso;
+      end if;
+    elsif new.waste_percentage is distinct from old.waste_percentage
+          and new.waste_percentage is distinct from v_atteso then
+      raise exception 'Lo scarto non si corregge a mano: cambia la quantita'' lorda o quella netta, e la percentuale si sposta da se''. Da % ne restano %, quindi lo scarto e'' %.',
+        new.quantita_lorda, new.quantity, v_atteso;
     end if;
-  elsif new.waste_percentage is distinct from old.waste_percentage
-        and new.waste_percentage is distinct from v_atteso then
-    raise exception 'Lo scarto non si corregge a mano: cambia la quantita'' lorda o quella netta, e la percentuale si sposta da se''. Da % ne restano %, quindi lo scarto e'' %.',
-      new.quantita_lorda, new.quantity, v_atteso;
   end if;
 
   new.waste_percentage := v_atteso;
@@ -357,7 +400,7 @@ create trigger trg_riflette_lo_scarto
   for each row execute function riflette_lo_scarto();
 
 comment on column recipe_ingredients.waste_percentage is
-  'RIFLESSO di quantita_lorda e quantity, scritto solo dal trigger `trg_riflette_lo_scarto` (R12, 22/09/2026). Non si scrive e non si corregge a mano: si cambiano i due numeri. ⚠️ E'' lo SCARTO in punti nella forma che il calcolo del costo usa da sempre — il lordo e'' il netto per (1 + scarto/100) — non la resa, che e'' netto/lordo e si mostra soltanto.';
+  'RIFLESSO di quantita_lorda e quantity, scritto solo dal trigger `trg_riflette_lo_scarto` (R12, 22/09/2026). Non si scrive e non si corregge a mano: si cambiano i due numeri. ⚠️ E'' lo SCARTO in punti nella forma che il calcolo del costo usa da sempre — il lordo e'' il netto per (1 + scarto/100) — non la resa, che e'' netto/lordo e si mostra soltanto. 🔴 PERIODO DI PASSAGGIO: chi scrive SOLO questo campo (il sito vecchio, che non conosce quantita_lorda) viene preso in parola e il lordo si ricava da qui — tolleranza temporanea, chiusa da una migrazione separata dopo la pubblicazione del sito nuovo.';
 
 -- ---------------------------------------------------------------------
 -- 7. IL VALORE STANDARD DEL PRODOTTO: IL LIMITE FALSO E IL MESTIERE NUOVO
@@ -844,6 +887,7 @@ declare
   v_r1      uuid;
   v_r2      uuid;
   v_riga    uuid;
+  v_riga_vecchio uuid;
   v_copia   uuid;
   v_preso   boolean;
   v_num     numeric;
@@ -959,31 +1003,56 @@ begin
     end if;
 
     -- -------------------------------------------------------------
-    -- (6) LO SCARTO NON SI SCRIVE PIU' A MANO: SI RIFIUTA.
+    -- (6) IL VECCHIO CLIENT: SOLO LO SCARTO, SENZA IL LORDO — SI RICAVA.
     -- -------------------------------------------------------------
+    -- 🔴 RILASCIO IN DUE FASI (22/09/2026): durante il passaggio il sito
+    --    vecchio scrive ancora `waste_percentage` da solo, senza sapere
+    --    che `quantita_lorda` esiste. Non si rifiuta piu': il lordo si
+    --    ricava da quanto dichiara (blocco 6 del trigger).
+    insert into recipe_ingredients (recipe_id, ingredient_id, quantity, unit, waste_percentage)
+    values (v_r1, v_ing, 0.5000, 'kg', 30) returning id into v_riga_vecchio;
+    if (select quantita_lorda from recipe_ingredients where id = v_riga_vecchio) is distinct from 0.6500 then
+      raise exception 'Il vecchio client ha scritto scarto 30 su 0,5 netti: il lordo doveva ricavarsi a 0,65, e'' %.',
+        (select quantita_lorda from recipe_ingredients where id = v_riga_vecchio);
+    end if;
+
+    -- ...e lo stesso vale correggendo SOLO lo scarto, in aggiornamento: il
+    -- vecchio client non conosce il lordo, quindi non lo tocca mai.
+    update recipe_ingredients set waste_percentage = 10 where id = v_riga_vecchio;
+    if (select quantita_lorda from recipe_ingredients where id = v_riga_vecchio) is distinct from 0.5500 then
+      raise exception 'Il vecchio client ha corretto lo scarto a 10 su 0,5 netti: il lordo doveva ricalcolarsi a 0,55, e'' %.',
+        (select quantita_lorda from recipe_ingredients where id = v_riga_vecchio);
+    end if;
+
+    -- -------------------------------------------------------------
+    -- (6-bis) IL NUOVO CLIENT: LORDO E SCARTO INSIEME, E NON TORNANO —
+    --         QUI SI RIFIUTA ANCORA, IN INSERIMENTO E IN CORREZIONE.
+    -- -------------------------------------------------------------
+    -- ⚠️ La tolleranza del blocco (6) vale solo per chi NON manda il
+    --    lordo. Chi lo manda insieme a uno scarto che non torna resta
+    --    autorevole quanto prima, e resta respinto.
     v_preso := false;
     begin
-      insert into recipe_ingredients (recipe_id, ingredient_id, quantity, unit, waste_percentage)
-      values (v_r1, v_ing, 0.5000, 'kg', 30);
+      insert into recipe_ingredients (recipe_id, ingredient_id, quantity, quantita_lorda, unit, waste_percentage)
+      values (v_r1, v_ing, 0.5000, 1.0000, 'kg', 30);
     exception when others then
       v_preso := true;
       if sqlerrm not like '%non si scrive piu%' then
-        raise exception 'Lo scarto scritto a mano e'' stato respinto, ma col messaggio sbagliato: %', sqlerrm;
+        raise exception 'Lordo e scarto incoerenti in inserimento sono stati respinti col messaggio sbagliato: %', sqlerrm;
       end if;
     end;
-    if not v_preso then raise exception 'Lo scarto si e'' lasciato scrivere a mano.'; end if;
+    if not v_preso then raise exception 'Lordo e scarto incoerenti sono passati insieme in inserimento.'; end if;
 
-    -- ...e non si corregge nemmeno dopo.
     v_preso := false;
     begin
-      update recipe_ingredients set waste_percentage = 99 where id = v_riga;
+      update recipe_ingredients set quantita_lorda = 2.0000, waste_percentage = 30 where id = v_riga_vecchio;
     exception when others then
       v_preso := true;
       if sqlerrm not like '%non si corregge a mano%' then
-        raise exception 'La correzione dello scarto e'' stata respinta col messaggio sbagliato: %', sqlerrm;
+        raise exception 'Lordo e scarto incoerenti in aggiornamento sono stati respinti col messaggio sbagliato: %', sqlerrm;
       end if;
     end;
-    if not v_preso then raise exception 'Lo scarto si e'' lasciato correggere a mano.'; end if;
+    if not v_preso then raise exception 'Lordo e scarto incoerenti sono passati insieme in aggiornamento.'; end if;
 
     -- -------------------------------------------------------------
     -- (7) CAMBIANDO I NUMERI, LO SCARTO SI SPOSTA DA SE'.

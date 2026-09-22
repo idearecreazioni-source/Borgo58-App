@@ -417,3 +417,35 @@ prima stesura la rovesciava; posta a lui, non è passata.
 | `docs/DECISIONI.md` | la voce del 25/08 confermata, più il «precompila, non eredita» |
 | `docs/decisioni_rovesciate.md` | rovesciamento n. 95 |
 | `docs/consegne/20260922_la_resa_sulla_riga_di_ricetta.md` | questo |
+| `tests/app/resa-vecchio-client.test.js` | **nuovo** — la compatibilità del rilascio in due fasi, e che lo standard non muove una riga già scritta |
+
+---
+## 14 · Il rilascio in due fasi, aggiunto il 22/09/2026 sulla PR
+
+🔴 **IL RISCHIO**: questa migrazione può essere pubblicata in produzione
+prima del sito nuovo. Nell'intervallo, il sito vecchio continua a scrivere
+`waste_percentage` da solo — non conosce `quantita_lorda` — e il trigger,
+così com'era scritto in §6, lo avrebbe **rifiutato**: ogni salvataggio del
+sito vecchio si sarebbe rotto fra le due pubblicazioni.
+
+**La correzione**, dentro `riflette_lo_scarto()`: se una riga arriva senza
+`quantita_lorda` ma con uno `waste_percentage` dichiarato — in inserimento,
+o in un aggiornamento che tocca solo lo scarto — il lordo **si ricava** da
+quel numero (`quantity * (1 + waste_percentage / 100)`), invece di essere
+sostituito da un'ipotesi di scarto zero e poi rifiutato. Il nuovo client,
+che scrive `quantita_lorda`, resta **autorevole** esattamente come prima: il
+ramo di compatibilità si attiva solo quando il lordo non c'è.
+
+⚠️ **QUESTA TOLLERANZA È TEMPORANEA E NON È IN QUESTA MIGRAZIONE PER
+RESTARE.** Chiuderla — tornare a rifiutare uno scarto senza lordo — è un
+**lavoro separato**, in una migrazione propria, da fare solo **dopo** che il
+sito nuovo è pubblicato e verificato. Unire le due nella stessa migrazione
+ricreerebbe esattamente l'intervallo incompatibile che questa fase vuole
+evitare.
+
+⚠️ **NON VERIFICATO, come il resto di questa consegna**: `tests/app/resa-vecchio-client.test.js`
+prova il vecchio formato, il nuovo, il rifiuto di uno scarto scritto insieme
+a un lordo che non torna, e che lo standard del prodotto cambiato dopo non
+muove né il lordo né il costo di una riga già scritta — ma la migrazione non
+è mai stata applicata, quindi queste prove non sono mai girate contro un
+database.
