@@ -299,3 +299,50 @@ export async function lineeDellaPrevisione(id) {
   if (error) throw error;
   return data ?? [];
 }
+
+// --- L'anno chiuso (C5, 23/09/2026) ---------------------------------
+//
+// ⚠️ La stessa strada delle chiusure mensili: una funzione del database,
+// una sola tabella scritta, una sola chiamata. Non c'è nessuna scrittura
+// in sequenza dal browser, e per questo non passa dal corridoio — è il
+// CALCOLO che tocca mezzo gestionale, non la scrittura.
+
+export async function misureDellAnno(entityId, anno) {
+  const { data, error } = await supabase.rpc("misure_dell_anno", {
+    p_entity_id: entityId,
+    p_anno: anno,
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// ⚠️ LA CONFERMA VIAGGIA FINO AL DATABASE, e non si ferma nella schermata:
+// è lì che viene pretesa, quindi è lì che deve arrivare. Un controllo che
+// vive solo nel browser lo scavalca chiunque scriva da un'altra porta, e
+// questa è una fotografia che non si rifà.
+export async function chiudiAnno(entityId, anno, confermaContiSenzaDocumento = false, note = null) {
+  const { data, error } = await supabase.rpc("chiudi_anno", {
+    p_entity_id: entityId,
+    p_anno: anno,
+    p_conferma_conti_senza_documento: confermaContiSenzaDocumento,
+    p_note: note,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function listaChiusureAnnuali(entityId) {
+  let q = supabase.from("chiusure_annuali").select("*").order("anno", { ascending: false });
+  if (entityId) q = q.eq("entity_id", entityId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Un anno sbagliato si cancella e si richiude: la copia resta in
+// `deleted_records`, perché è una tabella di soldi — e la chiusura nuova
+// dichiarerà di essere una seconda.
+export async function cancellaChiusuraAnnuale(id) {
+  const { error } = await supabase.from("chiusure_annuali").delete().eq("id", id);
+  if (error) throw error;
+}
