@@ -580,3 +580,58 @@ diventano rosse tornando indietro.
 
 Le cinque prove di `tests/app/resa-vecchio-client.test.js` restano
 **condizionate e saltate**, come prima.
+
+---
+
+## 16 · 🔴 «Facoltativo» era scritto in sei posti, e non era vero
+
+Applicando su Prova il **23/09** la migrazione si è fermata con:
+
+```
+ERROR: null value in column "waste_percentage_default" violates not-null constraint
+```
+
+🔴 **Una premessa mia che il database ha smentito.** Avevo scritto in **sei
+posti** che il campo è facoltativo e che *«vuoto non è zero»* — il commento
+della colonna, il vincolo (col suo ramo `is null or`, irraggiungibile), la
+schermata, le prove, questo riepilogo e `DECISIONI.md`. La colonna nasce
+`numeric(5,2) not null default 0` il **30/07**, il giorno in cui la tabella è
+stata creata.
+
+⚠️ **E mordeva in due modi diversi dalle due porte**, che è la parte peggiore:
+
+| porta | cosa succedeva a un campo lasciato vuoto |
+|---|---|
+| **creazione** | `create_ingredient` faceva `coalesce(…, 0)` → diventava **zero**, cioè «di questo prodotto non si butta niente» |
+| **modifica** | l'app scrive dritto in tabella → il salvataggio veniva **rifiutato** |
+
+Due risposte diverse alla stessa domanda, e nessuna delle due era quella
+giusta.
+
+⚠️ **E le prove di schermata passavano perché fingono il database**: è la
+lezione del **16/08** sulle mance, letta allo specchio. Là il campo non
+arrivava al database; qui arrivava un valore che il database non accetta.
+
+### La decisione, del 23/09
+
+> Il campo è **facoltativo**. **Vuoto** vuol dire «non lo sa ancora nessuno»;
+> **zero** vuol dire «non si butta niente», ed è una risposta diversa.
+
+Quindi: via il `not null` **e** via il `default 0` — che era il modo in cui il
+vuoto diventava una scelta senza che nessuno l'avesse fatta. E
+`create_ingredient` riscritta dal corpo vivo togliendo **solo** le due
+normalizzazioni: il predefinito del parametro e il `coalesce`.
+
+⚠️ **I dati esistenti non si toccano**, ed è una condizione esplicita: uno zero
+già salvato **può essere una scelta vera**, e trasformarlo in vuoto sarebbe
+cancellare una risposta di Alessio per far quadrare una colonna. Da qui in
+avanti i due stati si distinguono; all'indietro no, e si **dichiara** invece di
+sanare.
+
+⚠️ **E la creazione si prova dal client, non dentro la migrazione**:
+`create_ingredient` ha un portiere, e in una migrazione `is_titolare()` è
+**falso** — chiamarla da lì darebbe «riservato al titolare», cioè un arresto
+che non dice niente sulla regola. *Ogni difetto che vive nei permessi si prova
+solo dal client* (16/08). Quelle cinque prove vivono in
+`tests/app/resa-vecchio-client.test.js`, col token del titolare, e restano
+**condizionate** all'applicazione.

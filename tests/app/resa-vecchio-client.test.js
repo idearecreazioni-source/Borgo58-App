@@ -217,4 +217,92 @@ describe.skipIf(!APPLICATA)("R12: il vecchio formato e il nuovo, discriminati", 
     expect(Number(dopoIlCambio.waste_percentage)).toBeCloseTo(275, 2);
     expect(Number(costoDopo.costo)).toBeCloseTo(Number(primaDelCambio.costo), 4);
   });
+
+  // ===================================================================
+  // 🔴 VUOTO E ZERO SONO DUE RISPOSTE DIVERSE — decisione del 23/09/2026
+  // ===================================================================
+  // ⚠️ QUESTA META' SI PROVA SOLO DA QUI, e non dentro la migrazione:
+  //    `create_ingredient` ha un portiere (`is_titolare()`), e in una
+  //    migrazione quello e' FALSO — il blocco gira come proprietario del
+  //    database, non come utente. *Ogni difetto che vive nei permessi si
+  //    prova solo dal client, col token di un utente vero* (16/08).
+  it("🔴 creando SENZA nominare lo scarto, il gestionale non ne scrive uno", async () => {
+    // Fino al 23/09 il parametro partiva da `DEFAULT 0`: chi non lo
+    // nominava affatto si ritrovava scritto zero, cioe' «di questo prodotto
+    // non si butta niente» — una risposta che nessuno aveva dato.
+    const { data, error } = await titolare.rpc("create_ingredient", {
+      p_entity_id: ente,
+      p_name: `${MARCA} senza scarto`,
+      p_category: "pesce",
+      p_unit: "kg",
+      p_current_price: 1,
+    });
+    expect(error).toBeNull();
+    expect(data.waste_percentage_default).toBeNull();
+  });
+
+  it("🔴 e nominandolo VUOTO resta vuoto: il coalesce non lo riempie piu'", async () => {
+    const { data, error } = await titolare.rpc("create_ingredient", {
+      p_entity_id: ente,
+      p_name: `${MARCA} scarto vuoto`,
+      p_category: "pesce",
+      p_unit: "kg",
+      p_current_price: 1,
+      p_waste_percentage_default: null,
+    });
+    expect(error).toBeNull();
+    expect(data.waste_percentage_default).toBeNull();
+  });
+
+  it("⚠️ ma uno ZERO chiesto apposta resta zero: e' una risposta, non un'assenza", async () => {
+    const { data, error } = await titolare.rpc("create_ingredient", {
+      p_entity_id: ente,
+      p_name: `${MARCA} scarto zero`,
+      p_category: "pesce",
+      p_unit: "kg",
+      p_current_price: 1,
+      p_waste_percentage_default: 0,
+    });
+    expect(error).toBeNull();
+    expect(Number(data.waste_percentage_default)).toBe(0);
+  });
+
+  it("🔴 e MODIFICANDO si puo' svuotare: prima il database lo rifiutava", async () => {
+    // Era l'altra faccia: l'app scrive dritto in tabella, e il `not null`
+    // faceva fallire il salvataggio di un prodotto senza resa standard.
+    const { error } = await titolare
+      .from("ingredients")
+      .update({ waste_percentage_default: null })
+      .eq("id", ids.cozze);
+    expect(error).toBeNull();
+
+    const { data } = await titolare
+      .from("ingredients")
+      .select("waste_percentage_default")
+      .eq("id", ids.cozze)
+      .single();
+    expect(data.waste_percentage_default).toBeNull();
+
+    // ⚠️ E la riga di ricetta NON si muove: e' il cuore di R12, guardato
+    //    dal verso piu' estremo — il valore del prodotto sparito del tutto.
+    const { data: righe } = await titolare
+      .from("recipe_ingredients")
+      .select("quantita_lorda, waste_percentage")
+      .eq("recipe_id", ids.ricetta);
+    for (const r of righe ?? []) {
+      expect(r.waste_percentage).not.toBeNull();
+      expect(Number(r.quantita_lorda)).toBeGreaterThan(0);
+    }
+
+    await titolare.from("ingredients").update({ waste_percentage_default: 20 }).eq("id", ids.cozze);
+  });
+
+  it("⚠️ e un valore sopra 100 resta ammesso anche sul prodotto", async () => {
+    const { error } = await titolare
+      .from("ingredients")
+      .update({ waste_percentage_default: 275 })
+      .eq("id", ids.cozze);
+    expect(error).toBeNull();
+    await titolare.from("ingredients").update({ waste_percentage_default: 20 }).eq("id", ids.cozze);
+  });
 });

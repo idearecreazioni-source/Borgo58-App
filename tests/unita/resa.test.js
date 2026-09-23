@@ -1085,3 +1085,111 @@ describe("22 · il cuore della decisione si prova leggendo prima e dopo", () => 
     expect(dopoIlTocco).toMatch(/update ingredients set waste_percentage_default = 25 where id = v_ing/);
   });
 });
+
+// =====================================================================
+// 23 · LA RESA STANDARD E' DAVVERO FACOLTATIVA — decisione del 23/09/2026
+// =====================================================================
+// 🔴 PERCHE' ESISTE. Applicando su Prova il 23/09 la migrazione si e'
+//    fermata con «null value in column waste_percentage_default violates
+//    not-null constraint». Avevo scritto in SEI posti che il campo era
+//    facoltativo e che «vuoto non e' zero» — commento della colonna,
+//    vincolo, schermata, prove, riepilogo, `DECISIONI.md` — e non era vero:
+//    la colonna nasce `not null default 0` il 30/07.
+//
+// ⚠️ E MORDEVA IN DUE MODI DIVERSI DALLE DUE PORTE. Creando, il coalesce
+//    trasformava il vuoto in ZERO — «di questo non si butta niente», una
+//    risposta che nessuno aveva dato. Modificando, il salvataggio veniva
+//    RIFIUTATO. Due comportamenti per lo stesso campo lasciato vuoto.
+//
+// ⚠️ E le prove di schermata passavano perche' fingono il database: la
+//    lezione del 16/08 sulle mance, letta allo specchio.
+describe("23 · vuoto e zero sono due risposte diverse", () => {
+  it("🔴 lo schema toglie sia il `not null` sia il `default 0`", () => {
+    expect(codiceR12).toMatch(
+      /alter table ingredients alter column waste_percentage_default drop not null/,
+    );
+    // ⚠️ Il `default 0` da solo basterebbe a rimettere il difetto: chi non
+    //    nomina la colonna si ritroverebbe scritto zero, in silenzio.
+    expect(codiceR12).toMatch(
+      /alter table ingredients alter column waste_percentage_default drop default/,
+    );
+  });
+
+  it("⚠️ e l'ordine è quello giusto: il permesso prima di chi lo usa", () => {
+    // `create_ingredient` riscritta scrive `null`: se venisse prima del
+    // `drop not null`, chi legge il file vedrebbe una funzione che scrive
+    // una cosa che la colonna ancora non accetta.
+    const dovePermesso = codiceR12.indexOf("alter column waste_percentage_default drop not null");
+    const doveFunzione = codiceR12.indexOf("FUNCTION public.create_ingredient(");
+    expect(dovePermesso).toBeGreaterThan(0);
+    expect(doveFunzione).toBeGreaterThan(dovePermesso);
+  });
+
+  it("🔴 nessun `coalesce(..., 0)` torna sul valore standard", () => {
+    // Era la normalizzazione che trasformava «non lo so» in «zero».
+    expect(codiceR12).not.toMatch(/coalesce\(p_waste_percentage_default,\s*0\)/);
+    // E il parametro non parte più da zero.
+    expect(codiceR12).toMatch(/p_waste_percentage_default numeric DEFAULT NULL::numeric/);
+    expect(codiceR12).not.toMatch(/p_waste_percentage_default numeric DEFAULT 0/);
+  });
+
+  it("🔴 e nemmeno l'app riempie il vuoto", () => {
+    const api = readFileSync("src/lib/api/ingredients.js", "utf8");
+    expect(api).toMatch(/p_waste_percentage_default: payload\.waste_percentage_default \?\? null/);
+    expect(api).not.toMatch(/p_waste_percentage_default: payload\.waste_percentage_default \?\? 0/);
+  });
+
+  it("🔴 NON c'è nessuna sanatoria che trasformi gli zeri esistenti in vuoti", () => {
+    // ⚠️ Condizione esplicita di Alessio: uno zero già salvato può essere
+    //    una scelta vera («questo prodotto non si pulisce»), e cambiarlo
+    //    sarebbe cancellare una sua risposta per far quadrare una colonna.
+    expect(codiceR12).not.toMatch(
+      /update\s+ingredients\s+set\s+waste_percentage_default\s*=\s*null\s+where[^;]*=\s*0/i,
+    );
+    expect(codiceR12).not.toMatch(/nullif\(\s*waste_percentage_default\s*,\s*0\s*\)/i);
+    // E la migrazione lo dichiara, invece di lasciarlo dedurre.
+    expect(sqlR12grezzo).toMatch(/I DATI ESISTENTI NON SI TOCCANO/);
+  });
+
+  it("il vincolo ammette il vuoto, lo zero e i valori sopra 100", () => {
+    const vincolo = codiceR12.match(
+      /add constraint ingredients_scarto_standard_sensato\s+check \(([\s\S]*?)\);/,
+    )?.[1];
+    expect(vincolo).toBeTruthy();
+    expect(vincolo).toMatch(/waste_percentage_default is null/);
+    expect(vincolo).toMatch(/waste_percentage_default >= 0/);
+    expect(vincolo).not.toContain("100");
+  });
+
+  it("🔴 la verifica prova vuoto e zero come due stati distinti", () => {
+    expect(codiceR12).toMatch(/Il vuoto non e'' rimasto vuoto sulla scheda del prodotto/);
+    expect(codiceR12).toMatch(/Lo zero esplicito non e'' rimasto zero/);
+  });
+
+  it("⚠️ e la creazione si prova dal CLIENT, non dentro la migrazione", () => {
+    // `create_ingredient` ha un portiere, e in una migrazione
+    // `is_titolare()` è falso: chiamarla da lì darebbe «riservato al
+    // titolare», cioè un arresto che non dice niente sulla regola.
+    expect(codiceR12, "la migrazione chiama una funzione col portiere").not.toMatch(
+      /select .*create_ingredient\(|:= create_ingredient\(|= *\(create_ingredient\(/,
+    );
+    const app = readFileSync("tests/app/resa-vecchio-client.test.js", "utf8");
+    expect(app).toMatch(/rpc\("create_ingredient"/);
+    expect(app).toMatch(/creando SENZA nominare lo scarto/);
+    expect(app).toMatch(/nominandolo VUOTO resta vuoto/);
+    expect(app).toMatch(/ZERO chiesto apposta resta zero/);
+    expect(app).toMatch(/MODIFICANDO si puo' svuotare/);
+  });
+
+  it("🔴 e le righe di ricetta restano indipendenti dal valore del prodotto", () => {
+    // Il verso più estremo: il valore del prodotto sparito del tutto.
+    const app = readFileSync("tests/app/resa-vecchio-client.test.js", "utf8");
+    expect(app).toMatch(/expect\(r\.waste_percentage\)\.not\.toBeNull\(\)/);
+    expect(app).toMatch(/expect\(Number\(r\.quantita_lorda\)\)\.toBeGreaterThan\(0\)/);
+    // E `waste_percentage` sulla RIGA resta `not null`: quella non diventa
+    // facoltativa, è un riflesso.
+    expect(codiceR12).toMatch(
+      /alter table recipe_ingredients alter column waste_percentage set not null/,
+    );
+  });
+});

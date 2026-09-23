@@ -390,6 +390,93 @@ alter table recipe_ingredients
 comment on constraint recipe_ingredienti_numeri_sensati on recipe_ingredients is
   'Una riga di ricetta con quantita'' zero non e'' un ingrediente, e uno scarto negativo vorrebbe dire che prendendone meno se ne ottiene di piu''. 🔴 SOPRA 100 E'' AMMESSO ed e'' normale: da 1,5 kg di cozze escono 400 g di mollusco, cioe'' uno scarto del 275%. Il vecchio tetto «sotto 100» e'' stato tolto il 22/09/2026 — veniva da una formula sbagliata scritta il 24/08 («il lordo si ricava dividendo per 1 - scarto/100»), e RIFIUTAVA casi veri: il lordo si ottiene MOLTIPLICANDO il netto per (1 + scarto/100). ⚠️ E lo scarto non si scrive a mano: e'' il riflesso di quanto ne prendi e quanto ne resta.';
 
+
+-- ---------------------------------------------------------------------
+-- 5-ter. LA RESA STANDARD DIVENTA DAVVERO FACOLTATIVA
+-- ---------------------------------------------------------------------
+-- 🔴 IL `not null` ERA META' DEL DIFETTO; L'ALTRA META' E' QUI.
+--    `create_ingredient` faceva due cose che trasformavano «non lo so»
+--    in «non si butta niente»:
+--      · il parametro partiva da `DEFAULT 0` — chi non lo nomina affatto
+--        scriveva zero;
+--      · e `coalesce(p_waste_percentage_default, 0)` azzerava anche chi
+--        lo nominava vuoto apposta.
+--    Tolto solo il `not null`, la creazione avrebbe continuato a
+--    scrivere zero **in silenzio**, mentre la modifica avrebbe scritto
+--    vuoto: due porte, due risposte diverse alla stessa domanda.
+--
+-- ⚠️ SI TOLGONO SOLO LE DUE NORMALIZZAZIONI. Il corpo e' preso dal
+--    CORPO VIVO (regola del 18/08) e cambia in due punti: il valore
+--    predefinito del parametro e il coalesce. Tutto il resto — categorie,
+--    allergeni, stagionalita', la carta, il magazzino — resta identico.
+--
+-- ⚠️ E il parametro resta con un predefinito, che adesso e' `NULL`: senza,
+--    ogni chiamante che non lo nomina si romperebbe, e i chiamanti sono
+--    piu' di uno.
+alter table ingredients alter column waste_percentage_default drop not null;
+alter table ingredients alter column waste_percentage_default drop default;
+
+-- ⚠️ I DATI ESISTENTI NON SI TOCCANO, ed e' una condizione esplicita: uno
+--    zero gia' salvato puo' essere una scelta vera («questo prodotto non
+--    si pulisce»), e trasformarlo in vuoto sarebbe cancellare una risposta
+--    di Alessio per far quadrare una colonna. Da qui in avanti i due stati
+--    si distinguono; all'indietro no, e si dichiara invece di sanare.
+
+CREATE OR REPLACE FUNCTION public.create_ingredient(p_entity_id uuid, p_name text, p_category text, p_unit unit_type, p_current_price numeric, p_source_type ingredient_source DEFAULT 'fornitore_esterno'::ingredient_source, p_supplier_id uuid DEFAULT NULL::uuid, p_producer_entity_id uuid DEFAULT NULL::uuid, p_allergens allergen[] DEFAULT '{}'::allergen[], p_seasonality month_code[] DEFAULT '{}'::month_code[], p_storage_type storage_type DEFAULT NULL::storage_type, p_waste_percentage_default numeric DEFAULT NULL::numeric, p_haccp_receiving_temp text DEFAULT NULL::text, p_haccp_notes text DEFAULT NULL::text, p_stock_minimum_threshold numeric DEFAULT NULL::numeric, p_alimentare boolean DEFAULT true, p_tenuto_in_magazzino boolean DEFAULT true, p_va_in_carta boolean DEFAULT false)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_row ingredients%rowtype;
+begin
+  if not is_titolare() then
+    raise exception 'Solo il titolare puo'' gestire gli ingredienti';
+  end if;
+  if p_name is null or btrim(p_name) = '' then
+    raise exception 'Serve il nome dell''ingrediente';
+  end if;
+  if p_current_price is null or p_current_price < 0 then
+    raise exception 'Il prezzo non puo'' essere negativo o mancante';
+  end if;
+  -- Zero non e' «nessuna soglia»: sarebbe una soglia che non scatta mai,
+  -- cioe' una riga vuota che sembra compilata. Se non serve, si lascia
+  -- vuota (null) e l'ingrediente non entra in lista da solo.
+  if p_stock_minimum_threshold is not null and p_stock_minimum_threshold <= 0 then
+    raise exception 'La scorta minima deve essere maggiore di zero, oppure lasciata vuota';
+  end if;
+
+  insert into ingredients (
+    entity_id, name, category, unit, current_price, source_type,
+    supplier_id, producer_entity_id, allergens, seasonality, storage_type,
+    waste_percentage_default, temperatura_attesa, haccp_notes,
+    stock_minimum_threshold, alimentare, tenuto_in_magazzino, va_in_carta
+  ) values (
+    p_entity_id, btrim(p_name), p_category, p_unit, p_current_price,
+    coalesce(p_source_type, 'fornitore_esterno'), p_supplier_id,
+    p_producer_entity_id, coalesce(p_allergens, '{}'),
+    coalesce(p_seasonality, '{}'), p_storage_type,
+    p_waste_percentage_default, p_haccp_receiving_temp, p_haccp_notes,
+    p_stock_minimum_threshold,
+    -- ⚠️ `coalesce` e non il valore secco: chi non passa niente ottiene il
+    -- predefinito di sempre, e nessuna chiamata gia' scritta cambia
+    -- comportamento.
+    coalesce(p_alimentare, true), coalesce(p_tenuto_in_magazzino, true),
+    -- ⚠️ FALSO se nessuno lo dice: un prodotto che finisce in carta senza
+    -- che qualcuno l'abbia spuntato **si vende a un cliente**, e quello e'
+    -- l'errore che costa. Il contrario si vede subito: manca dal menu.
+    coalesce(p_va_in_carta, false)
+  )
+  returning * into v_row;
+
+  -- Lo storico parte SEMPRE dal prezzo iniziale, nella stessa transazione.
+  insert into price_history (ingredient_id, price, supplier_id, source, note)
+  values (v_row.id, p_current_price, p_supplier_id, 'manuale', 'Prezzo iniziale');
+
+  return to_jsonb(v_row);
+end;
+$function$;
 -- ---------------------------------------------------------------------
 -- 6. IL RIFLESSO — e solo adesso, non prima della sanatoria
 -- ---------------------------------------------------------------------
@@ -495,6 +582,32 @@ comment on column recipe_ingredients.waste_percentage is
 --    `ingredients_scarto_sotto_cento` su un vincolo che non guarda piu'
 --    il cento sarebbe una frase falsa scritta nel posto che questo
 --    progetto mostra all'utente quando rifiuta.
+-- ---------------------------------------------------------------------
+-- 🔴 E IL CAMPO DIVENTA DAVVERO FACOLTATIVO — non lo era mai stato
+-- ---------------------------------------------------------------------
+-- 🔴 UNA PREMESSA MIA CHE IL DATABASE HA SMENTITO, applicando su Prova il
+--    23/09: avevo scritto in sei posti che questo campo e' FACOLTATIVO e
+--    che «vuoto non e' zero» — nel commento della colonna, nel vincolo qui
+--    sotto (col suo ramo `is null or`), nella schermata, nelle prove, nel
+--    riepilogo e in `DECISIONI.md`. Non era vero: la colonna nasce
+--    `numeric(5,2) not null default 0` il 30/07, il giorno in cui la
+--    tabella e' stata creata.
+--
+-- ⚠️ E MORDEVA IN DUE MODI DIVERSI DALLE DUE PORTE, che e' la parte
+--    peggiore: CREANDO un prodotto, `create_ingredient` faceva
+--    `coalesce(..., 0)` e il vuoto diventava ZERO — cioe' «di questo non
+--    si butta niente», una risposta al posto di un'assenza di risposta;
+--    MODIFICANDOLO, l'app scrive dritto in tabella e il salvataggio
+--    sarebbe stato RIFIUTATO dal `not null`.
+--
+-- ⚠️ E le prove di schermata passavano perche' fingono il database: e' la
+--    lezione del 16/08 sulle mance, letta allo specchio. La' il campo non
+--    arrivava; qui arrivava un valore che il database non accetta.
+--
+-- 🔴 DECISIONE DI ALESSIO, 23/09/2026: il campo e' facoltativo. Vuoto vuol
+--    dire «non lo sa ancora nessuno»; ZERO vuol dire «non si butta
+--    niente», ed e' una risposta diversa. Quindi via il `not null` e via
+--    il `default 0`, che era il modo in cui il vuoto diventava una scelta.
 alter table ingredients drop constraint if exists ingredients_scarto_sotto_cento;
 alter table ingredients drop constraint if exists ingredients_scarto_standard_sensato;
 alter table ingredients
@@ -1328,7 +1441,6 @@ begin
     --    perche' un limite che rifiuta anche i casi buoni e' peggio di
     --    nessun limite (regola del 24/08).
     update ingredients set waste_percentage_default = 275 where id = v_ing;
-    update ingredients set waste_percentage_default = null where id = v_ing;
 
     v_preso := false;
     begin
@@ -1339,6 +1451,33 @@ begin
       raise exception 'Uno scarto standard negativo doveva essere respinto.';
     end if;
 
+    -- -------------------------------------------------------------
+    -- (12) 🔴 VUOTO E ZERO SONO DUE RISPOSTE DIVERSE.
+    -- -------------------------------------------------------------
+    -- Vuoto: «non lo sa ancora nessuno». Zero: «di questo prodotto non si
+    -- butta niente». Fino al 23/09 il database non sapeva distinguerle —
+    -- la colonna era `not null default 0`, e il vuoto diventava zero.
+    update ingredients set waste_percentage_default = null where id = v_ing;
+    if (select waste_percentage_default from ingredients where id = v_ing) is not null then
+      raise exception 'Il vuoto non e'' rimasto vuoto sulla scheda del prodotto.';
+    end if;
+
+    update ingredients set waste_percentage_default = 0 where id = v_ing;
+    if (select waste_percentage_default from ingredients where id = v_ing) is distinct from 0 then
+      raise exception 'Lo zero esplicito non e'' rimasto zero.';
+    end if;
+
+    -- 🔴 E LA CREAZIONE? NON SI PROVA QUI, ED E' UNA TRAPPOLA NOTA.
+    --    `create_ingredient` ha un portiere (`is_titolare()`), e dentro
+    --    una migrazione quello e' FALSO: il blocco gira come proprietario
+    --    del database, non come un utente. Chiamarla da qui darebbe «e'
+    --    riservato al titolare» — cioe' un arresto che non dice niente
+    --    sulla regola in esame. E' la trappola del 16/08, e c'e' una rete
+    --    che la sorveglia (`tests/app/migrazioni-senza-portieri.test.js`).
+    -- ⚠️ Quella meta' si prova dove esiste un utente vero: in
+    --    `tests/app/resa-vecchio-client.test.js`, col token del titolare.
+    --    *Ogni difetto che vive nei permessi si prova solo dal client*
+    --    (16/08).
     raise exception 'ZZ_ANNULLA';  -- <<< qui la sotto-transazione rientra
   exception when others then
     if sqlerrm <> 'ZZ_ANNULLA' then raise; end if;
