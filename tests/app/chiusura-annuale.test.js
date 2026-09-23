@@ -90,6 +90,45 @@ describe.skipIf(!APPLICATA)("C5: l'anno si chiude, e dice cosa lascia indietro",
   let agricola;
   let mie;
   let conto;
+  // 🔴 QUANTE RIFOTOGRAFIE ESISTONO GIA' PER (società, anno) PRIMA CHE
+  //    QUESTA PROVA TOCCHI QUALCOSA. Vedi `rifotografieStoriche()`.
+  let base;
+
+  /**
+   * 🔴 IL CONTEGGIO DELLE RIFOTOGRAFIE E' UNA PROPRIETA' DEL DATABASE, NON
+   *    DELLA PROVA — 23/09/2026, difetto misurato.
+   *
+   * `chiudi_anno` non tiene un contatore: conta, nel registro delle
+   * cancellazioni, quante volte quella società in quell'anno è già stata
+   * chiusa e poi cancellata. È una scelta voluta (16/08) — un contatore
+   * separato sarebbe un secondo posto da tenere allineato.
+   *
+   * ⚠️ LA CONSEGUENZA, ED E' QUELLA CHE MI E' SFUGGITA: quel registro è
+   *    **storico** e non si ripulisce da nessuna parte. Gli anni di
+   *    fantasia sono novanta, uno per giro: quando due giri pescano lo
+   *    stesso, il secondo trova già una traccia — e le assertion assolute
+   *    `toBe(0)` e `toBe(1)` cadono. È successo, ed è un rosso che compare
+   *    circa una volta su novanta: *una prova intermittente è peggio di una
+   *    rossa, perché insegna a rilanciare invece che a guardare.*
+   *
+   * ⚠️ LA CURA NON E' ALLARGARE GLI ANNI (sposterebbe solo la probabilità)
+   *    né ripulire il registro (è storico, non sporco di prova): è **leggere
+   *    la base prima di cominciare** e confrontare con quella. Il controllo
+   *    resta esatto — la prima chiusura dichiara la base, la seconda la base
+   *    più uno — e smette di dipendere da chi è passato di qui prima.
+   */
+  async function rifotografieStoriche(entityId, anno) {
+    const { count, error } = await titolare
+      .from("deleted_records")
+      .select("*", { count: "exact", head: true })
+      .eq("table_name", "chiusure_annuali")
+      .eq("record->>entity_id", entityId)
+      .eq("record->>anno", String(anno));
+    // ⚠️ Non si deduce «zero» da una lettura fallita: sarebbe la stessa
+    //    famiglia del dato non letto che si legge «non c'è niente» (19/08).
+    if (error) throw new Error(`Non riesco a contare le rifotografie storiche: ${error.message}`);
+    return Number(count ?? 0);
+  }
 
   beforeAll(async () => {
     const cred = credenziali();
@@ -106,10 +145,15 @@ describe.skipIf(!APPLICATA)("C5: l'anno si chiude, e dice cosa lascia indietro",
       throw new Error("Servono la società e l'azienda agricola: la separazione non si può provare.");
     }
 
-    // ⚠️ Il perimetro dev'essere fatto di roba che la prova ha creato
-    //    (16/08): si parte pulendo l'anno di questo giro, che nessun altro
-    //    tocca ma che un giro interrotto potrebbe aver lasciato pieno.
-    await titolare.from("chiusure_annuali").delete().eq("anno", ANNO);
+    // 🔴 QUI C'ERA UNA PULIZIA A TAPPETO — `delete ... where anno = ANNO` —
+    //    e cancellava righe che questa prova non aveva creato. È
+    //    esattamente ciò che la regola del 23/08 vieta: *una pulizia
+    //    cancella solo righe di cui conosce l'identificativo, perché le ha
+    //    create lei.* Tolta.
+    // ⚠️ E toglierla ha anche un effetto buono: quella cancellazione
+    //    lasciava a sua volta una traccia nel registro, cioè sporcava
+    //    proprio il conteggio che la prova poi verificava.
+    base = await rifotografieStoriche(srls, ANNO);
   });
 
   afterAll(async () => {
@@ -147,7 +191,14 @@ describe.skipIf(!APPLICATA)("C5: l'anno si chiude, e dice cosa lascia indietro",
       .eq("id", esito.data)
       .single();
     expect(Number(riga.conti_senza_documento)).toBe(0);
-    expect(Number(riga.chiusure_precedenti)).toBe(0);
+    // 🔴 SI CONFRONTA CON LA BASE LETTA PRIMA DI COMINCIARE, non con uno
+    //    zero assoluto: il conteggio è una proprietà del registro, e lo
+    //    zero valeva solo finché nessun giro precedente era passato di qui.
+    //    Il controllo resta esatto — è un `toBe`, non un «almeno».
+    expect(
+      Number(riga.chiusure_precedenti),
+      `rifotografie storiche lette prima di chiudere: ${base}`
+    ).toBe(base);
     expect(riga.ricavi).toBeNull();
   });
 
@@ -285,8 +336,11 @@ describe.skipIf(!APPLICATA)("C5: l'anno si chiude, e dice cosa lascia indietro",
     // ⚠️ È così che la chiusura con avviso si distingue da una pulita: dal
     //    conteggio, non da una seconda colonna che potrebbe contraddirlo.
     // ⚠️ E dichiara di essere una seconda fotografia: la pulita è stata
-    //    cancellata poco fa.
-    expect(Number(riga.chiusure_precedenti)).toBe(1);
+    //    cancellata poco fa — quindi ESATTAMENTE una in più della base.
+    expect(
+      Number(riga.chiusure_precedenti),
+      `base ${base} + la pulita cancellata poco fa`
+    ).toBe(base + 1);
     expect(riga.prima_chiusura_il).not.toBeNull();
   });
 
@@ -387,5 +441,55 @@ describe.skipIf(!APPLICATA)("C5: l'anno si chiude, e dice cosa lascia indietro",
       lettura.error ? true : (lettura.data ?? []).length === 0,
       "un anonimo ha letto lo storico delle chiusure"
     ).toBe(true);
+  });
+
+  // ===================================================================
+  // 🔴 PERCHE' IL CONFRONTO ASSOLUTO ERA SBAGLIATO — 23/09/2026
+  // ===================================================================
+  // Sta in fondo apposta: fa un terzo giro di chiusura sullo stesso anno,
+  // e nessuna prova qui sopra dipende da com'è messo il database dopo.
+  it("🔴 il conteggio SEGUE la storia del registro, e il vecchio `toBe(1)` sarebbe caduto qui", async () => {
+    // A questo punto della prova la storia di (questa società, questo anno)
+    // vale base + 1: la chiusura pulita è stata cancellata una volta.
+    const storiche = await rifotografieStoriche(srls, ANNO);
+    expect(storiche, "la storia letta dal registro").toBe(base + 1);
+
+    // Si cancella la chiusura viva — solo la nostra, per identificativo — e
+    // si richiude.
+    const { data: viva } = await titolare
+      .from("chiusure_annuali")
+      .select("id")
+      .eq("entity_id", srls)
+      .eq("anno", ANNO)
+      .single();
+    await titolare.from("chiusure_annuali").delete().eq("id", viva.id);
+
+    const esito = await titolare.rpc("chiudi_anno", {
+      p_entity_id: srls,
+      p_anno: ANNO,
+      p_conferma_conti_senza_documento: true,
+      p_note: `${MARCA} terza`,
+    });
+    expect(esito.error, spiega(esito)).toBeNull();
+    mie.segna("chiusure_annuali", esito.data);
+
+    const { data: riga } = await titolare
+      .from("chiusure_annuali")
+      .select("chiusure_precedenti, prima_chiusura_il")
+      .eq("id", esito.data)
+      .single();
+
+    // 🔴 ED E' QUI CHE LA VECCHIA FORMA CADEVA. Il valore è `base + 2`,
+    //    cioè **almeno 2**, qualunque sia la base: un `toBe(1)` scritto a
+    //    mano sarebbe rosso sempre, e un `toBe(0)` anche. Il difetto non
+    //    era il numero scelto — era aver scritto un numero invece di una
+    //    relazione.
+    // ⚠️ E la relazione si verifica ESATTA, non «almeno»: ogni
+    //    cancellazione vale esattamente una rifotografia in più.
+    expect(
+      Number(riga.chiusure_precedenti),
+      `il conteggio deve seguire la storia: base ${base} + due cancellazioni`
+    ).toBe(base + 2);
+    expect(riga.prima_chiusura_il, "la prima volta non si è persa").not.toBeNull();
   });
 });
