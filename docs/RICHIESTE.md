@@ -54,7 +54,7 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **79 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**23 in attesa** · **0 in corso** · **52 fatte** · **4 scartate da lui**.
+**22 in attesa** · **1 in corso** · **52 fatte** · **4 scartate da lui**.
 La somma fa **79**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
@@ -131,7 +131,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | R9 | **«Salva modifiche» sta schiacciato in un angolo a metà schermata**, con roba da compilare ancora sopra. | 29/08/2026 | Sua schermata | — | fatta · commit del 30/08 (nessuna migrazione) |
 | R10 | **Via la spunta «Guarnizione opzionale (esclusa dal food cost)».** | 29/08/2026 | Decisione esplicita sua | — | fatta · migrazione `20260829000023` |
 | R11 | **Estrazione ricette col pulsante «estrapola»**, con aiuto alla lista della spesa. | prima del 19/08/2026 | `CODA_E_DECISIONI.md` | si può fare adesso | in attesa |
-| R12 | **La resa al posto dello scarto standard**: lo scarto è una proprietà della coppia ingrediente × preparazione, non dell'ingrediente. La resa vive sulla riga di ricetta, espressa in lordo → netto («1,5 kg di cozze danno 400 g»), non in percentuale. | 14/08/2026 | Blocco 5 del mandato cumulativo | si può fare adesso | in attesa |
+| R12 | **La resa al posto dello scarto standard**: lo scarto è una proprietà della coppia ingrediente × preparazione, non dell'ingrediente. La resa vive sulla riga di ricetta, espressa in lordo → netto («1,5 kg di cozze danno 400 g»), non in percentuale. | 14/08/2026 | Blocco 5 del mandato cumulativo | si può fare adesso | in corso · PR aperta, migrazione NON applicata da nessuna parte |
 | R13 | **La scheda dell'ingrediente diventa il posto unico.** Dichiarata non aperta il 29/08: è l'unico punto del suo blocco senza una misura sotto, e prima di riorganizzarla va deciso cosa ci finisce dentro. | 29/08/2026 | Blocco 2 del mandato del 29/08 | aspetta | in attesa |
 
 ---

@@ -64,13 +64,31 @@ import {
 } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
 import { stagioneAccesa, stagioniDopoIlTocco, stagioniNormalizzate } from "../../lib/calcoli/stagionalita";
+import {
+  comeSiLegge,
+  lordoDaSalvare,
+  lordoPrecompilato,
+  ragioneNonSalvabile,
+  resaPercento,
+} from "../../lib/calcoli/resa";
 
 const emptyIngredientForm = {
   ingredient_id: "",
   component_recipe_id: "",
   quantity: "",
   unit: "",
-  waste_percentage: "",
+  // 🔴 LA RESA SI SCRIVE IN LORDO E NETTO (R12, 22/09/2026): «1,5 kg di
+  //    cozze danno 400 g». Lo scarto in percentuale non si scrive piu' —
+  //    nel database e' un riflesso dei due numeri, e scriverlo viene
+  //    rifiutato.
+  // ⚠️ Nasce VUOTO, e vuoto non e' zero: vuol dire «non ho detto che c'e'
+  //    scarto», e allora il lordo e' il netto.
+  quantita_lorda: "",
+  // 🔴 «PRECOMPILA UNA VOLTA» HA BISOGNO DI SAPERE SE QUALCUNO HA GIA'
+  //    SCRITTO. Senza questo segno, la proposta ricalcolata a ogni
+  //    cambio del netto sovrascriverebbe il numero appena digitato —
+  //    cioe' il gestionale butterebbe via una scelta senza dirlo.
+  lordoToccato: false,
   prep_note: "",
 };
 
@@ -653,9 +671,12 @@ export default function RicettaDetail() {
         component_recipe_id: componentMode ? ingredientForm.component_recipe_id : null,
         quantity: quanti,
         unit: unita,
-        waste_percentage: ingredientForm.waste_percentage
-          ? Number(ingredientForm.waste_percentage)
-          : null,
+        // 🔴 SI MANDA IL LORDO, NON LO SCARTO. Il database rifiuta lo
+        //    scarto scritto a mano: e' il riflesso dei due numeri.
+        // ⚠️ E se nessuno ha detto il lordo, si manda il netto — la stessa
+        //    regola del trigger, da questa parte, cosi' il modulo non manda
+        //    un vuoto e poi rilegge un numero diverso da quello mostrato.
+        quantita_lorda: lordoDaSalvare(ingredientForm.quantita_lorda, quanti),
         prep_note: ingredientForm.prep_note || null,
       });
       setIngredientForm(emptyIngredientForm);
@@ -1620,7 +1641,11 @@ export default function RicettaDetail() {
                     etichetta: "Scarto",
                     valore: ri.component
                       ? ""
-                      : `${ri.waste_percentage ?? ri.ingredient.waste_percentage_default ?? 0}%`,
+                      // 🔴 «1,5 kg → 0,4 kg netti (27%)» al posto di «275%»:
+                      //    la percentuale da sola non dice niente a chi
+                      //    cucina, e lo scarto in quella forma e' il numero
+                      //    piu' difficile da leggere dei due.
+                      : (comeSiLegge(ri) ?? "—"),
                     vuoto: "—",
                   });
                 }
@@ -1728,6 +1753,17 @@ export default function RicettaDetail() {
                       ...f,
                       ingredient_id: e.target.value,
                       unit: chosen?.unit ?? f.unit,
+                      // 🔴 LA RESA STANDARD DEL PRODOTTO PRECOMPILA, E BASTA
+                      //    (decisione di Alessio, 22/09). Non è un'eredità:
+                      //    il numero entra nel campo e da lì in poi è della
+                      //    riga. Cambiando domani la scheda del prodotto,
+                      //    questa riga non si muove.
+                      // ⚠️ E si ferma appena qualcuno scrive nel campo: una
+                      //    proposta che sovrascrive una scelta non è una
+                      //    proposta.
+                      quantita_lorda: f.lordoToccato
+                        ? f.quantita_lorda
+                        : (lordoPrecompilato(f.quantity, chosen?.waste_percentage_default) ?? ""),
                     }));
                   }}
                   className={`${inputClass} mt-2`}
@@ -1750,7 +1786,25 @@ export default function RicettaDetail() {
                 step="0.01"
                 min="0"
                 value={ingredientForm.quantity}
-                onChange={(e) => setIngredientForm((f) => ({ ...f, quantity: e.target.value }))}
+                aria-label="Quanto ne resta, netto"
+                data-prova="riga-netto"
+                onChange={(e) =>
+                  setIngredientForm((f) => {
+                    // ⚠️ La proposta segue il netto finché nessuno ha scritto
+                    //    il lordo: scrivendo prima la quantità e poi
+                    //    scegliendo l'ingrediente — o viceversa — il numero
+                    //    proposto dev'essere lo stesso.
+                    const scelto = allIngredients.find((i) => i.id === f.ingredient_id);
+                    return {
+                      ...f,
+                      quantity: e.target.value,
+                      quantita_lorda: f.lordoToccato
+                        ? f.quantita_lorda
+                        : (lordoPrecompilato(e.target.value, scelto?.waste_percentage_default) ??
+                          ""),
+                    };
+                  })
+                }
                 placeholder="Quantità"
                 className={inputClass}
               />
@@ -1767,32 +1821,79 @@ export default function RicettaDetail() {
                 ))}
               </select>
             )}
+            {/* 🔴 «QUANTO NE PRENDI» AL POSTO DELLA PERCENTUALE — R12.
+                Prima qui c'era «% scarto», che e' un numero che nessuno
+                calcola a mente: un cuoco sa che da un chilo e mezzo di
+                cozze escono quattro etti, non che lo scarto e' il 275%.
+                ⚠️ Su una preparazione non compare: lo scarto di una
+                preparazione vive dentro di lei. */}
             {modoRighe === "preparation" ? (
               <div />
             ) : (
               <input
                 type="number"
-                step="0.1"
+                step="0.0001"
                 min="0"
-                max="100"
-                value={ingredientForm.waste_percentage}
-                onChange={(e) => setIngredientForm((f) => ({ ...f, waste_percentage: e.target.value }))}
-                placeholder="% scarto (default ingrediente)"
+                value={ingredientForm.quantita_lorda}
+                onChange={(e) =>
+                  setIngredientForm((f) => ({
+                    ...f,
+                    quantita_lorda: e.target.value,
+                    lordoToccato: true,
+                  }))
+                }
+                placeholder="quanto ne prendi (lordo)"
+                aria-label="Quanto ne prendi, lordo"
+                data-prova="riga-lordo"
                 className={inputClass}
               />
             )}
           </div>
+          {/* 🔴 LA RESA SI VEDE MENTRE SI SCRIVE, e il rifiuto sta DOVE
+              sta il dubbio — non in cima alla pagina (lezione del 17/08). */}
+          {modoRighe !== "preparation" && ingredientForm.quantity ? (
+            ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity) ? (
+              <p
+                data-prova="riga-resa-rifiuto"
+                className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-2"
+              >
+                {ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity)}
+              </p>
+            ) : ingredientForm.quantita_lorda ? (
+              <p data-prova="riga-resa" className="testo-sala text-b58-charcoal-soft mb-2">
+                Da {ingredientForm.quantita_lorda} {ingredientForm.unit} ne restano{" "}
+                {ingredientForm.quantity} {ingredientForm.unit}:{" "}
+                <strong>
+                  resa {resaPercento(ingredientForm.quantita_lorda, ingredientForm.quantity)}%
+                </strong>
+                {/* 🔴 UN NUMERO PROPOSTO SI DICE PROPOSTO. Precompilato e
+                    basta somiglia in tutto a un numero digitato da qualcuno
+                    — ed è la forma di difetto che questo progetto insegue:
+                    non un errore che grida, un numero plausibile. */}
+                {!ingredientForm.lordoToccato && (
+                  <span data-prova="riga-lordo-proposto" className="block">
+                    Proposto dalla resa standard del prodotto: correggilo se
+                    per questa ricetta è diverso.
+                  </span>
+                )}
+              </p>
+            ) : null
+          ) : null}
+
           <div className="flex items-center justify-end">
             <button
               type="button"
               disabled={
                 addingIngredient ||
+                (modoRighe !== "preparation" &&
+                  Boolean(ragioneNonSalvabile(ingredientForm.quantita_lorda, ingredientForm.quantity))) ||
                 (!isSelezione && !ingredientForm.quantity) ||
                 (modoRighe === "preparation"
                   ? !ingredientForm.component_recipe_id
                   : !ingredientForm.ingredient_id)
               }
               onClick={handleAddIngredient}
+              data-prova="riga-aggiungi"
               className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
