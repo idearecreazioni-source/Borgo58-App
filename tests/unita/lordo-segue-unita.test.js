@@ -153,10 +153,21 @@ describe("🔴 e non si toccano né i dati né le migrazioni già applicate", ()
     expect(r12).not.toContain("colonne_unita_non_classificate");
   });
 
-  it("⚠️ ed è l'unica migrazione nuova dopo la riparazione RLS", () => {
+  it("⚠️ ed è la PRIMA migrazione dopo la riparazione RLS", () => {
+    // 🔴 QUESTA RIGA PRETENDEVA «e l'unica dopo», ed era troppo stretta —
+    //    per la seconda volta in due giorni, dopo la stessa correzione su
+    //    `vista-costi-rls.test.js`. E' diventata rossa il giorno dopo per
+    //    un lavoro legittimo (la chiusura dell'anno, C5).
+    // ⚠️ *Un controllo che vieta il futuro invece di descrivere una
+    //    relazione grida su chi non ha fatto niente di male* — e la seconda
+    //    volta non e' una svista: e' che correggere un esemplare non chiude
+    //    la famiglia. La forma giusta e' sempre la stessa: si dice quale
+    //    relazione deve valere, non cosa non deve esistere dopo.
     const tutte = readdirSync("supabase/migrations").filter((f) => f.endsWith(".sql"));
     const rls = tutte.find((f) => f.startsWith("20260923000001"));
-    const dopo = tutte.filter((f) => f > rls);
-    expect(dopo).toEqual(["20260923000002_cambiando_unita_il_lordo_segue_il_netto.sql"]);
+    const dopo = tutte.filter((f) => f > rls).sort();
+    expect(dopo[0], `la prima dopo la riparazione RLS e': ${dopo[0]}`).toBe(
+      "20260923000002_cambiando_unita_il_lordo_segue_il_netto.sql",
+    );
   });
 });
