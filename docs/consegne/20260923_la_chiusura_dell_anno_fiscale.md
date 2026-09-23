@@ -1,7 +1,7 @@
 # C5 — La chiusura dell'anno fiscale
 
 **23/09/2026** · ramo `claude/c5-chiusura-anno` · proposta verso `slave`, **non unita**
-· migrazione `20260923000003` **non applicata da nessuna parte**
+· migrazioni `20260923000003` e `20260923000004` **applicate al solo progetto di prova**
 
 ---
 
@@ -106,6 +106,28 @@ scelgono anni lontani e vuoti per non toccare i dati veri (17/08), e un limite
 stretto le avrebbe **respinte** — cioè avrebbe impedito di provare la regola
 invece di proteggerla. La verifica della migrazione chiude il **1996**.
 
+**Migrazione `20260923000004_i_due_vincoli_della_chiusura_parlano_italiano.sql`**
+— la coda, e nasce da un buco mio trovato applicando. Nella `…003` avevo scritto
+la frase italiana per i quattro vincoli sui **valori** e non per le altre due
+forme: l'unicità su società + anno e il legame col soggetto. La regola del 25/08
+riguardava i `check`, ed è stata **allargata il 28/08** a unicità e chiavi
+esterne — *correggere un esemplare non chiude la famiglia*.
+
+⚠️ **Non è teorico**: sulla strada normale il messaggio buono lo dà
+`chiudi_anno`, ma la RLS permette al titolare di scrivere **dritto in tabella**,
+e da lì il rifiuto uscirebbe come «duplicate key value violates unique
+constraint» — che in sala non è un rifiuto, è un guasto.
+
+⚠️ **I due nomi se li fa dire dal catalogo**, non li indovina: li cerca per
+**struttura** (l'unicità dev'essere esattamente su `(entity_id, anno)`, il legame
+dev'essere `entity_id → entities(id)` e restare `restrict`) e **si ferma
+rumorosamente** se non coincidono, invece di commentare la cosa sbagliata.
+
+⚠️ **E un commento non cambia da sé la lingua dell'errore di Postgres**: la
+traduzione la fa il punto unico da cui passano le richieste dell'app, che legge
+proprio quel commento. Questa migrazione riempie il posto da cui la traduzione
+pesca, e **non introduce nessun trigger e nessuna logica nuova**.
+
 **Codice**
 
 - `src/lib/calcoli/chiusuraAnno.js` — le regole, separate dal disegno.
@@ -118,6 +140,8 @@ invece di proteggerla. La verifica della migrazione chiude il **1996**.
 - `tests/unita/chiusura-anno.test.js` — 30 prove pure.
 - `tests/schermate/chiusura-anno.test.jsx` — 21 prove di schermata.
 - `tests/app/chiusura-annuale.test.js` — 13 prove sui dati veri, **condizionate**.
+- `tests/unita/vincoli-chiusura-anno.test.js` — 19 prove pure sulla `…004`.
+- `tests/app/vincoli-chiusura-anno.test.js` — 5 prove sui dati veri, **condizionate**.
 
 ---
 
@@ -163,11 +187,12 @@ chiusura annuale riusa la macchina dei mesi senza cambiarne una regola, e
 
 ## Cosa NON è verificato
 
-- 🔴 **La migrazione non è applicata da nessuna parte**, per mandato. Quindi
-  **la verifica dentro di lei non è mai girata**, e le 13 prove sui dati veri
-  sono **saltate** — si riaccendono da sole il giorno che la versione compare
-  nel registro. Quello che è provato oggi è la **forma** (prove pure) e il
-  **tratto fra schermata e collegamento** (prove di schermata).
+- 🔴 **Il gestionale vero non ha niente di tutto questo.** Le due migrazioni
+  sono applicate **al solo progetto di prova**, e la proposta non è unita: in
+  produzione la tabella non esiste.
+  ⚠️ *Questa riga diceva «non applicata da nessuna parte», ed era vera quando
+  è stata scritta. È diventata falsa quando la migrazione è stata applicata al
+  progetto di prova, e si corregge dove vive.*
 - ⚠️ **Nessuna mano ha aperto la schermata.** In questo ambiente le prove non
   guardano un'immagine: che l'avviso si distingua con le luci del ristorante, e
   che la conferma sia comoda col dito, restano giudizi di Alessio.
