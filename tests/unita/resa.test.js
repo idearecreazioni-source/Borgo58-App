@@ -17,6 +17,10 @@ import {
 
 // Il testo della migrazione R12, coi commenti tolti: un setaccio che cerca
 // una forma nel testo trova anche chi la nomina per spiegarla (27/08).
+const sqlR12grezzo = readFileSync(
+  "supabase/migrations/20260922000001_la_resa_sulla_riga_di_ricetta.sql",
+  "utf8",
+);
 const codiceR12 = readFileSync(
   "supabase/migrations/20260922000001_la_resa_sulla_riga_di_ricetta.sql",
   "utf8",
@@ -884,5 +888,117 @@ describe("20 · sulla riga di ricetta uno scarto sopra 100 è ammesso", () => {
     expect(codiceR12).toMatch(/Una riga col netto a zero e'' passata/);
     expect(codiceR12).toMatch(/values \(v_r1, v_ing, 1, -1, 'kg'\)/);
     expect(codiceR12).toMatch(/Una riga col lordo negativo e'' passata/);
+  });
+});
+
+// =====================================================================
+// 21 · IL NETTO A ZERO LO FERMA UN TRIGGER, NON UN VINCOLO
+// =====================================================================
+// 🔴 PERCHE' ESISTE QUESTO GRUPPO. Il 23/09, applicando su Prova, la
+//    migrazione si e' fermata al gruppo (4) della propria verifica:
+//
+//      ERROR: La quantità di ZZ verifica resa - cozze non può essere zero…
+//
+//    Non era un difetto di R12: lo zero lo ferma `trg_vieta_quantita_che_
+//    sparisce` (23/08) con un `P0001`, e la verifica catturava solo
+//    `check_violation`. Aveva ottenuto il rifiuto che voleva, e si e'
+//    fermata lo stesso.
+//
+// ⚠️ E quel trigger fa MEGLIO di un vincolo: dice cosa e' successo e la via
+//    d'uscita. Era la verifica ad aspettarsi la forma sbagliata di rifiuto.
+describe("21 · il gruppo (4) cattura il P0001 giusto, e solo quello", () => {
+  // ⚠️ L'ancora e' il CODICE, non il titolo del gruppo: `codiceR12` toglie
+  //    i commenti, quindi «(4) ZERO E NEGATIVI» li' dentro non c'e'. E' la
+  //    trappola del 27/08 — un setaccio che cerca una forma nel testo e la
+  //    trova solo dove qualcuno la nomina per spiegarla.
+  const casoZero = codiceR12.split("v_ing, 0, 1, 'kg'")[1]?.split("v_ing, 1, -1")[0];
+  // 🔴 E IL PERIMETRO SI CHIUDE SU UN'ANCORA DI CODICE, non su «(5)»:
+  //    quello e' un commento, che `codiceR12` toglie — quindi il pezzo
+  //    arrivava fino in fondo al file e ci trovava DUE `check_violation`,
+  //    uno dei quali di un altro gruppo. Misurato: 6838 caratteri invece
+  //    di 162. Con quel perimetro la prova restava verde anche allargando
+  //    il gestore del lordo negativo — cioe' non provava niente.
+  //    *Un perimetro piu' largo del vero e' un falso allarme al contrario:
+  //    non grida quando dovrebbe.*
+  const casoNegativo = codiceR12.split("v_ing, 1, -1")[1]?.split("end if;")[0];
+
+  it("il gruppo (4) c'è, e ha due casi distinti", () => {
+    expect(casoZero, "non trovo il caso del netto a zero").toBeTruthy();
+    expect(casoNegativo, "non trovo il caso del lordo negativo").toBeTruthy();
+    expect(codiceR12).toContain("v_ing, 0, 1, 'kg'");
+    expect(codiceR12).toContain("v_ing, 1, -1, 'kg'");
+  });
+
+  it("🔴 1. il caso zero NON torna a catturare solo `check_violation`", () => {
+    // È il difetto che ha fermato la migrazione: lo zero non è una
+    // violazione di vincolo.
+    expect(casoZero).toMatch(/exception when sqlstate 'P0001' then/);
+    expect(casoZero, "il caso zero cattura di nuovo check_violation").not.toMatch(
+      /exception when check_violation/,
+    );
+  });
+
+  it("🔴 2. e non cattura genericamente `raise_exception` né `others`", () => {
+    // ⚠️ Un gestore largo inghiottirebbe anche un errore che non c'entra —
+    //    una colonna sbagliata, una funzione che non risponde — e la
+    //    verifica passerebbe VERDE avendo preso la cosa sbagliata.
+    //    *Un controllo che cattura tutto non controlla niente.*
+    expect(casoZero).not.toMatch(/when\s+raise_exception/);
+    expect(casoZero).not.toMatch(/when\s+others/);
+  });
+
+  it("🔴 3. un P0001 con un messaggio diverso NON passa", () => {
+    // Non basta che arrivi un rifiuto: si guarda cosa dice. Il messaggio
+    // viene conservato e confrontato due volte — la frase attesa, e il nome
+    // della riga che questa verifica ha appena costruito.
+    expect(casoZero).toMatch(/v_motivo\s*:=\s*sqlerrm;/);
+    expect(casoZero).toMatch(/v_motivo not like '%non può essere zero%'/);
+    expect(casoZero).toMatch(/v_motivo not like '%ZZ verifica resa - cozze%'/);
+    // ⚠️ E un rifiuto che non arriva affatto è un caso a sé, dichiarato:
+    //    senza, `v_motivo` resterebbe vuoto e i due confronti sopra
+    //    passerebbero su un `null`.
+    expect(casoZero).toMatch(/v_motivo is null then/);
+  });
+
+  it("⚠️ e la riga che passa quando NON dovrebbe è ancora un fallimento", () => {
+    // Se l'inserimento riesce, il trigger non ha fatto il suo lavoro.
+    expect(casoZero).toMatch(/v_preso := true;/);
+    expect(casoZero).toMatch(/Una riga col netto a zero e'' passata/);
+  });
+
+  it("🔴 4a. il caso del lordo negativo resta su `check_violation`", () => {
+    // Quello sì è un vincolo (`riga_lordo_e_netto_coerenti`), e non si
+    // tocca: allargarlo al P0001 nasconderebbe il giorno in cui smettesse
+    // di essere il vincolo a fermarlo.
+    expect(casoNegativo).toMatch(/exception when check_violation then/);
+    expect(casoNegativo).toMatch(/Una riga col lordo negativo e'' passata/);
+  });
+
+  it("🔴 4b. e per «far passare» la prova nessuno ha toccato vincoli o trigger", () => {
+    // ⚠️ La scorciatoia era allargare le regole invece di correggere la
+    //    verifica. Le tre cose che dovevano restare com'erano:
+    //    · il vincolo di R12 sul lordo e il netto;
+    //    · il vincolo storico, già corretto nel solo tetto dei 100;
+    //    · il trigger del 23/08, che questa migrazione non nomina affatto.
+    expect(codiceR12).toMatch(/add constraint riga_lordo_e_netto_coerenti\s+check \(quantity > 0/);
+    expect(codiceR12).toMatch(
+      /add constraint recipe_ingredienti_numeri_sensati\s+check \(quantity > 0 and waste_percentage >= 0\)/,
+    );
+    expect(codiceR12, "la migrazione tocca il trigger del 23/08").not.toContain(
+      "trg_vieta_quantita_che_sparisce",
+    );
+    expect(codiceR12).not.toContain("vieta_quantita_che_sparisce");
+  });
+
+  it("⚠️ e le verifiche successive non sono state ammorbidite", () => {
+    // I gruppi da (5) a (11) devono esserci tutti: farne sparire uno
+    // sarebbe l'altro modo di «far passare» la verifica.
+    // ⚠️ I titoli dei gruppi sono COMMENTI, quindi si guardano nel testo
+    //    grezzo — non in `codiceR12`, che li toglie.
+    for (const n of [5, 6, 7, 8, 9, 10, 11]) {
+      expect(sqlR12grezzo, `manca il gruppo (${n})`).toContain(`(${n})`);
+    }
+    expect(codiceR12).toContain("ZZ_ANNULLA");
+    expect(codiceR12).toMatch(/perform pretendi_nessun_residuo\(/);
   });
 });

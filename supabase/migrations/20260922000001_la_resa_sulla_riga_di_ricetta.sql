@@ -992,6 +992,7 @@ declare
   v_copia   uuid;
   v_preso   boolean;
   v_num     numeric;
+  v_motivo  text;
 begin
   select id into v_ent from entities where entity_type = 'srls';
   if v_ent is null then raise exception 'Serve la societa'' per verificare.'; end if;
@@ -1077,13 +1078,51 @@ begin
     -- -------------------------------------------------------------
     -- (4) ZERO E NEGATIVI SONO RESPINTI.
     -- -------------------------------------------------------------
+    -- 🔴 LO ZERO NON LO FERMA UN VINCOLO: LO FERMA UN TRIGGER, ed e' il
+    --    punto su cui questa verifica si e' fermata il 23/09 applicando su
+    --    Prova. `trg_vieta_quantita_che_sparisce` (23/08) solleva un
+    --    `P0001`, non un `check_violation`, quindi il gestore di prima non
+    --    lo catturava e l'eccezione attraversava tutto il blocco.
+    --
+    -- ⚠️ E QUEL TRIGGER FA MEGLIO DI UN VINCOLO: dice cosa e' successo e
+    --    la via d'uscita — «per le spezie, cambia l'unita' del prodotto in
+    --    grammi». Era la verifica ad aspettarsi la forma sbagliata di
+    --    rifiuto, non la regola a essere storta.
+    --
+    -- ⚠️ SI CATTURA SOLO `P0001`, MAI `when others` ne' il nome generico
+    --    `raise_exception`: un gestore largo inghiottirebbe anche un errore
+    --    che non c'entra — una colonna sbagliata, una funzione che non
+    --    risponde — e la verifica passerebbe VERDE avendo preso la cosa
+    --    sbagliata. *Un controllo che cattura tutto non controlla niente.*
+    --
+    -- ⚠️ E NON BASTA CHE ARRIVI UN P0001: si guarda **cosa dice**. Il
+    --    messaggio deve parlare della riga che questa verifica ha appena
+    --    costruito — altrimenti un qualunque altro rifiuto in italiano
+    --    passerebbe per quello atteso. E' il modello della
+    --    `20260823000012`, che fa esattamente questo.
     v_preso := false;
+    v_motivo := null;
     begin
       insert into recipe_ingredients (recipe_id, ingredient_id, quantity, quantita_lorda, unit)
       values (v_r1, v_ing, 0, 1, 'kg');
-    exception when check_violation then v_preso := true;
+      v_preso := true;   -- <<< e' PASSATA: il rifiuto non c'e' stato
+    exception when sqlstate 'P0001' then
+      v_motivo := sqlerrm;
     end;
-    if not v_preso then raise exception 'Una riga col netto a zero e'' passata.'; end if;
+    if v_preso then
+      raise exception 'Una riga col netto a zero e'' passata.';
+    end if;
+    if v_motivo is null then
+      raise exception 'Il netto a zero non e'' stato rifiutato con un P0001, e nessun errore e'' arrivato fin qui.';
+    end if;
+    if v_motivo not like '%non può essere zero%' then
+      raise exception 'Il rifiuto del netto a zero non spiega cosa e'' successo: %', v_motivo;
+    end if;
+    -- ⚠️ E nomina la riga di QUESTA verifica: senza, un rifiuto di tutt'altra
+    --    origine passerebbe per quello atteso.
+    if v_motivo not like '%ZZ verifica resa - cozze%' then
+      raise exception 'Il rifiuto del netto a zero non parla della riga di questa verifica: %', v_motivo;
+    end if;
 
     v_preso := false;
     begin
