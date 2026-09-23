@@ -1250,30 +1250,75 @@ begin
     --    questo numero spostasse il food cost di OGNI ricetta che usa
     --    quell'ingrediente — anche scritte mesi prima da chi quel numero
     --    non l'aveva scelto. Adesso precompila e basta.
-    update ingredients set waste_percentage_default = 900 where id = v_ing;
+    -- 🔴 SI FOTOGRAFA PRIMA, NON SI SCRIVE UN NUMERO A MANO — e la ragione
+    --    e' un difetto vero, misurato applicando il 23/09. Qui c'erano tre
+    --    numeri fissi (scarto 275, food cost 15,00, fabbisogno 1,5): i
+    --    valori che questa riga aveva al gruppo (1). Ma il gruppo (7) LI
+    --    CAMBIA APPOSTA — e' il suo lavoro, dimostra che il riflesso segue
+    --    i due numeri — portando la riga a 1,0 lordo su 0,25 netto, cioe'
+    --    scarto 300 e costo 10,00.
+    --
+    --    Risultato: il gruppo (10) accusava «lo scarto si e' mosso col
+    --    numero del prodotto», e l'accusa era FALSA. Si era mosso perche'
+    --    l'aveva mosso il gruppo (7), due passi prima, facendo la cosa
+    --    giusta.
+    --
+    -- ⚠️ *Un guardiano deve esprimere una PROPRIETA', non una quantita'*
+    --    (16/08). Un numero scritto a mano e' una fotografia, e qui una
+    --    fotografia scaduta accusava una regola sana. La proprieta' vera e'
+    --    «toccando la scheda del prodotto, questi tre numeri non si
+    --    muovono»: si leggono prima, si tocca, si rileggono. Cosi' il
+    --    controllo non dipende piu' da cosa hanno fatto i gruppi
+    --    precedenti — e diventa piu' forte, non piu' debole.
+    declare
+      v_scarto_prima  numeric;
+      v_costo_prima   numeric;
+      v_fabbi_prima   numeric;
+    begin
+      select waste_percentage into v_scarto_prima
+        from recipe_ingredients where id = v_riga;
+      select food_cost_base into v_costo_prima
+        from v_recipe_costs where recipe_id = v_r2;
+      select round(quantita, 4) into v_fabbi_prima
+        from fabbisogno_preparazione(v_r2, 1) where ingredient_id = v_ing;
 
-    select waste_percentage into v_num from recipe_ingredients where id = v_riga;
-    if v_num is distinct from 275.00 then
-      raise exception 'Lo scarto della riga si e'' mosso col numero del prodotto: e'' %, doveva restare 275.', v_num;
-    end if;
+      -- ⚠️ E i tre valori devono ESSERCI: su tre `null` il confronto
+      --    passerebbe senza aver guardato niente — la trappola del caso
+      --    vuoto (17/08).
+      if v_scarto_prima is null or v_costo_prima is null or v_fabbi_prima is null then
+        raise exception 'Non ho potuto fotografare lo stato prima di toccare il prodotto (scarto %, costo %, fabbisogno %): mi fermo invece di confrontare il nulla.',
+          v_scarto_prima, v_costo_prima, v_fabbi_prima;
+      end if;
 
-    select food_cost_base into v_num from v_recipe_costs where recipe_id = v_r2;
-    if round(v_num, 2) is distinct from 15.00 then
-      raise exception 'Il food cost si e'' mosso cambiando il numero sulla scheda del prodotto: e'' %, doveva restare 15,00.', v_num;
-    end if;
+      update ingredients set waste_percentage_default = 900 where id = v_ing;
 
-    -- ⚠️ E ALLO SPECCHIO: il fabbisogno di magazzino legge lo stesso numero
-    --    da un'altra strada (`fabbisogno_*`), quindi si guarda anche quello
-    --    — due letture che si comportassero diversamente sarebbero la
-    --    forma peggiore, perche' ognuna delle due sembra plausibile.
-    select round(quantita, 4) into v_num
-      from fabbisogno_preparazione(v_r2, 1)
-     where ingredient_id = v_ing;
-    if v_num is distinct from 1.5000 then
-      raise exception 'Il fabbisogno si e'' mosso col numero del prodotto: e'' %, doveva restare 1,5.', v_num;
-    end if;
+      select waste_percentage into v_num from recipe_ingredients where id = v_riga;
+      if v_num is distinct from v_scarto_prima then
+        raise exception 'Lo scarto della riga si e'' mosso col numero del prodotto: era %, adesso e'' %.',
+          v_scarto_prima, v_num;
+      end if;
 
-    update ingredients set waste_percentage_default = 25 where id = v_ing;
+      select food_cost_base into v_num from v_recipe_costs where recipe_id = v_r2;
+      if round(v_num, 2) is distinct from round(v_costo_prima, 2) then
+        raise exception 'Il food cost si e'' mosso cambiando il numero sulla scheda del prodotto: era %, adesso e'' %.',
+          v_costo_prima, v_num;
+      end if;
+
+      -- ⚠️ E ALLO SPECCHIO: il fabbisogno di magazzino legge lo stesso
+      --    numero da un'altra strada (`fabbisogno_*`), quindi si guarda
+      --    anche quello — due letture che si comportassero diversamente
+      --    sarebbero la forma peggiore, perche' ognuna delle due sembra
+      --    plausibile.
+      select round(quantita, 4) into v_num
+        from fabbisogno_preparazione(v_r2, 1)
+       where ingredient_id = v_ing;
+      if v_num is distinct from v_fabbi_prima then
+        raise exception 'Il fabbisogno si e'' mosso col numero del prodotto: era %, adesso e'' %.',
+          v_fabbi_prima, v_num;
+      end if;
+
+      update ingredients set waste_percentage_default = 25 where id = v_ing;
+    end;
 
     -- -------------------------------------------------------------
     -- (11) SOPRA 100 SI ACCETTA, E SOTTO ZERO NO.

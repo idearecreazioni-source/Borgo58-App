@@ -443,13 +443,18 @@ describe("15 · la migrazione si verifica da sé e non lascia residui", () => {
     // ⚠️ È il controllo per cui questa migrazione esiste nella forma che ha:
     //    senza, «non eredita più» resterebbe una frase.
     expect(codice).toMatch(/update ingredients set waste_percentage_default = 900/);
-    expect(codice).toMatch(/doveva restare 275/);
-    expect(codice).toMatch(/doveva restare 15,00/);
+    // 🔴 QUESTA PROVA PRETENDEVA TRE NUMERI FISSI — «doveva restare 275»,
+    //    «15,00», «1,5» — e li pretendeva perché la verifica li aveva
+    //    scritti a mano. Il 23/09, applicando su Prova, si è visto che
+    //    erano FOTOGRAFIE SCADUTE: il gruppo (7) cambia apposta i numeri
+    //    di quella riga, e la verifica accusava una regola sana.
+    //    Adesso si confronta prima-e-dopo, e il dettaglio sta nel gruppo 22.
+    expect(codice).toMatch(/v_num is distinct from v_scarto_prima/);
     // E lo stesso da un'altra strada: il fabbisogno di magazzino. Due
     // letture che si comportassero diversamente sarebbero la forma
     // peggiore, perché ognuna delle due sembra plausibile.
     expect(codice).toMatch(/fabbisogno_preparazione\(v_r2, 1\)/);
-    expect(codice).toMatch(/doveva restare 1,5/);
+    expect(codice).toMatch(/v_num is distinct from v_fabbi_prima/);
   });
 
   it("🔴 e sopra 100 si accetta, sotto zero no — provato nei due versi", () => {
@@ -1000,5 +1005,83 @@ describe("21 · il gruppo (4) cattura il P0001 giusto, e solo quello", () => {
     }
     expect(codiceR12).toContain("ZZ_ANNULLA");
     expect(codiceR12).toMatch(/perform pretendi_nessun_residuo\(/);
+  });
+});
+
+// =====================================================================
+// 22 · IL GRUPPO (10) CONFRONTA UNA PROPRIETA', NON UNA FOTOGRAFIA
+// =====================================================================
+// 🔴 PERCHE' ESISTE. Il 23/09, applicando su Prova, la migrazione si e'
+//    fermata al gruppo (10) — il cuore della decisione del 22/09 — con:
+//
+//      ERROR: Lo scarto della riga si e' mosso col numero del prodotto:
+//             e' 300.00, doveva restare 275.
+//
+//    E L'ACCUSA ERA FALSA. Il gruppo (7) cambia apposta i due numeri di
+//    quella riga (1,0 lordo su 0,25 netto) per dimostrare che il riflesso
+//    li segue: e' il suo lavoro, ed era passato. Il gruppo (10) pretendeva
+//    ancora i valori del gruppo (1).
+//
+// ⚠️ *Un guardiano deve esprimere una PROPRIETA', non una quantita'*
+//    (16/08). Tre numeri scritti a mano erano tre fotografie, e una
+//    fotografia scaduta accusava una regola sana.
+describe("22 · il cuore della decisione si prova leggendo prima e dopo", () => {
+  const gruppo10 = codiceR12
+    .split("update ingredients set waste_percentage_default = 900")[0]
+    ?.split("v_scarto_prima")
+    .length;
+  const dopoIlTocco = codiceR12.split(
+    "update ingredients set waste_percentage_default = 900",
+  )[1];
+
+  it("🔴 i tre valori si LEGGONO prima di toccare il prodotto", () => {
+    // Senza la lettura preventiva non c'è niente con cui confrontare, e
+    // l'unica alternativa è un numero scritto a mano — cioè il difetto.
+    expect(codiceR12).toMatch(/v_scarto_prima\s+numeric;/);
+    expect(codiceR12).toMatch(/v_costo_prima\s+numeric;/);
+    expect(codiceR12).toMatch(/v_fabbi_prima\s+numeric;/);
+    // E sono letti PRIMA dell'update sul prodotto.
+    expect(gruppo10, "le variabili non sono valorizzate prima del tocco").toBeGreaterThan(3);
+  });
+
+  it("🔴 e dopo il tocco si confronta con quelli, NON con numeri fissi", () => {
+    expect(dopoIlTocco).toMatch(/v_num is distinct from v_scarto_prima/);
+    expect(dopoIlTocco).toMatch(/round\(v_num, 2\) is distinct from round\(v_costo_prima, 2\)/);
+    expect(dopoIlTocco).toMatch(/v_num is distinct from v_fabbi_prima/);
+  });
+
+  it("⚠️ le tre fotografie scadute non possono tornare", () => {
+    // Erano i valori del gruppo (1), invalidati dal gruppo (7).
+    expect(dopoIlTocco).not.toMatch(/is distinct from 275\.00/);
+    expect(dopoIlTocco).not.toMatch(/doveva restare 275/);
+    expect(dopoIlTocco).not.toMatch(/doveva restare 15,00/);
+    expect(dopoIlTocco).not.toMatch(/doveva restare 1,5/);
+  });
+
+  it("🔴 e tre letture vuote non passano per «niente si è mosso»", () => {
+    // Con tre `null` il confronto passerebbe senza aver guardato niente:
+    // è la trappola del caso vuoto (17/08).
+    expect(codiceR12).toMatch(
+      /v_scarto_prima is null or v_costo_prima is null or v_fabbi_prima is null/,
+    );
+    expect(codiceR12).toMatch(/mi fermo invece di confrontare il nulla/);
+  });
+
+  it("⚠️ e il gruppo (7), che muove i numeri, resta com'era", () => {
+    // 🔴 La scorciatoia era togliere di mezzo il gruppo (7) — cioè
+    //    smettere di provare che il riflesso segue i due numeri — per far
+    //    quadrare il (10). Quello sì sarebbe stato ammorbidire una regola.
+    expect(codiceR12).toMatch(
+      /update recipe_ingredients set quantita_lorda = 1\.0000, quantity = 0\.5000 where id = v_riga/,
+    );
+    expect(codiceR12).toMatch(/update recipe_ingredients set quantity = 0\.2500 where id = v_riga/);
+    expect(codiceR12).toMatch(/is distinct from 300\.00/);
+  });
+
+  it("⚠️ e il prodotto viene rimesso com'era dopo la prova", () => {
+    // La verifica gira in una sotto-transazione annullata, ma rimettere il
+    // valore è comunque la forma giusta: la prova non lascia dietro di sé
+    // uno stato che nessun gruppo successivo si aspetta.
+    expect(dopoIlTocco).toMatch(/update ingredients set waste_percentage_default = 25 where id = v_ing/);
   });
 });
