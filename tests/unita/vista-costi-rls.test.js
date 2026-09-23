@@ -122,9 +122,16 @@ describe("🔴 e la migrazione R12, già registrata, non viene toccata", () => {
     expect(r12, "manca R12").toBeTruthy();
     expect(cura, "manca la riparazione").toBeTruthy();
     expect(cura > r12, "la riparazione deve venire dopo R12").toBe(true);
-    // E dev'essere UNA sola migrazione nuova.
-    const dopoR12 = tutte.filter((f) => f > r12);
-    expect(dopoR12, `migrazioni dopo R12: ${dopoR12.join(", ")}`).toEqual([cura]);
+    // ⚠️ E dev'essere la PRIMA dopo R12: la riparazione di un difetto
+    //    introdotto da R12 non si accoda in fondo a lavori successivi, o si
+    //    perde di vista da cosa nasce.
+    // 🔴 QUESTA RIGA PRETENDEVA «e nessun'altra dopo», ed era troppo
+    //    stretta: il giorno dopo e' arrivata la migrazione del cambio
+    //    d'unita' e questa prova e' diventata rossa per un lavoro
+    //    legittimo. *Un controllo che vieta il futuro invece di descrivere
+    //    una relazione grida su chi non ha fatto niente di male.*
+    const dopoR12 = tutte.filter((f) => f > r12).sort();
+    expect(dopoR12[0], `la prima dopo R12 e': ${dopoR12[0]}`).toBe(cura);
   });
 
   it("🔴 e la rete che l'ha trovato non viene indebolita", () => {
