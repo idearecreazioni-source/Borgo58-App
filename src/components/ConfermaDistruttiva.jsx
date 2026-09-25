@@ -13,7 +13,13 @@ import { useState } from "react";
  *      cliente, note «di tasca mia», rimborsi, spese deducibili.
  *   2. **Non chiede conferma** ciò che si rifà in tre secondi o ha una via
  *      di ritorno visibile: righe di ricetta, fasi, video, voci di menu,
- *      colture, impegni.
+ *      colture.
+ *
+ * ⚠️ L'ECCEZIONE DELL'AGENDA — 25/09/2026, decisione di Alessio: gli
+ * impegni stavano nel secondo gruppo, ma in Agenda ci sono anche gli
+ * adempimenti societari, e «Elimina» nella scheda di un impegno ora chiede
+ * conferma. Vale solo per gli impegni: il resto del secondo gruppo non
+ * cambia.
  *
  * ⚠️ E la conferma **dice cosa sparisce**, non «sei sicuro?». Un «sei
  * sicuro?» generico è una porta che si apre premendo due volte invece di

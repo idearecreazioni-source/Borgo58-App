@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
 import SceltaOra from "../../components/SceltaOra";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
@@ -158,10 +159,10 @@ export default function TaskForm() {
     "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
-  const siRipete = Boolean(form.ricorrenza_unita);
-  // Il sollecito si può chiedere solo dove c'è un promemoria: è la stessa
-  // regola del database, detta prima di arrivarci.
-  const haPromemoria = Boolean(form.remind_date);
+  const siRipete = Boolean(form.ricorrenza_unita);
+  // Il sollecito si può chiedere solo dove c'è un promemoria: è la stessa
+  // regola del database, detta prima di arrivarci.
+  const haPromemoria = Boolean(form.remind_date);
   const sollecita = haPromemoria && Boolean(form.sollecito_ogni);
   // Il minimo dipende dall'unità: cinque minuti, oppure uno.
   const minimoSollecito = form.sollecito_unita === "minuti" ? 5 : 1;
@@ -190,7 +191,13 @@ export default function TaskForm() {
   const contenitoreCampo = "min-w-0 max-w-full testo-sala";
   const campoCompatto =
     "block max-w-full rounded-lg border border-b58-charcoal/15 bg-white px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
-  const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.75)" };
+  // 🔴 L'ALTEZZA TORNA QUELLA DEGLI ALTRI CAMPI — 25/09/2026, dal
+  //    censimento visivo. Era 0,75 cm (scelta dell'11/09, «troppo grandi»)
+  //    e accanto ai campi da 0,85 si vedeva: 7,5 mm contro 8,5 nello stesso
+  //    modulo. Resta compatto ciò che l'11/09 aveva reso compatto — la
+  //    larghezza sul contenuto e il testo a 3,2 mm — e l'altezza è la
+  //    stessa di `.tocco-campo`. Una prova la confronta con quella.
+  const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.85)" };
   const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
 
   // 🔴 L'ORA SI SCEGLIE A RUOTA — 20/09/2026, seconda correzione dello
@@ -391,7 +398,7 @@ export default function TaskForm() {
 
         {/* La stella non si può calcolare da nient'altro: è l'unica cosa
             che dice «questo lo voglio davanti agli occhi». */}
-        <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+        <label data-casella-preferito className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
           <input
             type="checkbox"
             checked={form.preferito}
@@ -402,12 +409,18 @@ export default function TaskForm() {
 
         {isTitolare && !origineModulo && (
           <div className="border-t border-b58-charcoal/10 pt-4">
-            <label className="flex items-start gap-2.5 cursor-pointer">
+            {/* 🔴 IL BERSAGLIO È QUELLO DI «PER ME CONTA» — 25/09/2026.
+                Era alto 5,0 mm contro 8,5: è la casella che decide chi
+                vede l'impegno, e un tocco mancato lo cambia. */}
+            <label
+              data-casella-staff
+              className="tocco-campo flex items-center gap-2.5 cursor-pointer"
+            >
               <input
                 type="checkbox"
                 checked={form.visibile_staff}
                 onChange={(e) => setForm((f) => ({ ...f, visibile_staff: e.target.checked }))}
-                className="mt-0.5 shrink-0"
+                className="shrink-0"
               />
               {/* ⚠️ LA SPIEGAZIONE È SPARITA — 10/09/2026, deciso da
                   Alessio. Diceva «l'Agenda è condivisa: di norma un task è
@@ -557,15 +570,17 @@ export default function TaskForm() {
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
+          {/* 🔴 «ELIMINA» CHIEDE CONFERMA — 25/09/2026, decisione di
+              Alessio. Cancellava al primo tocco, e in Agenda ci sono anche
+              gli adempimenti societari. La conferma dice QUALE impegno
+              sparisce: un «sei sicuro?» generico non aggiunge niente. */}
           {isEdit && isTitolare && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={saving}
-              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-            >
-              Elimina
-            </button>
+            <ConfermaDistruttiva
+              cosaSparisce={`l'impegno «${form.title}»`}
+              onConferma={handleDelete}
+              disabilitato={saving}
+              attributi={{ "data-elimina-impegno": "" }}
+            />
           )}
         </div>
       </form>

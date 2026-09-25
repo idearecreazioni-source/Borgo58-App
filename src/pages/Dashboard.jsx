@@ -429,7 +429,7 @@ function RichiesteDeiClienti({ richieste, posta }) {
 // ⚠️ E NESSUN «SEGNA COME LETTO»: un avviso se ne va quando la cosa è
 // risolta. L'unico gesto è «rimanda», che è dichiaratamente un rinvio e
 // non uno spegnimento — e si disfa.
-function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
+export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
   const attivi = avvisi.filter((a) => !a.rimandato_a);
   const rimandati = avvisi.filter((a) => a.rimandato_a);
 
@@ -445,7 +445,15 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
         <ul className="divide-y divide-b58-charcoal/5">
           {attivi.map((a) => (
             <li key={a.chiave} className="py-2 first:pt-0">
-              <div className="flex items-start justify-between gap-3">
+              {/* 🔴 SUL TELEFONO «NON ADESSO» VA SOTTO — 25/09/2026, dal
+                  censimento visivo. Affiancato, a 390 punti prendeva 132
+                  punti e ne lasciava 123 al titolo, che andava su quattro
+                  righe, e la descrizione si tagliava. Da `sm` in su resta
+                  accanto, dove il titolo sta su una riga (misurato a 768). */}
+              <div
+                data-avviso-riga
+                className="flex flex-col items-stretch gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"
+              >
                 <button
                   type="button"
                   onClick={() => onVai(a.dove)}
@@ -462,7 +470,7 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span className="testo-sala text-b58-charcoal font-medium">{a.titolo}</span>
                   </span>
                   {a.dettaglio && (
-                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 truncate">
+                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 sm:truncate">
                       {a.dettaglio}
                     </span>
                   )}
@@ -474,7 +482,7 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                 <button
                   type="button"
                   onClick={() => onRimanda(a.chiave)}
-                  className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
+                  className="tocco-bottone shrink-0 self-start rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
                   title="Non adesso: torna domani"
                 >
                   Non adesso
