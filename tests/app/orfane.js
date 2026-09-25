@@ -54,6 +54,17 @@ export const ORFANE_SEMPRE = {
   tipi_vocali_senza_ramo: "rete: i comandi vocali che il gestionale non sa eseguire",
   vincoli_senza_frase: "rete: i rifiuti che non parlano italiano",
   funzioni_senza_chiamante: "rete: questa stessa — chi non ha un chiamante nel database",
+  // 🔴 AGGIUNTA IL 22/09/2026, e non perché sia cambiata lei: perché è
+  //    cambiato il setaccio. Fino a oggi questa rete leggeva anche i
+  //    COMMENTI di `src/`, e `guardie_vocabolario()` è nominata lì dentro in
+  //    un posto solo — il commento in cima a `src/lib/calcoli/vocabolari.js`
+  //    che spiega dove vive la regola. Bastava quella riga a farla sembrare
+  //    raggiungibile.
+  //    ⚠️ Non era una porta: nessuna schermata la chiama, e a interrogarla è
+  //    `tests/app/vocabolari.test.js`. Cioè è una RETE come le tredici qui
+  //    sopra, ed è sempre stata in quella categoria — solo che nessuno
+  //    poteva vederlo.
+  guardie_vocabolario: "rete: i tre posti dove vive un vocabolario chiuso",
   // ⚠️ AGGIUNTA IL 05/09/2026 con la correzione RLS delle viste economiche.
   //    Non e' un debito e non e' una porta che manca: e' una RETE, come le
   //    dieci qui sopra. La interroga `tests/app/permessi.test.js` col token
