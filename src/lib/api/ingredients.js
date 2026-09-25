@@ -105,7 +105,13 @@ export async function createIngredient(payload) {
     p_allergens: payload.allergens ?? [],
     p_seasonality: payload.seasonality ?? [],
     p_storage_type: payload.storage_type ?? null,
-    p_waste_percentage_default: payload.waste_percentage_default ?? 0,
+    // 🔴 `?? null`, mai `?? 0` — e non è pignoleria: fino al 23/09 qui
+    //    c'era uno zero, e trasformava «non lo sa ancora nessuno» in «di
+    //    questo prodotto non si butta niente». Due risposte diverse, e la
+    //    seconda nessuno l'aveva data. ⚠️ E morde solo in CREAZIONE: la
+    //    modifica scrive dritto in tabella, quindi le due porte scrivevano
+    //    due cose diverse per lo stesso campo lasciato vuoto.
+    p_waste_percentage_default: payload.waste_percentage_default ?? null,
     // ⚠️ Il PARAMETRO della funzione resta col nome vecchio: rinominarlo
     // romperebbe le chiamate per nome del corridoio. A cambiare e la
     // COLONNA, che dal 23/08/2026 si chiama temperatura_attesa perche
