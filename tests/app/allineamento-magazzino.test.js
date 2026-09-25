@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, mettiDaParteIMiei, primaEntita } from "./aiuto";
+import { listIngredients } from "../../src/lib/api/ingredients";
 import {
   allineaGiacenza,
   daAllineare,
@@ -116,6 +117,8 @@ describe("si dichiara quanto c'è, e la differenza la calcola il gestionale", ()
 
   afterAll(async () => {
     await pulisci();
+    // Rete di sicurezza se l'ultima prova non è arrivata a farlo.
+    await mettiDaParteIMiei(titolare, MARCA);
     await supabase.auth.signOut({ scope: "local" });
     await titolare.auth.signOut({ scope: "local" });
     await staff.auth.signOut({ scope: "local" });
@@ -241,5 +244,22 @@ describe("si dichiara quanto c'è, e la differenza la calcola il gestionale", ()
     expect(Number(mia.atteso)).toBe(6);
     // ⚠️ Ha appena avuto un allineamento: il campo lo deve dire.
     expect(mia.ultimo_allineamento).toBeTruthy();
+  });
+
+  // 🔴 A FINE GIRO IL PRODOTTO ESCE DAGLI ELENCHI — 26/09/2026. Il marchio
+  //    cambia a ogni esecuzione, quindi «si riusa» non riusava niente: ne
+  //    nasceva uno nuovo a ogni giro, attivo. Misurato: 417 sul progetto di
+  //    prova. Messo da parte, non compare più in nessun elenco di lavoro.
+  it("🔴 a fine giro il prodotto della prova esce dagli elenchi", async () => {
+    const tolti = await mettiDaParteIMiei(titolare, MARCA);
+    expect(tolti, "il prodotto di questo giro non era uno").toBe(1);
+    const { data: attivi } = await titolare
+      .from("ingredients").select("id").like("name", `${MARCA}%`).eq("active", true);
+    expect(attivi ?? [], "un prodotto di prova è rimasto attivo").toHaveLength(0);
+    const elenco = await listIngredients({ alimentare: null, includiPreparazioni: true });
+    expect(
+      elenco.filter((i) => i.name.startsWith(MARCA)),
+      "un prodotto di prova è ancora negli elenchi di lavoro",
+    ).toHaveLength(0);
   });
 });

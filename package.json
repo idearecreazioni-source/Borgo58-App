@@ -48,7 +48,8 @@
     "peso": "node scripts/peso-pacchetto.mjs",
     "copertura": "node scripts/copertura.mjs",
     "worktree": "node scripts/worktree.mjs",
-    "residui": "node scripts/residui-di-prova.mjs"
+    "residui": "node scripts/residui-di-prova.mjs",
+    "pulizia:prodotti-prova": "node scripts/pulizia-prodotti-prova.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

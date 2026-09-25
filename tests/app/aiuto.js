@@ -213,6 +213,39 @@ export async function righeDaTogliere(client, tabella, colonna, base) {
   return [...new Set([...(miei ?? []), ...(vecchie ?? [])].map((r) => r.id))];
 }
 
+/**
+ * Mette da parte i prodotti di magazzino creati da QUESTO giro (il nome
+ * comincia col marchio del giro) e dice quanti erano ancora attivi.
+ *
+ * 🔴 PERCHÉ — 26/09/2026. Un prodotto dal gestionale non si cancella: ha
+ *    scarichi e rettifiche che lo nominano. Due prove ne creavano uno nuovo
+ *    a ogni giro e lo lasciavano ATTIVO: misurato sul progetto di prova,
+ *    1255 prodotti «TEST-AUTO» su 1388, e gli elenchi — tagliati a mille —
+ *    non mostravano più undici prodotti veri. Messo da parte, un prodotto
+ *    esce da tutti gli elenchi di lavoro (Ricettario, Magazzino, Carico,
+ *    Posta, Schede) senza staccarsi da niente: è la strada normale del
+ *    gestionale, `metti_da_parte_ingrediente`, non una porta per le prove.
+ *
+ * ⚠️ Tocca SOLO le righe di questo giro: il filtro è il marchio completo,
+ *    quindi un altro giro — o un residuo vecchio — resta dov'è.
+ */
+export async function mettiDaParteIMiei(client, nomeMarcato) {
+  if (!nomeMarcato.includes(`#${CORSA}`)) {
+    throw new Error(`mettiDaParteIMiei: «${nomeMarcato}» non porta il marchio di questo giro`);
+  }
+  const { data, error } = await client
+    .from("ingredients")
+    .select("id")
+    .like("name", `${nomeMarcato}%`)
+    .eq("active", true);
+  if (error) throw error;
+  for (const { id } of data ?? []) {
+    const r = await client.rpc("metti_da_parte_ingrediente", { p_id: id, p_attivo: false });
+    if (r.error) throw r.error;
+  }
+  return (data ?? []).length;
+}
+
 export function clientAnonimo() {
   if (!URL || !ANON) {
     throw new Error(
