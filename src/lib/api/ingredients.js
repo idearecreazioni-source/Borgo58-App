@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { leggiTutte } from "../leggiTutte";
 import { eseguiOperazione } from "../operazioni";
 
 const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_entity_id(id, name)";
@@ -51,30 +52,36 @@ export async function listIngredients({
   includiNonAttivi,
   alimentare = true,
 } = {}) {
-  let query = supabase
-    .from("ingredients")
-    .select(SELECT)
-    .order("name");
+  // 🔴 A PAGINE — 26/09/2026: oltre le mille righe il progetto taglia in
+  //    silenzio (vedi `leggiTutte`). L'`id` in coda all'ordine non cambia
+  //    l'ordine per nome: decide solo fra due nomi uguali, così fra una
+  //    pagina e l'altra nessuna riga si ripete o sparisce.
+  const crea = () => {
+    let query = supabase
+      .from("ingredients")
+      .select(SELECT, { count: "exact" })
+      .order("name")
+      .order("id");
 
-  // ⚠️ Di norma si vedono solo quelli in elenco. Ma senza un modo di
-  // guardare quelli messi da parte non si potrebbero piu' RIMETTERE — e
-  // un gesto che non si puo' disfare non e' «mettere da parte», e'
-  // cancellare con un altro nome.
-  if (!includiNonAttivi) query = query.eq("active", true);
+    // ⚠️ Di norma si vedono solo quelli in elenco. Ma senza un modo di
+    // guardare quelli messi da parte non si potrebbero piu' RIMETTERE — e
+    // un gesto che non si puo' disfare non e' «mettere da parte», e'
+    // cancellare con un altro nome.
+    if (!includiNonAttivi) query = query.eq("active", true);
 
-  if (!includiPreparazioni) query = query.is("preparazione_id", null);
+    if (!includiPreparazioni) query = query.is("preparazione_id", null);
 
-  // `null` vuol dire «tutti e due»: è il solo caso in cui non si filtra.
-  if (alimentare !== null && alimentare !== undefined) {
-    query = query.eq("alimentare", alimentare);
-  }
+    // `null` vuol dire «tutti e due»: è il solo caso in cui non si filtra.
+    if (alimentare !== null && alimentare !== undefined) {
+      query = query.eq("alimentare", alimentare);
+    }
 
-  if (search) query = query.ilike("name", `%${search}%`);
-  if (category) query = query.eq("category", category);
+    if (search) query = query.ilike("name", `%${search}%`);
+    if (category) query = query.eq("category", category);
+    return query;
+  };
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
+  return leggiTutte(crea);
 }
 
 export async function getIngredient(id) {
