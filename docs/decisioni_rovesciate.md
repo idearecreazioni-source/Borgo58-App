@@ -151,8 +151,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
 | 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
+| 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 
-⚠️ **Righe: 95.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 96.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3442,3 +3443,56 @@ quando questa sezione è stata scritta.
    ⚠️ **Il prezzo, dichiarato**: due colonne `e_investimento` invece di una, e
    due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
    una spesa può vivere, e non si paga con una terza tabella.
+
+## 95 · 22/09/2026 — «lo scarto del prodotto vale per ogni riga, a ogni calcolo»
+
+1. **Cosa era stato deciso e quando.** Il **13/08/2026**, con le schede dei
+   prodotti: `ingredients.waste_percentage_default` — *«la percentuale di
+   scarto proposta: è quanto di ciò che si compra finisce nel bidone, e serve
+   al costo del piatto»*. E il modo in cui è stata costruita è il punto: non
+   precompilava niente, **si sostituiva al volo** dentro il calcolo, con
+   `coalesce(riga.waste_percentage, prodotto.default, 0)`.
+
+2. **La ragione di allora.** Era giusta e resta scritta: *«con lo scarto a
+   zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
+   l'errore è enorme»*. Una riga di ricetta a cui nessuno aveva detto lo
+   scarto doveva comunque costare il vero, e l'unico numero disponibile era
+   quello del prodotto.
+
+3. **Cosa si decide adesso.** Decisione di Alessio del **22/09/2026**: il
+   valore standard **resta** sulla scheda del prodotto — confermando la sua
+   decisione del 25/08 contro una mia proposta che lo toglieva — ma **serve
+   solo a precompilare una volta** lordo e netto quando **nasce** una riga.
+   Dopo, la riga è **autonoma e autorevole**: nessuna eredità viva.
+   La garanzia non è una promessa ma un vincolo — `recipe_ingredients.
+   waste_percentage` diventa `not null`, quindi il secondo argomento di quei
+   `coalesce` **non è più raggiungibile** — e i **cinque** punti che lo
+   nominavano sono riscritti dal loro corpo vivo.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché quel numero non
+   arrivava solo dove mancava: arrivava SEMPRE, anche dove qualcuno aveva già
+   scelto.** Misurabile: cambiando lo scarto sulla scheda di un prodotto si
+   spostava il food cost di **ogni** ricetta che lo usa, comprese quelle
+   scritte mesi prima da chi quel numero non l'aveva scelto — e nessun
+   errore lo diceva, perché il numero nuovo è plausibile quanto il vecchio.
+   ⚠️ *Un valore che continua a valere per righe già scritte non è un valore
+   standard: è una decisione presa al posto di chi le ha scritte.*
+   ⚠️ **E la ragione di allora è servita intera**: la riga senza scarto non
+   resta scoperta — la sanatoria le materializza lo scarto che aveva davvero
+   in quel momento, e la precompilazione continua a darlo a chi ne scrive una
+   nuova. Cambia **quando** il numero arriva, non **se**.
+   ⚠️ **Il prezzo, dichiarato**: correggere lo scarto standard di un prodotto
+   non sistema più da sé le ricette già scritte. Si paga volentieri, perché
+   il verso opposto — sistemarle tutte in silenzio — è il difetto.
+
+5. **E una cosa che NON è stata rovesciata, scritta perché non si perda.** La
+   prima stesura di questa proposta **toglieva il campo** dalla scheda del
+   prodotto, rovesciando la decisione di Alessio del 25/08 — *«il campo %
+   scarto standard RESTA: serve per l'ingrediente che va solo pulito, senza
+   una preparazione da cui ricavare la resa»*. **Non confermata**: il caso
+   del carciofo è vero, e senza quel campo lo stesso numero andrebbe
+   riscritto da zero su ogni ricetta che usa quel prodotto.
+   ⚠️ Vale la pena notare **come** era stato fatto: dentro un commento di
+   migrazione, con la ragione scritta bene. *Un rovesciamento ben
+   argomentato resta un rovesciamento, e va posto a chi ha preso la
+   decisione invece che eseguito.*

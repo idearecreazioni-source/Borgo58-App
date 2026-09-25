@@ -53,10 +53,29 @@ import {
 //    inventarli.
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import { comeSiLeggeLoStandard, resaDaScarto, scartoDaResa } from "../../lib/calcoli/resa";
 import { meseAcceso, stagionalitaDopoIlTocco } from "../../lib/calcoli/stagionalita";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 const DA_VOCE = { nome: "name", categoria: "category", unita: "unit" };
+
+// ⚠️ Le due frasi che accompagnano la resa standard. Stanno qui e non dentro
+//    il modulo perche' sono pure — e perche' una prova possa chiederle senza
+//    montare la schermata.
+const spiegaResaStandard = (resa, unita) => {
+  const scarto = scartoDaResa(resa);
+  return scarto === null ? null : comeSiLeggeLoStandard(scarto, unita);
+};
+
+// ⚠️ Il rifiuto compare solo quando qualcosa e' stato scritto: un campo
+//    vuoto non e' un errore, e una riga rossa su un campo facoltativo mai
+//    toccato si impara a ignorare.
+const rifiutoResaStandard = (resa) => {
+  const testo = String(resa ?? "").trim();
+  if (testo === "") return null;
+  if (scartoDaResa(testo) !== null) return null;
+  return "La resa si scrive fra 0 e 100: è quanto ne resta ogni cento che ne prendi. Da un chilo non ne escono due — se una cosa cresce cuocendo, quella è la quantità della ricetta, non una resa.";
+};
 
 const emptyForm = {
   name: "",
@@ -68,7 +87,9 @@ const emptyForm = {
   allergens: [],
   seasonality: [],
   storage_type: "",
-  waste_percentage_default: "0",
+  // ⚠️ VUOTO, non "0": zero vorrebbe dire «non si butta niente», che e'
+  //    una risposta. Vuoto vuol dire che nessuno l'ha ancora detto.
+  resa_standard: "",
   stock_minimum_threshold: "",
   temperatura_attesa: "",
   haccp_notes: "",
@@ -339,7 +360,12 @@ export default function IngredienteForm() {
             allergens: ing.allergens ?? [],
             seasonality: ing.seasonality ?? [],
             storage_type: ing.storage_type ?? "",
-            waste_percentage_default: ing.waste_percentage_default ?? "0",
+            // Sotto c'e' uno scarto, sopra si legge una resa: la
+            // conversione vive in un posto solo.
+            resa_standard:
+              resaDaScarto(ing.waste_percentage_default) === null
+                ? ""
+                : String(resaDaScarto(ing.waste_percentage_default)),
             stock_minimum_threshold: ing.stock_minimum_threshold ?? "",
             temperatura_attesa: ing.temperatura_attesa ?? "",
             haccp_notes: ing.haccp_notes ?? "",
@@ -478,7 +504,12 @@ export default function IngredienteForm() {
         allergens: form.allergens,
         seasonality: form.seasonality,
         storage_type: form.storage_type || null,
-        waste_percentage_default: Number(form.waste_percentage_default) || 0,
+        // ⚠️ `null` quando il campo e' vuoto, mai zero: il database
+        //    distingue «non lo sa nessuno» da «non si butta niente», e
+        //    un valore precompilato a zero farebbe nascere ogni riga di
+        //    ricetta col lordo uguale al netto senza che nessuno
+        //    l'abbia deciso.
+        waste_percentage_default: scartoDaResa(form.resa_standard),
         // Vuoto e zero sono la stessa cosa qui: nessuna soglia. Zero
         // sarebbe una soglia che non scatta mai, e il database la rifiuta.
         stock_minimum_threshold:
@@ -1199,25 +1230,61 @@ export default function IngredienteForm() {
               ))}
             </select>
           </div>
-          <div className={eAlimento ? undefined : "hidden"}>
-            {/* 🔴 LO SCARTO NON LO PROPONE PIÙ NESSUNO (23/08/2026,
-                decisione di Alessio): il dato vero emerge dalla
-                preparazione — un chilo di alici che diventa un chilo di
-                sugo — e lo stesso ingrediente ha rese diverse a seconda di
-                dove finisce. Un numero inventato entra nel costo di ogni
-                piatto e nessuno lo verifica mai. */}
-            <label className={labelClass}>% scarto standard{segnoMacchina("scarto")}</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={form.waste_percentage_default}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, waste_percentage_default: e.target.value }))
-              }
-              className={inputClass}
-            />
+          {/* 🔴 LA RESA STANDARD DEL PRODOTTO — R12, 22/09/2026.
+
+              Era «% scarto standard», e faceva due mestieri in uno. Il
+              primo resta ed è quello deciso da Alessio il 25/08:
+              *serve per l'ingrediente che va solo pulito, senza una
+              preparazione da cui ricavare la resa* — il carciofo.
+
+              🔴 IL SECONDO SE N'È ANDATO, ed è la decisione del 22/09:
+              questo numero **precompila una volta** i due della riga di
+              ricetta, e poi tace. Prima si sostituiva al volo a ogni
+              calcolo, quindi cambiarlo qui spostava il food cost di ogni
+              ricetta che usa il prodotto — comprese quelle scritte mesi
+              prima da chi quel numero non l'aveva scelto. *Un valore che
+              continua a valere per righe già scritte non è un valore
+              standard: è una decisione presa al posto di chi le ha
+              scritte.*
+
+              ⚠️ E SI SCRIVE COME RESA, non come scarto: «da 1 kg ne
+              restano 300 g» si capisce, «scarto 233%» no — ed è lo stesso
+              numero. Sotto, nel database, resta lo scarto, perché è la
+              forma che i conti usano da sempre; la conversione vive in un
+              posto solo (`src/lib/calcoli/resa.js`).
+
+              ⚠️ VUOTO NON È ZERO: vuoto vuol dire che per questo prodotto
+              non lo sa ancora nessuno, e allora la riga di ricetta non
+              viene precompilata — si scrivono i due numeri a mano, che è
+              il caso normale. Zero vorrebbe dire «non si butta niente»,
+              che è una risposta. */}
+          <div>
+            <label className={labelClass}>Resa standard (facoltativa)</label>
+            <div className="flex items-center gap-2">
+              <span className="testo-sala text-b58-charcoal-soft">da 1 {form.unit || "unità"} ne restano</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                data-prova="resa-standard"
+                value={form.resa_standard}
+                onChange={(e) => setForm((f) => ({ ...f, resa_standard: e.target.value }))}
+                className={inputClass + " w-28"}
+                placeholder="—"
+              />
+              <span className="testo-sala text-b58-charcoal-soft">%</span>
+            </div>
+            {spiegaResaStandard(form.resa_standard, form.unit) && (
+              <p data-prova="resa-standard-esempio" className="mt-1 testo-sala text-b58-charcoal-soft">
+                {spiegaResaStandard(form.resa_standard, form.unit)}
+              </p>
+            )}
+            {rifiutoResaStandard(form.resa_standard) && (
+              <p data-prova="resa-standard-rifiuto" className="mt-1 testo-sala text-b58-terracotta">
+                {rifiutoResaStandard(form.resa_standard)}
+              </p>
+            )}
           </div>
           {/* La scorta minima è quello che fa nascere una riga nella lista
               della spesa. Volutamente VUOTA di partenza e mai proposta dal

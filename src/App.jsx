@@ -76,6 +76,7 @@ import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import Previsioni from "./pages/fiscale/Previsioni";
 import PrevisioneDettaglio from "./pages/fiscale/PrevisioneDettaglio";
 import AndamentoMensile from "./pages/fiscale/AndamentoMensile";
+import ChiusuraAnnuale from "./pages/fiscale/ChiusuraAnnuale";
 import PrevisioneForm from "./pages/fiscale/PrevisioneForm";
 import PersonaleHome from "./pages/personale/PersonaleHome";
 import DipendenteDetail from "./pages/personale/DipendenteDetail";
@@ -306,6 +307,7 @@ function AppRoutes() {
         <Route path="/fiscale/previsioni/:id/modifica" element={<RequireTitolare><PrevisioneForm /></RequireTitolare>} />
         <Route path="/fiscale/previsioni/:id" element={<RequireTitolare><PrevisioneDettaglio /></RequireTitolare>} />
         <Route path="/fiscale/andamento" element={<RequireTitolare><AndamentoMensile /></RequireTitolare>} />
+        <Route path="/fiscale/chiusura-anno" element={<RequireTitolare><ChiusuraAnnuale /></RequireTitolare>} />
 
         {/* Personale & Buste Paga (solo titolare — §4 mod. 11) */}
         <Route path="/personale" element={<RequireTitolare><PersonaleHome /></RequireTitolare>} />
