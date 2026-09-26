@@ -204,11 +204,13 @@ export default function SpesaSpicciola() {
       </div>
       {/* ⚠️ Una riga sola, e dice la cosa che serve sapere: che questa non
           è l'altra lista. Senza, il primo dubbio di chiunque sarà «e
-          allora la lista della spesa cos'è?». */}
+          allora la lista della spesa cos'è?».
+          ⚠️ Il collegamento porta `tocco-inline` (26/09/2026): nudo era
+          alto 3,8 mm sul telefono, sotto i 5,3 provati col dito. */}
       <p className="mb-4 testo-sala text-stone-600">
         Quello che compri di persona al supermercato. Non c&apos;entra col magazzino: non tocca le
         giacenze e non diventa un ordine. Quella dei fornitori è la{" "}
-        <Link to="/magazzino/lista-spesa" className="underline hover:text-stone-900">
+        <Link to="/magazzino/lista-spesa" data-collegamento-lista className="tocco-inline underline hover:text-stone-900">
           lista della spesa
         </Link>
         .

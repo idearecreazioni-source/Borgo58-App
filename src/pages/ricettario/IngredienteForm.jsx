@@ -1094,10 +1094,13 @@ export default function IngredienteForm() {
               serve — un materiale si compra da qualcuno come tutto il resto,
               ed e stato detto espressamente di lasciarlo. */}
           <label className={eAlimento ? labelClass : "hidden"}>Provenienza</label>
+          {/* ⚠️ 26/09/2026: quale delle due è scelta si vedeva solo dal colore;
+              `aria-pressed` lo dice anche a chi non vede lo schermo. */}
           <div className={eAlimento ? "flex gap-2 mb-3" : "hidden"}>
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "fornitore_esterno" }))}
+              aria-pressed={form.source_type === "fornitore_esterno"}
               className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "fornitore_esterno"
                   ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
@@ -1109,6 +1112,7 @@ export default function IngredienteForm() {
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, source_type: "produzione_interna" }))}
+              aria-pressed={form.source_type === "produzione_interna"}
               className={`flex-1 tocco-campo rounded-lg border px-3 py-2 testo-sala-grande transition-colors ${
                 form.source_type === "produzione_interna"
                   ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"

@@ -159,13 +159,26 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
 //    la stessa altezza di riga del titolo; il quadratino (0,6 cm) salito di
 //    mezzo millimetro, così il suo centro cade sul centro della prima riga
 //    (una riga del titolo è alta 0,5 cm). La prova visiva lo misura.
-function Spunta({ onFatto }) {
+//
+//    🔴 26/09/2026, dal censimento a 360 punti: l'etichetta era larga
+//    quanto il quadratino (0,6 cm) — il gesto più frequente della
+//    schermata sotto la misura dei pulsanti — e la casella non aveva un
+//    nome: il `title` sta sull'etichetta, e chi non vede lo schermo sentiva
+//    «casella» e basta. Ora il bersaglio è largo 0,85 cm (il segno resta
+//    dov'era, in alto a sinistra) e il nome dice quale impegno si chiude.
+function Spunta({ onFatto, titolo }) {
   return (
-    <label className="tocco-azione inline-flex shrink-0 items-start" title="Fatto">
+    <label
+      data-spunta-impegno
+      className="tocco-azione inline-flex shrink-0 items-start"
+      style={{ minWidth: "calc(var(--pxcm) * 0.85)" }}
+      title="Fatto"
+    >
       <input
         type="checkbox"
         checked={false}
         onChange={onFatto}
+        aria-label={`Segna fatto: ${titolo}`}
         className="spunta-grande"
         style={{ marginTop: "calc(var(--pxcm) * -0.05)" }}
       />
@@ -224,7 +237,7 @@ function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, on
   const campi = campiImpegno(t).filter((c) => c.valore || (c.chiave === "scadenza" && scadenzaSempre));
   return (
     <div className="flex items-start gap-3">
-      <Spunta onFatto={onFatto} />
+      <Spunta onFatto={onFatto} titolo={t.title} />
       <div className="min-w-0 flex-1">
         <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words">
           {t.title}
@@ -623,7 +636,7 @@ export default function AgendaList() {
                             // spingeva a destra solo lui, e i campi sotto
                             // partivano 34,7 punti più a sinistra. La prova
                             // visiva che lo misura è `npm run test:visive`.
-                            inizio={(t) => <Spunta onFatto={() => fatto(t)} />}
+                            inizio={(t) => <Spunta onFatto={() => fatto(t)} titolo={t.title} />}
                             titolo={(t) => (
                               <span className="flex items-start gap-3">
                                 {/* 🔴 IL TITOLO NON È PIÙ UN PULSANTE —

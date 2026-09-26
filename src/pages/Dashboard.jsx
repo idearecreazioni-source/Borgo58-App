@@ -10,7 +10,7 @@ import { daComprare } from "../lib/calcoli/spesaSpicciola";
 import AppuntiInDashboard from "../components/AppuntiInDashboard";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
-import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
+import { TASK_CATEGORIES, TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
 import Didascalia from "../components/Didascalia";
 
@@ -175,7 +175,15 @@ export default function Dashboard() {
           avessi fatto niente. La regola è documentata accanto a quella
           che scavalca. */
     <div className="max-w-3xl contenuto-affiancato mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* 🔴 VA A CAPO — 26/09/2026, dal censimento a 360 punti: il saluto e
+          «Agenda completa →» stavano su una riga che non poteva andare a
+          capo, e il collegamento usciva di 7 punti facendo scorrere di lato
+          tutta la pagina (22 punti). Ora, se non ci stanno, il collegamento
+          scende sotto il saluto; dove ci stanno resta accanto. */}
+      <div
+        data-intestazione-dashboard
+        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6"
+      >
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
             {isStaff ? "Benvenuto." : "Bentornato, Alessio."}
@@ -616,8 +624,14 @@ function TaskGroup({ tasks, onComplete }) {
           ⚠️ E la casella e il titolo fanno due cose OPPOSTE — una chiude
           l'impegno, l'altro lo apre — quindi la distanza fra loro è quella
           dei gesti che non si possono scambiare. */}
+      {/* 🔴 SUL TELEFONO LA PRIORITÀ VA SOTTO IL TITOLO — 26/09/2026, dal
+          censimento a 360 punti: casella, titolo ed etichetta in fila
+          lasciavano al titolo 125 punti, e andava su quattro o cinque
+          righe. Da `sm` in su resta tutto sulla stessa riga.
+          ⚠️ E la categoria si legge a parole: compariva il codice
+          («fisco_scadenze»), che è la chiave del database, non un nome. */}
       {tasks.map((t) => (
-        <div key={t.id} className="tocco-riga flex items-center gap-4 px-4 py-2">
+        <div key={t.id} data-riga-impegno className="tocco-riga flex items-center gap-4 px-4 py-2">
           <input
             type="checkbox"
             checked={false}
@@ -625,20 +639,28 @@ function TaskGroup({ tasks, onComplete }) {
             className="tocco-bottone shrink-0"
             aria-label={`Segna fatto: ${t.title}`}
           />
-          <Link
-            to={`/agenda/${t.id}`}
-            className="tocco-riga flex items-center flex-1 min-w-0 testo-sala text-b58-charcoal"
-          >
-            <span className="min-w-0">
-              {t.title}
-              {t.category && <span className="text-b58-charcoal-soft ml-2">· {t.category}</span>}
+          <div className="flex flex-1 min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              to={`/agenda/${t.id}`}
+              data-titolo-impegno
+              className="tocco-riga flex items-center w-full sm:w-auto sm:flex-1 min-w-0 testo-sala text-b58-charcoal"
+            >
+              <span className="min-w-0">
+                {t.title}
+                {t.category && (
+                  <span className="text-b58-charcoal-soft ml-2">
+                    · {labelFor(TASK_CATEGORIES, t.category)}
+                  </span>
+                )}
+              </span>
+            </Link>
+            <span
+              data-priorita-impegno
+              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+            >
+              {labelFor(TASK_PRIORITIES, t.priority)}
             </span>
-          </Link>
-          <span
-            className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
-          >
-            {labelFor(TASK_PRIORITIES, t.priority)}
-          </span>
+          </div>
         </div>
       ))}
     </div>

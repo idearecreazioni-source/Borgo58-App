@@ -693,7 +693,13 @@ export default function PrimaNota() {
           </div>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-4">
+            {/* 🔴 QUESTA FILA VA A CAPO — 26/09/2026, dal censimento a 360
+                punti: casella dell'investimento e nota stavano su una riga
+                che non poteva andare a capo, e la nota si stringeva fino a
+                4,3 mm — un campo in cui non si riesce a scrivere. Sul
+                telefono la nota scende e prende la riga intera; da `sm` in
+                su resta larga 12 rem, come prima. */}
+            <div data-riga-nota className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
               {form.direction === "entrata" && (
                 <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
@@ -739,7 +745,8 @@ export default function PrimaNota() {
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
                 placeholder="Nota (facoltativa)"
-                className={`${inputClass} w-48`}
+                data-campo-nota
+                className={`${inputClass} min-w-0 sm:w-48`}
               />
             </div>
             <button

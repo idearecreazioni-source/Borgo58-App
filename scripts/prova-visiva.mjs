@@ -103,10 +103,17 @@ const PEZZI_RIPETE = 3;
 // forma: in punti, a 64 punti per centimetro diventerebbero la metà.
 const VUOTO_MASSIMO_CM = 0.35; // fra titolo, scadenza e «rimanda»
 const STELLA_DAL_BORDO_CM = 0.15; // oltre il margine della scheda
-const CASELLA_ALTA_CM = 0.8;
+// 🔴 IL TETTO DELLE CASELLE È 0,85 DAL 25/09/2026 — la proposta #128 ha
+//    rovesciato la variante compatta dell'11/09 (0,75 cm): i campi data e
+//    «si ripete» sono alti quanto gli altri campi del modulo (8,5 mm).
+//    Questa prova non gira su GitHub, e col tetto a 0,8 era rossa su
+//    `slave` da quell'unione senza che nessuno lo vedesse — trovato il
+//    26/09 lanciandola. Resta un TETTO: una casella più alta di un campo
+//    normale è ancora un difetto, e lo si vede qui.
+const CASELLA_ALTA_CM = 0.85;
 // 🔴 LA RUOTA DELL'ORA SI GIUDICA CON LA SUA REGOLA — 21/09/2026, misurato.
-// Le due caselle di data della scheda sono alte 7,5 mm: e' la variante
-// compatta decisa l'11/09 per il telefono, e il tetto di 8 mm la sorveglia.
+// Le due caselle di data della scheda erano alte 7,5 mm: era la variante
+// compatta decisa l'11/09 per il telefono (dal 25/09 sono a 8,5, vedi sopra).
 // La ruota non e' un campo in cui si scrive, e' un PULSANTE che apre un
 // pannello, quindi porta il pavimento del tocco di questo progetto —
 // `tocco-campo`, 8,5 mm. Misurata: 8,5 esatti, cioe' il pavimento, non un
