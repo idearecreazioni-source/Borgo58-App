@@ -21,6 +21,73 @@ import path from "node:path";
 
 export const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// =====================================================================
+// NESSUNA RICHIESTA ESCE DAL COMPUTER — 27/09/2026
+// =====================================================================
+// 🔴 PERCHÉ. Le prove visive montano schermate vere con dati finti. Se un
+//    alias smette di sostituire il collegamento al database, la schermata
+//    torna a usare quello VERO — ed è successo il 26/09, costruendo la
+//    prova delle schermate: letture da anonimo, respinte, ma partite.
+//
+// ⚠️ SI FERMA TUTTO CIÒ CHE NON VA AL SERVER LOCALE DELLA PROVA, non solo
+//    Supabase: in CI non c'è `.env`, e il collegamento vero punterebbe
+//    all'indirizzo di ripiego (`…invalid`), che una regola su `supabase.co`
+//    non riconoscerebbe. Il criterio giusto è l'inverso: è ammesso solo il
+//    server Vite su questa macchina.
+//
+// ⚠️ Si carica PRIMA che la pagina parta (`Page.addScriptToEvaluateOnNewDocument`),
+//    quindi ogni copia di `fetch` presa dai moduli è già quella controllata.
+//    Il tentativo non parte e si CONTA: una prova che ne trova è rossa.
+export const NIENTE_RETE = `(() => {
+  window.__tentativiDiRete = 0;
+  window.__richiesteFermate = [];
+  const ammesso = (u) => {
+    try {
+      const x = new URL(String(u), location.href);
+      if (x.protocol === "data:" || x.protocol === "blob:") return true;
+      return x.origin === location.origin || /^(127\\.0\\.0\\.1|localhost|\\[::1\\])$/.test(x.hostname);
+    } catch { return false; }
+  };
+  const ferma = (u) => {
+    window.__tentativiDiRete += 1;
+    try { window.__richiesteFermate.push(new URL(String(u), location.href).host); } catch { window.__richiesteFermate.push("?"); }
+  };
+  const fetchVero = window.fetch.bind(window);
+  window.fetch = (risorsa, opzioni) => {
+    const u = typeof risorsa === "string" || risorsa instanceof URL ? risorsa : risorsa?.url;
+    if (!ammesso(u)) { ferma(u); return Promise.reject(new TypeError("rete vietata nella prova visiva")); }
+    return fetchVero(risorsa, opzioni);
+  };
+  const WSVero = window.WebSocket;
+  window.WebSocket = function (u, p) {
+    if (!ammesso(u)) { ferma(u); throw new Error("rete vietata nella prova visiva"); }
+    return new WSVero(u, p);
+  };
+  window.WebSocket.prototype = WSVero.prototype;
+  const apriVero = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (metodo, u, ...resto) {
+    if (!ammesso(u)) { ferma(u); throw new Error("rete vietata nella prova visiva"); }
+    return apriVero.call(this, metodo, u, ...resto);
+  };
+  if (navigator.sendBeacon) {
+    const beaconVero = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = (u, d) => { if (!ammesso(u)) { ferma(u); return false; } return beaconVero(u, d); };
+  }
+})();`;
+
+/** Quante richieste la pagina ha provato a mandare fuori (-1: blocco assente). */
+export const TENTATIVI_DI_RETE = `({ quanti: window.__tentativiDiRete ?? -1, dove: [...new Set(window.__richiesteFermate ?? [])] })`;
+
+/**
+ * Una cartella d'ambiente VUOTA per il server Vite delle prove: senza, in
+ * locale Vite leggerebbe `.env` e la schermata conoscerebbe l'indirizzo e
+ * la chiave del database vero; in CI no. Con questa, le due situazioni
+ * sono identiche — nessun indirizzo, nessuna chiave.
+ */
+export function cartellaSenzaAmbiente() {
+  return mkdtempSync(path.join(os.tmpdir(), "b58-visiva-senza-env-"));
+}
+
 function doveChrome() {
   const candidati = [
     process.env.CHROME,
@@ -39,7 +106,12 @@ function doveChrome() {
   return trovato;
 }
 
-export async function avviaChrome() {
+/**
+ * `senzaRete`: Chrome non risolve nessun nome tranne il server locale. Lo
+ * accendono le prove visive (dati finti); NON `misura-telefono.mjs`, che
+ * deve raggiungere il progetto di prova.
+ */
+export async function avviaChrome({ senzaRete = false } = {}) {
   const porta = 9400 + Math.floor(Math.random() * 400);
   const profilo = mkdtempSync(path.join(os.tmpdir(), "b58-visiva-"));
   const chrome = spawn(
@@ -50,6 +122,12 @@ export async function avviaChrome() {
       "--no-first-run",
       "--no-default-browser-check",
       "--hide-scrollbars",
+      // 🔴 LA SECONDA BARRIERA — 27/09/2026: nessun nome si risolve tranne
+      //    il server locale. Se un giorno il blocco dentro la pagina
+      //    (`NIENTE_RETE`) mancasse, una richiesta verso Supabase — o verso
+      //    qualunque altro server — non troverebbe l'indirizzo e non
+      //    partirebbe comunque. Le prove visive non hanno bisogno di rete.
+      ...(senzaRete ? ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1"] : []),
       `--remote-debugging-port=${porta}`,
       `--user-data-dir=${profilo}`,
       "about:blank",

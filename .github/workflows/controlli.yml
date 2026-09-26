@@ -178,6 +178,60 @@ jobs:
         run: npm run peso
 
   # -------------------------------------------------------------------
+  # 1-BIS. LE PROVE VISIVE IN CHROME — NESSUN DATABASE
+  # -------------------------------------------------------------------
+  # 🔴 PERCHÉ — 27/09/2026. Le prove di schermata girano senza impaginazione
+  #    (jsdom): una riga che sul telefono schiaccia il titolo, un bersaglio
+  #    da 5 mm o una pagina che scorre di lato lì passano identici.
+  #    `npm run test:visive` monta le schermate VERE con dati finti e le
+  #    misura in un Chrome senza schermo, a sei larghezze. Fino a oggi girava
+  #    solo a mano — ed era rimasta rossa su `slave` dall'unione della #128
+  #    senza che nessuno lo vedesse.
+  #
+  # ⚠️ ISOLATO PER COSTRUZIONE, e non per disciplina:
+  #    · non riceve nessun segreto, nessuna chiave, nessun indirizzo: qui
+  #      sotto non c'è una sola riga `secrets.` né `env:` di Supabase;
+  #    · il server delle prove parte da una cartella d'ambiente VUOTA
+  #      (`envDir`), quindi la schermata non conosce nessun database;
+  #    · nella pagina ogni richiesta che non va al server locale si ferma e
+  #      si conta (`NIENTE_RETE`): un tentativo fa ROSSA la prova;
+  #    · e Chrome non risolve nessun nome tranne il server locale
+  #      (`--host-resolver-rules`): anche senza il blocco, nessuna richiesta
+  #      troverebbe l'indirizzo.
+  #    Non condivide lucchetti né dati col lavoro del database, e gira in
+  #    parallelo agli altri.
+  visive:
+    name: Prove visive in Chrome — nessun database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      # ⚠️ Chrome è quello GIÀ INSTALLATO sul runner: niente si scarica. Se
+      #    manca, il lavoro si ferma qui dicendolo, invece di fallire più
+      #    avanti con un errore che sembra della prova.
+      - name: Chrome del runner, già installato
+        run: |
+          test -x /usr/bin/google-chrome || { echo "Chrome non c'è sul runner: la prova visiva non può girare."; exit 1; }
+          /usr/bin/google-chrome --version
+
+      - name: Le schermate vere, misurate in Chrome
+        env:
+          CHROME: /usr/bin/google-chrome
+        run: npm run test:visive
+
+  # -------------------------------------------------------------------
   # 2. LE PROVE CONTRO IL DATABASE DI PROVA
   # -------------------------------------------------------------------
   # 🔴 QUESTE SONO LE RETI VERE del progetto: i permessi, i vocabolari

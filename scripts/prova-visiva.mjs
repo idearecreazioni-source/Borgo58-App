@@ -84,7 +84,10 @@ import {
   aspetta,
   avviaChrome,
   fotografa as fotografaChrome,
+  cartellaSenzaAmbiente,
+  NIENTE_RETE,
   nomeFile,
+  TENTATIVI_DI_RETE,
   valuta,
 } from "./chrome-senza-schermo.mjs";
 
@@ -989,6 +992,9 @@ const server = await createServer({
   root: RADICE,
   configFile: path.join(RADICE, "vite.config.js"),
   logLevel: "error",
+  // Nessun `.env`: la schermata non conosce nessun indirizzo né chiave vera
+  // (27/09/2026) — in locale come in CI.
+  envDir: cartellaSenzaAmbiente(),
   server: { port: 5288, strictPort: false, host: "127.0.0.1" },
   resolve: {
     alias: [
@@ -1001,7 +1007,7 @@ const server = await createServer({
 await server.listen();
 const base = server.resolvedUrls.local[0];
 
-const { porta, chiudi } = await avviaChrome();
+const { porta, chiudi } = await avviaChrome({ senzaRete: true });
 const cartellaFoto = path.join(os.tmpdir(), "b58-prova-visiva");
 mkdirSync(cartellaFoto, { recursive: true });
 
@@ -1009,7 +1015,19 @@ const difetti = [];
 let misurati = 0;
 let statiSettimana = 0;
 
-const apriPagina = (forma, pagina) => apriPaginaChrome(porta, forma, `${base}${pagina}`);
+// ⚠️ Ogni pagina parte col blocco della rete (27/09/2026): se un modulo
+//    usa il collegamento vero invece di un finto, il tentativo non parte e
+//    la prova è rossa. Prima di questa data qui il blocco non c'era.
+const apriPagina = (forma, pagina) => apriPaginaChrome(porta, forma, `${base}${pagina}`, NIENTE_RETE);
+
+async function controllaRete(manda, dove) {
+  const r = await valuta(manda, TENTATIVI_DI_RETE).catch(() => null);
+  if (!r || r.quanti === -1) {
+    difetti.push(`${dove}: il blocco della rete non è caricato nella pagina — la prova non può garantire che niente esca.`);
+  } else if (r.quanti !== 0) {
+    difetti.push(`${dove}: la pagina ha provato a uscire dal computer (${r.quanti} tentativi verso ${r.dove.join(", ") || "?"}) — un modulo non passa da un finto.`);
+  }
+}
 
 async function fotografa(manda, nome) {
   const dove = await fotografaChrome(manda, path.join(cartellaFoto, `${nome}.png`));
@@ -1043,6 +1061,7 @@ try {
         controllaRimanda(`agenda · ${forma.nome}`, m, difetti);
       }
       console.log(`agenda · ${forma.nome}: ${misura.righe.length} schede misurate (${misura.pxcm} punti per cm)`);
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
     // --- la scheda di un impegno ---
@@ -1062,6 +1081,7 @@ try {
       } else {
         console.log(`scheda · ${forma.nome}: non disegnata`);
       }
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
     // --- il segno «?» ---
@@ -1075,6 +1095,7 @@ try {
       for (const g of gesti) if (!g.ok) difetti.push(`segno «?» · ${forma.nome}: ${g.cosa} — NO.`);
       console.log(`segno «?» · ${forma.nome}: ${gesti.filter((g) => g.ok).length} gesti su ${gesti.length} come previsto`);
       for (const g of gesti) console.log(`   ${g.ok ? "✓" : "✗"} ${g.cosa}`);
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
   }
@@ -1212,7 +1233,8 @@ try {
       await fotografa(manda, `mese-${nomeFile(forma.nome)}`);
       console.log(`${nomeMese}: ${mese?.ids.length ?? 0} impegni nel ${L0}, ore [${mese?.ore.join(" · ") ?? ""}]`);
     }
-    ws.close();
+    await controllaRete(manda, "prova visiva");
+      ws.close();
   }
 } finally {
   chiudi();
