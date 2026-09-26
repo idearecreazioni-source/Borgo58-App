@@ -14,6 +14,8 @@
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "../../../src/index.css";
+// Inter locale, come quello che il gestionale carica da Google Fonts (27/09/2026).
+import "../caratteri/inter.css";
 import { applyPxCm } from "../../../src/lib/touch";
 import Dashboard from "../../../src/pages/Dashboard";
 import AgendaList from "../../../src/pages/agenda/AgendaList";

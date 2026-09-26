@@ -44,7 +44,10 @@ import {
   aspetta,
   avviaChrome,
   fotografa as fotografaChrome,
+  cartellaSenzaAmbiente,
+  NIENTE_RETE,
   nomeFile,
+  pretendiInter,
   valuta,
 } from "./chrome-senza-schermo.mjs";
 
@@ -80,6 +83,7 @@ const MISURA = `(() => {
   return {
     pagina: main.dataset.pagina,
     rete: window.__tentativiDiRete ?? -1,
+    reteDove: [...new Set(window.__richiesteFermate ?? [])].join(", "),
     pxcm,
     larghezza: document.documentElement.clientWidth,
     sbordo: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -114,7 +118,8 @@ export function controlla(forma, m, difetti) {
   const no = (frase) => difetti.push(`${dove}: ${frase}`);
   const telefono = forma.larghezza < SOGLIA_SM;
 
-  if (m.rete !== 0) no(`la pagina ha provato a parlare col database vero (${m.rete} tentativi)`);
+  if (m.rete === -1) no("il blocco della rete non è caricato nella pagina: la prova non può garantire che niente esca");
+  else if (m.rete !== 0) no(`la pagina ha provato a uscire dal computer (${m.rete} tentativi verso ${m.reteDove || "?"}) — un alias non passa dal collegamento finto`);
   if (m.sbordo > 1) no(`la pagina scorre di lato di ${m.sbordo} punti`);
 
   if (m.pagina === "dashboard") {
@@ -189,22 +194,9 @@ export function controlla(forma, m, difetti) {
 }
 
 // --- Nessuna richiesta esce dal computer --------------------------------
-// 🔴 Anche se un alias sbagliasse di nuovo: prima che la pagina parta,
-//    ogni `fetch` e ogni WebSocket verso Supabase viene rifiutato, e il
-//    tentativo si conta. Una prova che trova tentativi è ROSSA: vuol dire
-//    che qualcosa non passa dal collegamento finto.
-export const NIENTE_RETE = `(() => {
-  window.__tentativiDiRete = 0;
-  const vietato = (u) => /supabase\\.co|supabase\\.in/.test(String(u));
-  const vero = window.fetch.bind(window);
-  window.fetch = (risorsa, opzioni) => {
-    const u = typeof risorsa === "string" ? risorsa : risorsa?.url;
-    if (vietato(u)) { window.__tentativiDiRete += 1; return Promise.reject(new TypeError("rete vietata nella prova visiva")); }
-    return vero(risorsa, opzioni);
-  };
-  const WS = window.WebSocket;
-  window.WebSocket = function (u, p) { if (vietato(u)) { window.__tentativiDiRete += 1; throw new Error("rete vietata"); } return new WS(u, p); };
-})();`;
+// Il blocco vive in `chrome-senza-schermo.mjs` (`NIENTE_RETE`), comune alle
+// due prove visive: ferma tutto ciò che non va al server locale, e la prova
+// che trova un tentativo è ROSSA.
 
 // --- Il giro -----------------------------------------------------------
 export const PAGINE = ["dashboard", "agenda", "primanota", "causali", "salaorari", "spesa", "ingrediente", "archivio"];
@@ -217,6 +209,8 @@ async function principale() {
     root: RADICE,
     configFile: path.join(RADICE, "vite.config.js"),
     logLevel: "error",
+    // Nessun `.env`: la schermata non conosce nessun indirizzo né chiave vera.
+    envDir: cartellaSenzaAmbiente(),
     server: { port: 5289, strictPort: false, host: "127.0.0.1" },
     resolve: {
       alias: [
@@ -235,7 +229,7 @@ async function principale() {
   });
   await server.listen();
   const base = server.resolvedUrls.local[0];
-  const { porta, chiudi } = await avviaChrome();
+  const { porta, chiudi } = await avviaChrome({ senzaRete: true });
   const cartellaFoto = path.join(os.tmpdir(), "b58-prova-visiva-schermate");
   mkdirSync(cartellaFoto, { recursive: true });
 
@@ -250,6 +244,8 @@ async function principale() {
           `${base}tests/visive/schermate/index.html?pagina=${pagina}`,
           NIENTE_RETE,
         );
+        // Il carattere vero, o la prova si ferma (27/09/2026).
+        await pretendiInter(manda, `${pagina} · ${forma.nome}`);
         let m = null;
         for (let i = 0; i < 80 && !m; i++) {
           await aspetta(250);

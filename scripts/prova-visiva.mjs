@@ -84,7 +84,11 @@ import {
   aspetta,
   avviaChrome,
   fotografa as fotografaChrome,
+  cartellaSenzaAmbiente,
+  NIENTE_RETE,
   nomeFile,
+  pretendiInter,
+  TENTATIVI_DI_RETE,
   valuta,
 } from "./chrome-senza-schermo.mjs";
 
@@ -165,7 +169,15 @@ const TITOLO_ELENCO_CM = 0.4; // `testo-sala-grande`, come nell'elenco
 //    computer, 2 sull'iPhone, **4** sull'iPhone a 64 punti per centimetro —
 //    tutte forme sane, e quella a 64 non va peggiorata. In sette colonne ne
 //    faceva 6. Quindi il confine sano/rotto sta fra 4 e 6: si prende 4.
-const TITOLO_RIGHE_MASSIME = 4;
+// 🔴 RITARATA COL CARATTERE VERO — 27/09/2026: da 4 a 5. Quelle misure erano
+//    fatte col carattere di ripiego (Segoe UI su Windows): le pagine di prova
+//    non caricavano Inter. Col carattere vero (`tests/visive/caratteri/`,
+//    identico a quello che Google Fonts manda al gestionale) la STESSA forma
+//    sana a 64 punti per cm chiede 891 punti su una riga invece di 849 e fa
+//    **5** righe — nessuna schermata è cambiata, è cambiato solo il metro.
+//    Stessa regola di taratura di allora: la forma sana più alta misurata è
+//    il tetto, e resta sotto le 6 della forma rotta.
+const TITOLO_RIGHE_MASSIME = 5;
 
 // --- Le misure, eseguite DENTRO la pagina -------------------------------
 // ⚠️ Si misura il TESTO disegnato, non il bordo dell'elemento: un elemento
@@ -989,6 +1001,9 @@ const server = await createServer({
   root: RADICE,
   configFile: path.join(RADICE, "vite.config.js"),
   logLevel: "error",
+  // Nessun `.env`: la schermata non conosce nessun indirizzo né chiave vera
+  // (27/09/2026) — in locale come in CI.
+  envDir: cartellaSenzaAmbiente(),
   server: { port: 5288, strictPort: false, host: "127.0.0.1" },
   resolve: {
     alias: [
@@ -1001,7 +1016,7 @@ const server = await createServer({
 await server.listen();
 const base = server.resolvedUrls.local[0];
 
-const { porta, chiudi } = await avviaChrome();
+const { porta, chiudi } = await avviaChrome({ senzaRete: true });
 const cartellaFoto = path.join(os.tmpdir(), "b58-prova-visiva");
 mkdirSync(cartellaFoto, { recursive: true });
 
@@ -1009,7 +1024,19 @@ const difetti = [];
 let misurati = 0;
 let statiSettimana = 0;
 
-const apriPagina = (forma, pagina) => apriPaginaChrome(porta, forma, `${base}${pagina}`);
+// ⚠️ Ogni pagina parte col blocco della rete (27/09/2026): se un modulo
+//    usa il collegamento vero invece di un finto, il tentativo non parte e
+//    la prova è rossa. Prima di questa data qui il blocco non c'era.
+const apriPagina = (forma, pagina) => apriPaginaChrome(porta, forma, `${base}${pagina}`, NIENTE_RETE);
+
+async function controllaRete(manda, dove) {
+  const r = await valuta(manda, TENTATIVI_DI_RETE).catch(() => null);
+  if (!r || r.quanti === -1) {
+    difetti.push(`${dove}: il blocco della rete non è caricato nella pagina — la prova non può garantire che niente esca.`);
+  } else if (r.quanti !== 0) {
+    difetti.push(`${dove}: la pagina ha provato a uscire dal computer (${r.quanti} tentativi verso ${r.dove.join(", ") || "?"}) — un modulo non passa da un finto.`);
+  }
+}
 
 async function fotografa(manda, nome) {
   const dove = await fotografaChrome(manda, path.join(cartellaFoto, `${nome}.png`));
@@ -1021,6 +1048,7 @@ try {
     // --- l'Agenda ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html`);
       const selettore = forma.mobile ? "[data-quadrotto]" : "[data-riga]";
       // Si aspetta che le schede ci siano davvero, non un tempo fisso.
       // ⚠️ E devono esserci TUTTE: una scheda che non si disegna non ha
@@ -1043,11 +1071,13 @@ try {
         controllaRimanda(`agenda · ${forma.nome}`, m, difetti);
       }
       console.log(`agenda · ${forma.nome}: ${misura.righe.length} schede misurate (${misura.pxcm} punti per cm)`);
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
     // --- la scheda di un impegno ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/scheda/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/scheda/index.html`);
       let m = null;
       for (let i = 0; i < 80; i++) {
         m = await valuta(manda, MISURA_SCHEDA);
@@ -1062,11 +1092,13 @@ try {
       } else {
         console.log(`scheda · ${forma.nome}: non disegnata`);
       }
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
     // --- il segno «?» ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/didascalia/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/didascalia/index.html`);
       for (let i = 0; i < 40; i++) {
         if ((await valuta(manda, `document.querySelectorAll("button[aria-label]").length`)) >= 2) break;
         await aspetta(250);
@@ -1075,6 +1107,7 @@ try {
       for (const g of gesti) if (!g.ok) difetti.push(`segno «?» · ${forma.nome}: ${g.cosa} — NO.`);
       console.log(`segno «?» · ${forma.nome}: ${gesti.filter((g) => g.ok).length} gesti su ${gesti.length} come previsto`);
       for (const g of gesti) console.log(`   ${g.ok ? "✓" : "✗"} ${g.cosa}`);
+      await controllaRete(manda, "prova visiva");
       ws.close();
     }
   }
@@ -1085,6 +1118,7 @@ try {
   const Lm1 = spostaSettimana(L0, -1);
   for (const forma of FORME_SETTIMANA) {
     const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html?telaio");
+    await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html?telaio`);
     for (let i = 0; i < 80 && !(await valuta(manda, clicca("[data-vista=settimana]"))); i++) await aspetta(250);
     const giri = [
       {
@@ -1212,7 +1246,8 @@ try {
       await fotografa(manda, `mese-${nomeFile(forma.nome)}`);
       console.log(`${nomeMese}: ${mese?.ids.length ?? 0} impegni nel ${L0}, ore [${mese?.ore.join(" · ") ?? ""}]`);
     }
-    ws.close();
+    await controllaRete(manda, "prova visiva");
+      ws.close();
   }
 } finally {
   chiudi();
