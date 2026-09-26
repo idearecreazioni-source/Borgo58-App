@@ -450,7 +450,14 @@ export default function ArchivioDocumentiHome() {
               const days = daysTo(d.expiry_date);
               return (
                 <li key={d.id} className="testo-sala-grande flex items-center justify-between gap-2">
-                  <button onClick={() => navigate(`/documenti/${d.id}`)} className="text-b58-charcoal hover:text-b58-terracotta text-left">
+                  {/* ⚠️ 26/09/2026: senza misura di tocco era alto 5,0 mm
+                      (censimento a 768 e 1280 punti); ora quanto il pulsante
+                      dell'elenco qui sotto. */}
+                  <button
+                    onClick={() => navigate(`/documenti/${d.id}`)}
+                    data-documento-in-scadenza
+                    className="tocco-campo inline-flex items-center text-b58-charcoal hover:text-b58-terracotta text-left"
+                  >
                     {d.title}
                   </button>
                   <span className={days < 0 ? "text-b58-terracotta-dark font-medium" : "text-b58-gold-dark"}>

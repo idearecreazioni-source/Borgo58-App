@@ -619,10 +619,16 @@ export default function SalaEOrari() {
                   <span className="testo-sala text-b58-charcoal-soft"> · nemmeno in cucina</span>
                 )}
               </span>
+              {/* 🔴 26/09/2026: era largo quanto la «✕» (5,3 mm sul
+                  telefono) e si chiamava «✕» per chi non vede lo schermo.
+                  Ora è un quadrato da dito, e il nome dice quale chiusura
+                  toglie. Il gesto non cambia. */}
               <button
                 onClick={() => esegui(() => deleteClosure(c.id))}
-                className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                data-togli-chiusura
+                className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                 title="Togli"
+                aria-label={`Togli la chiusura ${c.dal === c.al ? `del ${c.dal}` : `dal ${c.dal} al ${c.al}`}`}
               >
                 ✕
               </button>
