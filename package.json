@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run tests/unita",
     "test:schermate": "vitest run tests/schermate --config vitest.schermate.config.js",
+    "test:visive": "node scripts/prova-visiva.mjs && node scripts/prova-visiva-schermate.mjs",
+    "misura:telefono": "node scripts/misura-telefono.mjs",
     "test:app": "node scripts/chiavi-di-prova.mjs && node scripts/prove-app.mjs",
     "backup": "node scripts/backup.mjs",
     "prova:ricostruisci": "node scripts/prova-ricostruisci.mjs",
@@ -25,6 +27,7 @@
     "collaudo:documenti": "node scripts/documenti-finti.mjs",
     "prova:scenario": "node scripts/prova-base.mjs --scenario --rifai",
     "funzione:viva": "node scripts/funzione-viva.mjs",
+    "funzioni:allinea": "node scripts/funzioni-allinea.mjs",
     "collaudo:stato": "node scripts/collaudo-stato.mjs",
     "deposito:orfani": "node scripts/deposito-orfani.mjs",
     "prova:copia": "node scripts/prova-copia.mjs",
@@ -43,7 +46,10 @@
     "cloudflare": "node scripts/cloudflare.mjs",
     "cloudflare:verifica": "node scripts/cloudflare-verifica.mjs",
     "peso": "node scripts/peso-pacchetto.mjs",
-    "copertura": "node scripts/copertura.mjs"
+    "copertura": "node scripts/copertura.mjs",
+    "worktree": "node scripts/worktree.mjs",
+    "residui": "node scripts/residui-di-prova.mjs",
+    "pulizia:prodotti-prova": "node scripts/pulizia-prodotti-prova.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
@@ -64,6 +70,6 @@
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.0",
     "vitest": "^4.1.10",
-    "wrangler": "4.128.0"
+    "wrangler": "4.131.0"
   }
 }

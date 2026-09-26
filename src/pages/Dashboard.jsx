@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { listDashboardTasks, updateTask } from "../lib/api/tasks";
+import { listDashboardTasks } from "../lib/api/tasks";
+import { FRASE_NATO_IL_SUCCESSIVO, chiudiImpegno } from "../lib/chiudiImpegno";
 import { listReservations, listRichiesteDaConfermare } from "../lib/api/reservations";
 import { contaPostaInAttesa } from "../lib/api/posta";
 import { quanteAspettano } from "../lib/api/voce";
-import { daQuantoAspetta } from "../lib/calcoli/voce";
+import { listSpesaSpicciola } from "../lib/api/spesaSpicciola";
+import { daComprare } from "../lib/calcoli/spesaSpicciola";
+import AppuntiInDashboard from "../components/AppuntiInDashboard";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
-import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
+import { TASK_CATEGORIES, TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
+import Didascalia from "../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -39,8 +43,10 @@ export default function Dashboard() {
   const [posta, setPosta] = useState(0);
   const [avvisi, setAvvisi] = useState([]);
   const [dettate, setDettate] = useState(null);
+  const [spicciola, setSpicciola] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const oggi = oggiLocale();
 
@@ -89,6 +95,15 @@ export default function Dashboard() {
       //    leggerebbe «non hai niente in sospeso», cioè una frase
       //    tranquilla e falsa.
       isStaff ? Promise.resolve() : leggi(quanteAspettano()).then(setDettate),
+      // 🔴 QUANTE COSE RESTANO DA COMPRARE DI PERSONA — 10/09/2026,
+      //    Blocco 5 del mandato. La spesa spicciola è l'unica lista che si
+      //    guarda **uscendo di casa**, ed era raggiungibile solo passando
+      //    dal Magazzino: chi la dettava la sera non la ritrovava la
+      //    mattina, quando serve.
+      // ⚠️ Lettura indipendente e col segno «non letto», per la stessa
+      //    ragione di quella sopra: un riquadro sparito si leggerebbe «non
+      //    c'è niente da comprare».
+      isStaff ? Promise.resolve() : leggi(listSpesaSpicciola()).then(setSpicciola),
     ]).finally(() => setLoading(false));
 
   useEffect(() => {
@@ -96,13 +111,26 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 🔴 «FATTO» DALLA DASHBOARD FA NASCERE IL SUCCESSIVO, COME DALL'AGENDA —
+  //    12/09/2026. Qui c'era `updateTask(id, { status: "completato" })`,
+  //    cioè lo stato scritto dritto nella tabella: un impegno che si ripete
+  //    si chiudeva e non tornava più, perché il successivo lo crea solo
+  //    `completa_task` nel database (analisi nella #68). Adesso la strada è
+  //    la stessa dell'Agenda, in un posto solo (`chiudiImpegno`): la riga
+  //    sparisce subito, torna se il salvataggio fallisce, e il secondo tocco
+  //    mentre il primo è in volo non parte.
+  //    ⚠️ Il successivo qui non compare: la Dashboard mostra gli impegni di
+  //       oggi e quelli senza data, e il successivo cade sempre dopo oggi.
+  //       Per questo lo si dice con la frase dell'Agenda.
   const toggleComplete = async (task) => {
-    try {
-      await updateTask(task.id, { status: "completato" });
-      setTasks((ts) => ts.filter((t) => t.id !== task.id));
-    } catch (e) {
-      setError(e.message);
-    }
+    setNotice("");
+    const { ok, esito } = await chiudiImpegno({
+      righe: tasks,
+      id: task.id,
+      mostra: setTasks,
+      avvisa: setError,
+    });
+    if (ok && esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
   };
 
   const today = tasks.filter((t) => t.due_date);
@@ -147,12 +175,30 @@ export default function Dashboard() {
           avessi fatto niente. La regola è documentata accanto a quella
           che scavalca. */
     <div className="max-w-3xl contenuto-affiancato mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* 🔴 VA A CAPO — 26/09/2026, dal censimento a 360 punti: il saluto e
+          «Agenda completa →» stavano su una riga che non poteva andare a
+          capo, e il collegamento usciva di 7 punti facendo scorrere di lato
+          tutta la pagina (22 punti). Ora, se non ci stanno, il collegamento
+          scende sotto il saluto; dove ci stanno resta accanto. */}
+      <div
+        data-intestazione-dashboard
+        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6"
+      >
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
             {isStaff ? "Benvenuto." : "Bentornato, Alessio."}
           </h1>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">Oggi, {todayLabel}</p>
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            Oggi, {todayLabel}{" "}
+            {/* ⚠️ Il dubbio di questa schermata e' perche' un riquadro un
+                giorno c'e' e un altro no: i riquadri vuoti non si disegnano,
+                per scelta — «0 cose da comprare» ogni mattina e' arredamento.
+                Senza dirlo, chi non lo sa lo legge come qualcosa che manca. */}
+            <Didascalia etichetta="Cosa vedi qui">
+              Compare solo quello che aspetta una tua risposta: i riquadri vuoti non si disegnano.
+              «Agenda completa» apre tutti gli impegni, anche quelli senza scadenza.
+            </Didascalia>
+          </p>
         </div>
         {/* ⚠️ MISURATO, non stimato: come link nudo questo faceva 5,3 mm di
             altezza — sotto la soglia degli 8,5. Il testo resta uguale, il
@@ -165,6 +211,9 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {notice && (
+        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+      )}
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
       {loading ? (
@@ -211,22 +260,59 @@ export default function Dashboard() {
             </p>
           )}
 
+          {/* 🔴 DALL'11/09/2026 SI APPROVA ANCHE DA QUI (mandato «MEMO
+              affidabile»): la riga si apre e mostra le stesse schede di
+              MEMO. Prima era un collegamento e basta.
+              ⚠️ Dopo ogni gesto si rilegge SOLO il conteggio: rileggere
+              tutta la mattina rimetterebbe in giro sette letture per un
+              numero, e il riquadro sparirebbe sotto le mani di chi sta
+              approvando l'ultimo. */}
           {!isStaff && !nonLetto(dettate) && dettate?.quante > 0 && (
+            <AppuntiInDashboard
+              dettate={dettate}
+              onCambiato={() => leggi(quanteAspettano()).then(setDettate)}
+            />
+          )}
+
+          {/* ------------------------------------------------------------
+              LA SPESA SPICCIOLA — 10/09/2026, Blocco 5 del mandato
+             ------------------------------------------------------------
+              🔴 NON È LA LISTA DEI FORNITORI, e le due non vanno confuse:
+              quella nasce dalle soglie del magazzino e finisce in un
+              ordine, questa è la roba che Alessio compra di persona al
+              supermercato. Il riquadro lo dice con le parole, non solo col
+              titolo: «di persona» è la sola cosa che le distingue a colpo
+              d'occhio. */}
+          {!isStaff && nonLetto(spicciola) && (
+            <p className="testo-sala text-b58-terracotta-dark">
+              Non sono riuscito a leggere la spesa spicciola.{" "}
+              <button type="button" onClick={load} className="tocco-inline underline">
+                Riprova
+              </button>
+            </p>
+          )}
+
+          {/* 🔴 SI CONTA SOLO QUELLO CHE RESTA DA COMPRARE — 10/09/2026, dal
+              collaudo. Prima il riquadro contava anche le cose già nel
+              carrello, mentre la pagina della spesa spicciola no: due numeri
+              per la stessa domanda, uguali solo col carrello vuoto. Adesso
+              tutti e due chiedono la stessa regola (`daComprare`).
+              ⚠️ E col carrello pieno e niente da prendere il riquadro NON
+              compare: «0 cose da comprare» tutte le mattine è arredamento. */}
+          {!isStaff && !nonLetto(spicciola) && daComprare(spicciola).length > 0 && (
             <Link
-              to="/detta"
-              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-gold bg-b58-gold/10 px-4 py-3"
+              to="/magazzino/spesa-spicciola"
+              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-olive bg-b58-olive/10 px-4 py-3"
             >
               <span className="testo-sala text-b58-charcoal">
                 <span className="font-medium">
-                  {dettate.quante === 1
-                    ? "Una cosa che hai detto"
-                    : `${dettate.quante} cose che hai detto`}
+                  {daComprare(spicciola).length === 1
+                    ? "Una cosa da comprare"
+                    : `${daComprare(spicciola).length} cose da comprare`}
                 </span>{" "}
-                {dettate.quante === 1 ? "aspetta che tu la guardi" : "aspettano che tu le guardi"}
-                {dettate.laPiuVecchia > 0 &&
-                  ` — la più vecchia ${daQuantoAspetta(dettate.laPiuVecchia)}`}
+                di persona — spesa spicciola
               </span>
-              <span aria-hidden="true" className="testo-sala text-b58-terracotta shrink-0">
+              <span aria-hidden="true" className="testo-sala text-b58-olive-dark shrink-0">
                 →
               </span>
             </Link>
@@ -265,10 +351,10 @@ export default function Dashboard() {
         <div className="space-y-6 mt-6 2xl:mt-0">
           <section>
             <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
-              Task di oggi
+              Impegni di oggi
             </h2>
             {today.length === 0 ? (
-              <p className="testo-sala text-b58-charcoal-soft/60">Nessun task con scadenza oggi.</p>
+              <p className="testo-sala text-b58-charcoal-soft/60">Nessun impegno con scadenza oggi.</p>
             ) : (
               <TaskGroup tasks={today} onComplete={toggleComplete} />
             )}
@@ -289,7 +375,7 @@ export default function Dashboard() {
             to="/agenda/nuovo"
             className="tocco-riga inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
           >
-            + Nuovo task
+            + Nuovo impegno
           </Link>
         </div>
         </div>
@@ -351,7 +437,7 @@ function RichiesteDeiClienti({ richieste, posta }) {
 // ⚠️ E NESSUN «SEGNA COME LETTO»: un avviso se ne va quando la cosa è
 // risolta. L'unico gesto è «rimanda», che è dichiaratamente un rinvio e
 // non uno spegnimento — e si disfa.
-function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
+export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
   const attivi = avvisi.filter((a) => !a.rimandato_a);
   const rimandati = avvisi.filter((a) => a.rimandato_a);
 
@@ -367,7 +453,15 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
         <ul className="divide-y divide-b58-charcoal/5">
           {attivi.map((a) => (
             <li key={a.chiave} className="py-2 first:pt-0">
-              <div className="flex items-start justify-between gap-3">
+              {/* 🔴 SUL TELEFONO «NON ADESSO» VA SOTTO — 25/09/2026, dal
+                  censimento visivo. Affiancato, a 390 punti prendeva 132
+                  punti e ne lasciava 123 al titolo, che andava su quattro
+                  righe, e la descrizione si tagliava. Da `sm` in su resta
+                  accanto, dove il titolo sta su una riga (misurato a 768). */}
+              <div
+                data-avviso-riga
+                className="flex flex-col items-stretch gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"
+              >
                 <button
                   type="button"
                   onClick={() => onVai(a.dove)}
@@ -384,7 +478,7 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span className="testo-sala text-b58-charcoal font-medium">{a.titolo}</span>
                   </span>
                   {a.dettaglio && (
-                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 truncate">
+                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 sm:truncate">
                       {a.dettaglio}
                     </span>
                   )}
@@ -396,7 +490,7 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                 <button
                   type="button"
                   onClick={() => onRimanda(a.chiave)}
-                  className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
+                  className="tocco-bottone shrink-0 self-start rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
                   title="Non adesso: torna domani"
                 >
                   Non adesso
@@ -530,8 +624,14 @@ function TaskGroup({ tasks, onComplete }) {
           ⚠️ E la casella e il titolo fanno due cose OPPOSTE — una chiude
           l'impegno, l'altro lo apre — quindi la distanza fra loro è quella
           dei gesti che non si possono scambiare. */}
+      {/* 🔴 SUL TELEFONO LA PRIORITÀ VA SOTTO IL TITOLO — 26/09/2026, dal
+          censimento a 360 punti: casella, titolo ed etichetta in fila
+          lasciavano al titolo 125 punti, e andava su quattro o cinque
+          righe. Da `sm` in su resta tutto sulla stessa riga.
+          ⚠️ E la categoria si legge a parole: compariva il codice
+          («fisco_scadenze»), che è la chiave del database, non un nome. */}
       {tasks.map((t) => (
-        <div key={t.id} className="tocco-riga flex items-center gap-4 px-4 py-2">
+        <div key={t.id} data-riga-impegno className="tocco-riga flex items-center gap-4 px-4 py-2">
           <input
             type="checkbox"
             checked={false}
@@ -539,20 +639,28 @@ function TaskGroup({ tasks, onComplete }) {
             className="tocco-bottone shrink-0"
             aria-label={`Segna fatto: ${t.title}`}
           />
-          <Link
-            to={`/agenda/${t.id}`}
-            className="tocco-riga flex items-center flex-1 min-w-0 testo-sala text-b58-charcoal"
-          >
-            <span className="min-w-0">
-              {t.title}
-              {t.category && <span className="text-b58-charcoal-soft ml-2">· {t.category}</span>}
+          <div className="flex flex-1 min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              to={`/agenda/${t.id}`}
+              data-titolo-impegno
+              className="tocco-riga flex items-center w-full sm:w-auto sm:flex-1 min-w-0 testo-sala text-b58-charcoal"
+            >
+              <span className="min-w-0">
+                {t.title}
+                {t.category && (
+                  <span className="text-b58-charcoal-soft ml-2">
+                    · {labelFor(TASK_CATEGORIES, t.category)}
+                  </span>
+                )}
+              </span>
+            </Link>
+            <span
+              data-priorita-impegno
+              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+            >
+              {labelFor(TASK_PRIORITIES, t.priority)}
             </span>
-          </Link>
-          <span
-            className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
-          >
-            {labelFor(TASK_PRIORITIES, t.priority)}
-          </span>
+          </div>
         </div>
       ))}
     </div>

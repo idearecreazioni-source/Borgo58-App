@@ -1,22 +1,44 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { createTask, deleteTask, getTask, updateTask } from "../../lib/api/tasks";
-import { TASK_CATEGORIES, TASK_RICORRENZE, TASK_STATUSES } from "../../lib/constants";
+import { TASK_RICORRENZA_UNITA, TASK_SOLLECITO_UNITA } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
 
 import { useDaVoce } from "../../lib/daVoce";
 import { conCampi } from "../../lib/calcoli/aMano";
+import SceltaOra from "../../components/SceltaOra";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
+import { provenienzaImpegno } from "../../lib/calcoli/agenda";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 
 // Quello che il gestionale ha già capito da un promemoria dettato.
-// ⚠️ L'ora (`due_time`) non c'è: la voce dà il giorno, non l'ora, e
-//    inventarla metterebbe una scadenza precisa che nessuno ha detto.
+// ⚠️ L'ORA C'È DALL'11/09/2026, e SOLO QUANDO È STATA DETTA E CAPITA: il
+//    database la normalizza a «HH:MM» e toglie quella che non sa leggere.
+//    La regola di prima resta intera — un'ora inventata metterebbe una
+//    scadenza precisa che nessuno ha detto — ma adesso un'ora detta non si
+//    perde più nella descrizione.
+// 🔴 E L'AVVISO TELEGRAM ARRIVA ANCHE LUI — 16/09/2026, difetto visto usando
+//    MEMO. Un appunto vocale che aveva capito *quando avvisare* («ricordamelo
+//    il giorno prima alle 15») apriva il modulo con titolo, giorno e ora
+//    dell'impegno e i campi del Promemoria Telegram **vuoti**. Poi «Fallo a
+//    mano» chiude l'appunto lo stesso: la notifica spariva senza un errore,
+//    senza una riga rossa, senza niente — e chi salvava credeva di averla.
+//    ⚠️ Le due date NON si confondono: `scadenza`/`ora` sono QUANDO SUCCEDE
+//       la cosa, `avviso_data`/`avviso_ora` QUANDO AVVISARE, che è quasi
+//       sempre un altro giorno. Sono quattro campi distinti e restano tali.
+//    ⚠️ Se l'avviso non era stato chiesto, le due chiavi non arrivano proprio
+//       (il database le toglie) e `conCampi` non scrive mai valori vuoti:
+//       nessun avviso chiesto = campi vuoti = nessun promemoria. La regola
+//       resta intera senza una riga in più.
 const DA_VOCE = {
   titolo: "title",
   descrizione: "description",
   scadenza: "due_date",
+  ora: "due_time",
   priorita: "priority",
   categoria: "category",
+  avviso_data: "remind_date",
+  avviso_ora: "remind_time",
 };
 
 const emptyForm = {
@@ -25,12 +47,30 @@ const emptyForm = {
   due_date: "",
   due_time: "",
   priority: "media",
+  // 🔴 STATO E CATEGORIA NON SI SCELGONO PIÙ QUI — 10/09/2026, deciso da
+  //    Alessio. Non sono spariti dal gestionale: sono spariti dal MODULO.
+  //
+  //    · lo **stato** di un impegno appena scritto è «da fare», sempre: non
+  //      esiste il caso di uno che apre «Nuovo impegno» per dichiararlo già
+  //      completato. Chiuderlo si fa con la spunta nell'elenco, che è il
+  //      gesto per cui quella schermata esiste. La colonna resta, e resta
+  //      quella che era su un impegno che si sta correggendo.
+  //    · la **categoria** di un impegno scritto a mano è «Altro», e il
+  //      menu lo dimostrava: su venti righe diceva «Altro» quindici volte.
+  //      ⚠️ Non si riscrive niente all'indietro — un impegno nato dalla
+  //      posta o dall'Archivio tiene la categoria che gli ha messo il
+  //      modulo che l'ha creato, e correggerlo qui non gliela cambia.
   status: "da_fare",
   category: "altro",
   preferito: false,
-  ricorrenza: "",
+  ricorrenza_ogni: "",
+  ricorrenza_unita: "",
   remind_date: "",
   remind_time: "",
+  // ⚠️ Il sollecito nasce SPENTO, e non c'è nessun valore proposto: un
+  //    predefinito qui vorrebbe dire mandare messaggi che nessuno ha chiesto.
+  sollecito_ogni: "",
+  sollecito_unita: "",
   // §3.18: l'Agenda è condivisa, quindi un task nasce visibile. Il titolare
   // può riservarne uno singolo; per i task automatici decide il DB (trigger
   // trg_task_visibility), qualunque cosa mandi questo form.
@@ -51,6 +91,8 @@ const splitLocal = (isoString) => {
 };
 const combineToISO = (date, time) =>
   date && time ? new Date(`${date}T${time}`).toISOString() : null;
+
+const maiuscola = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 export default function TaskForm() {
   const { id } = useParams();
@@ -86,7 +128,10 @@ export default function TaskForm() {
           status: t.status,
           category: t.category ?? "altro",
           preferito: t.preferito ?? false,
-          ricorrenza: t.ricorrenza ?? "",
+          ricorrenza_ogni: t.ricorrenza_ogni ?? "",
+          ricorrenza_unita: t.ricorrenza_unita ?? "",
+          sollecito_ogni: t.sollecito_ogni ?? "",
+          sollecito_unita: t.sollecito_unita ?? "",
           remind_date: remind.date,
           remind_time: remind.time,
           visibile_staff: t.visibile_staff ?? true,
@@ -111,8 +156,58 @@ export default function TaskForm() {
   }
 
   const inputClass =
-    "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
+    "w-full min-w-0 tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
+
+  const siRipete = Boolean(form.ricorrenza_unita);
+  // Il sollecito si può chiedere solo dove c'è un promemoria: è la stessa
+  // regola del database, detta prima di arrivarci.
+  const haPromemoria = Boolean(form.remind_date);
+  const sollecita = haPromemoria && Boolean(form.sollecito_ogni);
+  // Il minimo dipende dall'unità: cinque minuti, oppure uno.
+  const minimoSollecito = form.sollecito_unita === "minuti" ? 5 : 1;
+
+  // 🔴 LE DUE CASELLE DI UNA DATA STANNO IN UNA GRIGLIA CHE NON SBORDA —
+  //    10/09/2026. Erano già affiancate, e sul telefono non ci stavano lo
+  //    stesso: una casella `date` o `time` ha una larghezza minima sua, e
+  //    in una griglia una colonna non scende sotto il contenuto se non
+  //    glielo si dice. Da qui `min-w-0` sulle due colonne — senza, il
+  //    riquadro esce dallo schermo invece di stringersi.
+  //    ⚠️ È la famiglia misurata il 25/08 su HACCP, Magazzino e Comande:
+  //    da un monitor non si vede, perché lo spazio c'è.
+  //    🔴 11/09/2026: `min-w-0` non bastava. Stringeva la COLONNA, non la
+  //    casella: a 390 punti ogni metà ne ha 149, e una casella di data ne
+  //    chiede 175 (251 a 64 punti per centimetro) — su Safari la data si
+  //    tagliava e l'icona ci finiva sopra. Sul telefono le due caselle
+  //    vanno una sotto l'altra, affiancate da `sm` in su, dove ci stanno.
+  //    🔴 11/09/2026, SECONDO GIRO — dal collaudo su iPhone: impilate a
+  //    tutta larghezza col testo grande erano «troppo grandi». Adesso ogni
+  //    casella è larga quanto il suo contenuto, con un minimo in centimetri
+  //    veri (una casella vuota non deve stringersi fino a sparire), il testo
+  //    è quello dei campi secondari (3,2 mm) e l'altezza 0,75 cm. Giorno e
+  //    ora stanno sulla stessa riga quando ci stanno e vanno a capo quando
+  //    no: decide lo spazio vero, non una soglia di larghezza.
+  const rigaCompatta = "flex flex-wrap items-end gap-x-3 gap-y-2";
+  const contenitoreCampo = "min-w-0 max-w-full testo-sala";
+  const campoCompatto =
+    "block max-w-full rounded-lg border border-b58-charcoal/15 bg-white px-2 py-0.5 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta [&::-webkit-date-and-time-value]:text-left";
+  // 🔴 L'ALTEZZA TORNA QUELLA DEGLI ALTRI CAMPI — 25/09/2026, dal
+  //    censimento visivo. Era 0,75 cm (scelta dell'11/09, «troppo grandi»)
+  //    e accanto ai campi da 0,85 si vedeva: 7,5 mm contro 8,5 nello stesso
+  //    modulo. Resta compatto ciò che l'11/09 aveva reso compatto — la
+  //    larghezza sul contenuto e il testo a 3,2 mm — e l'altezza è la
+  //    stessa di `.tocco-campo`. Una prova la confronta con quella.
+  const altezzaCompatta = { minHeight: "calc(var(--pxcm) * 0.85)" };
+  const largoAlmeno = (cm) => ({ ...altezzaCompatta, minWidth: `calc(var(--pxcm) * ${cm})` });
+
+  // 🔴 L'ORA SI SCEGLIE A RUOTA — 20/09/2026, seconda correzione dello
+  //    stesso giorno. Prima era il campo orario del browser (offriva tutti e
+  //    sessanta i minuti e rifiutava al salvataggio), poi due menu a tendina
+  //    (giusti, ma due elenchi lunghi da aprire col dito in servizio).
+  //    Adesso: fascia — mattina o pomeriggio — e due ruote da dodici voci,
+  //    che girano col dito, con la rotella e con le frecce (`SceltaOra`).
+  //    Un orario già scritto fuori griglia resta, marcato, finché non lo si
+  //    cambia: non si arrotonda niente alle spalle di chi l'ha scritto.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -129,7 +224,17 @@ export default function TaskForm() {
         status: form.status,
         category: form.category || "altro",
         preferito: form.preferito,
-        ricorrenza: form.ricorrenza || null,
+        // ⚠️ Le due caselle vanno insieme o non vanno: mandarne una sola
+        //    il database lo rifiuta (vincolo `ricorrenza_intera`), ed è
+        //    giusto — un numero senza unità non dice ogni quanto.
+        ricorrenza_ogni: siRipete ? Number(form.ricorrenza_ogni) : null,
+        ricorrenza_unita: siRipete ? form.ricorrenza_unita : null,
+        // 🔴 IL SOLLECITO SE NE VA CON IL PROMEMORIA. Senza avviso il
+        //    database lo rifiuta (vincolo `sollecito_vuole_un_avviso`), e
+        //    lasciarlo scritto qui vorrebbe dire far fallire il salvataggio
+        //    di chi ha soltanto tolto il promemoria.
+        sollecito_ogni: sollecita && newRemindAt ? Number(form.sollecito_ogni) : null,
+        sollecito_unita: sollecita && newRemindAt ? form.sollecito_unita : null,
         remind_at: newRemindAt,
         visibile_staff: form.visibile_staff,
         // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
@@ -177,19 +282,6 @@ export default function TaskForm() {
         </p>
       )}
 
-      {origineModulo && (
-        <div className="testo-sala text-b58-charcoal-soft bg-b58-olive/5 rounded-lg px-3 py-2 mb-4">
-          <p>Generato automaticamente da: {origineModulo}</p>
-          {isTitolare && (
-            <p className="mt-1">
-              {form.visibile_staff
-                ? "Visibile anche allo staff."
-                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
-            </p>
-          )}
-        </div>
-      )}
-
       <StriscaDallaVoce venuto={venuto} />
 
       <form onSubmit={handleSubmit} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 space-y-4">
@@ -205,7 +297,7 @@ export default function TaskForm() {
         </div>
 
         <div>
-          <label className={labelClass}>Descrizione (opzionale)</label>
+          <label className={labelClass}>Descrizione (facoltativa)</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -214,132 +306,250 @@ export default function TaskForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Data (opzionale)</label>
+        <div className={rigaCompatta}>
+          <div className={contenitoreCampo}>
+            <label className={labelClass}>📅 Giorno</label>
             <input
               type="date"
               value={form.due_date}
               onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-              className={inputClass}
+              className={campoCompatto}
+              style={largoAlmeno(2.6)}
             />
           </div>
-          <div>
-            <label className={labelClass}>Ora (opzionale)</label>
-            <input
-              type="time"
+          <div className={contenitoreCampo}>
+            <label className={labelClass}>🕒 Ora</label>
+            <SceltaOra
+              data-campo="scadenza"
+              nome="scadenza"
               value={form.due_time}
-              onChange={(e) => setForm((f) => ({ ...f, due_time: e.target.value }))}
-              className={inputClass}
+              onChange={(v) => setForm((f) => ({ ...f, due_time: v }))}
               disabled={!form.due_date}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {/* La priorità dichiarata a mano è sparita: a decidere quanto è
-              urgente una cosa è la sua scadenza. Resta la stella, che è
-              un'altra cosa e non si può calcolare. */}
-          <div>
-            <label className={labelClass}>Si ripete</label>
+        {/* 🔴 LA CADENZA SI DICE A PAROLE SUE — 10/09/2026.
+            Erano quattro voci fisse (ogni mese / tre mesi / sei mesi /
+            anno), cioè il calendario fiscale: chi doveva cambiare i filtri
+            della cappa ogni sei settimane non trovava nessuna casella, e
+            **senza nessun errore** — quindi sembrava che la cosa non si
+            potesse fare.
+            ⚠️ La didascalia «chiudendolo ne nasce subito un altro» è
+            sparita: si legge il primo giorno e poi diventa arredamento, e
+            il gesto la dimostra da sé la prima volta che si chiude un
+            ricorrente (criterio del 18/08). */}
+        <div>
+          <label className={labelClass}>Si ripete</label>
+          {/* 🔴 «OGNI [n] [unità]» ERA ROTTA — 11/09/2026, collaudo su
+              iPhone. La casella del numero portava insieme `w-full` (dalla
+              classe comune) e `w-16`, e vinceva la prima: il numero
+              prendeva tutta la riga e il menu dell'unità finiva fuori
+              allineamento. Ora ogni pezzo ha la larghezza sua — il numero
+              tre cifre, il menu la parola più lunga — e se la frase non ci
+              sta accanto a «Si ripete» va a capo intera, sotto. */}
+          <div className={rigaCompatta} data-ripete>
+            <div className={contenitoreCampo}>
             <select
-              value={form.ricorrenza}
-              onChange={(e) => setForm((f) => ({ ...f, ricorrenza: e.target.value }))}
-              className={inputClass}
+              value={siRipete ? "si" : "no"}
+              onChange={(e) =>
+                setForm((f) =>
+                  e.target.value === "si"
+                    ? // Una proposta, non una risposta data al posto suo:
+                      // si vede, ed è la prima cosa che si corregge.
+                      { ...f, ricorrenza_ogni: f.ricorrenza_ogni || 1, ricorrenza_unita: "mesi" }
+                    : { ...f, ricorrenza_ogni: "", ricorrenza_unita: "" }
+                )
+              }
+              className={campoCompatto}
+              style={altezzaCompatta}
             >
-              {TASK_RICORRENZE.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
+              <option value="no">Non si ripete</option>
+              <option value="si">Si ripete</option>
             </select>
-            <p className="testo-sala text-b58-charcoal-soft mt-1">
-              Chiudendolo ne nasce subito un altro alla scadenza successiva.
-            </p>
-          </div>
-          <div>
-            <label className={labelClass}>Stato</label>
-            <select
-              value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-              className={inputClass}
-            >
-              {TASK_STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+            </div>
+            {siRipete && (
+              <div className={`${contenitoreCampo} flex flex-wrap items-center gap-2`}>
+                <span className="text-b58-charcoal-soft shrink-0">ogni</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={999}
+                  required
+                  value={form.ricorrenza_ogni}
+                  onChange={(e) => setForm((f) => ({ ...f, ricorrenza_ogni: e.target.value }))}
+                  className={`${campoCompatto} shrink-0 text-center`}
+                  style={{ ...altezzaCompatta, width: "calc(var(--pxcm) * 1.4)" }}
+                />
+                <select
+                  value={form.ricorrenza_unita}
+                  onChange={(e) => setForm((f) => ({ ...f, ricorrenza_unita: e.target.value }))}
+                  className={campoCompatto}
+                  style={altezzaCompatta}
+                >
+                  {TASK_RICORRENZA_UNITA.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Elenco chiuso: prima era testo libero, e su venti righe erano
-            nate quattro convenzioni diverse. */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Categoria</label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-              className={inputClass}
-            >
-              {TASK_CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end pb-2">
-            <label className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
-              <input
-                type="checkbox"
-                checked={form.preferito}
-                onChange={(e) => setForm((f) => ({ ...f, preferito: e.target.checked }))}
-              />
-              ★ Per me conta
-            </label>
-          </div>
-        </div>
+        {/* La stella non si può calcolare da nient'altro: è l'unica cosa
+            che dice «questo lo voglio davanti agli occhi». */}
+        <label data-casella-preferito className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+          <input
+            type="checkbox"
+            checked={form.preferito}
+            onChange={(e) => setForm((f) => ({ ...f, preferito: e.target.checked }))}
+          />
+          ★ Per me conta
+        </label>
 
         {isTitolare && !origineModulo && (
           <div className="border-t border-b58-charcoal/10 pt-4">
-            <label className="flex items-start gap-2.5 cursor-pointer">
+            {/* 🔴 IL BERSAGLIO È QUELLO DI «PER ME CONTA» — 25/09/2026.
+                Era alto 5,0 mm contro 8,5: è la casella che decide chi
+                vede l'impegno, e un tocco mancato lo cambia. */}
+            <label
+              data-casella-staff
+              className="tocco-campo flex items-center gap-2.5 cursor-pointer"
+            >
               <input
                 type="checkbox"
                 checked={form.visibile_staff}
                 onChange={(e) => setForm((f) => ({ ...f, visibile_staff: e.target.checked }))}
-                className="mt-0.5 shrink-0"
+                className="shrink-0"
               />
-              <span>
-                <span className="testo-sala-grande text-b58-charcoal">Visibile allo staff</span>
-                <span className="block testo-sala text-b58-charcoal-soft/70 mt-0.5">
-                  L'Agenda è condivisa: di norma un task è visibile a tutti. Togli la
-                  spunta per tenerlo solo per te.
-                </span>
-              </span>
+              {/* ⚠️ LA SPIEGAZIONE È SPARITA — 10/09/2026, deciso da
+                  Alessio. Diceva «l'Agenda è condivisa: di norma un task è
+                  visibile a tutti; togli la spunta per tenerlo solo per
+                  te», cioè raccontava a parole quello che la casella fa.
+                  La regola non è cambiata e resta scritta dov'è sempre
+                  stata: §3.18 del contratto e il trigger
+                  `trg_task_visibility`. Il giorno che entrerà personale
+                  nuovo, la spiegazione andrà rimessa — con parole per chi
+                  non ha mai visto questa schermata, non con queste. */}
+              <span className="testo-sala-grande text-b58-charcoal">Visibile allo staff</span>
             </label>
           </div>
         )}
 
         <div className="border-t border-b58-charcoal/10 pt-4">
-          <label className={labelClass}>Promemoria Telegram (opzionale)</label>
-          <p className="testo-sala text-b58-charcoal-soft/70 mb-2">
-            Scegli quando vuoi essere avvisato — indipendente dalla data di scadenza.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="date"
-              value={form.remind_date}
-              onChange={(e) => setForm((f) => ({ ...f, remind_date: e.target.value }))}
-              className={inputClass}
-            />
-            <input
-              type="time"
-              value={form.remind_time}
-              onChange={(e) => setForm((f) => ({ ...f, remind_time: e.target.value }))}
-              className={inputClass}
-              disabled={!form.remind_date}
-            />
+          {/* ⚠️ Via anche qui la didascalia: le due caselle adesso si
+              chiamano «Giorno» e «Ora», e una frase che ripete quello che
+              c'è scritto sopra le caselle è ingombro. Che il promemoria sia
+              indipendente dalla scadenza si vede compilandolo. */}
+          <label className={labelClass}>Promemoria Telegram (facoltativo)</label>
+          <div className={rigaCompatta}>
+            <div className={contenitoreCampo}>
+              <label className={labelClass}>📅 Giorno</label>
+              <input
+                type="date"
+                value={form.remind_date}
+                onChange={(e) => setForm((f) => ({ ...f, remind_date: e.target.value }))}
+                className={campoCompatto}
+                style={largoAlmeno(2.6)}
+              />
+            </div>
+            <div className={contenitoreCampo}>
+              <label className={labelClass}>🕒 Ora</label>
+              <SceltaOra
+                data-campo="avviso"
+                nome="avviso"
+                value={form.remind_time}
+                onChange={(v) => setForm((f) => ({ ...f, remind_time: v }))}
+                disabled={!form.remind_date}
+              />
+            </div>
           </div>
+          {/* 🔴 IL SOLLECITO — 20/09/2026. Compare SOLO dove c'è un
+              promemoria: senza, non avrebbe un istante da cui contare, e il
+              database lo rifiuta. Stessa forma della ricorrenza — «ogni N
+              unità», stesse quattro parole — perché un secondo modello
+              sarebbe un secondo vocabolario da tenere d'accordo. */}
+          {haPromemoria && (
+            <div className="mt-2" data-sollecito>
+              <label className={labelClass}>Se non lo faccio</label>
+              <div className={rigaCompatta}>
+                <div className={contenitoreCampo}>
+                  <select
+                    aria-label="Sollecito"
+                    value={sollecita ? "si" : "no"}
+                    onChange={(e) =>
+                      setForm((f) =>
+                        e.target.value === "si"
+                          ? { ...f, sollecito_ogni: f.sollecito_ogni || 1, sollecito_unita: "ore" }
+                          : { ...f, sollecito_ogni: "", sollecito_unita: "" }
+                      )
+                    }
+                    className={campoCompatto}
+                    style={altezzaCompatta}
+                  >
+                    <option value="no">Avvisami una volta sola</option>
+                    <option value="si">Insisti finché non lo chiudo</option>
+                  </select>
+                </div>
+                {sollecita && (
+                  <div className={`${contenitoreCampo} flex flex-wrap items-center gap-2`}>
+                    <span className="text-b58-charcoal-soft shrink-0">ogni</span>
+                    <input
+                      type="number"
+                      min={minimoSollecito}
+                      max={999}
+                      step={form.sollecito_unita === "minuti" ? 5 : 1}
+                      required
+                      aria-label="Ogni quanto sollecitare"
+                      value={form.sollecito_ogni}
+                      onChange={(e) => setForm((f) => ({ ...f, sollecito_ogni: e.target.value }))}
+                      className={`${campoCompatto} shrink-0 text-center`}
+                      style={{ ...altezzaCompatta, width: "calc(var(--pxcm) * 1.4)" }}
+                    />
+                    <select
+                      aria-label="Unità del sollecito"
+                      value={form.sollecito_unita}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          sollecito_unita: e.target.value,
+                          // 🔴 SOTTO I CINQUE MINUTI NON SI SOLLECITA, e il
+                          //    numero si alza QUI invece di essere rifiutato
+                          //    dopo: «ogni 1 minuto» non è una richiesta
+                          //    ragionevole da lasciar scrivere per poi
+                          //    respingerla al salvataggio.
+                          sollecito_ogni:
+                            e.target.value === "minuti" && Number(f.sollecito_ogni) < 5
+                              ? 5
+                              : f.sollecito_ogni,
+                        }))
+                      }
+                      className={campoCompatto}
+                      style={altezzaCompatta}
+                    >
+                      {TASK_SOLLECITO_UNITA.map((u) => (
+                        <option key={u.value} value={u.value}>{u.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {form.remind_date && (
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, remind_date: "", remind_time: "" }))}
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  remind_date: "",
+                  remind_time: "",
+                  // ⚠️ Tolto il promemoria se ne va anche il sollecito: il
+                  //    database non ammette l'uno senza l'altro.
+                  sollecito_ogni: "",
+                  sollecito_unita: "",
+                }))
+              }
               className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark mt-1.5"
             >
               Rimuovi promemoria
@@ -360,18 +570,39 @@ export default function TaskForm() {
           >
             {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
+          {/* 🔴 «ELIMINA» CHIEDE CONFERMA — 25/09/2026, decisione di
+              Alessio. Cancellava al primo tocco, e in Agenda ci sono anche
+              gli adempimenti societari. La conferma dice QUALE impegno
+              sparisce: un «sei sicuro?» generico non aggiunge niente. */}
           {isEdit && isTitolare && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={saving}
-              className="tocco-testo testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta-dark"
-            >
-              Elimina
-            </button>
+            <ConfermaDistruttiva
+              cosaSparisce={`l'impegno «${form.title}»`}
+              onConferma={handleDelete}
+              disabilitato={saving}
+              attributi={{ "data-elimina-impegno": "" }}
+            />
           )}
         </div>
       </form>
+
+      {/* 🔴 DA DOVE VIENE, IN FONDO E IN PICCOLO — 11/09/2026, dal collaudo
+          su iPhone. Stava in un riquadro colorato in cima alla scheda,
+          prima ancora del titolo, e nell'elenco era una riga su ogni
+          impegno nato da solo. È un'informazione secondaria: si legge qui,
+          dopo tutto il resto. Per un impegno automatico dice anche chi lo
+          vede, perché lì la casella «Visibile allo staff» non c'è. */}
+      {origineModulo && (
+        <div className="mt-3 px-1 testo-sala text-b58-charcoal-soft" data-provenienza>
+          <p>{maiuscola(provenienzaImpegno({ origine_modulo: origineModulo }))}.</p>
+          {isTitolare && (
+            <p className="mt-0.5">
+              {form.visibile_staff
+                ? "Visibile anche allo staff."
+                : "Riservato a te: lo staff non vede questo task in Agenda. La visibilità dei task automatici dipende dal modulo di origine e non è modificabile da qui."}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

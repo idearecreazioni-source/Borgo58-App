@@ -63,7 +63,8 @@ import {
   SUPPLIER_CATEGORIES,
   TASK_CATEGORIES,
   TASK_PRIORITIES,
-  TASK_RICORRENZE,
+  TASK_RICORRENZA_UNITA,
+  TASK_SOLLECITO_UNITA,
   TASK_STATUSES,
   TIP_MEZZI,
   VIDEO_PLATFORMS,
@@ -159,15 +160,39 @@ export const SPECCHIATI = [
   { costante: "TASK_CATEGORIES", valori: TASK_CATEGORIES, tabella: "tasks", colonna: "category" },
   { costante: "TASK_PRIORITIES", valori: TASK_PRIORITIES, tabella: "tasks", colonna: "priority" },
   { costante: "TASK_STATUSES", valori: TASK_STATUSES, tabella: "tasks", colonna: "status" },
+  // 🔴 LA RICORRENZA HA CAMBIATO FORMA — 10/09/2026. Era una parola sola
+  // fra quattro (`tasks.ricorrenza`); adesso sono due dati, quante volte e
+  // di che cosa, e il vocabolario chiuso è il secondo.
+  // ⚠️ `ricorrenza_ogni` NON è un vocabolario: è un numero con un limite,
+  // e a sorvegliarlo c'è un vincolo che rifiuta lo zero — un elenco di
+  // valori ammessi lì dentro non avrebbe senso.
+  // ⚠️ E non c'è più nessun `ignora`: «non si ripete» adesso è le due
+  // caselle vuote, non una voce del menu.
   {
-    costante: "TASK_RICORRENZE",
-    valori: TASK_RICORRENZE,
+    costante: "TASK_RICORRENZA_UNITA",
+    valori: TASK_RICORRENZA_UNITA,
     tabella: "tasks",
-    colonna: "ricorrenza",
-    // Il valore vuoto non è un valore del database: è «non si ripete»,
-    // cioè `null`. La colonna ammette `null` per quello.
-    ignora: [""],
-    perche: "il valore vuoto del menu significa «non si ripete», che nel database è null",
+    colonna: "ricorrenza_unita",
+  },
+  // 🔴 DUE ELENCHI SIMILI E NON UGUALI, ed è voluto: il sollecito ha in più
+  //    minuti e ore. Un impegno che si ripete ogni dieci minuti non esiste;
+  //    un sollecito sì. Sono due colonne diverse, quindi due specchi diversi
+  //    — e la rete confronta ognuno col SUO vincolo, che è il modo in cui
+  //    questa differenza resta voluta invece di diventare una divergenza.
+  {
+    costante: "TASK_SOLLECITO_UNITA",
+    valori: TASK_SOLLECITO_UNITA,
+    tabella: "tasks",
+    colonna: "sollecito_unita",
+    // 🔴 LA COLONNA ARRIVA CON UNA MIGRAZIONE, e finché quella non è
+    //    applicata su un database il confronto non si può fare — non perché
+    //    qualcosa non torni, ma perché non c'è ancora niente da confrontare.
+    //    ⚠️ È la stessa forma delle ORFANE_PIANIFICATE (17/09): quale dei due
+    //    momenti sia lo dice il REGISTRO DELLE MIGRAZIONI di quel database,
+    //    non una data scritta a mano. Iscrivere subito e basta farebbe
+    //    gridare la rete prima dell'applicazione; non iscrivere farebbe
+    //    gridare il giorno dopo.
+    daVersione: "20260920000005",
   },
 ];
 
@@ -191,6 +216,11 @@ export const SPECCHI_ESENTI = [
     costante: "RECIPE_STATI",
     perche:
       "non è un vocabolario del database: i quattro stati di una ricetta si DERIVANO da tre cose diverse — `pronta_per_carta` (booleano), `in_carta` (un riflesso scritto da un trigger) e `ritirata_il` (una data). Non esiste nessuna colonna «stato» con cui possano divergere, e crearne una distruggerebbe il riflesso, cioè l'unica ragione per cui oggi «in carta» non può mentire (16/08)",
+  },
+  {
+    costante: "STATI_PREPARAZIONE",
+    perche:
+      "stessa ragione di `RECIPE_STATI`, di cui è la versione per le preparazioni (la sceglie `statiPerTipo`): i tre stati si DERIVANO dalle stesse colonne — `pronta_per_carta`, `in_carta`, `ritirata_il` — in `statoPerTipo`, e per una preparazione cambiano solo le parole. Nessuna colonna «stato» con cui possano divergere (14/09/2026, nata dal rosso della prova sul database della #82)",
   },
 ];
 
@@ -267,9 +297,23 @@ const chiaviDi = (elenco, ignora = []) =>
  * `vocabolari` è quello che risponde `vocabolari_chiusi()`:
  * `[{ tabella, colonna, valori: [...] }]`.
  */
-export function problemiVocabolari(specchiati, vocabolari) {
+/**
+ * @param specchiati gli elenchi dichiarati
+ * @param vocabolari cosa dice il database ADESSO
+ * @param versioniApplicate le migrazioni di QUESTO database, per sapere se
+ *   una colonna pianificata è già arrivata. Se non si passano, gli specchi
+ *   pianificati si guardano lo stesso: è il caso di chi vuole il conto
+ *   intero.
+ */
+export function problemiVocabolari(specchiati, vocabolari, versioniApplicate = null) {
   const problemi = [];
+  const viste = versioniApplicate ? new Set(versioniApplicate) : null;
   for (const s of specchiati) {
+    // ⚠️ Uno specchio che aspetta la sua migrazione non è un problema: è un
+    //    lavoro non ancora applicato QUI. Appena la versione compare nel
+    //    registro, il confronto riparte da solo — e se la colonna non
+    //    arrivasse, a gridare sarebbe la rete delle migrazioni, non questa.
+    if (s.daVersione && viste && !viste.has(s.daVersione)) continue;
     const riga = vocabolari.find((v) => v.tabella === s.tabella && v.colonna === s.colonna);
     if (!riga) {
       problemi.push(`${s.costante}: ${s.tabella}.${s.colonna} non è un vocabolario chiuso del database`);

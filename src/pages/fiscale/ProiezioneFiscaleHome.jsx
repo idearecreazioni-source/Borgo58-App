@@ -41,7 +41,10 @@ export default function ProiezioneFiscaleHome() {
       to: "/fiscale/previsioni",
       icon: "chart",
       title: "Le previsioni",
-      desc: "Il tuo piano caricato dal foglio, chiuso e non più ritoccabile. Le riproiezioni si confrontano con la prima.",
+      // ⚠️ Diceva «caricato dal foglio, chiuso e non più ritoccabile»: dal
+      //    15/08 una previsione si scrive anche a mano, campo per campo, e
+      //    resta modificabile finché non la si chiude (11/09/2026).
+      desc: "Il tuo piano, scritto a mano o caricato dal foglio. Una volta chiuso non si ritocca più: le riproiezioni si confrontano con la prima.",
       stat: null,
     },
     {
@@ -49,6 +52,16 @@ export default function ProiezioneFiscaleHome() {
       icon: "clock",
       title: "Come sta andando",
       desc: "Il mese vero contro il previsto, scomposto: coperti, scontrino, food cost, fissi. E quanti omaggi ti puoi permettere.",
+      stat: null,
+    },
+    {
+      to: "/fiscale/chiusura-anno",
+      icon: "calendar",
+      title: "Chiudere l'anno",
+      // ⚠️ La descrizione nomina l'avviso, perché è la ragione per cui
+      //    questa voce esiste: chiudere un anno senza sapere cosa si sta
+      //    lasciando indietro è il gesto che questa schermata impedisce.
+      desc: "La fotografia dell'anno finito, soggetto per soggetto. Se restano conti senza documento fiscale te lo dice prima, e non chiude finché non li hai visti.",
       stat: null,
     },
     {

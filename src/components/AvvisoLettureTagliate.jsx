@@ -16,9 +16,18 @@ import {
 // ragione per cui il riconoscimento sta nel punto unico delle letture: una
 // schermata nuova è coperta senza che nessuno si ricordi di aggiungerlo.
 //
-// ⚠️ E NON SPARISCE DA SOLO: si toglie solo premendo, dopo aver ristretto
-// il periodo. Un avviso che se ne va allo scadere di un tempo lascia sullo
-// schermo dei numeri che nessuno sa più essere parziali.
+// ⚠️ E NON SPARISCE DA SOLO: si toglie solo premendo. Un avviso che se ne
+// va allo scadere di un tempo lascia sullo schermo dei numeri che nessuno
+// sa più essere parziali.
+//
+// 🔴 LE PAROLE DICONO SOLO CIÒ CHE È VERO IN OGNI SCHERMATA — 25/09/2026,
+// dal censimento visivo. Diceva «i totali calcolati qui sopra» e ordinava
+// «restringi il periodo o i filtri»: vero in Prima nota, falso in Posta,
+// Magazzino, Carico, Ricettario → Ingredienti e Schede prodotto, dove
+// l'avviso compare (sul progetto di prova: 1000 prodotti su ~1370) e non
+// c'è né un periodo né un totale sopra. Un consiglio che non si può
+// seguire è un vicolo cieco. L'avviso vive nel telaio comune e non sa quale
+// schermata ha dei filtri, quindi dice il fatto e il numero, non il gesto.
 export default function AvvisoLettureTagliate() {
   const [tagliate, setTagliate] = useState(elencoLettureTagliate);
 
@@ -27,11 +36,13 @@ export default function AvvisoLettureTagliate() {
   if (tagliate.length === 0) return null;
 
   return (
-    <div className="bg-b58-terracotta/15 ring-1 ring-b58-terracotta/50 rounded-lg px-3 py-2 mb-4 print:hidden">
+    <div
+      data-avviso-letture-tagliate
+      className="bg-b58-terracotta/15 ring-1 ring-b58-terracotta/50 rounded-lg px-3 py-2 mb-4 print:hidden"
+    >
       <p className="testo-sala text-b58-charcoal">
         <strong>Quello che vedi è incompleto.</strong> Il gestionale ha ricevuto solo una parte
-        delle righe, quindi anche i totali calcolati qui sopra sono parziali. Restringi il periodo
-        o i filtri e riprova.
+        delle righe: questa schermata mostra un elenco parziale, e quello che manca non compare.
       </p>
       <ul className="testo-sala text-b58-charcoal-soft mt-1 space-y-0.5">
         {tagliate.map((t) => (
@@ -45,7 +56,7 @@ export default function AvvisoLettureTagliate() {
         onClick={dimenticaLettureTagliate}
         className="tocco-bottone mt-1 testo-sala underline text-b58-terracotta-dark hover:text-b58-charcoal"
       >
-        Ho ristretto la ricerca, togli l&apos;avviso
+        Ho visto, togli l&apos;avviso
       </button>
     </div>
   );

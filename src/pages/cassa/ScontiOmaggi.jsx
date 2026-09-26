@@ -201,7 +201,7 @@ export default function ScontiOmaggi() {
       </h1>
       <p className="testo-sala text-b58-charcoal-soft mb-6">
         ⚠️ Se gli omaggi sistematici facciano scattare l&apos;autofattura TD27 dipende da
-        volume e frequenza: <strong>da verificare con Laura</strong>, non è automatico.
+        volume e frequenza: <strong>da verificare con la commercialista</strong>, non è automatico.
       </p>
 
       {error && (
@@ -255,7 +255,7 @@ export default function ScontiOmaggi() {
             Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
             <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
             al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
-            secondo è quello che serve a Laura per l&apos;autofattura sugli omaggi (da confermare
+            secondo è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
             con lei, domanda L1).
           </p>
         </div>
@@ -282,8 +282,11 @@ export default function ScontiOmaggi() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            <div>
+          {/* SPEC-0010, 11/09/2026: la giornata in mezza riga (132 punti) si
+              tagliava — chiedeva 181, 260 a 64 punti per cm. Regola comune in
+              index.css. */}
+          <div className="riga-campi mb-3">
+            <div className="cella-media">
               <label className={labelClass}>Valore a listino €</label>
               <input
                 type="number"
@@ -295,7 +298,7 @@ export default function ScontiOmaggi() {
               />
             </div>
             {!isOmaggio && (
-              <div>
+              <div className="cella-media">
                 <label className={labelClass}>Incassato €</label>
                 <input
                   type="number"
@@ -315,8 +318,9 @@ export default function ScontiOmaggi() {
               frase={`Questo ${form.type === "omaggio" ? "omaggio" : "sconto"} va sulla serata di`}
               labelClass={labelClass}
               inputClass={inputClass}
+              className="w-min"
             />
-            <div>
+            <div className="cella-larga">
               <label className={labelClass}>Causale (obbligatoria)</label>
               <select
                 value={form.causale_id}
@@ -337,7 +341,7 @@ export default function ScontiOmaggi() {
               onChange={(e) => setForm((f) => ({ ...f, customer_id: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Cliente (opz.)</option>
+              <option value="">Cliente (facoltativo)</option>
               {customers.map((c) => (
                 <option key={c.id} value={c.id}>{c.name || c.phone}</option>
               ))}
@@ -347,7 +351,7 @@ export default function ScontiOmaggi() {
               onChange={(e) => setForm((f) => ({ ...f, device_id: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Device (opz.)</option>
+              <option value="">Device (facoltativo)</option>
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
@@ -355,7 +359,7 @@ export default function ScontiOmaggi() {
             <input
               value={form.note}
               onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (opz.)"
+              placeholder="Nota (facoltativa)"
               className={inputClass}
             />
           </div>

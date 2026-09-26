@@ -37,3 +37,20 @@
 # oggi nessuno ha quella riga, e domani non si sa.
 *.mjs text eol=lf
 
+# ---------------------------------------------------------------------
+# Le funzioni online si installano con fine riga di Linux — 10/09/2026
+# ---------------------------------------------------------------------
+# 🔴 IL FATTO, misurato. `operazioni-atomiche` risultava v37 sul progetto di
+# prova e v36 in produzione, con impronte del pacchetto diverse. Il codice
+# installato era identico riga per riga: cambiavano solo i fine riga. La
+# prova era stata installata con fine riga di Linux (22.474 byte), la
+# produzione da una copia su Windows (22.902 byte, 428 CR). Qui dentro i
+# file delle funzioni sono salvati con fine riga di Linux, ma senza una
+# regola Windows li tira fuori con i suoi (`core.autocrlf=true`), e
+# l'installazione carica quello che trova sul disco.
+#
+# ⚠️ Con questa riga lo stesso codice diventa lo stesso pacchetto da
+# qualunque computer: una differenza di impronta fra prova e produzione
+# torna a voler dire una differenza di codice.
+supabase/functions/** text eol=lf
+

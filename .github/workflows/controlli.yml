@@ -66,9 +66,9 @@ name: Controlli
 #    quei rami non li guarderebbe piu' nessuno.
 on:
   push:
-    branches: [master]
+    branches: [master, slave]
   pull_request:
-    branches: [master]
+    branches: [master, slave]
 
 # 🔴 UNA CODA PER RAMO — corretto il 31/08/2026, misurando un giro ANNULLATO.
 #
@@ -176,6 +176,60 @@ jobs:
       #    silenzio. Il tetto e il modo di alzarlo stanno nel comando.
       - name: Quanto pesa il pacchetto
         run: npm run peso
+
+  # -------------------------------------------------------------------
+  # 1-BIS. LE PROVE VISIVE IN CHROME — NESSUN DATABASE
+  # -------------------------------------------------------------------
+  # 🔴 PERCHÉ — 27/09/2026. Le prove di schermata girano senza impaginazione
+  #    (jsdom): una riga che sul telefono schiaccia il titolo, un bersaglio
+  #    da 5 mm o una pagina che scorre di lato lì passano identici.
+  #    `npm run test:visive` monta le schermate VERE con dati finti e le
+  #    misura in un Chrome senza schermo, a sei larghezze. Fino a oggi girava
+  #    solo a mano — ed era rimasta rossa su `slave` dall'unione della #128
+  #    senza che nessuno lo vedesse.
+  #
+  # ⚠️ ISOLATO PER COSTRUZIONE, e non per disciplina:
+  #    · non riceve nessun segreto, nessuna chiave, nessun indirizzo: qui
+  #      sotto non c'è una sola riga `secrets.` né `env:` di Supabase;
+  #    · il server delle prove parte da una cartella d'ambiente VUOTA
+  #      (`envDir`), quindi la schermata non conosce nessun database;
+  #    · nella pagina ogni richiesta che non va al server locale si ferma e
+  #      si conta (`NIENTE_RETE`): un tentativo fa ROSSA la prova;
+  #    · e Chrome non risolve nessun nome tranne il server locale
+  #      (`--host-resolver-rules`): anche senza il blocco, nessuna richiesta
+  #      troverebbe l'indirizzo.
+  #    Non condivide lucchetti né dati col lavoro del database, e gira in
+  #    parallelo agli altri.
+  visive:
+    name: Prove visive in Chrome — nessun database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+
+      - run: npm ci
+
+      # ⚠️ Chrome è quello GIÀ INSTALLATO sul runner: niente si scarica. Se
+      #    manca, il lavoro si ferma qui dicendolo, invece di fallire più
+      #    avanti con un errore che sembra della prova.
+      - name: Chrome del runner, già installato
+        run: |
+          test -x /usr/bin/google-chrome || { echo "Chrome non c'è sul runner: la prova visiva non può girare."; exit 1; }
+          /usr/bin/google-chrome --version
+
+      - name: Le schermate vere, misurate in Chrome
+        env:
+          CHROME: /usr/bin/google-chrome
+        run: npm run test:visive
 
   # -------------------------------------------------------------------
   # 2. LE PROVE CONTRO IL DATABASE DI PROVA
@@ -313,7 +367,7 @@ jobs:
         run: npm run test:app
 
   # -------------------------------------------------------------------
-  # 3. LA PROVA GENERALE — la filiera intera, senza il sito in gioco
+  # 3. BORGO58-PROVA — il passaggio obbligato prima della produzione
   # -------------------------------------------------------------------
   #
   # ⚠️ COSA DIMOSTRA, DETTO PER QUELLO CHE E'. Dimostra **dal vivo la filiera
@@ -329,15 +383,42 @@ jobs:
   #    VERA NON SI PROVA MAI PRIMA. Qui la filiera gira intera — compila,
   #    controlla il pacchetto, carica con Wrangler — ma con la coppia del
   #    progetto di PROVA e su un ramo di anteprima.
+  #
+  # 🔴 NON E' PIU' UN'ALTERNATIVA ALLA PRODUZIONE — 17/09/2026, e questa e'
+  #    la correzione. Fino a ieri i due lavori si ESCLUDEVANO a vicenda:
+  #    `PUBBLICAZIONE_DA_GITHUB` valeva `prova` **oppure** `si`, e i due
+  #    `if:` erano l'uno il contrario dell'altro. Le conseguenze erano due, e
+  #    nessuna delle due si vedeva guardando un giro verde:
+  #      1. non esisteva NESSUN legame che imponesse a Prova di precedere la
+  #         produzione — erano due strade parallele, non due passi;
+  #      2. con l'interruttore su `si`, l'anteprima **non veniva piu'
+  #         ricostruita**: Borgo58-Prova restava ferma al giorno in cui
+  #         qualcuno aveva girato l'interruttore, mentre la produzione
+  #         andava avanti. Un ambiente di collaudo indietro rispetto alla
+  #         produzione non e' un collaudo: e' una cosa che rassicura.
+  #
+  # ⚠️ ADESSO GIRA SU OGNI COMMIT DI MASTER che ha passato codice e database,
+  #    senza interruttore. La produzione viene dopo, e `needs:` la tiene
+  #    ferma se questo lavoro fallisce **o viene saltato** — che e' il
+  #    comportamento predefinito di GitHub e non una condizione che scriviamo
+  #    noi, quindi non una condizione che possiamo sbagliare.
   prova_di_rilascio:
-    name: Prova generale del rilascio — nessuna produzione toccata
+    name: Pubblica su Borgo58-Prova — il passaggio prima della produzione
     needs: [codice, database]
-    if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'prova'
+    if: github.ref == 'refs/heads/slave'
     environment: anteprima
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
+    # 🔴 QUALE COMMIT E' USCITO SU PROVA, detto ad alta voce — 17/09/2026.
+    #    `needs:` lega gia' i due lavori allo stesso giro, quindi allo stesso
+    #    commit; ma quel legame vive nella FORMA del file e si scioglie con
+    #    una riga (`if: always()` sulla produzione) **restando verde**. Questa
+    #    uscita lo rende un dato che la produzione puo' confrontare, e che se
+    #    manca la ferma.
+    outputs:
+      commit: ${{ steps.uscito.outputs.commit }}
     # 🔴 IL BERSAGLIO SU CLOUDFLARE E' DICHIARATO UNA VOLTA, IN CIMA, e lo
     #    leggono sia il controllo sia il caricamento. Passandolo al solo
     #    caricamento, il controllo approverebbe un bersaglio e Wrangler ne
@@ -380,6 +461,14 @@ jobs:
           CLOUDFLARE_PROJECT: borgo58-app
         run: node scripts/rilascio.mjs --ambiente anteprima --conferma
 
+      # ⚠️ DOPO il caricamento, e non prima: quello che si dichiara qui e'
+      #    «su Prova e' uscito QUESTO», non «stavo per farlo». Se Wrangler
+      #    fallisce, il passo non arriva mai e la produzione non trova nessun
+      #    commit da confrontare — cioe' si ferma, che e' il verso giusto.
+      - name: Dichiara quale commit e' uscito su Prova
+        id: uscito
+        run: echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
   # -------------------------------------------------------------------
   # 4. LA PUBBLICAZIONE VERA
   # -------------------------------------------------------------------
@@ -390,10 +479,18 @@ jobs:
   #    **rossi**. Non e' che la pubblicazione arrivava prima dei controlli:
   #    arrivava anche quando erano rossi.
   #
-  # ⚠️ TRE BARRIERE, E LA TERZA E' UNA PERSONA:
-  #    1. `needs:` — GitHub non fa partire un lavoro che dipende da due lavori
-  #       se uno dei due fallisce. Non e' una nostra condizione, quindi non e'
-  #       una condizione che possiamo sbagliare.
+  # ⚠️ QUATTRO BARRIERE, E L'ULTIMA E' UNA PERSONA:
+  #    1. `needs:` — GitHub non fa partire un lavoro che dipende da altri
+  #       lavori se uno di quelli fallisce **o viene saltato**. Non e' una
+  #       nostra condizione, quindi non e' una condizione che possiamo
+  #       sbagliare. 🔴 Dal 17/09 fra quei lavori c'e' anche la pubblicazione
+  #       su Borgo58-Prova: **se Prova non e' uscita, qui non si parte.**
+  #    1-bis. il CONTENUTO COLLAUDATO, detto ad alta voce — primo passo qui
+  #       sotto. `needs:` non attraversa i giri, e il registro dei rilasci di
+  #       GitHub dice se il commit collaudato e' uscito su Prova dal ramo
+  #       `slave`; il confronto degli alberi dice che il contenuto di questo
+  #       commit e' lo stesso, a meno di pochi file di infrastruttura. Un dato
+  #       vuoto o illeggibile e' un rifiuto e non un passaggio.
   #    2. l'interruttore, che e' una **Variable del REPOSITORY** e non
   #       dell'ambiente. 🔴 Non e' un dettaglio: GitHub valuta `if:` PRIMA di
   #       assegnare l'ambiente, quindi una variabile d'ambiente qui dentro
@@ -404,20 +501,56 @@ jobs:
   #       ferma e aspetta. E' la barriera che regge anche se le prime due
   #       venissero allargate per sbaglio.
   pubblica:
-    name: Manda in produzione — due lavori verdi e un'approvazione
+    name: Manda in produzione — dopo Prova, e con un'approvazione
     needs: [codice, database]
     if: github.ref == 'refs/heads/master' && vars.PUBBLICAZIONE_DA_GITHUB == 'si'
     environment: produzione
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # ⚠️ Serve anche `deployments: read`: il passo qui sotto interroga il
+    #    registro dei rilasci per sapere se il commit e' uscito su Prova.
     permissions:
       contents: read
+      deployments: read
     steps:
+      # 🔴 LA STORIA SERVE, E DEVE ESSERE ABBASTANZA: il controllo del collaudo
+      #    confronta il contenuto di questo commit con quello del commit che e'
+      #    uscito su Prova, che sta nella storia (secondo genitore della
+      #    fusione). Con la storia di un solo commit non c'e' niente da
+      #    confrontare, e il controllo si fermerebbe — nella direzione sicura, ma
+      #    chiudendo anche il percorso lecito. La prova del workflow lega questo
+      #    numero a `ANTENATI_DA_GUARDARE`.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
       - uses: actions/setup-node@v4
         with:
           node-version: '22.16.0'
           cache: npm
+      # 🔴 LA PRIMA DOMANDA, E COSTA ZERO: il CONTENUTO di questo commit e' quello
+      #    che e' uscito su Borgo58-Prova? Sta PRIMA di `npm ci` perche' non ha
+      #    bisogno di nessuna libreria — e fermarsi qui costa zero invece di un
+      #    minuto.
+      # ⚠️ Se Prova non e' mai girata, o e' fallita, o il contenuto e' diverso, o
+      #    un dato non si legge, il comando si ferma: un valore mancante e' un
+      #    rifiuto, mai un passaggio.
+      # 🔴 IL LEGAME CON PROVA NON PASSA PIU' DA `needs:` — 18/09/2026.
+      #    Da quando Borgo58-Prova si costruisce dal ramo `slave`, i due
+      #    lavori vivono in GIRI DIVERSI: `needs:` non attraversa i giri, e
+      #    lasciarlo li' avrebbe dato un valore sempre VUOTO — cioe' un
+      #    cancello chiuso per sempre, e chiuso in silenzio.
+      # 🔴 E NON PASSA NEMMENO DALL'IDENTICO COMMIT — 18/09/2026. La proposta
+      #    da `slave` a `master` produce una FUSIONE nuova, che su Prova non e'
+      #    mai uscita: cercarla nel registro chiudeva il cancello per sempre.
+      #    Il fatto si legge dove GitHub lo REGISTRA (un rilascio riuscito
+      #    sull'ambiente `anteprima`, dal ramo `slave`, per il commit collaudato)
+      #    e si accompagna alla prova che il CONTENUTO non e' cambiato. Il
+      #    perche' e i limiti stanno in `scripts/rilascio.mjs`.
+      - name: Il contenuto di questo commit e' stato collaudato su Borgo58-Prova?
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/rilascio.mjs --ambiente produzione --collaudato-su-prova
+
       - run: npm ci
 
       # ⚠️ ANCHE QUI, E NON PERCHE' `if:` NON BASTI: `if:` guarda il ramo di

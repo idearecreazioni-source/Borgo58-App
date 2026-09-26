@@ -29,9 +29,62 @@
 // La verifica JWT del gateway Supabase resta attiva: due barriere, non
 // una. Chi ha solo la chiave pubblica supera la prima e si ferma qui.
 
+// ---------------------------------------------------------------------
+// E UNA CONSEGNA SI FA UNA VOLTA SOLA — 17/09/2026
+// ---------------------------------------------------------------------
+// 🔴 PERCHE' QUESTA FUNZIONE HA DOVUTO IMPARARE A RICORDARE. Il giro dei
+//    promemoria puo' sapere di aver ACCODATO una richiesta; non puo' sapere
+//    se sia ARRIVATA. Fra le due cose ci sta il caso che produce il
+//    doppione: risposta persa, si riprova, e il secondo Telegram parte.
+//    L'unico posto da cui si vede la differenza e' QUESTO — ed e' per questo
+//    che la memoria sta qui e non dalla parte di chi manda.
+//
+// ⚠️ LA DECISIONE STA IN `consegna.ts` PER POTERLA PROVARE: qui dentro
+//    l'unico modo di metterla alla prova sarebbe mandare messaggi veri.
+//
+// ⚠️ E LE PRENOTAZIONI E GLI ALLARMI NON CAMBIANO DI UNA RIGA: arrivano
+//    senza chiave, e per loro la strada e' quella di sempre.
+import { consegnaUnaVoltaSola, stradaDellaConsegna } from "./consegna.ts";
+// ⚠️ Da Prova ogni messaggio comincia con «TEST PROVA»: il perche' sta in
+//    `ambiente.ts`, e l'unico punto che lo applica e' `sendTelegram` qui sotto.
+import { testoPerIlProgetto } from "./ambiente.ts";
+import { deveTacere } from "./silenzio.ts";
+
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
 const NOTIFICHE_FIRMA = Deno.env.get("NOTIFICHE_FIRMA");
+// ⚠️ Le stesse due che usa gia' `posta-leggi` per scrivere nel database: la
+//    strada c'e', non se ne inventa una seconda.
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+/** Una chiamata al database con la chiave di servizio, come in `posta-leggi`. */
+async function rpc(nome: string, corpo: Record<string, unknown>): Promise<unknown> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${nome}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SERVICE_ROLE!,
+      Authorization: `Bearer ${SERVICE_ROLE}`,
+    },
+    body: JSON.stringify(corpo),
+  });
+  if (!r.ok) throw new Error(`${nome}: ${r.status} ${await r.text()}`);
+  // 🔴 «NESSUN CONTENUTO» E' UNA RISPOSTA GIUSTA, NON UN GUASTO — 20/09/2026,
+  //    misurato su Prova. Le due scritture della consegna — quella che la
+  //    conferma e quella che la rilascia — non restituiscono niente (i nomi
+  //    non si scrivono qui: una prova controlla che compaiano solo dentro il
+  //    ramo della chiave, e in un commento sarebbero un falso allarme),
+  //    quindi il database risponde **204 senza corpo**:
+  //    leggerlo come JSON solleva, e l'eccezione usciva dalla funzione
+  //    trasformando un promemoria GIA' CONSEGNATO in un «500 Internal Server
+  //    Error». Chi manda lo leggeva come «non arrivato» — allarme falso alle
+  //    15:25 e un tentativo buttato.
+  // ⚠️ Si guarda il CORPO, non solo il codice: una risposta vuota con 200 si
+  //    comporta allo stesso modo.
+  const testo = await r.text();
+  return testo.trim() === "" ? null : JSON.parse(testo);
+}
 
 function formatReservationMessage(record: Record<string, unknown>): string {
   const date = record.reservation_date as string;
@@ -154,7 +207,7 @@ async function sendTelegram(text: string) {
   return fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
+    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: testoPerIlProgetto(text, SUPABASE_URL) }),
   });
 }
 
@@ -211,6 +264,75 @@ Deno.serve(async (req) => {
     });
   }
 
+  // ⚠️ Su Prova, durante un giro di prove automatiche, allarmi e prenotazioni
+  //    non squillano (migrazione 20260919000001, regola in `silenzio.ts`).
+  //    I promemoria non passano mai da qui.
+  const tacere = await deveTacere({
+    payload,
+    supabaseUrl: SUPABASE_URL,
+    zittite: async () => Boolean(await rpc("notifiche_zittite", {})),
+  });
+  if (tacere) {
+    return new Response(JSON.stringify({ skipped: true, muto: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rispondi =(r: { stato: number; corpo: Record<string, unknown> }) =>
+    new Response(JSON.stringify(r.corpo), {
+      status: r.stato,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  // 🔴 LA CHIAVE SI PRENDE SOLO SE ARRIVA SCRITTA, e non si ricompone MAI da
+  //    altri campi. Il perche' — l'ordine del rilascio — sta in `consegna.ts`,
+  //    accanto alla regola, e non qui dove verrebbe letto una volta sola.
+  const strada = stradaDellaConsegna(payload);
+
+  if (strada.dedup) {
+    // 🔴 SENZA MEMORIA NON SI MANDA, e si dice perche'. Mandare comunque
+    //    sarebbe esattamente il difetto: un avviso che parte due volte perche'
+    //    nessuno ha potuto ricordarsi del primo. Si fallisce CHIUSI e
+    //    rumorosamente — chi manda lo registra e riprova — invece di aprire
+    //    in silenzio la porta al doppione.
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      return rispondi({
+        stato: 500,
+        corpo: {
+          ok: false,
+          error:
+            "Non posso ricordare che cosa ho gia' consegnato: senza quella memoria un avviso rischia di partire due volte, quindi non parte.",
+        },
+      });
+    }
+
+    return rispondi(
+      await consegnaUnaVoltaSola({
+        chiave: strada.chiave,
+        prendi: (c) => rpc("prendi_consegna", { p_chiave: c }) as Promise<never>,
+        conferma: async (c) => {
+          await rpc("conferma_consegna", { p_chiave: c });
+        },
+        rilascia: async (c) => {
+          await rpc("rilascia_consegna", { p_chiave: c });
+        },
+        manda: async () => {
+          const res = await sendTelegram(message);
+          // ⚠️ Una risposta di NO e' un fatto certo: Telegram non ha ricevuto
+          //    niente. Un'eccezione no — e `consegnaUnaVoltaSola` le tratta
+          //    diversamente apposta.
+          return res.ok
+            ? { riuscito: true }
+            : { riuscito: false, dettaglio: await res.text() };
+        },
+      }),
+    );
+  }
+
+  // ⚠️ SENZA CHIAVE — prenotazioni, allarmi, posta — la strada e' quella di
+  //    sempre: quelle notifiche nascono da un fatto che avviene una volta
+  //    sola, e non vengono ritentate da nessuno.
   const telegramRes = await sendTelegram(message);
 
   if (!telegramRes.ok) {

@@ -21,15 +21,27 @@ export default function CampoGiornata({
   frase = "Stai lavorando sulla serata di",
   labelClass,
   inputClass,
+  // Il riquadro del campo. In una `riga-campi` si passa `w-min` (11/09/2026):
+  // la cella resta larga quanto la sua data, e la frase qui sotto va a capo
+  // dentro — senza, la frase allargava la cella a tutta riga.
+  className = "",
 }) {
   return (
-    <div>
+    <div className={className}>
       <label className={labelClass}>{label}</label>
+      {/* 🔴 LA LARGHEZZA STA QUI DENTRO, NON NEI CHIAMANTI — 21/09/2026.
+          Dei tre posti che usano questo campo, due passavano `campo-data`
+          nella classe e uno (la home della Cassa) no: la stessa casella era
+          larga quanto la sua data in due schermate e stirata a tutta colonna
+          nella terza. ⚠️ Non era una svista da correggere una volta — era
+          una misura affidata alla memoria di chi scrive il chiamante, e una
+          dimenticanza li' non produce nessun errore. Ora la porta il
+          componente, e chi lo usa non la puo' dimenticare. */}
       <input
         type="date"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        className={inputClass}
+        className={`${inputClass ?? ""} campo-data`}
       />
       {/* ⚠️ Senza l'ora vera la frase non si scrive: inventarne una qui
           sarebbe il secondo orologio, e direbbe «fino alle 05:00» anche il

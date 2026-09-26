@@ -135,8 +135,25 @@ rossa da sola il giorno che l'indice resta indietro.
 | 76 | 04/09/2026 | produzione e orfani stanno in un lavoro solo |
 | 77 | 05/09/2026 | una vista aperta apposta non espone zero colonne economiche |
 | 78 | 05/09/2026 | il setaccio del denaro cerca le parole in qualunque punto del nome |
+| 79 | 06/09/2026 | le misure sicure si salvano da sé |
+| 80 | 06/09/2026 | scegliere fra i candidati esegue |
+| 81 | 09/09/2026 | il collegamento a mano promette i campi già compilati |
+| 82 | 09/09/2026 | le prove contro il database girano tutte, a ogni giro |
+| 83 | 09/09/2026 | i candidati si mostrano, e non si toccano |
+| 84 | 09/09/2026 | nel riquadro di quello che hai appena detto non si approva niente |
+| 85 | 10/09/2026 | una ricorrenza si sceglie fra quattro cadenze fisse |
+| 86 | 10/09/2026 | il modulo di un impegno chiede lo stato e la categoria |
+| 87 | 10/09/2026 | nel quadrotto di un impegno si tocca il titolo |
+| 88 | 11/09/2026 | la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto |
+| 89 | 11/09/2026 | un impegno riservato porta il segno «Riservato» nell'elenco |
+| 90 | 11/09/2026 | giorno e ora stanno affiancati, in due colonne uguali |
+| 91 | 11/09/2026 | `min-w-0` tiene la data dentro la sua colonna |
+| 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
+| 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
+| 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
+| 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 
-⚠️ **Righe: 79.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 96.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -2964,3 +2981,518 @@ che non viene mai salvata perché non passa da nessun deposito.
    dentro un segmento senza trattino basso — «sottocosto» — adesso non si vede.
    In questo schema non ce n'è nessuna, e la convenzione è snake_case.
    *(Proposta #24, commit `8be6891`; migrazione `20260905000001`.)*
+
+## 79 · 06/09/2026 — «le misure sicure si salvano da sé»
+
+1. **Cosa era stato deciso e quando.** Il **25/08/2026**, coi comandi vocali: le
+   azioni dettate si dividono fra **misure** e **creazioni**, e una misura
+   dichiarata sicura — una temperatura, una giacenza, una pulizia, un
+   promemoria — **si scrive nell'istante in cui viene detta**. Il criterio
+   viveva in una funzione apposta, `azione_si_esegue_da_se()`.
+
+2. **La ragione di allora.** In cella si hanno le mani occupate e il tablet
+   lontano. Far confermare a mano anche «cella carni tre gradi» avrebbe
+   trasformato il gesto più frequente in due gesti, e una misura sbagliata si
+   corregge dal modulo dove è finita — mentre una creazione (un prodotto, una
+   ricetta, un movimento di cassa) no.
+
+3. **Cosa si decide adesso.** **Niente si salva da sé, mai.** Ogni cosa dettata
+   diventa un **appunto** che Alessio legge, corregge, approva o butta.
+   `azione_si_esegue_da_se()` non è stata spenta: è stata **cancellata dal
+   database**.
+
+4. **Perché la ragione di allora non vale più.** Le parole di Alessio, in
+   SPEC-0013: *«la comodità non giustifica una registrazione non riletta»*. La
+   ragione di allora **non è stata smentita** — in cella le mani sono ancora
+   occupate — ed è il prezzo che accettiamo: un gesto in più su ogni misura.
+   Quello che è cambiato è cosa c'era dall'altra parte della bilancia. Il
+   criterio del 25/08 dava per scontato che una misura sicura fosse *quasi
+   sempre* giusta; ma «sicuro» lo dichiara il modello, e il registro delle
+   temperature va all'ASP. *Una misura vera messa sotto il nome sbagliato non
+   produce nessun errore e resta lì per anni* — e con l'esecuzione automatica
+   nessuno l'avrebbe mai riletta.
+   ⚠️ **La decisione è dichiarata sperimentale** e va rivalutata prima
+   dell'apertura di marzo 2027: se il gesto in più risulterà insostenibile in
+   servizio, si torna qui.
+   *(SPEC-0013; migrazioni `20260906000001` e `20260906000004`.)*
+
+## 80 · 06/09/2026 — «scegliere fra i candidati esegue»
+
+1. **Cosa era stato deciso e quando.** Il **27/08/2026**, e la ragione era
+   scritta dentro la funzione: *«chi ha appena detto QUALE ha già detto anche
+   SÌ: un secondo pulsante sarebbe il difetto di prima con un passaggio in
+   più»*.
+
+2. **La ragione di allora.** Quando il gestionale trovava due candidati — due
+   oli, due tonni — proponeva i due nomi e Alessio toccava quello giusto. In
+   quel mondo si sceglieva **davanti alla riga che stava per essere scritta**,
+   quindi scegliere *era* l'ultimo gesto rimasto, e chiedere una conferma dopo
+   sarebbe stato chiedere due volte la stessa cosa.
+
+3. **Cosa si decide adesso.** Scegliere **riempie il campo e basta**: la riga
+   resta in attesa, e il sì è l'approvazione dell'appunto.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Non è stata smentita: è
+   stata soddisfatta altrove.** SPEC-0013 sposta il sì dalla riga all'appunto,
+   che può contenerne altre — quindi scegliere non è più l'ultimo gesto, è
+   *riempire un campo*. E non compare nessun «secondo pulsante»: chi sceglie
+   non deve poi confermare quella riga, deve approvare l'appunto, che è un
+   gesto che avrebbe fatto comunque per le altre righe che ci sono dentro.
+   🔴 Lasciarlo eseguire avrebbe voluto dire che **una delle tre porte scriveva
+   ancora senza approvazione** — e la più facile da premere, perché somiglia a
+   una risposta e non a un comando.
+   ⚠️ **Il controllo che conta resta intero**: si accetta solo una delle scelte
+   che il gestionale aveva proposto, altrimenti dal browser si potrebbe
+   abbinare la temperatura di un frigo a un altro.
+   *(SPEC-0013; migrazione `20260906000002`.)*
+
+## 81 · 09/09/2026 — «il collegamento a mano promette i campi già compilati»
+
+1. **Cosa era stato deciso e quando.** 27/08/2026, decisione di Alessio con le
+   sue parole: *«se ti dico segna trenta euro pagati al fornitore, mi aspetto
+   che un collegamento mi porti dove si segnano le spese, coi campi noti già
+   compilati»*. L'etichetta del collegamento lo diceva: **«Fallo a mano, coi
+   campi già compilati →»**.
+
+2. **La ragione di allora.** La promessa dei campi compilati **è** il valore
+   del gesto: senza, «fallo a mano» somiglia a «arrangiati». Dirlo sul
+   pulsante fa capire prima di premere che il lavoro già fatto non si butta.
+
+3. **Cosa si decide adesso.** L'etichetta dice **«Fallo a mano →»**. La
+   promessa esce dal pulsante e resta dove si dimostra: sulla schermata di
+   arrivo, dove la striscia mostra i campi arrivati dalla voce.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora, e resta
+   vera per dodici destinazioni su quindici** — ma con l'Agenda a voce ne
+   nascono tre che portano a `/agenda`, dove **non c'è nessun modulo da
+   riempire**: c'è un impegno da cercare. Su quelle il pulsante prometteva una
+   cosa che nessun pezzo del gestionale mantiene, ed è la forma che questo
+   progetto rifiuta da sempre — *una schermata non promette un valore che un
+   altro pezzo non mantiene*.
+   ⚠️ **Le strade scartate erano due, e costavano più di quello che valevano**:
+   una mappa tipo→etichetta nel browser (cioè il secondo posto che dice dove si
+   va, appena tolto), oppure far viaggiare l'etichetta dal database, che vuol
+   dire una colonna nuova e due funzioni di lettura riscritte per una parola.
+   *(Fase 2 dell'Agenda a voce; migrazione `20260909000002`.)*
+
+## 82 · 09/09/2026 — «le prove contro il database girano tutte, a ogni giro»
+
+1. **Cosa era stato deciso e quando.** 31/08/2026, costruendo i controlli su
+   GitHub: le prove contro il progetto di prova girano a **ogni** proposta.
+   Fino ad allora dipendevano dal fatto che qualcuno si ricordasse di
+   lanciarle.
+
+2. **La ragione di allora.** *Preferire l'automazione alla disciplina: la
+   disciplina si degrada, l'automazione no.* Una prova che gira solo quando
+   qualcuno se la ricorda è una prova che un giorno non gira — e il giorno
+   che non gira è quello in cui sarebbe servita.
+
+3. **Cosa si decide adesso.** Le prove che chiamano **davvero il modello**
+   restano fuori dal giro automatico. Si lanciano apposta, con
+   `npm run test:app -- --col-modello`. Quali siano non lo dice un elenco
+   scritto a mano: si ricava dal codice — quali funzioni online nominano il
+   modello nel loro sorgente, e quali prove le invocano.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   questo è il prezzo che accettiamo.** Quelle prove provano una cosa che
+   nessun'altra prova può provare — che il modello *capisce* davvero — e da
+   oggi quella cosa la sorveglia una persona invece di una macchina.
+   Il prezzo si paga perché dall'altra parte c'è una spesa che **parte da
+   sola a ogni giro**: otto richieste vere per ogni proposta e per ogni push,
+   che nessuno ha deciso e che cresce da sé. È la stessa famiglia dei
+   ritentativi senza tetto del 12/08 — *ogni cosa automatica che costa soldi
+   vuole un tetto, altrimenti è una perdita che cresce da sola*.
+   ⚠️ E la disciplina non è tornata dov'era: il comando **dice sempre** quali
+   prove ha lasciato fuori e come lanciarle. Un'esclusione silenziosa sarebbe
+   copertura persa travestita da verde — che è peggio della copertura persa.
+
+## 83 · 09/09/2026 — «i candidati si mostrano, e non si toccano»
+
+1. **Cosa era stato deciso e quando.** 09/09/2026, poche ore prima, nella
+   #45: quando MEMO trova due impegni ugualmente plausibili l'appunto li
+   **elenca col loro giorno**, e restano una cosa da leggere. Nessun
+   pulsante. La via d'uscita era ridire la frase più precisa.
+
+2. **La ragione di allora.** Un pulsante per sceglierli renderebbe
+   approvabile un appunto che, finché i candidati sono due, non deve
+   esserlo: chiudere l'impegno di qualcun altro o spostare una scadenza che
+   nessuno voleva toccare sono errori che nessun messaggio annuncia.
+
+3. **Cosa si decide adesso.** I candidati si **toccano**. Il tocco
+   **sceglie e basta** — non scrive, non chiude, non sposta. Dopo il tocco
+   l'appunto dice quale impegno è stato scelto e compare «Approva», e solo
+   «Approva» esegue.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Era giusta sul
+   pericolo e sbagliata sul rimedio.** Il pericolo — *nessuno deve poter
+   approvare un'ambiguità* — è vero e resta chiuso. Ma quella decisione lo
+   chiudeva legando due cose che sono diverse: «non approvabile» e «non
+   toccabile». Scegliendo, l'ambiguità **smette di esistere**: resta un
+   candidato solo, e la firma è su quello. Il pericolo si chiude dove sta
+   davvero — *il tocco non scrive* — invece che togliendo il gesto.
+   ⚠️ E il prezzo della decisione vecchia si era visto in un giorno: davanti
+   a due righe sullo schermo il gesto naturale è toccarne una, e l'unica
+   strada era ripetere la frase. *Una schermata che mostra una scelta e non
+   la fa fare è un vicolo cieco con le indicazioni scritte bene.*
+
+## 84 · 09/09/2026 — «nel riquadro di quello che hai appena detto non si approva niente»
+
+1. **Cosa era stato deciso e quando.** 06/09/2026, con SPEC-0013: il
+   riquadro che compare a fine dettatura elenca **le frasi** appena dette e
+   basta. Il «sì» è uno solo e vive sull'appunto, nell'elenco di sotto.
+
+2. **La ragione di allora.** Prima ogni riga appena detta aveva lì il suo
+   «Sì, fallo», e approvare una **riga** scavalcava il raggruppamento: si
+   diceva sì a una voce di una lista senza vedere le altre due che ci
+   stavano dentro. Due posti da cui approvare sono due gesti diversi per la
+   stessa cosa.
+
+3. **Cosa si decide adesso.** In quel riquadro compare **l'appunto intero**
+   — la stessa scheda dell'elenco di sotto, coi candidati da toccare e con
+   «Approva».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e
+   proprio per questo la forma nuova la rispetta.** Il divieto era su
+   *approvare una riga*; quello che compare adesso non è una riga, è
+   l'appunto con tutti i suoi elementi sotto gli occhi. Il gesto resta uno
+   solo, e il raggruppamento non si scavalca: cambia **dove si legge**.
+   🔴 E il prezzo della decisione vecchia si è visto col telefono in mano:
+   il riquadro diceva «li trovi qui sotto» e l'elenco di sotto quell'appunto
+   lo **escludeva apposta** — per non ripetere la stessa riga in due
+   riquadri, che è una regola giusta. Per vedere la scheda bisognava uscire
+   da MEMO e rientrare. *Una schermata che dice dove guardare e non ci mette
+   niente è peggio di una che tace.*
+   ⚠️ E la regola del 27/08 **non** si rovescia: la stessa riga continua a
+   non stare in due riquadri — l'elenco di sotto non la ripete.
+
+## 85 · 10/09/2026 — «una ricorrenza si sceglie fra quattro cadenze fisse»
+
+1. **Cosa era stato deciso e quando.** Il 14/08/2026, col Blocco 1 del mandato
+   cumulativo, l'Agenda ha ricevuto le ricorrenze come **elenco chiuso di
+   quattro voci**: mensile, trimestrale, semestrale, annuale.
+
+2. **La ragione di allora.** Servivano agli **adempimenti societari**, che
+   erano gli unici impegni ricorrenti esistenti: le loro cadenze sono
+   esattamente quelle, e quattro voci le coprivano tutte. Un campo libero
+   avrebbe chiesto due dati per una cosa che ne voleva uno.
+
+3. **Cosa si decide adesso.** Due dati liberi: **quante volte** e **di che
+   cosa** — «ogni N giorni / settimane / mesi / anni». Le quattro di prima
+   diventano casi particolari (ogni 1 mesi, ogni 3 mesi, ogni 6 mesi, ogni 1
+   anni), e la colonna vecchia **si toglie**, non si spegne.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **È cambiato chi le usa.**
+   Finché in Agenda c'erano solo adempimenti, quelle quattro erano l'insieme
+   completo. Da quando ci finisce la manutenzione del locale — i filtri della
+   cappa, il tecnico della cella, le analisi — sono un **sottoinsieme che non
+   contiene il caso più comune**. 🔴 E il modo di fallire era quello che questo
+   progetto teme: il menu si apriva, quattro voci, **nessun errore**. *Un
+   elenco chiuso che non contiene il caso di chi guarda non sembra incompleto:
+   sembra che quella cosa non si possa fare.*
+
+## 86 · 10/09/2026 — «il modulo di un impegno chiede lo stato e la categoria»
+
+1. **Cosa era stato deciso e quando.** Sempre il 14/08/2026: il modulo di un
+   impegno mostra una casella **Stato** e una casella **Categoria**, e
+   quest'ultima è un **elenco chiuso** al posto del testo libero di prima.
+
+2. **La ragione di allora.** La categoria nasceva da un difetto misurato: su
+   venti righe di testo libero convivevano **quattro convenzioni diverse**
+   («Adempimenti societari», «Documenti», «amministrativo», vuoto). Lo stato
+   c'era per simmetria, perché il modulo mostrava tutte le colonne.
+
+3. **Cosa si decide adesso.** Tutte e due escono dal modulo. Le colonne
+   restano, e su un impegno che si sta correggendo restano quelle che erano.
+   Un impegno scritto a mano nasce «da fare» e «altro».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Sulla categoria vale
+   ancora, e infatti il vocabolario chiuso NON è stato toccato**: quello che è
+   caduto è che valesse la pena chiederla ogni volta. La misura è la stessa che
+   l'aveva giustificata — su venti righe la risposta era «Altro» **quindici
+   volte**. L'elenco chiuso resta per chi la categoria la scrive davvero: i
+   moduli che creano impegni da soli.
+   Sullo stato invece la ragione era la simmetria, che **non è una ragione
+   d'uso**: non esiste il caso di uno che apre «Nuovo impegno» per dichiararlo
+   già completato, e chiudere si fa con la spunta nell'elenco.
+   ⚠️ **Il prezzo dichiarato**: correggendo a mano un impegno nato da un altro
+   modulo non se ne può più cambiare la categoria da qui. Nessuno l'ha mai
+   chiesto, e riscrivere all'indietro i dati storici era il rischio da evitare.
+
+## 87 · 10/09/2026 — «nel quadrotto di un impegno si tocca il titolo»
+
+1. **Cosa era stato deciso e quando.** Il 29/08/2026, costruendo
+   `ElencoAdattivo`: *«se c'è un'azione, il blocchetto non è più un pulsante —
+   un bottone dentro un bottone non è HTML valido; e se serve anche `onTocco`
+   il titolo prende il suo pulsante per conto proprio»*.
+
+2. **La ragione di allora.** È vera e non si tocca: un bottone dentro un
+   bottone finisce col tocco che va a chi capita, ed è la stessa trappola del
+   numero di telefono dentro la riga della prenotazione (19/08).
+
+3. **Cosa si decide adesso.** Il riquadro **ascolta** il tocco senza essere un
+   pulsante, e **si tira indietro** quando il tocco è arrivato a un comando
+   suo. Il titolo smette di essere un pulsante.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera, e la
+   forma nuova la rispetta**: non c'è nessun bottone dentro un bottone. Quello
+   che era sbagliato era la **conseguenza** che se n'era tratta — che allora il
+   bersaglio dovesse restringersi al titolo. Su un telefono quella striscia di
+   testo è alta un centimetro in mezzo a un riquadro che sembra tutto
+   premibile: si finisce quasi sempre a lato, e lì non succedeva niente.
+   ⚠️ E la protezione dei comandi **guarda il bersaglio** invece di chiedere a
+   ogni comando di difendersi: sono otto elenchi, e il nono comando scritto fra
+   sei mesi lo dimenticherebbe **senza nessun errore**.
+
+## 88 · 11/09/2026 — «la provenienza di un impegno si legge nell'elenco, in fondo al quadrotto»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026 (`42d96cf`), togliendo
+   la colonna «Da» dall'elenco dell'Agenda: la provenienza restava come **nota
+   in fondo al quadrotto**, solo per gli impegni non scritti a mano («nato
+   dalla posta», «nato dall'Archivio documenti»).
+
+2. **La ragione di allora.** Un impegno nato da solo è quello che spiega
+   perché una riga è lì senza che nessuno l'abbia scritta; e come nota invece
+   che come colonna non occupava una riga su ogni impegno.
+
+3. **Cosa si decide adesso.** La provenienza esce dall'elenco, sul telefono e
+   sul computer, e sta **in fondo alla scheda dell'impegno**, sotto il modulo,
+   in piccolo. Deciso da Alessio nel collaudo su iPhone dell'11/09.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora a metà**:
+   l'informazione serve, e infatti non sparisce — è a un tocco. Non vale più il
+   posto: la domanda dell'elenco è «cosa devo fare adesso», e la provenienza
+   non la cambia. ⚠️ **Il prezzo**: guardando l'elenco non si distingue più a
+   colpo d'occhio un impegno nato da solo da uno scritto a mano.
+
+## 89 · 11/09/2026 — «un impegno riservato porta il segno «Riservato» nell'elenco»
+
+1. **Cosa era stato deciso e quando.** Il 04/08/2026 (`fb633ab`, §3.18:
+   i task riservati non sono più visibili allo staff), l'elenco dell'Agenda ha
+   ricevuto il segno «Riservato» accanto al titolo degli impegni che lo staff
+   non vede; poi anche l'elenco del giorno nel Calendario.
+
+2. **La ragione di allora.** Nasceva insieme alla regola, che chiudeva una
+   fuga di dati vera: il segno faceva vedere quali impegni erano stati tolti
+   allo staff.
+
+3. **Cosa si decide adesso.** Il segno esce dall'elenco e dal Calendario.
+   **Il dato e la regola non cambiano**: la visibilità si vede e si cambia
+   nella scheda dell'impegno («Visibile allo staff»; per gli impegni
+   automatici, la frase in fondo alla scheda). Deciso da Alessio nel collaudo
+   su iPhone dell'11/09.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La regola vale ancora
+   intera**, e infatti il database non è toccato: esce la spiegazione, non la
+   protezione. Il segno lo vedeva solo il titolare — allo staff quegli impegni
+   non arrivano proprio — e sul telefono spostava il resto della scheda
+   (misurato l'11/09: la stella fra 16 e 155 punti dal bordo). ⚠️ **Il
+   prezzo**: dall'elenco il titolare non sa più quali impegni lo staff non
+   vede; lo scopre aprendo la scheda.
+
+## 90 · 11/09/2026 — «giorno e ora stanno affiancati, in due colonne uguali»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026 (`42d96cf`): nella scheda
+   di un impegno giorno e ora — della scadenza e del promemoria — affiancati in
+   due colonne della stessa larghezza, con `min-w-0` perché non uscissero dallo
+   schermo.
+
+2. **La ragione di allora.** Sono una coppia e si leggono insieme; `min-w-0`
+   era la cura della famiglia misurata il 25/08 su HACCP, Magazzino e Comande.
+
+3. **Cosa si decide adesso.** Ogni casella è larga quanto il suo contenuto
+   (con un minimo in centimetri veri), testo da 3,2 mm, alta 0,75 cm;
+   affiancate quando ci stanno, a capo quando no. Ricostruita anche la riga
+   «Si ripete — ogni [n] [unità]».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La coppia resta, dove
+   ci sta.** Era sbagliata la misura: `min-w-0` stringe la colonna, non la
+   casella. Misurato l'11/09 a 390 punti: ogni metà ne ha 149, una casella di
+   data ne chiede 175 (251 a 64 punti per centimetro), e su Safari la data si
+   tagliava. Il primo rimedio — una sotto l'altra, a tutta larghezza — Alessio
+   l'ha respinto al collaudo: troppo grandi. ⚠️ **Il prezzo**: a 64 punti per
+   centimetro giorno e ora vanno a capo, perché affiancati chiederebbero 329
+   punti su 310.
+
+## 91 · 11/09/2026 — «`min-w-0` tiene la data dentro la sua colonna»
+
+1. **Cosa era stato deciso e quando.** Il 12/08/2026 (`f93ecca`, «Il campo
+   data non si stringe da solo, e schiaccia quello accanto»), nella
+   prenotazione pubblica: una data affiancata ad altri campi sta in una
+   colonna di griglia con `min-w-0`, così comanda la colonna e la data si
+   stringe. Lo stesso schema è stato ripreso poi in altre schermate.
+
+2. **La ragione di allora.** Una casella di data ha una larghezza minima
+   decisa dal browser: senza `min-w-0` usciva dalla colonna e finiva sopra
+   il campo accanto — sui telefoni stretti, sempre.
+
+3. **Cosa si decide adesso.** Date e ore hanno una larghezza **dichiarata**
+   sul loro testo (`campo-data` 11,5 em, `campo-ora` 7,5 em) e i campi
+   stanno in una riga che va a capo (`riga-campi`, in `index.css`): quando
+   due non entrano, il secondo passa sotto. SPEC-0010, mandato «telefono
+   ordinato».
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **La ragione vale
+   ancora** — la data non deve uscire né coprire il vicino — e la forma
+   nuova la rispetta. Era sbagliata la cura: `min-w-0` impedisce alla data
+   di uscire **stringendola sotto il suo contenuto**, e una data stretta si
+   taglia (Chrome) o esce lo stesso (Safari). Misurato l'11/09 col
+   censimento del telefono (`npm run misura:telefono`): in 16 schermate le
+   date avevano fra 132 e 192 punti e ne chiedevano 181, fino a 260 a 64
+   punti per centimetro. ⚠️ **Il prezzo**: sul telefono due date non stanno
+   più affiancate (chiederebbero più dei 326 punti di una riga) e vanno una
+   sotto l'altra — ognuna larga quanto la sua data, non tutta la riga.
+
+## 92 · 11/09/2026 — «la rete dell'Agenda guarda la frase detta intera»
+
+⚠️ Il numero è 92 e non 91 perché il 91 sta nella PR #57, non ancora unita
+quando questa sezione è stata scritta.
+
+1. **Cosa era stato deciso e quando.** L'08/09/2026 (`066f263`): la rete
+   deterministica che distingue «cosa nuova», «da segnare fatto» e «da
+   spostare» guarda il **dettato intero** e ha l'ultima parola su ogni azione
+   d'Agenda della filza (`correggiAgenda` in `ascolta-voce/agenda.ts`).
+
+2. **La ragione di allora.** Il modello riconduceva «segna come fatto il
+   rinnovo della firma» alla cosa più vicina che conosceva — un promemoria — e
+   nasceva un impegno doppio, approvabile, senza nessun errore. Si guardava il
+   dettato e non il riassunto del modello (regola del 07/09).
+
+3. **Cosa si decide adesso.** Deciso da Alessio l'11/09, variante (a): ogni
+   azione porta il suo **pezzo di frase**, copiato; la rete decide su quelle
+   parole **solo se la separazione è certa** (pezzi detti davvero, una volta
+   sola, senza sovrapporsi). In una frase mista che non si separa con
+   certezza, le cose d'Agenda restano `agenda_da_chiarire`: non approvabili,
+   col motivo scritto. E cade anche la seconda metà della regola dell'08/09 —
+   *«il gesto lo decide il modello quando lo dichiara»*: uno spostamento o una
+   chiusura dichiarati si approvano solo se le parole di quella cosa li dicono
+   (rilievo della revisione del diff).
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora intera**,
+   e la rete resta: cambia **su quali parole** decide. Il dettato intero,
+   misurato l'11/09, faceva diventare «da spostare» tutti gli appuntamenti
+   nuovi detti nella stessa frase di uno spostamento, e con un impegno
+   omonimo in Agenda approvandone uno si spostava quello vecchio. ⚠️ **Il
+   prezzo**: più attrito — se il modello non restituisce i pezzi, in una
+   frase mista tutte le cose d'Agenda restano da chiarire, anche quelle
+   capite bene; due spostamenti che condividono lo stesso verbo lasciano da
+   chiarire il secondo; e un verbo che l'elenco non conosce («anticipa»)
+   non basta più da solo a spostare un impegno.
+
+## 93 · 13/09/2026 — «al terzo gradino basta che uno contenga l'altro»
+
+⚠️ Il numero è 93: il 91 sta nella PR #57 e il 92 nella #58, non ancora unite
+quando questa sezione è stata scritta.
+
+1. **Cosa era stato deciso e quando.** Il 09/09/2026
+   (`20260909000003_agenda_riconosce_l_impegno.sql`): il terzo gradino di
+   `impegni_compatibili` — «uno contiene l'altro» — confronta i due testi
+   ridotti all'osso con `like '%…%'`, e conserva il confronto vecchio accanto
+   a quello senza articoli.
+
+2. **La ragione di allora.** Non perdere nessun impegno che prima si trovava:
+   *«togliendo il vecchio, qualcosa che prima si trovava smetterebbe di
+   trovarsi»*.
+
+3. **Cosa si decide adesso.** Chiesto da Alessio il 13/09, dopo il caso
+   «Test»: il terzo gradino contiene solo **parole e pezzi interi**, e un
+   pezzo tenuto insieme da trattino, cancelletto, barra o punto
+   («TEST-AUTO», «F24-bis») resta uno solo (`20260913000001`). Nessuna
+   soglia di lunghezza nuova. I gradini 1 e 2 non cambiano.
+
+4. **Perché la ragione di allora non vale più.** ⚠️ **Vale ancora per le
+   parole intere**, che continuano a trovarsi tutte; cade per i pezzi di
+   parola, che trovavano cose sbagliate: il 12/09 «Test» è diventato
+   candidato dentro «TEST-AUTO…» e nove prove vocali sono diventate rosse.
+   ⚠️ **Il prezzo**: un frammento di un pezzo col trattino («up caldaia» per
+   «Check-up caldaia») e una parola detta a metà non combaciano più al terzo
+   gradino — si ridice, o si usa «Fallo a mano».
+
+## 94 · 21/09/2026 — «un investimento anticipato per conto della società entra nel costo»
+
+1. **Cosa era stato deciso e quando.** Il **21/09/2026**, poche ore prima,
+   nella prima stesura di questa stessa proposta (#121): *«un investimento
+   pagato per conto della società e poi rimborsato **non entra** in questo
+   totale»*. Scritto come una conseguenza dichiarata, nel riepilogo, nella
+   migrazione e in `DECISIONI.md`.
+
+2. **La ragione di allora.** SPEC-0004 dice, fra i fuori-scope, che sommare
+   le anticipazioni rimborsabili *«raddoppierebbe il costo»*; e il commento
+   del vincolo del 16/08 dice che una nota collegata a una fattura *«smette
+   di essere solo un debito e diventa da sola un costo — la spesa
+   risulterebbe contata due volte, in silenzio»*. Da lì: meglio zero che due.
+
+3. **Cosa si decide adesso.** Decisione di Alessio: entra **una volta**,
+   sotto **Borgo 58**, **indipendentemente dal rimborso**. L'etichetta si
+   mette anche su `anticipazioni_socio`, cioè nel punto in cui la spesa vive;
+   il movimento «Rimborso al titolare» resta non marcabile; e il doppione
+   fattura+nota viene **impedito** da due trigger che si guardano a vicenda
+   sullo stesso `supplier_invoice_id`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Non era una scelta: era
+   un buco.** Il timore del doppio conteggio era giusto, ma la cura scelta
+   produceva **zero**, non uno — e zero non è la risposta prudente a
+   «quanto è costato aprire»: è la risposta sbagliata. ⚠️ *Un'etichetta che
+   manca nel punto in cui vive la spesa non è una regola prudente: è un buco
+   silenzioso*, e non lo dichiarava nessun numero — il totale sembrava
+   completo.
+   ⚠️ **E la ragione di allora resta intera dov'è nata**: la regola del 16/08
+   vale nel conteggio **fiscale**, che non è toccato. Qui la domanda è
+   un'altra — *quanto denaro è uscito per il progetto*, non *quanto costo è
+   deducibile* — e la stessa riga può rispondere «sì» all'una e «no»
+   all'altra senza contraddirsi.
+   ⚠️ **Il prezzo, dichiarato**: due colonne `e_investimento` invece di una, e
+   due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
+   una spesa può vivere, e non si paga con una terza tabella.
+
+## 95 · 22/09/2026 — «lo scarto del prodotto vale per ogni riga, a ogni calcolo»
+
+1. **Cosa era stato deciso e quando.** Il **13/08/2026**, con le schede dei
+   prodotti: `ingredients.waste_percentage_default` — *«la percentuale di
+   scarto proposta: è quanto di ciò che si compra finisce nel bidone, e serve
+   al costo del piatto»*. E il modo in cui è stata costruita è il punto: non
+   precompilava niente, **si sostituiva al volo** dentro il calcolo, con
+   `coalesce(riga.waste_percentage, prodotto.default, 0)`.
+
+2. **La ragione di allora.** Era giusta e resta scritta: *«con lo scarto a
+   zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
+   l'errore è enorme»*. Una riga di ricetta a cui nessuno aveva detto lo
+   scarto doveva comunque costare il vero, e l'unico numero disponibile era
+   quello del prodotto.
+
+3. **Cosa si decide adesso.** Decisione di Alessio del **22/09/2026**: il
+   valore standard **resta** sulla scheda del prodotto — confermando la sua
+   decisione del 25/08 contro una mia proposta che lo toglieva — ma **serve
+   solo a precompilare una volta** lordo e netto quando **nasce** una riga.
+   Dopo, la riga è **autonoma e autorevole**: nessuna eredità viva.
+   La garanzia non è una promessa ma un vincolo — `recipe_ingredients.
+   waste_percentage` diventa `not null`, quindi il secondo argomento di quei
+   `coalesce` **non è più raggiungibile** — e i **cinque** punti che lo
+   nominavano sono riscritti dal loro corpo vivo.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché quel numero non
+   arrivava solo dove mancava: arrivava SEMPRE, anche dove qualcuno aveva già
+   scelto.** Misurabile: cambiando lo scarto sulla scheda di un prodotto si
+   spostava il food cost di **ogni** ricetta che lo usa, comprese quelle
+   scritte mesi prima da chi quel numero non l'aveva scelto — e nessun
+   errore lo diceva, perché il numero nuovo è plausibile quanto il vecchio.
+   ⚠️ *Un valore che continua a valere per righe già scritte non è un valore
+   standard: è una decisione presa al posto di chi le ha scritte.*
+   ⚠️ **E la ragione di allora è servita intera**: la riga senza scarto non
+   resta scoperta — la sanatoria le materializza lo scarto che aveva davvero
+   in quel momento, e la precompilazione continua a darlo a chi ne scrive una
+   nuova. Cambia **quando** il numero arriva, non **se**.
+   ⚠️ **Il prezzo, dichiarato**: correggere lo scarto standard di un prodotto
+   non sistema più da sé le ricette già scritte. Si paga volentieri, perché
+   il verso opposto — sistemarle tutte in silenzio — è il difetto.
+
+5. **E una cosa che NON è stata rovesciata, scritta perché non si perda.** La
+   prima stesura di questa proposta **toglieva il campo** dalla scheda del
+   prodotto, rovesciando la decisione di Alessio del 25/08 — *«il campo %
+   scarto standard RESTA: serve per l'ingrediente che va solo pulito, senza
+   una preparazione da cui ricavare la resa»*. **Non confermata**: il caso
+   del carciofo è vero, e senza quel campo lo stesso numero andrebbe
+   riscritto da zero su ogni ricetta che usa quel prodotto.
+   ⚠️ Vale la pena notare **come** era stato fatto: dentro un commento di
+   migrazione, con la ragione scritta bene. *Un rovesciamento ben
+   argomentato resta un rovesciamento, e va posto a chi ha preso la
+   decisione invece che eseguito.*

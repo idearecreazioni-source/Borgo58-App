@@ -29,7 +29,7 @@ export const SENZA_CAUSALE = "senza causale";
 
 const DESCRIZIONE_ALTRI = {
   etichetta: "Finalità aziendale",
-  segnaposto: "Finalità aziendale (opz., utile in verifica)",
+  segnaposto: "Finalità aziendale (facoltativa, utile in verifica)",
   conEtichetta: false,
 };
 

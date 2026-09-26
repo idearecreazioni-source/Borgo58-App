@@ -1,34 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import {
-  annullaAzione,
+  appuntiDaApprovare,
   azioniDellaDettatura,
-  azioniInAttesa,
   chiaviVoce,
-  confermaAzione,
   creaChiaveVoce,
   mandaDettato,
   revocaChiaveVoce,
-  scegliPerAzione,
 } from "../../lib/api/voce";
+import { useGestiAppunti } from "../../lib/useGestiAppunti";
+import { ritornoDaMemo } from "../../lib/calcoli/ritornoMemo";
+import { MODULES } from "../../data/modules";
 import { spesaAiDelMese } from "../../lib/api/assistenteFoto";
+import { rispondiA } from "../../lib/api/domandeMemo";
+import {
+  accendiSuoni,
+  preparaSuoni,
+  suoniAccesi,
+  suonoMicrofonoAperto,
+  suonoMicrofonoChiuso,
+} from "../../lib/suoni";
+import { titoloDellaDomanda } from "../../lib/calcoli/domande";
 import {
   comeEAndata,
   componiDettato,
   creaRiconoscitore,
-  daQuantoAspetta,
   fraseDelMicrofono,
-  perchéAspetta,
   riconoscitoreDisponibile,
   statoDettatura,
-  unaVoltaSola,
 } from "../../lib/calcoli/voce";
 import { formatEUR } from "../../lib/constants";
-import { indirizzoAMano } from "../../lib/calcoli/aMano";
 import BarraDelPollice from "../../components/BarraDelPollice";
+import AppuntoDaApprovare from "../../components/AppuntoDaApprovare";
+import RispostaMemo from "../../components/RispostaMemo";
 import { ambienteCorrente } from "../../lib/ambiente";
+import { segnaRegistrazione } from "../../lib/registrazioneInCorso";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -57,6 +65,11 @@ export default function Detta() {
   const [errore, setErrore] = useState("");
   const [inCorso, setInCorso] = useState(false);
   const [riscontro, setRiscontro] = useState(null);
+  // 🔴 LA RISPOSTA A UNA DOMANDA — MEMO consultivo, fase 1. Vive accanto
+  //    al riscontro e mai insieme a lui: una frase è una domanda oppure
+  //    una cosa da segnare, e mostrarli tutt'e due farebbe cercare un
+  //    appunto che non c'è.
+  const [risposta, setRisposta] = useState(null);
   const [attesa, setAttesa] = useState(null);
   const [spesa, setSpesa] = useState(null);
   const [chiavi, setChiavi] = useState(null);
@@ -64,18 +77,54 @@ export default function Detta() {
   const [nomeChiave, setNomeChiave] = useState("iPhone di Alessio");
   const [apriChiavi, setApriChiavi] = useState(false);
   const [apriGuida, setApriGuida] = useState(false);
+  // La preferenza dei suoni vive nel browser di chi detta: si legge una
+  // volta all'apertura, cosi la casella parte dallo stato vero.
+  const [conSuoni, setConSuoni] = useState(() => suoniAccesi());
 
   const recRef = useRef(null);
   const frasiRef = useRef([]);
+  // Il suono di apertura e gia suonato per questa accensione? Il
+  // riconoscimento si riapre da se dopo una pausa, e senza questa memoria
+  // il bip tornerebbe in mezzo alla dettatura.
+  const suonatoRef = useRef(false);
+  // Dove si trovano le schede appena nate, per portarci l'occhio.
+  const nuoviRef = useRef(null);
   const disponibile = riconoscitoreDisponibile();
   // ⚠️ PERCHE' manca, non solo SE manca: la fascia di prima accusava il
   //    browser anche quando il browser era giusto e a mancare era il modo in
   //    cui la pagina girava. Vedi statoDettatura() in calcoli/voce.js.
   const perche = statoDettatura();
 
+  // 🔴 DA DOVE SI È ARRIVATI — 11/09/2026, mandato «MEMO affidabile».
+  //    Il pulsante MEMO in testata (e la voce del menu) portano qui
+  //    l'indirizzo della schermata di partenza; da qui si torna lì con un
+  //    tocco, che si sia finito o che si sia cambiato idea.
+  //    ⚠️ Arrivando da un indirizzo scritto a mano o dalla Scorciatoia non
+  //    c'è nessuna partenza, e allora non compare niente: un «torna» che
+  //    non sa dove andare è un pulsante che mente.
+  const location = useLocation();
+  const ritorno = ritornoDaMemo(location.state?.da, MODULES);
+
+  // 🔴 UNA LETTURA IN RITARDO NON RIPORTA INDIETRO LA SCHERMATA —
+  //    09/09/2026. `ricarica()` parte all'apertura e di nuovo appena
+  //    finisce una dettatura: sono due letture in volo sulla stessa
+  //    lista. Se la prima — partita prima, quindi SENZA l'appunto appena
+  //    nato — arriva per ultima, l'appunto **sparisce dallo schermo** un
+  //    istante dopo essere comparso.
+  //    ⚠️ E sparirebbe in silenzio: nessun errore, solo una scheda che
+  //    c'era e non c'e' piu'. Il numero del giro dice chi ha l'ultima
+  //    parola — vince sempre la lettura piu' recente, non la piu'
+  //    veloce.
+  const giroRef = useRef(0);
   const ricarica = useCallback(() => {
-    leggi(azioniInAttesa()).then(setAttesa);
-    leggi(spesaAiDelMese()).then(setSpesa);
+    const mio = giroRef.current + 1;
+    giroRef.current = mio;
+    leggi(appuntiDaApprovare()).then((v) => {
+      if (giroRef.current === mio) setAttesa(v);
+    });
+    leggi(spesaAiDelMese()).then((v) => {
+      if (giroRef.current === mio) setSpesa(v);
+    });
   }, []);
 
   useEffect(() => {
@@ -105,6 +154,19 @@ export default function Detta() {
     setParziale("");
   }, []);
 
+  // 🔴 A MICROFONO ACCESO IL MENU CHIEDE PRIMA DI CAMBIARE PAGINA
+  //    (12/09/2026, mandato notturno, blocco C). Qui si dice al telaio che
+  //    si sta registrando, e come lasciar perdere: spegnere SENZA mandare.
+  //    Cambiare pagina chiude MEMO, e quello che si è detto sparirebbe in
+  //    silenzio; così lo sceglie chi tocca. Vedi `registrazioneInCorso.js`.
+  useEffect(() => {
+    if (!ascolto) return undefined;
+    return segnaRegistrazione(() => {
+      frasiRef.current = [];
+      spegni();
+    });
+  }, [ascolto, spegni]);
+
   const manda = useCallback(
     async (testo) => {
       if (!testo) {
@@ -116,12 +178,51 @@ export default function Detta() {
       setStato("Sto capendo quello che hai detto…");
       try {
         const esito = await mandaDettato(testo);
+
+        // 🔴 ERA UNA DOMANDA: non è nato nessun appunto, e non c'è niente da
+        //    approvare. Si legge il gestionale COL PROPRIO ACCESSO e si
+        //    compone la risposta scritta.
+        //    ⚠️ Le letture stanno QUI e non nella funzione online: quella
+        //    gira con la chiave di servizio, dove la RLS non c'è, e la
+        //    risposta sarebbe quella del database invece che quella di chi
+        //    sta guardando.
+        if (esito?.esito === "domanda") {
+          setStato("Sto leggendo il gestionale…");
+          // ⚠️ LA FRASE DETTA VIAGGIA CON LA DOMANDA, e serve davvero: su
+          //    «quando scade …» e' la frase — non il modello — a dire se si
+          //    parla dell'Agenda o di una cosa in cella.
+          const domanda = { ...esito.domanda, testo: esito?.testo ?? testo };
+          const { risposta: r } = await rispondiA(domanda);
+          setRisposta({ domanda, titolo: titoloDellaDomanda(domanda), testo, r });
+          setRiscontro(null);
+          setFrasi([]);
+          frasiRef.current = [];
+          setStato("");
+          // ⚠️ Anche una domanda e' costata: la riga della spesa del mese si
+          //    rinfresca lo stesso, altrimenti resterebbe ferma su un numero
+          //    piu' basso del vero fino alla prossima apertura.
+          ricarica();
+          return;
+        }
+
         // ⚠️ Anche quando l'assistente non ha risposto, la dettatura è
         //    stata registrata col suo testo: si legge lo stesso, e quello
         //    che ha detto non si perde.
         const id = esito?.dettatura_id ?? esito?.dettatura?.dettatura_id;
         const azioni = id ? await azioniDellaDettatura(id) : [];
-        setRiscontro({ ...comeEAndata(azioni), testo, messaggio: esito?.messaggio ?? null });
+        // ⚠️ IL NUMERO DELLA DETTATURA SI SEGNA (11/09/2026). Fino a oggi
+        //    il riscontro non lo teneva, e la rilettura dopo un «Approva» o
+        //    una scelta partiva col numero vuoto: il database rispondeva che
+        //    la funzione senza numero non esiste. Dopo un «Approva» lo
+        //    nascondeva il silenzio; dopo una scelta RIUSCITA la schermata
+        //    diceva «Non è stato scritto niente — riprova».
+        setRiscontro({
+          ...comeEAndata(azioni),
+          testo,
+          messaggio: esito?.messaggio ?? null,
+          dettaturaId: id ?? null,
+        });
+        setRisposta(null);
         setFrasi([]);
         frasiRef.current = [];
         setStato("");
@@ -139,10 +240,19 @@ export default function Detta() {
   const accendi = () => {
     setErrore("");
     setRiscontro(null);
+    setRisposta(null);
     if (!disponibile) {
       setErrore(`${perche.frase} ${perche.cosaFare}`);
       return;
     }
+
+    // 🔴 L'AUDIO SI PREPARA DENTRO IL TOCCO, e non altrove: i browser
+    //    aprono l'audio solo dentro un gesto di chi guarda. Creandolo al
+    //    primo suono — che arriva da un evento del sistema, non da un dito
+    //    — il suono resterebbe muto sul telefono, e a schermo non si
+    //    vedrebbe niente.
+    preparaSuoni();
+    suonatoRef.current = false;
 
     const rec = creaRiconoscitore();
     frasiRef.current = [];
@@ -150,7 +260,23 @@ export default function Detta() {
     setParziale("");
 
     rec.onstart = () => setStato("Ti sto ascoltando. Di' pure tutto di fila.");
-    rec.onaudiostart = () => setStato("Microfono aperto: parla pure.");
+    // 🔴 IL SUONO ARRIVA QUI E NON AL TOCCO — 10/09/2026, Blocco 5.
+    //    `onaudiostart` è il momento in cui l'audio entra DAVVERO. Un suono
+    //    al tocco direbbe «sto registrando» anche quando il permesso è
+    //    negato, il microfono è occupato da un'altra app, o la pagina non è
+    //    su un indirizzo cifrato — e in tutti quei casi si parlerebbe a
+    //    vuoto convinti del contrario.
+    // ⚠️ E UNA VOLTA SOLA PER ACCENSIONE: il riconoscimento si chiude da sé
+    //    dopo una pausa lunga e viene riaperto (vedi `onend` più sotto),
+    //    quindi senza questa guardia il suono tornerebbe **in mezzo a una
+    //    dettatura**, dove non dice niente di nuovo e interrompe.
+    rec.onaudiostart = () => {
+      setStato("Microfono aperto: parla pure.");
+      if (!suonatoRef.current) {
+        suonatoRef.current = true;
+        suonoMicrofonoAperto();
+      }
+    };
 
     rec.onresult = (e) => {
       let corrente = "";
@@ -205,6 +331,11 @@ export default function Detta() {
 
   const fermaEManda = () => {
     const testo = componiDettato(frasiRef.current, parziale);
+    // ⚠️ IL SECONDO SUONO SOLO SE IL PRIMO C'È STATO: se il microfono non
+    //    si era mai aperto, non c'è nessuna registrazione da chiudere — e
+    //    un suono di fine su una cosa che non è mai cominciata direbbe che
+    //    qualcosa è stato registrato.
+    if (suonatoRef.current) suonoMicrofonoChiuso();
     spegni();
     setStato("");
     manda(testo);
@@ -221,76 +352,85 @@ export default function Detta() {
   //    ⚠️ Il database ha comunque l'ultima parola (una cosa già eseguita
   //       viene respinta sotto blocco): qui si toglie il secondo giro di
   //       rete e il secondo messaggio, che è ciò che confonde chi guarda.
-  const [inAzione, setInAzione] = useState(null);
-  const [esiti, setEsiti] = useState({});
-  const guardia = useRef(unaVoltaSola());
-
+  // ⚠️ LA GUARDIA E L'ESITO VIVONO IN `useGestiAppunti` DALL'11/09/2026:
+  //    gli stessi gesti si fanno anche dalla Dashboard, e due copie della
+  //    stessa guardia divergerebbero al primo ritocco. Le regole sono
+  //    quelle di prima, spostate e non riscritte — compresa quella del
+  //    06/09: **solo la scrittura decide se è andata**, e la rilettura che
+  //    viene dopo non può trasformare un sì riuscito in «non è stato
+  //    scritto niente» (che inviterebbe a riprovare, cioè a scrivere due
+  //    volte).
   // ⚠️ L'esito sta SULLA RIGA che è stata toccata, non in cima alla pagina:
   //    «un rifiuto lontano dal gesto è un rifiuto che non c'è», ed è la
   //    lezione del 17/08 pagata già una volta in Cassa.
-  const segna = (id, esito) => setEsiti((e) => ({ ...e, [id]: esito }));
+  const { inAzione, esiti, approva, butta, scegli: scegliElemento } = useGestiAppunti();
 
-  const conferma = async (azione) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
-    setErrore("");
-    try {
-      await confermaAzione(azione.id);
-      segna(azione.id, { stato: "fatta" });
-      ricarica();
-      if (riscontro) {
-        const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
-        if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
-      }
-    } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
-    } finally {
-      guardia.current.lascia(azione.id);
-      setInAzione(null);
+  /**
+   * Rimette a posto la schermata dopo un gesto RIUSCITO.
+   *
+   * 🔴 LA RILETTURA SI APPLICA SOLO ALLA DETTATURA CHE L'HA CHIESTA — trovato
+   *    dalla revisione del diff, 11/09/2026. Mentre torna, si può già aver
+   *    dettato un'altra cosa: senza il confronto sul numero, la lista della
+   *    dettatura di prima prenderebbe il posto del riscontro nuovo.
+   */
+  const rileggiRiscontro = async () => {
+    ricarica();
+    const id = riscontro?.dettaturaId;
+    if (!id) return;
+    const azioni = await azioniDellaDettatura(id);
+    if (azioni.length) {
+      setRiscontro((r) => (r && r.dettaturaId === id ? { ...r, ...comeEAndata(azioni) } : r));
     }
   };
 
-  // ⚠️ Stessa guardia sincrona di «Sì, fallo», e con la STESSA chiave:
-  //    i due pulsanti fanno la stessa scrittura, quindi non devono poter
-  //    partire tutt'e due sulla stessa riga.
-  const scegli = async (azione, sceltaId) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
+  const conferma = (appunto) => {
     setErrore("");
-    try {
-      await scegliPerAzione(azione.id, sceltaId);
-      segna(azione.id, { stato: "fatta" });
-      ricarica();
-      if (riscontro) {
-        const azioni = await azioniDellaDettatura(azione.dettatura_id ?? riscontro.dettaturaId);
-        if (azioni.length) setRiscontro((r) => ({ ...comeEAndata(azioni), testo: r.testo }));
-      }
-    } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
-    } finally {
-      guardia.current.lascia(azione.id);
-      setInAzione(null);
-    }
+    return approva(appunto, rileggiRiscontro);
   };
 
-  const annulla = async (azione) => {
-    if (!guardia.current.prendi(azione.id)) return;
-    setInAzione(azione.id);
-    segna(azione.id, { stato: "in_corso" });
+  // ⚠️ Stessa guardia sincrona dell'approvazione, con la chiave dell'APPUNTO
+  //    che contiene l'elemento: è lì che la scheda legge l'esito.
+  const scegli = (appunto, elementoId, sceltaId) => {
     setErrore("");
-    try {
-      await annullaAzione(azione.id);
+    return scegliElemento(appunto, elementoId, sceltaId, rileggiRiscontro);
+  };
+
+  const annulla = (appunto) => {
+    setErrore("");
+    return butta(appunto, () => {
       ricarica();
+      // Le righe di questo appunto spariscono anche dal riquadro di sopra:
+      // altrimenti resterebbero li' come se aspettassero ancora.
+      const suoi = new Set((appunto.elementi ?? []).map((e) => e.id));
       setRiscontro((r) =>
-        r ? { ...r, daGuardare: r.daGuardare.filter((a) => a.id !== azione.id) } : r,
+        r ? { ...r, daGuardare: r.daGuardare.filter((a) => !suoi.has(a.id)) } : r,
       );
+    });
+  };
+
+  // -------------------------------------------------------------------
+  // Scegliere di quale delle due cose si parlava
+  // -------------------------------------------------------------------
+  // ⚠️ NON È UNA SCELTA CHE SCRIVE: rifà la stessa domanda con il nome per
+  //    intero, cioè un'altra lettura. Il modello non viene richiamato — la
+  //    domanda l'aveva già capita — quindi non costa niente.
+  const [inRisposta, setInRisposta] = useState(false);
+
+  const scegliSoggetto = async (candidato) => {
+    if (!risposta) return;
+    setInRisposta(true);
+    setErrore("");
+    try {
+      // ⚠️ Si porta dietro l'IDENTIFICATIVO di quello che è stato toccato,
+      //    non solo il nome: due prodotti che si chiamano uguale li
+      //    distingue solo quello.
+      const domanda = { ...risposta.domanda, soggetto: candidato.soggetto, scelto: candidato.chiave };
+      const { risposta: r } = await rispondiA(domanda);
+      setRisposta((v) => ({ ...v, domanda, titolo: titoloDellaDomanda(domanda), r }));
     } catch (e) {
-      segna(azione.id, { stato: "fallita", messaggio: e.message });
+      setErrore(e.message);
     } finally {
-      guardia.current.lascia(azione.id);
-      setInAzione(null);
+      setInRisposta(false);
     }
   };
 
@@ -335,16 +475,74 @@ export default function Detta() {
   //    pendenze sono «quello che aspetta da PRIMA», e una riga di dieci
   //    secondi fa non è da prima.
   const giaSopra = new Set((riscontro?.daGuardare ?? []).map((a) => a.id));
-  const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter((a) => !giaSopra.has(a.id));
+  // ⚠️ UN APPUNTO SPARISCE DA QUI SOLO SE E' TUTTO GIA' SOPRA. Con
+  //    il raggruppamento un appunto puo' contenere una riga appena detta e
+  //    due di stamattina: nasconderlo per la prima farebbe sparire anche le
+  //    altre due, che aspettano da prima e nessuno vedrebbe piu'.
+  const daGuardareOra = (Array.isArray(attesa) ? attesa : []).filter(
+    (a) => !(a.elementi ?? []).every((e) => giaSopra.has(e.id)),
+  );
+
+  // 🔴 GLI APPUNTI APPENA NATI — 09/09/2026, dal collaudo col telefono.
+  //    Il riquadro diceva «li trovi qui sotto» e l'elenco di sotto li
+  //    ESCLUDEVA apposta (la riga qui sopra): per vedere la scheda
+  //    bisognava uscire da MEMO e rientrare. *Una schermata che dice
+  //    dove guardare e non ci mette niente e' peggio di una che tace.*
+  //
+  //    ⚠️ LA REGOLA DEL 27/08 NON SI ROVESCIA: la stessa riga non sta in
+  //    due riquadri. Quello che cambia e' DOVE sta — la scheda intera
+  //    viene qui, dentro «Ne ho fatto un appunto», e l'elenco di sotto
+  //    continua a non ripeterla.
+  //
+  // 🔴 E L'APPUNTO E' QUELLO DEL SERVER, non una copia messa insieme dal
+  //    browser: e' la stessa riga che arriva da `appuntiDaApprovare()`,
+  //    con dentro i candidati da toccare, l'essere approvabile e tutto
+  //    il resto. Una scheda inventata qui sarebbe una promessa su cosa
+  //    verra' scritto, fatta da chi non lo sa.
+  const appenaFatti = (Array.isArray(attesa) ? attesa : []).filter(
+    (a) => (a.elementi ?? []).length > 0 && (a.elementi ?? []).every((e) => giaSopra.has(e.id)),
+  );
+
+  // ⚠️ SI PORTA L'OCCHIO DOVE E' COMPARSA, e una volta sola: la chiave e'
+  //    l'identificativo del primo appunto nuovo, non il fatto che ce ne
+  //    siano. Senza, ogni ricarica della lista rifarebbe scorrere la
+  //    pagina sotto le mani di chi sta leggendo.
+  const primoNuovo = appenaFatti[0]?.id ?? null;
+  useEffect(() => {
+    if (!primoNuovo) return;
+    const el = nuoviRef.current;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [primoNuovo]);
   const dettato = componiDettato(frasi, parziale);
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* 🔴 IL RITORNO DOVE SI ERA — 11/09/2026. In cima, perché è la prima
+          cosa che serve a chi ha cambiato idea; e mentre il microfono è
+          acceso dice «Annulla»: toccarlo in quel momento spegne tutto e
+          NON manda niente — quello che si era detto non diventa un
+          appunto. */}
+      {ritorno && (
+        <Link
+          to={ritorno.da}
+          className="tocco-riga mb-2 inline-flex items-center rounded-lg px-2 -mx-1 testo-sala text-b58-terracotta hover:underline"
+        >
+          ← {ascolto ? ritorno.annulla : ritorno.frase}
+        </Link>
+      )}
       <div className="mb-6">
         {/* 🔴 SI CHIAMA MEMO (27/08). Il titolo prende il nome, il pulsante
             «Premi e parla» no: quello è il gesto. */}
         <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">MEMO voce</h1>
-        <Didascalia testo="Premi una volta per accendere il microfono, di' tutto quello che ti serve di fila, poi ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo chiede." />
+        {/* ⚠️ Il testo va DENTRO il segno (11/09/2026): come `testo="…"`
+            il componente non lo leggeva, e la spiegazione si apriva vuota. */}
+        <Didascalia>
+          Premi una volta per accendere il microfono, di&apos; tutto quello che ti serve di fila, poi
+          ripremi per fermare. Quello che MEMO capisce con sicurezza lo scrive da sé; il resto te lo
+          chiede.
+        </Didascalia>
       </div>
 
       {errore && (
@@ -369,7 +567,7 @@ export default function Detta() {
                dal bordo alto** su uno schermo da 375, cioè nel terzo
                superiore — il punto più lontano dal pollice di chi tiene il
                telefono in una mano e un barattolo nell'altra. */}
-        <BarraDelPollice>
+        <BarraDelPollice spaziatore={false}>
         <button
           type="button"
           onClick={ascolto ? fermaEManda : accendi}
@@ -444,6 +642,19 @@ export default function Detta() {
       </div>
 
       {/* ------------------------------------------------------------
+          LA RISPOSTA A UNA DOMANDA — niente da approvare, niente scritto
+         ------------------------------------------------------------ */}
+      {risposta && (
+        <RispostaMemo
+          titolo={risposta.titolo}
+          testoDetto={risposta.testo}
+          risposta={risposta.r}
+          occupato={inRisposta}
+          onScegli={scegliSoggetto}
+        />
+      )}
+
+      {/* ------------------------------------------------------------
           IL RISCONTRO — arriva ALLA FINE, e sono due elenchi
          ------------------------------------------------------------ */}
       {riscontro && (
@@ -468,26 +679,95 @@ export default function Detta() {
             </ul>
           )}
 
+          {/* 🔴 QUI SI APPROVA L'APPUNTO — e fino al 09/09/2026 questa riga
+              diceva il contrario. La regola di SPEC-0013 che la motivava
+              resta però intera, e va letta per quello che vietava: qui
+              c'era il «Sì, fallo» di **ogni riga**, e approvare una riga
+              scavalcava il raggruppamento — si diceva sì a una voce di una
+              lista senza vedere le altre due che ci stavano dentro.
+              ⚠️ Quello che compare adesso non è una riga: è **l'appunto
+                 intero**, la stessa scheda dell'elenco di sotto, con tutti
+                 i suoi elementi sotto gli occhi. Il gesto è uno solo, e il
+                 raggruppamento non si scavalca — cambia solo DOVE si legge.
+              🔴 E il perché è un difetto misurato: il riquadro diceva «li
+                 trovi qui sotto», e l'elenco di sotto li **escludeva**
+                 apposta. Per vedere la scheda bisognava uscire da MEMO e
+                 rientrare. *Una schermata che dice dove guardare e non ci
+                 mette niente è peggio di una che tace.*
+              ⚠️ La regola del 27/08 non si rovescia: la stessa riga NON sta
+                 in due riquadri. L'elenco di sotto continua a non
+                 ripeterla — risponde a *cosa aspetta da prima*, e una cosa
+                 detta dieci secondi fa non aspetta da prima. */}
           {riscontro.daGuardare.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4" ref={nuoviRef}>
               <h3 className="testo-sala font-medium text-b58-charcoal mb-2">
-                Queste te le chiedo:
+                {riscontro.daGuardare.length === 1
+                  ? "Ne ho fatto un appunto:"
+                  : `Ne ho fatti ${riscontro.daGuardare.length} appunti:`}
               </h3>
-              <ul className="space-y-2">
-                {riscontro.daGuardare.map((a) => (
-                  <RigaDaGuardare
-                    key={a.id}
-                    azione={a}
-                    occupato={inAzione === a.id}
 
-                    esito={esiti[a.id]}
-                    onConferma={() => conferma(a)}
-                    onAnnulla={() => annulla(a)}
-                    onScegli={(id) => scegli(a, id)}
-                  />
-                ))}
-              </ul>
+              {/* 🔴 LA SCHEDA INTERA, SUBITO. Prima qui c'era la sola frase
+                  detta, e la scheda — coi candidati da toccare e con
+                  «Approva» — compariva solo uscendo e rientrando.
+                  ⚠️ Finche' la lista del server non e' arrivata resta la
+                  frase: e' quello che si sa in quel momento, e inventare
+                  una scheda al posto suo vorrebbe dire promettere cosa
+                  verra' scritto senza averlo letto. */}
+              {appenaFatti.length > 0 ? (
+                <ul className="space-y-3">
+                  {appenaFatti.map((a) => (
+                    <AppuntoDaApprovare
+                      key={a.id}
+                      appunto={a}
+                      occupato={inAzione === a.id}
+                      esito={esiti[a.id]}
+                      onApprova={() => conferma(a)}
+                      onScarta={() => annulla(a)}
+                      onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <>
+                  <ul className="space-y-1">
+                    {riscontro.daGuardare.map((a) => (
+                      <li key={a.id} className="testo-sala text-b58-charcoal">
+                        · {a.frase}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="testo-sala mt-2 text-b58-charcoal-soft">
+                    Sto rileggendo quello che ho scritto…
+                  </p>
+                </>
+              )}
+
+              <p className="testo-sala mt-2 text-b58-charcoal-soft">
+                Non ho scritto niente nel gestionale: qui sopra ci sono i dati che scriverei.
+              </p>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* 🔴 FINITO, SI TORNA CON UN TOCCO — 11/09/2026. Non da solo: il
+          riscontro ALLA FINE è una decisione di Alessio del 25/08, e
+          tornare indietro in automatico lo farebbe sparire proprio quando
+          c'è da leggerlo.
+          ⚠️ E si dice che gli appunti restano: tornare non è approvare, e
+          chi torna nel modulo non deve credere di aver già scritto. */}
+      {ritorno && (riscontro || risposta) && !ascolto && (
+        <div className="mt-4">
+          <Link
+            to={ritorno.da}
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-charcoal px-4 testo-sala text-white hover:bg-b58-charcoal-soft"
+          >
+            ← {ritorno.frase}
+          </Link>
+          {riscontro?.daGuardare?.length > 0 && (
+            <p className="testo-sala mt-1 text-b58-charcoal-soft">
+              Gli appunti restano da approvare: li ritrovi qui e in Dashboard.
+            </p>
           )}
         </div>
       )}
@@ -510,27 +790,47 @@ export default function Detta() {
           <div className="mt-6 rounded-xl border border-b58-cream-dark bg-white p-4 md:p-6">
             <h2 className="testo-sala-lontano font-medium text-b58-charcoal">
               {daGuardareOra.length === 1
-                ? "Una cosa detta aspetta ancora"
-                : `${daGuardareOra.length} cose dette aspettano ancora`}
+                ? "Un appunto aspetta che tu lo guardi"
+                : `${daGuardareOra.length} appunti aspettano che tu li guardi`}
             </h2>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-3">
               {daGuardareOra.map((a) => (
-                <RigaDaGuardare
+                <AppuntoDaApprovare
                   key={a.id}
-                  azione={a}
-                  quando={daQuantoAspetta(a.giorni)}
+                  appunto={a}
                   occupato={inAzione === a.id}
-
                   esito={esiti[a.id]}
-                  onConferma={() => conferma(a)}
-                  onAnnulla={() => annulla(a)}
-                  onScegli={(id) => scegli(a, id)}
+                  onApprova={() => conferma(a)}
+                  onScarta={() => annulla(a)}
+                  onScegli={(elementoId, sceltaId) => scegli(a, elementoId, sceltaId)}
                 />
               ))}
             </ul>
           </div>
         )
       )}
+
+      {/* ------------------------------------------------------------
+          I DUE SUONI — 10/09/2026, Blocco 5 del mandato
+         ------------------------------------------------------------
+          🔴 SI PUÒ SPEGNERE, E LA SCELTA RESTA. Un suono che non si può
+          togliere diventa un fastidio il giorno che si detta accanto a un
+          cliente; e una preferenza che si dimentica a ogni ricarica è come
+          non averla.
+          ⚠️ La casella sta QUI e non in un pannello di impostazioni: è la
+          schermata in cui il suono si sente, ed è l'unico posto in cui a
+          qualcuno viene in mente di spegnerlo. */}
+      <label className="tocco-riga mt-4 flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+        <input
+          type="checkbox"
+          checked={conSuoni}
+          onChange={(e) => {
+            accendiSuoni(e.target.checked);
+            setConSuoni(e.target.checked);
+          }}
+        />
+        Fai un suono quando il microfono si apre e quando finisce
+      </label>
 
       {/* ------------------------------------------------------------
           LE CHIAVI DELLA SCORCIATOIA
@@ -651,6 +951,15 @@ export default function Detta() {
           </div>
         )}
       </div>
+
+      {/* 🔴 LO SPAZIO DELLA BARRA SI RISERVA QUI, IN FONDO — 09/09/2026.
+          La barra del microfono sta a meta' pagina, e il suo spaziatore
+          teneva lo spazio li', dove non serve: misurato a 390x844,
+          l'ultimo comando della pagina finiva 66 punti SOTTO la barra —
+          un pulsante che non si puo' premere, e nessuno lo dice.
+          ⚠️ L'altezza non e' scritta a mano: la pubblica la barra
+          misurandosi, cosi' le due non possono separarsi al primo ritocco. */}
+      <div aria-hidden="true" className="md:hidden" style={{ height: "var(--barra-pollice, 0px)" }} />
     </div>
   );
 }
@@ -670,121 +979,6 @@ export default function Detta() {
 //    schermata: riusa la funzione che già sa cosa manca. Deciderlo qui
 //    sarebbe la seconda definizione della stessa cosa, e il giorno che le
 //    due divergono la schermata offre un pulsante che il database rifiuta.
-function RigaDaGuardare({ azione, quando, occupato, esito, onConferma, onAnnulla, onScegli }) {
-  const inCorso = esito?.stato === "in_corso" || occupato;
-  const fatta = esito?.stato === "fatta";
-  const fallita = esito?.stato === "fallita";
-  const scelte = Array.isArray(azione.scelte) ? azione.scelte : [];
-  const chiedeQuale = azione.domanda === "scegli" && scelte.length > 0;
-  // ⚠️ `manca` è il caso in cui nemmeno il gestionale sa cosa proporre:
-  //    lì «Sì, fallo» è inutile quanto nel caso sopra, ma non c'è niente
-  //    da toccare. Resta la via d'uscita: ridire, o lasciar perdere.
-  const chiedeAltro = azione.domanda === "manca";
-
-  return (
-    <li className="rounded-lg border border-b58-cream-dark bg-b58-cream/40 p-3">
-      <p className="testo-sala font-medium text-b58-charcoal">{azione.frase}</p>
-      <p className="testo-sala mt-1 text-b58-charcoal-soft">
-        {perchéAspetta(azione)}
-        {quando ? ` · ${quando}` : ""}
-      </p>
-
-      {/* ⚠️ UN RIFIUTO SENZA GESTO D'USCITA È UN VICOLO CIECO, e questo
-          progetto li tratta come un difetto a sé. Su una riga a cui manca
-          un'informazione che il gestionale non può proporre, gli unici
-          pulsanti sarebbero «Lascia perdere» — cioè buttare via quello che
-          ha detto.
-          ✅ LE USCITE SONO DUE, dal 27/08: ridirlo a voce, oppure andare
-             nella schermata giusta coi campi già compilati — decisione di
-             Alessio, e qui sotto c'è il collegamento. */}
-      {chiedeAltro && !fatta && (
-        <p className="testo-sala mt-2 text-b58-charcoal-soft">
-          Ridillo a voce aggiungendo quello che manca, oppure fallo a mano qui sotto:
-          quello che hai detto resta qui finché non fai una delle due.
-        </p>
-      )}
-
-      {/* 🔴 LA SECONDA USCITA — decisione di Alessio del 27/08, sue parole:
-          *«mi aspetto che un collegamento mi porti dove si segnano le spese,
-          coi campi noti già compilati, e io aggiungo solo il nome del
-          fornitore che ho omesso»*.
-          ⚠️ Il gestionale ha GIÀ CAPITO quasi tutto — l'importo, il verso,
-             che è un fornitore. Rimandarlo a un modulo vuoto butterebbe via
-             quel lavoro.
-          ⚠️ E il percorso arriva dal DATABASE (`azione_percorso`), non da una
-             mappa scritta qui: il giorno che nasce un tipo nuovo, una mappa
-             nel browser porterebbe da nessuna parte e nessuna verifica se ne
-             accorgerebbe. Quando non c'è — la nota non capita — il
-             collegamento non compare, perché non si sa dove mandare. */}
-      {azione.percorso && !fatta && (
-        <p className="testo-sala mt-2">
-          <Link
-            to={indirizzoAMano(azione.percorso, azione.id)}
-            className="tocco-riga inline-flex items-center rounded-lg px-2 -mx-1 text-b58-terracotta hover:underline"
-          >
-            Fallo a mano, coi campi già compilati →
-          </Link>
-        </p>
-      )}
-
-      {chiedeQuale && !fatta && (
-        <div className="mt-2">
-          <p className="testo-sala text-b58-charcoal">Quale dei due?</p>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {scelte.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => onScegli(s.id)}
-                disabled={inCorso}
-                className="tocco-riga rounded-lg bg-b58-charcoal px-4 testo-sala text-b58-parchment disabled:opacity-60"
-              >
-                {s.nome}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        {/* 🔴 «Sì, fallo» compare SOLO dove la domanda è «lo faccio o no?». */}
-        {!chiedeQuale && !chiedeAltro && (
-          <button
-            type="button"
-            onClick={onConferma}
-            disabled={inCorso || fatta}
-            className="tocco-riga rounded-lg bg-b58-olive px-4 testo-sala text-white disabled:opacity-60"
-          >
-            {/* 🔴 «…» non è un riscontro: chi non capisce che sta succedendo
-                qualcosa ripreme. Le parole per intero, anche se occupano. */}
-            {fatta ? "✓ Fatto" : inCorso ? "Lo sto facendo…" : "Sì, fallo"}
-          </button>
-        )}
-        {(chiedeQuale || chiedeAltro) && fatta && (
-          <span className="testo-sala text-b58-charcoal">✓ Fatto</span>
-        )}
-        <button
-          type="button"
-          onClick={onAnnulla}
-          disabled={inCorso || fatta}
-          className="tocco-riga rounded-lg px-4 testo-sala text-b58-terracotta-dark disabled:opacity-60"
-        >
-          Lascia perdere
-        </button>
-      </div>
-
-      {/* 🔴 L'ESITO STA QUI, SULLA RIGA TOCCATA, e non in cima alla pagina:
-          «un rifiuto lontano dal gesto è un rifiuto che non c'è» — lezione
-          del 17/08, già pagata una volta in Cassa. La notte del 27/08
-          Alessio ha premuto due volte proprio perché non vedeva niente. */}
-      {fallita && (
-        <p className="testo-sala mt-2 rounded-lg bg-b58-terracotta/10 px-3 py-2 text-b58-terracotta-dark">
-          Non si è fatta: {esito.messaggio}
-        </p>
-      )}
-    </li>
-  );
-}
 
 // I passaggi per costruire la Scorciatoia dell'iPhone.
 //

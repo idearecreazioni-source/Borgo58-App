@@ -63,6 +63,7 @@ import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
+import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
 import Scontrini from "./pages/comande/Scontrini";
@@ -75,6 +76,7 @@ import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import Previsioni from "./pages/fiscale/Previsioni";
 import PrevisioneDettaglio from "./pages/fiscale/PrevisioneDettaglio";
 import AndamentoMensile from "./pages/fiscale/AndamentoMensile";
+import ChiusuraAnnuale from "./pages/fiscale/ChiusuraAnnuale";
 import PrevisioneForm from "./pages/fiscale/PrevisioneForm";
 import PersonaleHome from "./pages/personale/PersonaleHome";
 import DipendenteDetail from "./pages/personale/DipendenteDetail";
@@ -267,6 +269,7 @@ function AppRoutes() {
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
+        <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
             gliene deve ancora è un fatto suo e di quelle persone. */}
@@ -304,6 +307,7 @@ function AppRoutes() {
         <Route path="/fiscale/previsioni/:id/modifica" element={<RequireTitolare><PrevisioneForm /></RequireTitolare>} />
         <Route path="/fiscale/previsioni/:id" element={<RequireTitolare><PrevisioneDettaglio /></RequireTitolare>} />
         <Route path="/fiscale/andamento" element={<RequireTitolare><AndamentoMensile /></RequireTitolare>} />
+        <Route path="/fiscale/chiusura-anno" element={<RequireTitolare><ChiusuraAnnuale /></RequireTitolare>} />
 
         {/* Personale & Buste Paga (solo titolare — §4 mod. 11) */}
         <Route path="/personale" element={<RequireTitolare><PersonaleHome /></RequireTitolare>} />

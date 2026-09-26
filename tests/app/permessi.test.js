@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { almenoUnaRiga, clientAnonimo, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
+import { spiega, almenoUnaRiga, clientAnonimo, clientAutenticato, corridoioInstallato, credenziali, denunciaSaltiCorridoio, primaEntita } from "./aiuto";
 
 // Il corridoio si cerca PRIMA di definire le prove: se la funzione online
 // non è installata su questo progetto, le prove che la riguardano vengono
@@ -220,7 +220,18 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 30 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  // 🔴 SCESE DA 29 A 28 IL 20/09/2026, e la ragione è che una si è CHIUSA,
+  //    non che il controllo si sia allargato: la 20260920000004 toglie a
+  //    `send_due_task_reminders` il permesso di essere eseguita da chi ha
+  //    fatto il login. La chiama pg_cron ogni cinque minuti, e nessuno
+  //    dall'app — quindi non ha più bisogno di un portiere, perché non ha
+  //    più una porta.
+  //    ⚠️ Un numero che scende va guardato due volte: se fosse sceso perché
+  //    la rete ha smesso di vedere qualcosa, sarebbe un pezzo di guardia
+  //    spento in silenzio. Qui è il contrario, ed è stato misurato su Prova
+  //    chiedendolo al database: has_function_privilege('authenticated',
+  //    'send_due_task_reminders()', 'execute') = false.
+  it("solo 28 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -244,7 +255,10 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       "link_reservation_customer",
       "notify_reservation_telegram",
       "segnala_allarme",
-      "send_due_task_reminders",
+      // ⚠️ `send_due_task_reminders` era qui e se n'è andata il 20/09: adesso
+      //    è chiusa a `authenticated` (vedi il commento in cima a questa
+      //    prova). Resta un lavoro pianificato, e pg_cron la chiama come
+      //    prima.
       "set_order_entity_srls",
       // Il form pubblico.
       "public_reservation_options",
@@ -311,15 +325,12 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       // chiama solo un trigger, che gira come proprietario e non ha
       // bisogno del permesso di nessun utente.
       "allergeni_con_origine",
-      // ⚠️ AGGIUNTA IL 26/08 coi comandi vocali, ed e dichiarata invece che
-      // corretta: risponde a UNA domanda sola — «questo tipo di azione si
-      // salva da se?» — leggendo il catalogo `tipi_azione_vocale`, che ha
-      // gia la lettura aperta a tutto lo staff. Non espone nessun dato, e
-      // non decide niente per conto proprio: chi la interroga sono
-      // `scrivi_dettatura` e le prove.
-      // ⚠️ Il portiere ce l ha dove conta: `registra_dettatura` pretende il
-      // titolare, e senza passare da li nessuno arriva a eseguire niente.
-      "azione_si_esegue_da_se",
+      // ⚠️ `azione_si_esegue_da_se` STAVA QUI, ed e' stata TOLTA dal
+      // database il 06/09 con SPEC-0013: rispondeva a «questo tipo si salva
+      // da se'?», e da quel giorno la risposta non esiste piu' perche' non si
+      // salva da se' piu' niente. Non e' stata spenta: e' stata cancellata —
+      // una porta chiusa che resta al suo posto e' una porta che qualcuno
+      // riapre credendo di riparare qualcosa.
       // ⚠️ AGGIUNTA IL 29/08 col giorno chiuso, e SENZA portiere per forza:
       // la chiama il modulo di prenotazione pubblico, dove chi legge non ha
       // e non puo' avere un accesso al gestionale. Un `is_titolare()` qui
@@ -599,18 +610,42 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
     //    si vede più da nessuno. Si pretende un conteggio **positivo**: è
     //    la sola forma che distingue «la RLS morde» da «la vista è rotta».
     //
-    // ⚠️ PREZZO DICHIARATO: da qui in avanti questa prova DIPENDE DAI DATI
-    //    del progetto di prova. `v_cash_balance` regge da sé (fa un `left
-    //    join` sulle entità, quindi risponde una riga per entità anche
-    //    senza movimenti), ma `v_discounts_gifts_monthly` aggrega gli
-    //    sconti: su un progetto ricostruito da zero e mai popolato sarebbe
-    //    vuota, e questa prova diventerebbe rossa **per assenza di dati,
-    //    non per un difetto**. Chi la vede rossa guardi prima se lo stato
-    //    di partenza c'è (`npm run prova:base`).
-    for (const vista of ["v_cash_balance", "v_discounts_gifts_monthly"]) {
-      const r = await titolare.from(vista).select("*", { count: "exact", head: true });
-      expect(r.error, `${vista}: il titolare non riesce a leggerla`).toBeNull();
-      expect(r.count, `${vista}: il titolare la legge ma è vuota — vista rotta o svuotata, non protetta`).toBeGreaterThan(0);
-    }
+    // 🔴 IL PREZZO DICHIARATO È STATO PAGATO, ED È STATO TOLTO — 10/09/2026.
+    //    Fino a ieri questa prova pretendeva che le viste avessero righe, e
+    //    lo dichiarava: *«dipende dai dati del progetto di prova»*. Il 09/09
+    //    quel prezzo si è visto — un giro rosso in CI su una vista vuota o
+    //    irraggiungibile — e una prova che dipende da dati che qualcun altro
+    //    mette o toglie **non è una rete: è un allarme che suona da solo**.
+    //
+    // ⚠️ `v_cash_balance` regge da sé: fa un `left join` sulle entità, quindi
+    //    risponde una riga per entità anche senza un movimento al mondo. Lì
+    //    il «più di zero» non dipende da niente e resta.
+    const saldi = await titolare
+      .from("v_cash_balance")
+      .select("*", { count: "exact", head: true });
+    expect(saldi.error, `v_cash_balance: il titolare non riesce a leggerla — ${spiega(saldi)}`).toBeNull();
+    expect(
+      saldi.count,
+      "v_cash_balance: il titolare la legge ma è vuota — vista rotta o svuotata, non protetta",
+    ).toBeGreaterThan(0);
+
+    // 🔴 E SULL'ALTRA SI PRETENDE UN ACCORDO, non un numero. La vista
+    //    aggrega `discounts_gifts`: **è vuota se e solo se la tabella lo è**.
+    //    Questa forma non dipende da nessun dato — con zero sconti dice
+    //    «zero e zero, d'accordo» — e discrimina più di prima: prende sia la
+    //    vista svuotata da una `where` sbagliata sopra una tabella piena,
+    //    sia una vista che inventasse righe dal nulla.
+    const tabella = await titolare
+      .from("discounts_gifts")
+      .select("*", { count: "exact", head: true });
+    const vista = await titolare
+      .from("v_discounts_gifts_monthly")
+      .select("*", { count: "exact", head: true });
+    expect(tabella.error, `discounts_gifts: il titolare non riesce a leggerla — ${spiega(tabella)}`).toBeNull();
+    expect(vista.error, `v_discounts_gifts_monthly: il titolare non riesce a leggerla — ${spiega(vista)}`).toBeNull();
+    expect(
+      vista.count > 0,
+      `v_discounts_gifts_monthly: la vista ha ${vista.count} gruppi e la tabella ${tabella.count} righe — o è svuotata sopra dati veri, o inventa righe dal nulla`,
+    ).toBe(tabella.count > 0);
   });
 });

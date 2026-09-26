@@ -581,7 +581,24 @@ percorso: quale progetto Supabase il pacchetto deve nominare, e su quale ramo di
 Cloudflare si scrive. *Due percorsi divergono, e a divergere per prima è sempre
 la strada meno battuta.*
 
-Vive in `scripts/rilascio.mjs`. Tre controlli, tutti **fail-closed**:
+Vive in `scripts/rilascio.mjs`. Quattro controlli, tutti **fail-closed**:
+
+0. **il contenuto collaudato** *(dal 17/09/2026, corretto il 18/09/2026, solo in
+   produzione)* — la produzione pubblica solo un contenuto che è **già uscito su
+   Borgo58-Prova**. Il commit di fusione che GitHub crea per la proposta
+   `slave → master` su Prova non è mai uscito, quindi il confronto dell'identico
+   commit non si poteva soddisfare. Si dimostra invece che: (a) un commit
+   collaudato — il commit stesso, o il **secondo genitore di una fusione** nella
+   sua storia diretta — ha un rilascio **riuscito** sull'ambiente `anteprima`
+   **dal ramo `slave`** nel registro dei rilasci di GitHub; (b) fra quel commit e
+   quello che esce non cambia **nessun file**, tranne pochi file di
+   infrastruttura elencati per nome (`PERCORSI_DI_INFRASTRUTTURA` in
+   `scripts/rilascio.mjs`: il workflow, lo script, la sua prova e questa guida).
+   Non contano il messaggio della fusione né il nome della proposta. Un rilascio
+   assente, fallito o da un altro ramo, un contenuto diverso, un commit che non è
+   una fusione e non è uscito, o un dato **vuoto o illeggibile** sono un
+   rifiuto: un lavoro saltato non lascia un errore, lascia una stringa vuota. Il
+   `checkout` porta 30 commit di storia, perché il confronto ne ha bisogno;
 
 1. **la coerenza** — ambiente dichiarato, ramo di GitHub e ramo di Cloudflare
    devono dire la stessa storia, e il ramo di produzione **si chiede a
@@ -597,7 +614,7 @@ Vive in `scripts/rilascio.mjs`. Tre controlli, tutti **fail-closed**:
 
 | | dove | perché lì |
 |---|---|---|
-| `PUBBLICAZIONE_DA_GITHUB` | **Repository Variable** | 🔴 è letta in `job.if`, che GitHub valuta **prima** di assegnare l'ambiente. Messa nell'ambiente leggerebbe vuoto e il lavoro verrebbe saltato **sempre**: un cancello che sembra funzionare perché non pubblica mai — fallisce nella direzione sicura e **in silenzio**, che è la forma peggiore |
+| `PUBBLICAZIONE_DA_GITHUB` | **Repository Variable** | 🔴 è letta in `job.if`, che GitHub valuta **prima** di assegnare l'ambiente. Messa nell'ambiente leggerebbe vuoto e il lavoro verrebbe saltato **sempre**: un cancello che sembra funzionare perché non pubblica mai — fallisce nella direzione sicura e **in silenzio**, che è la forma peggiore. ⚠️ **Dal 17/09/2026 accende soltanto la produzione**, e non è più un aut-aut: Borgo58-Prova si pubblica su **ogni** commit di `master` che ha passato codice e database, senza interruttore |
 | `CLOUDFLARE_ACCOUNT_ID` | **Environment Variable** (in tutti e due) | non è un segreto, ma è configurazione operativa: un posto solo, separato per ambiente. **Nessun ripiego su `.env.example`** |
 | `CLOUDFLARE_API_TOKEN` | **Environment Secret**, uno per ambiente | token distinti: tracce distinte, revoca indipendente |
 | `SUPABASE_URL` | **Environment Variable** | prova nell'uno, produzione nell'altro. Stesso nome, valore diverso: il lavoro non sceglie la coppia — gliela dà l'ambiente |
@@ -621,6 +638,18 @@ dell'anteprima meno potere su quello di produzione.
 | **3** | `PUBBLICAZIONE_DA_GITHUB = prova` → il giro generale verso un'anteprima | Alessio | provare con `si` vuol dire che il primo giro vero è anche il primo collaudo |
 | **4** | spegnere la pubblicazione automatica della produzione sul pannello | Alessio | **spegnendo dopo** il passo 5 si pubblicherebbe due volte lo stesso commit; **spegnendo prima** del passo 3 il sito resterebbe senza nessuno che lo pubblica |
 | **5** | `PUBBLICAZIONE_DA_GITHUB = si` | Alessio | — |
+
+🔴 **Questa sequenza è STORIA, ed è cambiata il 17/09/2026.** Non si riscrive —
+racconta com'è andata il 01/09 — ma il passo **3** descrive una cosa che oggi
+non si fa più: mettere la Variable su `prova` per far girare l'anteprima. *Il
+difetto era proprio lì*: con `prova` **oppure** `si`, i due lavori si
+escludevano a vicenda, quindi (a) niente imponeva a Prova di venire **prima**
+della produzione, e (b) con l'interruttore su `si` l'anteprima **non veniva più
+ricostruita** — Borgo58-Prova restava ferma al giorno in cui qualcuno aveva
+girato l'interruttore, mentre il sito vero andava avanti. *Un ambiente di
+collaudo più indietro della produzione non è un collaudo: è una cosa che
+rassicura.* Oggi Prova esce da sé a ogni commit di `master`, e la Variable
+accende soltanto l'ultimo passo.
 
 ### Il rollback, e come si controlla che la produzione non sia stata toccata
 

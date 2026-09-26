@@ -16,6 +16,7 @@ import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import CampoGiornata from "../../components/CampoGiornata";
+import Scorciatoia from "../../components/Scorciatoia";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
@@ -353,28 +354,44 @@ export default function CassaHome() {
           )}
 
           {/* Navigazione sezioni */}
+          {/* 🔴 «COMANDE» NON STA PIÙ QUI — 11/09/2026, mandato «telefono
+              ordinato». Era un residuo: nato il 04/08 come `/cassa/comande`,
+              quando le Comande erano una pagina dentro Cassa; il 05/08 sono
+              diventate uno schermo a sé con la loro voce nel menu, e questo
+              pulsante è stato solo ripuntato a `/comande`. Si arriva alle
+              Comande dal menu laterale, che non è toccato. */}
           <div className="flex flex-wrap gap-2 mb-6">
-            <Link to="/comande" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
-              Comande
-            </Link>
-            <Link to="/cassa/prima-nota" className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
+            <Scorciatoia to="/cassa/prima-nota" principale>
               Prima nota
-            </Link>
-            <Link to="/cassa/previsione" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            </Scorciatoia>
+            <Scorciatoia to="/cassa/previsione">
               Ce la faccio?
-            </Link>
-            <Link to="/cassa/scontrinato" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            </Scorciatoia>
+            <Scorciatoia to="/cassa/scontrinato">
               Incassato e scontrinato
-            </Link>
+            </Scorciatoia>
+            {/* 🔴 LA PORTA DEL COSTO DEL PROGETTO — C11, 21/09/2026, e la
+                porta non e' un dettaglio: il 20/08 i Preventivi restarono
+                irraggiungibili per giorni perche' la rotta c'era e nessun
+                collegamento ci portava.
+                ⚠️ Sta QUI, dentro «Cassa, Banca e Prima Nota», e non fra i
+                moduli principali: legge la Prima nota e basta, e un modulo a
+                sé farebbe credere che ci sia un secondo archivio delle
+                spese. ⚠️ E serve fino a marzo 2027: una voce nel menu
+                principale sarebbe una cosa permanente per una domanda che
+                scade. */}
+            <Scorciatoia to="/cassa/costo-progetto">
+              Quanto e' costato il progetto
+            </Scorciatoia>
             {/* ⚠️ QUESTA NON E' LA TASCA, e i due si somigliano abbastanza da
                 scambiarsi: qui si registra una spesa fatta **per conto della
                 società**, che la società poi ti pareggia — misurato il
                 31/08, scrive in `anticipazioni_socio` sul soggetto Borgo 58.
                 La tasca è l'altra cosa: soldi tuoi che non torneranno
                 indietro, e non c'è niente da pareggiare. */}
-            <Link to="/cassa/personale" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            <Scorciatoia to="/cassa/personale">
               Anticipo io, poi mi rimborso
-            </Link>
+            </Scorciatoia>
             {/* 🔴 LA PORTA DELLA TASCA — 31/08/2026. Il soggetto esisteva in
                 produzione dall'01:06 e **da Cassa non ci si arrivava**: il
                 menu della Prima nota lo offre, ma bisognava sapere di
@@ -384,29 +401,29 @@ export default function CassaHome() {
                 ⚠️ L'indirizzo porta il soggetto: si arriva alla Prima nota
                 **già sulla tasca**, invece di arrivarci su Borgo 58 e dover
                 cambiare — che è il gesto in cui si sbaglia. */}
-            <Link to="/cassa/prima-nota?soggetto=tasca" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            <Scorciatoia to="/cassa/prima-nota?soggetto=tasca">
               La mia tasca
-            </Link>
+            </Scorciatoia>
             {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
                 Preventivi è rimasta irraggiungibile per giorni perché la
                 rotta c'era e nessun collegamento ci portava. */}
-            <Link to="/cassa/prestiti" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            <Scorciatoia to="/cassa/prestiti">
               Prestiti da privati
-            </Link>
-            <Link to="/cassa/sconti-omaggi" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            </Scorciatoia>
+            <Scorciatoia to="/cassa/sconti-omaggi">
               Sconti e omaggi
-            </Link>
-            <Link to="/cassa/causali" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            </Scorciatoia>
+            <Scorciatoia to="/cassa/causali">
               Causali
-            </Link>
+            </Scorciatoia>
             {/* ⚠️ LA PORTA DEL RIFIUTO (25/08/2026): da oggi un movimento di
                 banca senza conto viene respinto, e il messaggio manda qui.
                 Senza questo collegamento sarebbe un vicolo cieco — e il
                 precedente è del 20/08, quando i Preventivi restarono
                 irraggiungibili per giorni con la rotta già scritta. */}
-            <Link to="/cassa/conti-correnti" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+            <Scorciatoia to="/cassa/conti-correnti">
               Conti correnti
-            </Link>
+            </Scorciatoia>
           </div>
         </>
       )}

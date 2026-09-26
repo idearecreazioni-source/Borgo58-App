@@ -213,6 +213,39 @@ export async function righeDaTogliere(client, tabella, colonna, base) {
   return [...new Set([...(miei ?? []), ...(vecchie ?? [])].map((r) => r.id))];
 }
 
+/**
+ * Mette da parte i prodotti di magazzino creati da QUESTO giro (il nome
+ * comincia col marchio del giro) e dice quanti erano ancora attivi.
+ *
+ * 🔴 PERCHÉ — 26/09/2026. Un prodotto dal gestionale non si cancella: ha
+ *    scarichi e rettifiche che lo nominano. Due prove ne creavano uno nuovo
+ *    a ogni giro e lo lasciavano ATTIVO: misurato sul progetto di prova,
+ *    1255 prodotti «TEST-AUTO» su 1388, e gli elenchi — tagliati a mille —
+ *    non mostravano più undici prodotti veri. Messo da parte, un prodotto
+ *    esce da tutti gli elenchi di lavoro (Ricettario, Magazzino, Carico,
+ *    Posta, Schede) senza staccarsi da niente: è la strada normale del
+ *    gestionale, `metti_da_parte_ingrediente`, non una porta per le prove.
+ *
+ * ⚠️ Tocca SOLO le righe di questo giro: il filtro è il marchio completo,
+ *    quindi un altro giro — o un residuo vecchio — resta dov'è.
+ */
+export async function mettiDaParteIMiei(client, nomeMarcato) {
+  if (!nomeMarcato.includes(`#${CORSA}`)) {
+    throw new Error(`mettiDaParteIMiei: «${nomeMarcato}» non porta il marchio di questo giro`);
+  }
+  const { data, error } = await client
+    .from("ingredients")
+    .select("id")
+    .like("name", `${nomeMarcato}%`)
+    .eq("active", true);
+  if (error) throw error;
+  for (const { id } of data ?? []) {
+    const r = await client.rpc("metti_da_parte_ingrediente", { p_id: id, p_attivo: false });
+    if (r.error) throw r.error;
+  }
+  return (data ?? []).length;
+}
+
 export function clientAnonimo() {
   if (!URL || !ANON) {
     throw new Error(
@@ -385,6 +418,17 @@ export async function corridoioInstallato(client) {
   return corpo?.errore?.codice === "operazione";
 }
 
+// 🔴 OGNI SESSIONE APERTA DA UNA PROVA SI CHIUDE — 10/09/2026, misurato.
+//    Sul progetto di prova c'erano 8.333 sessioni del titolare di prova e
+//    4.713 dello staff, 726 nate in un giorno solo, e nessuna chiusa: quasi
+//    tutti i file aprono un accesso e non lo chiudono. Un giro dei quattro
+//    file del collaudo ne lasciava 7.
+//    ⚠️ Si chiudono in un posto solo e non file per file: `chiudiSessioniAperte`
+//    gira dopo ogni file (`tests/app/chiusura-sessioni.js`), anche quando il
+//    file è fallito. Chiudere a mano in settanta file vuol dire dimenticarne
+//    uno al primo file nuovo.
+const sessioniAperte = [];
+
 export async function clientAutenticato({ email, password }) {
   const c = clientAnonimo();
   const { error } = await c.auth.signInWithPassword({ email, password });
@@ -394,7 +438,21 @@ export async function clientAutenticato({ email, password }) {
         "Gli utenti di prova esistono nella dashboard e hanno il ruolo in user_roles? (tests/app/LEGGIMI.md)"
     );
   }
+  sessioniAperte.push(c);
   return c;
+}
+
+/**
+ * Chiude le sessioni aperte da questo file di prova. Solo la PROPRIA
+ * sessione di ciascun client (`scope: "local"`): quella globale butterebbe
+ * fuori anche gli altri giri (§8).
+ * Una sessione già chiusa dal file stesso risponde con un errore, e va
+ * bene: si ignora.
+ */
+export async function chiudiSessioniAperte() {
+  const da = sessioniAperte.splice(0);
+  await Promise.all(da.map((c) => c.auth.signOut({ scope: "local" }).catch(() => null)));
+  return da.length;
 }
 
 // ---------------------------------------------------------------------
@@ -525,4 +583,29 @@ export function righeMie(client) {
       }
     },
   };
+}
+
+/**
+ * COSA E' ANDATO STORTO, in una frase che si puo' leggere.
+ *
+ * 🔴 NASCE DA UN ROSSO CHE NON DICEVA NIENTE — 09/09/2026. Una prova e'
+ * fallita in CI con `expected { message: '' } to be null`: un errore col
+ * messaggio VUOTO. Non era un caso: `head: true` fa fare a postgrest una
+ * richiesta **HEAD**, e una risposta HEAD non ha corpo **per specifica**
+ * — quindi qualunque errore arriva senza testo, sempre.
+ *
+ * ⚠️ Il NUMERO DI STATO invece c'e' sempre, e distingue le cose che
+ * contano: 401/403 e' un permesso, 404 una tabella che non c'e', 5xx un
+ * intoppo del mezzo. *Un rosso che non dice perche' insegna a rilanciare
+ * invece che a guardare.*
+ */
+export function spiega(r) {
+  if (!r) return "nessuna risposta";
+  if (!r.error) return "nessun errore";
+  const testo = String(r.error.message ?? "").trim();
+  const stato = r.status ? `stato HTTP ${r.status}${r.statusText ? ` ${r.statusText}` : ""}` : "senza numero di stato";
+  const codice = r.error.code ? ` [${r.error.code}]` : "";
+  return testo === ""
+    ? `${stato}${codice} — nessun messaggio: era una richiesta HEAD, che per specifica non ha corpo`
+    : `${stato}${codice}: ${testo}`;
 }

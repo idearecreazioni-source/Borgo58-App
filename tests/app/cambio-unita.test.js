@@ -145,6 +145,14 @@ describe("l'unita' di un prodotto non si cambia se i numeri non la seguono", () 
     // La rete: quando qualcuno aggiungera' una colonna nuova che tiene una
     // quantita' o un prezzo per unita', questa prova diventa rossa da sola
     // — invece di lasciare un numero che cambia significato in silenzio.
+    // ✅ E IL 23/09 HA FUNZIONATO DAVVERO, che e' la differenza fra una
+    //    rete e una buona intenzione: R12 ha aggiunto
+    //    `recipe_ingredients.quantita_lorda` e questa prova e' diventata
+    //    rossa da sola, PRIMA che qualcuno cambiasse un'unita'. Senza,
+    //    convertendo un prodotto da chili a grammi il netto sarebbe
+    //    diventato mille volte piu' grande e il lordo no — e il cambio
+    //    d'unita' sarebbe fallito contro il vincolo, o avrebbe cambiato lo
+    //    scarto da solo.
     const { data, error } = await titolare.rpc("colonne_unita_non_classificate");
     expect(error).toBeNull();
     expect(data).toEqual([]);

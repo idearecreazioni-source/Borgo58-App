@@ -35,6 +35,8 @@ const SCARTO = 20;
 const PREZZO = 2;
 const ATTESO_KG = 13.2;
 
+let rigaScarto;
+
 describe("il fabbisogno di un evento regge tutta la catena", () => {
   let titolare;
   let ente;
@@ -125,11 +127,24 @@ describe("il fabbisogno di un evento regge tutta la catena", () => {
       recipe_type: "piatto_finito",
       pronta_per_carta: true,
     });
-    await titolare.from("recipe_ingredients").insert([
-      { recipe_id: piatto, component_recipe_id: finger, quantity: PEZZI, unit: "pz" },
-      // ⚠️ Con lo scarto: senza questa riga la prova non guarderebbe lo scarto.
-      { recipe_id: piatto, ingredient_id: ing, quantity: DIRETTO, unit: "kg", waste_percentage: SCARTO },
-    ]);
+    await titolare
+      .from("recipe_ingredients")
+      .insert({ recipe_id: piatto, component_recipe_id: finger, quantity: PEZZI, unit: "pz" });
+    // ⚠️ Con lo scarto: senza questa riga la prova non guarderebbe lo scarto.
+    // 🔴 E SE NE TIENE L'IDENTIFICATIVO (R12, 23/09). Prima la si ritrovava
+    //    come «la riga con waste_percentage non null», e funzionava perche'
+    //    quasi tutte le righe l'avevano VUOTO — lo scarto arrivava dalla
+    //    scheda del prodotto. Con R12 quella colonna e' un riflesso ed e'
+    //    `not null` su TUTTE: quel criterio ha smesso di distinguere, e
+    //    `.single()` trovava piu' righe e falliva.
+    // ⚠️ Una riga si ritrova per identificativo, perche' l'abbiamo creata
+    //    noi e ce lo siamo segnato — la stessa regola delle pulizie (23/08).
+    const { data: rigaDiretta } = await titolare
+      .from("recipe_ingredients")
+      .insert({ recipe_id: piatto, ingredient_id: ing, quantity: DIRETTO, unit: "kg", waste_percentage: SCARTO })
+      .select("id")
+      .single();
+    rigaScarto = rigaDiretta.id;
 
     const { data: m } = await titolare
       .from("menus")
@@ -173,18 +188,12 @@ describe("il fabbisogno di un evento regge tutta la catena", () => {
     const conScarto = await fabbisognoEvento(menu, PERSONE);
     const prima = Number(conScarto.find((r) => r.ingredient_id === ing).quantita);
 
-    const { data: riga } = await titolare
-      .from("recipe_ingredients")
-      .select("id")
-      .eq("ingredient_id", ing)
-      .not("waste_percentage", "is", null)
-      .single();
-    await titolare.from("recipe_ingredients").update({ waste_percentage: 0 }).eq("id", riga.id);
+    await titolare.from("recipe_ingredients").update({ waste_percentage: 0 }).eq("id", rigaScarto);
 
     const senzaScarto = await fabbisognoEvento(menu, PERSONE);
     const dopo = Number(senzaScarto.find((r) => r.ingredient_id === ing).quantita);
 
-    await titolare.from("recipe_ingredients").update({ waste_percentage: SCARTO }).eq("id", riga.id);
+    await titolare.from("recipe_ingredients").update({ waste_percentage: SCARTO }).eq("id", rigaScarto);
 
     expect(dopo, "lo scarto non cambia niente: il calcolo non lo guarda").toBeLessThan(prima);
     expect(dopo).toBeCloseTo(ATTESO_KG - DIRETTO * (PERSONE / PORZIONI) * (SCARTO / 100), 3);

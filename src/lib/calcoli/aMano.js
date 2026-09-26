@@ -21,7 +21,15 @@ export const PARAMETRO = "daVoce";
  */
 export function indirizzoAMano(percorso, id) {
   if (!percorso || !id) return null;
-  return `${percorso}?${PARAMETRO}=${encodeURIComponent(id)}`;
+  // 🔴 SE IL PERCORSO HA GIA' UNA DOMANDA, SI ATTACCA CON LA «E» —
+  //    07/09/2026. Con un secondo «?» l'indirizzo non e' rotto in modo
+  //    visibile: il browser lo accetta e il parametro finisce dentro il
+  //    valore del primo. La spesa dalla tasca porta gia'
+  //    `?soggetto=tasca`, quindi sarebbe arrivata su una schermata senza
+  //    niente di precompilato — cioe' avrebbe buttato via quello che il
+  //    gestionale aveva capito, senza dare nessun errore.
+  const attacco = percorso.includes("?") ? "&" : "?";
+  return `${percorso}${attacco}${PARAMETRO}=${encodeURIComponent(id)}`;
 }
 
 /**

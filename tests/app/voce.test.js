@@ -80,33 +80,51 @@ afterAll(async () => {
   await staff.auth.signOut({ scope: "local" });
 });
 
-describe("il criterio salva-da-sé", () => {
-  // 🔴 I QUATTRO INCROCI, e servono tutti e quattro: una funzione che
-  //    rispondesse sempre «sì» passerebbe il solo caso buono, e una che
-  //    rispondesse sempre «no» passerebbe il solo caso cattivo.
-  it("una misura sicura si salva da sé, una creazione sicura no", async () => {
-    const chiedi = async (tipo, sicuro) => {
-      const { data, error } = await titolare.rpc("azione_si_esegue_da_se", {
-        p_tipo: tipo,
-        p_sicuro: sicuro,
-      });
-      expect(error).toBeNull();
-      return data;
-    };
-
-    expect(await chiedi("giacenza", true)).toBe(true);
-    expect(await chiedi("giacenza", false)).toBe(false);
-    // ⚠️ Questo è il controllo che vale di più: sicurissimo e comunque no.
-    expect(await chiedi("movimento_cassa", true)).toBe(false);
-    expect(await chiedi("movimento_cassa", false)).toBe(false);
-  });
-
-  it("un tipo che non esiste non si salva da sé", async () => {
-    const { data } = await titolare.rpc("azione_si_esegue_da_se", {
-      p_tipo: "questo-non-esiste",
+describe("🔴 niente si salva da sé — SPEC-0013, 06/09/2026", () => {
+  // Questo blocco provava il contrario, e la ragione di allora era scritta
+  // così: *le misure sicure si salvano, le creazioni le guarda lui*. La
+  // decisione del 06/09 la supera per intero — «la comodità non giustifica
+  // una registrazione non riletta» — e il criterio non è stato spento: la
+  // funzione che lo custodiva è stata **cancellata dal database**.
+  //
+  // ⚠️ SI PROVA CHE NON C'È PIÙ, e non solo che non viene chiamata: una
+  //    funzione lasciata lì è una porta che fra sei mesi qualcuno riapre
+  //    credendo di riparare qualcosa.
+  it("il criterio che faceva salvare da sé non esiste più", async () => {
+    const { error } = await titolare.rpc("azione_si_esegue_da_se", {
+      p_tipo: "giacenza",
       p_sicuro: true,
     });
-    expect(data).toBe(false);
+    // PGRST202: PostgREST non trova la funzione. È il segno che è sparita
+    // davvero, non che risponde «no».
+    expect(error).toBeTruthy();
+    expect(error.code).toBe("PGRST202");
+  });
+
+  it("e una misura sicurissima resta comunque in attesa", async () => {
+    // 🔴 È il caso che prima si scriveva da solo: `giacenza`, natura
+    //    «misura», dichiarata sicura. Oggi aspetta come tutto il resto.
+    const { data, error } = await titolare.rpc("registra_dettatura", {
+      p_testo: "PROVA-voce: criterio, giacenza sicura",
+      p_azioni: [
+        {
+          tipo: "giacenza",
+          sicuro: true,
+          frase: "Giacenza sicurissima",
+          dati: { nome_sentito: "zzz prova criterio", quanto_ce: 3 },
+        },
+      ],
+    });
+    expect(error).toBeNull();
+    mie.segna("dettature", data.dettatura_id);
+
+    expect(data.eseguite).toBe(0);
+    expect(data.da_guardare).toBe(1);
+
+    const { data: azioni } = await titolare.rpc("azioni_della_dettatura", {
+      p_id: data.dettatura_id,
+    });
+    expect(azioni[0].stato).toBe("in_attesa");
   });
 });
 
@@ -157,7 +175,7 @@ describe("una dettatura fa quello che ha capito", () => {
   //    confondersi con la riga di adesso.
   const titoloDelPromemoria = `PROVA-voce una cosa ${crypto.randomUUID().slice(0, 8)}`;
 
-  it("le misure sicure si salvano, le creazioni aspettano — nella stessa filza", async () => {
+  it("in una filza sola, TUTTE aspettano — misure comprese", async () => {
     // ⚠️ Si portano via i residui dei giri uccisi a meta': stesso marcatore
     //    «PROVA-voce una cosa», sul database di PROVA, dove nessun impegno
     //    vero puo' chiamarsi cosi'.
@@ -196,16 +214,20 @@ describe("una dettatura fa quello che ha capito", () => {
     mie.segna("dettature", data.dettatura_id);
 
     expect(data.azioni).toBe(2);
-    expect(data.eseguite).toBe(1);
-    expect(data.da_guardare).toBe(1);
+    // 🔴 Prima erano 1 eseguita e 1 in attesa. Da SPEC-0013 aspettano
+    //    tutt'e due: il promemoria non e' meno importante del pagamento,
+    //    e' solo piu' comodo da scrivere senza guardarlo.
+    expect(data.eseguite).toBe(0);
+    expect(data.da_guardare).toBe(2);
 
     const { data: azioni } = await titolare.rpc("azioni_della_dettatura", {
       p_id: data.dettatura_id,
     });
-    expect(azioni[0].stato).toBe("eseguita");
-    // ⚠️ Il promemoria è nato DAVVERO: si va a cercarlo in Agenda invece
-    //    di fidarsi dello stato scritto sulla riga. «Eseguita» e «ha
-    //    prodotto qualcosa» sono due affermazioni diverse.
+    expect(azioni[0].stato).toBe("in_attesa");
+    // 🔴 E IN AGENDA NON C'E' NIENTE: si va a guardare invece di fidarsi
+    //    dello stato scritto sulla riga. «In attesa» e «non ha prodotto
+    //    niente» sono due affermazioni diverse, ed e' la seconda che
+    //    SPEC-0013 pretende.
     const { data: nato } = await titolare
       .from("tasks").select("id").eq("title", titoloDelPromemoria);
     // ⚠️ SI SEGNA PRIMA DI AFFERMARE, e non e' pignoleria: se
@@ -213,7 +235,7 @@ describe("una dettatura fa quello che ha capito", () => {
     //    comunque essere ripulita. Segnandola dopo, ogni fallimento
     //    lasciava un residuo che rendeva rosso anche il giro successivo.
     for (const t of nato ?? []) mie.segna("tasks", t.id);
-    expect(nato).toHaveLength(1);
+    expect(nato).toHaveLength(0);
     expect(azioni[1].stato).toBe("in_attesa");
     expect(azioni[1].natura).toBe("creazione");
   });
@@ -269,7 +291,10 @@ describe("una dettatura fa quello che ha capito", () => {
     });
     expect(error).toBeNull();
     mie.segna("dettature", data.dettatura_id);
-    expect(data.eseguite).toBe(1);
+    // 🔴 Non e' piu' un impegno subito: e' un appunto da approvare. Quello
+    //    che conta — che la frase non vada persa — regge lo stesso, ed e'
+    //    provato qui sotto guardando che in Agenda NON sia ancora comparsa.
+    expect(data.eseguite).toBe(0);
 
     const { data: task } = await titolare
       .from("tasks")
@@ -278,8 +303,8 @@ describe("una dettatura fa quello che ha capito", () => {
       // ⚠️ Solo la nota di QUESTO giro: con il modello condiviso, la nota di
       //    un'altra esecuzione faceva contare due dove la prova pretende uno.
       .like("description", `%${soloMiei("PROVA-voce quella cosa")}`);
-    expect(task).toHaveLength(1);
-    mie.segna("tasks", task[0].id);
+    expect(task).toHaveLength(0);
+    for (const t of task ?? []) mie.segna("tasks", t.id);
   });
 });
 
@@ -427,6 +452,161 @@ describe("un tipo acceso deve saperlo fare davvero", () => {
 // ⚠️ QUESTA PROVA NON COSTA UNA CHIAMATA ALL'ASSISTENTE: senza credenziali
 //    valide la funzione risponde 401 molto prima di parlare col modello.
 //    È il motivo per cui si può tenere accesa.
+// =====================================================================
+// LA RICHIESTA SENZA CHIAVE HA UN LIMITE SUO — 24/09/2026
+// =====================================================================
+// 🔴 Il 23/09 (corsa 35909686384) questa sola richiesta è rimasta appesa
+//    e Vitest l'ha fermata dopo 30 secondi con «Test timed out», senza
+//    dire QUALE attesa non aveva risposto. Misurato dopo: 3 giri isolati,
+//    una suite completa e 20 richieste dirette, tutte 401 in 0,08–0,54 s.
+//    Senza chiave la funzione non fa nessuna chiamata prima di rispondere,
+//    quindi un'attesa di 30 s è un intoppo del TRASPORTO, non una risposta.
+//
+// ⚠️ Il limite è di 5 secondi: dieci volte la risposta più lenta misurata,
+//    e ben sotto i 30 generali, così a parlare è questa prova e non Vitest.
+//    L'annullamento è VERO (`AbortSignal`): copre sia l'attesa della
+//    risposta sia la lettura del corpo, e non lascia la richiesta appesa.
+//
+// ⚠️ Nessun nuovo tentativo, mai: la prova resta rossa, dice solo perché.
+//    E un errore di trasporto non diventa MAI un 401 finto — si solleva,
+//    non si restituisce. Il messaggio non porta indirizzo né intestazioni.
+const LIMITE_SENZA_CHIAVE_MS = 5000;
+const FRASE_TRASPORTO =
+  "la funzione ascolta-voce non ha risposto: errore di trasporto, non una risposta valida";
+
+async function senzaChiaveConLimite({
+  indirizzo,
+  corpo,
+  ms = LIMITE_SENZA_CHIAVE_MS,
+  fetchFn = fetch,
+}) {
+  const segnale = AbortSignal.timeout(ms);
+  let stato;
+  let testo;
+  try {
+    const r = await fetchFn(indirizzo, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo),
+      signal: segnale,
+    });
+    stato = r.status;
+    testo = await r.text();
+  } catch (e) {
+    const causa = segnale.aborted
+      ? `annullata dopo ${ms / 1000} s`
+      : `errore di rete ${e?.name ?? ""}${e?.cause?.code ? ` ${e.cause.code}` : ""}`.trim();
+    throw new Error(`${FRASE_TRASPORTO} (${causa})`);
+  }
+  let letto;
+  try {
+    letto = JSON.parse(testo);
+  } catch {
+    letto = null;
+  }
+  return { stato, corpo: letto };
+}
+
+function verificaSenzaChiave(r) {
+  expect(r.stato).toBe(401);
+  expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+}
+
+// Le prove qui sotto non escono dal computer: il fetch è finto.
+describe("la richiesta senza chiave: il limite e la frase del trasporto", () => {
+  const risposta = (stato, corpo) => ({ status: stato, text: async () => JSON.stringify(corpo) });
+  const contato = (fn) => {
+    const f = async (...a) => {
+      f.chiamate += 1;
+      return fn(...a);
+    };
+    f.chiamate = 0;
+    return f;
+  };
+  // Un fetch che non risponde mai, e si arrende solo se lo si annulla.
+  const muto = () => {
+    const f = contato(
+      (_, { signal }) =>
+        new Promise((_, rifiuta) => {
+          signal?.addEventListener("abort", () => {
+            f.annullato = true;
+            rifiuta(new DOMException("annullata", "AbortError"));
+          });
+        }),
+    );
+    f.annullato = false;
+    return f;
+  };
+  // Se l'annullamento sparisse, la prova diventa rossa in 2 s, non in 30.
+  const entro = (p, ms = 2000) =>
+    Promise.race([
+      p,
+      new Promise((_, rifiuta) =>
+        setTimeout(() => rifiuta(new Error("la richiesta NON è stata annullata")), ms),
+      ),
+    ]);
+
+  it("un 401 che nomina la chiave passa", async () => {
+    const f = contato(async () => risposta(401, { errore: { messaggio: "Non è arrivata nessuna chiave." } }));
+    const r = await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: f });
+    expect(() => verificaSenzaChiave(r)).not.toThrow();
+  });
+
+  it("un 401 che parla d'altro resta rosso, e così un 200 che nomina la chiave", async () => {
+    for (const [stato, messaggio] of [
+      [401, "Autenticazione mancante"],
+      [200, "Non è arrivata nessuna chiave."],
+    ]) {
+      const f = contato(async () => risposta(stato, { errore: { messaggio } }));
+      const r = await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: f });
+      expect(() => verificaSenzaChiave(r)).toThrow();
+    }
+  });
+
+  it("una richiesta che non risponde viene annullata e dice che è il trasporto", async () => {
+    const f = muto();
+    const errore = await entro(
+      senzaChiaveConLimite({ indirizzo: "x", corpo: {}, ms: 50, fetchFn: f }),
+    ).then(
+      () => null,
+      (e) => e,
+    );
+    expect(errore?.message).toContain(FRASE_TRASPORTO);
+    expect(errore?.message).toContain("annullata dopo");
+    expect(f.annullato).toBe(true);
+  });
+
+  it("un errore di rete dice che è il trasporto, senza indirizzo, e non diventa un 401", async () => {
+    const f = contato(async () => {
+      throw new TypeError("fetch failed https://segreto.example/functions/v1/ascolta-voce");
+    });
+    const errore = await senzaChiaveConLimite({
+      indirizzo: "https://segreto.example/x",
+      corpo: {},
+      fetchFn: f,
+    }).then(
+      () => null,
+      (e) => e,
+    );
+    expect(errore?.message).toContain(FRASE_TRASPORTO);
+    expect(errore?.message).not.toMatch(/segreto|https?:/);
+  });
+
+  it("parte una richiesta sola, in tutti i casi: nessun nuovo tentativo nascosto", async () => {
+    const buono = contato(async () => risposta(401, { errore: { messaggio: "chiave" } }));
+    await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: buono });
+    expect(buono.chiamate).toBe(1);
+    const zitto = muto();
+    await entro(senzaChiaveConLimite({ indirizzo: "x", corpo: {}, ms: 50, fetchFn: zitto })).catch(() => {});
+    expect(zitto.chiamate).toBe(1);
+    const rotto = contato(async () => {
+      throw new TypeError("fetch failed");
+    });
+    await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: rotto }).catch(() => {});
+    expect(rotto.chiamate).toBe(1);
+  });
+});
+
 describe("la Scorciatoia entra senza nessun accesso, e la chiave fa la guardia", () => {
   const indirizzo = `${process.env.VITE_SUPABASE_URL}/functions/v1/ascolta-voce`;
 
@@ -480,9 +660,8 @@ describe("la Scorciatoia entra senza nessun accesso, e la chiave fa la guardia",
     // ⚠️ Chi arriva qui senza niente è quasi sempre una Scorciatoia a cui
     //    manca il campo: «autenticazione mancante» lo manderebbe a cercare
     //    un accesso che non deve avere.
-    const r = await comeLOrologio({ testo: "PROVA-voce senza chiave" });
-    expect(r.stato).toBe(401);
-    expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+    const r = await senzaChiaveConLimite({ indirizzo, corpo: { testo: "PROVA-voce senza chiave" } });
+    verificaSenzaChiave(r);
   });
 
   // 🔴 QUESTA PROVA SI PROVA SU UN CASO DI CUI SI CONOSCE GIÀ LA RISPOSTA.

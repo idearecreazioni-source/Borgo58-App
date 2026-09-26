@@ -1,4 +1,4 @@
-import { TASK_CATEGORIES, formatDate, labelFor } from "../constants";
+import { formatDate } from "../constants";
 
 // COME SI LEGGE L'AGENDA — 30/08/2026, Blocco 3 del mandato.
 //
@@ -68,6 +68,28 @@ export function sezioniDellAgenda(righe) {
 }
 
 /**
+ * QUESTO IMPEGNO SCADE OGGI?
+ *
+ * 🔴 STA IN UN POSTO SOLO PERCHE' IL 07/09/2026 ERA IN DUE, e i due
+ * dicevano cose diverse. Il numero accanto al titolo dell'Agenda scriveva
+ * `giorni_alla_scadenza === 0`; MEMO scriveva `Number(giorni_alla_scadenza)
+ * === 0`, e `Number(null)` **vale zero**. Misurato sul progetto di prova:
+ * l'Agenda contava **0 impegni di oggi**, MEMO ne annunciava **15** — tutti
+ * quelli della corsia «quando capita», che per costruzione una scadenza non
+ * ce l'hanno.
+ *
+ * ⚠️ NESSUNO DEI DUE DAVA ERRORE, ed è la ragione per cui è vissuto: la
+ * risposta era plausibile, e la schermata accanto diceva un altro numero.
+ * È la famiglia che questo progetto insegue dal 19/08 — due parti dello
+ * stesso gestionale che raccontano cose diverse dello stesso fatto.
+ *
+ * ⚠️ E UNA DATA CHE MANCA NON È UNA DATA DI OGGI: un impegno senza scadenza
+ * è una cosa da fare **quando capita**, e metterla in mezzo a quelle di oggi
+ * è il modo di far smettere di guardare l'elenco di oggi.
+ */
+export const eDiOggi = (t) => t?.giorni_alla_scadenza === 0;
+
+/**
  * QUANTI IMPEGNI CHIEDONO ATTENZIONE ADESSO — il numero accanto al titolo.
  *
  * ⚠️ Conta SOLO ritardo e oggi, e «quando capita» non ci entra mai: un
@@ -79,7 +101,7 @@ export function sezioniDellAgenda(righe) {
  * legge, non se è in ritardo.
  */
 export const daFareAdesso = (righe) =>
-  (righe ?? []).filter((t) => t.corsia === "in_ritardo" || t.giorni_alla_scadenza === 0).length;
+  (righe ?? []).filter((t) => t.corsia === "in_ritardo" || eDiOggi(t)).length;
 
 /**
  * I CAMPI DI UN IMPEGNO NEL QUADROTTO, scritti una volta sola.
@@ -105,17 +127,6 @@ export function campiImpegno(t) {
       vuoto: "quando capita",
       forte: t.corsia === "in_ritardo",
     },
-    {
-      chiave: "categoria",
-      etichetta: "Tipo",
-      valore: labelFor(TASK_CATEGORIES, t.category),
-    },
-    {
-      chiave: "da",
-      etichetta: "Da",
-      valore: t.origine_modulo === "posta" ? "Posta" : t.origine_modulo ? "Archivio documenti" : "",
-      vuoto: "scritto a mano",
-    },
     // ⚠️ L'anzianità è ciò che impedisce a «quando capita» di diventare un
     // cimitero: senza, una voce ferma da tre mesi sembra scritta ieri.
     // Compare solo dove serve — su una riga con la scadenza il dato c'è già.
@@ -123,6 +134,58 @@ export function campiImpegno(t) {
       ? [{ chiave: "eta", etichetta: "In lista da", valore: anzianita(t.giorni_in_lista) }]
       : []),
   ];
+}
+
+// 🔴 «TIPO» E «DA» SONO USCITI DALL'ELENCO — 10/09/2026, deciso da Alessio.
+//
+// Non erano sbagliati: erano **due colonne che rispondono a una domanda che
+// nessuno fa guardando l'Agenda**. La domanda dell'Agenda è «cosa devo fare
+// adesso», e il tipo di un impegno non la cambia — su venti righe «Tipo»
+// diceva «Altro» quindici volte. È la stessa cernita delle sette
+// spiegazioni tolte il 18/08: si toglie dichiarando dove la cosa resta
+// scritta, non cancellandola.
+//
+//   · il TIPO resta nella scheda dell'impegno, che è dove si sceglie;
+//   · la PROVENIENZA ~~resta qui sotto, come nota in fondo al quadrotto~~ —
+//     🔴 11/09/2026, dal collaudo su iPhone: è uscita anche dall'elenco, e
+//     sta in fondo alla scheda dell'impegno, in piccolo. Questa funzione
+//     scrive la frase che si legge lì.
+//
+// ⚠️ E la frase c'è solo se NON è scritto a mano, che è il caso normale:
+// «scritto a mano» su ogni impegno è arredamento, e un impegno nato da solo
+// dall'Archivio o dalla posta è invece la cosa che spiega perché è lì
+// senza che nessuno l'abbia scritto.
+// ⚠️ `fatture_fornitori` ha la frase sua (11/09): lo scrive la migrazione
+//    `20260817000004` sul promemoria di una fattura da pagare, e prima
+//    finiva sotto «Archivio documenti», che per quell'impegno è falso.
+export function provenienzaImpegno(t) {
+  if (!t?.origine_modulo) return null;
+  if (t.origine_modulo === "posta") return "nato dalla posta";
+  if (t.origine_modulo === "voce") return "nato da una cosa detta a voce";
+  if (t.origine_modulo === "fatture_fornitori") return "nato dalle Fatture fornitori";
+  return "nato dall'Archivio documenti";
+}
+
+/**
+ * COME SI LEGGE UNA CADENZA: «ogni 3 mesi», «ogni giorno».
+ *
+ * ⚠️ Sta qui e non nel database (10/09/2026): il database conserva i due
+ * dati — quante volte e di che cosa — e le parole italiane vivono dove
+ * vivono tutte le altre etichette del gestionale. Se la frase la componesse
+ * `agenda_corsie()`, questa sarebbe la sola etichetta italiana scritta in
+ * SQL, e la prossima schermata che mostra una cadenza dovrebbe chiederla al
+ * database invece di saperla.
+ *
+ * ⚠️ E l'«ogni 1» si dice al SINGOLARE. Non è una rifinitura: «ogni 1 mesi»
+ * si legge come una cosa scritta da una macchina, e quel sospetto si
+ * trasferisce al numero accanto.
+ */
+const SINGOLARE = { giorni: "giorno", settimane: "settimana", mesi: "mese", anni: "anno" };
+
+export function fraseRicorrenza(ogni, unita) {
+  if (!ogni || !unita) return null;
+  if (!(unita in SINGOLARE)) return null;
+  return ogni === 1 ? `ogni ${SINGOLARE[unita]}` : `ogni ${ogni} ${unita}`;
 }
 
 function anzianita(giorni) {

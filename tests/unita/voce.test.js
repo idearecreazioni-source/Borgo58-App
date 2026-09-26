@@ -95,14 +95,14 @@ describe("il riscontro arriva alla fine, e sono due elenchi", () => {
 
   it("il titolo distingue i tre casi", () => {
     expect(titoloDelRiscontro(3, 0)).toMatch(/^Fatto: 3 cose/);
-    expect(titoloDelRiscontro(0, 2)).toMatch(/^2 cose da guardare/);
-    expect(titoloDelRiscontro(2, 1)).toMatch(/Fatte 2 cose.*Una da guardare/);
+    expect(titoloDelRiscontro(0, 2)).toMatch(/^2 appunti da guardare prima di scriverli\./);
+    expect(titoloDelRiscontro(2, 1)).toMatch(/Fatte 2 cose.*Un appunto da guardare/);
     expect(titoloDelRiscontro(0, 0)).toMatch(/Non ho capito/);
   });
 
   it("al singolare non dice «1 cose»", () => {
     expect(titoloDelRiscontro(1, 0)).toBe("Fatto: una cosa.");
-    expect(titoloDelRiscontro(0, 1)).toMatch(/^Una cosa da guardare/);
+    expect(titoloDelRiscontro(0, 1)).toMatch(/^Un appunto da guardare prima di scriverlo\./);
   });
 });
 

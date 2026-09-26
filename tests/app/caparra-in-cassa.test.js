@@ -91,14 +91,29 @@ describe("la caparra: quando la ricevi, entra in cassa", () => {
     await staff?.auth.signOut({ scope: "local" });
   });
 
+  /**
+   * I movimenti di cassa DI QUESTA PRENOTAZIONE.
+   *
+   * 🔴 NON TUTTI — 09/09/2026. Prima si contava l'intera tabella prima e
+   * dopo: un movimento scritto da Alessio dal telefono in quei secondi
+   * faceva fallire il confronto. Legandolo alla prenotazione il conto e'
+   * esatto **e** dice una cosa piu' forte: che il movimento nato e' proprio
+   * quello di questa caparra.
+   */
+  const movimentiDellaPrenotazione = () =>
+    titolare
+      .from("cash_movements")
+      .select("id", { count: "exact", head: true })
+      .eq("reservation_id", prenotazione);
+
   it.skipIf(!CORRIDOIO)("registrarla scrive il movimento di cassa, con la sua causale", async () => {
-    const prima = await titolare.from("cash_movements").select("id", { count: "exact", head: true });
+    const prima = await movimentiDellaPrenotazione();
 
     const esito = await setReservationDeposit(prenotazione, 80);
     expect(esito?.movimento_id).toBeTruthy();
     movimenti.push(esito.movimento_id);
 
-    const dopo = await titolare.from("cash_movements").select("id", { count: "exact", head: true });
+    const dopo = await movimentiDellaPrenotazione();
     expect(dopo.count).toBe(prima.count + 1);
 
     const { data: mov } = await titolare
@@ -123,12 +138,12 @@ describe("la caparra: quando la ricevi, entra in cassa", () => {
   });
 
   it.skipIf(!CORRIDOIO)("correggere l'importo sposta tutti e due i numeri, non ne crea un secondo", async () => {
-    const prima = await titolare.from("cash_movements").select("id", { count: "exact", head: true });
+    const prima = await movimentiDellaPrenotazione();
 
     const esito = await setReservationDeposit(prenotazione, 95);
     expect(esito?.corretta).toBe(true);
 
-    const dopo = await titolare.from("cash_movements").select("id", { count: "exact", head: true });
+    const dopo = await movimentiDellaPrenotazione();
     expect(dopo.count).toBe(prima.count);
 
     const { data: mov } = await titolare

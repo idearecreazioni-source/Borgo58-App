@@ -434,23 +434,24 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   quello che resta. Per dividerlo, scegli prima «Non scalarla».
                 </p>
               )}
-              <div className="flex flex-wrap gap-2">
-                {ORDER_PAYMENT_METHODS.map((pm) => (
-                  <button
-                    key={pm.value}
-                    type="button"
-                    disabled={busy || aspettaCaparra}
-                    onClick={() => handlePaid(pm.value)}
-                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
-                  >
-                    Paga {pm.label.toLowerCase()}
-                  </button>
-                ))}
-              </div>
               {/* 🔴 «IL CLIENTE VUOLE FATTURA» — 31/08/2026, chiesto da
                   Alessio. Sta SOPRA i pulsanti di pagamento perché è lì
                   che il cliente lo dice: dopo aver incassato, chi chiude
                   se n'è già andato dalla schermata.
+
+                  🔴 E FINO AL 22/09/2026 QUESTA FRASE ERA FALSA. La spunta
+                  stava SOTTO «Paga contante» e «Paga carta» — cioè sotto i
+                  due gesti con cui si chiude la quasi totalità dei conti —
+                  e sopra soltanto «Pagano in due modi» e «Alla romana».
+                  Il commento diceva la cosa giusta e il codice faceva
+                  l'opposto, quindi chi incassava in contanti premeva prima
+                  di vedere la spunta: esattamente il caso che questa riga
+                  dichiara di impedire.
+                  ⚠️ NON L'HA TROVATA UNA RILETTURA — l'ha trovata la prova
+                  di `tests/schermate/fattura-al-tavolo.test.jsx`, che
+                  confronta la posizione nel documento invece di fidarsi di
+                  quello che il commento dichiara. *Una frase che descrive
+                  una disposizione si misura, non si cita.*
                   ⚠️ NON EMETTE E NON TRASMETTE NIENTE: al tavolo esce il
                   preconto, e questo è uno **stato interno**. La fattura la
                   fa Alessio da Fatture in Cloud, e quando c'è la chiude da
@@ -475,6 +476,19 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   </span>
                 </span>
               </label>
+              <div className="flex flex-wrap gap-2">
+                {ORDER_PAYMENT_METHODS.map((pm) => (
+                  <button
+                    key={pm.value}
+                    type="button"
+                    disabled={busy || aspettaCaparra}
+                    onClick={() => handlePaid(pm.value)}
+                    className="tocco-bottone flex-1 rounded-lg bg-b58-olive hover:bg-b58-olive-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-3"
+                  >
+                    Paga {pm.label.toLowerCase()}
+                  </button>
+                ))}
+              </div>
 
               {/* ⚠️ DUE RIGHE DA DUE, non quattro stretti (22/08). Anche
                   con la finestra larga, «Pagano in due modi» a 3,20 mm non

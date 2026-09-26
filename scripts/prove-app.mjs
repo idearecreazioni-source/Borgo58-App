@@ -27,6 +27,8 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 
 import { MINUTI_MASSIMI_DI_UN_GIRO } from "./tempi-prove.mjs";
+import { argomentiDiEsclusione } from "./prove-che-costano.mjs";
+import { frasePerChiAspetta, lascia, prendi } from "./un-giro-per-volta.mjs";
 
 /** Quanto si aspetta, dopo il garbato SIGTERM, prima di insistere. */
 export const SECONDI_PRIMA_DI_INSISTERE = 15;
@@ -47,14 +49,69 @@ export function avviaConTetto({
   scrivi = (r) => console.error(r),
   finito = (codice) => process.exit(codice),
 } = {}) {
+  // 🔴 LE PROVE CHE CHIAMANO IL MODELLO RESTANO FUORI, se non le si chiede
+  //    apposta — 09/09/2026. Girano a ogni proposta e a ogni push, e ognuna
+  //    di quelle chiamate si paga: una spesa che parte da sola a ogni giro
+  //    non e' una scelta di nessuno, e' una perdita che cresce (stessa
+  //    famiglia dei ritentativi senza tetto del 12/08).
+  //    ⚠️ E SI DICE SEMPRE QUALI, anche quando non ne resta fuori nessuna:
+  //    un'esclusione silenziosa e' copertura persa travestita da verde.
+  const colModello = filtri.includes("--col-modello");
+  const puliti = filtri.filter((f) => f !== "--col-modello");
+  const { argomenti: esclusioni, fuori } = colModello
+    ? { argomenti: [], fuori: [] }
+    : argomentiDiEsclusione(".");
+  if (colModello) {
+    scrivi("Giro CON le prove che chiamano il modello: questo giro si paga.");
+  } else if (fuori.length > 0) {
+    scrivi(
+      "Fuori da questo giro, perche' chiamano il modello e si pagano:" +
+        fuori.map((f) => `\n  · ${f.file}  (${f.funzioni.join(", ")})`).join("") +
+        "\nPer lanciarle davvero:  npm run test:app -- --col-modello"
+    );
+  }
+
+  // 🔴 UN FILE SOLO VUOL DIRE UN FILE SOLO — 10/09/2026, misurato. Prima
+  //    «tests/app» veniva passato SEMPRE, e per vitest i filtri si sommano:
+  //    `npm run test:app -- tests/app/deposito-documenti.test.js` ha fatto
+  //    girare tutte le 557 prove dei 77 file. Il commento in cima a questo
+  //    file prometteva il contrario.
+  //    ⚠️ Un file che non sta in tests/app si RIFIUTA: girerebbe con la
+  //    configurazione delle prove sul database senza esserlo.
+  //    ⚠️ Due casi trovati dalla revisione: il valore di un'opzione non è un
+  //    file (`-t tests/app/x.test.js` cerca le prove con quel NOME), e un
+  //    percorso scritto per intero — su Windows `C:\...\tests\app\x.test.js`
+  //    — si confronta con la cartella del progetto, non come testo.
+  const conValore = new Set([
+    "-t", "--testNamePattern", "--exclude", "--reporter", "--outputFile",
+    "--project", "--shard", "--bail", "--retry", "--root", "--dir", "--config",
+  ]);
+  const relativo = (f) => path.relative(process.cwd(), path.resolve(f)).replace(/\\/g, "/");
+  const fileChiesti = puliti.filter(
+    (f, i) =>
+      !f.startsWith("-") &&
+      !conValore.has(puliti[i - 1]) &&
+      (/\.test\.[cm]?[jt]sx?$/.test(f) || relativo(f).startsWith("tests/"))
+  );
+  const fuoriPosto = fileChiesti.filter((f) => !relativo(f).startsWith("tests/app/"));
+  if (fuoriPosto.length > 0) {
+    scrivi(
+      `Non sono prove sul database: ${fuoriPosto.join(", ")}.\n` +
+        "Con questo comando si lanciano solo i file di tests/app/."
+    );
+    finito(2);
+    return null;
+  }
+
   const giro = spawnFn(process.execPath, [
     path.join("node_modules", "vitest", "vitest.mjs"),
     "run",
-    "tests/app",
+    ...(fileChiesti.length > 0 ? [] : ["tests/app"]),
     "--no-file-parallelism",
     "--config",
     "vitest.app.config.js",
-    ...filtri,
+    ...puliti,
+    ...esclusioni,
   ], { stdio: "inherit", env: { ...process.env, BORGO58_CON_TETTO: "1" } });
 
   let insisti;
@@ -76,6 +133,7 @@ export function avviaConTetto({
   giro.on("exit", (codice, segnale) => {
     clearTimeout(tetto);
     clearTimeout(insisti);
+    lascia();
     finito(codice ?? (segnale ? 1 : 0));
   });
 
@@ -83,6 +141,22 @@ export function avviaConTetto({
 }
 
 // Lanciato come comando: `npm run test:app`.
+//
+// 🔴 UN GIRO PER VOLTA, e il lucchetto sta QUI e non dentro `avviaConTetto`:
+//    quella funzione e' provata con uno spawn finto e un orologio finto, e
+//    non deve toccare il disco. Il divieto riguarda il COMANDO — che e' la
+//    cosa che due volte insieme fa danno.
+//    Il database di prova e' uno solo: due giri si cancellano le righe a
+//    vicenda, e il risultato sembra un disastro del codice invece che una
+//    collisione (27/08: 41 file falliti, tutte verdi al rilancio).
 if (process.argv[1] && process.argv[1].endsWith("prove-app.mjs")) {
+  const posto = prendi();
+  if (!posto.preso) {
+    console.error(frasePerChiAspetta(posto.altrui));
+    process.exit(1);
+  }
+  // ⚠️ Anche se il giro viene ucciso: senza questo il lucchetto resterebbe
+  //    fino alla scadenza, e nel frattempo nessuno potrebbe piu' lanciare.
+  for (const segnale of ["exit", "SIGINT", "SIGTERM"]) process.on(segnale, () => lascia());
   avviaConTetto({ filtri: process.argv.slice(2) });
 }

@@ -72,17 +72,13 @@ export async function quanteAspettano() {
   return { quante: r?.quante ?? 0, laPiuVecchia: r?.la_piu_vecchia ?? 0 };
 }
 
-// ⚠️ Passano dal corridoio (B4): confermare una cosa dettata la fa
-//    succedere davvero — una giacenza si muove, una temperatura entra nel
-//    registro HACCP — e insieme aggiorna la riga che la teneva in attesa.
-export async function confermaAzione(id) {
-  return eseguiOperazione("esegui_azione_dettata", { p_id: id });
-}
-
-export async function annullaAzione(id) {
-  return eseguiOperazione("annulla_azione_dettata", { p_id: id });
-}
-
+// 🔴 `confermaAzione` e `annullaAzione` SONO STATE TOLTE il 06/09/2026
+//    (SPEC-0013). Confermavano o annullavano UNA riga; adesso si approva
+//    o si butta l'APPUNTO, e le funzioni del database che facevano quel
+//    gesto non sono piu' concesse a nessun utente.
+//    ⚠️ Non sono state lasciate qui «per sicurezza»: una funzione che
+//    nessuno chiama e che il database rifiuterebbe e' una riga che fra
+//    sei mesi qualcuno riusa credendo che funzioni ancora.
 /** Le ultime dettature, per vedere cosa si è detto e quanto è costato. */
 export async function dettatureRecenti(giorni = 7) {
   const { data, error } = await supabase.rpc("dettature_recenti", { p_giorni: giorni });
@@ -157,14 +153,54 @@ export async function azioneAMano(id) {
  * fatta, e la volta dopo Alessio la ridice a voce o preme «Sì, fallo» — la
  * stessa spesa in cassa due volte. È il difetto peggiore di tutto il blocco.
  *
- * ⚠️ NON PASSA DAL CORRIDOIO, e la distinzione non è una scorciatoia:
- * confermare o annullare FANNO succedere qualcosa (una giacenza si muove,
- * una temperatura entra nel registro) e sono multi-tabella per costruzione.
- * Questa scrive una riga sola su `azioni_dettate`, che è titolare-only, e
- * non ha nessuna conseguenza altrove — categoria A del Contratto.
+ * 🔴 PASSA DAL CORRIDOIO DAL 06/09/2026, e prima no: fino a SPEC-0013
+ * questa scriveva una riga sola su `azioni_dettate` — categoria A del
+ * Contratto. Adesso ne scrive due, perché se quella era l'ultima cosa
+ * rimasta dentro l'appunto chiude anche l'appunto. A metà resterebbe un
+ * appunto aperto e vuoto nell'elenco delle cose da approvare.
+ *
+ * 🔴 E SENZA QUESTO PASSAGGIO la riga resterebbe in sospeso DOPO essere
+ * stata fatta, e la volta dopo Alessio la ridice a voce o la approva — la
+ * stessa spesa in cassa due volte.
  */
 export async function chiudiAMano(id) {
-  const { data, error } = await supabase.rpc("chiudi_azione_a_mano", { p_id: id });
+  return eseguiOperazione("chiudi_azione_a_mano", { p_id: id });
+}
+
+// --- SPEC-0013: gli appunti da approvare --------------------------------
+//
+// 🔴 L'UNITA' CHE ALESSIO APPROVA NON E' PIU' LA SINGOLA RIGA. Tre articoli
+//    detti per la stessa lista in tre momenti diversi sono un appunto solo;
+//    due pagamenti restano due. Il criterio non e' qui: e' una colonna del
+//    catalogo nel database (`additivo`), perche' schermata e database
+//    devono raggruppare allo stesso modo — se lo decidessero in due posti,
+//    prima o poi mostrerebbero un numero e ne scriverebbero un altro.
+
+/** Gli appunti aperti, con dentro gli elementi e i loro dati concreti. */
+export async function appuntiDaApprovare() {
+  const { data, error } = await supabase.rpc("appunti_da_approvare");
   if (error) throw error;
-  return data;
+  return data ?? [];
+}
+
+// ⚠️ Passano dal corridoio (B4): approvare un appunto esegue TUTTI i suoi
+//    elementi in una transazione sola — o entrano tutti, o nessuno.
+export async function approvaAppunto(id) {
+  return eseguiOperazione("approva_appunto", { p_id: id });
+}
+
+export async function scartaAppunto(id) {
+  return eseguiOperazione("scarta_appunto", { p_id: id });
+}
+
+/**
+ * Corregge i dati di un elemento. L'appunto resta APERTO.
+ *
+ * ⚠️ Correggere non e' approvare, ed e' la distinzione che tiene in piedi
+ * SPEC-0013: si sistema un importo e si continua a guardare. Se questa
+ * chiamata chiudesse l'appunto, una correzione diventerebbe una scrittura
+ * — cioe' esattamente la cosa che non deve succedere senza un sì.
+ */
+export async function correggiElemento(id, dati) {
+  return eseguiOperazione("correggi_elemento_appunto", { p_id: id, p_dati: dati });
 }

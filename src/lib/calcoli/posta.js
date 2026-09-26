@@ -26,6 +26,40 @@
  *     schermata dice che sta ripiegando. */
 export const TENTATIVI_DI_RIPIEGO = 3;
 
+// =====================================================================
+// QUALI CAMPI SI CORREGGONO, PER CIASCUN TIPO DI AZIONE
+// =====================================================================
+// Si vedono solo premendo «Correggi i dati»: i campi servono a correggere,
+// non a capire — quello che si legge e' la descrizione (critica di Alessio
+// del 28/08).
+//
+// 🔴 «SOCIETA'» E' STATA AGGIUNTA IL 21/09/2026, e non e' un campo in piu':
+// e' la meta' mancante di un difetto misurato. `esegui_azione_posta`
+// chiamava `create_document` senza societa', quindi **ogni** documento nato
+// da una mail ne restava privo — e nella schermata delle Fatture i documenti
+// collegabili sono quelli della stessa societa' della fattura. Un valore
+// assente non combacia mai: un DDT archiviato dalla posta non compariva fra
+// i collegabili, per nessuna fattura, senza nessun errore.
+//
+// ⚠️ RESTA FACOLTATIVA, come nell'Archivio a mano. Renderla obbligatoria
+// qui vorrebbe dire bloccare l'archiviazione di una mail per un dato che il
+// modello non puo' sapere — e la regola di questo progetto e' che cio' che
+// nessuno ha dichiarato resta vuoto e dichiarato, non indovinato.
+export const CAMPI_AZIONE = {
+  archivia_documento: ["titolo", "tipo", "societa", "controparte", "data", "importo", "scadenza"],
+  archivia_testo: ["titolo", "tipo", "societa", "controparte", "data", "importo", "scadenza"],
+  promemoria: ["titolo", "data", "note"],
+  promemoria_multipli: [],
+  da_fare_a_mano: ["titolo", "data"],
+  nessuna: [],
+};
+
+/** I tipi di azione che archiviano un documento, e che quindi hanno una
+ *  societa' da conservare. */
+export function azioneArchivia(tipo) {
+  return tipo === "archivia_documento" || tipo === "archivia_testo";
+}
+
 /**
  * Da quanto tace, in parole.
  * ⚠️ Un numero di minuti a quattro cifre non dice niente a nessuno: «da 5
@@ -285,7 +319,7 @@ export function etichettaRifiuto(azione) {
  *    essere rifiutato: non è una seconda regola, è la stessa detta prima.
  */
 export function motivoAzioneBloccata(azione, parametri) {
-  if (azione?.tipo === "archivia_documento" || azione?.tipo === "archivia_testo") {
+  if (azioneArchivia(azione?.tipo)) {
     const p = parametri ?? {};
     const senzaTipo = !String(p.tipo ?? "").trim();
     const senzaData = !String(p.data ?? "").trim();

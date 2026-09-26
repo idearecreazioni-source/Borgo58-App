@@ -1,0 +1,344 @@
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// =====================================================================
+// LA SETTIMANA DELL'AGENDA — 11/09/2026, mandato notturno
+// =====================================================================
+// 🔴 COSA SI PROVA: il selettore «Lista · Settimana · Mese», la lettura dei
+//    sette giorni giusti, l'ordine per ora, il giorno vuoto, il passaggio
+//    fra le settimane col ritorno a quella di oggi, e il tocco che apre la
+//    scheda. La FORMA (niente tagli, niente scorrimento di lato, giorni
+//    compatti) la misura la prova visiva in un browser vero.
+//
+// ⚠️ IL GIORNO È FERMO: mercoledì 9 settembre 2026, cioè la settimana da
+//    lunedì 7 a domenica 13. Solo `Date` è finto: i tempi di React no.
+
+const finte = { tra: vi.fn(), mese: vi.fn() };
+
+vi.mock("../../src/lib/api/tasks", () => ({
+  agendaCorsie: vi.fn(() => Promise.resolve([])),
+  agendaFatti: vi.fn(() => Promise.resolve([])),
+  completaTask: vi.fn(),
+  riapriTask: vi.fn(),
+  spostaTask: vi.fn(),
+  stellaTask: vi.fn(),
+  listTasksForMonth: (...a) => finte.mese(...a),
+  listTasksBetween: (...a) => finte.tra(...a),
+}));
+vi.mock("../../src/context/AuthContext", () => ({ useAuth: () => ({ isTitolare: true }) }));
+
+const { default: AgendaList } = await import("../../src/pages/agenda/AgendaList");
+
+const t = (id, due_date, due_time = null, extra = {}) => ({ id, title: `Impegno ${id}`, due_date, due_time, status: "da_fare", ...extra });
+const RIGHE = [
+  t("sera", "2026-09-07", "18:30:00"),
+  t("mattina", "2026-09-07", "09:00:00"),
+  t("giornata", "2026-09-07"),
+  t("fatto", "2026-09-09", null, { status: "completato" }),
+  t("prima", "2026-09-03", "11:00:00"),
+  // Nella settimana del 21: la lettura vecchia, se vincesse, la farebbe
+  // sparire (vedi «due tocchi veloci»).
+  t("dopo2", "2026-09-22", "12:00:00"),
+];
+
+function Scheda() {
+  const { id } = useParams();
+  return <p>scheda di {id}</p>;
+}
+
+const mostra = () =>
+  render(
+    <MemoryRouter initialEntries={["/agenda"]}>
+      <Routes>
+        <Route path="/agenda" element={<AgendaList />} />
+        <Route path="/agenda/:id" element={<Scheda />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+async function tocca(el) {
+  await act(async () => {
+    el.click();
+  });
+}
+
+const giorni = () => [...document.querySelectorAll("[data-giorno]")];
+const giorno = (iso) => document.querySelector(`[data-giorno="${iso}"]`);
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-09-09T10:00:00"));
+  finte.tra.mockReset().mockImplementation((dal, al) =>
+    Promise.resolve(RIGHE.filter((r) => r.due_date >= dal && r.due_date <= al)),
+  );
+  finte.mese.mockReset().mockResolvedValue([]);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks();
+});
+
+describe("🔴 il selettore", () => {
+  it("tre voci allo stesso livello; si apre sulla Lista, e Mese è il calendario di sempre", async () => {
+    mostra();
+    expect(screen.getByRole("button", { name: "Lista" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Settimana" })).toBeTruthy();
+    await tocca(screen.getByRole("button", { name: "Mese" }));
+    await waitFor(() => expect(finte.mese).toHaveBeenCalledWith(2026, 9));
+    expect(document.querySelector("[data-settimana]")).toBeNull();
+  });
+});
+
+describe("🔴 il mese: lo stesso giorno si legge come nella settimana", () => {
+  it("in ordine (senza ora in cima), con l'ora, il fatto barrato; le frecce hanno un nome", async () => {
+    finte.mese.mockResolvedValue([
+      t("sera", "2026-09-07", "18:30:00"),
+      t("mattina", "2026-09-07", "09:00:00"),
+      t("giornata", "2026-09-07"),
+      t("fatto7", "2026-09-07", null, { status: "completato" }),
+    ]);
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Mese" }));
+    expect(screen.getByRole("button", { name: "Mese precedente" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mese successivo" })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("button", { name: "7" })).toBeTruthy());
+    await tocca(screen.getByRole("button", { name: "7" }));
+    const ids = [...document.querySelectorAll("[data-impegno]")].map((b) => b.dataset.impegno);
+    // Senza ora prima, a pari ora per titolo: «Impegno fatto7» < «Impegno giornata».
+    expect(ids).toEqual(["fatto7", "giornata", "mattina", "sera"]);
+    expect(document.querySelector("[data-impegno='mattina'] [data-ora]").textContent).toBe("09:00");
+    // La colonna dell'ora c'è anche vuota: i titoli partono tutti dallo stesso punto.
+    expect(document.querySelector("[data-impegno='giornata'] [data-ora]").textContent).toBe("");
+    expect(document.querySelector("[data-impegno='fatto7'] [data-titolo]").className).toMatch(/line-through/);
+    expect(document.querySelector("[data-impegno='sera'] [data-titolo]").className).not.toMatch(/line-through/);
+  });
+});
+
+describe("🔴 la settimana", () => {
+  it("legge da lunedì 7 a domenica 13, e mostra i sette giorni", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(finte.tra).toHaveBeenCalledWith("2026-09-07", "2026-09-13"));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+    expect(giorni().map((g) => g.dataset.giorno)).toEqual([
+      "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13",
+    ]);
+    expect(screen.getByText("7 – 13 settembre 2026")).toBeTruthy();
+    // Oggi è mercoledì, e si vede.
+    expect(giorno("2026-09-09").hasAttribute("data-oggi")).toBe(true);
+    // Sulla settimana di oggi il ritorno non serve.
+    expect(document.querySelector("[data-settimana-questa]")).toBeNull();
+  });
+
+  it("🔴 dentro un giorno: senza ora in cima, poi per ora — con l'ora scritta", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+    const lun = [...giorno("2026-09-07").querySelectorAll("[data-impegno]")];
+    expect(lun.map((b) => b.dataset.impegno)).toEqual(["giornata", "mattina", "sera"]);
+    expect(lun.map((b) => b.querySelector("[data-ora]").textContent)).toEqual(["", "09:00", "18:30"]);
+  });
+
+  // 🔴 SEPARARE GLI IMPEGNI — 12/09/2026, mandato notturno, blocco B (dal
+  //    collaudo sull'iPhone): in un giorno con più impegni ognuno dev'essere
+  //    un'unità distinta, con una linea leggera FRA l'uno e l'altro — mai
+  //    prima del primo né dopo l'ultimo — e ora e titolo insieme nello stesso
+  //    bersaglio. Sul codice di prima nessun impegno porta la linea: rossa.
+  it("🔴 fra un impegno e l'altro dello stesso giorno c'è una linea; né prima del primo né dopo l'ultimo", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+    const righe = [...giorno("2026-09-07").querySelectorAll("[data-impegno]")].map((b) => b.parentElement);
+    // Ognuno è una riga a sé della lista del giorno…
+    expect(righe.every((li) => li.tagName === "LI")).toBe(true);
+    // …la linea sta sopra il secondo e il terzo, non sopra il primo…
+    expect(righe.map((li) => li.hasAttribute("data-separato"))).toEqual([false, true, true]);
+    // …ed è il segmento corto, dentro la riga e prima del pulsante (la forma
+    // la misura la prova visiva: `tests/visive/agenda/linee.js`).
+    expect(righe.map((li) => li.querySelectorAll(":scope > [data-separatore-impegno]").length)).toEqual([0, 1, 1]);
+    expect(righe[1].firstElementChild.hasAttribute("data-separatore-impegno")).toBe(true);
+    // …e non ce n'è una in fondo: dopo l'ultimo non viene niente.
+    expect(righe[2].nextElementSibling).toBeNull();
+    // Ora e titolo stanno nello stesso pulsante, cioè si toccano insieme.
+    for (const li of righe) {
+      const b = li.querySelector("[data-impegno]");
+      expect(b.querySelector("[data-ora]") && b.querySelector("[data-titolo]")).toBeTruthy();
+    }
+    // Un giorno con un impegno solo non ha linee; uno vuoto non ha elenco.
+    expect(giorno("2026-09-09").querySelectorAll("[data-separato]")).toHaveLength(0);
+    expect(giorno("2026-09-08").querySelectorAll("li")).toHaveLength(0);
+  });
+
+  it("un giorno vuoto dice «niente», e il fatto resta, barrato", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+    expect(within(giorno("2026-09-08")).getByText("niente")).toBeTruthy();
+    const fatto = giorno("2026-09-09").querySelector("[data-impegno='fatto'] [data-titolo]");
+    expect(fatto.className).toMatch(/line-through/);
+  });
+
+  // 🔴 LE SETTE COLONNE SONO STATE TOLTE — 16/09/2026, difetto visto da
+  //    Alessio sul monitor vero (1920×1080, barra laterale aperta) e poi
+  //    MISURATO. Il titolo lungo del campione chiede 501 punti su una riga:
+  //      · a righe, computer 1280 ...... 1 riga, 809 punti disponibili
+  //      · a righe, iPhone 390/440 ..... 2 righe
+  //      · a righe, iPhone a 64 px/cm .. 4 righe
+  //      · in sette colonne, 1600 E 1920  **6 righe, 129 punti**
+  //    1600 e 1920 danno lo stesso numero perché la pagina ha un tetto di
+  //    larghezza: allargare il monitor non allarga il riquadro, e per stare
+  //    in due righe servirebbe un riquadro da ~1800 punti che non esiste.
+  //
+  // ⚠️ QUI SI PROVA LA STRUTTURA, NON I PUNTI: in queste prove non c'è un
+  //    motore di stile. Le righe e i millimetri li misura `prova-visiva.mjs`
+  //    in un browser vero, a sei larghezze — compresa 1920, che prima
+  //    mancava, ed è il motivo per cui il difetto non era sorvegliato.
+  describe("🔴 i sette giorni sono righe, a qualunque larghezza", () => {
+    it("ora e titolo sono UNA riga sola, e il titolo non finisce in un cartellino", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+      const b = giorno("2026-09-07").querySelector("[data-impegno='mattina']");
+      const riga = b.querySelector("[data-cella-ora]").parentElement;
+      expect(riga.contains(b.querySelector("[data-titolo]"))).toBe(true);
+      expect(riga.className).toMatch(/items-baseline/);
+      expect(riga.className).not.toMatch(/flex-col/);
+      // `[data-ora]` contiene l'ora e basta — lo legge anche la prova del
+      // 12/09 qui sopra — e la cella non porta più nessun puntino: quello
+      // esisteva solo per le colonne.
+      expect(b.querySelector("[data-ora]").textContent).toBe("09:00");
+      expect(b.querySelector("[data-cella-ora]").textContent.replace(/\s+/g, " ").trim()).toBe("09:00");
+      // Su un impegno senza ora la cella c'è lo stesso, vuota: i titoli dello
+      // stesso giorno partono tutti dallo stesso punto.
+      const senzOra = giorno("2026-09-07").querySelector("[data-impegno='giornata'] [data-cella-ora]");
+      expect(senzOra.textContent.trim()).toBe("");
+      expect(senzOra).toBeTruthy();
+    });
+
+    it("la colonna dell'ora ha UNA larghezza sola, e il rientro della linea la segue", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorno("2026-09-07")?.querySelectorAll("[data-impegno]")).toHaveLength(3));
+      // Una misura sola, uguale dappertutto: prima ce n'erano due, una per il
+      // telefono e una per le colonne, e le colonne non ci sono più.
+      for (const c of [...giorno("2026-09-07").querySelectorAll("[data-cella-ora]")]) {
+        expect(c.className).toMatch(/w-\[3\.2em\]/);
+      }
+      // La linea fra un impegno e l'altro comincia dove comincia il titolo:
+      // stesso rientro della colonna dell'ora (lo misura `linee.js`).
+      const spazio = giorno("2026-09-07").querySelector("[data-separatore-impegno] span");
+      expect(spazio.className).toMatch(/w-\[3\.2em\]/);
+    });
+
+    it("🔴 le sette colonne non tornano: né griglia, né contenitore, né varianti larghe", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorni()).toHaveLength(7));
+      // 🔴 QUESTA È LA RETE CHE IMPEDISCE IL RITORNO. Le colonne nascevano da
+      //    tre cose insieme: il contenitore che misura il riquadro, la griglia
+      //    a sette e le varianti «@5xl:». Se una sola ricompare, qui si vede —
+      //    e senza questa prova tornerebbero in silenzio, perché in jsdom non
+      //    cambierebbero nulla di visibile.
+      const riquadro = document.querySelector("[data-settimana]");
+      expect(riquadro.className).not.toMatch(/@container/);
+      const elenco = riquadro.querySelector("ol");
+      expect(elenco.className).not.toMatch(/grid/);
+      const conVarianti = [...riquadro.querySelectorAll("*")]
+        .map((e) => String(e.className ?? ""))
+        .filter((c) => /@5xl:|@container/.test(c));
+      expect(conVarianti).toEqual([]);
+      // I titoli vanno a capo come parole italiane, non spezzati a caso.
+      const titolo = giorno("2026-09-07").querySelector("[data-titolo]");
+      expect(titolo.getAttribute("lang")).toBe("it");
+      expect(titolo.className).toMatch(/hyphens-auto/);
+    });
+
+    it("il giorno vuoto dice «niente», una parola sola, sulla riga del giorno", async () => {
+      mostra();
+      await tocca(screen.getByRole("button", { name: "Settimana" }));
+      await waitFor(() => expect(giorni()).toHaveLength(7));
+      const vuoto = giorno("2026-09-08").querySelector("[data-vuoto]");
+      // Una parola sola: «Nessun impegno» esisteva solo per le colonne, dove
+      // c'era spazio. A righe resta quella del telefono, che non cambia.
+      expect(vuoto.textContent.trim()).toBe("niente");
+      expect(vuoto.textContent).not.toMatch(/Nessun impegno/);
+      // E l'intestazione del giorno resta corta, com'era.
+      const intestazione = giorno("2026-09-08").querySelector("[data-intestazione]");
+      expect(intestazione.textContent).toMatch(/Mar/);
+    });
+  });
+
+  it("→ la settimana dopo, ← quella prima, e «Torna a questa settimana»", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+
+    await tocca(screen.getByRole("button", { name: "Settimana successiva" }));
+    await waitFor(() => expect(finte.tra).toHaveBeenLastCalledWith("2026-09-14", "2026-09-20"));
+    await waitFor(() => expect(screen.getByText("14 – 20 settembre 2026")).toBeTruthy());
+    // Settimana vuota: sette «niente», nessun impegno.
+    await waitFor(() => expect(document.querySelectorAll("[data-vuoto]")).toHaveLength(7));
+    expect(document.querySelectorAll("[data-impegno]")).toHaveLength(0);
+
+    await tocca(screen.getByRole("button", { name: "Torna a questa settimana" }));
+    await waitFor(() => expect(screen.getByText("7 – 13 settembre 2026")).toBeTruthy());
+
+    await tocca(screen.getByRole("button", { name: "Settimana precedente" }));
+    await waitFor(() => expect(finte.tra).toHaveBeenLastCalledWith("2026-08-31", "2026-09-06"));
+    await waitFor(() => expect(giorno("2026-09-03")?.querySelector("[data-impegno='prima']")).toBeTruthy());
+    expect(screen.getByText("31 agosto – 6 settembre 2026")).toBeTruthy();
+  });
+
+  it("⚠️ due tocchi veloci: vince l'ultima settimana chiesta, non la lettura più lenta", async () => {
+    let sblocca = () => {};
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+    // La prossima lettura (settimana dopo) resta in volo…
+    finte.tra.mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          sblocca = () => r([t("vecchia", "2026-09-15")]);
+        }),
+    );
+    await tocca(screen.getByRole("button", { name: "Settimana successiva" }));
+    // …e intanto si va avanti ancora di una, dove c'è un impegno.
+    await tocca(screen.getByRole("button", { name: "Settimana successiva" }));
+    await waitFor(() => expect(screen.getByText("21 – 27 settembre 2026")).toBeTruthy());
+    await waitFor(() => expect(document.querySelector("[data-impegno='dopo2']")).toBeTruthy());
+    await act(async () => {
+      sblocca();
+    });
+    // ⚠️ Il caso che conta NON è «la vecchia compare» — divisa sui giorni di
+    //    questa settimana non ci starebbe comunque — ma che la risposta
+    //    vecchia si porti via quella giusta: senza la guardia, «dopo2»
+    //    sparirebbe e il martedì direbbe «niente». Rompendo la guardia, la
+    //    prima stesura di questa prova restava verde.
+    expect(document.querySelector("[data-impegno='dopo2']")).toBeTruthy();
+    expect(document.querySelector("[data-impegno='vecchia']")).toBeNull();
+  });
+
+  it("🔴 se la lettura fallisce lo dice, non disegna sette «niente», e si riprova", async () => {
+    mostra();
+    finte.tra.mockImplementationOnce(() => Promise.reject(new Error("rete assente")));
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(document.querySelector("[data-errore-settimana]")).toBeTruthy());
+    expect(screen.getByText(/rete assente/)).toBeTruthy();
+    expect(giorni()).toHaveLength(0);
+    expect(document.querySelectorAll("[data-vuoto]")).toHaveLength(0);
+    await tocca(screen.getByRole("button", { name: "Riprova" }));
+    await waitFor(() => expect(giorni()).toHaveLength(7));
+    expect(document.querySelector("[data-errore-settimana]")).toBeNull();
+    expect(screen.queryByText(/rete assente/)).toBeNull();
+  });
+
+  it("🔴 toccare un impegno apre la sua scheda", async () => {
+    mostra();
+    await tocca(screen.getByRole("button", { name: "Settimana" }));
+    await waitFor(() => expect(document.querySelector("[data-impegno='mattina']")).toBeTruthy());
+    await tocca(document.querySelector("[data-impegno='mattina']"));
+    expect(screen.getByText("scheda di mattina")).toBeTruthy();
+  });
+});

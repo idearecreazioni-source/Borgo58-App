@@ -1,16 +1,19 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  cartaDaRistampare,
   createBarItem,
   listBarItems,
   listMargineCarta,
   proposteAbbinamento,
+  segnaCartaStampata,
   setBarItemActive,
   prodottiPerLaCarta,
   updateBarItem,
 } from "../../lib/api/barItems";
 import { formatEUR, formatQta } from "../../lib/constants";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
+import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
@@ -59,12 +62,28 @@ export default function BevandeVini() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  // 🔴 LO STATO DELLA CARTA STAMPATA (16/09/2026). `null` finché non si è
+  //    letto: «sto ancora leggendo», «non ci sono riuscito» e «non c'è niente
+  //    in carta» sono tre risposte diverse, e nessuna delle tre è un elenco
+  //    vuoto travestito da dato (regola del 19/08).
+  const [carta, setCarta] = useState(null);
+  const [cartaCaricando, setCartaCaricando] = useState(true);
 
   const load = () =>
     listBarItems({ includeInactive: true })
       .then(setItems)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+  // ⚠️ Si legge col marcatore del progetto: una lettura fallita diventa
+  //    `NON_LETTO`, non un elenco vuoto — e la schermata lo dice invece di
+  //    disegnare due carte «mai stampate» che nessuno ha mai guardato.
+  const caricaCarta = () => {
+    setCartaCaricando(true);
+    return leggi(cartaDaRistampare())
+      .then(setCarta)
+      .finally(() => setCartaCaricando(false));
+  };
 
   const caricaProposte = () =>
     leggi(proposteAbbinamento()).then((righe) => {
@@ -86,6 +105,7 @@ export default function BevandeVini() {
     load();
     caricaMargini();
     caricaProposte();
+    caricaCarta();
     // 🔴 SOLO I PRODOTTI SEGNATI «VA IN CARTA» (31/08/2026, decisione di
     //    Alessio). Prima qui arrivava **tutto il magazzino**: misurato
     //    aprendo la schermata, ventisei menu da 116 voci — per collegare un
@@ -335,6 +355,119 @@ export default function BevandeVini() {
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">{error}</p>
       )}
 
+      {/* LA CARTA STAMPATA --------------------------------------------- */}
+      {/* 🔴 IL GESTIONALE SAPEVA RISPONDERE E NESSUNO POTEVA CHIEDERE — dal
+          31/08 esistono `carta_da_ristampare()` e `segna_carta_stampata()`, e
+          fino al 16/09 non c'era nessuna schermata che le usasse.
+          ⚠️ QUI NON SI DECIDE NIENTE: si mostrano i numeri — da quanto è
+             ferma, cosa è cambiato da allora, quante voci ci sono adesso — e
+             se ristampare lo decide Alessio. Nessuna soglia, nessun allarme.
+          ⚠️ E IL PULSANTE NON STAMPA: registra una stampa già avvenuta. Il
+             nome lo dice, e la conferma lo ripete prima di scrivere. */}
+      <section data-carta-stampata className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
+        <h2 className="font-display text-xl text-b58-charcoal mb-1">
+          La carta stampata
+          <Didascalia>
+            Il gestionale non stampa niente: qui si registra una stampa già fatta, per sapere
+            da quando quella in sala è ferma e cosa è cambiato da allora.
+          </Didascalia>
+        </h2>
+
+        {cartaCaricando ? (
+          <p className="testo-sala-grande text-b58-charcoal-soft">Carico lo stato della carta…</p>
+        ) : nonLetto(carta) ? (
+          // 🔴 NON VUOL DIRE «MAI STAMPATA»: vuol dire che non lo so. Due
+          //    carte «mai stampate» disegnate su una lettura fallita sono una
+          //    risposta inventata (regola del 19/08).
+          <div data-carta-non-letta>
+            <p className="testo-sala-grande text-b58-terracotta-dark">
+              Non ho letto lo stato della carta: non so da quando è ferma.
+            </p>
+            <button
+              type="button"
+              onClick={caricaCarta}
+              className="tocco-testo testo-sala-grande font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+            >
+              Riprova
+            </button>
+          </div>
+        ) : (carta ?? []).length === 0 ? (
+          <p className="testo-sala-grande text-b58-charcoal-soft/70">
+            Non c'è ancora niente in carta: non c'è una stampa da registrare.
+          </p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {(carta ?? []).map((c) => {
+              const nome = c.sezione === "vini" ? "Carta dei vini" : "Carta delle bevande";
+              const mai = c.ultima_stampa == null;
+              const giorni = c.giorni_ferma;
+              return (
+                <li
+                  key={c.sezione}
+                  data-carta={c.sezione}
+                  className="rounded-lg bg-white/60 ring-1 ring-b58-charcoal/10 px-3 py-2"
+                >
+                  <p className="testo-sala-grande font-medium text-b58-charcoal">{nome}</p>
+                  {/* ⚠️ Vuoto non è zero: «mai stampata» non è «stampata zero
+                      giorni fa», ed è la distinzione che la funzione del
+                      database tiene apposta. */}
+                  <p className="testo-sala text-b58-charcoal-soft">
+                    {mai ? (
+                      "Mai stampata."
+                    ) : (
+                      <>
+                        Ultima stampa il{" "}
+                        {new Date(c.ultima_stampa).toLocaleDateString("it-IT", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                        {giorni != null && (
+                          <> · {giorni === 0 ? "oggi" : giorni === 1 ? "1 giorno fa" : `${giorni} giorni fa`}</>
+                        )}
+                      </>
+                    )}
+                  </p>
+                  <p className="testo-sala text-b58-charcoal-soft">
+                    {c.entrate_da_allora} {c.entrate_da_allora === 1 ? "entrata" : "entrate"} ·{" "}
+                    {c.uscite_da_allora} {c.uscite_da_allora === 1 ? "tolta" : "tolte"}{" "}
+                    {mai ? "da quando esiste la carta" : "dall'ultima stampa"}
+                  </p>
+                  <p className="testo-sala text-b58-charcoal-soft">
+                    {c.voci_adesso} {c.voci_adesso === 1 ? "voce in carta" : "voci in carta"} adesso
+                  </p>
+                  <div className="mt-1">
+                    {/* ⚠️ LA CONFERMA PRIMA DELLA SCRITTURA, con la stessa
+                        forma del resto del gestionale: il pulsante diventa la
+                        domanda sul posto, e il «sì» cade lontano dal primo
+                        tocco. Registrare una stampa non si disfa dall'app —
+                        fotografa quante voci c'erano — quindi un tocco per
+                        sbaglio non deve bastare. */}
+                    <ConfermaDistruttiva
+                      etichetta="Segna che l'ho stampata"
+                      etichettaConferma="Sì, l'ho stampata"
+                      domanda={`L'hai già stampata? Registro la stampa di ${nome} con le ${c.voci_adesso} voci di adesso.`}
+                      attributi={{ "data-segna-stampata": c.sezione }}
+                      onConferma={async () => {
+                        setError("");
+                        try {
+                          await segnaCartaStampata(c.sezione);
+                          // Lo stato si rilegge dal database: i giorni e i
+                          // conteggi li calcola lui, non questa schermata.
+                          await caricaCarta();
+                        } catch (e) {
+                          setError(e.message);
+                        }
+                      }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {/* AGGIUNTA ------------------------------------------------------ */}
       <form onSubmit={handleAdd} className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-2">
@@ -420,7 +553,7 @@ export default function BevandeVini() {
       </label>
 
       {loading ? (
-        <p className="testo-sala-grande text-b58-charcoal-soft">Carico…</p>
+        <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
       ) : (
         sezioni.map((s) => (
           <div key={s.section} className="mb-8">

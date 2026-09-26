@@ -42,6 +42,7 @@
 // lavoro, non a ogni singola funzione.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { esitoVerificaUtente } from "./sessione.ts";
 
 // Elenco CHIUSO delle operazioni invocabili. Tutto ciò che non è qui
 // dentro riceve un rifiuto: il corridoio non è un passacarte generico
@@ -284,13 +285,37 @@ const OPERAZIONI = new Set([
   // qui, come `elimina_nota_credito`: sono le due facce dello stesso gesto
   // — Alessio guarda una cosa e dice si' o no — e separarle renderebbe
   // meta' di quel gesto invisibile nell'elenco delle scritture.
-  "esegui_azione_dettata",
-  "annulla_azione_dettata",
+  // 🔴 `esegui_azione_dettata` e `annulla_azione_dettata` NON sono piu' qui
+  // dal 06/09/2026 (SPEC-0013): eseguivano o annullavano UNA riga, e da
+  // quando l'unita' che si approva e' l'appunto quella e' una seconda
+  // porta che lo scavalca — su una lista da tre articoli avrebbe scritto
+  // il primo lasciando gli altri due dentro un appunto a meta'. Al loro
+  // posto ci sono `approva_appunto` e `scarta_appunto`, qui sotto.
   // ⚠️ Scegliere fra i candidati proposti ESEGUE, quindi è la stessa
   // scrittura di `esegui_azione_dettata` con una decisione in più davanti:
   // se uscisse da un'altra porta, metà dei gesti che scrivono a voce non
   // comparirebbe nell'elenco delle scritture.
   "scegli_per_azione_dettata",
+
+  // SPEC-0013 — gli appunti vocali.
+  // ⚠️ `approva_appunto` e' multi-tabella per costruzione: esegue TUTTI gli
+  // elementi dell'appunto e li chiude, in una transazione sola. O entrano
+  // tutti e tre gli articoli della lista, o non ne entra nessuno — a meta'
+  // sarebbe un appunto sparito con solo una parte scritta, e nessuno che
+  // sappia quale.
+  // ⚠️ Le altre due toccano meno tabelle e passano comunque di qui, per la
+  // ragione gia' scritta sopra: sono le altre facce dello stesso gesto —
+  // Alessio guarda un appunto e lo approva, lo corregge o lo butta — e
+  // farle uscire da un'altra porta renderebbe due terzi di quel gesto
+  // invisibili nell'elenco delle scritture.
+  "approva_appunto",
+  "scarta_appunto",
+  "correggi_elemento_appunto",
+  // ⚠️ `chiudi_azione_a_mano` E' ENTRATA QUI IL 06/09: prima toccava una
+  // riga sola, adesso ne tocca due — segna la riga come finita a mano e,
+  // se era l'ultima, CHIUDE l'appunto. Senza la seconda scrittura un
+  // appunto resterebbe aperto e vuoto nell'elenco, per sempre.
+  "chiudi_azione_a_mano",
 
   // ⚠️ Tengono una tabella sola e passano comunque di qui, per la stessa
   // ragione delle due righe qui sopra: la caparra entra dal corridoio
@@ -344,9 +369,25 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
 
+  // 🔴 «SESSIONE NON VALIDA» SOLO SE LO È — 10/09/2026. Prima qualunque
+  //    errore della verifica diventava 401, anche un servizio di accesso
+  //    che non rispondeva: misurato su una sessione valida (vedi
+  //    `sessione.ts`). Quando non è un rifiuto, si scrive nel registro della
+  //    funzione cosa è successo — nome, stato e codice, MAI il gettone —
+  //    così la prossima volta la causa si legge invece di dedurla.
   const { data: utente, error: authError } = await supabase.auth.getUser();
-  if (authError || !utente?.user) {
-    return errore(401, "auth", "Sessione non valida: rifare l'accesso");
+  const esito = esitoVerificaUtente(authError, utente?.user);
+  if (esito) {
+    if (esito.stato !== 401) {
+      console.error(JSON.stringify({
+        evento: "verifica_utente_non_riuscita",
+        nome: authError?.name ?? null,
+        stato: (authError as { status?: number } | null)?.status ?? null,
+        codice: (authError as { code?: string } | null)?.code ?? null,
+        messaggio: authError?.message ?? null,
+      }));
+    }
+    return errore(esito.stato, esito.codice, esito.messaggio);
   }
 
   let corpo;
@@ -359,7 +400,17 @@ Deno.serve(async (req) => {
   const operazione = corpo?.operazione;
   const parametri = corpo?.parametri ?? {};
   if (typeof operazione !== "string" || !OPERAZIONI.has(operazione)) {
-    return errore(404, "operazione", "Operazione non ammessa");
+    // 🔴 IL MESSAGGIO DICE COSA VUOL DIRE, dal 06/09/2026. Diceva
+    //    «Operazione non ammessa», che a chi la legge suona come un
+    //    permesso mancante — e manda a cercare nel posto sbagliato. La
+    //    causa vera e' quasi sempre un'altra: il gestionale nel browser
+    //    e' piu' avanti di questo corridoio, che non e' ancora stato
+    //    installato. Successo davvero, e a trovarlo e' stato un tocco su
+    //    «Approva» che non scriveva niente.
+    return errore(404, "operazione",
+      `Questo gestionale sa fare «${operazione}», ma la parte online non e' ancora ` +
+      `stata aggiornata e non la conosce. NON e' stato scritto niente. ` +
+      `Va installata la funzione «operazioni-atomiche».`);
   }
 
   const { data, error } = await supabase.rpc(operazione, parametri);

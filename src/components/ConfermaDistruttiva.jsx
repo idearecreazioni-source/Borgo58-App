@@ -13,7 +13,13 @@ import { useState } from "react";
  *      cliente, note «di tasca mia», rimborsi, spese deducibili.
  *   2. **Non chiede conferma** ciò che si rifà in tre secondi o ha una via
  *      di ritorno visibile: righe di ricetta, fasi, video, voci di menu,
- *      colture, impegni.
+ *      colture.
+ *
+ * ⚠️ L'ECCEZIONE DELL'AGENDA — 25/09/2026, decisione di Alessio: gli
+ * impegni stavano nel secondo gruppo, ma in Agenda ci sono anche gli
+ * adempimenti societari, e «Elimina» nella scheda di un impegno ora chiede
+ * conferma. Vale solo per gli impegni: il resto del secondo gruppo non
+ * cambia.
  *
  * ⚠️ E la conferma **dice cosa sparisce**, non «sei sicuro?». Un «sei
  * sicuro?» generico è una porta che si apre premendo due volte invece di
@@ -33,6 +39,11 @@ export default function ConfermaDistruttiva({
   onConferma,
   disabilitato = false,
   className = "",
+  // ⚠️ Attributi da appendere al pulsante VERO (16/09/2026): senza, per
+  //    marcarlo bisognerebbe avvolgerlo in un contenitore, e un contenitore
+  //    non si preme — una prova che tocca l'involucro non tocca il pulsante,
+  //    e passerebbe senza aver provato niente.
+  attributi = {},
 }) {
   const [chiesto, setChiesto] = useState(false);
   const [inCorso, setInCorso] = useState(false);
@@ -57,6 +68,7 @@ export default function ConfermaDistruttiva({
         type="button"
         disabled={disabilitato}
         onClick={() => setChiesto(true)}
+        {...attributi}
         className={`tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark disabled:opacity-50 ${className}`}
       >
         {etichetta}

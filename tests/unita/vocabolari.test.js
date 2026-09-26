@@ -24,7 +24,13 @@ const DB = [
   { tabella: "supplier_invoices", colonna: "payment_method", valori: ["assegno", "bonifico", "carta", "contante"] },
   { tabella: "shopping_list_items", colonna: "payment_method", valori: ["bonifico", "carta", "contante"] },
   { tabella: "orders", colonna: "payment_method", valori: ["carta", "contante", "misto"] },
-  { tabella: "tasks", colonna: "ricorrenza", valori: ["annuale", "mensile", "semestrale", "trimestrale"] },
+  // ⚠️ INVENTATA APPOSTA, e dal 10/09/2026 non somiglia più a niente di
+  //    vero: qui era scritto `tasks.ricorrenza`, che quel giorno ha smesso
+  //    di esistere. Una prova che nomina una colonna vera diventa una
+  //    frase falsa il giorno che quella colonna cambia, e non serve — la
+  //    regola in esame (il valore vuoto si ignora solo dove è dichiarato)
+  //    non ha bisogno di una colonna vera per essere esercitata.
+  { tabella: "esempio", colonna: "cadenza", valori: ["annuale", "mensile", "semestrale", "trimestrale"] },
 ];
 
 const etichette = (...valori) => valori.map((v) => ({ value: v, label: v }));
@@ -112,10 +118,10 @@ describe("la rete dei vocabolari scatta quando i tre posti divergono", () => {
 
   it("ignora il valore vuoto solo dove è dichiarato che significa «niente»", () => {
     const specchio = {
-      costante: "TASK_RICORRENZE",
+      costante: "CADENZE_DI_ESEMPIO",
       valori: etichette("", "mensile", "trimestrale", "semestrale", "annuale"),
-      tabella: "tasks",
-      colonna: "ricorrenza",
+      tabella: "esempio",
+      colonna: "cadenza",
     };
     expect(problemiVocabolari([{ ...specchio, ignora: [""] }], DB)).toEqual([]);
     expect(problemiVocabolari([specchio], DB)).toHaveLength(1);
@@ -223,6 +229,22 @@ describe("un elenco che non rispecchia nessuna colonna si dichiara", () => {
       expect(e.perche, `${e.costante} è esente ma non dice perché`).toBeTruthy();
       expect(e.perche.length).toBeGreaterThan(40);
     }
+  });
+
+  it("gli elenchi VERI di `constants.js` sono tutti dichiarati — anche senza il database", async () => {
+    // ⚠️ Nata il 14/09/2026 da un rosso vero: la #82 ha aggiunto
+    //    `STATI_PREPARAZIONE` senza dichiararlo, e se n'è accorta solo la
+    //    prova sul database (`tests/app/vocabolari.test.js`), dieci minuti
+    //    dopo la spinta. Questo controllo però il database non lo usa: legge
+    //    `constants.js` e le due liste di `vocabolari.js`. Qui gira fra le
+    //    prove pure, quindi scatta in locale e nel primo lavoro su GitHub.
+    const costanti = await import("../../src/lib/constants");
+    const { SPECCHIATI } = await import("../../src/lib/calcoli/vocabolari");
+    expect(
+      specchiNonDichiarati(costanti, SPECCHIATI),
+      "elenchi di etichette non dichiarati in src/lib/calcoli/vocabolari.js: vanno agganciati " +
+        "alla loro colonna in SPECCHIATI, oppure dichiarati in SPECCHI_ESENTI con la ragione"
+    ).toEqual([]);
   });
 });
 

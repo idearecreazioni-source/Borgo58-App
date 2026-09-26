@@ -1,19 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FRASE_NATO_IL_SUCCESSIVO, chiudiImpegno } from "../../lib/chiudiImpegno";
 import {
   agendaCorsie,
   agendaFatti,
-  completaTask,
   riapriTask,
+  listTasksBetween,
   listTasksForMonth,
   spostaTask,
   stellaTask,
 } from "../../lib/api/tasks";
+import SettimanaAgenda from "./SettimanaAgenda";
+import {
+  inOrdineDelGiorno,
+  lunediDi,
+  oraBreve,
+  spostaGiorni,
+  spostaSettimana,
+} from "../../lib/calcoli/settimana";
 import { formatDate, oggiLocale } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
-import { campiImpegno, daFareAdesso, sezioniDellAgenda } from "../../lib/calcoli/agenda";
+import {
+  campiImpegno,
+  daFareAdesso,
+  fraseRicorrenza,
+  sezioniDellAgenda,
+} from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
-import { toccaSubito, togliSubito } from "../../lib/calcoli/tocco";
+import { toccaSubito } from "../../lib/calcoli/tocco";
+import Didascalia from "../../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -80,11 +95,13 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
   return (
     <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4">
       <div className="flex items-center justify-between mb-4">
-        <button onClick={onPrev} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
+        {/* Il nome delle frecce (11/09/2026): senza, per la lettura dello
+            schermo erano «←» e «→». Stessi nomi della Settimana. */}
+        <button onClick={onPrev} aria-label="Mese precedente" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">←</button>
         <h3 className="font-display testo-sala-grande text-b58-charcoal">
           {MONTH_NAMES[month - 1]} {year}
         </h3>
-        <button onClick={onNext} className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
+        <button onClick={onNext} aria-label="Mese successivo" className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta px-2">→</button>
       </div>
 
       {loading ? (
@@ -132,14 +149,125 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
 // Solo il titolare vede i task riservati (la RLS li filtra per lo staff,
 // §3.18) — per lui è utile sapere a colpo d'occhio quali lo sono, altrimenti
 // non ha modo di distinguerli da quelli che lo staff sta leggendo davvero.
-function RiservatoBadge() {
+// 🔴 LA SPUNTA E LA STELLA DI UN IMPEGNO — 11/09/2026, dal collaudo su
+//    iPhone. Sono le stesse nella scheda del telefono e nella riga del
+//    computer, quindi vivono una volta sola.
+//
+//    ⚠️ IL BERSAGLIO RESTA 1,2 cm, IL SEGNO SI ALLINEA ALLA PRIMA RIGA DEL
+//    TITOLO. Un pulsante alto 1,2 cm centra quello che ha dentro, e il segno
+//    finiva a metà altezza, sotto il titolo. Qui sta in alto: la stella con
+//    la stessa altezza di riga del titolo; il quadratino (0,6 cm) salito di
+//    mezzo millimetro, così il suo centro cade sul centro della prima riga
+//    (una riga del titolo è alta 0,5 cm). La prova visiva lo misura.
+//
+//    🔴 26/09/2026, dal censimento a 360 punti: l'etichetta era larga
+//    quanto il quadratino (0,6 cm) — il gesto più frequente della
+//    schermata sotto la misura dei pulsanti — e la casella non aveva un
+//    nome: il `title` sta sull'etichetta, e chi non vede lo schermo sentiva
+//    «casella» e basta. Ora il bersaglio è largo 0,85 cm (il segno resta
+//    dov'era, in alto a sinistra) e il nome dice quale impegno si chiude.
+function Spunta({ onFatto, titolo }) {
   return (
-    <span
-      title="Riservato: lo staff non vede questo task"
-      className="shrink-0 inline-flex items-center rounded-full bg-b58-charcoal/10 text-b58-charcoal-soft testo-sala font-medium px-2 py-0.5"
+    <label
+      data-spunta-impegno
+      className="tocco-azione inline-flex shrink-0 items-start"
+      style={{ minWidth: "calc(var(--pxcm) * 0.85)" }}
+      title="Fatto"
     >
-      Riservato
-    </span>
+      <input
+        type="checkbox"
+        checked={false}
+        onChange={onFatto}
+        aria-label={`Segna fatto: ${titolo}`}
+        className="spunta-grande"
+        style={{ marginTop: "calc(var(--pxcm) * -0.05)" }}
+      />
+    </label>
+  );
+}
+
+function Stella({ accesa, onStella }) {
+  return (
+    <button
+      type="button"
+      onClick={onStella}
+      // Largo quanto un dito, con la ★ spinta contro il bordo destro: il
+      // bersaglio cresce verso il titolo, il segno resta al bordo.
+      className="tocco-azione shrink-0 flex items-start justify-end testo-sala-grande"
+      style={{ minWidth: "calc(var(--pxcm) * 0.8)" }}
+      title={accesa ? "Togli dalla testa" : "Portalo in testa"}
+    >
+      <span data-stella className={accesa ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>
+        ★
+      </span>
+    </button>
+  );
+}
+
+function CasellaRimanda({ giorno, onGiorno }) {
+  return (
+    <input
+      type="date"
+      defaultValue={giorno ?? ""}
+      onChange={(e) => onGiorno(e.target.value)}
+      className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+    />
+  );
+}
+
+// 🔴 LA SCHEDA DI UN IMPEGNO SUL TELEFONO — 11/09/2026, ridisegnata dopo il
+//    collaudo su iPhone («non limitarti a spostare elementi»).
+//    · Spunta, titolo e stella partono dalla stessa riga, in alto.
+//    · Titolo, scadenza e «rimanda» sono UNA colonna, allineata a sinistra;
+//      «rimanda» sta sempre sotto, nello stesso punto — un comando che si
+//      sposta si cerca ogni volta.
+//    · Spunta e stella sono alte 1,2 cm per il dito, ma stanno ACCANTO alla
+//      colonna e non sopra la scadenza: prima la loro altezza scavava un
+//      vuoto fra il titolo e la data su ogni impegno di una riga sola.
+//    · La scadenza è testo, non un blocco: più piccola del titolo e larga
+//      quanto le sue parole.
+//    ⚠️ «Riservato» e la provenienza NON ci sono, apposta (stesso collaudo).
+//       Il dato non è toccato: la visibilità si vede e si cambia nella
+//       scheda dell'impegno, e la provenienza è scritta in fondo alla scheda.
+function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, onRimanda, onGiorno }) {
+  // La scadenza vuota si dice («quando capita») se nello stesso gruppo c'è
+  // qualcuno che una data ce l'ha: è la regola del blocchetto di serie, e
+  // senza, in «Per me conta» un impegno senza data accanto a uno datato non
+  // direbbe niente. In «Quando capita» invece lo dice già il titolo.
+  const campi = campiImpegno(t).filter((c) => c.valore || (c.chiave === "scadenza" && scadenzaSempre));
+  return (
+    <div className="flex items-start gap-3">
+      <Spunta onFatto={onFatto} titolo={t.title} />
+      <div className="min-w-0 flex-1">
+        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words">
+          {t.title}
+        </p>
+        {campi.map((c) => (
+          <p key={c.chiave} data-campo className="w-fit mt-1 testo-sala text-b58-charcoal-soft">
+            {c.etichetta}:{" "}
+            {c.valore ? (
+              <span className={c.forte ? "text-b58-charcoal font-medium" : "text-b58-charcoal"}>{c.valore}</span>
+            ) : (
+              <span className="italic text-b58-charcoal-soft/70">{c.vuoto}</span>
+            )}
+          </p>
+        ))}
+        <button
+          type="button"
+          data-gesto
+          onClick={onRimanda}
+          className="tocco-testo testo-sala font-medium text-b58-terracotta hover:text-b58-terracotta-dark"
+        >
+          {t.due_date ? "rimanda" : "dagli una data"}
+        </button>
+        {rimandaAperta && (
+          <div className="mt-1" data-non-apre>
+            <CasellaRimanda giorno={t.due_date} onGiorno={onGiorno} />
+          </div>
+        )}
+      </div>
+      <Stella accesa={t.preferito} onStella={onStella} />
+    </div>
   );
 }
 
@@ -166,6 +294,23 @@ export default function AgendaList() {
   const [monthLoading, setMonthLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState(null);
   const [notice, setNotice] = useState("");
+
+  // La settimana (11/09/2026): il suo lunedì, e gli impegni di quei 7 giorni.
+  const [lunedi, setLunedi] = useState(() => lunediDi(oggiISO));
+  const [settimana, setSettimana] = useState([]);
+  const [settimanaCaricando, setSettimanaCaricando] = useState(true);
+  // ⚠️ Una lettura fallita resta DENTRO la settimana, col suo «Riprova», e
+  //    si toglie alla lettura dopo: un errore globale restava in cima anche
+  //    sopra la settimana letta bene (rilievo della revisione, 11/09).
+  const [erroreSettimana, setErroreSettimana] = useState("");
+  const [riprovaSettimana, setRiprovaSettimana] = useState(0);
+  // ⚠️ Vince la lettura PIÙ RECENTE, non la più veloce: toccando «→» due
+  //    volte di fila partono due letture, e se la prima tornasse per ultima
+  //    sostituirebbe gli impegni della settimana giusta con quelli di
+  //    un'altra — che, divisi sui giorni di questa, non ci stanno: la
+  //    schermata direbbe «niente» su giorni che hanno impegni. Plausibile e
+  //    falso (misurato rompendo la guardia, 11/09).
+  const giroSettimana = useRef(0);
 
   const ricarica = async () => {
     const [c, f] = await Promise.all([agendaCorsie(), agendaFatti(30)]);
@@ -203,7 +348,25 @@ export default function AgendaList() {
   }, []);
 
   useEffect(() => {
-    if (view !== "calendario") return;
+    if (view !== "settimana") return;
+    const mio = giroSettimana.current + 1;
+    giroSettimana.current = mio;
+    setSettimanaCaricando(true);
+    setErroreSettimana("");
+    listTasksBetween(lunedi, spostaGiorni(lunedi, 6))
+      .then((righe) => {
+        if (giroSettimana.current === mio) setSettimana(righe ?? []);
+      })
+      .catch((e) => {
+        if (giroSettimana.current === mio) setErroreSettimana(e.message);
+      })
+      .finally(() => {
+        if (giroSettimana.current === mio) setSettimanaCaricando(false);
+      });
+  }, [view, lunedi, riprovaSettimana]);
+
+  useEffect(() => {
+    if (view !== "mese") return;
     setMonthLoading(true);
     listTasksForMonth(year, month)
       .then(setMonthTasks)
@@ -235,17 +398,21 @@ export default function AgendaList() {
   // l'impegno successivo di una ricorrenza, e quello lo sa solo il
   // database. La riga sparisce subito; l'impegno nuovo compare quando
   // arriva, insieme alla frase che lo annuncia.
+  //
+  // ⚠️ DAL 12/09/2026 LA CHIUSURA STA IN `chiudiImpegno`, la stessa che usa
+  //    la Dashboard: prima la Dashboard chiudeva per un'altra strada e il
+  //    successivo di un ricorrente non nasceva. Qui il comportamento è
+  //    quello di prima, più la guardia sul secondo tocco.
   const fatto = async (task) => {
     setNotice("");
-    const { ok, esito } = await togliSubito({
+    const { ok, esito } = await chiudiImpegno({
       righe: corsie,
       id: task.id,
       mostra: setCorsie,
       avvisa: setError,
-      salva: () => completaTask(task.id),
     });
     if (!ok) return; // `togliSubito` l'ha già rimessa al suo posto e l'ha detto
-    if (esito) setNotice("Fatto. Ne è già nato uno nuovo alla prossima scadenza.");
+    if (esito) setNotice(FRASE_NATO_IL_SUCCESSIVO);
     await ricarica();
   };
 
@@ -281,7 +448,11 @@ export default function AgendaList() {
   const quanti = daFareAdesso(corsie);
   const sezioni = sezioniDellAgenda(corsie);
 
-  const dayTasks = selectedDay ? monthTasks.filter((t) => t.due_date === selectedDay) : [];
+  // ⚠️ Il giorno scelto nel Mese si legge come nella Settimana (11/09/2026):
+  //    stesso ordine, l'ora accanto, il fatto barrato. Prima arrivavano
+  //    nell'ordine del database, senza ora, e un impegno già fatto era
+  //    uguale a uno da fare — la lettura del mese li comprende tutti.
+  const dayTasks = selectedDay ? inOrdineDelGiorno(monthTasks.filter((t) => t.due_date === selectedDay)) : [];
 
   return (
     <div className="testo-sala max-w-4xl mx-auto">
@@ -322,13 +493,22 @@ export default function AgendaList() {
         <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
 
-      <div className="flex gap-2 mb-4">
+      {/* 🔴 LISTA · SETTIMANA · MESE — 11/09/2026, mandato notturno: «un
+          selettore chiaro fra Mese e Settimana». Tre voci allo stesso
+          livello invece di un secondo selettore dentro «Calendario»: due
+          file di pulsanti uno sotto l'altro si confondono. «Mese» è la vista
+          che fino a oggi si chiamava «Calendario», identica. È una scelta
+          dichiarata nel riepilogo, e cambiarla è questa riga. */}
+      <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Come vedere l'Agenda">
         {[
           { value: "lista", label: "Lista" },
-          { value: "calendario", label: "Calendario" },
+          { value: "settimana", label: "Settimana" },
+          { value: "mese", label: "Mese" },
         ].map((v) => (
           <button
             key={v.value}
+            data-vista={v.value}
+            aria-pressed={view === v.value}
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
@@ -339,6 +519,16 @@ export default function AgendaList() {
             {v.label}
           </button>
         ))}
+        {/* 🔴 IL «?» STA DOVE STA IL DUBBIO — 21/09/2026. I tre nomi dicono
+            la forma e non cosa ci trovi dentro: la Lista e' l'unica in ordine
+            di urgenza, e l'unica che mostra gli impegni **senza data**.
+            ⚠️ Dietro un «?» e non sopra la schermata: una spiegazione sempre
+            visibile la si legge il primo giorno e poi diventa arredamento —
+            in due giorni d'agosto Alessio ne ha tolte sette. */}
+        <Didascalia etichetta="Cosa cambia fra le tre viste">
+          Lista: cosa c'è da fare, in ordine di urgenza, compreso quello senza data. Settimana: i sette
+          giorni con gli orari. Mese: il calendario.
+        </Didascalia>
       </div>
 
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
@@ -430,52 +620,66 @@ export default function AgendaList() {
                           <ElencoAdattivo
                             righe={elenco}
                             chiave={(t) => t.id}
-                            intestazioneTitolo="Impegno"
+                            intestazioneTitolo="Task"
+                            // Una tabella per sezione: senza una larghezza
+                            // fissa «Scadenza» cominciava in un punto diverso
+                            // in ognuna (da 600 a 875 punti, misurato).
+                            larghezzaTitolo="50%"
+                            // 🔴 LA SPUNTA A SINISTRA E GRANDE: è il gesto
+                            // più frequente e si fa col pollice.
+                            // ⚠️ `tocco-azione` (1,2 cm) e non
+                            // `tocco-bottone` (0,85): la soglia è il minimo,
+                            // non l'obiettivo, e chiudere un impegno è ciò per
+                            // cui questa schermata esiste.
+                            // 🔴 E STA IN UNA COLONNA SUA, non dentro il titolo
+                            // (10/09/2026, dal collaudo): dentro il titolo
+                            // spingeva a destra solo lui, e i campi sotto
+                            // partivano 34,7 punti più a sinistra. La prova
+                            // visiva che lo misura è `npm run test:visive`.
+                            inizio={(t) => <Spunta onFatto={() => fatto(t)} titolo={t.title} />}
                             titolo={(t) => (
                               <span className="flex items-start gap-3">
-                                {/* 🔴 LA SPUNTA A SINISTRA E GRANDE: è il
-                                    gesto più frequente e si fa col pollice.
-                                    ⚠️ `tocco-azione` (1,2 cm) e non
-                                    `tocco-bottone` (0,85): la soglia è il
-                                    minimo, non l'obiettivo, e chiudere un
-                                    impegno è ciò per cui questa schermata
-                                    esiste. */}
-                                <label
-                                  className="tocco-azione inline-flex shrink-0 items-center"
-                                  title="Fatto"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={false}
-                                    onChange={() => fatto(t)}
-                                    className="spunta-grande"
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => navigate(`/agenda/${t.id}`)}
-                                  className="min-w-0 flex-1 text-left"
-                                >
+                                {/* 🔴 IL TITOLO NON È PIÙ UN PULSANTE —
+                                    10/09/2026. Ad aprire la scheda adesso è
+                                    il quadrotto INTERO (`onTocco` qui sotto):
+                                    un tocco su una striscia di testo alta un
+                                    centimetro, in mezzo a un riquadro che
+                                    sembra tutto premibile, sul telefono
+                                    finisce quasi sempre a lato — e lì non
+                                    faceva niente.
+                                    ⚠️ La spunta, la stella e «rimanda»
+                                    restano indipendenti, e non è questa
+                                    schermata a difenderli: se ne occupa
+                                    ElencoAdattivo, che si tira indietro
+                                    quando il tocco arriva a un comando. */}
+                                {/* «Riservato» non c'è più, nemmeno qui:
+                                    tolto dall'elenco nel collaudo dell'11/09
+                                    (vedi `SchedaImpegno`). */}
+                                <span className="min-w-0 flex-1" data-testo-titolo>
                                   {t.title}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => stella(t)}
-                                  className="tocco-azione shrink-0 leading-none testo-sala-grande"
-                                  title={t.preferito ? "Togli dalla testa" : "Portalo in testa"}
-                                >
-                                  <span
-                                    className={
-                                      t.preferito ? "text-b58-gold" : "text-b58-charcoal-soft/30"
-                                    }
-                                  >
-                                    ★
-                                  </span>
-                                </button>
+                                </span>
+                                <Stella accesa={t.preferito} onStella={() => stella(t)} />
                               </span>
                             )}
-                            segno={(t) => (t.visibile_staff === false ? <RiservatoBadge /> : null)}
                             campi={campiImpegno}
+                            onTocco={(t) => navigate(`/agenda/${t.id}`)}
+                            // 🔴 LA PROVENIENZA È USCITA DALL'ELENCO — 11/09,
+                            // dal collaudo su iPhone: sta in fondo alla scheda
+                            // dell'impegno, come informazione secondaria.
+                            schedaTelefono={(t) => (
+                              <SchedaImpegno
+                                t={t}
+                                scadenzaSempre={elenco.some((x) => x.due_date)}
+                                rimandaAperta={Boolean(rimanda[t.id])}
+                                onFatto={() => fatto(t)}
+                                onStella={() => stella(t)}
+                                onRimanda={() => setRimanda((r) => ({ ...r, [t.id]: !r[t.id] }))}
+                                onGiorno={(g) => {
+                                  sposta(t, g);
+                                  setRimanda((r) => ({ ...r, [t.id]: false }));
+                                }}
+                              />
+                            )}
                             azione={(t) => ({
                               // ⚠️ SEMPRE NELLO STESSO POSTO, in fondo al
                               // quadrotto: è la richiesta di Alessio, e la
@@ -486,14 +690,12 @@ export default function AgendaList() {
                             })}
                             aperta={(t) =>
                               rimanda[t.id] ? (
-                                <input
-                                  type="date"
-                                  defaultValue={t.due_date ?? ""}
-                                  onChange={(e) => {
-                                    sposta(t, e.target.value);
+                                <CasellaRimanda
+                                  giorno={t.due_date}
+                                  onGiorno={(g) => {
+                                    sposta(t, g);
                                     setRimanda((r) => ({ ...r, [t.id]: false }));
                                   }}
-                                  className="tocco-campo rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
                                 />
                               ) : null
                             }
@@ -528,8 +730,10 @@ export default function AgendaList() {
                   <span className="testo-sala text-b58-charcoal-soft line-through flex-1 min-w-0">
                     {f.title}
                   </span>
-                  {f.ricorrenza && (
-                    <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">si ripete</span>
+                  {fraseRicorrenza(f.ricorrenza_ogni, f.ricorrenza_unita) && (
+                    <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">
+                      {fraseRicorrenza(f.ricorrenza_ogni, f.ricorrenza_unita)}
+                    </span>
                   )}
                   <span className="testo-sala text-b58-charcoal-soft/70 shrink-0">
                     {formatDate(f.fatto_il)}
@@ -548,7 +752,22 @@ export default function AgendaList() {
         </div>
       )}
 
-      {view === "calendario" ? (
+      {view === "settimana" && (
+        <SettimanaAgenda
+          lunedi={lunedi}
+          oggiISO={oggiISO}
+          impegni={settimana}
+          caricando={settimanaCaricando}
+          errore={erroreSettimana}
+          onRiprova={() => setRiprovaSettimana((n) => n + 1)}
+          onPrima={() => setLunedi((l) => spostaSettimana(l, -1))}
+          onDopo={() => setLunedi((l) => spostaSettimana(l, 1))}
+          onQuesta={() => setLunedi(lunediDi(oggiISO))}
+          onApri={(t) => navigate(`/agenda/${t.id}`)}
+        />
+      )}
+
+      {view === "mese" ? (
         <>
           <CalendarView
             tasks={monthTasks}
@@ -570,14 +789,41 @@ export default function AgendaList() {
                   {dayTasks.map((t) => (
                     <button
                       key={t.id}
+                      data-impegno={t.id}
                       onClick={() => navigate(`/agenda/${t.id}`)}
                       className="tocco-bottone w-full text-left flex items-center gap-2 testo-sala"
                     >
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_BADGE[t.priority]}`}
                       />
-                      <span className="text-b58-charcoal flex-1">{t.title}</span>
-                      {t.visibile_staff === false && <RiservatoBadge />}
+                      {/* ⚠️ Ora e titolo sulla stessa riga di base, e la
+                          colonna dell'ora c'è anche vuota se nel giorno
+                          qualcuno un'ora ce l'ha: nella prima fotografia il
+                          titolo senza ora partiva più a sinistra degli
+                          altri, e «18:30» stava a metà di un titolo su due
+                          righe. Come nella Settimana. */}
+                      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                        {dayTasks.some((x) => oraBreve(x)) && (
+                          <span data-ora className="w-[3.2em] shrink-0 tabular-nums text-b58-charcoal-soft">
+                            {oraBreve(t) ?? ""}
+                          </span>
+                        )}
+                        {/* Il nome come nelle corsie — 11/09/2026: stessa
+                            misura e stesso peso, così lo stesso impegno non
+                            cambia faccia passando dall'elenco al calendario. */}
+                        <span
+                          data-titolo
+                          title={t.status === "completato" ? "Fatto" : undefined}
+                          className={`min-w-0 flex-1 break-words testo-sala-grande font-medium ${
+                            t.status === "completato" ? "line-through text-b58-charcoal-soft" : "text-b58-charcoal"
+                          }`}
+                        >
+                          {t.title}
+                        </span>
+                      </span>
+                      {/* «Riservato» non c'è più nemmeno qui (11/09, dal
+                          collaudo su iPhone): la visibilità si vede e si
+                          cambia nella scheda dell'impegno. */}
                     </button>
                   ))}
                 </div>

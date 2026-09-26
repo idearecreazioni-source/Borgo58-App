@@ -18,6 +18,23 @@ describe("l'indirizzo per finire a mano", () => {
     expect(i).not.toMatch(/importo|30|fornitore/);
   });
 
+  it("🔴 e se il percorso ha gia' una domanda, si attacca con la «e»", () => {
+    // 🔴 La spesa dalla tasca porta il soggetto nell'indirizzo
+    //    (`/cassa/prima-nota?soggetto=tasca`): con un secondo «?»
+    //    l'indirizzo non si rompe in modo visibile — il browser lo
+    //    accetta e il parametro finisce dentro il valore del primo. La
+    //    schermata si aprirebbe senza niente di precompilato, e senza
+    //    nessun errore: cioe' il lavoro gia' fatto buttato via in
+    //    silenzio.
+    const i = indirizzoAMano("/cassa/prima-nota?soggetto=tasca", "abc-123");
+    expect(i).toBe(`/cassa/prima-nota?soggetto=tasca&${PARAMETRO}=abc-123`);
+
+    // e quello che c'era prima si legge ancora per intero
+    const q = new URLSearchParams(i.split("?")[1]);
+    expect(q.get("soggetto")).toBe("tasca");
+    expect(q.get(PARAMETRO)).toBe("abc-123");
+  });
+
   it("senza percorso non inventa un indirizzo a metà", () => {
     // È il caso della nota non capita: non si sa dove mandare. Un
     // collegamento che porta da nessuna parte è peggio di nessuno.

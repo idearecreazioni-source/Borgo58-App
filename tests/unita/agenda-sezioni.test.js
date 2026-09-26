@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   SEZIONI,
   campiImpegno,
+  fraseRicorrenza,
+  provenienzaImpegno,
   daFareAdesso,
   sezioneDi,
   sezioniDellAgenda,
@@ -124,12 +126,61 @@ describe("i campi di un quadrotto", () => {
     ).toBe(false);
   });
 
-  it("da dove viene si legge in italiano, e «scritto a mano» non è un buco", () => {
-    expect(campiImpegno(r({ origine_modulo: "posta" })).find((c) => c.chiave === "da").valore).toBe(
-      "Posta"
+  it("🔴 «Tipo» e «Da» non sono più colonne", () => {
+    // 10/09/2026. Non è una rifinitura: erano due righe su ogni quadrotto
+    // che rispondevano a una domanda che nessuno fa guardando l'Agenda —
+    // «Tipo» diceva «Altro» su quindici righe su venti, «Da» diceva
+    // «scritto a mano» su quasi tutte. Se qualcuno le rimettesse credendo
+    // di aggiungere un'informazione, questa prova lo direbbe.
+    const chiavi = campiImpegno(r({ origine_modulo: "posta" })).map((c) => c.chiave);
+    expect(chiavi).not.toContain("categoria");
+    expect(chiavi).not.toContain("da");
+  });
+});
+
+describe("la provenienza si legge in fondo, e solo quando c'è qualcosa da dire", () => {
+  it("un impegno scritto a mano non porta nessuna nota", () => {
+    // ⚠️ È il caso normale: una riga «scritto a mano» su ogni impegno
+    //    sarebbe una colonna travestita da nota.
+    expect(provenienzaImpegno(r({ origine_modulo: null }))).toBeNull();
+  });
+
+  it("i moduli che scrivono da soli si distinguono", () => {
+    expect(provenienzaImpegno(r({ origine_modulo: "posta" }))).toBe("nato dalla posta");
+    expect(provenienzaImpegno(r({ origine_modulo: "voce" }))).toBe("nato da una cosa detta a voce");
+    // Qualunque altro modulo passa dall'Archivio documenti.
+    expect(provenienzaImpegno(r({ origine_modulo: "documenti" }))).toBe(
+      "nato dall'Archivio documenti"
     );
-    const senza = campiImpegno(r({ origine_modulo: null })).find((c) => c.chiave === "da");
-    expect(senza.valore).toBe("");
-    expect(senza.vuoto).toBe("scritto a mano");
+  });
+});
+
+describe("come si legge una cadenza", () => {
+  it("«ogni 3 mesi», e al singolare quando è una volta sola", () => {
+    expect(fraseRicorrenza(3, "mesi")).toBe("ogni 3 mesi");
+    expect(fraseRicorrenza(6, "settimane")).toBe("ogni 6 settimane");
+    // 🔴 L'«ogni 1» al singolare non è una rifinitura: «ogni 1 mesi» si
+    //    legge come una cosa scritta da una macchina, e quel sospetto si
+    //    trasferisce al numero accanto.
+    expect(fraseRicorrenza(1, "mesi")).toBe("ogni mese");
+    expect(fraseRicorrenza(1, "giorni")).toBe("ogni giorno");
+    expect(fraseRicorrenza(1, "settimane")).toBe("ogni settimana");
+    expect(fraseRicorrenza(1, "anni")).toBe("ogni anno");
+  });
+
+  it("mezza cadenza non si scrive: vuol dire che non si ripete", () => {
+    // ⚠️ Le due caselle vanno insieme. Con una sola, la risposta giusta è
+    //    «niente» — mai «ogni 3 undefined», che a schermo sembrerebbe un
+    //    guasto, e mai «ogni 3» da solo, che sembrerebbe una cadenza vera.
+    expect(fraseRicorrenza(null, null)).toBeNull();
+    expect(fraseRicorrenza(3, null)).toBeNull();
+    expect(fraseRicorrenza(null, "mesi")).toBeNull();
+    expect(fraseRicorrenza(0, "mesi")).toBeNull();
+  });
+
+  it("un'unità che nessuno sa contare non si scrive a caso", () => {
+    // Se il database imparasse una parola nuova e questa funzione no, la
+    // risposta giusta è tacere invece di stampare «ogni 2 lune piene».
+    expect(fraseRicorrenza(2, "lune piene")).toBeNull();
   });
 });

@@ -1,0 +1,37 @@
+/* =====================================================================
+   FRAUNCES, LOCALE — SOLO PER LE PROVE VISIVE (27/09/2026)
+   =====================================================================
+   🔴 PERCHÉ. I titoli del gestionale (`font-display`) sono in Fraunces,
+   caricato da Google Fonts (index.html: tondo 400, 500, 600 e corsivo
+   500, con la dimensione ottica libera fra 9 e 144). Nelle pagine di prova
+   ricadeva su un serif di sistema — Georgia su Windows, un altro su Linux —
+   e una misura esistente ci passa sopra: il saluto della Dashboard, che non
+   deve andare su più righe.
+
+   ⚠️ QUESTO FILE NON ENTRA NELL'APP: vive sotto `tests/visive/` e lo
+   importano solo le pagine delle prove visive.
+
+   ⚠️ SOLO IL TONDO, e non è una dimenticanza: misurato su tutte le pagine
+   di prova, Fraunces vi compare solo in tondo, peso 400. Il corsivo del
+   gestionale non serve qui; se un giorno una pagina di prova lo usasse, il
+   controllo (`CARATTERE_PRONTO`) diventa rosso invece di lasciarlo simulare
+   al browser.
+
+   ⚠️ LA DIMENSIONE OTTICA RESTA LIBERA, come nel gestionale (Google la
+   manda variabile, 9..144). Misurato con tre frasi dei titoli, pesi 400,
+   500 e 600: a 24 e a 30 punti identico a Google al centesimo; a 20,48
+   punti 0,06-0,08 punti in più su ~190 (lo 0,04%).
+
+   Fonte: https://github.com/undercasetype/Fraunces, release 1.000
+   (UnderCaseType_Fraunces_1.000.zip, «Fonts - Web/Fraunces[SOFT,WONK,
+   opsz,wght].woff2», sha256 25e420d8…d0ce). Licenza: SIL Open Font
+   License 1.1, in LICENSE-Fraunces.txt accanto (dal repository ufficiale,
+   perché il pacchetto della release non la contiene). */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  /* I pesi del tondo che il gestionale chiede a Google Fonts: 400-600. */
+  font-weight: 400 600;
+  font-display: block;
+  src: url("./FrauncesVariable.woff2") format("woff2");
+}

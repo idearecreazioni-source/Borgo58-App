@@ -54,6 +54,11 @@ export default defineConfig({
   test: {
     environment: "node",
     env: { TZ: "Europe/Rome", ...leggiChiaviDiProva() },
+    // Chiude le sessioni aperte da ogni file, anche quando fallisce: vedi
+    // `chiudiSessioniAperte` in tests/app/aiuto.js.
+    setupFiles: ["./tests/app/chiusura-sessioni.js"],
+    // Un giro di prove non suona il telefono: silenzio a tempo su Prova.
+    globalSetup: ["./tests/app/silenzio-globale.js"],
     // Le prove contro il database vero possono richiedere qualche secondo.
     testTimeout: 30000,
     hookTimeout: 30000,

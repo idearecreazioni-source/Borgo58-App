@@ -182,7 +182,7 @@ export default function ListaSpesa() {
     try {
       const count = await addBelowThresholdItems();
       await loadAll();
-      if (count === 0) setError("Nessun ingrediente sotto soglia da aggiungere.");
+      if (count === 0) setError("Nessun ingrediente sotto scorta minima da aggiungere.");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -357,7 +357,7 @@ export default function ListaSpesa() {
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Magazzino
       </Link>
-      <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap mt-1 mb-1">
         <h1 className="font-display text-2xl text-b58-charcoal">Lista della spesa</h1>
         <StriscaDallaVoce venuto={venuto} />
         <div className="flex flex-wrap gap-2">
@@ -379,6 +379,21 @@ export default function ListaSpesa() {
           )}
         </div>
       </div>
+
+      {/* ⚠️ UNA RIGA SOLA, e dice qual è delle due: dal 07/09/2026 MEMO
+          scrive in questa lista o nella spesa spicciola a seconda di come
+          si detta, e chi guarda deve sapere in quale delle due sta. È la
+          gemella della riga che la spesa spicciola ha dal 23/08 — se la
+          spiegazione sta solo su una delle due, la domanda «e allora
+          l'altra cos'è?» resta a chi apre questa. */}
+      <p className="mb-4 testo-sala text-b58-charcoal-soft">
+        Quello che si ordina ai fornitori: nasce dalle scorte minime del magazzino e finisce in
+        una bozza d&apos;ordine. Per la spesa che fai di persona al supermercato c&apos;è la{" "}
+        <Link to="/magazzino/spesa-spicciola" className="underline hover:text-b58-terracotta">
+          spesa spicciola
+        </Link>
+        .
+      </p>
 
       {!scorteGuardate && (
         <DatoNonLetto
@@ -440,7 +455,7 @@ export default function ListaSpesa() {
                         )}
                         {item.source === "soglia_minima" && (
                           <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
-                            sotto soglia
+                            sotto scorta minima
                           </span>
                         )}
                         {item.status === "ordinata" && (
@@ -562,10 +577,13 @@ export default function ListaSpesa() {
                         </div>
 
                         {closeForm.esito === "non_presa" ? (
+                          // Il nome vero del pulsante (vedi ESITI in cima al
+                          // file): la frase diceva «Avuta gratis», che non c'è
+                          // (11/09/2026).
                           <p className="testo-sala text-b58-charcoal-soft mb-2">
                             La riga sparisce. Niente costo e <strong>niente merce in
                             magazzino</strong>: se invece te l&apos;hanno regalata, scegli
-                            «Avuta gratis».
+                            «Me l&apos;hanno regalato».
                           </p>
                         ) : (
                           <div className="flex flex-wrap gap-2 items-end">
@@ -654,7 +672,7 @@ export default function ListaSpesa() {
                                   onChange={(e) =>
                                     setCloseForm((f) => ({ ...f, document_reference: e.target.value }))
                                   }
-                                  placeholder="Rif. documento (opz.)"
+                                  placeholder="Rif. documento (facoltativo)"
                                   className={inputClass}
                                 />
                               </div>
@@ -803,7 +821,7 @@ export default function ListaSpesa() {
             <input
               value={addForm.note}
               onChange={(e) => setAddForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Nota (opzionale)"
+              placeholder="Nota (facoltativa)"
               className={`${inputClass} flex-1`}
             />
             <button
