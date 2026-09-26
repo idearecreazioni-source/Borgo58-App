@@ -87,6 +87,7 @@ import {
   cartellaSenzaAmbiente,
   NIENTE_RETE,
   nomeFile,
+  pretendiInter,
   TENTATIVI_DI_RETE,
   valuta,
 } from "./chrome-senza-schermo.mjs";
@@ -168,7 +169,15 @@ const TITOLO_ELENCO_CM = 0.4; // `testo-sala-grande`, come nell'elenco
 //    computer, 2 sull'iPhone, **4** sull'iPhone a 64 punti per centimetro —
 //    tutte forme sane, e quella a 64 non va peggiorata. In sette colonne ne
 //    faceva 6. Quindi il confine sano/rotto sta fra 4 e 6: si prende 4.
-const TITOLO_RIGHE_MASSIME = 4;
+// 🔴 RITARATA COL CARATTERE VERO — 27/09/2026: da 4 a 5. Quelle misure erano
+//    fatte col carattere di ripiego (Segoe UI su Windows): le pagine di prova
+//    non caricavano Inter. Col carattere vero (`tests/visive/caratteri/`,
+//    identico a quello che Google Fonts manda al gestionale) la STESSA forma
+//    sana a 64 punti per cm chiede 891 punti su una riga invece di 849 e fa
+//    **5** righe — nessuna schermata è cambiata, è cambiato solo il metro.
+//    Stessa regola di taratura di allora: la forma sana più alta misurata è
+//    il tetto, e resta sotto le 6 della forma rotta.
+const TITOLO_RIGHE_MASSIME = 5;
 
 // --- Le misure, eseguite DENTRO la pagina -------------------------------
 // ⚠️ Si misura il TESTO disegnato, non il bordo dell'elemento: un elemento
@@ -1039,6 +1048,7 @@ try {
     // --- l'Agenda ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html`);
       const selettore = forma.mobile ? "[data-quadrotto]" : "[data-riga]";
       // Si aspetta che le schede ci siano davvero, non un tempo fisso.
       // ⚠️ E devono esserci TUTTE: una scheda che non si disegna non ha
@@ -1067,6 +1077,7 @@ try {
     // --- la scheda di un impegno ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/scheda/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/scheda/index.html`);
       let m = null;
       for (let i = 0; i < 80; i++) {
         m = await valuta(manda, MISURA_SCHEDA);
@@ -1087,6 +1098,7 @@ try {
     // --- il segno «?» ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/didascalia/index.html");
+      await pretendiInter(manda, `${forma.nome} · tests/visive/didascalia/index.html`);
       for (let i = 0; i < 40; i++) {
         if ((await valuta(manda, `document.querySelectorAll("button[aria-label]").length`)) >= 2) break;
         await aspetta(250);
@@ -1106,6 +1118,7 @@ try {
   const Lm1 = spostaSettimana(L0, -1);
   for (const forma of FORME_SETTIMANA) {
     const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html?telaio");
+    await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html?telaio`);
     for (let i = 0; i < 80 && !(await valuta(manda, clicca("[data-vista=settimana]"))); i++) await aspetta(250);
     const giri = [
       {

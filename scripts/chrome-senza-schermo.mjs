@@ -75,6 +75,53 @@ export const NIENTE_RETE = `(() => {
   }
 })();`;
 
+// =====================================================================
+// IL CARATTERE È QUELLO VERO, O NON SI MISURA — 27/09/2026
+// =====================================================================
+// 🔴 PERCHÉ. Le prove visive misuravano col carattere di ripiego del
+//    sistema (Segoe UI su Windows, un altro su Linux) invece di Inter:
+//    stesse schermate, misure diverse — 202 contro 218 punti una casella,
+//    849 contro 943 un titolo. Ora le pagine di prova caricano Inter dal
+//    server locale (`tests/visive/caratteri/inter.css`), e prima di
+//    misurare si pretende che sia davvero lui.
+//
+// ⚠️ `document.fonts.check()` da solo NON basta: con una famiglia che non
+//    ha facce dichiarate risponde `true` lo stesso. Si guarda la faccia:
+//    deve essercene UNA sola «Inter» (la nostra), caricata, e il testo
+//    della pagina deve chiedere Inter.
+export const CARATTERE_PRONTO = `(async () => {
+  if (!location.pathname.includes("/tests/visive/")) return { pronta: false };
+  try { await Promise.all(["400", "500", "600", "700"].map((p) => document.fonts.load(p + " 16px Inter"))); } catch { /* lo dice lo stato qui sotto */ }
+  await document.fonts.ready;
+  const facce = [...document.fonts].filter((f) => f.family.replace(/["']/g, "") === "Inter");
+  const stati = facce.map((f) => f.status);
+  const famiglia = getComputedStyle(document.body).fontFamily;
+  const ok = facce.length === 1 && stati.every((s) => s === "loaded") && /^["']?Inter["']?(,|$)/.test(famiglia);
+  return { pronta: true, ok, facce: facce.length, stati, famiglia };
+})()`;
+
+/**
+ * Pretende Inter locale nella pagina aperta. Se non c'è, FERMA la prova con
+ * un messaggio chiaro: misurare un carattere di ripiego darebbe numeri
+ * diversi da quelli che vede chi usa il gestionale.
+ */
+export async function pretendiInter(manda, dove) {
+  let r = null;
+  for (let i = 0; i < 60; i++) {
+    r = (await manda("Runtime.evaluate", { expression: CARATTERE_PRONTO, returnByValue: true, awaitPromise: true }))
+      .result.value;
+    if (r?.pronta) break;
+    await aspetta(250);
+  }
+  if (!r?.pronta || !r.ok) {
+    throw new Error(
+      `${dove}: il carattere Inter locale non è caricato (facce Inter: ${r?.facce ?? "?"}, stati: ${
+        r?.stati?.join(",") || "?"
+      }, testo in: ${r?.famiglia ?? "?"}). La prova si ferma invece di misurare un carattere di ripiego.`,
+    );
+  }
+}
+
 /** Quante richieste la pagina ha provato a mandare fuori (-1: blocco assente). */
 export const TENTATIVI_DI_RETE = `({ quanti: window.__tentativiDiRete ?? -1, dove: [...new Set(window.__richiesteFermate ?? [])] })`;
 

@@ -47,6 +47,7 @@ import {
   cartellaSenzaAmbiente,
   NIENTE_RETE,
   nomeFile,
+  pretendiInter,
   valuta,
 } from "./chrome-senza-schermo.mjs";
 
@@ -243,6 +244,8 @@ async function principale() {
           `${base}tests/visive/schermate/index.html?pagina=${pagina}`,
           NIENTE_RETE,
         );
+        // Il carattere vero, o la prova si ferma (27/09/2026).
+        await pretendiInter(manda, `${pagina} · ${forma.nome}`);
         let m = null;
         for (let i = 0; i < 80 && !m; i++) {
           await aspetta(250);

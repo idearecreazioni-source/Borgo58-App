@@ -1,0 +1,38 @@
+/* =====================================================================
+   INTER, LOCALE — SOLO PER LE PROVE VISIVE (27/09/2026)
+   =====================================================================
+   🔴 PERCHÉ. Il gestionale carica Inter da Google Fonts (index.html, pesi
+   400, 500, 600 e 700, solo tondo). Le pagine delle prove visive non lo
+   caricavano — e il blocco della rete lo fermerebbe comunque — quindi
+   misuravano col carattere di ripiego del sistema: Segoe UI su Windows,
+   un altro su Linux. Misurato: la stessa casella di data 202 punti su
+   Windows e 218 su Linux, lo stesso titolo 849 e 943. Nessuno dei due era
+   il carattere che vede Alessio.
+
+   ⚠️ QUESTO FILE NON ENTRA NELL'APP: vive sotto `tests/visive/` e lo
+   importano solo le pagine delle prove visive. L'app pubblicata continua a
+   caricare Inter da Google Fonts come prima.
+
+   ⚠️ UNA SOLA FACCIA, NESSUN `local()`: se il file non si carica, la prova
+   deve saperlo e fermarsi (`CARATTERE_PRONTO` in chrome-senza-schermo.mjs),
+   non misurare in silenzio un carattere di sistema.
+
+   Fonte: https://github.com/rsms/inter, release v4.1 (Inter-4.1.zip,
+   web/InterVariable.woff2, sha256 693b77d4…a8e3). Licenza: SIL Open Font
+   License 1.1, in LICENSE-Inter.txt accanto. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  /* I pesi che il gestionale chiede a Google Fonts: 400-700. */
+  font-weight: 400 700;
+  /* `block`: nessun carattere di ripiego disegnato mentre si carica. */
+  font-display: block;
+  /* 🔴 LA DIMENSIONE OTTICA FISSA A 14 — misurata, non scelta. Il file del
+     progetto Inter ha l'asse «opsz» e il browser lo seguirebbe con la
+     grandezza del testo; quello che Google Fonts manda al gestionale no, è
+     fermo alla grandezza da testo. Misurato con la stessa frase a 20,48
+     punti: Google 360,64 (peso 400) e 371,81 (700); questo file lasciato
+     libero 347,80 e 363,70; fermo a 14, 360,64 e 371,81 — identico. */
+  font-variation-settings: "opsz" 14;
+  src: url("./InterVariable.woff2") format("woff2");
+}
