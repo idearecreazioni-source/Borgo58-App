@@ -87,7 +87,7 @@ import {
   cartellaSenzaAmbiente,
   NIENTE_RETE,
   nomeFile,
-  pretendiInter,
+  pretendiCaratteri,
   TENTATIVI_DI_RETE,
   valuta,
 } from "./chrome-senza-schermo.mjs";
@@ -1048,7 +1048,7 @@ try {
     // --- l'Agenda ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html");
-      await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html`);
+      await pretendiCaratteri(manda, `${forma.nome} · tests/visive/agenda/index.html`);
       const selettore = forma.mobile ? "[data-quadrotto]" : "[data-riga]";
       // Si aspetta che le schede ci siano davvero, non un tempo fisso.
       // ⚠️ E devono esserci TUTTE: una scheda che non si disegna non ha
@@ -1077,7 +1077,7 @@ try {
     // --- la scheda di un impegno ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/scheda/index.html");
-      await pretendiInter(manda, `${forma.nome} · tests/visive/scheda/index.html`);
+      await pretendiCaratteri(manda, `${forma.nome} · tests/visive/scheda/index.html`);
       let m = null;
       for (let i = 0; i < 80; i++) {
         m = await valuta(manda, MISURA_SCHEDA);
@@ -1098,7 +1098,7 @@ try {
     // --- il segno «?» ---
     {
       const { ws, manda } = await apriPagina(forma, "tests/visive/didascalia/index.html");
-      await pretendiInter(manda, `${forma.nome} · tests/visive/didascalia/index.html`);
+      await pretendiCaratteri(manda, `${forma.nome} · tests/visive/didascalia/index.html`);
       for (let i = 0; i < 40; i++) {
         if ((await valuta(manda, `document.querySelectorAll("button[aria-label]").length`)) >= 2) break;
         await aspetta(250);
@@ -1118,7 +1118,7 @@ try {
   const Lm1 = spostaSettimana(L0, -1);
   for (const forma of FORME_SETTIMANA) {
     const { ws, manda } = await apriPagina(forma, "tests/visive/agenda/index.html?telaio");
-    await pretendiInter(manda, `${forma.nome} · tests/visive/agenda/index.html?telaio`);
+    await pretendiCaratteri(manda, `${forma.nome} · tests/visive/agenda/index.html?telaio`);
     for (let i = 0; i < 80 && !(await valuta(manda, clicca("[data-vista=settimana]"))); i++) await aspetta(250);
     const giri = [
       {
