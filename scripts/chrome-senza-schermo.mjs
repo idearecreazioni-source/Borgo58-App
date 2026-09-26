@@ -89,23 +89,37 @@ export const NIENTE_RETE = `(() => {
 //    ha facce dichiarate risponde `true` lo stesso. Si guarda la faccia:
 //    deve essercene UNA sola «Inter» (la nostra), caricata, e il testo
 //    della pagina deve chiedere Inter.
+// 🔴 E DAL 27/09/2026 ANCHE FRAUNCES, il carattere dei titoli: stessa regola.
+//    Una sola faccia «Fraunces» (tondo 400-600, come nel gestionale),
+//    caricata; e nessun testo in Fraunces CORSIVO, che qui non c'è e che il
+//    browser simulerebbe dal tondo con misure diverse dal gestionale.
 export const CARATTERE_PRONTO = `(async () => {
   if (!location.pathname.includes("/tests/visive/")) return { pronta: false };
-  try { await Promise.all(["400", "500", "600", "700"].map((p) => document.fonts.load(p + " 16px Inter"))); } catch { /* lo dice lo stato qui sotto */ }
+  // ⚠️ In sviluppo Vite inserisce i fogli di stile quando partono i moduli:
+  //    chiedere un carattere prima che la sua @font-face esista non carica
+  //    niente. Si aspetta che le due famiglie siano dichiarate (il ciclo in
+  //    pretendiCaratteri riprova per 15 secondi, poi dice cosa manca).
+  const dichiarate = (fam) => [...document.fonts].some((x) => x.family.replace(/["']/g, "") === fam);
+  if (document.readyState !== "complete" || !dichiarate("Inter") || !dichiarate("Fraunces")) return { pronta: false, inter: { facce: dichiarate("Inter") ? 1 : 0 }, fraunces: { facce: dichiarate("Fraunces") ? 1 : 0 } };
+  const carica = (fam, pesi, px) => Promise.all(pesi.map((p) => document.fonts.load(p + " " + px + "px " + fam))).catch(() => null);
+  await carica("Inter", ["400", "500", "600", "700"], 16);
+  await carica("Fraunces", ["400", "500", "600"], 24);
   await document.fonts.ready;
-  const facce = [...document.fonts].filter((f) => f.family.replace(/["']/g, "") === "Inter");
-  const stati = facce.map((f) => f.status);
+  const stato = (fam) => { const f = [...document.fonts].filter((x) => x.family.replace(/["']/g, "") === fam); return { facce: f.length, stati: f.map((x) => x.status), ok: f.length === 1 && f.every((x) => x.status === "loaded") }; };
+  const inter = stato("Inter");
+  const fraunces = stato("Fraunces");
   const famiglia = getComputedStyle(document.body).fontFamily;
-  const ok = facce.length === 1 && stati.every((s) => s === "loaded") && /^["']?Inter["']?(,|$)/.test(famiglia);
-  return { pronta: true, ok, facce: facce.length, stati, famiglia };
+  const corsivi = [...document.querySelectorAll("body *")].filter((e) => /^["']?Fraunces/.test(getComputedStyle(e).fontFamily) && getComputedStyle(e).fontStyle !== "normal" && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).length;
+  const ok = inter.ok && fraunces.ok && corsivi === 0 && /^["']?Inter["']?(,|$)/.test(famiglia);
+  return { pronta: true, ok, inter, fraunces, corsivi, famiglia };
 })()`;
 
 /**
- * Pretende Inter locale nella pagina aperta. Se non c'è, FERMA la prova con
+ * Pretende Inter e Fraunces locali nella pagina aperta. Se non ci sono, FERMA la prova con
  * un messaggio chiaro: misurare un carattere di ripiego darebbe numeri
  * diversi da quelli che vede chi usa il gestionale.
  */
-export async function pretendiInter(manda, dove) {
+export async function pretendiCaratteri(manda, dove) {
   let r = null;
   for (let i = 0; i < 60; i++) {
     r = (await manda("Runtime.evaluate", { expression: CARATTERE_PRONTO, returnByValue: true, awaitPromise: true }))
@@ -114,10 +128,11 @@ export async function pretendiInter(manda, dove) {
     await aspetta(250);
   }
   if (!r?.pronta || !r.ok) {
+    const d = (x) => `${x?.facce ?? "?"} facce, stati ${x?.stati?.join(",") || "?"}`;
     throw new Error(
-      `${dove}: il carattere Inter locale non è caricato (facce Inter: ${r?.facce ?? "?"}, stati: ${
-        r?.stati?.join(",") || "?"
-      }, testo in: ${r?.famiglia ?? "?"}). La prova si ferma invece di misurare un carattere di ripiego.`,
+      `${dove}: i caratteri locali non sono quelli veri — Inter: ${d(r?.inter)}; Fraunces: ${d(r?.fraunces)}; ` +
+        `testi in Fraunces corsivo: ${r?.corsivi ?? "?"}; testo in: ${r?.famiglia ?? "?"}. ` +
+        "La prova si ferma invece di misurare un carattere di ripiego.",
     );
   }
 }
