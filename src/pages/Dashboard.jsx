@@ -478,7 +478,11 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span className="testo-sala text-b58-charcoal font-medium">{a.titolo}</span>
                   </span>
                   {a.dettaglio && (
-                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 sm:truncate">
+                    // 🔴 NIENTE `truncate` (27/09/2026, audit visivo): a 768
+                    // punti tagliava proprio la coda che dice QUANDO e
+                    // QUANTO — «scaduta da 12 giorni», «registrato ieri
+                    // sera». La riga va a capo.
+                    <span data-avviso-dettaglio className="block testo-sala text-b58-charcoal-soft mt-0.5">
                       {a.dettaglio}
                     </span>
                   )}
@@ -504,8 +508,10 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
       {rimandati.length > 0 && (
         <div className="mt-3 pt-3 border-t border-b58-charcoal/5">
           {rimandati.map((a) => (
-            <div key={a.chiave} className="flex items-center justify-between gap-3 py-1">
-              <span className="testo-sala text-b58-charcoal-soft truncate">
+            <div key={a.chiave} data-avviso-rimandato className="flex items-center justify-between gap-3 py-1">
+              {/* Va a capo invece di tagliarsi: sul telefono il taglio
+                  lasciava «Prodotti sotto sc…» e nascondeva la data. */}
+              <span data-avviso-rimandato-testo className="min-w-0 testo-sala text-b58-charcoal-soft">
                 {a.titolo} ({a.quanti}) — torna il {formatDate(a.rimandato_a)}
               </span>
               <button
