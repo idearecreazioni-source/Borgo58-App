@@ -956,7 +956,7 @@ export default function IngredienteForm() {
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder='Es. "Pomodoro San Marzano DOP"'
+              placeholder="Es. San Marzano"
               className={inputClass}
             />
             {omonimi.length > 0 && (
@@ -1130,7 +1130,7 @@ export default function IngredienteForm() {
                 onChange={(e) => setForm((f) => ({ ...f, supplier_id: e.target.value }))}
                 className={inputClass}
               >
-                <option value="">Nessun fornitore specifico</option>
+                <option value="">Nessun fornitore</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -1265,7 +1265,7 @@ export default function IngredienteForm() {
           <div>
             <label className={labelClass}>Resa standard (facoltativa)</label>
             <div className="flex items-center gap-2">
-              <span className="testo-sala text-b58-charcoal-soft">da 1 {form.unit || "unità"} ne restano</span>
+              <span className="min-w-0 testo-sala text-b58-charcoal-soft">da 1 {form.unit || "unità"} ne restano</span>
               <input
                 type="number"
                 min="0"
@@ -1274,7 +1274,10 @@ export default function IngredienteForm() {
                 data-prova="resa-standard"
                 value={form.resa_standard}
                 onChange={(e) => setForm((f) => ({ ...f, resa_standard: e.target.value }))}
-                className={inputClass + " w-28"}
+                // Larga quanto «100,0» e non di più (27/09/2026): con `w-28`
+                // la frase accanto andava su tre righe a 360 e a 768 punti.
+                className={inputClass + " shrink-0"}
+                style={{ width: "max(calc(var(--pxcm) * 1.6), 5.5rem)" }}
                 placeholder="—"
               />
               <span className="testo-sala text-b58-charcoal-soft">%</span>
@@ -1305,7 +1308,9 @@ export default function IngredienteForm() {
                 setForm((f) => ({ ...f, stock_minimum_threshold: e.target.value }))
               }
               className={inputClass}
-              placeholder="vuota = mai in lista da solo"
+              // Il significato del vuoto lo dice il testo qui sotto: ripeterlo
+              // dentro il campo lo tagliava a metà sul telefono (27/09/2026).
+              placeholder="—"
             />
             <p className="testo-sala text-b58-charcoal-soft mt-1">
               Sotto questa quantità il prodotto entra da solo nella lista della
