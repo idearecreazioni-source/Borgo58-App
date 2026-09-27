@@ -251,6 +251,21 @@ describe("4 · un'uscita gia' scritta si marca e si smarca", () => {
 });
 
 describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si dice perche'", () => {
+  // Dal 27/09/2026 la ragione intera sta dietro il «?» (secondo batch
+  // visivo): a vista resta «Non è un investimento», e il «?» ha un nome
+  // che dice cosa spiega. Si apre come la aprirebbe un dito.
+  const PERCHE = "Perché questo movimento non è un investimento";
+  const apriPerche = async (container) => {
+    const riga = tutti(container, '[data-prova="investimento-no"]')[0];
+    expect(riga.textContent).toMatch(/Non è un investimento/);
+    const q = riga.querySelector(`button[aria-label="${PERCHE}"]`);
+    expect(q).toBeTruthy();
+    await act(async () => {
+      q.click();
+    });
+    return screen.getByRole("tooltip").textContent;
+  };
+
   it("su un'entrata", async () => {
     finto.movimenti = [movimento({ direction: "entrata", causale: null })];
     const { container } = await apriPrimaNota();
@@ -258,7 +273,7 @@ describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si 
       expect(tutti(container, '[data-prova="investimento-no"]').length).toBeGreaterThan(0)
     );
     expect(tutti(container, '[data-prova="investimento-riga"]')).toHaveLength(0);
-    expect(tutti(container, '[data-prova="investimento-no"]')[0].textContent).toMatch(/entrata/i);
+    expect(await apriPerche(container)).toMatch(/entrata/i);
   });
 
   it("🔴 su un rimborso al titolare — la riga che il gestionale scrive da sé", async () => {
@@ -268,7 +283,7 @@ describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si 
       expect(tutti(container, '[data-prova="investimento-no"]').length).toBeGreaterThan(0)
     );
     expect(tutti(container, '[data-prova="investimento-riga"]')).toHaveLength(0);
-    expect(tutti(container, '[data-prova="investimento-no"]')[0].textContent).toMatch(/due volte/i);
+    expect(await apriPerche(container)).toMatch(/due volte/i);
   });
 });
 

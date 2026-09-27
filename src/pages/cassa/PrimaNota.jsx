@@ -894,30 +894,48 @@ export default function PrimaNota() {
                 ) : null
               }
               aperta={(m) => (
-                <div className="space-y-3">
+                // 🔴 UNA FASCIA SOLA — 27/09/2026, secondo batch visivo.
+                //    Prima casella e «Rimuovi» stavano su due righe, più la
+                //    spiegazione ripetuta sotto ogni entrata: ogni movimento
+                //    diventava alto il doppio. Ora stanno affiancati, con i
+                //    5 mm dei gesti pericolosi fra loro (`gesti-pericolosi`,
+                //    che va a capo invece di sbordare), «Rimuovi» a destra.
+                <div data-fascia-movimento className="gesti-pericolosi justify-between">
                   {/* 🔴 IL GESTO SULLA RIGA GIA' SCRITTA (C11). Compare solo
                       dove il database lo ammette; dove non lo ammette, al
                       suo posto c'e' la RAGIONE — l'assenza muta di un gesto
-                      si legge come un guasto. */}
+                      si legge come un guasto. Dal 27/09 la ragione intera
+                      sta dietro il «?», e a vista resta una frase corta. */}
                   {idoneoAInvestimento(m) ? (
                     <label
                       data-prova="investimento-riga"
-                      className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
+                      className="tocco-campo flex flex-1 items-center gap-2 testo-sala text-b58-charcoal-soft"
                     >
                       <input
                         type="checkbox"
+                        aria-label="Investimento per il progetto"
                         checked={Boolean(m.e_investimento)}
                         disabled={marcando === m.id}
                         onChange={(e) => handleInvestimento(m, e.target.checked)}
                       />
+                      {/* Sul telefono la parola sola: per intero, accanto a
+                          «Rimuovi» a 360 punti non ci stava e lo spingeva
+                          sotto. Il nome della casella resta intero. */}
                       <span>
-                        Investimento per il progetto
+                        <span className="sm:hidden">Investimento</span>
+                        <span className="hidden sm:inline">Investimento per il progetto</span>
                         {marcando === m.id ? " — salvo…" : ""}
                       </span>
                     </label>
                   ) : (
-                    <p data-prova="investimento-no" className="testo-sala text-b58-charcoal-soft/70">
-                      {ragioneNonIdoneo(m)}
+                    // `flex-1` SENZA `min-w-0`: la frase va a capo nel suo spazio
+                    // invece di spingere «Rimuovi» sotto, e quando «Rimuovi»
+                    // si apre nella sua conferma è lei a scendere di riga.
+                    <p data-prova="investimento-no" className="flex-1 testo-sala text-b58-charcoal-soft/70">
+                      Non è un investimento
+                      <Didascalia etichetta="Perché questo movimento non è un investimento">
+                        {ragioneNonIdoneo(m)}
+                      </Didascalia>
                     </p>
                   )}
                   <ConfermaDistruttiva
