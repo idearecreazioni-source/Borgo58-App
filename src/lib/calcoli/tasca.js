@@ -29,7 +29,8 @@ export const SENZA_CAUSALE = "senza causale";
 
 const DESCRIZIONE_ALTRI = {
   etichetta: "Finalità aziendale",
-  segnaposto: "Finalità aziendale (facoltativa, utile in verifica)",
+  // Corta (27/09/2026): la frase intera si tagliava nel campo a 360, 390 e 768.
+  segnaposto: "Finalità (facoltativa)",
   conEtichetta: false,
 };
 
