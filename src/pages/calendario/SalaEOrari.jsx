@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
-import { oggiLocale } from "../../lib/constants";
+import { formatDate, oggiLocale } from "../../lib/constants";
 import {
   GIORNI,
   attivaSagoma,
@@ -608,7 +608,8 @@ export default function SalaEOrari() {
               className="flex items-center justify-between gap-2 testo-sala-grande text-b58-charcoal bg-white rounded-lg px-3 py-2"
             >
               <span>
-                {c.dal === c.al ? c.dal : `${c.dal} → ${c.al}`}
+                {/* In italiano, non «2026-12-24 → 2026-12-27» (27/09/2026). */}
+                {c.dal === c.al ? formatDate(c.dal) : `${formatDate(c.dal)} – ${formatDate(c.al)}`}
                 {c.motivo ? ` — ${c.motivo}` : ""}
                 {/* Si dice solo quando qualcuno si e' pronunciato: scriverlo
                     sempre farebbe sembrare una decisione anche il silenzio. */}
