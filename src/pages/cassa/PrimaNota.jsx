@@ -36,6 +36,7 @@ import {
 } from "../../lib/calcoli/tasca";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 import Didascalia from "../../components/Didascalia";
+import { totaliDelPeriodo } from "../../lib/calcoli/totaliPrimaNota";
 import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investimento";
 
 const today = oggiLocale;
@@ -365,11 +366,9 @@ export default function PrimaNota() {
     ]);
   };
 
-  const periodTotals = useMemo(() => {
-    const inc = movements.filter((m) => m.direction === "entrata").reduce((s, m) => s + Number(m.amount), 0);
-    const out = movements.filter((m) => m.direction === "uscita").reduce((s, m) => s + Number(m.amount), 0);
-    return { inc, out };
-  }, [movements]);
+  // Entrate, uscite e saldo da un posto solo (27/09/2026): il saldo è la
+  // differenza dei due totali, non un secondo conto.
+  const periodTotals = useMemo(() => totaliDelPeriodo(movements), [movements]);
 
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
@@ -804,10 +803,31 @@ export default function PrimaNota() {
           <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento nel periodo.</p>
         ) : (
           <>
-            <div className="testo-sala text-b58-charcoal-soft mb-3">
-              Totali periodo: <span className="text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</span>{" "}
-              <span className="text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</span>
-            </div>
+            {/* 🔴 TRE NUMERI CON IL LORO NOME — 27/09/2026. Prima era «Totali
+                periodo: +1.750,00 € −3.030,85 €»: due cifre senza etichetta,
+                e nessuna differenza. Stessi colori e segni di prima; il
+                saldo prende il colore del suo segno. */}
+            <dl data-totali-periodo className="flex flex-wrap gap-x-6 gap-y-1 testo-sala mb-3">
+              <div data-totale="entrate">
+                <dt className="inline text-b58-charcoal-soft">Entrate </dt>
+                <dd className="inline text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</dd>
+              </div>
+              <div data-totale="uscite">
+                <dt className="inline text-b58-charcoal-soft">Uscite </dt>
+                <dd className="inline text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</dd>
+              </div>
+              <div data-totale="saldo">
+                <dt className="inline text-b58-charcoal-soft">Saldo del periodo </dt>
+                <dd
+                  className={`inline font-medium ${
+                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"
+                  }`}
+                >
+                  {periodTotals.saldo < 0 ? "−" : "+"}
+                  {formatEUR(Math.abs(periodTotals.saldo))}
+                </dd>
+              </div>
+            </dl>
             {/* 🔴 LA TABELLA DIVENTA IL TELAIO (31/08/2026), e il difetto
                 l'ha trovato una MISURA, non una rilettura: aperta a 390
                 punti con venti righe dentro, questa tabella sbordava di

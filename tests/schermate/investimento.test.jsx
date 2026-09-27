@@ -685,3 +685,37 @@ describe("🔴 l'aiuto dell'etichetta dice la società giusta", () => {
     expect((await apriAiuto()).textContent).toMatch(/dopo che ti sei rimborsato/);
   });
 });
+
+// =====================================================================
+// 27/09/2026, secondo batch visivo: i totali del periodo col loro nome.
+describe("i totali del periodo: Entrate, Uscite, Saldo del periodo", () => {
+  it("ognuno ha la sua etichetta, e il saldo è entrate meno uscite", async () => {
+    finto.movimenti = [
+      movimento({ id: "a", direction: "entrata", amount: "250.00", causale: null }),
+      movimento({ id: "b", direction: "uscita", amount: "100.00" }),
+      movimento({ id: "c", direction: "uscita", amount: "40.50" }),
+    ];
+    const { container } = await apriPrimaNota();
+    await waitFor(() => expect(container.querySelector("[data-totali-periodo]")).toBeTruthy());
+    const riga = (k) => container.querySelector(`[data-totale="${k}"]`);
+    const testo = (k) => riga(k).textContent.replace(/\s+/g, " ").trim();
+    expect(riga("entrate").querySelector("dt").textContent.trim()).toBe("Entrate");
+    expect(riga("uscite").querySelector("dt").textContent.trim()).toBe("Uscite");
+    expect(riga("saldo").querySelector("dt").textContent.trim()).toBe("Saldo del periodo");
+    expect(testo("entrate")).toMatch(/\+250,00/);
+    expect(testo("uscite")).toMatch(/−140,50/);
+    expect(testo("saldo")).toMatch(/\+109,50/);
+  });
+
+  it("un saldo negativo ha il segno meno e il colore delle uscite", async () => {
+    finto.movimenti = [
+      movimento({ id: "a", direction: "entrata", amount: "10.00", causale: null }),
+      movimento({ id: "b", direction: "uscita", amount: "30.00" }),
+    ];
+    const { container } = await apriPrimaNota();
+    await waitFor(() => expect(container.querySelector('[data-totale="saldo"]')).toBeTruthy());
+    const dd = container.querySelector('[data-totale="saldo"] dd');
+    expect(dd.textContent.replace(/\s+/g, " ")).toMatch(/−20,00/);
+    expect(dd.className).toMatch(/terracotta/);
+  });
+});
