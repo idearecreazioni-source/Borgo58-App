@@ -1550,8 +1550,8 @@ export default function IngredienteForm() {
             <Didascalia>
               Metterlo da parte lo fa sparire da dove lo cerchi, ma resta
               agganciato a tutto quello che l&apos;ha usato: ricette, carichi,
-              partite in magazzino, food cost gia&apos; calcolati. Cancellarlo
-              davvero si puo&apos; solo se non l&apos;ha mai usato nessuno.
+              partite in magazzino, food cost già calcolati. Cancellarlo
+              davvero si può solo se non l&apos;ha mai usato nessuno.
             </Didascalia>
           </h2>
 

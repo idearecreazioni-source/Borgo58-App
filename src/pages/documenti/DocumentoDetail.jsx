@@ -149,7 +149,7 @@ export default function DocumentoDetail() {
               <option value="">Senza sezione</option>
               {sezioni.map((s) => (
                 <option key={s.codice} value={s.codice}>
-                  {s.etichetta}{s.attiva ? "" : " (non si usa piu')"}
+                  {s.etichetta}{s.attiva ? "" : " (non si usa più)"}
                 </option>
               ))}
             </select>

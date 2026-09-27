@@ -478,8 +478,8 @@ export default function PrimaNota() {
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
           {inTasca && (
             <p className="testo-sala text-b58-charcoal-soft mb-3">
-              Dalla tasca escono soldi e basta: e' il contante che spendi di tuo,
-              senza documento. Non e' deducibile e non entra in nessun calcolo
+              Dalla tasca escono soldi e basta: è il contante che spendi di tuo,
+              senza documento. Non è deducibile e non entra in nessun calcolo
               fiscale — serve solo a saperne il conto.
             </p>
           )}
@@ -733,8 +733,8 @@ export default function PrimaNota() {
                   <Didascalia etichetta="Cosa vuol dire «investimento per il progetto»">
                     Spunta questa casella quando la spesa serve a <strong>mettere in piedi il
                     locale</strong> — arredi, attrezzature, lavori, pratiche — e non alla gestione
-                    di tutti i giorni. Serve solo a rispondere a «quanto e' costato aprire»:
-                    non cambia la deducibilita', l'IVA ne' nessun calcolo delle imposte.
+                    di tutti i giorni. Serve solo a rispondere a «quanto è costato aprire»:
+                    non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
                     <br />
                     Si mette e si toglie quando vuoi, anche dopo, da questa stessa pagina.
                     Dopo l'apertura di marzo 2027 basta smettere di usarla.

@@ -110,11 +110,11 @@ export function idoneoAInvestimento(movimento) {
 export function ragioneNonIdoneo(movimento) {
   if (!movimento || idoneoAInvestimento(movimento)) return null;
   if (movimento.direction !== "uscita") {
-    return "Un'entrata non e' un investimento: sono soldi che arrivano.";
+    return "Un'entrata non è un investimento: sono soldi che arrivano.";
   }
   return (
-    "Questa riga la scrive il gestionale da se' — un versamento, una differenza di cassa, " +
-    "un rimborso o la restituzione di un prestito. Non e' una spesa: e' denaro che cambia posto, " +
+    "Questa riga la scrive il gestionale da sé — un versamento, una differenza di cassa, " +
+    "un rimborso o la restituzione di un prestito. Non è una spesa: è denaro che cambia posto, " +
     "o un debito che si chiude. Contarla farebbe crescere due volte il costo del progetto."
   );
 }
