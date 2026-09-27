@@ -823,7 +823,11 @@ export default function PrimaNota() {
                 ⚠️ La forma non e' nuova: e' `ElencoAdattivo`, il telaio
                 del 29/08 — blocchetti sul telefono, tabella sul computer,
                 coi campi dichiarati UNA VOLTA SOLA. */}
+            {/* `tabellaDa="xl"` (27/09/2026, audit visivo): a 768 la tabella
+                chiedeva 799 punti in 656 e l'importo finiva fuori dalla
+                vista. Le schede restano fino a 1280. */}
             <ElencoAdattivo
+              tabellaDa="xl"
               righe={movements}
               chiave={(m) => m.id}
               titolo={(m) => formatDate(m.movement_date)}

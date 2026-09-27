@@ -105,6 +105,16 @@ export default function ElencoAdattivo({
   //    costruita da `titolo` e `campi`. Chi non la passa non vede niente
   //    di diverso.
   schedaTelefono,
+  // 🔴 DA QUALE LARGHEZZA SI PASSA ALLA TABELLA — 27/09/2026, facoltativa,
+  //    dall'audit visivo della Prima nota. Di serie la tabella parte da
+  //    `md` (768 punti), e per quasi tutti gli elenchi va bene. La Prima
+  //    nota ha cinque colonne: a 768 la tabella chiedeva 799 punti in un
+  //    riquadro da 656, e l'IMPORTO restava fuori dalla vista. Con "xl" le
+  //    schede restano fino a 1280, dove la tabella ci sta.
+  //    ⚠️ Solo "md" e "xl", con le classi scritte per intero dove servono:
+  //    Tailwind le trova nel testo del sorgente, e la rete delle tabelle
+  //    larghe (`larghezza.js`) cerca «hidden md:block» accanto alla tabella.
+  tabellaDa = "md",
   vuoto = "—",
 }) {
   if (!righe || righe.length === 0) return null;
@@ -191,7 +201,7 @@ export default function ElencoAdattivo({
           un foglio di blocchetti invece della tabella. Sulla carta la
           larghezza non e' quella dello schermo, quindi il motivo per cui i
           blocchetti esistono li' non c'e'. */}
-      <div className="md:hidden print:hidden space-y-3">
+      <div className={`${tabellaDa === "xl" ? "xl:hidden" : "md:hidden"} print:hidden space-y-3`}>
         {righe.map((r, i) => {
           const dentro = (
             <>
@@ -312,7 +322,7 @@ export default function ElencoAdattivo({
       </div>
 
       {/* SUL COMPUTER E SULLA CARTA: la tabella. */}
-      <div className="hidden md:block print:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent">
+      <div className={`${tabellaDa === "xl" ? "hidden xl:block" : "hidden md:block"} print:block rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 overflow-hidden overflow-x-auto print:ring-0 print:bg-transparent`}>
         <table className={`w-full testo-sala-grande ${larghezzaTitolo ? "table-fixed" : ""}`}>
           <thead>
             <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
