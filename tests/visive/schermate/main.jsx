@@ -58,6 +58,28 @@ const causale = (id, label, kind = "uscita") => ({
   e_costo_fisso: false,
 });
 
+// Un movimento di prima nota, con la causale già incorporata come la legge
+// `listCashMovements`.
+const movimento = (n, direction, amount, etichetta, mezzo, extra = {}) => {
+  const { di_sistema = false, ...resto } = extra;
+  return {
+    id: `m${n}`,
+    direction,
+    amount,
+    movement_date: `2026-09-${String(27 - n).padStart(2, "0")}`,
+    causale: { id: `cm${n}`, label: etichetta, di_sistema },
+    mezzo,
+    note: null,
+    document_reference: null,
+    business_purpose: null,
+    is_owner_injection: false,
+    e_investimento: false,
+    tipo_documento: null,
+    entity_id: "e1",
+    ...resto,
+  };
+};
+
 const DATI = {
   dashboard: {
     tabelle: {
@@ -78,6 +100,27 @@ const DATI = {
           dove: "/haccp/non-conformita",
           rimandato_a: null,
         },
+        // 27/09/2026: un secondo avviso lungo e uno rimandato. A 768 il
+        // dettaglio si tagliava con «…» proprio sulla coda che dice quando;
+        // sul telefono il rimandato diventava «Prodotti sotto sc…».
+        {
+          chiave: "fatture",
+          quanti: 5,
+          titolo: "Fatture da pagare scadute",
+          dettaglio: "La più vecchia è di Mililli Ortofrutta, 412,80 €, scaduta da 12 giorni",
+          gravita: "alta",
+          dove: "/fatture",
+          rimandato_a: null,
+        },
+        {
+          chiave: "sotto_scorta",
+          quanti: 1,
+          titolo: "Prodotti sotto scorta",
+          dettaglio: "Olio extravergine",
+          gravita: "bassa",
+          dove: "/magazzino/lista-spesa",
+          rimandato_a: "2026-09-30",
+        },
       ],
     },
   },
@@ -87,6 +130,22 @@ const DATI = {
     tabelle: {
       cash_causali: [causale("c1", "Spesa alimentare"), causale("c2", "Manutenzione"), causale("c3", "Incasso", "entrata")],
       entities: [{ id: "e1", name: "Borgo 58", entity_type: "srls" }],
+      // 27/09/2026: sei movimenti, con una nota lunga, un riferimento di
+      // documento e due righe scritte dal gestionale. A 768 la tabella
+      // chiedeva 799 punti in 656 e l'importo finiva fuori dalla vista.
+      cash_movements: [
+        movimento(1, "uscita", 38.5, "Spesa alimentare", "cassa", {
+          note: "Pane e verdure dal mercato di piazza, pagato in contanti al banco del signor Rizzo",
+        }),
+        movimento(2, "entrata", 1250, "Incasso", "banca"),
+        movimento(3, "uscita", 12, "Manutenzione", "cassa", { note: "Guarnizione" }),
+        movimento(4, "uscita", 2480.35, "Materiale di consumo / economato", "banca", {
+          note: "Stoviglie nuove per la sala",
+          document_reference: "FT 2026/0412 del 10/09",
+        }),
+        movimento(5, "entrata", 500, "Versamento dalla cassa", "banca", { di_sistema: true }),
+        movimento(6, "uscita", 500, "Versamento in banca", "cassa", { di_sistema: true }),
+      ],
     },
   },
   causali: {
@@ -108,7 +167,16 @@ const DATI = {
     },
   },
   spesa: {},
-  ingrediente: {},
+  // Le due società, come nel gestionale vero: senza, la scheda apriva con un
+  // errore in inglese in cima, che nel locale non compare (27/09/2026).
+  ingrediente: {
+    tabelle: {
+      entities: [
+        { id: "e1", name: "Borgo 58", entity_type: "srls" },
+        { id: "e2", name: "Azienda agricola", entity_type: "azienda_agricola" },
+      ],
+    },
+  },
   archivio: {
     tabelle: {
       entities: [{ id: "e1", name: "Borgo 58", entity_type: "srls" }],

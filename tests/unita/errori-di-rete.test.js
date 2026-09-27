@@ -112,7 +112,7 @@ describe("la funzione che non c'è non è la rete che manca", () => {
   it("🔴 con la rete misurata VIVA, la causa cambia", () => {
     expect(genereDelGuasto(staccata, { reteViva: true })).toBe(SERVIZIO_ASSENTE);
     const frase = fraseDelGuasto(staccata, "compilare le schede", null, { reteViva: true });
-    expect(frase).toContain("non e' installata qui");
+    expect(frase).toContain("non è installata qui");
     // ⚠️ E soprattutto NON deve più mandare a cercare la connessione.
     expect(frase).not.toContain("connessione. Riprova");
   });

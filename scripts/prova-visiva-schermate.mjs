@@ -50,6 +50,7 @@ import {
   pretendiCaratteri,
   valuta,
 } from "./chrome-senza-schermo.mjs";
+import { accentoConApostrofo } from "./testi-a-schermo.mjs";
 
 const RADICE = process.cwd();
 
@@ -109,11 +110,56 @@ const MISURA = `(() => {
     // I titoli in Fraunces, stampati a ogni giro (27/09/2026): e' il modo di
     // confrontare Windows e Linux sul carattere dei titoli, che le misure
     // qui sopra usano solo di sbieco (il saluto della Dashboard).
+    // --- 27/09/2026, «niente tagliato, niente nascosto» ---
+    // Ciò che scorre di lato DENTRO la pagina (la pagina ferma, il riquadro no).
+    scorrono: [...main.querySelectorAll("*")].filter((el) => { const s = getComputedStyle(el); return /auto|scroll/.test(s.overflowX) && el.getBoundingClientRect().width > 0 && el.scrollWidth > el.clientWidth + 1; }).map((el) => ({ testo: (el.innerText || "").trim().slice(0, 40), w: el.clientWidth, serve: el.scrollWidth })),
+    // Un testo tagliato: il contenitore lo nasconde e ne ha più di quanto mostra.
+    tagliati: [...main.querySelectorAll("*")].filter((el) => { const s = getComputedStyle(el); return (s.overflowX === "hidden" || s.textOverflow === "ellipsis") && el.getBoundingClientRect().width > 0 && el.scrollWidth > el.clientWidth + 1 && el.innerText.trim(); }).map((el) => ({ testo: el.innerText.trim().slice(0, 60), w: el.clientWidth, serve: el.scrollWidth })),
+    // Gli importi scritti come li scrive la Prima nota, e se qualcosa li copre.
+    importi: tutti("main *").filter((el) => el.children.length === 0 && /^[+−][\\d.]+,\\d{2}\\s€$/.test(el.textContent.trim()) && el.getBoundingClientRect().width > 0).map((el) => {
+      const b = el.getBoundingClientRect();
+      let coperto = false;
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        if (getComputedStyle(a).overflowX === "visible") continue;
+        const c = a.getBoundingClientRect();
+        if (b.right > c.right + 1 || b.left < c.left - 1) coperto = true;
+      }
+      return { testo: el.textContent.trim(), destra: b.right, coperto };
+    }),
+    // I titoli dell'Agenda: quanto spazio hanno, e la parola più lunga ci sta?
+    titoliAgenda: tutti("[data-testo-titolo]").filter((t) => t.getBoundingClientRect().width > 0).map((t) => {
+      let casa = t.parentElement;
+      while (casa && !casa.querySelector("[data-spunta-impegno]")) casa = casa.parentElement;
+      const s = getComputedStyle(t);
+      const prova = document.createElement("span");
+      prova.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap;font:" + s.font + ";letter-spacing:" + s.letterSpacing;
+      document.body.appendChild(prova);
+      let parola = "", larga = 0;
+      for (const p of t.textContent.split(/\\s+/)) { prova.textContent = p; const w = prova.getBoundingClientRect().width; if (w > larga) { larga = w; parola = p; } }
+      prova.remove();
+      const b = t.getBoundingClientRect();
+      return { testo: t.textContent.slice(0, 30), w: b.width, destra: b.right, casa: casa ? casa.getBoundingClientRect().width : 0, parola, larga };
+    }),
+    // Le scritte dentro i campi (e l'opzione scelta di un menu): ci stanno?
+    scritteNeiCampi: tutti("main input[placeholder], main textarea[placeholder], main select").filter((c) => c.getBoundingClientRect().width > 0).map((c) => {
+      const s = getComputedStyle(c);
+      const testo = c.tagName === "SELECT" ? (c.selectedOptions[0]?.textContent ?? "") : c.placeholder;
+      const tela = document.createElement("canvas").getContext("2d");
+      tela.font = s.font;
+      // Il menu a tendina ha la sua freccia dentro lo spazio del campo:
+      // si tiene da parte quanto una riga di testo.
+      const freccia = c.tagName === "SELECT" ? parseFloat(s.fontSize) : 0;
+      const posto = c.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight) - freccia;
+      return { testo, serve: tela.measureText(testo).width, posto };
+    }),
+    resaRighe: (() => { const e = tutti("main span").find((x) => /ne restano$/.test(x.textContent.trim())); if (!e) return null; const s = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / (parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.25)); })(),
+    testo: main.innerText,
     titoli: tutti("main h1, main h2").filter((t) => /Fraunces/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
   };
 })()`;
 
 // --- I confronti -------------------------------------------------------
+
 const cm = (px, pxcm) => px / pxcm;
 const mm = (px, pxcm) => (cm(px, pxcm) * 10).toFixed(1);
 
@@ -125,6 +171,12 @@ export function controlla(forma, m, difetti) {
   if (m.rete === -1) no("il blocco della rete non è caricato nella pagina: la prova non può garantire che niente esca");
   else if (m.rete !== 0) no(`la pagina ha provato a uscire dal computer (${m.rete} tentativi verso ${m.reteDove || "?"}) — un alias non passa dal collegamento finto`);
   if (m.sbordo > 1) no(`la pagina scorre di lato di ${m.sbordo} punti`);
+
+  // Niente tagliato, niente nascosto (27/09/2026) — su OGNI schermata.
+  for (const s of m.scorrono ?? []) no(`un riquadro scorre di lato: chiede ${s.serve} punti e ne ha ${s.w} («${s.testo}»)`);
+  for (const t of m.tagliati ?? []) no(`un testo è tagliato: ${t.w} punti su ${t.serve} («${t.testo}»)`);
+  const accento = accentoConApostrofo(m.testo ?? "");
+  if (accento) no(`a schermo c'è «${accento}»: l'apostrofo sta al posto dell'accento`);
 
   if (m.pagina === "dashboard") {
     if (!m.intestazione) no("«Agenda completa →» non c'è");
@@ -168,6 +220,38 @@ export function controlla(forma, m, difetti) {
     }
     if (!m.registra) no("«Registra movimento» non c'è");
     else if (m.registra.destra > m.larghezza + 1) no("«Registra movimento» esce dallo schermo");
+    // I sei movimenti dei dati finti, più la riga dei totali.
+    const importi = m.importi ?? [];
+    if (importi.length < 6) no(`si leggono ${importi.length} importi: i movimenti finti sono sei`);
+    for (const i of importi) {
+      if (i.destra > m.larghezza + 1) no(`l'importo ${i.testo} esce dallo schermo`);
+      if (i.coperto) no(`l'importo ${i.testo} è fuori dal suo riquadro: si vede solo scorrendo`);
+    }
+  }
+
+  if (m.pagina === "agenda") {
+    if (!m.titoliAgenda?.length) no("nessun titolo di impegno misurato");
+    for (const t of m.titoliAgenda ?? []) {
+      if (t.w < t.casa * 0.5) no(`il titolo «${t.testo}» ha ${Math.round(t.w)} punti su ${Math.round(t.casa)}: meno di metà della scheda`);
+      // Se la parola più lunga ci sta, il titolo va a capo fra le parole o
+      // col trattino della sillabazione: mai dove capita.
+      if (t.larga > t.w + 0.5) no(`«${t.parola}» chiede ${Math.round(t.larga)} punti e il titolo ne ha ${Math.round(t.w)}: si spezza a metà`);
+      if (t.destra > m.larghezza + 1) no(`il titolo «${t.testo}» esce dallo schermo`);
+    }
+  }
+
+  if (m.pagina === "salaorari") {
+    const iso = (m.testo ?? "").match(/\b\d{4}-\d{2}-\d{2}\b/);
+    if (iso) no(`una data si legge come ${iso[0]}`);
+    if (!/24 dic 2026/.test(m.testo ?? "")) no("la chiusura delle feste non si legge come «24 dic 2026»");
+  }
+
+  if (m.pagina === "ingrediente") {
+    for (const c of m.scritteNeiCampi ?? []) {
+      if (c.serve > c.posto + 0.5) no(`«${c.testo}» chiede ${Math.round(c.serve)} punti e il campo ne ha ${Math.round(c.posto)}`);
+    }
+    if (m.resaRighe == null) no("la riga «ne restano» della resa non c'è");
+    else if (m.resaRighe > 2) no(`«ne restano» va su ${m.resaRighe} righe`);
   }
 
   if (m.pagina === "causali" || m.pagina === "salaorari") {

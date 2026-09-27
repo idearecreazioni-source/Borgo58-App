@@ -179,10 +179,13 @@ describe("🔴 «Da sistemare» sul telefono non schiaccia il titolo", () => {
     expect(classi).not.toContain("flex-row");
     // Dal tablet in su torna come prima.
     expect(classi).toContain("sm:flex-row");
-    // E la descrizione sul telefono non si taglia.
+    // E la descrizione non si taglia MAI: fino al 27/09/2026 da `sm` in su
+    // aveva `sm:truncate`, che a 768 punti nascondeva proprio la coda che
+    // dice quando («scaduta da 12 giorni»). La misura vera, in punti, sta
+    // nella prova visiva (`prova-visiva-schermate.mjs`).
     const dettaglio = screen.getByText(avviso.dettaglio);
     expect(dettaglio.classList.contains("truncate")).toBe(false);
-    expect(dettaglio.classList.contains("sm:truncate")).toBe(true);
+    expect(dettaglio.classList.contains("sm:truncate")).toBe(false);
     expect(within(riga).getByRole("button", { name: "Non adesso" })).toBeTruthy();
   });
 });

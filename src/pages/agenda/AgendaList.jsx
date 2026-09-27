@@ -191,10 +191,15 @@ function Stella({ accesa, onStella }) {
     <button
       type="button"
       onClick={onStella}
-      // Largo quanto un dito, con la ★ spinta contro il bordo destro: il
-      // bersaglio cresce verso il titolo, il segno resta al bordo.
-      className="tocco-azione shrink-0 flex items-start justify-end testo-sala-grande"
-      style={{ minWidth: "calc(var(--pxcm) * 0.8)" }}
+      // Con la ★ spinta contro il bordo destro: il bersaglio cresce verso il
+      // titolo, il segno resta al bordo.
+      // 🔴 PIÙ STRETTA DI PRIMA — 27/09/2026, audit visivo. A 360 punti il
+      // titolo aveva 173 punti e «commercialista» ne chiede 174: le parole
+      // si spezzavano a metà. Dalla stella si toglie solo il vuoto: 0,65 cm
+      // di larghezza (sopra i 5,3 mm provati col dito il 18/08), alta 1,2 cm
+      // come prima, e `-ml-2` le toglie metà dello stacco dal titolo.
+      className="tocco-azione -ml-2 shrink-0 flex items-start justify-end testo-sala-grande"
+      style={{ minWidth: "calc(var(--pxcm) * 0.65)" }}
       title={accesa ? "Togli dalla testa" : "Portalo in testa"}
     >
       <span data-stella className={accesa ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>
@@ -239,7 +244,10 @@ function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, on
     <div className="flex items-start gap-3">
       <Spunta onFatto={onFatto} titolo={t.title} />
       <div className="min-w-0 flex-1">
-        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words">
+        {/* `hyphens-auto`: se una parola non ci sta, va a capo col trattino
+            della sillabazione italiana (la pagina è `lang="it"`), non dove
+            capita. `break-words` resta come ultima rete contro lo sbordo. */}
+        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words hyphens-auto">
           {t.title}
         </p>
         {campi.map((c) => (
@@ -655,7 +663,7 @@ export default function AgendaList() {
                                 {/* «Riservato» non c'è più, nemmeno qui:
                                     tolto dall'elenco nel collaudo dell'11/09
                                     (vedi `SchedaImpegno`). */}
-                                <span className="min-w-0 flex-1" data-testo-titolo>
+                                <span className="min-w-0 flex-1 hyphens-auto" data-testo-titolo>
                                   {t.title}
                                 </span>
                                 <Stella accesa={t.preferito} onStella={() => stella(t)} />

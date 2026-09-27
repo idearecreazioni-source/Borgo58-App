@@ -117,7 +117,7 @@ export function fraseDelGuasto(errore, cosa, dalCorpo = null, { reteViva = null 
   // non esiste. È la famiglia delle frasi diventate false: una frase giusta
   // per un caso, usata per tutti.
   if (genere === SERVIZIO_ASSENTE)
-    return `Non sono riuscito a${gesto}: questa parte del gestionale non e' installata qui. La connessione c'e' — l'ho appena controllata.`;
+    return `Non sono riuscito a${gesto}: questa parte del gestionale non è installata qui. La connessione c'è — l'ho appena controllata.`;
 
   if (genere === NESSUNA_RISPOSTA)
     return `Non sono riuscito a${gesto}: il gestionale non ha risposto. Riprova.`;
