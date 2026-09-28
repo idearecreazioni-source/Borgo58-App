@@ -30,7 +30,7 @@ const spazi = (s) => s.replace(/\s+/g, " ").trim();
 // definiscono: è quello che il database ha, finché nessuna la ridefinisce.
 // ⚠️ Si cerca nel codice SENZA commenti, senza badare alle maiuscole né a un
 //    «public.» davanti, e si prende l'ULTIMA definizione del file più
-//    recente, qualunque sia il delimitatore del corpo (revisione Codex, 28/09).
+//    recente, qualunque sia il delimitatore del corpo.
 const DEFINIZIONE =
   /create\s+or\s+replace\s+function\s+(?:public\.)?lapidi_delle_verifiche\s*\(\s*\)[\s\S]*?\bas\s+(\$\w*\$)([\s\S]*?)\1/gi;
 const ultimaFunzione = () => {
@@ -75,7 +75,7 @@ describe("l'indice delle verifiche", () => {
 
   it("🔴 si applica tutta o niente: npm run migra la esegue in una transazione sola", () => {
     // Un indice creato e una verifica fallita non devono poter lasciare
-    // l'indice e la riga del registro senza la verifica (revisione Codex).
+    // l'indice e la riga del registro senza la verifica.
     const { argomenti, atomica } = argomentiMigrazione("postgres://sconosciuto", FILE);
     expect(atomica).toBe(true);
     expect(argomenti).toContain("--single-transaction");

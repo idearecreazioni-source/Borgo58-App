@@ -1,7 +1,7 @@
 # Le verifiche nel registro, trovate da un indice
 
-**28/09/2026** · ramo `claude/indice-verifiche` · proposta verso `slave`, **non unita**
-· migrazione `20260928000001` **non applicata a nessun database remoto** (né Prova, né produzione)
+**28/09/2026** · ramo `claude/indice-verifiche` · proposta #135 verso `slave`, **aperta e non unita**
+· migrazione `20260928000001` **applicata solo su Borgo58-Prova**, mai in produzione
 
 ---
 
@@ -91,18 +91,22 @@ Scan.
   estensioni, `concurrently`, funzioni ridefinite. È un setaccio sul testo, non
   un parser SQL. Rotture prese tutte: indice tolto, predicato più largo, chiave
   sbagliata, un `delete` sul registro, un `vacuum`.
-- **Revisione Codex del diff**: nove rilievi. Accolti e corretti quelli sul
-  ripristino delle impostazioni, sul corpo letto coi commenti, sul riordino
-  cercato solo nella prima riga del piano, sulla robustezza della prova pura e
-  sulle frasi di questo riepilogo. Quello sull'atomicità non regge per come il
-  progetto applica le migrazioni, ed è ora fissato da una prova.
+## Su Borgo58-Prova
+
+- Applicata con `npm run prova:migra -- 20260928000001`: la verifica della
+  migrazione è passata sul registro vero, e Prova registra la versione.
+- Misurata subito dopo, in sola lettura: la SELECT reale della funzione, da
+  titolare con la RLS e il pianificatore nelle impostazioni normali, ha usato
+  `idx_deleted_records_verifiche`, **senza Seq Scan né Sort, in 0,045 ms**.
+- L'impronta del registro (righe, identificativo massimo, impronta dei
+  contenuti) era uguale subito prima e subito dopo l'applicazione:
+  `102600|113478|cea92f8e68424c5efea4b30dba80acdd`.
 
 ## Cosa non è verificato
 
-- La migrazione **non è applicata a Prova**: finché non lo è, il controllo
-  «Prove contro il progetto di prova» resta esposto al 57014 già noto.
-- Il tempo sul Prova vero con l'indice non è misurato: la dimostrazione è su
-  dati sintetici, non sui 102.394 record veri.
+- Manca ancora il nuovo giro del controllo rosso della #134, «Prove contro il
+  progetto di prova».
+- La migrazione **non è applicata in produzione**.
 
 ## Cosa abbiamo rovesciato
 

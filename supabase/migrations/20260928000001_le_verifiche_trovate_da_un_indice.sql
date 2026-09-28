@@ -114,7 +114,7 @@ begin
   -- 2. La funzione cerca ancora con quel filtro e con quell'ordine: se no,
   --    l'indice non la servirebbe piu', e nessun errore lo direbbe.
   --    ⚠️ Si guarda il corpo SENZA i commenti e con gli spazi e le maiuscole
-  --    ridotti (revisione Codex del 28/09): un commento che ripetesse il
+  --    ridotti: un commento che ripetesse il
   --    vecchio filtro non deve bastare a far passare un filtro cambiato, e
   --    una riga andata a capo diversamente non deve far fallire.
   select lower(regexp_replace(regexp_replace(p.prosrc, '--[^\n]*', '', 'g'), '\s+', ' ', 'g'))
