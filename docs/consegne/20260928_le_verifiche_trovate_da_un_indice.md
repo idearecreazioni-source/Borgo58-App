@@ -1,6 +1,6 @@
 # Le verifiche nel registro, trovate da un indice
 
-**28/09/2026** · ramo `claude/indice-verifiche` · proposta #135 verso `slave`, **aperta e non unita**
+**28/09/2026** · ramo `claude/indice-verifiche` · proposta #135 **unita in `slave`**
 · migrazione `20260928000001` **applicata solo su Borgo58-Prova**, mai in produzione
 
 ---
@@ -104,8 +104,9 @@ Scan.
 
 ## Cosa non è verificato
 
-- Manca ancora il nuovo giro del controllo rosso della #134, «Prove contro il
-  progetto di prova».
+- Il tentativo 2 della corsa `36349917319` della #134, job «Prove contro il
+  progetto di prova», è verde. La #134 resta aperta e dovrà essere
+  riallineata al nuovo `slave` prima di un'eventuale unione.
 - La migrazione **non è applicata in produzione**.
 
 ## Cosa abbiamo rovesciato
