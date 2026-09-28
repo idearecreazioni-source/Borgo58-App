@@ -124,7 +124,7 @@ const MISURA = `(() => {
         const c = a.getBoundingClientRect();
         if (b.right > c.right + 1 || b.left < c.left - 1) coperto = true;
       }
-      return { testo: el.textContent.trim(), destra: b.right, coperto };
+      return { testo: el.textContent.trim(), destra: b.right, coperto, totale: Boolean(el.closest("[data-totali-periodo]")) };
     }),
     // I titoli dell'Agenda: quanto spazio hanno, e la parola più lunga ci sta?
     titoliAgenda: tutti("[data-testo-titolo]").filter((t) => t.getBoundingClientRect().width > 0).map((t) => {
@@ -152,6 +152,16 @@ const MISURA = `(() => {
       const posto = c.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight) - freccia;
       return { testo, serve: tela.measureText(testo).width, posto };
     }),
+    // Prima nota, secondo batch (27/09/2026): i totali col loro nome, e la
+    // fascia sotto ogni movimento (casella o «?», e «Rimuovi»).
+    totali: tutti("[data-totale]").map((d) => ({ chiave: d.dataset.totale, etichetta: d.querySelector("dt")?.textContent.trim() ?? "", valore: d.querySelector("dd")?.textContent.trim() ?? "" })),
+    fasce: tutti("[data-fascia-movimento]").filter((f) => f.getBoundingClientRect().width > 0).map((f) => {
+      const casella = f.querySelector('[data-prova="investimento-riga"]');
+      const perche = f.querySelector('[data-prova="investimento-no"]');
+      const segno = perche?.querySelector("button[aria-label]");
+      const rimuovi = [...f.querySelectorAll("button")].find((b) => b.textContent.trim() === "Rimuovi");
+      return { fascia: r(f), sinistra: r(casella ?? perche), segno: segno ? { ...r(segno), nome: segno.getAttribute("aria-label") } : null, rimuovi: r(rimuovi) };
+    }),
     resaRighe: (() => { const e = tutti("main span").find((x) => /ne restano$/.test(x.textContent.trim())); if (!e) return null; const s = getComputedStyle(e); return Math.round(e.getBoundingClientRect().height / (parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.25)); })(),
     testo: main.innerText,
     titoli: tutti("main h1, main h2").filter((t) => /Fraunces/.test(getComputedStyle(t).fontFamily.split(",")[0])).map((t) => { const b = t.getBoundingClientRect(); const s = getComputedStyle(t); const riga = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.3; const rng = document.createRange(); rng.selectNodeContents(t); return { testo: t.textContent.trim().slice(0, 18), larga: +rng.getBoundingClientRect().width.toFixed(2), righe: Math.round(b.height / riga) }; }),
@@ -159,6 +169,15 @@ const MISURA = `(() => {
 })()`;
 
 // --- I confronti -------------------------------------------------------
+
+/** I 5 mm fra un gesto che cancella e uno qualunque (`.gesti-pericolosi`). */
+export const DISTANZA_PERICOLOSA_CM = 0.5;
+
+/** «−1.280,85 €» → −1280.85 (il segno meno tipografico compreso). */
+export const euro = (testo) => {
+  const n = Number(testo.replace(/[^\d,+−-]/g, "").replace(",", ".").replace("−", "-"));
+  return Number.isFinite(n) ? n : NaN;
+};
 
 const cm = (px, pxcm) => px / pxcm;
 const mm = (px, pxcm) => (cm(px, pxcm) * 10).toFixed(1);
@@ -222,7 +241,59 @@ export function controlla(forma, m, difetti) {
     else if (m.registra.destra > m.larghezza + 1) no("«Registra movimento» esce dallo schermo");
     // I sei movimenti dei dati finti, più la riga dei totali.
     const importi = m.importi ?? [];
-    if (importi.length < 6) no(`si leggono ${importi.length} importi: i movimenti finti sono sei`);
+    const deiMovimenti = importi.filter((i) => !i.totale);
+    if (deiMovimenti.length < 6) no(`si leggono ${deiMovimenti.length} importi: i movimenti finti sono sei`);
+
+    // Il campo della finalità: la sua frase ci sta intera (27/09/2026).
+    const finalita = (m.scritteNeiCampi ?? []).find((c) => /^Finalità/.test(c.testo));
+    if (!finalita) no("il campo della finalità non c'è");
+    else if (finalita.serve > finalita.posto + 0.5) no(`«${finalita.testo}» chiede ${Math.round(finalita.serve)} punti e il campo ne ha ${Math.round(finalita.posto)}`);
+
+    // Entrate, Uscite, Saldo del periodo: col loro nome, e coerenti con i
+    // movimenti a schermo. Il saldo è la differenza dei due totali.
+    const totale = (chiave) => (m.totali ?? []).find((t) => t.chiave === chiave);
+    const NOMI = { entrate: "Entrate", uscite: "Uscite", saldo: "Saldo del periodo" };
+    for (const [chiave, nome] of Object.entries(NOMI)) {
+      const t = totale(chiave);
+      if (!t) no(`il totale «${nome}» non c'è`);
+      else if (t.etichetta !== nome) no(`il totale «${nome}» si chiama «${t.etichetta}»`);
+    }
+    if (totale("entrate") && totale("uscite") && totale("saldo")) {
+      const piu = deiMovimenti.filter((i) => i.testo.startsWith("+")).reduce((s, i) => s + euro(i.testo), 0);
+      const meno = deiMovimenti.filter((i) => i.testo.startsWith("−")).reduce((s, i) => s + euro(i.testo), 0);
+      const [e, u, sa] = ["entrate", "uscite", "saldo"].map((k) => euro(totale(k).valore));
+      if (Math.abs(e - piu) > 0.005) no(`«Entrate» dice ${e} e i movimenti in entrata fanno ${piu.toFixed(2)}`);
+      if (Math.abs(u - meno) > 0.005) no(`«Uscite» dice ${u} e i movimenti in uscita fanno ${meno.toFixed(2)}`);
+      if (Math.abs(sa - (e + u)) > 0.005) no(`«Saldo del periodo» dice ${sa}, ma entrate meno uscite fa ${(e + u).toFixed(2)}`);
+    }
+
+    // La fascia sotto ogni movimento: casella (o frase e «?») e «Rimuovi»
+    // insieme, senza toccarsi, coi 5 mm dei gesti pericolosi fra loro.
+    const fasce = m.fasce ?? [];
+    if (fasce.length < 6) no(`le fasce sotto i movimenti sono ${fasce.length}, non sei`);
+    for (const f of fasce) {
+      if (!f.sinistra) { no("una fascia non ha né la casella né la frase col «?»"); continue; }
+      if (!f.rimuovi) { no("una fascia non ha «Rimuovi»"); continue; }
+      for (const [chi, b] of [["la casella o la frase", f.sinistra], ["«Rimuovi»", f.rimuovi]]) {
+        if (b.destra > m.larghezza + 1 || b.x < -1) no(`${chi} esce dallo schermo`);
+      }
+      if (cm(Math.min(f.rimuovi.w, f.rimuovi.h), m.pxcm) < TOCCO_CM - 0.01) no(`«Rimuovi» ha un lato di ${mm(Math.min(f.rimuovi.w, f.rimuovi.h), m.pxcm)} mm`);
+      const staccoX = f.rimuovi.x - f.sinistra.destra;
+      const staccoY = f.rimuovi.y - f.sinistra.basso;
+      if (Math.max(staccoX, staccoY) < 0) no("la casella o la frase si sovrappone a «Rimuovi»");
+      else if (cm(Math.max(staccoX, staccoY), m.pxcm) < DISTANZA_PERICOLOSA_CM - 0.01) no(`fra la casella e «Rimuovi» ci sono ${mm(Math.max(staccoX, staccoY), m.pxcm)} mm, meno dei 5 dei gesti pericolosi`);
+      if (f.segno) {
+        if (!/non è un investimento/i.test(f.segno.nome)) no(`il «?» si chiama «${f.segno.nome}»: non dice cosa spiega`);
+        if (cm(Math.min(f.segno.w, f.segno.h), m.pxcm) < TOCCO_CM - 0.01) no(`il «?» ha un lato di ${mm(Math.min(f.segno.w, f.segno.h), m.pxcm)} mm`);
+      }
+    }
+    if (!fasce.some((f) => f.segno)) no("nessun movimento ha il «?» della spiegazione");
+    if (!m.perche) no("il «?» non è stato toccato");
+    else if (!m.perche.aperta) no("toccato il «?», la spiegazione non si apre");
+    else {
+      if (!/investimento|gestionale/i.test(m.perche.testo)) no(`la spiegazione aperta dice «${m.perche.testo.slice(0, 40)}»`);
+      if (m.perche.destra > m.larghezza + 1 || m.perche.x < -1) no("la spiegazione aperta esce dallo schermo");
+    }
     for (const i of importi) {
       if (i.destra > m.larghezza + 1) no(`l'importo ${i.testo} esce dallo schermo`);
       if (i.coperto) no(`l'importo ${i.testo} è fuori dal suo riquadro: si vede solo scorrendo`);
@@ -279,6 +350,33 @@ export function controlla(forma, m, difetti) {
     if (m.provenienze.length !== 2) no(`le provenienze con uno stato sono ${m.provenienze.length}, non 2`);
     else if (m.provenienze.filter((p) => p.premuto === "true").length !== 1) no("le provenienze non dicono quale delle due è scelta");
   }
+}
+
+// --- Il «?» della Prima nota, toccato davvero (27/09/2026) --------------
+// Sul telefono e sul tablet un tocco vero (`Input.dispatchTouchEvent`, che
+// produce la sequenza di eventi di un dito); sul computer il passaggio del
+// mouse, che è il modo in cui lì si apre. Poi si guarda se la spiegazione
+// c'è, cosa dice e se sta dentro lo schermo.
+async function toccaIlPerche(manda, forma) {
+  const dove = await valuta(
+    manda,
+    // ⚠️ Il primo visibile, non il primo della pagina: le schede e la
+    //    tabella stanno tutte e due nel documento, e una delle due è nascosta.
+    `(() => { const q = [...document.querySelectorAll('[data-prova="investimento-no"] button[aria-label]')].find((b) => b.getBoundingClientRect().width > 0); if (!q) return null; q.scrollIntoView({ block: "center" }); const b = q.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`,
+  ).catch(() => null);
+  if (!dove) return null;
+  await aspetta(150);
+  if (forma.mobile) {
+    await manda("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: dove.x, y: dove.y }] });
+    await manda("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } else {
+    await manda("Input.dispatchMouseEvent", { type: "mouseMoved", x: dove.x, y: dove.y });
+  }
+  await aspetta(300);
+  return valuta(
+    manda,
+    `(() => { const t = document.querySelector('[role="tooltip"]'); if (!t) return { aperta: false }; const b = t.getBoundingClientRect(); return { aperta: b.width > 0, testo: t.textContent.trim(), x: b.left, destra: b.right }; })()`,
+  ).catch(() => null);
 }
 
 // --- Nessuna richiesta esce dal computer --------------------------------
@@ -346,6 +444,7 @@ async function principale() {
         if (!m) {
           difetti.push(`${pagina} · ${forma.nome}: la schermata non si è disegnata`);
         } else {
+          if (pagina === "primanota") m.perche = await toccaIlPerche(manda, forma);
           controlla(forma, m, difetti);
           if (m.titoli?.length) console.log(`   ${pagina} · ${forma.nome}: titoli ${m.titoli.map((t) => `«${t.testo}» ${t.larga}×${t.righe}`).join(", ")}`);
           misurate += 1;

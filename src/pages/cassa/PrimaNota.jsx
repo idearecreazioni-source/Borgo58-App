@@ -36,6 +36,7 @@ import {
 } from "../../lib/calcoli/tasca";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
 import Didascalia from "../../components/Didascalia";
+import { totaliDelPeriodo } from "../../lib/calcoli/totaliPrimaNota";
 import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investimento";
 
 const today = oggiLocale;
@@ -365,11 +366,9 @@ export default function PrimaNota() {
     ]);
   };
 
-  const periodTotals = useMemo(() => {
-    const inc = movements.filter((m) => m.direction === "entrata").reduce((s, m) => s + Number(m.amount), 0);
-    const out = movements.filter((m) => m.direction === "uscita").reduce((s, m) => s + Number(m.amount), 0);
-    return { inc, out };
-  }, [movements]);
+  // Entrate, uscite e saldo da un posto solo (27/09/2026): il saldo è la
+  // differenza dei due totali, non un secondo conto.
+  const periodTotals = useMemo(() => totaliDelPeriodo(movements), [movements]);
 
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
@@ -804,10 +803,31 @@ export default function PrimaNota() {
           <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento nel periodo.</p>
         ) : (
           <>
-            <div className="testo-sala text-b58-charcoal-soft mb-3">
-              Totali periodo: <span className="text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</span>{" "}
-              <span className="text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</span>
-            </div>
+            {/* 🔴 TRE NUMERI CON IL LORO NOME — 27/09/2026. Prima era «Totali
+                periodo: +1.750,00 € −3.030,85 €»: due cifre senza etichetta,
+                e nessuna differenza. Stessi colori e segni di prima; il
+                saldo prende il colore del suo segno. */}
+            <dl data-totali-periodo className="flex flex-wrap gap-x-6 gap-y-1 testo-sala mb-3">
+              <div data-totale="entrate">
+                <dt className="inline text-b58-charcoal-soft">Entrate </dt>
+                <dd className="inline text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</dd>
+              </div>
+              <div data-totale="uscite">
+                <dt className="inline text-b58-charcoal-soft">Uscite </dt>
+                <dd className="inline text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</dd>
+              </div>
+              <div data-totale="saldo">
+                <dt className="inline text-b58-charcoal-soft">Saldo del periodo </dt>
+                <dd
+                  className={`inline font-medium ${
+                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"
+                  }`}
+                >
+                  {periodTotals.saldo < 0 ? "−" : "+"}
+                  {formatEUR(Math.abs(periodTotals.saldo))}
+                </dd>
+              </div>
+            </dl>
             {/* 🔴 LA TABELLA DIVENTA IL TELAIO (31/08/2026), e il difetto
                 l'ha trovato una MISURA, non una rilettura: aperta a 390
                 punti con venti righe dentro, questa tabella sbordava di
@@ -894,30 +914,48 @@ export default function PrimaNota() {
                 ) : null
               }
               aperta={(m) => (
-                <div className="space-y-3">
+                // 🔴 UNA FASCIA SOLA — 27/09/2026, secondo batch visivo.
+                //    Prima casella e «Rimuovi» stavano su due righe, più la
+                //    spiegazione ripetuta sotto ogni entrata: ogni movimento
+                //    diventava alto il doppio. Ora stanno affiancati, con i
+                //    5 mm dei gesti pericolosi fra loro (`gesti-pericolosi`,
+                //    che va a capo invece di sbordare), «Rimuovi» a destra.
+                <div data-fascia-movimento className="gesti-pericolosi justify-between">
                   {/* 🔴 IL GESTO SULLA RIGA GIA' SCRITTA (C11). Compare solo
                       dove il database lo ammette; dove non lo ammette, al
                       suo posto c'e' la RAGIONE — l'assenza muta di un gesto
-                      si legge come un guasto. */}
+                      si legge come un guasto. Dal 27/09 la ragione intera
+                      sta dietro il «?», e a vista resta una frase corta. */}
                   {idoneoAInvestimento(m) ? (
                     <label
                       data-prova="investimento-riga"
-                      className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
+                      className="tocco-campo flex flex-1 items-center gap-2 testo-sala text-b58-charcoal-soft"
                     >
                       <input
                         type="checkbox"
+                        aria-label="Investimento per il progetto"
                         checked={Boolean(m.e_investimento)}
                         disabled={marcando === m.id}
                         onChange={(e) => handleInvestimento(m, e.target.checked)}
                       />
+                      {/* Sul telefono la parola sola: per intero, accanto a
+                          «Rimuovi» a 360 punti non ci stava e lo spingeva
+                          sotto. Il nome della casella resta intero. */}
                       <span>
-                        Investimento per il progetto
+                        <span className="sm:hidden">Investimento</span>
+                        <span className="hidden sm:inline">Investimento per il progetto</span>
                         {marcando === m.id ? " — salvo…" : ""}
                       </span>
                     </label>
                   ) : (
-                    <p data-prova="investimento-no" className="testo-sala text-b58-charcoal-soft/70">
-                      {ragioneNonIdoneo(m)}
+                    // `flex-1` SENZA `min-w-0`: la frase va a capo nel suo spazio
+                    // invece di spingere «Rimuovi» sotto, e quando «Rimuovi»
+                    // si apre nella sua conferma è lei a scendere di riga.
+                    <p data-prova="investimento-no" className="flex-1 testo-sala text-b58-charcoal-soft/70">
+                      Non è un investimento
+                      <Didascalia etichetta="Perché questo movimento non è un investimento">
+                        {ragioneNonIdoneo(m)}
+                      </Didascalia>
                     </p>
                   )}
                   <ConfermaDistruttiva

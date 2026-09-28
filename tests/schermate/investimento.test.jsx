@@ -251,6 +251,21 @@ describe("4 · un'uscita gia' scritta si marca e si smarca", () => {
 });
 
 describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si dice perche'", () => {
+  // Dal 27/09/2026 la ragione intera sta dietro il «?» (secondo batch
+  // visivo): a vista resta «Non è un investimento», e il «?» ha un nome
+  // che dice cosa spiega. Si apre come la aprirebbe un dito.
+  const PERCHE = "Perché questo movimento non è un investimento";
+  const apriPerche = async (container) => {
+    const riga = tutti(container, '[data-prova="investimento-no"]')[0];
+    expect(riga.textContent).toMatch(/Non è un investimento/);
+    const q = riga.querySelector(`button[aria-label="${PERCHE}"]`);
+    expect(q).toBeTruthy();
+    await act(async () => {
+      q.click();
+    });
+    return screen.getByRole("tooltip").textContent;
+  };
+
   it("su un'entrata", async () => {
     finto.movimenti = [movimento({ direction: "entrata", causale: null })];
     const { container } = await apriPrimaNota();
@@ -258,7 +273,7 @@ describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si 
       expect(tutti(container, '[data-prova="investimento-no"]').length).toBeGreaterThan(0)
     );
     expect(tutti(container, '[data-prova="investimento-riga"]')).toHaveLength(0);
-    expect(tutti(container, '[data-prova="investimento-no"]')[0].textContent).toMatch(/entrata/i);
+    expect(await apriPerche(container)).toMatch(/entrata/i);
   });
 
   it("🔴 su un rimborso al titolare — la riga che il gestionale scrive da sé", async () => {
@@ -268,7 +283,7 @@ describe("1-8 · sulle righe che non la possono portare, il gesto non c'e' e si 
       expect(tutti(container, '[data-prova="investimento-no"]').length).toBeGreaterThan(0)
     );
     expect(tutti(container, '[data-prova="investimento-riga"]')).toHaveLength(0);
-    expect(tutti(container, '[data-prova="investimento-no"]')[0].textContent).toMatch(/due volte/i);
+    expect(await apriPerche(container)).toMatch(/due volte/i);
   });
 });
 
@@ -668,5 +683,39 @@ describe("🔴 l'aiuto dell'etichetta dice la società giusta", () => {
     expect((await apriAiuto()).textContent).toMatch(/dopo che ti sei rimborsato/);
     await scegli(container, AGRICOLA.id);
     expect((await apriAiuto()).textContent).toMatch(/dopo che ti sei rimborsato/);
+  });
+});
+
+// =====================================================================
+// 27/09/2026, secondo batch visivo: i totali del periodo col loro nome.
+describe("i totali del periodo: Entrate, Uscite, Saldo del periodo", () => {
+  it("ognuno ha la sua etichetta, e il saldo è entrate meno uscite", async () => {
+    finto.movimenti = [
+      movimento({ id: "a", direction: "entrata", amount: "250.00", causale: null }),
+      movimento({ id: "b", direction: "uscita", amount: "100.00" }),
+      movimento({ id: "c", direction: "uscita", amount: "40.50" }),
+    ];
+    const { container } = await apriPrimaNota();
+    await waitFor(() => expect(container.querySelector("[data-totali-periodo]")).toBeTruthy());
+    const riga = (k) => container.querySelector(`[data-totale="${k}"]`);
+    const testo = (k) => riga(k).textContent.replace(/\s+/g, " ").trim();
+    expect(riga("entrate").querySelector("dt").textContent.trim()).toBe("Entrate");
+    expect(riga("uscite").querySelector("dt").textContent.trim()).toBe("Uscite");
+    expect(riga("saldo").querySelector("dt").textContent.trim()).toBe("Saldo del periodo");
+    expect(testo("entrate")).toMatch(/\+250,00/);
+    expect(testo("uscite")).toMatch(/−140,50/);
+    expect(testo("saldo")).toMatch(/\+109,50/);
+  });
+
+  it("un saldo negativo ha il segno meno e il colore delle uscite", async () => {
+    finto.movimenti = [
+      movimento({ id: "a", direction: "entrata", amount: "10.00", causale: null }),
+      movimento({ id: "b", direction: "uscita", amount: "30.00" }),
+    ];
+    const { container } = await apriPrimaNota();
+    await waitFor(() => expect(container.querySelector('[data-totale="saldo"]')).toBeTruthy());
+    const dd = container.querySelector('[data-totale="saldo"] dd');
+    expect(dd.textContent.replace(/\s+/g, " ")).toMatch(/−20,00/);
+    expect(dd.className).toMatch(/terracotta/);
   });
 });

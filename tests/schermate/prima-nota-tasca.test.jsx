@@ -60,7 +60,7 @@ async function apri(indirizzo) {
 }
 
 function campoDescrizione(contenitore) {
-  return contenitore.querySelector('input[placeholder*="Abbonamento AI"], input[placeholder*="Finalità aziendale"]');
+  return contenitore.querySelector('input[placeholder*="Abbonamento AI"], input[placeholder*="Finalità"]');
 }
 
 beforeEach(() => {
@@ -122,10 +122,10 @@ describe("La tasca di Alessio", () => {
 });
 
 describe("Borgo 58 — non deve cambiare niente", () => {
-  it("il campo si chiama ancora «Finalità aziendale» e non prende un titolo", async () => {
+  it("il campo resta quello della finalità, e non prende un titolo", async () => {
     const { container } = await apri("/cassa/prima-nota");
     const campo = campoDescrizione(container);
-    expect(campo.getAttribute("placeholder")).toBe("Finalità aziendale (facoltativa, utile in verifica)");
+    expect(campo.getAttribute("placeholder")).toBe("Finalità (facoltativa)");
     // Nessuna etichetta sopra il campo: altrove il nome vive nel grigio.
     expect(screen.queryByText("Descrizione della spesa")).toBeNull();
   });
