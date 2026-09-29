@@ -188,7 +188,8 @@ una sola finestra.
 
 Ci si ferma, senza correggere e senza riprovare, se:
 
-- `npm run migra` in sola lettura elenca migrazioni diverse da queste 16;
+- `npm run migra -- --salta 20260921000001` in sola lettura elenca un insieme
+  o un ordine diverso dalle 15 migrazioni applicabili indicate nella tabella;
 - una guardia o una verifica si ferma: le migrazioni già applicate restano
   applicate, ognuna è una transazione a sé;
 - l'installazione di `notify-telegram-reservation` non riesce: **non si
