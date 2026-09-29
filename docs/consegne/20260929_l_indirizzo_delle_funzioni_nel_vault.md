@@ -1,8 +1,14 @@
 # L'indirizzo delle funzioni nel Vault
 
 **29/09/2026** · mandato M16-q · ramo `claude/indirizzo-funzioni-vault` ·
-migrazione `20260929000001` **scritta, NON applicata** né su Prova né in
-produzione.
+migrazione `20260929000001` **applicata e verificata su Borgo58-Prova il
+29/09/2026** (mandato M16-t, vedi «La prova su Borgo58-Prova»), **NON
+applicata in produzione**.
+
+> ⚠️ Corretto il 29/09/2026 (mandato M17-1). Questa riga diceva «scritta, NON
+> applicata né su Prova né in produzione»: era vera quando il riepilogo è
+> stato scritto, ed è diventata falsa con la prova su Prova fatta dopo
+> l'unione in `slave`.
 
 ---
 
@@ -77,10 +83,36 @@ nessun progetto.
   riferimento ammesso, un valore nel messaggio, una `update_secret` → tutte e
   tre fanno fallire la prova.
 
+## La prova su Borgo58-Prova
+
+29/09/2026, mandato M16-t, dopo l'unione in `slave` (`2fd39ab`). Comando:
+`npm run prova:migra -- 20260929000001`, lanciato due volte. Tutte le letture
+di controllo sono state fatte in una transazione di sola lettura e hanno
+restituito **soltanto conteggi**: nessun valore del Vault, nessun indirizzo.
+
+| | prima | dopo la 1ª applicazione | dopo la 2ª applicazione |
+|---|---|---|---|
+| `chiave_anon` nel Vault | 1 | 1 | 1 |
+| `url_funzioni` nel Vault | 1 | 1 | 1 |
+| registrazioni di `20260929000001` | 0 | 1 | 1 |
+| migrazioni registrate in tutto | 410 | 411 | 411 |
+
+- **Prima applicazione**: la migrazione ha riconosciuto `url_funzioni` già
+  presente e corretta per questo progetto («c'era gia' ed e' quella di questo
+  progetto: nessuna scrittura»), **non l'ha riscritta**, ha superato la
+  verifica finale e ha registrato la versione, portando il totale da 410 a 411.
+- **Seconda applicazione**, solo per l'idempotenza: stesso messaggio, nessuna
+  scrittura nel Vault, nessuna registrazione doppia, totale invariato a 411.
+- **La produzione non è stata letta né toccata** da questa prova: lo script si
+  ferma se la connessione di Prova contiene il riferimento della produzione, e
+  ogni collegamento è andato a Borgo58-Prova.
+- ⚠️ **Resta non provato il ramo che CREA la voce**: su Prova `url_funzioni`
+  c'era già, quindi è stato esercitato solo il caso «c'è ed è quella giusta».
+
 ## Cosa non è verificato
 
-- **Il SQL non è mai stato eseguito**: nessun database, locale o remoto, in
-  questo mandato. La prima esecuzione sarà su Prova, con un mandato apposito.
+- **In produzione la migrazione non è applicata.** L'unica esecuzione reale è
+  quella su Borgo58-Prova descritta sopra.
 - **La `chiave_anon` nel Vault di produzione**: presenza e formato non sono
   misurabili dal ruolo di sola lettura. Se manca o non è un JWT del gestionale
   vero, la migrazione si ferma senza scrivere.
