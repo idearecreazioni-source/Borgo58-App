@@ -9,23 +9,39 @@ sito pubblicato. Questo è un piano, non un resoconto di rilascio.
 
 ## ⚠️ Come sono scritte le versioni, e perché
 
-In questo file le migrazioni sono indicate **in forma breve** — `0920-001`
-sta per la migrazione del 20/09/2026 numero 1 — e **mai col numero di
-versione intero**. Non è una svista.
+*Sezione corretta il 29/09/2026 (mandato M16-c).* La prima stesura diceva che
+la forma breve «lascia accesa» la rete dei riepiloghi e che dopo il rilascio
+questa avrebbe preteso da sola il resoconto. **Era falso**: guardava soltanto
+il controllo su ciò che è già applicato, e ignorava quello su ciò che sta per
+entrare.
 
-La rete dei riepiloghi (`versioniNonNominate` in `scripts/comune.mjs`, provata
-da `tests/unita/riepiloghi.test.js`) considera documentata una migrazione
-applicata quando la sua versione compare **per intero** in un file di
-`docs/consegne/`. Se questo piano le scrivesse per intero, dopo il rilascio la
-rete le troverebbe già «documentate» e **non chiederebbe più il riepilogo con i
-numeri veri dell'applicazione** — cioè il piano spegnerebbe il controllo che
-deve seguirlo. La forma breve lascia la rete accesa: dopo il rilascio
-continuerà a pretendere un riepilogo che le nomini per intero.
+**Il fatto corretto.** `npm run migra` usa `versioniNonNominate`
+(`scripts/comune.mjs`) in due punti:
 
-L'unica eccezione è la `0917-001`, che il riepilogo arretrato
-[`20260917_un_promemoria_e_inviato_solo_se_arriva.md`](20260917_un_promemoria_e_inviato_solo_se_arriva.md)
-nomina per intero per mandato: per lei la rete **non** chiederà più il
-riepilogo dopo l'applicazione, ed è dichiarato in quel file.
+- **prima dell'applicazione — il «Vincolo 0-bis»** (`scripts/migra.mjs`): se
+  una versione che sta per entrare non compare **per intero** in un file di
+  `docs/consegne/`, il programma **si ferma subito, anche in sola lettura**.
+  Una forma breve come `0920-001` non la nomina: lascia la versione scoperta, e
+  il rilascio non parte;
+- **dopo**, sulle versioni già applicate.
+
+Per questo le **nove** migrazioni che nessun altro riepilogo nominava per
+intero sono scritte **per intero** nella tabella qui sotto. Le altre sei che il
+rilascio passerà al motore sono già nominate per intero da altri file di
+`docs/consegne/`: la `0917-001` dal riepilogo arretrato, e `0921-003`,
+`0922-001`, `0923-003`, `0923-004`, `0928-001` dai propri riepiloghi. Insieme
+soddisfano il Vincolo 0-bis. La `0921-001` non entra nel conto, perché il
+rilascio la salta. Le forme brevi (`0920-001` = migrazione del 20/09/2026
+numero 1) restano solo come abbreviazione nel testo.
+
+🔴 **La conseguenza, dichiarata**: da qui in avanti, dopo l'applicazione, **la
+rete non pretenderà più da sola il resoconto**, perché troverà queste versioni
+già nominate. Il resoconto del rilascio **con i numeri veri** — versioni
+registrate, righe toccate, lapidi prima e dopo, allarmi — resta però
+**obbligatorio dopo M17**, per regola (CLAUDE.md §2): è un obbligo operativo
+esplicito di chi applica, non un blocco automatico. Lo stesso vale per la
+`0917-001`, nominata per intero nel riepilogo arretrato
+[`20260917_un_promemoria_e_inviato_solo_se_arriva.md`](20260917_un_promemoria_e_inviato_solo_se_arriva.md).
 
 ## La sequenza delle 16 migrazioni
 
@@ -36,18 +52,18 @@ nessuna usa `CONCURRENTLY`.
 | # | Migrazione | Oggetti | Effetto sui dati | Blocchi | Funzione online | La verifica scrive su |
 |---|---|---|---|---|---|---|
 | 1 | `0917-001` un promemoria è inviato solo se arriva | tabelle `invii_promemoria`, `consegne_telegram`; 8 funzioni nuove; `send_due_task_reminders` riscritta; lavoro `esiti-promemoria` ogni 5 min + riga in `lavori_sorvegliati` | nessuna riga esistente toccata | solo tabelle nuove | **`notify-telegram-reservation` PRIMA** | tabelle nuove |
-| 2 | `0919-001` le prove automatiche non suonano | tabella `silenzi_notifiche`; `siamo_su_prova`, `apri/chiudi_silenzio_notifiche`, `notifiche_zittite` | nessuno | tabella nuova | la funzione di `slave` non la chiama fuori da Prova | — |
-| 3 | `0920-001` nessun ripiego verso il gestionale vero | `url_funzioni_configurato`; riscritte `chiedi_lettura_posta`, `invia_email_conferma`, `invia_preventivo_per_email`, `segnala_allarme`, `notify_reservation_telegram` | nessuno | trigger delle prenotazioni sostituito | — | — |
-| 4 | `0920-002` un mancato riscontro non è un non arrivato | `send_due_task_reminders`, `esito_di_un_invio` | nessuno | — | — | — |
-| 5 | `0920-003` la ricorrenza porta con sé l'avviso | `istante_della_scadenza`, `avviso_del_successivo`, `completa_task` | nessuno | — | — | `tasks` |
-| 6 | `0920-004` il sollecito finché non lo chiudi | `tasks` +2 colonne e 4 vincoli; `istante_sollecito`; `send_due_task_reminders`, `completa_task` | colonne nuove vuote | **`ALTER TABLE tasks`** | — | `tasks` |
-| 7 | `0920-005` il sollecito anche a ore | 2 vincoli di `tasks`; `istante_sollecito` | nessuno | **`ALTER TABLE tasks`** | — | `tasks` |
+| 2 | `20260919000001` (`0919-001`) le prove automatiche non suonano | tabella `silenzi_notifiche`; `siamo_su_prova`, `apri/chiudi_silenzio_notifiche`, `notifiche_zittite` | nessuno | tabella nuova | la funzione di `slave` non la chiama fuori da Prova | — |
+| 3 | `20260920000001` (`0920-001`) nessun ripiego verso il gestionale vero | `url_funzioni_configurato`; riscritte `chiedi_lettura_posta`, `invia_email_conferma`, `invia_preventivo_per_email`, `segnala_allarme`, `notify_reservation_telegram` | nessuno | trigger delle prenotazioni sostituito | — | — |
+| 4 | `20260920000002` (`0920-002`) un mancato riscontro non è un non arrivato | `send_due_task_reminders`, `esito_di_un_invio` | nessuno | — | — | — |
+| 5 | `20260920000003` (`0920-003`) la ricorrenza porta con sé l'avviso | `istante_della_scadenza`, `avviso_del_successivo`, `completa_task` | nessuno | — | — | `tasks` |
+| 6 | `20260920000004` (`0920-004`) il sollecito finché non lo chiudi | `tasks` +2 colonne e 4 vincoli; `istante_sollecito`; `send_due_task_reminders`, `completa_task` | colonne nuove vuote | **`ALTER TABLE tasks`** | — | `tasks` |
+| 7 | `20260920000005` (`0920-005`) il sollecito anche a ore | 2 vincoli di `tasks`; `istante_sollecito` | nessuno | **`ALTER TABLE tasks`** | — | `tasks` |
 | 8 | `0921-001` il documento dalla posta tiene la società | `esegui_azione_posta` | — | — | — | — |
-| 9 | `0921-002` la società dalla posta dal corpo vivo | `esegui_azione_posta` (+1 riga rispetto alla versione applicata); registra anche la `0921-001` | nessuno | — | — | `posta_ricevuta`, `posta_azioni` |
+| 9 | `20260921000002` (`0921-002`) la società dalla posta dal corpo vivo | `esegui_azione_posta` (+1 riga rispetto alla versione applicata); registra anche la `0921-001` | nessuno | — | — | `posta_ricevuta`, `posta_azioni` |
 | 10 | `0921-003` l'etichetta investimento | `cash_movements` e `anticipazioni_socio` +`e_investimento`; vincolo; 2 trigger; `costo_del_progetto`, `righe_costo_del_progetto` | colonna nuova a `false` | **`ALTER TABLE cash_movements`, `anticipazioni_socio`** | — | `cash_movements`, `anticipazioni_socio`, `tag_anticipazioni`, `suppliers`, `supplier_invoices` |
 | 11 | `0922-001` la resa sulla riga di ricetta | `recipe_ingredients` +`quantita_lorda`; `ingredients.waste_percentage_default` diventa facoltativa; vincoli sostituiti; 1 trigger; 7 funzioni; 2 viste | **`UPDATE` di sanatoria su tutte le righe di `recipe_ingredients`**, poi 2 `SET NOT NULL` | **`ALTER TABLE recipe_ingredients`, `ingredients`** | — | `ingredients`, `recipes`, `recipe_ingredients` |
-| 12 | `0923-001` la vista dei costi torna a rispettare la RLS | `v_recipe_row_costs` | nessuno | — | — | — |
-| 13 | `0923-002` cambiando unità il lordo segue il netto | `converti_numeri_dell_unita` (funzione del trigger già esistente), `colonne_unita_non_classificate` | nessuno sulle righe esistenti | — | — | `ingredients`, `recipes`, `recipe_ingredients` |
+| 12 | `20260923000001` (`0923-001`) la vista dei costi torna a rispettare la RLS | `v_recipe_row_costs` | nessuno | — | — | — |
+| 13 | `20260923000002` (`0923-002`) cambiando unità il lordo segue il netto | `converti_numeri_dell_unita` (funzione del trigger già esistente), `colonne_unita_non_classificate` | nessuno sulle righe esistenti | — | — | `ingredients`, `recipes`, `recipe_ingredients` |
 | 14 | `0923-003` la chiusura dell'anno fiscale | tabella `chiusure_annuali` (RLS, 3 trigger, registro delle cancellazioni); riga in `perimetro_registro`; `misure_dell_anno`, `chiudi_anno` | nessuno | tabella nuova | — | `orders`, `chiusure_annuali` |
 | 15 | `0923-004` i due vincoli della chiusura parlano italiano | frasi sui vincoli | nessuno | — | — | — |
 | 16 | `0928-001` le verifiche trovate da un indice | indice `idx_deleted_records_verifiche` | nessuno | **`CREATE INDEX` non concorrente su `deleted_records`** | — | — |
@@ -163,8 +179,9 @@ una sola finestra.
 10. Nessun allarme nuovo nel quarto d'ora successivo, e le lapidi in
     `deleted_records` contate prima e dopo.
 11. Riepilogo del rilascio in `docs/consegne/` con **tutte le versioni per
-    intero e i numeri veri**. La rete lo pretenderà per le 15; per la
-    `0917-001` è dovuto per regola.
+    intero e i numeri veri**. **Nessuna rete lo pretenderà**: tutte le versioni
+    risultano già nominate da questo piano e dal riepilogo arretrato della
+    `0917-001`. È un obbligo operativo esplicito di M17, per regola.
 
 ## Condizioni di stop
 
