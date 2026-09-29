@@ -5,6 +5,7 @@ import {
   righeMie,
   corridoioInstallato,
   denunciaSaltiCorridoio,
+  marchio,
 } from "./aiuto";
 import { registraProdottoLetto } from "../../src/lib/api/assistenteFoto";
 import { andamentoPrezzo } from "../../src/lib/api/ingredients";
@@ -29,7 +30,7 @@ import { supabase } from "../../src/lib/supabase";
 //    versioni» da «due ingredienti» — con una sola marca le due risposte
 //    coincidono e la prova non proverebbe niente.
 
-const MARCA = "PRV-PRODING";
+const MARCA = marchio("PRV-PRODING");
 
 const sonda = await clientAutenticato(credenziali().titolare);
 const CORRIDOIO = await corridoioInstallato(sonda);
