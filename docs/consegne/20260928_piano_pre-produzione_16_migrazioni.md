@@ -157,8 +157,9 @@ una sola finestra.
    pubblicazione si trattiene fino al passo 7.
 2. Copia di sicurezza: `npm run backup`. Il piano Supabase attuale non ne fa.
 3. Nessuna corsa GitHub, prova o migrazione in corso.
-4. `npm run migra` **senza `--conferma`**: deve elencare esattamente le 16, in
-   quest'ordine.
+4. `npm run migra -- --salta 20260921000001` **senza `--conferma`**: deve
+   elencare esattamente le 15 migrazioni applicabili, nell'ordine della
+   tabella; la `20260921000001` è volutamente esclusa.
 
 **Durante**
 
@@ -187,7 +188,8 @@ una sola finestra.
 
 Ci si ferma, senza correggere e senza riprovare, se:
 
-- `npm run migra` in sola lettura elenca migrazioni diverse da queste 16;
+- `npm run migra -- --salta 20260921000001` in sola lettura elenca un insieme
+  o un ordine diverso dalle 15 migrazioni applicabili indicate nella tabella;
 - una guardia o una verifica si ferma: le migrazioni già applicate restano
   applicate, ognuna è una transazione a sé;
 - l'installazione di `notify-telegram-reservation` non riesce: **non si
