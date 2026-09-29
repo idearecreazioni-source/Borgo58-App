@@ -1,6 +1,9 @@
-# Piano pre-produzione — le 16 migrazioni che mancano in produzione
+# Piano pre-produzione — le migrazioni che mancano in produzione
 
 **28/09/2026** · mandato M15 · `master` `896a883` · `slave` `c02173c`
+· **aggiornato il 29/09/2026 (mandato M16-q)**: con il passo preparatorio
+`20260929000001` le mancanti sono **17**, le applicabili **16**, e la
+`20260921000001` resta l'unica da saltare stabilmente
 · **NESSUNA PROMOZIONE È STATA FATTA**: niente è stato unito in `master`,
 nessuna migrazione applicata, nessuna funzione online installata, nessun
 sito pubblicato. Questo è un piano, non un resoconto di rilascio.
@@ -43,11 +46,24 @@ esplicito di chi applica, non un blocco automatico. Lo stesso vale per la
 `0917-001`, nominata per intero nel riepilogo arretrato
 [`20260917_un_promemoria_e_inviato_solo_se_arriva.md`](20260917_un_promemoria_e_inviato_solo_se_arriva.md).
 
-## La sequenza delle 16 migrazioni
+## La sequenza: 17 mancanti, 16 applicabili
 
-Ordine di versione, che è l'ordine in cui `npm run migra` le applica. Ognuna
-va in **un'unica transazione** (nessuna contiene `alter type … add value`) e
-nessuna usa `CONCURRENTLY`.
+**Il passo preparatorio viene PRIMA, in un passaggio a parte.** La
+`20260929000001` (riepilogo
+[`20260929_l_indirizzo_delle_funzioni_nel_vault.md`](20260929_l_indirizzo_delle_funzioni_nel_vault.md))
+crea `url_funzioni` nel Vault, che la `0917-001` pretende di trovare. Porta la
+data in cui è stata scritta, quindi per numero viene **dopo** tutte le altre: si
+applica da sola saltando esplicitamente le sedici già in attesa, e solo dopo
+seguono le altre quindici. **Nessuna migrazione retrodatata, nessuna scrittura
+diretta nel Vault.**
+
+| # | Migrazione | Oggetti | Effetto sui dati | Blocchi | Funzione online | La verifica scrive su |
+|---|---|---|---|---|---|---|
+| 0 | `20260929000001` l'indirizzo delle funzioni nel Vault — **passaggio a parte, per primo** | voce `url_funzioni` nel Vault, solo se manca | nessuno | — | — | il solo Vault, e solo se la voce manca |
+
+Poi le altre, in ordine di versione, che è l'ordine in cui `npm run migra` le
+applica. Ognuna va in **un'unica transazione** (nessuna contiene
+`alter type … add value`) e nessuna usa `CONCURRENTLY`.
 
 | # | Migrazione | Oggetti | Effetto sui dati | Blocchi | Funzione online | La verifica scrive su |
 |---|---|---|---|---|---|---|
@@ -125,10 +141,12 @@ Quindi: `npm run migra` con **`--salta` seguito dalla versione intera della
 ## Rischi NON misurabili con le sole letture
 
 - 🔴 **Il segreto `url_funzioni` nel Vault di produzione.** Non letto: è un
-  segreto. Se manca, la `0917-001` si ferma prima di toccare qualunque cosa. Se
-  invece c'è ma è sbagliato, dopo la `0920-001` le cinque funzioni chiamano
-  l'indirizzo sbagliato: prenotazioni e allarmi **non notificati**, invio dei
-  preventivi in errore.
+  segreto. Dal 29/09 lo gestisce la `20260929000001`: se manca lo crea, se c'è
+  ed è giusto non lo tocca, se c'è ma è diverso **si ferma senza correggere**.
+  Resta non misurabile ciò da cui quella migrazione ricava l'indirizzo: la
+  `chiave_anon` nel Vault di produzione. Se manca, è doppia o non è un JWT del
+  gestionale vero, la migrazione si ferma senza scrivere, e il rilascio non va
+  avanti.
 - **Transazioni aperte al momento dell'applicazione**: `npm run migra` non
   imposta un `lock_timeout`, quindi un `ALTER TABLE` o l'indice aspettano
   senza limite dietro una transazione lunga, e le scritture del gestionale si
@@ -151,43 +169,57 @@ Richiede un **mandato separato**. Si fa **fuori dall'uso del gestionale**, in
 una sola finestra.
 
 **Prima**
-1. `master` contiene le 16 migrazioni: `npm run migra` rifiuta ciò che non è su
+1. `master` contiene le 17 migrazioni: `npm run migra` rifiuta ciò che non è su
    `origin/master`. Quindi il merge `slave → master` viene prima, e **il sito
    non deve andare online prima delle migrazioni**: l'approvazione della
-   pubblicazione si trattiene fino al passo 7.
+   pubblicazione si trattiene fino al passo 8.
 2. Copia di sicurezza: `npm run backup`. Il piano Supabase attuale non ne fa.
 3. Nessuna corsa GitHub, prova o migrazione in corso.
-4. `npm run migra -- --salta 20260921000001` **senza `--conferma`**: deve
-   elencare esattamente le 15 migrazioni applicabili, nell'ordine della
-   tabella; la `20260921000001` è volutamente esclusa.
+4. **Passaggio A, in sola lettura** — senza `--conferma`, saltando
+   esplicitamente le sedici già in attesa, deve elencare **soltanto** la
+   `20260929000001`:
+
+   ```
+   npm run migra -- --salta 20260917000001 --salta 20260919000001 --salta 20260920000001 --salta 20260920000002 --salta 20260920000003 --salta 20260920000004 --salta 20260920000005 --salta 20260921000001 --salta 20260921000002 --salta 20260921000003 --salta 20260922000001 --salta 20260923000001 --salta 20260923000002 --salta 20260923000003 --salta 20260923000004 --salta 20260928000001
+   ```
 
 **Durante**
 
-5. `npm run funzione notify-telegram-reservation -- --conferma`. Non
+5. Lo stesso comando del passo 4 **con `--conferma`**: applica la sola
+   `20260929000001`. Il messaggio della migrazione dice se ha creato la voce o
+   se c'era già; in nessun caso mostra il valore.
+6. `npm run funzione notify-telegram-reservation -- --conferma`. Non
    `telegram-prova-test`.
-6. `npm run migra -- --salta <versione intera della 0921-001> --conferma`.
-7. Solo dopo, approvare la pubblicazione del sito.
+7. **Passaggio B** — `npm run migra -- --salta 20260921000001`, prima **senza
+   `--conferma`**: deve elencare esattamente le 15 migrazioni applicabili,
+   nell'ordine della tabella; la `20260921000001` è volutamente esclusa. Poi lo
+   stesso comando **con `--conferma`**.
+8. Solo dopo, approvare la pubblicazione del sito.
 
 **Dopo**
 
-8. Le versioni registrate in produzione coincidono con i file di
+9. Le versioni registrate in produzione coincidono con i file di
    `supabase/migrations/` su `master`, compresa la `0921-001` registrata dalla
-   `0921-002`.
-9. Esistono `invii_promemoria`, `consegne_telegram`, `silenzi_notifiche`,
-   `chiusure_annuali` e `idx_deleted_records_verifiche`; il lavoro
-   `esiti-promemoria` è pianificato, iscritto in `lavori_sorvegliati`, e ha un
-   battito recente in `stato_lavori`.
-10. Nessun allarme nuovo nel quarto d'ora successivo, e le lapidi in
+   `0921-002` e la `20260929000001`.
+10. Esistono `invii_promemoria`, `consegne_telegram`, `silenzi_notifiche`,
+    `chiusure_annuali` e `idx_deleted_records_verifiche`; il lavoro
+    `esiti-promemoria` è pianificato, iscritto in `lavori_sorvegliati`, e ha un
+    battito recente in `stato_lavori`.
+11. Nessun allarme nuovo nel quarto d'ora successivo, e le lapidi in
     `deleted_records` contate prima e dopo.
-11. Riepilogo del rilascio in `docs/consegne/` con **tutte le versioni per
+12. Riepilogo del rilascio in `docs/consegne/` con **tutte le versioni per
     intero e i numeri veri**. **Nessuna rete lo pretenderà**: tutte le versioni
-    risultano già nominate da questo piano e dal riepilogo arretrato della
-    `0917-001`. È un obbligo operativo esplicito di M17, per regola.
+    risultano già nominate da questo piano e dai riepiloghi della `0917-001` e
+    della `20260929000001`. È un obbligo operativo esplicito di M17, per regola.
 
 ## Condizioni di stop
 
 Ci si ferma, senza correggere e senza riprovare, se:
 
+- il passaggio A in sola lettura elenca qualcosa di diverso dalla sola
+  `20260929000001`;
+- la `20260929000001` si ferma: **non si fa il passaggio B** (la `0917-001`
+  si fermerebbe comunque sulla sua guardia);
 - `npm run migra -- --salta 20260921000001` in sola lettura elenca un insieme
   o un ordine diverso dalle 15 migrazioni applicabili indicate nella tabella;
 - una guardia o una verifica si ferma: le migrazioni già applicate restano

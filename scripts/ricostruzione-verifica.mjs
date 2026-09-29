@@ -215,7 +215,7 @@ end $f$;
 -- usa-e-getta.
 select vault.create_secret(encode(gen_random_bytes(24), 'hex'), 'notifiche_firma',
   'Valore a caso della prova di ricarica. Non apre niente.');
-select vault.create_secret('chiave-finta-della-prova-di-ricarica', 'chiave_anon',
+select vault.create_secret('eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJyZWYiOiJibndxZ3B1eXptenVqeGZidHl2cyJ9.firma-finta-della-prova-di-ricarica', 'chiave_anon',
   'Valore finto della prova di ricarica. Non apre niente.');
 
 -- ⚠️ I PERMESSI SUGLI SCHEMI DI SERVIZIO. Su un progetto Supabase vero i
