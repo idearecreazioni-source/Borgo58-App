@@ -1,7 +1,7 @@
 # La prova di ricarica affidabile
 
 **30/09/2026** · mandato M20-B · ramo `claude/ricostruzione-affidabile` ·
-base `slave` `609b23d` · commit sotto questo riepilogo `633e72a` ·
+base `slave` `609b23d` · commit sotto questo riepilogo `e0c5498` ·
 **nessuna migrazione**, niente applicato su Prova né in produzione.
 
 ---
@@ -29,7 +29,7 @@ primarie e 62 effetti a catena:
 |---|---|
 | `scripts/ricostruzione-regole.mjs` | nuovo: le **8 eccezioni storiche**, una per riga, ognuna col messaggio con cui deve fermarsi; il modo di applicazione; la classificazione delle fermate; l'esito del registro **per versione**; l'esito complessivo |
 | `scripts/ricostruzione-verifica.mjs` | usa le regole; moncone di `storage.objects` scrivibile come su Supabase vero; referto in quattro parti; tutte le differenze di schema stampate; database usa-e-getta buttato anche se lo strumento si ferma a metà, e «buttato» detto solo dopo averlo controllato |
-| `tests/unita/ricostruzione-regole.test.js` | 23 prove pure |
+| `tests/unita/ricostruzione-regole.test.js` | 25 prove pure |
 | `docs/decisioni_rovesciate.md` | rovesciamento n. 96, e l'indice rigenerato |
 
 Le eccezioni:
@@ -37,7 +37,7 @@ Le eccezioni:
 | Versione | Come | Fermata attesa | Chi la registra |
 |---|---|---|---|
 | `20260820000010` | fuso di Roma, atomica | nessuna | se stessa |
-| `20260822000003` | a metà | `item_has_source` | `20260825000012` |
+| `20260822000003` | a metà | `item_has_source` (nome del vincolo, definito nella `20260804000005`) | `20260825000012` |
 | `20260823000024` | a metà | «Sono sparite le ricette» | `20260825000012` |
 | `20260824000033` | a metà | «Nessuna previsione libera» | `20260825000012` |
 | `20260827000018` | a metà | «Il pareggio di istante sceglie a caso» | `20260828000007` |
@@ -55,14 +55,25 @@ Il moncone del deposito: misurato in sola lettura su Prova, `anon`,
 
 ## Prove
 
-- `tests/unita/ricostruzione-regole.test.js`: 23 su 23. **Rotture provate**
+- `tests/unita/ricostruzione-regole.test.js`: 25 su 25. **Rotture provate**
   e rimesse: registro confrontato per conteggio invece che per versione → 1
   rossa (quella giusta); eccezione accettata con qualunque messaggio → 2
   rosse.
-- `npm run test`: **1932 su 1932** in 128 file. `npm run lint`: zero.
+- **Provenienza dei messaggi attesi** (rilievo di Codex sulla #143, corretto
+  in `e0c5498`): la prima stesura escludeva per nome `item_has_source`, che
+  non sta nel file della `20260822000003`. Ora l'eccezione dichiara
+  `origineAttesa: 20260804000005`, nessun messaggio è escluso, e ognuno deve
+  stare nel **codice** (non in un commento) del proprio file o dell'origine
+  dichiarata. Una prova segue la catena: vincolo su `order_items`, nessuna
+  ridefinizione prima della `20260822000003`, ricetta presa da `select id
+  from recipes limit 1`, inserimento senza nome libero, nessun `raise` prima.
+  Rotture: senza origine → 2 rosse; origine sbagliata → 2 rosse.
+- `npm run test`: **1934 su 1934** in 128 file. `npm run lint`: zero.
   `npm run build`: riuscita. `git diff --check`: pulito.
 - `npm run ricostruzione:verifica`: **una sola corsa** (01:56 → 02:17 del
-  30/09), sul codice di `51b796f`, identico per gli script a questo commit.
+  30/09), sul codice di `51b796f`. ⚠️ Dopo quella corsa `e0c5498` ha aggiunto
+  all'eccezione della `20260822000003` il solo campo `origineAttesa`, che lo
+  strumento non legge: serve alla prova. **La corsa non è stata rifatta.**
   `ricostruzione_prova` assente prima e dopo, controllato in sola lettura.
 
 ## L'esito della corsa — rosso, e dice perché
