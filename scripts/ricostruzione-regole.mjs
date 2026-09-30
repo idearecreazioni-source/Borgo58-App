@@ -83,12 +83,28 @@ export const ECCEZIONI_STORICHE = [
     motivo: "la verifica cerca una previsione non congelata che non ha creato lei",
   },
   {
+    versione: "20260827000006",
+    come: "a_meta",
+    attesa: "si e' fermata su un prodotto noto",
+    sanataDa: "20260827000017",
+    motivo:
+      "la verifica prende in prestito un ingrediente qualunque, e un magazzino vuoto non ne ha: in produzione e' entrata a meta' e l'ha registrata la 20260827000017, che ne rifa' il controllo",
+  },
+  {
     versione: "20260827000018",
     come: "a_meta",
     attesa: "Il pareggio di istante sceglie a caso",
     sanataDa: "20260828000007",
     motivo:
       "la verifica contiene un istante scritto a mano (27/08 alle 9) ed e' scaduta: nella storia vera e' entrata a meta' e l'ha registrata la 20260828000007",
+  },
+  {
+    versione: "20260829000006",
+    come: "nota",
+    attesa: "nessuna partita con scadenza in giacenza",
+    sanataDa: "20260829000022",
+    motivo:
+      "guardia voluta: si rifiuta di passare su un magazzino vuoto; la 20260829000022 reinstalla lo stesso corpo, lo verifica con roba propria e la registra",
   },
   {
     versione: "20260917000001",
