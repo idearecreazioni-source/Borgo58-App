@@ -3496,3 +3496,38 @@ quando questa sezione è stata scritta.
    migrazione, con la ragione scritta bene. *Un rovesciamento ben
    argomentato resta un rovesciamento, e va posto a chi ha preso la
    decisione invece che eseguito.*
+
+## 96 · 30/09/2026 — «la prova di ricarica applica ogni migrazione con la regola della produzione»
+
+1. **Cosa era stato deciso e quando.** Il **28/08/2026** (commit `733ed25`),
+   insieme alla correzione dei comandi veri: anche la prova di ricarica
+   applica ogni migrazione **in una transazione sola**, salvo enum, con il
+   commento *«stessa regola della produzione: se qui girasse diversamente,
+   questa prova generale proverebbe una cosa che non succede»*.
+
+2. **La ragione di allora.** Una prova che applica le migrazioni in un modo
+   diverso da `npm run migra` non prova `npm run migra`.
+
+3. **Cosa si decide adesso.** La regola resta per tutte, **tranne otto
+   eccezioni storiche elencate una per una** in
+   `scripts/ricostruzione-regole.mjs`: quattro si applicano **a metà**
+   (istruzione per istruzione), come sono andate davvero prima del 28/08;
+   una col **fuso di Roma**; tre restano atomiche con la fermata **attesa e
+   spiegata**. Ogni eccezione dichiara il messaggio con cui deve fermarsi, e
+   se si ferma con un altro è un errore inatteso. I comandi veri non
+   cambiano.
+
+4. **Perché la ragione di allora non vale più — per una parte.** 🔴 La
+   ricostruzione non ricostruisce `npm run migra` di oggi: ricostruisce **la
+   storia**, e la storia di quattro migrazioni è stata un'applicazione a
+   metà sanata più tardi da un'altra (la `20260825000012` e la
+   `20260828000007` esistono **perché** quelle tabelle erano rimaste). Con la
+   regola del 28/08 quelle tabelle sparivano e la ricostruzione passava da
+   3 a **72** fermate, 62 delle quali a catena.
+   ⚠️ **La ragione di allora vale ancora per tutte le altre**, ed è il
+   motivo per cui le eccezioni sono un elenco chiuso e non una data di
+   taglio: una migrazione nuova segue sempre la regola della produzione.
+   ⚠️ **Il prezzo, dichiarato**: per le cinque applicate in modo diverso
+   (le quattro a metà e quella col fuso) la prova non esercita il modo in
+   cui `npm run migra` le applicherebbe oggi. Le altre tre restano atomiche
+   come in produzione.
