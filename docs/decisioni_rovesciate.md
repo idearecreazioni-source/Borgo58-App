@@ -3532,3 +3532,18 @@ quando questa sezione è stata scritta.
    (le quattro a metà e quella col fuso) la prova non esercita il modo in
    cui `npm run migra` le applicherebbe oggi. Le altre tre restano atomiche
    come in produzione.
+
+   ⚠️ **Aggiornamento del 30/09 sera (mandati M20-E e M20-G): le eccezioni
+   sono diventate UNDICI**, e i numeri qui sopra — «otto», «quattro a metà»,
+   «tre atomiche», «le cinque applicate in modo diverso» — descrivono la
+   prima stesura. Oggi: **sei a metà** (in più la `20260827000006`, sanata
+   dalla `20260827000017`, e la `20260826000013`, **senza sanatrice**), una
+   col fuso, **quattro atomiche con fermata attesa** (in più la
+   `20260829000006`, sanata dalla `20260829000022`). Quindi il prezzo vale
+   per **sette** migrazioni applicate in modo diverso da `npm run migra`.
+   ⚠️ **La `20260826000013` è un caso diverso dalle altre a metà**: per
+   quelle la storia vera a metà è scritta nel repository (nelle migrazioni
+   che le sanano); per lei **no** — il suo riepilogo del 26/08 documenta
+   solo la prova, e come sia andata in produzione **non è verificato**.
+   «A metà» qui è una **rappresentazione decisa** (M20-G) per tenere la
+   funzione che crea prima della verifica, non un fatto storico misurato.

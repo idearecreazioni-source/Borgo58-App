@@ -83,6 +83,17 @@ export const ECCEZIONI_STORICHE = [
     motivo: "la verifica cerca una previsione non congelata che non ha creato lei",
   },
   {
+    versione: "20260826000013",
+    come: "a_meta",
+    attesa: "Il tetto senza autore dice",
+    // Nessuna sanatrice: nessuna migrazione la registra, quindi resta fuori
+    // dal registro della ricostruzione e il referto lo dice. «A meta'» serve
+    // solo a tenere la funzione che crea prima della verifica.
+    sanataDa: null,
+    motivo:
+      "la verifica presume un tetto di spesa gia' impostato, e nessuna migrazione lo imposta: la funzione chi_ha_messo_il_tetto() nasce prima della verifica e resta; la registrazione non arriva e nessuna migrazione la fa",
+  },
+  {
     versione: "20260827000006",
     come: "a_meta",
     attesa: "si e' fermata su un prodotto noto",

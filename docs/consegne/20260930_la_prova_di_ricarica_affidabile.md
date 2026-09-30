@@ -170,13 +170,79 @@ raccontano la prima corsa: «le **8** eccezioni storiche» e «25 prove pure»
 nell'M20-D). Anche il rovesciamento n. 96 dice «tranne otto eccezioni»:
 **sono dieci**, e quel file qui non è stato toccato.
 
+## Aggiornamento del 30/09 sera — la `20260826000013` a metà (M20-G)
+
+Ramo `claude/ricostruzione-tetto`, base `slave` `5a42890`. Quattro file:
+`scripts/ricostruzione-regole.mjs`, `tests/unita/ricostruzione-regole.test.js`,
+questo riepilogo e `docs/decisioni_rovesciate.md` (una nota in fondo al
+n. 96). **Nessuna migrazione**; `ricostruzione-verifica.mjs` e `comune.mjs`
+non toccati.
+
+**L'eccezione aggiunta** (ora sono **undici**):
+
+| Versione | Come | Fermata attesa | Chi la registra |
+|---|---|---|---|
+| `20260826000013` | a metà | «Il tetto senza autore dice» | **nessuna** |
+
+⚠️ **Non è una storia documentata come le altre a metà.** Per quelle, la
+migrazione che le sana racconta che in produzione erano entrate a metà. Per
+la `20260826000013` il riepilogo del 26/08 documenta **solo la prova**; come
+sia andata in produzione **non è verificato** (il mandato vietava di
+collegarsi). «A metà» è una **rappresentazione decisa** nel mandato M20-G,
+per tenere nel database usa-e-getta la funzione che crea prima della
+verifica.
+
+**Prova statica** (prove pure, dal testo delle migrazioni):
+- nel file della `20260826000013` l'ordine è: `create or replace function
+  chi_ha_messo_il_tetto()` → `do $verifica$` → «Il tetto senza autore dice» →
+  `insert into applied_migrations`;
+- con il tetto vuoto la funzione risponde «Nessun tetto: le letture non si
+  fermano mai da sole.», che è il messaggio con cui la verifica si ferma;
+- **nessuna** migrazione successiva ricrea la funzione o nomina la versione,
+  e nessuna eccezione la dichiara sanata.
+
+**Prove**: `tests/unita/ricostruzione-regole.test.js` **38 su 38** (5 nuove).
+Rotture provate e rimesse: resa atomica → 1 rossa; messaggio atteso
+sbagliato → 2 rosse. ⚠️ La prova vecchia che usava la `20260826000013` come
+esempio di «migrazione senza eccezione» ora usa la `20260827000017`.
+`npm run test` prima della corsa: al primo giro **1 rossa per tempo scaduto**
+(`letture.test.js`, oltre i 5 secondi, in un file non toccato), da sola 8 su
+8; al secondo giro completo **1947 su 1947**. Lint zero, compilazione
+riuscita, spazi puliti.
+
+**La terza corsa — una sola, 21:11 → 21:22 del 30/09**, sul codice di
+`5a42890` più le due modifiche. `ricostruzione_prova` assente prima e dopo,
+controllato in sola lettura.
+- **Eccezioni**: 11 applicate, **10 fermate col messaggio atteso**
+  (`20260822000003`, `20260823000024`, `20260824000033`, `20260826000013`,
+  `20260827000006`, `20260827000018`, `20260829000006`, `20260917000001`,
+  `20260920000001`, `20260921000001`); la `20260820000010` non si è fermata.
+- **Errori inattesi: nessuno.**
+- **Registro**: 411 file, **408 righe**, incompleto. Mancano **tre**, tutte
+  eccezioni note senza sanatrice: `20260826000013`, `20260917000001`,
+  `20260920000001`.
+- **Differenze di schema: 34**, tutte solo nella prova (3258 elementi contro
+  3292): **33** dalla `20260917000001`, **1** dalla `20260920000001`
+  (`url_funzioni_configurato`). `chi_ha_messo_il_tetto` **non è più** fra le
+  differenze.
+- **Esito**: rosso, dichiarato **solo** per registro incompleto e differenze
+  di schema — «registro incompleto (3 mancanti, 0 senza file), 34 differenze
+  di schema». **Nessuna fermata inspiegata.**
+
+**Frasi di questo riepilogo diventate false**, lasciate sopra perché
+raccontano le corse precedenti: «Nessuna eccezione per la `20260826000013`, e
+una prova lo fissa»; «ora sono **dieci**»; «Errori inattesi: 1 — la
+`20260826000013`»; «Differenze di schema: 35»; «La `20260826000013` resta
+aperta: nessuna strada è stata scelta».
+
 ## Cosa non è verificato
 
 - **Che l'esito non dipenda dall'ora non è stato visto in una corsa dentro la
   finestra 00–02**: la corsa ha applicato la `20260820000010` dopo le 02:00.
   È dimostrato il meccanismo (misura delle 01:50) e che la sessione di quella
   migrazione riceve il fuso di Roma (prova pura), non una corsa notturna.
-- **La `20260826000013` resta aperta**: nessuna strada è stata scelta.
+- *(corsa del pomeriggio)* **La `20260826000013` resta aperta**: nessuna strada è stata scelta. → superata dal M20-G: rappresentata a metà, senza sanatrice.
+- **Come sia andata la `20260826000013` in produzione** (intera o a metà) non è verificato.
 - **La ricostruzione resta rossa anche risolta quella**: `20260917000001` e
   `20260920000001` restano fuori dal registro per il limite di ordine.
 - *(prima corsa)* **Le 4 fermate inattese non sono state indagate**: due sono

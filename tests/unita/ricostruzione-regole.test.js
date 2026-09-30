@@ -77,7 +77,7 @@ describe("come si applica una migrazione nella ricostruzione", () => {
 
   it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
     const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
-    expect(conAttesa.length).toBe(9);
+    expect(conAttesa.length).toBe(10);
     for (const e of conAttesa) {
       // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
       // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
@@ -211,29 +211,83 @@ describe("le due storie aggiunte il 30/09 (mandato M20-E)", () => {
     expect(inattese).toHaveLength(1);
   });
 
-  it("nessuna eccezione per la 20260826000013: la sua fermata resta inattesa", () => {
-    expect(ECCEZIONI_STORICHE.some((e) => e.versione === "20260826000013")).toBe(false);
-    expect(ECCEZIONI_STORICHE.some((e) => e.sanataDa === "20260826000013" || e.origineAttesa === "20260826000013")).toBe(false);
-    expect(modoRicostruzione("20260826000013", true)).toMatchObject({ atomica: true, fusoRoma: false, eccezione: null });
-    const { note, inattese } = classificaFermate(
-      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice «Nessun tetto: le letture non si fermano mai da sole.»" }],
-      ["20260826000013"]
-    );
-    expect(note).toHaveLength(0);
-    expect(inattese).toHaveLength(1);
-  });
-
-  it("l'elenco e' chiuso: dieci eccezioni, queste e non altre", () => {
+  it("l'elenco e' chiuso: undici eccezioni, queste e non altre", () => {
     expect(ECCEZIONI_STORICHE.map((e) => e.versione)).toEqual([
       "20260820000010", "20260822000003", "20260823000024", "20260824000033",
-      "20260827000006", "20260827000018", "20260829000006",
+      "20260826000013", "20260827000006", "20260827000018", "20260829000006",
       "20260917000001", "20260920000001", "20260921000001",
     ]);
   });
 });
 
+describe("la 20260826000013 a meta' (mandato M20-G)", () => {
+  const cartella = "supabase/migrations";
+  const elenco = readdirSync(cartella).filter((f) => f.endsWith(".sql")).sort();
+  const nome = elenco.find((f) => f.startsWith("20260826000013"));
+  const testo = readFileSync(`${cartella}/${nome}`, "utf8").replace(/--[^\n]*/g, "");
+
+  it("solo nella ricostruzione e' non atomica, e senza fuso", () => {
+    const m = modoRicostruzione("20260826000013", true);
+    expect(m).toMatchObject({ atomica: false, fusoRoma: false });
+    expect(m.eccezione.sanataDa).toBeNull();
+    const arg = argomentiRicostruzione("URL", "f.sql", { ...m, chiedeIlCatalogo: false });
+    expect(arg).not.toContain("--single-transaction");
+    // I comandi veri non leggono le eccezioni: la regola di produzione resta.
+    expect(readFileSync("scripts/comune.mjs", "utf8")).not.toMatch(/ricostruzione-regole/);
+  });
+
+  it("crea la funzione PRIMA della verifica che si ferma, e si registra solo DOPO", () => {
+    const crea = testo.search(/create or replace function chi_ha_messo_il_tetto\s*\(/i);
+    const verifica = testo.search(/do \$verifica\$/i);
+    const fermata = testo.indexOf("Il tetto senza autore dice");
+    const registra = testo.search(/insert into applied_migrations/i);
+    expect(crea).toBeGreaterThan(-1);
+    expect(crea).toBeLessThan(verifica);
+    expect(verifica).toBeLessThan(fermata);
+    expect(fermata).toBeLessThan(registra);
+    // e la verifica si ferma sul controllo (A) solo se il tetto e' vuoto:
+    // la frase che produce la funzione in quel caso e' «Nessun tetto…».
+    expect(testo).toMatch(/when v_r\.tetto_mensile_euro is null then\s*'Nessun tetto: le letture non si fermano mai da sole\.'/);
+  });
+
+  it("nessuna migrazione successiva ricrea la funzione o registra la versione", () => {
+    const dopo = elenco.filter((f) => f.slice(0, 14) > "20260826000013");
+    expect(dopo.length).toBeGreaterThan(0);
+    for (const f of dopo) {
+      const t = readFileSync(`${cartella}/${f}`, "utf8").replace(/--[^\n]*/g, "");
+      expect(/function (public\.)?chi_ha_messo_il_tetto\s*\(/i.test(t), f).toBe(false);
+      expect(t.includes("20260826000013"), f).toBe(false);
+    }
+    // e nessuna eccezione la dichiara sanata o ne fa l'origine di un messaggio
+    expect(ECCEZIONI_STORICHE.some((e) => e.sanataDa === "20260826000013" || e.origineAttesa === "20260826000013")).toBe(false);
+  });
+
+  it("col messaggio atteso e' nota; con un messaggio diverso resta inattesa", () => {
+    const nota = classificaFermate(
+      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice «Nessun tetto: le letture non si fermano mai da sole.», e doveva dire che non l'ha messo nessuno." }],
+      ["20260826000013"]
+    );
+    expect(nota.note).toHaveLength(1);
+    expect(nota.inattese).toHaveLength(0);
+    const altra = classificaFermate(
+      [{ versione: "20260826000013", motivo: "ERROR:  Non c'e' nessuna riga di impostazioni_ai: questa verifica non puo' girare." }],
+      ["20260826000013"]
+    );
+    expect(altra.note).toHaveLength(0);
+    expect(altra.inattese).toHaveLength(1);
+  });
+
+  it("senza sanatrice, resta fra le mancanti del registro anche se la fermata e' nota", () => {
+    const file = ["20260826000013", "20260826000014"];
+    const r = esitoRegistro(file, ["20260826000014"]);
+    expect(r.completo).toBe(false);
+    expect(r.mancanti).toEqual(["20260826000013"]);
+    expect(esitoComplessivo({ inattese: [], registro: r, differenze: 0 }).verde).toBe(false);
+  });
+});
+
 describe("le fermate si dividono in note e inattese", () => {
-  const applicate = ["20260822000003", "20260827000018", "20260826000013", "20260917000001"];
+  const applicate = ["20260822000003", "20260827000018", "20260827000017", "20260917000001"];
 
   it("un'eccezione col messaggio atteso e' nota", () => {
     const { note, inattese } = classificaFermate(
@@ -255,7 +309,7 @@ describe("le fermate si dividono in note e inattese", () => {
 
   it("una migrazione senza eccezione che si ferma e' inattesa", () => {
     const { inattese } = classificaFermate(
-      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice …" }],
+      [{ versione: "20260827000017", motivo: "ERROR:  Un identificativo passato a mano e' arrivato in tabella." }],
       applicate
     );
     expect(inattese).toHaveLength(1);
