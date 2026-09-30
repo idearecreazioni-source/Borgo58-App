@@ -67,14 +67,70 @@ describe("come si applica una migrazione nella ricostruzione", () => {
     }
   });
 
-  it("il messaggio atteso di ogni eccezione sta davvero nel suo file", () => {
-    const cartella = "supabase/migrations";
-    const elenco = readdirSync(cartella);
-    for (const e of ECCEZIONI_STORICHE.filter((x) => x.attesa && x.attesa !== "item_has_source")) {
-      const nome = elenco.find((f) => f.startsWith(e.versione));
-      const testo = readFileSync(`${cartella}/${nome}`, "utf8").replace(/''/g, "'");
-      expect(testo.includes(e.attesa), e.versione).toBe(true);
+  // Il testo di una migrazione, con gli apici raddoppiati di SQL riportati a uno.
+  const cartella = "supabase/migrations";
+  const leggi = (versione) => {
+    const nome = readdirSync(cartella).find((f) => f.startsWith(versione));
+    return readFileSync(`${cartella}/${nome}`, "utf8").replace(/''/g, "'");
+  };
+  const senzaCommenti = (t) => t.replace(/--[^\n]*/g, "");
+
+  it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
+    const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
+    expect(conAttesa.length).toBe(7);
+    for (const e of conAttesa) {
+      // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
+      // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
+      //    nominare quel messaggio non lo produce.
+      const dove = e.origineAttesa ?? e.versione;
+      expect(senzaCommenti(leggi(dove)).includes(e.attesa), `${e.versione} → ${dove}`).toBe(true);
     }
+  });
+
+  it("origineAttesa si dichiara solo quando serve, e punta a una migrazione precedente", () => {
+    const nomi = new Set(readdirSync(cartella).map((f) => f.slice(0, 14)));
+    for (const e of ECCEZIONI_STORICHE.filter((x) => x.origineAttesa)) {
+      expect(nomi.has(e.origineAttesa), e.origineAttesa).toBe(true);
+      expect(e.origineAttesa < e.versione, e.versione).toBe(true);
+      // Se il messaggio stesse (fuori dai commenti) nel suo file, il campo
+      // sarebbe una dichiarazione di troppo.
+      expect(senzaCommenti(leggi(e.versione)).includes(e.attesa), e.versione).toBe(false);
+    }
+    // Ed e' il solo caso: chi non lo dichiara ha il messaggio nel proprio file.
+    expect(ECCEZIONI_STORICHE.filter((x) => x.origineAttesa).map((x) => x.versione)).toEqual(["20260822000003"]);
+  });
+
+  it("la 20260822000003 fa scattare item_has_source: la catena, anello per anello", () => {
+    // 1. Il vincolo nasce nella 20260804000005, su order_items, e pretende
+    //    una ricetta OPPURE un nome libero.
+    const origine = senzaCommenti(leggi("20260804000005"));
+    const tabella = origine.slice(origine.search(/create table[^(]*\border_items\b/i));
+    const corpo = tabella.slice(0, tabella.indexOf(");"));
+    expect(corpo).toMatch(
+      /constraint\s+item_has_source\s+check\s*\(\s*recipe_id is not null or free_text_name is not null\s*\)/i
+    );
+
+    // 2. Nessun'altra migrazione lo ridefinisce o lo toglie prima della 0822-003.
+    const prima = readdirSync(cartella).filter((f) => f.slice(0, 14) < "20260822000003" && !f.startsWith("20260804000005"));
+    for (const f of prima) {
+      expect(senzaCommenti(readFileSync(`${cartella}/${f}`, "utf8")).includes("item_has_source"), f).toBe(false);
+    }
+
+    // 3. La verifica della 0822-003 prende la ricetta da «una qualsiasi» —
+    //    null su un database vuoto — e inserisce in order_items senza nome libero.
+    const lei = senzaCommenti(leggi("20260822000003"));
+    expect(lei).toMatch(/select id into v_ricetta from recipes limit 1/i);
+    const inserimenti = [...lei.matchAll(/insert into order_items\s*\(([^)]*)\)\s*values\s*\(([^)]*)\)/gi)];
+    expect(inserimenti.length).toBeGreaterThan(0);
+    const primo = inserimenti[0];
+    expect(primo[1]).toMatch(/\brecipe_id\b/);
+    expect(primo[1]).not.toMatch(/free_text_name/);
+    expect(primo[2]).toMatch(/\bv_ricetta\b/);
+
+    // 4. E quel primo inserimento viene PRIMA di ogni altro controllo che
+    //    potrebbe fermarla con un messaggio suo.
+    const verifica = lei.slice(lei.search(/select id into v_ricetta from recipes limit 1/i));
+    expect(verifica.slice(0, verifica.search(/insert into order_items/i))).not.toMatch(/raise exception/i);
   });
 });
 

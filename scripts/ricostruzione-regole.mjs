@@ -41,6 +41,11 @@
  * `attesa` e' un pezzo del messaggio d'errore con cui deve fermarsi
  * (null se non deve fermarsi). `sanataDa` e' la migrazione che, piu'
  * avanti, rifa' il controllo e la registra (null se nessuna).
+ *
+ * `origineAttesa` si scrive SOLO quando il messaggio atteso non sta nel file
+ * dell'eccezione: e' la migrazione che definisce cio' che lo produce (un
+ * vincolo, per esempio). Senza, la provenienza del messaggio non sarebbe
+ * dimostrabile — e una prova che lo esclude per nome non dimostra niente.
  */
 export const ECCEZIONI_STORICHE = [
   {
@@ -55,6 +60,11 @@ export const ECCEZIONI_STORICHE = [
     versione: "20260822000003",
     come: "a_meta",
     attesa: "item_has_source",
+    // Il messaggio non lo scrive lei: e' il nome del VINCOLO di order_items,
+    // nato nella 20260804000005. Lei lo fa scattare inserendo una riga con
+    // la ricetta presa da «select id from recipes limit 1», che su un
+    // database vuoto e' null.
+    origineAttesa: "20260804000005",
     sanataDa: "20260825000012",
     motivo: "la verifica cerca una ricetta qualsiasi, e un database vuoto non ne ha",
   },
