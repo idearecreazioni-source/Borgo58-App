@@ -100,14 +100,88 @@ Il moncone del deposito: misurato in sola lettura su Prova, `anon`,
   (`chi_ha_messo_il_tetto`). Origine controllata cercando dove ciascun
   oggetto viene creato.
 
+## Aggiornamento del 30/09 pomeriggio — due eccezioni in più (M20-D, M20-E, M20-E2)
+
+Ramo `claude/ricostruzione-due-eccezioni`, base `slave` `738b3ba`. Tre file:
+`scripts/ricostruzione-regole.mjs`, `tests/unita/ricostruzione-regole.test.js`
+e questo riepilogo. **Nessuna migrazione**, `ricostruzione-verifica.mjs` e
+`comune.mjs` non toccati.
+
+⚠️ **Tutto ciò che sta SOPRA questa sezione descrive la prima corsa**
+(01:56 → 02:17) con 8 eccezioni, e resta com'era scritto. Quello che segue è
+lo stato dopo la seconda.
+
+**L'audit M20-D** (sola lettura) ha classificato le 4 fermate inattese:
+
+| Versione | Cosa è | Dove sta scritto |
+|---|---|---|
+| `20260827000006` | storia nota: la verifica prende in prestito un ingrediente (`select name … from ingredients … limit 1`), in produzione è entrata **a metà** | intestazione della `20260827000017`, che rifà il controllo e **la registra** |
+| `20260827000017` | effetto a catena della precedente: senza la riscrittura di `fai_azione_dettata` fatta dalla `20260827000006`, il suo controllo 5 trova l'identificativo in tabella | il suo stesso controllo 5 |
+| `20260829000006` | guardia voluta: si rifiuta su un magazzino vuoto | intestazione della `20260829000022`, che reinstalla lo stesso corpo e **la registra** |
+| `20260826000013` | verifica che presume un dato: un tetto di spesa già impostato. La `20260825000013` crea la riga col tetto vuoto e **nessuna migrazione lo imposta**; nessuna migrazione la registra | — |
+
+**Le due eccezioni aggiunte** (ora sono **dieci**):
+
+| Versione | Come | Fermata attesa | Chi la registra |
+|---|---|---|---|
+| `20260827000006` | a metà | «si e' fermata su un prodotto noto» | `20260827000017` |
+| `20260829000006` | atomica | «nessuna partita con scadenza in giacenza» | `20260829000022` |
+
+**Nessuna eccezione per la `20260826000013`**, e una prova lo fissa.
+
+**Prove** — `tests/unita/ricostruzione-regole.test.js`: **34 su 34**. Le nove
+nuove dimostrano che la `20260827000017` registra la `20260827000006` e se
+stessa; che la `20260829000022` registra la `20260829000006`; che **ogni**
+sanatrice dichiarata registra davvero la versione che sana; che un messaggio
+diverso da quello atteso resta inatteso; che la `20260827000017` non è
+un'eccezione; che l'elenco è chiuso a dieci. Rotture provate e rimesse:
+sanatrice sbagliata → 2 rosse; messaggio atteso inesistente → 2 rosse.
+`npm run test`: **1943 su 1943**. ⚠️ Al primo giro completo erano comparse 4
+rosse in file non toccati (`prove-che-costano`, `prove-saltate`, `pulizie`,
+`tetto-del-giro`); rilanciate da sole 32 su 32, e il giro completo ripetuto è
+verde. Intermittenti: **la causa non è stata misurata**.
+
+**La seconda corsa — una sola, 16:28 → 16:39 del 30/09**, sul codice di
+questo ramo (`738b3ba` più le due modifiche). `ricostruzione_prova` assente
+prima e dopo, controllato in sola lettura. **Non è stata ripetuta** dopo la
+modifica di questo riepilogo.
+
+- **Eccezioni note**: 10 applicate, **9 fermate col messaggio atteso** —
+  comprese `20260827000006` e `20260829000006`; la `20260820000010` non si è
+  fermata.
+- **La `20260827000017` non si è fermata**: non è più un errore inatteso.
+- **Errori inattesi: 1** — la `20260826000013`.
+- **Registro**: 411 file, **408 righe**, incompleto. Mancano **tre**:
+  `20260826000013` (inattesa), `20260917000001` e `20260920000001`
+  (eccezioni note senza sanatrice).
+- **Differenze di schema: 35**, tutte solo nella prova (3257 elementi contro
+  3292, come nella prima corsa): **33** dalla `20260917000001`, **1** dalla
+  `20260920000001` (`url_funzioni_configurato`), **1** dalla `20260826000013`
+  (`chi_ha_messo_il_tetto`).
+  ⚠️ **Il valore 34 non vale nello stato attuale**: varrebbe solo dopo aver
+  risolto la `20260826000013`. Era il numero atteso nel mandato M20-E, e per
+  quella differenza il lavoro si è fermato prima del commit.
+- **Esito**: rosso, dichiarato — «1 fermate inattese, registro incompleto (3
+  mancanti, 0 senza file), 35 differenze di schema».
+
+**Frasi di questo riepilogo diventate false**, lasciate sopra perché
+raccontano la prima corsa: «le **8** eccezioni storiche» e «25 prove pure»
+(ora 10 e 34); «Le 4 fermate inattese non sono state indagate» (indagate
+nell'M20-D). Anche il rovesciamento n. 96 dice «tranne otto eccezioni»:
+**sono dieci**, e quel file qui non è stato toccato.
+
 ## Cosa non è verificato
 
 - **Che l'esito non dipenda dall'ora non è stato visto in una corsa dentro la
   finestra 00–02**: la corsa ha applicato la `20260820000010` dopo le 02:00.
   È dimostrato il meccanismo (misura delle 01:50) e che la sessione di quella
   migrazione riceve il fuso di Roma (prova pura), non una corsa notturna.
-- **Le 4 fermate inattese non sono state indagate**: due sono verifiche che
-  presumono dati, due non le ho classificate.
+- **La `20260826000013` resta aperta**: nessuna strada è stata scelta.
+- **La ricostruzione resta rossa anche risolta quella**: `20260917000001` e
+  `20260920000001` restano fuori dal registro per il limite di ordine.
+- *(prima corsa)* **Le 4 fermate inattese non sono state indagate**: due sono
+  verifiche che presumono dati, due non le ho classificate. → superata
+  dall'aggiornamento qui sopra.
 - La `20260827000018` si ferma col messaggio atteso, ma **il perché del
   12,00** è quello scritto nella `20260828000007`, non rimisurato qui.
 

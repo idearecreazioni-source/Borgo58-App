@@ -77,7 +77,7 @@ describe("come si applica una migrazione nella ricostruzione", () => {
 
   it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
     const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
-    expect(conAttesa.length).toBe(7);
+    expect(conAttesa.length).toBe(9);
     for (const e of conAttesa) {
       // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
       // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
@@ -131,6 +131,104 @@ describe("come si applica una migrazione nella ricostruzione", () => {
     //    potrebbe fermarla con un messaggio suo.
     const verifica = lei.slice(lei.search(/select id into v_ricetta from recipes limit 1/i));
     expect(verifica.slice(0, verifica.search(/insert into order_items/i))).not.toMatch(/raise exception/i);
+  });
+});
+
+describe("le due storie aggiunte il 30/09 (mandato M20-E)", () => {
+  const cartella = "supabase/migrations";
+  const leggi = (versione) => {
+    const nome = readdirSync(cartella).find((f) => f.startsWith(versione));
+    return readFileSync(`${cartella}/${nome}`, "utf8").replace(/--[^\n]*/g, "");
+  };
+  // Le versioni che una migrazione scrive nel registro, fuori dai commenti.
+  const registra = (versione) => {
+    const testo = leggi(versione);
+    const trovate = [];
+    for (const m of testo.matchAll(/insert into applied_migrations\s*\(version, name\)\s*values([^;]*);/gi)) {
+      for (const v of m[1].matchAll(/\(\s*'(\d{14})'/g)) trovate.push(v[1]);
+    }
+    return trovate;
+  };
+
+  it("la 20260827000006 si applica a meta', sanata dalla 20260827000017", () => {
+    const m = modoRicostruzione("20260827000006", true);
+    expect(m.atomica).toBe(false);
+    expect(m.fusoRoma).toBe(false);
+    expect(m.eccezione.sanataDa).toBe("20260827000017");
+  });
+
+  it("la 20260829000006 resta atomica con fermata nota, sanata dalla 20260829000022", () => {
+    const m = modoRicostruzione("20260829000006", true);
+    expect(m.atomica).toBe(true);
+    expect(m.eccezione.come).toBe("nota");
+    expect(m.eccezione.sanataDa).toBe("20260829000022");
+  });
+
+  it("la 20260827000017 registra sia la 20260827000006 sia se stessa", () => {
+    expect(registra("20260827000017")).toEqual(["20260827000006", "20260827000017"]);
+  });
+
+  it("la 20260829000022 registra la 20260829000006, e poi se stessa", () => {
+    expect(registra("20260829000022")).toEqual(["20260829000006", "20260829000022"]);
+  });
+
+  it("OGNI sanatrice dichiarata registra davvero la versione che sana", () => {
+    for (const e of ECCEZIONI_STORICHE.filter((x) => x.sanataDa)) {
+      expect(registra(e.sanataDa), `${e.sanataDa} → ${e.versione}`).toContain(e.versione);
+      expect(e.sanataDa > e.versione, e.versione).toBe(true);
+    }
+  });
+
+  it("col messaggio atteso sono note; con un messaggio diverso restano inattese", () => {
+    const applicate = ["20260827000006", "20260829000006"];
+    const giuste = classificaFermate(
+      [
+        { versione: "20260827000006", motivo: "ERROR:  La lista della spesa si e' fermata su un prodotto noto: «Non ho capito che cosa aggiungere alla lista.»" },
+        { versione: "20260829000006", motivo: "ERROR:  Verifica impossibile: nessuna partita con scadenza in giacenza." },
+      ],
+      applicate
+    );
+    expect(giuste.note.map((f) => f.versione)).toEqual(applicate);
+    expect(giuste.inattese).toHaveLength(0);
+
+    const altre = classificaFermate(
+      [
+        { versione: "20260827000006", motivo: "ERROR:  Il ramo della lista della spesa non ha la forma attesa" },
+        { versione: "20260829000006", motivo: "ERROR:  Verifica impossibile: nessun titolare." },
+      ],
+      applicate
+    );
+    expect(altre.note).toHaveLength(0);
+    expect(altre.inattese.map((f) => f.versione)).toEqual(applicate);
+  });
+
+  it("la 20260827000017 NON e' un'eccezione: se si ferma e' un errore inatteso", () => {
+    expect(ECCEZIONI_STORICHE.some((e) => e.versione === "20260827000017")).toBe(false);
+    const { inattese } = classificaFermate(
+      [{ versione: "20260827000017", motivo: "ERROR:  Un identificativo passato a mano e' arrivato in tabella." }],
+      ["20260827000017"]
+    );
+    expect(inattese).toHaveLength(1);
+  });
+
+  it("nessuna eccezione per la 20260826000013: la sua fermata resta inattesa", () => {
+    expect(ECCEZIONI_STORICHE.some((e) => e.versione === "20260826000013")).toBe(false);
+    expect(ECCEZIONI_STORICHE.some((e) => e.sanataDa === "20260826000013" || e.origineAttesa === "20260826000013")).toBe(false);
+    expect(modoRicostruzione("20260826000013", true)).toMatchObject({ atomica: true, fusoRoma: false, eccezione: null });
+    const { note, inattese } = classificaFermate(
+      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice «Nessun tetto: le letture non si fermano mai da sole.»" }],
+      ["20260826000013"]
+    );
+    expect(note).toHaveLength(0);
+    expect(inattese).toHaveLength(1);
+  });
+
+  it("l'elenco e' chiuso: dieci eccezioni, queste e non altre", () => {
+    expect(ECCEZIONI_STORICHE.map((e) => e.versione)).toEqual([
+      "20260820000010", "20260822000003", "20260823000024", "20260824000033",
+      "20260827000006", "20260827000018", "20260829000006",
+      "20260917000001", "20260920000001", "20260921000001",
+    ]);
   });
 });
 
