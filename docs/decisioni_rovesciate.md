@@ -3509,41 +3509,54 @@ quando questa sezione è stata scritta.
 2. **La ragione di allora.** Una prova che applica le migrazioni in un modo
    diverso da `npm run migra` non prova `npm run migra`.
 
-3. **Cosa si decide adesso.** La regola resta per tutte, **tranne otto
+3. **Cosa si decide adesso** *(stato al 01/10/2026; i conteggi precedenti
+   sono nella nota in fondo)*. La regola resta per tutte, **tranne dieci
    eccezioni storiche elencate una per una** in
-   `scripts/ricostruzione-regole.mjs`: quattro si applicano **a metà**
+   `scripts/ricostruzione-regole.mjs`: cinque si applicano **a metà**
    (istruzione per istruzione), come sono andate davvero prima del 28/08;
-   una col **fuso di Roma**; tre restano atomiche con la fermata **attesa e
-   spiegata**. Ogni eccezione dichiara il messaggio con cui deve fermarsi, e
-   se si ferma con un altro è un errore inatteso. I comandi veri non
-   cambiano.
+   una col **fuso di Roma**; quattro restano atomiche con la fermata
+   **attesa e spiegata**. Ogni eccezione dichiara il messaggio con cui deve
+   fermarsi, e se si ferma con un altro è un errore inatteso. In più c'è
+   **una preparazione della prova**, che **non è un'eccezione**: prima della
+   `20260826000013`, e solo nel database usa-e-getta `ricostruzione_prova`,
+   si mette un tetto di spesa finto di 10 € (vedi la nota in fondo). I
+   comandi veri non cambiano.
 
 4. **Perché la ragione di allora non vale più — per una parte.** 🔴 La
    ricostruzione non ricostruisce `npm run migra` di oggi: ricostruisce **la
-   storia**, e la storia di quattro migrazioni è stata un'applicazione a
-   metà sanata più tardi da un'altra (la `20260825000012` e la
-   `20260828000007` esistono **perché** quelle tabelle erano rimaste). Con la
-   regola del 28/08 quelle tabelle sparivano e la ricostruzione passava da
-   3 a **72** fermate, 62 delle quali a catena.
+   storia**, e la storia di cinque migrazioni è stata un'applicazione a
+   metà sanata più tardi da un'altra (la `20260825000012`, la
+   `20260827000017` e la `20260828000007` esistono **perché** quelle tabelle
+   erano rimaste). Con la regola del 28/08 quelle tabelle sparivano e la
+   ricostruzione passava da 3 a **72** fermate, 62 delle quali a catena.
    ⚠️ **La ragione di allora vale ancora per tutte le altre**, ed è il
    motivo per cui le eccezioni sono un elenco chiuso e non una data di
    taglio: una migrazione nuova segue sempre la regola della produzione.
-   ⚠️ **Il prezzo, dichiarato**: per le cinque applicate in modo diverso
-   (le quattro a metà e quella col fuso) la prova non esercita il modo in
-   cui `npm run migra` le applicherebbe oggi. Le altre tre restano atomiche
-   come in produzione.
+   ⚠️ **Il prezzo, dichiarato**: per le sei applicate in modo diverso
+   (le cinque a metà e quella col fuso) la prova non esercita il modo in
+   cui `npm run migra` le applicherebbe oggi. Le altre quattro restano
+   atomiche come in produzione.
 
-   ⚠️ **Aggiornamento del 30/09 sera (mandati M20-E e M20-G): le eccezioni
-   sono diventate UNDICI**, e i numeri qui sopra — «otto», «quattro a metà»,
-   «tre atomiche», «le cinque applicate in modo diverso» — descrivono la
-   prima stesura. Oggi: **sei a metà** (in più la `20260827000006`, sanata
-   dalla `20260827000017`, e la `20260826000013`, **senza sanatrice**), una
-   col fuso, **quattro atomiche con fermata attesa** (in più la
-   `20260829000006`, sanata dalla `20260829000022`). Quindi il prezzo vale
-   per **sette** migrazioni applicate in modo diverso da `npm run migra`.
-   ⚠️ **La `20260826000013` è un caso diverso dalle altre a metà**: per
-   quelle la storia vera a metà è scritta nel repository (nelle migrazioni
-   che le sanano); per lei **no** — il suo riepilogo del 26/08 documenta
-   solo la prova, e come sia andata in produzione **non è verificato**.
-   «A metà» qui è una **rappresentazione decisa** (M20-G) per tenere la
-   funzione che crea prima della verifica, non un fatto storico misurato.
+   ⚠️ **Come sono cambiati i conteggi — la storia, conservata.**
+   - *Prima stesura (30/09 notte, M20-B)*: **otto** eccezioni — quattro a
+     metà, una col fuso, tre atomiche; prezzo su cinque migrazioni.
+   - *30/09 pomeriggio (M20-E)*: **dieci** — in più la `20260827000006`
+     (a metà, sanata dalla `20260827000017`) e la `20260829000006`
+     (atomica, sanata dalla `20260829000022`).
+   - *30/09 sera (M20-G)*: **undici** — in più la `20260826000013` «a metà»,
+     **senza sanatrice**. Era una **rappresentazione decisa**, non un fatto
+     storico: per le altre a metà la storia vera è scritta nelle migrazioni
+     che le sanano, per lei no.
+   - 🔴 **Correzione del 01/10 (M20-H, misurata dalla corsa 039, adottata
+     nel M20-Q): la `20260826000013` NON è un'eccezione storica.** Della
+     produzione si sa solo che la funzione esiste e la versione è
+     registrata, non come ci sia arrivata. Le eccezioni tornano **dieci**, e
+     al posto dell'eccezione c'è una **preparazione dichiarata**
+     (`PREPARAZIONI_PROVA`): la sua verifica pretende un tetto con un valore
+     e senza autore, quindi prima di lei, solo nel database usa-e-getta, si
+     esegue `update impostazioni_ai set tetto_mensile_euro = 10 where id;`.
+     Così la migrazione si applica atomica come in produzione, si completa e
+     si registra. È un **valore finto della prova**: non è un fatto storico
+     né un dato di produzione, e nessun valore di produzione è stato letto,
+     copiato o citato. Il modello di oggi è **10 eccezioni storiche + 1
+     preparazione temporanea della prova**.

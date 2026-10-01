@@ -69,7 +69,10 @@ import {
   classificaFermate,
   esitoComplessivo,
   esitoRegistro,
+  configurazioneSenzaProduzione,
+  leggiArgomenti,
   modoRicostruzione,
+  preparazioneDi,
 } from "./ricostruzione-regole.mjs";
 
 /** Il database usa-e-getta. Sempre lo stesso nome: si rifa' e si butta. */
@@ -304,7 +307,13 @@ order by 1;
 
 // ---------------------------------------------------------------------
 
-const config = leggiConfigurazione();
+// 🔴 `--senza-produzione` (M20-H): l'elenco degli argomenti e' chiuso, e con
+// l'argomento ogni chiave che nomina la produzione viene scartata APPENA
+// letta la configurazione. Il comando non ha altri accessi alla produzione:
+// il confronto e' con il progetto di prova (`madre`), mai con la produzione.
+const { senzaProduzione, sconosciuti } = leggiArgomenti(process.argv.slice(2));
+if (sconosciuti.length) fermati("Argomento sconosciuto. L'unico ammesso e' --senza-produzione.");
+const config = configurazioneSenzaProduzione(leggiConfigurazione(), senzaProduzione);
 const madre = obbligatorio(config, "DB_URL_PROVA", "manca in .env");
 soloProva(madre);
 
@@ -351,6 +360,7 @@ const migrazioni = readdirSync("supabase/migrations")
 titolo("La prova di ricarica — le migrazioni in ordine di NUMERO");
 console.log(`   database usa-e-getta:  ${DATABASE}`);
 console.log(`   migrazioni da provare: ${migrazioni.length}`);
+console.log(`   produzione:            ${senzaProduzione ? "esclusa (--senza-produzione)" : "non usata da questo comando"}`);
 console.log("");
 
 interroga(madre, `drop database if exists ${DATABASE} with (force); create database ${DATABASE};`);
@@ -387,6 +397,7 @@ const rinfrescate = [];
 let seminati = false;
 const fermate = [];
 const eccezioniApplicate = [];
+const preparate = [];
 let numero = 0;
 for (const file of migrazioni) {
   numero++;
@@ -447,6 +458,15 @@ for (const file of migrazioni) {
   const versione = file.slice(0, 14);
   const modo = modoRicostruzione(versione, argomentiMigrazione(url, daApplicare).atomica);
   if (modo.eccezione) eccezioniApplicate.push({ versione, file, come: modo.eccezione.come });
+  // FIXTURE DELLA PROVA, non un fatto storico: solo per le versioni che la
+  // dichiarano (scripts/ricostruzione-regole.mjs), solo in questo database
+  // usa-e-getta, subito prima della migrazione.
+  const preparazione = preparazioneDi(versione);
+  if (preparazione) {
+    const p = applica(preparazione, "preparazione");
+    if (!p.ok) fermati(`La preparazione della prova per la ${versione} non e' riuscita.`, p.uscita.slice(-600));
+    preparate.push(versione);
+  }
   const r = esegui(
     psql,
     argomentiRicostruzione(url, daApplicare, { ...modo, chiedeIlCatalogo }),
@@ -519,6 +539,9 @@ if (note.length) {
     console.log(`          → ${f.eccezione.motivo}` +
       (f.eccezione.sanataDa ? `; la registra la ${f.eccezione.sanataDa}` : "; nessuna migrazione la registra"));
   }
+}
+if (preparate.length) {
+  console.log(`   PREPARAZIONI DELLA PROVA (fixture, non storia ne' dati di produzione): ${preparate.join(", ")}`);
 }
 if (nonScattate.length) {
   console.log("   ⚠️ eccezioni che dovevano fermarsi e NON si sono fermate (la storia non corrisponde piu'):");

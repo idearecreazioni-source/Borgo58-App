@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import {
   ECCEZIONI_STORICHE,
+  PREPARAZIONI_PROVA,
   argomentiRicostruzione,
   classificaFermate,
+  configurazioneSenzaProduzione,
+  eccezioneDi,
   esitoComplessivo,
   esitoRegistro,
+  leggiArgomenti,
   modoRicostruzione,
+  preparazioneDi,
 } from "../../scripts/ricostruzione-regole.mjs";
 
 // La prova di ricarica (npm run ricostruzione:verifica) il 30/09/2026 diceva
@@ -77,7 +82,7 @@ describe("come si applica una migrazione nella ricostruzione", () => {
 
   it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
     const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
-    expect(conAttesa.length).toBe(10);
+    expect(conAttesa.length).toBe(9);
     for (const e of conAttesa) {
       // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
       // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
@@ -211,78 +216,134 @@ describe("le due storie aggiunte il 30/09 (mandato M20-E)", () => {
     expect(inattese).toHaveLength(1);
   });
 
-  it("l'elenco e' chiuso: undici eccezioni, queste e non altre", () => {
+  it("l'elenco e' chiuso: dieci eccezioni, queste e non altre", () => {
     expect(ECCEZIONI_STORICHE.map((e) => e.versione)).toEqual([
       "20260820000010", "20260822000003", "20260823000024", "20260824000033",
-      "20260826000013", "20260827000006", "20260827000018", "20260829000006",
+      "20260827000006", "20260827000018", "20260829000006",
       "20260917000001", "20260920000001", "20260921000001",
     ]);
   });
 });
 
-describe("la 20260826000013 a meta' (mandato M20-G)", () => {
+describe("la 20260826000013: fixture della prova, non eccezione storica (mandato M20-H)", () => {
   const cartella = "supabase/migrations";
   const elenco = readdirSync(cartella).filter((f) => f.endsWith(".sql")).sort();
   const nome = elenco.find((f) => f.startsWith("20260826000013"));
   const testo = readFileSync(`${cartella}/${nome}`, "utf8").replace(/--[^\n]*/g, "");
+  const leggiMig = (versione) => readFileSync(`${cartella}/${elenco.find((f) => f.startsWith(versione))}`, "utf8");
 
-  it("solo nella ricostruzione e' non atomica, e senza fuso", () => {
-    const m = modoRicostruzione("20260826000013", true);
-    expect(m).toMatchObject({ atomica: false, fusoRoma: false });
-    expect(m.eccezione.sanataDa).toBeNull();
-    const arg = argomentiRicostruzione("URL", "f.sql", { ...m, chiedeIlCatalogo: false });
-    expect(arg).not.toContain("--single-transaction");
-    // I comandi veri non leggono le eccezioni: la regola di produzione resta.
-    expect(readFileSync("scripts/comune.mjs", "utf8")).not.toMatch(/ricostruzione-regole/);
-  });
-
-  it("crea la funzione PRIMA della verifica che si ferma, e si registra solo DOPO", () => {
-    const crea = testo.search(/create or replace function chi_ha_messo_il_tetto\s*\(/i);
-    const verifica = testo.search(/do \$verifica\$/i);
-    const fermata = testo.indexOf("Il tetto senza autore dice");
-    const registra = testo.search(/insert into applied_migrations/i);
-    expect(crea).toBeGreaterThan(-1);
-    expect(crea).toBeLessThan(verifica);
-    expect(verifica).toBeLessThan(fermata);
-    expect(fermata).toBeLessThan(registra);
-    // e la verifica si ferma sul controllo (A) solo se il tetto e' vuoto:
-    // la frase che produce la funzione in quel caso e' «Nessun tetto…».
-    expect(testo).toMatch(/when v_r\.tetto_mensile_euro is null then\s*'Nessun tetto: le letture non si fermano mai da sole\.'/);
-  });
-
-  it("nessuna migrazione successiva ricrea la funzione o registra la versione", () => {
-    const dopo = elenco.filter((f) => f.slice(0, 14) > "20260826000013");
-    expect(dopo.length).toBeGreaterThan(0);
-    for (const f of dopo) {
-      const t = readFileSync(`${cartella}/${f}`, "utf8").replace(/--[^\n]*/g, "");
-      expect(/function (public\.)?chi_ha_messo_il_tetto\s*\(/i.test(t), f).toBe(false);
-      expect(t.includes("20260826000013"), f).toBe(false);
-    }
-    // e nessuna eccezione la dichiara sanata o ne fa l'origine di un messaggio
+  it("non e' fra le eccezioni storiche: si applica come tutte, atomica e senza fuso", () => {
+    expect(ECCEZIONI_STORICHE.some((e) => e.versione === "20260826000013")).toBe(false);
+    expect(eccezioneDi("20260826000013")).toBeNull();
+    expect(modoRicostruzione("20260826000013", true)).toMatchObject({ atomica: true, fusoRoma: false, eccezione: null });
     expect(ECCEZIONI_STORICHE.some((e) => e.sanataDa === "20260826000013" || e.origineAttesa === "20260826000013")).toBe(false);
+    // I comandi veri non leggono ne' le eccezioni ne' le preparazioni.
+    const comune = readFileSync("scripts/comune.mjs", "utf8");
+    expect(comune).not.toMatch(/ricostruzione-regole/);
+    expect(comune).not.toMatch(/preparazion/i);
   });
 
-  it("col messaggio atteso e' nota; con un messaggio diverso resta inattesa", () => {
-    const nota = classificaFermate(
-      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice «Nessun tetto: le letture non si fermano mai da sole.», e doveva dire che non l'ha messo nessuno." }],
-      ["20260826000013"]
-    );
-    expect(nota.note).toHaveLength(1);
-    expect(nota.inattese).toHaveLength(0);
-    const altra = classificaFermate(
-      [{ versione: "20260826000013", motivo: "ERROR:  Non c'e' nessuna riga di impostazioni_ai: questa verifica non puo' girare." }],
-      ["20260826000013"]
-    );
-    expect(altra.note).toHaveLength(0);
-    expect(altra.inattese).toHaveLength(1);
+  it("la preparazione esiste SOLO per la 20260826000013", () => {
+    expect(PREPARAZIONI_PROVA.map((p) => p.versione)).toEqual(["20260826000013"]);
+    expect(preparazioneDi("20260826000013")).toBeTruthy();
+    for (const f of elenco) {
+      const v = f.slice(0, 14);
+      if (v !== "20260826000013") expect(preparazioneDi(v), v).toBeNull();
+    }
   });
 
-  it("senza sanatrice, resta fra le mancanti del registro anche se la fermata e' nota", () => {
-    const file = ["20260826000013", "20260826000014"];
-    const r = esitoRegistro(file, ["20260826000014"]);
-    expect(r.completo).toBe(false);
-    expect(r.mancanti).toEqual(["20260826000013"]);
-    expect(esitoComplessivo({ inattese: [], registro: r, differenze: 0 }).verde).toBe(false);
+  it("la fixture e' minima: un valore finto positivo e nessun campo di autore o data", () => {
+    const sql = preparazioneDi("20260826000013");
+    expect(sql).toBe("update impostazioni_ai set tetto_mensile_euro = 10 where id;");
+    // il valore sta nel vincolo tetto_sensato (1..1000), creato dalla 20260825000013
+    expect(leggiMig("20260825000013")).toMatch(/tetto_mensile_euro is null or \(tetto_mensile_euro > 0 and tetto_mensile_euro <= 1000\)/);
+    // tocca solo la colonna del tetto: niente autore, date, sblocco, inserimenti
+    expect(sql).not.toMatch(/tetto_da|tetto_il|sbloccato|aggiornato_il|insert|delete|uuid|auth\./i);
+    // e si dichiara fixture: ne' fatto storico ne' dato di produzione
+    expect(readFileSync("scripts/ricostruzione-regole.mjs", "utf8")).toMatch(/fixture, NON fatti storici e NON dati di\s*\*\s*produzione/);
+  });
+
+  it("soddisfa il prerequisito della verifica (A) della migrazione", () => {
+    // pretende tetto_da vuoto e la frase «non l'ha messo nessuno», che la
+    // funzione dice solo con tetto valorizzato e tetto_da vuoto
+    expect(testo).toMatch(/if v_prima\.tetto_da is not null then/);
+    expect(testo).toMatch(/when v_r\.tetto_mensile_euro is null then\s*'Nessun tetto: le letture non si fermano mai da sole\.'\s*when v_r\.tetto_da is null then/);
+    expect(testo).toMatch(/non l''ha messo nessuno/);
+    // le colonne di autore nascono vuote, senza default
+    const nove = leggiMig("20260826000009");
+    expect(nove).toMatch(/add column if not exists tetto_da\s+uuid references auth\.users\(id\) on delete set null;/);
+    expect(nove).not.toMatch(/(tetto_da|tetto_il|sbloccato_da)[^;]*default/i);
+  });
+
+  it("nella verifica la preparazione va PRIMA della migrazione, e c'e' una sola chiamata", () => {
+    const s = readFileSync("scripts/ricostruzione-verifica.mjs", "utf8");
+    const prep = s.indexOf("preparazioneDi(versione)");
+    const lancio = s.indexOf("argomentiRicostruzione(url, daApplicare");
+    expect(prep).toBeGreaterThan(-1);
+    expect(prep).toBeLessThan(lancio);
+    expect(s.match(/preparazioneDi\(/g)).toHaveLength(1);
+    expect(readFileSync("package.json", "utf8")).not.toMatch(/preparazion/i);
+  });
+
+  it("senza eccezione, una fermata della 20260826000013 e' inattesa", () => {
+    const { note, inattese } = classificaFermate(
+      [{ versione: "20260826000013", motivo: "ERROR:  Il tetto senza autore dice «Nessun tetto», e doveva dire che non l'ha messo nessuno." }],
+      ["20260826000013"]
+    );
+    expect(note).toHaveLength(0);
+    expect(inattese).toHaveLength(1);
+  });
+});
+
+describe("--senza-produzione protegge ogni accesso alla produzione (mandato M20-H)", () => {
+  const sorgente = readFileSync("scripts/ricostruzione-verifica.mjs", "utf8");
+  const codice = sorgente.replace(/^\s*\/\/.*$/gm, "");
+
+  it("gli argomenti sono un elenco chiuso: solo --senza-produzione", () => {
+    expect(leggiArgomenti([])).toEqual({ senzaProduzione: false, sconosciuti: [] });
+    expect(leggiArgomenti(["--senza-produzione"])).toEqual({ senzaProduzione: true, sconosciuti: [] });
+    expect(leggiArgomenti(["--con-produzione"]).sconosciuti).toEqual(["--con-produzione"]);
+    expect(leggiArgomenti(["--senza-produzione", "--altro"]).sconosciuti).toEqual(["--altro"]);
+    expect(codice).toMatch(/if \(sconosciuti\.length\) fermati\(/);
+  });
+
+  it("col flag ogni chiave che nomina la produzione sparisce; senza, la configurazione passa com'e'", () => {
+    const cfg = { DB_URL_PROVA: "p", DB_URL_PRODUZIONE: "x", ALTRA_PRODUZIONE_CHIAVE: "y", db_url_produzione: "z", ALTRO: "a" };
+    expect(configurazioneSenzaProduzione(cfg, true)).toEqual({ DB_URL_PROVA: "p", ALTRO: "a" });
+    expect(configurazioneSenzaProduzione(cfg, false)).toBe(cfg);
+  });
+
+  it("la configurazione e' filtrata subito alla lettura, e nessun'altra lettura esiste", () => {
+    expect(codice).toMatch(/const config = configurazioneSenzaProduzione\(leggiConfigurazione\(\), senzaProduzione\);/);
+    expect(codice.match(/leggiConfigurazione\(/g)).toHaveLength(1);
+    const letti = [...codice.matchAll(/obbligatorio\(\s*config,\s*"([A-Z0-9_]+)"/g)].map((m) => m[1]);
+    expect(letti).toEqual(["DB_URL_PROVA"]);
+    expect(codice).not.toMatch(/config\[/);
+    expect(codice).not.toMatch(/process\.env/);
+  });
+
+  it("nessun blocco dello strumento nomina o raggiunge la produzione", () => {
+    // (maiuscolo: i nomi delle variabili e dei riferimenti; il flag e' minuscolo)
+    expect(codice).not.toMatch(/PRODUZIONE/);
+    expect(codice).not.toMatch(/oudjuqbqszisdtwzbxdo/);
+    // Ogni collegamento usa soltanto `madre` (progetto di prova, passato da
+    // soloProva) o `url` (ricostruzione_prova, derivato da `madre`).
+    const collegamenti = [
+      ...codice.matchAll(/interroga\(\s*([A-Za-z_]+)/g),
+      ...codice.matchAll(/"-d",\s*([A-Za-z_]+)/g),
+    ].map((m) => m[1]);
+    expect(collegamenti.length).toBeGreaterThan(5);
+    for (const c of collegamenti) expect(["madre", "url"], c).toContain(c);
+    expect(codice).toMatch(/soloProva\(madre\);/);
+    expect(codice).toMatch(/const url = madre\.replace\(/);
+    expect(codice).not.toMatch(/fetch\(|https?:\/\/|supabase\.co|createClient/);
+    expect(codice.match(/\bconst madre\b/g)).toHaveLength(1);
+    expect(codice.match(/\bmadre\s*=[^=]/g)).toHaveLength(1);
+  });
+
+  it("package.json lancia lo strumento senza scorciatoie", () => {
+    const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+    expect(pkg.scripts["ricostruzione:verifica"]).toBe("node scripts/ricostruzione-verifica.mjs");
   });
 });
 
