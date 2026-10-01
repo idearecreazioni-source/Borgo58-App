@@ -24,6 +24,12 @@
 //    `npm run prova:migra`. Le eccezioni qui sotto valgono SOLO dentro il
 //    database usa-e-getta della prova di ricarica.
 //
+// 🔴 CORRETTO IL 30/09 (mandato M20-H): la 20260826000013 NON e' piu' una
+//    eccezione storica. Della produzione si sa solo che la funzione esiste e
+//    la versione e' registrata: non il valore del tetto, ne' come la
+//    migrazione sia arrivata. Nella prova le serve una FIXTURE dichiarata
+//    (PREPARAZIONI_PROVA), che non e' un fatto storico ne' un dato di produzione.
+//
 // ⚠️ NESSUNA ECCEZIONE NASCONDE UN ERRORE. Ogni eccezione dichiara il
 //    messaggio con cui DEVE fermarsi: se si ferma con un altro, e' un errore
 //    inatteso. E nessuna eccezione registra niente: se nessuna migrazione la
@@ -129,6 +135,54 @@ export const ECCEZIONI_STORICHE = [
     motivo: "la sua guardia non riconosce la funzione; e' superata dalla 20260921000002, che la registra",
   },
 ];
+
+/**
+ * LE PREPARAZIONI DELLA PROVA — fixture, NON fatti storici e NON dati di
+ * produzione. Il SQL gira SOLO nel database usa-e-getta della ricostruzione,
+ * immediatamente prima della migrazione indicata, e per nessun'altra.
+ *
+ * 20260826000013: la sua verifica (A) pretende una riga di `impostazioni_ai`
+ * con `tetto_da` vuoto, e la frase «non l'ha messo nessuno» esce solo se il
+ * tetto ha un valore (con il tetto vuoto la funzione dice «Nessun tetto…»).
+ * `impostazioni_ai` nasce con la riga e il tetto vuoto (20260825000013), e il
+ * vincolo `tetto_sensato` ammette 1..1000. La fixture mette il solo valore
+ * finto 10 (lo stesso che la verifica usa come ripiego) e lascia VUOTI
+ * `tetto_da`, `tetto_il`, `sbloccato_il`, `sbloccato_da`: nessun valore di
+ * produzione e' noto, copiato o citato.
+ */
+export const PREPARAZIONI_PROVA = [
+  {
+    versione: "20260826000013",
+    sql: "update impostazioni_ai set tetto_mensile_euro = 10 where id;",
+  },
+];
+
+const PREPARAZIONE_PER_VERSIONE = new Map(PREPARAZIONI_PROVA.map((p) => [p.versione, p]));
+
+/** Il SQL della fixture da applicare PRIMA di una versione, o null. */
+export function preparazioneDi(versione) {
+  return PREPARAZIONE_PER_VERSIONE.get(versione)?.sql ?? null;
+}
+
+/**
+ * Gli argomenti dello strumento. L'elenco e' chiuso: un argomento
+ * sconosciuto e' un errore, non viene ignorato.
+ */
+export function leggiArgomenti(argv) {
+  const sconosciuti = argv.filter((a) => a !== "--senza-produzione");
+  return { senzaProduzione: argv.includes("--senza-produzione"), sconosciuti };
+}
+
+/**
+ * Con `--senza-produzione` ogni chiave di configurazione che nomina la
+ * produzione viene scartata APPENA letta: nessun blocco successivo puo'
+ * trovarla, quindi nessun percorso puo' collegarsi, interrogare o confrontare.
+ * Senza l'argomento la configurazione passa com'e' (non e' resa piu' permissiva).
+ */
+export function configurazioneSenzaProduzione(config, senzaProduzione) {
+  if (!senzaProduzione) return config;
+  return Object.fromEntries(Object.entries(config).filter(([k]) => !/PRODUZIONE/i.test(k)));
+}
 
 const PER_VERSIONE = new Map(ECCEZIONI_STORICHE.map((e) => [e.versione, e]));
 
