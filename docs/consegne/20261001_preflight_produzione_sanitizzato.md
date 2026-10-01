@@ -114,10 +114,63 @@ risultato è NON PRONTO per costruzione.
 - che modulo, documento e contratto delle 17 migrazioni dicano le stesse
   versioni, lo stesso primo giro, lo stesso secondo giro e la stessa esclusa.
 
+## L'esecutore protetto (mandato M21-E)
+
+*Aggiunto il 01/10/2026.* `scripts/esegui-preflight-produzione.mjs` è chi, in
+futuro, misurerà sul database di produzione la parte di questi controlli che
+da lì si può misurare, e passerà i risultati al modulo qui sopra.
+
+> 🔴 **In questo mandato l'esecutore NON è stato eseguito**, e non si è
+> collegato a niente. Le sue prove usano solo client finti. Una sua esecuzione
+> richiede un **mandato separato**.
+
+**Come si protegge:**
+
+- parte solo con **entrambi** i consensi, `--produzione` e
+  `--confermo-sola-lettura`, e con nessun altro argomento;
+- non carica `.env` né file di configurazione. Legge **una sola** variabile,
+  `PREFLIGHT_PRODUZIONE_COLLEGAMENTO`, che dovrà essere **iniettata** da chi lo
+  esegue. Se manca si rifiuta: nessun valore predefinito, nessun ripiego;
+- prima di collegarsi controlla che quel canale indichi la produzione e non il
+  progetto di prova, senza ripeterlo da nessuna parte;
+- apre una transazione **di sola lettura** e, prima di **ogni** misura,
+  ricontrolla che lo sia ancora. Se non lo è, si ferma subito;
+- chiude **sempre** con rollback, anche quando una misura fallisce;
+- le interrogazioni sono stringhe fisse, senza parti calcolate, e nessuna
+  scrive;
+- dal Vault fa uscire **solo conteggi o sì/no**: il confronto con un valore
+  avviene dentro il database;
+- restituisce **solo** PRONTO / NON PRONTO e i nomi dei controlli non validi.
+  Se si rifiuta, aggiunge un motivo scelto da un elenco fisso. Non restituisce
+  mai il canale, i valori letti, le interrogazioni o i messaggi d'errore del
+  database.
+
+**Cosa misura da qui:** l'ultima versione registrata in produzione, quali
+delle 17 mancano, quante versioni registrate dopo la `20260916000002` non sono
+fra le 17, `chiave_anon` (quante e se è del progetto atteso), `url_funzioni`
+(quante e se corrisponde), le guardie controllabili prima di applicare
+(quelle della `20260917000001` e della `20260920000003`), le transazioni
+aperte da più di un minuto e i blocchi in attesa.
+
+**Cosa NON misura, e resta NON VERIFICATO:** master, Prova, copia di
+sicurezza, funzione online delle notifiche, corpi vivi confrontati col
+repository, dati delle ricette, e i due giri. Quindi **da solo l'esecutore
+risponde sempre NON PRONTO**: il rilascio può essere PRONTO solo quando anche
+questi controlli saranno stati **misurati davvero** da un altro passo.
+
+**Nessuna informazione riservata lascia l'ambiente protetto:** il risultato
+contiene solo l'esito e nomi di controlli.
+
+⚠️ **Il collegamento vero passa a `psql` come argomento**, come fanno già gli
+strumenti delle migrazioni. Non viene stampato né salvato, ma nell'elenco dei
+processi della macchina che lo esegue è visibile finché `psql` è aperto: va
+tenuto presente quando si sceglierà dove eseguirlo.
+
 ## Cosa non è verificato
 
 - Nessuno dei 12 controlli è stato fatto sull'ambiente vero: è il compito del
   prossimo mandato.
+- Il collegamento reale dell'esecutore verso `psql` non è mai stato provato.
 - Che la produzione sia ancora ferma alla `20260916000002`: lo era all'audit
   M21-A del 01/10/2026.
 
