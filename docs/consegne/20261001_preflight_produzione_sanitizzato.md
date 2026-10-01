@@ -114,66 +114,74 @@ risultato è NON PRONTO per costruzione.
 - che modulo, documento e contratto delle 17 migrazioni dicano le stesse
   versioni, lo stesso primo giro, lo stesso secondo giro e la stessa esclusa.
 
-## L'esecutore protetto (mandato M21-E)
+## L'orchestratore del preflight (mandati M21-E e M21-F)
 
-*Aggiunto il 01/10/2026.* `scripts/esegui-preflight-produzione.mjs` è chi, in
-futuro, misurerà sul database di produzione la parte di questi controlli che
-da lì si può misurare, e passerà i risultati al modulo qui sopra.
+`scripts/esegui-preflight-produzione.mjs` è chi raccoglierà i 20 risultati e
+li passerà al modulo qui sopra.
 
-> 🔴 **In questo mandato l'esecutore NON è stato eseguito**, e non si è
-> collegato a niente. Le sue prove usano solo client finti. Una sua esecuzione
-> richiede un **mandato separato**.
+> 🔴 **Nessun preflight reale è stato eseguito.** In questi mandati il file non
+> si è mai collegato a niente: le sue prove usano solo adattatori finti. Una
+> sua esecuzione richiede un **mandato separato**.
 
-**Come si protegge:**
+**Il repository non gestisce più e non trasporta il collegamento** (M21-F).
+La prima stesura (M21-E) conteneva anche il cavo verso il database e passava il
+collegamento a `psql` come argomento: chiunque guardasse l'elenco dei processi
+della macchina lo avrebbe visto. Quel cavo **è stato tolto**. Oggi il file:
 
-- parte solo con **entrambi** i consensi, `--produzione` e
-  `--confermo-sola-lettura`, e con nessun altro argomento;
-- non carica `.env` né file di configurazione. Legge **una sola** variabile,
-  `PREFLIGHT_PRODUZIONE_COLLEGAMENTO`, che dovrà essere **iniettata** da chi lo
-  esegue. Se manca si rifiuta: nessun valore predefinito, nessun ripiego;
-- prima di collegarsi controlla che quel canale indichi la produzione e non il
-  progetto di prova, senza ripeterlo da nessuna parte;
-- apre una transazione **di sola lettura** e, prima di **ogni** misura,
-  ricontrolla che lo sia ancora. Se non lo è, si ferma subito;
-- chiude **sempre** con rollback, anche quando una misura fallisce;
-- le interrogazioni sono stringhe fisse, senza parti calcolate, e nessuna
-  scrive;
-- dal Vault fa uscire **solo conteggi o sì/no**: il confronto con un valore
-  avviene dentro il database;
-- restituisce **solo** PRONTO / NON PRONTO e i nomi dei controlli non validi.
-  Se si rifiuta, aggiunge un motivo scelto da un elenco fisso. Non restituisce
-  mai il canale, i valori letti, le interrogazioni o i messaggi d'errore del
-  database.
+- non legge variabili d'ambiente, `.env` o file;
+- non lancia programmi, non usa la rete, non si collega a database;
+- non contiene interrogazioni;
+- non riceve, costruisce, stampa o conserva collegamenti, indirizzi o chiavi.
 
-**Cosa misura da qui:** l'ultima versione registrata in produzione, quali
-delle 17 mancano, quante versioni registrate dopo la `20260916000002` non sono
-fra le 17, `chiave_anon` (quante e se è del progetto atteso), `url_funzioni`
-(quante e se corrisponde), le guardie controllabili prima di applicare
-(quelle della `20260917000001` e della `20260920000003`), le transazioni
-aperte da più di un minuto e i blocchi in attesa.
+**Il futuro adattatore protetto vive FUORI dal repository** ed è lui il solo
+responsabile del collegamento, della sola lettura e della chiusura. Il file del
+repository gli chiede **soltanto il nome** di una misura, scelto fra i 20 campi
+del modulo, uno per volta, e nient'altro.
 
-**Cosa NON misura, e resta NON VERIFICATO:** master, Prova, copia di
-sicurezza, funzione online delle notifiche, corpi vivi confrontati col
-repository, dati delle ricette, e i due giri. Quindi **da solo l'esecutore
-risponde sempre NON PRONTO**: il rilascio può essere PRONTO solo quando anche
-questi controlli saranno stati **misurati davvero** da un altro passo.
+**Cosa l'adattatore può restituire:**
 
-**Nessuna informazione riservata lascia l'ambiente protetto:** il risultato
-contiene solo l'esito e nomi di controlli.
+- sì / no;
+- un conteggio intero, da zero in su;
+- una versione di migrazione di 14 cifre, o un elenco di versioni;
+- «niente», cioè `null`, se quella misura non si può ottenere ridotta a una di
+  queste forme: diventa **NON VERIFICATO**, mai un'approssimazione.
 
-⚠️ **Il collegamento vero passa a `psql` come argomento**, come fanno già gli
-strumenti delle migrazioni. Non viene stampato né salvato, ma nell'elenco dei
-processi della macchina che lo esegue è visibile finché `psql` è aperto: va
-tenuto presente quando si sceglierà dove eseguirlo.
+Qualunque altra cosa — una frase, un oggetto, un indirizzo, un numero storto, un
+elenco con proprietà in più — **ferma tutto**: il risultato è NON PRONTO con un
+motivo scelto da un elenco fisso, e il valore ricevuto non viene ripetuto. Lo
+stesso vale per un errore dell'adattatore: il suo messaggio non esce.
+
+**Il risultato** è soltanto PRONTO / NON PRONTO e i nomi dei controlli non
+validi. **Senza tutti e 20 i risultati sanitizzati il rilascio resta NON
+PRONTO**: PRONTO arriva solo se ogni misura è stata davvero ottenuta e ogni
+controllo è OK.
+
+Restano anche qui i due consensi espliciti, `--produzione` e
+`--confermo-sola-lettura`: senza tutti e due, nessuna misura viene chiesta.
 
 ## Cosa non è verificato
 
 - Nessuno dei 12 controlli è stato fatto sull'ambiente vero: è il compito del
   prossimo mandato.
-- Il collegamento reale dell'esecutore verso `psql` non è mai stato provato.
+- L'adattatore protetto non esiste ancora: va costruito fuori dal repository,
+  in un mandato a parte.
 - Che la produzione sia ancora ferma alla `20260916000002`: lo era all'audit
   M21-A del 01/10/2026.
 
 ## Cosa abbiamo rovesciato
 
-Niente.
+- **Cosa era stato deciso e quando.** M21-E, 01/10/2026: l'esecutore conteneva
+  nel repository il cavo verso il database (`psql`) e leggeva il collegamento da
+  una variabile iniettata.
+- **La ragione di allora.** Un solo file, provato con client finti, che facesse
+  tutto il giro dalla misura alla decisione.
+- **Cosa si decide adesso.** M21-F: il repository contiene solo l'orchestratore.
+  Il collegamento, la sola lettura e la chiusura stanno in un adattatore
+  protetto fuori dal repository.
+- **Perché la ragione di allora non vale più.** Passare il collegamento come
+  argomento di un programma lo rende visibile nell'elenco dei processi, e
+  nessuna prova con client finti poteva impedirlo. Tenere il collegamento fuori
+  dal repository toglie il problema invece di sorvegliarlo.
+
+⚠️ La riga corrispondente in `docs/decisioni_rovesciate.md` **non è stata
+scritta**: il mandato M21-F autorizzava solo tre file. Resta da aggiungere.
