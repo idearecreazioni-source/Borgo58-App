@@ -1,12 +1,12 @@
 # Piano di rilascio a gruppi, per una mano umana — solo documento
 
-**03/10/2026** · mandato M24-C · ramo `claude/piano-rilascio-a-gruppi` ·
+**03/10/2026** · mandati M24-C e M24-D · ramo `claude/piano-rilascio-a-gruppi` ·
 base `slave` `d83edcb` · `master` `896a883`
 
 > 🔴 **È UN PIANO, NON UN'AUTORIZZAZIONE E NON UN RESOCONTO.** Nessuna
 > migrazione è stata applicata, nessun gruppo è partito, nessun collegamento
 > è stato aperto. Oggi **nessun gruppo può partire** (matrice finale): mancano
-> quattro misure reali e cinque decisioni operative, e lo strumento che
+> sei misure reali e cinque decisioni operative, e lo strumento che
 > applicherebbe le migrazioni non è autorizzato da nessun mandato.
 
 Fonti, tutte già tracciate in `slave`:
@@ -168,9 +168,8 @@ Valgono per **tutti** i gruppi, e non si ripetono sotto:
 ### G4 — `20260921000003`
 
 - **Precondizioni**: G3 concluso; `soggetti_e_utenti_presenti` verde (soggetti
-  `srls`, `tasca`, `azienda_agricola` e titolare); esiste una causale di
-  uscita normale attiva e una di sistema (righe 610-616) — **misura in sola
-  lettura non ancora prevista dal contratto**.
+  `srls`, `tasca`, `azienda_agricola` e titolare);
+  `causali_di_uscita_presenti` verde (righe 610-616).
 - **Copia**: quella della finestra.
 - **Protezioni**: nessuna scrittura in cassa o nelle anticipazioni durante il
   gruppo.
@@ -201,9 +200,8 @@ Valgono per **tutti** i gruppi, e non si ripetono sotto:
 ### G6 — `20260923000003` → `20260923000004`
 
 - **Precondizioni**: G5 concluso; `soggetti_e_utenti_presenti` verde
-  (titolare, `srls`, `azienda_agricola`); `vincoli_senza_frase` verde; nessun
-  conto del 1996 senza documento (riga 511) — **misura in sola lettura non
-  ancora prevista dal contratto**.
+  (titolare, `srls`, `azienda_agricola`); `vincoli_senza_frase` verde;
+  `conti_del_1996_senza_documento` verde (righe 509-512).
 - **Copia**: quella della finestra.
 - **Protezioni**: le due nella stessa finestra.
 - **Risultato prima di G7**: la tabella delle chiusure annuali esiste; nessun
@@ -227,26 +225,25 @@ per intero e i numeri veri.
 
 ---
 
-## 4. I quattro controlli obbligatori — non ancora misurati
+## 4. I sei controlli obbligatori — non ancora misurati
 
-Dal contratto (`CONTROLLI_OBBLIGATORI`). **Nessuno è stato eseguito.**
+Dal contratto (`CONTROLLI_OBBLIGATORI`). 🔴 **I SEI CONTROLLI OBBLIGATORI
+NON SONO STATI ESEGUITI.** Gli ultimi due li ha trovati questo piano, e dal
+mandato M24-D sono nel contratto come gli altri quattro.
 
 | Controllo | Serve a | Stato |
 |---|---|---|
 | `funzioni_che_nominano_la_produzione` | G1 | non misurato |
 | `vincoli_senza_frase` | G6 | non misurato |
-| `soggetti_e_utenti_presenti` | G1, G4, G6 | non misurato |
+| `soggetti_e_utenti_presenti` | G1, G2, G4, G6 | non misurato |
 | `modulo_di_rete_con_tempo_massimo` | G1 | non misurato |
+| `causali_di_uscita_presenti` | G4 | non misurato |
+| `conti_del_1996_senza_documento` | G6 | non misurato |
 
 🔴 **Bloccante**: misurarli richiede un accesso in sola lettura alla
 produzione. L'identità dedicata non esiste (proposta n. 153, non applicata) e
 l'adattatore protetto è fermo. **Chi misura, e con quale accesso, è una
 decisione umana.**
-
-Due misure in più, trovate scrivendo questo piano e **non** ancora nel
-contratto: le causali di uscita per G4 (righe 610-616 della
-`20260921000003`) e i conti del 1996 per G6 (riga 511 della
-`20260923000003`).
 
 ---
 
@@ -274,9 +271,9 @@ Dal contratto (`CONDIZIONI_OPERATIVE`). **Nessuna ha una risposta scritta.**
 | G1 | ❌ | ❌ 3 non misurati | — | ❌ | **NO** |
 | G2 | ❌ | ❌ 1 non misurato | ❌ `righe_temporanee_nell_agenda` | ❌ | **NO** |
 | G3 | ❌ | — | ⚠️ `esclusa_resta_esclusa` da rispettare | ❌ | **NO** |
-| G4 | ❌ | ❌ 1 non misurato, più le causali | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
+| G4 | ❌ | ❌ 2 non misurati | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
 | G5 | ❌ | — | ❌ `finestra_della_vista_dei_costi`, `storico_dei_costi_riga_per_riga` | ❌ | **NO** |
-| G6 | ❌ | ❌ 2 non misurati, più i conti del 1996 | — | ❌ | **NO** |
+| G6 | ❌ | ❌ 3 non misurati | — | ❌ | **NO** |
 | G7 | ❌ | — | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
 
 In più, per tutti: `master` non contiene ancora le 17 migrazioni, e la
