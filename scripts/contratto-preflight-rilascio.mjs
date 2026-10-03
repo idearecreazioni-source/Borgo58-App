@@ -151,6 +151,24 @@ export const CONTROLLI_OBBLIGATORI = Object.freeze([
     altrimenti:
       "20260920000002: la funzione si crea comunque, e l'errore comparirebbe solo inviando i promemoria (riga 135, e la verifica guarda soltanto il testo, riga 274)",
   }),
+  // Gli ultimi due li ha trovati il piano a gruppi M24-C (03/10/2026).
+  Object.freeze({
+    id: "causali_di_uscita_presenti",
+    obbligatorio: true,
+    prima: Object.freeze(["20260921000003"]),
+    richiede:
+      "fra le causali di cassa esiste almeno una di tipo uscita, attiva e non di sistema, e almeno una di tipo uscita e di sistema, attiva o no",
+    altrimenti: "20260921000003: la verifica si ferma se ne manca una delle due (righe 610-616)",
+  }),
+  Object.freeze({
+    id: "conti_del_1996_senza_documento",
+    obbligatorio: true,
+    prima: Object.freeze(["20260923000003"]),
+    richiede:
+      "per il soggetto srls la regola conti_senza_documento, sulle serate dal 01/01/1996 al 31/12/1996, non trova nessun conto",
+    altrimenti:
+      "20260923000003: la verifica si ferma se il 1996 ha gia' conti senza documento (righe 509-512)",
+  }),
 ]);
 
 /**
@@ -191,7 +209,7 @@ export const CONDIZIONI_PER_PARTIRE = Object.freeze([
   "copia di sicurezza della produzione recente, fatta prima del rilascio",
   "le 17 versioni risultano registrate sul progetto di prova",
   "verifiche d'ambiente del mandato separato tutte verdi",
-  "i quattro controlli obbligatori in sola lettura risultano verdi",
+  "i sei controlli obbligatori in sola lettura risultano verdi",
   "le condizioni operative hanno ciascuna la sua risposta scritta nel mandato di rilascio",
   "nessuna corsa GitHub, prova o migrazione in esecuzione",
   "un mandato esplicito che autorizza il rilascio",
@@ -209,26 +227,34 @@ export const CONDIZIONI_DI_ARRESTO = Object.freeze([
   "arriva un allarme durante o subito dopo",
 ]);
 
-const ID_CONTROLLI = Object.freeze([
-  "funzioni_che_nominano_la_produzione",
-  "vincoli_senza_frase",
-  "soggetti_e_utenti_presenti",
-  "modulo_di_rete_con_tempo_massimo",
-]);
+// Per ogni controllo, le migrazioni che ne dipendono: e' la riga contro cui
+// si confronta `prima`, cosi' spostare un controllo sulla versione sbagliata
+// diventa un problema invece di passare in silenzio.
+const PRIMA_ATTESA = Object.freeze({
+  funzioni_che_nominano_la_produzione: "20260920000001",
+  vincoli_senza_frase: "20260923000004",
+  soggetti_e_utenti_presenti: "20260919000001,20260921000003,20260923000003",
+  modulo_di_rete_con_tempo_massimo: "20260920000002",
+  causali_di_uscita_presenti: "20260921000003",
+  conti_del_1996_senza_documento: "20260923000003",
+});
 
 /**
- * I controlli obbligatori sono quelli attesi, tutti obbligatori, legati a
- * migrazioni del contratto e senza valori? Restituisce l'elenco dei problemi.
+ * I controlli obbligatori sono quelli attesi, tutti obbligatori, legati alle
+ * migrazioni giuste e senza valori? Restituisce l'elenco dei problemi.
  */
 export function problemiDeiControlli(controlli = CONTROLLI_OBBLIGATORI, versioni = VERSIONI_DA_REGISTRARE, esclusa = ESCLUSA) {
   const problemi = [];
   const id = controlli.map((c) => c.id);
-  for (const atteso of ID_CONTROLLI) {
+  for (const atteso of Object.keys(PRIMA_ATTESA)) {
     if (!id.includes(atteso)) problemi.push(`manca il controllo ${atteso}`);
   }
   for (const c of controlli) {
     if (c.obbligatorio !== true) problemi.push(`${c.id}: non e' obbligatorio`);
     if (!Array.isArray(c.prima) || c.prima.length === 0) problemi.push(`${c.id}: non dice prima di quali migrazioni`);
+    else if (Object.hasOwn(PRIMA_ATTESA, c.id) && [...c.prima].join(",") !== PRIMA_ATTESA[c.id]) {
+      problemi.push(`${c.id}: legato alle migrazioni sbagliate`);
+    }
     for (const v of c.prima ?? []) {
       if (!versioni.includes(v)) problemi.push(`${c.id}: ${v} non e' nel contratto`);
       if (v === esclusa.versione) problemi.push(`${c.id}: ${v} non si applica mai`);

@@ -140,12 +140,14 @@ describe("il controllo di coerenza del piano", () => {
 });
 
 // =====================================================================
-// I QUATTRO CONTROLLI OBBLIGATORI — 03/10/2026, mandato M24-B
+// I SEI CONTROLLI OBBLIGATORI — 03/10/2026, mandati M24-B e M24-D
 // =====================================================================
-// L'audit M24-A li ha trovati nei sorgenti delle migrazioni. Queste prove
+// L'audit M24-A ne ha trovati quattro nei sorgenti delle migrazioni, il
+// piano a gruppi M24-C altri due. Queste prove
 // tengono fermo che il contratto li RICHIEDA tutti: toglierne uno, renderlo
 // facoltativo o legarlo a una migrazione sbagliata le fa diventare rosse.
 const PIANO = "docs/consegne/20260928_piano_pre-produzione_16_migrazioni.md";
+const PIANO_A_GRUPPI = "docs/consegne/20261003_piano_rilascio_a_gruppi_controllato.md";
 const sqlDi = (versione) => {
   const file = readdirSync(CARTELLA).find((f) => f.startsWith(`${versione}_`));
   return readFileSync(`${CARTELLA}/${file}`, "utf8");
@@ -156,10 +158,12 @@ const ATTESI = {
   vincoli_senza_frase: ["20260923000004"],
   soggetti_e_utenti_presenti: ["20260919000001", "20260921000003", "20260923000003"],
   modulo_di_rete_con_tempo_massimo: ["20260920000002"],
+  causali_di_uscita_presenti: ["20260921000003"],
+  conti_del_1996_senza_documento: ["20260923000003"],
 };
 
-describe("i quattro controlli obbligatori", () => {
-  it("sono esattamente quattro, tutti obbligatori, ciascuno prima delle migrazioni giuste", () => {
+describe("i sei controlli obbligatori", () => {
+  it("sono esattamente sei, tutti obbligatori, ciascuno prima delle migrazioni giuste", () => {
     expect(CONTROLLI_OBBLIGATORI.map((c) => c.id)).toEqual(Object.keys(ATTESI));
     for (const c of CONTROLLI_OBBLIGATORI) {
       expect(c.obbligatorio, c.id).toBe(true);
@@ -170,7 +174,7 @@ describe("i quattro controlli obbligatori", () => {
   });
 
   it("le condizioni per partire e di arresto li pretendono", () => {
-    expect(CONDIZIONI_PER_PARTIRE.join(" ")).toMatch(/i quattro controlli obbligatori in sola lettura risultano verdi/);
+    expect(CONDIZIONI_PER_PARTIRE.join(" ")).toMatch(/i sei controlli obbligatori in sola lettura risultano verdi/);
     expect(CONDIZIONI_DI_ARRESTO.join(" ")).toMatch(/un controllo obbligatorio non e' verde, o non e' stato misurato/);
   });
 
@@ -197,6 +201,16 @@ describe("i quattro controlli obbligatori", () => {
     expect(problemiDeiControlli(con(["20260921000001"])).join(" ")).toMatch(/non si applica mai/);
   });
 
+  it("vede un controllo legato alla versione sbagliata", () => {
+    const sposta = (id, prima) => CONTROLLI_OBBLIGATORI.map((x) => (x.id === id ? { ...x, prima } : x));
+    expect(problemiDeiControlli(sposta("causali_di_uscita_presenti", ["20260921000002"])).join(" "))
+      .toMatch(/causali_di_uscita_presenti: legato alle migrazioni sbagliate/);
+    expect(problemiDeiControlli(sposta("conti_del_1996_senza_documento", ["20260923000004"])).join(" "))
+      .toMatch(/conti_del_1996_senza_documento: legato alle migrazioni sbagliate/);
+    expect(problemiDeiControlli(sposta("soggetti_e_utenti_presenti", ["20260919000001", "20260921000003"])).join(" "))
+      .toMatch(/soggetti_e_utenti_presenti: legato alle migrazioni sbagliate/);
+  });
+
   it("vede un valore o un'interrogazione dentro un controllo", () => {
     for (const intruso of ["select count(*) from pg_proc", "SELECT 1", "https://esempio", "ey" + "Jabc", "abcdefghijabcdefghij", "x; y"]) {
       const altri = CONTROLLI_OBBLIGATORI.map((x, i) => (i === 1 ? { ...x, richiede: intruso } : x));
@@ -213,6 +227,20 @@ describe("i quattro controlli obbligatori", () => {
     expect(righe(sqlDi("20260923000003"), 490, 502)).toMatch(/entity_type = 'azienda_agricola'/);
     expect(righe(sqlDi("20260920000002"), 135, 135)).toMatch(/timeout_milliseconds/);
     expect(righe(sqlDi("20260920000002"), 274, 274)).toMatch(/timeout_milliseconds/);
+    const causali = righe(sqlDi("20260921000003"), 610, 616);
+    expect(causali).toMatch(/kind = 'uscita' and active and not di_sistema/);
+    expect(causali).toMatch(/kind = 'uscita' and di_sistema/);
+    expect(causali).toMatch(/raise exception/);
+    const anno = righe(sqlDi("20260923000003"), 509, 512);
+    expect(anno).toMatch(/misure_dell_anno\(v_ent, 1996\)/);
+    expect(anno).toMatch(/conti_senza_documento <> 0/);
+    expect(anno).toMatch(/raise exception/);
+    // ⚠️ v_ent e' proprio il soggetto srls, e misure_dell_anno conta con la
+    //    regola conti_senza_documento sull'anno intero
+    expect(righe(sqlDi("20260923000003"), 497, 497)).toMatch(/v_ent\s+from entities where entity_type = 'srls'/);
+    expect(sqlDi("20260923000003")).toMatch(
+      /from conti_senza_documento\(\s*p_entity_id,\s*make_date\(p_anno, 1, 1\),\s*make_date\(p_anno, 12, 31\)\)/,
+    );
   });
 
   it("le sei funzioni ammesse sono proprio quelle che la 20260917000001 e la 20260920000001 riscrivono", () => {
@@ -249,7 +277,7 @@ describe("le condizioni operative", () => {
     }
   });
 
-  it("il piano le dichiara tutte, coi quattro controlli e l'esclusa", () => {
+  it("il piano le dichiara tutte, coi sei controlli e l'esclusa", () => {
     const piano = readFileSync(PIANO, "utf8");
     const sezione = piano.slice(piano.indexOf("## Controlli obbligatori e condizioni operative"));
     expect(sezione.length).toBeGreaterThan(100);
@@ -258,6 +286,31 @@ describe("le condizioni operative", () => {
     expect(sezione).toContain("--salta 20260921000001");
     expect(piano).not.toMatch(/https?:\/\//);
     expect(piano).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}/);
+  });
+});
+
+describe("il piano a gruppi e' allineato al contratto", () => {
+  const testo = readFileSync(PIANO_A_GRUPPI, "utf8");
+  const tra = (id) => "`" + id + "`";
+
+  it("nomina i sei controlli e le cinque condizioni, e dice che nessun controllo e' stato eseguito", () => {
+    for (const c of CONTROLLI_OBBLIGATORI) expect(testo, c.id).toContain(tra(c.id));
+    for (const c of CONDIZIONI_OPERATIVE) expect(testo, c.id).toContain(tra(c.id));
+    expect(testo).toMatch(/I SEI CONTROLLI OBBLIGATORI\s+NON SONO STATI ESEGUITI/);
+    expect(testo).not.toMatch(/quattro controlli/i);
+  });
+
+  it("non dice piu' che le due misure sono fuori dal contratto", () => {
+    expect(testo).not.toMatch(/non ancora prevista dal contratto/);
+    expect(testo).not.toMatch(/non\*\* ancora nel\s+contratto/);
+  });
+
+  it("dice che oggi nessun gruppo puo' partire, e non contiene valori ne' istruzioni", () => {
+    expect(testo).toMatch(/Oggi nessun gruppo è autorizzato/);
+    expect(testo).not.toMatch(/https?:\/\//);
+    expect(testo).not.toMatch(/ey[J][A-Za-z0-9_-]{10,}/);
+    expect(testo).not.toMatch(/\b[a-z]{20}\b/);
+    expect(testo).not.toMatch(/^\s*(select|insert|update|delete|alter|create|drop)\b/im);
   });
 });
 

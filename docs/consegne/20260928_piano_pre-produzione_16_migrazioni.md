@@ -4,8 +4,9 @@
 · **aggiornato il 29/09/2026 (mandato M16-q)**: con il passo preparatorio
 `20260929000001` le mancanti sono **17**, le applicabili **16**, e la
 `20260921000001` resta l'unica da saltare stabilmente
-· **aggiornato il 03/10/2026 (mandato M24-B)**: quattro controlli obbligatori
-in sola lettura e cinque condizioni operative, dall'audit M24-A — vedi
+· **aggiornato il 03/10/2026 (mandati M24-B e M24-D)**: sei controlli
+obbligatori in sola lettura e cinque condizioni operative, dall'audit M24-A e
+dal piano a gruppi M24-C — vedi
 «Controlli obbligatori e condizioni operative»; i controlli **non sono stati
 eseguiti**
 · **NESSUNA PROMOZIONE È STATA FATTA**: niente è stato unito in `master`,
@@ -237,11 +238,13 @@ Ci si ferma, senza correggere e senza riprovare, se:
 ## Controlli obbligatori e condizioni operative
 
 *Aggiunta il 03/10/2026 (mandato M24-B), dai risultati dell'audit statico
-M24-A.* Le stesse voci sono in `scripts/contratto-preflight-rilascio.mjs`
-(`CONTROLLI_OBBLIGATORI`, `CONDIZIONI_OPERATIVE`), e una prova pura le tiene
-d'accordo con questa sezione.
+M24-A; completata lo stesso giorno (mandato M24-D) coi due controlli trovati
+dal piano a gruppi M24-C.* Le stesse voci sono in
+`scripts/contratto-preflight-rilascio.mjs` (`CONTROLLI_OBBLIGATORI`,
+`CONDIZIONI_OPERATIVE`), e una prova pura le tiene d'accordo con questa
+sezione.
 
-🔴 **I QUATTRO CONTROLLI NON SONO STATI ESEGUITI.** Il contratto li richiede:
+🔴 **I SEI CONTROLLI NON SONO STATI ESEGUITI.** Il contratto li richiede:
 finché non risultano verdi, misurati in sola lettura sulla produzione,
 nessuna fase parte. Qui c'è **cosa** va accertato, non come.
 
@@ -251,6 +254,8 @@ nessuna fase parte. Qui c'è **cosa** va accertato, non come.
 | `vincoli_senza_frase` | `20260923000004` | nessun vincolo che rifiuta, fuori dall'elenco congelato, è privo della frase italiana | la verifica della `20260923000004` si ferma (righe 172-176) |
 | `soggetti_e_utenti_presenti` | `20260919000001`, `20260921000003`, `20260923000003` | esistono un utente titolare e uno staff, e i soggetti `srls`, `tasca`, `azienda_agricola` | le tre verifiche si fermano (righe 185-189, 601-607, 490-502) |
 | `modulo_di_rete_con_tempo_massimo` | `20260920000002` | la funzione di invio del modulo di rete installato accetta il parametro `timeout_milliseconds` | la migrazione passa, e l'errore comparirebbe solo inviando i promemoria (riga 135; la verifica guarda solo il testo, riga 274) |
+| `causali_di_uscita_presenti` | `20260921000003` | fra le causali di cassa esiste almeno una di tipo uscita, attiva e non di sistema, e almeno una di tipo uscita e di sistema, attiva o no | la verifica della `20260921000003` si ferma (righe 610-616) |
+| `conti_del_1996_senza_documento` | `20260923000003` | per il soggetto `srls` la regola `conti_senza_documento`, sulle serate dal 01/01/1996 al 31/12/1996, non trova nessun conto | la verifica della `20260923000003` si ferma (righe 509-512) |
 
 ⚠️ **Le sei funzioni ammesse sono ricavate dai sorgenti, non dalla
 produzione**: sono quelle la cui ultima definizione fino alla
@@ -291,7 +296,7 @@ una risposta scritta nel mandato di rilascio.
 
 ## Cosa non è verificato
 
-- i quattro controlli obbligatori qui sopra: richiesti, mai eseguiti;
+- i sei controlli obbligatori qui sopra: richiesti, mai eseguiti;
 - tutto l'elenco dei «rischi non misurabili» qui sopra;
 - lo stato di queste migrazioni su Borgo58-Prova: in questo lavoro Prova non è
   stata interrogata a mano.
