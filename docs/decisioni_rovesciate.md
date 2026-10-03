@@ -153,8 +153,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
 | 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 | 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
+| 97 | 03/10/2026 | se il ruolo del lettore del preflight esiste già, la migrazione si ferma |
 
-⚠️ **Righe: 97.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 98.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3560,3 +3561,25 @@ quando questa sezione è stata scritta.
      né un dato di produzione, e nessun valore di produzione è stato letto,
      copiato o citato. Il modello di oggi è **10 eccezioni storiche + 1
      preparazione temporanea della prova**.
+
+## 97 · 03/10/2026 — «se il ruolo del lettore del preflight esiste già, la migrazione si ferma»
+
+1. **Cosa era stato deciso e quando.** Il **03/10/2026**, nel mandato M23-C:
+   la migrazione che crea `borgo58_preflight_reader` si ferma se il ruolo
+   esiste già.
+
+2. **La ragione di allora.** Non modificare in silenzio i privilegi di un
+   ruolo che qualcuno potrebbe aver toccato.
+
+3. **Cosa si decide adesso** (integrazione M23-C-1, Alessio). Il ruolo
+   esistente si accetta **solo se è una scatola vuota** — niente login,
+   niente password, nessun attributo amministrativo, nessuna appartenenza,
+   nessun oggetto, nessun privilegio esplicito — e solo allora riceve di
+   nuovo la lettura minima. In ogni altro caso si ferma prima di toccare
+   qualcosa. Migrazione `20261003000001`, proposta non applicata.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che accettiamo.**
+   Un ruolo vive sull'intero server, non nello schema: ricostruendo Prova lo
+   schema sparisce e il ruolo resta, spoglio. Fermarsi sempre avrebbe
+   bloccato ogni ricostruzione. L'eccezione è scritta, ed è limitata al
+   ruolo che non può fare niente.
