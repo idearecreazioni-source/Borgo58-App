@@ -4,6 +4,10 @@
 · **aggiornato il 29/09/2026 (mandato M16-q)**: con il passo preparatorio
 `20260929000001` le mancanti sono **17**, le applicabili **16**, e la
 `20260921000001` resta l'unica da saltare stabilmente
+· **aggiornato il 03/10/2026 (mandato M24-B)**: quattro controlli obbligatori
+in sola lettura e cinque condizioni operative, dall'audit M24-A — vedi
+«Controlli obbligatori e condizioni operative»; i controlli **non sono stati
+eseguiti**
 · **NESSUNA PROMOZIONE È STATA FATTA**: niente è stato unito in `master`,
 nessuna migrazione applicata, nessuna funzione online installata, nessun
 sito pubblicato. Questo è un piano, non un resoconto di rilascio.
@@ -230,8 +234,64 @@ Ci si ferma, senza correggere e senza riprovare, se:
 - arriva un allarme su Telegram durante o subito dopo;
 - il sito va online prima che le migrazioni siano finite.
 
+## Controlli obbligatori e condizioni operative
+
+*Aggiunta il 03/10/2026 (mandato M24-B), dai risultati dell'audit statico
+M24-A.* Le stesse voci sono in `scripts/contratto-preflight-rilascio.mjs`
+(`CONTROLLI_OBBLIGATORI`, `CONDIZIONI_OPERATIVE`), e una prova pura le tiene
+d'accordo con questa sezione.
+
+🔴 **I QUATTRO CONTROLLI NON SONO STATI ESEGUITI.** Il contratto li richiede:
+finché non risultano verdi, misurati in sola lettura sulla produzione,
+nessuna fase parte. Qui c'è **cosa** va accertato, non come.
+
+| Controllo | Prima di | Cosa deve risultare | Se non è vero |
+|---|---|---|---|
+| `funzioni_che_nominano_la_produzione` | `20260920000001` | le funzioni vive che contengono l'identificativo del progetto di produzione sono al più le sei che la `20260917000001` e la `20260920000001` riscrivono: `chiedi_lettura_posta`, `invia_email_conferma`, `invia_preventivo_per_email`, `notify_reservation_telegram`, `segnala_allarme`, `send_due_task_reminders` | la verifica della `20260920000001` si ferma (righe 377-383) |
+| `vincoli_senza_frase` | `20260923000004` | nessun vincolo che rifiuta, fuori dall'elenco congelato, è privo della frase italiana | la verifica della `20260923000004` si ferma (righe 172-176) |
+| `soggetti_e_utenti_presenti` | `20260919000001`, `20260921000003`, `20260923000003` | esistono un utente titolare e uno staff, e i soggetti `srls`, `tasca`, `azienda_agricola` | le tre verifiche si fermano (righe 185-189, 601-607, 490-502) |
+| `modulo_di_rete_con_tempo_massimo` | `20260920000002` | la funzione di invio del modulo di rete installato accetta il parametro `timeout_milliseconds` | la migrazione passa, e l'errore comparirebbe solo inviando i promemoria (riga 135; la verifica guarda solo il testo, riga 274) |
+
+⚠️ **Le sei funzioni ammesse sono ricavate dai sorgenti, non dalla
+produzione**: sono quelle la cui ultima definizione fino alla
+`20260916000002` contiene l'identificativo. Una funzione creata a mano in
+produzione, fuori dalle migrazioni, non comparirebbe in questo elenco: è
+proprio ciò che il controllo deve scoprire.
+
+⚠️ **`vincoli_senza_frase()` ha il portiere del titolare**: chi misura in sola
+lettura non può chiamarla, e deve ottenere lo stesso risultato da una lettura
+del catalogo. Come, lo decide il mandato che costruisce lo strumento di
+misura.
+
+**Condizioni operative non aggirabili.** Non sono misure: sono vincoli sul
+modo di fare il rilascio. Nessuna risulta già soddisfatta, e ciascuna vuole
+una risposta scritta nel mandato di rilascio.
+
+- `esclusa_resta_esclusa` — la `20260921000001` non si applica mai
+  direttamente: si passa sempre `--salta 20260921000001`, e la registra la
+  `20260921000002` dopo la propria verifica.
+- `finestra_della_vista_dei_costi` — la `20260922000001` ricrea la vista dei
+  costi per riga di ricetta **senza** la protezione per ruolo, e solo la
+  `20260923000001` la rimette. Sono due transazioni separate: fra le due,
+  chi è collegato come staff potrebbe vedere i costi. Serve una protezione
+  operativa esplicita per quella finestra.
+- `nessun_tempo_massimo_sui_blocchi` — `npm run migra` non imposta oggi
+  nessun tempo massimo di attesa sui blocchi: un `ALTER TABLE` o l'indice
+  aspettano senza limite dietro una transazione lunga, e le scritture del
+  gestionale si accodano. Un'attesa va interrotta a mano.
+- `storico_dei_costi_riga_per_riga` — la sanatoria della `20260922000001`
+  aggiorna le righe di ricetta una per una, e ogni aggiornamento fa scattare
+  il trigger dello storico dei costi (`20260820000003`, righe 374-376). È
+  una modifica di dati che si annulla solo da una copia: serve una strategia
+  di ripristino **già verificata**, non solo una copia fatta.
+- `righe_temporanee_nell_agenda` — le verifiche della `20260920000003`,
+  `20260920000004` e `20260920000005` creano e cancellano impegni veri
+  dell'agenda della produzione, dentro la propria transazione. L'agenda non è
+  nel registro delle cancellazioni, quindi non lasciano lapidi.
+
 ## Cosa non è verificato
 
+- i quattro controlli obbligatori qui sopra: richiesti, mai eseguiti;
 - tutto l'elenco dei «rischi non misurabili» qui sopra;
 - lo stato di queste migrazioni su Borgo58-Prova: in questo lavoro Prova non è
   stata interrogata a mano.

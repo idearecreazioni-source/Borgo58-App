@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import {
   CONDIZIONI_DI_ARRESTO,
+  CONDIZIONI_OPERATIVE,
   CONDIZIONI_PER_PARTIRE,
+  CONTROLLI_OBBLIGATORI,
   ESCLUSA,
   FASI,
+  FUNZIONI_CHE_LO_PERDONO,
   ULTIMA_IN_PRODUZIONE,
   VERSIONI_DA_REGISTRARE,
+  problemiDeiControlli,
   problemiDelPiano,
 } from "../../scripts/contratto-preflight-rilascio.mjs";
 
@@ -132,6 +136,128 @@ describe("il controllo di coerenza del piano", () => {
   it("vede un giro fuori ordine", () => {
     const rovesciato = [...FASI[1].versioni].reverse();
     expect(problemiDelPiano([FASI[0], { ...FASI[1], versioni: rovesciato }]).join(" ")).toMatch(/ordine di numero/);
+  });
+});
+
+// =====================================================================
+// I QUATTRO CONTROLLI OBBLIGATORI — 03/10/2026, mandato M24-B
+// =====================================================================
+// L'audit M24-A li ha trovati nei sorgenti delle migrazioni. Queste prove
+// tengono fermo che il contratto li RICHIEDA tutti: toglierne uno, renderlo
+// facoltativo o legarlo a una migrazione sbagliata le fa diventare rosse.
+const PIANO = "docs/consegne/20260928_piano_pre-produzione_16_migrazioni.md";
+const sqlDi = (versione) => {
+  const file = readdirSync(CARTELLA).find((f) => f.startsWith(`${versione}_`));
+  return readFileSync(`${CARTELLA}/${file}`, "utf8");
+};
+const righe = (testo, da, a) => testo.split("\n").slice(da - 1, a).join("\n");
+const ATTESI = {
+  funzioni_che_nominano_la_produzione: ["20260920000001"],
+  vincoli_senza_frase: ["20260923000004"],
+  soggetti_e_utenti_presenti: ["20260919000001", "20260921000003", "20260923000003"],
+  modulo_di_rete_con_tempo_massimo: ["20260920000002"],
+};
+
+describe("i quattro controlli obbligatori", () => {
+  it("sono esattamente quattro, tutti obbligatori, ciascuno prima delle migrazioni giuste", () => {
+    expect(CONTROLLI_OBBLIGATORI.map((c) => c.id)).toEqual(Object.keys(ATTESI));
+    for (const c of CONTROLLI_OBBLIGATORI) {
+      expect(c.obbligatorio, c.id).toBe(true);
+      expect([...c.prima], c.id).toEqual(ATTESI[c.id]);
+      expect(Object.isFrozen(c), c.id).toBe(true);
+    }
+    expect(problemiDeiControlli()).toEqual([]);
+  });
+
+  it("le condizioni per partire e di arresto li pretendono", () => {
+    expect(CONDIZIONI_PER_PARTIRE.join(" ")).toMatch(/i quattro controlli obbligatori in sola lettura risultano verdi/);
+    expect(CONDIZIONI_DI_ARRESTO.join(" ")).toMatch(/un controllo obbligatorio non e' verde, o non e' stato misurato/);
+  });
+
+  // ⚠️ Le prove al contrario: rendere facoltativo, togliere o spostare un
+  //    controllo deve far trovare un problema.
+  it("vede un controllo tolto", () => {
+    for (const id of Object.keys(ATTESI)) {
+      const senza = CONTROLLI_OBBLIGATORI.filter((c) => c.id !== id);
+      expect(problemiDeiControlli(senza).join(" "), id).toMatch(new RegExp(`manca il controllo ${id}`));
+    }
+  });
+
+  it("vede un controllo reso facoltativo", () => {
+    for (const c of CONTROLLI_OBBLIGATORI) {
+      const altri = CONTROLLI_OBBLIGATORI.map((x) => (x.id === c.id ? { ...x, obbligatorio: false } : x));
+      expect(problemiDeiControlli(altri).join(" "), c.id).toMatch(/non e' obbligatorio/);
+    }
+  });
+
+  it("vede un controllo legato a nessuna migrazione, a una estranea o all'esclusa", () => {
+    const con = (prima) => CONTROLLI_OBBLIGATORI.map((x, i) => (i === 0 ? { ...x, prima } : x));
+    expect(problemiDeiControlli(con([])).join(" ")).toMatch(/non dice prima di quali migrazioni/);
+    expect(problemiDeiControlli(con(["20990101000001"])).join(" ")).toMatch(/non e' nel contratto/);
+    expect(problemiDeiControlli(con(["20260921000001"])).join(" ")).toMatch(/non si applica mai/);
+  });
+
+  it("vede un valore o un'interrogazione dentro un controllo", () => {
+    for (const intruso of ["select count(*) from pg_proc", "SELECT 1", "https://esempio", "ey" + "Jabc", "abcdefghijabcdefghij", "x; y"]) {
+      const altri = CONTROLLI_OBBLIGATORI.map((x, i) => (i === 1 ? { ...x, richiede: intruso } : x));
+      expect(problemiDeiControlli(altri).join(" "), intruso).toMatch(/contiene un valore o un'interrogazione/);
+    }
+  });
+
+  it("le righe citate dicono davvero quello che il controllo afferma", () => {
+    expect(righe(sqlDi("20260920000001"), 377, 383)).toMatch(/pg_get_functiondef\(p\.oid\) like/);
+    expect(righe(sqlDi("20260920000001"), 377, 383)).toMatch(/raise exception/);
+    expect(righe(sqlDi("20260923000004"), 172, 176)).toMatch(/from vincoli_senza_frase\(\)/);
+    expect(righe(sqlDi("20260919000001"), 185, 189)).toMatch(/role = 'staff'/);
+    expect(righe(sqlDi("20260921000003"), 601, 607)).toMatch(/entity_type = 'tasca'/);
+    expect(righe(sqlDi("20260923000003"), 490, 502)).toMatch(/entity_type = 'azienda_agricola'/);
+    expect(righe(sqlDi("20260920000002"), 135, 135)).toMatch(/timeout_milliseconds/);
+    expect(righe(sqlDi("20260920000002"), 274, 274)).toMatch(/timeout_milliseconds/);
+  });
+
+  it("le sei funzioni ammesse sono proprio quelle che la 20260917000001 e la 20260920000001 riscrivono", () => {
+    const definite = (v) =>
+      [...sqlDi(v).matchAll(/create\s+or\s+replace\s+function\s+(?:public\.)?([a-z_0-9]+)/gi)].map((m) => m[1]);
+    const riscritte = new Set([...definite("20260917000001"), ...definite("20260920000001")]);
+    for (const f of FUNZIONI_CHE_LO_PERDONO) expect(riscritte.has(f), f).toBe(true);
+    expect([...FUNZIONI_CHE_LO_PERDONO].sort()).toEqual([...FUNZIONI_CHE_LO_PERDONO]);
+    expect(FUNZIONI_CHE_LO_PERDONO).toHaveLength(6);
+  });
+});
+
+describe("le condizioni operative", () => {
+  const ATTESE_OPERATIVE = [
+    "esclusa_resta_esclusa",
+    "finestra_della_vista_dei_costi",
+    "nessun_tempo_massimo_sui_blocchi",
+    "storico_dei_costi_riga_per_riga",
+    "righe_temporanee_nell_agenda",
+  ];
+
+  it("sono le cinque dimostrate dall'audit", () => {
+    expect(CONDIZIONI_OPERATIVE.map((c) => c.id)).toEqual(ATTESE_OPERATIVE);
+  });
+
+  it("la vista perde la protezione nella 20260922000001 e la riprende nella 20260923000001", () => {
+    expect(sqlDi("20260922000001")).toMatch(/create or replace view v_recipe_row_costs as/);
+    expect(sqlDi("20260923000001")).toMatch(/alter view v_recipe_row_costs set \(security_invoker = true\)/);
+  });
+
+  it("lo strumento di rilascio non imposta un tempo massimo sui blocchi", () => {
+    for (const f of ["scripts/migra.mjs", "scripts/comune.mjs"]) {
+      expect(readFileSync(f, "utf8"), f).not.toMatch(/lock_timeout/);
+    }
+  });
+
+  it("il piano le dichiara tutte, coi quattro controlli e l'esclusa", () => {
+    const piano = readFileSync(PIANO, "utf8");
+    const sezione = piano.slice(piano.indexOf("## Controlli obbligatori e condizioni operative"));
+    expect(sezione.length).toBeGreaterThan(100);
+    for (const id of [...Object.keys(ATTESI), ...ATTESE_OPERATIVE]) expect(sezione, id).toContain(`\`${id}\``);
+    expect(sezione).toMatch(/NON SONO STATI ESEGUITI/);
+    expect(sezione).toContain("--salta 20260921000001");
+    expect(piano).not.toMatch(/https?:\/\//);
+    expect(piano).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}/);
   });
 });
 
