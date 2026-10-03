@@ -10,6 +10,9 @@
 > operativo descritto qui richiede un nuovo consenso esplicito di Alessio.**
 > Il preflight resta NON PRONTO, e il connettore Supabase «lettura» della
 > sessione **non** è considerato accesso protetto (decisione del 03/10/2026).
+> Il client C# resta **bloccato dal controllo automatico di sicurezza** di
+> Claude Code, e questo documento non propone modi per superarlo (§3.1).
+> Cosa il documento non autorizza è elencato al §8.
 
 Riferimenti già uniti in `slave`:
 `docs/consegne/20261002_disegno_adattatore_protetto_preflight.md` (il
@@ -136,30 +139,31 @@ estendendolo:
 - **uscita stretta** controllata due volte (adattatore e orchestratore), errori
   a codice fisso, nessun valore ripetuto, nessun risultato salvato.
 
-### 3.1 Il client verso il database — punto aperto
+### 3.1 Il client verso il database — bloccato
 
-Tre strade, nessuna oggi percorribile senza una decisione:
+Il client C# previsto (mandati M23-K e M23-L) è stato **bloccato dal
+controllo automatico di sicurezza di Claude Code** al momento di scriverlo.
+Quel blocco è un **confine di sicurezza**, non un ostacolo tecnico da
+risolvere: nell'attuale sessione non è superabile, e questo progetto non
+propone nessun modo per superarlo, allentarlo o spostarlo altrove.
 
-| Strada | Stato |
-|---|---|
-| client C# con la libreria PostgreSQL locale (`libpq` 17.10, impronta già calcolata) | la scrittura del client è **bloccata dai controlli di sicurezza di Claude Code** (M23-L) |
-| libreria PostgreSQL per Node | sarebbe una **dipendenza nuova**, da scaricare: vietato finora |
-| `psql` | non legge la password dall'ingresso standard; l'unico modo senza argomenti né ambiente sarebbe un file, **vietato** |
+> **Finché il controllo automatico non consente l'operazione nel suo
+> ambiente previsto, il client resta non eseguibile. Non si cercano
+> scorciatoie. L'eventuale sblocco richiede un chiarimento o un ambiente
+> ufficialmente approvato fuori da questo mandato.**
 
-La strada coerente col lavoro fatto è la prima. Per sbloccarla serve che
-Alessio scelga **come** autorizzare quei passi (permesso per la modifica dei
-file in quella cartella, oppure la modalità che chiede conferma a ogni
-azione, oppure scrivere lui il file) — vedi M23-L.
+Conseguenza: tutti i passi che dipendono dal client (§5, dal passo 4 in poi)
+restano **non eseguibili**, e il preflight resta NON PRONTO.
 
 ### 3.2 La credenziale
 
 - **Gestione credenziali di Windows**, una voce **per ambiente** (Prova e
   produzione mai la stessa), **creata da Alessio**.
-- L'adattatore la legge **solo in memoria** e la consegna al client senza
-  argomenti, ambiente, file o output. ⚠️ Leggere quella voce da un programma è
-  esattamente il tipo di azione che i controlli di sicurezza di Claude Code
-  hanno già bloccato: è probabile che **solo Alessio** possa lanciare quel
-  passo.
+- L'adattatore la riceverebbe **solo in memoria** e la consegnerebbe al
+  client senza argomenti, ambiente, file o output. Anche questo passo dipende
+  dal client, e vale per lui la stessa regola del §3.1: **non è eseguibile**
+  finché il controllo automatico non consente l'operazione nel suo ambiente
+  previsto.
 - **Come nasce la password** non ha un percorso conforme alle regole del
   progetto (documento dell'identità, §5.2): resta una **decisione di Alessio**.
 
@@ -204,7 +208,9 @@ Alessio**:
    (letto dal catalogo con l'accesso del proprietario, già usato per Prova);
 3. decisione e creazione della password **di Prova**, da Alessio, con la prova
    che non finisce in log, argomenti o cronologia;
-4. sblocco del client (§3.1) e collaudo della sola libreria;
+4. collaudo della sola libreria — **non eseguibile**: dipende dal client
+   bloccato (§3.1), e da qui in avanti nessun passo può partire finché il
+   controllo automatico non consente l'operazione nel suo ambiente previsto;
 5. primo collegamento con l'identità di Prova: la sessione risulta in sola
    lettura senza chiederlo;
 6. le misure su Prova: tipi giusti, e confronto con ciò che il proprietario
@@ -242,8 +248,23 @@ Ci si ferma, senza correggere e senza riprovare, se:
 3. **Il controllo 1** (funzioni che nominano la produzione): come misurarlo
    senza che la misura contenga il valore e senza leggere il Vault.
 4. **Come nasce la password** di Prova (e poi di produzione).
-5. **Come sbloccare il client** C# (§3.1).
-6. **Chi lancia l'adattatore** e da quale computer.
+5. **Chi lancia l'adattatore** e da quale computer.
+
+Il client C# **non** è una decisione aperta di questo documento: è bloccato
+dal controllo automatico di sicurezza, e il suo eventuale sblocco richiede un
+chiarimento o un ambiente ufficialmente approvato **fuori da questo mandato**
+(§3.1).
+
+## 8. Cosa questo documento NON autorizza
+
+- Il percorso con lo schema `preflight` è **solo una proposta progettuale**.
+- **Nessuna migrazione** è autorizzata.
+- **Nessuna funzione di database, nessun ruolo, nessuna password, nessuna
+  credenziale e nessuna connessione** sono autorizzati.
+- **L'estrazione della logica finanziaria** (il nucleo del totale del conto,
+  §2.1 e decisione 2) **non è autorizzata** senza un mandato separato.
+- **La proposta n. 153 resta aperta e invariata.**
+- **Nessuna decisione sulla produzione** è presa da questo documento.
 
 ## Cosa non è verificato
 
@@ -252,10 +273,11 @@ Ci si ferma, senza correggere e senza riprovare, se:
 - che una sessione in sola lettura respinga le scritture dentro le funzioni
   di misura;
 - cosa erediti un ruolo nuovo dai permessi comuni;
-- che il client C# possa caricare la libreria e leggere una credenziale.
+- che il client C# possa caricare la libreria e leggere una credenziale: il
+  client è bloccato (§3.1), e questa verifica non è eseguibile.
 
-Sono tutti passi del collaudo su Prova (§5), non affermazioni di questo
-documento.
+I primi tre sono passi del collaudo su Prova (§5), non affermazioni di
+questo documento.
 
 ## Cosa abbiamo rovesciato
 
