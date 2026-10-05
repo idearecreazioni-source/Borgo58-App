@@ -155,8 +155,9 @@ Valgono per **tutti** i gruppi, e non si ripetono sotto:
 
 ### G3 — `20260921000002` (con la `20260921000001` saltata)
 
-- **Precondizioni**: G2 concluso; il corpo vivo della funzione della posta è
-  ancora quello misurato il 28/09 (da rimisurare: la misura è vecchia).
+- **Precondizioni**: G2 concluso; `soggetti_e_utenti_presenti` verde
+  (titolare e `srls`, righe 417-420); il corpo vivo della funzione della posta
+  è ancora quello misurato il 28/09 (da rimisurare: la misura è vecchia).
 - **Copia**: quella della finestra.
 - **Protezioni**: la `20260921000001` **saltata esplicitamente**; nessuna
   lettura della posta in corso.
@@ -179,7 +180,8 @@ Valgono per **tutti** i gruppi, e non si ripetono sotto:
 
 ### G5 — `20260922000001` → `20260923000002`
 
-- **Precondizioni**: G4 concluso; condizione operativa
+- **Precondizioni**: G4 concluso; `soggetti_e_utenti_presenti` verde (`srls`,
+  per la `20260922000001` e la `20260923000002`); condizione operativa
   `storico_dei_costi_riga_per_riga` risolta: una strategia di ripristino
   **già verificata**, non solo una copia fatta; condizione
   `finestra_della_vista_dei_costi` risolta: una protezione decisa per il
@@ -210,8 +212,8 @@ Valgono per **tutti** i gruppi, e non si ripetono sotto:
 
 ### G7 — `20260928000001`
 
-- **Precondizioni**: G6 concluso; nessuna cancellazione in corso nel
-  gestionale.
+- **Precondizioni**: G6 concluso; `soggetti_e_utenti_presenti` verde
+  (titolare, righe 135-137); nessuna cancellazione in corso nel gestionale.
 - **Copia**: quella della finestra.
 - **Protezioni**: condizione `nessun_tempo_massimo_sui_blocchi`: qualcuno pronto
   a interrompere se l'indice resta in attesa.
@@ -229,13 +231,16 @@ per intero e i numeri veri.
 
 Dal contratto (`CONTROLLI_OBBLIGATORI`). 🔴 **I SEI CONTROLLI OBBLIGATORI
 NON SONO STATI ESEGUITI.** Gli ultimi due li ha trovati questo piano, e dal
-mandato M24-D sono nel contratto come gli altri quattro.
+mandato M24-D sono nel contratto come gli altri quattro. Dal mandato M27-B
+(05/10/2026) `soggetti_e_utenti_presenti` vale prima di **tutte** le
+migrazioni che, nei sorgenti, si fermano se mancano titolare, staff o
+soggetti: undici, nei gruppi da G1 a G7.
 
 | Controllo | Serve a | Stato |
 |---|---|---|
 | `funzioni_che_nominano_la_produzione` | G1 | non misurato |
 | `vincoli_senza_frase` | G6 | non misurato |
-| `soggetti_e_utenti_presenti` | G1, G2, G4, G6 | non misurato |
+| `soggetti_e_utenti_presenti` | G1, G2, G3, G4, G5, G6, G7 | non misurato |
 | `modulo_di_rete_con_tempo_massimo` | G1 | non misurato |
 | `causali_di_uscita_presenti` | G4 | non misurato |
 | `conti_del_1996_senza_documento` | G6 | non misurato |
@@ -270,11 +275,11 @@ Dal contratto (`CONDIZIONI_OPERATIVE`). **Nessuna ha una risposta scritta.**
 | G0 | ❌ | — | — | ❌ | **NO** |
 | G1 | ❌ | ❌ 3 non misurati | — | ❌ | **NO** |
 | G2 | ❌ | ❌ 1 non misurato | ❌ `righe_temporanee_nell_agenda` | ❌ | **NO** |
-| G3 | ❌ | — | ⚠️ `esclusa_resta_esclusa` da rispettare | ❌ | **NO** |
+| G3 | ❌ | ❌ 1 non misurato | ⚠️ `esclusa_resta_esclusa` da rispettare | ❌ | **NO** |
 | G4 | ❌ | ❌ 2 non misurati | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
-| G5 | ❌ | — | ❌ `finestra_della_vista_dei_costi`, `storico_dei_costi_riga_per_riga` | ❌ | **NO** |
+| G5 | ❌ | ❌ 1 non misurato | ❌ `finestra_della_vista_dei_costi`, `storico_dei_costi_riga_per_riga` | ❌ | **NO** |
 | G6 | ❌ | ❌ 3 non misurati | — | ❌ | **NO** |
-| G7 | ❌ | — | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
+| G7 | ❌ | ❌ 1 non misurato | ❌ `nessun_tempo_massimo_sui_blocchi` | ❌ | **NO** |
 
 In più, per tutti: `master` non contiene ancora le 17 migrazioni, e la
 copia di sicurezza della finestra non esiste.
