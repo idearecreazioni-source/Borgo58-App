@@ -10,6 +10,7 @@ import {
   FUNZIONI_CHE_LO_PERDONO,
   ULTIMA_IN_PRODUZIONE,
   VERSIONI_DA_REGISTRARE,
+  controlliRichiestiPrima,
   problemiDeiControlli,
   problemiDelPiano,
 } from "../../scripts/contratto-preflight-rilascio.mjs";
@@ -156,7 +157,11 @@ const righe = (testo, da, a) => testo.split("\n").slice(da - 1, a).join("\n");
 const ATTESI = {
   funzioni_che_nominano_la_produzione: ["20260920000001"],
   vincoli_senza_frase: ["20260923000004"],
-  soggetti_e_utenti_presenti: ["20260919000001", "20260921000003", "20260923000003"],
+  soggetti_e_utenti_presenti: [
+    "20260919000001", "20260920000003", "20260920000004", "20260920000005",
+    "20260921000002", "20260921000003", "20260922000001", "20260923000002",
+    "20260923000003", "20260923000004", "20260928000001",
+  ],
   modulo_di_rete_con_tempo_massimo: ["20260920000002"],
   causali_di_uscita_presenti: ["20260921000003"],
   conti_del_1996_senza_documento: ["20260923000003"],
@@ -225,6 +230,20 @@ describe("i sei controlli obbligatori", () => {
     expect(righe(sqlDi("20260919000001"), 185, 189)).toMatch(/role = 'staff'/);
     expect(righe(sqlDi("20260921000003"), 601, 607)).toMatch(/entity_type = 'tasca'/);
     expect(righe(sqlDi("20260923000003"), 490, 502)).toMatch(/entity_type = 'azienda_agricola'/);
+    // le righe nuove del controllo sui soggetti (M27-B): ricerca e rifiuto
+    for (const [v, da, a, cosa] of [
+      ["20260920000003", 220, 222, /role = 'titolare'/],
+      ["20260920000004", 449, 451, /role = 'titolare'/],
+      ["20260920000005", 151, 153, /role = 'titolare'/],
+      ["20260921000002", 417, 420, /entity_type = 'srls'/],
+      ["20260922000001", 1110, 1111, /entity_type = 'srls'/],
+      ["20260923000002", 265, 266, /entity_type = 'srls'/],
+      ["20260923000004", 153, 154, /role = 'titolare'/],
+      ["20260928000001", 135, 137, /role = 'titolare'/],
+    ]) {
+      expect(righe(sqlDi(v), da, a), v).toMatch(cosa);
+      expect(righe(sqlDi(v), da, a), v).toMatch(/raise exception/);
+    }
     expect(righe(sqlDi("20260920000002"), 135, 135)).toMatch(/timeout_milliseconds/);
     expect(righe(sqlDi("20260920000002"), 274, 274)).toMatch(/timeout_milliseconds/);
     const causali = righe(sqlDi("20260921000003"), 610, 616);
@@ -286,6 +305,92 @@ describe("le condizioni operative", () => {
     expect(sezione).toContain("--salta 20260921000001");
     expect(piano).not.toMatch(/https?:\/\//);
     expect(piano).not.toMatch(/eyJ[A-Za-z0-9_-]{10,}/);
+  });
+});
+
+// =====================================================================
+// SOGGETTI E UTENTI: L'ELENCO VIENE DAI CONTROLLI DEI SORGENTI — M27-B
+// =====================================================================
+// Una migrazione dipende dal controllo se nei suoi sorgenti c'e' una
+// ricerca su `user_roles` o `entities` salvata in una variabile e, entro
+// poche righe, un `if <variabile> is null` seguito da `raise exception`.
+// Le parole da sole non bastano: e' il rifiuto che ferma la migrazione.
+function guardieSoggetti(testo) {
+  const righeT = testo.split(/\r?\n/).map((l) => l.replace(/--.*$/, ""));
+  const trovate = [];
+  righeT.forEach((l, i) => {
+    const m = l.match(/\binto\s+(v_[a-z0-9_]+)\s+from\s+(?:public\.)?(user_roles|entities)\b/i);
+    if (!m) return;
+    const q = righeT.slice(i, i + 3).join(" ").match(/(?:role|entity_type)\s*=\s*'([a-z_]+)'/);
+    if (!q) return;
+    const nulla = new RegExp("\\bif\\b[^;]*\\b" + m[1] + "\\s+is\\s+null", "i");
+    for (let j = i + 1; j < Math.min(righeT.length, i + 12); j++) {
+      if (nulla.test(righeT[j])) {
+        if (/raise\s+exception/i.test(righeT.slice(j, j + 4).join(" "))) trovate.push(q[1]);
+        break;
+      }
+    }
+  });
+  return trovate;
+}
+
+const GRUPPI_DEL_PIANO = () => {
+  const testo = readFileSync(PIANO_A_GRUPPI, "utf8");
+  const sezione = testo.slice(testo.indexOf("## 2. I gruppi e i loro confini"), testo.indexOf("## 3."));
+  const gruppi = {};
+  for (const m of sezione.matchAll(/^\| \*\*(G\d)\*\* \| ([^|]+) \|/gm)) {
+    const [da, a] = [...m[2].matchAll(/`(\d{14})`/g)].map((x) => x[1]);
+    gruppi[m[1]] = a ? VERSIONI_DA_REGISTRARE.filter((v) => v >= da && v <= a && v !== ESCLUSA.versione) : [da];
+  }
+  return gruppi;
+};
+
+describe("soggetti e utenti: l'elenco e' quello dei sorgenti", () => {
+  const soggetti = CONTROLLI_OBBLIGATORI.find((c) => c.id === "soggetti_e_utenti_presenti");
+
+  it("le migrazioni che si fermano senza titolare, staff o soggetti sono esattamente quelle del contratto", () => {
+    const dalSorgente = VERSIONI_DA_REGISTRARE.filter(
+      (v) => v !== ESCLUSA.versione && guardieSoggetti(sqlDi(v)).length > 0,
+    );
+    expect([...soggetti.prima]).toEqual(dalSorgente);
+    // e l'esclusa ha lo stesso controllo, ma non si applica mai
+    expect(guardieSoggetti(sqlDi(ESCLUSA.versione)).length).toBeGreaterThan(0);
+    expect(soggetti.prima).not.toContain(ESCLUSA.versione);
+  });
+
+  it("il riconoscitore distingue: senza rifiuto, o con la variabile fuori dal rifiuto, non conta", () => {
+    expect(guardieSoggetti("select user_id into v_t from user_roles where role = 'titolare';\nif v_t is null then raise exception 'x'; end if;")).toEqual(["titolare"]);
+    expect(guardieSoggetti("select user_id into v_t from user_roles where role = 'titolare';\nperform 1;")).toEqual([]);
+    expect(guardieSoggetti("select id into v_a from entities where entity_type = 'tasca';\nif v_b is null then raise exception 'x'; end if;")).toEqual([]);
+    expect(guardieSoggetti("-- select user_id into v_t from user_roles where role = 'titolare';\nif v_t is null then raise exception 'x'; end if;")).toEqual([]);
+  });
+
+  it("nessun duplicato, e nessuna versione fuori dal contratto", () => {
+    expect(new Set(soggetti.prima).size).toBe(soggetti.prima.length);
+    for (const v of soggetti.prima) expect(VERSIONI_DA_REGISTRARE).toContain(v);
+  });
+
+  it("senza il controllo restano bloccati tutti i gruppi che ne dipendono, e solo quelli", () => {
+    const gruppi = GRUPPI_DEL_PIANO();
+    expect(Object.keys(gruppi)).toEqual(["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7"]);
+    const bloccati = Object.entries(gruppi)
+      .filter(([, vs]) => vs.some((v) => controlliRichiestiPrima(v).includes("soggetti_e_utenti_presenti")))
+      .map(([g]) => g);
+    expect(bloccati).toEqual(["G1", "G2", "G3", "G4", "G5", "G6", "G7"]);
+    // G0 non dipende: la sua migrazione non ha nessuna ricerca su utenti o soggetti
+    expect(guardieSoggetti(sqlDi("20260929000001"))).toEqual([]);
+    expect(controlliRichiestiPrima("20260929000001")).toEqual([]);
+  });
+
+  it("il piano a gruppi dice lo stesso, gruppo per gruppo", () => {
+    const testo = readFileSync(PIANO_A_GRUPPI, "utf8");
+    for (const g of ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7"]) {
+      const inizio = testo.search(new RegExp("^### " + g + " ", "m"));
+      const fine = testo.indexOf("\n### ", inizio + 1);
+      const sezione = testo.slice(inizio, fine === -1 ? undefined : fine);
+      const precondizioni = sezione.slice(0, sezione.indexOf("- **Copia**"));
+      expect(precondizioni.includes("`soggetti_e_utenti_presenti`"), g).toBe(g !== "G0");
+    }
   });
 });
 

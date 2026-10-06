@@ -136,11 +136,27 @@ export const CONTROLLI_OBBLIGATORI = Object.freeze([
   Object.freeze({
     id: "soggetti_e_utenti_presenti",
     obbligatorio: true,
-    prima: Object.freeze(["20260919000001", "20260921000003", "20260923000003"]),
+    // ⚠️ L'elenco viene dai CONTROLLI dei sorgenti (una ricerca su utenti o
+    //    soggetti seguita da un rifiuto se manca), non dalle parole: una prova
+    //    lo ricava di nuovo dai file e pretende che coincida (M27-B, 05/10/2026).
+    //    La 20260921000001 ha lo stesso controllo, ma non si applica mai.
+    prima: Object.freeze([
+      "20260919000001",
+      "20260920000003",
+      "20260920000004",
+      "20260920000005",
+      "20260921000002",
+      "20260921000003",
+      "20260922000001",
+      "20260923000002",
+      "20260923000003",
+      "20260923000004",
+      "20260928000001",
+    ]),
     richiede:
       "esistono un utente titolare e un utente staff, e i soggetti srls, tasca e azienda_agricola",
     altrimenti:
-      "20260919000001 (righe 185-189), 20260921000003 (righe 601-607), 20260923000003 (righe 490-502): la verifica si ferma se ne manca uno",
+      "la verifica si ferma se ne manca uno: 20260919000001 (righe 185-188), 20260920000003 (righe 220-222), 20260920000004 (righe 449-451), 20260920000005 (righe 151-153), 20260921000002 (righe 417-420), 20260921000003 (righe 601-607), 20260922000001 (righe 1110-1111), 20260923000002 (righe 265-266), 20260923000003 (righe 490-502), 20260923000004 (righe 153-154), 20260928000001 (righe 135-137)",
   }),
   Object.freeze({
     id: "modulo_di_rete_con_tempo_massimo",
@@ -233,7 +249,8 @@ export const CONDIZIONI_DI_ARRESTO = Object.freeze([
 const PRIMA_ATTESA = Object.freeze({
   funzioni_che_nominano_la_produzione: "20260920000001",
   vincoli_senza_frase: "20260923000004",
-  soggetti_e_utenti_presenti: "20260919000001,20260921000003,20260923000003",
+  soggetti_e_utenti_presenti:
+    "20260919000001,20260920000003,20260920000004,20260920000005,20260921000002,20260921000003,20260922000001,20260923000002,20260923000003,20260923000004,20260928000001",
   modulo_di_rete_con_tempo_massimo: "20260920000002",
   causali_di_uscita_presenti: "20260921000003",
   conti_del_1996_senza_documento: "20260923000003",
@@ -267,6 +284,15 @@ export function problemiDeiControlli(controlli = CONTROLLI_OBBLIGATORI, versioni
     if (/:\/\/|\bey[A-Z]|\b[a-z]{20}\b|;/.test(testo) || /\b(select|from)\b/i.test(testo)) problemi.push(`${c.id}: contiene un valore o un'interrogazione`);
   }
   return problemi;
+}
+
+/**
+ * Quali controlli obbligatori devono essere verdi prima di questa versione?
+ * Funzione pura: serve a dire quali gruppi del rilascio restano bloccati se
+ * un controllo non e' verde o non e' stato misurato.
+ */
+export function controlliRichiestiPrima(versione, controlli = CONTROLLI_OBBLIGATORI) {
+  return controlli.filter((c) => (c.prima ?? []).includes(versione)).map((c) => c.id);
 }
 
 /**
