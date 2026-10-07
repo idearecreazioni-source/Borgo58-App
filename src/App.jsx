@@ -8,6 +8,8 @@ import ModulePlaceholder from "./pages/ModulePlaceholder";
 import RicettarioHome from "./pages/ricettario/RicettarioHome";
 import IngredientiList from "./pages/ricettario/IngredientiList";
 import SchedeProdotti from "./pages/ricettario/SchedeProdotti";
+import BozzeList from "./pages/ricettario/BozzeList";
+import BozzaDetail from "./pages/ricettario/BozzaDetail";
 import Fotografa from "./pages/assistente/Fotografa";
 import Detta from "./pages/assistente/Detta";
 import IngredienteForm from "./pages/ricettario/IngredienteForm";
@@ -157,6 +159,10 @@ function AppRoutes() {
         <Route path="/ricettario/ricette/:id" element={<RecipeDetailByRole />} />
         <Route path="/ricettario/ingredienti" element={<RequireTitolare><IngredientiList /></RequireTitolare>} />
         <Route path="/ricettario/schede" element={<RequireTitolare><SchedeProdotti /></RequireTitolare>} />
+        {/* Le bozze di ricetta (Fase 1A, 06/10/2026): NON nel menu finché la
+            migrazione 20261006000001 e il corridoio non sono installati. */}
+        <Route path="/ricettario/bozze" element={<RequireTitolare><BozzeList /></RequireTitolare>} />
+        <Route path="/ricettario/bozze/:id" element={<RequireTitolare><BozzaDetail /></RequireTitolare>} />
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
