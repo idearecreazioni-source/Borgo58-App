@@ -15,6 +15,11 @@
 //      · «2-3 patate»    → quantità vuota: fra due numeri non si sceglie;
 //      · «2 confezioni da 125 g» → quantità vuota: due numeri, due letture;
 //      · «due uova»      → quantità vuota: un numero in lettere non si indovina;
+//      · «2 uova e un tuorlo» → quantità vuota: anche «un» è un numero;
+//      · «1.000 g»       → quantità vuota: mille o uno? il separatore si legge
+//                          in due modi, e non si sceglie;
+//      · «100/150 g»     → quantità vuota: una frazione di cucina è piccola
+//                          («1/2», «3/4»), questa è un'alternativa;
 //      · «200 ml»        → unità «ml» com'è scritta: convertirla in litri
 //                          sarebbe un calcolo che nessuno ha chiesto.
 //    Le uniche trasformazioni sono SINONIMI dello stesso codice («grammi» →
@@ -39,7 +44,10 @@
 export const LUNGHEZZA_MASSIMA = 20000;
 
 const INDIRIZZO = /(?:https?:\/\/|www\.)[^\s<>"]+/gi;
-const SOLO_INDIRIZZO = /^(?:(?:https?:\/\/|www\.)[^\s<>"]+\s*)+$/i;
+// Ciò che resta attorno a un indirizzo e non dice niente: «<…>», «(…)», «…».
+const SOLO_CORNICE = /^[\s<>()[\]{}"'«».,;:!?-]*$/;
+// Un riferimento conserva l'indirizzo, non la punteggiatura che lo chiude.
+const CODA_INDIRIZZO = /[)\]}.,;:!?'»]+$/;
 
 const SEZIONE_INGREDIENTI = /^(?:ingredienti|ingredients)(?:\s+(?:per\b.*|occorrenti))?\s*:?$/i;
 const SEZIONE_PASSAGGI =
@@ -74,6 +82,9 @@ const MISURE_NON_CODIFICATE = new Set([
 const QB = /\b(?:q\.?\s*b\.?|quanto basta)(?=\s|[.,;:)]|$)/i;
 const NUMERO = String.raw`\d+(?:[.,]\d+)?(?:\/\d+)?`;
 const INTERVALLO = new RegExp(String.raw`${NUMERO}\s*(?:-|–|—|o|a)\s*${NUMERO}`, "i");
+// «1.000» o «1,250»: separatore seguito da ESATTAMENTE tre cifre, senza zero
+// davanti. In italiano sono migliaia, in inglese decimali: due letture.
+const SEPARATORE_AMBIGUO = /^[1-9]\d{0,2}[.,]\d{3}$/;
 const NUMERI_IN_LETTERE =
   /\b(?:mezz[oa]|un[oa]?|due|tre|quattro|cinque|sei|sette|otto|nove|dieci|dodici|venti|trenta|cento)\b/i;
 
@@ -91,8 +102,11 @@ function senzaSegno(riga) {
 function numeroDa(testo) {
   const t = testo.replace(",", ".");
   if (t.includes("/")) {
+    // Solo una frazione di cucina: intera, minore di uno, con denominatore
+    // da 2 a 10. «100/150» o «3/2» non si dividono.
+    if (!/^\d+\/\d+$/.test(t)) return null;
     const [a, b] = t.split("/").map(Number);
-    return b > 0 ? a / b : null;
+    return a >= 1 && b >= 2 && b <= 10 && a < b ? a / b : null;
   }
   const n = Number(t);
   return Number.isFinite(n) && n > 0 ? n : null;
@@ -110,7 +124,7 @@ function leggiIngrediente(originale) {
   const base = { testo_originale: originale, nome: riga, quantita: null, unita: null, ingredient_id: null, nota: null };
 
   if (QB.test(riga)) {
-    const nome = senzaDi(riga.replace(QB, "").replace(/\s+/g, " "));
+    const nome = senzaDi(pulisci(riga.replace(QB, "")));
     const n = nome || riga;
     buchi.push(`«${n}»: «q.b.» non è una quantità`);
     return { riga: { ...base, nome: n, nota: "q.b." }, buchi };
@@ -131,6 +145,16 @@ function leggiIngrediente(originale) {
     if (NUMERI_IN_LETTERE.test(riga)) {
       buchi.push(`«${riga}»: la quantità è scritta in lettere, va riscritta in cifre`);
     }
+    return { riga: base, buchi };
+  }
+
+  // Un numero in cifre E uno in lettere («2 uova e un tuorlo») sono due numeri.
+  if (NUMERI_IN_LETTERE.test(riga)) {
+    buchi.push(`«${riga}»: più di un numero, la quantità va scelta`);
+    return { riga: base, buchi };
+  }
+  if (SEPARATORE_AMBIGUO.test(numeri[0])) {
+    buchi.push(`«${riga}»: «${numeri[0]}» si legge in due modi, la quantità va riscritta`);
     return { riga: base, buchi };
   }
 
@@ -194,7 +218,8 @@ export function bozzaDaTesto(testo) {
       messaggio: `Il testo è più lungo di ${LUNGHEZZA_MASSIMA} caratteri: non sembra una ricetta incollata.`,
     };
   }
-  if (SOLO_INDIRIZZO.test(intero)) {
+  const indirizzi = intero.match(INDIRIZZO) ?? [];
+  if (indirizzi.length > 0 && SOLO_CORNICE.test(intero.replace(INDIRIZZO, ""))) {
     return {
       ok: false,
       motivo: "solo_indirizzo",
@@ -203,13 +228,14 @@ export function bozzaDaTesto(testo) {
     };
   }
 
-  const riferimento = (intero.match(INDIRIZZO) ?? [])[0] ?? null;
+  const riferimento = indirizzi.length > 0 ? indirizzi[0].replace(CODA_INDIRIZZO, "") : null;
   const buchi = [];
   const ingredienti = [];
   const passaggi = [];
   const nonClassificate = [];
   let titolo = null;
-  let porzioni = null;
+  let candidatoTitoloVisto = false;
+  const porzioniLette = [];
   let sezione = null;
   let vistaUnaSezione = false;
 
@@ -217,7 +243,8 @@ export function bozzaDaTesto(testo) {
     const riga = pulisci(grezza);
     if (riga === "") continue;
     const senzaLink = pulisci(riga.replace(INDIRIZZO, ""));
-    if (senzaLink === "") continue; // una riga che è solo un link: è il riferimento
+    // Una riga che è solo un link, anche fra parentesi: è il riferimento.
+    if (SOLO_CORNICE.test(senzaLink)) continue;
 
     if (SEZIONE_INGREDIENTI.test(senzaLink)) {
       sezione = "ingredienti";
@@ -232,9 +259,8 @@ export function bozzaDaTesto(testo) {
     const p = senzaLink.match(PORZIONI);
     if (p && sezione !== "passaggi" && /\d/.test(p[1])) {
       const letta = leggiPorzioni(p[1]);
-      if (porzioni === null && letta.porzioni !== null) porzioni = letta.porzioni;
-      else if (letta.buco) buchi.push(letta.buco);
-      else if (porzioni !== letta.porzioni) buchi.push(`porzioni indicate due volte in modo diverso`);
+      if (letta.buco) buchi.push(letta.buco);
+      porzioniLette.push(letta.porzioni);
       continue;
     }
 
@@ -248,15 +274,26 @@ export function bozzaDaTesto(testo) {
     } else if (sezione === "passaggi") {
       const descrizione = senzaSegno(senzaLink);
       if (descrizione) passaggi.push({ posizione: passaggi.length + 1, fase: null, descrizione });
-    } else if (titolo === null && !vistaUnaSezione) {
+    } else if (!candidatoTitoloVisto && !vistaUnaSezione) {
       // Il titolo è la PRIMA riga, prima di qualunque sezione, e solo se
-      // è corta come un titolo. Una frase lunga non si spaccia per titolo.
-      if (senzaLink.length <= 80 && !/[.!?]$/.test(senzaLink)) titolo = senzaLink.replace(/:$/, "");
+      // è corta come un titolo. Una frase lunga non si spaccia per titolo,
+      // e non passa il turno alla riga dopo: quella non è più la prima.
+      // Una riga con dentro un indirizzo non è un titolo: tolto il link,
+      // quello che resta è un testo mutilato, non quello scritto.
+      candidatoTitoloVisto = true;
+      if (senzaLink === riga && senzaLink.length <= 80 && !/[.!?]$/.test(senzaLink)) titolo = senzaLink.replace(/:$/, "");
       else nonClassificate.push(senzaLink);
     } else {
       nonClassificate.push(senzaLink);
     }
   }
+
+  // Le porzioni valgono solo se dette in un modo solo: due indicazioni
+  // diverse, o una illeggibile accanto a una leggibile, e non si sceglie.
+  const valoriPorzioni = [...new Set(porzioniLette)];
+  let porzioni = null;
+  if (valoriPorzioni.length === 1 && valoriPorzioni[0] !== null) porzioni = valoriPorzioni[0];
+  else if (valoriPorzioni.length > 1) buchi.push("porzioni indicate più volte in modo diverso, vanno scelte");
 
   if (titolo === null) buchi.unshift("manca il titolo: va scritto a mano");
   if (!vistaUnaSezione) {
