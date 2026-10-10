@@ -325,6 +325,10 @@ const OPERAZIONI = new Set([
   "trattieni_caparra",
   "annulla_trattenuta_caparra",
   "promuovi_bozza_ricetta",
+  // ⚠️ La bozza da un link: bozza, ingredienti e passaggi in una
+  // transazione (20261010000002). A meta' resterebbe una bozza col titolo e
+  // senza ricetta, che sembra solo incompleta.
+  "crea_bozza_da_lettura",
 ]);
 
 const CORS = {
