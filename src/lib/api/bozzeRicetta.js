@@ -1,5 +1,7 @@
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { chiamaFunzione } from "../chiamaFunzione";
+import { bozzaDaRicettaLetta } from "../calcoli/ricettaDaLink";
 
 // LE BOZZE DI RICETTA (Ricettario Fase 1A, 06/10/2026).
 //
@@ -150,4 +152,31 @@ export async function promuoviBozza(bozzaId, esito, gesto) {
     p_esito: esito,
     p_gesto: gesto,
   });
+}
+
+/**
+ * UNA BOZZA DA UN LINK (10/10/2026). Due passi:
+ *   1. la funzione online `ricetta-da-link` apre la pagina e restituisce la
+ *      ricetta che dichiara — non salva niente;
+ *   2. il lettore dell'anteprima da testo la smonta (`bozzaDaRicettaLetta`),
+ *      e la bozza nasce dal corridoio, intera: bozza, ingredienti e passaggi
+ *      in una transazione (`crea_bozza_da_lettura`, regola B4).
+ * `gesto` (vedi `nuovoGesto`): lo stesso gesto ripetuto riceve la stessa
+ * bozza invece di crearne una seconda.
+ * Restituisce l'identificativo della bozza.
+ */
+export async function importaRicettaDaLink(url, gesto) {
+  const letta = await chiamaFunzione("ricetta-da-link", { url }, "leggere la ricetta dal link");
+  const { url: pulito, ricetta } = letta?.risultato ?? {};
+  if (!ricetta) throw new Error("La pagina non ha restituito nessuna ricetta.");
+  const candidata = bozzaDaRicettaLetta(ricetta, pulito);
+  if (!candidata.ok) throw new Error(candidata.messaggio);
+  if (!candidata.bozza.titolo) throw new Error("La ricetta letta non ha un titolo: non posso creare la bozza.");
+  const esito = await eseguiOperazione("crea_bozza_da_lettura", {
+    p_bozza: candidata.bozza,
+    p_ingredienti: candidata.ingredienti,
+    p_passaggi: candidata.passaggi,
+    p_gesto: gesto,
+  });
+  return esito?.bozza_id;
 }
