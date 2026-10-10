@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   aggiornaBozza,
   aggiornaIngredienteBozza,
@@ -15,17 +15,16 @@ import {
 } from "../../lib/api/bozzeRicetta";
 import { listIngredients } from "../../lib/api/ingredients";
 import {
-  ORIGINI_BOZZA,
   buchiDellaBozza,
   nuovoGesto,
   quantitaDalCampo,
-  statoLeggibile,
 } from "../../lib/calcoli/bozzeRicetta";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
-import { RECIPE_CATEGORIES, STEP_PHASES, labelFor } from "../../lib/constants";
+import { RECIPE_CATEGORIES, STEP_PHASES } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
 import CampoAutosalvato from "../../components/CampoAutosalvato";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import LetturaBozza from "./LetturaBozza";
 
 // UNA BOZZA DI RICETTA — rivederla e confermarla (Ricettario Fase 1A).
 //
@@ -37,6 +36,16 @@ import DatoNonLetto from "../../components/DatoNonLetto";
 // ⚠️ Dopo una correzione si aggiorna SOLO la riga toccata, mai la bozza intera:
 //    ricaricare tutto butterebbe via quello che si sta ancora scrivendo in un
 //    altro campo (§8, 12/08).
+//
+// 🔴 IL RICETTARIO VIRTUALE (10/10/2026, decisione di Alessio): una bozza si
+//    TIENE così com'è, senza compilare niente. Il collegamento al magazzino,
+//    le segnalazioni e «cosa manca» servono solo a farla diventare una
+//    ricetta del locale, e restano chiusi dietro «Portala in cucina» finché
+//    non li chiede — lo farà quando comprerà gli ingredienti. Prima
+//    l'elenco di 33 voci stava sempre sotto gli occhi, e sembrava un obbligo.
+//
+// ⚠️ Ciò che ha proposto l'assistente all'importazione si DICHIARA
+//    (`proposte_assistente`), finché Alessio non preme «Visto».
 //
 // ⚠️ IL DOPPIO TOCCO: aprendo la conferma nasce UN gesto, con un suo
 //    identificativo. Premere due volte — o riprovare dopo un errore di rete —
@@ -50,7 +59,10 @@ const campo = "tocco-riga w-full rounded border border-stone-300 px-3";
 export default function BozzaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const avvisoAssistente = useLocation().state?.avvisoAssistente ?? null;
   const unita = useUnita();
+  const [inCucina, setInCucina] = useState(false);
+  const [modifica, setModifica] = useState(false);
   const [dati, setDati] = useState(null);
   const [anagrafica, setAnagrafica] = useState([]);
   const [errore, setErrore] = useState("");
@@ -98,6 +110,11 @@ export default function BozzaDetail() {
   const { bozza, ingredienti, passaggi } = dati;
   const promossa = !!bozza.promossa_il;
   const ferma = promossa || bozza.stato === "scartata";
+  // Il collegamento al magazzino si vede quando lo si chiede, o quando c'è già.
+  const mostraCucina = inCucina || promossa || ingredienti.some((r) => r.ingredient_id);
+  const proposte = bozza.proposte_assistente ?? [];
+  // La scheda si LEGGE; i campi compaiono quando si correggono o si porta in cucina.
+  const inModifica = modifica || mostraCucina;
 
   const sicuro = async (fn) => {
     setErrore("");
@@ -160,11 +177,14 @@ export default function BozzaDetail() {
         ← Bozze di ricetta
       </Link>
 
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">{bozza.titolo}</h1>
-      <p className="mb-4 text-stone-600">
-        {statoLeggibile(bozza)} · {labelFor(ORIGINI_BOZZA, bozza.origine_tipo)}
-        {bozza.origine_riferimento ? ` · ${bozza.origine_riferimento}` : ""}
-      </p>
+      <LetturaBozza
+        bozza={bozza}
+        ingredienti={ingredienti}
+        passaggi={passaggi}
+        modifica={inModifica}
+        puoModificare={!ferma && !mostraCucina}
+        onModifica={() => setModifica((m) => !m)}
+      />
 
       {promossa && (
         <p className="mb-4 rounded bg-emerald-50 p-3 text-emerald-800">
@@ -185,9 +205,25 @@ export default function BozzaDetail() {
         </p>
       )}
       {errore && <p className="mb-4 rounded bg-red-50 p-3 text-red-700">{errore}</p>}
+      {avvisoAssistente && <p className="mb-4 rounded bg-amber-50 p-3 text-amber-900">{avvisoAssistente}</p>}
+      {proposte.length > 0 && !ferma && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-b58-olive/10 p-3 text-b58-olive-dark ring-1 ring-b58-olive/20">
+          <span>
+            Proposte dall'assistente: {proposte.join(", ")}. Controllale e correggi dove serve.
+          </span>
+          <button
+            type="button"
+            className="tocco-bottone rounded-lg border border-b58-olive/40 px-3"
+            onClick={() => salvaBozza({ proposte_assistente: [] })}
+          >
+            Visto
+          </button>
+        </div>
+      )}
 
-      {/* ---- i dati della bozza ---- */}
-      <section className="mb-6 grid gap-3">
+      {/* ---- i dati della bozza: si correggono in «Modifica» o portandola in cucina ---- */}
+      {inModifica && (<>
+      <section className="mb-6 grid gap-3 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
         <label className="flex flex-col">
           <span className="text-stone-600">Titolo</span>
           <CampoAutosalvato
@@ -248,7 +284,7 @@ export default function BozzaDetail() {
         </div>
       </section>
 
-      {bozza.buchi_dichiarati?.length > 0 && (
+      {mostraCucina && bozza.buchi_dichiarati?.length > 0 && (
         <section className="mb-6">
           <h2 className="mb-2 font-semibold">Segnalazioni di chi ha proposto la bozza</h2>
           <ul>
@@ -273,7 +309,7 @@ export default function BozzaDetail() {
       )}
 
       {/* ---- gli ingredienti proposti ---- */}
-      <section className="mb-6">
+      <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
         <h2 className="mb-2 font-semibold">Ingredienti proposti</h2>
         {ingredienti.length === 0 && <p className="text-stone-600">Nessuno.</p>}
         <ul>
@@ -281,8 +317,8 @@ export default function BozzaDetail() {
             const unitaSconosciuta = r.unita && !codiciUnita.includes(r.unita);
             return (
               <li key={r.id} className="mb-3 grid gap-2 border-b border-stone-200 pb-3 sm:grid-cols-2">
-                <label className="flex flex-col">
-                  <span className="text-stone-600">Come l'ha scritto la bozza</span>
+                <label className={`flex flex-col ${mostraCucina ? "" : "sm:col-span-2"}`}>
+                  <span className="text-stone-600">Ingrediente</span>
                   <CampoAutosalvato
                     value={r.nome}
                     disabled={ferma}
@@ -290,6 +326,7 @@ export default function BozzaDetail() {
                     onSave={(t) => t && salvaIngrediente(r, { nome: t })}
                   />
                 </label>
+                {mostraCucina && (
                 <label className="flex flex-col">
                   <span className="text-stone-600">Ingrediente dell'anagrafica</span>
                   <select
@@ -306,6 +343,7 @@ export default function BozzaDetail() {
                     ))}
                   </select>
                 </label>
+                )}
                 <label className="flex flex-col">
                   <span className="text-stone-600">Quantità</span>
                   <CampoAutosalvato
@@ -333,6 +371,7 @@ export default function BozzaDetail() {
                     ))}
                   </select>
                 </label>
+                {r.nota && <p className="text-stone-600 sm:col-span-2">Nota: {r.nota}</p>}
                 {!ferma && (
                   <div className="sm:col-span-2">
                     <button
@@ -370,7 +409,7 @@ export default function BozzaDetail() {
       </section>
 
       {/* ---- i passaggi proposti ---- */}
-      <section className="mb-6">
+      <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
         <h2 className="mb-2 font-semibold">Passaggi proposti</h2>
         {passaggi.length === 0 && <p className="text-stone-600">Nessuno.</p>}
         <ol>
@@ -430,8 +469,27 @@ export default function BozzaDetail() {
         )}
       </section>
 
+      </>)}
+
+      {/* ---- il ricettario virtuale: niente da compilare finché non va in cucina ---- */}
+      {!mostraCucina && bozza.stato !== "scartata" && (
+        <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
+          <p className="mb-3 text-b58-charcoal-soft">
+            È salvata nel tuo ricettario così com'è: non c'è niente da compilare. Quando comprerai gli
+            ingredienti, da qui la colleghi al magazzino e diventa una ricetta del locale.
+          </p>
+          <button
+            type="button"
+            className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+            onClick={() => setInCucina(true)}
+          >
+            Portala in cucina
+          </button>
+        </section>
+      )}
+
       {/* ---- cosa manca, e la conferma ---- */}
-      {!promossa && (
+      {!promossa && (mostraCucina || bozza.stato === "scartata") && (
         <section className="mb-6 rounded border border-stone-300 p-4" data-buchi={buchi.length}>
           <h2 className="mb-2 font-semibold">
             {buchi.length === 0

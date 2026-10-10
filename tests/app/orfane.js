@@ -146,6 +146,13 @@ export const ORFANE_PIANIFICATE = {
     versione: "20260919000001",
     perche: "la chiama la fine delle prove sul database: chiude il proprio silenzio",
   },
+  // ⚠️ Stessa forma di `registra_lettura_foto` (in SEMPRE): la chiama una
+  //    funzione online, `ricetta-da-link`, e non una schermata. PIANIFICATA
+  //    finche' la 20261010000003 non e' anche in produzione.
+  registra_lettura_ricetta: {
+    versione: "20261010000003",
+    perche: "chiamata da ricetta-da-link: registra la spesa dell'assistente sulla ricetta importata",
+  },
 };
 
 /**

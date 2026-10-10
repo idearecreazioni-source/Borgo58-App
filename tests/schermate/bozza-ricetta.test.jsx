@@ -78,6 +78,12 @@ describe("i buchi si vedono prima della conferma", () => {
     });
     mostra();
 
+    // 🔴 Il ricettario virtuale (10/10/2026): l'elenco non si impone, si chiede.
+    expect(await screen.findByText(/È salvata nel tuo ricettario così com'è/)).toBeTruthy();
+    expect(screen.queryByText(/Cosa manca per diventare una ricetta/)).toBeNull();
+    expect(screen.queryByText("Ingrediente dell'anagrafica")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Portala in cucina" }));
+
     expect(await screen.findByText(/Cosa manca per diventare una ricetta \(5\)/)).toBeTruthy();
     expect(screen.getByText("mancano le porzioni")).toBeTruthy();
     expect(screen.getByText("«pecorino»: non collegato a un ingrediente dell'anagrafica")).toBeTruthy();
@@ -94,6 +100,30 @@ describe("i buchi si vedono prima della conferma", () => {
     mostra();
     expect(await screen.findByText("Non manca niente: può diventare una ricetta.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Crea la ricetta" }).disabled).toBe(false);
+  });
+});
+
+describe("il ricettario virtuale e le proposte dell'assistente (10/10/2026)", () => {
+  it("le proposte si dichiarano, e «Visto» le toglie", async () => {
+    api.getBozzaRicetta.mockResolvedValue({
+      bozza: { ...BOZZA, proposte_assistente: ["la categoria", "le fasi dei passaggi"] },
+      ingredienti: [{ ...RIGA, ingredient_id: null, nota: "per decorare" }],
+      passaggi: [{ ...PASSO }],
+    });
+    const { aggiornaBozza } = await import("../../src/lib/api/bozzeRicetta");
+    mostra();
+    expect(await screen.findByText(/Proposte dall'assistente: la categoria, le fasi dei passaggi/)).toBeTruthy();
+    // La nota si legge anche senza il collegamento al magazzino.
+    expect(screen.getByText("per decorare")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Visto" }));
+    await waitFor(() => expect(aggiornaBozza).toHaveBeenCalledWith("b1", { proposte_assistente: [] }));
+  });
+
+  it("una bozza già collegata al magazzino mostra subito la parte della cucina", async () => {
+    api.getBozzaRicetta.mockResolvedValue(completa());
+    mostra();
+    expect(await screen.findByText("Non manca niente: può diventare una ricetta.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Portala in cucina" })).toBeNull();
   });
 });
 

@@ -134,6 +134,14 @@ export const ECCEZIONI_STORICHE = [
     sanataDa: "20260921000002",
     motivo: "la sua guardia non riconosce la funzione; e' superata dalla 20260921000002, che la registra",
   },
+  {
+    versione: "20261006000001",
+    come: "nota",
+    attesa: "Restano colonne non classificate",
+    sanataDa: "20261010000001",
+    motivo:
+      "riscrive il censimento delle unita' da un corpo anteriore alla 20260923000002 e perde il lordo: la sua verifica si ferma; la porta per intero la 20261010000001, che la registra (misurato in produzione il 10/10/2026)",
+  },
 ];
 
 /**

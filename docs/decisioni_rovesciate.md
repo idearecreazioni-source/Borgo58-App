@@ -153,8 +153,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
 | 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 | 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
+| 97 | 10/10/2026 | un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma |
 
-⚠️ **Righe: 97.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 98.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3560,3 +3561,34 @@ quando questa sezione è stata scritta.
      né un dato di produzione, e nessun valore di produzione è stato letto,
      copiato o citato. Il modello di oggi è **10 eccezioni storiche + 1
      preparazione temporanea della prova**.
+
+## 97 · 10/10/2026 — «un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma»
+
+1. **Cosa era stato deciso e quando.** Il **06/10/2026** (Ricettario Fase 1B,
+   `src/lib/calcoli/ricettaDaTesto.js`): il lettore di ricette trasforma solo
+   i sinonimi dello stesso codice, e «200 ml» resta «ml» — *«convertirla in
+   litri sarebbe un calcolo che nessuno ha chiesto»*. Nella stessa fase
+   (Fase 1A, `BozzaDetail.jsx`) l'elenco «cosa manca per diventare una
+   ricetta» sta **sempre** sotto gli occhi.
+
+2. **La ragione di allora.** Il lettore non deve fare calcoli non richiesti;
+   e una bozza deve mostrare i suoi buchi prima di qualunque conferma.
+
+3. **Cosa si decide adesso** (Alessio, 10/10/2026, dopo la prima ricetta
+   vera importata da Clove: *«così non me ne esco più»*). (a) ml, cl, dl → l
+   e mg → g si convertono, perché sono conversioni **esatte**; cucchiai e
+   pizzichi restano scritti com'erano. (b) Le bozze sono il suo **ricettario
+   virtuale**: si tengono senza compilare niente, e collegamento al
+   magazzino, segnalazioni ed elenco dei buchi restano chiusi dietro
+   «Portala in cucina» finché non li chiede. (c) All'importazione
+   l'assistente **propone** categoria, fasi e nomi puliti, e la bozza lo
+   dichiara.
+
+4. **Perché la ragione di allora non vale più.** (a) Il calcolo ora l'ha
+   chiesto lui, ed è esatto: non c'è niente da indovinare. (b) **La ragione
+   vale ancora, ed è questo il prezzo che accettiamo**: i buchi esistono
+   sempre, e la promozione a ricetta del locale li rifiuta tutti come prima.
+   Quello che cambia è *quando* si guardano — al momento di portare la
+   ricetta in cucina, non al momento di salvarla. Un elenco di 33 voci
+   mostrato a chi sta solo collezionando ricette sembrava un obbligo, e
+   avrebbe fatto smettere di usare il ricettario.

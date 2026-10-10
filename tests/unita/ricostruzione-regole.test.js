@@ -82,7 +82,7 @@ describe("come si applica una migrazione nella ricostruzione", () => {
 
   it("il messaggio atteso di OGNI eccezione ha una provenienza dimostrata, senza esclusioni", () => {
     const conAttesa = ECCEZIONI_STORICHE.filter((x) => x.attesa);
-    expect(conAttesa.length).toBe(9);
+    expect(conAttesa.length).toBe(10);
     for (const e of conAttesa) {
       // Dove deve stare: nel suo file, oppure nella migrazione dichiarata.
       // ⚠️ Nel CODICE, non in un commento: una migrazione che si limita a
@@ -216,11 +216,11 @@ describe("le due storie aggiunte il 30/09 (mandato M20-E)", () => {
     expect(inattese).toHaveLength(1);
   });
 
-  it("l'elenco e' chiuso: dieci eccezioni, queste e non altre", () => {
+  it("l'elenco e' chiuso: undici eccezioni, queste e non altre", () => {
     expect(ECCEZIONI_STORICHE.map((e) => e.versione)).toEqual([
       "20260820000010", "20260822000003", "20260823000024", "20260824000033",
       "20260827000006", "20260827000018", "20260829000006",
-      "20260917000001", "20260920000001", "20260921000001",
+      "20260917000001", "20260920000001", "20260921000001", "20261006000001",
     ]);
   });
 });
