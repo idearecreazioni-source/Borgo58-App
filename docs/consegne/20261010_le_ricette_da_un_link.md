@@ -54,4 +54,22 @@ del locale li rifiuta come prima; cambia solo quando si guardano.
 
 ## 6 · Applicazione in produzione
 
-*(da completare dopo `--conferma`, coi numeri letti dal database vero)*
+Applicata da Alessio il 10/10/2026 alle 23:28 circa, con
+`npm run migra -- --salta 20261006000001 --conferma`: **3 su 3**. Poi
+`npm run funzione ricetta-da-link -- --conferma` e
+`npm run funzione operazioni-atomiche -- --conferma`, tutte e due «Fatta».
+
+Letto dopo dal database vero (connettore in sola lettura):
+
+* `applied_migrations`: **415** (erano 411). Nuove: `20261006000001`
+  (registrata dalla `20261010000001`), `20261010000001`, `20261010000002`,
+  `20261010000003`.
+* `bozze_ricetta`: **0** righe; `letture_ricetta`: **0** righe — nessun dato
+  creato dalle verifiche.
+* `recipes`: **14**, invariate.
+* Presenti `crea_bozza_da_lettura`, `registra_lettura_ricetta`, le colonne
+  `bozze_ricetta.gesto_creazione` e `proposte_assistente`; `consumi_ai`
+  comprende `letture_ricetta`.
+* **Non verificato da qui**: che la chiave `ANTHROPIC_API_KEY` sia nei
+  Secrets di produzione (si vedrà alla prima importazione: senza, la bozza
+  nasce lo stesso e lo dice).
