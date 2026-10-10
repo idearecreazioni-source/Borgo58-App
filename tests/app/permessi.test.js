@@ -220,7 +220,18 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
   // due reti stesse — erano eseguibili da chiunque avesse fatto il login.
   // Hanno preso il portiere nella stessa consegna, come
   // `funzioni_aperte_ad_anon` dal 13/08.
-  it("solo 29 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
+  // 🔴 SCESE DA 29 A 28 IL 20/09/2026, e la ragione è che una si è CHIUSA,
+  //    non che il controllo si sia allargato: la 20260920000004 toglie a
+  //    `send_due_task_reminders` il permesso di essere eseguita da chi ha
+  //    fatto il login. La chiama pg_cron ogni cinque minuti, e nessuno
+  //    dall'app — quindi non ha più bisogno di un portiere, perché non ha
+  //    più una porta.
+  //    ⚠️ Un numero che scende va guardato due volte: se fosse sceso perché
+  //    la rete ha smesso di vedere qualcosa, sarebbe un pezzo di guardia
+  //    spento in silenzio. Qui è il contrario, ed è stato misurato su Prova
+  //    chiedendolo al database: has_function_privilege('authenticated',
+  //    'send_due_task_reminders()', 'execute') = false.
+  it("solo 28 funzioni scavalcano la RLS senza chiedere chi sei", async () => {
     const attese = [
       // La lista della spesa: la scrive chi va a fare la spesa.
       "add_below_threshold_items",
@@ -244,7 +255,10 @@ describe("permessi: la barriera è nel database, non nella schermata", () => {
       "link_reservation_customer",
       "notify_reservation_telegram",
       "segnala_allarme",
-      "send_due_task_reminders",
+      // ⚠️ `send_due_task_reminders` era qui e se n'è andata il 20/09: adesso
+      //    è chiusa a `authenticated` (vedi il commento in cima a questa
+      //    prova). Resta un lavoro pianificato, e pg_cron la chiama come
+      //    prima.
       "set_order_entity_srls",
       // Il form pubblico.
       "public_reservation_options",

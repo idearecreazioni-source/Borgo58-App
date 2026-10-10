@@ -3,23 +3,28 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // =====================================================================
-// IN AGENDA SI DICE «IMPEGNO», MAI «TASK» — 17/09/2026
+// IN AGENDA SI DICE «TASK» — 20/09/2026, e ROVESCIA il 17/09
 // =====================================================================
-// 🔴 PERCHE' ESISTE, ed e' una misura e non un timore. L'11/09/2026 la parola
-//    «task» e' stata tolta dall'interfaccia e sostituita con «impegno»
-//    (`docs/consegne/20260911_impegno_non_task.md`). Cercata in tutto
-//    `tests/`: **zero occorrenze** di «Nuovo impegno» e **zero** di «Nuovo
-//    task». Quella rinomina viveva soltanto in un riepilogo.
-//    ⚠️ Una parola che vive in un riepilogo torna indietro al primo pulsante
-//    nuovo che qualcuno scrive, e non se ne accorge nessuno: e' la forma
-//    della disciplina che si degrada, e in questo progetto vale la regola
-//    opposta — *preferire l'automazione alla disciplina*.
+// 🔴 COSA E' CAMBIATO, E PERCHE' LA PROVA E' RIMASTA. L'11/09 la parola
+//    «task» era stata tolta dall'interfaccia e sostituita con «impegno»
+//    (`docs/consegne/20260911_impegno_non_task.md`), e il 17/09 questa prova
+//    era nata per impedire che tornasse. Il 20/09 la decisione e' stata
+//    ROVESCIATA: nei percorsi di Agenda e di MEMO la parola visibile torna a
+//    essere «task».
+//    ⚠️ LA RAGIONE DI ALLORA NON ERA SBAGLIATA — «task» e' una parola
+//    tecnica — ma non e' piu' quella che decide: chi usa il gestionale ha
+//    chiesto «task». Quello che resta vero e' il METODO: una parola che vive
+//    solo in un riepilogo torna indietro al primo pulsante nuovo che qualcuno
+//    scrive. Quindi la prova non si cancella, **si gira**: adesso pretende
+//    «task» e rifiuta «impegno» — la stessa rete nell'altro verso.
+//    ⚠️ E resta fuori tutto cio' che e' tecnico: tabelle, colonne e funzioni
+//    dell'API continuano a chiamarsi come si chiamano.
 //
 // 🔴 SI GUARDA IL TESTO DISEGNATO, NON IL CODICE SORGENTE, ed e' la scelta
-//    che rende questa rete usabile. Le funzioni dell'API si chiamano
-//    `completaTask`, `spostaTask`, `listTasksForMonth`, e la colonna del
-//    database e' `tasks`: un setaccio sul sorgente darebbe falsi allarmi a
-//    raffica, e **un guardiano che grida sempre si impara a spegnere**.
+//    che rende questa rete usabile, e adesso vale al contrario: nel sorgente
+//    restano `campiImpegno`, `SchedaImpegno` e `chiudiImpegno`, e un setaccio
+//    sul sorgente griderebbe su nomi che nessuno legge — **un guardiano che
+//    grida sempre si impara a spegnere**.
 //    Quello che conta e' la parola che Alessio legge sullo schermo.
 //
 // ⚠️ E IL SETACCIO SI TARA SU CASI DI RISPOSTA NOTA (regola del 26/08): un
@@ -27,7 +32,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 //    parola direbbe «a posto» su qualunque schermata — cioe' sarebbe un
 //    guardiano che approva senza aver guardato.
 
-const parolaTecnica = /task/i;
+// La parola che in Agenda non si deve piu' leggere. ⚠️ Prende «impegno»,
+// «impegni» e «Impegno», e lascia stare tutto il resto.
+const parolaVecchia = /impegn/i;
 const testoDisegnato = () => document.body.textContent.replace(/\s+/g, " ").trim();
 
 const finte = {
@@ -118,49 +125,48 @@ afterEach(() => {
 describe("🔴 il setaccio riconosce la parola che cerca", () => {
   // ⚠️ SENZA QUESTO, TUTTO IL RESTO NON PROVA NIENTE. Un controllo «non
   //    compare» e' verde anche quando non sa cercare.
-  it("prende «task» dove c'e' davvero", () => {
-    expect("+ Nuovo task").toMatch(parolaTecnica);
-    expect("Nessun task in ritardo").toMatch(parolaTecnica);
-    expect("Tasks completati").toMatch(parolaTecnica);
+  it("prende «impegno» dove c'e' davvero", () => {
+    expect("+ Nuovo impegno").toMatch(parolaVecchia);
+    expect("Nessun impegno in questo giorno.").toMatch(parolaVecchia);
+    expect("La visibilita' degli impegni automatici").toMatch(parolaVecchia);
   });
 
-  it("e non inciampa sulle parole vere del gestionale", () => {
-    expect("+ Nuovo impegno").not.toMatch(parolaTecnica);
-    // 🔴 «Tasca» E' UNA PAROLA DI QUESTO GESTIONALE — il soggetto delle spese
-    //    che Alessio paga di suo — e un setaccio che la scambiasse per
-    //    «task» griderebbe su una schermata sana.
-    expect("Spesa dalla tasca").not.toMatch(parolaTecnica);
+  it("e non inciampa sulle parole nuove", () => {
+    expect("+ Nuovo task").not.toMatch(parolaVecchia);
+    // ⚠️ «Tasca» resta una parola di questo gestionale: il setaccio nuovo non
+    //    la tocca, ed e' bene che una riga lo dica.
+    expect("Spesa dalla tasca").not.toMatch(parolaVecchia);
   });
 });
 
-describe("🔴 l'elenco dell'Agenda non dice mai «task»", () => {
-  it("il pulsante e' «+ Nuovo impegno», e la parola non compare in nessuna delle tre viste", async () => {
+describe("🔴 l'elenco dell'Agenda dice «task», e non dice piu' «impegno»", () => {
+  it("il pulsante e' «+ Nuovo task», e la parola vecchia non compare in nessuna delle tre viste", async () => {
     mostra("/agenda");
-    expect(screen.getByRole("link", { name: "+ Nuovo impegno" })).toBeTruthy();
-    expect(testoDisegnato(), "la Lista dice «task»").not.toMatch(parolaTecnica);
+    expect(screen.getByRole("link", { name: "+ Nuovo task" })).toBeTruthy();
+    expect(testoDisegnato(), "la Lista dice ancora «impegno»").not.toMatch(parolaVecchia);
 
     await tocca(screen.getByRole("button", { name: "Settimana" }));
     await waitFor(() => expect(document.querySelectorAll("[data-giorno]")).toHaveLength(7));
-    expect(testoDisegnato(), "la Settimana dice «task»").not.toMatch(parolaTecnica);
+    expect(testoDisegnato(), "la Settimana dice ancora «impegno»").not.toMatch(parolaVecchia);
 
     await tocca(screen.getByRole("button", { name: "Mese" }));
     await waitFor(() => expect(finte.mese).toHaveBeenCalled());
-    expect(testoDisegnato(), "il Mese dice «task»").not.toMatch(parolaTecnica);
+    expect(testoDisegnato(), "il Mese dice ancora «impegno»").not.toMatch(parolaVecchia);
   });
 });
 
-describe("🔴 e nemmeno il modulo di un impegno", () => {
-  it("scrivendone uno nuovo si legge «Nuovo impegno»", async () => {
+describe("🔴 e nemmeno il modulo di un task", () => {
+  it("scrivendone uno nuovo si legge «Nuovo task»", async () => {
     mostra("/agenda/nuovo");
-    expect(await screen.findByRole("heading", { name: "Nuovo impegno" })).toBeTruthy();
-    expect(testoDisegnato(), "il modulo nuovo dice «task»").not.toMatch(parolaTecnica);
+    expect(await screen.findByRole("heading", { name: "Nuovo task" })).toBeTruthy();
+    expect(testoDisegnato(), "il modulo nuovo dice ancora «impegno»").not.toMatch(parolaVecchia);
   });
 
-  it("⚠️ e aprendone uno esistente «Modifica impegno» — il titolo che si vede piu' spesso", async () => {
+  it("⚠️ e aprendone uno esistente «Modifica task» — il titolo che si vede piu' spesso", async () => {
     // Coprire solo il modulo nuovo lascerebbe scoperto proprio il titolo che
     // si tocca ogni volta che si corregge qualcosa.
     mostra("/agenda/t-1");
-    expect(await screen.findByRole("heading", { name: "Modifica impegno" })).toBeTruthy();
-    expect(testoDisegnato(), "il modulo di modifica dice «task»").not.toMatch(parolaTecnica);
+    expect(await screen.findByRole("heading", { name: "Modifica task" })).toBeTruthy();
+    expect(testoDisegnato(), "il modulo di modifica dice ancora «impegno»").not.toMatch(parolaVecchia);
   });
 });

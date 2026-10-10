@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { credenziali, sagomeDiProva } from "./aiuto";
 import { supabase } from "../../src/lib/supabase";
 import { apriConto } from "../../src/lib/api/orders";
@@ -108,6 +108,12 @@ afterAll(async () => {
 });
 
 describe("Il conto sa da quale prenotazione nasce", () => {
+  // ⚠️ La pulizia gira DOPO OGNI prova, anche quando una fallisce: il
+  //    19/09 un conto rimasto aperto da una prova rossa ha fatto cadere la
+  //    successiva con «Questi tavoli hanno gia' un conto aperto» — un rosso
+  //    che non parlava di lei.
+  afterEach(chiudiEPulisci);
+
   it("su un tavolo senza prenotazioni il legame resta VUOTO — ed è normale", async () => {
     // ⚠️ Il caso che va scritto perché nessuno lo «corregga»: un conto
     // senza prenotazione è uno che entra senza prenotare.
@@ -132,13 +138,22 @@ describe("Il conto sa da quale prenotazione nasce", () => {
     // Le due ore si mettono a cavallo dell'istante in cui gira la prova,
     // così una delle due è per forza la più vicina — e si controlla che
     // sia QUELLA, non che sia una delle due.
+    // 🔴 E NESSUNA DELLE DUE ORE DEVE SCAVALCARE LA MEZZANOTTE (19/09/2026).
+    //    Il database misura la distanza sull'orologio del giorno, senza
+    //    girare attorno alla mezzanotte: il 19/09 la prova e' girata alle
+    //    23:56, «fra cinque minuti» e' diventato 00:01, ventiquattro ore
+    //    lontano, e ha vinto l'altra. Le ore si scelgono dal lato del giorno
+    //    in cui c'e' spazio.
     const adesso = new Date();
+    const minuti = adesso.getHours() * 60 + adesso.getMinutes();
+    const dopo = minuti + 5 < 24 * 60 ? 5 : -5;
+    const lontano = minuti >= 240 ? -240 : 240;
     const hh = (m) => {
       const d = new Date(adesso.getTime() + m * 60000);
       return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     };
-    const vicina = await prenota(hh(5), "PROVA vicina");
-    await prenota(hh(-240), "PROVA lontana");
+    const vicina = await prenota(hh(dopo), "PROVA vicina");
+    await prenota(hh(lontano), "PROVA lontana");
     const id = await apriConto([tavolo], { serata: GIORNO });
     nati.ordini.push(id);
     expect(await legameDi(id)).toBe(vicina);

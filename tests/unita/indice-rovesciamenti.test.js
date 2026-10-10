@@ -18,6 +18,15 @@ describe("l'indice dei rovesciamenti è allineato alle sezioni", () => {
     expect(generaIndice(testo)).toBe(testo);
   });
 
+  it("il fine riga del file non conta: LF e CRLF danno lo stesso esito", () => {
+    // ⚠️ Su Windows con core.autocrlf il documento arriva con CRLF: questa
+    //    prova era rossa solo lì. Si provano tutti e due i versi.
+    const lf = testo.replace(/\r\n/g, "\n");
+    const crlf = lf.replace(/\n/g, "\r\n");
+    expect(generaIndice(lf)).toBe(lf);
+    expect(generaIndice(crlf)).toBe(crlf);
+  });
+
   it("le sezioni si leggono in tutt'e due le forme di intestazione", () => {
     // ⚠️ Le intestazioni hanno due forme — la data in mezzo o in fondo — e
     // riconoscerne una sola perderebbe le altre IN SILENZIO, che è il difetto

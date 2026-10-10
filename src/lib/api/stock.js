@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { leggiTutte } from "../leggiTutte";
 import { eseguiOperazione } from "../operazioni";
 
 // Giacenza per ingrediente (soglia, prossima scadenza) — vista sicura,
@@ -17,13 +18,17 @@ export async function mondiDelMagazzino() {
   return data ?? [];
 }
 
+// 🔴 A PAGINE — 26/09/2026 (vedi `leggiTutte`). `ingredient_id` in coda
+//    all'ordine decide fra due nomi uguali: la vista ha una riga per
+//    prodotto, quindi non si ripete.
 export async function listStockLevels() {
-  const { data, error } = await supabase
-    .from("v_stock_levels")
-    .select("*")
-    .order("ingredient_name");
-  if (error) throw error;
-  return data;
+  return leggiTutte(() =>
+    supabase
+      .from("v_stock_levels")
+      .select("*", { count: "exact" })
+      .order("ingredient_name")
+      .order("ingredient_id"),
+  );
 }
 
 // Lotti con costo — solo titolare (RLS li nega comunque allo staff).

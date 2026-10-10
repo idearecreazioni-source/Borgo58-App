@@ -452,6 +452,161 @@ describe("un tipo acceso deve saperlo fare davvero", () => {
 // ⚠️ QUESTA PROVA NON COSTA UNA CHIAMATA ALL'ASSISTENTE: senza credenziali
 //    valide la funzione risponde 401 molto prima di parlare col modello.
 //    È il motivo per cui si può tenere accesa.
+// =====================================================================
+// LA RICHIESTA SENZA CHIAVE HA UN LIMITE SUO — 24/09/2026
+// =====================================================================
+// 🔴 Il 23/09 (corsa 35909686384) questa sola richiesta è rimasta appesa
+//    e Vitest l'ha fermata dopo 30 secondi con «Test timed out», senza
+//    dire QUALE attesa non aveva risposto. Misurato dopo: 3 giri isolati,
+//    una suite completa e 20 richieste dirette, tutte 401 in 0,08–0,54 s.
+//    Senza chiave la funzione non fa nessuna chiamata prima di rispondere,
+//    quindi un'attesa di 30 s è un intoppo del TRASPORTO, non una risposta.
+//
+// ⚠️ Il limite è di 5 secondi: dieci volte la risposta più lenta misurata,
+//    e ben sotto i 30 generali, così a parlare è questa prova e non Vitest.
+//    L'annullamento è VERO (`AbortSignal`): copre sia l'attesa della
+//    risposta sia la lettura del corpo, e non lascia la richiesta appesa.
+//
+// ⚠️ Nessun nuovo tentativo, mai: la prova resta rossa, dice solo perché.
+//    E un errore di trasporto non diventa MAI un 401 finto — si solleva,
+//    non si restituisce. Il messaggio non porta indirizzo né intestazioni.
+const LIMITE_SENZA_CHIAVE_MS = 5000;
+const FRASE_TRASPORTO =
+  "la funzione ascolta-voce non ha risposto: errore di trasporto, non una risposta valida";
+
+async function senzaChiaveConLimite({
+  indirizzo,
+  corpo,
+  ms = LIMITE_SENZA_CHIAVE_MS,
+  fetchFn = fetch,
+}) {
+  const segnale = AbortSignal.timeout(ms);
+  let stato;
+  let testo;
+  try {
+    const r = await fetchFn(indirizzo, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(corpo),
+      signal: segnale,
+    });
+    stato = r.status;
+    testo = await r.text();
+  } catch (e) {
+    const causa = segnale.aborted
+      ? `annullata dopo ${ms / 1000} s`
+      : `errore di rete ${e?.name ?? ""}${e?.cause?.code ? ` ${e.cause.code}` : ""}`.trim();
+    throw new Error(`${FRASE_TRASPORTO} (${causa})`);
+  }
+  let letto;
+  try {
+    letto = JSON.parse(testo);
+  } catch {
+    letto = null;
+  }
+  return { stato, corpo: letto };
+}
+
+function verificaSenzaChiave(r) {
+  expect(r.stato).toBe(401);
+  expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+}
+
+// Le prove qui sotto non escono dal computer: il fetch è finto.
+describe("la richiesta senza chiave: il limite e la frase del trasporto", () => {
+  const risposta = (stato, corpo) => ({ status: stato, text: async () => JSON.stringify(corpo) });
+  const contato = (fn) => {
+    const f = async (...a) => {
+      f.chiamate += 1;
+      return fn(...a);
+    };
+    f.chiamate = 0;
+    return f;
+  };
+  // Un fetch che non risponde mai, e si arrende solo se lo si annulla.
+  const muto = () => {
+    const f = contato(
+      (_, { signal }) =>
+        new Promise((_, rifiuta) => {
+          signal?.addEventListener("abort", () => {
+            f.annullato = true;
+            rifiuta(new DOMException("annullata", "AbortError"));
+          });
+        }),
+    );
+    f.annullato = false;
+    return f;
+  };
+  // Se l'annullamento sparisse, la prova diventa rossa in 2 s, non in 30.
+  const entro = (p, ms = 2000) =>
+    Promise.race([
+      p,
+      new Promise((_, rifiuta) =>
+        setTimeout(() => rifiuta(new Error("la richiesta NON è stata annullata")), ms),
+      ),
+    ]);
+
+  it("un 401 che nomina la chiave passa", async () => {
+    const f = contato(async () => risposta(401, { errore: { messaggio: "Non è arrivata nessuna chiave." } }));
+    const r = await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: f });
+    expect(() => verificaSenzaChiave(r)).not.toThrow();
+  });
+
+  it("un 401 che parla d'altro resta rosso, e così un 200 che nomina la chiave", async () => {
+    for (const [stato, messaggio] of [
+      [401, "Autenticazione mancante"],
+      [200, "Non è arrivata nessuna chiave."],
+    ]) {
+      const f = contato(async () => risposta(stato, { errore: { messaggio } }));
+      const r = await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: f });
+      expect(() => verificaSenzaChiave(r)).toThrow();
+    }
+  });
+
+  it("una richiesta che non risponde viene annullata e dice che è il trasporto", async () => {
+    const f = muto();
+    const errore = await entro(
+      senzaChiaveConLimite({ indirizzo: "x", corpo: {}, ms: 50, fetchFn: f }),
+    ).then(
+      () => null,
+      (e) => e,
+    );
+    expect(errore?.message).toContain(FRASE_TRASPORTO);
+    expect(errore?.message).toContain("annullata dopo");
+    expect(f.annullato).toBe(true);
+  });
+
+  it("un errore di rete dice che è il trasporto, senza indirizzo, e non diventa un 401", async () => {
+    const f = contato(async () => {
+      throw new TypeError("fetch failed https://segreto.example/functions/v1/ascolta-voce");
+    });
+    const errore = await senzaChiaveConLimite({
+      indirizzo: "https://segreto.example/x",
+      corpo: {},
+      fetchFn: f,
+    }).then(
+      () => null,
+      (e) => e,
+    );
+    expect(errore?.message).toContain(FRASE_TRASPORTO);
+    expect(errore?.message).not.toMatch(/segreto|https?:/);
+  });
+
+  it("parte una richiesta sola, in tutti i casi: nessun nuovo tentativo nascosto", async () => {
+    const buono = contato(async () => risposta(401, { errore: { messaggio: "chiave" } }));
+    await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: buono });
+    expect(buono.chiamate).toBe(1);
+    const zitto = muto();
+    await entro(senzaChiaveConLimite({ indirizzo: "x", corpo: {}, ms: 50, fetchFn: zitto })).catch(() => {});
+    expect(zitto.chiamate).toBe(1);
+    const rotto = contato(async () => {
+      throw new TypeError("fetch failed");
+    });
+    await senzaChiaveConLimite({ indirizzo: "x", corpo: {}, fetchFn: rotto }).catch(() => {});
+    expect(rotto.chiamate).toBe(1);
+  });
+});
+
 describe("la Scorciatoia entra senza nessun accesso, e la chiave fa la guardia", () => {
   const indirizzo = `${process.env.VITE_SUPABASE_URL}/functions/v1/ascolta-voce`;
 
@@ -505,9 +660,8 @@ describe("la Scorciatoia entra senza nessun accesso, e la chiave fa la guardia",
     // ⚠️ Chi arriva qui senza niente è quasi sempre una Scorciatoia a cui
     //    manca il campo: «autenticazione mancante» lo manderebbe a cercare
     //    un accesso che non deve avere.
-    const r = await comeLOrologio({ testo: "PROVA-voce senza chiave" });
-    expect(r.stato).toBe(401);
-    expect(r.corpo?.errore?.messaggio).toMatch(/chiave/i);
+    const r = await senzaChiaveConLimite({ indirizzo, corpo: { testo: "PROVA-voce senza chiave" } });
+    verificaSenzaChiave(r);
   });
 
   // 🔴 QUESTA PROVA SI PROVA SU UN CASO DI CUI SI CONOSCE GIÀ LA RISPOSTA.

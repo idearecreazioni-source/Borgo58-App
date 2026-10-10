@@ -324,6 +324,7 @@ const OPERAZIONI = new Set([
   // scritture che toccano quel denaro non sarebbe piu' completo.
   "trattieni_caparra",
   "annulla_trattenuta_caparra",
+  "promuovi_bozza_ricetta",
 ]);
 
 const CORS = {

@@ -82,6 +82,32 @@ function testoDi(dir, filtro) {
   return out;
 }
 
+// 🔴 UN NOME DENTRO UN COMMENTO NON E' UNA PORTA — 22/09/2026, difetto
+//    misurato perche' questa rete e' diventata rossa su `numeri_sospetti`.
+//    In R12 quella funzione e' nominata in UN SOLO posto di `src/`: dentro
+//    il riquadro che spiega perche' un campo e' sparito dalla scheda del
+//    prodotto. Nessuna schermata la chiama — e la rete chiedeva di toglierla
+//    dall'elenco delle orfane, cioe' di **scrivere una cosa falsa**.
+//
+// ⚠️ E' la famiglia del 27/08, gia' pagata due volte in questo progetto: un
+//    setaccio che cerca una forma nel testo trova anche i commenti che
+//    parlano di quella forma. La cura non e' togliere il commento — la
+//    spiegazione serve, ed e' il posto giusto: e' far guardare al setaccio
+//    il CODICE.
+//
+// ⚠️ SI TOGLIE POCO APPOSTA: i blocchi di commento (quindi anche quelli del
+//    JSX) e le righe che COMINCIANO con due sbarre o con un asterisco. Due
+//    sbarre in mezzo a una riga non si toccano, perche' li' dentro ci sono
+//    gli indirizzi web e tagliarli porterebbe via il codice che segue —
+//    cioe' inventerebbe orfane che non esistono. *Un setaccio troppo largo
+//    sbaglia nel verso opposto, e con la stessa faccia.*
+const senzaCommenti = (testo) =>
+  testo
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .split(/\r?\n/)
+    .filter((r) => !/^\s*(\/\/|\*)/.test(r))
+    .join("\n");
+
 const nomina = (nome, testo) => new RegExp(`\\b${nome}\\b`).test(testo);
 
 // 🔴 L'ELENCO NON VIVE PIU' QUI, E NON E' PIU' UNO SOLO — 17/09/2026,
@@ -111,7 +137,9 @@ describe("nessuna funzione del database resta senza una porta", () => {
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
 
-    const codice = Object.fromEntries(CARTELLE.map(([d, f]) => [d, testoDi(d, f)]));
+    const codice = Object.fromEntries(
+      CARTELLE.map(([d, f]) => [d, senzaCommenti(testoDi(d, f))]),
+    );
 
     // ⚠️ TARATURA su casi di risposta nota (regola del 26/08): senza, un
     //    setaccio rotto direbbe «zero orfane» e sembrerebbe una conferma.
@@ -119,6 +147,21 @@ describe("nessuna funzione del database resta senza una porta", () => {
     //    trigger interno che in `src/` non compare.
     expect(nomina("close_order_paid", codice.src), "il setaccio non trova ciò che c'è").toBe(true);
     expect(nomina("questa_funzione_non_esiste_davvero", codice.src)).toBe(false);
+    // 🔴 IL TERZO CASO DI RISPOSTA NOTA, ed e' quello per cui la riga sopra
+    //    esiste: un nome che compare SOLO dentro un commento non deve
+    //    risultare trovato. Senza, il setaccio tornerebbe a contare le
+    //    spiegazioni come porte, e nessuno se ne accorgerebbe finche' non
+    //    scrive «toglila dall'elenco» su una funzione che porta non ne ha.
+    expect(
+      nomina("solo_dentro_un_commento", senzaCommenti("// parla di solo_dentro_un_commento")),
+      "il setaccio legge ancora i commenti",
+    ).toBe(false);
+    // ⚠️ E il verso opposto: una chiamata vera con un commento in coda resta
+    //    una chiamata. Un setaccio che togliesse anche quella inventerebbe
+    //    orfane, che è l'errore speculare e fa lo stesso danno.
+    expect(nomina("vera_chiamata", senzaCommenti("vera_chiamata(1); // e poi il commento"))).toBe(
+      true,
+    );
 
     const orfane = data
       .map((r) => r.nome)

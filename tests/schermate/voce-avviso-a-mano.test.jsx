@@ -64,14 +64,29 @@ const apri = async () => {
   await waitFor(() => expect(finte.aMano).toHaveBeenCalledWith("el-1"));
 };
 
-/** Le due caselle del Promemoria Telegram, prese dal loro riquadro. */
+/** Le caselle del Promemoria Telegram, prese dal loro riquadro.
+ *
+ * ⚠️ L'ORA NON E' PIU' UN CAMPO ORARIO DEL BROWSER — 20/09/2026: e' un
+ *    riquadro con due ruote e i pulsanti Annulla e Conferma, perche' `step`
+ *    diceva quali valori erano validi e non quali offrire. Qui l'ora scritta
+ *    si legge dal campo, senza aprire il pannello: e' quello che una persona
+ *    vede prima di toccare. */
 const caselleAvviso = () => {
   const riquadro = screen.getByText(/Promemoria Telegram/i).parentElement;
+  const campoOra = riquadro.querySelector('[data-scelta-ora="avviso"]');
   return {
     giorno: riquadro.querySelector("input[type=date]"),
-    ora: riquadro.querySelector("input[type=time]"),
+    campoOra,
+    apri: campoOra?.querySelector("[data-apri-ora]"),
+    get ora() {
+      return { value: campoOra?.dataset.valore || "" };
+    },
   };
 };
+
+/** L'ora dell'impegno, dai suoi due menu. */
+const oraDellImpegno = () =>
+  document.querySelector('[data-scelta-ora="scadenza"]')?.dataset.valore || "";
 
 beforeEach(() => {
   finte.aMano.mockReset();
@@ -103,7 +118,7 @@ describe("🔴 «Fallo a mano» su un promemoria dettato", () => {
     //    manderebbe la notifica il giorno dell'appuntamento invece che il
     //    giorno prima.
     expect(screen.getByDisplayValue("2026-09-19")).toBeTruthy();
-    expect(screen.getByDisplayValue("11:00")).toBeTruthy();
+    expect(oraDellImpegno()).toBe("11:00");
 
     // Il pulsante che compare solo quando un promemoria c'è davvero.
     expect(screen.getByRole("button", { name: /Rimuovi promemoria/i })).toBeTruthy();
@@ -124,9 +139,9 @@ describe("🔴 «Fallo a mano» su un promemoria dettato", () => {
     expect(avviso.ora.value).toBe("");
     // Niente promemoria da rimuovere, perché non ce n'è nessuno.
     expect(screen.queryByRole("button", { name: /Rimuovi promemoria/i })).toBeNull();
-    // ⚠️ E la casella dell'ora è spenta finché non c'è un giorno: un'ora
+    // ⚠️ Il pannello non si apre nemmeno finché non c'è un giorno: un'ora
     //    senza giorno non è un avviso.
-    expect(avviso.ora.disabled).toBe(true);
+    expect(avviso.apri.disabled).toBe(true);
   });
 
   it("⚠️ mezzo avviso: arriva il pezzo detto, l'altro resta vuoto — nessuna ora inventata", async () => {

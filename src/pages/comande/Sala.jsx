@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   addDraftItem,
   allergeniDellaRiga,
@@ -48,6 +47,8 @@ import ClientePagante from "../../components/ClientePagante";
 import RiquadroDelTavolo from "../../components/RiquadroDelTavolo";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import PiantaSala from "../../components/PiantaSala";
+import Didascalia from "../../components/Didascalia";
+import Scorciatoia from "../../components/Scorciatoia";
 import {
   ZONE_DEL_BANCO,
   ZONE_DEL_PANNELLO,
@@ -1635,35 +1636,22 @@ export default function Sala() {
             elementi affiancati che non ci stanno, invisibili da un
             monitor. */}
         <div className="flex flex-wrap justify-end gap-1.5">
-          <Link
-            to="/comande/bar"
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
-          >
+          <Scorciatoia to="/comande/bar">
             Bar
-          </Link>
-          <Link
-            to="/comande/cucina"
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
-          >
+          </Scorciatoia>
+          <Scorciatoia to="/comande/cucina">
             Cucina
-          </Link>
+          </Scorciatoia>
           {/* 🔴 QUESTA SCHERMATA NON AVEVA NESSUNA PORTA — misurato il
               20/08 insieme a quella dei preventivi: la rotta esisteva e
               nessun file la nominava. E il posto è QUESTO, non un menu:
               chi si accorge che lo scontrino non è uscito è chi ha il
               tavolo davanti. */}
-          <Link
-            to="/comande/scontrini"
-            className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3 py-2"
-          >
+          <Scorciatoia to="/comande/scontrini">
             Scontrini
-          </Link>
+          </Scorciatoia>
           {isTitolare && (
-            <button
-              type="button"
-              onClick={() => setPanel((p) => (p ? null : "tavoli"))}
-              className="tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-3"
-            >
+            <Scorciatoia onClick={() => setPanel((p) => (p ? null : "tavoli"))} premuto={Boolean(panel)}>
               {/* ⚠️ «CHIUDI IMPOSTAZIONI», non «Chiudi» (22/08). In sala
                   «chiudere» vuol dire **incassare**: è la regola per cui il
                   gesto del conto si chiama «Chiudi conto» e l'uscita dal
@@ -1671,8 +1659,14 @@ export default function Sala() {
                   due dita da un tavolo aperto, è la parola sbagliata nel
                   posto peggiore. */}
               {panel ? "Chiudi impostazioni" : "Impostazioni"}
-            </button>
+            </Scorciatoia>
           )}
+          {/* ⚠️ «Scontrini» e' la porta che si capisce meno: le altre due
+              sono postazioni, quella e' un gesto di rimedio. */}
+          <Didascalia etichetta="Dove portano">
+            Bar e Cucina sono le altre due postazioni. Scontrini serve a segnalare uno scontrino che non
+            e' uscito dalla stampante.
+          </Didascalia>
         </div>
       </div>
 
@@ -1692,20 +1686,12 @@ export default function Sala() {
       {panel && isTitolare && (
         <div className="space-y-3 mb-4">
           <div className="flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => setPanel("coperto")}
-              className={`testo-sala rounded-full px-3 py-1.5 border ${panel === "coperto" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
-            >
+            <Scorciatoia tonda onClick={() => setPanel("coperto")} premuto={panel === "coperto"}>
               Coperto
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanel("calibrazione")}
-              className={`testo-sala rounded-full px-3 py-1.5 border ${panel === "calibrazione" ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`}
-            >
+            </Scorciatoia>
+            <Scorciatoia tonda onClick={() => setPanel("calibrazione")} premuto={panel === "calibrazione"}>
               Dimensione dei tocchi
-            </button>
+            </Scorciatoia>
           </div>
 
           {panel === "calibrazione" && <CalibrazioneTocco onClose={() => setPanel(null)} />}

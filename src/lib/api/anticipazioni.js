@@ -52,19 +52,47 @@ export async function listAnticipazioni(entityId, { soloAperte = false } = {}) {
   return data;
 }
 
+/**
+ * I campi che arrivano al database quando si registra una nota.
+ *
+ * 🔴 STANNO QUI, IN UNA FUNZIONE PURA, e non dentro la chiamata: e' la
+ * stessa forma di `payloadMancia` (16/08/2026), e nasce dallo stesso
+ * difetto. Quel giorno il menu «contanti / carta» delle mance c'era, si
+ * vedeva, si sceglieva — e `mezzo` non arrivava mai al database: ogni
+ * mancia su carta finiva nel contante del cassetto **senza nessun errore**.
+ *
+ * ⚠️ E LO STESSO BUCO E' RICOMPARSO QUI, il 21/09: rompendo apposta la riga
+ * di `e_investimento` **nessuna prova diventava rossa**. Quelle di schermata
+ * fingono questo modulo, quindi provano che la schermata passa il campo —
+ * non che il campo si traduce in una colonna. Con l'elenco in un posto solo,
+ * una prova pura lo confronta per intero.
+ */
+export function payloadAnticipazione(payload) {
+  return {
+    entity_id: payload.entityId,
+    importo: Number(payload.importo),
+    pagata_il: payload.pagataIl,
+    tag_id: payload.tagId,
+    fondi: payload.fondi ?? "contanti",
+    supplier_invoice_id: payload.supplierInvoiceId || null,
+    documento_riferimento: payload.documento?.trim() || null,
+    // 🔴 L'ETICHETTA «INVESTIMENTO» NEL PUNTO IN CUI VIVE LA SPESA (C11,
+    //    21/09/2026). Qui e non sul rimborso: il rimborso non e' una spesa,
+    //    e marcarlo farebbe crescere il costo due volte.
+    // ⚠️ Nasce SPENTA: se Alessio non sceglie, non e' un investimento.
+    //    Nessuna regola la deduce dal tag, dall'importo o dal testo — e
+    //    `=== true` non e' un vezzo: un `undefined` che arrivasse al
+    //    database si appoggerebbe al predefinito, che e' lo stesso valore
+    //    ma per un'altra ragione.
+    e_investimento: payload.eInvestimento === true,
+    nota: payload.nota?.trim() || null,
+  };
+}
+
 export async function createAnticipazione(payload) {
   const { data, error } = await supabase
     .from("anticipazioni_socio")
-    .insert({
-      entity_id: payload.entityId,
-      importo: Number(payload.importo),
-      pagata_il: payload.pagataIl,
-      tag_id: payload.tagId,
-      fondi: payload.fondi ?? "contanti",
-      supplier_invoice_id: payload.supplierInvoiceId || null,
-      documento_riferimento: payload.documento?.trim() || null,
-      nota: payload.nota?.trim() || null,
-    })
+    .insert(payloadAnticipazione(payload))
     .select()
     .single();
   if (error) throw error;
@@ -95,6 +123,30 @@ export async function pareggiaAnticipazione(id, data) {
     p_anticipazione_id: id,
     p_data: data ?? null,
   });
+}
+
+// 🔴 SI MARCA E SI SMARCA UNA NOTA GIA' SCRITTA, e si manda UN CAMPO SOLO.
+//
+// ⚠️ Scrittura diretta su una tabella sola senza conseguenze altrove —
+//    categoria A del Contratto. Le protezioni sono quelle di sempre: la RLS
+//    (`anticipazioni_socio` e' titolare-only per ogni operazione) e i due
+//    divieti della migrazione `20260921000003`, che valgono anche da qui —
+//    una nota della tasca non si marca, e la stessa fattura non si conta
+//    due volte.
+//
+// ⚠️ Rileggere la riga e rimandarla intera sovrascriverebbe con dati vecchi
+//    quello che fosse cambiato nel frattempo, ed e' la famiglia del 12/08.
+//    Marcare NON tocca importo, data, motivo, fondi, fattura, documento,
+//    nota ne' lo stato del rimborso.
+export async function segnaInvestimentoAnticipazione(id, valore) {
+  const { data, error } = await supabase
+    .from("anticipazioni_socio")
+    .update({ e_investimento: valore })
+    .eq("id", id)
+    .select("*, tag:tag_anticipazioni(etichetta)")
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // --- Le letture ------------------------------------------------------

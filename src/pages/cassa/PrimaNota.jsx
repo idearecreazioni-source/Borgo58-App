@@ -5,6 +5,7 @@ import {
   deleteCashMovement,
   getCashBalance,
   listCashMovements,
+  segnaInvestimento,
   spesoDallaTasca,
   listCausali,
 } from "../../lib/api/cash";
@@ -34,6 +35,9 @@ import {
   totaleTasca,
 } from "../../lib/calcoli/tasca";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import Didascalia from "../../components/Didascalia";
+import { totaliDelPeriodo } from "../../lib/calcoli/totaliPrimaNota";
+import { idoneoAInvestimento, ragioneNonIdoneo } from "../../lib/calcoli/investimento";
 
 const today = oggiLocale;
 
@@ -49,6 +53,10 @@ const emptyForm = {
   forager_tax_code: "",
   harvest_region: "",
   is_owner_injection: false,
+  // 🔴 NASCE SPENTA, SEMPRE (C11): se Alessio non sceglie, il movimento non
+  //    e' un investimento. Nessuna regola prova a indovinarlo dall'importo,
+  //    dalla causale o dalle parole della descrizione.
+  e_investimento: false,
   note: "",
 };
 
@@ -214,6 +222,20 @@ export default function PrimaNota() {
 
   const causaliForDirection = form.direction === "entrata" ? causaliEntrata : causaliUscita;
 
+  // 🔴 L'ETICHETTA «INVESTIMENTO» SI OFFRE SOLO DOVE IL DATABASE LA AMMETTE
+  //    (C11, 21/09/2026). La regola sta in `src/lib/calcoli/investimento.js`
+  //    e vale sia qui, in creazione, sia sulle righe gia' scritte: non ci
+  //    sono due criteri da tenere allineati.
+  // ⚠️ Il divieto NON e' questa riga — sono un vincolo `check` e un trigger
+  //    della migrazione `20260921000003`. Qui si evita soltanto di offrire un
+  //    gesto che verrebbe rifiutato: *un pulsante premibile per essere
+  //    respinto e' un vicolo cieco.*
+  const causaleScelta = causaliForDirection.find((c) => c.id === form.causale_id);
+  const offreInvestimento = idoneoAInvestimento({
+    direction: form.direction,
+    causale: causaleScelta,
+  });
+
   // Promemoria deterministico (§3.4): scontrino ≤400€ su un'uscita → suggerisci
   // la fattura semplificata per recuperare l'IVA.
   const showSimplifiedInvoiceHint =
@@ -230,8 +252,13 @@ export default function PrimaNota() {
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
   const labelClass = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
 
+  // ⚠️ Passando a «entrata», l'etichetta si spegne: il database la rifiuta
+  //    (vincolo `investimento_solo_su_uscita`), e lasciarla accesa
+  //    produrrebbe un rifiuto per una scelta fatta PRIMA di cambiare verso —
+  //    cioe' un rifiuto che non c'entra col gesto. Stessa cura gia' in piedi
+  //    per il verso e il mezzo quando si passa alla tasca.
   const setDirection = (direction) =>
-    setForm((f) => ({ ...f, direction, causale_id: "", is_owner_injection: false }));
+    setForm((f) => ({ ...f, direction, causale_id: "", is_owner_injection: false, e_investimento: false }));
 
   const handleAdd = async () => {
     if (!form.amount || Number(form.amount) <= 0) return;
@@ -251,6 +278,10 @@ export default function PrimaNota() {
         forager_tax_code: isForager ? form.forager_tax_code || null : null,
         harvest_region: isForager ? form.harvest_region || null : null,
         is_owner_injection: form.direction === "entrata" ? form.is_owner_injection : false,
+        // ⚠️ Mai un `true` su un'entrata, nemmeno se lo stato fosse rimasto
+        //    acceso per una strada che non abbiamo previsto: il divieto vero
+        //    e' nel database, questa riga evita solo di andarci a sbattere.
+        e_investimento: offreInvestimento ? form.e_investimento : false,
         note: form.note || null,
       });
       // 🔴 DOPO il salvataggio riuscito, mai prima: chiudendo prima, un
@@ -272,6 +303,28 @@ export default function PrimaNota() {
       await reload();
     } catch (e) {
       setError(e.message);
+    }
+  };
+
+  // 🔴 SI MARCA E SI SMARCA UNA RIGA GIA' SCRITTA, senza cancellarla e
+  //    rifarla: rifarla le darebbe un identificativo nuovo, una data di
+  //    creazione nuova, e lascerebbe una lapide nel registro delle
+  //    cancellazioni per una cosa che non e' stata cancellata.
+  //
+  // ⚠️ SI AGGIORNA SOLO LA RIGA TOCCATA, mai tutto l'elenco: una
+  //    ricarica completa butterebbe via quello che si sta scrivendo nel
+  //    modulo sopra — la trappola del 12/08, pagata una volta.
+  const [marcando, setMarcando] = useState(null);
+  const handleInvestimento = async (mov, valore) => {
+    setMarcando(mov.id);
+    setError("");
+    try {
+      const aggiornata = await segnaInvestimento(mov.id, valore);
+      setMovements((righe) => righe.map((r) => (r.id === mov.id ? aggiornata : r)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setMarcando(null);
     }
   };
 
@@ -305,15 +358,17 @@ export default function PrimaNota() {
       { label: "CF raccoglitore", value: (m) => m.forager_tax_code },
       { label: "Regione di raccolta", value: (m) => m.harvest_region },
       { label: "Versamento titolare", value: (m) => (m.is_owner_injection ? "Sì" : "") },
+      // ⚠️ Vuoto quando non è marcata, mai «No»: una colonna che scrive «No»
+      //    su quasi tutte le righe si smette di leggere, e chi cerca gli
+      //    investimenti in un foglio filtra su ciò che c'è.
+      { label: "Investimento", value: (m) => (m.e_investimento ? "Sì" : "") },
       { label: "Nota", value: (m) => m.note },
     ]);
   };
 
-  const periodTotals = useMemo(() => {
-    const inc = movements.filter((m) => m.direction === "entrata").reduce((s, m) => s + Number(m.amount), 0);
-    const out = movements.filter((m) => m.direction === "uscita").reduce((s, m) => s + Number(m.amount), 0);
-    return { inc, out };
-  }, [movements]);
+  // Entrate, uscite e saldo da un posto solo (27/09/2026): il saldo è la
+  // differenza dei due totali, non un secondo conto.
+  const periodTotals = useMemo(() => totaliDelPeriodo(movements), [movements]);
 
   return (
     <div className="testo-sala max-w-5xl mx-auto pb-16">
@@ -422,8 +477,8 @@ export default function PrimaNota() {
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
           {inTasca && (
             <p className="testo-sala text-b58-charcoal-soft mb-3">
-              Dalla tasca escono soldi e basta: e' il contante che spendi di tuo,
-              senza documento. Non e' deducibile e non entra in nessun calcolo
+              Dalla tasca escono soldi e basta: è il contante che spendi di tuo,
+              senza documento. Non è deducibile e non entra in nessun calcolo
               fiscale — serve solo a saperne il conto.
             </p>
           )}
@@ -513,7 +568,7 @@ export default function PrimaNota() {
               oraFineSerata={oraFineSerata}
               frase="Questo movimento va sulla serata di"
               labelClass={labelClass}
-              inputClass={`${inputClass} campo-data`}
+              inputClass={inputClass}
               className="w-min"
             />
             <div className="cella-larga">
@@ -637,7 +692,13 @@ export default function PrimaNota() {
           </div>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-4">
+            {/* 🔴 QUESTA FILA VA A CAPO — 26/09/2026, dal censimento a 360
+                punti: casella dell'investimento e nota stavano su una riga
+                che non poteva andare a capo, e la nota si stringeva fino a
+                4,3 mm — un campo in cui non si riesce a scrivere. Sul
+                telefono la nota scende e prende la riga intera; da `sm` in
+                su resta larga 12 rem, come prima. */}
+            <div data-riga-nota className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
               {form.direction === "entrata" && (
                 <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
                   <input
@@ -648,11 +709,43 @@ export default function PrimaNota() {
                   Versamento titolare / fondo cassa
                 </label>
               )}
+              {/* 🔴 «INVESTIMENTO PER IL PROGETTO» — C11, 21/09/2026.
+                  ⚠️ Sulle ENTRATE non compare, e non e' una questione di
+                  ordine: e' il verso sbagliato. Il divieto vero sta nel
+                  database, questa riga evita di offrire il gesto.
+                  ⚠️ La spiegazione sta DIETRO IL SEGNO e non accanto al
+                  nome: una nota affiancata a una spunta toglie spazio
+                  proprio al nome che spiega — misurato il 25/08 su questa
+                  stessa forma (174 punti alla nota, 107 al nome, su un
+                  telefono da 390). */}
+              {offreInvestimento && (
+                <label
+                  data-prova="investimento-creazione"
+                  className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft"
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.e_investimento}
+                    onChange={(e) => setForm((f) => ({ ...f, e_investimento: e.target.checked }))}
+                  />
+                  <span>Investimento per il progetto</span>
+                  <Didascalia etichetta="Cosa vuol dire «investimento per il progetto»">
+                    Spunta questa casella quando la spesa serve a <strong>mettere in piedi il
+                    locale</strong> — arredi, attrezzature, lavori, pratiche — e non alla gestione
+                    di tutti i giorni. Serve solo a rispondere a «quanto è costato aprire»:
+                    non cambia la deducibilità, l'IVA né nessun calcolo delle imposte.
+                    <br />
+                    Si mette e si toglie quando vuoi, anche dopo, da questa stessa pagina.
+                    Dopo l'apertura di marzo 2027 basta smettere di usarla.
+                  </Didascalia>
+                </label>
+              )}
               <input
                 value={form.note}
                 onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
                 placeholder="Nota (facoltativa)"
-                className={`${inputClass} w-48`}
+                data-campo-nota
+                className={`${inputClass} min-w-0 sm:w-48`}
               />
             </div>
             <button
@@ -710,10 +803,31 @@ export default function PrimaNota() {
           <p className="testo-sala text-b58-charcoal-soft/60">Nessun movimento nel periodo.</p>
         ) : (
           <>
-            <div className="testo-sala text-b58-charcoal-soft mb-3">
-              Totali periodo: <span className="text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</span>{" "}
-              <span className="text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</span>
-            </div>
+            {/* 🔴 TRE NUMERI CON IL LORO NOME — 27/09/2026. Prima era «Totali
+                periodo: +1.750,00 € −3.030,85 €»: due cifre senza etichetta,
+                e nessuna differenza. Stessi colori e segni di prima; il
+                saldo prende il colore del suo segno. */}
+            <dl data-totali-periodo className="flex flex-wrap gap-x-6 gap-y-1 testo-sala mb-3">
+              <div data-totale="entrate">
+                <dt className="inline text-b58-charcoal-soft">Entrate </dt>
+                <dd className="inline text-b58-olive-dark font-medium">+{formatEUR(periodTotals.inc)}</dd>
+              </div>
+              <div data-totale="uscite">
+                <dt className="inline text-b58-charcoal-soft">Uscite </dt>
+                <dd className="inline text-b58-terracotta-dark font-medium">−{formatEUR(periodTotals.out)}</dd>
+              </div>
+              <div data-totale="saldo">
+                <dt className="inline text-b58-charcoal-soft">Saldo del periodo </dt>
+                <dd
+                  className={`inline font-medium ${
+                    periodTotals.saldo < 0 ? "text-b58-terracotta-dark" : "text-b58-olive-dark"
+                  }`}
+                >
+                  {periodTotals.saldo < 0 ? "−" : "+"}
+                  {formatEUR(Math.abs(periodTotals.saldo))}
+                </dd>
+              </div>
+            </dl>
             {/* 🔴 LA TABELLA DIVENTA IL TELAIO (31/08/2026), e il difetto
                 l'ha trovato una MISURA, non una rilettura: aperta a 390
                 punti con venti righe dentro, questa tabella sbordava di
@@ -729,7 +843,11 @@ export default function PrimaNota() {
                 ⚠️ La forma non e' nuova: e' `ElencoAdattivo`, il telaio
                 del 29/08 — blocchetti sul telefono, tabella sul computer,
                 coi campi dichiarati UNA VOLTA SOLA. */}
+            {/* `tabellaDa="xl"` (27/09/2026, audit visivo): a 768 la tabella
+                chiedeva 799 punti in 656 e l'importo finiva fuori dalla
+                vista. Le schede restano fino a 1280. */}
             <ElencoAdattivo
+              tabellaDa="xl"
               righe={movements}
               chiave={(m) => m.id}
               titolo={(m) => formatDate(m.movement_date)}
@@ -779,12 +897,73 @@ export default function PrimaNota() {
                   valore: `${m.direction === "entrata" ? "+" : "−"}${formatEUR(m.amount)}`,
                 },
               ]}
+              // 🔴 UNA RIGA MARCATA SI RICONOSCE, senza rendere rumorosa la
+              //    schermata: un segno corto accanto alla data, non una
+              //    colonna in piu' che direbbe «no» su quasi tutte le righe.
+              //    E' la stessa regola con cui l'Agenda ha tolto la colonna
+              //    della provenienza (10/09).
+              segno={(m) =>
+                m.e_investimento ? (
+                  <span
+                    data-prova="segno-investimento"
+                    title="Investimento per il progetto"
+                    className="rounded-full bg-b58-gold/20 text-b58-gold-dark px-2 testo-sala"
+                  >
+                    investimento
+                  </span>
+                ) : null
+              }
               aperta={(m) => (
-                <ConfermaDistruttiva
-                  etichetta="Rimuovi"
-                  cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
-                  onConferma={() => handleDelete(m.id)}
-                />
+                // 🔴 UNA FASCIA SOLA — 27/09/2026, secondo batch visivo.
+                //    Prima casella e «Rimuovi» stavano su due righe, più la
+                //    spiegazione ripetuta sotto ogni entrata: ogni movimento
+                //    diventava alto il doppio. Ora stanno affiancati, con i
+                //    5 mm dei gesti pericolosi fra loro (`gesti-pericolosi`,
+                //    che va a capo invece di sbordare), «Rimuovi» a destra.
+                <div data-fascia-movimento className="gesti-pericolosi justify-between">
+                  {/* 🔴 IL GESTO SULLA RIGA GIA' SCRITTA (C11). Compare solo
+                      dove il database lo ammette; dove non lo ammette, al
+                      suo posto c'e' la RAGIONE — l'assenza muta di un gesto
+                      si legge come un guasto. Dal 27/09 la ragione intera
+                      sta dietro il «?», e a vista resta una frase corta. */}
+                  {idoneoAInvestimento(m) ? (
+                    <label
+                      data-prova="investimento-riga"
+                      className="tocco-campo flex flex-1 items-center gap-2 testo-sala text-b58-charcoal-soft"
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label="Investimento per il progetto"
+                        checked={Boolean(m.e_investimento)}
+                        disabled={marcando === m.id}
+                        onChange={(e) => handleInvestimento(m, e.target.checked)}
+                      />
+                      {/* Sul telefono la parola sola: per intero, accanto a
+                          «Rimuovi» a 360 punti non ci stava e lo spingeva
+                          sotto. Il nome della casella resta intero. */}
+                      <span>
+                        <span className="sm:hidden">Investimento</span>
+                        <span className="hidden sm:inline">Investimento per il progetto</span>
+                        {marcando === m.id ? " — salvo…" : ""}
+                      </span>
+                    </label>
+                  ) : (
+                    // `flex-1` SENZA `min-w-0`: la frase va a capo nel suo spazio
+                    // invece di spingere «Rimuovi» sotto, e quando «Rimuovi»
+                    // si apre nella sua conferma è lei a scendere di riga.
+                    <p data-prova="investimento-no" className="flex-1 testo-sala text-b58-charcoal-soft/70">
+                      Non è un investimento
+                      <Didascalia etichetta="Perché questo movimento non è un investimento">
+                        {ragioneNonIdoneo(m)}
+                      </Didascalia>
+                    </p>
+                  )}
+                  <ConfermaDistruttiva
+                    etichetta="Rimuovi"
+                    cosaSparisce={`il movimento del ${formatDate(m.movement_date)} da ${formatEUR(m.amount)}`}
+                    onConferma={() => handleDelete(m.id)}
+                  />
+                </div>
               )}
             />
           </>

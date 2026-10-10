@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import {
   listChiamateTurno,
   listRepartoTickets,
@@ -10,6 +9,7 @@ import { bigliettiCucina, etichettaTurno } from "../../lib/calcoli/turni";
 import { toccaSubito, toccaTutteSubito } from "../../lib/calcoli/tocco";
 import { allergeniTolti, frasiSostituzioni, nomeRiga } from "../../lib/calcoli/righeComanda";
 import { ALLERGENS, labelFor } from "../../lib/constants";
+import Scorciatoia from "../../components/Scorciatoia";
 
 // CUCINA — postazione di stampa, non schermata di lavoro (§3.2.1).
 //
@@ -270,12 +270,12 @@ export default function Cucina() {
           </p>
         </div>
         <div className="flex gap-1.5">
-          <Link to="/comande" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+          <Scorciatoia to="/comande">
             Sala
-          </Link>
-          <Link to="/comande/bar" className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4">
+          </Scorciatoia>
+          <Scorciatoia to="/comande/bar">
             Bar
-          </Link>
+          </Scorciatoia>
         </div>
       </div>
 

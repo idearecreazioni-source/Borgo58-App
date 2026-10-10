@@ -54,6 +54,17 @@ export const ORFANE_SEMPRE = {
   tipi_vocali_senza_ramo: "rete: i comandi vocali che il gestionale non sa eseguire",
   vincoli_senza_frase: "rete: i rifiuti che non parlano italiano",
   funzioni_senza_chiamante: "rete: questa stessa — chi non ha un chiamante nel database",
+  // 🔴 AGGIUNTA IL 22/09/2026, e non perché sia cambiata lei: perché è
+  //    cambiato il setaccio. Fino a oggi questa rete leggeva anche i
+  //    COMMENTI di `src/`, e `guardie_vocabolario()` è nominata lì dentro in
+  //    un posto solo — il commento in cima a `src/lib/calcoli/vocabolari.js`
+  //    che spiega dove vive la regola. Bastava quella riga a farla sembrare
+  //    raggiungibile.
+  //    ⚠️ Non era una porta: nessuna schermata la chiama, e a interrogarla è
+  //    `tests/app/vocabolari.test.js`. Cioè è una RETE come le tredici qui
+  //    sopra, ed è sempre stata in quella categoria — solo che nessuno
+  //    poteva vederlo.
+  guardie_vocabolario: "rete: i tre posti dove vive un vocabolario chiuso",
   // ⚠️ AGGIUNTA IL 05/09/2026 con la correzione RLS delle viste economiche.
   //    Non e' un debito e non e' una porta che manca: e' una RETE, come le
   //    dieci qui sopra. La interroga `tests/app/permessi.test.js` col token
@@ -63,8 +74,21 @@ export const ORFANE_SEMPRE = {
   //    sala.
   viste_che_scavalcano_rls: "rete: quali viste non applicano la RLS di chi le interroga",
 
-  // Lavoro pianificato: lo chiama pg_cron, non una persona.
-  send_due_task_reminders: "lavoro pianificato: i promemoria dell'Agenda",
+  // 🔴 QUI STAVA `send_due_task_reminders`, ed è uscita il 20/09/2026 —
+  //    non perché qualcuno le abbia costruito una schermata, ma perché
+  //    adesso **dall'app non la può chiamare nessuno**: la 20260920000004 la
+  //    chiude con un `revoke` verso `authenticated`, e questa rete guarda
+  //    solo ciò che un utente del gestionale può eseguire.
+  //    ⚠️ La riga vecchia diceva «lavoro pianificato: lo chiama pg_cron», ed
+  //    era vera: la chiama ancora pg_cron ogni cinque minuti. Quello che è
+  //    cambiato è che PRIMA la poteva chiamare anche chi aveva fatto il
+  //    login — cioè un gesto che nessuna schermata offriva, ed era proprio
+  //    ciò che la faceva comparire fra le orfane. Adesso quella porta non
+  //    c'è più, e il debito è pagato: lasciarla iscritta racconterebbe un
+  //    debito che non esiste (è la regola dichiarata in cima a questa prova).
+  // Misurato su Prova il 20/09, chiedendolo al database come titolare:
+  //   has_function_privilege('authenticated', …) = false
+  //   funzioni_senza_chiamante() → 212 righe, e lei non c'è più.
 
   // Interrogata da uno script a riga di comando.
   numeri_sospetti: "interrogata da `npm run numeri`",
@@ -106,7 +130,23 @@ export const ORFANE_SEMPRE = {
 // ⚠️ Resta vuoto e non sparisce: e' il posto dove iscrivere la PROSSIMA
 //    funzione che entrera' davvero senza chiamante, e la prova qui accanto
 //    continua a sorvegliarne la forma su un elenco inventato.
-export const ORFANE_PIANIFICATE = {};
+export const ORFANE_PIANIFICATE = {
+  // ⚠️ Le chiama il passo iniziale delle prove sul database
+  //    (`tests/app/silenzio-globale.js`), non una schermata: aprono e chiudono
+  //    il silenzio Telegram di Prova mentre girano i controlli automatici.
+  //    Una porta a schermo non avrebbe senso — Alessio non zittisce niente a
+  //    mano, e fuori da Borgo58-Prova il database le rifiuta comunque.
+  // ⚠️ PIANIFICATE e non SEMPRE: la 20260919000001 e' applicata su Prova e non
+  //    in produzione, e la rete deve aspettarsele solo dove la migrazione c'e'.
+  apri_silenzio_notifiche: {
+    versione: "20260919000001",
+    perche: "la chiama l'avvio delle prove sul database: apre il silenzio Telegram di Prova",
+  },
+  chiudi_silenzio_notifiche: {
+    versione: "20260919000001",
+    perche: "la chiama la fine delle prove sul database: chiude il proprio silenzio",
+  },
+};
 
 /**
  * L'elenco delle orfane attese in UN database, viste le sue migrazioni.

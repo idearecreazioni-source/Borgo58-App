@@ -19,6 +19,13 @@
 // applicate **in ordine di numero** su un database vuoto, arrivano in
 // fondo — e che lo schema che ne esce e' lo stesso del progetto di prova.
 //
+// ⚠️ LE ECCEZIONI STORICHE (30/09/2026): poche migrazioni si applicano qui
+// come sono andate davvero — a meta', o col fuso di Roma — e sono elencate
+// una per una, col messaggio con cui DEVONO fermarsi, in
+// scripts/ricostruzione-regole.mjs. Solo qui: i comandi veri restano
+// atomici. Il referto separa eccezioni note, errori inattesi, registro e
+// differenze di schema, e dice «completo» solo se lo e' davvero.
+//
 // ⚠️ DOVE GIRA, e non e' un dettaglio: su un database USA E GETTA
 // (`ricostruzione_prova`) creato sullo stesso motore del progetto di
 // prova, come fa gia' `npm run backup:ripristina` dal 23/08. La
@@ -57,6 +64,16 @@ import {
   formaDelDatabase,
   argomentiMigrazione,
 } from "./comune.mjs";
+import {
+  argomentiRicostruzione,
+  classificaFermate,
+  esitoComplessivo,
+  esitoRegistro,
+  configurazioneSenzaProduzione,
+  leggiArgomenti,
+  modoRicostruzione,
+  preparazioneDi,
+} from "./ricostruzione-regole.mjs";
 
 /** Il database usa-e-getta. Sempre lo stesso nome: si rifa' e si butta. */
 const DATABASE = "ricostruzione_prova";
@@ -215,7 +232,7 @@ end $f$;
 -- usa-e-getta.
 select vault.create_secret(encode(gen_random_bytes(24), 'hex'), 'notifiche_firma',
   'Valore a caso della prova di ricarica. Non apre niente.');
-select vault.create_secret('chiave-finta-della-prova-di-ricarica', 'chiave_anon',
+select vault.create_secret('eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJyZWYiOiJibndxZ3B1eXptenVqeGZidHl2cyJ9.firma-finta-della-prova-di-ricarica', 'chiave_anon',
   'Valore finto della prova di ricarica. Non apre niente.');
 
 -- ⚠️ I PERMESSI SUGLI SCHEMI DI SERVIZIO. Su un progetto Supabase vero i
@@ -238,6 +255,16 @@ begin
     execute format('grant execute on all functions in schema %I to anon, authenticated, service_role, postgres', s);
   end loop;
 end $$;
+
+-- ⚠️ IL DEPOSITO DEI FILE SI SCRIVE, COME SU SUPABASE VERO (30/09/2026).
+-- Il ciclo qui sopra da' solo "select", e la verifica della
+-- 20260910000003 — che carica un file come titolare — si fermava con
+-- «permission denied for table objects»: un limite del moncone, non della
+-- migrazione. Misurato in sola lettura sul progetto di prova: anon,
+-- authenticated e service_role hanno select, insert, update e delete su
+-- storage.objects e storage.buckets, e a decidere e' la RLS.
+grant select, insert, update, delete on storage.objects, storage.buckets
+  to anon, authenticated, service_role;
 `;
 
 // I ruoli si assegnano SUBITO DOPO la migrazione che crea `user_roles`:
@@ -280,7 +307,13 @@ order by 1;
 
 // ---------------------------------------------------------------------
 
-const config = leggiConfigurazione();
+// 🔴 `--senza-produzione` (M20-H): l'elenco degli argomenti e' chiuso, e con
+// l'argomento ogni chiave che nomina la produzione viene scartata APPENA
+// letta la configurazione. Il comando non ha altri accessi alla produzione:
+// il confronto e' con il progetto di prova (`madre`), mai con la produzione.
+const { senzaProduzione, sconosciuti } = leggiArgomenti(process.argv.slice(2));
+if (sconosciuti.length) fermati("Argomento sconosciuto. L'unico ammesso e' --senza-produzione.");
+const config = configurazioneSenzaProduzione(leggiConfigurazione(), senzaProduzione);
 const madre = obbligatorio(config, "DB_URL_PROVA", "manca in .env");
 soloProva(madre);
 
@@ -327,10 +360,25 @@ const migrazioni = readdirSync("supabase/migrations")
 titolo("La prova di ricarica — le migrazioni in ordine di NUMERO");
 console.log(`   database usa-e-getta:  ${DATABASE}`);
 console.log(`   migrazioni da provare: ${migrazioni.length}`);
+console.log(`   produzione:            ${senzaProduzione ? "esclusa (--senza-produzione)" : "non usata da questo comando"}`);
 console.log("");
 
 interroga(madre, `drop database if exists ${DATABASE} with (force); create database ${DATABASE};`);
 console.log("  database rifatto, vuoto");
+
+// ⚠️ IL DATABASE USA-E-GETTA SI BUTTA ANCHE SE LO STRUMENTO SI FERMA A META'
+// (30/09/2026). Prima lo si buttava solo in fondo: un `fermati()` in mezzo
+// lo lasciava sul motore di prova. `process.on("exit")` gira anche dopo un
+// process.exit, e `interroga` e' sincrona, quindi fa in tempo.
+let buttato = false;
+process.on("exit", () => {
+  if (buttato) return;
+  try {
+    interroga(madre, `drop database if exists ${DATABASE} with (force);`);
+  } catch {
+    console.log(`  🔴 Il database usa-e-getta ${DATABASE} potrebbe essere rimasto: controllalo.`);
+  }
+});
 
 const pre = applica(PREREQUISITI, "prereq");
 if (!pre.ok) {
@@ -348,6 +396,8 @@ const neutralizzate = [];
 const rinfrescate = [];
 let seminati = false;
 const fermate = [];
+const eccezioniApplicate = [];
+const preparate = [];
 let numero = 0;
 for (const file of migrazioni) {
   numero++;
@@ -401,17 +451,25 @@ for (const file of migrazioni) {
     daApplicare = temporaneoDaTogliere;
     neutralizzate.push(file);
   }
+  // Stessa regola dei comandi veri — atomica salvo enum — tranne le
+  // ECCEZIONI STORICHE dichiarate in scripts/ricostruzione-regole.mjs, che
+  // riproducono come quelle migrazioni sono andate davvero (a meta', o col
+  // fuso di Roma). I comandi veri non passano di qui.
+  const versione = file.slice(0, 14);
+  const modo = modoRicostruzione(versione, argomentiMigrazione(url, daApplicare).atomica);
+  if (modo.eccezione) eccezioniApplicate.push({ versione, file, come: modo.eccezione.come });
+  // FIXTURE DELLA PROVA, non un fatto storico: solo per le versioni che la
+  // dichiarano (scripts/ricostruzione-regole.mjs), solo in questo database
+  // usa-e-getta, subito prima della migrazione.
+  const preparazione = preparazioneDi(versione);
+  if (preparazione) {
+    const p = applica(preparazione, "preparazione");
+    if (!p.ok) fermati(`La preparazione della prova per la ${versione} non e' riuscita.`, p.uscita.slice(-600));
+    preparate.push(versione);
+  }
   const r = esegui(
     psql,
-    [
-      "-v", "ON_ERROR_STOP=1",
-      // Stessa regola della produzione: atomica salvo enum. Se qui girasse
-      // diversamente, questa prova generale proverebbe una cosa che non succede.
-      ...(argomentiMigrazione(url, daApplicare).atomica ? ["--single-transaction"] : []),
-      "-d", url,
-      ...(chiedeIlCatalogo ? ["-c", "set enable_seqscan = off"] : []),
-      "-f", daApplicare,
-    ],
+    argomentiRicostruzione(url, daApplicare, { ...modo, chiedeIlCatalogo }),
     { silenzioso: true }
   );
   if (temporaneoDaTogliere) unlinkSync(temporaneoDaTogliere);
@@ -421,12 +479,12 @@ for (const file of migrazioni) {
     //    punto rotto e niente sugli altri duecento. Si prosegue e si
     //    raccoglie tutto.
     //
-    // ⚠️ E lo schema resta confrontabile lo stesso, perche' queste si
-    //    fermano nel blocco di VERIFICA, dopo le DDL: una migrazione che
-    //    fallisce alla fine lascia dentro il lavoro gia' fatto (§8 del
-    //    25/08), e psql committa un'istruzione per volta.
+    // 🔴 E NON SI PRESUME CHE LE DDL SIANO RIMASTE (corretto il 30/09): dal
+    //    28/08 una migrazione atomica che si ferma annulla TUTTO, tabelle e
+    //    funzioni comprese. Restano solo nelle eccezioni "a_meta".
     fermate.push({
       file,
+      versione,
       numero,
       motivo: (r.uscita.split(/\r?\n/).filter((l) => /ERROR:/.test(l)).pop() || "?")
         .replace(/^psql:[^:]+:\d+:\s*/, "")
@@ -451,40 +509,71 @@ console.log("");
 
 // 🔴 LA DOMANDA CHE CONTA DAVVERO NON E' «QUANTE SI SONO FERMATE», e ci
 // e' voluto un giro per capirlo: e' **se il registro finale e' completo**.
-// Una migrazione che si ferma nel blocco di verifica ha gia' fatto le sue
-// DDL, ma non arriva a registrarsi — e un registro piu' corto dei file
-// applicati e' la famiglia della risposta con l'aria di essere intera:
-// il giorno dopo `npm run migra` direbbe che manca qualcosa che c'e' gia'.
-const registrate = Number(
-  interroga(url, "select count(*) from applied_migrations;").trim()
-);
-console.log(`  file applicati: ${migrazioni.length}  ·  registrati: ${registrate}`);
-if (registrate === migrazioni.length) {
-  console.log("  ✅ IL REGISTRO E' COMPLETO: ogni file ha la sua riga.");
-} else {
-  console.log(`  🔴 IL REGISTRO E' PIU' CORTO DI ${migrazioni.length - registrate} RIGHE.`);
+// Una migrazione che si ferma non arriva a registrarsi (se e' atomica non
+// lascia nemmeno le sue DDL; se e' un'eccezione "a_meta" le lascia) — e un
+// registro piu' corto dei file applicati e' la famiglia della risposta con
+// l'aria di essere intera.
+//
+// 🔴 CORRETTO IL 30/09: qui sotto c'era una frase fissa — «e' per questo che
+// il registro qui sopra risulta completo» — stampata a ogni fermata, anche
+// sotto una riga che diceva il contrario. Ora «completo» si dice SOLO se
+// ogni file ha la sua riga, confrontando le VERSIONI e non i conteggi.
+const versioniFile = migrazioni.map((f) => f.slice(0, 14));
+const versioniRegistrate = interroga(url, "select version from applied_migrations order by 1;")
+  .split(/\r?\n/)
+  .map((x) => x.trim())
+  .filter(Boolean);
+const registro = esitoRegistro(versioniFile, versioniRegistrate);
+const { note, inattese, nonScattate } = classificaFermate(fermate, versioniFile);
+
+const riga = (f) => `     ${String(f.numero).padStart(3, " ")}ª  ${f.file}`;
+
+// 1 · LE ECCEZIONI STORICHE NOTE
+console.log(`  ECCEZIONI STORICHE NOTE: ${eccezioniApplicate.length} applicate in modo dichiarato`);
+for (const e of eccezioniApplicate) console.log(`     · ${e.file}  (${e.come})`);
+if (note.length) {
+  console.log(`   di cui ${note.length} si sono fermate col messaggio atteso:`);
+  for (const f of note) {
+    console.log(riga(f));
+    console.log(`          ${f.motivo}`);
+    console.log(`          → ${f.eccezione.motivo}` +
+      (f.eccezione.sanataDa ? `; la registra la ${f.eccezione.sanataDa}` : "; nessuna migrazione la registra"));
+  }
+}
+if (preparate.length) {
+  console.log(`   PREPARAZIONI DELLA PROVA (fixture, non storia ne' dati di produzione): ${preparate.join(", ")}`);
+}
+if (nonScattate.length) {
+  console.log("   ⚠️ eccezioni che dovevano fermarsi e NON si sono fermate (la storia non corrisponde piu'):");
+  for (const e of nonScattate) console.log(`     · ${e.versione}`);
 }
 console.log("");
 
-if (fermate.length) {
-  console.log(`  ⚠️ ${fermate.length} migrazioni si sono fermate nel loro blocco di VERIFICA`);
-  console.log("     (le DDL erano gia' passate — e' il motivo per cui lo schema torna):");
-  console.log("");
-  for (const f of fermate) {
-    console.log(`     ${String(f.numero).padStart(3, " ")}ª  ${f.file}`);
+// 2 · GLI ERRORI INATTESI
+if (inattese.length) {
+  console.log(`  🔴 ERRORI INATTESI: ${inattese.length}`);
+  for (const f of inattese) {
+    console.log(riga(f));
     console.log(`          ${f.motivo}`);
+    if (f.eccezione) console.log(`          (eccezione nota, ma NON col messaggio atteso: ${f.eccezione.attesa ?? "non doveva fermarsi"})`);
   }
-  console.log("");
-  console.log("");
-  console.log("  ⚠️ NON E' UN FALLIMENTO DELLA RICOSTRUZIONE, ed e' la parte che");
-  console.log("     va letta bene: quei file NON si riscrivono — una migrazione");
-  console.log("     applicata racconta cosa e' successo quel giorno. I loro tre");
-  console.log("     controlli vengono RIFATTI con roba propria dalla");
-  console.log("     20260825000012, che poi registra le tre versioni: e' per");
-  console.log("     questo che il registro qui sopra risulta completo.");
-  console.log("     Il seguito e' in docs/CODA_E_DECISIONI.md, voce 0-zero.");
 } else {
-  console.log("  ✅ Tutte e 245 arrivano in fondo in ordine di numero.");
+  console.log("  ✅ ERRORI INATTESI: nessuno");
+}
+console.log("");
+
+// 3 · IL REGISTRO
+console.log(`  REGISTRO: ${versioniFile.length} file, ${versioniRegistrate.length} righe`);
+if (registro.completo) {
+  console.log("  ✅ IL REGISTRO E' COMPLETO: ogni file ha la sua riga, e nessuna riga e' senza file.");
+} else {
+  console.log(`  🔴 IL REGISTRO E' INCOMPLETO: ${registro.mancanti.length} file senza riga, ${registro.estranee.length} righe senza file.`);
+  for (const v of registro.mancanti) {
+    const f = fermate.find((x) => x.versione === v);
+    const tipo = note.some((x) => x.versione === v) ? "eccezione nota" : "inattesa";
+    console.log(`     − ${v}` + (f ? `  (${tipo})` : "  (non si e' fermata, ma non si e' registrata)"));
+  }
+  for (const v of registro.estranee) console.log(`     + ${v}  (riga senza file)`);
 }
 console.log("");
 
@@ -526,10 +615,11 @@ if (soloQui.length === 0 && soloLa.length === 0) {
   console.log("     Non e' un conteggio: e' una proprieta' — nessun elemento di forma");
   console.log("     sta da una parte e non dall'altra.");
 } else {
-  console.log(`  🔴 DIFFERENZE: ${soloQui.length} solo nel ricostruito, ${soloLa.length} solo nella prova.`);
-  for (const x of soloQui.slice(0, 25)) console.log("     + " + x.slice(0, 190));
-  for (const x of soloLa.slice(0, 25)) console.log("     − " + x.slice(0, 190));
-  if (soloQui.length + soloLa.length > 50) console.log(`     … e altre ${soloQui.length + soloLa.length - 50}`);
+  // ⚠️ TUTTE, non le prime cinquanta (corretto il 30/09): «… e altre 179»
+  //    e' una differenza che nessuno legge.
+  console.log(`  🔴 DIFFERENZE DI SCHEMA: ${soloQui.length} solo nel ricostruito, ${soloLa.length} solo nella prova.`);
+  for (const x of soloQui) console.log("     + " + x);
+  for (const x of soloLa) console.log("     − " + x);
 }
 
 console.log("");
@@ -538,6 +628,19 @@ console.log("     notifiche escano, che il Vault conservi. Qui sono monconi — 
 console.log("     la nota in testa a scripts/ricostruzione-verifica.mjs.");
 
 interroga(madre, `drop database if exists ${DATABASE} with (force);`);
+// ⚠️ «Buttato» si dice dopo averlo CHIESTO, non dopo averlo ordinato.
+const resta = interroga(madre, `select count(*) from pg_database where datname = '${DATABASE}';`).trim();
+buttato = resta === "0";
 console.log("");
-console.log(`  Il database usa-e-getta e' stato buttato.`);
-process.exit(soloQui.length + soloLa.length === 0 ? 0 : 1);
+console.log(buttato
+  ? "  Il database usa-e-getta e' stato buttato (controllato: non esiste piu')."
+  : `  🔴 Il database usa-e-getta ${DATABASE} risulta ANCORA presente.`);
+
+const esito = esitoComplessivo({ inattese, registro, differenze: soloQui.length + soloLa.length });
+console.log("");
+if (esito.verde) {
+  console.log("  ✅ ESITO: la ricostruzione in ordine di numero e' completa e uguale alla prova.");
+} else {
+  console.log("  🔴 ESITO: la ricostruzione NON e' riuscita — " + esito.motivi.join(", ") + ".");
+}
+process.exit(esito.verde && buttato ? 0 : 1);

@@ -150,8 +150,11 @@ rossa da sola il giorno che l'indice resta indietro.
 | 91 | 11/09/2026 | `min-w-0` tiene la data dentro la sua colonna |
 | 92 | 11/09/2026 | la rete dell'Agenda guarda la frase detta intera |
 | 93 | 13/09/2026 | al terzo gradino basta che uno contenga l'altro |
+| 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
+| 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
+| 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
 
-⚠️ **Righe: 94.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 97.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3404,3 +3407,156 @@ quando questa sezione è stata scritta.
    ⚠️ **Il prezzo**: un frammento di un pezzo col trattino («up caldaia» per
    «Check-up caldaia») e una parola detta a metà non combaciano più al terzo
    gradino — si ridice, o si usa «Fallo a mano».
+
+## 94 · 21/09/2026 — «un investimento anticipato per conto della società entra nel costo»
+
+1. **Cosa era stato deciso e quando.** Il **21/09/2026**, poche ore prima,
+   nella prima stesura di questa stessa proposta (#121): *«un investimento
+   pagato per conto della società e poi rimborsato **non entra** in questo
+   totale»*. Scritto come una conseguenza dichiarata, nel riepilogo, nella
+   migrazione e in `DECISIONI.md`.
+
+2. **La ragione di allora.** SPEC-0004 dice, fra i fuori-scope, che sommare
+   le anticipazioni rimborsabili *«raddoppierebbe il costo»*; e il commento
+   del vincolo del 16/08 dice che una nota collegata a una fattura *«smette
+   di essere solo un debito e diventa da sola un costo — la spesa
+   risulterebbe contata due volte, in silenzio»*. Da lì: meglio zero che due.
+
+3. **Cosa si decide adesso.** Decisione di Alessio: entra **una volta**,
+   sotto **Borgo 58**, **indipendentemente dal rimborso**. L'etichetta si
+   mette anche su `anticipazioni_socio`, cioè nel punto in cui la spesa vive;
+   il movimento «Rimborso al titolare» resta non marcabile; e il doppione
+   fattura+nota viene **impedito** da due trigger che si guardano a vicenda
+   sullo stesso `supplier_invoice_id`.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Non era una scelta: era
+   un buco.** Il timore del doppio conteggio era giusto, ma la cura scelta
+   produceva **zero**, non uno — e zero non è la risposta prudente a
+   «quanto è costato aprire»: è la risposta sbagliata. ⚠️ *Un'etichetta che
+   manca nel punto in cui vive la spesa non è una regola prudente: è un buco
+   silenzioso*, e non lo dichiarava nessun numero — il totale sembrava
+   completo.
+   ⚠️ **E la ragione di allora resta intera dov'è nata**: la regola del 16/08
+   vale nel conteggio **fiscale**, che non è toccato. Qui la domanda è
+   un'altra — *quanto denaro è uscito per il progetto*, non *quanto costo è
+   deducibile* — e la stessa riga può rispondere «sì» all'una e «no»
+   all'altra senza contraddirsi.
+   ⚠️ **Il prezzo, dichiarato**: due colonne `e_investimento` invece di una, e
+   due guardiani da tenere allineati. È il prezzo di avere due tabelle dove
+   una spesa può vivere, e non si paga con una terza tabella.
+
+## 95 · 22/09/2026 — «lo scarto del prodotto vale per ogni riga, a ogni calcolo»
+
+1. **Cosa era stato deciso e quando.** Il **13/08/2026**, con le schede dei
+   prodotti: `ingredients.waste_percentage_default` — *«la percentuale di
+   scarto proposta: è quanto di ciò che si compra finisce nel bidone, e serve
+   al costo del piatto»*. E il modo in cui è stata costruita è il punto: non
+   precompilava niente, **si sostituiva al volo** dentro il calcolo, con
+   `coalesce(riga.waste_percentage, prodotto.default, 0)`.
+
+2. **La ragione di allora.** Era giusta e resta scritta: *«con lo scarto a
+   zero un piatto sembra costare meno di quanto costa, e su carciofi o pesce
+   l'errore è enorme»*. Una riga di ricetta a cui nessuno aveva detto lo
+   scarto doveva comunque costare il vero, e l'unico numero disponibile era
+   quello del prodotto.
+
+3. **Cosa si decide adesso.** Decisione di Alessio del **22/09/2026**: il
+   valore standard **resta** sulla scheda del prodotto — confermando la sua
+   decisione del 25/08 contro una mia proposta che lo toglieva — ma **serve
+   solo a precompilare una volta** lordo e netto quando **nasce** una riga.
+   Dopo, la riga è **autonoma e autorevole**: nessuna eredità viva.
+   La garanzia non è una promessa ma un vincolo — `recipe_ingredients.
+   waste_percentage` diventa `not null`, quindi il secondo argomento di quei
+   `coalesce` **non è più raggiungibile** — e i **cinque** punti che lo
+   nominavano sono riscritti dal loro corpo vivo.
+
+4. **Perché la ragione di allora non vale più.** 🔴 **Perché quel numero non
+   arrivava solo dove mancava: arrivava SEMPRE, anche dove qualcuno aveva già
+   scelto.** Misurabile: cambiando lo scarto sulla scheda di un prodotto si
+   spostava il food cost di **ogni** ricetta che lo usa, comprese quelle
+   scritte mesi prima da chi quel numero non l'aveva scelto — e nessun
+   errore lo diceva, perché il numero nuovo è plausibile quanto il vecchio.
+   ⚠️ *Un valore che continua a valere per righe già scritte non è un valore
+   standard: è una decisione presa al posto di chi le ha scritte.*
+   ⚠️ **E la ragione di allora è servita intera**: la riga senza scarto non
+   resta scoperta — la sanatoria le materializza lo scarto che aveva davvero
+   in quel momento, e la precompilazione continua a darlo a chi ne scrive una
+   nuova. Cambia **quando** il numero arriva, non **se**.
+   ⚠️ **Il prezzo, dichiarato**: correggere lo scarto standard di un prodotto
+   non sistema più da sé le ricette già scritte. Si paga volentieri, perché
+   il verso opposto — sistemarle tutte in silenzio — è il difetto.
+
+5. **E una cosa che NON è stata rovesciata, scritta perché non si perda.** La
+   prima stesura di questa proposta **toglieva il campo** dalla scheda del
+   prodotto, rovesciando la decisione di Alessio del 25/08 — *«il campo %
+   scarto standard RESTA: serve per l'ingrediente che va solo pulito, senza
+   una preparazione da cui ricavare la resa»*. **Non confermata**: il caso
+   del carciofo è vero, e senza quel campo lo stesso numero andrebbe
+   riscritto da zero su ogni ricetta che usa quel prodotto.
+   ⚠️ Vale la pena notare **come** era stato fatto: dentro un commento di
+   migrazione, con la ragione scritta bene. *Un rovesciamento ben
+   argomentato resta un rovesciamento, e va posto a chi ha preso la
+   decisione invece che eseguito.*
+
+## 96 · 30/09/2026 — «la prova di ricarica applica ogni migrazione con la regola della produzione»
+
+1. **Cosa era stato deciso e quando.** Il **28/08/2026** (commit `733ed25`),
+   insieme alla correzione dei comandi veri: anche la prova di ricarica
+   applica ogni migrazione **in una transazione sola**, salvo enum, con il
+   commento *«stessa regola della produzione: se qui girasse diversamente,
+   questa prova generale proverebbe una cosa che non succede»*.
+
+2. **La ragione di allora.** Una prova che applica le migrazioni in un modo
+   diverso da `npm run migra` non prova `npm run migra`.
+
+3. **Cosa si decide adesso** *(stato al 01/10/2026; i conteggi precedenti
+   sono nella nota in fondo)*. La regola resta per tutte, **tranne dieci
+   eccezioni storiche elencate una per una** in
+   `scripts/ricostruzione-regole.mjs`: cinque si applicano **a metà**
+   (istruzione per istruzione), come sono andate davvero prima del 28/08;
+   una col **fuso di Roma**; quattro restano atomiche con la fermata
+   **attesa e spiegata**. Ogni eccezione dichiara il messaggio con cui deve
+   fermarsi, e se si ferma con un altro è un errore inatteso. In più c'è
+   **una preparazione della prova**, che **non è un'eccezione**: prima della
+   `20260826000013`, e solo nel database usa-e-getta `ricostruzione_prova`,
+   si mette un tetto di spesa finto di 10 € (vedi la nota in fondo). I
+   comandi veri non cambiano.
+
+4. **Perché la ragione di allora non vale più — per una parte.** 🔴 La
+   ricostruzione non ricostruisce `npm run migra` di oggi: ricostruisce **la
+   storia**, e la storia di cinque migrazioni è stata un'applicazione a
+   metà sanata più tardi da un'altra (la `20260825000012`, la
+   `20260827000017` e la `20260828000007` esistono **perché** quelle tabelle
+   erano rimaste). Con la regola del 28/08 quelle tabelle sparivano e la
+   ricostruzione passava da 3 a **72** fermate, 62 delle quali a catena.
+   ⚠️ **La ragione di allora vale ancora per tutte le altre**, ed è il
+   motivo per cui le eccezioni sono un elenco chiuso e non una data di
+   taglio: una migrazione nuova segue sempre la regola della produzione.
+   ⚠️ **Il prezzo, dichiarato**: per le sei applicate in modo diverso
+   (le cinque a metà e quella col fuso) la prova non esercita il modo in
+   cui `npm run migra` le applicherebbe oggi. Le altre quattro restano
+   atomiche come in produzione.
+
+   ⚠️ **Come sono cambiati i conteggi — la storia, conservata.**
+   - *Prima stesura (30/09 notte, M20-B)*: **otto** eccezioni — quattro a
+     metà, una col fuso, tre atomiche; prezzo su cinque migrazioni.
+   - *30/09 pomeriggio (M20-E)*: **dieci** — in più la `20260827000006`
+     (a metà, sanata dalla `20260827000017`) e la `20260829000006`
+     (atomica, sanata dalla `20260829000022`).
+   - *30/09 sera (M20-G)*: **undici** — in più la `20260826000013` «a metà»,
+     **senza sanatrice**. Era una **rappresentazione decisa**, non un fatto
+     storico: per le altre a metà la storia vera è scritta nelle migrazioni
+     che le sanano, per lei no.
+   - 🔴 **Correzione del 01/10 (M20-H, misurata dalla corsa 039, adottata
+     nel M20-Q): la `20260826000013` NON è un'eccezione storica.** Della
+     produzione si sa solo che la funzione esiste e la versione è
+     registrata, non come ci sia arrivata. Le eccezioni tornano **dieci**, e
+     al posto dell'eccezione c'è una **preparazione dichiarata**
+     (`PREPARAZIONI_PROVA`): la sua verifica pretende un tetto con un valore
+     e senza autore, quindi prima di lei, solo nel database usa-e-getta, si
+     esegue `update impostazioni_ai set tetto_mensile_euro = 10 where id;`.
+     Così la migrazione si applica atomica come in produzione, si completa e
+     si registra. È un **valore finto della prova**: non è un fatto storico
+     né un dato di produzione, e nessun valore di produzione è stato letto,
+     copiato o citato. Il modello di oggi è **10 eccezioni storiche + 1
+     preparazione temporanea della prova**.

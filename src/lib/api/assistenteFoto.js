@@ -30,7 +30,7 @@ import {
  */
 export async function preparaFoto(file) {
   if (!tipoAmmesso(file.type)) {
-    throw new Error("Questo tipo di immagine non si puo' leggere. Serve una foto.");
+    throw new Error("Questo tipo di immagine non si può leggere. Serve una foto.");
   }
 
   const immagine = await new Promise((risolvi, rifiuta) => {
@@ -63,7 +63,7 @@ export async function preparaFoto(file) {
     const prossima = qualitaSuccessiva(qualita);
     if (prossima === null) {
       throw new Error(
-        "Questa foto resta troppo pesante anche rimpicciolita. Rifalla piu' da vicino, inquadrando solo l'etichetta."
+        "Questa foto resta troppo pesante anche rimpicciolita. Rifalla più da vicino, inquadrando solo l'etichetta."
       );
     }
     qualita = prossima;
@@ -114,7 +114,7 @@ export async function leggiFoto({ base64, tipo, genere = "qualunque" }) {
     // Nessun corpo: quasi sempre e' la rete. Non si drammatizza — in
     // cucina la rete cade, e la scheda si compila a mano come sempre.
     const e = new Error(
-      "Non sono riuscito a mandare la foto: puo' essere la rete. La scheda si compila a mano come sempre."
+      "Non sono riuscito a mandare la foto: può essere la rete. La scheda si compila a mano come sempre."
     );
     e.codice = "rete";
     throw e;

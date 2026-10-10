@@ -12,6 +12,7 @@ import {
   scartaPosta,
 } from "../../lib/api/posta";
 import {
+  CAMPI_AZIONE,
   cosaCeDaLeggere,
   etichettaConferma,
   etichettaRifiuto,
@@ -59,18 +60,14 @@ const NOME_TIPO = {
 // solo premendo «modifica». È il punto della seconda critica di Alessio:
 // i campi servono a correggere, non a capire. Quello che si legge è la
 // descrizione.
-const CAMPI = {
-  archivia_documento: ["titolo", "tipo", "controparte", "data", "importo", "scadenza"],
-  archivia_testo: ["titolo", "tipo", "controparte", "data", "importo", "scadenza"],
-  promemoria: ["titolo", "data", "note"],
-  promemoria_multipli: [],
-  da_fare_a_mano: ["titolo", "data"],
-  nessuna: [],
-};
+// ⚠️ L'elenco è uscito di qui il 21/09: sta in `src/lib/calcoli/posta.js`
+//    con le altre regole della Posta, perché una prova possa leggerlo.
+const CAMPI = CAMPI_AZIONE;
 
 const ETICHETTE = {
   titolo: "Titolo",
   tipo: "Tipo",
+  societa: "Società",
   controparte: "Controparte",
   data: "Data",
   importo: "Importo",
@@ -752,6 +749,8 @@ function RigheCarico({ par, ingredienti, fornitori, allegati, apriAllegato, camb
 export default function PostaInArrivo() {
   // Le sezioni dell'archivio, per il menu del campo «tipo» (30/08/2026).
   const [sezioni, setSezioni] = useState([]);
+  // Le società, per il campo «Società» di un documento archiviato (21/09).
+  const [entities, setEntities] = useState(null);
   const [posta, setPosta] = useState([]);
   const [valori, setValori] = useState({});
   const [loading, setLoading] = useState(true);
@@ -848,8 +847,14 @@ export default function PostaInArrivo() {
     //
     // ⚠️ Il catch muto è la metà peggiore: un errore che nessuno vede è
     // peggio di un errore. Ora l'errore si mostra.
+    // ⚠️ Le società servono adesso anche al campo «Società» di un documento
+    //    archiviato dalla posta (21/09): si tengono, invece di buttarle via
+    //    dopo averle usate per i fornitori.
     getEntities()
-      .then((ent) => listSuppliers(ent.srls.id))
+      .then((ent) => {
+        setEntities(ent);
+        return listSuppliers(ent.srls.id);
+      })
       .then(setFornitori)
       .catch((e) => setError(e.message));
     // Il tetto dei tentativi. `leggi` marca NON_LETTO invece di ingoiare:
@@ -1164,6 +1169,31 @@ export default function PostaInArrivo() {
                               {(nonLetto(sezioni) ? [] : sezioni).map((s) => (
                                 <option key={s.codice} value={s.codice}>{s.etichetta}</option>
                               ))}
+                            </select>
+                          ) : c === "societa" ? (
+                            /* 🔴 LA SOCIETÀ DI UN DOCUMENTO ARCHIVIATO DALLA
+                               POSTA (21/09). Le stesse due voci dell'Archivio a
+                               mano — la tasca non compare, perché è il soggetto
+                               delle spese senza documento e non intesta niente.
+                               ⚠️ Resta FACOLTATIVA: il modello non può sapere di
+                               chi sia una fattura, e un valore inventato qui
+                               finirebbe addosso al documento per sempre. Vuota,
+                               il documento nasce senza società esattamente come
+                               prima — e le Fatture dicono che c'è e perché non
+                               si può collegare. */
+                            <select
+                              data-campo-societa
+                              value={valori[a.id]?.[c] ?? ""}
+                              onChange={(e) => cambia(a.id, c, e.target.value)}
+                              className={campo}
+                            >
+                              <option value="">Non lo so</option>
+                              {entities?.srls && (
+                                <option value={entities.srls.id}>{entities.srls.name}</option>
+                              )}
+                              {entities?.agricola && (
+                                <option value={entities.agricola.id}>{entities.agricola.name}</option>
+                              )}
                             </select>
                           ) : (
                           <input

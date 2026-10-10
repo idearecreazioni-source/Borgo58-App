@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { clientAutenticato, credenziali, marchio, primaEntita } from "./aiuto";
+import { clientAutenticato, credenziali, marchio, mettiDaParteIMiei, primaEntita } from "./aiuto";
+import { listIngredients } from "../../src/lib/api/ingredients";
 import { supabase } from "../../src/lib/supabase";
 import {
   abbattiPartita,
@@ -90,6 +91,8 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
 
   afterAll(async () => {
     await pulisci();
+    // Rete di sicurezza se l'ultima prova non è arrivata a farlo.
+    await mettiDaParteIMiei(titolare, NOME);
     await supabase.auth.signOut({ scope: "local" });
     await titolare.auth.signOut({ scope: "local" });
   });
@@ -309,5 +312,23 @@ describe("il prodotto fermo: sei risposte, sei strade diverse", () => {
       prodotti ?? [],
       "i prodotti di prova devono restare DUE: se se ne accumulano, la pulizia non funziona"
     ).toHaveLength(2);
+  });
+
+  // 🔴 A FINE GIRO I DUE PRODOTTI ESCONO DAGLI ELENCHI — 26/09/2026.
+  //    «Restano DUE» guardava solo il giro corrente: il marchio cambia a
+  //    ogni esecuzione, quindi ne nascevano due nuovi ogni volta, e restavano
+  //    ATTIVI. Misurato: 838 «prodotto fermo» sul progetto di prova, e gli
+  //    elenchi tagliati a mille non mostravano più undici prodotti veri.
+  it("🔴 a fine giro i prodotti della prova escono dagli elenchi", async () => {
+    const tolti = await mettiDaParteIMiei(titolare, NOME);
+    expect(tolti, "i prodotti di questo giro non erano due").toBe(2);
+    const { data: attivi } = await titolare
+      .from("ingredients").select("id").like("name", `${NOME}%`).eq("active", true);
+    expect(attivi ?? [], "un prodotto di prova è rimasto attivo").toHaveLength(0);
+    const elenco = await listIngredients({ alimentare: null, includiPreparazioni: true });
+    expect(
+      elenco.filter((i) => i.name.startsWith(NOME)),
+      "un prodotto di prova è ancora negli elenchi di lavoro",
+    ).toHaveLength(0);
   });
 });

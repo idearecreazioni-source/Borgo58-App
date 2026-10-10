@@ -160,10 +160,16 @@ export default function Causali() {
                           protegge, e un tasto che dà errore ogni volta
                           insegna solo a diffidare dei tasti. */}
                       {!c.di_sistema && (
+                        // 🔴 26/09/2026: era largo quanto la «✕» (5,3 mm sul
+                        // telefono) e si chiamava «✕» per chi non vede lo
+                        // schermo. Ora è un quadrato da dito, e il nome dice
+                        // cosa fa e su quale causale. Il gesto non cambia.
                         <button
                           onClick={() => handleRemove(c.id)}
-                          className="tocco-testo testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          data-disattiva-causale
+                          className="tocco-bottone inline-flex shrink-0 items-center justify-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                           title="Disattiva"
+                          aria-label={`Disattiva la causale «${c.label}»`}
                         >
                           ✕
                         </button>

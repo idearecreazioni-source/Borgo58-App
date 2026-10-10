@@ -10,8 +10,9 @@ import { daComprare } from "../lib/calcoli/spesaSpicciola";
 import AppuntiInDashboard from "../components/AppuntiInDashboard";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
-import { TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
+import { TASK_CATEGORIES, TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
+import Didascalia from "../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -174,12 +175,30 @@ export default function Dashboard() {
           avessi fatto niente. La regola è documentata accanto a quella
           che scavalca. */
     <div className="max-w-3xl contenuto-affiancato mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* 🔴 VA A CAPO — 26/09/2026, dal censimento a 360 punti: il saluto e
+          «Agenda completa →» stavano su una riga che non poteva andare a
+          capo, e il collegamento usciva di 7 punti facendo scorrere di lato
+          tutta la pagina (22 punti). Ora, se non ci stanno, il collegamento
+          scende sotto il saluto; dove ci stanno resta accanto. */}
+      <div
+        data-intestazione-dashboard
+        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-6"
+      >
         <div>
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
             {isStaff ? "Benvenuto." : "Bentornato, Alessio."}
           </h1>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">Oggi, {todayLabel}</p>
+          <p className="testo-sala text-b58-charcoal-soft mt-1">
+            Oggi, {todayLabel}{" "}
+            {/* ⚠️ Il dubbio di questa schermata e' perche' un riquadro un
+                giorno c'e' e un altro no: i riquadri vuoti non si disegnano,
+                per scelta — «0 cose da comprare» ogni mattina e' arredamento.
+                Senza dirlo, chi non lo sa lo legge come qualcosa che manca. */}
+            <Didascalia etichetta="Cosa vedi qui">
+              Compare solo quello che aspetta una tua risposta: i riquadri vuoti non si disegnano.
+              «Agenda completa» apre tutti gli impegni, anche quelli senza scadenza.
+            </Didascalia>
+          </p>
         </div>
         {/* ⚠️ MISURATO, non stimato: come link nudo questo faceva 5,3 mm di
             altezza — sotto la soglia degli 8,5. Il testo resta uguale, il
@@ -418,7 +437,7 @@ function RichiesteDeiClienti({ richieste, posta }) {
 // ⚠️ E NESSUN «SEGNA COME LETTO»: un avviso se ne va quando la cosa è
 // risolta. L'unico gesto è «rimanda», che è dichiaratamente un rinvio e
 // non uno spegnimento — e si disfa.
-function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
+export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
   const attivi = avvisi.filter((a) => !a.rimandato_a);
   const rimandati = avvisi.filter((a) => a.rimandato_a);
 
@@ -434,7 +453,15 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
         <ul className="divide-y divide-b58-charcoal/5">
           {attivi.map((a) => (
             <li key={a.chiave} className="py-2 first:pt-0">
-              <div className="flex items-start justify-between gap-3">
+              {/* 🔴 SUL TELEFONO «NON ADESSO» VA SOTTO — 25/09/2026, dal
+                  censimento visivo. Affiancato, a 390 punti prendeva 132
+                  punti e ne lasciava 123 al titolo, che andava su quattro
+                  righe, e la descrizione si tagliava. Da `sm` in su resta
+                  accanto, dove il titolo sta su una riga (misurato a 768). */}
+              <div
+                data-avviso-riga
+                className="flex flex-col items-stretch gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3"
+              >
                 <button
                   type="button"
                   onClick={() => onVai(a.dove)}
@@ -451,7 +478,11 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                     <span className="testo-sala text-b58-charcoal font-medium">{a.titolo}</span>
                   </span>
                   {a.dettaglio && (
-                    <span className="block testo-sala text-b58-charcoal-soft mt-0.5 truncate">
+                    // 🔴 NIENTE `truncate` (27/09/2026, audit visivo): a 768
+                    // punti tagliava proprio la coda che dice QUANDO e
+                    // QUANTO — «scaduta da 12 giorni», «registrato ieri
+                    // sera». La riga va a capo.
+                    <span data-avviso-dettaglio className="block testo-sala text-b58-charcoal-soft mt-0.5">
                       {a.dettaglio}
                     </span>
                   )}
@@ -463,7 +494,7 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
                 <button
                   type="button"
                   onClick={() => onRimanda(a.chiave)}
-                  className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
+                  className="tocco-bottone shrink-0 self-start rounded-lg px-3 testo-sala text-b58-charcoal-soft hover:text-b58-charcoal hover:bg-b58-cream-dark/40 transition-colors"
                   title="Non adesso: torna domani"
                 >
                   Non adesso
@@ -477,8 +508,10 @@ function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
       {rimandati.length > 0 && (
         <div className="mt-3 pt-3 border-t border-b58-charcoal/5">
           {rimandati.map((a) => (
-            <div key={a.chiave} className="flex items-center justify-between gap-3 py-1">
-              <span className="testo-sala text-b58-charcoal-soft truncate">
+            <div key={a.chiave} data-avviso-rimandato className="flex items-center justify-between gap-3 py-1">
+              {/* Va a capo invece di tagliarsi: sul telefono il taglio
+                  lasciava «Prodotti sotto sc…» e nascondeva la data. */}
+              <span data-avviso-rimandato-testo className="min-w-0 testo-sala text-b58-charcoal-soft">
                 {a.titolo} ({a.quanti}) — torna il {formatDate(a.rimandato_a)}
               </span>
               <button
@@ -597,8 +630,14 @@ function TaskGroup({ tasks, onComplete }) {
           ⚠️ E la casella e il titolo fanno due cose OPPOSTE — una chiude
           l'impegno, l'altro lo apre — quindi la distanza fra loro è quella
           dei gesti che non si possono scambiare. */}
+      {/* 🔴 SUL TELEFONO LA PRIORITÀ VA SOTTO IL TITOLO — 26/09/2026, dal
+          censimento a 360 punti: casella, titolo ed etichetta in fila
+          lasciavano al titolo 125 punti, e andava su quattro o cinque
+          righe. Da `sm` in su resta tutto sulla stessa riga.
+          ⚠️ E la categoria si legge a parole: compariva il codice
+          («fisco_scadenze»), che è la chiave del database, non un nome. */}
       {tasks.map((t) => (
-        <div key={t.id} className="tocco-riga flex items-center gap-4 px-4 py-2">
+        <div key={t.id} data-riga-impegno className="tocco-riga flex items-center gap-4 px-4 py-2">
           <input
             type="checkbox"
             checked={false}
@@ -606,20 +645,28 @@ function TaskGroup({ tasks, onComplete }) {
             className="tocco-bottone shrink-0"
             aria-label={`Segna fatto: ${t.title}`}
           />
-          <Link
-            to={`/agenda/${t.id}`}
-            className="tocco-riga flex items-center flex-1 min-w-0 testo-sala text-b58-charcoal"
-          >
-            <span className="min-w-0">
-              {t.title}
-              {t.category && <span className="text-b58-charcoal-soft ml-2">· {t.category}</span>}
+          <div className="flex flex-1 min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              to={`/agenda/${t.id}`}
+              data-titolo-impegno
+              className="tocco-riga flex items-center w-full sm:w-auto sm:flex-1 min-w-0 testo-sala text-b58-charcoal"
+            >
+              <span className="min-w-0">
+                {t.title}
+                {t.category && (
+                  <span className="text-b58-charcoal-soft ml-2">
+                    · {labelFor(TASK_CATEGORIES, t.category)}
+                  </span>
+                )}
+              </span>
+            </Link>
+            <span
+              data-priorita-impegno
+              className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
+            >
+              {labelFor(TASK_PRIORITIES, t.priority)}
             </span>
-          </Link>
-          <span
-            className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
-          >
-            {labelFor(TASK_PRIORITIES, t.priority)}
-          </span>
+          </div>
         </div>
       ))}
     </div>

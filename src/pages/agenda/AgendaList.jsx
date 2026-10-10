@@ -28,6 +28,7 @@ import {
 } from "../../lib/calcoli/agenda";
 import { useAuth } from "../../context/AuthContext";
 import { toccaSubito } from "../../lib/calcoli/tocco";
+import Didascalia from "../../components/Didascalia";
 
 const PRIORITY_BADGE = {
   alta: "bg-b58-terracotta",
@@ -158,13 +159,26 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
 //    la stessa altezza di riga del titolo; il quadratino (0,6 cm) salito di
 //    mezzo millimetro, così il suo centro cade sul centro della prima riga
 //    (una riga del titolo è alta 0,5 cm). La prova visiva lo misura.
-function Spunta({ onFatto }) {
+//
+//    🔴 26/09/2026, dal censimento a 360 punti: l'etichetta era larga
+//    quanto il quadratino (0,6 cm) — il gesto più frequente della
+//    schermata sotto la misura dei pulsanti — e la casella non aveva un
+//    nome: il `title` sta sull'etichetta, e chi non vede lo schermo sentiva
+//    «casella» e basta. Ora il bersaglio è largo 0,85 cm (il segno resta
+//    dov'era, in alto a sinistra) e il nome dice quale impegno si chiude.
+function Spunta({ onFatto, titolo }) {
   return (
-    <label className="tocco-azione inline-flex shrink-0 items-start" title="Fatto">
+    <label
+      data-spunta-impegno
+      className="tocco-azione inline-flex shrink-0 items-start"
+      style={{ minWidth: "calc(var(--pxcm) * 0.85)" }}
+      title="Fatto"
+    >
       <input
         type="checkbox"
         checked={false}
         onChange={onFatto}
+        aria-label={`Segna fatto: ${titolo}`}
         className="spunta-grande"
         style={{ marginTop: "calc(var(--pxcm) * -0.05)" }}
       />
@@ -177,10 +191,15 @@ function Stella({ accesa, onStella }) {
     <button
       type="button"
       onClick={onStella}
-      // Largo quanto un dito, con la ★ spinta contro il bordo destro: il
-      // bersaglio cresce verso il titolo, il segno resta al bordo.
-      className="tocco-azione shrink-0 flex items-start justify-end testo-sala-grande"
-      style={{ minWidth: "calc(var(--pxcm) * 0.8)" }}
+      // Con la ★ spinta contro il bordo destro: il bersaglio cresce verso il
+      // titolo, il segno resta al bordo.
+      // 🔴 PIÙ STRETTA DI PRIMA — 27/09/2026, audit visivo. A 360 punti il
+      // titolo aveva 173 punti e «commercialista» ne chiede 174: le parole
+      // si spezzavano a metà. Dalla stella si toglie solo il vuoto: 0,65 cm
+      // di larghezza (sopra i 5,3 mm provati col dito il 18/08), alta 1,2 cm
+      // come prima, e `-ml-2` le toglie metà dello stacco dal titolo.
+      className="tocco-azione -ml-2 shrink-0 flex items-start justify-end testo-sala-grande"
+      style={{ minWidth: "calc(var(--pxcm) * 0.65)" }}
       title={accesa ? "Togli dalla testa" : "Portalo in testa"}
     >
       <span data-stella className={accesa ? "text-b58-gold" : "text-b58-charcoal-soft/30"}>
@@ -196,7 +215,7 @@ function CasellaRimanda({ giorno, onGiorno }) {
       type="date"
       defaultValue={giorno ?? ""}
       onChange={(e) => onGiorno(e.target.value)}
-      className="tocco-campo max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
+      className="tocco-campo campo-data max-w-full min-w-0 rounded border border-b58-charcoal/15 bg-white px-2 py-1 testo-sala text-b58-charcoal"
     />
   );
 }
@@ -223,9 +242,12 @@ function SchedaImpegno({ t, scadenzaSempre, rimandaAperta, onFatto, onStella, on
   const campi = campiImpegno(t).filter((c) => c.valore || (c.chiave === "scadenza" && scadenzaSempre));
   return (
     <div className="flex items-start gap-3">
-      <Spunta onFatto={onFatto} />
+      <Spunta onFatto={onFatto} titolo={t.title} />
       <div className="min-w-0 flex-1">
-        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words">
+        {/* `hyphens-auto`: se una parola non ci sta, va a capo col trattino
+            della sillabazione italiana (la pagina è `lang="it"`), non dove
+            capita. `break-words` resta come ultima rete contro lo sbordo. */}
+        <p data-testo-titolo className="testo-sala-grande font-medium text-b58-charcoal break-words hyphens-auto">
           {t.title}
         </p>
         {campi.map((c) => (
@@ -470,7 +492,7 @@ export default function AgendaList() {
             to="/agenda/nuovo"
             className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
           >
-            + Nuovo impegno
+            + Nuovo task
           </Link>
         </div>
       </div>
@@ -505,6 +527,16 @@ export default function AgendaList() {
             {v.label}
           </button>
         ))}
+        {/* 🔴 IL «?» STA DOVE STA IL DUBBIO — 21/09/2026. I tre nomi dicono
+            la forma e non cosa ci trovi dentro: la Lista e' l'unica in ordine
+            di urgenza, e l'unica che mostra gli impegni **senza data**.
+            ⚠️ Dietro un «?» e non sopra la schermata: una spiegazione sempre
+            visibile la si legge il primo giorno e poi diventa arredamento —
+            in due giorni d'agosto Alessio ne ha tolte sette. */}
+        <Didascalia etichetta="Cosa cambia fra le tre viste">
+          Lista: cosa c'è da fare, in ordine di urgenza, compreso quello senza data. Settimana: i sette
+          giorni con gli orari. Mese: il calendario.
+        </Didascalia>
       </div>
 
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
@@ -596,7 +628,7 @@ export default function AgendaList() {
                           <ElencoAdattivo
                             righe={elenco}
                             chiave={(t) => t.id}
-                            intestazioneTitolo="Impegno"
+                            intestazioneTitolo="Task"
                             // Una tabella per sezione: senza una larghezza
                             // fissa «Scadenza» cominciava in un punto diverso
                             // in ognuna (da 600 a 875 punti, misurato).
@@ -612,7 +644,7 @@ export default function AgendaList() {
                             // spingeva a destra solo lui, e i campi sotto
                             // partivano 34,7 punti più a sinistra. La prova
                             // visiva che lo misura è `npm run test:visive`.
-                            inizio={(t) => <Spunta onFatto={() => fatto(t)} />}
+                            inizio={(t) => <Spunta onFatto={() => fatto(t)} titolo={t.title} />}
                             titolo={(t) => (
                               <span className="flex items-start gap-3">
                                 {/* 🔴 IL TITOLO NON È PIÙ UN PULSANTE —
@@ -631,7 +663,7 @@ export default function AgendaList() {
                                 {/* «Riservato» non c'è più, nemmeno qui:
                                     tolto dall'elenco nel collaudo dell'11/09
                                     (vedi `SchedaImpegno`). */}
-                                <span className="min-w-0 flex-1" data-testo-titolo>
+                                <span className="min-w-0 flex-1 hyphens-auto" data-testo-titolo>
                                   {t.title}
                                 </span>
                                 <Stella accesa={t.preferito} onStella={() => stella(t)} />
@@ -759,7 +791,7 @@ export default function AgendaList() {
             <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mt-4">
               <h3 className="testo-sala font-medium text-b58-charcoal mb-2">{formatDate(selectedDay)}</h3>
               {dayTasks.length === 0 ? (
-                <p className="testo-sala text-b58-charcoal-soft">Nessun impegno in questo giorno.</p>
+                <p className="testo-sala text-b58-charcoal-soft">Nessun task in questo giorno.</p>
               ) : (
                 <div className="space-y-2">
                   {dayTasks.map((t) => (

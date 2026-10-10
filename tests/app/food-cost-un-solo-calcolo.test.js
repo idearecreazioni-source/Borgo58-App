@@ -79,7 +79,14 @@ describe("il food cost si calcola in un posto solo", () => {
       name: `${MARCA} piatto`, category: "primo", portions_yield: 4,
     });
 
-    await inserisci("recipe_ingredients", { recipe_id: soffritto.id, ingredient_id: cipolla.id, quantity: 1, unit: "kg" });
+    // 🔴 IL LORDO SI DICHIARA SULLA RIGA (R12, 23/09). Prima questa riga
+    //    scriveva solo il netto e si prendeva il 20% di scarto dalla scheda
+    //    del prodotto: era l'EREDITA' VIVA, che R12 toglie apposta.
+    //    La realta' fisica e' la stessa — 1 kg di cipolla pulita se ne
+    //    prende 1,2 dalla cella — ma adesso e' la riga a dirlo.
+    // ⚠️ E il numero atteso del food cost NON e' stato toccato: torna 2,65
+    //    perche' la riga dichiara lo stesso scarto che prima ereditava.
+    const rigaCipolla = await inserisci("recipe_ingredients", { recipe_id: soffritto.id, ingredient_id: cipolla.id, quantity: 1, quantita_lorda: 1.2, unit: "kg" });
     await inserisci("recipe_ingredients", { recipe_id: ragu.id, component_recipe_id: soffritto.id, quantity: 1, unit: "kg" });
     await inserisci("recipe_ingredients", { recipe_id: ragu.id, ingredient_id: carne.id, quantity: 2, unit: "kg" });
     const rigaRagu = await inserisci("recipe_ingredients", { recipe_id: piatto.id, component_recipe_id: ragu.id, quantity: 0.5, unit: "kg" });
@@ -89,12 +96,104 @@ describe("il food cost si calcola in un posto solo", () => {
       menu_id: menu.id, recipe_id: piatto.id, category: "primo", selling_price: 10.0,
     });
 
-    ids = { cipolla: cipolla.id, piatto: piatto.id, rigaRagu: rigaRagu.id, menu: menu.id, voce: voce.id };
+    ids = {
+      cipolla: cipolla.id, piatto: piatto.id, rigaRagu: rigaRagu.id,
+      menu: menu.id, voce: voce.id, rigaCipolla: rigaCipolla.id,
+    };
   });
 
   afterAll(async () => {
     await pulisci();
     await titolare.auth.signOut({ scope: "local" });
+  });
+
+  // ===================================================================
+  // 🔴 DA DOVE VIENE IL NUMERO — R12, 23/09/2026
+  // ===================================================================
+  // Prima di R12 queste prove scrivevano il solo netto e il 20% di scarto
+  // arrivava dalla scheda del prodotto, a ogni lettura. Adesso la riga lo
+  // dichiara. I tre controlli qui sotto tengono ferma quella differenza.
+  it("🔴 il food cost legge la RIGA, non la scheda del prodotto", async () => {
+    const { data: riga } = await titolare
+      .from("recipe_ingredients")
+      .select("quantity, quantita_lorda, waste_percentage")
+      .eq("id", ids.rigaCipolla)
+      .single();
+    // 1 kg netto da 1,2 lordi: lo scarto è il riflesso dei due numeri.
+    expect(Number(riga.quantity)).toBeCloseTo(1, 4);
+    expect(Number(riga.quantita_lorda)).toBeCloseTo(1.2, 4);
+    expect(Number(riga.waste_percentage)).toBeCloseTo(20, 2);
+
+    // E il costo di quella riga è il LORDO per il prezzo: 1,2 × 2,00.
+    const { data: costo } = await titolare
+      .from("v_recipe_row_costs")
+      .select("costo")
+      .eq("recipe_ingredient_id", ids.rigaCipolla)
+      .single();
+    expect(Number(costo.costo)).toBeCloseTo(2.4, 4);
+  });
+
+  it("🔴 e il valore standard del prodotto NON torna a ereditarsi", async () => {
+    // ⚠️ È il cuore di R12: cambiando il numero sulla scheda, una riga già
+    //    scritta non si muove. Prima, questo stesso gesto spostava il food
+    //    cost di ogni ricetta che usa la cipolla.
+    const prima = await titolare
+      .from("v_recipe_costs")
+      .select("food_cost_base")
+      .eq("recipe_id", ids.piatto)
+      .single();
+
+    await titolare.from("ingredients").update({ waste_percentage_default: 90 }).eq("id", ids.cipolla);
+
+    const { data: riga } = await titolare
+      .from("recipe_ingredients")
+      .select("quantita_lorda, waste_percentage")
+      .eq("id", ids.rigaCipolla)
+      .single();
+    const dopo = await titolare
+      .from("v_recipe_costs")
+      .select("food_cost_base")
+      .eq("recipe_id", ids.piatto)
+      .single();
+
+    await titolare.from("ingredients").update({ waste_percentage_default: 20 }).eq("id", ids.cipolla);
+
+    expect(Number(riga.quantita_lorda)).toBeCloseTo(1.2, 4);
+    expect(Number(riga.waste_percentage)).toBeCloseTo(20, 2);
+    expect(Number(dopo.data.food_cost_base)).toBeCloseTo(Number(prima.data.food_cost_base), 4);
+  });
+
+  it("⚠️ e il numero atteso si RICAVA dai numeri scritti nella riga", async () => {
+    // 🔴 Non è un numero copiato: si rifà il conto dai due valori che la
+    //    riga porta, così se domani qualcuno cambiasse la riga senza
+    //    cambiare l'atteso, questa prova lo direbbe.
+    const { data: riga } = await titolare
+      .from("recipe_ingredients")
+      .select("quantita_lorda")
+      .eq("id", ids.rigaCipolla)
+      .single();
+    const { data: cipolla } = await titolare
+      .from("ingredients")
+      .select("current_price")
+      .eq("id", ids.cipolla)
+      .single();
+
+    // soffritto = lordo × prezzo; nel ragù entra per 1 kg su una resa di 2;
+    // il ragù = quello + 2 kg di carne a 10,00; nel piatto entra 0,5 kg su
+    // una resa di 4.
+    const soffritto = Number(riga.quantita_lorda) * Number(cipolla.current_price);
+    const ragu = soffritto / 2 + 2 * 10.0;
+    const atteso = (0.5 / 4) * ragu;
+
+    const { data: ricetta } = await titolare
+      .from("v_recipe_costs")
+      .select("food_cost_base")
+      .eq("recipe_id", ids.piatto)
+      .single();
+    expect(Number(ricetta.food_cost_base)).toBeCloseTo(atteso, 4);
+    // E fa 2,65, cioè lo stesso numero di prima di R12: la realtà fisica
+    // non è cambiata, è cambiato chi la dichiara.
+    expect(atteso).toBeCloseTo(2.65, 4);
   });
 
   it("la somma delle righe È il food cost della ricetta, non un secondo conto", async () => {

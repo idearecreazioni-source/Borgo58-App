@@ -106,6 +106,9 @@ essere verdi.
        esattamente questi, copiati dai controlli veri:
        - `Codice, prove pure e compilazione`
        - `Prove contro il progetto di prova`
+       - (dal 27/09/2026, se vuoi che blocchi anche lui) `Prove visive in Chrome — nessun database`
+         ⚠️ Finché non lo aggiungi qui, un rosso visivo si vede sulla proposta
+         ma non impedisce l'unione: renderlo obbligatorio è una tua scelta.
    - ☑ **Block force pushes** — nessuno può riscrivere la storia
 7. **Create**
 
@@ -187,19 +190,24 @@ esattamente ciò che quel freno esiste per fare.
 
 ## 5 · Cosa controlla la pipeline, e cosa NON controlla
 
-**Controlla**, in due lavori:
+**Controlla**, in tre lavori:
 
 | lavoro | cosa fa | quanto ci mette |
 |---|---|---|
 | **Codice, prove pure e compilazione** | il codice non ha avvisi · 697 prove che non toccano il database · 12 prove che montano una schermata · l'app si compila · quanto pesa il pacchetto | ~4 minuti |
 | **Prove contro il progetto di prova** | 459 prove contro il database vero di prova | ~7 minuti |
+| **Prove visive in Chrome — nessun database** | `npm run test:visive`: le schermate vere con dati finti, misurate in Chrome a 360, 390, 430, 768, 1280 e 1920 punti (dal 27/09/2026). Nessun segreto, nessun database, nessuna richiesta fuori dal computer | ~5 minuti |
 
-Il secondo parte **solo se il primo è verde**: far scrivere righe di prova da
+Il secondo parte **solo se il primo è verde** (il terzo, che non scrive niente, parte subito): far scrivere righe di prova da
 un ramo che non compila nemmeno è sporcare per niente.
 
 🔴 **NON controlla — e va detto perché non si scambi per una garanzia
 intera:**
 
+* **Dal 27/09/2026 un lavoro guarda come si vedono otto schermate**
+  (Dashboard, Agenda, Prima nota, Causali, Sala e orari, Spesa spicciola,
+  scheda di un ingrediente, Archivio): misura in Chrome larghezze, righe
+  che vanno a capo, bersagli e nomi dei gesti. **Le altre schermate no.**
 * **Quasi nessuna prova guarda una schermata**, e quelle che lo fanno non
   guardano *come si vede*. Dal 01/09/2026 ce ne sono 12 che **montano** una
   schermata: provano che si apre, che chi non è entrato non ne vede una, che

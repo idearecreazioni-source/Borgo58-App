@@ -139,7 +139,7 @@ export default function SettimanaAgenda({
         //    non si è letto, con la via d'uscita per riprovare.
         <div data-errore-settimana className="py-2">
           <p className="testo-sala text-b58-terracotta-dark">
-            Non riesco a leggere gli impegni di questa settimana: {errore}
+            Non riesco a leggere i task di questa settimana: {errore}
           </p>
           <button
             type="button"

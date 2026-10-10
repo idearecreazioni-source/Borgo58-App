@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { leggiTutte } from "../leggiTutte";
 import { eseguiOperazione } from "../operazioni";
 
 const SELECT = "*, supplier:supplier_id(id, name), producer_entity:producer_entity_id(id, name)";
@@ -51,30 +52,36 @@ export async function listIngredients({
   includiNonAttivi,
   alimentare = true,
 } = {}) {
-  let query = supabase
-    .from("ingredients")
-    .select(SELECT)
-    .order("name");
+  // 🔴 A PAGINE — 26/09/2026: oltre le mille righe il progetto taglia in
+  //    silenzio (vedi `leggiTutte`). L'`id` in coda all'ordine non cambia
+  //    l'ordine per nome: decide solo fra due nomi uguali, così fra una
+  //    pagina e l'altra nessuna riga si ripete o sparisce.
+  const crea = () => {
+    let query = supabase
+      .from("ingredients")
+      .select(SELECT, { count: "exact" })
+      .order("name")
+      .order("id");
 
-  // ⚠️ Di norma si vedono solo quelli in elenco. Ma senza un modo di
-  // guardare quelli messi da parte non si potrebbero piu' RIMETTERE — e
-  // un gesto che non si puo' disfare non e' «mettere da parte», e'
-  // cancellare con un altro nome.
-  if (!includiNonAttivi) query = query.eq("active", true);
+    // ⚠️ Di norma si vedono solo quelli in elenco. Ma senza un modo di
+    // guardare quelli messi da parte non si potrebbero piu' RIMETTERE — e
+    // un gesto che non si puo' disfare non e' «mettere da parte», e'
+    // cancellare con un altro nome.
+    if (!includiNonAttivi) query = query.eq("active", true);
 
-  if (!includiPreparazioni) query = query.is("preparazione_id", null);
+    if (!includiPreparazioni) query = query.is("preparazione_id", null);
 
-  // `null` vuol dire «tutti e due»: è il solo caso in cui non si filtra.
-  if (alimentare !== null && alimentare !== undefined) {
-    query = query.eq("alimentare", alimentare);
-  }
+    // `null` vuol dire «tutti e due»: è il solo caso in cui non si filtra.
+    if (alimentare !== null && alimentare !== undefined) {
+      query = query.eq("alimentare", alimentare);
+    }
 
-  if (search) query = query.ilike("name", `%${search}%`);
-  if (category) query = query.eq("category", category);
+    if (search) query = query.ilike("name", `%${search}%`);
+    if (category) query = query.eq("category", category);
+    return query;
+  };
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
+  return leggiTutte(crea);
 }
 
 export async function getIngredient(id) {
@@ -105,7 +112,13 @@ export async function createIngredient(payload) {
     p_allergens: payload.allergens ?? [],
     p_seasonality: payload.seasonality ?? [],
     p_storage_type: payload.storage_type ?? null,
-    p_waste_percentage_default: payload.waste_percentage_default ?? 0,
+    // 🔴 `?? null`, mai `?? 0` — e non è pignoleria: fino al 23/09 qui
+    //    c'era uno zero, e trasformava «non lo sa ancora nessuno» in «di
+    //    questo prodotto non si butta niente». Due risposte diverse, e la
+    //    seconda nessuno l'aveva data. ⚠️ E morde solo in CREAZIONE: la
+    //    modifica scrive dritto in tabella, quindi le due porte scrivevano
+    //    due cose diverse per lo stesso campo lasciato vuoto.
+    p_waste_percentage_default: payload.waste_percentage_default ?? null,
     // ⚠️ Il PARAMETRO della funzione resta col nome vecchio: rinominarlo
     // romperebbe le chiamate per nome del corridoio. A cambiare e la
     // COLONNA, che dal 23/08/2026 si chiama temperatura_attesa perche

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { leggiTutte } from "../leggiTutte";
 import { chiamaFunzione } from "../chiamaFunzione";
 
 // Le schede dei prodotti: quello che un prodotto nato da una fattura non
@@ -93,12 +94,16 @@ export async function confermaTutti(scelte) {
  * o messo a mano da Alessio. Sparisce il cancello, non l'informazione.
  */
 export async function listOrigineAllergeni() {
-  const { data, error } = await supabase
-    .from("ingredients")
-    .select("id, name, allergens, allergeni_tracce, origine_allergeni, alimentare")
-    .eq("active", true)
-    .eq("alimentare", true)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
+  // 🔴 A PAGINE — 26/09/2026 (vedi `leggiTutte`).
+  return leggiTutte(() =>
+    supabase
+      .from("ingredients")
+      .select("id, name, allergens, allergeni_tracce, origine_allergeni, alimentare", {
+        count: "exact",
+      })
+      .eq("active", true)
+      .eq("alimentare", true)
+      .order("name")
+      .order("id"),
+  );
 }

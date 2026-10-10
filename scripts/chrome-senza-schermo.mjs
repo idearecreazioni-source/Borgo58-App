@@ -21,6 +21,135 @@ import path from "node:path";
 
 export const aspetta = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// =====================================================================
+// NESSUNA RICHIESTA ESCE DAL COMPUTER — 27/09/2026
+// =====================================================================
+// 🔴 PERCHÉ. Le prove visive montano schermate vere con dati finti. Se un
+//    alias smette di sostituire il collegamento al database, la schermata
+//    torna a usare quello VERO — ed è successo il 26/09, costruendo la
+//    prova delle schermate: letture da anonimo, respinte, ma partite.
+//
+// ⚠️ SI FERMA TUTTO CIÒ CHE NON VA AL SERVER LOCALE DELLA PROVA, non solo
+//    Supabase: in CI non c'è `.env`, e il collegamento vero punterebbe
+//    all'indirizzo di ripiego (`…invalid`), che una regola su `supabase.co`
+//    non riconoscerebbe. Il criterio giusto è l'inverso: è ammesso solo il
+//    server Vite su questa macchina.
+//
+// ⚠️ Si carica PRIMA che la pagina parta (`Page.addScriptToEvaluateOnNewDocument`),
+//    quindi ogni copia di `fetch` presa dai moduli è già quella controllata.
+//    Il tentativo non parte e si CONTA: una prova che ne trova è rossa.
+export const NIENTE_RETE = `(() => {
+  window.__tentativiDiRete = 0;
+  window.__richiesteFermate = [];
+  const ammesso = (u) => {
+    try {
+      const x = new URL(String(u), location.href);
+      if (x.protocol === "data:" || x.protocol === "blob:") return true;
+      return x.origin === location.origin || /^(127\\.0\\.0\\.1|localhost|\\[::1\\])$/.test(x.hostname);
+    } catch { return false; }
+  };
+  const ferma = (u) => {
+    window.__tentativiDiRete += 1;
+    try { window.__richiesteFermate.push(new URL(String(u), location.href).host); } catch { window.__richiesteFermate.push("?"); }
+  };
+  const fetchVero = window.fetch.bind(window);
+  window.fetch = (risorsa, opzioni) => {
+    const u = typeof risorsa === "string" || risorsa instanceof URL ? risorsa : risorsa?.url;
+    if (!ammesso(u)) { ferma(u); return Promise.reject(new TypeError("rete vietata nella prova visiva")); }
+    return fetchVero(risorsa, opzioni);
+  };
+  const WSVero = window.WebSocket;
+  window.WebSocket = function (u, p) {
+    if (!ammesso(u)) { ferma(u); throw new Error("rete vietata nella prova visiva"); }
+    return new WSVero(u, p);
+  };
+  window.WebSocket.prototype = WSVero.prototype;
+  const apriVero = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (metodo, u, ...resto) {
+    if (!ammesso(u)) { ferma(u); throw new Error("rete vietata nella prova visiva"); }
+    return apriVero.call(this, metodo, u, ...resto);
+  };
+  if (navigator.sendBeacon) {
+    const beaconVero = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = (u, d) => { if (!ammesso(u)) { ferma(u); return false; } return beaconVero(u, d); };
+  }
+})();`;
+
+// =====================================================================
+// IL CARATTERE È QUELLO VERO, O NON SI MISURA — 27/09/2026
+// =====================================================================
+// 🔴 PERCHÉ. Le prove visive misuravano col carattere di ripiego del
+//    sistema (Segoe UI su Windows, un altro su Linux) invece di Inter:
+//    stesse schermate, misure diverse — 202 contro 218 punti una casella,
+//    849 contro 943 un titolo. Ora le pagine di prova caricano Inter dal
+//    server locale (`tests/visive/caratteri/inter.css`), e prima di
+//    misurare si pretende che sia davvero lui.
+//
+// ⚠️ `document.fonts.check()` da solo NON basta: con una famiglia che non
+//    ha facce dichiarate risponde `true` lo stesso. Si guarda la faccia:
+//    deve essercene UNA sola «Inter» (la nostra), caricata, e il testo
+//    della pagina deve chiedere Inter.
+// 🔴 E DAL 27/09/2026 ANCHE FRAUNCES, il carattere dei titoli: stessa regola.
+//    Una sola faccia «Fraunces» (tondo 400-600, come nel gestionale),
+//    caricata; e nessun testo in Fraunces CORSIVO, che qui non c'è e che il
+//    browser simulerebbe dal tondo con misure diverse dal gestionale.
+export const CARATTERE_PRONTO = `(async () => {
+  if (!location.pathname.includes("/tests/visive/")) return { pronta: false };
+  // ⚠️ In sviluppo Vite inserisce i fogli di stile quando partono i moduli:
+  //    chiedere un carattere prima che la sua @font-face esista non carica
+  //    niente. Si aspetta che le due famiglie siano dichiarate (il ciclo in
+  //    pretendiCaratteri riprova per 15 secondi, poi dice cosa manca).
+  const dichiarate = (fam) => [...document.fonts].some((x) => x.family.replace(/["']/g, "") === fam);
+  if (document.readyState !== "complete" || !dichiarate("Inter") || !dichiarate("Fraunces")) return { pronta: false, inter: { facce: dichiarate("Inter") ? 1 : 0 }, fraunces: { facce: dichiarate("Fraunces") ? 1 : 0 } };
+  const carica = (fam, pesi, px) => Promise.all(pesi.map((p) => document.fonts.load(p + " " + px + "px " + fam))).catch(() => null);
+  await carica("Inter", ["400", "500", "600", "700"], 16);
+  await carica("Fraunces", ["400", "500", "600"], 24);
+  await document.fonts.ready;
+  const stato = (fam) => { const f = [...document.fonts].filter((x) => x.family.replace(/["']/g, "") === fam); return { facce: f.length, stati: f.map((x) => x.status), ok: f.length === 1 && f.every((x) => x.status === "loaded") }; };
+  const inter = stato("Inter");
+  const fraunces = stato("Fraunces");
+  const famiglia = getComputedStyle(document.body).fontFamily;
+  const corsivi = [...document.querySelectorAll("body *")].filter((e) => /^["']?Fraunces/.test(getComputedStyle(e).fontFamily) && getComputedStyle(e).fontStyle !== "normal" && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).length;
+  const ok = inter.ok && fraunces.ok && corsivi === 0 && /^["']?Inter["']?(,|$)/.test(famiglia);
+  return { pronta: true, ok, inter, fraunces, corsivi, famiglia };
+})()`;
+
+/**
+ * Pretende Inter e Fraunces locali nella pagina aperta. Se non ci sono, FERMA la prova con
+ * un messaggio chiaro: misurare un carattere di ripiego darebbe numeri
+ * diversi da quelli che vede chi usa il gestionale.
+ */
+export async function pretendiCaratteri(manda, dove) {
+  let r = null;
+  for (let i = 0; i < 60; i++) {
+    r = (await manda("Runtime.evaluate", { expression: CARATTERE_PRONTO, returnByValue: true, awaitPromise: true }))
+      .result.value;
+    if (r?.pronta) break;
+    await aspetta(250);
+  }
+  if (!r?.pronta || !r.ok) {
+    const d = (x) => `${x?.facce ?? "?"} facce, stati ${x?.stati?.join(",") || "?"}`;
+    throw new Error(
+      `${dove}: i caratteri locali non sono quelli veri — Inter: ${d(r?.inter)}; Fraunces: ${d(r?.fraunces)}; ` +
+        `testi in Fraunces corsivo: ${r?.corsivi ?? "?"}; testo in: ${r?.famiglia ?? "?"}. ` +
+        "La prova si ferma invece di misurare un carattere di ripiego.",
+    );
+  }
+}
+
+/** Quante richieste la pagina ha provato a mandare fuori (-1: blocco assente). */
+export const TENTATIVI_DI_RETE = `({ quanti: window.__tentativiDiRete ?? -1, dove: [...new Set(window.__richiesteFermate ?? [])] })`;
+
+/**
+ * Una cartella d'ambiente VUOTA per il server Vite delle prove: senza, in
+ * locale Vite leggerebbe `.env` e la schermata conoscerebbe l'indirizzo e
+ * la chiave del database vero; in CI no. Con questa, le due situazioni
+ * sono identiche — nessun indirizzo, nessuna chiave.
+ */
+export function cartellaSenzaAmbiente() {
+  return mkdtempSync(path.join(os.tmpdir(), "b58-visiva-senza-env-"));
+}
+
 function doveChrome() {
   const candidati = [
     process.env.CHROME,
@@ -39,7 +168,12 @@ function doveChrome() {
   return trovato;
 }
 
-export async function avviaChrome() {
+/**
+ * `senzaRete`: Chrome non risolve nessun nome tranne il server locale. Lo
+ * accendono le prove visive (dati finti); NON `misura-telefono.mjs`, che
+ * deve raggiungere il progetto di prova.
+ */
+export async function avviaChrome({ senzaRete = false } = {}) {
   const porta = 9400 + Math.floor(Math.random() * 400);
   const profilo = mkdtempSync(path.join(os.tmpdir(), "b58-visiva-"));
   const chrome = spawn(
@@ -50,6 +184,12 @@ export async function avviaChrome() {
       "--no-first-run",
       "--no-default-browser-check",
       "--hide-scrollbars",
+      // 🔴 LA SECONDA BARRIERA — 27/09/2026: nessun nome si risolve tranne
+      //    il server locale. Se un giorno il blocco dentro la pagina
+      //    (`NIENTE_RETE`) mancasse, una richiesta verso Supabase — o verso
+      //    qualunque altro server — non troverebbe l'indirizzo e non
+      //    partirebbe comunque. Le prove visive non hanno bisogno di rete.
+      ...(senzaRete ? ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1"] : []),
       `--remote-debugging-port=${porta}`,
       `--user-data-dir=${profilo}`,
       "about:blank",

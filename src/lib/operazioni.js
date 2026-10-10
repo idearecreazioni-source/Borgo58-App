@@ -27,6 +27,7 @@ const IN_ITALIANO = {
   scarta_appunto: "buttare l'appunto",
   correggi_elemento_appunto: "correggere l'appunto",
   chiudi_azione_a_mano: "segnare che l'hai fatta tu",
+  promuovi_bozza_ricetta: "confermare la bozza",
 };
 
 const comeSiChiama = (operazione) =>

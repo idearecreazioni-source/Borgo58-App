@@ -8,6 +8,9 @@ import ModulePlaceholder from "./pages/ModulePlaceholder";
 import RicettarioHome from "./pages/ricettario/RicettarioHome";
 import IngredientiList from "./pages/ricettario/IngredientiList";
 import SchedeProdotti from "./pages/ricettario/SchedeProdotti";
+import BozzeList from "./pages/ricettario/BozzeList";
+import BozzaDetail from "./pages/ricettario/BozzaDetail";
+import AnteprimaDaTesto from "./pages/ricettario/AnteprimaDaTesto";
 import Fotografa from "./pages/assistente/Fotografa";
 import Detta from "./pages/assistente/Detta";
 import IngredienteForm from "./pages/ricettario/IngredienteForm";
@@ -63,6 +66,7 @@ import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
+import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
 import Scontrini from "./pages/comande/Scontrini";
@@ -75,6 +79,7 @@ import SimulatoreFiscale from "./pages/fiscale/SimulatoreFiscale";
 import Previsioni from "./pages/fiscale/Previsioni";
 import PrevisioneDettaglio from "./pages/fiscale/PrevisioneDettaglio";
 import AndamentoMensile from "./pages/fiscale/AndamentoMensile";
+import ChiusuraAnnuale from "./pages/fiscale/ChiusuraAnnuale";
 import PrevisioneForm from "./pages/fiscale/PrevisioneForm";
 import PersonaleHome from "./pages/personale/PersonaleHome";
 import DipendenteDetail from "./pages/personale/DipendenteDetail";
@@ -155,6 +160,13 @@ function AppRoutes() {
         <Route path="/ricettario/ricette/:id" element={<RecipeDetailByRole />} />
         <Route path="/ricettario/ingredienti" element={<RequireTitolare><IngredientiList /></RequireTitolare>} />
         <Route path="/ricettario/schede" element={<RequireTitolare><SchedeProdotti /></RequireTitolare>} />
+        {/* Le bozze di ricetta (Fase 1A, 06/10/2026): NON nel menu finché la
+            migrazione 20261006000001 e il corridoio non sono installati. */}
+        <Route path="/ricettario/bozze" element={<RequireTitolare><BozzeList /></RequireTitolare>} />
+        {/* Anteprima locale da testo (Fase 1C): non salva nulla, non nel menu.
+            Prima della rotta dinamica qui sotto, apposta. */}
+        <Route path="/ricettario/bozze/da-testo" element={<RequireTitolare><AnteprimaDaTesto /></RequireTitolare>} />
+        <Route path="/ricettario/bozze/:id" element={<RequireTitolare><BozzaDetail /></RequireTitolare>} />
         {/* Solo il titolare: il personale non c'e' ancora, e restringere
             adesso non costa niente mentre allargare dopo e' una riga. */}
         <Route path="/fotografa" element={<RequireTitolare><Fotografa /></RequireTitolare>} />
@@ -267,6 +279,7 @@ function AppRoutes() {
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
+        <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
             gliene deve ancora è un fatto suo e di quelle persone. */}
@@ -304,6 +317,7 @@ function AppRoutes() {
         <Route path="/fiscale/previsioni/:id/modifica" element={<RequireTitolare><PrevisioneForm /></RequireTitolare>} />
         <Route path="/fiscale/previsioni/:id" element={<RequireTitolare><PrevisioneDettaglio /></RequireTitolare>} />
         <Route path="/fiscale/andamento" element={<RequireTitolare><AndamentoMensile /></RequireTitolare>} />
+        <Route path="/fiscale/chiusura-anno" element={<RequireTitolare><ChiusuraAnnuale /></RequireTitolare>} />
 
         {/* Personale & Buste Paga (solo titolare — §4 mod. 11) */}
         <Route path="/personale" element={<RequireTitolare><PersonaleHome /></RequireTitolare>} />

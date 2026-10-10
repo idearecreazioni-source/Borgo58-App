@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import {
   getOrder,
   getServiceSettings,
@@ -14,6 +13,7 @@ import { formatEUR } from "../../lib/constants";
 import CloseOrderModal from "./CloseOrderModal";
 import PrecontoModal from "./PrecontoModal";
 import Didascalia from "../../components/Didascalia";
+import Scorciatoia from "../../components/Scorciatoia";
 
 // Schermata BAR — tablet 11" in orizzontale, su supporto fisso (§3.2.1).
 //
@@ -191,18 +191,12 @@ export default function Bar() {
           </p>
         </div>
         <div className="flex gap-1.5">
-          <Link
-            to="/comande"
-            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
-          >
+          <Scorciatoia to="/comande">
             Sala
-          </Link>
-          <Link
-            to="/comande/cucina"
-            className="tocco-bottone inline-flex items-center rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4"
-          >
+          </Scorciatoia>
+          <Scorciatoia to="/comande/cucina">
             Cucina
-          </Link>
+          </Scorciatoia>
         </div>
       </div>
 

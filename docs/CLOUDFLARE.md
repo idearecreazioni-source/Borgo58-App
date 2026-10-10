@@ -583,10 +583,22 @@ la strada meno battuta.*
 
 Vive in `scripts/rilascio.mjs`. Quattro controlli, tutti **fail-closed**:
 
-0. **lo stesso commit** *(dal 17/09/2026, solo in produzione)* — la produzione
-   pubblica solo il commit che è **già uscito su Borgo58-Prova**. Un commit che
-   non coincide è un rifiuto; un commit **vuoto** anche, ed è il caso che conta:
-   un lavoro saltato non lascia un errore, lascia una stringa vuota;
+0. **il contenuto collaudato** *(dal 17/09/2026, corretto il 18/09/2026, solo in
+   produzione)* — la produzione pubblica solo un contenuto che è **già uscito su
+   Borgo58-Prova**. Il commit di fusione che GitHub crea per la proposta
+   `slave → master` su Prova non è mai uscito, quindi il confronto dell'identico
+   commit non si poteva soddisfare. Si dimostra invece che: (a) un commit
+   collaudato — il commit stesso, o il **secondo genitore di una fusione** nella
+   sua storia diretta — ha un rilascio **riuscito** sull'ambiente `anteprima`
+   **dal ramo `slave`** nel registro dei rilasci di GitHub; (b) fra quel commit e
+   quello che esce non cambia **nessun file**, tranne pochi file di
+   infrastruttura elencati per nome (`PERCORSI_DI_INFRASTRUTTURA` in
+   `scripts/rilascio.mjs`: il workflow, lo script, la sua prova e questa guida).
+   Non contano il messaggio della fusione né il nome della proposta. Un rilascio
+   assente, fallito o da un altro ramo, un contenuto diverso, un commit che non è
+   una fusione e non è uscito, o un dato **vuoto o illeggibile** sono un
+   rifiuto: un lavoro saltato non lascia un errore, lascia una stringa vuota. Il
+   `checkout` porta 30 commit di storia, perché il confronto ne ha bisogno;
 
 1. **la coerenza** — ambiente dichiarato, ramo di GitHub e ramo di Cloudflare
    devono dire la stessa storia, e il ramo di produzione **si chiede a

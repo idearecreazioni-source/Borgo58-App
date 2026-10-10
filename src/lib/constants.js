@@ -532,6 +532,22 @@ export const TASK_CATEGORIES = [
 //
 // ⚠️ Elenco CHIUSO come tutti gli altri: il database rifiuta le altre
 // parole, perché sono le sole quattro che qualcuno sa contare.
+// 🔴 IL SOLLECITO HA DUE UNITA' IN PIU' DELLA RICORRENZA — 20/09/2026.
+//    Un impegno che si ripete ogni dieci minuti non esiste; un sollecito
+//    sì: «ricordamelo fra un'ora se non l'ho fatto». Le quattro di sempre
+//    restano le stesse parole, così i due elenchi non divergono — chi ne
+//    aggiunge una alla ricorrenza la trova anche qui.
+// ⚠️ Sotto i cinque minuti il database rifiuta: un avviso ogni minuto non è
+//    un promemoria, è un martello.
+export const TASK_SOLLECITO_UNITA = [
+  { value: "minuti", label: "minuti" },
+  { value: "ore", label: "ore" },
+  { value: "giorni", label: "giorni" },
+  { value: "settimane", label: "settimane" },
+  { value: "mesi", label: "mesi" },
+  { value: "anni", label: "anni" },
+];
+
 export const TASK_RICORRENZA_UNITA = [
   { value: "giorni", label: "giorni" },
   { value: "settimane", label: "settimane" },

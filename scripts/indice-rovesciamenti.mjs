@@ -116,7 +116,13 @@ export function generaIndice(testo) {
     );
   }
   const voci = rovesciamenti(testo);
-  return testo.slice(0, i + INIZIO.length) + "\n" + tabella(voci) + "\n" + testo.slice(j);
+  // ⚠️ IL FINE RIGA SI PRENDE DAL FILE, non si impone (19/09/2026): su
+  //    Windows, con core.autocrlf, il documento arriva con CRLF e l'indice
+  //    generato con LF — la prova diventava rossa solo lì, e il comando
+  //    avrebbe scritto un file a fine riga misti.
+  const nl = testo.includes("\r\n") ? "\r\n" : "\n";
+  const nuovo = ("\n" + tabella(voci) + "\n").replace(/\r?\n/g, nl);
+  return testo.slice(0, i + INIZIO.length) + nuovo + testo.slice(j);
 }
 
 if (process.argv[1]?.endsWith("indice-rovesciamenti.mjs")) {

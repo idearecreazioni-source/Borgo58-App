@@ -147,10 +147,35 @@ export async function consegnaUnaVoltaSola(opz: {
   if (!riuscito) {
     // Telegram ha risposto di no: e' CERTO che non abbia ricevuto niente,
     // quindi la chiave torna libera e il prossimo tentativo mandera'.
-    await opz.rilascia(opz.chiave);
+    // ⚠️ E se nemmeno il rilascio riesce, l'esito resta «non mandato»: e'
+    //    vero, ed e' la cosa che chi manda deve sapere. La chiave restera'
+    //    presa e diventera' «ignota» da se'.
+    try {
+      await opz.rilascia(opz.chiave);
+    } catch {
+      /* il rifiuto di Telegram resta il fatto principale */
+    }
     return { stato: 502, corpo: { ok: false, error: "Invio Telegram fallito", detail: dettaglio } };
   }
 
-  await opz.conferma(opz.chiave);
+  // 🔴 DA QUI IN POI IL MESSAGGIO E' GIA' SU TELEGRAM, E NIENTE PUO' PIU'
+  //    RENDERLO «NON ARRIVATO» — 20/09/2026, difetto misurato su Prova.
+  //    Il 20/09 alle 15:20 un promemoria e' stato consegnato, la conferma e'
+  //    stata scritta, e la funzione ha risposto lo stesso **500**: l'errore
+  //    nasceva DOPO l'invio, mentre si leggeva la risposta della conferma.
+  //    Chi manda l'ha letto come «non arrivato», ha fatto scattare un allarme
+  //    falso alle 15:25 e ha riprovato alle 15:30.
+  // ⚠️ Quindi un guaio nella conferma NON diventa un fallimento: si risponde
+  //    che il messaggio e' partito, e si dichiara che la conferma non si e'
+  //    potuta scrivere. Cosi' chi manda smette di riprovare — il messaggio
+  //    c'e' — e chi legge sa che la memoria di questa consegna e' monca.
+  try {
+    await opz.conferma(opz.chiave);
+  } catch (e) {
+    return {
+      stato: 200,
+      corpo: { ok: true, conferma_non_scritta: true, detail: String(e) },
+    };
+  }
   return { stato: 200, corpo: { ok: true } };
 }
