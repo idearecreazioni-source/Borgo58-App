@@ -41,12 +41,56 @@ export function testoDellaRicetta(ricetta) {
 }
 
 /**
- * La bozza candidata: quello che il lettore ha capito, con origine «link»
- * e il link come riferimento. Se il lettore rifiuta, il suo motivo.
+ * Applica le PROPOSTE dell'assistente (10/10/2026) sopra quello che il
+ * lettore ha capito: la categoria, la fase di ogni passaggio, il nome pulito
+ * e la nota di ogni ingrediente. Restituisce anche l'elenco di cosa ha
+ * proposto, che la bozza dichiara («proposto dall'assistente»).
+ *
+ * 🔴 I NUMERI NON SI TOCCANO: quantità e unità restano quelle del lettore.
+ * ⚠️ Le proposte arrivano gia' controllate dalla funzione online
+ *    (`proposte.ts`); qui si applicano solo se le righe combaciano, e un
+ *    nome vuoto lascia quello del lettore.
  */
-export function bozzaDaRicettaLetta(ricetta, url) {
-  const letta = bozzaDaTesto(testoDellaRicetta(ricetta));
-  if (!letta.ok) return letta;
+export function applicaProposte(letta, proposte) {
+  const fatte = [];
+  if (!proposte) return { ...letta, proposte: fatte };
+  const bozza = { ...letta.bozza };
+  let ingredienti = letta.ingredienti;
+  let passaggi = letta.passaggi;
+
+  if (proposte.categoria) {
+    bozza.categoria = proposte.categoria;
+    fatte.push("la categoria");
+  }
+  if (Array.isArray(proposte.fasi) && proposte.fasi.length === passaggi.length && proposte.fasi.some(Boolean)) {
+    passaggi = passaggi.map((p, i) => ({ ...p, fase: proposte.fasi[i] ?? null }));
+    fatte.push("le fasi dei passaggi");
+  }
+  if (Array.isArray(proposte.ingredienti) && proposte.ingredienti.length === ingredienti.length) {
+    let cambiati = false;
+    ingredienti = ingredienti.map((r, i) => {
+      const p = proposte.ingredienti[i] ?? {};
+      const nome = p.nome ? p.nome : r.nome;
+      // La nota del lettore («q.b.») non si perde: si affianca a quella proposta.
+      const note = [r.nota, p.nota].filter(Boolean);
+      const nota = note.length ? [...new Set(note)].join(" · ") : null;
+      if (nome !== r.nome || nota !== r.nota) cambiati = true;
+      return { ...r, nome, nota };
+    });
+    if (cambiati) fatte.push("i nomi degli ingredienti");
+  }
+  return { ...letta, bozza, ingredienti, passaggi, proposte: fatte };
+}
+
+/**
+ * La bozza candidata: quello che il lettore ha capito, con origine «link»
+ * e il link come riferimento, e sopra le proposte dell'assistente se ci
+ * sono. Se il lettore rifiuta, il suo motivo.
+ */
+export function bozzaDaRicettaLetta(ricetta, url, proposte = null) {
+  const grezza = bozzaDaTesto(testoDellaRicetta(ricetta));
+  if (!grezza.ok) return grezza;
+  const letta = applicaProposte(grezza, proposte);
   const buchi = [...letta.bozza.buchi_dichiarati];
   // Il lettore dice «porzioni non scritte» solo se le cerca nel testo: qui la
   // pagina le ha date in una forma che non diventa un numero solo.
@@ -61,6 +105,7 @@ export function bozzaDaRicettaLetta(ricetta, url) {
       origine_riferimento: url,
       sunto: ricetta.video ? `Video originale: ${ricetta.video}` : null,
       buchi_dichiarati: buchi,
+      proposte_assistente: letta.proposte,
     },
   };
 }

@@ -20,10 +20,14 @@
 //                          in due modi, e non si sceglie;
 //      · «100/150 g»     → quantità vuota: una frazione di cucina è piccola
 //                          («1/2», «3/4»), questa è un'alternativa;
-//      · «200 ml»        → unità «ml» com'è scritta: convertirla in litri
-//                          sarebbe un calcolo che nessuno ha chiesto.
-//    Le uniche trasformazioni sono SINONIMI dello stesso codice («grammi» →
-//    «g»), mai conversioni fra unità.
+//      · «200 ml»        → 0,2 l: una conversione ESATTA verso un'unità che il
+//                          gestionale conosce (ml, cl, dl → l; mg → g).
+//    Le trasformazioni sono i SINONIMI dello stesso codice («grammi» → «g»)
+//    e le conversioni esatte di CONVERSIONI_ESATTE, nient'altro: un cucchiaio
+//    o un pizzico non hanno un peso esatto, e restano scritti com'erano.
+//    ⚠️ Fino al 10/10/2026 «ml» restava «ml» («un calcolo che nessuno ha
+//    chiesto»): l'ha chiesto Alessio, perché ogni ricetta importata
+//    lasciava da correggere a mano tutte le righe in millilitri.
 //
 // 🔴 UN INDIRIZZO NON SI SEGUE. Un testo che è solo un link viene rifiutato:
 //    leggerlo vorrebbe dire aprire una pagina, e questo nucleo non apre
@@ -67,11 +71,21 @@ const SINONIMI_UNITA = {
   conf: "conf", confezione: "conf", confezioni: "conf",
 };
 
+// Conversioni ESATTE verso un'unità del gestionale: un fattore, mai una
+// stima. Il risultato si arrotonda a 6 decimali solo per togliere il rumore
+// della virgola mobile (3 dl × 0,1 = 0,30000000000000004).
+const CONVERSIONI_ESATTE = {
+  ml: { unita: "l", fattore: 0.001 },
+  cl: { unita: "l", fattore: 0.01 },
+  dl: { unita: "l", fattore: 0.1 },
+  mg: { unita: "g", fattore: 0.001 },
+};
+
 // Parole di misura che si riconoscono come UNITÀ (non come ingrediente) ma
 // che il gestionale non conosce: restano scritte, e a valle sono un buco
 // («unità non compresa»).
 const MISURE_NON_CODIFICATE = new Set([
-  "ml", "cl", "dl", "mg", "cucchiaio", "cucchiai", "cucchiaino", "cucchiaini",
+  "cucchiaio", "cucchiai", "cucchiaino", "cucchiaini",
   "bicchiere", "bicchieri", "tazza", "tazze", "pizzico", "pizzichi", "spicchio",
   "spicchi", "foglia", "foglie", "rametto", "rametti", "fetta", "fette",
   "manciata", "manciate", "noce", "noci", "bustina", "bustine", "barattolo",
@@ -88,7 +102,10 @@ const SEPARATORE_AMBIGUO = /^[1-9]\d{0,2}[.,]\d{3}$/;
 const NUMERI_IN_LETTERE =
   /\b(?:mezz[oa]|un[oa]?|due|tre|quattro|cinque|sei|sette|otto|nove|dieci|dodici|venti|trenta|cento)\b/i;
 
-const pulisci = (riga) => riga.replace(/\s+/g, " ").trim();
+// ⚠️ Togliendo «q.b.» da «Acqua fredda, q.b., per la gelatina» restano due
+//    virgole di fila: si richiudono in una.
+const pulisci = (riga) =>
+  riga.replace(/\s+/g, " ").replace(/\s*,(?:\s*,)+/g, ",").replace(/\s+,/g, ",").trim();
 
 /** Toglie il segno d'elenco: «- », «• », «* », «1. », «1) », «Passo 1:». */
 function senzaSegno(riga) {
@@ -168,7 +185,11 @@ function leggiIngrediente(originale) {
   let dopo = m[4] ?? "";
 
   let unita = null;
-  if (parola && SINONIMI_UNITA[parola]) unita = SINONIMI_UNITA[parola];
+  let quantitaFinale = quantita;
+  if (parola && CONVERSIONI_ESATTE[parola]) {
+    unita = CONVERSIONI_ESATTE[parola].unita;
+    if (quantita !== null) quantitaFinale = Number((quantita * CONVERSIONI_ESATTE[parola].fattore).toFixed(6));
+  } else if (parola && SINONIMI_UNITA[parola]) unita = SINONIMI_UNITA[parola];
   else if (parola && MISURE_NON_CODIFICATE.has(parola)) unita = parola;
   else if (parola) dopo = `${m[3]} ${dopo}`; // non è un'unità: è il nome
 
@@ -180,7 +201,7 @@ function leggiIngrediente(originale) {
   if (quantita === null) {
     buchi.push(`«${riga}»: la quantità non si legge`);
   }
-  return { riga: { ...base, nome, quantita, unita }, buchi };
+  return { riga: { ...base, nome, quantita: quantitaFinale, unita }, buchi };
 }
 
 function leggiPorzioni(resto) {

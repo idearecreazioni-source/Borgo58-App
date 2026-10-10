@@ -10,9 +10,19 @@
 //    potrebbe mandare la funzione dove vuole.
 // La regola di lettura vive in `lettura.ts`, provata senza rete in
 // tests/unita/ricetta-da-link.test.js.
+//
+// 🔴 L'ASSISTENTE (10/10/2026, decisione di Alessio): letta la ricetta, un
+//    modello PROPONE categoria, fasi e nomi puliti (`proposte.ts`). Non tocca
+//    i numeri. Se non risponde, se manca la chiave o se il tetto di spesa e'
+//    raggiunto, la ricetta arriva lo stesso, senza proposte, e lo si dice:
+//    l'importazione non dipende dall'assistente.
+// ⚠️ Ogni chiamata si registra (`registra_lettura_ricetta`) e quindi entra
+//    nel tetto unico della spesa (`consumi_ai`), anche quella fallita.
 
+import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { indirizzoAmmesso, PESO_MASSIMO, ricettaDallaPagina } from "./lettura.ts";
+import { indirizzoAmmesso, PESO_MASSIMO, ricettaDallaPagina, type RicettaLetta } from "./lettura.ts";
+import { domandaPerAssistente, ISTRUZIONI, jsonDallaRisposta, proposteValide, type Proposte } from "./proposte.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +32,82 @@ const CORS = {
 
 const TEMPO_MASSIMO_MS = 10_000;
 const RINVII_MASSIMI = 3;
+
+// Il modello piccolo: tre scelte di classificazione e dei nomi da ripulire,
+// niente che riguardi la salute (gli allergeni non si chiedono qui).
+const MODELLO = "claude-haiku-4-5-20251001";
+// Il tetto si alza nello stesso momento in cui si chiede di scrivere di piu'
+// (CLAUDE.md §8): una riga per ingrediente e una per passaggio. Non si paga
+// cio' che non si scrive.
+const TETTO_RISPOSTA = 4000;
+
+type Assistente = {
+  esito: "proposte" | "saltato" | "errore";
+  messaggio: string | null;
+  proposte: Proposte | null;
+};
+
+async function chiediAssistente(
+  supabase: ReturnType<typeof createClient>,
+  ricetta: RicettaLetta,
+): Promise<Assistente> {
+  const chiave = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!chiave) {
+    return { esito: "saltato", messaggio: "L'assistente non è configurato: categoria e fasi vanno scelte a mano.", proposte: null };
+  }
+
+  // Il tetto, PRIMA di spendere.
+  const { data: spesa, error: erroreSpesa } = await supabase.rpc("spesa_ai_del_mese");
+  const stato = Array.isArray(spesa) ? spesa[0] : spesa;
+  if (erroreSpesa || stato?.blocca) {
+    const messaggio = erroreSpesa
+      ? "Non riesco a leggere la spesa dell'assistente: categoria e fasi vanno scelte a mano."
+      : `${stato?.frase ?? "La spesa del mese ha raggiunto il tetto."} Categoria e fasi vanno scelte a mano.`;
+    await supabase.rpc("registra_lettura_ricetta", { p_esito: "tetto", p_messaggio: messaggio });
+    return { esito: "saltato", messaggio, proposte: null };
+  }
+
+  let tokenDomanda = 0;
+  let tokenRisposta = 0;
+  try {
+    const anthropic = new Anthropic({ apiKey: chiave });
+    const esito = await anthropic.messages.create({
+      model: MODELLO,
+      max_tokens: TETTO_RISPOSTA,
+      system: ISTRUZIONI,
+      messages: [{ role: "user", content: domandaPerAssistente(ricetta) }],
+    });
+    tokenDomanda = esito.usage.input_tokens;
+    tokenRisposta = esito.usage.output_tokens;
+    if (esito.stop_reason === "max_tokens") throw new Error("La risposta si è interrotta a metà.");
+    const testo = esito.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { text: string }).text)
+      .join("\n");
+    const proposte = proposteValide(jsonDallaRisposta(testo), ricetta.ingredienti.length, ricetta.passaggi.length);
+    await supabase.rpc("registra_lettura_ricetta", {
+      p_esito: "proposte",
+      p_modello: MODELLO,
+      p_token_domanda: tokenDomanda,
+      p_token_risposta: tokenRisposta,
+    });
+    return { esito: "proposte", messaggio: null, proposte };
+  } catch (e) {
+    // ⚠️ Una chiamata fallita a meta' si paga lo stesso: i token si registrano.
+    await supabase.rpc("registra_lettura_ricetta", {
+      p_esito: "errore",
+      p_modello: tokenDomanda || tokenRisposta ? MODELLO : null,
+      p_token_domanda: tokenDomanda,
+      p_token_risposta: tokenRisposta,
+      p_messaggio: (e as Error).message,
+    });
+    return {
+      esito: "errore",
+      messaggio: "L'assistente non ha risposto: la ricetta è importata, categoria e fasi vanno scelte a mano.",
+      proposte: null,
+    };
+  }
+}
 
 function risposta(status: number, corpo: unknown) {
   return new Response(JSON.stringify(corpo), {
@@ -122,5 +208,7 @@ Deno.serve(async (req) => {
   const letta = ricettaDallaPagina(pagina.html);
   if (!letta.ok) return errore(422, "ricetta", letta.messaggio);
 
-  return risposta(200, { risultato: { url: indirizzo.url, ricetta: letta.ricetta } });
+  const assistente = await chiediAssistente(supabase, letta.ricetta);
+
+  return risposta(200, { risultato: { url: indirizzo.url, ricetta: letta.ricetta, assistente } });
 });

@@ -147,7 +147,7 @@ describe("la bozza che ne nasce", () => {
 
   it("🔴 le quantità le decide il lettore dell'anteprima: scritte → numero, «q.b.» e intervalli → buchi", () => {
     const [latte, zucchero, tuorli, sale] = b.ingredienti;
-    expect([latte.quantita, latte.unita]).toEqual([200, "ml"]);
+    expect([latte.quantita, latte.unita]).toEqual([0.2, "l"]);
     expect(zucchero.quantita).toBe(null);
     expect(tuorli.quantita).toBe(null);
     expect([sale.quantita, sale.unita]).toEqual([1, "pizzico"]);
@@ -190,5 +190,100 @@ describe("i fili che legano i pezzi", () => {
     expect(f).toMatch(/redirect:\s*"manual"/);
     expect(f).toMatch(/indirizzoAmmesso\(new URL\(dove, attuale\)/);
     expect(f).toMatch(/rpc\("is_titolare"\)/);
+  });
+});
+
+// =====================================================================
+// LE PROPOSTE DELL'ASSISTENTE — 10/10/2026
+// =====================================================================
+import {
+  CATEGORIE_PROPONIBILI,
+  FASI_PROPONIBILI,
+  domandaPerAssistente,
+  jsonDallaRisposta,
+  proposteValide,
+} from "../../supabase/functions/ricetta-da-link/proposte";
+import { applicaProposte } from "../../src/lib/calcoli/ricettaDaLink";
+import { STEP_PHASES, RECIPE_CATEGORIES } from "../../src/lib/constants";
+
+describe("le proposte dell'assistente si controllano prima di usarle", () => {
+  it("gli elenchi sono quelli del gestionale (il finger food no: la promozione lo rifiuta)", () => {
+    expect([...FASI_PROPONIBILI].sort()).toEqual(STEP_PHASES.map((f) => f.value).sort());
+    expect([...CATEGORIE_PROPONIBILI].sort()).toEqual(
+      RECIPE_CATEGORIES.map((c) => c.value).filter((v) => v !== "finger_food").sort()
+    );
+  });
+
+  it("valori fuori elenco diventano vuoti, non indovinati", () => {
+    const p = proposteValide(
+      { categoria: "bevanda", fasi: ["cottura", "riposo"], ingredienti: [{ nome: "panna", nota: 5 }] },
+      1,
+      2
+    );
+    expect(p).toEqual({ categoria: null, fasi: ["cottura", null], ingredienti: [{ nome: "panna", nota: null }] });
+  });
+
+  it("🔴 se le righe non sono tante quante quelle della ricetta, si scartano TUTTE", () => {
+    const p = proposteValide(
+      { categoria: "dolce", fasi: ["cottura"], ingredienti: [{ nome: "a" }, { nome: "b" }] },
+      3,
+      2
+    );
+    expect(p).toEqual({ categoria: "dolce", fasi: null, ingredienti: null });
+  });
+
+  it("una risposta che non è un oggetto non rompe niente", () => {
+    expect(proposteValide(null, 1, 1)).toEqual({ categoria: null, fasi: null, ingredienti: null });
+    expect(jsonDallaRisposta('```json\n{"categoria":"primo"}\n```')).toEqual({ categoria: "primo" });
+  });
+
+  it("la domanda numera righe e passaggi e dice quanti sono", () => {
+    const d = domandaPerAssistente({ titolo: "X", ingredienti: ["a", "b"], passaggi: ["uno"] });
+    expect(d).toMatch(/Ingredienti \(2 righe\):\n1\. a\n2\. b/);
+    expect(d).toMatch(/Passaggi \(1\):\n1\. uno/);
+  });
+});
+
+describe("le proposte sopra la bozza", () => {
+  const letta = ricettaDallaPagina(pagina(RICETTA)).ricetta;
+
+  it("categoria, fasi e nomi entrano, e la bozza dichiara cosa ha proposto l'assistente", () => {
+    const b = bozzaDaRicettaLetta(letta, "https://clove.kitchen/recipes/x", {
+      categoria: "dolce",
+      fasi: ["cottura", "mise_en_place"],
+      ingredienti: [
+        { nome: "latte", nota: "intero" },
+        { nome: "zucchero", nota: null },
+        { nome: "", nota: null },
+        { nome: "sale", nota: null },
+      ],
+    });
+    expect(b.bozza.categoria).toBe("dolce");
+    expect(b.passaggi.map((p) => p.fase)).toEqual(["cottura", "mise_en_place"]);
+    expect(b.ingredienti.map((i) => i.nome)).toEqual(["latte", "zucchero", "2-3 tuorli", "sale"]);
+    expect(b.ingredienti[0].nota).toBe("intero");
+    expect(b.bozza.proposte_assistente).toEqual(["la categoria", "le fasi dei passaggi", "i nomi degli ingredienti"]);
+  });
+
+  it("🔴 l'assistente non tocca i numeri, e la nota del lettore («q.b.») resta", () => {
+    const senza = bozzaDaRicettaLetta(letta, "u");
+    const con = bozzaDaRicettaLetta(letta, "u", {
+      categoria: null,
+      fasi: null,
+      ingredienti: [
+        { nome: "latte", nota: null },
+        { nome: "zucchero", nota: "per la crema" },
+        { nome: "tuorli", nota: null },
+        { nome: "sale", nota: null },
+      ],
+    });
+    expect(con.ingredienti.map((i) => [i.quantita, i.unita])).toEqual(senza.ingredienti.map((i) => [i.quantita, i.unita]));
+    expect(con.ingredienti[1].nota).toBe("q.b. · per la crema");
+    expect(con.bozza.buchi_dichiarati).toEqual(senza.bozza.buchi_dichiarati);
+  });
+
+  it("senza proposte la bozza non dichiara niente", () => {
+    expect(bozzaDaRicettaLetta(letta, "u").bozza.proposte_assistente).toEqual([]);
+    expect(applicaProposte({ bozza: {}, ingredienti: [], passaggi: [] }, null).proposte).toEqual([]);
   });
 });
