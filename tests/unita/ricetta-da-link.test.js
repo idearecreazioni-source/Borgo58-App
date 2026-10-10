@@ -111,6 +111,17 @@ describe("cosa si legge dalla pagina", () => {
     expect(e.ok).toBe(false);
   });
 
+  it("🔴 le entità si sciolgono una volta sola: «&amp;lt;» resta «&lt;», e un numero fuori misura non rompe la lettura", () => {
+    const e = ricettaDallaPagina(
+      pagina({
+        ...RICETTA,
+        recipeIngredient: ["5 g &amp;lt;sale&amp;gt;", "1 &#9999999999; uovo", "2 &#233;clair"],
+      })
+    );
+    expect(e.ok).toBe(true);
+    expect(e.ricetta.ingredienti).toEqual(["5 g &lt;sale&gt;", "1 &#9999999999; uovo", "2 éclair"]);
+  });
+
   it("la coda del titolo: via il sito e «Recipe», ma un titolo che è solo coda resta vuoto", () => {
     expect(titoloSenzaCoda("Pasta e fagioli Recipe | Clove")).toBe("Pasta e fagioli");
     expect(titoloSenzaCoda("Pasta e fagioli")).toBe("Pasta e fagioli");
