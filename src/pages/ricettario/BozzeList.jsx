@@ -58,8 +58,8 @@ export default function BozzeList() {
     setImportando(true);
     setErroreLink("");
     try {
-      const id = await importaRicettaDaLink(link.trim(), gestoLink);
-      navigate(`/ricettario/bozze/${id}`);
+      const { bozzaId, avviso } = await importaRicettaDaLink(link.trim(), gestoLink);
+      navigate(`/ricettario/bozze/${bozzaId}`, { state: { avvisoAssistente: avviso } });
     } catch (err) {
       setErroreLink(err.message);
       setImportando(false);
@@ -96,7 +96,7 @@ export default function BozzeList() {
           disabled={!link.trim() || importando}
           className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment disabled:opacity-50"
         >
-          {importando ? "Sto leggendo la ricetta…" : "Importa"}
+          {importando ? "Sto leggendo la ricetta e la sistemo…" : "Importa"}
         </button>
       </form>
       {erroreLink && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-red-700">{erroreLink}</p>}

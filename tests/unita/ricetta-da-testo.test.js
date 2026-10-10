@@ -37,7 +37,7 @@ describe("estrae ciò che è scritto, e solo quello", () => {
     expect(soloGliIngredienti(e)).toEqual([
       { nome: "spaghetti", quantita: 320, unita: "g" },
       { nome: "pomodori pelati", quantita: 400, unita: "g" },
-      { nome: "olio extravergine", quantita: 30, unita: "ml" },
+      { nome: "olio extravergine", quantita: 0.03, unita: "l" },
       { nome: "aglio", quantita: 2, unita: "spicchi" },
       { nome: "sale", quantita: null, unita: null },
       { nome: "cipolla", quantita: 0.5, unita: null },
@@ -88,9 +88,28 @@ describe("🔴 nessuna invenzione quando manca qualcosa", () => {
     expect(soloGliIngredienti(e)).toEqual([{ nome: "prezzemolo", quantita: null, unita: null }]);
   });
 
-  it("un'unità diversa non si converte: «ml» resta «ml»", () => {
-    const e = bozzaDaTesto("Prova\nIngredienti\n250 ml latte");
-    expect(soloGliIngredienti(e)).toEqual([{ nome: "latte", quantita: 250, unita: "ml" }]);
+  it("le conversioni ESATTE sì (ml, cl, dl → l; mg → g), senza rumore di virgola", () => {
+    const e = bozzaDaTesto("Prova\nIngredienti\n250 ml latte\n3 dl panna\n5 cl rum\n500 mg sale\n1,5 ml estratto");
+    expect(soloGliIngredienti(e)).toEqual([
+      { nome: "latte", quantita: 0.25, unita: "l" },
+      { nome: "panna", quantita: 0.3, unita: "l" },
+      { nome: "rum", quantita: 0.05, unita: "l" },
+      { nome: "sale", quantita: 0.5, unita: "g" },
+      { nome: "estratto", quantita: 0.0015, unita: "l" },
+    ]);
+  });
+
+  it("🔴 ciò che non ha un peso esatto resta com'è scritto: cucchiaio, pizzico", () => {
+    const e = bozzaDaTesto("Prova\nIngredienti\n2 cucchiai olio\n1 pizzico sale");
+    expect(soloGliIngredienti(e)).toEqual([
+      { nome: "olio", quantita: 2, unita: "cucchiai" },
+      { nome: "sale", quantita: 1, unita: "pizzico" },
+    ]);
+  });
+
+  it("togliendo «q.b.» in mezzo alla riga non restano due virgole", () => {
+    const e = bozzaDaTesto("Prova\nIngredienti\nAcqua fredda, q.b., per ammorbidire la gelatina");
+    expect(e.ingredienti[0].nome).toBe("Acqua fredda, per ammorbidire la gelatina");
   });
 
   it("i sinonimi dello stesso codice sì, e solo quelli", () => {
@@ -284,7 +303,7 @@ describe("1D · quantità scritte in modo esplicito", () => {
       { nome: "burro", quantita: 50, unita: "g" },
       { nome: "Uova", quantita: 3, unita: null },
       { nome: "zucchero", quantita: 200, unita: "g" },
-      { nome: "latte", quantita: 250, unita: "ml" },
+      { nome: "latte", quantita: 0.25, unita: "l" },
     ]);
   });
 });

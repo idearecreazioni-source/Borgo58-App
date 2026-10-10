@@ -26,6 +26,8 @@ const CAMPI_BOZZA = [
   "categoria",
   "porzioni",
   "buchi_dichiarati",
+  // Solo per svuotarlo («Visto»): dal browser non si puo' scrivere alla creazione.
+  "proposte_assistente",
 ];
 
 const solo = (dati, campi) =>
@@ -163,13 +165,16 @@ export async function promuoviBozza(bozzaId, esito, gesto) {
  *      in una transazione (`crea_bozza_da_lettura`, regola B4).
  * `gesto` (vedi `nuovoGesto`): lo stesso gesto ripetuto riceve la stessa
  * bozza invece di crearne una seconda.
- * Restituisce l'identificativo della bozza.
+ * Dal 10/10/2026 la funzione online restituisce anche le PROPOSTE
+ * dell'assistente (categoria, fasi, nomi puliti), che si applicano sopra.
+ * Restituisce `{ bozzaId, avviso }`: `avviso` dice perche' l'assistente non
+ * ha proposto niente (tetto, errore), oppure e' vuoto.
  */
 export async function importaRicettaDaLink(url, gesto) {
   const letta = await chiamaFunzione("ricetta-da-link", { url }, "leggere la ricetta dal link");
-  const { url: pulito, ricetta } = letta?.risultato ?? {};
+  const { url: pulito, ricetta, assistente } = letta?.risultato ?? {};
   if (!ricetta) throw new Error("La pagina non ha restituito nessuna ricetta.");
-  const candidata = bozzaDaRicettaLetta(ricetta, pulito);
+  const candidata = bozzaDaRicettaLetta(ricetta, pulito, assistente?.proposte ?? null);
   if (!candidata.ok) throw new Error(candidata.messaggio);
   if (!candidata.bozza.titolo) throw new Error("La ricetta letta non ha un titolo: non posso creare la bozza.");
   const esito = await eseguiOperazione("crea_bozza_da_lettura", {
@@ -178,5 +183,5 @@ export async function importaRicettaDaLink(url, gesto) {
     p_passaggi: candidata.passaggi,
     p_gesto: gesto,
   });
-  return esito?.bozza_id;
+  return { bozzaId: esito?.bozza_id, avviso: assistente?.messaggio ?? null };
 }
