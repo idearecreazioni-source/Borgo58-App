@@ -226,10 +226,23 @@ describe("la migrazione delle bozze", () => {
   });
 });
 
-describe("la schermata non è esposta finché non è installata", () => {
-  it("nessun collegamento alle bozze nel menu o nella pagina del Ricettario", () => {
-    for (const f of ["src/components/Sidebar.jsx", "src/pages/ricettario/RicettarioHome.jsx"]) {
-      expect(readFileSync(f, "utf8"), f).not.toContain("/ricettario/bozze");
-    }
+// ⚠️ FINO AL 10/10/2026 QUI SI PRETENDEVA IL CONTRARIO: «nessun collegamento
+//    alle bozze finché non è installata». La condizione si è avverata: la
+//    20261010000001 porta le tabelle delle bozze, e la consegna dell'
+//    importazione da link le installa insieme al collegamento. Resta vera la
+//    ragione di allora — non offrire una schermata rotta — e la si sorveglia
+//    da qui in poi chiedendo che il collegamento ci sia SOLO per il titolare.
+describe("la schermata è nel Ricettario, e solo per il titolare", () => {
+  it("il collegamento alle bozze sta dentro il blocco del titolare", () => {
+    const home = readFileSync("src/pages/ricettario/RicettarioHome.jsx", "utf8");
+    const i = home.indexOf('to="/ricettario/bozze"');
+    expect(i).toBeGreaterThan(-1);
+    const prima = home.slice(0, i);
+    expect(prima.lastIndexOf("{isTitolare && (")).toBeGreaterThan(prima.lastIndexOf(")}"));
+  });
+
+  it("la rotta resta protetta dal titolare", () => {
+    const app = readFileSync("src/App.jsx", "utf8");
+    expect(app).toMatch(/path="\/ricettario\/bozze" element=\{<RequireTitolare>/);
   });
 });
