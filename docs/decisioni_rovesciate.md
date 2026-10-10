@@ -153,8 +153,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 94 | 21/09/2026 | un investimento anticipato per conto della società entra nel costo |
 | 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 | 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
+| 97 | 10/10/2026 | un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma |
 
-⚠️ **Righe: 97.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 98.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
