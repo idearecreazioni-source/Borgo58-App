@@ -97,16 +97,21 @@ function trovaRicetta(dato: unknown): Record<string, unknown> | null {
   return grafo ? trovaRicetta(grafo) : null;
 }
 
-/** Il testo di una pagina ha entita' HTML anche dentro il JSON: si sciolgono le comuni. */
+const ENTITA: Record<string, string> = { nbsp: " ", amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" };
+
+/**
+ * Il testo di una pagina ha entita' HTML anche dentro il JSON: si sciolgono
+ * le comuni, IN UN PASSAGGIO SOLO. A passaggi successivi «&amp;lt;» diventava
+ * prima «&lt;» e poi «<»: sciolto due volte (rilievo CodeQL sul n. 166).
+ */
 function sciogliEntita(t: string): string {
-  return t
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)));
+  return t.replace(/&(?:#(\d+)|([a-z]+));/gi, (tutta, n, nome) => {
+    if (n) {
+      const cp = Number(n);
+      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : tutta;
+    }
+    return ENTITA[nome.toLowerCase()] ?? tutta;
+  });
 }
 
 function pulito(v: unknown): string | null {
