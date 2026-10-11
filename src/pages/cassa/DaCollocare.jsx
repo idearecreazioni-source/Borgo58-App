@@ -162,7 +162,7 @@ function Riga({ spesa, elenchi, onCollocata }) {
               </label>
               <label>
                 <span className={etichetta}>Data della spesa</span>
-                <input type="date" value={campi.data} onChange={imposta("data")} className={campo} />
+                <input type="date" value={campi.data} onChange={imposta("data")} className={`${campo} campo-data`} />
               </label>
               <label>
                 <span className={etichetta}>A chi</span>
