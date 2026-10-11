@@ -39,8 +39,17 @@ const CARTELLA = path.join(process.cwd(), "dist", "assets");
  * abbastanza largo
  * da non gridare per una libreria in piu', abbastanza stretto da accorgersi
  * di un modulo nuovo che entra nel pacchetto unico.
+ *
+ * ⚠️ ALZATO A 410 L'11/10/2026, dichiarando perche'. Misurato da questo
+ * comando: 396,20 kB prima delle spese «Da collocare» (3bbf26c), 400,61
+ * dopo — +4,41 kB, una schermata nuova e i suoi due moduli. Non e' una
+ * libreria entrata per sbaglio: e' il gestionale che cresce di una
+ * funzione, che e' la crescita che il tetto deve rendere VISIBILE, non
+ * impedire. ⚠️ La cura vera resta quella scritta qui sopra e non e' fatta:
+ * separare `/prenota` (l'unica pagina che apre un cliente) dal resto del
+ * pacchetto. E' una decisione di Alessio, posta l'11/10.
  */
-const TETTO_KB_COMPRESSI = 400;
+const TETTO_KB_COMPRESSI = 410;
 
 if (!existsSync(CARTELLA)) {
   console.error("Non trovo `dist/assets`: prima va compilato il gestionale (`npm run build`).");
