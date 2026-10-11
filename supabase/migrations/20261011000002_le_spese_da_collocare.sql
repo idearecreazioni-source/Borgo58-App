@@ -379,7 +379,7 @@ begin
         raise exception 'Manca quanto hai speso: scrivi l''importo e riprova.';
       end if;
       select id into v_ent from entities
-       where entity_type = case p_dove when 'tasca' then 'tasca' else 'srls' end
+       where entity_type = (case p_dove when 'tasca' then 'tasca' else 'srls' end)::entity_type
        limit 1;
       if v_ent is null then
         raise exception 'In questo gestionale non c''e'' il soggetto per questa destinazione: la spesa resta da collocare.';
