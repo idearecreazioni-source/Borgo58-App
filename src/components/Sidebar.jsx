@@ -38,7 +38,7 @@ export default function Sidebar({ onNavigate, sopra = null }) {
   const linkClasses = ({ isActive }) =>
     `tocco-bottone flex items-center gap-3 rounded-lg px-3 testo-sala transition-colors ${
       isActive
-        ? "bg-b58-terracotta text-b58-parchment"
+        ? "bg-b58-azione text-b58-parchment"
         : "text-b58-charcoal-soft hover:bg-b58-cream-dark"
     }`;
 

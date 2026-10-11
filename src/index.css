@@ -10,6 +10,12 @@
   --color-b58-parchment: #fbf7ee;
   --color-b58-terracotta: #b5502e;
   --color-b58-terracotta-dark: #93401f;
+  /* L'AZIONE PRINCIPALE, l'elemento attivo e lo stato positivo (U1,
+     11/10/2026). Oggi vale il terracotta di sempre: la palette nuova — il
+     verde del logo — si prova SOLO sulla Dashboard, con `.tema-prova` qui
+     sotto, e si estende al resto solo dopo l'ok di Alessio. */
+  --color-b58-azione: #b5502e;
+  --color-b58-azione-dark: #93401f;
   --color-b58-olive: #56603c;
   --color-b58-olive-dark: #3f4a2c;
   --color-b58-charcoal: #2b2621;
@@ -854,4 +860,20 @@ body {
 
 .ruota-ora .ruota-vuoto {
   height: calc(var(--pxcm) * 1.7);
+}
+
+/* LA PALETTE NUOVA, IN PROVA SULLA SOLA DASHBOARD (U1, 11/10/2026).
+   La Dashboard mette questa classe su <html> finché è aperta, e la toglie
+   quando si cambia schermata: tutto il resto del gestionale resta com'era.
+   · fondo beige più chiaro, riquadri quasi bianchi;
+   · il VERDE DEL LOGO (#577632, preso dal file del logo) per le azioni
+     principali, gli elementi attivi e gli stati positivi — contrasto col
+     testo chiaro 4,8:1, sopra la soglia di 4,5;
+   · il terracotta resta per gli accenti e gli avvisi. */
+html.tema-prova {
+  --color-b58-cream: #fbf8f2;
+  --color-b58-cream-dark: #f0e8da;
+  --color-b58-parchment: #fffefa;
+  --color-b58-azione: #577632;
+  --color-b58-azione-dark: #435b26;
 }

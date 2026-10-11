@@ -54,7 +54,7 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **87 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**23 in attesa** · **4 in corso** · **56 fatte** · **4 scartate da lui**.
+**22 in attesa** · **5 in corso** · **56 fatte** · **4 scartate da lui**.
 La somma fa **87**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
@@ -105,7 +105,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 
 | # | Richiesta | Chiesta il | Da dove viene | Quando | Stato |
 |---|---|---|---|---|---|
-| U1 | **Restyling e controllo estetico di tutto il gestionale**, partendo da un censimento visivo delle parti comuni (intestazioni, filtri, moduli, pulsanti, riquadri, tabelle, avvisi, menu) e correggendo le regole condivise, col prima/dopo misurato. **La palette nuova si prova prima sulla sola Dashboard**: beige di fondo più chiaro, il verde del logo per le azioni principali e gli stati positivi, la terracotta solo come accento. Si estende al resto solo dopo il suo ok. | 11/10/2026 | [relazione dell'11/10](proposte/20261011_le_migliorie_ancora_aperte.md) | si può fare adesso | in attesa |
+| U1 | **Restyling e controllo estetico di tutto il gestionale**, partendo da un censimento visivo delle parti comuni (intestazioni, filtri, moduli, pulsanti, riquadri, tabelle, avvisi, menu) e correggendo le regole condivise, col prima/dopo misurato. **La palette nuova si prova prima sulla sola Dashboard**: beige di fondo più chiaro, il verde del logo per le azioni principali e gli stati positivi, la terracotta solo come accento. Si estende al resto solo dopo il suo ok. | 11/10/2026 | [relazione dell'11/10](proposte/20261011_le_migliorie_ancora_aperte.md) | si può fare adesso | in corso · fatta solo la PROVA DELLA PALETTE sulla Dashboard (proposta #177): fondo più chiaro, verde del logo `#577632` per azioni, elemento attivo e stati positivi. Aspetta il suo giudizio prima di estenderla. Il censimento estetico delle parti comuni è ancora da fare |
 
 ---
 
