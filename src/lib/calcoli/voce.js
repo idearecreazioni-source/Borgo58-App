@@ -337,3 +337,30 @@ export function statoDettatura(finestra = typeof window !== "undefined" ? window
     cosaFare: `Sul telefono apri il gestionale con Safari, sul computer con Google Chrome. ${laScorciatoia}`,
   };
 }
+
+/**
+ * Cosa MEMO dice A VOCE dopo una dettatura di giacenza (V2, 11/10/2026).
+ *
+ * ⚠️ Solo le giacenze: è l'allineamento che si detta in cella col telefono
+ *    appoggiato, dove guardare lo schermo costa. Per il resto basta lo
+ *    schermo, e una voce che parla di tutto si impara a zittire.
+ * ⚠️ Ripete SOLO quello che serve a controllare — la riga che si legge a
+ *    schermo («Passata di pomodoro Mutti: ce ne sono 4 kg»), oppure il
+ *    rifiuto vero. Niente «ho capito che volevi…».
+ * ⚠️ Una giacenza che aspetta l'approvazione NON si dice «segnata»: non lo è.
+ *
+ * Restituisce `null` quando non c'è niente da dire.
+ */
+export function fraseDaDire(azioni = []) {
+  const giacenze = azioni.filter((a) => a.tipo === "giacenza");
+  if (!giacenze.length) return null;
+  const pezzi = [];
+  const fatte = giacenze.filter((a) => a.stato === "eseguita" && a.frase);
+  if (fatte.length) pezzi.push(`Segnato. ${fatte.map((a) => a.frase).join(". ")}.`);
+  for (const a of giacenze.filter((x) => x.stato === "fallita")) {
+    pezzi.push(`Non l'ho segnato: ${a.errore || a.frase || "il gestionale l'ha rifiutato"}.`);
+  }
+  const aspettano = giacenze.filter((a) => a.stato === "in_attesa").length;
+  if (aspettano) pezzi.push(aspettano === 1 ? "Una giacenza aspetta che tu la guardi." : `${aspettano} giacenze aspettano che tu le guardi.`);
+  return pezzi.length ? pezzi.join(" ").replace(/\.\./g, ".") : null;
+}

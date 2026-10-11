@@ -6,6 +6,7 @@ import { ALLERGENS, RECIPE_CATEGORIES, formatEUR, labelFor } from "../../lib/con
 import PrintButton from "../../components/PrintButton";
 import Didascalia from "../../components/Didascalia";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import FoglioCarta, { Masthead, Sprig, TitoloSezione } from "../../components/FoglioCarta";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 
 // Intestazioni al plurale per il menu stampato.
@@ -15,41 +16,6 @@ const CATEGORY_ORDER = [
   { value: "secondo", label: "Secondi" },
   { value: "dolce", label: "Dolci" },
 ];
-
-// Segno distintivo: un piccolo rametto d'ulivo, come la foglia del logo e
-// l'orto dell'azienda agricola. Separa le sezioni del menu.
-function Sprig() {
-  return (
-    <svg viewBox="0 0 150 22" width="120" height="18" className="mx-auto my-3 text-b58-olive" aria-hidden="true">
-      <line x1="0" y1="12" x2="58" y2="12" stroke="currentColor" strokeWidth="0.7" />
-      <line x1="92" y1="12" x2="150" y2="12" stroke="currentColor" strokeWidth="0.7" />
-      <path d="M75 12 C 75 5 80 2 87 3.5 C 84.5 9.5 80 12 75 12 Z" fill="currentColor" opacity="0.85" />
-      <path d="M75 12 C 75 5 70 2 63 3.5 C 65.5 9.5 70 12 75 12 Z" fill="currentColor" opacity="0.85" />
-      <line x1="75" y1="12" x2="75" y2="19" stroke="currentColor" strokeWidth="0.7" />
-    </svg>
-  );
-}
-
-function Masthead({ header, subheader }) {
-  const [logoOk, setLogoOk] = useState(true);
-  return (
-    <div className="text-center mb-2">
-      {logoOk ? (
-        <img
-          src="/logo-borgo58.png"
-          alt={header}
-          onError={() => setLogoOk(false)}
-          className="mx-auto h-20 md:h-24 object-contain"
-        />
-      ) : (
-        <>
-          <h2 className="font-display text-4xl text-b58-charcoal">{header}</h2>
-          {subheader && <p className="testo-sala tracking-[0.3em] uppercase text-b58-charcoal-soft mt-1">{subheader}</p>}
-        </>
-      )}
-    </div>
-  );
-}
 
 // 🔴 GLI ALLERGENI SI LEGGONO COL SEGNO «NON LETTO» (12/09/2026, mandato
 //    esteso, priorità 1). Prima una lettura fallita finiva nel `catch` dei
@@ -360,10 +326,7 @@ export default function EditorMenuHome() {
         />
       ) : (
         /* Anteprima menu — è ciò che viene stampato */
-        <div
-          className="mx-auto max-w-2xl bg-b58-parchment ring-1 ring-b58-charcoal/10 px-10 py-12 md:px-14 md:py-16 print:ring-0 print:max-w-none"
-          style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact", fontFamily: "var(--font-menu)" }}
-        >
+        <FoglioCarta>
           <Masthead header={header} subheader={subheader} />
           <Sprig />
 
@@ -372,9 +335,7 @@ export default function EditorMenuHome() {
             if (dishes.length === 0) return null;
             return (
               <section key={cat.value} className="mt-8 first:mt-6 break-inside-avoid">
-                <h3 className="text-center text-[1.6rem] leading-none text-b58-terracotta-dark tracking-[0.08em]" style={{ fontFamily: "var(--font-menu)", fontWeight: 500 }}>
-                  {cat.label}
-                </h3>
+                <TitoloSezione>{cat.label}</TitoloSezione>
                 <ul className="mt-5 space-y-5 max-w-lg mx-auto">
                   {dishes.map((d) => {
                     const scheda = allergensByRecipe[d.recipe_id];
@@ -457,7 +418,7 @@ export default function EditorMenuHome() {
               )}
             </p>
           )}
-        </div>
+        </FoglioCarta>
       )}
     </div>
   );

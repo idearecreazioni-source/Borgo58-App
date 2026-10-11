@@ -27,6 +27,7 @@ import {
   comeEAndata,
   componiDettato,
   creaRiconoscitore,
+  fraseDaDire,
   fraseDelMicrofono,
   riconoscitoreDisponibile,
   statoDettatura,
@@ -37,6 +38,13 @@ import AppuntoDaApprovare from "../../components/AppuntoDaApprovare";
 import RispostaMemo from "../../components/RispostaMemo";
 import { ambienteCorrente } from "../../lib/ambiente";
 import { segnaRegistrazione } from "../../lib/registrazioneInCorso";
+import {
+  impostaRispostaParlata,
+  parla,
+  rispostaParlataAccesa,
+  sbloccaVoce,
+  vocePresente,
+} from "../../lib/voceParlata";
 
 // =====================================================================
 // PARLA E BASTA — i comandi vocali
@@ -167,6 +175,11 @@ export default function Detta() {
     });
   }, [ascolto, spegni]);
 
+  // V2 (11/10/2026): dopo una giacenza dettata MEMO lo dice anche a voce.
+  const [parlata, setParlata] = useState(rispostaParlataAccesa);
+  const parlataRef = useRef(parlata);
+  parlataRef.current = parlata;
+
   const manda = useCallback(
     async (testo) => {
       if (!testo) {
@@ -216,6 +229,8 @@ export default function Detta() {
         //    la funzione senza numero non esiste. Dopo un «Approva» lo
         //    nascondeva il silenzio; dopo una scelta RIUSCITA la schermata
         //    diceva «Non è stato scritto niente — riprova».
+        // ⚠️ Prima di disegnare, così la voce parte insieme allo schermo.
+        if (parlataRef.current) parla(fraseDaDire(azioni));
         setRiscontro({
           ...comeEAndata(azioni),
           testo,
@@ -252,6 +267,7 @@ export default function Detta() {
     //    — il suono resterebbe muto sul telefono, e a schermo non si
     //    vedrebbe niente.
     preparaSuoni();
+    if (parlataRef.current) sbloccaVoce();
     suonatoRef.current = false;
 
     const rec = creaRiconoscitore();
@@ -611,6 +627,22 @@ export default function Detta() {
                   : `${frasi.length} cose sentite finora`}
             </span>
           </div>
+        )}
+
+        {/* V2: la risposta parlata si spegne qui, e la scelta vale per
+            questo dispositivo. Dove il browser non ha voce, non compare. */}
+        {vocePresente() && (
+          <label className="tocco-riga mt-2 inline-flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+            <input
+              type="checkbox"
+              checked={parlata}
+              onChange={(e) => {
+                setParlata(e.target.checked);
+                impostaRispostaParlata(e.target.checked);
+              }}
+            />
+            Dimmi a voce le giacenze segnate
+          </label>
         )}
 
         {stato && !ascolto && <p className="testo-sala mt-3 text-b58-charcoal-soft">{stato}</p>}

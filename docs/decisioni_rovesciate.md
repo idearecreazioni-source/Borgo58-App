@@ -154,8 +154,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 | 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
 | 97 | 10/10/2026 | un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma |
+| 98 | 11/10/2026 | la bozza si legge in una scheda, e si corregge in un modulo a parte |
 
-⚠️ **Righe: 98.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 99.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3592,3 +3593,30 @@ quando questa sezione è stata scritta.
    ricetta in cucina, non al momento di salvarla. Un elenco di 33 voci
    mostrato a chi sta solo collezionando ricette sembrava un obbligo, e
    avrebbe fatto smettere di usare il ricettario.
+
+## 98 · 11/10/2026 — «la bozza si legge in una scheda, e si corregge in un modulo a parte»
+
+1. **Cosa era stato deciso e quando.** Il **10/10/2026** (proposta #172,
+   `LetturaBozza.jsx`): la bozza si **legge** in una scheda — titolo, ingredienti
+   con la quantità in colonna, procedimento numerato con la fase a colori — e
+   «Modifica» apre **sotto** il modulo di prima, campo per campo con le sue
+   etichette.
+
+2. **La ragione di allora.** Il modulo era la parte che funzionava già: si è
+   rifatta la lettura, che era il problema segnalato, senza toccare la
+   scrittura.
+
+3. **Cosa si decide adesso** (Alessio, 11/10/2026, dopo la seconda ricetta
+   importata: *«non possiamo rendere la schermata nuova più leggibile anche
+   modificabile, in modo da avere una sola schermata e non usare l'altra che
+   è piuttosto confusionaria?»*). Una schermata sola, `SchedaBozza.jsx`:
+   «Modifica» trasforma **in posto** ogni dato nel suo campo, con la stessa
+   disposizione della lettura. Il modulo a parte è tolto. Il collegamento al
+   magazzino compare dentro la stessa scheda, sotto ogni ingrediente, solo
+   «in cucina».
+
+4. **Perché la ragione di allora non vale più.** Il modulo non era sbagliato,
+   ma con la scheda accanto diventava una **seconda versione** della stessa
+   ricetta: due disposizioni da confrontare a occhio per capire cosa si stava
+   cambiando. Il salvataggio resta lo stesso (ogni campo si salva da solo),
+   quindi non cambia niente nei dati.
