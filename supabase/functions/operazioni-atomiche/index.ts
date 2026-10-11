@@ -335,6 +335,13 @@ const OPERAZIONI = new Set([
   // ancora «da collocare», cioe' la stessa spesa collocabile una seconda
   // volta.
   "colloca_spesa",
+  // 🔴 E la via di ritorno (20261011000003): togliere il movimento,
+  // l'anticipo o il documento e riportare l'appunto fra quelli da
+  // collocare, insieme. A meta' resterebbe un appunto «da collocare» con
+  // il suo movimento ancora in prima nota: la stessa spesa contata due volte.
+  "annulla_collocazione_spesa",
+  // Una tabella sola, ma e' una cancellazione: passa di qui come le altre.
+  "elimina_spesa_da_collocare",
 ]);
 
 const CORS = {

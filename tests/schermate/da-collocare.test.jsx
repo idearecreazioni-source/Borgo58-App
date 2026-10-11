@@ -1,5 +1,5 @@
 import { MemoryRouter } from "react-router-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // «DA COLLOCARE» A SCHERMO (C12, 11/10/2026).
@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // si guarda che la schermata chieda ciò che serve, mandi i campi giusti,
 // tolga la foto quando la collocazione lo dice, e non collochi due volte.
 
-const api = vi.hoisted(() => ({ colloca: vi.fn(), togli: vi.fn() }));
+const api = vi.hoisted(() => ({ colloca: vi.fn(), togli: vi.fn(), annulla: vi.fn(), elimina: vi.fn(), fatte: vi.fn() }));
 
 const APERTE = [
   {
@@ -27,8 +27,10 @@ const APERTE = [
 
 vi.mock("../../src/lib/api/speseDaCollocare", () => ({
   listSpeseDaCollocare: vi.fn(async () => APERTE),
-  listSpeseCollocate: vi.fn(async () => []),
+  listSpeseCollocate: (...a) => api.fatte(...a),
   collocaSpesa: (...a) => api.colloca(...a),
+  annullaCollocazione: (...a) => api.annulla(...a),
+  eliminaSpesa: (...a) => api.elimina(...a),
   togliFotoSpesa: (...a) => api.togli(...a),
   urlFotoSpesa: vi.fn(async () => "https://foto.finta/x.jpg"),
 }));
@@ -55,7 +57,16 @@ const mostra = () =>
 beforeEach(() => {
   api.colloca.mockReset();
   api.togli.mockReset().mockResolvedValue();
+  api.annulla.mockReset();
+  api.elimina.mockReset();
+  api.fatte.mockReset().mockResolvedValue([]);
 });
+
+const COLLOCATA = {
+  id: "s9", provenienza: "voce", importo: 12, data: "2026-10-11", controparte: null,
+  descrizione: "spesa al panificio", natura_proposta: "prima_nota", foto_path: null,
+  stato: "collocata", collocata_in: "prima_nota", collocata_il: "2026-10-11T21:24:00Z",
+};
 
 const riga = (id) => document.querySelector(`[data-spesa="${id}"]`);
 
@@ -123,5 +134,44 @@ describe("Da collocare", () => {
     await waitFor(() => expect(api.colloca).toHaveBeenCalled());
     expect(api.colloca.mock.calls[0][2]).toMatchObject({ sezione: "fatture_ricevute", data: "2026-10-10" });
     expect(api.togli).not.toHaveBeenCalled();
+  });
+
+  // 🔴 LA VIA DI RITORNO (20261011000003, dal collaudo dell'11/10): una
+  //    spesa collocata nel posto sbagliato non si correggeva più.
+  it("🔴 una collocata si annulla, dicendo PRIMA cosa toglie, una volta sola", async () => {
+    let rispondi;
+    api.fatte.mockResolvedValue([COLLOCATA]);
+    api.annulla.mockImplementation(() => new Promise((r) => (rispondi = r)));
+    mostra();
+    fireEvent.click(await screen.findByRole("button", { name: "Annulla la collocazione" }));
+    expect(screen.getByText("Toglie il movimento dalla prima nota e la spesa torna da collocare.")).toBeTruthy();
+    const si = screen.getByRole("button", { name: "Sì, annulla" });
+    fireEvent.click(si);
+    fireEvent.click(si);
+    expect(api.annulla).toHaveBeenCalledTimes(1);
+    expect(api.annulla).toHaveBeenCalledWith("s9");
+    api.fatte.mockResolvedValue([]);
+    rispondi({ frase: "Tolto il movimento dalla prima nota: la spesa torna da collocare." });
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Annulla la collocazione" })).toBeNull());
+  });
+
+  it("«No, lascia stare» non annulla niente", async () => {
+    api.fatte.mockResolvedValue([COLLOCATA]);
+    mostra();
+    fireEvent.click(await screen.findByRole("button", { name: "Annulla la collocazione" }));
+    fireEvent.click(screen.getByRole("button", { name: "No, lascia stare" }));
+    expect(api.annulla).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Annulla la collocazione" })).toBeTruthy();
+  });
+
+  it("un appunto mai collocato si toglie, foto compresa, e lo dice prima", async () => {
+    api.elimina.mockResolvedValue({});
+    mostra();
+    await screen.findByText("cancelleria");
+    fireEvent.click(within(riga("s2")).getByRole("button", { name: "Togli l'appunto" }));
+    expect(screen.getByText(/foto compresa/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Sì, toglilo" }));
+    await waitFor(() => expect(riga("s2")).toBeNull());
+    expect(api.elimina).toHaveBeenCalledWith("s2");
   });
 });

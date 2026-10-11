@@ -47,6 +47,25 @@ export function eUnaSpesa(azione: AzioneDettata): boolean {
   return verso !== "entrata";
 }
 
+/**
+ * La riga che si legge sull'appunto prima di approvare.
+ *
+ * 🔴 SI SCRIVE QUI E NON SI TIENE QUELLA DEL MODELLO (11/10/2026, dal
+ *    collaudo): il modello la scrive pensando alla destinazione che avrebbe
+ *    scelto lui, e a schermo compariva «Uscita di cassa: 12 €…» su una spesa
+ *    che approvando NON va in cassa. Una riga che promette una destinazione
+ *    diversa da quella vera è la cosa peggiore da leggere prima di firmare.
+ */
+export function rigaDellaSpesa(d: Record<string, unknown>): string {
+  const n = typeof d.importo === "number" ? d.importo : Number(String(d.importo ?? "").replace(",", "."));
+  const euro =
+    d.importo != null && String(d.importo).trim() !== "" && Number.isFinite(n)
+      ? `${n.toFixed(2).replace(".", ",")} €`
+      : "importo non detto";
+  const cosa = testo(d.descrizione) ?? testo(d.fornitore);
+  return cosa ? `${euro} · ${cosa}` : euro;
+}
+
 /** Una spesa detta diventa un appunto da collocare. */
 export function daCollocare(azione: AzioneDettata, dettato = ""): AzioneDettata {
   if (!eUnaSpesa(azione)) return azione;
@@ -77,6 +96,7 @@ export function daCollocare(azione: AzioneDettata, dettato = ""): AzioneDettata 
     ...azione,
     tipo: TIPO_DA_COLLOCARE,
     destinazione: "Da collocare",
+    frase: rigaDellaSpesa(dati),
     sicuro: true,
     motivo:
       "Non è ancora contabilità: va fra le spese «Da collocare», e da lì scegli tu se è prima nota, la tua tasca, un anticipo o un documento da archiviare.",

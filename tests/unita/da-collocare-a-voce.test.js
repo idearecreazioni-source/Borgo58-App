@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TIPO_DA_COLLOCARE, collocaLeSpese, daCollocare, eUnaSpesa } from "../../supabase/functions/ascolta-voce/dacollocare.ts";
+import { TIPO_DA_COLLOCARE, collocaLeSpese, daCollocare, eUnaSpesa, rigaDellaSpesa } from "../../supabase/functions/ascolta-voce/dacollocare.ts";
 import { correggiSpese } from "../../supabase/functions/ascolta-voce/tasca.ts";
 
 // 🔴 DECISO DA ALESSIO L'11/10/2026: TUTTE le spese dette a MEMO vanno
@@ -71,5 +71,19 @@ describe("le spese dette vanno «da collocare»", () => {
   it("le altre cose dette passano intatte", () => {
     const g = { tipo: "giacenza", sicuro: true, dati: { quanto_ce: 3 } };
     expect(collocaLeSpese([g])[0]).toBe(g);
+  });
+
+  // 🔴 Dal collaudo dell'11/10: la riga del modello diceva «Uscita di
+  //    cassa» su una spesa che approvando NON va in cassa.
+  it("la riga sull'appunto non è quella del modello: importo e cosa", () => {
+    const a = daCollocare(detta({ importo: 12, descrizione: "spesa al panificio" }, { frase: "Uscita di cassa: 12 €" }));
+    expect(a.frase).toBe("12,00 € · spesa al panificio");
+    expect(a.frase).not.toMatch(/cassa/i);
+  });
+
+  it("senza importo lo dice, senza descrizione usa il fornitore", () => {
+    expect(rigaDellaSpesa({ fornitore: "Panificio Rossi" })).toBe("importo non detto · Panificio Rossi");
+    expect(rigaDellaSpesa({ importo: "7,5" })).toBe("7,50 €");
+    expect(rigaDellaSpesa({ importo: 0, descrizione: "x" })).toBe("0,00 € · x");
   });
 });

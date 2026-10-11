@@ -88,6 +88,35 @@ export async function collocaSpesa(id, dove, campi) {
   return eseguiOperazione("colloca_spesa", { p_id: id, p_dove: dove, p_campi: campi });
 }
 
+/**
+ * La via di ritorno: toglie il movimento, l'anticipo o il documento e
+ * riporta la spesa fra quelle da collocare. Restituisce la frase che dice
+ * cosa è stato tolto.
+ */
+export async function annullaCollocazione(id) {
+  return eseguiOperazione("annulla_collocazione_spesa", { p_id: id });
+}
+
+/**
+ * Toglie un appunto mai diventato contabilità (da collocare o ignorato).
+ * Prima la riga, poi il file: se il secondo passo fallisce il file resta
+ * orfano e lo trova `npm run deposito:orfani`.
+ */
+export async function eliminaSpesa(id) {
+  const esito = await eseguiOperazione("elimina_spesa_da_collocare", { p_id: id });
+  const path = esito?.foto_da_togliere;
+  if (path) {
+    const { error } = await supabase.storage.from(BUCKET).remove([path]);
+    if (error) {
+      return {
+        fotoRimasta:
+          "La spesa è tolta, ma la sua foto è rimasta nel deposito: non dà fastidio, e la trova il controllo dei file orfani.",
+      };
+    }
+  }
+  return {};
+}
+
 /** Dopo la collocazione la foto se ne va (tranne che in Archivio). */
 export async function togliFotoSpesa(id, path) {
   if (path) {

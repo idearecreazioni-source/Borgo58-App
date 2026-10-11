@@ -156,8 +156,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 97 | 10/10/2026 | un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma |
 | 98 | 11/10/2026 | la bozza si legge in una scheda, e si corregge in un modulo a parte |
 | 99 | 11/10/2026 | una spesa detta a voce va da sé nel soggetto che le parole indicano |
+| 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
 
-⚠️ **Righe: 100.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 101.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3650,3 +3651,33 @@ quando questa sezione è stata scritta.
    esattamente che una frase incompleta lasci una traccia invece di una
    registrazione sbagliata. ⚠️ Le entrate dette a voce **non** sono toccate:
    restano movimenti di cassa come prima.
+
+## 100 · 11/10/2026 — «una spesa si colloca una volta sola, e collocata non si tocca più»
+
+1. **Cosa era stato deciso e quando.** Lo stesso giorno, poche ore prima
+   (migrazione `20261011000002`): una spesa «Da collocare», una volta
+   collocata o ignorata, è ferma per sempre. Il guardiano sulla tabella
+   rifiutava ogni modifica e ogni cancellazione, e il legame `restrict`
+   impediva di togliere il movimento, l'anticipo o il documento nato da lei.
+
+2. **La ragione di allora.** La stessa spesa non deve finire in due posti:
+   ricollocarla liberamente avrebbe lasciato il primo dato dov'era e scritto
+   il secondo, cioè una spesa contata due volte.
+
+3. **Cosa si decide adesso** (dal collaudo con le mani dell'11/10 sera, per
+   costruire la pulizia delle prove che Alessio ha autorizzato). Una spesa
+   collocata **si annulla** (`annulla_collocazione_spesa`, migrazione
+   `20261011000003`): nella stessa transazione si toglie il movimento,
+   l'anticipo o il documento, e l'appunto torna «da collocare». Si respinge
+   solo l'anticipo già rimborsato, dove è uscito denaro vero. E un appunto
+   mai diventato contabilità — da collocare o ignorato — **si può togliere**.
+
+4. **La ragione di allora vale ancora, ed è dentro la forma nuova**: la
+   spesa resta in un posto solo alla volta, perché il ritorno toglie
+   l'effetto prima di permettere una seconda collocazione. Quello che si
+   abbandona è il «per sempre», che lasciava un vicolo cieco: chi metteva
+   una spesa sua in prima nota invece che nella tasca non aveva nessun gesto
+   per rimediare — la regola del 16/08, *ogni rifiuto vuole la sua via di
+   ritorno*. Il prezzo: il guardiano ammette un passo in più, nella sola
+   forma esatta del ritorno, e regge perché dal browser la tabella si legge
+   soltanto.

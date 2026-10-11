@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import {
+  annullaCollocazione,
   collocaSpesa,
+  eliminaSpesa,
   listSpeseCollocate,
   listSpeseDaCollocare,
   togliFotoSpesa,
@@ -62,7 +64,88 @@ function Foto({ path }) {
   );
 }
 
-function Riga({ spesa, elenchi, onCollocata }) {
+// 🔴 UN GESTO CHE TOGLIE SI CONFERMA SULLA RIGA, e la conferma dice COSA
+//    toglie: un «Sei sicuro?» generico si impara a premere senza leggere.
+//    Il secondo tocco ha la guardia sincrona come gli altri (27/08): chi
+//    non vede succedere niente ripreme.
+function GestoConConferma({ etichetta, domanda, conferma, onFai }) {
+  const [chiede, setChiede] = useState(false);
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState("");
+  const guardia = useRef(unaVoltaSola());
+
+  const fai = async () => {
+    if (!guardia.current.prendi("fai")) return;
+    setErrore("");
+    setLavoro(true);
+    try {
+      await onFai();
+    } catch (e) {
+      setErrore(e.message);
+      setLavoro(false);
+    } finally {
+      guardia.current.lascia("fai");
+    }
+  };
+
+  if (!chiede) {
+    return (
+      <button
+        type="button"
+        onClick={() => setChiede(true)}
+        className="tocco-bottone testo-sala mt-1 rounded-md border border-b58-charcoal/20 px-3 text-b58-charcoal"
+      >
+        {etichetta}
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2 rounded-lg bg-b58-cream-dark/40 p-2">
+      <p className="testo-sala text-b58-charcoal">{domanda}</p>
+      {errore && <p className="testo-sala mt-1 rounded bg-red-50 p-2 text-red-700">{errore}</p>}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={fai}
+          disabled={lavoro}
+          className="tocco-bottone rounded-lg bg-b58-terracotta px-4 font-medium text-b58-parchment disabled:opacity-60"
+        >
+          {lavoro ? "Lo sto facendo…" : conferma}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setChiede(false);
+            setErrore("");
+          }}
+          disabled={lavoro}
+          className="tocco-bottone rounded-lg border border-b58-charcoal/20 px-4 text-b58-charcoal"
+        >
+          No, lascia stare
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Cosa toglie l'annullamento, detto PRIMA di premere.
+function cosaToglie(s) {
+  if (s.stato === "ignorata") return "Non è andata da nessuna parte: torna solo fra quelle da collocare.";
+  switch (s.collocata_in) {
+    case "prima_nota":
+      return "Toglie il movimento dalla prima nota e la spesa torna da collocare.";
+    case "tasca":
+      return "Toglie il movimento dalla tua tasca e la spesa torna da collocare.";
+    case "anticipo":
+      return "Toglie l'anticipo e la spesa torna da collocare.";
+    case "archivio":
+      return "Toglie il documento dall'Archivio; la foto resta alla spesa, che torna da collocare.";
+    default:
+      return "La spesa torna da collocare.";
+  }
+}
+
+function Riga({ spesa, elenchi, onCollocata, onTolta, tornata }) {
   const [aperta, setAperta] = useState(false);
   const [dove, setDove] = useState(spesa.natura_proposta ?? "");
   const [campi, setCampi] = useState(() => campiIniziali(spesa));
@@ -98,6 +181,9 @@ function Riga({ spesa, elenchi, onCollocata }) {
 
   return (
     <li className="rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10" data-spesa={spesa.id}>
+      {/* L'esito dell'annullamento sta sulla riga che è tornata, non in
+          cima alla pagina: un esito lontano dal gesto non si vede (17/08). */}
+      {tornata && <p className="testo-sala mb-2 text-b58-olive-dark">{tornata}</p>}
       <div className="flex gap-3">
         {spesa.foto_path && <Foto path={spesa.foto_path} />}
         <div className="min-w-0 flex-1">
@@ -123,13 +209,25 @@ function Riga({ spesa, elenchi, onCollocata }) {
       </div>
 
       {!aperta ? (
-        <button
-          type="button"
-          onClick={() => setAperta(true)}
-          className="tocco-bottone mt-3 rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark"
-        >
-          Colloca
-        </button>
+        <div className="mt-3 flex flex-wrap items-start gap-2">
+          <button
+            type="button"
+            onClick={() => setAperta(true)}
+            className="tocco-bottone rounded-lg bg-b58-azione px-5 font-medium text-b58-parchment hover:bg-b58-azione-dark"
+          >
+            Colloca
+          </button>
+          <GestoConConferma
+            etichetta="Togli l'appunto"
+            domanda={
+              spesa.foto_path
+                ? "Lo tolgo del tutto, foto compresa. Non è contabilità, quindi nessun conto cambia."
+                : "Lo tolgo del tutto. Non è contabilità, quindi nessun conto cambia."
+            }
+            conferma="Sì, toglilo"
+            onFai={async () => onTolta(spesa.id, await eliminaSpesa(spesa.id))}
+          />
+        </div>
       ) : (
         <div className="mt-3 border-t border-b58-charcoal/10 pt-3">
           <fieldset>
@@ -320,6 +418,7 @@ export default function DaCollocare() {
   const [elenchi, setElenchi] = useState({ causali: [], conti: [], tag: [], sezioni: [] });
   const [errLettura, setErrLettura] = useState("");
   const [esiti, setEsiti] = useState({});
+  const [avviso, setAvviso] = useState("");
 
   const carica = () => {
     setErrLettura("");
@@ -352,7 +451,7 @@ export default function DaCollocare() {
 
   // Dopo la collocazione si ricarica solo ciò che è cambiato sul server: le
   // altre righe possono avere un modulo aperto a metà (trappola del 12/08).
-  // SILENZIO MOTIVATO (qui e in togliFoto): è solo l'elenco «di recente»,
+  // SILENZIO MOTIVATO: è solo l'elenco «di recente»,
   // che resta quello di prima; l'esito vero del gesto si vede già — la riga
   // sparisce dalle aperte, o il motivo compare sotto la riga toccata.
   const collocata = (id, dove, fotoRimasta) => {
@@ -361,10 +460,35 @@ export default function DaCollocare() {
     listSpeseCollocate().then(setFatte).catch(() => {});
   };
 
+  // ⚠️ Ricaricare le «aperte» qui NON butta il lavoro delle altre righe:
+  //    ogni riga tiene i suoi campi nel proprio stato, legato al suo id, e
+  //    un elenco riletto con gli stessi id le lascia com'erano.
+  const annullata = async (s) => {
+    const esito = await annullaCollocazione(s.id);
+    setEsiti((e) => ({ ...e, [s.id]: { tornata: esito?.frase ?? "La spesa è tornata da collocare." } }));
+    // ⚠️ Il gesto e' riuscito: se la rilettura fallisce non lo si fa
+    //    sembrare fallito — lo si dice, e la pagina si ricarica a mano.
+    try {
+      const [a, f] = await Promise.all([listSpeseDaCollocare(), listSpeseCollocate()]);
+      setAperte(a);
+      setFatte(f);
+    } catch {
+      setAvviso("Fatto, ma non riesco a rileggere l'elenco: ricarica la pagina per vederla fra quelle da collocare.");
+    }
+  };
+
+  const tolta = (id, esito) => {
+    setAperte((a) => (a ?? []).filter((s) => s.id !== id));
+    setFatte((f) => f.filter((s) => s.id !== id));
+    if (esito?.fotoRimasta) setAvviso(esito.fotoRimasta);
+  };
+
   const togliFoto = async (s) => {
     try {
       await togliFotoSpesa(s.id, s.foto_path);
       setEsiti((e) => ({ ...e, [s.id]: { ...(e[s.id] ?? {}), fotoRimasta: null } }));
+      // SILENZIO MOTIVATO: è solo l'elenco «di recente», che resta quello di
+      // prima; l'esito del gesto si vede già sotto la riga toccata.
       listSpeseCollocate().then(setFatte).catch(() => {});
     } catch (e) {
       setEsiti((x) => ({ ...x, [s.id]: { ...(x[s.id] ?? {}), fotoRimasta: e.message } }));
@@ -390,6 +514,8 @@ export default function DaCollocare() {
         Le spese dette a MEMO o fotografate. Non sono ancora contabilità: scegli tu dove vanno, una volta sola.
       </p>
 
+      {avviso && <p className="testo-sala mb-3 text-b58-ambra-dark">{avviso}</p>}
+
       {aperte.length === 0 ? (
         <p className="rounded-xl bg-b58-parchment p-4 text-b58-charcoal-soft ring-1 ring-b58-charcoal/10">
           Niente da collocare.
@@ -397,7 +523,14 @@ export default function DaCollocare() {
       ) : (
         <ul className="space-y-3">
           {aperte.map((s) => (
-            <Riga key={s.id} spesa={s} elenchi={elenchi} onCollocata={collocata} />
+            <Riga
+              key={s.id}
+              spesa={s}
+              elenchi={elenchi}
+              onCollocata={collocata}
+              onTolta={tolta}
+              tornata={esiti[s.id]?.tornata}
+            />
           ))}
         </ul>
       )}
@@ -420,15 +553,33 @@ export default function DaCollocare() {
                 {esiti[s.id]?.fotoRimasta && (
                   <p className="testo-sala text-b58-ambra-dark">{esiti[s.id].fotoRimasta}</p>
                 )}
-                {s.foto_path && s.collocata_in !== "archivio" && (
-                  <button
-                    type="button"
-                    onClick={() => togliFoto(s)}
-                    className="tocco-bottone testo-sala mt-1 rounded-md border border-b58-charcoal/20 px-3 text-b58-charcoal"
-                  >
-                    Togli la foto
-                  </button>
-                )}
+                <div className="flex flex-wrap items-start gap-2">
+                  {s.foto_path && s.collocata_in !== "archivio" && (
+                    <button
+                      type="button"
+                      onClick={() => togliFoto(s)}
+                      className="tocco-bottone testo-sala mt-1 rounded-md border border-b58-charcoal/20 px-3 text-b58-charcoal"
+                    >
+                      Togli la foto
+                    </button>
+                  )}
+                  {/* 🔴 LA VIA DI RITORNO (20261011000003): senza, una spesa
+                      messa nel posto sbagliato non si correggeva più. */}
+                  <GestoConConferma
+                    etichetta={s.stato === "ignorata" ? "Rimettila da collocare" : "Annulla la collocazione"}
+                    domanda={cosaToglie(s)}
+                    conferma={s.stato === "ignorata" ? "Sì, rimettila" : "Sì, annulla"}
+                    onFai={() => annullata(s)}
+                  />
+                  {s.stato === "ignorata" && (
+                    <GestoConConferma
+                      etichetta="Togli del tutto"
+                      domanda="La tolgo del tutto. Era ignorata, quindi nessun conto cambia."
+                      conferma="Sì, toglila"
+                      onFai={async () => tolta(s.id, await eliminaSpesa(s.id))}
+                    />
+                  )}
+                </div>
               </li>
             ))}
           </ul>
