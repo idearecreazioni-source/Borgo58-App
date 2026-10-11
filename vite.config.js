@@ -44,6 +44,13 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
 
+    // ⚠️ L'ELENCO DEI PEZZI, scritto dalla compilazione (11/10/2026). Da
+    //    quando le pagine pubbliche partono da sole il codice e' in piu'
+    //    pezzi, e `scripts/peso-pacchetto.mjs` deve sapere QUALI scarica chi
+    //    prenota e quali chi apre il gestionale. Questo file lo dice senza
+    //    indovinarlo dal testo compilato. Contiene solo nomi di file.
+    build: { manifest: true },
+
     // 🔴 L'APP RICEVE UNA STRINGA GIÀ VALIDATA, non la variabile.
     //
     // Non esiste una seconda lettura che possa divergere: c'è una sorgente
