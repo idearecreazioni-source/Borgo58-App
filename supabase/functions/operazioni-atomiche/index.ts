@@ -329,6 +329,12 @@ const OPERAZIONI = new Set([
   // transazione (20261010000002). A meta' resterebbe una bozza col titolo e
   // senza ricetta, che sembra solo incompleta.
   "crea_bozza_da_lettura",
+  // 🔴 Le spese «Da collocare» (20261011000002): il dato definitivo — un
+  // movimento, un anticipo o un documento — e il segno sull'appunto in una
+  // transazione. A meta' resterebbe un movimento scritto con l'appunto
+  // ancora «da collocare», cioe' la stessa spesa collocabile una seconda
+  // volta.
+  "colloca_spesa",
 ]);
 
 const CORS = {

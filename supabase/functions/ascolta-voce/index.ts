@@ -35,6 +35,7 @@ import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { correggiDestinazioni } from "./destinazioni.ts";
 import { correggiSpese } from "./tasca.ts";
+import { collocaLeSpese } from "./dacollocare.ts";
 import { correggiAgenda, istruzioniAgenda } from "./agenda.ts";
 // Il giorno E l'ora di adesso, nel fuso del locale (16/09/2026): senza
 // l'ora, «fra cinque minuti» non ha un punto di partenza.
@@ -597,6 +598,12 @@ Deno.serve(async (req) => {
   //    interpretazione, e il 07/09 ci aveva scritto «anticipati» sopra una
   //    spesa che Alessio aveva detto essere di tasca sua.
   azioni = correggiSpese(azioni, testo);
+
+  // 🔴 E POI TUTTE LE SPESE VANNO «DA COLLOCARE» (11/10/2026, decisione di
+  //    Alessio): la regola qui sopra non scrive piu' in un soggetto, decide
+  //    soltanto la destinazione PROPOSTA. La scelta vera la fa lui, una
+  //    volta sola, dall'elenco. Vedi dacollocare.ts.
+  azioni = collocaLeSpese(azioni, testo);
 
   // 🔴 E SULL'AGENDA CI SONO TRE COSE, non una: creare un impegno, chiuderne
   //    uno che esiste, spostarne uno che esiste. Il gestionale sa fare solo

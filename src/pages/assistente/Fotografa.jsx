@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ScattaFoto from "../../components/ScattaFoto";
 import Didascalia from "../../components/Didascalia";
 import DatoNonLetto from "../../components/DatoNonLetto";
@@ -11,7 +11,9 @@ import {
   sbloccaSpesaAi,
   spesaAiDelMese,
 } from "../../lib/api/assistenteFoto";
-import { formatEUR } from "../../lib/constants";
+import { formatDate, formatEUR } from "../../lib/constants";
+import { annotaSpesaDaFoto } from "../../lib/api/speseDaCollocare";
+import { appuntoDaLettura } from "../../lib/calcoli/daCollocare";
 
 // Fotografa qualcosa e lascia che l'assistente dica cos'è.
 //
@@ -34,6 +36,24 @@ export default function Fotografa() {
   const [chiTetto, setChiTetto] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState("");
+  // 🔴 UNO SCONTRINO VA «DA COLLOCARE» DA SÉ (11/10/2026, C12, decisione di
+  //    Alessio: tutte le spese fotografate passano di lì). Non è
+  //    contabilità, quindi non chiede conferma: la scelta vera si fa
+  //    collocandolo. `spesa` è lo stato di quel salvataggio — in corso,
+  //    fatto, o fallito col perché.
+  const [spesaFoto, setSpesaFoto] = useState(null);
+  const [ultimaFoto, setUltimaFoto] = useState(null);
+
+  const mettiDaCollocare = useCallback(async (letta, pronta) => {
+    const campi = appuntoDaLettura(letta);
+    setSpesaFoto({ stato: "salvo", campi });
+    try {
+      await annotaSpesaDaFoto(campi, pronta);
+      setSpesaFoto({ stato: "fatto", campi });
+    } catch (e) {
+      setSpesaFoto({ stato: "errore", campi, errore: e.message });
+    }
+  }, []);
 
   const ricarica = useCallback(() => {
     leggi(spesaAiDelMese()).then((s) => {
@@ -96,7 +116,12 @@ export default function Fotografa() {
       <ScattaFoto
         genere="qualunque"
         gestoInBasso
-        onLetto={(risposta) => setEsito(risposta)}
+        onLetto={(risposta, pronta) => {
+          setEsito(risposta);
+          setUltimaFoto(pronta);
+          setSpesaFoto(null);
+          if (risposta?.esito === "letta" && risposta.acquisto) mettiDaCollocare(risposta, pronta);
+        }}
       />
 
       {/* ------------------------------------------------------------- */}
@@ -129,6 +154,49 @@ export default function Fotografa() {
             La scheda si apre già riempita: la controlli e la salvi tu. Finché non salvi non è
             stato scritto niente.
           </Didascalia>
+        </div>
+      )}
+
+      {/* 🔴 LO SCONTRINO: dove è finito, e che cosa ha capito MEMO. */}
+      {esito?.esito === "letta" && esito.acquisto && spesaFoto && (
+        <div
+          data-spesa-foto
+          className={`testo-sala mt-4 rounded-lg p-4 ${
+            spesaFoto.stato === "errore" ? "bg-b58-terracotta/10 text-b58-terracotta-dark" : "bg-emerald-50 text-emerald-900"
+          }`}
+        >
+          <p className="font-semibold">
+            {esito.riconosciuto === "fattura" ? "È una fattura" : "È una spesa"}
+            {spesaFoto.campi.importo != null && <>: {formatEUR(spesaFoto.campi.importo)}</>}
+            {spesaFoto.campi.controparte && <> · {spesaFoto.campi.controparte}</>}
+            {spesaFoto.campi.data && <> · {formatDate(spesaFoto.campi.data)}</>}
+          </p>
+          {spesaFoto.campi.importo == null && (
+            <p className="mt-1 text-amber-900">Non ho letto l&apos;importo: lo scrivi tu quando la collochi.</p>
+          )}
+          {spesaFoto.campi.incertezza && <p className="mt-1 text-amber-900">{spesaFoto.campi.incertezza}</p>}
+          {spesaFoto.stato === "salvo" && <p className="mt-2">La metto fra le spese da collocare…</p>}
+          {spesaFoto.stato === "fatto" && (
+            <p className="mt-2">
+              L&apos;ho messa fra le spese <strong>da collocare</strong>, con la foto: non è ancora
+              contabilità.{" "}
+              <Link to="/cassa/da-collocare" className="underline">
+                Apri «Da collocare»
+              </Link>
+            </p>
+          )}
+          {spesaFoto.stato === "errore" && (
+            <>
+              <p className="mt-2">Non sono riuscito a metterla da parte: {spesaFoto.errore}</p>
+              <button
+                type="button"
+                onClick={() => mettiDaCollocare(esito, ultimaFoto)}
+                className="tocco-bottone testo-sala mt-2 rounded-md bg-b58-charcoal px-4 py-2 font-semibold text-white"
+              >
+                Riprova
+              </button>
+            </>
+          )}
         </div>
       )}
 
