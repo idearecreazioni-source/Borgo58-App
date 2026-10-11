@@ -20,6 +20,11 @@ export default function Sidebar({ onNavigate, sopra = null }) {
   const visibleModules = MODULES.filter(
     (m) => (isTitolare || m.staffVisible) && !m.porte
   );
+  // ⚠️ I moduli messi da parte (11/10/2026: l'Agricolo, finché l'azienda
+  //    agricola non nasce) restano raggiungibili, ma in fondo e separati:
+  //    non devono stare fra i gesti di tutti i giorni.
+  const inUso = visibleModules.filter((m) => !m.daParte);
+  const daParte = visibleModules.filter((m) => m.daParte);
 
   // 🔴 ANCHE QUESTE SONO RIGHE DA TOCCARE (22/08). Misuravano 5,07 mm di
   // altezza e 1,89 di testo: sul computer è un menu, ma **sugli schermi
@@ -85,12 +90,29 @@ export default function Sidebar({ onNavigate, sopra = null }) {
           Moduli
         </div>
 
-        {visibleModules.map((m) => (
+        {inUso.map((m) => (
           <NavLink
             key={m.id}
             to={m.route ?? `/moduli/${m.id}`}
             onClick={onNavigate}
             className={linkClasses}
+          >
+            <Icon name={m.icon} className="w-4 h-4" />
+            <span className="truncate">{m.name}</span>
+          </NavLink>
+        ))}
+
+        {daParte.length > 0 && (
+          <div className="pt-4 pb-1 px-3 testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft/60">
+            Messo da parte
+          </div>
+        )}
+        {daParte.map((m) => (
+          <NavLink
+            key={m.id}
+            to={m.route ?? `/moduli/${m.id}`}
+            onClick={onNavigate}
+            className={(stato) => `${linkClasses(stato)} opacity-70`}
           >
             <Icon name={m.icon} className="w-4 h-4" />
             <span className="truncate">{m.name}</span>

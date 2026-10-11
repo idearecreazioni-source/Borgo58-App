@@ -40,9 +40,9 @@ export default function ModulePlaceholder() {
         {/* 🔴 UN MODULO CHE C'È NON SI DICE «NON SVILUPPATO» — 27/08/2026.
             Chi arriva qui a mano su un modulo che ha le sue porte altrove
             deve trovarci le porte, non una frase che è diventata falsa.
-            ⚠️ Per gli altri due — Ricerca Ricorrente e Monitoraggio Social —
-               la frase è ancora VERA: misurato, non hanno nessuna schermata.
-               Si corregge quello che è diventato falso, non tutto. */}
+            ⚠️ Gli altri due segnaposto — Ricerca Ricorrente e Monitoraggio
+               Social — sono stati TOLTI l'11/10/2026 (decisione di Alessio):
+               oggi questa pagina serve solo a chi ha le porte altrove. */}
         {module.porte ? (
           <div className="mt-8 rounded-xl border border-b58-charcoal/15 p-6">
             <p className="text-b58-charcoal-soft">

@@ -261,6 +261,8 @@ Nati dall'audit del 05/08/2026 e da bug reali. **Principio sopra i protocolli: p
 
 **Tutti i 15 moduli del brief hanno un'implementazione funzionante.** Ricettario, Agenda, Fatture Fornitori (manuale), Magazzino, Cassa/Prima Nota, Calendario Eventi, HACCP, Agricolo, Proiezione Fiscale, Ricerca Ricorrente (placeholder), Personale, Monitoraggio Social (placeholder), Editor Menu, Assistente AI (placeholder), Archivio Documenti.
 
+⚠️ **11/10/2026, decisione di Alessio**: **Ricerca Ricorrente e Monitoraggio Social sono TOLTI** (erano due segnaposto senza schermate), e **l'Agricolo è messo da parte** — resta intero e raggiungibile, ma nel menu scende in fondo sotto «Messo da parte» (`daParte` in `src/data/modules.js`) finché l'azienda agricola non nasce. ⚠️ La riga «Monitoraggio social» nel Contratto (§5) non è stata toccata: il Contratto si cambia solo con un commit approvato da Alessio.
+
 **Chiuso di recente:**
 - **L'assistente legge le etichette, e ogni allergene dice da dove viene (25/08, sera)** — il motore per qualunque foto più la prima destinazione. Riepilogo in [l'assistente che legge le foto](docs/consegne/20260825_l_assistente_che_legge_le_foto.md). **In produzione 247**; cinque migrazioni nuove (`20260825000013`→`…017`) aspettano il push.
   - 🔴 **LA FOTO NON VIENE MAI SALVATA, e la verifica chiesta dal mandato diventa una PROPRIETÀ**: vive nella memoria del browser fra lo scatto e la conferma, viaggia dentro la richiesta e finisce lì — non tocca il deposito, non tocca il database. *Non si cancella ciò che non è mai stato scritto.* ⚠️ Prezzo dichiarato: ricaricando la pagina prima di confermare, la foto va rifatta.
