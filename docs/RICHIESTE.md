@@ -54,11 +54,11 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **87 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**21 in attesa** · **6 in corso** · **56 fatte** · **4 scartate da lui**.
+**20 in attesa** · **7 in corso** · **56 fatte** · **4 scartate da lui**.
 La somma fa **87**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **27** ancora aperte, **4** si possono fare adesso e
+Delle **27** ancora aperte, **3** si possono fare adesso e
 **18** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
@@ -223,7 +223,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | N13 | **L'annata diventa un campo suo**, fuori dalla descrizione della confezione. Con quaranta etichette e due annate dello stesso vino è il motivo per cui la proposta dell'abbinamento sbaglia. Va fatto PRIMA che carichi le etichette: dopo è una rilavorazione. | 31/08/2026 | Sua decisione | — | fatta · migrazione `20260831000002`, e l'ordine al fornitore ora la dice (`20260831000003`) |
 | N14 | **Il segno «questo va in carta» sul prodotto.** In magazzino c'è anche il vino da cucina, l'acqua del personale, la birra del bar: sulla carta va solo ciò che si vende al cliente. ⚠️ I sette mondi non bastano — dentro «Vini» ci sono bottiglie che in carta non ci vanno. | 31/08/2026 | Sua decisione | — | fatta · migrazione `20260831000002` |
 | N15 | **L'editor della carta dei vini come quello del menu**, e dentro ci va ciò che sta in magazzino ed è segnato «va in carta». ⚠️ Un prodotto NON è una riga di carta: la stessa bottiglia ci sta due volte, al calice e alla bottiglia. | 31/08/2026 | Sua decisione | si può fare adesso | fatta · solo la parte dei prodotti — il menu passa da 116 voci a quelle segnate. ⚠️ **La somiglianza di FORMA con l'editor del menu non è stata fatta** |
-| N19 | **L'editor della carta dei vini nella FORMA dell'editor del menu** — la parte di N15 che non è stata fatta. Un prodotto di magazzino non è automaticamente una riga di carta: la stessa bottiglia può starci al calice e in bottiglia. | 11/10/2026 | [relazione dell'11/10](proposte/20261011_le_migliorie_ancora_aperte.md) | si può fare adesso | in attesa |
+| N19 | **L'editor della carta dei vini nella FORMA dell'editor del menu** — la parte di N15 che non è stata fatta. Un prodotto di magazzino non è automaticamente una riga di carta: la stessa bottiglia può starci al calice e in bottiglia. | 11/10/2026 | [relazione dell'11/10](proposte/20261011_le_migliorie_ancora_aperte.md) | — | in corso · proposta #177: la carta dei vini ha il suo FOGLIO STAMPATO, con gli stessi pezzi del menu (logo, rametto, titoli di sezione), e una bottiglia al calice e in bottiglia vi compare come un vino solo con due prezzi. ⚠️ La parte dove si inseriscono le voci è rimasta com'era |
 | N16 | **E1 · Sotto scorta → nasce l'ordine.** | 31/08/2026 | Sua richiesta | — | fatta · 🔴 **misurato il 31/08: la catena c'era già intera** — un vino sotto scorta entra da sé in lista, arriva nella bozza e il testo si scrive da solo. Nessun codice nuovo |
 | N17 | **E2 · L'ordine si scrive da solo col listino del fornitore**, con le parole del fornitore e non con quelle di Alessio. | 31/08/2026 | Sua richiesta | — | fatta · `bozza_ordine` lo faceva già; quello che mancava davvero era **l'annata nell'ordine** (`20260831000003`): con due annate a catalogo il fornitore non sa quale mandare, e sbaglia in silenzio |
 | N18 | **E3 · La carta vecchia.** Non a giacenza zero — quella capita ogni settimana e un'allerta che suona sempre si impara a ignorare. L'allerta è sulla CARTA: porta la data dell'ultima stampa, quante etichette sono entrate e uscite da allora, e da quanti giorni è ferma. | 31/08/2026 | Sua richiesta, approvata in questa forma | — | fatta · migrazione `20260831000003` (`carta_da_ristampare`, `segna_carta_stampata`). ⚠️ **La schermata non è stata costruita**: il gestionale sa rispondere, nessuno glielo chiede ancora |
