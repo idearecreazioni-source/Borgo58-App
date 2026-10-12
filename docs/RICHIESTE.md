@@ -54,7 +54,7 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **87 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**19 in attesa** · **8 in corso** · **56 fatte** · **4 scartate da lui**.
+**18 in attesa** · **9 in corso** · **56 fatte** · **4 scartate da lui**.
 La somma fa **87**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
