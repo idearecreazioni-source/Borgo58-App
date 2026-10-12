@@ -27,7 +27,7 @@ aggiunti in fondo, alla voce § 7, dopo `--conferma`.
 | `20261011000001` | «Estrapola la spesa» dalle ricette (`estrapola_ricette`, R11) | già applicata: il primo `npm run prova:migra` dell'11/10 sera ne ha trovata **una sola** da applicare, la `…002` | da applicare |
 | `20261011000002` | le spese «Da collocare» (C12): tabella, guardiano, `annota_spesa_da_collocare`, `colloca_spesa`, `togli_foto_spesa`, il tipo vocale `spesa_da_collocare` e il suo ramo in `fai_azione_dettata` | applicata **al secondo giro** (vedi § 4) | da applicare |
 | `20261011000003` | la via di ritorno: `annulla_collocazione_spesa`, `elimina_spesa_da_collocare`, il guardiano che ammette il solo ritorno, le frasi sui tre legami | applicata | da applicare |
-| `20261011000004` | una foto, un appunto: `spese_da_collocare.chiave` (unica) e `annota_spesa_da_collocare` che alla stessa chiave restituisce l'appunto già scritto | **da applicare** (provata solo in locale, vedi § 3-bis) | da applicare |
+| `20261011000004` | una foto, un appunto: `spese_da_collocare.chiave` (unica) e `annota_spesa_da_collocare` che alla stessa chiave restituisce l'appunto già scritto | applicata il 12/10 alle 14:49 da Alessio: verifica «Fatto», **419** migrazioni registrate sulla prova | da applicare |
 
 Nessuna va saltata. Comando previsto: `npm run migra -- --conferma`, dopo
 l'unione su `master` (il freno `nonAncoraSuGitHub` guarda `origin/master`).
@@ -142,8 +142,9 @@ fotografie):**
 
 ## 5 · Cosa NON è verificato
 
-* Nessuna delle quattro migrazioni è in produzione, e la `…004` non è
-  ancora nemmeno sulla prova. Nessuna funzione è installata
+* Nessuna delle quattro migrazioni è in produzione.
+* Il «Riprova» con una rete che cade davvero non l'ha fatto nessuna mano:
+  lo provano la verifica della `…004` (sulla prova) e la prova a schermo. Nessuna funzione è installata
   in produzione.
 * La `…003` non è stata vista girare in un database Supabase **da me**: la sua
   applicazione sulla prova l'ha lanciata Alessio, e la fine di
