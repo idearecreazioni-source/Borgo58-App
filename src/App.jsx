@@ -65,6 +65,7 @@ import Causali from "./pages/cassa/Causali";
 import Previsione from "./pages/cassa/Previsione";
 import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
+import DaCollocare from "./pages/cassa/DaCollocare";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
 import CostoProgetto from "./pages/cassa/CostoProgetto";
@@ -285,6 +286,7 @@ function AppRoutes() {
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
         {/* ⚠️ Titolare-only: chi ha prestato soldi ad Alessio e quanto
             gliene deve ancora è un fatto suo e di quelle persone. */}
+        <Route path="/cassa/da-collocare" element={<RequireTitolare><DaCollocare /></RequireTitolare>} />
         <Route path="/cassa/prestiti" element={<RequireTitolare><Prestiti /></RequireTitolare>} />
         <Route path="/cassa/scontrinato" element={<RequireTitolare><Scontrinato /></RequireTitolare>} />
         {/* Comande (§3.2, §4 mod. 5): staff-accessibile, voce propria in

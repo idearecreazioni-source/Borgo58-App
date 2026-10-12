@@ -55,7 +55,14 @@ titolo("I file del deposito che nessun documento nomina");
 const files = await elenca();
 const righe = interroga(
   dbUrl,
-  "select storage_path from documents where storage_path is not null;"
+  // 🔴 ANCHE LE FOTO DELLE SPESE «DA COLLOCARE» SONO NOMINATE (11/10/2026):
+  //    vivono nello stesso deposito finche' la spesa non e' collocata, e
+  //    senza questa riga `--conferma` le toglierebbe — cioe' l'originale su
+  //    cui Alessio deve ancora decidere. Se la tabella non c'e' ancora (la
+  //    migrazione 20261011000002 non e' applicata) la richiesta fallisce e lo
+  //    script si ferma: meglio fermi che un elenco corto.
+  "select storage_path from documents where storage_path is not null " +
+    "union select foto_path from spese_da_collocare where foto_path is not null;"
 )
   .split(String.fromCharCode(10))
   .map((r) => r.trim())

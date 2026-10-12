@@ -78,6 +78,14 @@ export default function ScattaFoto({
         //    ha detto che non sa dove metterla — e lo dice invece di
         //    incastrarla dove non va.
         setAvviso(esito?.messaggio ?? "Non ho riconosciuto questa foto.");
+      } else if (genere === "etichetta" && esito.riconosciuto !== "etichetta") {
+        // 🔴 UNO SCONTRINO FOTOGRAFATO DALLA SCHEDA DI UN PRODOTTO (11/10/2026):
+        //    la lettura riesce, ma qui non c'è niente da compilare. Senza
+        //    questa riga la foto sparirebbe in silenzio — e chi l'ha scattata
+        //    crederebbe di averla messa da qualche parte.
+        setAvviso(
+          "Questa sembra una spesa, non un'etichetta: per metterla fra le spese da collocare fotografala da MEMO foto."
+        );
       }
       onLetto?.(esito, pronta);
     } catch (err) {

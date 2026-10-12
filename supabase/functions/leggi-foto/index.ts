@@ -63,22 +63,24 @@ const ISTRUZIONI = `Sei l'assistente di Borgo 58, un'osteria a Piazza Armerina (
 Rispondi SOLO con un oggetto JSON, senza testo attorno e senza blocchi di codice.
 
 {
-  "riconosciuto": "etichetta" | "bolla" | "fattura" | "altro",
+  "riconosciuto": "etichetta" | "spesa" | "bolla" | "fattura" | "altro",
   "sicuro": true | false,
   "cosa_vedo": "una frase breve in italiano che descrive la foto",
-  "scheda": { ... } | null
+  "scheda": { ... } | null,
+  "spesa": { ... } | null
 }
 
 PRIMA COSA: CHE COS'È QUESTA FOTO
 - "etichetta": l'etichetta di un prodotto alimentare o di un prodotto per la pulizia — un barattolo, una confezione, un sacco. Ha un nome commerciale, di solito un peso, spesso un elenco di ingredienti.
 - "bolla": un documento di trasporto o di consegna di un fornitore, con un elenco di righe di merce.
-- "fattura": una fattura, con importi, imponibile, IVA.
+- "spesa": uno scontrino o una ricevuta di un acquisto fatto da una persona — il supermercato, la cartolibreria, la ferramenta, il rifornimento di carburante, la ricevuta di un acquisto online (per esempio Temu o Amazon), lo scontrino del POS. Dice quanto si è pagato, di solito a chi e quando.
+- "fattura": una fattura, con numero, imponibile, IVA, intestata a un'azienda.
 - "altro": qualunque altra cosa — una persona, un piatto pronto, un paesaggio, un foglio bianco, una schermata.
 
-"sicuro" vale true SOLO se non hai dubbi su quale delle quattro sia. Se la foto è mossa, tagliata, troppo scura, o potrebbe essere due cose diverse, metti false. Non è un voto sulla tua bravura: è quello che decide se il gestionale va avanti da solo o si ferma a chiedere. Sbagliare dicendo "sicuro" costa molto di più che ammettere un dubbio.
+"sicuro" vale true SOLO se non hai dubbi su quale delle cinque sia. Se la foto è mossa, tagliata, troppo scura, o potrebbe essere due cose diverse, metti false. Non è un voto sulla tua bravura: è quello che decide se il gestionale va avanti da solo o si ferma a chiedere. Sbagliare dicendo "sicuro" costa molto di più che ammettere un dubbio.
 
 SECONDA COSA: SE È UN'ETICHETTA, COMPILA LA SCHEDA
-Solo per "etichetta", riempi "scheda" così (per bolla, fattura e altro metti null):
+Solo per "etichetta", riempi "scheda" così (per spesa, bolla, fattura e altro metti null):
 
 "scheda": {
   "nome": "il nome del prodotto come lo scriveresti in un ricettario, breve",
@@ -128,6 +130,21 @@ Nel dubbio fra "etichetta" e "dedotto", scegli "dedotto": dire «l'ho letto» qu
 NON dichiarare mai allergeni da contaminazione («può contenere tracce di…»), nemmeno se sono scritti in etichetta: hanno un campo loro nel gestionale e non vanno in questo elenco.
 
 Se l'elenco ingredienti non si legge — foto storta, sfocata, scritta troppo piccola, confezione piegata — NON tirare a indovinare l'elenco: metti "ingredienti_letti": null, indica solo gli allergeni che ti senti di dedurre dal tipo di prodotto con origine "dedotto", e metti "sicuro": false.
+
+TERZA COSA: SE È UNA SPESA O UNA FATTURA, DI' QUANTO E A CHI
+Solo per "spesa" e "fattura", riempi "spesa" così (per le altre metti null):
+
+"spesa": {
+  "importo": il TOTALE pagato, come numero (18.40), oppure null se non si legge,
+  "data": "AAAA-MM-GG" com'è stampata, oppure null,
+  "esercente": "a chi si è pagato, com'è scritto (il nome del negozio o del venditore)", oppure null,
+  "cosa": "che cosa si è comprato, in poche parole italiane («cancelleria», «gasolio», «detersivi»)", oppure null,
+  "documento": "scontrino" | "fattura" | "non_documentato",
+  "dubbi": "che cosa non si legge o non ti è chiaro, in una frase", oppure null
+}
+
+⚠️ L'IMPORTO È IL TOTALE PAGATO, non una riga e non l'imponibile. Se ci sono più totali e non sai quale sia quello pagato, metti null e dillo in "dubbi": un importo sbagliato finisce nei conti, uno mancante si chiede.
+⚠️ Una ricevuta di un acquisto online, una conferma d'ordine o una ricevuta di pagamento NON sono uno scontrino fiscale: per quelle "documento" è "non_documentato".
 
 REGOLE
 1. Non inventare codici, categorie o unità fuori dagli elenchi.
@@ -380,25 +397,26 @@ Deno.serve(async (req) => {
   const sicuro = letto?.sicuro === true;
   const cosaVedo = String(letto?.cosa_vedo ?? "");
 
-  // ⚠️ LA DESTINAZIONE CHE NON C'È ANCORA. Bolle e fatture il modello le
-  //    riconosce — e le riconoscerà — ma in questo mandato non c'è dove
-  //    metterle. Si DICE, chiaro, e ci si ferma: incastrare una bolla
-  //    nella scheda di un prodotto produrrebbe un dato falso che nessun
-  //    errore segnalerebbe.
+  // ⚠️ LA DESTINAZIONE CHE NON C'È ANCORA. Le bolle il modello le
+  //    riconosce, ma non c'è dove metterle. Si DICE, chiaro, e ci si ferma:
+  //    incastrare una bolla nella scheda di un prodotto produrrebbe un dato
+  //    falso che nessun errore segnalerebbe.
+  // 🔴 SCONTRINI, RICEVUTE E FATTURE UNA DESTINAZIONE CE L'HANNO (11/10/2026,
+  //    C12): l'elenco «Da collocare». Qui si legge e basta — la foto la
+  //    conserva il browser nel deposito, e l'appunto lo scrive lui: questa
+  //    funzione continua a non salvare niente.
   let esito = "letta";
   let messaggio: string | null = null;
 
-  if (riconosciuto === "bolla" || riconosciuto === "fattura") {
+  if (riconosciuto === "bolla") {
     esito = "destinazione_mancante";
     messaggio =
-      riconosciuto === "bolla"
-        ? "Ho letto una bolla di consegna, ma non so ancora dove metterla: il gestionale non l'ha ancora imparata. Per ora si registra a mano."
-        : "Ho letto una fattura, ma non so ancora dove metterla: il gestionale non l'ha ancora imparata. Per ora si registra a mano.";
+      "Ho letto una bolla di consegna, ma non so ancora dove metterla: il gestionale non l'ha ancora imparata. Per ora si registra a mano.";
   } else if (riconosciuto === "altro") {
     esito = "non_riconosciuta";
     messaggio = cosaVedo
       ? `Questa non sembra una cosa che so leggere. Vedo: ${cosaVedo}`
-      : "Questa non sembra un'etichetta, una bolla o una fattura.";
+      : "Questa non sembra un'etichetta, uno scontrino, una bolla o una fattura.";
   }
 
   const { data: registrata } = await supabase.rpc("registra_lettura_foto", {
@@ -424,7 +442,13 @@ Deno.serve(async (req) => {
       sicuro,
       cosa_vedo: cosaVedo,
       messaggio,
-      scheda: esito === "letta" ? (letto?.scheda ?? null) : null,
+      scheda: esito === "letta" && riconosciuto === "etichetta" ? (letto?.scheda ?? null) : null,
+      // ⚠️ «acquisto» e non «spesa»: `spesa` in questa risposta e' gia' quanto
+      //    sta costando l'assistente nel mese, e la schermata la legge.
+      acquisto:
+        esito === "letta" && (riconosciuto === "spesa" || riconosciuto === "fattura")
+          ? (letto?.spesa ?? null)
+          : null,
       costo_euro: (registrata as Record<string, unknown>)?.costo_euro ?? null,
       spesa: Array.isArray(dopo) ? dopo[0] : dopo,
       modello: MODELLO,
