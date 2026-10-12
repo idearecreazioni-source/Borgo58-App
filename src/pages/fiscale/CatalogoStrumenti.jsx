@@ -117,7 +117,7 @@ export default function CatalogoStrumenti() {
       <h1 className="font-display text-2xl text-b58-charcoal mb-6">
         Catalogo strumenti fiscali
         <Didascalia>
-          Lo compili tu: in futuro il modulo Ricerca ricorrente lo aggiornerà da solo. Se dai una
+          Lo compili tu. Se dai una
           scadenza a uno strumento, il gestionale crea da sé un impegno in Agenda.
         </Didascalia>
       </h1>

@@ -154,8 +154,11 @@ rossa da sola il giorno che l'indice resta indietro.
 | 95 | 22/09/2026 | lo scarto del prodotto vale per ogni riga, a ogni calcolo |
 | 96 | 30/09/2026 | la prova di ricarica applica ogni migrazione con la regola della produzione |
 | 97 | 10/10/2026 | un'unità diversa non si converte: «ml» resta «ml»» e «i buchi si vedono sempre, prima della conferma |
+| 98 | 11/10/2026 | la bozza si legge in una scheda, e si corregge in un modulo a parte |
+| 99 | 11/10/2026 | una spesa detta a voce va da sé nel soggetto che le parole indicano |
+| 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
 
-⚠️ **Righe: 98.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 101.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3592,3 +3595,89 @@ quando questa sezione è stata scritta.
    ricetta in cucina, non al momento di salvarla. Un elenco di 33 voci
    mostrato a chi sta solo collezionando ricette sembrava un obbligo, e
    avrebbe fatto smettere di usare il ricettario.
+
+## 98 · 11/10/2026 — «la bozza si legge in una scheda, e si corregge in un modulo a parte»
+
+1. **Cosa era stato deciso e quando.** Il **10/10/2026** (proposta #172,
+   `LetturaBozza.jsx`): la bozza si **legge** in una scheda — titolo, ingredienti
+   con la quantità in colonna, procedimento numerato con la fase a colori — e
+   «Modifica» apre **sotto** il modulo di prima, campo per campo con le sue
+   etichette.
+
+2. **La ragione di allora.** Il modulo era la parte che funzionava già: si è
+   rifatta la lettura, che era il problema segnalato, senza toccare la
+   scrittura.
+
+3. **Cosa si decide adesso** (Alessio, 11/10/2026, dopo la seconda ricetta
+   importata: *«non possiamo rendere la schermata nuova più leggibile anche
+   modificabile, in modo da avere una sola schermata e non usare l'altra che
+   è piuttosto confusionaria?»*). Una schermata sola, `SchedaBozza.jsx`:
+   «Modifica» trasforma **in posto** ogni dato nel suo campo, con la stessa
+   disposizione della lettura. Il modulo a parte è tolto. Il collegamento al
+   magazzino compare dentro la stessa scheda, sotto ogni ingrediente, solo
+   «in cucina».
+
+4. **Perché la ragione di allora non vale più.** Il modulo non era sbagliato,
+   ma con la scheda accanto diventava una **seconda versione** della stessa
+   ricetta: due disposizioni da confrontare a occhio per capire cosa si stava
+   cambiando. Il salvataggio resta lo stesso (ogni campo si salva da solo),
+   quindi non cambia niente nei dati.
+
+## 99 · 11/10/2026 — «una spesa detta a voce va da sé nel soggetto che le parole indicano»
+
+1. **Cosa era stato deciso e quando.** Il **07/09/2026** (migrazione
+   `20260907000002`, regole in `supabase/functions/ascolta-voce/tasca.ts`):
+   una spesa detta a MEMO diventa un appunto che, approvato, scrive **subito**
+   nel soggetto indicato dalle parole — «di tasca mia» nella tasca, una spesa
+   normale nella prima nota dell'osteria; «poi mi rimborso» rimandava a mano
+   agli anticipi.
+
+2. **La ragione di allora.** Dettare serve a non dover ripassare dal
+   computer: se le parole dicono già di chi erano i soldi, chiedere di nuovo
+   è un gesto in più.
+
+3. **Cosa si decide adesso** (Alessio, 11/10/2026, risposta «2 tutte» alla
+   domanda su quali spese far passare di lì). **Tutte** le spese dette a MEMO
+   o fotografate diventano un appunto nell'elenco **«Da collocare»**
+   (`spese_da_collocare`, migrazione `20261011000002`), che non è
+   contabilità. Da lì Alessio sceglie una volta sola: prima nota, la sua
+   tasca, anticipo da rimborsare, archivio, oppure ignora. La regola delle
+   parole del 07/09 resta e decide la destinazione **proposta**.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che accettiamo**:
+   ogni spesa detta costa un passaggio in più davanti al computer. Lo si paga
+   perché la scelta del soggetto contabile, sbagliata, non dà nessun errore —
+   la riga è plausibile dovunque finisca — e la relazione dell'11/10 chiede
+   esattamente che una frase incompleta lasci una traccia invece di una
+   registrazione sbagliata. ⚠️ Le entrate dette a voce **non** sono toccate:
+   restano movimenti di cassa come prima.
+
+## 100 · 11/10/2026 — «una spesa si colloca una volta sola, e collocata non si tocca più»
+
+1. **Cosa era stato deciso e quando.** Lo stesso giorno, poche ore prima
+   (migrazione `20261011000002`): una spesa «Da collocare», una volta
+   collocata o ignorata, è ferma per sempre. Il guardiano sulla tabella
+   rifiutava ogni modifica e ogni cancellazione, e il legame `restrict`
+   impediva di togliere il movimento, l'anticipo o il documento nato da lei.
+
+2. **La ragione di allora.** La stessa spesa non deve finire in due posti:
+   ricollocarla liberamente avrebbe lasciato il primo dato dov'era e scritto
+   il secondo, cioè una spesa contata due volte.
+
+3. **Cosa si decide adesso** (dal collaudo con le mani dell'11/10 sera, per
+   costruire la pulizia delle prove che Alessio ha autorizzato). Una spesa
+   collocata **si annulla** (`annulla_collocazione_spesa`, migrazione
+   `20261011000003`): nella stessa transazione si toglie il movimento,
+   l'anticipo o il documento, e l'appunto torna «da collocare». Si respinge
+   solo l'anticipo già rimborsato, dove è uscito denaro vero. E un appunto
+   mai diventato contabilità — da collocare o ignorato — **si può togliere**.
+
+4. **La ragione di allora vale ancora, ed è dentro la forma nuova**: la
+   spesa resta in un posto solo alla volta, perché il ritorno toglie
+   l'effetto prima di permettere una seconda collocazione. Quello che si
+   abbandona è il «per sempre», che lasciava un vicolo cieco: chi metteva
+   una spesa sua in prima nota invece che nella tasca non aveva nessun gesto
+   per rimediare — la regola del 16/08, *ogni rifiuto vuole la sua via di
+   ritorno*. Il prezzo: il guardiano ammette un passo in più, nella sola
+   forma esatta del ritorno, e regge perché dal browser la tabella si legge
+   soltanto.

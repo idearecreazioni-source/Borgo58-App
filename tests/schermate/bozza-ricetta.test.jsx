@@ -127,6 +127,49 @@ describe("il ricettario virtuale e le proposte dell'assistente (10/10/2026)", ()
   });
 });
 
+describe("una schermata sola: si legge e si corregge in posto (11/10/2026)", () => {
+  it("«Modifica» trasforma i dati nei loro campi, senza un secondo modulo", async () => {
+    api.getBozzaRicetta.mockResolvedValue({
+      bozza: { ...BOZZA },
+      ingredienti: [{ ...RIGA, ingredient_id: null }],
+      passaggi: [{ ...PASSO }],
+    });
+    const { aggiornaPassaggioBozza, togliIngredienteBozza } = await import("../../src/lib/api/bozzeRicetta");
+    mostra();
+
+    // In lettura: la ricetta, nessun campo.
+    expect(await screen.findByRole("heading", { name: "Amatriciana" })).toBeTruthy();
+    expect(screen.queryByLabelText("Titolo")).toBeNull();
+    expect(screen.queryByRole("button", { name: "+ Ingrediente" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Modifica" }));
+    expect(screen.getByLabelText("Titolo").value).toBe("Amatriciana");
+    expect(screen.getByLabelText("Quantità di guanciale").value).toBe("200");
+    expect(screen.getByLabelText("Passaggio 1").value).toBe("rosolare");
+    // Il magazzino non c'entra nel ricettario virtuale.
+    expect(screen.queryByLabelText("Prodotto del magazzino per guanciale")).toBeNull();
+    // Il vecchio modulo non c'è più.
+    expect(screen.queryByText("Ingredienti proposti")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Fase del passaggio 1"), { target: { value: "finitura" } });
+    await waitFor(() => expect(aggiornaPassaggioBozza).toHaveBeenCalledWith("p1", { fase: "finitura" }));
+
+    togliIngredienteBozza.mockResolvedValue();
+    fireEvent.click(screen.getByRole("button", { name: "Togli guanciale" }));
+    await waitFor(() => expect(togliIngredienteBozza).toHaveBeenCalledWith("r1"));
+    await waitFor(() => expect(screen.queryByLabelText("Quantità di guanciale")).toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: "Fine modifiche" }));
+    expect(screen.queryByLabelText("Titolo")).toBeNull();
+  });
+
+  it("in cucina ogni ingrediente offre il collegamento al magazzino", async () => {
+    api.getBozzaRicetta.mockResolvedValue(completa());
+    mostra();
+    expect((await screen.findByLabelText("Prodotto del magazzino per guanciale")).value).toBe("i1");
+  });
+});
+
 describe("la conferma è esplicita, e il doppio tocco non duplica", () => {
   it("🔴 due tocchi di fila mandano UNA richiesta", async () => {
     api.getBozzaRicetta.mockResolvedValue(completa());

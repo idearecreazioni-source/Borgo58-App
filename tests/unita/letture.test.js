@@ -168,6 +168,14 @@ describe("nessuna lettura resta muta", () => {
       // tutto questo blocco evita. Se uno scarto nasce, non resta invisibile:
       // si vede in Cassa fra i conti fiscalizzati in ritardo.
       "src/pages/comande/CloseOrderModal.jsx",
+      // ⚠️ AGGIUNTI L'11/10/2026 con «Da collocare» (C12). In Cassa tace il
+      // solo NUMERO accanto al collegamento: il collegamento c'è comunque, e
+      // dentro la schermata l'elenco vero dichiara da sé se non si è letto.
+      // In «Da collocare» tace solo il ricaricamento dell'elenco «di
+      // recente» dopo un gesto, il cui esito si vede già sulla riga; e la
+      // foto che non si apre non tace affatto — lo scrive al suo posto.
+      "src/pages/cassa/CassaHome.jsx",
+      "src/pages/cassa/DaCollocare.jsx",
       // ⚠️ AGGIUNTO IL 23/08 col pulsante che smette di mentire. Qui non
       // manca un dato: manca una **precisazione su un numero che c'è già**.
       // La schermata chiede alla funzione online quanti prodotti compilerà

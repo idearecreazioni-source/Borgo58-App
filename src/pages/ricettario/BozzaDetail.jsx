@@ -14,17 +14,11 @@ import {
   togliPassaggioBozza,
 } from "../../lib/api/bozzeRicetta";
 import { listIngredients } from "../../lib/api/ingredients";
-import {
-  buchiDellaBozza,
-  nuovoGesto,
-  quantitaDalCampo,
-} from "../../lib/calcoli/bozzeRicetta";
+import { buchiDellaBozza, nuovoGesto } from "../../lib/calcoli/bozzeRicetta";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
-import { RECIPE_CATEGORIES, STEP_PHASES } from "../../lib/constants";
 import { useUnita } from "../../lib/unita";
-import CampoAutosalvato from "../../components/CampoAutosalvato";
 import DatoNonLetto from "../../components/DatoNonLetto";
-import LetturaBozza from "./LetturaBozza";
+import SchedaBozza from "./SchedaBozza";
 
 // UNA BOZZA DI RICETTA — rivederla e confermarla (Ricettario Fase 1A).
 //
@@ -53,8 +47,6 @@ import LetturaBozza from "./LetturaBozza";
 //    invece di crearne una seconda. In più la guardia sincrona non fa nemmeno
 //    partire il secondo tocco mentre il primo è in viaggio (§8, 27/08).
 
-const CATEGORIE_BOZZA = RECIPE_CATEGORIES.filter((c) => c.value !== "finger_food");
-const campo = "tocco-riga w-full rounded border border-stone-300 px-3";
 
 export default function BozzaDetail() {
   const { id } = useParams();
@@ -113,8 +105,9 @@ export default function BozzaDetail() {
   // Il collegamento al magazzino si vede quando lo si chiede, o quando c'è già.
   const mostraCucina = inCucina || promossa || ingredienti.some((r) => r.ingredient_id);
   const proposte = bozza.proposte_assistente ?? [];
-  // La scheda si LEGGE; i campi compaiono quando si correggono o si porta in cucina.
-  const inModifica = modifica || mostraCucina;
+  // Una schermata sola (11/10/2026): la scheda si LEGGE, e «Modifica» — o
+  // portarla in cucina — trasforma in posto ogni dato nel suo campo.
+  const inModifica = !ferma && (modifica || mostraCucina);
 
   const sicuro = async (fn) => {
     setErrore("");
@@ -148,6 +141,32 @@ export default function BozzaDetail() {
 
   const prossima = (righe) => righe.reduce((m, r) => Math.max(m, r.posizione), 0) + 1;
 
+  const azioni = {
+    bozza: salvaBozza,
+    ingrediente: salvaIngrediente,
+    passaggio: salvaPassaggio,
+    togliIngrediente: (r) =>
+      sicuro(async () => {
+        await togliIngredienteBozza(r.id);
+        setDati((d) => ({ ...d, ingredienti: d.ingredienti.filter((x) => x.id !== r.id) }));
+      }),
+    togliPassaggio: (p) =>
+      sicuro(async () => {
+        await togliPassaggioBozza(p.id);
+        setDati((d) => ({ ...d, passaggi: d.passaggi.filter((x) => x.id !== p.id) }));
+      }),
+    aggiungiIngrediente: () =>
+      sicuro(async () => {
+        const nuova = await aggiungiIngredienteBozza(bozza.id, prossima(ingredienti));
+        setDati((d) => ({ ...d, ingredienti: [...d.ingredienti, nuova] }));
+      }),
+    aggiungiPassaggio: () =>
+      sicuro(async () => {
+        const nuovo = await aggiungiPassaggioBozza(bozza.id, prossima(passaggi));
+        setDati((d) => ({ ...d, passaggi: [...d.passaggi, nuovo] }));
+      }),
+  };
+
   const apriConferma = (quale) => {
     setEsito(null);
     setConferma({ esito: quale, gesto: nuovoGesto() });
@@ -177,13 +196,17 @@ export default function BozzaDetail() {
         ← Bozze di ricetta
       </Link>
 
-      <LetturaBozza
+      <SchedaBozza
         bozza={bozza}
         ingredienti={ingredienti}
         passaggi={passaggi}
         modifica={inModifica}
         puoModificare={!ferma && !mostraCucina}
         onModifica={() => setModifica((m) => !m)}
+        cucina={mostraCucina}
+        anagrafica={anagrafica}
+        unita={unita}
+        azioni={azioni}
       />
 
       {promossa && (
@@ -221,69 +244,6 @@ export default function BozzaDetail() {
         </div>
       )}
 
-      {/* ---- i dati della bozza: si correggono in «Modifica» o portandola in cucina ---- */}
-      {inModifica && (<>
-      <section className="mb-6 grid gap-3 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
-        <label className="flex flex-col">
-          <span className="text-stone-600">Titolo</span>
-          <CampoAutosalvato
-            value={bozza.titolo}
-            disabled={ferma}
-            className={campo}
-            onSave={(t) => t && salvaBozza({ titolo: t })}
-          />
-        </label>
-        <label className="flex flex-col">
-          <span className="text-stone-600">Sunto</span>
-          <CampoAutosalvato
-            value={bozza.sunto ?? ""}
-            disabled={ferma}
-            className={campo}
-            onSave={(t) => salvaBozza({ sunto: t || null })}
-          />
-        </label>
-        <label className="flex flex-col">
-          <span className="text-stone-600">Link d'origine</span>
-          <CampoAutosalvato
-            value={bozza.origine_riferimento ?? ""}
-            disabled={ferma}
-            className={campo}
-            onSave={(t) => salvaBozza({ origine_riferimento: t || null })}
-          />
-        </label>
-        <div className="flex flex-wrap gap-3">
-          <label className="flex flex-col">
-            <span className="text-stone-600">Categoria</span>
-            <select
-              value={bozza.categoria ?? ""}
-              disabled={ferma}
-              className="tocco-riga rounded border border-stone-300 px-3"
-              onChange={(e) => salvaBozza({ categoria: e.target.value || null })}
-            >
-              <option value="">— non ancora detta —</option>
-              {CATEGORIE_BOZZA.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col">
-            <span className="text-stone-600">Porzioni</span>
-            <CampoAutosalvato
-              value={bozza.porzioni ?? ""}
-              disabled={ferma}
-              placeholder="non ancora dette"
-              className="tocco-riga w-40 rounded border border-stone-300 px-3"
-              onSave={(t) => {
-                const n = quantitaDalCampo(t);
-                salvaBozza({ porzioni: n === null ? null : Math.round(n) });
-              }}
-            />
-          </label>
-        </div>
-      </section>
-
       {mostraCucina && bozza.buchi_dichiarati?.length > 0 && (
         <section className="mb-6">
           <h2 className="mb-2 font-semibold">Segnalazioni di chi ha proposto la bozza</h2>
@@ -308,168 +268,6 @@ export default function BozzaDetail() {
         </section>
       )}
 
-      {/* ---- gli ingredienti proposti ---- */}
-      <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
-        <h2 className="mb-2 font-semibold">Ingredienti proposti</h2>
-        {ingredienti.length === 0 && <p className="text-stone-600">Nessuno.</p>}
-        <ul>
-          {ingredienti.map((r) => {
-            const unitaSconosciuta = r.unita && !codiciUnita.includes(r.unita);
-            return (
-              <li key={r.id} className="mb-3 grid gap-2 border-b border-stone-200 pb-3 sm:grid-cols-2">
-                <label className={`flex flex-col ${mostraCucina ? "" : "sm:col-span-2"}`}>
-                  <span className="text-stone-600">Ingrediente</span>
-                  <CampoAutosalvato
-                    value={r.nome}
-                    disabled={ferma}
-                    className={campo}
-                    onSave={(t) => t && salvaIngrediente(r, { nome: t })}
-                  />
-                </label>
-                {mostraCucina && (
-                <label className="flex flex-col">
-                  <span className="text-stone-600">Ingrediente dell'anagrafica</span>
-                  <select
-                    value={r.ingredient_id ?? ""}
-                    disabled={ferma}
-                    className={campo}
-                    onChange={(e) => salvaIngrediente(r, { ingredient_id: e.target.value || null })}
-                  >
-                    <option value="">— non collegato —</option>
-                    {anagrafica.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                )}
-                <label className="flex flex-col">
-                  <span className="text-stone-600">Quantità</span>
-                  <CampoAutosalvato
-                    value={r.quantita ?? ""}
-                    disabled={ferma}
-                    placeholder="non ancora detta"
-                    className={campo}
-                    onSave={(t) => salvaIngrediente(r, { quantita: quantitaDalCampo(t) })}
-                  />
-                </label>
-                <label className="flex flex-col">
-                  <span className="text-stone-600">Unità</span>
-                  <select
-                    value={r.unita ?? ""}
-                    disabled={ferma}
-                    className={campo}
-                    onChange={(e) => salvaIngrediente(r, { unita: e.target.value || null })}
-                  >
-                    <option value="">— non ancora detta —</option>
-                    {unitaSconosciuta && <option value={r.unita}>«{r.unita}» — non compresa</option>}
-                    {unita.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {r.nota && <p className="text-stone-600 sm:col-span-2">Nota: {r.nota}</p>}
-                {!ferma && (
-                  <div className="sm:col-span-2">
-                    <button
-                      type="button"
-                      className="tocco-bottone rounded border border-stone-300 px-3"
-                      onClick={() =>
-                        sicuro(async () => {
-                          await togliIngredienteBozza(r.id);
-                          setDati((d) => ({ ...d, ingredienti: d.ingredienti.filter((x) => x.id !== r.id) }));
-                        })
-                      }
-                    >
-                      Togli dalla bozza
-                    </button>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-        {!ferma && (
-          <button
-            type="button"
-            className="tocco-bottone rounded border border-stone-300 px-4"
-            onClick={() =>
-              sicuro(async () => {
-                const nuova = await aggiungiIngredienteBozza(bozza.id, prossima(ingredienti));
-                setDati((d) => ({ ...d, ingredienti: [...d.ingredienti, nuova] }));
-              })
-            }
-          >
-            + Ingrediente
-          </button>
-        )}
-      </section>
-
-      {/* ---- i passaggi proposti ---- */}
-      <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
-        <h2 className="mb-2 font-semibold">Passaggi proposti</h2>
-        {passaggi.length === 0 && <p className="text-stone-600">Nessuno.</p>}
-        <ol>
-          {passaggi.map((p, i) => (
-            <li key={p.id} className="mb-3 grid gap-2 border-b border-stone-200 pb-3">
-              <span className="font-medium">Passaggio {i + 1}</span>
-              <select
-                value={p.fase ?? ""}
-                disabled={ferma}
-                className={campo}
-                onChange={(e) => salvaPassaggio(p, { fase: e.target.value || null })}
-              >
-                <option value="">— fase non ancora detta —</option>
-                {STEP_PHASES.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-              <CampoAutosalvato
-                value={p.descrizione ?? ""}
-                disabled={ferma}
-                placeholder="cosa si fa"
-                className={campo}
-                onSave={(t) => salvaPassaggio(p, { descrizione: t || null })}
-              />
-              {!ferma && (
-                <button
-                  type="button"
-                  className="tocco-bottone justify-self-start rounded border border-stone-300 px-3"
-                  onClick={() =>
-                    sicuro(async () => {
-                      await togliPassaggioBozza(p.id);
-                      setDati((d) => ({ ...d, passaggi: d.passaggi.filter((x) => x.id !== p.id) }));
-                    })
-                  }
-                >
-                  Togli il passaggio
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
-        {!ferma && (
-          <button
-            type="button"
-            className="tocco-bottone rounded border border-stone-300 px-4"
-            onClick={() =>
-              sicuro(async () => {
-                const nuovo = await aggiungiPassaggioBozza(bozza.id, prossima(passaggi));
-                setDati((d) => ({ ...d, passaggi: [...d.passaggi, nuovo] }));
-              })
-            }
-          >
-            + Passaggio
-          </button>
-        )}
-      </section>
-
-      </>)}
 
       {/* ---- il ricettario virtuale: niente da compilare finché non va in cucina ---- */}
       {!mostraCucina && bozza.stato !== "scartata" && (

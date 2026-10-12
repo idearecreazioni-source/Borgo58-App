@@ -1,4 +1,5 @@
-// Fonte: APP_Borgo58_Brief_Tecnico_v2_1.md §4-5 (revisione 02/08/2026, 15 moduli)
+// Fonte: APP_Borgo58_Brief_Tecnico_v2_1.md §4-5 (revisione 02/08/2026, 15 moduli;
+// dall'11/10/2026 13: tolti Ricerca Ricorrente e Monitoraggio Social)
 export const PHASES = {
   1: { label: "Fase 1 · Nucleo operativo", colorClass: "bg-b58-terracotta" },
   2: { label: "Fase 2 · Fiscale e amministrativo", colorClass: "bg-b58-olive" },
@@ -101,6 +102,11 @@ export const MODULES = [
     icon: "leaf",
     route: "/agricolo",
     // niente staffVisible: solo titolare
+    // ⚠️ MESSO DA PARTE (11/10/2026, Alessio): l'azienda agricola non è
+    //    ancora costituita. Il modulo resta intero e raggiungibile, ma nel
+    //    menu scende in fondo, sotto «Messo da parte». Quando l'azienda
+    //    nascerà basta togliere questa riga.
+    daParte: true,
   },
   {
     id: "proiezione-fiscale",
@@ -112,14 +118,9 @@ export const MODULES = [
     route: "/fiscale",
     // niente staffVisible: accesso solo titolare
   },
-  {
-    id: "ricerca-ricorrente",
-    number: 10,
-    name: "Ricerca Ricorrente",
-    description: "Digest su sgravi, bandi, normativa, catalogo strumenti fiscali.",
-    phase: 2,
-    icon: "search",
-  },
+  // 🔴 «Ricerca Ricorrente» (n. 10 del brief) è TOLTA — decisione di
+  //    Alessio dell'11/10/2026. Era un segnaposto senza nessuna schermata;
+  //    il Catalogo strumenti fiscali resta, e si compila a mano.
   {
     id: "personale",
     number: 11,
@@ -130,14 +131,8 @@ export const MODULES = [
     route: "/personale",
     // niente staffVisible: solo titolare (§4 mod. 11)
   },
-  {
-    id: "monitoraggio-social",
-    number: 12,
-    name: "Monitoraggio Social",
-    description: "Osserva Instagram/TikTok/Google, segnala criticità e recensioni.",
-    phase: 3,
-    icon: "share",
-  },
+  // 🔴 «Monitoraggio Social» (n. 12 del brief) è TOLTO — decisione di
+  //    Alessio dell'11/10/2026. Era un segnaposto senza nessuna schermata.
   {
     id: "editor-menu",
     number: 13,

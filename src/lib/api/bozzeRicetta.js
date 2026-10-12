@@ -36,7 +36,7 @@ const solo = (dati, campi) =>
 export async function listBozzeRicetta() {
   const { data, error } = await supabase
     .from("bozze_ricetta")
-    .select("id, titolo, origine_tipo, stato, promossa_il, ricetta_id, created_at, updated_at")
+    .select("id, titolo, origine_tipo, stato, porzioni, promossa_il, ricetta_id, created_at, updated_at")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data ?? [];

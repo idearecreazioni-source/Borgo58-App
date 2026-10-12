@@ -16,6 +16,9 @@ import CampoAutosalvato from "../../components/CampoAutosalvato";
 import ConfermaDistruttiva from "../../components/ConfermaDistruttiva";
 import Didascalia from "../../components/Didascalia";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
+import FoglioCarta, { Masthead, Sprig, TitoloSezione } from "../../components/FoglioCarta";
+import PrintButton from "../../components/PrintButton";
+import { cartaDaStampare } from "../../lib/calcoli/cartaVini";
 
 // Carta di vini e bevande (§3.2.1). Vive nell'Editor Menu insieme al resto
 // dell'offerta, ma su una tabella propria: menu_items pretende una ricetta
@@ -68,6 +71,8 @@ export default function BevandeVini() {
   //    vuoto travestito da dato (regola del 19/08).
   const [carta, setCarta] = useState(null);
   const [cartaCaricando, setCartaCaricando] = useState(true);
+  // N19: sul foglio vanno i vini; le bevande solo se le si chiede.
+  const [stampaBevande, setStampaBevande] = useState(false);
 
   const load = () =>
     listBarItems({ includeInactive: true })
@@ -327,8 +332,15 @@ export default function BevandeVini() {
   const inputClass =
     "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
+  // N19 (11/10/2026): il foglio stampato, nella stessa forma del menu.
+  const daStampare = sezioni
+    .filter((x) => x.section === "vini" || stampaBevande)
+    .map((x) => ({ ...x, carta: cartaDaStampare(x.categorie) }))
+    .filter((x) => x.carta.length > 0);
+
   return (
     <div className="max-w-4xl">
+      <div className="print:hidden">
       <div className="flex items-center justify-between gap-4 mb-1">
         <h1 className="font-display text-2xl text-b58-charcoal">
           Bevande e vini
@@ -648,6 +660,62 @@ export default function BevandeVini() {
       {/* ⚠️ Era un riquadro in fondo alla pagina: si legge una volta e poi
           è arredamento. La stessa frase sta ora accanto al titolo, dove la
           si cerca la prima volta che si toglie qualcosa dalla carta. */}
+      </div>
+
+      {/* ---- LA CARTA COME ESCE STAMPATA (N19, 11/10/2026) ----
+          🔴 Prima la carta dei vini esisteva solo come tabella di lavoro:
+             l'editor del menu aveva il suo foglio, questa no. Ora c'è lo
+             stesso foglio (FoglioCarta), con gli stessi pezzi.
+          ⚠️ Una riga di carta non è un prodotto: la stessa bottiglia al
+             calice e in bottiglia sono due righe qui sopra, e sul foglio
+             diventano UN vino con due prezzi (cartaDaStampare). */}
+      {/* Con la carta vuota il foglio non si disegna: lo dice già «La carta
+          stampata» qui sopra, e due frasi uguali sono rumore. */}
+      {daStampare.length > 0 && (
+      <section data-carta-foglio className="mt-10">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
+          <h2 className="font-display text-xl text-b58-charcoal">Come esce stampata</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="tocco-campo flex items-center gap-2 testo-sala text-b58-charcoal-soft">
+              <input type="checkbox" checked={stampaBevande} onChange={(e) => setStampaBevande(e.target.checked)} />
+              Anche le bevande
+            </label>
+            <PrintButton />
+          </div>
+        </div>
+          <FoglioCarta>
+            <Masthead header="Borgo 58" subheader="Osteria Contemporanea" />
+            <Sprig />
+            {daStampare.map((sez) => (
+              <div key={sez.section} className="mt-6">
+                {daStampare.length > 1 && (
+                  <p className="testo-sala text-center uppercase tracking-[0.3em] text-b58-charcoal-soft">{sez.label}</p>
+                )}
+                {sez.carta.map((cat) => (
+                  <section key={cat.nome} className="mt-8 first:mt-6 break-inside-avoid">
+                    <TitoloSezione>{cat.nome}</TitoloSezione>
+                    <ul className="mt-5 space-y-4 max-w-lg mx-auto">
+                      {cat.righe.map((r) => (
+                        <li key={`${r.nome}|${r.produttore ?? ""}`} className="text-center break-inside-avoid">
+                          <span className="font-display testo-sala-titolo text-b58-charcoal">{r.nome}</span>
+                          {r.produttore && (
+                            <p className="testo-sala-grande italic text-b58-charcoal-soft/85 leading-snug">{r.produttore}</p>
+                          )}
+                          <p className="testo-sala-grande text-b58-gold-dark mt-0.5">
+                            {r.formati
+                              .map((f) => [f.formato, formatEUR(f.prezzo)].filter(Boolean).join(" "))
+                              .join(" · ")}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            ))}
+          </FoglioCarta>
+      </section>
+      )}
     </div>
   );
 }

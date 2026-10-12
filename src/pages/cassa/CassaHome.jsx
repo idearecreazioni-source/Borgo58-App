@@ -13,6 +13,7 @@ import {
 } from "../../lib/api/cash";
 import { CAUSALE_ALTRO, omaggiAListino, percentualeOmaggi } from "../../lib/calcoli/omaggi";
 import { getEntities } from "../../lib/api/entities";
+import { contaSpeseDaCollocare } from "../../lib/api/speseDaCollocare";
 import { formatDate, formatEUR, oggiLocale, primoDelMeseLocale } from "../../lib/constants";
 import { useGiornataOperativa } from "../../lib/giornataOperativa";
 import CampoGiornata from "../../components/CampoGiornata";
@@ -34,6 +35,14 @@ export default function CassaHome() {
   // Le uscite scritte e non ancora avvenute: servono a spiegare il saldo.
   const [future, setFuture] = useState(null);
   const [tesoreria, setTesoreria] = useState(null);
+  // Quante spese aspettano in «Da collocare».
+  // SILENZIO MOTIVATO: il numero è un di più accanto al collegamento, che
+  // c'è comunque; se non si legge non si scrive, e dentro la schermata
+  // l'elenco vero dichiara da sé se non si è letto.
+  const [daCollocare, setDaCollocare] = useState(0);
+  useEffect(() => {
+    contaSpeseDaCollocare().then(setDaCollocare).catch(() => setDaCollocare(0));
+  }, []);
   const [quadratura, setQuadratura] = useState([]);
   const [monthMovements, setMonthMovements] = useState([]);
   // Gli sconti e gli omaggi del mese, riga per riga: servono con la loro
@@ -363,6 +372,13 @@ export default function CassaHome() {
           <div className="flex flex-wrap gap-2 mb-6">
             <Scorciatoia to="/cassa/prima-nota" principale>
               Prima nota
+            </Scorciatoia>
+            {/* 🔴 LA PORTA DI «DA COLLOCARE» (11/10/2026, C12): le spese dette a
+                MEMO o fotografate aspettano qui, e senza un collegamento
+                resterebbero un elenco che nessuno apre. Il numero dice quante
+                aspettano: zero non si scrive. */}
+            <Scorciatoia to="/cassa/da-collocare">
+              Da collocare{daCollocare > 0 && ` (${daCollocare})`}
             </Scorciatoia>
             <Scorciatoia to="/cassa/previsione">
               Ce la faccio?

@@ -144,14 +144,16 @@ A differenza della v1, questa sezione non è una griglia di ipotesi: riporta lo 
 ⚠️ **La stessa forma di difetto si ripresenterà nella Sala** (rilievo del validatore, 14/08/2026): assegnare una prenotazione tocca la prenotazione **e** le righe dei tavoli, cioè due tabelle — quindi il corridoio è **obbligatorio**, non facoltativo. Per contro, un'operazione che scrive più righe su **una sola** tabella (come `completa_task`/`riapri_task` in Agenda) resta Categoria A e la chiamata diretta via RPC è corretta: a rendere necessario il corridoio è la seconda tabella, non il numero di righe.
 | Calendario eventi / clienti | Costruito, form pubblico con freno anti-abuso | A + B2/B3 (Edge Function per notifica) |
 | HACCP | Costruito; manca filtro di periodo sul manuale esportabile (§3.19 punto 5) | A |
-| Agricolo | Costruito | A |
+| Agricolo | Costruito; messo da parte nel menu (in fondo, sotto «Messo da parte») finché l'azienda agricola non è costituita | A |
 | Proiezione fiscale | Costruito | A + B4 — vedi la constatazione qui sotto |
-| Ricerca ricorrente | Placeholder, non attivato | Non ancora costruito — bloccato su account AI di Alessio |
+| Ricerca ricorrente | **Tolto l'11/10/2026** (decisione di Alessio) | — |
 | Personale | Costruito | A |
-| Monitoraggio social | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
+| Monitoraggio social | **Tolto l'11/10/2026** (decisione di Alessio) | — |
 | Editor menu | Costruito | A |
 | Assistente AI | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |
 | Archivio documenti | Costruito | A |
+
+*Righe di Agricolo, Ricerca ricorrente e Monitoraggio social aggiornate l'11/10/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarate al validatore** nella proposta #177. I due moduli tolti erano segnaposto senza nessuna schermata; l'Agricolo resta costruito e raggiungibile. **Il testo originale era** `| Agricolo | Costruito | A |`, `| Ricerca ricorrente | Placeholder, non attivato | Non ancora costruito — bloccato su account AI di Alessio |` e `| Monitoraggio social | Placeholder, non attivato | Non ancora costruito — bloccato su account AI |`, e resta qui perché il confronto sia possibile.*
 
 *Riga della Proiezione fiscale aggiornata il 15/08/2026 su autorizzazione esplicita di Alessio (Sezione 0), e **dichiarata al validatore** nel riepilogo della consegna «la rotta economica». **Il testo originale era `| Proiezione fiscale | Costruito | A |`**, e resta qui perché il confronto sia possibile.*
 

@@ -203,3 +203,12 @@ describe("🔴 un impegno ricorrente spuntato dalla Dashboard", () => {
     expect(screen.queryByText(NATO)).toBeNull();
   });
 });
+
+describe("la palette in prova vale solo sulla Dashboard (U1, 11/10/2026)", () => {
+  it("accende `tema-prova` su <html> e lo spegne quando si esce", async () => {
+    const { unmount } = mostraDashboard();
+    expect(document.documentElement.classList.contains("tema-prova")).toBe(true);
+    unmount();
+    expect(document.documentElement.classList.contains("tema-prova")).toBe(false);
+  });
+});

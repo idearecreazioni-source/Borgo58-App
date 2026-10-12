@@ -35,6 +35,14 @@ const PRIORITY_BADGE = {
 // per la stessa ragione. Un riquadro che dice «niente» tutte le mattine
 // diventa arredamento, e allora smette di farsi notare il giorno che parla.
 export default function Dashboard() {
+  // U1 (11/10/2026): la palette nuova si prova SOLO qui. La classe vive su
+  // <html> finché la Dashboard è aperta, perché il fondo della pagina e la
+  // barra laterale stanno fuori da questo componente.
+  useEffect(() => {
+    document.documentElement.classList.add("tema-prova");
+    return () => document.documentElement.classList.remove("tema-prova");
+  }, []);
+
   const { isStaff } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -205,14 +213,14 @@ export default function Dashboard() {
             bersaglio cresce col padding: si tocca la riga, non le lettere. */}
         <Link
           to="/agenda"
-          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-terracotta hover:text-b58-terracotta-dark hover:bg-b58-cream-dark/40 font-medium transition-colors"
+          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 font-medium transition-colors"
         >
           Agenda completa →
         </Link>
       </div>
 
       {notice && (
-        <p className="testo-sala text-b58-olive-dark bg-b58-olive/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
+        <p className="testo-sala text-b58-azione-dark bg-b58-azione/10 rounded-lg px-3 py-2 mb-4">{notice}</p>
       )}
       {error && <p className="testo-sala text-b58-terracotta-dark mb-4">Errore: {error}</p>}
 
@@ -302,7 +310,7 @@ export default function Dashboard() {
           {!isStaff && !nonLetto(spicciola) && daComprare(spicciola).length > 0 && (
             <Link
               to="/magazzino/spesa-spicciola"
-              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-olive bg-b58-olive/10 px-4 py-3"
+              className="tocco-riga flex items-center justify-between gap-3 rounded-xl border border-b58-azione bg-b58-azione/10 px-4 py-3"
             >
               <span className="testo-sala text-b58-charcoal">
                 <span className="font-medium">
@@ -312,7 +320,7 @@ export default function Dashboard() {
                 </span>{" "}
                 di persona — spesa spicciola
               </span>
-              <span aria-hidden="true" className="testo-sala text-b58-olive-dark shrink-0">
+              <span aria-hidden="true" className="testo-sala text-b58-azione-dark shrink-0">
                 →
               </span>
             </Link>
@@ -373,7 +381,7 @@ export default function Dashboard() {
 
           <Link
             to="/agenda/nuovo"
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
           >
             + Nuovo impegno
           </Link>
@@ -517,7 +525,7 @@ export function Avvisi({ avvisi, onVai, onRimanda, onRiprendi }) {
               <button
                 type="button"
                 onClick={() => onRiprendi(a.chiave)}
-                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-terracotta hover:bg-b58-cream-dark/40 transition-colors"
+                className="tocco-bottone shrink-0 rounded-lg px-3 testo-sala text-b58-azione hover:bg-b58-cream-dark/40 transition-colors"
               >
                 Rimettilo
               </button>
@@ -550,7 +558,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
         </h2>
         <Link
           to="/calendario-eventi/pianta"
-          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-terracotta hover:text-b58-terracotta-dark hover:bg-b58-cream-dark/40 transition-colors"
+          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
         >
           La sala →
         </Link>
@@ -565,7 +573,7 @@ function PrenotazioniDiOggi({ prenotazioni, onRiprova, onApri }) {
           <button
             type="button"
             onClick={onRiprova}
-            className="tocco-bottone mt-2 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala font-medium px-4 transition-colors"
+            className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-medium px-4 transition-colors"
           >
             Riprova
           </button>

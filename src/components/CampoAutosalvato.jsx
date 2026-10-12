@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 // Campo che si salva DA SOLO mentre si scrive.
 //
@@ -26,6 +26,11 @@ export default function CampoAutosalvato({
   placeholder,
   className,
   disabled,
+  // Per i campi senza etichetta visibile (la scheda della bozza, 11/10/2026).
+  etichetta,
+  // Un numero di righe fa del campo un testo su più righe: un passaggio di
+  // ricetta in un campo da una riga si legge a pezzi.
+  righe,
 }) {
   const [text, setText] = useState(value ?? "");
   // Ultimo valore che risulta scritto nel database: evita di risalvare
@@ -35,6 +40,16 @@ export default function CampoAutosalvato({
   const testoRef = useRef(value ?? "");
 
   testoRef.current = text;
+
+  // Su più righe il campo cresce col testo: un passaggio tagliato a metà
+  // dentro un riquadro che scorre non si rilegge.
+  const area = useRef(null);
+  useLayoutEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [text]);
 
   // Il valore puo' cambiare da fuori (ricarico dopo un salvataggio):
   // ci si allinea solo se e' davvero diverso da quello che risulta
@@ -82,6 +97,22 @@ export default function CampoAutosalvato({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (righe) {
+    return (
+      <textarea
+        ref={area}
+        rows={righe}
+        value={text}
+        onChange={handleChange}
+        onBlur={salva}
+        placeholder={placeholder}
+        disabled={disabled}
+        aria-label={etichetta}
+        className={className}
+      />
+    );
+  }
+
   return (
     <input
       type={type}
@@ -91,6 +122,7 @@ export default function CampoAutosalvato({
       onBlur={salva}
       placeholder={placeholder}
       disabled={disabled}
+      aria-label={etichetta}
       className={className}
     />
   );
