@@ -232,3 +232,8 @@ produzione. Questa sessione non ha accesso al database; l'unica cosa che le
 riguarda sono i tre «zero residui» dichiarati dalle verifiche, che sono la
 parola della migrazione su sé stessa. Il primo controllo vero è aprire
 *Cassa → Da collocare* sul gestionale vero: deve essere vuota.
+
+✅ **Guardato da Alessio subito dopo** (12/10, sera): *Cassa → Da collocare*
+sul gestionale vero è **vuota**. È uno sguardo alla schermata, non un
+conteggio sul database. E la copia di sicurezza delle 18:58 è stata
+portata fuori dal computer.
