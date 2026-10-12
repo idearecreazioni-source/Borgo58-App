@@ -183,6 +183,57 @@ fotografie):**
 
 ## 7 · Applicazione in produzione
 
-*Da compilare dopo `npm run migra -- --conferma` e le tre
-`npm run funzione … -- --conferma`: quante migrazioni sono entrate, l'esito
-di ogni funzione, e le righe di `spese_da_collocare` (devono essere zero).*
+Fatto il 12/10/2026 fra le 18:58 e le 19:09, da Alessio, su `ef3f6da`
+(la fusione della #179 in `master`). Numeri letti dalle schermate del suo
+terminale e da GitHub, non dedotti.
+
+**Copia di sicurezza prima di applicare** — `npm run migra` si era fermato:
+l'ultima copia aveva 54,6 ore, il limite è 24. `npm run backup` alle 18:58:
+139 tabelle, 1560 righe (contate nel file = dichiarate), 2 documenti,
+4 utenti e 4 identità, file `Borgo58_backup_2026-10-12_1858.zip` da 687 KB.
+
+**Migrazioni** — prima: 419 nel repository, 415 in produzione.
+`npm run migra -- --conferma`: **applicate e registrate 4 su 4**, nessuna
+saltata:
+
+- `20261011000001` estrapola_dalle_ricette
+- `20261011000002` le_spese_da_collocare — verifica: «la voce e la foto
+  scrivono un appunto e nessun movimento; […] lo staff e' respinto. Provato
+  e annullato: zero residui.»
+- `20261011000003` una_spesa_collocata_torna_indietro — verifica: «prima
+  nota, tasca, anticipo, archivio e ignorata tornano da collocare togliendo
+  il loro effetto; l'anticipo rimborsato e' respinto; […] Provato e
+  annullato: zero residui.»
+- `20261011000004` una_foto_un_appunto — verifica: «la stessa foto
+  riprovata scrive un appunto solo; senza chiave nulla cambia; lo staff e'
+  respinto. Provato e annullato: zero residui.»
+
+Totale in produzione dopo: **419**.
+
+**Funzioni online** — tutte e tre sul progetto `oudjuqbqszisdtwzbxdo`,
+risposta «Deployed Functions» e «Fatta»:
+
+| funzione | verifica del token | esito |
+|---|---|---|
+| `ascolta-voce` | spenta (è in `SENZA_TOKEN`: la chiama la Scorciatoia) | installata |
+| `leggi-foto` | accesa | installata |
+| `operazioni-atomiche` | accesa | installata |
+
+⚠️ Per tutte e tre lo strumento dice «non sono riuscito a rileggerne la
+versione»: l'installazione è riuscita, il numero di versione non è stato
+letto. Non è un errore dell'installazione, ma il numero non c'è.
+
+**Sito** — il lavoro «Manda in produzione» della corsa `38260926708`
+(controlli su `ef3f6da`) è stato approvato da Alessio ed è **riuscito**
+(34 secondi).
+
+⚠️ **Non misurato da qui**: le righe di `spese_da_collocare` in
+produzione. Questa sessione non ha accesso al database; l'unica cosa che le
+riguarda sono i tre «zero residui» dichiarati dalle verifiche, che sono la
+parola della migrazione su sé stessa. Il primo controllo vero è aprire
+*Cassa → Da collocare* sul gestionale vero: deve essere vuota.
+
+✅ **Guardato da Alessio subito dopo** (12/10, sera): *Cassa → Da collocare*
+sul gestionale vero è **vuota**. È uno sguardo alla schermata, non un
+conteggio sul database. E la copia di sicurezza delle 18:58 è stata
+portata fuori dal computer.
