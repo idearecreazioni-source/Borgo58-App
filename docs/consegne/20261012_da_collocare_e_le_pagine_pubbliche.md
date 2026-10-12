@@ -27,6 +27,7 @@ aggiunti in fondo, alla voce § 7, dopo `--conferma`.
 | `20261011000001` | «Estrapola la spesa» dalle ricette (`estrapola_ricette`, R11) | già applicata: il primo `npm run prova:migra` dell'11/10 sera ne ha trovata **una sola** da applicare, la `…002` | da applicare |
 | `20261011000002` | le spese «Da collocare» (C12): tabella, guardiano, `annota_spesa_da_collocare`, `colloca_spesa`, `togli_foto_spesa`, il tipo vocale `spesa_da_collocare` e il suo ramo in `fai_azione_dettata` | applicata **al secondo giro** (vedi § 4) | da applicare |
 | `20261011000003` | la via di ritorno: `annulla_collocazione_spesa`, `elimina_spesa_da_collocare`, il guardiano che ammette il solo ritorno, le frasi sui tre legami | applicata | da applicare |
+| `20261011000004` | una foto, un appunto: `spese_da_collocare.chiave` (unica) e `annota_spesa_da_collocare` che alla stessa chiave restituisce l'appunto già scritto | **da applicare** (provata solo in locale, vedi § 3-bis) | da applicare |
 
 Nessuna va saltata. Comando previsto: `npm run migra -- --conferma`, dopo
 l'unione su `master` (il freno `nonAncoraSuGitHub` guarda `origin/master`).
@@ -69,6 +70,29 @@ sempre: lo decide `SENZA_TOKEN` in `scripts/funzione.mjs`, non un flag.
   Ricerca ricorrente e Monitoraggio social tolti, Agricolo messo da parte.
   Autorizzato da Alessio l'11/10 («sì, aggiorna anche il contratto»), in un
   commit a parte. Lo dichiaro qui come vuole §6 di `CLAUDE.md`.
+
+## 3-bis · I due rilievi della validazione del 12/10, e cosa ne è stato
+
+1. **«Riprova» dopo una rete incerta poteva creare due appunti** — vero, e
+   chiuso. Se la risposta di `annota_spesa_da_collocare` si perdeva dopo la
+   scrittura, «Riprova» chiamava di nuovo e nasceva un secondo appunto (con
+   una seconda copia della foto, perché il nome del file era nuovo a ogni
+   giro). Ora la schermata genera una **chiave per foto** una volta sola e la
+   ripassa a ogni «Riprova»; il database la ricorda (`…004`, indice unico) e
+   restituisce l'appunto già scritto; il file prende il nome dalla chiave, e
+   «esiste già» si tratta come «caricato dal giro di prima» (`giaCaricata`).
+   Prove: la `…004` passa due volte in locale e diventa **rossa** con la
+   funzione vecchia (0 appunti con quella chiave); a schermo
+   `tests/schermate/foto-riprova-una-volta.test.jsx` diventa **rossa** se
+   «Riprova» genera una chiave nuova; 3 prove pure su `giaCaricata`.
+   ⚠️ La voce non ne ha bisogno: l'appunto dettato si scrive approvandolo,
+   una volta sola.
+2. **`npm run deposito:orfani` si ferma se la tabella non c'è ancora** —
+   vero, ed è il verso giusto: la sua interrogazione nomina
+   `spese_da_collocare.foto_path`, e prima della `…002` in produzione
+   risponde con un errore invece di dichiarare orfane foto che non conosce.
+   Nessuna modifica: **l'ordine è applicare le migrazioni prima di usare
+   quel comando sulla produzione**, ed è scritto qui.
 
 ## 4 · Cosa si è visto
 
@@ -118,7 +142,8 @@ fotografie):**
 
 ## 5 · Cosa NON è verificato
 
-* Nessuna delle tre migrazioni è in produzione. Nessuna funzione è installata
+* Nessuna delle quattro migrazioni è in produzione, e la `…004` non è
+  ancora nemmeno sulla prova. Nessuna funzione è installata
   in produzione.
 * La `…003` non è stata vista girare in un database Supabase **da me**: la sua
   applicazione sulla prova l'ha lanciata Alessio, e la fine di

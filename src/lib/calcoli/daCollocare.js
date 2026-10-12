@@ -109,3 +109,13 @@ export function appuntoDaLettura(lettura) {
     incertezza: dubbi.length ? dubbi.join("; ") : null,
   };
 }
+
+/**
+ * Il deposito dei file risponde così quando un file con quel nome c'è già.
+ * Con la chiave della foto nel nome (20261011000004) vuol dire «il giro di
+ * prima l'aveva caricata»: è la stessa foto, e si va avanti.
+ */
+export function giaCaricata(error) {
+  const stato = String(error?.statusCode ?? error?.status ?? "");
+  return stato === "409" || /already exists|duplicate/i.test(String(error?.message ?? ""));
+}

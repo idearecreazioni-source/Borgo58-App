@@ -11,6 +11,7 @@
 
 import { supabase } from "../supabase";
 import { eseguiOperazione } from "../operazioni";
+import { giaCaricata } from "../calcoli/daCollocare";
 
 const BUCKET = "documents";
 const CARTELLA = "da-collocare";
@@ -58,21 +59,31 @@ function blobDaBase64(base64, tipo) {
  * Una foto letta da MEMO diventa un appunto da collocare.
  * `pronta` è la foto già rimpicciolita (preparaFoto), `campi` ciò che MEMO
  * ha capito (appuntoDaLettura).
+ *
+ * 🔴 `chiave` SI GENERA UNA VOLTA PER FOTO E SI RIPASSA A OGNI «RIPROVA»
+ *    (20261011000004). Se la rete cade dopo che il database ha scritto, la
+ *    seconda chiamata riceve lo stesso appunto invece di scriverne un altro;
+ *    e il file ha un nome che dipende dalla chiave, quindi riprovando non ne
+ *    nasce una seconda copia.
  */
-export async function annotaSpesaDaFoto(campi, pronta) {
+export async function annotaSpesaDaFoto(campi, pronta, chiave = crypto.randomUUID()) {
   let fotoPath = null;
   if (pronta?.base64) {
-    fotoPath = `${CARTELLA}/${crypto.randomUUID()}.jpg`;
+    fotoPath = `${CARTELLA}/${chiave}.jpg`;
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(fotoPath, blobDaBase64(pronta.base64, pronta.tipo || "image/jpeg"), {
         upsert: false,
         contentType: pronta.tipo || "image/jpeg",
       });
-    if (error) throw new Error("Non sono riuscito a conservare la foto: " + error.message);
+    // ⚠️ «Esiste già» vuol dire che il giro di prima l'aveva caricata: è la
+    //    stessa foto, e si va avanti. Ogni altro rifiuto ferma.
+    if (error && !giaCaricata(error)) {
+      throw new Error("Non sono riuscito a conservare la foto: " + error.message);
+    }
   }
   const { data, error } = await supabase.rpc("annota_spesa_da_collocare", {
-    p_campi: { ...campi, foto_path: fotoPath, foto_nome: fotoPath ? "ricevuta.jpg" : null },
+    p_campi: { ...campi, chiave, foto_path: fotoPath, foto_nome: fotoPath ? "ricevuta.jpg" : null },
   });
   if (error) throw error;
   return data;

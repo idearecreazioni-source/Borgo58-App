@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appuntoDaLettura, campiPer, cosaMancaPer } from "../../src/lib/calcoli/daCollocare";
+import { appuntoDaLettura, campiPer, cosaMancaPer, giaCaricata } from "../../src/lib/calcoli/daCollocare";
 
 describe("cosa manca per collocare", () => {
   it("le mancanze si dicono tutte insieme", () => {
@@ -41,5 +41,21 @@ describe("dalla foto all'appunto", () => {
   });
   it("un documento fuori elenco non passa", () => {
     expect(appuntoDaLettura({ acquisto: { documento: "ricevuta" } }).documento).toBeNull();
+  });
+});
+
+// 🔴 Dalla validazione della #178: «Riprova» dopo una rete che cade non deve
+//    fermarsi sul file già caricato dal giro di prima, e non deve passare
+//    sopra a un rifiuto vero del deposito.
+describe("la foto già caricata dal giro di prima", () => {
+  it("«esiste già» si riconosce, dal codice o dalle parole", () => {
+    expect(giaCaricata({ statusCode: "409", message: "x" })).toBe(true);
+    expect(giaCaricata({ status: 409 })).toBe(true);
+    expect(giaCaricata({ message: "The resource already exists" })).toBe(true);
+  });
+  it("un rifiuto vero non passa per «già caricata»", () => {
+    expect(giaCaricata({ statusCode: "403", message: "new row violates row-level security policy" })).toBe(false);
+    expect(giaCaricata({ message: "Payload too large" })).toBe(false);
+    expect(giaCaricata(null)).toBe(false);
   });
 });

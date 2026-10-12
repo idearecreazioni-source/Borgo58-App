@@ -44,11 +44,14 @@ export default function Fotografa() {
   const [spesaFoto, setSpesaFoto] = useState(null);
   const [ultimaFoto, setUltimaFoto] = useState(null);
 
-  const mettiDaCollocare = useCallback(async (letta, pronta) => {
+  // ⚠️ `foto` porta la foto E la sua chiave, nata una volta sola quando la
+  //    lettura arriva: «Riprova» ripassa la stessa, così una rete che cade
+  //    dopo la scrittura non produce due appunti (20261011000004).
+  const mettiDaCollocare = useCallback(async (letta, foto) => {
     const campi = appuntoDaLettura(letta);
     setSpesaFoto({ stato: "salvo", campi });
     try {
-      await annotaSpesaDaFoto(campi, pronta);
+      await annotaSpesaDaFoto(campi, foto?.pronta, foto?.chiave);
       setSpesaFoto({ stato: "fatto", campi });
     } catch (e) {
       setSpesaFoto({ stato: "errore", campi, errore: e.message });
@@ -118,9 +121,10 @@ export default function Fotografa() {
         gestoInBasso
         onLetto={(risposta, pronta) => {
           setEsito(risposta);
-          setUltimaFoto(pronta);
+          const foto = { pronta, chiave: crypto.randomUUID() };
+          setUltimaFoto(foto);
           setSpesaFoto(null);
-          if (risposta?.esito === "letta" && risposta.acquisto) mettiDaCollocare(risposta, pronta);
+          if (risposta?.esito === "letta" && risposta.acquisto) mettiDaCollocare(risposta, foto);
         }}
       />
 
