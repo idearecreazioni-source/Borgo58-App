@@ -42,6 +42,7 @@ import SpesaSpicciola from "./pages/magazzino/SpesaSpicciola";
 import Ordini from "./pages/magazzino/Ordini";
 import Produzioni from "./pages/magazzino/Produzioni";
 import Tracciabilita from "./pages/haccp/Tracciabilita";
+import LottoDestinazioni from "./pages/haccp/LottoDestinazioni";
 import Scadenze from "./pages/magazzino/Scadenze";
 import Fermi from "./pages/magazzino/Fermi";
 import Allineamento from "./pages/magazzino/Allineamento";
@@ -231,6 +232,7 @@ function AppRoutes() {
             chi ha il collegamento salvato sul tablet non trova una pagina
             morta. */}
         <Route path="/haccp/tracciabilita" element={<Tracciabilita />} />
+        <Route path="/haccp/tracciabilita/:id" element={<LottoDestinazioni />} />
         <Route
           path="/magazzino/tracciabilita"
           element={<Navigate to="/haccp/tracciabilita" replace />}

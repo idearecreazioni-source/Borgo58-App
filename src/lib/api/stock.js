@@ -44,6 +44,27 @@ export async function listStockLots(ingredientId) {
   return data;
 }
 
+// Un lotto solo, per la testata di «dove è finito». Titolare (RLS).
+export async function getStockLot(id) {
+  const { data, error } = await supabase
+    .from("stock_lots")
+    .select("*, ingredient:ingredient_id(id, name, unit), supplier:supplier_id(id, name)")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// DOVE È FINITO UN LOTTO — 12/10/2026 (N6). Conti coi piatti, produzioni
+// seguite fino al lotto nato, sprechi e resi; quello uscito prima del
+// 12/10/2026 torna come riga «non_annotato». Solo il titolare: il database
+// rifiuta chiunque altro, non risponde vuoto.
+export async function doveEFinitoIlLotto(lottoId) {
+  const { data, error } = await supabase.rpc("dove_e_finito_il_lotto", { p_lotto_id: lottoId });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Stessa cosa, senza unit_cost — per lo staff. La vista non ha foreign key
 // (niente embed automatico via PostgREST), quindi il nome del fornitore
 // arriva appiattito e va ricomposto qui nella stessa forma di listStockLots.

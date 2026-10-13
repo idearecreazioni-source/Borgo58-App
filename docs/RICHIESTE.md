@@ -54,7 +54,7 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
 **87 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**19 in attesa** · **8 in corso** · **56 fatte** · **4 scartate da lui**.
+**18 in attesa** · **9 in corso** · **56 fatte** · **4 scartate da lui**.
 La somma fa **87**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
@@ -230,7 +230,7 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | N20 | **La schermata «Carta da ristampare»**: il gestionale sa già dire se la carta è invecchiata dall'ultima stampa (vedi N18), manca la schermata che lo mostra, dice in breve perché, e permette di segnarla stampata. Senza allarmi invadenti. | 11/10/2026 | [relazione dell'11/10](proposte/20261011_le_migliorie_ancora_aperte.md) | — | fatta · ricontrollato l'11/10/2026: la schermata c'è già, è la sezione «La carta stampata» in Bevande e vini (commit `7c3591d` del 16/09, su `master`). La relazione la dava ancora da fare |
 | N10 | **Inventario della cantina ogni 3 mesi**, con lo scostamento mostrato **in bottiglie e in euro** — non una rettifica silenziosa. | 14/08/2026 | Blocco 3 del mandato cumulativo, scorporato da N4 il 30/08 | — | fatta · migrazione `20260831000004` (`inventario_cantina`) e la sezione nella schermata Cantina. ⚠️ **Rilegge** le rettifiche scritte dall'Allineamento: non ne scrive nessuna e non corregge niente in silenzio. ⚠️ **Il periodo lo sceglie lui**: nessun promemoria trimestrale automatico |
 | N5 | **Fatture in Cloud nelle due direzioni** (prerequisito suo: piano Complete e accesso). | 14/08/2026 | Blocco 4 del mandato cumulativo | aspetta | in attesa · aspetta il piano Complete e l'accesso, che decide lui |
-| N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | si può fare adesso | in attesa |
+| N6 | **La tracciabilità va sotto HACCP e guarda a valle**: dato un lotto, dove è finito — quali giorni, quali piatti, quali conti. | 14/08/2026 | Blocco 6 del mandato cumulativo | si può fare adesso | in corso · migrazione `20261012000001`: le uscite di ogni lotto si annotano da sole (un trigger), e «Tracciabilità lotti» apre dove è finito ogni lotto — conti coi piatti, produzioni seguite fino al lotto nato, sprechi e resi. ⚠️ Quello uscito **prima del 12/10/2026** non si ricostruisce: compare dichiarato come tale. Solo il titolare. Da provare sul progetto di prova |
 | N7 | **Il costo del personale e i premi** — la voce di spesa più grossa dell'anno non passa da nessun modulo. Fermo in attesa dei documenti veri di Gianna. | 15/08/2026 | Blocchi 1 e 2 del mandato personale e tesoreria | aspetta | in attesa · aspetta il prospetto del costo aziendale e il calendario delle paghe |
 | N8 | **Il simulatore di assunzione**: costo dal livello CCNL, non da un lordo digitato. | 15/08/2026 | Blocco 4 dello stesso mandato | aspetta | in attesa |
 | N11 | 🔴 **L'archivio a sezioni.** `documents.doc_type` era **testo libero**: «Fattura», «fattura» e «Fatture» sarebbero state tre sezioni diverse. Le otto sezioni sono sue. ⚠️ Vale la regola del 27/08: **una categoria spenta resta legale** per i documenti che la portano, non si distrugge. | 30/08/2026 | Sua richiesta, categorie sue | — | fatta · migrazione `20260830000013` |
