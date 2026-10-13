@@ -114,7 +114,7 @@ browser**: la regola chiede un contenitore di `24,15 × pxcm + 344` punti
 cioè `32 × pxcm` (1209 alla stessa calibrazione, margini esclusi). Quindi
 **a calibrazione di fabbrica non scatta mai**; scatta solo da circa 44 punti
 per centimetro in su, su una finestra abbastanza larga. Su quale calibrazione
-abbia il computer di Alessio **non lo so**. La decisione resta ad Alessio: tenerlo o toglierlo.
+abbia il computer di Alessio **non lo so**. ✅ **Deciso lo stesso giorno: «toglile»** — tolte dal codice, rovesciamento n. 101.
 
 ---
 
