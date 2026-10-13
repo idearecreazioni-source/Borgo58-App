@@ -1,3 +1,5 @@
+import { normalizza } from "./domande";
+
 // DOVE È FINITO UN LOTTO — 12/10/2026 (N6)
 //
 // Le parole e l'ordine delle righe restituite da `dove_e_finito_il_lotto`
@@ -47,4 +49,23 @@ export function contoDelLotto(righe) {
     else annotato += Number(r.quantita) || 0;
   }
   return { annotato, nonAnnotato };
+}
+
+// LA RICERCA FRA I LOTTI — 13/10/2026, chiesta da Alessio provando la
+// pagina: con tanti lotti non c'era modo di trovare il proprio. Davanti a
+// un richiamo si parte da un PRODOTTO, da un FORNITORE o da un NUMERO DI
+// LOTTO, quindi si cerca in tutti e tre.
+// ⚠️ Senza accenti e senza maiuscole (`normalizza`, la stessa regola del
+//    MEMO): «Calamaro» si trova scrivendo «calamaro», e un lotto «a7-12»
+//    scrivendo «A7 12». Più parole devono esserci TUTTE, in qualunque campo:
+//    «calamaro mulino» trova il calamaro di quel fornitore.
+export function filtraLotti(lotti, testo) {
+  const parole = normalizza(testo).split(" ").filter(Boolean);
+  if (parole.length === 0) return lotti ?? [];
+  return (lotti ?? []).filter((l) => {
+    const dove = normalizza(
+      [l.ingredient?.name, l.supplier?.name, l.supplier_batch_number].filter(Boolean).join(" ")
+    );
+    return parole.every((p) => dove.includes(p));
+  });
 }

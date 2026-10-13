@@ -38,3 +38,29 @@ describe("l'ordine delle righe", () => {
     expect(c).toEqual({ annotato: 2, nonAnnotato: 3 });
   });
 });
+
+import { filtraLotti } from "../../src/lib/calcoli/lotti";
+
+describe("la ricerca fra i lotti", () => {
+  const lotti = [
+    { id: "1", ingredient: { name: "Calamaro" }, supplier: { name: "Pescheria Mulè" }, supplier_batch_number: "A7-12" },
+    { id: "2", ingredient: { name: "Ragù pronto" }, supplier: { name: "Mulino" }, supplier_batch_number: null },
+    { id: "3", ingredient: { name: "Farina" }, supplier: null, supplier_batch_number: "X1" },
+  ];
+  const ids = (t) => filtraLotti(lotti, t).map((l) => l.id);
+
+  it("vuota, restituisce tutto", () => {
+    expect(ids("")).toEqual(["1", "2", "3"]);
+    expect(ids("   ")).toEqual(["1", "2", "3"]);
+  });
+  it("cerca nel prodotto, nel fornitore e nel numero di lotto, senza accenti né maiuscole", () => {
+    expect(ids("CALAMARO")).toEqual(["1"]);
+    expect(ids("ragu")).toEqual(["2"]);
+    expect(ids("mule")).toEqual(["1"]);
+    expect(ids("a7 12")).toEqual(["1"]);
+  });
+  it("più parole devono esserci tutte", () => {
+    expect(ids("calamaro mulino")).toEqual([]);
+    expect(ids("ragu mulino")).toEqual(["2"]);
+  });
+});
