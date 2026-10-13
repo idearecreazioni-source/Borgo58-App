@@ -950,7 +950,8 @@ Alessio. Nessun danno — solo un giro in più.
 - **Autoprodotti in magazzino e raccolta propria col registro HACCP** —
   rimandati all'apertura dell'azienda agricola.
 - **Sito web**: dopo l'app, col gestionale spostato su un sottodominio.
-- **Le due colonne sul computer** nella schermata della sala.
+- ~~**Le due colonne sul computer** nella schermata della sala.~~ Scartata da
+  Alessio il 13/10/2026 (S5 in `RICHIESTE.md`).
 - 🆕 **Un modulo PREVENTIVI per i clienti**, sullo stile dell'editor del menu
   (19/08/2026). È nata parlando dei finger food scelti per un evento: chi
   organizza una cena sceglie i bocconcini uno per uno, e da quella scelta
