@@ -78,7 +78,12 @@ describe("il conteggio delle richieste è allineato alle righe", () => {
   });
 
   it("e si rifiuta anche se una riga non dice quando si può fare", () => {
-    const rotto = testo.replace("| si può fare adesso | in attesa |", "|  | in attesa |");
+    // Una riga APERTA qualsiasi, in attesa o in corso: legarsi a «in attesa»
+    // rompeva la prova il giorno in cui l'ultima di quelle si chiudeva.
+    const rotto = testo.replace(
+      /\| si può fare adesso \| (in attesa|in corso)/,
+      "|  | $1"
+    );
     expect(rotto, "nessuna riga «si può fare adesso»: la prova non prova niente").not.toBe(testo);
     expect(() => generaConteggio(rotto)).toThrow(/Quando|adesso/i);
   });
