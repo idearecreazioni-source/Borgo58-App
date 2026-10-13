@@ -66,7 +66,9 @@ schermata» (dall'01/09 esiste `tests/schermate/`, **54** file).
 
 **Aperte davvero** (il «cosa manca» è verificato nel codice, non dedotto):
 
-1. **Le caparre tenute non si vedono da nessuna parte.** Il database le
+1. ✅ **Chiusa il 13/10 sera**: schermata *Cassa → Caparre tenute*
+   (`cassa/CaparreTenute.jsx`, prova `tests/schermate/caparre-tenute.test.jsx`).
+   *Prima:* **Le caparre tenute non si vedono da nessuna parte.** Il database le
    distingue (`20260827000003`) e `caparreTrattenute()` esiste in
    `src/lib/api/reservations.js`, ma **nessuna schermata la chiama**
    (cercato in `src/`).
