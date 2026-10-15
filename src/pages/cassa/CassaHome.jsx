@@ -429,6 +429,13 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/sconti-omaggi">
               Sconti e omaggi
             </Scorciatoia>
+            {/* 🔴 LA PORTA DELLE CAPARRE TENUTE (13/10/2026): il dato c'era dal
+                27/08 e nessuna schermata lo mostrava. Senza questo
+                collegamento la pagina sarebbe di nuovo una rotta che nessuno
+                apre — il difetto dei Preventivi del 20/08. */}
+            <Scorciatoia to="/cassa/caparre-tenute">
+              Caparre tenute
+            </Scorciatoia>
             <Scorciatoia to="/cassa/causali">
               Causali
             </Scorciatoia>

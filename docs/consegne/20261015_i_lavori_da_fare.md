@@ -61,7 +61,7 @@ Nessuna.
 
 ## 6 · Cosa abbiamo rovesciato
 
-* **n. 101** — la categoria di un impegno torna sceglibile nel modulo, **una
+* **n. 102** — la categoria di un impegno torna sceglibile nel modulo, **una
   sola** e con una casella (decisione del 10/09/2026). Ragione di allora
   ancora valida: il menu non torna. Dettaglio in
   [`docs/decisioni_rovesciate.md`](../decisioni_rovesciate.md).
