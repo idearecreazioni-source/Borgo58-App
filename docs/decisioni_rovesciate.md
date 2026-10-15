@@ -3732,3 +3732,28 @@ quando questa sezione è stata scritta.
    non cambiare niente di ciò che si vede. Questa sì — sposta l'impegno in
    una sezione — ed è l'unica differenza che rende una scelta degna di stare
    nel modulo. Il prezzo è una casella in più nella scheda di ogni impegno.
+
+## 103 · 15/10/2026 — «un impegno scritto a mano nasce visibile allo staff»
+
+1. **Cosa era stato deciso e quando.** Il 04/08/2026 (§3.18, migrazione
+   `20260804000001`): l'Agenda è condivisa, quindi nella scheda di un
+   impegno nuovo la casella «Visibile allo staff» partiva spuntata, e il
+   titolare la toglieva per riservarne uno.
+
+2. **La ragione di allora.** Un'Agenda condivisa in cui quasi tutto è per
+   tutti: il caso raro era riservare, e il predefinito seguiva il caso
+   frequente.
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 15/10: *«puoi togliere
+   la spunta di default in "visibile allo staff"?»*). Nella scheda di un
+   impegno **nuovo** la casella parte tolta. Gli impegni già scritti
+   tengono il valore che hanno; il predefinito del database
+   (`default true`) non cambia, e continua a valere per gli impegni
+   automatici (che decide `trg_task_visibility`) e per quelli scritti dallo
+   staff, che il database rende comunque visibili.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: chi scrive l'impegno è quasi sempre il titolare, e oggi il
+   caso frequente è suo. Il prezzo è che un impegno pensato per la sala
+   resta invisibile allo staff finché lui non mette la spunta — e
+   dimenticarla non dà nessun errore.
