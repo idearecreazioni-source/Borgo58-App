@@ -66,6 +66,7 @@ import Causali from "./pages/cassa/Causali";
 import Previsione from "./pages/cassa/Previsione";
 import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
+import CaparreTenute from "./pages/cassa/CaparreTenute";
 import DaCollocare from "./pages/cassa/DaCollocare";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
@@ -290,6 +291,7 @@ function AppRoutes() {
             gliene deve ancora è un fatto suo e di quelle persone. */}
         <Route path="/cassa/da-collocare" element={<RequireTitolare><DaCollocare /></RequireTitolare>} />
         <Route path="/cassa/prestiti" element={<RequireTitolare><Prestiti /></RequireTitolare>} />
+        <Route path="/cassa/caparre-tenute" element={<RequireTitolare><CaparreTenute /></RequireTitolare>} />
         <Route path="/cassa/scontrinato" element={<RequireTitolare><Scontrinato /></RequireTitolare>} />
         {/* Comande (§3.2, §4 mod. 5): staff-accessibile, voce propria in
             sidebar — non sotto /cassa, dato che è una modalità operativa

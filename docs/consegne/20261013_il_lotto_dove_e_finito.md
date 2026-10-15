@@ -4,9 +4,9 @@
 idearecreazioni-source/Borgo58-App#183 (ramo `claude/align-prod-staging-data-zym1ue`
 → `slave`).
 
-⚠️ **Scritto PRIMA di applicare in produzione**, perché `npm run migra` lo
-pretende. I numeri veri dell'applicazione vanno aggiunti alla voce § 7,
-dopo `--conferma`.
+Scritto PRIMA di applicare in produzione, perché `npm run migra` lo
+pretende; la voce § 7 è stata completata dopo l'applicazione, coi numeri
+veri.
 
 ---
 
@@ -106,6 +106,24 @@ Niente.
 
 ## 7 · Applicazione in produzione
 
-*Da compilare dopo `npm run migra -- --conferma`: quante migrazioni sono
-entrate e le righe di `uscite_lotto` (zero all'inizio: il gestionale vero
-comincia ad annotare da lì).*
+Fatto da Alessio il 13/10/2026 alle 20:16, dopo l'unione su `master`
+(idearecreazioni-source/Borgo58-App#184, commit di unione `45073d5`).
+
+* **Copia di sicurezza** fatta prima (`npm run backup`), come pretende
+  `npm run migra`.
+* **`npm run migra -- --conferma`**: «applicate e registrate: 1 su 1» —
+  `20261012000001_il_lotto_dove_e_finito.sql` — verifica «Fatto … zero
+  residui», **totale migrazioni in produzione: 420**. Le tre NOTICE «does not
+  exist, skipping» sono i `drop … if exists` della prima applicazione.
+* **Misurato dopo, dal connettore in sola lettura sulla produzione**:
+  `applied_migrations` = **420**, ultima `20261012000001`; `uscite_lotto` =
+  **0** righe; movimenti con `transazione` valorizzata = **0**; i due trigger
+  (`trg_traccia_uscita_lotto`, `trg_collega_uscite_al_movimento`) **accesi**.
+  Zero è lo stato di partenza atteso: il gestionale vero comincia ad annotare
+  dal primo calo di un lotto dopo l'applicazione, e tutto ciò che è uscito
+  prima compare come riga «non annotato».
+* **Sito**: il passaggio «Manda in produzione» della corsa 38404004650 è
+  riuscito dopo l'approvazione di Alessio.
+* **Funzioni online**: nessuna da installare.
+* ⚠️ **Non guardato**: nessuno ha riportato di aver aperto la pagina «Dove è
+  finito» sul gestionale vero.

@@ -29,6 +29,97 @@ alla fine di ogni giro** — non ci sarà più una chat da rileggere.
 
 ---
 
+## 🔄 Il ripasso del 13/10/2026 — cosa di questo file è ancora vero
+
+Chiesto da Alessio («non hai niente in coda?»). Ogni voce è stata confrontata
+con il repository — migrazioni, consegne, codice, storia di git — **in sola
+lettura e senza database**. Le voci qui sotto **non sono state riscritte**:
+restano come origine delle decisioni, e questo riquadro dice quali sono
+superate.
+
+⚠️ **Due frasi ricorrenti nel file sono false da tempo, e valgono per tutte
+le voci**: «non applicata / niente in produzione» (al 13/10 le migrazioni sono
+**420** nel repository e **420** in produzione, ultima `20261012000001`,
+misurato dal connettore in sola lettura) e «nessuna prova guarda una
+schermata» (dall'01/09 esiste `tests/schermate/`, **54** file).
+
+**Chiuse, con la prova di dove:**
+
+| voce | dove sta |
+|---|---|
+| 0-zero | `20260825000012`; eccezioni in `scripts/ricostruzione-regole.mjs` |
+| 0-ter, 0-ter-bis | `20260823000002` |
+| 0-quater, 0-quater-bis | `20260823000003`-`…005`; il vino in magazzino con `20260830000002` |
+| 0-sei | `20260823000015`, schermata `cassa/Scontrinato.jsx` |
+| 0-bis | referto `referti/20260822_quello_che_sta_fuori_dalle_schermate.md`, commit `1f5cef2` |
+| 0 (finger food e storico dei costi) | `20260819000012`, `…013`, `20260820000001`-`…003` |
+| 1 «arrivati N di M» | `20260819000001`, `magazzino/ListaSpesa.jsx` |
+| 2 la lista non scrive uscite | `20260819000002`-`…005`, `tests/app/tre-esiti-lista.test.js` |
+| 4 la serata sulla Dashboard | `20260824000024`, `Dashboard.jsx` (⚠️ `collaudo/annotazioni.md` dice ancora «da fare») |
+| 5 la regola delle 5 | consegne del 19/08 |
+| 10 i preventivi | cinque blocchi, l'ultimo `20260822000001` |
+| 12 l'allineamento del magazzino | `20260820000010` |
+| le due colonne delle **Comande** sul tablet | tolte il 21/08 (`comande/Sala.jsx`); ⚠️ **non è S5**, vedi sotto |
+| i bersagli fra 5 e 8 mm | consegna `consegne/20260826_i_comandi_vocali_i_bersagli_e_le_decisioni.md`: nessuno sotto 8,50 mm (⚠️ il commit che cita, `57fea27`, **non esiste** in questa storia di git) |
+| la seconda strada del push | superata dal lavoro a rami del 31/08 |
+| le prove che guardano le schermate | `tests/schermate/` dall'01/09 (decisione rovesciata) |
+
+**Aperte davvero** (il «cosa manca» è verificato nel codice, non dedotto):
+
+1. ✅ **Chiusa il 13/10 sera**: schermata *Cassa → Caparre tenute*
+   (`cassa/CaparreTenute.jsx`, prova `tests/schermate/caparre-tenute.test.jsx`).
+   *Prima:* **Le caparre tenute non si vedono da nessuna parte.** Il database le
+   distingue (`20260827000003`) e `caparreTrattenute()` esiste in
+   `src/lib/api/reservations.js`, ma **nessuna schermata la chiama**
+   (cercato in `src/`).
+2. **`npm run prova:ricostruisci` non regge una ricostruzione da zero.**
+   `scripts/prova-ricostruisci.mjs` fa solo `analyze` (righe 237-252, col
+   commento «si rilancia dopo un analyze» che la voce 0-zero-bis dichiara
+   falso) e non conosce le eccezioni storiche che `ricostruzione-verifica`
+   invece applica. Voci 0-zero-bis e 0-zero-storico. **Non è stato
+   lanciato**: che si fermi a metà è letto dal codice.
+3. **In Comande, dopo «Invia», una rilettura fallita non lo dice**:
+   `comande/Sala.jsx:970` è ancora `withBusy(…).then(loadBoard)` (voce 8).
+4. **Registratore, blocco 3**: nessuna ristampa dal gestionale, e
+   `listContiFiscalizzatiInRitardo` (`src/lib/api/orders.js`) non ha
+   chiamanti (voce 9).
+5. **Lo zero di `ingredients.current_price`** vale ancora come prezzo
+   ovunque non ci sia un'avvertenza dedicata (voce 0, decisione aperta).
+6. **Il controllo che guarda la forma** (voce 3): tutti i pezzi aperti
+   tranne i conteggi, in parte diventati comandi. Fra questi
+   `createCashMovement`, che costruisce ancora i dati nella schermata
+   (`cassa/PrimaNota.jsx`).
+7. **L'avviso del prodotto fermo** guarda il prodotto, non il lotto; il
+   legame per lotto esiste dal 12/10 (`uscite_lotto`) e l'avviso non lo usa
+   (voce 0-cinque). **Le etichette di produzione** non esistono.
+8. **La posta dei clienti, blocco 3** (leggere le mail dei clienti) e
+   **l'invio vero delle comunicazioni commerciali** (voce 11).
+9. **La chiave che scrive in produzione** è ancora fra le variabili del
+   computer di Alessio (`.env.example`); l'identità di sola lettura è
+   progettata e non creata (RICHIESTE T2).
+10. **Il Bar raggruppa ancora per invio** e non per turno, e la coda di
+    stampa non esiste (sezione «i turni dei pasti»).
+11. **Le tre tabelle del registro delle cancellazioni** ancora da decidere
+    (`20260829000021`).
+12. **La serata recitata per intero** non è mai stata rifatta sull'app di
+    oggi (voce 6).
+
+🔴 **E UNA CONTRADDIZIONE TROVATA DAL RIPASSO, MIA.** Il 13/10 ho mostrato ad
+Alessio uno schizzo delle «due colonne sulla schermata della sala, sul
+computer» (S5) **dicendogli che oggi la schermata è una colonna sola**, e lui
+le ha scartate. **Non era vero: S5 era già costruita il 21/09** (commit
+`336b1ee`, `salaAffiancata()` in `src/lib/calcoli/sala.js`,
+`PiantaGiornata.jsx`, prova `tests/schermate/sala-due-colonne.test.jsx`), e
+`RICHIESTE.md` la dava «in attesa» invece che fatta. ⚠️ **Quando compare, calcolato dai numeri del codice e non guardato in un
+browser**: la regola chiede un contenitore di `24,15 × pxcm + 344` punti
+(1257 a calibrazione di fabbrica, 37,8), e il tetto della pagina è 80rem,
+cioè `32 × pxcm` (1209 alla stessa calibrazione, margini esclusi). Quindi
+**a calibrazione di fabbrica non scatta mai**; scatta solo da circa 44 punti
+per centimetro in su, su una finestra abbastanza larga. Su quale calibrazione
+abbia il computer di Alessio **non lo so**. ✅ **Deciso lo stesso giorno: «toglile»** — tolte dal codice, rovesciamento n. 101.
+
+---
+
 ## La coda dei lavori, nell'ordine deciso
 
 0-caparra. 🟡 **UNA CAPARRA INCASSATA NON ARRIVAVA MAI IN CASSA — misurato e
@@ -950,7 +1041,8 @@ Alessio. Nessun danno — solo un giro in più.
 - **Autoprodotti in magazzino e raccolta propria col registro HACCP** —
   rimandati all'apertura dell'azienda agricola.
 - **Sito web**: dopo l'app, col gestionale spostato su un sottodominio.
-- **Le due colonne sul computer** nella schermata della sala.
+- ~~**Le due colonne sul computer** nella schermata della sala.~~ Scartata da
+  Alessio il 13/10/2026 (S5 in `RICHIESTE.md`).
 - 🆕 **Un modulo PREVENTIVI per i clienti**, sullo stile dell'editor del menu
   (19/08/2026). È nata parlando dei finger food scelti per un evento: chi
   organizza una cena sceglie i bocconcini uno per uno, e da quella scelta
