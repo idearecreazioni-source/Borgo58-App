@@ -159,8 +159,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
 | 101 | 13/10/2026 | sul computer la sala e le prenotazioni stanno affiancate |
 | 102 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
+| 103 | 15/10/2026 | un impegno scritto a mano nasce visibile allo staff |
 
-⚠️ **Righe: 103.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 104.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
