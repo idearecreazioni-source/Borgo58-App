@@ -513,6 +513,9 @@ export const TASK_CATEGORIES = [
   { value: "fornitori_pagamenti", label: "Fornitori e pagamenti" },
   { value: "personale", label: "Personale" },
   { value: "haccp_locale", label: "HACCP e locale" },
+  // 15/10/2026, chiesto da Alessio: i lavori al locale hanno una sezione
+  // loro in Agenda (`sezioneDi` in `calcoli/agenda.js`).
+  { value: "lavori", label: "Lavori da fare" },
   { value: "altro", label: "Altro" },
 ];
 

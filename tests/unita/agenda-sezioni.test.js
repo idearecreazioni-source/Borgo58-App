@@ -38,6 +38,28 @@ describe("in quale sezione entra un impegno", () => {
     expect(sezioneDi(r({ corsia: "in_ritardo" }))).toBe("in_ritardo");
   });
 
+  // ⚠️ Il lavoro si prova IN RITARDO: è il caso in cui la corsia direbbe
+  //    un'altra cosa, quindi l'unico in cui la regola si vede lavorare.
+  it("un lavoro da fare va nella sua sezione, anche se è in ritardo", () => {
+    const t = r({ category: "lavori", corsia: "in_ritardo", giorni_alla_scadenza: -2 });
+    expect(sezioneDi(t)).toBe("lavori");
+    const sezioni = sezioniDellAgenda([t]);
+    expect(sezioni.find((s) => s.key === "lavori").righe).toEqual([t]);
+    expect(sezioni.find((s) => s.key === "in_ritardo").righe).toEqual([]);
+    // e il badge lo conta ancora: scaduto è scaduto
+    expect(daFareAdesso([t])).toBe(1);
+  });
+
+  it("un lavoro stellato va in testa come gli altri", () => {
+    expect(sezioneDi(r({ category: "lavori", preferito: true }))).toBe("per_me_conta");
+  });
+
+  it("la sezione dei lavori si vede anche vuota", () => {
+    const lavori = SEZIONI.find((s) => s.key === "lavori");
+    expect(lavori?.titolo).toBe("Lavori da fare");
+    expect(lavori.nascondiSeVuota).toBeFalsy();
+  });
+
   it("🔴 una riga stellata E in ritardo compare UNA VOLTA SOLA", () => {
     const righe = [r({ preferito: true, corsia: "in_ritardo" })];
     const sez = sezioniDellAgenda(righe);
