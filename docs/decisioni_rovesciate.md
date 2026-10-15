@@ -3681,3 +3681,26 @@ quando questa sezione è stata scritta.
    ritorno*. Il prezzo: il guardiano ammette un passo in più, nella sola
    forma esatta del ritorno, e regge perché dal browser la tabella si legge
    soltanto.
+
+## 101 · 15/10/2026 — «la categoria di un impegno non si sceglie nel modulo»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026, da Alessio: il menu
+   delle categorie esce dalla scheda di un impegno. Un impegno scritto a mano
+   nasce «Altro», e la categoria la mettono solo i moduli che creano impegni
+   da soli (Archivio, Fatture, Personale).
+
+2. **La ragione di allora.** Su venti impegni il menu diceva «Altro» quindici
+   volte: era una scelta che nessuno faceva, e un campo che nessuno usa è
+   ingombro.
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 15/10: *«vorrei
+   aggiungere una sezione in agenda: lavori da fare»*). **Una** categoria
+   torna sceglibile a mano, `lavori`, con una casella e non con il menu:
+   «È un lavoro da fare». Spuntata, l'impegno va nella sezione «Lavori da
+   fare» dell'elenco.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: il menu non torna, perché le altre categorie continuano a
+   non cambiare niente di ciò che si vede. Questa sì — sposta l'impegno in
+   una sezione — ed è l'unica differenza che rende una scelta degna di stare
+   nel modulo. Il prezzo è una casella in più nella scheda di ogni impegno.
