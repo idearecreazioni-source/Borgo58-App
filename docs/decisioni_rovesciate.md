@@ -159,8 +159,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
 | 101 | 13/10/2026 | sul computer la sala e le prenotazioni stanno affiancate |
 | 102 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
+| 103 | 15/10/2026 | un impegno scritto a mano nasce visibile allo staff |
 
-⚠️ **Righe: 103.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 104.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3732,3 +3733,28 @@ quando questa sezione è stata scritta.
    non cambiare niente di ciò che si vede. Questa sì — sposta l'impegno in
    una sezione — ed è l'unica differenza che rende una scelta degna di stare
    nel modulo. Il prezzo è una casella in più nella scheda di ogni impegno.
+
+## 103 · 15/10/2026 — «un impegno scritto a mano nasce visibile allo staff»
+
+1. **Cosa era stato deciso e quando.** Il 04/08/2026 (§3.18, migrazione
+   `20260804000001`): l'Agenda è condivisa, quindi nella scheda di un
+   impegno nuovo la casella «Visibile allo staff» partiva spuntata, e il
+   titolare la toglieva per riservarne uno.
+
+2. **La ragione di allora.** Un'Agenda condivisa in cui quasi tutto è per
+   tutti: il caso raro era riservare, e il predefinito seguiva il caso
+   frequente.
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 15/10: *«puoi togliere
+   la spunta di default in "visibile allo staff"?»*). Nella scheda di un
+   impegno **nuovo** la casella parte tolta. Gli impegni già scritti
+   tengono il valore che hanno; il predefinito del database
+   (`default true`) non cambia, e continua a valere per gli impegni
+   automatici (che decide `trg_task_visibility`) e per quelli scritti dallo
+   staff, che il database rende comunque visibili.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: chi scrive l'impegno è quasi sempre il titolare, e oggi il
+   caso frequente è suo. Il prezzo è che un impegno pensato per la sala
+   resta invisibile allo staff finché lui non mette la spunta — e
+   dimenticarla non dà nessun errore.

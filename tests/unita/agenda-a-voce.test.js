@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { TASK_CATEGORIES } from "../../src/lib/constants.js";
 import {
   TIPO_CHIARIRE,
   TIPO_FATTO,
@@ -693,5 +695,32 @@ describe("le istruzioni per il modello", () => {
 
   it("e dicono di non inventare la data", () => {
     expect(istruzioniAgenda()).toMatch(/Non mettere una data che non ha detto/);
+  });
+});
+
+// =====================================================================
+// I LAVORI DA FARE A VOCE — 15/10/2026, chiesto da Alessio
+// =====================================================================
+// 🔴 Il database accettava gia' la categoria `lavori` su un promemoria
+//    dettato (`fai_azione_dettata` legge `dati.categoria`), ma il modello
+//    non sapeva che il campo esisteva: ogni lavoro detto a voce finiva in
+//    «Altro». Queste prove tengono il campo nelle DUE descrizioni del
+//    promemoria (quella generale e quella dell'Agenda) e il valore uguale a
+//    quello del vocabolario chiuso: un valore diverso il database lo
+//    tradurrebbe in «altro», in silenzio.
+describe("i lavori da fare detti a voce", () => {
+  const PROMPT = readFileSync("supabase/functions/ascolta-voce/index.ts", "utf8");
+
+  it("il valore che il modello deve usare è quello del vocabolario", () => {
+    expect(TASK_CATEGORIES.map((c) => c.value)).toContain("lavori");
+  });
+
+  it("le istruzioni generali conoscono il campo, e dicono quando lasciarlo vuoto", () => {
+    expect(PROMPT).toContain('"categoria": "lavori"|null');
+    expect(PROMPT).toMatch(/In ogni altro caso resta \*\*null\*\*/);
+  });
+
+  it("e lo conoscono anche le istruzioni dell'Agenda", () => {
+    expect(istruzioniAgenda()).toContain('"categoria": "lavori"|null');
   });
 });

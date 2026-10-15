@@ -71,10 +71,14 @@ const emptyForm = {
   //    predefinito qui vorrebbe dire mandare messaggi che nessuno ha chiesto.
   sollecito_ogni: "",
   sollecito_unita: "",
-  // §3.18: l'Agenda è condivisa, quindi un task nasce visibile. Il titolare
-  // può riservarne uno singolo; per i task automatici decide il DB (trigger
-  // trg_task_visibility), qualunque cosa mandi questo form.
-  visibile_staff: true,
+  // 🔴 UN IMPEGNO NUOVO NASCE RISERVATO AL TITOLARE — 15/10/2026, deciso
+  //    da Alessio: la spunta «Visibile allo staff» parte tolta, e la mette
+  //    lui quando serve. Vale solo per gli impegni che nascono da qui: quelli
+  //    già scritti tengono il valore che hanno. Per i task automatici decide
+  //    il DB (trigger trg_task_visibility), qualunque cosa mandi questo form;
+  //    e un impegno scritto dallo staff il DB lo rende comunque visibile
+  //    (§3.18), perché lo staff la casella non la vede.
+  visibile_staff: false,
 };
 
 // Il DB salva remind_at come timestamptz (UTC); i campi data/ora del form
@@ -241,7 +245,9 @@ export default function TaskForm() {
         sollecito_ogni: sollecita && newRemindAt ? Number(form.sollecito_ogni) : null,
         sollecito_unita: sollecita && newRemindAt ? form.sollecito_unita : null,
         remind_at: newRemindAt,
-        visibile_staff: form.visibile_staff,
+        // Lo staff la casella non la vede: per lui resta visibile, che è
+        // anche ciò che il database imporrebbe da sé.
+        visibile_staff: isTitolare ? form.visibile_staff : true,
         // Un promemoria nuovo o cambiato deve poter essere rimandato di nuovo.
         ...(newRemindAt !== initialRemindAt ? { reminder_sent_at: null } : {}),
       };
