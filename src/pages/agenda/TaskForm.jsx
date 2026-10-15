@@ -105,6 +105,10 @@ export default function TaskForm() {
   //    suoi, e riempirli con quelli di una dettatura li cancellerebbe.
   const venuto = useDaVoce((c) => { if (!isEdit) setForm((f) => conCampi(f, c, DA_VOCE)); });
   const [origineModulo, setOrigineModulo] = useState(null);
+  // ⚠️ La categoria con cui l'impegno è arrivato: togliendo la casella dei
+  //    lavori torna QUELLA, non «altro» — un impegno nato dall'Archivio
+  //    («documenti») non deve perdere la sua categoria per un tocco di prova.
+  const [categoriaPrima, setCategoriaPrima] = useState("altro");
   const [reminderSentAt, setReminderSentAt] = useState(null);
   const [initialRemindAt, setInitialRemindAt] = useState(null);
   const [loading, setLoading] = useState(isEdit);
@@ -137,6 +141,7 @@ export default function TaskForm() {
           visibile_staff: t.visibile_staff ?? true,
         });
         setOrigineModulo(t.origine_modulo);
+        setCategoriaPrima(t.category && t.category !== "lavori" ? t.category : "altro");
         setReminderSentAt(t.reminder_sent_at);
         setInitialRemindAt(t.remind_at);
       })
@@ -405,6 +410,22 @@ export default function TaskForm() {
             onChange={(e) => setForm((f) => ({ ...f, preferito: e.target.checked }))}
           />
           ★ Per me conta
+        </label>
+
+        {/* 🔴 I LAVORI DA FARE — 15/10/2026, chiesto da Alessio. Una casella
+            e non un menu delle categorie: il menu è stato tolto dal modulo
+            il 10/09 (diceva «Altro» quindici volte su venti), e questa è
+            l'unica categoria che si sceglie a mano perché ha una sezione
+            sua nell'Agenda. */}
+        <label data-casella-lavoro className="tocco-campo flex items-center gap-2 testo-sala-grande text-b58-charcoal">
+          <input
+            type="checkbox"
+            checked={form.category === "lavori"}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, category: e.target.checked ? "lavori" : categoriaPrima }))
+            }
+          />
+          È un lavoro da fare
         </label>
 
         {isTitolare && !origineModulo && (

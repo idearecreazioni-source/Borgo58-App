@@ -46,12 +46,25 @@ export const SEZIONI = [
   { key: "questa_settimana", titolo: "Questa settimana", perGiorno: true },
   { key: "piu_avanti", titolo: "Più avanti", chiudibile: true, chiusaDiSuo: true, perMese: true },
   { key: "quando_capita", titolo: "Quando capita" },
+  // 🔴 I LAVORI DA FARE — 15/10/2026, chiesto da Alessio: «vorrei
+  //    aggiungere una sezione in agenda: lavori da fare». Sono gli impegni
+  //    con la categoria `lavori` (la casella «È un lavoro da fare» nella
+  //    scheda), e come le stellate escono dalla loro corsia invece di
+  //    comparire in due posti.
+  //    ⚠️ Resta visibile anche vuota, apposta: è una sezione nuova, e una
+  //    sezione che compare solo quando è piena non si sa che esiste.
+  //    ⚠️ Il badge non cambia: conta ancora ritardo e oggi, quindi un
+  //    lavoro scaduto continua a contare.
+  { key: "lavori", titolo: "Lavori da fare" },
 ];
 
 /**
  * Da quale sezione entra una riga. Una sola risposta per riga.
  */
-export const sezioneDi = (t) => (t.preferito ? "per_me_conta" : t.corsia);
+// ⚠️ La stella vince sui lavori: è l'unico segno che dice «questo davanti
+// agli occhi», e un lavoro stellato deve stare in testa come gli altri.
+export const sezioneDi = (t) =>
+  t.preferito ? "per_me_conta" : t.category === "lavori" ? "lavori" : t.corsia;
 
 /**
  * Le righe di ogni sezione, contate una volta sola.

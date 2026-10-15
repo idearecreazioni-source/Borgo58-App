@@ -158,8 +158,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 99 | 11/10/2026 | una spesa detta a voce va da sé nel soggetto che le parole indicano |
 | 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
 | 101 | 13/10/2026 | sul computer la sala e le prenotazioni stanno affiancate |
+| 102 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
 
-⚠️ **Righe: 102.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 103.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3708,3 +3709,26 @@ quando questa sezione è stata scritta.
    comunque: la regola chiedeva 1257 punti di contenitore e il tetto della
    pagina ne dava 1209. Il racconto è nel ripasso del 13/10 in
    `CODA_E_DECISIONI.md`.
+
+## 102 · 15/10/2026 — «la categoria di un impegno non si sceglie nel modulo»
+
+1. **Cosa era stato deciso e quando.** Il 10/09/2026, da Alessio: il menu
+   delle categorie esce dalla scheda di un impegno. Un impegno scritto a mano
+   nasce «Altro», e la categoria la mettono solo i moduli che creano impegni
+   da soli (Archivio, Fatture, Personale).
+
+2. **La ragione di allora.** Su venti impegni il menu diceva «Altro» quindici
+   volte: era una scelta che nessuno faceva, e un campo che nessuno usa è
+   ingombro.
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 15/10: *«vorrei
+   aggiungere una sezione in agenda: lavori da fare»*). **Una** categoria
+   torna sceglibile a mano, `lavori`, con una casella e non con il menu:
+   «È un lavoro da fare». Spuntata, l'impegno va nella sezione «Lavori da
+   fare» dell'elenco.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: il menu non torna, perché le altre categorie continuano a
+   non cambiare niente di ciò che si vede. Questa sì — sposta l'impegno in
+   una sezione — ed è l'unica differenza che rende una scelta degna di stare
+   nel modulo. Il prezzo è una casella in più nella scheda di ogni impegno.
