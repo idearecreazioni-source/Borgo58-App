@@ -157,8 +157,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 98 | 11/10/2026 | la bozza si legge in una scheda, e si corregge in un modulo a parte |
 | 99 | 11/10/2026 | una spesa detta a voce va da sé nel soggetto che le parole indicano |
 | 100 | 11/10/2026 | una spesa si colloca una volta sola, e collocata non si tocca più |
+| 101 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
 
-⚠️ **Righe: 101.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 102.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
