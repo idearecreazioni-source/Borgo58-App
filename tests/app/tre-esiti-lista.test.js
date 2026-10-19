@@ -297,19 +297,24 @@ describe("i tre esiti di una riga chiusa a mano", () => {
     // sa tacere non sta misurando niente.
     await nuovoIngrediente();
     const riga = await nuovaRiga(10);
-    await chiudi({
+    // Senza questo controllo, un corridoio che risponde 503 lascia lo storico
+    // vuoto e la prova cade più sotto su un `data[0]` indefinito, che sembra
+    // un difetto del confronto dei prezzi (successo il 19/10 su #197).
+    const chiusa = await chiudi({
       p_item_id: riga,
       p_esito: "comprata",
       p_importo: 40,
       p_metodo_pagamento: "contante",
       p_quantita_ricevuta: 10,
     });
+    expect(chiusa.error).toBeNull();
 
     const uguale = await titolare.rpc("variazione_prezzo_su", {
       p_ingredient_id: ingrediente,
       p_articolo_id: null,
       p_prezzo: 4,
     });
+    expect(uguale.error).toBeNull();
     expect(uguale.data[0].da_segnalare).toBe(false);
   });
 });
