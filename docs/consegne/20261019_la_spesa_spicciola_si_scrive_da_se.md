@@ -76,7 +76,20 @@ dell'impronta, e registra **entrambe** le versioni. In produzione si applica con
 `npm run migra -- --salta 20261019000001 --conferma`; la `20261019000001` resta
 da saltare anche in una ricostruzione da Windows.
 
-*Numeri veri dopo l'applicazione: da completare.*
+**Sul progetto di prova**, 19/10 sera: la `20261019000002` è stata applicata
+dal computer di Alessio (Windows, quindi con gli stessi a capo della
+produzione) con `npm run prova:migra`. La verifica è passata, e il progetto di
+prova è arrivato a **423** migrazioni senza residui.
+
+**Prove su GitHub per il passaggio `slave` → `master` (#197)**: due esecuzioni
+sullo stesso commit `853fc9e`, entrambe rosse **per il corridoio della prova**
+e non per questa modifica. La prima aveva un timeout in `anticipazioni.test.js`.
+La seconda aveva `502`/`503 EDGE_FUNCTION_ERROR` da `operazioni-atomiche`
+intorno alle 17:07 UTC, in tre prove. Una di queste, `tre-esiti-lista`, non
+controllava l'esito di `chiudi()` e quindi cadeva su un `data[0]` vuoto. Ora lo
+controlla.
+
+*Numeri veri dopo l'applicazione in produzione: da completare.*
 
 ## Cosa NON è verificato
 
