@@ -160,8 +160,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 101 | 13/10/2026 | sul computer la sala e le prenotazioni stanno affiancate |
 | 102 | 15/10/2026 | la categoria di un impegno non si sceglie nel modulo |
 | 103 | 15/10/2026 | un impegno scritto a mano nasce visibile allo staff |
+| 104 | 19/10/2026 | nessuna dettatura scrive niente prima che Alessio approvi |
 
-⚠️ **Righe: 104.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 105.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
@@ -3758,3 +3759,30 @@ quando questa sezione è stata scritta.
    caso frequente è suo. Il prezzo è che un impegno pensato per la sala
    resta invisibile allo staff finché lui non mette la spunta — e
    dimenticarla non dà nessun errore.
+
+## 104 · 19/10/2026 — «nessuna dettatura scrive niente prima che Alessio approvi»
+
+1. **Cosa era stato deciso e quando.** Il 06/09/2026 (SPEC-0013, migrazione
+   `20260906000001`): ogni cosa detta a MEMO diventa un appunto da
+   approvare, e niente si scrive da sé — nemmeno una riga della spesa
+   spicciola (ribadito il 07/09 dalla `20260907000001`: *«questa migrazione
+   aggiunge una destinazione, non una scorciatoia»*).
+
+2. **La ragione di allora.** *La comodità non giustifica una registrazione
+   non riletta*: le temperature, le giacenze e le pulizie entravano nel
+   gestionale nell'istante in cui venivano dette.
+
+3. **Cosa si decide adesso** (chiesto da Alessio il 19/10: *«vorrei che gli
+   appunti che vanno nella spesa spicciola non necessitino di
+   approvazione»*). Una riga detta per la spesa spicciola si scrive subito,
+   in un appunto suo già chiuso — **se MEMO era sicuro e non manca
+   niente**; altrimenti resta da guardare come prima. È una colonna del
+   catalogo (`tipi_azione_vocale.senza_approvazione`), vera oggi per una
+   riga sola. Migrazione `20261019000001`.
+
+4. **La ragione di allora vale ancora, e questo è il prezzo che
+   accettiamo**: vale intera per tutto ciò che tocca soldi, magazzino,
+   registri e Agenda, che continuano ad aspettare. Sulla spesa spicciola
+   non morde — non muove soldi né giacenze, e una riga si toglie con un
+   tocco. Il prezzo è che una parola capita male finisce in lista senza che
+   nessuno l'abbia riletta, e la si vede solo aprendo la lista.

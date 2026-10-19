@@ -167,35 +167,30 @@ describe("le due liste della spesa", () => {
   });
 
   // -------------------------------------------------------------------
-  it("🔴 approvare una riga della SPESA SPICCIOLA non tocca la lista della spesa", async () => {
+  it("🔴 la SPESA SPICCIOLA detta con sicurezza si scrive DA SOLA, e non tocca la lista della spesa", async () => {
+    // 🔴 DECISIONE DI ALESSIO del 19/10/2026: gli appunti della spesa
+    //    spicciola non aspettano l'approvazione. Si guarda contando le righe
+    //    delle due tabelle, non fidandosi dello stato scritto sulla riga.
     const prima = await conta();
 
     const righe = await detta("spicciola", [
       riga("spesa_spicciola", "shampoo", { categoria: "pulizia", note: "quello grande" }),
     ]);
     expect(righe[0].tipo).toBe("spesa_spicciola");
-    expect(righe[0].stato).toBe("in_attesa");
+    expect(righe[0].stato, "la spesa spicciola aspetta ancora l'approvazione").toBe("eseguita");
 
-    // ⚠️ Prima dell'approvazione non deve essere cambiato NIENTE: è la
-    //    regola di SPEC-0013, e qui si guarda contando, non fidandosi dello
-    //    stato scritto sulla riga.
-    expect(await conta()).toEqual(prima);
-
-    // ⚠️ Quante righe entreranno lo dice l'APPUNTO: la spesa spicciola è
-    //    additiva, quindi può raccogliere anche roba detta prima e ancora
-    //    aperta. Scrivere «+1» misurerebbe il raggruppamento invece della
-    //    separazione.
-    const attese = await quantiDentro(righe[0].appunto_id);
-    const { error } = await approva(righe[0].appunto_id);
-    expect(error).toBeNull();
+    // ⚠️ Un appunto SUO, già chiuso: agganciarsi a quello aperto della lista
+    //    vorrebbe dire riscriverla al prossimo «Approva».
+    const { data: appunto } = await titolare
+      .from("appunti_vocali")
+      .select("stato")
+      .eq("id", righe[0].appunto_id)
+      .single();
+    expect(appunto.stato).toBe("approvato");
 
     const dopo = await conta();
-    expect(dopo.spicciola, "la riga non è finita nella spesa spicciola").toBe(
-      prima.spicciola + attese,
-    );
-    expect(dopo.lista, "approvare la spesa spicciola ha toccato la lista della spesa").toBe(
-      prima.lista,
-    );
+    expect(dopo.spicciola, "la riga non è finita nella spesa spicciola").toBe(prima.spicciola + 1);
+    expect(dopo.lista, "la spesa spicciola ha toccato la lista della spesa").toBe(prima.lista);
 
     const { spicciola, lista } = await mie();
     expect(spicciola.map((r) => r.articolo)).toContain(`${NOME} shampoo`);
@@ -204,6 +199,29 @@ describe("le due liste della spesa", () => {
     const scritta = spicciola.find((r) => r.articolo === `${NOME} shampoo`);
     expect(scritta.categoria).toBe("pulizia");
     expect(scritta.nota).toBe("quello grande");
+  });
+
+  it("🔴 se MEMO NON era sicuro, la spesa spicciola resta da approvare — e approvarla la scrive", async () => {
+    // ⚠️ È la metà che discrimina: una cura che scrivesse da sé anche ciò
+    //    che MEMO non ha capito bene passerebbe la prova qui sopra.
+    const prima = await conta();
+
+    const righe = await detta("spicciola incerta", [
+      { ...riga("spesa_spicciola", "spugnette"), sicuro: false },
+    ]);
+    expect(righe[0].stato).toBe("in_attesa");
+    expect(await conta(), "una riga incerta si è scritta da sola").toEqual(prima);
+
+    // ⚠️ Quante righe entreranno lo dice l'APPUNTO: la spesa spicciola è
+    //    additiva, quindi può raccogliere anche roba detta prima e ancora
+    //    aperta.
+    const attese = await quantiDentro(righe[0].appunto_id);
+    const { error } = await approva(righe[0].appunto_id);
+    expect(error).toBeNull();
+
+    const dopo = await conta();
+    expect(dopo.spicciola).toBe(prima.spicciola + attese);
+    expect(dopo.lista).toBe(prima.lista);
   });
 
   it("🔴 ...e allo specchio: la LISTA DELLA SPESA non finisce nella spicciola", async () => {
@@ -315,7 +333,9 @@ describe("le due liste della spesa", () => {
     //    una alla volta proverebbe soltanto che un appunto chiuso non si
     //    riapre.
     const prima = await conta();
-    const righe = await detta("due mani", [riga("spesa_spicciola", "spugne")]);
+    // ⚠️ NON SICURA apposta: dal 19/10 una spesa spicciola sicura si scrive
+    //    da sola, e non resterebbe nessun appunto da far approvare a due mani.
+    const righe = await detta("due mani", [{ ...riga("spesa_spicciola", "spugne"), sicuro: false }]);
 
     // 🔴 QUANTE RIGHE ASPETTARSI LO DICE L'APPUNTO, NON LA DETTATURA, ed è
     //    la lezione che questa prova ha imparato diventando rossa: la spesa
@@ -407,7 +427,9 @@ describe("le due liste della spesa", () => {
     // riga nasce dentro il database, e la prova NON la va a leggere — quindi
     // non se la segna. Prima di questa correzione restava lì per sempre.
     const righe = await detta("approvata e mai letta", [
-      riga("spesa_spicciola", "spicciola mai letta"),
+      // ⚠️ Non sicura apposta: dal 19/10 una spicciola sicura si scrive
+      //    da sola in un appunto gia' chiuso, e approvarlo verrebbe respinto.
+      { ...riga("spesa_spicciola", "spicciola mai letta"), sicuro: false },
       riga("lista_spesa", "lista mai letta"),
     ]);
     for (const appunto of new Set(righe.map((r) => r.appunto_id))) {
