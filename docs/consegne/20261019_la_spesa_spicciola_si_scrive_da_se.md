@@ -58,7 +58,25 @@ una spicciola **sicura**, che ora nasce già chiusa e non si può più approvare
 
 ## Applicazione in produzione
 
-*Da completare con i numeri veri dopo `npm run migra -- --conferma`.*
+**Primo tentativo, 19/10 alle 14:06, fermato dalla guardia — niente applicato**
+(produzione rimasta a 421). La guardia di `20261019000001` confronta
+`md5(prosrc)` di `scrivi_dettatura` con `6d823efe99f2a54c154f7ad016c2fdf8` e in
+produzione ha trovato `53faf27163a43d14534354a4cdd566e9`. Misurato in sola
+lettura: `md5(replace(prosrc, E'\r\n', E'\n'))` in produzione vale
+**`6d823efe99f2a54c154f7ad016c2fdf8`**. Il corpo è identico; cambiano solo gli
+a capo — le migrazioni di produzione si applicano dal computer di Alessio
+(Windows, CRLF), quelle della prova da Linux (LF), e Postgres conserva il corpo
+byte per byte.
+
+Cura: migrazione nuova **`20261019000002`**
+(`la_spesa_spicciola_anche_con_gli_a_capo_di_windows`), non una riscrittura della
+`20261019000001` (già applicata sulla prova). Stesso contenuto della `…001`
+dalla riga 53 in giù, con la guardia che normalizza gli a capo prima
+dell'impronta, e registra **entrambe** le versioni. In produzione si applica con
+`npm run migra -- --salta 20261019000001 --conferma`; la `20261019000001` resta
+da saltare anche in una ricostruzione da Windows.
+
+*Numeri veri dopo l'applicazione: da completare.*
 
 ## Cosa NON è verificato
 
