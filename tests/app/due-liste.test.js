@@ -427,7 +427,9 @@ describe("le due liste della spesa", () => {
     // riga nasce dentro il database, e la prova NON la va a leggere — quindi
     // non se la segna. Prima di questa correzione restava lì per sempre.
     const righe = await detta("approvata e mai letta", [
-      riga("spesa_spicciola", "spicciola mai letta"),
+      // ⚠️ Non sicura apposta: dal 19/10 una spicciola sicura si scrive
+      //    da sola in un appunto gia' chiuso, e approvarlo verrebbe respinto.
+      { ...riga("spesa_spicciola", "spicciola mai letta"), sicuro: false },
       riga("lista_spesa", "lista mai letta"),
     ]);
     for (const appunto of new Set(righe.map((r) => r.appunto_id))) {
