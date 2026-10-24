@@ -52,7 +52,7 @@ Collegare le fatture elettroniche che riceve (SDI, via Aruba) alle Fatture forni
 1. **La migrazione non è applicata né a Borgo58-Prova né in produzione.** Lo schema finto è PG16, la produzione PG17. Da questo ambiente non ci sono le chiavi del progetto di prova.
 2. **Il corridoio non è installato** con le tre operazioni nuove: finché non lo è, rispondono 404.
 3. **Nessuna delle due schermate è stata aperta**, né da me né da Alessio.
-4. Nei tre estratti veri non c'è il bonifico del 20/10 (−4.941,00): l'abbinamento fattura ↔ bonifico è provato solo dentro la verifica della migrazione, con dati costruiti.
+4. L'abbinamento fattura ↔ bonifico è provato solo dentro la verifica della migrazione, con dati costruiti. Il bonifico vero del 20/10 (−4.941,00) **c'è** nel flusso di quel giorno, insieme alla commissione (−1,00) e a un bonifico in entrata (+5.000,00): il saldo passa da 3.987,44 a 4.045,44. ⚠️ Una prima versione di questo punto diceva il contrario: era una frase scritta senza aver elencato i movimenti, smentita elencandoli.
 5. Limite noto e non coperto: con **più conti attivi e nessuno predefinito**, `pay_supplier_invoice` rifiuta prima che il conto venga corretto. Oggi il conto è uno.
 
 ## Cosa abbiamo rovesciato
