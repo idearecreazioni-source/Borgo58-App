@@ -1,6 +1,5 @@
-// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { centesimiDecimale, leggiFatturaPA, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
+import { centesimiDecimale, leggiFatturaPA, leggiXml, payloadFattura, xmlDaFile } from "../../src/lib/calcoli/fatturaPA";
 
 // IL LETTORE DELLE FATTURE ELETTRONICHE (24/10/2026).
 //
@@ -209,5 +208,23 @@ describe("quello che va al database", () => {
       cliente: { partita_iva: "IT00000000002" },
     });
     expect(p.note).toMatch(/IT00X0000000000000000000001/);
+  });
+});
+
+// Il lettore dell'XML è suo (niente DOMParser): si prova da solo.
+describe("il lettore dell'XML", () => {
+  it("entità, CDATA, commenti e attributi con «>» dentro", () => {
+    const r = leggiXml(`<?xml version="1.0"?><!-- c --><p:A x="1>2" y='z'><B>R&amp;D &#232; &#x20AC;</B><B><![CDATA[<non è un tag>]]></B><C/></p:A>`);
+    expect(r.localName).toBe("A");
+    expect(r.children.map((c) => c.localName)).toEqual(["B", "B", "C"]);
+    expect(r.children[0].textContent).toBe("R&D è €");
+    expect(r.children[1].textContent).toBe("<non è un tag>");
+  });
+  it("si ferma su ciò che non torna, invece di indovinare", () => {
+    expect(() => leggiXml("<A><B></A></B>")).toThrow(/non corrisponde/);
+    expect(() => leggiXml("<A><B></B>")).toThrow(/non è chiuso/);
+    expect(() => leggiXml('<!DOCTYPE A [<!ENTITY e "x">]><A>&e;</A>')).toThrow(/DOCTYPE/);
+    expect(() => leggiXml("<A></A><B></B>")).toThrow(/radice/);
+    expect(() => leggiXml("niente")).toThrow();
   });
 });

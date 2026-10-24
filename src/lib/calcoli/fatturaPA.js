@@ -143,6 +143,104 @@ export function xmlDaFile(bytes) {
 }
 
 // --- l'XML ----------------------------------------------------------------
+//
+// 🔴 UN LETTORE SUO, E NON `DOMParser` (24/10/2026). Il controllo di
+// sicurezza di GitHub (CodeQL) segnala ogni `parseFromString` su un testo
+// che arriva da un file come «testo reinterpretato come HTML». Qui non lo
+// era — si leggeva come XML e si estraeva solo il testo — ma un allarme
+// alto che resta acceso sulla proposta si impara a ignorare. Una fattura
+// elettronica usa poco dell'XML: elementi, attributi, testo, entità,
+// commenti e CDATA. Questo lettore costruisce solo quello, non crea mai un
+// documento del browser, e si FERMA su un tag non chiuso o non
+// corrispondente invece di indovinare.
+
+const ENTITA = { lt: "<", gt: ">", amp: "&", quot: '"', apos: "'" };
+
+function decodifica(t) {
+  return t.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (tutto, e) => {
+    if (e[0] === "#") {
+      const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return Number.isFinite(n) && n <= 0x10ffff ? String.fromCodePoint(n) : tutto;
+    }
+    return ENTITA[e] ?? tutto;
+  });
+}
+
+class Elemento {
+  constructor(nome) {
+    this.localName = nome.includes(":") ? nome.slice(nome.indexOf(":") + 1) : nome;
+    this.children = [];
+    this.pezzi = []; // testo e figli, nell'ordine
+  }
+  get textContent() {
+    return this.pezzi.map((p) => (typeof p === "string" ? p : p.textContent)).join("");
+  }
+}
+
+/** @returns {Elemento} la radice; lancia un Error se l'XML è malformato. */
+export function leggiXml(s) {
+  const x = String(s ?? "").replace(/^\uFEFF/, "");
+  const pila = [];
+  let radice = null;
+  let i = 0;
+  const testoA = (t) => {
+    if (!t) return;
+    if (pila.length) pila[pila.length - 1].pezzi.push(t);
+    else if (t.trim()) throw new Error("testo fuori dall'elemento radice");
+  };
+  while (i < x.length) {
+    const lt = x.indexOf("<", i);
+    if (lt < 0) {
+      testoA(decodifica(x.slice(i)));
+      break;
+    }
+    testoA(decodifica(x.slice(i, lt)));
+    let fine;
+    if (x.startsWith("<!--", lt)) {
+      fine = x.indexOf("-->", lt + 4);
+      if (fine < 0) throw new Error("commento non chiuso");
+      i = fine + 3;
+    } else if (x.startsWith("<![CDATA[", lt)) {
+      fine = x.indexOf("]]>", lt + 9);
+      if (fine < 0) throw new Error("CDATA non chiuso");
+      testoA(x.slice(lt + 9, fine));
+      i = fine + 3;
+    } else if (x.startsWith("<?", lt)) {
+      fine = x.indexOf("?>", lt + 2);
+      if (fine < 0) throw new Error("istruzione non chiusa");
+      i = fine + 2;
+    } else if (x.startsWith("<!", lt)) {
+      // ⚠️ Un DOCTYPE in una fattura non serve a niente e può portarsi
+      // dietro entità definite a piacere: si rifiuta invece di ignorarlo.
+      throw new Error("dichiarazione DOCTYPE non ammessa");
+    } else if (x[lt + 1] === "/") {
+      fine = x.indexOf(">", lt);
+      if (fine < 0) throw new Error("tag non chiuso");
+      const nome = x.slice(lt + 2, fine).trim();
+      const aperto = pila.pop();
+      if (!aperto || aperto.nome !== nome) throw new Error(`«</${nome}>» non corrisponde`);
+      i = fine + 1;
+    } else {
+      // Un tag d'apertura: le virgolette degli attributi possono contenere «>».
+      const re = /^<([A-Za-z_][\w.:-]*)((?:\s+[\w.:-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/;
+      const m = re.exec(x.slice(lt, lt + 4096));
+      if (!m) throw new Error("tag non leggibile");
+      const el = new Elemento(m[1]);
+      el.nome = m[1];
+      if (pila.length) {
+        const padre = pila[pila.length - 1];
+        padre.children.push(el);
+        padre.pezzi.push(el);
+      } else if (radice) throw new Error("più di un elemento radice");
+      else radice = el;
+      if (!m[3]) pila.push(el);
+      i = lt + m[0].length;
+    }
+  }
+  if (pila.length) throw new Error(`«<${pila[pila.length - 1].nome}>» non è chiuso`);
+  if (!radice) throw new Error("nessun elemento");
+  return radice;
+}
 
 /** I figli diretti con quel nome locale (lo spazio dei nomi varia fra file). */
 function figli(el, nome) {
@@ -222,15 +320,18 @@ function euro(c) {
  * fatture (un «lotto»: stesso fornitore, più corpi): ognuna è una voce.
  *
  * @param {string} xml
- * @param {{ parseFromString(s: string, t: string): Document }} [parser]
  * @returns {{ fatture: object[], errori: string[] }}
  *   Importi in centesimi. Ogni fattura ha i suoi `errori` (bloccano) e
  *   `avvisi` (si mostrano); `errori` in cima riguarda il file intero.
  */
-export function leggiFatturaPA(xml, parser = new DOMParser()) {
-  const doc = parser.parseFromString(String(xml ?? ""), "application/xml");
-  const radice = doc.documentElement;
-  if (!radice || radice.localName !== "FatturaElettronica" || doc.getElementsByTagName("parsererror").length) {
+export function leggiFatturaPA(xml) {
+  let radice = null;
+  try {
+    radice = leggiXml(xml);
+  } catch {
+    radice = null;
+  }
+  if (!radice || radice.localName !== "FatturaElettronica") {
     return { fatture: [], errori: ["Il file non è una fattura elettronica (manca «FatturaElettronica»)."] };
   }
   const testa = figli(radice, "FatturaElettronicaHeader")[0];
