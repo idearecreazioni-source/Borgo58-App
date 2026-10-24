@@ -29,6 +29,8 @@ Collegare le fatture elettroniche che riceve (SDI, via Aruba) alle Fatture forni
 - `abbina_movimento_banca`, `ignora_movimento_banca` (vuole il perché) e `riapri_movimento_banca`. ⚠️ Riaprire scioglie il collegamento e **non cancella niente** dalla prima nota.
 - Blocco di verifica in 15 passi, annullato alla fine (`ZZ_ANNULLA`), con `pretendi_nessun_residuo`. Auto-registrazione.
 
+**Migrazione `20261024000002_i_movimenti_della_banca_parlano_italiano`.** Le prove sul progetto di prova (`tests/app/vincoli-che-parlano.test.js`) sono diventate rosse appena la `…001` è entrata: le due unicità e la chiave esterna verso il conto di `movimenti_banca` erano mute, perché la `…001` dava la frase ai soli `check`. La `…002` le dà la frase; la sua verifica guarda **tutte** le unicità e chiavi esterne della tabella dal catalogo, e ne ha trovata una quarta che la rete non elencava (`movimenti_banca_cash_movement_id_fkey`). Rotta apposta togliendo una frase: diventa rossa nominandola. La `…001` non è stata riscritta: sulla prova è già applicata.
+
 **Corridoio**: tre nomi nuovi in `OPERAZIONI`.
 
 **Il lettore dell'XML è suo, non `DOMParser`.** CodeQL ha segnalato `parseFromString` su un testo da file come «testo reinterpretato come HTML» (alto). Non era sfruttabile (application/xml, solo testo estratto e mostrato da React), ma un allarme alto acceso si impara a ignorare. `leggiXml()` costruisce solo elementi, attributi, testo, entità, commenti e CDATA; si ferma su tag non chiusi o non corrispondenti e **rifiuta i DOCTYPE**. Riletta la fattura vera: stessi campi.
@@ -49,8 +51,8 @@ Collegare le fatture elettroniche che riceve (SDI, via Aruba) alle Fatture forni
 
 ## Cosa NON è verificato
 
-1. **La migrazione non è applicata né a Borgo58-Prova né in produzione.** Lo schema finto è PG16, la produzione PG17. Da questo ambiente non ci sono le chiavi del progetto di prova.
-2. **Il corridoio non è installato** con le tre operazioni nuove: finché non lo è, rispondono 404.
+1. **Sul progetto di prova la `…001` è applicata** (dal PC di Alessio, 24/10 sera: registro da 423 a 424, verifica verde, rilanciata una seconda volta senza effetti, `movimenti_banca` a 0 righe). **La `…002` non è ancora applicata alla prova**, e nessuna delle due è in produzione.
+2. **Il corridoio è installato sulla prova** (`operazioni-atomiche` versione 45); in produzione no, e lì le tre operazioni nuove rispondono 404.
 3. **Nessuna delle due schermate è stata aperta**, né da me né da Alessio.
 4. L'abbinamento fattura ↔ bonifico è provato solo dentro la verifica della migrazione, con dati costruiti. Il bonifico vero del 20/10 (−4.941,00) **c'è** nel flusso di quel giorno, insieme alla commissione (−1,00) e a un bonifico in entrata (+5.000,00): il saldo passa da 3.987,44 a 4.045,44. ⚠️ Una prima versione di questo punto diceva il contrario: era una frase scritta senza aver elencato i movimenti, smentita elencandoli.
 5. Limite noto e non coperto: con **più conti attivi e nessuno predefinito**, `pay_supplier_invoice` rifiuta prima che il conto venga corretto. Oggi il conto è uno.
