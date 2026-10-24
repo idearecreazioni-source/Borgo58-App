@@ -1,6 +1,6 @@
 # La banca e le fatture elettroniche entrano da file
 
-**24/10/2026** · richiesta di Alessio · commit sotto questo riepilogo: `2737bc8` · ramo `claude/project-thread-yqj6ae`, proposta #199 verso `slave` · working tree pulito al commit
+**24/10/2026** · richiesta di Alessio · commit sotto questo riepilogo: `ff48999` (il lavoro è `2737bc8` + `ff48999`) · ramo `claude/project-thread-yqj6ae`, proposta #199 verso `slave` · working tree pulito al commit
 
 ## Cosa ha chiesto
 
@@ -31,11 +31,13 @@ Collegare le fatture elettroniche che riceve (SDI, via Aruba) alle Fatture forni
 
 **Corridoio**: tre nomi nuovi in `OPERAZIONI`.
 
+**Il lettore dell'XML è suo, non `DOMParser`.** CodeQL ha segnalato `parseFromString` su un testo da file come «testo reinterpretato come HTML» (alto). Non era sfruttabile (application/xml, solo testo estratto e mostrato da React), ma un allarme alto acceso si impara a ignorare. `leggiXml()` costruisce solo elementi, attributi, testo, entità, commenti e CDATA; si ferma su tag non chiusi o non corrispondenti e **rifiuta i DOCTYPE**. Riletta la fattura vera: stessi campi.
+
 **Schermate**: `/cassa/banca` («Movimenti della banca», da Cassa) e `/fatture-fornitori/da-file` («Carica una fattura elettronica», da Fatture fornitori). Guardia sincrona sul doppio tocco, e l'esito sulla riga toccata.
 
 ## Verifiche
 
-- `npm run lint` pulito; `npm run test` **2278 verdi**, di cui 43 nuove (18 CBI, 20 FatturaPA, 5 zip); `npm run build` riuscito.
+- `npm run lint` pulito; `npm run test` **2280 verdi**, di cui 45 nuove (18 CBI, 22 FatturaPA, 5 zip); `npm run build` riuscito.
 - I lettori sono stati provati **sui file veri**, che stanno fuori dal repository:
   - la fattura FPR 98/26 (TD01, 4.941,00, imponibile 4.050,00, IVA 891,00): zero errori e zero avvisi;
   - i tre flussi CBI: zero errori, 3 movimenti in tutto, impronte tutte distinte.
