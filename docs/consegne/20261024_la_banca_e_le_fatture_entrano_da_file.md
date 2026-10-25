@@ -33,6 +33,8 @@ Collegare le fatture elettroniche che riceve (SDI, via Aruba) alle Fatture forni
 
 **Migrazione `20261024000003_il_portiere_dei_movimenti_della_banca`.** La rete dei portieri (`tests/app/permessi.test.js`) ha segnalato quattro funzioni `security definer` (paga, abbina, registra, ignora) il cui controllo del titolare stava solo dentro `movimento_banca_da_abbinare()`, chiamata nell'inizializzazione di una variabile: il rifiuto c'era, ma non nel corpo del gesto. Ora ognuna lo scrive da sé; corpi presi dalla `…001`, cambia solo l'inizio. Sul Postgres locale: la verifica della `…003` passa due volte e la verifica intera della `…001`, rieseguita dopo, resta verde.
 
+**Migrazione `20261025000001_le_spese_della_banca_hanno_il_loro_documento`.** Decisione di Alessio del 25/10, dopo la prova: una commissione di banca non aveva un tipo di documento giusto, e «non documentato» l'avrebbe tolta dai deducibili. Nuovo valore `estratto_conto` in `cash_document_type` (etichetta «Estratto conto (spese bancarie)» in `CASH_DOCUMENT_TYPES`). La causale resta un dato suo, da Cassa → Causali: in produzione oggi non ce n'è una per le spese di banca.
+
 **Corridoio**: tre nomi nuovi in `OPERAZIONI`.
 
 **Il lettore dell'XML è suo, non `DOMParser`.** CodeQL ha segnalato `parseFromString` su un testo da file come «testo reinterpretato come HTML» (alto). Non era sfruttabile (application/xml, solo testo estratto e mostrato da React), ma un allarme alto acceso si impara a ignorare. `leggiXml()` costruisce solo elementi, attributi, testo, entità, commenti e CDATA; si ferma su tag non chiusi o non corrispondenti e **rifiuta i DOCTYPE**. Riletta la fattura vera: stessi campi.
