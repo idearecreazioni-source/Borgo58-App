@@ -49,9 +49,9 @@ export default function ImportaFatturaElettronica() {
         const bytes = new Uint8Array(await f.arrayBuffer());
         if (eZip(bytes)) {
           for (const d of await leggiZip(bytes)) {
-            if (/\.(xml|p7m)$/i.test(d.nome)) singoli.push({ nome: `${f.name} › ${d.nome}`, bytes: d.contenuto, daZip: true });
+            if (/\.(xml|p7m)$/i.test(d.nome)) singoli.push({ nome: `${f.name} › ${d.nome}`, file: d.nome.split("/").pop(), bytes: d.contenuto, daZip: true });
           }
-        } else singoli.push({ nome: f.name, bytes, daZip: false });
+        } else singoli.push({ nome: f.name, file: f.name, bytes, daZip: false });
       } catch (e) {
         nuove.push({ chiave: f.name, nome: f.name, errore: e.message });
       }
@@ -69,6 +69,10 @@ export default function ImportaFatturaElettronica() {
             // un file può contenere più fatture (un lotto): ognuna è la sua riga
             chiave: fatture.length > 1 ? `${s.nome}#${i + 1}` : s.nome,
             nome: fatture.length > 1 ? `${s.nome}#${i + 1}` : s.nome,
+            // ⚠️ Il nome che si conserva è quello del FILE, non il percorso
+            // dentro lo zip: è su quello che il database riconosce una
+            // fattura già caricata.
+            file: s.file,
             fattura,
           }),
         );
@@ -86,7 +90,7 @@ export default function ImportaFatturaElettronica() {
     if (!guardia.current.prendi(l.chiave)) return;
     setOccupato(l.chiave);
     try {
-      const r = await registraFatturaElettronica(entityId, payloadFattura(l.fattura, l.nome));
+      const r = await registraFatturaElettronica(entityId, payloadFattura(l.fattura, l.file));
       setEsiti((p) => ({
         ...p,
         [l.chiave]: {
