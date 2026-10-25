@@ -406,13 +406,14 @@ export default function PrimaNota() {
               )}
             </span>
           )}
+          {/* 🔴 «CONTANTE IN CASSA» TOLTO (25/10/2026, decisione di Alessio).
+              Contava i soli movimenti di prima nota, senza gli incassi in
+              contanti dei conti chiusi e senza le mance: sul progetto di prova
+              diceva −25.721,66 mentre il cassetto ne aveva 1.352,49. Il
+              contante si legge in Cassa (`saldo_tesoreria`), che li somma. */}
           {!inTasca && balance && (
             <span className="testo-sala text-b58-charcoal-soft">
-              Contante in cassa:{" "}
-              <span className={`font-medium ${Number(balance.balance) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
-                {formatEUR(balance.balance)}
-              </span>
-              {" · "}Banca:{" "}
+              Banca:{" "}
               <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.saldo_banca)}
               </span>
