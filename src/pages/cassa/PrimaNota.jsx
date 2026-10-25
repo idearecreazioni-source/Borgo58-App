@@ -477,9 +477,11 @@ export default function PrimaNota() {
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
           {inTasca && (
             <p className="testo-sala text-b58-charcoal-soft mb-3">
-              Dalla tasca escono soldi e basta: è il contante che spendi di tuo,
-              senza documento. Non è deducibile e non entra in nessun calcolo
-              fiscale — serve solo a saperne il conto.
+              Dalla tasca escono soldi e basta
+              <Didascalia>
+                È il contante che spendi di tuo, senza documento. Non è deducibile e non entra in
+                nessun calcolo fiscale — serve solo a saperne il conto.
+              </Didascalia>
             </p>
           )}
           <div className={`flex gap-2 mb-3 ${inTasca ? "hidden" : ""}`}>
@@ -633,10 +635,14 @@ export default function PrimaNota() {
 
           {isForager && (
             <div className="mb-3">
-              <p className="testo-sala text-b58-charcoal-soft/80 bg-b58-cream-dark/50 rounded-lg px-3 py-2 mb-2">
-                Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non legnosi):
-                conserva codice fiscale del raccoglitore e riferimento F24 codice tributo 1853 come prova
-                del forfait pagato. Dal 2026 è obbligatoria anche la regione di raccolta.
+              <p className="testo-sala text-b58-charcoal-soft mb-2">
+                Raccoglitore occasionale
+                <Didascalia>
+                  Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non
+                  legnosi): conserva codice fiscale del raccoglitore e riferimento F24 codice tributo
+                  1853 come prova del forfait pagato. Dal 2026 è obbligatoria anche la regione di
+                  raccolta.
+                </Didascalia>
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
@@ -752,7 +758,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>

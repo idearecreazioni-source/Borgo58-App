@@ -15,6 +15,7 @@ import ElencoAdattivo from "../../components/ElencoAdattivo";
 import { leggi, statoLettura } from "../../lib/calcoli/letture";
 import { useDaVoce } from "../../lib/daVoce";
 import { StriscaDallaVoce } from "../../components/StriscaDallaVoce";
+import Didascalia from "../../components/Didascalia";
 
 const emptyConsumptionForm = { quantity: "", reason: "consumo", note: "" };
 
@@ -299,7 +300,7 @@ export default function MagazzinoHome() {
           </Link>
           <Link
             to="/magazzino/carico"
-            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
           >
             + Registra carico
           </Link>
@@ -330,12 +331,12 @@ export default function MagazzinoHome() {
         <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-6">
           <h2 className="testo-sala font-semibold text-b58-charcoal">
             Cosa non è sceso dal magazzino ({nonScaricate.length})
+            <Didascalia>
+              Righe di conti chiusi e di produzioni che la giacenza non ha potuto
+              seguire. Non sono state indovinate: la giacenza qui sotto è più alta
+              del vero di questo tanto.
+            </Didascalia>
           </h2>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">
-            Righe di conti chiusi e di produzioni che la giacenza non ha potuto
-            seguire. Non sono state indovinate: la giacenza qui sotto è più alta
-            del vero di questo tanto.
-          </p>
           {/* 🔴 IL TAGLIO SI DICHIARA (23/08/2026). Le bevande sono uscite da
               questo elenco — erano 1.840 righe tutte uguali che seppellivano
               le tre che contano — ma un elenco che tace su ciò che esclude è
@@ -446,12 +447,12 @@ export default function MagazzinoHome() {
         <div className="rounded-xl border border-b58-charcoal/15 bg-b58-parchment px-4 py-3 mb-6">
           <h2 className="testo-sala font-semibold text-b58-charcoal">
             Il magazzino non riesce a seguirli ({troppoPiccoli.length})
+            <Didascalia>
+              In qualche piatto ne serve così poco che la giacenza non lo sa
+              contare: non scende, e non scenderà. Puoi toglierli dal magazzino
+              dalla loro scheda nel Ricettario.
+            </Didascalia>
           </h2>
-          <p className="testo-sala text-b58-charcoal-soft mt-1">
-            In qualche piatto ne serve così poco che la giacenza non lo sa
-            contare: non scende, e non scenderà. Puoi toglierli dal magazzino
-            dalla loro scheda nel Ricettario.
-          </p>
           <ul className="mt-2 space-y-1">
             {troppoPiccoli.map((p) => (
               <li key={p.ingredient_id} className="testo-sala text-b58-charcoal">
@@ -648,7 +649,7 @@ export default function MagazzinoHome() {
                   type="button"
                   disabled={saving || !consumptionForm.quantity}
                   onClick={() => handleConsumption(l.ingredient_id)}
-                  className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60"
+                  className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "Conferma"}
                 </button>

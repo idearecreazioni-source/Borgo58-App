@@ -5,6 +5,7 @@ import { listFiscalTools } from "../../lib/api/fiscal";
 import { getEntities } from "../../lib/api/entities";
 import { getRettificheFiscali, listSpeseValorizzate } from "../../lib/api/deducibilita";
 import { formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const currentYear = new Date().getFullYear();
 
@@ -97,8 +98,12 @@ export default function ProiezioneFiscaleHome() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Proiezione Fiscale</h1>
-        <p className="text-b58-charcoal-soft mt-1">Deduzioni, strumenti fiscali, stime.</p>
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+          Proiezione Fiscale
+          <Didascalia>
+            Deduzioni, strumenti fiscali, stime.
+          </Didascalia>
+        </h1>
       </div>
 
       <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-6">

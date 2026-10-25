@@ -372,7 +372,7 @@ export default function ListaSpesa() {
           {isTitolare && (
             <Link
               to="/magazzino/ordini"
-              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
             >
               Ordina ai fornitori
             </Link>
@@ -716,7 +716,7 @@ export default function ListaSpesa() {
                               (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
                             onClick={() => handleClose(item.id)}
-                            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
+                            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
                           >
                             {closing ? "Chiudo…" : "Conferma"}
                           </button>
@@ -830,7 +830,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>

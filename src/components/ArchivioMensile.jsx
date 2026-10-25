@@ -71,7 +71,7 @@ export default function ArchivioMensile({
               onClick={() => setScelto(attivo ? null : { anno: m.anno, mese: m.mese })}
               className={`tocco-bottone rounded-lg testo-sala px-3 ${
                 attivo
-                  ? "bg-b58-terracotta text-b58-parchment"
+                  ? "bg-b58-azione text-b58-parchment"
                   : "border border-b58-charcoal/15 text-b58-charcoal hover:bg-b58-cream-dark"
               }`}
             >

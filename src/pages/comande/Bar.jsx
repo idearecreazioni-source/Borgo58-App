@@ -291,7 +291,7 @@ export default function Bar() {
                       <button
                         type="button"
                         onClick={() => apriConto(o.id, "close")}
-                        className="tocco-azione flex-1 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala font-semibold"
+                        className="tocco-azione flex-1 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala font-semibold"
                       >
                         Chiudi conto
                       </button>

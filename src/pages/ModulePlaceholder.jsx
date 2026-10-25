@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import Icon from "../components/Icon";
 import { PHASES, getModule } from "../data/modules";
+import Didascalia from "../components/Didascalia";
 
 export default function ModulePlaceholder() {
   const { moduleId } = useParams();
@@ -32,8 +33,10 @@ export default function ModulePlaceholder() {
             </span>
             <h1 className="font-display text-2xl text-b58-charcoal">
               {module.name}
+              <Didascalia>
+                {module.description}
+              </Didascalia>
             </h1>
-            <p className="text-b58-charcoal-soft mt-1">{module.description}</p>
           </div>
         </div>
 

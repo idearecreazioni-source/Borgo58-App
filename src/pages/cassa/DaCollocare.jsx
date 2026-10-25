@@ -22,6 +22,7 @@ import {
 } from "../../lib/calcoli/daCollocare";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { formatDate, formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // «DA COLLOCARE» — le spese dette a MEMO o fotografate (11/10/2026, C12).
 //
@@ -108,7 +109,7 @@ function GestoConConferma({ etichetta, domanda, conferma, onFai }) {
           type="button"
           onClick={fai}
           disabled={lavoro}
-          className="tocco-bottone rounded-lg bg-b58-terracotta px-4 font-medium text-b58-parchment disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-azione px-4 font-medium text-b58-parchment disabled:opacity-60"
         >
           {lavoro ? "Lo sto facendo…" : conferma}
         </button>
@@ -509,10 +510,13 @@ export default function DaCollocare() {
       <Link to="/cassa" className="tocco-bottone inline-flex items-center text-b58-charcoal-soft">
         ← Cassa
       </Link>
-      <h1 className="mt-2 font-display text-2xl md:text-3xl text-b58-charcoal">Da collocare</h1>
-      <p className="mb-4 text-b58-charcoal-soft">
-        Le spese dette a MEMO o fotografate. Non sono ancora contabilità: scegli tu dove vanno, una volta sola.
-      </p>
+      <h1 className="mt-2 mb-4 font-display text-2xl md:text-3xl text-b58-charcoal">
+        Da collocare
+        <Didascalia>
+          Le spese dette a MEMO o fotografate. Non sono ancora contabilità: scegli tu dove vanno, una
+          volta sola.
+        </Didascalia>
+      </h1>
 
       {avviso && <p className="testo-sala mb-3 text-b58-ambra-dark">{avviso}</p>}
 

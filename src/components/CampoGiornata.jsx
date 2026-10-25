@@ -1,4 +1,5 @@
 import { formatDate } from "../lib/constants";
+import Didascalia from "./Didascalia";
 
 // IL CAMPO DELLA GIORNATA — uno solo, per tutte le schermate che datano un
 // gesto della cassa o di un conto.
@@ -28,7 +29,25 @@ export default function CampoGiornata({
 }) {
   return (
     <div className={className}>
-      <label className={labelClass}>{label}</label>
+      {/* 🔴 LA FRASE SOTTO IL CAMPO E' PASSATA DIETRO IL «?» — 25/10/2026,
+          chiesto da Alessio guardando la Cassa: «eliminare tutte le
+          didascalie che creano confusione». Rovesciamento n. 105.
+          ⚠️ NON E' STATA TOLTA: la ragione scritta qui sopra vale ancora
+          (distingue «ha scelto per me» da «ha sbagliato»), quindi resta
+          a un tocco, accanto all'etichetta. Il prezzo: chi non tocca il
+          segno non vede piu' quale serata sta datando. */}
+      <label className={labelClass}>
+        {label}
+        {/* ⚠️ Senza l'ora vera la frase non si scrive: inventarne una qui
+            sarebbe il secondo orologio, e direbbe «fino alle 05:00» anche
+            il giorno che Alessio cambia quel numero. */}
+        {oraFineSerata && (
+          <Didascalia etichetta="Quale serata">
+            {frase} <strong>{formatDate(value)}</strong>. Fino alle{" "}
+            {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
+          </Didascalia>
+        )}
+      </label>
       {/* 🔴 LA LARGHEZZA STA QUI DENTRO, NON NEI CHIAMANTI — 21/09/2026.
           Dei tre posti che usano questo campo, due passavano `campo-data`
           nella classe e uno (la home della Cassa) no: la stessa casella era
@@ -43,15 +62,6 @@ export default function CampoGiornata({
         onChange={(e) => onChange(e.target.value)}
         className={`${inputClass ?? ""} campo-data`}
       />
-      {/* ⚠️ Senza l'ora vera la frase non si scrive: inventarne una qui
-          sarebbe il secondo orologio, e direbbe «fino alle 05:00» anche il
-          giorno che Alessio cambia quel numero. */}
-      {oraFineSerata && (
-        <p className="testo-sala text-b58-charcoal-soft mt-1">
-          {frase} <strong className="text-b58-charcoal">{formatDate(value)}</strong>. Fino alle{" "}
-          {String(oraFineSerata).slice(0, 5)} è ancora la sera prima.
-        </p>
-      )}
     </div>
   );
 }

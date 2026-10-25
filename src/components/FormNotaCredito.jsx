@@ -89,7 +89,7 @@ export default function FormNotaCredito({ fattura, onSalva, onAnnulla }) {
             type="button"
             disabled={salvando || !(valore > 0) || !data}
             onClick={salva}
-            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
           >
             {salvando ? "Registro…" : "Registra la nota"}
           </button>

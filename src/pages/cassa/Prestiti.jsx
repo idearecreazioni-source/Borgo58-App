@@ -309,7 +309,7 @@ export default function Prestiti() {
                   <div className="gesti-pericolosi justify-end mt-3">
                     <button
                       type="button" disabled={busy || !causali} onClick={restituisci}
-                      className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment px-4 disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment px-4 disabled:opacity-60"
                     >
                       {busy ? "Registro…" : "Registra la restituzione"}
                     </button>
@@ -395,7 +395,7 @@ export default function Prestiti() {
             type="button"
             disabled={busy || !causali || !form.daChi.trim() || !Number(form.importo)}
             onClick={salva}
-            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment px-4 disabled:opacity-50"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment px-4 disabled:opacity-50"
           >
             {busy ? "Registro…" : "Registra"}
           </button>

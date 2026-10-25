@@ -289,7 +289,7 @@ export default function ArchivioDocumentiHome() {
           </button>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo documento"}
           </button>
@@ -431,7 +431,7 @@ export default function ArchivioDocumentiHome() {
                 type="button"
                 disabled={saving || leggendo || !form.title.trim()}
                 onClick={handleAdd}
-                className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
               >
                 {saving ? "Salvo…" : "+ Salva nell'Archivio"}
               </button>

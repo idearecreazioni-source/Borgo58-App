@@ -9,6 +9,7 @@ import {
 } from "../../lib/api/deducibilita";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 const annoCorrente = new Date().getFullYear();
 
@@ -134,12 +135,14 @@ export default function Deducibilita() {
         </div>
       </div>
 
-      <h1 className="font-display text-2xl text-b58-charcoal mb-1">Deducibilità dei costi</h1>
-      <p className="testo-sala text-b58-charcoal-soft/80 mb-6">
-        Non tutto quello che si spende si scarica. Qui si dice quali costi si deducono e quanto, una volta
-        per tutte le schermate: la Proiezione ne ha bisogno perché <strong>l&apos;utile e l&apos;imponibile
-        sono due numeri diversi</strong>.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mb-6">
+        Deducibilità dei costi
+        <Didascalia>
+          Non tutto quello che si spende si scarica. Qui si dice quali costi si deducono e quanto, una volta
+          per tutte le schermate: la Proiezione ne ha bisogno perché <strong>l&apos;utile e l&apos;imponibile
+          sono due numeri diversi</strong>.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -149,11 +152,13 @@ export default function Deducibilita() {
 
       {/* ---- Le due basi ------------------------------------------- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">I costi del {anno}</h2>
-        <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-          Uscite di prima nota e fatture fornitori. Le spese del modulo <em>Deduzioni</em> non sono
-          sommate qui: finché non generano il loro movimento di cassa, contarle sarebbe contarle due volte.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          I costi del {anno}
+          <Didascalia>
+            Uscite di prima nota e fatture fornitori. Le spese del modulo <em>Deduzioni</em> non sono
+            sommate qui: finché non generano il loro movimento di cassa, contarle sarebbe contarle due volte.
+          </Didascalia>
+        </h2>
 
         {loading ? (
           <p className="testo-sala-grande text-b58-charcoal-soft">Caricamento…</p>
@@ -190,12 +195,14 @@ export default function Deducibilita() {
       {/* ---- Cosa manca da classificare ----------------------------- */}
       {daClassificare.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Da classificare</h2>
-          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-            Il modo più veloce di non rivederle più è dare una regola alla <strong>causale</strong> (in{" "}
-            <Link to="/cassa/causali" className="tocco-inline underline">Cassa → Causali</Link>) o al{" "}
-            <strong>fornitore</strong>: da lì in poi le righe la ereditano da sole.
-          </p>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+            Da classificare
+            <Didascalia>
+              Il modo più veloce di non rivederle più è dare una regola alla <strong>causale</strong> (in{" "}
+              Cassa → Causali) o al{" "}
+              <strong>fornitore</strong>: da lì in poi le righe la ereditano da sole.
+            </Didascalia>
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>
@@ -374,7 +381,7 @@ export default function Deducibilita() {
               type="button"
               disabled={saving || !form.etichetta.trim()}
               onClick={aggiungiRegola}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Salvo…" : "+ Aggiungi"}
             </button>

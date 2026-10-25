@@ -207,7 +207,7 @@ export default function ImportaFatturaElettronica() {
                   type="button"
                   disabled={occupato === l.chiave || !entityId}
                   onClick={() => registra(l)}
-                  className="tocco-bottone mt-3 rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-bottone mt-3 rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {occupato === l.chiave ? "Sto registrando…" : "Registra la fattura"}
                 </button>

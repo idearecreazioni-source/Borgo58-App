@@ -19,6 +19,7 @@ import {
   listSettimanaCucina,
   setGiornoCucina,
 } from "../../lib/api/sala";
+import Didascalia from "../../components/Didascalia";
 
 // Quando si è aperti, come si chiamano i tavoli, quando si è chiusi.
 //
@@ -182,11 +183,13 @@ export default function SalaEOrari() {
 
       {/* Orari */}
       <div className={sezioneClass}>
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quando siamo aperti</h2>
-        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
-          L'<em>ultimo ingresso</em> è l'ora oltre la quale non fai più entrare nessuno, non
-          l'ora in cui chiudi.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Quando siamo aperti
+          <Didascalia>
+            L'<em>ultimo ingresso</em> è l'ora oltre la quale non fai più entrare nessuno, non
+            l'ora in cui chiudi.
+          </Didascalia>
+        </h2>
         <div className="space-y-4">
           {GIORNI.map((g) => (
             <div key={g.weekday}>
@@ -265,16 +268,17 @@ export default function SalaEOrari() {
 
       {/* Quanti ne tiene un tavolo, per formato */}
       <div className={sezioneClass}>
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quanti ne tiene un tavolo</h2>
-        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
-          Quanti coperti fa <strong>un tavolo da solo</strong>, per formato. Accostandone due il
-          totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
-          vede sulla{" "}
-          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
-            pianta
-          </Link>
-          , e lì si corregge a mano quando la sala dice altro.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Quanti ne tiene un tavolo
+          <Didascalia>
+            Quanti coperti fa <strong>un tavolo da solo</strong>, per formato. Accostandone due il
+            totale scende di due — dove si toccano i posti non ci sono. Il numero della serata si
+            vede sulla{" "}
+            pianta, e lì si corregge a mano quando la sala dice altro. Due tavoli si accostano{" "}
+            <strong>solo se sono dello stesso formato</strong>: i due lunghi fra loro, i quadrati fra
+            loro. Non è il gestionale che sceglie — è che sono mobili diversi.
+          </Didascalia>
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {formati.map((f) => (
             <div key={f.id} className="bg-white rounded-lg px-3 py-2">
@@ -289,29 +293,23 @@ export default function SalaEOrari() {
           ))}
         </div>
         {/* ⚠️ IL FORMATO È ANCHE LA REGOLA DELL'ACCOSTAMENTO, e va detto
-            qui perché è dove uno se lo chiede. La ragione è di Alessio e
+            qui (dietro il «?» del titolo) perché è dove uno se lo chiede. La ragione è di Alessio e
             non è la misura: i due tavoli lunghi sono di uno STILE diverso,
             quindi si accostano fra loro e non ai quadrati. Se domani
             comprasse due 90x90 di un altro stile, sarebbero un formato
             nuovo — e giustamente non accostabili a questi. */}
-        <p className="testo-sala text-b58-charcoal-soft/80 mt-3">
-          Due tavoli si accostano <strong>solo se sono dello stesso formato</strong>: i due lunghi
-          fra loro, i quadrati fra loro. Non è il gestionale che sceglie — è che sono mobili
-          diversi.
-        </p>
       </div>
 
       {/* Come si chiamano i tavoli */}
       <div className={sezioneClass}>
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Come si chiamano i tavoli</h2>
-        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
-          Solo il nome: dove stanno lo decidi trascinandoli dalla{" "}
-          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
-            pianta
-          </Link>
-          . Un tavolo che non usi più si spegne, non si cancella: le prenotazioni vecchie
-          devono continuare a dire dove erano seduti.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Come si chiamano i tavoli
+          <Didascalia>
+            Solo il nome: dove stanno lo decidi trascinandoli dalla{" "}
+            pianta. Un tavolo che non usi più si spegne, non si cancella: le prenotazioni vecchie
+            devono continuare a dire dove erano seduti.
+          </Didascalia>
+        </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {tavoli.map((t) => (
             <div key={t.id} className={`bg-white rounded-lg px-3 py-2 ${t.active ? "" : "opacity-50"}`}>
@@ -341,18 +339,20 @@ export default function SalaEOrari() {
         <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Regole di prenotazione</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Fin quando è «primo giro»</label>
+            <label className={labelClass}>
+              Fin quando è «primo giro»
+              <Didascalia>
+                Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
+                liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
+                colpo d'occhio: non impedisce niente.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="time"
               value={regole?.ora_primo_turno?.slice(0, 5) ?? ""}
               onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_primo_turno: v }))}
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Sulla pianta, chi arriva entro quest'ora è <strong>giallo</strong> (il tavolo può
-              liberarsi per una seconda serata), dopo è <strong>verde</strong>. Serve a vederlo a
-              colpo d'occhio: non impedisce niente.
-            </p>
           </div>
           <div>
             {/* ⚠️ FIN QUANDO È ANCORA IERI SERA. È il parametro che decide
@@ -360,20 +360,28 @@ export default function SalaEOrari() {
                 lo leggeranno anche le funzioni del database che scrivono
                 cassa e mance: un numero, due lettori — mai due copie che
                 possono divergere. */}
-            <label className={labelClass}>Fino a che ora è ancora la sera prima</label>
+            <label className={labelClass}>
+              Fino a che ora è ancora la sera prima
+              <Didascalia>
+                Un conto chiuso all'una di notte appartiene alla <strong>sera prima</strong>, non al
+                giorno dopo. Fino a quest'ora la sala continua a mostrare la serata in corso.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="time"
               value={regole?.ora_fine_serata?.slice(0, 5) ?? ""}
               onSave={(v) => esegui(() => updateRegolePrenotazione({ ora_fine_serata: v }))}
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Un conto chiuso all'una di notte appartiene alla <strong>sera prima</strong>, non al
-              giorno dopo. Fino a quest'ora la sala continua a mostrare la serata in corso.
-            </p>
           </div>
           <div>
-            <label className={labelClass}>Ogni quanti minuti un orario sul sito</label>
+            <label className={labelClass}>
+              Ogni quanti minuti un orario sul sito
+              <Didascalia>
+                Con 15, il sito propone 20:00, 20:15, 20:30… Deve dividere l&apos;ora esatta,
+                altrimenti la griglia si sposterebbe di ora in ora.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="number"
               value={regole?.passo_prenotazioni_minuti ?? ""}
@@ -382,23 +390,21 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Con 15, il sito propone 20:00, 20:15, 20:30… Deve dividere l&apos;ora esatta,
-              altrimenti la griglia si sposterebbe di ora in ora.
-            </p>
           </div>
           <div>
-            <label className={labelClass}>Minuti fra un giro e l'altro</label>
+            <label className={labelClass}>
+              Minuti fra un giro e l'altro
+              <Didascalia>
+                Quanto serve per sparecchiare e riapparecchiare. A zero, «da liberare entro le…»
+                dice l'ora esatta della prenotazione dopo.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="number"
               value={regole?.minuti_fra_turni ?? ""}
               onSave={(v) => esegui(() => updateRegolePrenotazione({ minuti_fra_turni: Number(v) }))}
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Quanto serve per sparecchiare e riapparecchiare. A zero, «da liberare entro le…»
-              dice l'ora esatta della prenotazione dopo.
-            </p>
           </div>
           <div>
             {/* ⚠️ LA SOGLIA È UN SUO PARAMETRO, non un numero nel codice.
@@ -406,7 +412,13 @@ export default function SalaEOrari() {
                 di quel che la cucina regge (30): è così di proposito, per
                 il rodaggio, e il giorno che il rodaggio finisce si cambia
                 qui invece che con una migrazione. */}
-            <label className={labelClass}>Avvisami sopra questi coperti a serata</label>
+            <label className={labelClass}>
+              Avvisami sopra questi coperti a serata
+              <Didascalia>
+                Sopra questo numero di coperti confermati la sala te lo dice. <strong>Avvisa
+                soltanto</strong>: accettare o no lo decidi tu.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="number"
               value={regole?.soglia_coperti_serata ?? ""}
@@ -415,10 +427,6 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Sopra questo numero di coperti confermati la sala te lo dice. <strong>Avvisa
-              soltanto</strong>: accettare o no lo decidi tu.
-            </p>
           </div>
           <div>
             {/* ⚠️ IL NUMERO C'ERA GIÀ NEL DATABASE DAL GIRO D1 E NESSUNO LO
@@ -427,7 +435,15 @@ export default function SalaEOrari() {
                 parametro che sembra governare qualcosa e non governa niente
                 è la famiglia della soglia che non si poteva scrivere (13/08)
                 — tutto acceso, e muto. */}
-            <label className={labelClass}>Dopo quanti minuti un tavolo si sbarra</label>
+            <label className={labelClass}>
+              Dopo quanti minuti un tavolo si sbarra
+              <Didascalia>
+                Passati questi minuti dall&apos;ora prenotata, se nessuno ha aperto la comanda su
+                quel tavolo, in sala si vede <strong>sbarrato</strong>. Serve a decidere se
+                riassegnarlo: <strong>avvisa soltanto</strong>. «È arrivato» non lo segna nessuno —
+                lo dice l&apos;apertura del conto.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="number"
               value={regole?.minuti_tolleranza_ritardo ?? ""}
@@ -436,24 +452,20 @@ export default function SalaEOrari() {
               }
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Passati questi minuti dall&apos;ora prenotata, se nessuno ha aperto la comanda su
-              quel tavolo, in sala si vede <strong>sbarrato</strong>. Serve a decidere se
-              riassegnarlo: <strong>avvisa soltanto</strong>. «È arrivato» non lo segna nessuno —
-              lo dice l&apos;apertura del conto.
-            </p>
           </div>
           <div>
-            <label className={labelClass}>Con quanto anticipo minimo (minuti)</label>
+            <label className={labelClass}>
+              Con quanto anticipo minimo (minuti)
+              <Didascalia>
+                Sotto questa soglia gli orari non compaiono più: chi è in ritardo chiama.
+              </Didascalia>
+            </label>
             <CampoAutosalvato
               type="number"
               value={regole?.preavviso_minuti ?? ""}
               onSave={(v) => esegui(() => updateRegolePrenotazione({ preavviso_minuti: Number(v) }))}
               className={`${inputClass} w-full`}
             />
-            <p className="testo-sala text-b58-charcoal-soft/80 mt-1">
-              Sotto questa soglia gli orari non compaiono più: chi è in ritardo chiama.
-            </p>
           </div>
           <div>
             <label className={labelClass}>Fin quanto in là si prenota (giorni)</label>
@@ -472,12 +484,14 @@ export default function SalaEOrari() {
           e restano due interruttori: il giorno di chiusura e' spesso proprio
           quello delle preparazioni lunghe. */}
       <div className={sezioneClass}>
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Quando si lavora in cucina</h2>
-        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
-          Non è la stessa cosa di «aperto al pubblico»: il giorno di chiusura è spesso
-          proprio quello delle preparazioni lunghe. Da qui il gestionale sa quando far
-          comparire da sole le cose da preparare.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Quando si lavora in cucina
+          <Didascalia>
+            Non è la stessa cosa di «aperto al pubblico»: il giorno di chiusura è spesso
+            proprio quello delle preparazioni lunghe. Da qui il gestionale sa quando far
+            comparire da sole le cose da preparare.
+          </Didascalia>
+        </h2>
         <div className="space-y-2">
           {/* ⚠️ Si riusa l'elenco dei giorni che questa schermata ha gia' —
               oggetti `{weekday, nome}` che partono dal LUNEDI' — invece di
@@ -507,7 +521,7 @@ export default function SalaEOrari() {
                       onClick={() => esegui(() => setGiornoCucina(g, s.v))}
                       className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
                         riga?.si_lavora === s.v
-                          ? "bg-b58-terracotta text-b58-parchment"
+                          ? "bg-b58-azione text-b58-parchment"
                           : "border border-b58-charcoal/20 text-b58-charcoal-soft"
                       }`}
                     >
@@ -523,16 +537,15 @@ export default function SalaEOrari() {
 
       {/* Chiusure */}
       <div className={sezioneClass}>
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-1">Chiusure straordinarie</h2>
-        <p className="testo-sala-grande text-b58-charcoal-soft mb-4">
-          Ferie, festivi, giorni singoli. In queste date il sito non propone nessun orario e
-          scrive al cliente il motivo, se lo metti. <strong>Non è «siamo pieni»</strong>:
-          quello si mette giorno per giorno dalla{" "}
-          <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
-            pianta
-          </Link>
-          , e nello storico resta una cosa diversa.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Chiusure straordinarie
+          <Didascalia>
+            Ferie, festivi, giorni singoli. In queste date il sito non propone nessun orario e
+            scrive al cliente il motivo, se lo metti. <strong>Non è «siamo pieni»</strong>:
+            quello si mette giorno per giorno dalla{" "}
+            pianta, e nello storico resta una cosa diversa.
+          </Didascalia>
+        </h2>
         {/* SPEC-0010, 11/09/2026: a 64 punti per cm la fila andava a capo
             dove capitava e il menu usciva dal riquadro di 14 punti. */}
         <div className="riga-campi mb-4">
@@ -595,7 +608,7 @@ export default function SalaEOrari() {
               type="button"
               onClick={aggiungiChiusura}
               disabled={!nuovaChiusura.dal}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Aggiungi
             </button>

@@ -1103,7 +1103,7 @@ export default function Sala() {
         {v.producer && <span className="block testo-sala text-b58-charcoal-soft/70">{v.producer}</span>}
       </span>
       <span className="testo-sala text-b58-charcoal-soft shrink-0">{formatEUR(v.selling_price)}</span>
-      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
+      <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
         +
       </span>
     </button>
@@ -1171,7 +1171,7 @@ export default function Sala() {
         type="button"
         disabled={sentItems.length === 0}
         onClick={() => setShowClose(true)}
-        className="tocco-bottone w-full rounded-lg bg-b58-terracotta disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
+        className="tocco-bottone w-full rounded-lg bg-b58-azione disabled:opacity-40 text-b58-parchment testo-sala font-semibold px-2"
       >
         Chiudi conto
       </button>
@@ -1481,7 +1481,7 @@ export default function Sala() {
                   <span className="testo-sala text-b58-charcoal-soft shrink-0 self-start pt-1.5">
                     {formatEUR(mi.selling_price)}
                   </span>
-                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
+                  <span className="tocco-bottone shrink-0 rounded-lg bg-b58-azione text-b58-parchment flex items-center justify-center testo-sala-grande pointer-events-none">
                     +
                   </span>
                 </button>
@@ -1713,7 +1713,7 @@ export default function Sala() {
                   <button
                     type="button"
                     onClick={handleSavePrice}
-                    className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+                    className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
                   >
                     Salva
                   </button>
@@ -2022,7 +2022,7 @@ export default function Sala() {
                 onClick={() => handleLinea(order.linea === l.valore ? null : l.valore)}
                 className={`tocco-bottone inline-flex items-center rounded-lg px-4 testo-sala ring-1 disabled:opacity-40 ${
                   order.linea === l.valore
-                    ? "bg-b58-terracotta text-b58-parchment ring-b58-terracotta"
+                    ? "bg-b58-azione text-b58-parchment ring-b58-terracotta"
                     : "bg-white text-b58-charcoal ring-b58-charcoal/15"
                 }`}
               >
