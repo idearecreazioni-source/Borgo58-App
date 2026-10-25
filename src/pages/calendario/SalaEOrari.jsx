@@ -521,7 +521,7 @@ export default function SalaEOrari() {
                       onClick={() => esegui(() => setGiornoCucina(g, s.v))}
                       className={`tocco-bottone rounded-lg px-3 testo-sala-grande ${
                         riga?.si_lavora === s.v
-                          ? "bg-b58-terracotta text-b58-parchment"
+                          ? "bg-b58-azione text-b58-parchment"
                           : "border border-b58-charcoal/20 text-b58-charcoal-soft"
                       }`}
                     >
@@ -608,7 +608,7 @@ export default function SalaEOrari() {
               type="button"
               onClick={aggiungiChiusura}
               disabled={!nuovaChiusura.dal}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Aggiungi
             </button>

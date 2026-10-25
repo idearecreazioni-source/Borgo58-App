@@ -353,7 +353,7 @@ export default function ClienteDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>

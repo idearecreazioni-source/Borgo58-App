@@ -135,7 +135,7 @@ export default function Previsioni() {
             scritto per la società sbagliata non si nota da nessun numero. */}
         <Link
           to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
-          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
         >
           + Scrivi una previsione
         </Link>
@@ -254,7 +254,7 @@ export default function Previsioni() {
                     type="button"
                     onClick={conferma}
                     disabled={salvando}
-                    className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
                   >
                     {salvando ? "Salvo…" : "Crea la previsione"}
                   </button>

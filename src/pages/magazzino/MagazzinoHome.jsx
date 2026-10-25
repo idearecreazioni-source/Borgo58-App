@@ -300,7 +300,7 @@ export default function MagazzinoHome() {
           </Link>
           <Link
             to="/magazzino/carico"
-            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
           >
             + Registra carico
           </Link>
@@ -649,7 +649,7 @@ export default function MagazzinoHome() {
                   type="button"
                   disabled={saving || !consumptionForm.quantity}
                   onClick={() => handleConsumption(l.ingredient_id)}
-                  className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60"
+                  className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60"
                 >
                   {saving ? "Salvo…" : "Conferma"}
                 </button>

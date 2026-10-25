@@ -5,17 +5,20 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-menu: "Cormorant Garamond", "Georgia", serif;
 
-  --color-b58-cream: #f6efe2;
-  --color-b58-cream-dark: #ece0c9;
-  --color-b58-parchment: #fbf7ee;
+  --color-b58-cream: #fbf8f2;
+  --color-b58-cream-dark: #f0e8da;
+  --color-b58-parchment: #fffefa;
   --color-b58-terracotta: #b5502e;
   --color-b58-terracotta-dark: #93401f;
   /* L'AZIONE PRINCIPALE, l'elemento attivo e lo stato positivo (U1,
-     11/10/2026). Oggi vale il terracotta di sempre: la palette nuova — il
-     verde del logo — si prova SOLO sulla Dashboard, con `.tema-prova` qui
-     sotto, e si estende al resto solo dopo l'ok di Alessio. */
-  --color-b58-azione: #b5502e;
-  --color-b58-azione-dark: #93401f;
+     11/10/2026). È il VERDE DEL LOGO (#577632, preso dal file del logo):
+     contrasto col testo chiaro 4,8:1, sopra la soglia di 4,5. Provato sulla
+     sola Dashboard dall'11/10, esteso a tutto il gestionale il 25/10/2026
+     su richiesta di Alessio («mi piace di più, applichiamola a tutto»).
+     ⚠️ Il terracotta resta per gli accenti, gli avvisi e i gesti che
+     cancellano: un colore, una cosa sola. */
+  --color-b58-azione: #577632;
+  --color-b58-azione-dark: #435b26;
   --color-b58-olive: #56603c;
   --color-b58-olive-dark: #3f4a2c;
   --color-b58-charcoal: #2b2621;
@@ -862,18 +865,3 @@ body {
   height: calc(var(--pxcm) * 1.7);
 }
 
-/* LA PALETTE NUOVA, IN PROVA SULLA SOLA DASHBOARD (U1, 11/10/2026).
-   La Dashboard mette questa classe su <html> finché è aperta, e la toglie
-   quando si cambia schermata: tutto il resto del gestionale resta com'era.
-   · fondo beige più chiaro, riquadri quasi bianchi;
-   · il VERDE DEL LOGO (#577632, preso dal file del logo) per le azioni
-     principali, gli elementi attivi e gli stati positivi — contrasto col
-     testo chiaro 4,8:1, sopra la soglia di 4,5;
-   · il terracotta resta per gli accenti e gli avvisi. */
-html.tema-prova {
-  --color-b58-cream: #fbf8f2;
-  --color-b58-cream-dark: #f0e8da;
-  --color-b58-parchment: #fffefa;
-  --color-b58-azione: #577632;
-  --color-b58-azione-dark: #435b26;
-}

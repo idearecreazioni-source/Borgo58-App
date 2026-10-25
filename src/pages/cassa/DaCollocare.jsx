@@ -109,7 +109,7 @@ function GestoConConferma({ etichetta, domanda, conferma, onFai }) {
           type="button"
           onClick={fai}
           disabled={lavoro}
-          className="tocco-bottone rounded-lg bg-b58-terracotta px-4 font-medium text-b58-parchment disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-azione px-4 font-medium text-b58-parchment disabled:opacity-60"
         >
           {lavoro ? "Lo sto facendo…" : conferma}
         </button>

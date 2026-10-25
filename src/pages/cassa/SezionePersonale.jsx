@@ -317,7 +317,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={!nuovoTag.trim()}
                     onClick={aggiungiTag}
-                    className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     + Crea
                   </button>
@@ -510,7 +510,7 @@ export default function SezionePersonale() {
                     type="button"
                     disabled={saving || !form.importo || !form.tagId}
                     onClick={registra}
-                    className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+                    className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
                   >
                     {saving ? "Registro…" : "+ Registra"}
                   </button>
@@ -596,7 +596,7 @@ export default function SezionePersonale() {
                     <span className="flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => pareggia(n.id)}
-                        className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5"
+                        className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5"
                       >
                         Mi sono rimborsato
                       </button>

@@ -1266,7 +1266,7 @@ export default function PostaInArrivo() {
                             type="button"
                             disabled={inCorso === a.id || !!bloccato}
                             onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
+                            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
                           >
                             {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
                           </button>

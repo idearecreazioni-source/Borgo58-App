@@ -105,7 +105,7 @@ export default function Cessioni() {
         <Link to="/agricolo" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
           ← Agricolo / Orto
         </Link>
-        <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+        <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
           {showForm ? "Annulla" : "+ Nuova cessione"}
         </button>
       </div>
@@ -176,7 +176,7 @@ export default function Cessioni() {
                 <input type="checkbox" checked={Boolean(form.update_cost && form.ingredient_id)} onChange={(e) => setForm((f) => ({ ...f, update_cost: e.target.checked }))} disabled={!form.ingredient_id} />
                 Aggiorna il costo dell'ingrediente collegato a questo prezzo
               </label>
-              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+              <button type="button" disabled={saving || !form.product_description.trim() || !form.quantity || !form.unit_price} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                 {saving ? "Registro…" : "+ Registra cessione"}
               </button>
             </div>

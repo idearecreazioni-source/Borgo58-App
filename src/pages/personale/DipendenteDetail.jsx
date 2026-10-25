@@ -318,7 +318,7 @@ export default function DipendenteDetail() {
           <button
             onClick={saveHeader}
             disabled={savingHeader}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {savingHeader ? "Salvo…" : "Salva anagrafica"}
           </button>
@@ -362,7 +362,7 @@ export default function DipendenteDetail() {
             <input value={docForm.document_reference} onChange={(e) => setDocForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={`${inputClass} cella-larga`} />
           </div>
           <div className="flex justify-end mt-2">
-            <button type="button" disabled={busy} onClick={addDocument} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={addDocument} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
               + Aggiungi documento
             </button>
           </div>
@@ -401,7 +401,7 @@ export default function DipendenteDetail() {
           <input type="date" value={leaveForm.start_date} onChange={(e) => setLeaveForm((f) => ({ ...f, start_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="date" value={leaveForm.end_date} onChange={(e) => setLeaveForm((f) => ({ ...f, end_date: e.target.value }))} className={inputClass + " w-40"} />
           <input type="number" step="0.5" value={leaveForm.days} onChange={(e) => setLeaveForm((f) => ({ ...f, days: e.target.value }))} placeholder="Giorni" className={inputClass + " w-24"} />
-          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy || !leaveForm.start_date || !leaveForm.end_date} onClick={addLeave} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Aggiungi
           </button>
         </div>
@@ -460,7 +460,7 @@ export default function DipendenteDetail() {
           <input type="number" step="0.01" value={payForm.net_amount} onChange={(e) => setPayForm((f) => ({ ...f, net_amount: e.target.value }))} placeholder="Netto €" className={inputClass + " cella-media"} />
           <input value={payForm.document_reference} onChange={(e) => setPayForm((f) => ({ ...f, document_reference: e.target.value }))} placeholder="Rif. file (opz.)" className={inputClass + " cella-larga"} />
           <div className="riga-campi-gesti">
-            <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={busy || !payForm.period_month} onClick={addPayslip} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
               + Aggiungi
             </button>
           </div>

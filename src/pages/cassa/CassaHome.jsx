@@ -631,7 +631,7 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
               type="button"
               disabled={inCorso !== "" || contato === ""}
               onClick={() => conta(false)}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3  disabled:opacity-60 shrink-0"
             >
               {inCorso === "conteggio" ? "…" : "Conta"}
             </button>

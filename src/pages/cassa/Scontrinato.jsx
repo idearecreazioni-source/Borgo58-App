@@ -326,7 +326,7 @@ export default function Scontrinato() {
                         <button
                           disabled={inCorso === c.order_id || !(numeroFattura[c.order_id] ?? "").trim()}
                           onClick={() => segna(c.order_id, "fattura")}
-                          className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
+                          className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60"
                         >
                           Fattura fatta
                         </button>

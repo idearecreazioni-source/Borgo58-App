@@ -136,7 +136,7 @@ export default function SchedeProdotti() {
               </ul>
               <button
                 type="button"
-                className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
                 disabled={lavorando}
                 onClick={compila}
               >

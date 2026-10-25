@@ -83,7 +83,7 @@ export default function PersonaleHome() {
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo dipendente"}
           </button>
@@ -127,7 +127,7 @@ export default function PersonaleHome() {
             type="button"
             disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
             onClick={handleAdd}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Creo…" : "Crea"}
           </button>

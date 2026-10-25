@@ -278,7 +278,7 @@ export default function BozzaDetail() {
           </p>
           <button
             type="button"
-            className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+            className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
             onClick={() => setInCucina(true)}
           >
             Portala in cucina
@@ -321,7 +321,7 @@ export default function BozzaDetail() {
                 <button
                   type="button"
                   disabled={lavorando || (conferma.esito === "ricetta" && buchi.length > 0)}
-                  className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment disabled:opacity-50"
+                  className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
                   onClick={confermaDavvero}
                 >
                   {lavorando
@@ -345,7 +345,7 @@ export default function BozzaDetail() {
               <button
                 type="button"
                 disabled={buchi.length > 0}
-                className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment disabled:opacity-50"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
                 onClick={() => apriConferma("ricetta")}
               >
                 Crea la ricetta

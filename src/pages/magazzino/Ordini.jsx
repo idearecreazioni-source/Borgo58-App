@@ -395,7 +395,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, via)}
-                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               {via === "whatsapp" ? "Registra e apri WhatsApp" : "Registra e apri la posta"}
                             </button>
@@ -405,7 +405,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, "altro")}
-                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               Registra l&apos;ordine
                             </button>

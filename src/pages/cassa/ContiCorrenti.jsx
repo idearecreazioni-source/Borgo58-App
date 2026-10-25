@@ -131,7 +131,7 @@ export default function ContiCorrenti() {
           type="button"
           disabled={salvando || !nome.trim() || !entityId}
           onClick={aggiungi}
-          className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>

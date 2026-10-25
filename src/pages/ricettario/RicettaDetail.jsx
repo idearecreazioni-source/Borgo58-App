@@ -1400,7 +1400,7 @@ export default function RicettaDetail() {
         <button
           onClick={saveHeader}
           disabled={savingHeader}
-          className="print:hidden w-full tocco-azione rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4"
+          className="print:hidden w-full tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4"
         >
           {savingHeader ? "Salvo…" : "Salva modifiche"}
         </button>
@@ -1895,7 +1895,7 @@ export default function RicettaDetail() {
               }
               onClick={handleAddIngredient}
               data-prova="riga-aggiungi"
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -2134,7 +2134,7 @@ export default function RicettaDetail() {
               type="button"
               disabled={addingStep || !stepForm.description.trim()}
               onClick={handleAddStep}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
@@ -2203,7 +2203,7 @@ export default function RicettaDetail() {
             type="button"
             disabled={addingVideo || !videoUrl.trim()}
             onClick={handleAddVideo}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
           </button>

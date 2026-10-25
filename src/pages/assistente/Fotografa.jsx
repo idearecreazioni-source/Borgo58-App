@@ -259,7 +259,7 @@ export default function Fotografa() {
                 type="button"
                 onClick={sblocca}
                 disabled={salvando}
-                className="tocco-bottone testo-sala mt-3 rounded-md bg-b58-terracotta px-4 py-2 font-semibold text-white disabled:opacity-50"
+                className="tocco-bottone testo-sala mt-3 rounded-md bg-b58-azione px-4 py-2 font-semibold text-white disabled:opacity-50"
               >
                 Vai avanti lo stesso per questo mese
               </button>

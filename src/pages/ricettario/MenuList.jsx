@@ -27,7 +27,7 @@ export default function MenuList() {
         </div>
         <Link
           to="/ricettario/menu/nuovo"
-          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
         >
           + Nuovo menu
         </Link>

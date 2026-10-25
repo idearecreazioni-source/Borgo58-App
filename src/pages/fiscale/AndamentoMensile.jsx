@@ -347,7 +347,7 @@ export default function AndamentoMensile() {
               type="button"
               disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
               onClick={aggiungiPeriodo}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Segna
             </button>
@@ -374,7 +374,7 @@ export default function AndamentoMensile() {
                 <button
                   onClick={chiudi}
                   disabled={chiudendo}
-                  className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {chiudendo ? "Chiudo…" : "Fotografa questo mese"}
                 </button>

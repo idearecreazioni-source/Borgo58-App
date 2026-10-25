@@ -758,7 +758,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>

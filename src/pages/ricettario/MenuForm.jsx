@@ -67,7 +67,7 @@ export default function MenuForm() {
         <button
           type="submit"
           disabled={saving}
-          className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
+          className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
         >
           {saving ? "Creo…" : "Crea menu"}
         </button>

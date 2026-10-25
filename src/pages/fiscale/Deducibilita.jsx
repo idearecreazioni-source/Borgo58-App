@@ -381,7 +381,7 @@ export default function Deducibilita() {
               type="button"
               disabled={saving || !form.etichetta.trim()}
               onClick={aggiungiRegola}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60 shrink-0"
             >
               {saving ? "Salvo…" : "+ Aggiungi"}
             </button>

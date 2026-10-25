@@ -177,7 +177,7 @@ export default function Cantina() {
             type="button"
             disabled={!scelto || inCorso === "apri"}
             onClick={apri}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
           >
             {inCorso === "apri" ? "Apro…" : "Stappa"}
           </button>

@@ -388,7 +388,7 @@ export default function ScontiOmaggi() {
                   <input type="checkbox" checked={newDevice.isOwnerDevice} onChange={(e) => setNewDevice((d) => ({ ...d, isOwnerDevice: e.target.checked }))} />
                   È il tuo tablet
                 </label>
-                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
+                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
                   {savingDevice ? "Salvo…" : "+ Aggiungi"}
                 </button>
               </div>
@@ -400,7 +400,7 @@ export default function ScontiOmaggi() {
               type="button"
               disabled={saving || !form.full_amount || !form.causale_id}
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>

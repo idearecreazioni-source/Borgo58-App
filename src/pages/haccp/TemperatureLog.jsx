@@ -258,7 +258,7 @@ export default function TemperatureLog() {
                 type="button"
                 disabled={addingEquipment || !equipmentForm.name.trim()}
                 onClick={handleAddEquipment}
-                className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
               >
                 {addingEquipment ? "Aggiungo…" : "+ Aggiungi"}
               </button>
@@ -375,7 +375,7 @@ export default function TemperatureLog() {
             )}
             <Link
               to="/haccp/non-conformita"
-              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4"
             >
               Vai alle non conformità
             </Link>
@@ -483,7 +483,7 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
                 type="button"
                 disabled={salvando || !form.recordedTempC}
                 onClick={onConferma}
-                className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
               >
                 {salvando ? "Salvo…" : "Conferma"}
               </button>
