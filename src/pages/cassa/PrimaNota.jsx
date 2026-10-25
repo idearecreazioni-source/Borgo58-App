@@ -485,13 +485,16 @@ export default function PrimaNota() {
               </Didascalia>
             </p>
           )}
+          {/* ⚠️ Il selezionato ha lo stesso aspetto su tutti e quattro i
+              pulsanti (25/10/2026, Alessio): «Uscita» in rosso sembrava un
+              errore. Il verso si legge dal segno nell'elenco. */}
           <div className={`flex gap-2 mb-3 ${inTasca ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setDirection("uscita")}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "uscita"
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -502,7 +505,7 @@ export default function PrimaNota() {
               onClick={() => setDirection("entrata")}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "entrata"
-                  ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >

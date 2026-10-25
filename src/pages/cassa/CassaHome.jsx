@@ -384,7 +384,9 @@ export default function CassaHome() {
               impostazioni stanno in fondo e più discrete, perché si toccano
               di rado. Le schede sono le stesse di prima: cambia solo l'ordine. */}
           <Gruppo titolo="Ogni giorno">
-            <Scorciatoia to="/cassa/prima-nota" principale>
+            {/* ⚠️ NIENTE «principale» (25/10/2026, Alessio): pieno di verde
+                sembrava la sezione in cui si e' gia', non una porta. */}
+            <Scorciatoia to="/cassa/prima-nota">
               Prima nota
             </Scorciatoia>
             {/* 🔴 LA PORTA DI «DA COLLOCARE» (11/10/2026, C12): le spese dette a
