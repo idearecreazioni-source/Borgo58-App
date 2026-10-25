@@ -162,8 +162,9 @@ rossa da sola il giorno che l'indice resta indietro.
 | 103 | 15/10/2026 | un impegno scritto a mano nasce visibile allo staff |
 | 104 | 19/10/2026 | nessuna dettatura scrive niente prima che Alessio approvi |
 | 105 | 25/10/2026 | nella Cassa gli avvertimenti sul cassetto restano scritti a schermo |
+| 106 | 25/10/2026 | una bozza diventa ricetta solo con tutti gli ingredienti collegati al magazzino |
 
-⚠️ **Righe: 106.** Generato da `npm run indice` leggendo le sezioni
+⚠️ **Righe: 107.** Generato da `npm run indice` leggendo le sezioni
 di questo file: non si scrive a mano, e non può più restare indietro.
 
 ⚠️ **Numeri usati più di una volta: 18, 48, 49.** NON si rinumerano
