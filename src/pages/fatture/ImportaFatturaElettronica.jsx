@@ -5,6 +5,7 @@ import { getEntities } from "../../lib/api/entities";
 import { formatDate, formatEUR } from "../../lib/constants";
 import { leggiFatturaPA, payloadFattura, xmlDaFile } from "../../lib/calcoli/fatturaPA";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
+import { eZip, leggiZip } from "../../lib/calcoli/zip";
 
 // LA FATTURA ELETTRONICA DA FILE (24/10/2026). Il file che arriva dallo SDI
 // (.xml, o .xml.p7m firmato) si legge qui, si guarda, e si registra con un
@@ -24,6 +25,8 @@ export default function ImportaFatturaElettronica() {
   const [esiti, setEsiti] = useState({}); // chiave → { ok, testo }
   const guardia = useRef(unaVoltaSola());
   const [occupato, setOccupato] = useState(null);
+  const [saltati, setSaltati] = useState([]);
+  const [tutte, setTutte] = useState(false);
 
   useEffect(() => {
     getEntities().then((ent) => {
@@ -35,23 +38,46 @@ export default function ImportaFatturaElettronica() {
 
   const leggi = async (files) => {
     const nuove = [];
+    // ⚠️ Uno .zip (lo scarico di più fatture insieme) si apre qui, e ogni
+    // file dentro diventa una riga sua. Un file dell'archivio che non è una
+    // fattura (i metadati che il portale mette accanto) si conta e si dice,
+    // ma non si mostra come un errore: non c'è niente da correggere.
+    const saltati = [];
+    const singoli = [];
     for (const f of files) {
       try {
-        const xml = xmlDaFile(new Uint8Array(await f.arrayBuffer()));
-        const { fatture, errori } = leggiFatturaPA(xml);
-        if (errori.length) nuove.push({ chiave: f.name, nome: f.name, errore: errori.join(" ") });
-        fatture.forEach((fattura, i) =>
-          nuove.push({
-            // un file può contenere più fatture (un lotto): ognuna è la sua riga
-            chiave: fatture.length > 1 ? `${f.name}#${i + 1}` : f.name,
-            nome: fatture.length > 1 ? `${f.name}#${i + 1}` : f.name,
-            fattura,
-          }),
-        );
+        const bytes = new Uint8Array(await f.arrayBuffer());
+        if (eZip(bytes)) {
+          for (const d of await leggiZip(bytes)) {
+            if (/\.(xml|p7m)$/i.test(d.nome)) singoli.push({ nome: `${f.name} › ${d.nome}`, bytes: d.contenuto, daZip: true });
+          }
+        } else singoli.push({ nome: f.name, bytes, daZip: false });
       } catch (e) {
         nuove.push({ chiave: f.name, nome: f.name, errore: e.message });
       }
     }
+    for (const s of singoli) {
+      try {
+        const { fatture, errori } = leggiFatturaPA(xmlDaFile(s.bytes));
+        if (s.daZip && fatture.length === 0) {
+          saltati.push(s.nome);
+          continue;
+        }
+        if (errori.length) nuove.push({ chiave: s.nome, nome: s.nome, errore: errori.join(" ") });
+        fatture.forEach((fattura, i) =>
+          nuove.push({
+            // un file può contenere più fatture (un lotto): ognuna è la sua riga
+            chiave: fatture.length > 1 ? `${s.nome}#${i + 1}` : s.nome,
+            nome: fatture.length > 1 ? `${s.nome}#${i + 1}` : s.nome,
+            fattura,
+          }),
+        );
+      } catch (e) {
+        if (s.daZip) saltati.push(s.nome);
+        else nuove.push({ chiave: s.nome, nome: s.nome, errore: e.message });
+      }
+    }
+    setSaltati(saltati);
     setLetture(nuove);
     setEsiti({});
   };
@@ -78,6 +104,20 @@ export default function ImportaFatturaElettronica() {
     }
   };
 
+  // ⚠️ In fila, una alla volta: il corridoio crea il fornitore se manca, e
+  // due fatture dello stesso fornitore nuovo mandate insieme potrebbero
+  // provare a crearlo due volte. Un doppione si ferma nel database e la
+  // riga dice perché: le altre proseguono.
+  const daRegistrare = letture.filter((l) => !l.errore && l.fattura.errori.length === 0 && !esiti[l.chiave]?.ok);
+  const registraTutte = async () => {
+    setTutte(true);
+    try {
+      for (const l of daRegistrare) await registra(l);
+    } finally {
+      setTutte(false);
+    }
+  };
+
   const campo =
     "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 
@@ -94,12 +134,12 @@ export default function ImportaFatturaElettronica() {
       <div className="bg-white rounded-lg border border-b58-charcoal/10 p-3 mb-4 flex flex-wrap gap-3 items-end">
         <label className="flex-1 min-w-[220px]">
           <span className="block testo-sala-grande text-b58-charcoal mb-2">
-            Il file della fattura (.xml o .p7m)
+            I file delle fatture (.xml, .p7m, o uno .zip con dentro più fatture)
           </span>
           <input
             type="file"
             multiple
-            accept=".xml,.p7m,application/xml,text/xml,application/pkcs7-mime"
+            accept=".xml,.p7m,.zip,application/xml,text/xml,application/pkcs7-mime,application/zip"
             onChange={(e) => {
               const files = [...e.target.files];
               e.target.value = "";
@@ -121,6 +161,24 @@ export default function ImportaFatturaElettronica() {
           </label>
         )}
       </div>
+
+      {saltati.length > 0 && (
+        <p className="testo-sala text-b58-charcoal-soft mb-3">
+          {saltati.length === 1 ? "Un file dell'archivio non è una fattura" : `${saltati.length} file dell'archivio non sono fatture`}{" "}
+          (di solito i metadati del portale): li ho lasciati stare.
+        </p>
+      )}
+
+      {daRegistrare.length > 1 && (
+        <button
+          type="button"
+          disabled={tutte || occupato != null || !entityId}
+          onClick={registraTutte}
+          className="tocco-bottone mb-3 rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+        >
+          {tutte ? "Sto registrando, una alla volta…" : `Registra tutte (${daRegistrare.length})`}
+        </button>
+      )}
 
       <ul className="space-y-3">
         {letture.map((l) => {
@@ -205,7 +263,7 @@ export default function ImportaFatturaElettronica() {
               {!bloccata && !esito?.ok && (
                 <button
                   type="button"
-                  disabled={occupato === l.chiave || !entityId}
+                  disabled={occupato === l.chiave || tutte || !entityId}
                   onClick={() => registra(l)}
                   className="tocco-bottone mt-3 rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
