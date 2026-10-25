@@ -250,7 +250,7 @@ export default function RicettaForm() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full mt-4 tocco-azione rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 testo-sala-grande"
+          className="w-full mt-4 tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 testo-sala-grande"
         >
           {saving ? "Creo…" : porta.crea}
         </button>

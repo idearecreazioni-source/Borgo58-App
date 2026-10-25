@@ -123,7 +123,7 @@ function CalendarView({ tasks, loading, year, month, onPrev, onNext, selectedDay
                 onClick={() => onSelectDay(isSelected ? null : dateISO)}
                 className={`tocco-bottone aspect-square rounded-lg flex flex-col items-center justify-center testo-sala relative ${
                   isSelected
-                    ? "bg-b58-terracotta text-b58-parchment"
+                    ? "bg-b58-azione text-b58-parchment"
                     : isToday
                       ? "bg-b58-olive/15 text-b58-charcoal font-medium"
                       : "text-b58-charcoal hover:bg-b58-cream-dark"
@@ -471,7 +471,7 @@ export default function AgendaList() {
               entra mai: un numero fermo su venti smette di essere
               un'informazione e si impara a ignorarlo. */}
           {quanti > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-b58-terracotta text-b58-parchment testo-sala font-medium px-2 py-0.5 align-middle">
+            <span className="ml-2 inline-flex items-center rounded-full bg-b58-azione text-b58-parchment testo-sala font-medium px-2 py-0.5 align-middle">
               {quanti}
             </span>
           )}
@@ -490,7 +490,7 @@ export default function AgendaList() {
           )}
           <Link
             to="/agenda/nuovo"
-            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
+            className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4  testo-sala"
           >
             + Nuovo task
           </Link>
@@ -520,7 +520,7 @@ export default function AgendaList() {
             onClick={() => setView(v.value)}
             className={`tocco-bottone testo-sala rounded-full px-3  border transition-colors ${
               view === v.value
-                ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
+                ? "bg-b58-azione text-b58-parchment border-b58-terracotta"
                 : "border-b58-charcoal/15 text-b58-charcoal-soft"
             }`}
           >

@@ -372,7 +372,7 @@ export default function ListaSpesa() {
           {isTitolare && (
             <Link
               to="/magazzino/ordini"
-              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+              className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
             >
               Ordina ai fornitori
             </Link>
@@ -454,7 +454,7 @@ export default function ListaSpesa() {
                           <span className="testo-sala text-b58-charcoal-soft ml-1">{item.unit}</span>
                         )}
                         {item.source === "soglia_minima" && (
-                          <span className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
+                          <span className="inline-block whitespace-nowrap testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-full px-2 py-0.5 ml-1.5">
                             sotto scorta minima
                           </span>
                         )}
@@ -533,7 +533,7 @@ export default function ListaSpesa() {
                           <button
                             type="button"
                             onClick={() => openClose(item.id, item.quantity_needed)}
-                            className="tocco-bottone testo-sala text-b58-terracotta hover:text-b58-terracotta-dark"
+                            className="tocco-bottone rounded-lg bg-b58-azione px-3 testo-sala font-medium text-b58-parchment hover:bg-b58-azione-dark"
                           >
                             Segna acquistato
                           </button>
@@ -541,7 +541,7 @@ export default function ListaSpesa() {
                         <button
                           type="button"
                           onClick={() => handleRemove(item.id)}
-                          className="tocco-bottone testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
+                          className="tocco-bottone rounded-lg border border-b58-charcoal/20 px-3 testo-sala text-b58-charcoal-soft hover:text-b58-terracotta-dark"
                         >
                           Rimuovi
                         </button>
@@ -716,7 +716,7 @@ export default function ListaSpesa() {
                               (closeForm.esito === "comprata" && !closeForm.purchased_amount)
                             }
                             onClick={() => handleClose(item.id)}
-                            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
+                            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 py-2 disabled:opacity-60 tocco-bottone"
                           >
                             {closing ? "Chiudo…" : "Conferma"}
                           </button>
@@ -830,7 +830,7 @@ export default function ListaSpesa() {
                 adding || (addForm.mode === "custom" ? !addForm.custom_name.trim() : !addForm.ingredient_id)
               }
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60 shrink-0 tocco-bottone"
             >
               {adding ? "Aggiungo…" : "+ Aggiungi"}
             </button>

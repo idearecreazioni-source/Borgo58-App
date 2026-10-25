@@ -406,13 +406,14 @@ export default function PrimaNota() {
               )}
             </span>
           )}
+          {/* 🔴 «CONTANTE IN CASSA» TOLTO (25/10/2026, decisione di Alessio).
+              Contava i soli movimenti di prima nota, senza gli incassi in
+              contanti dei conti chiusi e senza le mance: sul progetto di prova
+              diceva −25.721,66 mentre il cassetto ne aveva 1.352,49. Il
+              contante si legge in Cassa (`saldo_tesoreria`), che li somma. */}
           {!inTasca && balance && (
             <span className="testo-sala text-b58-charcoal-soft">
-              Contante in cassa:{" "}
-              <span className={`font-medium ${Number(balance.balance) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
-                {formatEUR(balance.balance)}
-              </span>
-              {" · "}Banca:{" "}
+              Banca:{" "}
               <span className={`font-medium ${Number(balance.saldo_banca) < 0 ? "text-b58-terracotta-dark" : "text-b58-charcoal"}`}>
                 {formatEUR(balance.saldo_banca)}
               </span>
@@ -477,18 +478,23 @@ export default function PrimaNota() {
               legge come un guasto (lezione del 27/08 sulla caparra scalata). */}
           {inTasca && (
             <p className="testo-sala text-b58-charcoal-soft mb-3">
-              Dalla tasca escono soldi e basta: è il contante che spendi di tuo,
-              senza documento. Non è deducibile e non entra in nessun calcolo
-              fiscale — serve solo a saperne il conto.
+              Dalla tasca escono soldi e basta
+              <Didascalia>
+                È il contante che spendi di tuo, senza documento. Non è deducibile e non entra in
+                nessun calcolo fiscale — serve solo a saperne il conto.
+              </Didascalia>
             </p>
           )}
+          {/* ⚠️ Il selezionato ha lo stesso aspetto su tutti e quattro i
+              pulsanti (25/10/2026, Alessio): «Uscita» in rosso sembrava un
+              errore. Il verso si legge dal segno nell'elenco. */}
           <div className={`flex gap-2 mb-3 ${inTasca ? "hidden" : ""}`}>
             <button
               type="button"
               onClick={() => setDirection("uscita")}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "uscita"
-                  ? "border-b58-terracotta bg-b58-terracotta/10 text-b58-terracotta-dark"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -499,7 +505,7 @@ export default function PrimaNota() {
               onClick={() => setDirection("entrata")}
               className={`tocco-bottone flex-1 rounded-lg border px-3  testo-sala transition-colors ${
                 form.direction === "entrata"
-                  ? "border-b58-olive bg-b58-olive/10 text-b58-olive-dark"
+                  ? "border-b58-charcoal bg-b58-charcoal/5 text-b58-charcoal"
                   : "border-b58-charcoal/15 text-b58-charcoal-soft"
               }`}
             >
@@ -633,10 +639,14 @@ export default function PrimaNota() {
 
           {isForager && (
             <div className="mb-3">
-              <p className="testo-sala text-b58-charcoal-soft/80 bg-b58-cream-dark/50 rounded-lg px-3 py-2 mb-2">
-                Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non legnosi):
-                conserva codice fiscale del raccoglitore e riferimento F24 codice tributo 1853 come prova
-                del forfait pagato. Dal 2026 è obbligatoria anche la regione di raccolta.
+              <p className="testo-sala text-b58-charcoal-soft mb-2">
+                Raccoglitore occasionale
+                <Didascalia>
+                  Regime L. 145/2018 per raccoglitori occasionali (funghi/prodotti selvatici non
+                  legnosi): conserva codice fiscale del raccoglitore e riferimento F24 codice tributo
+                  1853 come prova del forfait pagato. Dal 2026 è obbligatoria anche la regione di
+                  raccolta.
+                </Didascalia>
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
@@ -752,7 +762,7 @@ export default function PrimaNota() {
               type="button"
               disabled={saving || !form.amount || Number(form.amount) <= 0}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra movimento"}
             </button>

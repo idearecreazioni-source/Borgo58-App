@@ -18,6 +18,7 @@ import { buchiDellaBozza, nuovoGesto } from "../../lib/calcoli/bozzeRicetta";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
 import { useUnita } from "../../lib/unita";
 import DatoNonLetto from "../../components/DatoNonLetto";
+import Didascalia from "../../components/Didascalia";
 import SchedaBozza from "./SchedaBozza";
 
 // UNA BOZZA DI RICETTA — rivederla e confermarla (Ricettario Fase 1A).
@@ -34,9 +35,14 @@ import SchedaBozza from "./SchedaBozza";
 // 🔴 IL RICETTARIO VIRTUALE (10/10/2026, decisione di Alessio): una bozza si
 //    TIENE così com'è, senza compilare niente. Il collegamento al magazzino,
 //    le segnalazioni e «cosa manca» servono solo a farla diventare una
-//    ricetta del locale, e restano chiusi dietro «Portala in cucina» finché
-//    non li chiede — lo farà quando comprerà gli ingredienti. Prima
-//    l'elenco di 33 voci stava sempre sotto gli occhi, e sembrava un obbligo.
+//    ricetta del locale, e restano chiusi dietro «Mettila nel Ricettario»
+//    finché non li chiede. Prima l'elenco di 33 voci stava sempre sotto gli
+//    occhi, e sembrava un obbligo.
+//
+// 🔴 25/10/2026: il collegamento al magazzino NON serve più per diventare
+//    ricetta (migrazione 20261025000020). Gli ingredienti non collegati
+//    entrano fra quelli «da collegare», e il collegamento diventa
+//    obbligatorio solo per la carta, un menu o una preparazione.
 //
 // ⚠️ Ciò che ha proposto l'assistente all'importazione si DICHIARA
 //    (`proposte_assistente`), finché Alessio non preme «Visto».
@@ -105,6 +111,7 @@ export default function BozzaDetail() {
   // Il collegamento al magazzino si vede quando lo si chiede, o quando c'è già.
   const mostraCucina = inCucina || promossa || ingredienti.some((r) => r.ingredient_id);
   const proposte = bozza.proposte_assistente ?? [];
+  const daCollegare = ingredienti.filter((r) => !r.ingredient_id).length;
   // Una schermata sola (11/10/2026): la scheda si LEGGE, e «Modifica» — o
   // portarla in cucina — trasforma in posto ogni dato nel suo campo.
   const inModifica = !ferma && (modifica || mostraCucina);
@@ -193,7 +200,7 @@ export default function BozzaDetail() {
   return (
     <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
       <Link to="/ricettario/bozze" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
-        ← Bozze di ricetta
+        ← Bozze
       </Link>
 
       <SchedaBozza
@@ -273,15 +280,18 @@ export default function BozzaDetail() {
       {!mostraCucina && bozza.stato !== "scartata" && (
         <section className="mb-6 rounded-xl bg-b58-parchment p-4 ring-1 ring-b58-charcoal/10">
           <p className="mb-3 text-b58-charcoal-soft">
-            È salvata nel tuo ricettario così com'è: non c'è niente da compilare. Quando comprerai gli
-            ingredienti, da qui la colleghi al magazzino e diventa una ricetta del locale.
+            È salvata fra le bozze così com'è.
+            <Didascalia>
+              Mettendola nel Ricettario gli ingredienti non collegati al magazzino entrano lo stesso:
+              li colleghi dopo, quando servono per il costo, la carta o un menu.
+            </Didascalia>
           </p>
           <button
             type="button"
-            className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+            className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
             onClick={() => setInCucina(true)}
           >
-            Portala in cucina
+            Mettila nel Ricettario
           </button>
         </section>
       )}
@@ -314,14 +324,16 @@ export default function BozzaDetail() {
             <div className="rounded bg-stone-50 p-3">
               <p className="mb-2">
                 {conferma.esito === "ricetta"
-                  ? `Stai per creare nel Ricettario la ricetta «${bozza.titolo}», con ${ingredienti.length} ingredienti e ${passaggi.length} passaggi.`
+                  ? `Stai per creare nel Ricettario la ricetta «${bozza.titolo}», con ${ingredienti.length} ingredienti${
+                      daCollegare > 0 ? ` (${daCollegare} da collegare al magazzino)` : ""
+                    } e ${passaggi.length} passaggi.`
                   : "Stai per salvarla come ispirazione: titolo, sunto e link restano qui, e nel Ricettario non cambia niente."}
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   disabled={lavorando || (conferma.esito === "ricetta" && buchi.length > 0)}
-                  className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment disabled:opacity-50"
+                  className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
                   onClick={confermaDavvero}
                 >
                   {lavorando
@@ -345,7 +357,7 @@ export default function BozzaDetail() {
               <button
                 type="button"
                 disabled={buchi.length > 0}
-                className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment disabled:opacity-50"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment disabled:opacity-50"
                 onClick={() => apriConferma("ricetta")}
               >
                 Crea la ricetta

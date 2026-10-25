@@ -4,6 +4,7 @@ import { getRecipe, getRecipeAllergens } from "../../lib/api/recipes";
 import { listRecipeSteps } from "../../lib/api/recipeSteps";
 import { listRecipeIngredientsDisplay } from "../../lib/api/recipeIngredients";
 import { listRecipeVideos } from "../../lib/api/recipeVideos";
+import { listDaCollegare } from "../../lib/api/ricettaDaCollegare";
 import PrintButton from "../../components/PrintButton";
 import {
   ALLERGENS,
@@ -39,11 +40,24 @@ export default function StaffRicettaDetail() {
       listRecipeSteps(id),
       getRecipeAllergens(id),
       listRecipeVideos(id),
+      listDaCollegare(id),
     ])
-      .then(([rec, ing, st, al, vids]) => {
+      .then(([rec, ing, st, al, vids, dc]) => {
         if (cancelled) return;
         setRecipe(rec);
-        setIngredients(ing);
+        // ⚠️ In cucina un ingrediente è un ingrediente, collegato o no al
+        // magazzino (25/10/2026): quelli ancora scritti a parole stanno
+        // nella stessa tabella, dopo gli altri.
+        setIngredients([
+          ...ing,
+          ...dc.map((r) => ({
+            recipe_ingredient_id: `dc-${r.id}`,
+            ingredient_name: r.nome,
+            prep_note: r.nota,
+            quantity: r.quantita ?? "",
+            unit: r.unita ?? "",
+          })),
+        ]);
         setSteps(st);
         setAllergens(al);
         setVideos(vids);

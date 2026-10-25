@@ -4,6 +4,7 @@ import { createEmployee, listEmployees, listExpiringDocuments } from "../../lib/
 import { getEntities } from "../../lib/api/entities";
 import { CONTRACT_TYPES, EMPLOYEE_STATUSES, COMPLIANCE_DOC_TYPES, formatDate, labelFor } from "../../lib/constants";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
+import Didascalia from "../../components/Didascalia";
 
 const emptyForm = { first_name: "", last_name: "", role: "", contract_type: "indeterminato" };
 
@@ -66,8 +67,12 @@ export default function PersonaleHome() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">Personale & Buste Paga</h1>
-          <p className="text-b58-charcoal-soft mt-1">Anagrafica, documenti, ferie, buste paga, mance.</p>
+          <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
+            Personale & Buste Paga
+            <Didascalia>
+              Anagrafica, documenti, ferie, buste paga, mance.
+            </Didascalia>
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -78,7 +83,7 @@ export default function PersonaleHome() {
           </Link>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {showForm ? "Annulla" : "+ Nuovo dipendente"}
           </button>
@@ -122,7 +127,7 @@ export default function PersonaleHome() {
             type="button"
             disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
             onClick={handleAdd}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {saving ? "Creo…" : "Crea"}
           </button>

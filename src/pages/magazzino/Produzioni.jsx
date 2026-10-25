@@ -428,7 +428,7 @@ export default function Produzioni() {
             type="button"
             disabled={salvando || !dosi || !quantita}
             onClick={salva}
-            className="tocco-bottone mt-4 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+            className="tocco-bottone mt-4 rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
           >
             {salvando ? "Registro…" : "Registra la produzione"}
           </button>

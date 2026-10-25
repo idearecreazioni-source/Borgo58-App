@@ -236,7 +236,7 @@ export default function PuliziaESanificazione() {
                 type="button"
                 disabled={addingTask || !taskForm.name.trim()}
                 onClick={handleAddTask}
-                className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
               >
                 {addingTask ? "Aggiungo…" : "+ Aggiungi"}
               </button>
@@ -375,7 +375,7 @@ export default function PuliziaESanificazione() {
               type="button"
               disabled={addingPest}
               onClick={handleAddPest}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
             >
               {addingPest ? "Registro…" : "+ Registra"}
             </button>
@@ -439,7 +439,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
         <button
           type="button"
           onClick={onApri}
-          className="tocco-azione shrink-0 rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4"
+          className="tocco-azione shrink-0 rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4"
         >
           {aperta ? "Annulla" : "Fatta"}
         </button>
@@ -459,7 +459,7 @@ function VoceDaFare({ riga, aperta, nota, setNota, salvando, onApri, onConferma 
             type="button"
             disabled={salvando}
             onClick={onConferma}
-            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4 disabled:opacity-60"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4 disabled:opacity-60"
           >
             {salvando ? "Salvo…" : "Conferma"}
           </button>

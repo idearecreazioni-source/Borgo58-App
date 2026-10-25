@@ -71,6 +71,9 @@ import {
   ragioneNonSalvabile,
   resaPercento,
 } from "../../lib/calcoli/resa";
+import Didascalia from "../../components/Didascalia";
+import IngredientiDaCollegare from "../../components/IngredientiDaCollegare";
+import { listDaCollegare } from "../../lib/api/ricettaDaCollegare";
 
 const emptyIngredientForm = {
   ingredient_id: "",
@@ -130,6 +133,10 @@ export default function RicettaDetail() {
   const [error, setError] = useState("");
 
   const [recipeIngredients, setRecipeIngredients] = useState([]);
+  // Gli ingredienti scritti a parole e non ancora collegati al magazzino
+  // (25/10/2026, migrazione 20261025000020): fuori dal costo e dagli
+  // allergeni, e la schermata lo dichiara.
+  const [daCollegare, setDaCollegare] = useState([]);
   const [steps, setSteps] = useState([]);
   const [cost, setCost] = useState(null);
   const [allergens, setAllergens] = useState({ allergens: [], daVerificare: false, ingredienti: [], tracce: [] });
@@ -201,13 +208,15 @@ export default function RicettaDetail() {
   // una lettura in più; un numero vecchio accanto a uno nuovo no.
   const ricaricaRighe = async (elencoComponenti = preparations) => {
     const idFinger = elencoComponenti.filter((p) => p.recipe_type === "finger").map((p) => p.id);
-    const [ri, costi, c, cf] = await Promise.all([
+    const [ri, costi, c, cf, dc] = await Promise.all([
       listRecipeIngredients(id),
       getRecipeRowCosts(id),
       getRecipeCost(id),
       listRecipeCostsFor(idFinger),
+      listDaCollegare(id),
     ]);
     setRecipeIngredients(ri);
+    setDaCollegare(dc);
     setRowCosts(costi);
     setCost(c);
     setCostiFinger(cf);
@@ -925,6 +934,15 @@ export default function RicettaDetail() {
                   ? "totale della preparazione"
                   : "totale ricetta base"}
             </div>
+            {/* ⚠️ UN COSTO A META' SI DICE A META' (25/10/2026): gli
+                ingredienti non ancora collegati non hanno un prezzo, e un
+                totale che li ignora in silenzio sembra il costo vero. */}
+            {daCollegare.length > 0 && (
+              <div className="testo-sala text-b58-terracotta mt-1 max-w-[16rem]">
+                Parziale: {daCollegare.length === 1 ? "1 ingrediente" : `${daCollegare.length} ingredienti`} da
+                collegare al magazzino
+              </div>
+            )}
             {/* 🔴 IL PREZZO DI VENDITA DI UNA SELEZIONE NON SI CALCOLA —
                 30/08, decisione esplicita di Alessio: *«un tagliere di
                 quattro pezzi non costa quattro volte il pezzo»*. Il
@@ -1399,7 +1417,7 @@ export default function RicettaDetail() {
         <button
           onClick={saveHeader}
           disabled={savingHeader}
-          className="print:hidden w-full tocco-azione rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4"
+          className="print:hidden w-full tocco-azione rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4"
         >
           {savingHeader ? "Salvo…" : "Salva modifiche"}
         </button>
@@ -1668,6 +1686,21 @@ export default function RicettaDetail() {
           </div>
         )}
 
+        {!isSelezione && (
+          <div className="mb-4">
+            <IngredientiDaCollegare
+              righe={daCollegare}
+              prodotti={allIngredients}
+              unita={UNITS}
+              modificabile={isTitolare}
+              onCambiato={async () => {
+                const [, al] = await Promise.all([ricaricaRighe(), getRecipeAllergens(id)]);
+                setAllergens(al);
+              }}
+            />
+          </div>
+        )}
+
         <div className="print:hidden bg-white rounded-lg border border-b58-charcoal/10 p-3">
           {/* ⚠️ SU UNA SELEZIONE NON SI SCEGLIE FRA INGREDIENTI E PREPARAZIONI
               (24/08): dentro ci vanno solo finger, quindi la scelta non c'è
@@ -1894,7 +1927,7 @@ export default function RicettaDetail() {
               }
               onClick={handleAddIngredient}
               data-prova="riga-aggiungi"
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingIngredient ? "Aggiungo…" : "+ Aggiungi"}
             </button>
@@ -2133,7 +2166,7 @@ export default function RicettaDetail() {
               type="button"
               disabled={addingStep || !stepForm.description.trim()}
               onClick={handleAddStep}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {addingStep ? "Aggiungo…" : "+ Aggiungi fase"}
             </button>
@@ -2145,11 +2178,13 @@ export default function RicettaDetail() {
       {/* Video ricetta */}
       {!isSelezione && (
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Video ricetta</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-4">
-          ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
-          non si ricavano da soli.
-        </p>
+        <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+          Video ricetta
+          <Didascalia>
+            ⚠️ Solo il collegamento: il video non viene caricato qui, e ingredienti e passaggi
+            non si ricavano da soli.
+          </Didascalia>
+        </h2>
 
         {videos.length > 0 && (
           <ul className="space-y-2 mb-4">
@@ -2200,7 +2235,7 @@ export default function RicettaDetail() {
             type="button"
             disabled={addingVideo || !videoUrl.trim()}
             onClick={handleAddVideo}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
           >
             {addingVideo ? "Aggiungo…" : "+ Aggiungi video"}
           </button>
@@ -2239,6 +2274,13 @@ export default function RicettaDetail() {
               non li ha ancora visti né una persona né MEMO:{" "}
               {allergens.ingredienti.join(", ")}. Finché è così, questo piatto non stampa
               l&apos;elenco allergeni sul menu.
+            </p>
+          )}
+
+          {daCollegare.length > 0 && (
+            <p className="mb-3 rounded bg-b58-terracotta/10 px-3 py-2 testo-sala-grande text-b58-charcoal">
+              <strong>Elenco incompleto.</strong> Gli allergeni di {daCollegare.map((r) => r.nome).join(", ")}{" "}
+              non sono contati: si leggono dal prodotto del magazzino, e questi non sono ancora collegati.
             </p>
           )}
 

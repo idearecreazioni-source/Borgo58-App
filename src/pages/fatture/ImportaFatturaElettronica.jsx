@@ -149,7 +149,7 @@ export default function ImportaFatturaElettronica() {
               e.target.value = "";
               if (files.length) leggi(files);
             }}
-            className="testo-sala"
+            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
           />
         </label>
         {entita.length > 1 && (
@@ -269,7 +269,7 @@ export default function ImportaFatturaElettronica() {
                   type="button"
                   disabled={occupato === l.chiave || tutte || !entityId}
                   onClick={() => registra(l)}
-                  className="tocco-bottone mt-3 rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-bottone mt-3 rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {occupato === l.chiave ? "Sto registrando…" : "Registra la fattura"}
                 </button>

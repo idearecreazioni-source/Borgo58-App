@@ -141,7 +141,7 @@ export default function AgricoloHome() {
           <Link to="/agricolo/cessioni" className="tocco-campo rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala-grande font-medium px-4 py-2">
             Cessioni alla S.r.l.s.
           </Link>
-          <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
+          <button onClick={() => setShowForm((v) => !v)} className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2">
             {showForm ? "Annulla" : "+ Nuova coltura"}
           </button>
         </div>
@@ -181,7 +181,7 @@ export default function AgricoloHome() {
             </select>
           </div>
           <div className="flex justify-end">
-            <button type="button" disabled={saving || !form.name.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+            <button type="button" disabled={saving || !form.name.trim()} onClick={handleAdd} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
               {saving ? "Salvo…" : "+ Aggiungi coltura"}
             </button>
           </div>
@@ -273,7 +273,7 @@ export default function AgricoloHome() {
                           <select value={harvest.unit} onChange={(e) => setHarvest((h) => ({ ...h, unit: e.target.value }))} className={inputClass + " w-28"}>
                             {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
                           </select>
-                          <button type="button" onClick={() => saveHarvest(c)} disabled={!harvest.harvested_quantity} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+                          <button type="button" onClick={() => saveHarvest(c)} disabled={!harvest.harvested_quantity} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                             Registra raccolto
                           </button>
                         </div>

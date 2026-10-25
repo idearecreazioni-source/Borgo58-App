@@ -28,6 +28,7 @@ import { sezioniArchivio } from "../../lib/api/documents";
 import { listSuppliers } from "../../lib/api/suppliers";
 import { getEntities } from "../../lib/api/entities";
 import { formatDate, qtaConUnita } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // La posta arrivata al locale, in attesa di una decisione.
 //
@@ -920,11 +921,13 @@ export default function PostaInArrivo() {
       <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Archivio Documenti
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-1">Posta in arrivo</h1>
-      <p className="testo-sala-grande text-b58-charcoal-soft mb-6">
-        Quello che arriva alle caselle del locale. MEMO legge e{" "}
-        <strong>propone cosa fare</strong>: decidi tu, una cosa alla volta.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
+        Posta in arrivo
+        <Didascalia>
+          Quello che arriva alle caselle del locale. MEMO legge e{" "}
+          <strong>propone cosa fare</strong>: decidi tu, una cosa alla volta.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala-grande text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -1263,7 +1266,7 @@ export default function PostaInArrivo() {
                             type="button"
                             disabled={inCorso === a.id || !!bloccato}
                             onClick={() => agisci(a.id, () => confermaAzione(a.id, valori[a.id]))}
-                            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
+                            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-3 py-1.5 testo-sala-grande"
                           >
                             {inCorso === a.id ? "…" : etichettaConferma(a, valori[a.id])}
                           </button>
