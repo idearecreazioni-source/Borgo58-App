@@ -1321,14 +1321,20 @@ begin
      or has_function_privilege('anon', 'voce_risolvi_dati(text, jsonb)', 'execute') then
     raise exception 'VERIFICA: una porta della voce e'' aperta a chi non deve.';
   end if;
-  if exists (select 1 from tipi_vocali_senza_ramo() t
-              where t.tipo in ('prestito_ricevuto', 'prestito_restituito')) then
-    raise exception 'VERIFICA: un tipo dei prestiti e'' nel catalogo senza un ramo che lo esegua.';
-  end if;
 
   begin  -- <<< la sotto-transazione che verra' annullata
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_titolare, 'role', 'authenticated')::text, true);
+
+    -- ⚠️ La rete dei rami ha il portiere del titolare: una migrazione non
+    --    ha un utente, quindi la si interroga solo DOPO aver impersonato il
+    --    titolare (CLAUDE.md §8). Chiamata prima, rispondeva «I comandi
+    --    vocali sono del titolare.» e fermava la migrazione — sul progetto
+    --    di prova, il 25/10, prima di scrivere niente.
+    if exists (select 1 from tipi_vocali_senza_ramo() t
+                where t.tipo in ('prestito_ricevuto', 'prestito_restituito')) then
+      raise exception 'VERIFICA: un tipo dei prestiti e'' nel catalogo senza un ramo che lo esegua.';
+    end if;
 
     -- 1. Completo: niente manca.
     v_r := voce_risolvi_dati('prestito_ricevuto', jsonb_build_object(
