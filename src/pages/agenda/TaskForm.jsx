@@ -284,7 +284,7 @@ export default function TaskForm() {
         ← Agenda
       </Link>
       <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
-        {isEdit ? "Modifica impegno" : "Nuovo impegno"}
+        {isEdit ? "Modifica task" : "Nuovo task"}
       </h1>
 
       {error && (
@@ -595,7 +595,7 @@ export default function TaskForm() {
             disabled={saving}
             className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5 py-2.5 testo-sala-grande"
           >
-            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea impegno"}
+            {saving ? "Salvo…" : isEdit ? "Salva modifiche" : "Crea task"}
           </button>
           {/* 🔴 «ELIMINA» CHIEDE CONFERMA — 25/09/2026, decisione di
               Alessio. Cancellava al primo tocco, e in Agenda ci sono anche
