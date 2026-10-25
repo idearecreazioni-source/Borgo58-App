@@ -158,9 +158,16 @@ update tipi_azione_vocale set percorso = '/cassa/da-collocare'
 -- ---------------------------------------------------------------------------
 -- 4. IL CATALOGO PORTA LE ISTRUZIONI — inserite nel corpo vivo
 -- ---------------------------------------------------------------------------
+-- ⚠️ I CORPI VIVI POSSONO AVERE L'«A CAPO» DI WINDOWS (misurato il 25/10
+--    sul progetto di prova): le migrazioni si applicano da un computer con
+--    `core.autocrlf = true`, quindi il file arriva a psql con \r\n e la
+--    funzione nasce con \r dentro. Un'ancora scritta con \n soli non la
+--    trova, e la migrazione si ferma. Per questo i tre passi qui sotto
+--    tolgono i \r dal corpo PRIMA di cercare: la funzione riscritta esce
+--    con l'«a capo» di Linux, e fa esattamente le stesse cose.
 do $catalogo$
 declare
-  v_def    text := pg_get_functiondef('public.voce_catalogo()'::regprocedure);
+  v_def    text := replace(pg_get_functiondef('public.voce_catalogo()'::regprocedure), E'\r', '');
   v_ancora text := E'\n  return v_out;\nend';
   v_quante integer;
 begin
@@ -377,7 +384,7 @@ revoke all on function voce_risolvi_operazione(text, jsonb, text) from public, a
 
 do $risolvi$
 declare
-  v_def    text := pg_get_functiondef('public.voce_risolvi_dati(text,jsonb)'::regprocedure);
+  v_def    text := replace(pg_get_functiondef('public.voce_risolvi_dati(text,jsonb)'::regprocedure), E'\r', '');
   v_ancora text := E'\n  return jsonb_build_object(''dati'', v_dati, ''manca'', v_manca);\nend';
   v_quante integer;
 begin
@@ -483,7 +490,7 @@ revoke all on function fai_operazione_memo(text, jsonb) from public, anon, authe
 
 do $fai$
 declare
-  v_def    text := pg_get_functiondef('public.fai_azione_dettata(text,jsonb)'::regprocedure);
+  v_def    text := replace(pg_get_functiondef('public.fai_azione_dettata(text,jsonb)'::regprocedure), E'\r', '');
   v_ancora text := E'\n    else\n      raise exception ''Questa cosa il gestionale non la sa ancora fare a voce';
   v_quante integer;
 begin
