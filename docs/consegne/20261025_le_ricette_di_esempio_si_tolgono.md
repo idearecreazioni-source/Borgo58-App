@@ -1,6 +1,6 @@
 # Le ricette di esempio si tolgono
 
-**25/10/2026** · decisione di Alessio (*«le 14 ricette le puoi togliere»*) · commit sotto questo riepilogo: `0be1017` · migrazione `20261025000021` · ramo `claude/project-thread-7v8uro`, proposta verso `slave` · working tree pulito al commit
+**25/10/2026** · decisione di Alessio (*«le 14 ricette le puoi togliere»*) · commit sotto questo riepilogo: `c1d9a1b` (la migrazione è in `0be1017`) · migrazione `20261025000021` · ramo `claude/project-thread-7v8uro`, proposta verso `slave` · working tree pulito al commit
 
 ## Cosa ha deciso
 
@@ -16,6 +16,10 @@ Alessio ha detto che le 14 ricette in produzione non sono sue ma esempi, e ha ap
 ## Misure in produzione prima (25/10, sola lettura)
 
 `recipe_status_history` 28 righe, `menu_items` 14, `order_items` 7 (6 con una ricetta), `order_tables` 2. Tutte le altre tabelle con una chiave verso queste righe: 0. Le 3 bozze hanno `ricetta_id` vuoto. Lapidi attese: **9** (2 conti + 7 righe), perché `orders` e `order_items` sono nel registro delle cancellazioni; ricette, menu e storico di stato no.
+
+## Allineamento con slave
+
+Sopra `0be1017` il ramo ha ricevuto `origin/slave` (i ritocchi di forma, #208). Un conflitto solo, sul titolo di `BozzeList.jsx`: tenuto lo stile nuovo di slave e il nome «Bozze» chiesto da Alessio. Poi `npm run indice` (`c1d9a1b`), perché i due rami avevano aggiunto un rovesciamento ciascuno (105 e 106). Dopo l'unione: lint pulito, prove pure 2281/2281, prove delle schermate 443/443, build riuscita.
 
 ## Verifiche
 
