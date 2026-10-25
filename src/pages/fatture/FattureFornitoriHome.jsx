@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   annullaPagamentoFattura,
   anteprimaPagamento,
@@ -555,11 +555,19 @@ export default function FattureFornitoriHome() {
           <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal">
             Fatture Fornitori
             <Didascalia>
-              Le fatture si inseriscono a mano: il collegamento automatico con Fatture in
+              Le fatture si inseriscono a mano o dal file della fattura elettronica: il collegamento automatico con Fatture in
               Cloud non è ancora acceso. Registrare un pagamento scrive l&apos;uscita in
               prima nota, quindi il costo non finisce contato due volte.
             </Didascalia>
           </h1>
+          {/* La porta della fattura elettronica (24/10/2026): il file che
+              arriva dallo SDI si legge invece di ricopiarlo. */}
+          <Link
+            to="/fatture-fornitori/da-file"
+            className="tocco-bottone inline-flex items-center mt-2 rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal"
+          >
+            Carica una fattura elettronica
+          </Link>
         </div>
         {/* 🔴 A SINISTRA SUL TELEFONO, A DESTRA SUL COMPUTER (30/08,
             richiesta di Alessio guardando la schermata dal cellulare: *«mi
