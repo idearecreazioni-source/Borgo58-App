@@ -28,6 +28,7 @@ const IN_ITALIANO = {
   correggi_elemento_appunto: "correggere l'appunto",
   chiudi_azione_a_mano: "segnare che l'hai fatta tu",
   promuovi_bozza_ricetta: "confermare la bozza",
+  collega_ingrediente_ricetta: "collegare l'ingrediente",
 };
 
 const comeSiChiama = (operazione) =>

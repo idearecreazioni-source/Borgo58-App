@@ -6,13 +6,13 @@
 // (`promuovi_bozza_ricetta`, regola B4).
 //
 // 🔴 UN BUCO RESTA UN BUCO. Una quantità che non c'è è VUOTA, non zero; un'unità
-//    che il gestionale non conosce resta scritta com'era; un ingrediente non
-//    collegato all'anagrafica non viene creato da solo. Questo modulo li
-//    ELENCA, e non ne riempie nessuno.
+//    che il gestionale non conosce resta scritta com'era; un prodotto del
+//    magazzino non viene mai creato da solo. Questo modulo li ELENCA, e non
+//    ne riempie nessuno.
 //
 // ⚠️ LA STESSA DEFINIZIONE VIVE IN DUE POSTI, CON DUE RUOLI DIVERSI: qui la
 //    si MOSTRA prima della conferma, nella funzione del database
-//    (migrazione 20261006000001) la si FA RISPETTARE. Le frasi sono le stesse
+//    (migrazione 20261025000020, l'ultima che la riscrive) la si FA RISPETTARE. Le frasi sono le stesse
 //    apposta, e la prova `tests/unita/bozze-ricetta.test.js` controlla che
 //    ogni frase di questo file compaia anche nel corpo della funzione: se
 //    una delle due imparasse un buco nuovo e l'altra no, diventa rossa.
@@ -65,8 +65,11 @@ export function buchiDellaBozza(bozza, ingredienti = [], passaggi = [], unitaNot
   if (ingredienti.length === 0) buchi.push("nessun ingrediente");
 
   for (const r of ingredienti) {
-    if (vuoto(r.ingredient_id))
-      buchi.push(`«${r.nome}»: non collegato a un ingrediente dell'anagrafica`);
+    // 🔴 25/10/2026: un ingrediente NON collegato non è più un buco — entra
+    //    nella ricetta fra quelli «da collegare» (migrazione 20261025000020).
+    //    Quantità e unità si pretendono solo sulle righe collegate, le sole
+    //    che entrano nel costo.
+    if (vuoto(r.ingredient_id)) continue;
     if (vuoto(r.quantita)) buchi.push(`«${r.nome}»: quantita' mancante`);
     if (vuoto(r.unita)) buchi.push(`«${r.nome}»: unita' mancante`);
     else if (!unitaNote.includes(r.unita))

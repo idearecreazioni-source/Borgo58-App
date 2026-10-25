@@ -21,10 +21,27 @@ const VERSIONE = "20261006000001";
 const FILE = readdirSync("supabase/migrations").filter((f) => f.startsWith(`${VERSIONE}_`));
 const SQL = FILE.length === 1 ? readFileSync(`supabase/migrations/${FILE[0]}`, "utf8") : "";
 // Il corpo della funzione di promozione, e solo quello.
-const CORPO = SQL.slice(
-  SQL.indexOf("create or replace function promuovi_bozza_ricetta("),
-  SQL.indexOf("$funzione$;", SQL.indexOf("create or replace function promuovi_bozza_ricetta("))
-);
+const corpoDi = (sql) =>
+  sql.slice(
+    sql.indexOf("create or replace function promuovi_bozza_ricetta("),
+    sql.indexOf("$funzione$;", sql.indexOf("create or replace function promuovi_bozza_ricetta("))
+  );
+const CORPO = corpoDi(SQL);
+// 🔴 25/10/2026: le frasi dei buchi si confrontano col corpo VIVO, cioè con
+//    l'ULTIMA migrazione che riscrive la funzione — non con la prima. Con la
+//    prima, togliere un buco dal modulo e dal database insieme farebbe
+//    diventare rossa una prova che sta guardando il passato.
+const ULTIMA = readdirSync("supabase/migrations")
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .filter((f) =>
+    readFileSync(`supabase/migrations/${f}`, "utf8").includes(
+      "create or replace function promuovi_bozza_ricetta("
+    )
+  )
+  .at(-1);
+const SQL_ULTIMA = readFileSync(`supabase/migrations/${ULTIMA}`, "utf8");
+const CORPO_VIVO = corpoDi(SQL_ULTIMA);
 // Il codice del file, senza i commenti: un campo NOMINATO in una spiegazione non
 // e' un campo mandato.
 const API = readFileSync("src/lib/api/bozzeRicetta.js", "utf8").replace(/^\s*\/\/.*$/gm, "");
@@ -50,10 +67,14 @@ describe("i buchi di una bozza", () => {
     expect(quantitaDalCampo("1,5")).toBe(1.5);
   });
 
-  it("un ingrediente non collegato e un'unità non compresa si dicono, non si indovinano", () => {
+  it("🔴 un ingrediente NON collegato non è un buco: si cataloga com'è scritto (25/10/2026)", () => {
     const riga = { nome: "pecorino", ingredient_id: null, quantita: null, unita: "cucchiaio" };
+    expect(buchiDellaBozza(BOZZA_COMPLETA, [riga], [PASSO_BUONO], ["g"])).toEqual([]);
+  });
+
+  it("su un ingrediente COLLEGATO quantità e unità non compresa si dicono, non si indovinano", () => {
+    const riga = { nome: "pecorino", ingredient_id: "i2", quantita: null, unita: "cucchiaio" };
     expect(buchiDellaBozza(BOZZA_COMPLETA, [riga], [PASSO_BUONO], ["g"])).toEqual([
-      "«pecorino»: non collegato a un ingrediente dell'anagrafica",
       "«pecorino»: quantita' mancante",
       "«pecorino»: unita' non compresa («cucchiaio»)",
     ]);
@@ -107,18 +128,24 @@ describe("🔴 le due definizioni dei buchi dicono le stesse frasi", () => {
     "mancano le porzioni",
     "segnalazioni ancora aperte: ",
     "nessun ingrediente",
-    "»: non collegato a un ingrediente dell'anagrafica",
     "»: quantita' mancante",
     "»: unita' mancante",
     "»: unita' non compresa («",
     ": manca la fase",
     ": manca la descrizione",
   ];
-  const corpo = CORPO.replace(/''/g, "'");
+  const corpo = CORPO_VIVO.replace(/''/g, "'");
 
   it("il corpo della funzione si trova", () => {
     expect(FILE).toHaveLength(1);
     expect(CORPO.length).toBeGreaterThan(1000);
+    expect(CORPO_VIVO.length).toBeGreaterThan(1000);
+  });
+
+  it("🔴 «non collegato» non è più un buco, né nel modulo né nel corpo vivo", () => {
+    const modulo = readFileSync("src/lib/calcoli/bozzeRicetta.js", "utf8");
+    expect(modulo).not.toContain("non collegato a un ingrediente");
+    expect(corpo).not.toContain("non collegato a un ingrediente");
   });
 
   for (const f of FISSE) {

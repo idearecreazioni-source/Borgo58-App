@@ -124,8 +124,9 @@ describe.skipIf(!APPLICATA)("le bozze di ricetta, coi permessi veri", () => {
   it("🔴 coi buchi la conferma si rifiuta, li nomina, e non crea niente", async () => {
     const r = await promuovi(titolare, bozza, "ricetta", crypto.randomUUID());
     expect(r.errore?.messaggio ?? "").toMatch(/manca la categoria/);
-    expect(r.errore?.messaggio ?? "").toMatch(/non collegato/);
-    expect(r.errore?.messaggio ?? "").toMatch(/quantita' mancante/);
+    // 🔴 25/10/2026: l'ingrediente non collegato NON è più un buco (si
+    //    cataloga fra quelli da collegare): il rifiuto non lo nomina.
+    expect(r.errore?.messaggio ?? "").not.toMatch(/non collegato/);
 
     const ricette = await titolare.from("recipes").select("id").eq("name", MARCA);
     expect(ricette.data).toEqual([]);

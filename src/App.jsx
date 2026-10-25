@@ -68,6 +68,7 @@ import SezionePersonale from "./pages/cassa/SezionePersonale";
 import Prestiti from "./pages/cassa/Prestiti";
 import CaparreTenute from "./pages/cassa/CaparreTenute";
 import DaCollocare from "./pages/cassa/DaCollocare";
+import Segnalazioni from "./pages/assistente/Segnalazioni";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
 import MovimentiBanca from "./pages/cassa/MovimentiBanca";
@@ -180,6 +181,7 @@ function AppRoutes() {
         {/* I comandi vocali (26/08/2026). Stessa ragione del limite qui
             sopra: per ora l'assistente lo usa solo Alessio. */}
         <Route path="/detta" element={<RequireTitolare><Detta /></RequireTitolare>} />
+        <Route path="/segnalazioni" element={<RequireTitolare><Segnalazioni /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/nuovo" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/ingredienti/:id" element={<RequireTitolare><IngredienteForm /></RequireTitolare>} />
         <Route path="/ricettario/menu" element={<RequireTitolare><MenuList /></RequireTitolare>} />

@@ -443,7 +443,13 @@ function RigaAttrezzatura({ eq, aperta, form, setForm, salvando, inputClass, onT
         <td className="py-2 text-right">
           <button
             onClick={onToggle}
-            className="tocco-bottone text-b58-charcoal-soft hover:text-b58-terracotta-dark testo-sala"
+            className={`tocco-bottone rounded-lg px-3 testo-sala font-medium whitespace-nowrap ${
+              aperta
+                ? "text-b58-charcoal-soft"
+                : eq.registrata
+                  ? "border border-b58-charcoal/20 text-b58-charcoal"
+                  : "bg-b58-azione text-b58-parchment"
+            }`}
           >
             {aperta ? "Annulla" : eq.registrata ? "+ Registra ancora" : "+ Registra temperatura"}
           </button>

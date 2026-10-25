@@ -260,13 +260,13 @@ export default function RicetteList() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="grid grid-cols-1 gap-3 mb-4 sm:flex sm:flex-wrap [&>select]:w-full [&>select]:min-w-0 sm:[&>select]:w-auto">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca per nome…"
-          className={`${selectClass} flex-1 min-w-[200px]`}
+          className={`${selectClass} sm:flex-1 sm:min-w-[200px]`}
         />
         <select value={category} onChange={(e) => setCategory(e.target.value)} className={selectClass}>
           <option value="">Tutte le categorie</option>

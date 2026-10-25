@@ -126,7 +126,10 @@ export const NOTE_LARGHE = {
   // magri si legge come una cura*.
   // Dopo, a 390 punti: sbordo **zero**, venti blocchetti; sul computer la
   // tabella e' intatta con le cinque intestazioni.
-  "src/pages/cassa/Previsione.jsx": "58 punti — report",
+  // ✅ «CE LA FACCIO?»: TOLTA DA QUI IL 25/10/2026. Sul telefono «Cosa
+  // deve uscire» e' un elenco (cosa e quanto in alto, data e da dove
+  // sotto), sul computer resta la tabella. Misurato a 390 punti: sbordo
+  // della pagina zero, e l'importo si legge intero.
   "src/pages/menu-editor/BevandeVini.jsx": "8 punti — tabella di MODIFICA, i campi si scrivono dentro",
   "src/pages/fiscale/PrevisioneDettaglio.jsx": "non misurata a schermo — matrice",
   "src/pages/fiscale/PrevisioneForm.jsx": "457 punti misurati il 30/08 — modulo a matrice, ed e' la piu' larga di tutte",

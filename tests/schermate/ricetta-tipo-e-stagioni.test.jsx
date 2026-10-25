@@ -65,6 +65,13 @@ vi.mock("../../src/lib/api/recipeSteps", () => ({
   swapStepOrder: vi.fn(),
 }));
 vi.mock("../../src/lib/api/ingredients", () => ({ listIngredients: vuoto, listUnita: vuoto }));
+// Gli ingredienti ancora da collegare al magazzino (25/10/2026): nessuno.
+vi.mock("../../src/lib/api/ricettaDaCollegare", () => ({
+  listDaCollegare: vuoto,
+  aggiornaDaCollegare: vi.fn(),
+  togliDaCollegare: vi.fn(),
+  collegaIngrediente: vi.fn(),
+}));
 vi.mock("../../src/lib/api/recipeVideos", () => ({
   addRecipeVideo: vi.fn(),
   listRecipeVideos: vuoto,
