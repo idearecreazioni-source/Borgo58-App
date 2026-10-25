@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   SCAMBI_MASSIMI,
+  idDaSostituire,
   istruzioniConversa,
   leggiChiarimento,
   messaggiConMemoria,
+  righeInAttesa,
   tokenCache,
 } from "../../supabase/functions/ascolta-voce/conversa.ts";
 
@@ -104,5 +106,62 @@ describe("istruzioniConversa", () => {
     const t = istruzioniConversa();
     expect(t).toContain("GIA' STATE SEGNATE");
     expect(t).toContain('"chiedo"');
+  });
+});
+
+// 🔴 LA CORREZIONE PRENDE IL POSTO (25/10/2026): misurato sulla prova,
+//    «aggiungi il latte» e poi «mettine due litri» lasciavano in attesa
+//    due appunti. Il modello nomina la riga vecchia con un numero, e lo
+//    stesso elenco che numera il messaggio deve ritradurre il numero.
+const ID_A = "11111111-1111-4111-8111-111111111111";
+const ID_B = "22222222-2222-4222-8222-222222222222";
+const ID_C = "33333333-3333-4333-8333-333333333333";
+
+describe("le righe ancora in attesa", () => {
+  const scambi = [
+    { detto: "aggiungi il latte", capito: "Latte", in_attesa: [{ id: ID_A, frase: "Lista della spesa: latte" }] },
+    { detto: "e il pane e le uova", capito: "Pane, uova", in_attesa: [{ id: ID_B, frase: "pane" }, { id: "storto", frase: "x" }, { id: ID_C, frase: "uova" }] },
+  ];
+
+  it("si numerano di seguito, saltando gli identificativi storti", () => {
+    expect(righeInAttesa(scambi)).toEqual([
+      { numero: 1, id: ID_A, frase: "Lista della spesa: latte" },
+      { numero: 2, id: ID_B, frase: "pane" },
+      { numero: 3, id: ID_C, frase: "uova" },
+    ]);
+  });
+
+  it("il messaggio le mostra con gli STESSI numeri", () => {
+    const m = messaggiConMemoria(scambi, ADESSO, "mettine due litri");
+    expect(m[1].content).toContain("[1] Lista della spesa: latte");
+    expect(m[3].content).toContain("[2] pane; [3] uova");
+    expect(m[3].content).not.toContain("storto");
+  });
+
+  it("un numero torna l'identificativo vero; quelli che non esistono cadono", () => {
+    const righe = righeInAttesa(scambi);
+    expect(idDaSostituire([1], righe)).toEqual([ID_A]);
+    expect(idDaSostituire(["3", 3, 9, "x"], righe)).toEqual([ID_C]);
+    expect(idDaSostituire(undefined, righe)).toEqual([]);
+    expect(idDaSostituire([1], [])).toEqual([]);
+  });
+
+  it("gli scambi oltre il tetto non entrano nemmeno nella numerazione", () => {
+    const tanti = Array.from({ length: SCAMBI_MASSIMI + 1 }, (_, i) => ({
+      detto: `frase ${i}`,
+      in_attesa: [{ id: i === 0 ? ID_A : ID_B, frase: `r${i}` }],
+    }));
+    expect(righeInAttesa(tanti).map((r) => r.id)).not.toContain(ID_A);
+  });
+
+  it("senza righe in attesa il turno non cambia", () => {
+    const m = messaggiConMemoria([{ detto: "uno", capito: "Fatto" }], ADESSO, "due");
+    expect(m[1].content).toBe("Avevo capito, ed e' gia' segnato: Fatto");
+  });
+
+  it("il prompt spiega quando mettere sostituisce e quando no", () => {
+    const t = istruzioniConversa();
+    expect(t).toContain('"sostituisce"');
+    expect(t).toContain("cosa in piu'");
   });
 });

@@ -28,17 +28,72 @@
 //    prompt, e lo dice con la ragione accanto.
 
 /** Uno scambio come lo consegna `voce_scambi_recenti()`. */
-export type Scambio = { quando?: string; detto?: string; capito?: string };
+export type Scambio = {
+  quando?: string;
+  detto?: string;
+  capito?: string;
+  in_attesa?: { id?: string; frase?: string }[];
+};
 
 /** Quanti scambi al massimo entrano nel messaggio: lo stesso tetto del database. */
 export const SCAMBI_MASSIMI = 6;
+
+/** Una riga ancora in attesa, col numero con cui il modello la nomina. */
+export type RigaInAttesa = { numero: number; id: string; frase: string };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function scambiBuoni(scambi: Scambio[] | null | undefined): Scambio[] {
+  return (Array.isArray(scambi) ? scambi : [])
+    .filter((s) => String(s?.detto ?? "").trim() !== "")
+    .slice(-SCAMBI_MASSIMI);
+}
+
+/**
+ * Le righe ancora in attesa degli scambi recenti, NUMERATE da 1.
+ *
+ * 🔴 PERCHE' UN NUMERO E NON L'IDENTIFICATIVO (25/10/2026, misurato sulla
+ *    prova): dopo «aggiungi il latte» e «mettine due litri» restavano in
+ *    attesa DUE appunti, «latte» e «latte, 2 l», e Alessio avrebbe dovuto
+ *    buttare il primo a mano. Il modello deve poter dire «questa prende il
+ *    posto di quella»: un numero corto lo ripete senza sbagliare, un uuid
+ *    da 36 caratteri no — e un uuid storpiato annullerebbe un'altra riga.
+ * ⚠️ Lo stesso elenco serve a scrivere il messaggio e a ritradurre la
+ *    risposta, quindi i due non possono numerare in modo diverso.
+ */
+export function righeInAttesa(scambi: Scambio[] | null | undefined): RigaInAttesa[] {
+  const righe: RigaInAttesa[] = [];
+  for (const s of scambiBuoni(scambi)) {
+    for (const r of Array.isArray(s.in_attesa) ? s.in_attesa : []) {
+      const id = String(r?.id ?? "");
+      if (!UUID.test(id)) continue;
+      righe.push({ numero: righe.length + 1, id, frase: String(r?.frase ?? "").trim() || "(senza frase)" });
+    }
+  }
+  return righe;
+}
+
+/**
+ * I numeri che il modello ha messo in "sostituisce", ritradotti negli
+ * identificativi veri. Un numero che non esiste si lascia cadere: meglio
+ * un doppione da buttare a mano che una riga giusta annullata.
+ */
+export function idDaSostituire(numeri: unknown, righe: RigaInAttesa[]): string[] {
+  if (!Array.isArray(numeri)) return [];
+  const ids = new Set<string>();
+  for (const n of numeri) {
+    const riga = righe.find((r) => r.numero === Number(n));
+    if (riga) ids.add(riga.id);
+  }
+  return [...ids];
+}
 
 export function istruzioniConversa(): string {
   return `
 🔴 LE COSE DETTE POCO FA — e quello che avevi capito
 Prima della frase di adesso puoi trovare le frasi che Alessio ti ha detto negli ultimi minuti, ognuna con quello che avevi capito tu. Servono a capire la frase di adesso come la capirebbe una persona che c'era: «aggiungine anche due chili», «no, sabato», «quello di prima», «anche al bar» si riferiscono a quelle.
 ⚠️ QUELLE COSE SONO GIA' STATE SEGNATE. Non rimetterle fra le azioni: ogni azione che restituisci diventa un appunto nuovo, e ripeterle farebbe nascere due volte la stessa cosa. Restituisci SOLO quello che chiede la frase di adesso.
-⚠️ Se la frase di adesso CORREGGE una cosa di prima («no, erano tre chili», «non sabato, domenica»), restituisci l'azione giusta e nel "motivo" scrivi che corregge quella di prima: l'appunto vecchio lo butta lui, e deve sapere quale.
+⚠️ Se la frase di adesso CORREGGE o COMPLETA una cosa di prima («no, erano tre chili», «non sabato, domenica», «mettine due litri»), restituisci l'azione INTERA e giusta, e se quella cosa di prima compare fra le righe ancora in attesa — quelle con un numero fra parentesi quadre, [1], [2] — aggiungi all'azione "sostituisce": [quel numero]. Il gestionale toglie la riga vecchia, che altrimenti resterebbe accanto a quella nuova come un doppione. Metti "sostituisce" SOLO quando la nuova prende davvero il posto della vecchia: se e' una cosa in piu' («aggiungi anche il pane»), niente "sostituisce".
 ⚠️ Se la frase di adesso non c'entra niente con quelle di prima, ignorale.
 
 QUANDO NON PUOI PROPORRE NIENTE, CHIEDI — UNA COSA SOLA
@@ -66,9 +121,8 @@ export function messaggiConMemoria(
   adesso: string,
   testo: string,
 ): { role: "user" | "assistant"; content: string }[] {
-  const buoni = (Array.isArray(scambi) ? scambi : [])
-    .filter((s) => String(s?.detto ?? "").trim() !== "")
-    .slice(-SCAMBI_MASSIMI);
+  const buoni = scambiBuoni(scambi);
+  let numero = 0;
 
   const messaggi: { role: "user" | "assistant"; content: string }[] = [];
   buoni.forEach((s, i) => {
@@ -78,9 +132,14 @@ export function messaggiConMemoria(
       role: "user",
       content: `${apertura}${ora} Alessio ha detto:\n\n${String(s.detto).trim()}`,
     });
+    // ⚠️ Stessa numerazione di `righeInAttesa()`: stesso filtro, stesso ordine.
+    const attesa = (Array.isArray(s.in_attesa) ? s.in_attesa : [])
+      .filter((r) => UUID.test(String(r?.id ?? "")))
+      .map((r) => `[${++numero}] ${String(r?.frase ?? "").trim() || "(senza frase)"}`);
+    const coda = attesa.length > 0 ? `\nAncora in attesa di conferma: ${attesa.join("; ")}` : "";
     messaggi.push({
       role: "assistant",
-      content: `Avevo capito, ed e' gia' segnato: ${String(s.capito ?? "").trim() || "niente."}`,
+      content: `Avevo capito, ed e' gia' segnato: ${String(s.capito ?? "").trim() || "niente."}${coda}`,
     });
   });
 

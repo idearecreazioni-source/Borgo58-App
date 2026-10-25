@@ -44,7 +44,9 @@ import { fraseDiAdesso } from "./adesso.ts";
 import {
   istruzioniConversa,
   leggiChiarimento,
+  idDaSostituire,
   messaggiConMemoria,
+  righeInAttesa,
   tokenCache,
   type Scambio,
 } from "./conversa.ts";
@@ -614,6 +616,9 @@ Deno.serve(async (req) => {
   //    lo stesso codice che ritraduce, nella stessa transazione: non
   //    possono divergere nemmeno se un prodotto viene rinominato mentre
   //    qualcuno sta parlando.
+  // ⚠️ Le righe in attesa numerate come le ha viste il modello: e' da qui
+  //    che un "sostituisce": [1] torna a essere l'identificativo vero.
+  const inAttesa = righeInAttesa(scambi);
   let azioni = grezze.map((a) => {
     const tipo = String(a?.tipo ?? "nota_non_capita");
     const dati = { ...((a?.dati ?? {}) as Record<string, unknown>) };
@@ -647,6 +652,11 @@ Deno.serve(async (req) => {
       //    si scrive nel database: serve solo a decidere, qui.
       pezzo: typeof a?.pezzo === "string" ? a.pezzo : null,
       alternative: alternative.length > 0 ? alternative : null,
+      // 🔴 LA RIGA DI PRIMA CHE QUESTA PRENDE IL POSTO DI (25/10/2026): la
+      //    legge `voce_sostituisci_azioni()` e la annulla, nella stessa
+      //    transazione che scrive questa. Senza, «latte» e «latte, 2 l»
+      //    restavano in attesa tutti e due.
+      sostituisce: idDaSostituire(a?.sostituisce, inAttesa),
       dati,
     };
   });
