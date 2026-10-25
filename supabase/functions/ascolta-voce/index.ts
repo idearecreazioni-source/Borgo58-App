@@ -40,6 +40,14 @@ import { correggiAgenda, istruzioniAgenda } from "./agenda.ts";
 // Il giorno E l'ora di adesso, nel fuso del locale (16/09/2026): senza
 // l'ora, «fra cinque minuti» non ha un punto di partenza.
 import { fraseDiAdesso } from "./adesso.ts";
+// La memoria breve e il chiarimento (25/10/2026): vedi conversa.ts.
+import {
+  istruzioniConversa,
+  leggiChiarimento,
+  messaggiConMemoria,
+  tokenCache,
+  type Scambio,
+} from "./conversa.ts";
 import {
   causaInItaliano,
   comeRispondere,
@@ -87,6 +95,7 @@ In ogni azione metti in "pezzo" il tratto della frase che riguarda SOLO quella c
 
 ${istruzioniDomande()}
 ${istruzioniAgenda()}
+${istruzioniConversa()}
 
 🔴 NIENTE DI QUELLO CHE CAPISCI VIENE SCRITTO SUBITO. Ogni cosa che restituisci diventa un APPUNTO che Alessio legge, corregge, approva o butta. Non esiste piu' niente che si salvi da se', nemmeno quando sei sicurissimo. Questo cambia il tuo mestiere in una cosa sola, ed e' importante: **non devi piu' proteggerlo scegliendo di non capire**. Prima, davanti a una frase che non rientrava, la cosa prudente era dire «non ho capito»; adesso la cosa prudente e' **dire cosa hai capito**, perche' tanto decide lui.
 
@@ -301,12 +310,14 @@ Deno.serve(async (req) => {
 
   let catalogo: Record<string, unknown> = {};
   let spesa: Record<string, unknown> | null = null;
+  let scambi: Scambio[] = [];
 
   if (conChiave) {
     const { data, error } = await supabase.rpc("voce_apri_sessione", { p_chiave: chiaveVoce });
     if (error) return errore(401, "chiave", error.message);
     catalogo = (data?.catalogo ?? {}) as Record<string, unknown>;
     spesa = (data?.spesa ?? null) as Record<string, unknown> | null;
+    scambi = (Array.isArray(data?.scambi) ? data.scambi : []) as Scambio[];
   } else {
     // ⚠️ LA FRASE DEVE COPRIRE LE DUE PORTE, non solo quella dell'app. Chi
     //    arriva qui senza niente è quasi sempre una Scorciatoia a cui manca
@@ -330,14 +341,32 @@ Deno.serve(async (req) => {
     const { data: cat, error: erroreCat } = await supabase.rpc("voce_catalogo");
     if (erroreCat) return errore(403, "catalogo", erroreCat.message);
     catalogo = (cat ?? {}) as Record<string, unknown>;
+
+    // ⚠️ LA MEMORIA BREVE NON E' INDISPENSABILE, e una lettura che fallisce
+    //    non deve fermare la frase: senza, MEMO capisce come prima di oggi.
+    //    Ma NON SI FINGE di ricordare — `scambi` resta vuoto, e il modello
+    //    riceve la frase da sola, cioe' senza nessun «poco fa» inventato.
+    const { data: sc } = await supabase.rpc("voce_scambi_recenti");
+    scambi = (Array.isArray(sc) ? sc : []) as Scambio[];
   }
 
   // Le due strade registrano allo stesso modo: una funzione sola, e cambia
   // solo la porta da cui si entra.
-  const registra = (dati: Record<string, unknown>) =>
-    conChiave
-      ? supabase.rpc("registra_dettatura_da_chiave", { p_chiave: chiaveVoce, ...dati })
-      : supabase.rpc("registra_dettatura", dati);
+  // ⚠️ I TOKEN DELLA CACHE si aggiungono qui, una volta sola, e non in
+  //    ognuno dei sette punti che registrano: se se ne dimenticasse uno, la
+  //    dettatura costerebbe meno del vero — e il tetto di spesa del mese si
+  //    guarda proprio su quel numero.
+  let cache = { scritti: 0, letti: 0 };
+  const registra = (dati: Record<string, unknown>) => {
+    const conCache = {
+      ...dati,
+      p_token_cache_scritti: cache.scritti,
+      p_token_cache_letti: cache.letti,
+    };
+    return conChiave
+      ? supabase.rpc("registra_dettatura_da_chiave", { p_chiave: chiaveVoce, ...conCache })
+      : supabase.rpc("registra_dettatura", conCache);
+  };
 
   if (spesa?.blocca) {
     // ⚠️ Si registra anche la dettatura che NON è avvenuta: senza, il
@@ -381,14 +410,19 @@ Deno.serve(async (req) => {
     const esito = await anthropic.messages.create({
       model: MODELLO,
       max_tokens: TETTO_RISPOSTA,
-      system: istruzioni(catalogo),
-      messages: [
-        {
-          role: "user",
-          content: `${adesso} Alessio ha detto:\n\n${testo}`,
-        },
+      // 🔴 LE ISTRUZIONI SI METTONO IN CACHE (25/10/2026): sono circa
+      //    tredicimila token, uguali da una frase all'altra, e fino a oggi
+      //    si pagavano per intero a ogni frase. Rilette entro cinque minuti
+      //    costano un decimo. ⚠️ Il catalogo sta DENTRO le istruzioni: se
+      //    cambia (un prodotto nuovo) la cache si riscrive da sola, e la
+      //    frase dopo paga la scrittura — non si legge mai un catalogo
+      //    vecchio.
+      system: [
+        { type: "text", text: istruzioni(catalogo), cache_control: { type: "ephemeral" } },
       ],
+      messages: messaggiConMemoria(scambi, adesso, testo),
     });
+    cache = tokenCache(esito.usage as unknown as Record<string, unknown>);
 
     if (esito.stop_reason === "max_tokens") {
       await registra({
@@ -487,6 +521,40 @@ Deno.serve(async (req) => {
   //    facendo domande. Zero azioni vuol dire zero appunti: il registro
   //    delle dettature non è un dato del gestionale, è il conto di ciò che
   //    è stato detto e di quanto è costato.
+  // -------------------------------------------------------------------
+  // 4-ter. SE MEMO NON PUO' PROPORRE NIENTE, CHIEDE
+  // -------------------------------------------------------------------
+  // ⚠️ Una domanda non scrive niente, come una domanda di Alessio: la
+  //    dettatura si registra con la filza vuota e la domanda come messaggio.
+  //    E' da li' che `voce_scambi_recenti()` la rilegge alla frase dopo —
+  //    senza quella riga, la risposta di Alessio arriverebbe a un MEMO che
+  //    non ricorda di aver chiesto niente.
+  const chiarimento = leggiChiarimento(letto);
+  if (chiarimento) {
+    const { data: fatto, error: erroreChiedo } = await registra({
+      p_testo: testo,
+      p_azioni: [],
+      p_esito: "capita",
+      p_modello: MODELLO,
+      p_token_domanda: usoDomanda,
+      p_token_risposta: usoRisposta,
+      p_messaggio: `Ho chiesto: ${chiarimento}`,
+    });
+    if (erroreChiedo) return errore(500, "scrittura", erroreChiedo.message);
+    return new Response(
+      JSON.stringify({
+        esito: "chiarimento",
+        testo,
+        messaggio: chiarimento,
+        ...(fatto as Record<string, unknown>),
+        modello: MODELLO,
+        token_domanda: usoDomanda,
+        token_risposta: usoRisposta,
+      }),
+      { headers: { ...CORS, "Content-Type": "application/json" } },
+    );
+  }
+
   const scelta = comeRispondere(letto);
 
   if (scelta.tipo === "domanda") {
