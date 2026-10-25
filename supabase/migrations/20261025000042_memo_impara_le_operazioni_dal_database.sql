@@ -462,11 +462,14 @@ begin
 
     when 'nota_credito_ricevuta' then
       -- ⚠️ La data di un documento e' quella del calendario, non la serata.
-      return registra_nota_credito(v_ent, (v_check->'dati'->>'supplier_id')::uuid,
+      -- ⚠️ registra_nota_credito restituisce l'identificativo (uuid), non un
+      --    jsonb: va avvolto, o Postgres prova a leggerlo come JSON e si ferma.
+      v_id := registra_nota_credito(v_ent, (v_check->'dati'->>'supplier_id')::uuid,
         coalesce(memo_data(p_dati->>'data'), (now() at time zone 'Europe/Rome')::date),
         (p_dati->>'importo')::numeric, null,
         nullif(btrim(coalesce(p_dati->>'numero', '')), ''),
         coalesce(nullif(btrim(coalesce(p_dati->>'note', '')), ''), 'Registrata a voce'));
+      return jsonb_build_object('nota_credito_id', v_id);
 
     when 'scadenza_prevista' then
       if not (select is_titolare()) then
