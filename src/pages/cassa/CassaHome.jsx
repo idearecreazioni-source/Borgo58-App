@@ -377,7 +377,13 @@ export default function CassaHome() {
               diventate uno schermo a sé con la loro voce nel menu, e questo
               pulsante è stato solo ripuntato a `/comande`. Si arriva alle
               Comande dal menu laterale, che non è toccato. */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          {/* 🔴 LE SCHEDE IN QUATTRO GRUPPI (25/10/2026, richiesta di Alessio:
+              «un'accozzaglia di pulsanti messi vicini senza un senso logico»).
+              Ogni gruppo risponde a una domanda sola: cosa registro oggi, di
+              chi sono questi soldi, come sta andando, come è impostato. Le
+              impostazioni stanno in fondo e più discrete, perché si toccano
+              di rado. Le schede sono le stesse di prima: cambia solo l'ordine. */}
+          <Gruppo titolo="Ogni giorno">
             <Scorciatoia to="/cassa/prima-nota" principale>
               Prima nota
             </Scorciatoia>
@@ -388,6 +394,44 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/da-collocare">
               Da collocare{daCollocare > 0 && ` (${daCollocare})`}
             </Scorciatoia>
+          </Gruppo>
+          <Gruppo titolo="Soldi miei e di altri">
+            {/* 🔴 LA PORTA DELLA TASCA — 31/08/2026. Il soggetto esisteva in
+                produzione dall'01:06 e **da Cassa non ci si arrivava**: il
+                menu della Prima nota lo offre, ma bisognava sapere di
+                cercarlo lì. È la stessa famiglia dei Preventivi rimasti
+                irraggiungibili per giorni (20/08) — *la rotta c'era e nessun
+                collegamento ci portava*.
+                ⚠️ L'indirizzo porta il soggetto: si arriva alla Prima nota
+                **già sulla tasca**, invece di arrivarci su Borgo 58 e dover
+                cambiare — che è il gesto in cui si sbaglia. */}
+            <Scorciatoia to="/cassa/prima-nota?soggetto=tasca">
+              La mia tasca
+            </Scorciatoia>
+            {/* ⚠️ QUESTA NON E' LA TASCA, e i due si somigliano abbastanza da
+                scambiarsi: qui si registra una spesa fatta **per conto della
+                società**, che la società poi ti pareggia — misurato il
+                31/08, scrive in `anticipazioni_socio` sul soggetto Borgo 58.
+                La tasca è l'altra cosa: soldi tuoi che non torneranno
+                indietro, e non c'è niente da pareggiare. */}
+            <Scorciatoia to="/cassa/personale">
+              Anticipo io, poi mi rimborso
+            </Scorciatoia>
+            {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
+                Preventivi è rimasta irraggiungibile per giorni perché la
+                rotta c'era e nessun collegamento ci portava. */}
+            <Scorciatoia to="/cassa/prestiti">
+              Prestiti da privati
+            </Scorciatoia>
+            {/* 🔴 LA PORTA DELLE CAPARRE TENUTE (13/10/2026): il dato c'era dal
+                27/08 e nessuna schermata lo mostrava. Senza questo
+                collegamento la pagina sarebbe di nuovo una rotta che nessuno
+                apre — il difetto dei Preventivi del 20/08. */}
+            <Scorciatoia to="/cassa/caparre-tenute">
+              Caparre tenute
+            </Scorciatoia>
+          </Gruppo>
+          <Gruppo titolo="Resoconti">
             <Scorciatoia to="/cassa/previsione">
               Ce la faccio?
             </Scorciatoia>
@@ -407,43 +451,11 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/costo-progetto">
               Quanto e' costato il progetto
             </Scorciatoia>
-            {/* ⚠️ QUESTA NON E' LA TASCA, e i due si somigliano abbastanza da
-                scambiarsi: qui si registra una spesa fatta **per conto della
-                società**, che la società poi ti pareggia — misurato il
-                31/08, scrive in `anticipazioni_socio` sul soggetto Borgo 58.
-                La tasca è l'altra cosa: soldi tuoi che non torneranno
-                indietro, e non c'è niente da pareggiare. */}
-            <Scorciatoia to="/cassa/personale">
-              Anticipo io, poi mi rimborso
-            </Scorciatoia>
-            {/* 🔴 LA PORTA DELLA TASCA — 31/08/2026. Il soggetto esisteva in
-                produzione dall'01:06 e **da Cassa non ci si arrivava**: il
-                menu della Prima nota lo offre, ma bisognava sapere di
-                cercarlo lì. È la stessa famiglia dei Preventivi rimasti
-                irraggiungibili per giorni (20/08) — *la rotta c'era e nessun
-                collegamento ci portava*.
-                ⚠️ L'indirizzo porta il soggetto: si arriva alla Prima nota
-                **già sulla tasca**, invece di arrivarci su Borgo 58 e dover
-                cambiare — che è il gesto in cui si sbaglia. */}
-            <Scorciatoia to="/cassa/prima-nota?soggetto=tasca">
-              La mia tasca
-            </Scorciatoia>
-            {/* ⚠️ LA PORTA, e non è un dettaglio: il 20/08 la sezione
-                Preventivi è rimasta irraggiungibile per giorni perché la
-                rotta c'era e nessun collegamento ci portava. */}
-            <Scorciatoia to="/cassa/prestiti">
-              Prestiti da privati
-            </Scorciatoia>
             <Scorciatoia to="/cassa/sconti-omaggi">
               Sconti e omaggi
             </Scorciatoia>
-            {/* 🔴 LA PORTA DELLE CAPARRE TENUTE (13/10/2026): il dato c'era dal
-                27/08 e nessuna schermata lo mostrava. Senza questo
-                collegamento la pagina sarebbe di nuovo una rotta che nessuno
-                apre — il difetto dei Preventivi del 20/08. */}
-            <Scorciatoia to="/cassa/caparre-tenute">
-              Caparre tenute
-            </Scorciatoia>
+          </Gruppo>
+          <Gruppo titolo="Impostazioni" discreto>
             <Scorciatoia to="/cassa/causali">
               Causali
             </Scorciatoia>
@@ -455,7 +467,7 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/conti-correnti">
               Conti correnti
             </Scorciatoia>
-          </div>
+          </Gruppo>
         </>
       )}
     </div>
@@ -693,5 +705,16 @@ function IlCassetto({ entityId, tesoreria, onFatto, onErrore }) {
         </p>
       )}
     </div>
+  );
+}
+
+// Un gruppo di schede col suo titolo piccolo. «discreto» per le
+// impostazioni: si toccano di rado, quindi non devono pesare come il resto.
+function Gruppo({ titolo, discreto = false, children }) {
+  return (
+    <section className={discreto ? "mb-6 opacity-80" : "mb-5"}>
+      <h2 className="testo-sala uppercase tracking-wide text-b58-charcoal-soft mb-2">{titolo}</h2>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </section>
   );
 }
