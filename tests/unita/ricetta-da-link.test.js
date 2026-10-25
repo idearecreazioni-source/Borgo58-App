@@ -287,3 +287,21 @@ describe("le proposte sopra la bozza", () => {
     expect(applicaProposte({ bozza: {}, ingredienti: [], passaggi: [] }, null).proposte).toEqual([]);
   });
 });
+
+// 25/10/2026: la crema catalana di Clove dichiarava «1⁄2 litro latte» con la
+// barra delle frazioni (U+2044). La riga qui sotto ha la stessa grafia.
+describe("una frazione come la scrive Clove", () => {
+  it("«1⁄2 litro latte» diventa mezzo litro, senza buchi", () => {
+    const esito = ricettaDallaPagina(
+      pagina({ ...RICETTA, recipeIngredient: [" scorza di limone", "1\u20442 litro latte", "5 tuorli"] }),
+    );
+    expect(esito.ok).toBe(true);
+    const b = bozzaDaRicettaLetta(esito.ricetta, "https://clove.kitchen/recipes/x");
+    expect(b.ingredienti.map((r) => [r.nome, r.quantita, r.unita])).toEqual([
+      ["scorza di limone", null, null],
+      ["latte", 0.5, "l"],
+      ["tuorli", 5, null],
+    ]);
+    expect(b.bozza.buchi_dichiarati.some((x) => x.includes("latte"))).toBe(false);
+  });
+});

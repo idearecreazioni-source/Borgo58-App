@@ -296,6 +296,53 @@ describe("1D · quantità scritte in modo esplicito", () => {
     expect(buchi(e)).toEqual([]);
   });
 
+  // 25/10/2026: Clove scrive «1⁄2» con la barra delle frazioni (U+2044), e
+  // la quantità del latte della crema catalana era finita vuota.
+  it("le frazioni scritte con la barra delle frazioni o con un carattere solo", () => {
+    const e = conIngredienti("1\u20442 litro latte", "½ litro latte", "¾ kg patate", "1 \u2215 4 l panna");
+    expect(soloGliIngredienti(e)).toEqual([
+      { nome: "latte", quantita: 0.5, unita: "l" },
+      { nome: "latte", quantita: 0.5, unita: "l" },
+      { nome: "patate", quantita: 0.75, unita: "kg" },
+      { nome: "panna", quantita: 0.25, unita: "l" },
+    ]);
+    expect(buchi(e)).toEqual([]);
+    // La riga com'era scritta non si tocca.
+    expect(e.ingredienti[0].testo_originale).toBe("1\u20442 litro latte");
+  });
+
+  it("«1½» è un numero misto: resta un buco, come «1 1/2»", () => {
+    const e = conIngredienti("1½ tazze latte");
+    expect(e.ingredienti[0]).toMatchObject({ quantita: null, unita: null });
+    expect(buchi(e)[0]).toContain("più di un numero");
+  });
+
+  it("le unità italiane scritte per intero, e l'etto", () => {
+    const e = conIngredienti(
+      "2 etti burro",
+      "1 etto prosciutto",
+      "3 hg pancetta",
+      "250 cc panna",
+      "500 millilitri brodo",
+      "2 decilitri vino",
+      "5 centilitri grappa",
+      "200 milligrammi zafferano",
+      "0,5 litri latte",
+    );
+    expect(soloGliIngredienti(e)).toEqual([
+      { nome: "burro", quantita: 0.2, unita: "kg" },
+      { nome: "prosciutto", quantita: 0.1, unita: "kg" },
+      { nome: "pancetta", quantita: 0.3, unita: "kg" },
+      { nome: "panna", quantita: 0.25, unita: "l" },
+      { nome: "brodo", quantita: 0.5, unita: "l" },
+      { nome: "vino", quantita: 0.2, unita: "l" },
+      { nome: "grappa", quantita: 0.05, unita: "l" },
+      { nome: "zafferano", quantita: 0.2, unita: "g" },
+      { nome: "latte", quantita: 0.5, unita: "l" },
+    ]);
+    expect(buchi(e)).toEqual([]);
+  });
+
   it("il numero prima o dopo il nome, con o senza i due punti, con l'unità attaccata", () => {
     const e = conIngredienti("farina: 200 g", "burro 50g", "Uova: 3", "200 gr. zucchero", "latte 250 ml");
     expect(soloGliIngredienti(e)).toEqual([
