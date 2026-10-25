@@ -342,6 +342,14 @@ const OPERAZIONI = new Set([
   "annulla_collocazione_spesa",
   // Una tabella sola, ma e' una cancellazione: passa di qui come le altre.
   "elimina_spesa_da_collocare",
+  // 🔴 La banca e le fatture entrano da file (20261024000001). Una fattura
+  // elettronica può creare il fornitore E la fattura (col suo promemoria):
+  // a meta' resterebbe un fornitore nato per niente, o una fattura senza
+  // promemoria. Il bonifico che paga una fattura tocca fattura, prima nota
+  // e movimento della banca; registrarne uno nuovo, prima nota e banca.
+  "registra_fattura_elettronica",
+  "paga_fattura_da_movimento_banca",
+  "registra_movimento_banca",
 ]);
 
 const CORS = {
