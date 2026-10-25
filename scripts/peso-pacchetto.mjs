@@ -50,12 +50,17 @@ const CARTELLA = path.join(process.cwd(), "dist", "assets");
  *     cioe' +2,26 kB di impalcatura della divisione. I tetti lasciano un
  *     margine di ~15 kB: stretti abbastanza da accorgersi di un modulo
  *     nuovo, larghi abbastanza da non gridare per una riga.
+ *   · 25/10/2026 — gestionale 430 → 440: misurato da questo comando,
+ *     428,87 su slave e 431,02 col quaderno dei difetti (+2,15 kB: il
+ *     pulsante «Segnala» presente in ogni schermata, piu' la pagina
+ *     /segnalazioni). Il pulsante sta nel Layout, quindi non si puo'
+ *     caricare dopo. La strada pubblica non cambia (tetto 160 invariato).
  */
 const TETTI_KB_COMPRESSI = {
   // Quello che scarica un cliente per strada. E' il numero che conta di piu'.
   pubblico: 160,
   // Quello che scarica chi apre il gestionale.
-  gestionale: 430,
+  gestionale: 440,
 };
 
 const MANIFESTO = path.join(process.cwd(), "dist", ".vite", "manifest.json");
