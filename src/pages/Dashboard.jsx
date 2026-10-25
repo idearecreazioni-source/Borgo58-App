@@ -35,14 +35,6 @@ const PRIORITY_BADGE = {
 // per la stessa ragione. Un riquadro che dice «niente» tutte le mattine
 // diventa arredamento, e allora smette di farsi notare il giorno che parla.
 export default function Dashboard() {
-  // U1 (11/10/2026): la palette nuova si prova SOLO qui. La classe vive su
-  // <html> finché la Dashboard è aperta, perché il fondo della pagina e la
-  // barra laterale stanno fuori da questo componente.
-  useEffect(() => {
-    document.documentElement.classList.add("tema-prova");
-    return () => document.documentElement.classList.remove("tema-prova");
-  }, []);
-
   const { isStaff } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);

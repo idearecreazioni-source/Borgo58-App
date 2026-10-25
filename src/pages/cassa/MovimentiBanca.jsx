@@ -42,7 +42,7 @@ const campo =
 const bottone =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
 const bottonePieno =
-  "tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
+  "tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
 
 async function leggiFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());

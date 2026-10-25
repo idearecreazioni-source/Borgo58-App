@@ -10,6 +10,7 @@ import {
 } from "../../lib/api/ordini";
 import { listaSpesa } from "../../lib/api/shoppingList";
 import { formatDate, formatEUR, qtaConUnita } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // Fase B della filiera della spesa: l'ordine parte nella lingua del
 // fornitore, e parte dal telefono di Alessio.
@@ -220,10 +221,12 @@ export default function Ordini() {
       <Link to="/magazzino/lista-spesa" className="tocco-bottone inline-flex items-center testo-sala text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Lista della spesa
       </Link>
-      <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Ordini ai fornitori</h1>
-      <p className="text-b58-charcoal-soft mt-1 mb-6">
-        Il messaggio lo prepara il gestionale, lo mandi tu dal tuo telefono.
-      </p>
+      <h1 className="mb-6 font-display text-2xl md:text-3xl text-b58-charcoal mt-2">
+        Ordini ai fornitori
+        <Didascalia>
+          Il messaggio lo prepara il gestionale, lo mandi tu dal tuo telefono.
+        </Didascalia>
+      </h1>
 
       {error && (
         <p className="testo-sala text-b58-terracotta-dark bg-b58-terracotta/10 rounded-lg px-3 py-2 mb-4">
@@ -392,7 +395,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, via)}
-                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               {via === "whatsapp" ? "Registra e apri WhatsApp" : "Registra e apri la posta"}
                             </button>
@@ -402,7 +405,7 @@ export default function Ordini() {
                               type="button"
                               disabled={inCorso === g.supplier_id}
                               onClick={() => registra(g.supplier_id, "altro")}
-                              className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                              className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-medium px-4"
                             >
                               Registra l&apos;ordine
                             </button>

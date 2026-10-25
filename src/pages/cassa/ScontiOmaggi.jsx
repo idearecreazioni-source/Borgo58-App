@@ -211,7 +211,16 @@ export default function ScontiOmaggi() {
       {/* Riepilogo mensile (TD27) */}
       {months.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">Riepilogo mensile</h2>
+          <h2 className="font-display testo-sala-titolo text-b58-charcoal mb-4">
+            Riepilogo mensile
+            <Didascalia>
+              Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
+              <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato al
+              momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il secondo
+              è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
+              con lei, domanda L1).
+            </Didascalia>
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full testo-sala-grande">
               <thead>
@@ -251,13 +260,6 @@ export default function ScontiOmaggi() {
               </tbody>
             </table>
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-            Il <strong>valore a listino</strong> è quello che il cliente avrebbe pagato; il{" "}
-            <strong>costo ingredienti</strong> è quello che il piatto è costato davvero, congelato
-            al momento della chiusura. Sono due numeri diversi e servono a due cose diverse: il
-            secondo è quello che serve alla commercialista per l&apos;autofattura sugli omaggi (da confermare
-            con lei, domanda L1).
-          </p>
         </div>
       )}
 
@@ -386,7 +388,7 @@ export default function ScontiOmaggi() {
                   <input type="checkbox" checked={newDevice.isOwnerDevice} onChange={(e) => setNewDevice((d) => ({ ...d, isOwnerDevice: e.target.checked }))} />
                   È il tuo tablet
                 </label>
-                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
+                <button type="button" disabled={savingDevice || !newDevice.name.trim()} onClick={handleAddDevice} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-3 py-1.5 disabled:opacity-60">
                   {savingDevice ? "Salvo…" : "+ Aggiungi"}
                 </button>
               </div>
@@ -398,7 +400,7 @@ export default function ScontiOmaggi() {
               type="button"
               disabled={saving || !form.full_amount || !form.causale_id}
               onClick={handleAdd}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra"}
             </button>

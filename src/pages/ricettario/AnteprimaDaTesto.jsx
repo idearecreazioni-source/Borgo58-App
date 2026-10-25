@@ -76,7 +76,7 @@ export default function AnteprimaDaTesto() {
         <button
           type="button"
           onClick={esamina}
-          className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
         >
           Esamina il testo
         </button>

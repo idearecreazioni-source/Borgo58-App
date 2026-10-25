@@ -552,7 +552,7 @@ export default function BevandeVini() {
           <button
             type="submit"
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-5 py-2 whitespace-nowrap"
           >
             {saving ? "Aggiungo…" : "+ Metti in carta"}
           </button>

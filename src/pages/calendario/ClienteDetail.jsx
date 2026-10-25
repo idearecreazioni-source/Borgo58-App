@@ -24,6 +24,7 @@ import {
   labelFor,
 } from "../../lib/constants";
 import { useAuth } from "../../context/AuthContext";
+import Didascalia from "../../components/Didascalia";
 
 export default function ClienteDetail() {
   const { id } = useParams();
@@ -352,7 +353,7 @@ export default function ClienteDetail() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala-grande font-medium px-4 py-2"
           >
             {saving ? "Salvo…" : "Salva modifiche"}
           </button>
@@ -418,15 +419,17 @@ export default function ClienteDetail() {
           arriverebbe vuota anche senza questo blocco condizionale. */}
       {isTitolare && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mt-6">
-          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-            <h2 className="font-display testo-sala-titolo text-b58-charcoal">Sconti e omaggi ricevuti</h2>
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-4">
+            <h2 className="font-display testo-sala-titolo text-b58-charcoal">
+              Sconti e omaggi ricevuti
+              <Didascalia>
+                Sezione visibile solo a te: lo staff vede questa scheda senza i dati economici.
+              </Didascalia>
+            </h2>
             <span className="testo-sala uppercase tracking-wide text-b58-charcoal-soft bg-b58-charcoal/5 rounded-full px-2 py-0.5">
               Riservato
             </span>
           </div>
-          <p className="testo-sala text-b58-charcoal-soft/70 mb-4">
-            Sezione visibile solo a te: lo staff vede questa scheda senza i dati economici.
-          </p>
 
           {discounts.length === 0 ? (
             <p className="testo-sala-grande text-b58-charcoal-soft/60">

@@ -210,7 +210,7 @@ export default function RicetteList() {
         {isTitolare && (
           <Link
             to={`/ricettario/ricette/nuova?tipo=${dove.crea}`}
-            className="tocco-riga inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
+            className="tocco-riga inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 testo-sala"
           >
             {dove.nuovo}
           </Link>

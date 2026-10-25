@@ -174,7 +174,7 @@ export default function NonConformita() {
               type="button"
               disabled={adding || !form.description.trim()}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
             >
               {adding ? "Segnalo…" : "+ Segnala"}
             </button>
@@ -233,7 +233,7 @@ export default function NonConformita() {
                       type="button"
                       disabled={resolving || !correctiveAction.trim()}
                       onClick={() => handleResolve(item.id)}
-                      className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                      className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
                     >
                       {resolving ? "Confermo…" : "Conferma risoluzione"}
                     </button>

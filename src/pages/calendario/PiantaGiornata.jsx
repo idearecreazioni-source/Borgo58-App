@@ -91,7 +91,7 @@ const moduloScritto = (v) =>
 const BOTTONE =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 hover:bg-b58-cream-dark transition-colors text-b58-charcoal testo-sala font-medium px-4";
 const PRINCIPALE =
-  "tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-semibold px-4";
+  "tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment testo-sala font-semibold px-4";
 const CAMPO =
   "w-full tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta";
 const ETICHETTA = "block testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-1.5";
@@ -1698,7 +1698,7 @@ export default function PiantaGiornata() {
                             {suoi.map((a) => a.etichetta_al_momento).join(" · ")}
                           </span>
                         ) : (
-                          <span className="rounded-full bg-b58-terracotta text-b58-parchment testo-sala font-medium px-2.5 py-1">
+                          <span className="rounded-full bg-b58-azione text-b58-parchment testo-sala font-medium px-2.5 py-1">
                             senza tavolo
                           </span>
                         )}

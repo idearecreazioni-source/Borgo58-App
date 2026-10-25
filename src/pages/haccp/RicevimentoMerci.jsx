@@ -234,7 +234,7 @@ export default function RicevimentoMerci() {
             type="button"
             disabled={saving || !form.product_description.trim()}
             onClick={handleAdd}
-            className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
+            className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60 shrink-0"
           >
             {saving ? "Registro…" : "+ Registra"}
           </button>

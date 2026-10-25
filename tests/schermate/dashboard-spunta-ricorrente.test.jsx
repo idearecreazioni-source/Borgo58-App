@@ -204,11 +204,12 @@ describe("🔴 un impegno ricorrente spuntato dalla Dashboard", () => {
   });
 });
 
-describe("la palette in prova vale solo sulla Dashboard (U1, 11/10/2026)", () => {
-  it("accende `tema-prova` su <html> e lo spegne quando si esce", async () => {
+describe("la palette verde vale per tutto il gestionale (25/10/2026)", () => {
+  // Fino al 25/10 la Dashboard accendeva `tema-prova` su <html>: la palette
+  // era in prova li' sola. Ora e' il tema di base, e la classe non esiste piu'.
+  it("la Dashboard non accende piu' nessuna classe di prova", async () => {
     const { unmount } = mostraDashboard();
-    expect(document.documentElement.classList.contains("tema-prova")).toBe(true);
-    unmount();
     expect(document.documentElement.classList.contains("tema-prova")).toBe(false);
+    unmount();
   });
 });

@@ -11,6 +11,7 @@ import { formatEUR, formatQta, primoDelMeseLocale, oggiLocale } from "../../lib/
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import ElencoAdattivo from "../../components/ElencoAdattivo";
 import { unaVoltaSola } from "../../lib/calcoli/voce";
+import Didascalia from "../../components/Didascalia";
 
 // LA CANTINA — 31/08/2026
 //
@@ -141,11 +142,13 @@ export default function Cantina() {
       {/* STAPPARE                                                       */}
       {/* ------------------------------------------------------------- */}
       <section className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-4 mb-6">
-        <h2 className="font-display text-xl text-b58-charcoal mb-2">Stappa una bottiglia</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-3">
-          La giacenza non cambia: scaricano i calici quando si vendono. Qui si
-          segna solo che quella bottiglia non è più intera.
-        </p>
+        <h2 className="font-display text-xl text-b58-charcoal mb-3">
+          Stappa una bottiglia
+          <Didascalia>
+            La giacenza non cambia: scaricano i calici quando si vendono. Qui si
+            segna solo che quella bottiglia non è più intera.
+          </Didascalia>
+        </h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={scelto}
@@ -174,7 +177,7 @@ export default function Cantina() {
             type="button"
             disabled={!scelto || inCorso === "apri"}
             onClick={apri}
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-50 transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
           >
             {inCorso === "apri" ? "Apro…" : "Stappa"}
           </button>
@@ -302,12 +305,14 @@ export default function Cantina() {
       {/* L'INVENTARIO                                                   */}
       {/* ------------------------------------------------------------- */}
       <section>
-        <h2 className="font-display text-xl text-b58-charcoal mb-2">Inventario</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-3">
-          Quanto è mancato al conteggio, in bottiglie e in euro. I conteggi si
-          fanno dall'Allineamento: qui si rileggono, e niente viene corretto da
-          solo.
-        </p>
+        <h2 className="font-display text-xl text-b58-charcoal mb-3">
+          Inventario
+          <Didascalia>
+            Quanto è mancato al conteggio, in bottiglie e in euro. I conteggi si
+            fanno dall'Allineamento: qui si rileggono, e niente viene corretto da
+            solo.
+          </Didascalia>
+        </h2>
         <div className="flex flex-wrap items-end gap-3 mb-3">
           <label className="testo-sala text-b58-charcoal-soft">
             Dal{" "}
