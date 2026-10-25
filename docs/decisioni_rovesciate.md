@@ -3815,3 +3815,15 @@ quando questa sezione è stata scritta.
    che chi non tocca il segno non vede più quale serata sta datando, e che
    il conteggio del cassetto non dice più da solo che la differenza resta
    scritta (lo dice l'esito, dopo «Conta»).
+
+   **Esteso allo stesso giorno al resto del gestionale** (sua seconda
+   frase): titoli e campi di Calendario, Sala e orari, Clienti, Documenti,
+   Fiscale, HACCP, Magazzino, Ricettario, Personale portano la spiegazione
+   dietro il «?». Fuori, per scelta: le note che dicono l'effetto di un
+   gesto accanto al pulsante (es. «con una scadenza nasce un promemoria»),
+   le descrizioni dentro le schede-collegamento (un «?» dentro un
+   collegamento lo aprirebbe al tocco), il testo dentro i riquadri a
+   scomparsa, le pagine pubbliche e tutto ciò che si stampa (`<Didascalia>`
+   è `print:hidden`). E le schede in basso della Cassa sono divise in
+   quattro gruppi (Ogni giorno · Soldi miei e di altri · Resoconti ·
+   Impostazioni), approvati da lui.
