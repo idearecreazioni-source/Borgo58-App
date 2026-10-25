@@ -259,14 +259,14 @@ export default function Fermi() {
   );
 
   return (
-    <div className="testo-sala mx-auto max-w-3xl p-4">
+    <div className="testo-sala mx-auto max-w-3xl">
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
       {/* ⚠️ La differenza fra questa schermata e le Scadenze è una
           spiegazione — utile la prima volta, ingombro dalla seconda — e
           si apre dal segno. */}
-      <h1 className="mb-3 mt-2 text-2xl font-semibold">
+      <h1 className="mb-3 mt-2 font-display text-2xl text-b58-charcoal">
         Da quanto è ferma
         <Didascalia>
           Ogni partita ancora in giacenza, con le sei risposte per ognuna. In

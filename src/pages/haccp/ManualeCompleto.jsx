@@ -73,7 +73,7 @@ export default function ManualeCompleto() {
   };
 
   const chipClass = (attivo) =>
-    `tocco-campo text-xs rounded-full px-3 py-1.5 border ${attivo ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`;
+    `tocco-campo text-xs rounded-full px-3 py-1.5 border ${attivo ? "bg-b58-azione text-b58-parchment border-b58-terracotta" : "border-b58-charcoal/15 text-b58-charcoal-soft"}`;
   const inputClass =
     "tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-2 py-1.5 text-sm text-b58-charcoal";
 

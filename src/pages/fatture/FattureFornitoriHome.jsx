@@ -758,7 +758,7 @@ export default function FattureFornitoriHome() {
               type="button"
               disabled={saving || !form.supplier_id || !form.invoice_date || !form.amount}
               onClick={handleAdd}
-              className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+              className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
             >
               {saving ? "Registro…" : "+ Registra fattura"}
             </button>
@@ -1062,7 +1062,7 @@ export default function FattureFornitoriHome() {
                           type="button"
                           disabled={paying || !dataUscita}
                           onClick={() => handlePay(inv.id)}
-                          className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                          className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
                         >
                           {paying ? "Confermo…" : "Conferma pagamento"}
                         </button>

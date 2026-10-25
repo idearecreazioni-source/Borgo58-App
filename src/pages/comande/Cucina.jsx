@@ -314,7 +314,7 @@ export default function Cucina() {
               <button
                 type="button"
                 onClick={() => stampa(g, false)}
-                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande font-semibold print:hidden"
+                className="tocco-azione w-full mt-1.5 rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala-grande font-semibold print:hidden"
               >
                 🖨 Stampa
               </button>

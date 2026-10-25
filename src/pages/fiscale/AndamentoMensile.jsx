@@ -347,7 +347,7 @@ export default function AndamentoMensile() {
               type="button"
               disabled={!nuovoPeriodo.dal || !nuovoPeriodo.al}
               onClick={aggiungiPeriodo}
-              className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               + Segna
             </button>
@@ -362,12 +362,19 @@ export default function AndamentoMensile() {
           {/* --- Cosa si è potuto misurare --- */}
           <div className="rounded-xl bg-white ring-1 ring-b58-charcoal/10 p-5 mb-6">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-              <h2 className="font-display testo-sala-titolo text-b58-charcoal">Il mese vero</h2>
+              <h2 className="font-display testo-sala-titolo text-b58-charcoal">
+                Il mese vero
+                <Didascalia>
+                  «Non misurato» vuol dire che quel numero non c&apos;è ancora — non che è zero. Il food
+                  cost arriva dalle ricette, i costi fissi dalle causali di prima nota che hai segnato come
+                  tali.
+                </Didascalia>
+              </h2>
               {!stato?.mese_chiuso && !stato?.parziale && (
                 <button
                   onClick={chiudi}
                   disabled={chiudendo}
-                  className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+                  className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
                 >
                   {chiudendo ? "Chiudo…" : "Fotografa questo mese"}
                 </button>
@@ -396,10 +403,6 @@ export default function AndamentoMensile() {
                 <p className="text-b58-charcoal"><Valore v={misure?.food_cost} /></p>
               </div>
             </div>
-            <p className="testo-sala text-b58-charcoal-soft/70 mt-3">
-              «Non misurato» vuol dire che quel numero non c&apos;è ancora — non che è zero. Il food cost
-              arriva dalle ricette, i costi fissi dalle causali di prima nota che hai segnato come tali.
-            </p>
           </div>
 
           {/* --- Il piano sovrapposto ai numeri veri --- */}
@@ -413,7 +416,36 @@ export default function AndamentoMensile() {
                   un mese buono non viene moltiplicato per dodici.
                 </Didascalia>
               </h2>
-              <div className="overflow-x-auto">
+              <ul className="sm:hidden divide-y divide-b58-charcoal/5">
+                {anno_.map((r) => {
+                  const q = (v) =>
+                    v == null ? "—" :
+                    r.unita === "euro" ? formatEUR(v) :
+                    r.unita === "percento" ? `${Number(v).toLocaleString("it-IT", { maximumFractionDigits: 1 })}%` :
+                    Number(v).toLocaleString("it-IT", { maximumFractionDigits: 0 });
+                  const scarto = r.scarto_percento == null ? "—"
+                    : `${Number(r.scarto_percento) > 0 ? "+" : ""}${Number(r.scarto_percento).toLocaleString("it-IT", { maximumFractionDigits: 1 })}${r.unita === "percento" ? " punti" : "%"}`;
+                  return (
+                    <li key={r.indicatore} className="py-3">
+                      <div className="testo-sala-grande font-medium text-b58-charcoal">
+                        {r.indicatore}
+                        {r.spiegazione && <Didascalia>{r.spiegazione}</Didascalia>}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1 testo-sala">
+                        <span className="text-b58-charcoal-soft">Previsto a oggi</span>
+                        <span className="text-right tabular-nums text-b58-charcoal-soft">{q(r.previsto_a_oggi)}</span>
+                        <span className="text-b58-charcoal-soft">Reale a oggi</span>
+                        <span className="text-right tabular-nums text-b58-charcoal">{r.misurato ? q(r.reale_a_oggi) : "non misurato"}</span>
+                        <span className="text-b58-charcoal-soft">Scarto</span>
+                        <span className={`text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark font-medium" : "text-b58-olive-dark"}`}>{scarto}</span>
+                        <span className="text-b58-charcoal-soft">Stima a dicembre</span>
+                        <span className="text-right tabular-nums font-medium text-b58-charcoal">{q(r.proiettato_anno)}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full testo-sala-grande min-w-[680px]">
                   <thead>
                     <tr className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">

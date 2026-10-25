@@ -10,7 +10,7 @@ import { daComprare } from "../lib/calcoli/spesaSpicciola";
 import AppuntiInDashboard from "../components/AppuntiInDashboard";
 import { leggi, nonLetto } from "../lib/calcoli/letture";
 import { listAvvisi, rimandaAvviso, riprendiAvviso } from "../lib/api/avvisi";
-import { TASK_CATEGORIES, TASK_PRIORITIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
+import { TASK_CATEGORIES, formatDate, labelFor, oggiLocale } from "../lib/constants";
 import { useAuth } from "../context/AuthContext";
 import Didascalia from "../components/Didascalia";
 
@@ -35,14 +35,6 @@ const PRIORITY_BADGE = {
 // per la stessa ragione. Un riquadro che dice «niente» tutte le mattine
 // diventa arredamento, e allora smette di farsi notare il giorno che parla.
 export default function Dashboard() {
-  // U1 (11/10/2026): la palette nuova si prova SOLO qui. La classe vive su
-  // <html> finché la Dashboard è aperta, perché il fondo della pagina e la
-  // barra laterale stanno fuori da questo componente.
-  useEffect(() => {
-    document.documentElement.classList.add("tema-prova");
-    return () => document.documentElement.classList.remove("tema-prova");
-  }, []);
-
   const { isStaff } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -208,15 +200,6 @@ export default function Dashboard() {
             </Didascalia>
           </p>
         </div>
-        {/* ⚠️ MISURATO, non stimato: come link nudo questo faceva 5,3 mm di
-            altezza — sotto la soglia degli 8,5. Il testo resta uguale, il
-            bersaglio cresce col padding: si tocca la riga, non le lettere. */}
-        <Link
-          to="/agenda"
-          className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 font-medium transition-colors"
-        >
-          Agenda completa →
-        </Link>
       </div>
 
       {notice && (
@@ -358,9 +341,17 @@ export default function Dashboard() {
 
         <div className="space-y-6 mt-6 2xl:mt-0">
           <section>
-            <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft mb-2">
-              Impegni di oggi
-            </h2>
+            <div className="flex items-baseline justify-between gap-3 mb-2">
+              <h2 className="testo-sala font-medium uppercase tracking-wide text-b58-charcoal-soft">
+                Impegni di oggi
+              </h2>
+              <Link
+                to="/agenda"
+                className="tocco-riga inline-flex items-center shrink-0 rounded-lg px-3 -mx-1 testo-sala text-b58-azione hover:text-b58-azione-dark hover:bg-b58-cream-dark/40 transition-colors"
+              >
+                Agenda completa →
+              </Link>
+            </div>
             {today.length === 0 ? (
               <p className="testo-sala text-b58-charcoal-soft/60">Nessun impegno con scadenza oggi.</p>
             ) : (
@@ -661,19 +652,19 @@ function TaskGroup({ tasks, onComplete }) {
             >
               <span className="min-w-0">
                 {t.title}
-                {t.category && (
+                {t.category && t.category !== "altro" && (
                   <span className="text-b58-charcoal-soft ml-2">
                     · {labelFor(TASK_CATEGORIES, t.category)}
                   </span>
                 )}
               </span>
             </Link>
-            <span
+            {t.priority === "alta" && <span
               data-priorita-impegno
               className={`shrink-0 inline-flex items-center rounded-full ${PRIORITY_BADGE[t.priority]} text-b58-parchment testo-sala font-medium px-2 py-0.5`}
             >
-              {labelFor(TASK_PRIORITIES, t.priority)}
-            </span>
+              Urgente
+            </span>}
           </div>
         </div>
       ))}

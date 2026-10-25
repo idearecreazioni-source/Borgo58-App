@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // ricetta» resti spenta finché ce ne sono, e che il doppio tocco mandi UN
 // gesto solo — e lo stesso gesto se si riprova dopo un errore.
 // ⚠️ Il database qui è finto: cosa fa davvero la promozione lo prova la
-//    verifica della migrazione 20261006000001 (non ancora applicata).
+//    verifica delle migrazioni 20261006000001 e 20261025000020.
 
 const api = vi.hoisted(() => ({
   getBozzaRicetta: vi.fn(),
@@ -79,20 +79,33 @@ describe("i buchi si vedono prima della conferma", () => {
     mostra();
 
     // 🔴 Il ricettario virtuale (10/10/2026): l'elenco non si impone, si chiede.
-    expect(await screen.findByText(/È salvata nel tuo ricettario così com'è/)).toBeTruthy();
+    expect(await screen.findByText(/È salvata fra le bozze così com'è/)).toBeTruthy();
     expect(screen.queryByText(/Cosa manca per diventare una ricetta/)).toBeNull();
     expect(screen.queryByText("Ingrediente dell'anagrafica")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Portala in cucina" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mettila nel Ricettario" }));
 
-    expect(await screen.findByText(/Cosa manca per diventare una ricetta \(5\)/)).toBeTruthy();
+    // 🔴 25/10/2026: un ingrediente NON collegato non è più un buco — entra
+    //    fra quelli da collegare. Restano le porzioni e la fase.
+    expect(await screen.findByText(/Cosa manca per diventare una ricetta \(2\)/)).toBeTruthy();
     expect(screen.getByText("mancano le porzioni")).toBeTruthy();
-    expect(screen.getByText("«pecorino»: non collegato a un ingrediente dell'anagrafica")).toBeTruthy();
-    expect(screen.getByText("«pecorino»: quantita' mancante")).toBeTruthy();
-    expect(screen.getByText("«pecorino»: unita' non compresa («cucchiaio»)")).toBeTruthy();
+    expect(screen.queryByText(/non collegato a un ingrediente/)).toBeNull();
+    expect(screen.queryByText("«pecorino»: quantita' mancante")).toBeNull();
     expect(screen.getByText("passaggio 1: manca la fase")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Crea la ricetta" }).disabled).toBe(true);
     // ⚠️ L'unità che non conosce non sparisce: resta scelta, e dichiarata.
     expect(screen.getByText("«cucchiaio» — non compresa")).toBeTruthy();
+  });
+
+  it("🔴 una bozza coi soli ingredienti NON collegati può diventare ricetta (25/10/2026)", async () => {
+    api.getBozzaRicetta.mockResolvedValue({
+      bozza: { ...BOZZA },
+      ingredienti: [{ ...RIGA, ingredient_id: null, quantita: null, unita: null }],
+      passaggi: [{ ...PASSO }],
+    });
+    mostra();
+    fireEvent.click(await screen.findByRole("button", { name: "Mettila nel Ricettario" }));
+    expect(await screen.findByText("Non manca niente: può diventare una ricetta.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Crea la ricetta" }).disabled).toBe(false);
   });
 
   it("una bozza senza buchi lo dice, e si può confermare", async () => {
@@ -123,7 +136,7 @@ describe("il ricettario virtuale e le proposte dell'assistente (10/10/2026)", ()
     api.getBozzaRicetta.mockResolvedValue(completa());
     mostra();
     expect(await screen.findByText("Non manca niente: può diventare una ricetta.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Portala in cucina" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mettila nel Ricettario" })).toBeNull();
   });
 });
 

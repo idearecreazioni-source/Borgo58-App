@@ -271,7 +271,7 @@ export default function RegistraCarico() {
         <button
           type="submit"
           disabled={saving || !form.ingredient_id || !form.quantity}
-          className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5  testo-sala"
+          className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium px-5  testo-sala"
         >
           {saving ? "Registro…" : "Registra carico"}
         </button>

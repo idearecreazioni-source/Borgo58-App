@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { createCausale, deactivateCausale, listAllCausali, setCausaleNeiFissi } from "../../lib/api/cash";
 import { listRegoleDeducibilita, setRegolaCausale } from "../../lib/api/deducibilita";
+import Didascalia from "../../components/Didascalia";
 
 const KINDS = [
   { value: "uscita", label: "Uscite" },
@@ -92,22 +93,31 @@ export default function Causali() {
       <Link to="/cassa" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-terracotta">
         ← Cassa
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Causali</h1>
+      {/* 🔴 I TRE PARAGRAFI SONO PASSATI DIETRO IL «?» — 25/10/2026,
+          chiesto da Alessio (rovesciamento n. 105). ⚠️ Il collegamento
+          alla Deducibilità è rimasto FUORI: dentro la spiegazione col
+          mouse non si raggiunge, perché uscire dal segno la chiude. */}
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">
+        Causali
+        <Didascalia>
+          Sulle uscite c&apos;è una casella <strong>«è un costo fisso»</strong>: serve alla Proiezione
+          per confrontare i costi fissi veri con quelli previsti. Finché non ne spunti nessuna, il
+          confronto dice che i fissi non li ha misurati — non che sono zero.
+          <br />
+          <br />
+          Sotto c&apos;è anche <strong>la deducibilità abituale</strong>: le uscite registrate con
+          quella causale la ereditano, e su una singola riga puoi sempre dire diversamente.
+          <br />
+          <br />
+          Alcune causali le scrive <strong>il gestionale</strong>, non tu: quando conti il cassetto,
+          versi in banca o ti rimborsi un anticipo. <strong>Non compaiono quando registri un
+          movimento a mano</strong> — sono spostamenti di denaro, non spese, e sceglierne una per una
+          spesa vera la farebbe sparire dai costi.
+        </Didascalia>
+      </h1>
       <p className="testo-sala text-b58-charcoal-soft mb-6">
-        Sulle uscite c&apos;è una casella <strong>«è un costo fisso»</strong>: serve alla Proiezione per
-        confrontare i costi fissi veri con quelli previsti. Finché non ne spunti nessuna, il confronto dice
-        che i fissi non li ha misurati — non che sono zero.
-      </p>
-      <p className="testo-sala text-b58-charcoal-soft mb-6">
-        Sotto c&apos;è anche <strong>la deducibilità abituale</strong>: le uscite registrate con quella causale
-        la ereditano, e su una singola riga puoi sempre dire diversamente. Le regole si creano da{" "}
+        Le regole di deducibilità si creano da{" "}
         <Link to="/fiscale/deducibilita" className="tocco-inline underline">Proiezione fiscale → Deducibilità dei costi</Link>.
-      </p>
-      <p className="testo-sala text-b58-charcoal-soft mb-6">
-        Alcune causali le scrive <strong>il gestionale</strong>, non tu: quando conti il cassetto, versi in
-        banca o ti rimborsi un anticipo. Le vedi qui per sapere che esistono, ma{" "}
-        <strong>non compaiono quando registri un movimento a mano</strong> — sono spostamenti di denaro, non
-        spese, e sceglierne una per una spesa vera la farebbe sparire dai costi.
       </p>
 
       {error && (
@@ -130,7 +140,7 @@ export default function Causali() {
           type="button"
           disabled={saving || !newLabel.trim()}
           onClick={handleAdd}
-          className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+          className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
         >
           + Aggiungi
         </button>

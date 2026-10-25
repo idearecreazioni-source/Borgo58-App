@@ -393,7 +393,7 @@ function PannelloAllergene({
           onClick={() => onSalvaScelta(false, nota)}
           className={`rounded-full testo-sala px-3 py-1.5 border transition-colors disabled:opacity-50 ${
             riga.stato === "non_eliminabile"
-              ? "bg-b58-terracotta text-b58-parchment border-b58-terracotta"
+              ? "bg-b58-azione text-b58-parchment border-b58-terracotta"
               : "border-b58-charcoal/15 text-b58-charcoal-soft"
           }`}
         >
@@ -502,7 +502,7 @@ function PannelloAllergene({
                           });
                           setModifica(null);
                         }}
-                        className="rounded bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-50"
+                        className="rounded bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-50"
                       >
                         Salva
                       </button>

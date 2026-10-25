@@ -51,11 +51,11 @@ export default function AnteprimaDaTesto() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+    <div className="mx-auto max-w-3xl testo-sala-grande">
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">Anteprima da testo — non salva nulla</h1>
+      <h1 className="mb-1 mt-2 font-display text-2xl text-b58-charcoal">Anteprima da testo — non salva nulla</h1>
       <p className="mb-4 text-stone-600">
         Il testo che incolli resta solo in questa schermata: non viene inviato né salvato, e non crea
         nessuna bozza. Qui vedi soltanto cosa si riesce a leggere, e cosa andrebbe completato a mano.
@@ -76,7 +76,7 @@ export default function AnteprimaDaTesto() {
         <button
           type="button"
           onClick={esamina}
-          className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+          className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
         >
           Esamina il testo
         </button>

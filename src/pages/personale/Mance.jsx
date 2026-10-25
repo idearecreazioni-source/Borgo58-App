@@ -270,7 +270,7 @@ export default function Mance() {
                 {TIP_MEZZI.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
               </select>
               <input value={collectForm.note} onChange={(e) => setCollectForm((f) => ({ ...f, note: e.target.value }))} placeholder="Nota (facoltativa)" className={inputClass + " flex-1 min-w-[120px]"} />
-              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60">
+              <button type="button" disabled={busy || !collectForm.amount} onClick={handleCollect} className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60">
                 + Registra raccolta
               </button>
             </div>
@@ -415,7 +415,7 @@ export default function Mance() {
                     type="button"
                     disabled={busy || allocationTotal <= 0 || oltreIlMonte}
                     onClick={handleRegisterDistribution}
-                    className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
                   >
                     Registra distribuzione
                   </button>

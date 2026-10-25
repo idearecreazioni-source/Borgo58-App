@@ -381,7 +381,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                 Non vuol dire che non ce ne sia una. Riprova prima di incassare:
                 chiudere adesso potrebbe fargli pagare due volte.
               </p>
-              <button type="button" onClick={ricaricaCaparra} className="tocco-bottone mt-2 rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
+              <button type="button" onClick={ricaricaCaparra} className="tocco-bottone mt-2 rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4">
                 Riprova
               </button>
             </div>
@@ -748,7 +748,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.causaleId || (mode === "sconto" && !form.collectedAmount)}
                   onClick={handleDiscountGift}
-                  className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
                 >
                   Conferma
                 </button>
@@ -772,7 +772,7 @@ export default function CloseOrderModal({ order, copertoPrice, onClose, onDone }
                   type="button"
                   disabled={busy || !form.cancelReason.trim()}
                   onClick={handleCancel}
-                  className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
+                  className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment testo-sala font-medium px-4"
                 >
                   Conferma annullamento
                 </button>

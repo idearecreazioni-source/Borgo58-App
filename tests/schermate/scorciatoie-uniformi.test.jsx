@@ -43,8 +43,8 @@ describe("🔴 lo stampo e' uno", () => {
     );
     const pieno = screen.getByRole("link", { name: "Prima nota" });
     const vuoto = screen.getByRole("link", { name: "Causali" });
-    expect(pieno.className).toMatch(/bg-b58-terracotta/);
-    expect(vuoto.className).not.toMatch(/bg-b58-terracotta/);
+    expect(pieno.className).toMatch(/bg-b58-azione/);
+    expect(vuoto.className).not.toMatch(/bg-b58-azione/);
     // Il bersaglio e' lo stesso: cambia il colore, non la taglia.
     expect(pieno.className).toMatch(/\btocco-bottone\b/);
   });

@@ -159,7 +159,7 @@ export default function SceltaOra({
                 onClick={() => setBozza(convertiFascia(bozza, f.id))}
                 className={`tocco-bottone testo-sala flex-1 rounded-lg border px-2 ${
                   fascia === f.id
-                    ? "border-b58-terracotta bg-b58-terracotta text-white"
+                    ? "border-b58-terracotta bg-b58-azione text-white"
                     : "border-b58-sand bg-white text-b58-charcoal-soft"
                 }`}
               >
@@ -206,7 +206,7 @@ export default function SceltaOra({
                 onChange(bozza);
                 setAperto(false);
               }}
-              className="tocco-bottone testo-sala flex-1 rounded-lg bg-b58-terracotta px-2 text-white"
+              className="tocco-bottone testo-sala flex-1 rounded-lg bg-b58-azione px-2 text-white"
             >
               Conferma
             </button>
