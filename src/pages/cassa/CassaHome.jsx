@@ -394,6 +394,11 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/da-collocare">
               Da collocare{daCollocare > 0 && ` (${daCollocare})`}
             </Scorciatoia>
+            {/* La porta dell'estratto conto da file (24/10/2026): senza un
+                collegamento la rotta resterebbe irraggiungibile. */}
+            <Scorciatoia to="/cassa/banca">
+              Movimenti della banca
+            </Scorciatoia>
           </Gruppo>
           <Gruppo titolo="Soldi miei e di altri">
             {/* 🔴 LA PORTA DELLA TASCA — 31/08/2026. Il soggetto esisteva in
