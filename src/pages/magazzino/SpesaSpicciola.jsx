@@ -194,12 +194,12 @@ export default function SpesaSpicciola() {
   const campo = "tocco-bottone w-full rounded border border-stone-300 px-3 testo-sala";
 
   return (
-    <div className="testo-sala mx-auto max-w-3xl p-4">
+    <div className="testo-sala mx-auto max-w-3xl">
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
       <div className="mb-1 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">Spesa spicciola</h1>
+        <h1 className="font-display text-2xl text-b58-charcoal">Spesa spicciola</h1>
         <StriscaDallaVoce venuto={venuto} />
       </div>
       {/* ⚠️ Una riga sola, e dice la cosa che serve sapere: che questa non

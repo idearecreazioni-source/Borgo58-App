@@ -79,7 +79,7 @@ export default function IngredientiList() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca per nome…"
-          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta flex-1 min-w-[200px]"
+          className="tocco-campo rounded-lg border border-b58-charcoal/15 bg-white px-3 py-2 testo-sala-grande text-b58-charcoal focus:outline-none focus:ring-2 focus:ring-b58-terracotta basis-full sm:basis-auto sm:flex-1 sm:min-w-[200px]"
         />
         <select
           value={category}

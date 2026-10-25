@@ -198,7 +198,7 @@ export default function SalaEOrari() {
               </h3>
               <div className="space-y-1">
                 {orariDelGiorno(g.weekday).map((o) => (
-                  <div key={o.id} className="flex flex-wrap items-center gap-3 bg-white rounded-lg px-3 py-2">
+                  <div key={o.id} className="bg-white rounded-lg px-3 py-2">
                     <label className="tocco-campo flex items-center gap-2 min-w-[110px]">
                       <input
                         type="checkbox"
@@ -209,7 +209,10 @@ export default function SalaEOrari() {
                         className="h-4 w-4"
                       />
                       <span className="testo-sala-grande text-b58-charcoal capitalize">{o.servizio}</span>
+                      {!o.attivo && <span className="testo-sala text-b58-charcoal-soft/70">chiuso</span>}
                     </label>
+                    {o.attivo && <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-2 mt-1">
+                    <label className="flex flex-col gap-0.5">
                     <span className="testo-sala text-b58-charcoal-soft">dalle</span>
                     <CampoAutosalvato
                       type="time"
@@ -218,6 +221,8 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
+                    </label>
+                    <label className="flex flex-col gap-0.5">
                     <span className="testo-sala text-b58-charcoal-soft">ultimo ingresso</span>
                     <CampoAutosalvato
                       type="time"
@@ -226,6 +231,7 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
+                    </label>
                     {/* ⚠️ L'ora del primo giro sta QUI, sulla riga del
                         servizio, e non piu' una sola per tutto il locale:
                         la domenica e' pranzo, e un'ora buona per la cena
@@ -238,6 +244,7 @@ export default function SalaEOrari() {
                         pianta. Il nome dice questo di proposito — uno che
                         somigliasse a una chiusura, fra tre mesi, verrebbe
                         usato per impedire qualcosa. */}
+                    <label className="flex flex-col gap-0.5">
                     <span className="testo-sala text-b58-charcoal-soft">ultimi arrivi dalle</span>
                     <CampoAutosalvato
                       type="time"
@@ -248,6 +255,8 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
+                    </label>
+                    <label className="flex flex-col gap-0.5">
                     <span className="testo-sala text-b58-charcoal-soft">primo giro fino alle</span>
                     <CampoAutosalvato
                       type="time"
@@ -258,6 +267,8 @@ export default function SalaEOrari() {
                       className={inputClass}
                       disabled={!o.attivo}
                     />
+                    </label>
+                    </div>}
                   </div>
                 ))}
               </div>

@@ -291,7 +291,21 @@ export default function Previsione() {
                 Niente in scadenza entro quella data.
               </p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              <ul className="sm:hidden divide-y divide-b58-charcoal/5">
+                {attesi.map((a, i) => (
+                  <li key={`${a.origine}-${a.riferimento ?? i}`} className="py-2.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="testo-sala-grande text-b58-charcoal min-w-0">{a.descrizione}</span>
+                      <span className="testo-sala-grande font-medium text-b58-charcoal whitespace-nowrap">{formatEUR(a.importo)}</span>
+                    </div>
+                    <div className="testo-sala text-b58-charcoal-soft mt-0.5">
+                      {formatDate(a.quando)} · {a.origine === "fattura" ? "fattura fornitore" : a.origine === "imposta" ? "imposte" : "scritta da te"} · {a.mezzo}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full testo-sala-grande">
                   <thead>
                     <tr className="text-left text-b58-charcoal-soft border-b border-b58-charcoal/10">
@@ -319,6 +333,7 @@ export default function Previsione() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
 
             {/* ⚠️ IL TAGLIO SI DICHIARA (difetto n. 1 del collaudo, 17/08).

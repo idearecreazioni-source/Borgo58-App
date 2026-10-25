@@ -68,11 +68,11 @@ export default function BozzeList() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+    <div className="mx-auto max-w-3xl testo-sala-grande">
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-6 mt-2 text-2xl font-semibold">
+      <h1 className="mb-6 mt-2 font-display text-2xl text-b58-charcoal">
         Bozze di ricetta
         <Didascalia>
           Una bozza non è ancora nel Ricettario: ci entra solo quando la confermi.

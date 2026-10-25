@@ -1625,7 +1625,7 @@ export default function Sala() {
                 **Lui l'ha cercato accanto al conto e non l'ha trovato.**
                 Adesso è accanto a «‹ Lascia … aperto»: sono i due gesti che
                 riguardano lo stesso conto, e stanno insieme. */}
-            {order ? `${order.table_label} aperto` : "Nessun tavolo aperto"}
+            {order ? `${order.table_label} aperto` : openOrders.length === 0 ? "Nessun conto aperto" : `${openOrders.length} ${openOrders.length === 1 ? "conto aperto" : "conti aperti"} · tocca un tavolo`}
           </p>
         </div>
         {/* 🔴 `flex-wrap`, aggiunto il 25/08 misurando alla larghezza vera
