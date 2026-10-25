@@ -144,7 +144,7 @@ LE COSE CHE IL GESTIONALE SA GIA' FARE
   ⚠️ "data" vale come per "movimento_cassa": solo se ha detto un giorno diverso da adesso.
 - "prestito_restituito": ha RESTITUITO dei soldi a chi glieli aveva prestati («ho ridato cinquanta euro a Roberto»). dati: { "da_chi": "il nome come l'ha detto", "importo": <numero>, "mezzo": "cassa"|"banca"|null, "data": "AAAA-MM-GG"|null, "note": "..."|null }
   ⚠️ Il prestito giusto lo trova il gestionale dal nome: tu scrivi il nome come l'ha detto. Il mezzo, se non l'ha detto, lascialo null: si restituisce dallo stesso posto da cui era entrato.
-- "nota_non_capita": NON HAI CAPITO cosa vuole. dati: { "sentito": "il pezzo di frase che non hai capito, com'è stato detto" }
+${operazioniDalDatabase(catalogo)}- "nota_non_capita": NON HAI CAPITO cosa vuole. dati: { "sentito": "il pezzo di frase che non hai capito, com'è stato detto" }
 
 🔴 LA REGOLA PIÙ IMPORTANTE: MAGLIA LARGA, MA NON SI INVENTA.
 Se capisci cosa vuole, mettilo fra le azioni. Se NON lo capisci, non tirare a indovinare e non lasciarlo cadere: fai una "nota_non_capita" con quello che hai sentito. Una frase persa in silenzio è la cosa peggiore, perché lui crede di averla detta.
@@ -169,7 +169,7 @@ Qui sotto trovi quello che il locale ha davvero, ognuno con un numero: prodotti,
 
 🔴 E IN OGNI AZIONE CHE NOMINA QUALCOSA METTI SEMPRE ANCHE "nome_sentito": le parole con cui LUI l'ha chiamato, così come le ha dette. Serve in due casi, ed è obbligatorio in tutti e due: se il numero non si ritrova, il gestionale può dirgli «non ho trovato *bottarga di tonno*» invece di «non ho capito di che parlavi»; e sulla lista della spesa quel nome diventa la riga, perché lì una cosa scritta a mano è una riga legittima.
 
-${JSON.stringify(catalogo)}
+${JSON.stringify(catalogoSenzaOperazioni(catalogo))}
 
 LE QUATTRO COSE CHE CREANO
 ⚠️ Come tutto il resto, queste le guarda lui prima. I dati vanno riempiti lo stesso, e bene, perché quando lui approva vengono scritte così come le hai capite.
@@ -213,6 +213,29 @@ ${elenchiDelGestionale(catalogo)}`;
 //
 // ⚠️ E SE NON CI SONO non si ripiega su un elenco scritto qui: sarebbe una
 // seconda verita' che entra in gioco quando nessuno la sta guardando.
+// ⚠️ LE OPERAZIONI NUOVE ARRIVANO DAL DATABASE, non da questo file
+//    (`tipi_azione_vocale.istruzioni`, dentro `voce_catalogo()`): chi
+//    aggiunge un'operazione scrive una riga sola, nello stesso posto dove
+//    vive il ramo che la esegue — e un tipo spiegato al modello senza
+//    nessuno che lo esegua non puo' piu' nascere da qui.
+function operazioniDalDatabase(catalogo: Record<string, unknown>): string {
+  const op = catalogo?.operazioni;
+  if (!Array.isArray(op)) return "";
+  return op
+    .map((o) => {
+      const r = (o ?? {}) as Record<string, unknown>;
+      return r.tipo && r.istruzioni ? `- "${r.tipo}": ${r.istruzioni}\n` : "";
+    })
+    .join("");
+}
+
+// Le istruzioni stanno gia' scritte nell'elenco dei tipi: ripeterle nel
+// catalogo pagherebbe due volte gli stessi token a ogni frase.
+function catalogoSenzaOperazioni(catalogo: Record<string, unknown>) {
+  const { operazioni: _o, ...resto } = catalogo ?? {};
+  return resto;
+}
+
 function elenchiDelGestionale(catalogo: Record<string, unknown>): string {
   const v = catalogo?.vocabolari as Record<string, unknown> | undefined;
   const categorie = (v?.categorie_prodotto as { codice: string; nome: string }[] | null) ?? null;
