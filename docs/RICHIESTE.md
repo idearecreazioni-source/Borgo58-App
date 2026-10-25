@@ -53,13 +53,13 @@ rossa se qualcuno aggiunge una richiesta e dimentica il comando.
 
 <!-- CONTEGGIO: generato da `npm run richieste`, non si scrive a mano -->
 
-**87 richieste in tutto**, e ognuna sta in uno dei quattro stati:
-**17 in attesa** · **1 in corso** · **64 fatte** · **5 scartate da lui**.
-La somma fa **87**, cioè il numero delle righe: se non tornasse, questo
+**89 richieste in tutto**, e ognuna sta in uno dei quattro stati:
+**18 in attesa** · **2 in corso** · **64 fatte** · **5 scartate da lui**.
+La somma fa **89**, cioè il numero delle righe: se non tornasse, questo
 conteggio non verrebbe nemmeno generato.
 
-Delle **18** ancora aperte, **1** si possono fare adesso e
-**17** aspettano qualcun altro (un consulente, la banca, un
+Delle **20** ancora aperte, **2** si possono fare adesso e
+**18** aspettano qualcun altro (un consulente, la banca, un
 abbonamento, o un blocco che vuole una sessione sua).
 
 <!-- FINE CONTEGGIO -->
@@ -166,6 +166,8 @@ esisteva perché l'aveva nominata lui, e non si sapeva cosa fosse.
 | V4 | 🔴 **I due pulsanti di MEMO vanno rifatti: la cura del 29/08 non è bastata.** Sue parole del 30/08 dopo averli guardati: sono rimasti «in fondo alla schermata, attaccati» — lo stacco portato da 12 a 13 punti **non è uno stacco**. Vuole: stacco dal bordo di **circa 1 cm vero**, pulsanti **alti circa 1,5 cm veri** (⚠️ in centimetri, non in punti, o sul mini tablet non restano un centimetro), **tutti e due con lo stile scuro pieno di «Premi e parla»**, **scritta più grande**, e **l'emoji della macchina fotografica** accanto a «Fotografa» come il microfono sta accanto all'altro. Il risultato: le due schermate indistinguibili nel gesto — cambia solo la parola e il simbolo. | 30/08/2026 | Sue schermate | — | fatta · commit del 30/08 (nessuna migrazione) |
 | V5 | **La regola dell'azione principale in `DECISIONI.md` va completata con QUANTO VALE LO STACCO e QUANTO È ALTO il pulsante.** Senza quei due numeri la prossima schermata rinasce con 13 punti. | 30/08/2026 | Sua richiesta | — | fatta · commit del 30/08 (nessuna migrazione) |
 | V3 | **La funzione online della voce (`ascolta-voce`) non è installata da nessuna parte.** Il database sa già eseguire il tipo nuovo, ma finché quella funzione non viene installata il modello non lo produce mai. Va installata dopo un push, insieme alle migrazioni. | 29/08/2026 | Blocco 3 del 29/08 | — | fatta · 🔴 **la riga era invecchiata: misurato il 31/08, `ascolta-voce` è installata dal 29/08 (versione 2)** e il deploy è posteriore all'ultimo commit del file — 15:24 UTC contro 14:09. Cioè era già chiusa e nessuno l'aveva segnata |
+| V6 | **MEMO controlla e i difetti arrivano a Claude**: un quaderno dei difetti dentro il gestionale (solo titolare, niente GitHub perché il repository è pubblico), raccolto ogni sera; poi MEMO che controlla da sé cosa non torna e propone correzioni. Piano a tappe nell'artifact del 25/10. | 25/10/2026 | Sue parole nel thread «MEMO che controlla» | si può fare adesso | in corso · fatta la TAPPA 1, il quaderno (migrazione `20261025000002`, pulsante «Segnala», schermata *Segnalazioni*). Restano la raccolta serale (tappa 2), i controlli (tappa 4) e le correzioni proposte (tappa 5) |
+| V7 | **MEMO voce non più rigido: che capisca tutto ciò che gli dice come se lo dicesse a Claude** — memoria degli ultimi minuti, domande di chiarimento, letture libere del gestionale, sempre conferma prima di scrivere. | 25/10/2026 | Sue parole nel thread «MEMO che controlla» | aspetta | in attesa · dopo il quaderno e la raccolta serale (sua decisione del 25/10); prima di accenderla va riferito al coordinatore quanto costa |
 
 ---
 
