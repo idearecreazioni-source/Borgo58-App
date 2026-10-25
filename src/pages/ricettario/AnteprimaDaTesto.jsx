@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { bozzaDaTesto } from "../../lib/calcoli/ricettaDaTesto";
-import Didascalia from "../../components/Didascalia";
 
 // ANTEPRIMA DA TESTO — NON SALVA NULLA (Ricettario Fase 1C, 07/10/2026).
 //
@@ -56,13 +55,11 @@ export default function AnteprimaDaTesto() {
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-4 mt-2 text-2xl font-semibold">
-        Anteprima da testo — non salva nulla
-        <Didascalia>
-          Il testo che incolli resta solo in questa schermata: non viene inviato né salvato, e non crea
-          nessuna bozza. Qui vedi soltanto cosa si riesce a leggere, e cosa andrebbe completato a mano.
-        </Didascalia>
-      </h1>
+      <h1 className="mb-1 mt-2 text-2xl font-semibold">Anteprima da testo — non salva nulla</h1>
+      <p className="mb-4 text-stone-600">
+        Il testo che incolli resta solo in questa schermata: non viene inviato né salvato, e non crea
+        nessuna bozza. Qui vedi soltanto cosa si riesce a leggere, e cosa andrebbe completato a mano.
+      </p>
 
       <label className="mb-3 flex flex-col">
         <span className="text-stone-600">Testo della ricetta</span>
