@@ -96,7 +96,7 @@ export default function Fotografa() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-4">
+    <div className="mx-auto max-w-3xl">
       {/* 🔴 SI CHIAMA MEMO — decisione di Alessio del 27/08.
           ⚠️ Il TITOLO prende il nome, il PULSANTE no: «Fotografa» è il
              gesto, e il gesto non si chiama come chi lo esegue. Il titolo

@@ -215,7 +215,7 @@ export default function Scadenze() {
   };
 
   return (
-    <div className="testo-sala mx-auto max-w-3xl p-4">
+    <div className="testo-sala mx-auto max-w-3xl">
       <Link to="/magazzino" className="tocco-bottone inline-flex items-center testo-sala text-stone-600">
         ← Magazzino
       </Link>
@@ -223,7 +223,7 @@ export default function Scadenze() {
           si apre dal segno. **Il messaggio delle 10:00 no**: quello è un
           effetto — qualcosa che succede senza che nessuno lo chieda — e
           gli effetti restano visibili. */}
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+      <h1 className="mb-1 mt-2 font-display text-2xl text-b58-charcoal">
         Scadenze
         <Didascalia>
           Compaiono le partite che stanno per scadere e che non sono state rimpiazzate da una più

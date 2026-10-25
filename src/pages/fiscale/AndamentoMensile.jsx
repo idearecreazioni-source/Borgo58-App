@@ -416,7 +416,36 @@ export default function AndamentoMensile() {
                   un mese buono non viene moltiplicato per dodici.
                 </Didascalia>
               </h2>
-              <div className="overflow-x-auto">
+              <ul className="sm:hidden divide-y divide-b58-charcoal/5">
+                {anno_.map((r) => {
+                  const q = (v) =>
+                    v == null ? "—" :
+                    r.unita === "euro" ? formatEUR(v) :
+                    r.unita === "percento" ? `${Number(v).toLocaleString("it-IT", { maximumFractionDigits: 1 })}%` :
+                    Number(v).toLocaleString("it-IT", { maximumFractionDigits: 0 });
+                  const scarto = r.scarto_percento == null ? "—"
+                    : `${Number(r.scarto_percento) > 0 ? "+" : ""}${Number(r.scarto_percento).toLocaleString("it-IT", { maximumFractionDigits: 1 })}${r.unita === "percento" ? " punti" : "%"}`;
+                  return (
+                    <li key={r.indicatore} className="py-3">
+                      <div className="testo-sala-grande font-medium text-b58-charcoal">
+                        {r.indicatore}
+                        {r.spiegazione && <Didascalia>{r.spiegazione}</Didascalia>}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1 testo-sala">
+                        <span className="text-b58-charcoal-soft">Previsto a oggi</span>
+                        <span className="text-right tabular-nums text-b58-charcoal-soft">{q(r.previsto_a_oggi)}</span>
+                        <span className="text-b58-charcoal-soft">Reale a oggi</span>
+                        <span className="text-right tabular-nums text-b58-charcoal">{r.misurato ? q(r.reale_a_oggi) : "non misurato"}</span>
+                        <span className="text-b58-charcoal-soft">Scarto</span>
+                        <span className={`text-right tabular-nums ${r.peggiora ? "text-b58-terracotta-dark font-medium" : "text-b58-olive-dark"}`}>{scarto}</span>
+                        <span className="text-b58-charcoal-soft">Stima a dicembre</span>
+                        <span className="text-right tabular-nums font-medium text-b58-charcoal">{q(r.proiettato_anno)}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full testo-sala-grande min-w-[680px]">
                   <thead>
                     <tr className="testo-sala uppercase tracking-wide text-b58-charcoal-soft">
