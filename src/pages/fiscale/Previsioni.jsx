@@ -135,7 +135,7 @@ export default function Previsioni() {
             scritto per la società sbagliata non si nota da nessun numero. */}
         <Link
           to={`/fiscale/previsioni/nuova${entityId ? `?entita=${entityId}` : ""}`}
-          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
+          className="tocco-bottone inline-flex items-center rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment testo-sala font-medium px-4"
         >
           + Scrivi una previsione
         </Link>
@@ -172,13 +172,15 @@ export default function Previsioni() {
 
       {/* --- Caricare il foglio: la scorciatoia --- */}
       <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-6 mb-6">
-        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-1">Oppure parti dal tuo foglio Excel</h2>
-        <p className="testo-sala text-b58-charcoal-soft mb-4">
-          Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
-          scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
-          database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
-          correggi da qui.
-        </p>
+        <h2 className="font-display testo-sala-grande text-b58-charcoal mb-4">
+          Oppure parti dal tuo foglio Excel
+          <Didascalia>
+            Una scorciatoia, non un obbligo: serve a non ricopiare a mano sessanta numeri che hai già
+            scritto. Il file resta sul tuo computer — il gestionale ne legge i numeri e li tiene nel
+            database, non conserva il foglio da nessuna parte. Da lì in poi la previsione vive qui e la
+            correggi da qui.
+          </Didascalia>
+        </h2>
 
         {!decompressioneDisponibile() ? (
           <p className="testo-sala text-b58-terracotta-dark">
@@ -190,7 +192,7 @@ export default function Previsioni() {
             type="file"
             accept=".xlsx"
             onChange={(e) => apriFoglio(e.target.files?.[0])}
-            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal file:mr-3 file:rounded-lg file:border-0 file:bg-b58-terracotta file:px-4 file:py-2 file:testo-sala file:text-b58-parchment"
+            className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
           />
         )}
 
@@ -252,7 +254,7 @@ export default function Previsioni() {
                     type="button"
                     onClick={conferma}
                     disabled={salvando}
-                    className="tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-4  disabled:opacity-60"
+                    className="tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-4  disabled:opacity-60"
                   >
                     {salvando ? "Salvo…" : "Crea la previsione"}
                   </button>

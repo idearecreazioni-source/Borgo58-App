@@ -94,11 +94,11 @@ export default function SchedeProdotti() {
     // classe loro prendevano i 16 punti predefiniti del browser, che alla
     // calibrazione di un mini tablet fanno 2,50 mm. Ereditando dal padre si
     // sistemano tutti insieme, e chi ha già una classe sua continua a vincere.
-    <div className="mx-auto max-w-3xl p-4 testo-sala-grande">
+    <div className="mx-auto max-w-3xl testo-sala-grande">
       <Link to="/ricettario" className="tocco-bottone inline-flex items-center testo-sala-grande text-stone-600">
         ← Ricettario
       </Link>
-      <h1 className="mb-1 mt-2 text-2xl font-semibold">
+      <h1 className="mb-1 mt-2 font-display text-2xl text-b58-charcoal">
         Schede dei prodotti
         <Didascalia>
           Un prodotto nato da una fattura ha solo nome, unità e categoria. Qui
@@ -136,7 +136,7 @@ export default function SchedeProdotti() {
               </ul>
               <button
                 type="button"
-                className="tocco-bottone rounded bg-b58-terracotta px-5 text-b58-parchment"
+                className="tocco-bottone rounded bg-b58-azione px-5 text-b58-parchment"
                 disabled={lavorando}
                 onClick={compila}
               >
@@ -205,16 +205,18 @@ export default function SchedeProdotti() {
                  chiede. Su un dedotto mostra gli ingredienti invece di
                  garantire.
              ================================================================== */}
-          <h2 className="mb-2 font-semibold">Da dove vengono gli allergeni</h2>
-          <p className="mb-4 testo-sala-grande text-stone-600">
-            {/* ⚠️ Trovato dal censimento, non dall'elenco del mandato: è una
-                frase che DESCRIVE come lavora MEMO, non una risposta dopo un
-                gesto — quindi il nome ci va. */}
-            Quello che MEMO deduce vale: non c&apos;è niente da confermare. Questo
-            elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
-            in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
-            prodotto per aprirlo e sistemare a mano quello che manca.
-          </p>
+          <h2 className="mb-4 font-semibold">
+            Da dove vengono gli allergeni
+            <Didascalia>
+              {/* ⚠️ Trovato dal censimento, non dall'elenco del mandato: è una
+                  frase che DESCRIVE come lavora MEMO, non una risposta dopo un
+                  gesto — quindi il nome ci va. */}
+              Quello che MEMO deduce vale: non c&apos;è niente da confermare. Questo
+              elenco dice <strong>da dove arriva</strong> ogni allergene, perché è quello che serve
+              in sala — su un dedotto si mostrano gli ingredienti invece di garantire. Tocca un
+              prodotto per aprirlo e sistemare a mano quello che manca.
+            </Didascalia>
+          </h2>
 
           {conAllergeni.length === 0 ? (
             <p className="text-stone-600">Nessun prodotto ha allergeni.</p>

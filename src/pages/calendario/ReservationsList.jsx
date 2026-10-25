@@ -4,6 +4,7 @@ import { listReservations, listRichiesteDaConfermare } from "../../lib/api/reser
 import { useAuth } from "../../context/AuthContext";
 import { RESERVATION_STATUSES, RESERVATION_TYPES, formatDate, labelFor, oggiLocale } from "../../lib/constants";
 import { campiPrenotazione } from "../../lib/calcoli/prenotazioni";
+import Didascalia from "../../components/Didascalia";
 
 // 🔴 «SERVITA» E «NON SI È PRESENTATO» NON AVEVANO UNO SFONDO (11/09/2026,
 //    censimento delle schermate): l'etichetta usciva con la classe
@@ -109,7 +110,7 @@ export default function ReservationsList() {
           </Link>
           <Link
             to="/calendario-eventi/nuova"
-            className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
+            className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark transition-colors text-b58-parchment font-medium px-4 py-2 testo-sala-grande"
           >
             + Nuova prenotazione
           </Link>
@@ -118,22 +119,19 @@ export default function ReservationsList() {
 
       {daConfermare.length > 0 && (
         <div className="rounded-xl bg-b58-parchment ring-1 ring-b58-charcoal/10 p-5 mb-6">
-          <div className="flex items-center gap-2.5 mb-1">
+          <div className="flex items-center gap-2.5 mb-3">
             <span className="inline-flex items-center rounded-full bg-b58-gold text-b58-parchment testo-sala font-medium px-2.5 py-1">
               {daConfermare.length}
             </span>
             <h2 className="font-display testo-sala-titolo text-b58-charcoal">
               {daConfermare.length === 1 ? "richiesta da confermare" : "richieste da confermare"}
+              <Didascalia>
+                Una richiesta non tiene nessun tavolo: il cliente resta in attesa finché non
+                gliene dai uno tu dalla{" "}
+                pianta della sala.
+              </Didascalia>
             </h2>
           </div>
-          <p className="testo-sala-grande text-b58-charcoal-soft mb-3">
-            Una richiesta non tiene nessun tavolo: il cliente resta in attesa finché non
-            gliene dai uno tu dalla{" "}
-            <Link to="/calendario-eventi/pianta" className="tocco-inline underline text-b58-terracotta">
-              pianta della sala
-            </Link>
-            .
-          </p>
           <ul>
             {daConfermare.map((r) => (
               <li key={r.id} className="border-b border-b58-charcoal/5 last:border-0">

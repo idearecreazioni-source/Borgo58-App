@@ -141,7 +141,7 @@ export default function PiattiDelGiorno() {
             <label className="block testo-sala text-b58-charcoal-soft mb-1">Titolo</label>
             <input value={newForm.title} onChange={(e) => setNewForm((f) => ({ ...f, title: e.target.value }))} className={inputClass} />
           </div>
-          <button type="button" disabled={busy} onClick={handleCreate} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={handleCreate} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
             + Crea
           </button>
         </div>
@@ -222,7 +222,7 @@ export default function PiattiDelGiorno() {
                 <input type="number" step="0.01" value={itemForm.price} onChange={(e) => setItemForm((f) => ({ ...f, price: e.target.value }))} placeholder="Prezzo €" className={inputClass} />
               </div>
               <div className="flex justify-end mt-2">
-                <button type="button" disabled={busy} onClick={handleAddItem} className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
+                <button type="button" disabled={busy} onClick={handleAddItem} className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60">
                   + Aggiungi piatto
                 </button>
               </div>

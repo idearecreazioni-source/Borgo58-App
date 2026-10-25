@@ -4,6 +4,7 @@ import { chiediAllArchivio, listDomandeArchivio } from "../../lib/api/assistente
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { leggi, nonLetto } from "../../lib/calcoli/letture";
 import { formatDate } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // «Chiedi all'archivio» — una domanda in italiano, la risposta letta dai
 // documenti veri (12/08/2026).
@@ -71,10 +72,12 @@ export default function ChiediArchivio() {
         <Link to="/documenti" className="tocco-bottone inline-flex items-center testo-sala-grande text-b58-charcoal-soft hover:text-b58-charcoal">
           ← Archivio Documenti
         </Link>
-        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">Chiedi all'archivio</h1>
-        <p className="text-b58-charcoal-soft mt-1">
-          Una domanda in italiano. La risposta viene letta dentro i documenti, non dai titoli.
-        </p>
+        <h1 className="font-display text-2xl md:text-3xl text-b58-charcoal mt-2">
+          Chiedi all'archivio
+          <Didascalia>
+            Una domanda in italiano. La risposta viene letta dentro i documenti, non dai titoli.
+          </Didascalia>
+        </h1>
       </div>
 
       <div className={sezione}>
@@ -110,7 +113,7 @@ export default function ChiediArchivio() {
           <button
             onClick={() => chiedi()}
             disabled={attesa || !domanda.trim()}
-            className="tocco-bottone rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-40 transition-colors text-b58-parchment testo-sala-grande font-medium px-5"
+            className="tocco-bottone rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-40 transition-colors text-b58-parchment testo-sala-grande font-medium px-5"
           >
             {attesa ? "Sto leggendo…" : "Chiedi"}
           </button>

@@ -431,7 +431,7 @@ export default function PublicReservationForm() {
           <button
             type="submit"
             disabled={submitting || giornoChiuso || cercaOrari || (sceltaOrari && !form.time)}
-            className="w-full rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
+            className="w-full rounded-lg bg-b58-azione hover:bg-b58-azione-dark disabled:opacity-60 transition-colors text-b58-parchment font-medium py-3"
           >
             {submitting ? "Invio…" : "Invia richiesta"}
           </button>

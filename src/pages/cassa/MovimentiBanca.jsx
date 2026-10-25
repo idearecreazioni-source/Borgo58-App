@@ -42,7 +42,7 @@ const campo =
 const bottone =
   "tocco-bottone rounded-lg border border-b58-charcoal/15 bg-white testo-sala px-3 py-1.5 text-b58-charcoal disabled:opacity-60";
 const bottonePieno =
-  "tocco-bottone rounded-lg bg-b58-terracotta text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
+  "tocco-bottone rounded-lg bg-b58-azione text-b58-parchment testo-sala px-3 py-1.5 disabled:opacity-60";
 
 async function leggiFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -130,7 +130,7 @@ export default function MovimentiBanca() {
             e.target.value = "";
             if (files.length) carica(files);
           }}
-          className="testo-sala"
+          className="tocco-campo block w-full max-w-full testo-sala text-b58-charcoal-soft file:mr-3 file:rounded-lg file:border-0 file:bg-b58-azione file:px-4 file:py-2 file:font-medium file:text-b58-parchment hover:file:bg-b58-azione-dark"
         />
       </label>
 

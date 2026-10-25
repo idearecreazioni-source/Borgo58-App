@@ -22,7 +22,7 @@ vi.mock("../../src/lib/supabase", () => ({
 }));
 
 const spie = vi.hoisted(() => ({ aggiunta: null }));
-const finto = vi.hoisted(() => ({ righe: [] }));
+const finto = vi.hoisted(() => ({ righe: [], daCollegare: [] }));
 const vuoto = () => Promise.resolve([]);
 
 vi.mock("../../src/lib/api/recipes", () => ({
@@ -86,6 +86,13 @@ vi.mock("../../src/lib/api/ingredients", () => ({
     { valore: "g", etichetta: "g" },
   ]),
 }));
+// Gli ingredienti ancora da collegare al magazzino (25/10/2026).
+vi.mock("../../src/lib/api/ricettaDaCollegare", () => ({
+  listDaCollegare: vi.fn(async () => finto.daCollegare),
+  aggiornaDaCollegare: vi.fn(),
+  togliDaCollegare: vi.fn(),
+  collegaIngrediente: vi.fn(),
+}));
 vi.mock("../../src/lib/api/recipeVideos", () => ({
   addRecipeVideo: vi.fn(),
   listRecipeVideos: vuoto,
@@ -147,6 +154,7 @@ const bottoneAggiungi = () => document.querySelector('[data-prova="riga-aggiungi
 
 beforeEach(() => {
   finto.righe = [];
+  finto.daCollegare = [];
   spie.aggiunta = null;
   vi.clearAllMocks();
 });
@@ -291,5 +299,25 @@ describe("🔴 il valore standard del prodotto precompila, e poi tace", () => {
     scegliCozze(container);
     fireEvent.change(campo(container, "riga-netto"), { target: { value: "2" } });
     await waitFor(() => expect(campo(container, "riga-lordo").value).toBe("2.5"));
+  });
+});
+
+// =====================================================================
+describe("🔴 gli ingredienti da collegare si vedono, e il costo si dice parziale (25/10/2026)", () => {
+  it("la sezione li elenca, e accanto al costo c'e' «Parziale»", async () => {
+    finto.daCollegare = [
+      { id: "d1", recipe_id: "r1", posizione: 1, nome: "prezzemolo", quantita: null, unita: null, nota: null },
+    ];
+    const { container } = await apri();
+    await waitFor(() => expect(container.textContent).toMatch(/Da collegare al magazzino \(1\)/));
+    expect(container.textContent).toMatch(/Parziale: 1 ingrediente da\s*collegare al magazzino/);
+    expect(container.textContent).toMatch(/Elenco incompleto/);
+    expect(container.querySelector('select[aria-label="Collega «prezzemolo» a un prodotto"]')).toBeTruthy();
+  });
+
+  it("senza ingredienti da collegare la sezione e l'avviso non ci sono", async () => {
+    const { container } = await apri();
+    expect(container.textContent).not.toMatch(/Da collegare al magazzino/);
+    expect(container.textContent).not.toMatch(/Parziale/);
   });
 });

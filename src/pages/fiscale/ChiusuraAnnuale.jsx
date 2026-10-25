@@ -305,7 +305,7 @@ export default function ChiusuraAnnuale() {
                   disabilitato={chiudendo}
                   onConferma={() => chiudi(true)}
                   attributi={{ "data-prova": "chiudi-con-avviso" }}
-                  className="rounded-lg bg-b58-terracotta text-b58-parchment px-4 py-2 testo-sala-grande"
+                  className="rounded-lg bg-b58-azione text-b58-parchment px-4 py-2 testo-sala-grande"
                 />
               ) : (
                 <button

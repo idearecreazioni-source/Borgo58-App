@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import DatoNonLetto from "../../components/DatoNonLetto";
 import { caparreTrattenute } from "../../lib/api/reservations";
 import { formatDate, formatEUR } from "../../lib/constants";
+import Didascalia from "../../components/Didascalia";
 
 // LE CAPARRE TENUTE — 13/10/2026.
 //
@@ -44,11 +45,13 @@ export default function CaparreTenute() {
       >
         ← Cassa
       </Link>
-      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-2">Caparre tenute</h1>
-      <p className="testo-sala text-b58-charcoal-soft mb-6">
-        Le caparre tenute perché il cliente non si è presentato. Non sono un incasso del servizio:
-        stanno qui, separate.
-      </p>
+      <h1 className="font-display text-2xl text-b58-charcoal mt-1 mb-6">
+        Caparre tenute
+        <Didascalia>
+          Le caparre tenute perché il cliente non si è presentato. Non sono un incasso del servizio:
+          stanno qui, separate.
+        </Didascalia>
+      </h1>
 
       {errore ? (
         <DatoNonLetto

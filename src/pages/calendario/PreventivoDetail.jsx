@@ -274,7 +274,7 @@ export default function PreventivoDetail() {
             type="button"
             onClick={() => setVista(VISTA_COSTO)}
             className={`rounded-full testo-sala px-3 py-1.5 ${
-              vista === VISTA_COSTO ? "bg-b58-terracotta text-b58-parchment" : "text-b58-charcoal-soft"
+              vista === VISTA_COSTO ? "bg-b58-azione text-b58-parchment" : "text-b58-charcoal-soft"
             }`}
           >
             Per me
@@ -394,7 +394,7 @@ export default function PreventivoDetail() {
               onClick={mandaLaMail}
               disabled={inCorso !== "" || !prev.cliente_email}
               title={prev.cliente_email ? undefined : "Di questo cliente non hai l'email"}
-              className="tocco-campo rounded-lg bg-b58-terracotta hover:bg-b58-terracotta-dark text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
+              className="tocco-campo rounded-lg bg-b58-azione hover:bg-b58-azione-dark text-b58-parchment testo-sala-grande px-4 py-2 disabled:opacity-60"
             >
               {inCorso === "mail" ? "…" : "Manda la mail"}
             </button>
@@ -638,7 +638,7 @@ function VistaCosto({
               salva(null, [...prev.righe, { natura: "cibo", recipe_id: nuovoPiatto, porzioni_per_persona: 1 }]);
               setNuovoPiatto("");
             }}
-            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
+            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
           >
             Aggiungi
           </button>
@@ -689,7 +689,7 @@ function VistaCosto({
               setExtraNome("");
               setExtraPrezzo("");
             }}
-            className="rounded-lg bg-b58-terracotta disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
+            className="rounded-lg bg-b58-azione disabled:opacity-60 text-b58-parchment testo-sala-grande px-4"
           >
             Aggiungi
           </button>

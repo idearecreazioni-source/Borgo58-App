@@ -598,7 +598,7 @@ export default function PrevisioneForm() {
           <button
             onClick={salva}
             disabled={salvando}
-            className="tocco-campo rounded-lg bg-b58-terracotta text-b58-parchment testo-sala-grande px-5 py-2.5 disabled:opacity-60"
+            className="tocco-campo rounded-lg bg-b58-azione text-b58-parchment testo-sala-grande px-5 py-2.5 disabled:opacity-60"
           >
             {salvando ? "Salvo…" : modifica ? "Salva le correzioni" : "Crea la previsione"}
           </button>
