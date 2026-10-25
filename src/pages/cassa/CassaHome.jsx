@@ -447,6 +447,11 @@ export default function CassaHome() {
             <Scorciatoia to="/cassa/conti-correnti">
               Conti correnti
             </Scorciatoia>
+            {/* La porta dell'estratto conto da file (24/10/2026): senza un
+                collegamento la rotta resterebbe irraggiungibile. */}
+            <Scorciatoia to="/cassa/banca">
+              Movimenti della banca
+            </Scorciatoia>
           </div>
         </>
       )}

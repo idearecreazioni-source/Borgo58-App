@@ -70,6 +70,8 @@ import CaparreTenute from "./pages/cassa/CaparreTenute";
 import DaCollocare from "./pages/cassa/DaCollocare";
 import Scontrinato from "./pages/cassa/Scontrinato";
 import ContiCorrenti from "./pages/cassa/ContiCorrenti";
+import MovimentiBanca from "./pages/cassa/MovimentiBanca";
+import ImportaFatturaElettronica from "./pages/fatture/ImportaFatturaElettronica";
 import CostoProgetto from "./pages/cassa/CostoProgetto";
 import Bar from "./pages/comande/Bar";
 import Cucina from "./pages/comande/Cucina";
@@ -277,6 +279,7 @@ function AppRoutes() {
 
         {/* Fatture Fornitori (solo titolare, esplicito nel brief) */}
         <Route path="/fatture-fornitori" element={<RequireTitolare><FattureFornitoriHome /></RequireTitolare>} />
+        <Route path="/fatture-fornitori/da-file" element={<RequireTitolare><ImportaFatturaElettronica /></RequireTitolare>} />
 
         {/* Cassa, Banca e Prima Nota (solo titolare — §3.5) */}
         <Route path="/cassa" element={<RequireTitolare><CassaHome /></RequireTitolare>} />
@@ -284,6 +287,7 @@ function AppRoutes() {
         <Route path="/cassa/sconti-omaggi" element={<RequireTitolare><ScontiOmaggi /></RequireTitolare>} />
         <Route path="/cassa/causali" element={<RequireTitolare><Causali /></RequireTitolare>} />
         <Route path="/cassa/conti-correnti" element={<RequireTitolare><ContiCorrenti /></RequireTitolare>} />
+        <Route path="/cassa/banca" element={<RequireTitolare><MovimentiBanca /></RequireTitolare>} />
         <Route path="/cassa/previsione" element={<RequireTitolare><Previsione /></RequireTitolare>} />
         <Route path="/cassa/costo-progetto" element={<RequireTitolare><CostoProgetto /></RequireTitolare>} />
         <Route path="/cassa/personale" element={<RequireTitolare><SezionePersonale /></RequireTitolare>} />
