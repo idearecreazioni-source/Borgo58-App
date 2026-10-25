@@ -248,7 +248,7 @@ export default function Layout() {
               testata non c'è, quindi sta qui in alto a destra. Il riquadro
               si apre sopra la schermata e non la copre: chi segnala sta
               guardando proprio il difetto. */}
-          <div className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
+          <div data-fuori-dalla-foto className="hidden lg:flex print:hidden justify-end -mt-2 mb-2">
             <PulsanteSegnala aperto={segnala.aperto} onApri={segnala.apri} />
           </div>
           {segnala.aperto && (
